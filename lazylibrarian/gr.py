@@ -107,7 +107,7 @@ class GoodReads:
             author_dict = {}
 
             URL = 'http://www.goodreads.com/author/show/%s.xml?key=ckvsiSDsuqh7omh74ZZ6Q' % authorid
-            logger.info("Find authorinfo for ID: %s" % authorid)
+            logger.info("Processing info for authorID: %s" % authorid)
 
             sourcexml = ElementTree.parse(urllib.urlopen(URL))
             rootxml = sourcexml.getroot()

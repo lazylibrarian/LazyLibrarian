@@ -141,7 +141,7 @@ class WebInterface(object):
 
     def deleteAuthor(self, AuthorID):
         logger.info(u"Removing author: " + AuthorID)
-        myDB = db.DBConnection()
+        myDB = database.DBConnection()
         myDB.action('DELETE from authors WHERE AuthorID=?', [AuthorID])
         myDB.action('DELETE from books WHERE AuthorID=?', [AuthorID])
         raise cherrypy.HTTPRedirect("home")

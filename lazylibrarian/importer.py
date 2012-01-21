@@ -105,9 +105,9 @@ def addAuthorToDB(authorid):
 
     # now process books
     if not author['books']:
-        logger.warn("Error fetching books for author with ID: " + authorid)
-
-    #logger.info("Processing books from author: " + author['authorname'])
+        logger.warn("Error processing books for author ID: " + authorid)
+    else:
+        logger.info(u"Processing books for authorID: " + authorid)
 
     for book in author['books']:
 
@@ -135,4 +135,4 @@ def addAuthorToDB(authorid):
     newValueDict = {"Status": "Active"}
 
     myDB.upsert("authors", newValueDict, controlValueDict)
-    logger.info(u"Updating complete for: " + artist['artist_name'])
+    logger.info(u"Processing complete for: " + authorid)
