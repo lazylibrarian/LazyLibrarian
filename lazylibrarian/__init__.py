@@ -49,6 +49,22 @@ SAB_BH = False
 SAB_BHDIR = None
 SAB_RET = None
 
+NZBMATRIX = False
+NZBMATRIX_USER = None
+NZBMATRIX_API = None
+
+NEWZNAB = False
+NEWZNAB_HOST = None
+NEWZNAB_API = None
+
+NZBSORG = False
+NZBSORG_UID = None
+NZBSORG_HASH = None
+
+NEWZBIN = False
+NEWZBIN_UID = None
+NEWZBIN_PASSWORD = None
+
 def CheckSection(sec):
     """ Check if INI section exists, if not create it """
     try:
@@ -131,7 +147,8 @@ def initialize():
     with INIT_LOCK:
 
         global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, \
-            SAB_HOST, SAB_PORT, SAB_API, SAB_USER, SAB_PASS, SAB_DIR, SAB_CAT, SAB_RET, SAB_BH, SAB_BHDIR
+            SAB_HOST, SAB_PORT, SAB_API, SAB_USER, SAB_PASS, SAB_DIR, SAB_CAT, SAB_RET, SAB_BH, SAB_BHDIR, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NZBSORG, NZBSORG_UID, NZBSORG_HASH, \
+            NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS
 
         if __INITIALIZED__:
             return False
@@ -166,6 +183,22 @@ def initialize():
         SAB_BH = bool(check_setting_int(CFG, 'SABnzbd', 'sab_bh', 0))
         SAB_BHDIR = check_setting_str(CFG, 'SABnzbd', 'sab_bhdir', '')
         SAB_RET = check_setting_str(CFG, 'SABnzbd', 'sab_ret', '')
+
+        NZBMATRIX = bool(check_setting_int(CFG, 'NZBMatrix', 'nzbmatrix', 0))
+        NZBMATRIX_USER = check_setting_str(CFG, 'NZBMatrix', 'nzbmatrix_user', '')
+        NZBMATRIX_API = check_setting_str(CFG, 'NZBMatrix', 'nzbmatrix_api', '')
+        
+        NEWZNAB = bool(check_setting_int(CFG, 'Newznab', 'newznab', 0))
+        NEWZNAB_HOST = check_setting_str(CFG, 'Newznab', 'newznab_host', '')
+        NEWZNAB_API = check_setting_str(CFG, 'Newznab', 'newznab_api', '')
+        
+        NZBSORG = bool(check_setting_int(CFG, 'NZBsorg', 'nzbsorg', 0))
+        NZBSORG_UID = check_setting_str(CFG, 'NZBsorg', 'nzbsorg_uid', '')
+        NZBSORG_HASH = check_setting_str(CFG, 'NZBsorg', 'nzbsorg_hash', '')
+
+        NEWZBIN = bool(check_setting_int(CFG, 'Newzbin', 'newzbin', 0))
+        NEWZBIN_UID = check_setting_str(CFG, 'Newzbin', 'newzbin_uid', '')
+        NEWZBIN_PASS = check_setting_str(CFG, 'Newzbin', 'newzbin_pass', '')
 
         if not LOGDIR:
             LOGDIR = os.path.join(DATADIR, 'Logs')
@@ -274,6 +307,26 @@ def config_write():
     new_config['SABnzbd']['sab_bhdir'] = SAB_BHDIR
     new_config['SABnzbd']['sab_ret'] = SAB_RET
 
+    new_config['NZBMatrix'] = {}
+    new_config['NZBMatrix']['nzbmatrix'] = int(NZBMATRIX)
+    new_config['NZBMatrix']['nzbmatrix_user'] = NZBMATRIX_USER
+    new_config['NZBMatrix']['nzbmatrix_api'] = NZBMATRIX_API
+
+    new_config['Newznab'] = {}
+    new_config['Newznab']['newznab'] = int(NEWZNAB)
+    new_config['Newznab']['newznab_host'] = NEWZNAB_HOST
+    new_config['Newznab']['newznab_api'] = NEWZNAB_API
+
+    new_config['NZBsorg'] = {}
+    new_config['NZBsorg']['nzbsorg'] = int(NZBSORG)
+    new_config['NZBsorg']['nzbsorg_uid'] = NZBSORG_UID
+    new_config['NZBsorg']['nzbsorg_hash'] = NZBSORG_HASH
+    
+    new_config['Newzbin'] = {}
+    new_config['Newzbin']['newzbin'] = int(NEWZBIN)
+    new_config['Newzbin']['newzbin_uid'] = NEWZBIN_UID
+    new_config['Newzbin']['newzbin_pass'] = NEWZBIN_PASS
+
     new_config.write()
 
 def dbcheck():
@@ -281,7 +334,7 @@ def dbcheck():
     conn=sqlite3.connect(DBFILE)
     c=conn.cursor()
     c.execute('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT UNIQUE, AuthorName TEXT, AuthorImgs TEXT, AuthorImgl TEXT, AuthorLink TEXT, DateAdded TEXT, Status TEXT, LatestBook TEXT, ReleaseDate TEXT, HaveBooks INTEGER, TotalBooks INTEGER)')
-    c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, BookName TEXT, BookIsbn TEXT, BookRate INTEGER, BookImgs TEXT, BookImgl TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, ReleaseDate TEXT, DateAdded TEXT, Status TEXT)')
+    c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, BookName TEXT, BookIsbn TEXT, BookRate INTEGER, BookImgs TEXT, BookImgl TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookDate TEXT, DateAdded TEXT, Status TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS snatched (BookID TEXT, BookName TEXT, Size INTEGER, URL TEXT, DateAdded TEXT, Status TEXT, FolderName TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS have (AuthorName TEXT, BookName TEXT)')
 
@@ -317,6 +370,7 @@ def start():
 
 def shutdown(restart=False):
     config_write()
+    logger.info('LazyLibrarian is shutting down ...')
     cherrypy.engine.exit()
 
     if PIDFILE :

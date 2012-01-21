@@ -18,7 +18,7 @@
     <div class="table_wrapper">
         <form action="configUpdate" method="post">
         <a name="web_interface"><h2><u>Webinterface</u></h2></a>
-
+        <br>
         <table class="configtable" summary="Webinterface">
             <tr>
                 <td>
@@ -54,7 +54,7 @@
     <div class="table_wrapper">
         <a name="download"><h2><u>Downloadsettings</u></h2></a>
         <table class="configtable" summary="Downloadsettings">
-        <tr>
+            <tr>
                 <td>
                     <h3>SABnzbd+:</h3>
                 </td>
@@ -62,28 +62,61 @@
             <tr>
                 <td>
                     <h5>Hostname:</h5><input type="text" name="sab_host" value="${config['sab_host']}" size="20" maxlength="40">
-                    <h5>Port:</h5><input type="text" name="sab_port" value="${config['sab_port']}" size="10" maxlength="40">
+                    <h5>Port:</h5><input type="text" name="sab_port" value="${config['sab_port']}" size="20" maxlength="40">
                     <br>
                     <h5>Usenet retention:</h5><input type="text" name="sab_ret" value="${config['sab_ret']}" size="20" maxlength="40">
                 </td>
                 <td>
                     <h5>API Key:</h5><input type="text" name="sab_api" value="${config['sab_api']}" size="30" maxlength="40">
-                    <h5>Username:</h5><input type="text" name="sab_user" value="${config['sab_user']}" size="20" maxlength="40">
-                    <h5>Password:</h5><input type="password" name="sab_pass" value="${config['sab_pass']}" size="20" maxlength="40">
+                    <h5>Username:</h5><input type="text" name="sab_user" value="${config['sab_user']}" size="30" maxlength="40">
+                    <h5>Password:</h5><input type="password" name="sab_pass" value="${config['sab_pass']}" size="30" maxlength="40">
                 </td>
                 <td>
-                    <h5>Category:</h5><input type="text" name="sab_cat" value="${config['sab_cat']}" size="20" maxlength="40">
-                    <h5>Directory:</h5><input type="text" name="sab_dir" value="${config['sab_dir']}" size="50"><br>
-                    <i class="smalltext">Full path to the directory where SAB downloads your books.<br>
-                    <br>
-                    <h5>Blackhole: <input type="checkbox" name="sab_bh" value=1 ${config['sab_bh']} /></h5>
-                    <h5>Blackhole folder:</h5><input type="text" name="sab_bhdir" value="${config['sab_bhdir']}" size="50"><br>
+                    <h5>Category:</h5><input type="text" name="sab_cat" value="${config['sab_cat']}" size="30">
+                    <h5>Directory:</h5><input type="text" name="sab_dir" value="${config['sab_dir']}" size="50">
+                    <i class="smalltext">Full path to the directory where SAB downloads your books.</i>
+                    <h5>Use blackhole: <input type="checkbox" name="sab_bh" value=1 ${config['sab_bh']} /></h5>
+                    <input type="text" name="sab_bhdir" value="${config['sab_bhdir']}" size="50">
                     <i class="smalltext">The folder your nzb-downloader monitors for nzb-files.</i>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="table_wrapper">
+        <a name="providers"><h2><u>NZB Providers</u></h2></a>
+        <br>
+        <table class="configtable" summary="Providers">
+            <tr>
+                <td>
+                    <h3>Newznab <input type="checkbox" name="newznab" value=1 ${config['use_newznab']} /></h3>
+                </td>
+                <td>
+                    <h3>Newzbin <input type="checkbox" name="newzbin" value=1 ${config['use_newzbin']} /></h3>
+                </td>
+                <td>
+                    <h3>NZBMatrix <input type="checkbox" name="nzbmatrix" value=1 ${config['use_nzbmatrix']} /></h3>
+                </td>
+                <td>
+                    <h3>NZBsorg <input type="checkbox" name="nzbsorg" value=1 ${config['use_nzbsorg']} /></h3>
                 </td>
             </tr>
             <tr>
                 <td>
-
+                    <h5>Host:</h5><input type="text" name="sab_host" value="${config['sab_host']}" size="15" maxlength="40">
+                    <h5>Api:</h5><input type="text" name="sab_port" value="${config['sab_port']}" size="30" maxlength="40">
+                </td>
+                <td>
+                    <h5>UID:</h5><input type="text" name="newzbin_uid" value="${config['newzbin_uid']}" size="15" maxlength="40">
+                    <h5>Pass:</h5><input type="text" name="newzbin_pass" value="${config['newzbin_pass']}" size="30" maxlength="40">
+                </td>
+                <td>
+                    <h5>User:</h5><input type="text" name="nzbmatrix_user" value="${config['nzbmatrix_user']}" size="15" maxlength="40">
+                    <h5>Api:</h5><input type="text" name="nzbmatrix_api" value="${config['nzbmatrix_api']}" size="30" maxlength="40">
+                </td>
+                <td>
+                    <h5>UID:</h5><input type="text" name="nzbsorg_uid" value="${config['nzbsorg_uid']}" size="15" maxlength="40">
+                    <h5>Hash:</h5><input type="text" name="nzbsorg_hash" value="${config['nzbsorg_hash']}" size="30" maxlength="40">
                 </td>
             </tr>
         </table>
