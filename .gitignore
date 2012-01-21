@@ -1,0 +1,32 @@
+#  Lazy User Related   #
+######################
+cache/*
+cache.db*
+config.ini
+Logs/*
+lazylibrarian.db*
+
+#  Compiled source   #
+######################
+*.py[co]
+
+#  IDE specific      #
+######################
+*.bak
+*.tmp
+*.wpr
+*.project
+*.cproject
+*.tmproj
+*.tmproject
+
+# OS generated files #
+######################
+.Spotlight-V100
+.Trashes
+.DS_Store
+desktop.ini
+ehthumbs.db
+Thumbs.db
+.directory
+*~
