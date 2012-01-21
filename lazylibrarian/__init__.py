@@ -191,11 +191,13 @@ def initialize():
         logger.lazylibrarian_log.initLogger(loglevel=LOGLEVEL)
 
         # Initialize the database
-        logger.info('Checking database status ...')
+        logger.info('Database status CHECK ...')
         try:
             dbcheck()
         except Exception, e:
             logger.error("Can't connect to the database: %s" % e)
+
+        logger.info('Database status OK ...')
 
         __INITIALIZED__ = True
         return True

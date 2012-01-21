@@ -9,14 +9,14 @@
         <thead>
             <tr>
             %if type == 'book':
-                <th id="albumname">Title</th>
-                <th id="score">Book ID</th>
+                <th id="bookname">Title</th>
+                <th id="number">Book ID</th>
             %endif
-                <th id="artistname">Author</th>
+                <th id="authorname">Author</th>
             %if type == 'book':
-                <th id="score">Rating</th>
+                <th id="number">Rating</th>
             %else:
-                <th id="score">Author ID</th>
+                <th id="number">Author ID</th>
             %endif
                 <th id="add"></th>
             </tr>
@@ -37,14 +37,14 @@
                 %>
                 <tr class="grade${grade}">
                 %if type == 'book':
-                    <td id="albumname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a></td>
-                    <td id="score">${result['bookid']}</td>
+                    <td id="bookname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a></td>
+                    <td id="number">${result['bookid']}</td>
                 %endif
-                    <td id="artistname"><a href="${result['authorlink']}" target="_new">${result['authorname']}</a></td>
+                    <td id="authorname"><a href="${result['authorlink']}" target="_new">${result['authorname']}</a></td>
                 %if type == 'book':
-                    <td id="score">${result['bookrate']}</td>
+                    <td id="number">${result['bookrate']}</td>
                 %else:
-                    <td id="score">${result['authorid']}</td>
+                    <td id="number">${result['authorid']}</td>
                 %endif
                     <td id="add"><a href="addAuthor?authorid=${result['authorid']}"> add </a></td>
                 </tr>

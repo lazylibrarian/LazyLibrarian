@@ -94,30 +94,3 @@
       </form>
 
 </%def>
-
-<%def name="javascriptIncludes()">
-    <script>
-    $(document).ready(function()
-    {
-        if ($("#encode").is(":checked"))
-            {
-                $("#encoderoptions").show();
-            }
-        else
-            {
-                $("#encoderoptions").hide();
-            }
-        
-        $("#encode").click(function(){
-            if ($("#encode").is(":checked"))
-            {
-                $("#encoderoptions").show("fast");
-            }
-            else
-            {
-                $("#encoderoptions").hide("fast");
-            }
-        });
-    });
-    </script>
-</%def>

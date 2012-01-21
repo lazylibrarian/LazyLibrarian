@@ -30,7 +30,7 @@ def serve_template(templatename, **kwargs):
 class WebInterface(object):
 
     def index(self):
-        raise cherrypy.HTTPRedirect("config")
+        raise cherrypy.HTTPRedirect("home")
     index.exposed=True
 
     def home(self):
@@ -107,18 +107,18 @@ class WebInterface(object):
     search.exposed = True
 
 #AUTHOR
-    def artistPage(self, AuthorID):
+    def authorPage(self, AuthorID):
         myDB = database.DBConnection()
         author = myDB.action('SELECT * FROM authors WHERE AuthorID=?', [AuthorID]).fetchone()
         books = myDB.select('SELECT * from books WHERE AuthorID=? order by BookName DESC', [AuthorID])
         if author is None:
             raise cherrypy.HTTPRedirect("home")
-        return serve_template(templatename="artist.html", title=author['AuthorName'], author=author, books=books)
-    artistPage.exposed = True
+        return serve_template(templatename="author.html", title=author['AuthorName'], author=author, books=books)
+    authorPage.exposed = True
 
     def addAuthor(self, authorid):
         threading.Thread(target=importer.addAuthorToDB, args=[authorid]).start()
-        raise cherrypy.HTTPRedirect("artistPage?AuthorID=%s" % authorid)
+        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % authorid)
     addAuthor.exposed = True
 
     def pauseAuthor(self, AuthorID):
@@ -127,7 +127,7 @@ class WebInterface(object):
         controlValueDict = {'AuthorID': AuthorID}
         newValueDict = {'Status': 'Paused'}
         myDB.upsert("authors", newValueDict, controlValueDict)
-        raise cherrypy.HTTPRedirect("artistPage?AuthorID=%s" % AuthorID)
+        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
     pauseAuthor.exposed = True
 
     def resumeAuthor(self, AuthorID):
@@ -136,7 +136,7 @@ class WebInterface(object):
         controlValueDict = {'AuthorID': AuthorID}
         newValueDict = {'Status': 'Active'}
         myDB.upsert("authors", newValueDict, controlValueDict)
-        raise cherrypy.HTTPRedirect("artistPage?AuthorID=%s" % AuthorID)
+        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
     resumeAuthor.exposed = True
 
     def deleteAuthor(self, AuthorID):
@@ -149,11 +149,11 @@ class WebInterface(object):
 
     def refreshAuthor(self, AuthorID):
         importer.addAuthorToDB(ArtistID)
-        raise cherrypy.HTTPRedirect("artistPage?AuthorID=%s" % AuthorID)
+        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
     refreshAuthor.exposed=True
 
 #BOOKS
-    def markAlbums(self, AuthorID=None, action=None, **args):
+    def markBooks(self, AuthorID=None, action=None, **args):
         myDB = database.DBConnection()
         if action == 'WantedNew':
             newaction = 'Wanted'
@@ -168,10 +168,14 @@ class WebInterface(object):
 #            if action == 'WantedNew':
 #                searcher.searchforalbum(mbid, new=True)
         if AuthorID:
-            raise cherrypy.HTTPRedirect("artistPage?AuthorID=%s" % AuthorID)
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
         else:
             raise cherrypy.HTTPRedirect("upcoming")
-    markAlbums.exposed = True
+    markBooks.exposed = True
+
+    def logs(self):
+        return serve_template(templatename="logs.html", title="Log", lineList=lazylibrarian.LOGLIST)
+    logs.exposed = True
 
     def shutdown(self):
         lazylibrarian.config_write()

@@ -86,8 +86,6 @@ def addAuthorToDB(authorid):
             newValueDict = {"Status": "Active"}
         myDB.upsert("authors", newValueDict, controlValueDict)
         return
-    else:
-        logger.info("Processing author: " + str(author['authorname']))
 
     controlValueDict = {
         "AuthorID": authorid
