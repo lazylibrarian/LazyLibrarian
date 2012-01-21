@@ -106,24 +106,31 @@ class GoodReads:
 
             author_dict = {}
 
-            URL = 'http://www.goodreads.com/author/show/%s.xml?key=ckvsiSDsuqh7omh74ZZ6Q' % authorid
+            URL = 'http://www.goodreads.com/author/list/%s.xml?key=ckvsiSDsuqh7omh74ZZ6Q' % authorid
             logger.info("Processing info for authorID: %s" % authorid)
 
             sourcexml = ElementTree.parse(urllib.urlopen(URL))
             rootxml = sourcexml.getroot()
-            resultxml = rootxml.find('author')
+            resultxml = rootxml.iter('book')
 
             if not len(rootxml):
                 logger.info('No author found with ID: ' + authorid)
             else:
 
-                author_dict = {
-                    'authorname':   resultxml[1].text,
-                    'authorlink':   resultxml.find('link').text,
-                    'authorimg_s':  resultxml.find('small_image_url').text,
-                    'authorimg_l':  resultxml.find('image_url').text,
-                    'totalbooks':   resultxml.find('works_count').text
-                    }
+                # 1 loop is enough
+                getauthor = 1
+                while getauthor > 0:
+                    for book in resultxml:
+                        authors = book.iter('author')
+                        for author in authors:
+                            author_dict = {
+                                'authorname':   author[1].text,
+                                'authorlink':   author.find('link').text,
+                                'authorimg_s':  author.find('small_image_url').text,
+                                'authorimg_l':  author.find('image_url').text,
+                                'totalbooks':   None
+                                }
+                            getauthor = 0
 
                 books = []
                 resultxml = rootxml.iter('book')
@@ -137,11 +144,13 @@ class GoodReads:
                         'bookimg_s':    book.find('small_image_url').text,
                         'bookimg_l':    book.find('image_url').text,
                         'bookpages':    book.find('num_pages').text,
-                        'bookrate':     float(book.find('average_rating').text)
+                        'bookrate':     float(book.find('average_rating').text),
+                        'bookdate':     book.find('published').text
                         })
 
             author_dict['books'] = books
             return author_dict
+            print author_dict
 
     @staticmethod
     def get_author_books(authorid):

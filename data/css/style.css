@@ -148,6 +148,7 @@ table#author_table { background-color: white; width: 100%; padding: 20px; }
 
 table#author_table th#select { text-align: left; }
 table#author_table th#authorname { vertical-align: middle; text-align: left; min-width: 200px; }
+table#author_table th#authorsmall { vertical-align: middle; font-size:10px; }
 table#author_table th#authorart { vertical-align: middle; }
 table#author_table th#status { text-align: left; min-width: 50px; }
 table#author_table th#book { text-align: left; min-width: 300px; }
@@ -167,14 +168,15 @@ table#book_table th#bookart { text-align: left; min-width: 50px; }
 table#book_table th#bookname { text-align: left; min-width: 150px; }
 table#book_table th#reldate { width: 175px; text-align: center; min-width: 70px; }
 table#book_table th#status { width: 175px; text-align: center; min-width: 80px; }
-table#book_table th#number { text-align: right; min-width: 75px}
+table#book_table th#number { text-align: right; }
 table#book_table td#select { vertical-align: middle; text-align: left; }
 table#book_table td#bookart { vertical-align: middle; text-align: left; }
 table#book_table td#bookname { vertical-align: middle; text-align: left; }
 table#book_table td#reldate { vertical-align: middle; text-align: center; }
-table#book_table td#status { vertical-align: middle; text-align: center; font-size: 13px; }
+table#book_table td#status { vertical-align: middle; text-align: center; font-size: 12px; }
 table#book_table td#have { vertical-align: middle; }
-table#book_table td#number { vertical-align: middle; }
+table#book_table td#number { vertical-align: middle; text-align: right; }
+table#book_table td#isbn { vertical-align: middle; text-align: right; font-size: 12px }
 
 img.bookArt { float: left; padding-right: 5px; }
 div#bookheader { padding-top: 48px; height: 200px; }

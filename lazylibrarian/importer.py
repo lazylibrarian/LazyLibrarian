@@ -126,6 +126,7 @@ def addAuthorToDB(authorid):
             "BookLink":     book['booklink'],
             "BookRate":     book['bookrate'],
             "BookPages":    book['bookpages'],
+            "BookDate":     book['bookdate'],
             "DateAdded":    formatter.today()
             }
 
