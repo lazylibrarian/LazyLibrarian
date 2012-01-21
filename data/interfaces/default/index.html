@@ -1,0 +1,86 @@
+<%inherit file="base.html"/>
+<%!
+    from lazylibrarian import formatter
+%>
+
+<%def name="body()">
+    <table class="display" id="artist_table">
+        <thead>
+            <tr>
+                <th id="name">Author</th>
+                <th id="status">Status</th>
+                <th id="album">Latest Book</th>
+                <th id="have">Have</th>
+            </tr>
+        </thead>
+        <tbody>
+        %for author in authors:
+            <%
+                totalbooks = author['TotalBooks']
+                havebooks = author['HaveBooks']
+                if not havebooks:
+                    havebooks = 0
+                try:
+                    percent = (havebooks*100.0)/totalbooks
+                    if percent > 100:
+                        percent = 100
+                except (ZeroDivisionError, TypeError):
+                    percent = 0
+                    totalbooks = '?'
+                
+                if author['ReleaseDate'] and author['LatestBook']:
+                    releasedate = author['ReleaseDate']
+                    bookdisplay = '<i>%s</i> (%s)' % (author['LatestBook'], author['ReleaseDate'])
+                    if releasedate > formatter.today():
+                        grade = 'A'
+                    else:
+                        grade = 'Z'
+                elif author['LatestBook']:
+                    releasedate = ''
+                    grade = 'Z'
+                    bookdisplay = '<i>%s</i>' % author['LatestBook']
+                else:
+                    releasedate = ''
+                    grade = 'Z'
+                    bookdisplay = '<i>None</i>'
+                
+                if author['Status'] == 'Paused':
+                    grade = 'X'
+                
+            %>
+            <tr class="grade${grade}">
+                <td id="name"><span title="${author['AuthorName']}"></span><a href="artistPage?AuthorID=${author['AuthorID']}">${author['AuthorName']}</a></td>
+                <td id="status">${author['Status']}</td>
+                <td id="album"><span title="${releasedate}"></span><a href="albumPage?BookID=${author['BookID']}">${bookdisplay}</a></td>
+                <td id="have"><span title="${percent}"></span><div class="progress-container"><div style="width:${percent}%"><div class="havetracks">${havebooks}/${totalbooks}</div></div></div></td>
+            </tr>
+        %endfor
+        </tbody>
+    </table>
+</%def>
+
+<%def name="headIncludes()">
+    <link rel="stylesheet" href="css/data_table.css">
+</%def>
+
+<%def name="javascriptIncludes()">
+    <script src="js/libs/jquery.dataTables.min.js"></script>
+    <script>
+    $(document).ready(function()
+    {
+        $('#artist_table').dataTable(
+            {
+                "aoColumns": [
+                    { "sType": "title-string"},
+                    null,
+                    { "sType": "title-string"},
+                    { "sType": "title-numeric"}
+                ],
+                "bStateSave": true,
+                "iDisplayLength": 50,
+                "sPaginationType": "full_numbers",
+                
+            });
+    });
+    </script>
+</%def>

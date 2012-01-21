@@ -1,0 +1,188 @@
+import os, cherrypy
+
+from mako.template import Template
+from mako.lookup import TemplateLookup
+from mako import exceptions
+
+import threading, time
+
+import lazylibrarian
+
+from lazylibrarian import logger, importer, database
+from lazylibrarian.formatter import checked
+from lazylibrarian.gr import GoodReads
+
+
+def serve_template(templatename, **kwargs):
+
+    interface_dir = os.path.join(str(lazylibrarian.PROG_DIR), 'data/interfaces/')
+    template_dir = os.path.join(str(interface_dir), lazylibrarian.HTTP_LOOK)
+
+    _hplookup = TemplateLookup(directories=[template_dir])
+
+    try:
+        template = _hplookup.get_template(templatename)
+        return template.render(**kwargs)
+    except:
+        return exceptions.html_error_template().render()
+
+
+class WebInterface(object):
+
+    def index(self):
+        raise cherrypy.HTTPRedirect("config")
+    index.exposed=True
+
+    def home(self):
+        myDB = database.DBConnection()
+        authors = myDB.select('SELECT * from authors order by AuthorName COLLATE NOCASE')
+        return serve_template(templatename="index.html", title="Home", authors=authors)
+    home.exposed = True
+
+    def config(self):
+        http_look_dir = os.path.join(lazylibrarian.PROG_DIR, 'data/interfaces/')
+        http_look_list = [ name for name in os.listdir(http_look_dir) if os.path.isdir(os.path.join(http_look_dir, name)) ]
+
+        config = {
+                    "http_host" :   lazylibrarian.HTTP_HOST,
+                    "http_user" :   lazylibrarian.HTTP_USER,
+                    "http_port" :   lazylibrarian.HTTP_PORT,
+                    "http_pass" :   lazylibrarian.HTTP_PASS,
+                    "http_look" :   lazylibrarian.HTTP_LOOK,
+                    "http_look_list" : http_look_list,
+                    "launch_browser" : checked(lazylibrarian.LAUNCH_BROWSER),
+                    "logdir" :      lazylibrarian.LOGDIR,
+                    "sab_host" :    lazylibrarian.SAB_HOST,
+                    "sab_port" :    lazylibrarian.SAB_PORT,
+                    "sab_api":      lazylibrarian.SAB_API,
+                    "sab_user":     lazylibrarian.SAB_USER,
+                    "sab_pass":     lazylibrarian.SAB_PASS,
+                    "sab_dir":      lazylibrarian.SAB_DIR,
+                    "sab_cat":      lazylibrarian.SAB_CAT,
+                    "sab_ret":      lazylibrarian.SAB_RET,
+                    "sab_bh":       checked(lazylibrarian.SAB_BH),
+                    "sab_bhdir":    lazylibrarian.SAB_BHDIR,
+                }
+        return serve_template(templatename="config.html", title="Settings", config=config)    
+    config.exposed = True
+
+    def configUpdate(self, http_host='0.0.0.0', http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None,
+        sab_host=None, sab_port=None, sab_api=None, sab_user=None, sab_pass=None, sab_dir=None, sab_cat=None, sab_ret=None, sab_bh=0, sab_bhdir=None):
+
+        lazylibrarian.HTTP_HOST = http_host
+        lazylibrarian.HTTP_PORT = http_port
+        lazylibrarian.HTTP_USER = http_user
+        lazylibrarian.HTTP_PASS = http_pass
+        lazylibrarian.HTTP_LOOK = http_look
+        lazylibrarian.LAUNCH_BROWSER = launch_browser
+        lazylibrarian.LOGDIR = logdir
+
+        lazylibrarian.SAB_HOST = sab_host
+        lazylibrarian.SAB_PORT = sab_port
+        lazylibrarian.SAB_API = sab_api
+        lazylibrarian.SAB_USER = sab_user
+        lazylibrarian.SAB_PASS = sab_pass
+        lazylibrarian.SAB_DIR = sab_dir
+        lazylibrarian.SAB_CAT = sab_cat
+        lazylibrarian.SAB_RET = sab_ret
+        lazylibrarian.SAB_BH = sab_bh
+        lazylibrarian.SAB_BHDIR = sab_bhdir
+
+        lazylibrarian.config_write()
+
+        raise cherrypy.HTTPRedirect("config")
+
+    configUpdate.exposed = True
+
+#SEARCH
+    def search(self, name, type):
+        GR = GoodReads()
+        if len(name) == 0:
+            raise cherrypy.HTTPRedirect("config")
+        if type == 'author':
+            searchresults = GR.find_author_name(name)
+        else:
+            searchresults = GR.find_book_name(name)
+        return serve_template(templatename="searchresults.html", title='Search Results for: "' + name + '"', searchresults=searchresults, type=type)
+    search.exposed = True
+
+#AUTHOR
+    def artistPage(self, AuthorID):
+        myDB = database.DBConnection()
+        author = myDB.action('SELECT * FROM authors WHERE AuthorID=?', [AuthorID]).fetchone()
+        books = myDB.select('SELECT * from books WHERE AuthorID=? order by BookName DESC', [AuthorID])
+        if author is None:
+            raise cherrypy.HTTPRedirect("home")
+        return serve_template(templatename="artist.html", title=author['AuthorName'], author=author, books=books)
+    artistPage.exposed = True
+
+    def addAuthor(self, authorid):
+        threading.Thread(target=importer.addAuthorToDB, args=[authorid]).start()
+        raise cherrypy.HTTPRedirect("artistPage?AuthorID=%s" % authorid)
+    addAuthor.exposed = True
+
+    def pauseAuthor(self, AuthorID):
+        logger.info(u"Pausing author: " + AuthorID)
+        myDB = database.DBConnection()
+        controlValueDict = {'AuthorID': AuthorID}
+        newValueDict = {'Status': 'Paused'}
+        myDB.upsert("authors", newValueDict, controlValueDict)
+        raise cherrypy.HTTPRedirect("artistPage?AuthorID=%s" % AuthorID)
+    pauseAuthor.exposed = True
+
+    def resumeAuthor(self, AuthorID):
+        logger.info(u"Resuming author: " + AuthorID)
+        myDB = database.DBConnection()
+        controlValueDict = {'AuthorID': AuthorID}
+        newValueDict = {'Status': 'Active'}
+        myDB.upsert("authors", newValueDict, controlValueDict)
+        raise cherrypy.HTTPRedirect("artistPage?AuthorID=%s" % AuthorID)
+    resumeAuthor.exposed = True
+
+    def deleteAuthor(self, AuthorID):
+        logger.info(u"Removing author: " + AuthorID)
+        myDB = db.DBConnection()
+        myDB.action('DELETE from authors WHERE AuthorID=?', [AuthorID])
+        myDB.action('DELETE from books WHERE AuthorID=?', [AuthorID])
+        raise cherrypy.HTTPRedirect("home")
+    deleteAuthor.exposed = True
+
+    def refreshAuthor(self, AuthorID):
+        importer.addAuthorToDB(ArtistID)
+        raise cherrypy.HTTPRedirect("artistPage?AuthorID=%s" % AuthorID)
+    refreshAuthor.exposed=True
+
+#BOOKS
+    def markAlbums(self, AuthorID=None, action=None, **args):
+        myDB = database.DBConnection()
+        if action == 'WantedNew':
+            newaction = 'Wanted'
+        else:
+            newaction = action
+        for bookid in args:
+            controlValueDict = {'BookID': bookid}
+            newValueDict = {'Status': newaction}
+            myDB.upsert("books", newValueDict, controlValueDict)
+#            if action == 'Wanted':
+#                searcher.searchforalbum(mbid, new=False)
+#            if action == 'WantedNew':
+#                searcher.searchforalbum(mbid, new=True)
+        if AuthorID:
+            raise cherrypy.HTTPRedirect("artistPage?AuthorID=%s" % AuthorID)
+        else:
+            raise cherrypy.HTTPRedirect("upcoming")
+    markAlbums.exposed = True
+
+    def shutdown(self):
+        lazylibrarian.config_write()
+        lazylibrarian.SIGNAL = 'shutdown'
+        message = 'closing ...'
+        return serve_template(templatename="shutdown.html", title="Close library", message=message, timer=15)
+        return page
+    shutdown.exposed = True
+
+    def restart(self):
+        lazylibrarian.SIGNAL = 'restart'
+        message = 'reopening ...'
+        return serve_template(templatename="shutdown.html", title="Reopen library", message=message, timer=30)
+    restart.exposed = True

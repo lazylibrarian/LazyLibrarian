@@ -1,0 +1,81 @@
+<%inherit file="base.html" />
+
+<%def name="body()">
+
+    <div id="paddingheader">
+        <h1>Search Results<h1>
+    </div>
+    <table class="display" id="searchresults_table">
+        <thead>
+            <tr>
+            %if type == 'book':
+                <th id="albumname">Title</th>
+                <th id="score">Book ID</th>
+            %endif
+                <th id="artistname">Author</th>
+            %if type == 'book':
+                <th id="score">Rating</th>
+            %else:
+                <th id="score">Author ID</th>
+            %endif
+                <th id="add"></th>
+            </tr>
+        </thead>
+        <tbody>
+            %if searchresults:
+                %for result in searchresults:
+                <%
+                    if type == 'book':
+                        if result['bookrate'] >= 2.5:
+                            grade = 'A'
+                        elif result['bookrate'] == 0.0:
+                            grade = 'U'
+                        else:
+                            grade = 'C'
+                    else:
+                        grade = 'Z'
+                %>
+                <tr class="grade${grade}">
+                %if type == 'book':
+                    <td id="albumname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a></td>
+                    <td id="score">${result['bookid']}</td>
+                %endif
+                    <td id="artistname"><a href="${result['authorlink']}" target="_new">${result['authorname']}</a></td>
+                %if type == 'book':
+                    <td id="score">${result['bookrate']}</td>
+                %else:
+                    <td id="score">${result['authorid']}</td>
+                %endif
+                    <td id="add"><a href="addAuthor?authorid=${result['authorid']}"> add </a></td>
+                </tr>
+                %endfor
+            %endif
+        </tbody>
+    </table>
+</%def>
+
+<%def name="headIncludes()">
+    <link rel="stylesheet" href="css/data_table.css">
+</%def>
+
+<%def name="javascriptIncludes()">
+    <script src="js/libs/jquery.dataTables.min.js"></script>
+    <script>
+    $(document).ready(function()
+    {
+        $('#searchresults_table').dataTable(
+            {
+                "oLanguage": {
+                    "sLengthMenu":"Show _MENU_ results per page",
+                    "sEmptyTable": "No results",
+                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 results",
+                    "sInfoFiltered":"(filtered from _MAX_ total results)"},
+                "iDisplayLength": 25,
+                "sPaginationType": "full_numbers",
+                "aaSorting": []
+
+            });
+    });
+    </script>
+</%def>

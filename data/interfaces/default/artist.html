@@ -1,0 +1,106 @@
+<%inherit file="base.html"/>
+<%!
+    from lazylibrarian import database
+%>
+
+<%def name="headerIncludes()">
+    <div id="subhead_container">
+        <ul id="subhead_menu">
+            <li><a href="refreshAuthor?AuthorID=${author['AuthorID']}">Refresh</a></li>
+            <li><a href="deleteAuthor?ArtistID=${author['AuthorID']}">Delete</a></li>
+            %if author['Status'] == 'Paused':
+                <li><a href="resumeAuthor?AuthorID=${author['AuthorID']}">Resume</a></li>
+            %else:
+                <li><a href="pauseAuthor?AuthorID=${author['AuthorID']}">Pause</a></li>
+            %endif
+        </ul>
+    </div>
+</%def>
+
+<%def name="body()">
+
+    <div id="paddingheader">
+        <h1>${author['AuthorName']}<h1>
+        %if author['Status'] == 'Loading':
+        <h3><i>(Fetching information for this author ...)</i></h3>
+        %endif
+    </div>
+
+    <form action="markAlbums" method="get"><input type="hidden" name="AuthorID" value=${author['AuthorID']}>
+    <p class="indented">Mark selected books as 
+        <select name="action">
+              <option value="Wanted">Wanted</option>
+              <option value="WantedNew">Wanted (new only)</option>
+              <option value="Skipped">Skipped</option>
+              <option value="Downloaded">Downloaded</option>
+        </select>
+        <input type="submit" value="Go">
+    </p>
+
+    <table class="display" id="album_table">
+        <thead>
+            <tr>
+
+                <th id="albumart"></th>
+                <th id="albumname">Title</th>
+                <th id="score">ISBN</th>
+                <th id="status">Status</th>
+                <th id="select"><input type="checkbox" onClick="toggle(this)" /></th>
+
+            </tr>
+        </thead>
+
+        <tbody>
+        %for book in books:
+
+            <tr class="gradeA">
+                <td id="albumart"><img src="${book['BookImgs']}" height="75" width="50"></td>
+                <td id="albumname"><a href="${book['BookLink']}" target="_new">${book['BookName']}</a></td>
+                <td id="score">${book['BookIsbn']}</td>
+                <td id="status">${book['Status']}</td>
+                <td id="select"><input type="checkbox" name="${book['BookID']}" class="checkbox" /></td>
+            </tr>
+
+        %endfor
+        </tbody>
+    </table>
+    </form>
+</%def>
+
+<%def name="headIncludes()">
+    <link rel="stylesheet" href="css/data_table.css">
+    %if author['Status'] == 'Loading':
+    <meta http-equiv="refresh" content="5">
+    %endif
+</%def>
+
+<%def name="javascriptIncludes()">
+    <script src="js/libs/jquery.dataTables.min.js"></script>
+    <script>
+    $(document).ready(function()
+    {
+        $('#book_table').dataTable(
+            {
+                "aoColumns": [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    { "sType": "title-numeric"},
+                    null
+                ],
+                "oLanguage": {
+                    "sLengthMenu":"Show _MENU_ books per page",
+                    "sEmptyTable": "No book information available",
+                    "sInfo":"Showing _TOTAL_ books",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 books",
+                    "sInfoFiltered":"(filtered from _MAX_ total books)"},
+                "bPaginate": false,
+                "aaSorting": [[4, 'asc'],[3,'desc']]
+
+            });
+    });
+    </script>
+</%def>

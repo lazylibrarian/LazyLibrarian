@@ -1,0 +1,123 @@
+<%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
+
+<%def name="headerIncludes()">
+    <div id="subhead_container">
+        <ul id="subhead_menu">
+            <li><a href="shutdown">Shutdown</a></li>
+            <li><a href="restart">Restart</a></li>
+        </ul>
+    </div>
+</%def>
+<%def name="body()">
+    <div id="paddingheader">
+        <h1><h1>
+    </div>
+    <div class="table_wrapper">
+        <form action="configUpdate" method="post">
+        <a name="web_interface"><h2><u>Webinterface</u></h2></a>
+
+        <table class="configtable" summary="Webinterface">
+            <tr>
+                <td>
+                  <h5>Hostname:</h5><input type="text" name="http_host" value="${config['http_host']}" size="20" maxlength="40">
+                  <h5>Port:</h5><input type="text" name="http_port" value="${config['http_port']}" size="10" maxlength="40">
+                  <br>
+                  <br>
+                  <h5>Logdir:</h5><input type="text" name="logdir" value="${config['logdir']}" size="50"><br>
+                </td>
+                <td>
+                  <h5>Username:</h5><input type="text" name="http_user" value="${config['http_user']}" size="20" maxlength="40">
+                  <h5>Password:</h5><input type="password" name="http_pass" value="${config['http_pass']}" size="20" maxlength="40">
+                </td>
+                <td>
+                    <h5>Launch Browser: <input type="checkbox" name="launch_browser" value=1 ${config['launch_browser']} /></h5>
+                    <br>
+                    <h5>Interface: <select name="http_look"><h5>
+                    %for http_look in config['http_look_list']:
+                        <%
+                            if http_look == lazylibrarian.HTTP_LOOK:
+                                selected = 'selected="selected"'
+                            else:
+                                selected = ''
+                        %>
+                        <option value="${http_look}" ${selected}>${http_look}</option>
+                    %endfor
+                    </select>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="table_wrapper">
+        <a name="download"><h2><u>Downloadsettings</u></h2></a>
+        <table class="configtable" summary="Downloadsettings">
+        <tr>
+                <td>
+                    <h3>SABnzbd+:</h3>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <h5>Hostname:</h5><input type="text" name="sab_host" value="${config['sab_host']}" size="20" maxlength="40">
+                    <h5>Port:</h5><input type="text" name="sab_port" value="${config['sab_port']}" size="10" maxlength="40">
+                    <br>
+                    <h5>Usenet retention:</h5><input type="text" name="sab_ret" value="${config['sab_ret']}" size="20" maxlength="40">
+                </td>
+                <td>
+                    <h5>API Key:</h5><input type="text" name="sab_api" value="${config['sab_api']}" size="30" maxlength="40">
+                    <h5>Username:</h5><input type="text" name="sab_user" value="${config['sab_user']}" size="20" maxlength="40">
+                    <h5>Password:</h5><input type="password" name="sab_pass" value="${config['sab_pass']}" size="20" maxlength="40">
+                </td>
+                <td>
+                    <h5>Category:</h5><input type="text" name="sab_cat" value="${config['sab_cat']}" size="20" maxlength="40">
+                    <h5>Directory:</h5><input type="text" name="sab_dir" value="${config['sab_dir']}" size="50"><br>
+                    <i class="smalltext">Full path to the directory where SAB downloads your books.<br>
+                    <br>
+                    <h5>Blackhole: <input type="checkbox" name="sab_bh" value=1 ${config['sab_bh']} /></h5>
+                    <h5>Blackhole folder:</h5><input type="text" name="sab_bhdir" value="${config['sab_bhdir']}" size="50"><br>
+                    <i class="smalltext">The folder your nzb-downloader monitors for nzb-files.</i>
+                </td>
+            </tr>
+            <tr>
+                <td>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+
+        <p class="center"><input type="submit" value="Save changes"><br>
+        (Webinterface changes require a restart to take effect)
+      </form>
+
+</%def>
+
+<%def name="javascriptIncludes()">
+    <script>
+    $(document).ready(function()
+    {
+        if ($("#encode").is(":checked"))
+            {
+                $("#encoderoptions").show();
+            }
+        else
+            {
+                $("#encoderoptions").hide();
+            }
+        
+        $("#encode").click(function(){
+            if ($("#encode").is(":checked"))
+            {
+                $("#encoderoptions").show("fast");
+            }
+            else
+            {
+                $("#encoderoptions").hide("fast");
+            }
+        });
+    });
+    </script>
+</%def>
