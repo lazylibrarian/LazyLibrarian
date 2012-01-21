@@ -165,11 +165,11 @@ table.display td.center {
  * DataTables row classes
  */
 table.display tr.odd.gradeA {
-	background-color: #ddffdd;
+	background-color: #ddffdf;
 }
 
 table.display tr.even.gradeA {
-	background-color: #ddffdd;
+	background-color: #ccffcf;
 }
 
 table.display tr.odd.gradeC {

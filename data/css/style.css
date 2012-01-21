@@ -147,11 +147,13 @@ div#main { margin: 0; padding: 80px 0 0 0; }
 table#author_table { background-color: white; width: 100%; padding: 20px; }
 
 table#author_table th#select { text-align: left; }
-table#author_table th#name { text-align: left; min-width: 200px; }
+table#author_table th#authorname { vertical-align: middle; text-align: left; min-width: 200px; }
+table#author_table th#authorart { vertical-align: middle; }
 table#author_table th#status { text-align: left; min-width: 50px; }
 table#author_table th#book { text-align: left; min-width: 300px; }
 table#author_table th#have { text-align: center; }
-table#author_table td#name { vertical-align: middle; text-align: left; min-width:200px; }
+table#author_table th#statustoggle { font-size: 11px; vertical-align: middle; text-align: right; }
+table#author_table td#authorname { vertical-align: middle; text-align: left; min-width:200px; }
 table#author_table td#status { vertical-align: middle; text-align: left; min-width: 50px; }
 table#author_table td#book { vertical-align: middle; text-align: left; min-width: 300px; }
 table#author_table td#have { vertical-align: middle; }

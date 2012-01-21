@@ -19,25 +19,50 @@
 
 <%def name="body()">
 
-    <div id="paddingheader">
-        <h1>${author['AuthorName']}<h1>
-        %if author['Status'] == 'Loading':
-        <h5><i>(Fetching information for this author ...)</i></h5>
-        %endif
-    </div>
+<!--    <div id="paddingheader">-->
+<!--        <h1>${author['AuthorName']}<h1>-->
+<!--        %if author['Status'] == 'Loading':-->
+<!--        <h5><i>(Fetching information for this author ...)</i></h5>-->
+<!--        %endif-->
+<!--    </div>-->
 
-    <form action="markBooks" method="get"><input type="hidden" name="AuthorID" value=${author['AuthorID']}>
-    <p class="indented">Mark selected books as 
-        <select name="action">
-              <option value="Wanted">Wanted</option>
-              <option value="WantedNew">Wanted (new only)</option>
-              <option value="Skipped">Skipped</option>
-              <option value="Downloaded">Downloaded</option>
-        </select>
-        <input type="submit" value="Go">
-    </p>
+<!--    <form action="markBooks" method="get"><input type="hidden" name="AuthorID" value=${author['AuthorID']}>-->
+<!--    <p class="indented">Mark selected books as -->
+<!--        <select name="action">-->
+<!--              <option value="Wanted">Wanted</option>-->
+<!--              <option value="WantedNew">Wanted (new only)</option>-->
+<!--              <option value="Skipped">Skipped</option>-->
+<!--              <option value="Downloaded">Downloaded</option>-->
+<!--        </select>-->
+<!--        <input type="submit" value="Go">-->
+<!--    </p>-->
 
-    <table class="display" id="album_table">
+    <table class="display" id="author_table">
+        <thead>
+            <tr>
+                <th id="authorart"><img src="${author['AuthorImgl']}" height="100" width="75"></th>
+                <th id="authorname"><h1>${author['AuthorName']}<h1>
+                    %if author['Status'] == 'Loading':
+                        <br><h5><i>(Fetching information for this author ...)</i></h5>
+                    %endif
+                </th>
+                <th id="statustoggle">
+                    <form action="markBooks" method="get"><input type="hidden" name="AuthorID" value=${author['AuthorID']}>
+<!--                    <p class="indented">-->
+                        <select name="action">
+                              <option value="Wanted">Wanted</option>
+                              <option value="WantedNew">Wanted (new only)</option>
+                              <option value="Skipped">Skipped</option>
+                              <option value="Downloaded">Downloaded</option>
+                        </select>
+                        <input type="submit" value="Go">
+<!--                    </p>-->
+                </th>
+            </tr>
+        </thead>
+    </table>
+
+    <table class="display" id="book_table">
         <thead>
             <tr>
 
@@ -81,24 +106,15 @@
     {
         $('#book_table').dataTable(
             {
-                "aoColumns": [
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    { "sType": "title-numeric"},
-                    null
-                ],
                 "oLanguage": {
-                    "sLengthMenu":"Show _MENU_ books per page",
-                    "sEmptyTable": "No book information available",
-                    "sInfo":"Showing _TOTAL_ books",
-                    "sInfoEmpty":"Showing 0 to 0 of 0 books",
-                    "sInfoFiltered":"(filtered from _MAX_ total books)"},
-                "bPaginate": false,
-                "aaSorting": [[4, 'asc'],[3,'desc']]
+                    "sLengthMenu":"Show _MENU_ results per page",
+                    "sEmptyTable": "No results",
+                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 results",
+                    "sInfoFiltered":"(filtered from _MAX_ total results)"},
+                "iDisplayLength": 25,
+                "sPaginationType": "full_numbers",
+                "aaSorting": []
 
             });
     });
