@@ -342,30 +342,20 @@ def dbcheck():
 
     conn=sqlite3.connect(DBFILE)
     c=conn.cursor()
-    c.execute('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT UNIQUE, AuthorName TEXT, AuthorImgs TEXT, AuthorImgl TEXT, AuthorLink TEXT, DateAdded TEXT, Status TEXT, LatestBook TEXT, ReleaseDate TEXT, HaveBooks INTEGER, TotalBooks INTEGER)')
+    c.execute('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT UNIQUE, AuthorName TEXT, AuthorImgs TEXT, AuthorImgl TEXT, AuthorLink TEXT, DateAdded TEXT, Status TEXT, LatestBook TEXT, ReleaseDate TEXT, HaveBooks INTEGER, TotalBooks INTEGER, AuthorBorn TEXT, AuthorDeath TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, BookName TEXT, BookIsbn TEXT, BookRate INTEGER, BookImgs TEXT, BookImgl TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookDate TEXT, BookLang TEXT, DateAdded TEXT, Status TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS snatched (BookID TEXT, BookName TEXT, Size INTEGER, URL TEXT, DateAdded TEXT, Status TEXT, FolderName TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS have (AuthorName TEXT, BookName TEXT)')
 
     try:
-        c.execute('SELECT BookID from authors')
+        c.execute('SELECT AuthorBorn from authors')
     except sqlite3.OperationalError:
-        c.execute('ALTER TABLE authors ADD COLUMN BookID TEXT')
+        c.execute('ALTER TABLE authors ADD COLUMN AuthorBorn TEXT')
 
     try:
-        c.execute('SELECT HaveBooks from authors')
+        c.execute('SELECT AuthorDeath from authors')
     except sqlite3.OperationalError:
-        c.execute('ALTER TABLE authors ADD COLUMN HaveBooks INTEGER DEFAULT 0')
-
-    try:
-        c.execute('SELECT TotalBooks from authors')
-    except sqlite3.OperationalError:
-        c.execute('ALTER TABLE authors ADD COLUMN TotalBooks INTEGER DEFAULT 0')
-
-    try:
-        c.execute('SELECT FolderName from snatched')
-    except sqlite3.OperationalError:
-        c.execute('ALTER TABLE snatched ADD COLUMN FolderName TEXT')
+        c.execute('ALTER TABLE authors ADD COLUMN AuthorDeath TEXT')
 
     conn.commit()
     c.close()

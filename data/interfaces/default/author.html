@@ -25,7 +25,11 @@
                 <th id="authorart"><img src="${author['AuthorImgl']}" height="100" width="75"></th>
                 <th id="authorname">
                     <h1><a href="${author['AuthorLink']}" target="_new">${author['AuthorName']}<h1><br>
-                    <i class="smalltext">${author['TotalBooks']} books
+                    %if author['AuthorDeath']:
+                        <i class="smalltext">${author['AuthorBorn']} - ${author['AuthorDeath']}</i>
+                    %else:
+                        <i class="smalltext">${author['AuthorBorn']}</i>
+                    %endif
                     %if author['Status'] == 'Loading':
                         <br><i class="smalltext"><i>(Fetching information for this author ...)</i></h5>
                     %endif

@@ -97,6 +97,8 @@ def addAuthorToDB(authorid):
         "AuthorLink":   author['authorlink'],
         "AuthorImgs":   author['authorimg_s'],
         "AuthorImgl":   author['authorimg_l'],
+        "AuthorBorn":   author['authorborn'],
+        "AuthorDeath":  author['authordeath'],
         "TotalBooks":   author['totalbooks'],
         "DateAdded":    formatter.today(),
         "Status":       "Loading"

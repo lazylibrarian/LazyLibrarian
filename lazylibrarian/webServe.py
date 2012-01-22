@@ -153,7 +153,7 @@ class WebInterface(object):
         else:
             query = 'SELECT * from books WHERE AuthorID=%s order by BookName DESC' % AuthorID
 
-        logger.debug('DBQuery: ' + query)
+        #logger.debug('DBQuery: ' + query)
 
         author = myDB.action('SELECT * FROM authors WHERE AuthorID=?', [AuthorID]).fetchone()
         books = myDB.select(query)

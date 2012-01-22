@@ -91,6 +91,8 @@ class GoodReads:
                     'authorlink':   resultxml.find('link').text,
                     'authorimg_s':  resultxml.find('small_image_url').text,
                     'authorimg_l':  resultxml.find('image_url').text,
+                    'authorborn':   resultxml.find('born_at').text,
+                    'authordeath':  resultxml.find('died_at').text,
                     'totalbooks':   resultxml.find('works_count').text
                     }
                 totalbooks = int(float(resultxml.find('works_count').text))
