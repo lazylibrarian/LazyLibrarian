@@ -52,6 +52,9 @@ class WebInterface(object):
                     "http_look_list":   http_look_list,
                     "launch_browser":   checked(lazylibrarian.LAUNCH_BROWSER),
                     "logdir" :          lazylibrarian.LOGDIR,
+                    "use_imp_onlyisbn":  checked(lazylibrarian.IMP_ONLYISBN),
+                    "imp_preflang":     lazylibrarian.IMP_PREFLANG,
+                    "imp_ignlang":      lazylibrarian.IMP_IGNLANG,
                     "sab_host":         lazylibrarian.SAB_HOST,
                     "sab_port":         lazylibrarian.SAB_PORT,
                     "sab_api":          lazylibrarian.SAB_API,
@@ -78,7 +81,7 @@ class WebInterface(object):
         return serve_template(templatename="config.html", title="Settings", config=config)    
     config.exposed = True
 
-    def configUpdate(self, http_host='0.0.0.0', http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None,
+    def configUpdate(self, http_host='0.0.0.0', http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, imp_onlyisbn=0, imp_preflang=None, imp_ignlang = None,
         sab_host=None, sab_port=None, sab_api=None, sab_user=None, sab_pass=None, sab_dir=None, sab_cat=None, sab_ret=None, sab_bh=0, sab_bhdir=None,
         nzbmatrix=0, nzbmatrix_user=None, nzbmatrix_api=None, newznab=0, newznab_host=None, newznab_api=None, nzbsorg=0, nzbsorg_uid=None, nzbsorg_hash=None, 
         newzbin=0, newzbin_uid=None, newzbin_pass=None):
@@ -90,6 +93,10 @@ class WebInterface(object):
         lazylibrarian.HTTP_LOOK = http_look
         lazylibrarian.LAUNCH_BROWSER = launch_browser
         lazylibrarian.LOGDIR = logdir
+
+        lazylibrarian.IMP_ONLYISBN = imp_onlyisbn
+        lazylibrarian.IMP_PREFLANG = imp_preflang
+        lazylibrarian.IMP_IGNLANG = imp_ignlang
 
         lazylibrarian.SAB_HOST = sab_host
         lazylibrarian.SAB_PORT = sab_port

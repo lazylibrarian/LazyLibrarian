@@ -65,6 +65,10 @@ NEWZBIN = False
 NEWZBIN_UID = None
 NEWZBIN_PASSWORD = None
 
+IMP_PREFLANG = []
+IMP_IGNLANG = []
+IMP_ONLYISBN = False
+
 def CheckSection(sec):
     """ Check if INI section exists, if not create it """
     try:
@@ -147,8 +151,8 @@ def initialize():
     with INIT_LOCK:
 
         global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, \
-            SAB_HOST, SAB_PORT, SAB_API, SAB_USER, SAB_PASS, SAB_DIR, SAB_CAT, SAB_RET, SAB_BH, SAB_BHDIR, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NZBSORG, NZBSORG_UID, NZBSORG_HASH, \
-            NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS
+            IMP_ONLYISBN, IMP_PREFLANG, IMP_IGNLANG, SAB_HOST, SAB_PORT, SAB_API, SAB_USER, SAB_PASS, SAB_DIR, SAB_CAT, SAB_RET, SAB_BH, SAB_BHDIR, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
+            NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NZBSORG, NZBSORG_UID, NZBSORG_HASH, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS 
 
         if __INITIALIZED__:
             return False
@@ -172,6 +176,10 @@ def initialize():
 
         LAUNCH_BROWSER = bool(check_setting_int(CFG, 'General', 'launch_browser', 1))
         LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
+
+        IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', '')
+        IMP_IGNLANG = check_setting_str(CFG, 'General', 'imp_ignlang', '')
+        IMP_ONLYISBN = bool(check_setting_int(CFG, 'General', 'imp_onlyisbn', ''))
 
         SAB_HOST = check_setting_str(CFG, 'SABnzbd', 'sab_host', '')
         SAB_PORT = check_setting_str(CFG, 'SABnzbd', 'sab_port', '')
@@ -294,6 +302,9 @@ def config_write():
     new_config['General']['http_look'] = HTTP_LOOK
     new_config['General']['launch_browser'] = int(LAUNCH_BROWSER)
     new_config['General']['logdir'] = LOGDIR
+    new_config['General']['imp_onlyisbn'] = IMP_ONLYISBN
+    new_config['General']['imp_preflang'] = IMP_PREFLANG
+    new_config['General']['imp_ignlang'] = IMP_IGNLANG
 
     new_config['SABnzbd'] = {}
     new_config['SABnzbd']['sab_host'] = SAB_HOST
@@ -334,7 +345,7 @@ def dbcheck():
     conn=sqlite3.connect(DBFILE)
     c=conn.cursor()
     c.execute('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT UNIQUE, AuthorName TEXT, AuthorImgs TEXT, AuthorImgl TEXT, AuthorLink TEXT, DateAdded TEXT, Status TEXT, LatestBook TEXT, ReleaseDate TEXT, HaveBooks INTEGER, TotalBooks INTEGER)')
-    c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, BookName TEXT, BookIsbn TEXT, BookRate INTEGER, BookImgs TEXT, BookImgl TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookDate TEXT, DateAdded TEXT, Status TEXT)')
+    c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, BookName TEXT, BookIsbn TEXT, BookRate INTEGER, BookImgs TEXT, BookImgl TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookDate TEXT, BookLang TEXT, DateAdded TEXT, Status TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS snatched (BookID TEXT, BookName TEXT, Size INTEGER, URL TEXT, DateAdded TEXT, Status TEXT, FolderName TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS have (AuthorName TEXT, BookName TEXT)')
 

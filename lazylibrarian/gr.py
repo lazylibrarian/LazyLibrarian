@@ -1,4 +1,4 @@
-import time, threading, urllib
+import time, threading, urllib, sys
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, SubElement
 #from xml.dom.minidom import parse
@@ -7,7 +7,7 @@ import lazylibrarian
 from lazylibrarian import logger, formatter, database
 
 class GoodReads:
-    # http://www.goodreads.com/api/author_url/Orson%20Scott%20Card.xml?key=ckvsiSDsuqh7omh74ZZ6Q
+    # http://www.goodreads.com/api/
 
     @staticmethod
     def find_author_name(name):
@@ -68,113 +68,72 @@ class GoodReads:
                         'bookimg_s':    work.find('small_image_url').text,
                         'bookimg_m':    work.find('image_url').text
                         })
-                print booklist
-                return booklist
-
-    @staticmethod
-    def find_author_booklist(name):
-        with threading.Lock():
-            URL = 'http://www.goodreads.com/author/list/%s.xml?key=ckvsiSDsuqh7omh74ZZ6Q' % name
-            logger.info('Find all books from author with ID: ' + name)
-
-            sourcexml = ElementTree.parse(urllib.urlopen(URL))
-            rootxml = sourcexml.getroot()
-            resultxml = rootxml.iter('book')
-
-            if not len(rootxml):
-                logger.info('No books found for author with ID: ' + name)
-                booklist = []
-            else:
-                booklist = []
-
-                for book in resultxml:
-                    booklist.append({
-                        'bookid':       book[1],
-                        'bookisbn':     book[2],
-                        'bookname':     book.find('title').text,
-                        'booklink':     book.find('link').text,
-                        'bookrate':     float(book.find('average_rating').text),
-                        'bookimg_s':    book.find('small_image_url').text,
-                        'bookimg_l':    book.find('image_url').text,
-                        'bookpages':    book.find('num_pages').text
-                        })
                 return booklist
 
     @staticmethod
     def get_author_info(authorid):
         with threading.Lock():
 
-            author_dict = {}
-
-            URL = 'http://www.goodreads.com/author/list/%s.xml?key=ckvsiSDsuqh7omh74ZZ6Q' % authorid
-            logger.info("Processing info for authorID: %s" % authorid)
-
+            URL = 'http://www.goodreads.com/author/show/%s.xml?key=ckvsiSDsuqh7omh74ZZ6Q' % authorid
             sourcexml = ElementTree.parse(urllib.urlopen(URL))
             rootxml = sourcexml.getroot()
-            resultxml = rootxml.iter('book')
+            resultxml = rootxml.find('author')
+            author_dict = {}
 
             if not len(rootxml):
                 logger.info('No author found with ID: ' + authorid)
+
             else:
+                logger.info("Processing info for authorID: %s" % authorid)
 
-                # 1 loop is enough
-                getauthor = 1
-                while getauthor > 0:
-                    for book in resultxml:
-                        authors = book.iter('author')
-                        for author in authors:
-                            author_dict = {
-                                'authorname':   author[1].text,
-                                'authorlink':   author.find('link').text,
-                                'authorimg_s':  author.find('small_image_url').text,
-                                'authorimg_l':  author.find('image_url').text,
-                                'totalbooks':   None
-                                }
-                            getauthor = 0
+                author_dict = {
+                    'authorname':   resultxml[1].text,
+                    'authorlink':   resultxml.find('link').text,
+                    'authorimg_s':  resultxml.find('small_image_url').text,
+                    'authorimg_l':  resultxml.find('image_url').text,
+                    'totalbooks':   resultxml.find('works_count').text
+                    }
+                totalbooks = int(float(resultxml.find('works_count').text))
 
-                books = []
+            # pause 1 to respect api terms
+            time.sleep(1)
+
+            books = []
+            bookcount = 0
+            pagenumber = 0
+            while totalbooks > bookcount:
+
+                if pagenumber == 0:
+                    logger.info("Processing books for authorID: %s" % authorid)
+                    page = ''
+                else:
+                    time.sleep(1)
+                    logger.info("Processing books page %s" % pagenumber)
+                    page = '&page=%s' % pagenumber
+
+                URL = 'http://www.goodreads.com/author/list/%s.xml?key=ckvsiSDsuqh7omh74ZZ6Q%s' % (authorid, page)
+                sourcexml = ElementTree.parse(urllib.urlopen(URL))
+                rootxml = sourcexml.getroot()
                 resultxml = rootxml.iter('book')
 
-                for book in resultxml:
-                    books.append({
-                        'bookid':       book[0].text,
-                        'bookisbn':     book[1].text,
-                        'bookname':     book[4].text,
-                        'booklink':     book.find('link').text,
-                        'bookimg_s':    book.find('small_image_url').text,
-                        'bookimg_l':    book.find('image_url').text,
-                        'bookpages':    book.find('num_pages').text,
-                        'bookrate':     float(book.find('average_rating').text),
-                        'bookdate':     book.find('published').text
-                        })
+                if not len(rootxml):
+                    logger.info('No author found with ID: ' + authorid)
+
+                else:
+                    for book in resultxml:
+                        books.append({
+                            'bookid':       book[0].text,
+                            'bookisbn':     book[1].text,
+                            'bookname':     book[4].text,
+                            'booklink':     book.find('link').text,
+                            'bookimg_s':    book.find('small_image_url').text,
+                            'bookimg_l':    book.find('image_url').text,
+                            'bookpages':    book.find('num_pages').text,
+                            'bookrate':     float(book.find('average_rating').text),
+                            'bookdate':     book.find('published').text
+                            })
+                    bookcount = len(books)
+                    pagenumber = pagenumber+1
 
             author_dict['books'] = books
             return author_dict
-            print author_dict
-
-    @staticmethod
-    def get_author_books(authorid):
-        with threading.Lock():
-
-            book_dict = {}
-
-            URL = 'http://www.goodreads.com/author/show/%s.xml?key=ckvsiSDsuqh7omh74ZZ6Q' % authorid
-            logger.info("Find books from author with ID: %s" % authorid)
-
-            sourcexml = ElementTree.parse(urllib.urlopen(URL))
-            rootxml = sourcexml.getroot()
-            resultxml = rootxml.iter('book')
-
-            for book in resultxml:
-                book_dict = {
-                    'bookid':       book[0].text,
-                    'bookisbn':     book[1].text,
-                    'bookname':     book[4].text,
-                    'booklink':     book.find('link').text,
-                    'bookimg_s':    book.find('small_image_url').text,
-                    'bookimg_l':    book.find('image_url').text,
-                    'bookpages':    book.find('num_pages').text,
-                    'bookrate':     float(book.find('average_rating').text)
-                    }
-
-            return book_dict

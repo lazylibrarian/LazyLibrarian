@@ -51,8 +51,31 @@
         </table>
     </div>
 
+   <div class="table_wrapper">
+        <a name="download"><h2><u>Importoptions</u></h2></a>
+        <br>
+        <table class="configtable" summary="Importsettings">
+            <tr>
+                <td>
+                    <h3>Language</h3>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <h5>Preferred languages:</h5><input type="text" name="imp_preflang" value="${config['imp_preflang']}" size="20" maxlength="40">
+                    <h5>Ignored languages:</h5><input type="text" name="imp_ignlang" value="${config['imp_preflang']}" size="20" maxlength="40"><br>
+                    <i class="smalltext">Comma separated country shortcodes, supported:<br> en, ch, fr, ge, ja, nl, ru</i>
+                </td>
+                <td>
+                    <h5>Hide books without ISBN <input type="checkbox" name="imp_onlyisbn" value=1 ${config['use_imp_onlyisbn']} /></h3>
+                    <i class="smalltext">Note: Language's can only be detected by ISBN.</i>
+                </td>
+        </table>
+    </div>
+
     <div class="table_wrapper">
         <a name="download"><h2><u>Downloadsettings</u></h2></a>
+        <br>
         <table class="configtable" summary="Downloadsettings">
             <tr>
                 <td>
