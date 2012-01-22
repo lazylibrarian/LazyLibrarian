@@ -113,7 +113,7 @@ h4 { font-size: 14px; }
 h5 { font-size: 12px; }
 
 p.indented { padding-top: 20px; margin-left: 20px; font-size: 14px; }
-p.center { text-align: center; font-size: 12px; }
+p.center { text-align: center; font-size: 10px; }
 .smalltext2 { font-size: 12px; margin-left: 45px; }
 .smalltext { font-size: 10px }
 

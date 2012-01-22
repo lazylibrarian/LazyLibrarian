@@ -13,11 +13,11 @@
 </%def>
 <%def name="body()">
     <div id="paddingheader">
-        <h1><h1>
+        <h1>Configuration<h1>
     </div>
     <div class="table_wrapper">
         <form action="configUpdate" method="post">
-        <a name="web_interface"><h2><u>Webinterface</u></h2></a>
+        <a name="webinterface"><h2><u>Webinterface</u></h2></a>
         <br>
         <table class="configtable" summary="Webinterface">
             <tr>
@@ -51,8 +51,11 @@
         </table>
     </div>
 
+    <p class="center"><input type="submit" value="Save changes"><br>
+    (Webinterface changes require a restart to take effect)</p>
+
    <div class="table_wrapper">
-        <a name="download"><h2><u>Importoptions</u></h2></a>
+        <a name="importoptions"><h2><u>Importoptions</u></h2></a>
         <br>
         <table class="configtable" summary="Importsettings">
             <tr>
@@ -62,19 +65,20 @@
             </tr>
             <tr>
                 <td>
-                    <h5>Preferred languages:</h5><input type="text" name="imp_preflang" value="${config['imp_preflang']}" size="20" maxlength="40">
-                    <h5>Ignored languages:</h5><input type="text" name="imp_ignlang" value="${config['imp_preflang']}" size="20" maxlength="40"><br>
-                    <i class="smalltext">Comma separated country shortcodes, supported:<br> en, ch, fr, ge, ja, nl, ru</i>
-                </td>
-                <td>
-                    <h5>Hide books without ISBN <input type="checkbox" name="imp_onlyisbn" value=1 ${config['use_imp_onlyisbn']} /></h3>
+                    <h5>Hide books without ISBN <input type="checkbox" name="imp_onlyisbn" value=1 ${config['use_imp_onlyisbn']} /></h5>
                     <i class="smalltext">Note: Language's can only be detected by ISBN.</i>
+                    <br>
+                    <h5>Ignored languages:</h5><input type="text" name="imp_ignore" value="${config['imp_ignore']}" size="20" maxlength="40">
+                    <br>
+                    <i class="smalltext">Comma separated country shortcodes, supported:<br> en, ch, fr, ge, ja, nl, ru</i>
                 </td>
         </table>
     </div>
 
+    <p class="center"><input type="submit" value="Save changes"></p>
+
     <div class="table_wrapper">
-        <a name="download"><h2><u>Downloadsettings</u></h2></a>
+        <a name="downloadsettings"><h2><u>Downloadsettings</u></h2></a>
         <br>
         <table class="configtable" summary="Downloadsettings">
             <tr>
@@ -98,13 +102,15 @@
                     <h5>Category:</h5><input type="text" name="sab_cat" value="${config['sab_cat']}" size="30">
                     <h5>Directory:</h5><input type="text" name="sab_dir" value="${config['sab_dir']}" size="50">
                     <i class="smalltext">Full path to the directory where SAB downloads your books.</i>
-                    <h5>Use blackhole: <input type="checkbox" name="sab_bh" value=1 ${config['sab_bh']} /></h5>
+                    <h5>Use blackhole: <input type="checkbox" name="sab_bh" value=1 ${config['use_sab_bh']} /></h5>
                     <input type="text" name="sab_bhdir" value="${config['sab_bhdir']}" size="50">
                     <i class="smalltext">The folder your nzb-downloader monitors for nzb-files.</i>
                 </td>
             </tr>
         </table>
     </div>
+
+    <p class="center"><input type="submit" value="Save changes"></p>
 
     <div class="table_wrapper">
         <a name="providers"><h2><u>NZB Providers</u></h2></a>
@@ -126,8 +132,8 @@
             </tr>
             <tr>
                 <td>
-                    <h5>Host:</h5><input type="text" name="sab_host" value="${config['sab_host']}" size="15" maxlength="40">
-                    <h5>Api:</h5><input type="text" name="sab_port" value="${config['sab_port']}" size="30" maxlength="40">
+                    <h5>Host:</h5><input type="text" name="newznab_host" value="${config['newznab_host']}" size="15" maxlength="40">
+                    <h5>Api:</h5><input type="text" name="newznab_api" value="${config['newznab_api']}" size="30" maxlength="40">
                 </td>
                 <td>
                     <h5>UID:</h5><input type="text" name="newzbin_uid" value="${config['newzbin_uid']}" size="15" maxlength="40">
@@ -145,8 +151,7 @@
         </table>
     </div>
 
-        <p class="center"><input type="submit" value="Save changes"><br>
-        (Webinterface changes require a restart to take effect)
-      </form>
+    <p class="center"><input type="submit" value="Save changes"><br></p>
+</form>
 
 </%def>

@@ -52,9 +52,8 @@ class WebInterface(object):
                     "http_look_list":   http_look_list,
                     "launch_browser":   checked(lazylibrarian.LAUNCH_BROWSER),
                     "logdir" :          lazylibrarian.LOGDIR,
-                    "use_imp_onlyisbn":  checked(lazylibrarian.IMP_ONLYISBN),
-                    "imp_preflang":     lazylibrarian.IMP_PREFLANG,
-                    "imp_ignlang":      lazylibrarian.IMP_IGNLANG,
+                    "use_imp_onlyisbn": checked(lazylibrarian.IMP_ONLYISBN),
+                    "imp_ignore":       lazylibrarian.IMP_IGNORE,
                     "sab_host":         lazylibrarian.SAB_HOST,
                     "sab_port":         lazylibrarian.SAB_PORT,
                     "sab_api":          lazylibrarian.SAB_API,
@@ -63,7 +62,7 @@ class WebInterface(object):
                     "sab_dir":          lazylibrarian.SAB_DIR,
                     "sab_cat":          lazylibrarian.SAB_CAT,
                     "sab_ret":          lazylibrarian.SAB_RET,
-                    "sab_bh":           checked(lazylibrarian.SAB_BH),
+                    "use_sab_bh":       checked(lazylibrarian.SAB_BH),
                     "sab_bhdir":        lazylibrarian.SAB_BHDIR,
                     "use_nzbmatrix" :   checked(lazylibrarian.NZBMATRIX),
                     "nzbmatrix_user" :  lazylibrarian.NZBMATRIX_USER,
@@ -81,7 +80,7 @@ class WebInterface(object):
         return serve_template(templatename="config.html", title="Settings", config=config)    
     config.exposed = True
 
-    def configUpdate(self, http_host='0.0.0.0', http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, imp_onlyisbn=0, imp_preflang=None, imp_ignlang = None,
+    def configUpdate(self, http_host='0.0.0.0', http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, imp_onlyisbn=0, imp_ignore=None,
         sab_host=None, sab_port=None, sab_api=None, sab_user=None, sab_pass=None, sab_dir=None, sab_cat=None, sab_ret=None, sab_bh=0, sab_bhdir=None,
         nzbmatrix=0, nzbmatrix_user=None, nzbmatrix_api=None, newznab=0, newznab_host=None, newznab_api=None, nzbsorg=0, nzbsorg_uid=None, nzbsorg_hash=None, 
         newzbin=0, newzbin_uid=None, newzbin_pass=None):
@@ -95,8 +94,7 @@ class WebInterface(object):
         lazylibrarian.LOGDIR = logdir
 
         lazylibrarian.IMP_ONLYISBN = imp_onlyisbn
-        lazylibrarian.IMP_PREFLANG = imp_preflang
-        lazylibrarian.IMP_IGNLANG = imp_ignlang
+        lazylibrarian.IMP_IGNORE = imp_ignore
 
         lazylibrarian.SAB_HOST = sab_host
         lazylibrarian.SAB_PORT = sab_port
@@ -143,8 +141,21 @@ class WebInterface(object):
 #AUTHOR
     def authorPage(self, AuthorID):
         myDB = database.DBConnection()
+
+        if lazylibrarian.IMP_ONLYISBN and lazylibrarian.IMP_IGNORE:
+            language = str(lazylibrarian.IMP_IGNORE).replace(' ','')
+            query = 'SELECT * from books WHERE AuthorID=%s AND NOT BookLang IN %s AND BookLang IS NOT NULL order by BookName DESC' % (AuthorID, tuple(language.split(',')) )
+        elif lazylibrarian.IMP_IGNORE:
+            language = str(lazylibrarian.IMP_IGNORE).replace(' ','')
+            query = 'SELECT * from books WHERE AuthorID=%s AND NOT BookLang IN %s OR BookLang IS NULL order by BookName DESC' % (AuthorID, tuple(language.split(',')) )
+        elif lazylibrarian.IMP_ONLYISBN:
+            query = 'SELECT * from books WHERE AuthorID=%s AND BookLang IS NOT NULL order by BookName DESC' % AuthorID
+        else:
+            query = 'SELECT * from books WHERE AuthorID=%s order by BookName DESC' % AuthorID
+
+        logger.debug(query)
         author = myDB.action('SELECT * FROM authors WHERE AuthorID=?', [AuthorID]).fetchone()
-        books = myDB.select('SELECT * from books WHERE AuthorID=? order by BookName DESC', [AuthorID])
+        books = myDB.action(query)
         if author is None:
             raise cherrypy.HTTPRedirect("home")
         return serve_template(templatename="author.html", title=author['AuthorName'], author=author, books=books)
