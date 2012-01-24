@@ -113,6 +113,7 @@ h4 { font-size: 14px; }
 h5 { font-size: 12px; }
 
 p.indented { padding-top: 20px; margin-left: 20px; font-size: 14px; }
+p.leftside { text-align: left; font-size: 10px; }
 p.center { text-align: center; font-size: 10px; }
 .smalltext2 { font-size: 12px; margin-left: 45px; }
 .smalltext { font-size: 10px }
@@ -194,6 +195,9 @@ table#log_table { background-color: white; }
 table#log_table th#timestamp { text-align: left; min-width: 150px; }
 table#log_table th#level { text-align: left; min-width: 60px; }
 table#log_table th#message { text-align: left; min-width: 500px; }
+table#log_table td#timestamp { text-align: left; min-width: 150px; font-size: 11px; }
+table#log_table td#level { text-align: left; min-width: 60px; font-size: 11px; }
+table#log_table td#message { text-align: left; min-width: 500px; font-size: 12px; }
 
 table#upcoming_table th#bookart { text-align: center; min-width: 50px; }
 table#upcoming_table th#bookname { text-align: center; min-width: 200px; }

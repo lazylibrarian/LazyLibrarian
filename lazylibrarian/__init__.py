@@ -230,13 +230,10 @@ def initialize():
         logger.lazylibrarian_log.initLogger(loglevel=LOGLEVEL)
 
         # Initialize the database
-        logger.info('Database status CHECK ...')
         try:
             dbcheck()
         except Exception, e:
             logger.error("Can't connect to the database: %s" % e)
-
-        logger.info('Database status OK ...')
 
         __INITIALIZED__ = True
         return True
@@ -350,6 +347,7 @@ def dbcheck():
     try:
         c.execute('SELECT AuthorBorn from authors')
     except sqlite3.OperationalError:
+        logger.info('Altered databasetable authors to hold birthday')
         c.execute('ALTER TABLE authors ADD COLUMN AuthorBorn TEXT')
 
     try:

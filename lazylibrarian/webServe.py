@@ -9,6 +9,7 @@ import threading, time
 import lazylibrarian
 
 from lazylibrarian import logger, importer, database
+from lazylibrarian.searchnzb import searchbook
 from lazylibrarian.formatter import checked
 from lazylibrarian.gr import GoodReads
 
@@ -144,14 +145,14 @@ class WebInterface(object):
 
         if lazylibrarian.IMP_ONLYISBN and lazylibrarian.IMP_IGNORE:
             language = str(lazylibrarian.IMP_IGNORE).replace(' ','')
-            query = 'SELECT * from books WHERE AuthorID=%s AND NOT BookLang IN %s AND BookLang IS NOT NULL order by BookName DESC' % (AuthorID, tuple(language.split(',')) )
+            query = 'SELECT * from books WHERE AuthorID=%s AND NOT BookLang IN %s AND BookLang IS NOT NULL order by BookName ASC' % (AuthorID, tuple(language.split(',')) )
         elif lazylibrarian.IMP_IGNORE:
             language = str(lazylibrarian.IMP_IGNORE).replace(' ','')
-            query = 'SELECT * from books WHERE AuthorID=%s AND NOT BookLang IN %s OR BookLang IS NULL order by BookName DESC' % (AuthorID, tuple(language.split(',')) )
+            query = 'SELECT * from books WHERE AuthorID=%s AND NOT BookLang IN %s OR BookLang IS NULL order by BookName ASC' % (AuthorID, tuple(language.split(',')) )
         elif lazylibrarian.IMP_ONLYISBN:
-            query = 'SELECT * from books WHERE AuthorID=%s AND BookLang IS NOT NULL order by BookName DESC' % AuthorID
+            query = 'SELECT * from books WHERE AuthorID=%s AND BookLang IS NOT NULL order by BookName ASC' % AuthorID
         else:
-            query = 'SELECT * from books WHERE AuthorID=%s order by BookName DESC' % AuthorID
+            query = 'SELECT * from books WHERE AuthorID=%s order by BookName ASC' % AuthorID
 
         #logger.debug('DBQuery: ' + query)
 
@@ -200,23 +201,31 @@ class WebInterface(object):
 
 #BOOKS
     def markBooks(self, AuthorID=None, action=None, **args):
+
+        # update db first
         myDB = database.DBConnection()
-        if action == 'WantedNew':
-            newaction = 'Wanted'
-        else:
-            newaction = action
         for bookid in args:
-            controlValueDict = {'BookID': bookid}
-            newValueDict = {'Status': newaction}
-            myDB.upsert("books", newValueDict, controlValueDict)
-#            if action == 'Wanted':
-#                searcher.searchforalbum(mbid, new=False)
-#            if action == 'WantedNew':
-#                searcher.searchforalbum(mbid, new=True)
+            # ouch dirty workaround...
+            if not bookid == 'book_table_length':
+
+                controlValueDict = {'BookID': bookid}
+                newValueDict = {'Status': action}
+                myDB.upsert("books", newValueDict, controlValueDict)
+                logger.info('Status set to %s for BookID: %s' % (action, bookid))
+
+        # start searchthreads
+        for bookid in args:
+            # ouch dirty workaround...
+            if not bookid == 'book_table_length':
+
+                if action == 'Wanted':
+                    logger.info('Search started for BookID: ' + bookid)
+                    searchbook(bookid)
         if AuthorID:
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
-        else:
-            raise cherrypy.HTTPRedirect("upcoming")
+         ## create later, all wanted books to upcoming (or wanted.html)
+#        else:
+#            raise cherrypy.HTTPRedirect("upcoming")
     markBooks.exposed = True
 
     def logs(self):

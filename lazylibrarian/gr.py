@@ -1,7 +1,6 @@
 import time, threading, urllib, sys
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, SubElement
-#from xml.dom.minidom import parse
 
 import lazylibrarian
 from lazylibrarian import logger, formatter, database

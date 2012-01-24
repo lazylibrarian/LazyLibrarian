@@ -160,7 +160,7 @@ def addAuthorToDB(authorid):
             "AuthorID":     authorid,
             "AuthorName":   author['authorname'],
             "AuthorLink":   author['authorlink'],
-            "BookName":     book['bookname'],
+            "BookName":     str.strip(book['bookname']),
             "BookIsbn":     book['bookisbn'],
             "BookImgs":     book['bookimg_s'],
             "BookImgl":     book['bookimg_l'],

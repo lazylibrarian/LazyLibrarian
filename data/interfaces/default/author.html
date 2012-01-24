@@ -18,7 +18,7 @@
 </%def>
 
 <%def name="body()">
-
+    <div id="paddingheader">
     <table class="display" id="author_table">
         <thead>
             <tr>
@@ -34,46 +34,58 @@
                         <br><i class="smalltext"><i>(Fetching information for this author ...)</i></h5>
                     %endif
                 </th>
-                <th id="statustoggle">
-                    <form action="markBooks" method="get"><input type="hidden" name="AuthorID" value=${author['AuthorID']}>
-                        <select name="action">
-                              <option value="Wanted">Wanted</option>
-                              <option value="WantedNew">Wanted (new only)</option>
-                              <option value="Skipped">Skipped</option>
-                              <option value="Downloaded">Downloaded</option>
-                        </select>
-                        <input type="submit" value="Go">
-                </th>
             </tr>
         </thead>
     </table>
+</div>
+<!--    <table class="display">-->
+<!--        <thead>-->
+<!--            <tr>-->
+<!--                <th>-->
+    <p class="leftside">
+        <form action="markBooks" method="get"><input type="hidden" name="AuthorID" value=${author['AuthorID']}>
+            <select name="action">
+                  <option value="Wanted">Wanted</option>
+                  <option value="Have">Have</option>
+                  <option value="Downloaded">Downloaded</option>
+            </select>
+        <input type="submit" value="Go">
+    </p>
+<!--                </th>-->
+<!--            </tr>-->
+<!--        </thead>-->
+<!--    </table>-->
 
     <table class="display" id="book_table">
         <thead>
             <tr>
 
+                <th id="select"><input type="checkbox" onClick="toggle(this)" /></th>
                 <th id="bookart"></th>
                 <th id="bookname">Title</th>
                 <th id="number">Rating</th>
                 <th id="number">ISBN</th>
                 <th id="status">Status</th>
-                <th id="select"><input type="checkbox" onClick="toggle(this)" /></th>
 
             </tr>
         </thead>
 
         <tbody>
         %for book in books:
-
-            <tr class="gradeA">
+            <tr class="gradeU">
+                <td id="select"><input type="checkbox" name="${book['BookID']}" class="checkbox" /></td>
                 <td id="bookart"><img src="${book['BookImgs']}" height="75" width="50"></td>
                 <td id="bookname"><a href="${book['BookLink']}" target="_new">${book['BookName']}</a></td>
                 <td id="number">${book['BookRate']}</td>
                 <td id="isbn">${book['BookIsbn']}</td>
                 <td id="status">${book['Status']}</td>
-                <td id="select"><input type="checkbox" name="${book['BookID']}" class="checkbox" /></td>
-            </tr>
 
+<!--                %if book['Status'] == 'Wanted':-->
+<!--                    [<a href="unqueueBook?BookID=${book['BookID']}&AuthorID=${book['AuthorID']}">skip</a>]-->
+<!--                %else:-->
+<!--                    [<a href="queueBook?BookID=${book['BookID']}&AuthorID=${book['BookID']}" title="Retry the same download again">retry</a>][<a href="queueBook?BookID=${book['BookID']}&AuthorID=${book['AuthorID']}&new=True" title="Try a new download, skipping all previously tried nzbs">new</a>]-->
+<!--                %endif-->
+            </tr>
         %endfor
         </tbody>
     </table>
@@ -83,7 +95,7 @@
 <%def name="headIncludes()">
     <link rel="stylesheet" href="css/data_table.css">
     %if author['Status'] == 'Loading':
-    <meta http-equiv="refresh" content="5">
+    <meta http-equiv="refresh" content="10">
     %endif
 </%def>
 
@@ -94,16 +106,21 @@
     {
         $('#book_table').dataTable(
             {
+                "aoColumns": [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    ],
                 "oLanguage": {
-                    "sLengthMenu":"Show _MENU_ results per page",
-                    "sEmptyTable": "No results",
+                    "sLengthMenu":"Show _MENU_ books per page",
+                    "sEmptyTable": "No books found",
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
-                    "sInfoEmpty":"Showing 0 to 0 of 0 results",
-                    "sInfoFiltered":"(filtered from _MAX_ total results)"},
+                    "sInfoEmpty":"Showing 0 to 0 of 0 books",
+                    "sInfoFiltered":"(filtered from _MAX_ total books)"},
                 "iDisplayLength": 25,
                 "sPaginationType": "full_numbers",
-                "aaSorting": []
-
             });
     });
     </script>
