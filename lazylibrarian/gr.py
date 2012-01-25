@@ -122,10 +122,28 @@ class GoodReads:
 
                 else:
                     for book in resultxml:
+
+                        # unicrap
+                        dic = {
+                            '...':'',
+                            ' & ':' ',
+                             ' = ': ' ',
+                             '?':'',
+                             '$':'s',
+                             ' + ':' ',
+                             '"':'',
+                             ',':'',
+                             '*':''
+                             }
+
+                        bookname = formatter.latinToAscii(formatter.replace_all(book[4].text, dic))
+                        bookdesc = formatter.latinToAscii(formatter.replace_all(book.find('description').text, dic))
+
                         books.append({
                             'bookid':       book[0].text,
                             'bookisbn':     book[1].text,
-                            'bookname':     book[4].text,
+                            'bookname':     str.strip(bookname),
+                            'bookdesc':     str.strip(bookdesc),
                             'booklink':     book.find('link').text,
                             'bookimg_s':    book.find('small_image_url').text,
                             'bookimg_l':    book.find('image_url').text,

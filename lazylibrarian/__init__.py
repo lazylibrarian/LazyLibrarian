@@ -45,8 +45,8 @@ SAB_PASS = None
 SAB_API = None
 SAB_CAT = None
 SAB_DIR = None
-SAB_BH = False
-SAB_BHDIR = None
+BLACKHOLE = False
+BLACKHOLEDIR = None
 SAB_RET = None
 
 NZBMATRIX = False
@@ -150,7 +150,7 @@ def initialize():
     with INIT_LOCK:
 
         global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, \
-            IMP_ONLYISBN, IMP_IGNORE, SAB_HOST, SAB_PORT, SAB_API, SAB_USER, SAB_PASS, SAB_DIR, SAB_CAT, SAB_RET, SAB_BH, SAB_BHDIR, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
+            IMP_ONLYISBN, IMP_IGNORE, SAB_HOST, SAB_PORT, SAB_API, SAB_USER, SAB_PASS, SAB_DIR, SAB_CAT, SAB_RET, BLACKHOLE, BLACKHOLEDIR, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
             NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NZBSORG, NZBSORG_UID, NZBSORG_HASH, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS 
 
         if __INITIALIZED__:
@@ -186,8 +186,8 @@ def initialize():
         SAB_API = check_setting_str(CFG, 'SABnzbd', 'sab_api', '')
         SAB_CAT = check_setting_str(CFG, 'SABnzbd', 'sab_cat', '')
         SAB_DIR = check_setting_str(CFG, 'SABnzbd', 'sab_dir', '')
-        SAB_BH = bool(check_setting_int(CFG, 'SABnzbd', 'sab_bh', 0))
-        SAB_BHDIR = check_setting_str(CFG, 'SABnzbd', 'sab_bhdir', '')
+        BLACKHOLE = bool(check_setting_int(CFG, 'SABnzbd', 'blackhole', 0))
+        BLACKHOLEDIR = check_setting_str(CFG, 'SABnzbd', 'blackholedir', '')
         SAB_RET = check_setting_str(CFG, 'SABnzbd', 'sab_ret', '')
 
         NZBMATRIX = bool(check_setting_int(CFG, 'NZBMatrix', 'nzbmatrix', 0))
@@ -309,8 +309,8 @@ def config_write():
     new_config['SABnzbd']['sab_api'] = SAB_API
     new_config['SABnzbd']['sab_cat'] = SAB_CAT
     new_config['SABnzbd']['sab_dir'] = SAB_DIR
-    new_config['SABnzbd']['sab_bh'] = int(SAB_BH)
-    new_config['SABnzbd']['sab_bhdir'] = SAB_BHDIR
+    new_config['SABnzbd']['blackhole'] = int(BLACKHOLE)
+    new_config['SABnzbd']['blackholedir'] = BLACKHOLEDIR
     new_config['SABnzbd']['sab_ret'] = SAB_RET
 
     new_config['NZBMatrix'] = {}
@@ -340,20 +340,8 @@ def dbcheck():
     conn=sqlite3.connect(DBFILE)
     c=conn.cursor()
     c.execute('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT UNIQUE, AuthorName TEXT, AuthorImgs TEXT, AuthorImgl TEXT, AuthorLink TEXT, DateAdded TEXT, Status TEXT, LatestBook TEXT, ReleaseDate TEXT, HaveBooks INTEGER, TotalBooks INTEGER, AuthorBorn TEXT, AuthorDeath TEXT)')
-    c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, BookName TEXT, BookIsbn TEXT, BookRate INTEGER, BookImgs TEXT, BookImgl TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookDate TEXT, BookLang TEXT, DateAdded TEXT, Status TEXT)')
-    c.execute('CREATE TABLE IF NOT EXISTS snatched (BookID TEXT, BookName TEXT, Size INTEGER, URL TEXT, DateAdded TEXT, Status TEXT, FolderName TEXT)')
-    c.execute('CREATE TABLE IF NOT EXISTS have (AuthorName TEXT, BookName TEXT)')
-
-    try:
-        c.execute('SELECT AuthorBorn from authors')
-    except sqlite3.OperationalError:
-        logger.info('Altered databasetable authors to hold birthday')
-        c.execute('ALTER TABLE authors ADD COLUMN AuthorBorn TEXT')
-
-    try:
-        c.execute('SELECT AuthorDeath from authors')
-    except sqlite3.OperationalError:
-        c.execute('ALTER TABLE authors ADD COLUMN AuthorDeath TEXT')
+    c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, BookName TEXT, BookDesc TEXT, BookIsbn TEXT, BookRate INTEGER, BookImgs TEXT, BookImgl TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookDate TEXT, BookLang TEXT, DateAdded TEXT, Status TEXT)')
+    c.execute('CREATE TABLE IF NOT EXISTS wanted (AuthorName TEXT, BookID TEXT, BookName TEXT, Size INTEGER, JobName Text, ProvLink TEXT, NZBlink TEXT, DateAdded TEXT, PubDate Text, FileSize TEXT, Status TEXT, FolderName TEXT)')
 
     conn.commit()
     c.close()
@@ -362,7 +350,7 @@ def start():
     global __INITIALIZED__, started
 
     if __INITIALIZED__:
-        # Crons and scheduled jobs go here
+        # Crons and scheduled jobs go here.
         started = True
 
 def shutdown(restart=False):

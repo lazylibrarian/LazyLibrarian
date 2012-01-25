@@ -51,7 +51,6 @@
             <tr class="grade${grade}">
                 <td id="name"><span title="${author['AuthorName']}"></span><a href="authorPage?AuthorID=${author['AuthorID']}">${author['AuthorName']}</a></td>
                 <td id="status">${author['Status']}</td>
-                <td id="album"><span title="${releasedate}"></span><a href="albumPage?BookID=${author['BookID']}">${bookdisplay}</a></td>
                 <td id="have"><span title="${percent}"></span><div class="progress-container"><div style="width:${percent}%"><div class="havetracks">${havebooks}/${totalbooks}</div></div></div></td>
             </tr>
         %endfor

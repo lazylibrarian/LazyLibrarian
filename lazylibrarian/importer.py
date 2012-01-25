@@ -160,7 +160,8 @@ def addAuthorToDB(authorid):
             "AuthorID":     authorid,
             "AuthorName":   author['authorname'],
             "AuthorLink":   author['authorlink'],
-            "BookName":     str.strip(book['bookname']),
+            "BookName":     book['bookname'],
+            "BookDesc":     book['bookdesc'],
             "BookIsbn":     book['bookisbn'],
             "BookImgs":     book['bookimg_s'],
             "BookImgl":     book['bookimg_l'],
@@ -169,6 +170,7 @@ def addAuthorToDB(authorid):
             "BookPages":    book['bookpages'],
             "BookDate":     book['bookdate'],
             "BookLang":     booklang,
+            "Status":       "Skipped",
             "DateAdded":    formatter.today()
             }
 

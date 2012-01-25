@@ -63,8 +63,8 @@ class WebInterface(object):
                     "sab_dir":          lazylibrarian.SAB_DIR,
                     "sab_cat":          lazylibrarian.SAB_CAT,
                     "sab_ret":          lazylibrarian.SAB_RET,
-                    "use_sab_bh":       checked(lazylibrarian.SAB_BH),
-                    "sab_bhdir":        lazylibrarian.SAB_BHDIR,
+                    "use_blackhole":       checked(lazylibrarian.BLACKHOLE),
+                    "blackholedir":        lazylibrarian.BLACKHOLEDIR,
                     "use_nzbmatrix" :   checked(lazylibrarian.NZBMATRIX),
                     "nzbmatrix_user" :  lazylibrarian.NZBMATRIX_USER,
                     "nzbmatrix_api" :   lazylibrarian.NZBMATRIX_API,
@@ -82,7 +82,7 @@ class WebInterface(object):
     config.exposed = True
 
     def configUpdate(self, http_host='0.0.0.0', http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, imp_onlyisbn=0, imp_ignore=None,
-        sab_host=None, sab_port=None, sab_api=None, sab_user=None, sab_pass=None, sab_dir=None, sab_cat=None, sab_ret=None, sab_bh=0, sab_bhdir=None,
+        sab_host=None, sab_port=None, sab_api=None, sab_user=None, sab_pass=None, sab_dir=None, sab_cat=None, sab_ret=None, blackhole=0, blackholedir=None,
         nzbmatrix=0, nzbmatrix_user=None, nzbmatrix_api=None, newznab=0, newznab_host=None, newznab_api=None, nzbsorg=0, nzbsorg_uid=None, nzbsorg_hash=None, 
         newzbin=0, newzbin_uid=None, newzbin_pass=None):
 
@@ -105,8 +105,8 @@ class WebInterface(object):
         lazylibrarian.SAB_DIR = sab_dir
         lazylibrarian.SAB_CAT = sab_cat
         lazylibrarian.SAB_RET = sab_ret
-        lazylibrarian.SAB_BH = sab_bh
-        lazylibrarian.SAB_BHDIR = sab_bhdir
+        lazylibrarian.BLACKHOLE = blackhole
+        lazylibrarian.BLACKHOLEDIR = blackholedir
 
         lazylibrarian.NZBMATRIX = nzbmatrix
         lazylibrarian.NZBMATRIX_USER = nzbmatrix_user

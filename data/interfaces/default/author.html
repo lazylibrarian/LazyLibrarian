@@ -72,7 +72,7 @@
 
         <tbody>
         %for book in books:
-            <tr class="gradeU">
+            <tr class="gradeZ">
                 <td id="select"><input type="checkbox" name="${book['BookID']}" class="checkbox" /></td>
                 <td id="bookart"><img src="${book['BookImgs']}" height="75" width="50"></td>
                 <td id="bookname"><a href="${book['BookLink']}" target="_new">${book['BookName']}</a></td>
@@ -112,6 +112,7 @@
                     null,
                     null,
                     null,
+                    null
                     ],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ books per page",
