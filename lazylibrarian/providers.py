@@ -29,7 +29,7 @@ def NewzNab(searchterm=None, resultlist=None):
     try:
         data = ElementTree.parse(urllib2.urlopen(URL, timeout=20))
         rootxml = data.getroot()
-        resultxml = rootxml.iter('item')
+        resultxml = rootxml.getiterator('item')
     except urllib2.URLError, e:
         logger.warn('Error fetching data from %s: %s' % (lazylibrarian.NEWZNAB_HOST, e))
         data = None

@@ -19,7 +19,8 @@ class GoodReads:
 
         sourcexml = ElementTree.parse(urllib.urlopen(URL))
         rootxml = sourcexml.getroot()
-        resultxml = rootxml.iter('author')
+        # resultxml = rootxml.iter('author')... changed because python2.6 doesn't understand iter.
+        resultxml = rootxml.getiterator('author')
 
         if not len(rootxml):
             logger.info('No authors found with name: %s' % name)
@@ -45,7 +46,7 @@ class GoodReads:
 
         sourcexml = ElementTree.parse(urllib2.urlopen(URL, timeout=20))
         rootxml = sourcexml.getroot()
-        resultxml = rootxml.iter('work')
+        resultxml = rootxml.getiterator('work')
         booklist = []
 
         if not len(rootxml):
@@ -114,7 +115,7 @@ class GoodReads:
             URL = 'http://www.goodreads.com/author/list/%s.xml?key=ckvsiSDsuqh7omh74ZZ6Q%s' % (authorid, page)
             sourcexml = ElementTree.parse(urllib.urlopen(URL))
             rootxml = sourcexml.getroot()
-            resultxml = rootxml.iter('book')
+            resultxml = rootxml.getiterator('book')
 
             if not len(rootxml):
                 logger.info('No author found with ID: ' + authorid)
