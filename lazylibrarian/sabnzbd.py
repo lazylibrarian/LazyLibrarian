@@ -5,33 +5,42 @@ import lazylibrarian
 
 from lazylibrarian import logger, database
 
-def SABnzbd(nzbname=None, nzblink=None):
+def SABnzbd(title=None, nzburl=None):
 
     HOST = lazylibrarian.SAB_HOST + ":" + lazylibrarian.SAB_PORT
     if not str(HOST)[:4] == "http":
         HOST = 'http://' + HOST
 
-    params = {
-        "nzbname": nzbname,
-        "apikey": lazylibrarian.SAB_API
-        }
+    params = {}
 
+    params['mode'] = 'addurl'
+    params['name'] = nzburl
+
+    if lazylibrarian.SAB_USER:
+        params['ma_username'] = lazylibrarian.SAB_USER
+    if lazylibrarian.SAB_PASS:
+        params['ma_password'] = lazylibrarian.SAB_PASS
+    if lazylibrarian.SAB_API:
+        params['apikey'] = lazylibrarian.SAB_API
     if lazylibrarian.SAB_CAT:
-        params["cat"] = lazylibrarian.SAB_CAT
+        params['cat'] = lazylibrarian.SAB_CAT
 
-    ## FUTURE-CODE
-    #        if lazylibrarian.SAB_PRIO:
-    #            params["priority"] = lazylibrarian.SAB_PRIO
-    #        if lazylibrarian.SAB_PP:
-    #            params["script"] = lazylibrarian.SAB_SCRIPT
+    if lazylibrarian.USENET_RETENTION:
+        params["maxage"] = lazylibrarian.USENET_RETENTION
 
-    URL = HOST + "/api?mode=addurl&name=" + nzblink + urllib.urlencode(params)
+## FUTURE-CODE
+#    if lazylibrarian.SAB_PRIO:
+#        params["priority"] = lazylibrarian.SAB_PRIO
+#    if lazylibrarian.SAB_PP:
+#        params["script"] = lazylibrarian.SAB_SCRIPT
+
+    URL = HOST + "/api?" + urllib.urlencode(params) 
 
     # to debug because of api
     logger.debug(u'Request url for <a href="%s">SABnzbd</a>' % URL)
 
     try:
-        request = urllib2.urlopen(URL)
+        request = urllib.urlopen(URL)
 
     except (EOFError, IOError), e:
         logger.error(u"Unable to connect to SAB with URL: %s" % url)

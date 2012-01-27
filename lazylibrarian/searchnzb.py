@@ -5,96 +5,68 @@ from xml.etree.ElementTree import Element, SubElement
 
 import lazylibrarian
 
-from lazylibrarian import logger, database, formatter
-from lazylibrarian.providers import NZBProviders
-from lazylibrarian.downloaders import DownloadInstruct
+from lazylibrarian import logger, database, formatter, providers, sabnzbd
 
-def searchbook(bookid=None, nzblist=None):
+def searchbook(bookid=None):
 
-    with threading.Lock():
-        myDB = database.DBConnection()
+    myDB = database.DBConnection()
 
-        searchbooks = myDB.select('SELECT AuthorName, BookName from books WHERE BookID=?', [bookid])
+    if bookid:
+        searchbooks = myDB.select('SELECT AuthorName, BookName from books WHERE BookID=? AND Status="Wanted"', [bookid])
+    else:
+        searchbooks = myDB.select('SELECT AuthorName, Bookname from books WHERE Status="Wanted"')
 
-        for searchbook in searchbooks:
+    for searchbook in searchbooks:
+        author = searchbook[0]
+        book = searchbook[1]
 
-            author = searchbook[0]
-            book = searchbook[1]
+        dic = {'...':'', ' & ':' ', ' = ': ' ', '?':'', '$':'s', ' + ':' ', '"':'', ',':'', '*':''}
 
-            dic = {
-                '...':'',
-                ' & ':' ',
-                 ' = ': ' ',
-                 '?':'',
-                 '$':'s',
-                 ' + ':' ',
-                 '"':'',
-                 ',':'',
-                 '*':''
-                 }
+        author = formatter.latinToAscii(formatter.replace_all(author, dic))
+        book = formatter.latinToAscii(formatter.replace_all(book, dic))
 
-            author = formatter.latinToAscii(formatter.replace_all(author, dic))
-            book = formatter.latinToAscii(formatter.replace_all(book, dic))
+        searchterm = author + ' ' + book
+        searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
 
-            searchterm = author + ' ' + book
-            searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
+        resultlist = []
 
-            logger.info('Searching for: %s - %s ' % (author, book))
+        if lazylibrarian.NEWZNAB:
+            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NEWZNAB_HOST)
+            resultlist = providers.NewzNab(searchterm, resultlist)
 
-            if lazylibrarian.NEWZNAB:
-                logger.info('Searching NZB at provider %s ...' % lazylibrarian.NEWZNAB_HOST)
-                NP = NZBProviders()
-                nzbresult = NP.NewzNab(bookid, searchterm)
+# FUTURE-CODE
+        if lazylibrarian.NEWZBIN:
+            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NEWZBIN)
+            resultlist = providers.Newzbin(searchterm, resultlist)
 
-    ## FUTURE-CODE
-    #        if not nzblist:
-    #            if lazylibrarian.NEWZBIN:
-    #                logger.info('Searching NZB at provider %s ...' % lazylibrarian.NEWZBIN)
-    #                Newzbin(searchterm)
+        if lazylibrarian.NZBMATRIX:
+            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NZBMATRIX)
+            resultlist = providers.NZBMatrix(searchterm, resultlist)
 
-    #        if not nzblist:
-    #            if lazylibrarian.NZBMATRIX:
-    #                logger.info('Searching NZB at provider %s ...' % lazylibrarian.NZBMATRIX)
-    #                Newzbin(searchterm)
 
-    #        if not nzblist:
-    #            if lazylibrarian.NZBSORG:
-    #                logger.info('Searching NZB at provider %s ...' % lazylibrarian.NZBSORG)
+        if lazylibrarian.NZBSORG:
+            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NZBSORG)
+            resultlist = providers.NZBsorg(searchterm, resultlist)
 
-            if not nzbresult:
-                logger.info("Search didn't have results. Adding book %s - %s to queue." % (author, book))
+        if resultlist is None:
+            logger.info("Search didn't have results. Adding book %s - %s to queue." % (author, book))
 
-            else:
-                logger.info("Adding results to database ...")
+        else:
+            nzbcount = 0
+            for nzb in resultlist:
+                # write checks here later
+                    title = nzb['title']
+                    nzburl = nzb['nzburl']
+                    prvurl = nzb['prvurl']
+                    pubdate = nzb['pubdate']
+                    size = nzb['size']
 
-                myDB = database.DBConnection()
+                    download = sabnzbd.SABnzbd(title, nzburl)
+                    if download is True:
+                        break
+                    else:
+                        continue
 
-                # update bookstable
-                controlValueDict = {"BookID": bookid}
-                newValueDict = {"Status":"Pending"}
-                myDB.upsert("books", newValueDict, controlValueDict)
-
-                nzbcount = 0
-                for nzb in nzbresult['nzbs']:
-                    # update wantedtable
-                    nzbcount = nzbcount+1
-                    controlValueDict = {"BookID": bookid}
-                    newValueDict = {
-                        "AuthorName": author,
-                        "BookName": book,
-                        "JobName": nzb['jobname'],
-                        "ProvLink": nzb['provlink'],
-                        "NZBLink": nzb['nzblink'],
-                        "PubDate": nzb['pubdate'],
-                        "FileSize": nzb['filesize'],
-                        "Status": "Pending"
-                        }
-
-                    myDB.upsert("wanted", newValueDict, controlValueDict)
-
-                logger.info('Found %s nzbfiles. Preparing nzb for download' % nzbcount)
-                DI = DownloadInstruct()
-                DI.DownloadMethod(bookid)
 
 
 

@@ -6,7 +6,7 @@
 <%def name="headerIncludes()">
     <div id="subhead_container">
         <ul id="subhead_menu">
-            <li><a href="refreshAuthor?AuthorID=${author['AuthorID']}">Refresh</a></li>
+<!--            <li><a href="refreshAuthor?AuthorID=${author['AuthorID']}">Refresh</a></li>-->
             <li><a href="deleteAuthor?AuthorID=${author['AuthorID']}">Delete</a></li>
             %if author['Status'] == 'Paused':
                 <li><a href="resumeAuthor?AuthorID=${author['AuthorID']}">Resume</a></li>
