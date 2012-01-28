@@ -52,23 +52,84 @@ def searchbook(bookid=None):
             logger.info("Search didn't have results. Adding book %s - %s to queue." % (author, book))
 
         else:
-            nzbcount = 0
             for nzb in resultlist:
-                # write checks here later
-                    title = nzb['title']
-                    nzburl = nzb['nzburl']
-                    prvurl = nzb['prvurl']
-                    pubdate = nzb['pubdate']
-                    size = nzb['size']
+                nzbtitle = nzb['nzbtitle']
+                nzburl = nzb['nzburl']
+                nzbprov = nzb['nzbprov']
 
-                    download = sabnzbd.SABnzbd(title, nzburl)
-                    if download is True:
-                        break
-                    else:
-                        continue
+                #save nzb's to database for later use
+                snatchbooks = myDB.select('SELECT * from wanted WHERE BookID=? and Status="Snatched"', [bookid])
+                if snatchbooks:
+                    "Book with BookID %s allready snatched, skipped this NZB."
+                    controlValueDict = {"BookID": bookid}
+                    newValueDict = {
+                        "NZBprov": nzbprov,
+                        "NZBdate": formatter.today(),
+                        "NZBurl": nzburl,
+                        "NZBtitle": nzbtitle,
+                        "Status": "Skipped"
+                        }
+                    myDB.upsert("wanted", newValueDict, controlValueDict)
+
+                else:
+                    snatch = DownloadMethod(bookid, nzbprov, nzbtitle, nzburl)
 
 
+def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
 
+    myDB = database.DBConnection()
+
+    if lazylibrarian.SAB_HOST and not lazylibrarian.BLACKHOLE:
+        download = sabnzbd.SABnzbd(nzbtitle, nzburl)
+
+    elif lazylibrarian.BLACKHOLE:
+
+        try:
+            nzbfile = urllib2.urlopen(nzburl, timeout=30).read()
+
+        except urllib2.URLError, e:
+            logger.warn('Error fetching nzb from url: ' + nzburl + ' %s' % e)
+
+        nzbname = str.replace(nzbtitle, ' ', '_') + '.nzb'
+        nzbpath = os.path.join(lazylibrarian.BLACKHOLEDIR, nzbname)
+
+        try:
+            f = open(nzbpath, 'w')
+            f.write(nzbfile)
+            f.close()
+            logger.info('NZB file saved to: ' + nzbpath)
+            download = True
+        except Exception, e:
+            logger.error('%s not writable, NZB not saved. Error: %s' % (nzbpath, e))
+            download = False
+
+    if download:
+        myDB.action('UPDATE books SET status = "Snatched" WHERE BookID=?', [bookid])
+
+        controlValueDict = {"BookID": bookid}
+        newValueDict = {
+            "NZBprov": nzbprov,
+            "NZBdate": formatter.now(),
+            "NZBurl": nzburl,
+            "NZBtitle": nzbtitle,
+            "Status": "Snatched"
+            }
+
+        myDB.upsert("wanted", newValueDict, controlValueDict)
+
+    else:
+        controlValueDict = {"BookID": bookid}
+        newValueDict = {
+            "NZBprov": nzbprov,
+            "NZBdate": formatter.now(),
+            "NZBurl": nzburl,
+            "NZBtitle": nzbtitle,
+            "Status": "Failed"
+            }
+
+        myDB.upsert("wanted", newValueDict, controlValueDict)
+
+    return download
 
 
 

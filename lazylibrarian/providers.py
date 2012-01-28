@@ -38,13 +38,12 @@ def NewzNab(searchterm=None, resultlist=None):
         nzbcount = 0
         for nzb in resultxml:
             nzbcount = nzbcount+1
-            print nzb
             resultlist.append({
-                'title': nzb[0].text,
-                'prvurl': nzb[1].text,
+                'nzbprov': "NewzNab",
+                'nzbtitle': nzb[0].text,
                 'nzburl': nzb[2].text,
-                'pubdate': nzb[4].text,
-                'size': nzb[7].attrib.get('length')
+                'nzbdate': nzb[4].text,
+                'nzbsize': nzb[7].attrib.get('length')
                 })
     logger.info('%s returned %s nzbs for: %s' % (lazylibrarian.NEWZNAB_HOST, nzbcount, searchterm))
     return resultlist

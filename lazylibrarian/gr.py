@@ -15,7 +15,6 @@ class GoodReads:
 
         URL = 'http://www.goodreads.com/api/author_url/' + name + '.xml?' + urllib.urlencode(self.params)
         logger.info("Searching for author with name: %s" % name)
-        logger.debug("Searching at url: " + URL)
 
         sourcexml = ElementTree.parse(urllib.urlopen(URL))
         rootxml = sourcexml.getroot()
@@ -42,7 +41,6 @@ class GoodReads:
 
         URL = 'http://www.goodreads.com/search/index.xml?&search[field]=title&' + urllib.urlencode(self.params)
         logger.info("Searching for books with name: %s" % name)
-        logger.debug("Searching at url: " + URL)
 
         sourcexml = ElementTree.parse(urllib2.urlopen(URL, timeout=20))
         rootxml = sourcexml.getroot()

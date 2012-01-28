@@ -12,6 +12,15 @@ def today():
     yyyymmdd = datetime.date.isoformat(today)
     return yyyymmdd
 
+def age(histdate):
+    nowdate = datetime.date.today()
+    m1, d1, y1 = (int(x) for x in nowdate.split('-'))
+    m2, d2, y2 = (int(x) for x in histdate.split('-'))
+    date1 = datetime.date(y1, m1, d1)
+    date2 = datetime.date(y2, m2, d2)
+    age = date1 - date2
+    return age.days
+
 def checked(variable):
     if variable:
         return 'Checked'
