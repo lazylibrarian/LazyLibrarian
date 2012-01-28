@@ -93,6 +93,9 @@ def main():
 
     lazylibrarian.initialize()
 
+    if lazylibrarian.DAEMON:
+        lazylibrarian.daemonize()
+
     # Try to start the server. 
     webStart.initialize({
                     'http_port': lazylibrarian.HTTP_PORT,
