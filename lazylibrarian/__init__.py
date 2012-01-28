@@ -16,7 +16,7 @@ SIGNAL = None
 
 LOGLEVEL = 1
 DAEMON = False
-PIDFILE= None
+PIDFILE = None
 
 INIT_LOCK = Lock()
 __INITIALIZED__ = False
@@ -274,7 +274,7 @@ def daemonize():
 
     if PIDFILE:
         pid = str(os.getpid())
-        logger.log(u"Writing PID " + pid + " to " + str(PIDFILE))
+        logger.debug(u"Writing PID " + pid + " to " + str(PIDFILE))
         file(PIDFILE, 'w').write("%s\n" % pid)
 
 def launch_browser(host, port, root):
