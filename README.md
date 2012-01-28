@@ -1,4 +1,6 @@
-Author:  ar2zz
+## LazyLibrarian
+
+Author: Mar2zz
 blogs: mar2zz.tweakblogs.net
 License: GNU GPL v3
 
@@ -16,7 +18,7 @@ Right now its capable of the following:
 * LazyLibrarian will search a nzb-file for that book (only Newznab supported (e.g. nzb.su)
 * If a nzb is found it will be send to sabnzbd or saved in a blackhole where your downloadapp can pick it up.
 
-Install:
+## Install:
 
 Linux:
 
@@ -36,6 +38,10 @@ Ubuntu (init.d script):
 * Add it to the startup items: "sudo update-rc.d lazylibrarian defaults"  
 * Start with "sudo service lazylibrarian start"  
 
+## Update
+Just run git pulls, build a update-through-interface soon enough.
+
+## Remarks
 Need an logo/favicon/icon badly. Made a temporary one. If you feel creative, go ahead. 
 
 
