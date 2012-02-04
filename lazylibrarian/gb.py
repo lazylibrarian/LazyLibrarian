@@ -26,11 +26,12 @@ class GoogleBooks:
         else:
             set_url = self.url + urllib.quote('inauthor:' + '"' + self.name + '"')
 
-        logger.info('Searching url: ' + URL)
+        logger.info('Searching url: ' + set_url)
 
         try:
             startindex = 0
             resultcount = 0
+            ignored = 0
             while True:
 
                 self.params['startIndex'] = startindex
@@ -41,26 +42,38 @@ class GoogleBooks:
 
                 for item in jsonresults['items']:
 
+                    # skip if no author, no author is no book.
                     try:
                         authorname = item['volumeInfo']['authors'][0]
                     except KeyError:
                         logger.debug('Skipped a result without authorfield.')
-                        # skip if no author, no author is no book.
                         break
 
-                    bookname = item['volumeInfo']['title']
-                    logger.info('Collecting info for: ' + bookname)
+                    #skip if language is in ignore list
+                    booklang = item['volumeInfo']['language']
+                    if not booklang in lazylibrarian.IMP_PREFLANG:
+                        ignored = ignored+1
+                        break
 
-                    # need to find which items aren't common to be on GBS and set 'm in tries.
                     try:
-                        bookrate = float(item['volumeInfo']['averageRating'])
+                        bookdate = item['volumeInfo']['publishedDate']
+                    except KeyError:
+                        bookdate = 'Unknown'
+
+                    try:
+                        bookimg = item['volumeInfo']['imageLinks']['thumbnail']
+                    except KeyError:
+                        bookimg = 'images/nocover.png'
+
+                    try:
+                        bookrate = item['volumeInfo']['averageRating']
                     except KeyError:
                         bookrate = 0
 
                     try:
-                        bookpage = item['volumeInfo']['pageCount']
+                        bookpages = item['volumeInfo']['pageCount']
                     except KeyError:
-                        bookpage = 'Unknown'
+                        bookpages = '0'
 
                     try:
                         bookgenre = item['volumeInfo']['categories']
@@ -72,27 +85,97 @@ class GoogleBooks:
                     except KeyError:
                         bookdesc = 'Not available'
 
+                    try:
+                        if item['volumeInfo']['industryIdentifiers'][0]['type'] == 'ISBN_10':
+                            bookisbn = item['volumeInfo']['industryIdentifiers'][0]['identifier']
+                        else:
+                            bookisbn = 0
+                    except KeyError:
+                        bookisbn = 0
+
                     resultlist.append({
                         'authorname': authorname,
                         'bookid': item['id'],
-                        'bookname': bookname,
+                        'bookname': item['volumeInfo']['title'],
+                        'bookisbn': bookisbn,
+                        'bookdate': bookdate,
+                        'booklang': item['volumeInfo']['language'],
                         'booklink': item['volumeInfo']['canonicalVolumeLink'],
-                        'bookisbn': item['volumeInfo']['industryIdentifiers'][0]['identifier'],
-                        'bookrate': bookrate,
-                        'bookimg': item['volumeInfo']['canonicalVolumeLink'] + '&printsec=frontcover&img=1&zoom=1',
-                        'bookpage': bookpage,
+                        'bookrate': float(bookrate),
+                        'bookimg': bookimg,
+                        'bookpages': bookpages,
                         'bookgenre': bookgenre,
                         'bookdesc': bookdesc
                         })
 
-                time.sleep(1)
                 resultcount = resultcount+len(resultlist)
 
         except KeyError:
             logger.info('Found %s results for %s with name: %s' % (resultcount, self.type, self.name))
+            if ignored > 0:
+                logger.info('Skipped %s results because it is not a preferred language.' % ignored)
 
         return resultlist
 
+
+    def find_book(self, bookid=None):
+        resultlist = []
+
+        URL = 'https://www.googleapis.com/books/v1/volumes/' + bookid
+        jsonresults = json.JSONDecoder().decode(urllib2.urlopen(URL, timeout=30).read())
+
+        try:
+            bookdate = item['volumeInfo']['publishedDate']
+        except KeyError:
+            bookdate = 'Unknown'
+
+        try:
+            bookimg = item['volumeInfo']['imageLinks']['thumbnail']
+        except KeyError:
+            bookimg = 'images/nocover.png'
+
+        try:
+            bookrate = item['volumeInfo']['averageRating']
+        except KeyError:
+            bookrate = 0
+
+        try:
+            bookpages = item['volumeInfo']['pageCount']
+        except KeyError:
+            bookpages = 0
+
+        try:
+            bookgenre = item['volumeInfo']['categories']
+        except KeyError:
+            bookgenre = 'Unknown'
+
+        try:
+            bookdesc = item['volumeInfo']['description']
+        except KeyError:
+            bookdesc = 'Not available'
+
+        try:
+            if item['volumeInfo']['industryIdentifiers'][0]['type'] == 'ISBN_10':
+                bookisbn = item['volumeInfo']['industryIdentifiers'][0]['identifier']
+            else:
+                bookisbn = 0
+        except KeyError:
+            bookisbn = 0
+
+        resultlist.append({
+            'bookname': item['volumeInfo']['title'],
+            'bookisbn': bookisbn,
+            'bookdate': bookdate,
+            'booklang': item['volumeInfo']['language'],
+            'booklink': item['volumeInfo']['canonicalVolumeLink'],
+            'bookrate': float(bookrate),
+            'bookimg': bookimg,
+            'bookpages': bookpages,
+            'bookgenre': bookgenre,
+            'bookdesc': bookdesc
+            })
+
+        return resultlist
 
 
 

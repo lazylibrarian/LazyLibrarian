@@ -45,5 +45,5 @@ def NewzNab(searchterm=None, resultlist=None):
                 'nzbdate': nzb[4].text,
                 'nzbsize': nzb[7].attrib.get('length')
                 })
-    logger.info('%s returned %s nzbs for: %s' % (lazylibrarian.NEWZNAB_HOST, nzbcount, searchterm))
+    logger.info('Provider %s returned %s nzbs for: %s' % (lazylibrarian.NEWZNAB_HOST, nzbcount, searchterm))
     return resultlist

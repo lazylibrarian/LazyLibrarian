@@ -4,182 +4,152 @@ import os
 import lazylibrarian
 from lazylibrarian import logger, formatter, database
 from lazylibrarian.gr import GoodReads
+from lazylibrarian.gb import GoogleBooks
 
-def is_exists(authorid):
 
+def addBookToDB(bookid, authorname):
+    type = 'book'
     myDB = database.DBConnection()
+    GR = GoodReads(authorname, type)
+    GB = GoogleBooks(bookid, type)
 
-    # See if the author is already in the database
-    authorlist = myDB.select('SELECT AuthorID, AuthorName from authors WHERE AuthorID=?', [authorid])
+# process book
+    dbbook = myDB.action('SELECT * from books WHERE BookID=?', [bookid]).fetchone()
+    controlValueDict = {"BookID": bookid}
 
-    if any(authorid in x for x in authorlist):
-        logger.info(authorlist[0][1] + u" is already in the database. Updating books only.")
-        return True
+    if dbbook is None:
+        newValueDict = {
+            "BookID":   "BookID: %s" % (bookid),
+            "Status":       "Loading"
+            }
     else:
-        return False
+        newValueDict = {"Status": "Loading"}
+    myDB.upsert("books", newValueDict, controlValueDict)
 
+    book = GR.find_book()
 
-def authorlist_to_grids(authorlist, forced=False):
+    if not book:
+        logger.warn("Error fetching bookinfo for BookID: " + bookid)
 
-    for author in authorlist:
-        GR = GoodReads()
+    else:
+        controlValueDict = {"BookID": book['bookid']}
+        newValueDict = {
+            "AuthorName":   book['authorname'],
+            "BookName":     book['bookname'],
+            "BookDesc":     book['bookdesc'],
+            "BookIsbn":     book['bookisbn'],
+            "BookImg":      book['bookimg'],
+            "BookLink":     book['booklink'],
+            "BookRate":     book['bookrate'],
+            "BookPages":    book['bookpages'],
+            "BookDate":     book['bookdate'],
+            "BookLang":     book['booklang'],
+            "Status":       "Skipped",
+            "BookAdded":    formatter.today()
+            }
 
-        if forced:
-            author = unicode(author, 'utf-8')
+        myDB.upsert("books", newValueDict, controlValueDict)
 
-        results = GR.find_author_name(author, limit=1)
+# process author
+    dbauthor = myDB.action("SELECT * from authors WHERE AuthorName='?'", [authorname]).fetchone()
+    controlValueDict = {"AuthorName": authorname}
 
-        if not results:
-            logger.info('No results found for: %s' % author)
-            continue
-
-        try:
-            authorid = results[0]['authorid']
-
-        except IndexError:
-            logger.info('GoodReads query turned up no matches for: %s' % author)
-            continue
-
-        # Add to database if it doesn't exist
-        if not is_exists(authorid):
-            addAuthortoDB(authorid)
-
-        # Just update the books if it does
-        else:
-            myDB = db.DBConnection()
-            havebooks = len(myDB.select('SELECT BookName from books WHERE AuthorID=?', [authorid])) + len(myDB.select('SELECT BookName from have WHERE AuthorName like ?', [authorname]))
-            myDB.action('UPDATE authors SET HaveBooks=? WHERE AuthorID=?', [havebooks, authorid])
-
-def addAuthorToDB(authorid):
-
-    myDB = database.DBConnection()
-
-    # We need the current minimal info in the database instantly
-    # so we don't throw a 500 error when we redirect to the authorPage
-
-    controlValueDict = {"AuthorID": authorid}
-
-    # Don't replace a known author name with an "Artist ID" placeholder
-    dbauthor = myDB.action('SELECT * FROM authors WHERE AuthorID=?', [authorid]).fetchone()
     if dbauthor is None:
         newValueDict = {
-            "AuthorName":   "Author ID: %s" % (authorid),
+            "AuthorName":   "Authorname: %s" % (authorname),
             "Status":       "Loading"
             }
     else:
         newValueDict = {"Status": "Loading"}
 
-    myDB.upsert("authors", newValueDict, controlValueDict)
-
-    GR = GoodReads()
-    author = GR.get_author_info(authorid)
+    author = GR.find_author_id()
 
     if not author:
-        logger.warn("Error fetching author with ID: " + authorid)
-        if dbauthor is None:
-            newValueDict = {
-                "AuthorName":   "Fetch failed for author ID: %s, try refreshing." % (authorid),
-                "Status":       "Active"
-                }
-        else:
-            newValueDict = {"Status": "Active"}
-        myDB.upsert("authors", newValueDict, controlValueDict)
-        return
+        logger.warn("Error fetching authorinfo with name: " + authorname)
+
     else:
-        logger.info('Adding author to database')
+        controlValueDict = {"AuthorName": authorname}
+        newValueDict = {
+            "AuthorID":     author['authorid'],
+            "AuthorLink":   author['authorlink'],
+            "AuthorImg":    author['authorimg'],
+            "AuthorBorn":   author['authorborn'],
+            "AuthorDeath":  author['authordeath'],
+            "DateAdded":    formatter.today(),
+            "Status":       "Loading"
+            }
+        myDB.upsert("authors", newValueDict, controlValueDict)
 
-    controlValueDict = {
-        "AuthorID": authorid
-        }
+def addAuthorToDB(authorname=None):
+    type = 'author'
+    myDB = database.DBConnection()
 
-    newValueDict = {
-        "AuthorName":   author['authorname'],
-        "AuthorLink":   author['authorlink'],
-        "AuthorImgs":   author['authorimg_s'],
-        "AuthorImgl":   author['authorimg_l'],
-        "AuthorBorn":   author['authorborn'],
-        "AuthorDeath":  author['authordeath'],
-        "TotalBooks":   author['totalbooks'],
-        "DateAdded":    formatter.today(),
-        "Status":       "Loading"
-        }
+    GR = GoodReads(authorname, type)
+    GB = GoogleBooks(authorname, type)
 
+    query = "SELECT * from authors WHERE AuthorName='%s'" % authorname
+    dbauthor = myDB.action(query).fetchone()
+    controlValueDict = {"AuthorName": authorname}
+
+    if dbauthor is None:
+        newValueDict = {
+            "AuthorID":   "0: %s" % (authorname),
+            "Status":       "Loading"
+            }
+    else:
+        newValueDict = {"Status": "Loading"}
     myDB.upsert("authors", newValueDict, controlValueDict)
 
-    # now process books
-    if not len(author['books']):
-        logger.warn("Error processing books for author ID: " + authorid)
-    else:
-        logger.info("Adding books to database")
-
-    bookcount = 0
-    isbncount = 0
-    langcount = 0
-
-    for book in author['books']:
-
-        bookcount = bookcount+1
-        controlValueDict = {
-            "BookID": book['bookid']
-            }
-
-        # need to build a language list here
-        isbn = book['bookisbn']
-        if isbn:
-            if formatter.is_valid_isbn(isbn):
-                isbncount = isbncount+1
-                if str(isbn)[0] == '0' or str(isbn)[0] == '1':
-                    booklang = 'en'
-                    langcount = langcount+1
-                elif str(isbn)[0] == '2':
-                    booklang = 'fr'
-                    langcount = langcount+1
-                elif str(isbn)[0] == '3':
-                    booklang = 'ge'
-                    langcount = langcount+1
-                elif str(isbn)[0] == '4':
-                    booklang = 'ja'
-                    langcount = langcount+1
-                elif str(isbn)[0] == '5':
-                    booklang = 'ru'
-                    langcount = langcount+1
-                elif str(isbn)[0] == '7':
-                    booklang = 'ch'
-                    langcount = langcount+1
-                elif str(isbn)[:2] == '90' or str(isbn)[:2] == '94':
-                    booklang = 'nl'
-                    langcount = langcount+1
-                else:
-                    booklang = None
-            else:
-                booklang = None
-        else:
-            booklang = None
-
+    author = GR.find_author_id()
+    if author:
+        authorid = author['authorid']
+        authorlink = author['authorlink']
+        authorimg = author['authorimg']
+        controlValueDict = {"AuthorName": authorname}
         newValueDict = {
             "AuthorID":     authorid,
-            "AuthorName":   author['authorname'],
-            "AuthorLink":   author['authorlink'],
-            "BookName":     book['bookname'],
-            "BookDesc":     book['bookdesc'],
-            "BookIsbn":     book['bookisbn'],
-            "BookImgs":     book['bookimg_s'],
-            "BookImgl":     book['bookimg_l'],
-            "BookLink":     book['booklink'],
-            "BookRate":     book['bookrate'],
-            "BookPages":    book['bookpages'],
-            "BookDate":     book['bookdate'],
-            "BookLang":     booklang,
-            "Status":       "Skipped",
-            "DateAdded":    formatter.today()
+            "AuthorLink":   authorlink,
+            "AuthorImg":    authorimg,
+            "AuthorBorn":   author['authorborn'],
+            "AuthorDeath":  author['authordeath'],
+            "DateAdded":    formatter.today(),
+            "Status":       "Loading"
             }
+        myDB.upsert("authors", newValueDict, controlValueDict)
+    else:
+        logger.error("Nothing found")
 
-        myDB.upsert("books", newValueDict, controlValueDict)
+# process books
+    bookscount = 0
+    books = GB.find_results()
+    for book in books:
 
-    controlValueDict = {"AuthorID": authorid}
+        # this is for rare cases where google returns multiple authors who share nameparts
+        if book['authorname'] == authorname:
+
+            controlValueDict = {"BookID": book['bookid']}
+            newValueDict = {
+                "AuthorName":   book['authorname'],
+                "AuthorID":     authorid,
+                "AuthorLink":   authorimg,
+                "BookName":     book['bookname'],
+                "BookDesc":     book['bookdesc'],
+                "BookIsbn":     book['bookisbn'],
+                "BookImg":      book['bookimg'],
+                "BookLink":     book['booklink'],
+                "BookRate":     book['bookrate'],
+                "BookPages":    book['bookpages'],
+                "BookDate":     book['bookdate'],
+                "BookLang":     book['booklang'],
+                "Status":       "Skipped",
+                "BookAdded":    formatter.today()
+                }
+
+            myDB.upsert("books", newValueDict, controlValueDict)
+            bookscount = bookscount+1 
+
+    controlValueDict = {"AuthorName": authorname}
     newValueDict = {"Status": "Active"}
-
     myDB.upsert("authors", newValueDict, controlValueDict)
+    logger.info("Processing complete: Added %s books to the database" % bookscount)
 
-    logger.debug("Added %s books, %s with ISBN, language found for %s books." % (str(bookcount), str(isbncount), str(langcount)))
-    logger.info(u"Processing complete for authorID: " + authorid)

@@ -1,4 +1,4 @@
-import os, cherrypy
+import os, cherrypy, urllib
 
 from mako.template import Template
 from mako.lookup import TemplateLookup
@@ -12,6 +12,7 @@ from lazylibrarian import logger, importer, database
 from lazylibrarian.searchnzb import searchbook
 from lazylibrarian.formatter import checked
 from lazylibrarian.gr import GoodReads
+from lazylibrarian.gb import GoogleBooks
 
 
 def serve_template(templatename, **kwargs):
@@ -54,7 +55,7 @@ class WebInterface(object):
                     "launch_browser":   checked(lazylibrarian.LAUNCH_BROWSER),
                     "logdir" :          lazylibrarian.LOGDIR,
                     "use_imp_onlyisbn": checked(lazylibrarian.IMP_ONLYISBN),
-                    "imp_ignore":       lazylibrarian.IMP_IGNORE,
+                    "imp_preflang":       lazylibrarian.IMP_PREFLANG,
                     "sab_host":         lazylibrarian.SAB_HOST,
                     "sab_port":         lazylibrarian.SAB_PORT,
                     "sab_api":          lazylibrarian.SAB_API,
@@ -81,7 +82,7 @@ class WebInterface(object):
         return serve_template(templatename="config.html", title="Settings", config=config)    
     config.exposed = True
 
-    def configUpdate(self, http_host='0.0.0.0', http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, imp_onlyisbn=0, imp_ignore=None,
+    def configUpdate(self, http_host='0.0.0.0', http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, imp_onlyisbn=0, imp_preflang=None,
         sab_host=None, sab_port=None, sab_api=None, sab_user=None, sab_pass=None, sab_dir=None, sab_cat=None, usenet_retention=None, blackhole=0, blackholedir=None,
         nzbmatrix=0, nzbmatrix_user=None, nzbmatrix_api=None, newznab=0, newznab_host=None, newznab_api=None, nzbsorg=0, nzbsorg_uid=None, nzbsorg_hash=None, 
         newzbin=0, newzbin_uid=None, newzbin_pass=None):
@@ -95,7 +96,7 @@ class WebInterface(object):
         lazylibrarian.LOGDIR = logdir
 
         lazylibrarian.IMP_ONLYISBN = imp_onlyisbn
-        lazylibrarian.IMP_IGNORE = imp_ignore
+        lazylibrarian.IMP_PREFLANG = imp_preflang
 
         lazylibrarian.SAB_HOST = sab_host
         lazylibrarian.SAB_PORT = sab_port
@@ -129,44 +130,27 @@ class WebInterface(object):
 
 #SEARCH
     def search(self, name, type):
-        GR = GoodReads()
+        GB = GoogleBooks(name, type)
         if len(name) == 0:
             raise cherrypy.HTTPRedirect("config")
-        if type == 'author':
-            searchresults = GR.find_author_name(name)
         else:
-            searchresults = GR.find_book_name(name)
+            searchresults = GB.find_results()
         return serve_template(templatename="searchresults.html", title='Search Results for: "' + name + '"', searchresults=searchresults, type=type)
     search.exposed = True
 
 #AUTHOR
-    def authorPage(self, AuthorID):
+    def authorPage(self, AuthorName):
         myDB = database.DBConnection()
 
-        if lazylibrarian.IMP_ONLYISBN and lazylibrarian.IMP_IGNORE:
-            language = str(lazylibrarian.IMP_IGNORE).replace(' ','')
-            query = 'SELECT * from books WHERE AuthorID=%s AND NOT BookLang IN %s AND BookLang IS NOT NULL order by BookName ASC' % (AuthorID, tuple(language.split(',')) )
-        elif lazylibrarian.IMP_IGNORE:
-            language = str(lazylibrarian.IMP_IGNORE).replace(' ','')
-            query = 'SELECT * from books WHERE AuthorID=%s AND NOT BookLang IN %s OR BookLang IS NULL order by BookName ASC' % (AuthorID, tuple(language.split(',')) )
-        elif lazylibrarian.IMP_ONLYISBN:
-            query = 'SELECT * from books WHERE AuthorID=%s AND BookLang IS NOT NULL order by BookName ASC' % AuthorID
-        else:
-            query = 'SELECT * from books WHERE AuthorID=%s order by BookName ASC' % AuthorID
+        queryauthors = "SELECT * from authors WHERE AuthorName='%s'" % AuthorName
+        querybooks = "SELECT * from books WHERE AuthorName='%s' order by BookName ASC" % AuthorName
 
-        #logger.debug('DBQuery: ' + query)
-
-        author = myDB.action('SELECT * FROM authors WHERE AuthorID=?', [AuthorID]).fetchone()
-        books = myDB.select(query)
+        author = myDB.action(queryauthors).fetchone()
+        books = myDB.select(querybooks)
         if author is None:
             raise cherrypy.HTTPRedirect("home")
         return serve_template(templatename="author.html", title=author['AuthorName'], author=author, books=books)
     authorPage.exposed = True
-
-    def addAuthor(self, authorid):
-        threading.Thread(target=importer.addAuthorToDB, args=[authorid]).start()
-        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % authorid)
-    addAuthor.exposed = True
 
     def pauseAuthor(self, AuthorID):
         logger.info(u"Pausing author: " + AuthorID)
@@ -199,6 +183,24 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
     refreshAuthor.exposed=True
 
+    def addResults(self, action=None, **args):
+        for arg in args:
+            if not arg == 'book_table_length':
+                name = arg.split('&')
+                authorname = name[0]
+                bookid = name[1]
+
+                if action == 'author':
+                    threading.Thread(target=importer.addAuthorToDB, args=[authorname]).start()
+                    raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % authorname)
+                elif action == 'book':
+                    threading.Thread(target=importer.addBookToDB, args=[bookid, authorname]).start()
+                    raise cherrypy.HTTPRedirect("bookPage?BookID=%s" % bookid)
+                else:
+                    logger.info('Oops, a bug')
+
+    addResults.exposed = True
+
 #BOOKS
     def markBooks(self, AuthorID=None, action=None, **args):
 
@@ -223,9 +225,6 @@ class WebInterface(object):
                     searchbook(bookid)
         if AuthorID:
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
-         ## create later, all wanted books to upcoming (or wanted.html)
-#        else:
-#            raise cherrypy.HTTPRedirect("upcoming")
     markBooks.exposed = True
 
     def logs(self):

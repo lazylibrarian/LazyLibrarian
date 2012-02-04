@@ -5,53 +5,61 @@
     <div id="paddingheader">
         <h1>Search Results<h1>
     </div>
-    <table class="display" id="searchresults_table">
+
+    <p class="leftside">
+    <form action="addResults" method="get">
+            <select name="action">
+                  <option value="author">Add Author</option>
+                  <option value="book">Add Book</option>
+            </select>
+        <input type="submit" value="Go">
+    </p>
+
+    <table class="display" id="book_table">
         <thead>
             <tr>
-            %if type == 'book':
-                <th id="bookname">Title</th>
-                <th id="number">Book ID</th>
-            %endif
+                <th id="select"><input type="checkbox" onClick="toggle(this)" /></th>
+                <th id="bookart"></th>
                 <th id="authorname">Author</th>
-            %if type == 'book':
-                <th id="number">Rating</th>
-            %else:
-                <th id="number">Author ID</th>
-            %endif
-                <th id="add"></th>
-            </tr>
+                <th id="bookname">Title</th>
+                <th id="stars"><img src="images/0-stars.png}" width="50" height="10"></td>
+                <th id="language">Lang</th>
+             </tr>
         </thead>
+
         <tbody>
             %if searchresults:
                 %for result in searchresults:
                 <%
-                    if type == 'book':
-                        if result['bookrate'] >= 2.5:
-                            grade = 'A'
-                        elif result['bookrate'] == 0.0:
-                            grade = 'U'
-                        else:
-                            grade = 'C'
+                    if result['bookrate'] < 0.5:
+                        starimg = '0-stars.png'
+                    elif result['bookrate'] >= 0.5 and result['bookrate'] < 1.5:
+                        starimg = '1-stars.png'
+                    elif result['bookrate'] >= 1.5 and result['bookrate'] < 2.5:
+                        starimg = '2-stars.png'
+                    elif result['bookrate'] >= 2.5 and result['bookrate'] < 3.5:
+                        starimg = '3-stars.png'
+                    elif result['bookrate'] >= 3.5 and result['bookrate'] < 4.5:
+                        starimg = '4-stars.png'
+                    elif result['bookrate'] >= 4.5:
+                        starimg = '5-stars.png'
                     else:
-                        grade = 'Z'
+                        starimg = '0-stars.png'
                 %>
-                <tr class="grade${grade}">
-                %if type == 'book':
+                <tr class="gradeZ">
+                    <td id="select"><input type="checkbox" name="${result['authorname']}&${result['bookid']}" class="checkbox" /></td>
+                    <td id="bookart"><a href="${result['bookimg']}" target="_new"><img src="${result['bookimg']}" height="75" width="50"></a></td>
+                    <td id="authorname">${result['authorname']}</a></td>
                     <td id="bookname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a></td>
-                    <td id="number">${result['bookid']}</td>
-                %endif
-                    <td id="authorname"><a href="${result['authorlink']}" target="_new">${result['authorname']}</a></td>
-                %if type == 'book':
-                    <td id="number">${result['bookrate']}</td>
-                %else:
-                    <td id="number">${result['authorid']}</td>
-                %endif
-                    <td id="add"><a href="addAuthor?authorid=${result['authorid']}"> add </a></td>
+
+                    <td id="stars"><img src="images/${starimg}" width="50" height="10"><td/>
+                    <td id="language">${result['booklang']}</td>
                 </tr>
                 %endfor
             %endif
         </tbody>
     </table>
+    </form>
 </%def>
 
 <%def name="headIncludes()">
@@ -63,18 +71,25 @@
     <script>
     $(document).ready(function()
     {
-        $('#searchresults_table').dataTable(
+        $('#book_table').dataTable(
             {
+                "aoColumns": [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                    ],
                 "oLanguage": {
-                    "sLengthMenu":"Show _MENU_ results per page",
-                    "sEmptyTable": "No results",
+                    "sLengthMenu":"Show _MENU_ books per page",
+                    "sEmptyTable": "No books found",
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
-                    "sInfoEmpty":"Showing 0 to 0 of 0 results",
-                    "sInfoFiltered":"(filtered from _MAX_ total results)"},
-                "iDisplayLength": 25,
+                    "sInfoEmpty":"Showing 0 to 0 of 0 books",
+                    "sInfoFiltered":"(filtered from _MAX_ total books)"},
+                "iDisplayLength": 50,
                 "sPaginationType": "full_numbers",
-                "aaSorting": []
-
             });
     });
     </script>

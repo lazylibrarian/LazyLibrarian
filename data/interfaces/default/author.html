@@ -22,7 +22,7 @@
     <table class="display" id="author_table">
         <thead>
             <tr>
-                <th id="authorart"><img src="${author['AuthorImgl']}" height="100" width="75"></th>
+                <th id="authorart"><img src="${author['AuthorImg']}" height="100" width="75"></th>
                 <th id="authorname">
                     <h1><a href="${author['AuthorLink']}" target="_new">${author['AuthorName']}<h1><br>
                     %if author['AuthorDeath']:
@@ -43,7 +43,7 @@
 <!--            <tr>-->
 <!--                <th>-->
     <p class="leftside">
-        <form action="markBooks" method="get"><input type="hidden" name="AuthorID" value=${author['AuthorID']}>
+        <form action="markBooks" method="get"><input type="hidden" name="AuthorName" value=${author['AuthorName']}>
             <select name="action">
                   <option value="Wanted">Wanted</option>
                   <option value="Have">Have</option>
@@ -59,33 +59,42 @@
     <table class="display" id="book_table">
         <thead>
             <tr>
-
                 <th id="select"><input type="checkbox" onClick="toggle(this)" /></th>
                 <th id="bookart"></th>
                 <th id="bookname">Title</th>
-                <th id="number">Rating</th>
-                <th id="number">ISBN</th>
+                <th id="stars"><img src="images/0-stars}" width="50" height="10"></td></th>
+                <th id="language"></th>
                 <th id="status">Status</th>
-
             </tr>
         </thead>
 
         <tbody>
-        %for book in books:
-            <tr class="gradeZ">
-                <td id="select"><input type="checkbox" name="${book['BookID']}" class="checkbox" /></td>
-                <td id="bookart"><img src="${book['BookImgs']}" height="75" width="50"></td>
-                <td id="bookname"><a href="${book['BookLink']}" target="_new">${book['BookName']}</a></td>
-                <td id="number">${book['BookRate']}</td>
-                <td id="isbn">${book['BookIsbn']}</td>
-                <td id="status">${book['Status']}</td>
+        %for result in books:
+                <%
+                    if result['bookrate'] < 0.5:
+                        starimg = '0-stars.png'
+                    elif result['bookrate'] >= 0.5 and result['bookrate'] < 1.5:
+                        starimg = '1-stars.png'
+                    elif result['bookrate'] >= 1.5 and result['bookrate'] < 2.5:
+                        starimg = '2-stars.png'
+                    elif result['bookrate'] >= 2.5 and result['bookrate'] < 3.5:
+                        starimg = '3-stars.png'
+                    elif result['bookrate'] >= 3.5 and result['bookrate'] < 4.5:
+                        starimg = '4-stars.png'
+                    elif result['bookrate'] >= 4.5:
+                        starimg = '5-stars.png'
+                    else:
+                        starimg = '0-stars.png'
+                %>
+                <tr class="gradeZ">
+                    <td id="select"><input type="checkbox" name="${result['authorname']}&${result['bookid']}" class="checkbox" /></td>
+                    <td id="bookart"><a href="${result['bookimg']}" target="_new"><img src="${result['bookimg']}" height="75" width="50"></a></td>
+                    <td id="bookname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a></td>
 
-<!--                %if book['Status'] == 'Wanted':-->
-<!--                    [<a href="unqueueBook?BookID=${book['BookID']}&AuthorID=${book['AuthorID']}">skip</a>]-->
-<!--                %else:-->
-<!--                    [<a href="queueBook?BookID=${book['BookID']}&AuthorID=${book['BookID']}" title="Retry the same download again">retry</a>][<a href="queueBook?BookID=${book['BookID']}&AuthorID=${book['AuthorID']}&new=True" title="Try a new download, skipping all previously tried nzbs">new</a>]-->
-<!--                %endif-->
-            </tr>
+                    <td id="stars"><img src="images/${starimg}" width="50" height="10"></td>
+                    <td id="language">${result['booklang']}</td>
+                    <td id="status">${result['Status']}</td>
+                </tr>
         %endfor
         </tbody>
     </table>

@@ -33,7 +33,7 @@
                   <h5>Password:</h5><input type="password" name="http_pass" value="${config['http_pass']}" size="20" maxlength="40">
                 </td>
                 <td>
-                    <h5>Launch Browser: <input type="checkbox" name="launch_browser" value=1 ${config['launch_browser']} /></h5>
+                    <h5><input type="checkbox" name="launch_browser" value=1 ${config['launch_browser']} /> Launch browser</h5>
                     <br>
                     <h5>Interface: <select name="http_look"><h5>
                     %for http_look in config['http_look_list']:
@@ -59,19 +59,20 @@
         <br>
         <table class="configtable" summary="Importsettings">
             <tr>
-                <td>
+                <th>
+                    <h3>ImportSource</h3>
+                </th>
+                <th>
                     <h3>Language</h3>
-                </td>
+                </th>
             </tr>
-            <tr>
-                <td>
-                    <h5>Hide books without ISBN <input type="checkbox" name="imp_onlyisbn" value=1 ${config['use_imp_onlyisbn']} /></h5>
-                    <i class="smalltext">Note: Language's can only be detected by ISBN.</i>
-                    <br>
-                    <h5>Ignored languages:</h5><input type="text" name="imp_ignore" value="${config['imp_ignore']}" size="20" maxlength="40">
-                    <br>
-                    <i class="smalltext">Comma separated country shortcodes, supported:<br> en, ch, fr, ge, ja, nl, ru</i>
-                </td>
+            <td>
+                <h5><input type="checkbox" name="imp_onlyisbn" value=1 ${config['use_imp_onlyisbn']} /> Hide books without ISBN</h5>
+                <br>
+                <h5>Import languages:</h5><input type="text" name="imp_preflang" value="${config['imp_preflang']}" size="20" maxlength="40">
+                <br>
+                <i class="smalltext">Comma separated country shortcodes, e.g.:<br> en, ch, fr, ge, ja, nl, ru</i>
+            </td>
         </table>
     </div>
 
@@ -102,7 +103,7 @@
                     <h5>Category:</h5><input type="text" name="sab_cat" value="${config['sab_cat']}" size="30">
                     <h5>Directory:</h5><input type="text" name="sab_dir" value="${config['sab_dir']}" size="50">
                     <i class="smalltext">Full path to the directory where SAB downloads your books.</i>
-                    <h5>Use blackhole: <input type="checkbox" name="blackhole" value=1 ${config['use_blackhole']} /></h5>
+                    <h5><input type="checkbox" name="blackhole" value=1 ${config['use_blackhole']} /> Use blackhole</h5>
                     <input type="text" name="blackholedir" value="${config['blackholedir']}" size="50">
                     <i class="smalltext">The folder your nzb-downloader monitors for nzb-files.</i>
                 </td>
@@ -118,16 +119,16 @@
         <table class="configtable" summary="Providers">
             <tr>
                 <td>
-                    <h3>Newznab <input type="checkbox" name="newznab" value=1 ${config['use_newznab']} /></h3>
+                    <h3><input type="checkbox" name="newznab" value=1 ${config['use_newznab']} /> Newznab</h3>
                 </td>
 <!--                <td>-->
-<!--                    <h3>Newzbin <input type="checkbox" name="newzbin" value=1 ${config['use_newzbin']} /></h3>-->
+<!--                    <h3><input type="checkbox" name="newzbin" value=1 ${config['use_newzbin']} /> NewzBin</h3>-->
 <!--                </td>-->
 <!--                <td>-->
-<!--                    <h3>NZBMatrix <input type="checkbox" name="nzbmatrix" value=1 ${config['use_nzbmatrix']} /></h3>-->
+<!--                    <h3><input type="checkbox" name="nzbmatrix" value=1 ${config['use_nzbmatrix']} /> NZBMatrix</h3>-->
 <!--                </td>-->
 <!--                <td>-->
-<!--                    <h3>NZBsorg <input type="checkbox" name="nzbsorg" value=1 ${config['use_nzbsorg']} /></h3>-->
+<!--                    <h3><input type="checkbox" name="nzbsorg" value=1 ${config['use_nzbsorg']} />NZBsorg</h3>-->
 <!--                </td>-->
             </tr>
             <tr>

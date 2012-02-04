@@ -58,8 +58,8 @@ def searchbook(bookid=None):
                 nzbprov = nzb['nzbprov']
 
                 #save nzb's to database for later use
-                snatchbooks = myDB.select('SELECT * from wanted WHERE BookID=? and Status="Snatched"', [bookid])
-                if snatchbooks:
+                snatchedbooks = myDB.action('SELECT * from wanted WHERE BookID=? and Status="Snatched"', [bookid]).fetchone()
+                if snatchedbook:
                     "Book with BookID %s allready snatched, skipped this NZB."
                     controlValueDict = {"BookID": bookid}
                     newValueDict = {

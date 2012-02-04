@@ -49,6 +49,9 @@ BLACKHOLE = False
 BLACKHOLEDIR = None
 USENET_RETENTION = None
 
+IMP_PREFLANG = 'en'
+IMP_ONLYISBN = False
+
 GR_API = 'ckvsiSDsuqh7omh74ZZ6Q'
 
 NZBMATRIX = False
@@ -66,9 +69,6 @@ NZBSORG_HASH = None
 NEWZBIN = False
 NEWZBIN_UID = None
 NEWZBIN_PASSWORD = None
-
-IMP_IGNORE = 'ch, fr, ge, ja, ru'
-IMP_ONLYISBN = False
 
 def CheckSection(sec):
     """ Check if INI section exists, if not create it """
@@ -152,8 +152,8 @@ def initialize():
     with INIT_LOCK:
 
         global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, \
-            IMP_ONLYISBN, IMP_IGNORE, SAB_HOST, SAB_PORT, SAB_API, SAB_USER, SAB_PASS, SAB_DIR, SAB_CAT, USENET_RETENTION, BLACKHOLE, BLACKHOLEDIR, GR_API, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
-            NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NZBSORG, NZBSORG_UID, NZBSORG_HASH, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS 
+            IMP_ONLYISBN, IMP_PREFLANG, SAB_HOST, SAB_PORT, SAB_API, SAB_USER, SAB_PASS, SAB_DIR, SAB_CAT, USENET_RETENTION, BLACKHOLE, BLACKHOLEDIR, GR_API, \
+            NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NZBSORG, NZBSORG_UID, NZBSORG_HASH, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS
 
         if __INITIALIZED__:
             return False
@@ -178,7 +178,7 @@ def initialize():
         LAUNCH_BROWSER = bool(check_setting_int(CFG, 'General', 'launch_browser', 1))
         LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
 
-        IMP_IGNORE = check_setting_str(CFG, 'General', 'imp_ignore', IMP_IGNORE)
+        IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', IMP_PREFLANG)
         IMP_ONLYISBN = bool(check_setting_int(CFG, 'General', 'imp_onlyisbn', 0))
 
         SAB_HOST = check_setting_str(CFG, 'SABnzbd', 'sab_host', '')
@@ -301,7 +301,7 @@ def config_write():
     new_config['General']['logdir'] = LOGDIR
 
     new_config['General']['imp_onlyisbn'] = int(IMP_ONLYISBN)
-    new_config['General']['imp_ignore'] = IMP_IGNORE
+    new_config['General']['imp_preflang'] = IMP_PREFLANG
 
     new_config['SABnzbd'] = {}
     new_config['SABnzbd']['sab_host'] = SAB_HOST
@@ -341,8 +341,8 @@ def dbcheck():
 
     conn=sqlite3.connect(DBFILE)
     c=conn.cursor()
-    c.execute('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT UNIQUE, AuthorName TEXT, AuthorImgs TEXT, AuthorImgl TEXT, AuthorLink TEXT, DateAdded TEXT, Status TEXT, LatestBook TEXT, ReleaseDate TEXT, HaveBooks INTEGER, TotalBooks INTEGER, AuthorBorn TEXT, AuthorDeath TEXT)')
-    c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, BookName TEXT, BookDesc TEXT, BookIsbn TEXT, BookRate INTEGER, BookImgs TEXT, BookImgl TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookDate TEXT, BookLang TEXT, DateAdded TEXT, Status TEXT)')
+    c.execute('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT UNIQUE, AuthorName TEXT, AuthorImg TEXT, AuthorLink TEXT, DateAdded TEXT, Status TEXT, LatestBook TEXT, ReleaseDate TEXT, HaveBooks INTEGER, TotalBooks INTEGER, AuthorBorn TEXT, AuthorDeath TEXT)')
+    c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, BookName TEXT, BookDesc TEXT, BookIsbn TEXT, BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, NZBprov TEXT, Status TEXT)')
 
     conn.commit()
@@ -372,7 +372,5 @@ def shutdown(restart=False):
             popen_list += ['--nolaunch']
             logger.info('Restarting Headphones with ' + str(popen_list))
         subprocess.Popen(popen_list, cwd=os.getcwd())
-
-
 
     os._exit(0)
