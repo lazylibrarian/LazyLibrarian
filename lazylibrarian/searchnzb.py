@@ -19,6 +19,7 @@ def searchbook(bookid=None):
     for searchbook in searchbooks:
         author = searchbook[0]
         book = searchbook[1]
+        logger.info('Searching for %s - %s.' % (author, book))
 
         dic = {'...':'', ' & ':' ', ' = ': ' ', '?':'', '$':'s', ' + ':' ', '"':'', ',':'', '*':''}
 
@@ -30,23 +31,29 @@ def searchbook(bookid=None):
 
         resultlist = []
 
+        if not lazylibrarian.SAB_HOST and not lazylibrarian.BLACKHOLE:
+            logger.info('No downloadmethod is set, use SABnzbd or blackhole')
+
+        if not lazylibrarian.NEWZNAB:
+            logger.info('No providers are set.')
+
         if lazylibrarian.NEWZNAB:
             logger.info('Searching NZB at provider %s ...' % lazylibrarian.NEWZNAB_HOST)
             resultlist = providers.NewzNab(searchterm, resultlist)
 
 # FUTURE-CODE
-        if lazylibrarian.NEWZBIN:
-            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NEWZBIN)
-            resultlist = providers.Newzbin(searchterm, resultlist)
+#        if lazylibrarian.NEWZBIN:
+#            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NEWZBIN)
+#            resultlist = providers.Newzbin(searchterm, resultlist)
 
-        if lazylibrarian.NZBMATRIX:
-            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NZBMATRIX)
-            resultlist = providers.NZBMatrix(searchterm, resultlist)
+#        if lazylibrarian.NZBMATRIX:
+#            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NZBMATRIX)
+#            resultlist = providers.NZBMatrix(searchterm, resultlist)
 
 
-        if lazylibrarian.NZBSORG:
-            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NZBSORG)
-            resultlist = providers.NZBsorg(searchterm, resultlist)
+#        if lazylibrarian.NZBSORG:
+#            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NZBSORG)
+#            resultlist = providers.NZBsorg(searchterm, resultlist)
 
         if resultlist is None:
             logger.info("Search didn't have results. Adding book %s - %s to queue." % (author, book))
@@ -59,7 +66,7 @@ def searchbook(bookid=None):
 
                 #save nzb's to database for later use
                 snatchedbooks = myDB.action('SELECT * from wanted WHERE BookID=? and Status="Snatched"', [bookid]).fetchone()
-                if snatchedbook:
+                if snatchedbooks:
                     "Book with BookID %s allready snatched, skipped this NZB."
                     controlValueDict = {"BookID": bookid}
                     newValueDict = {

@@ -179,7 +179,7 @@ class WebInterface(object):
     deleteAuthor.exposed = True
 
     def refreshAuthor(self, AuthorID):
-        importer.addAuthorToDB(ArtistID)
+        importer.addAuthorToDB(AuthorID)
         raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
     refreshAuthor.exposed=True
 
@@ -202,7 +202,7 @@ class WebInterface(object):
     addResults.exposed = True
 
 #BOOKS
-    def markBooks(self, AuthorID=None, action=None, **args):
+    def markBooks(self, AuthorName=None, action=None, **args):
 
         # update db first
         myDB = database.DBConnection()
@@ -223,8 +223,8 @@ class WebInterface(object):
                 if action == 'Wanted':
                     logger.info('Search started for BookID: ' + bookid)
                     searchbook(bookid)
-        if AuthorID:
-            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+        if AuthorName:
+            raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     markBooks.exposed = True
 
     def logs(self):

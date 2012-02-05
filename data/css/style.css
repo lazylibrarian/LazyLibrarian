@@ -150,7 +150,7 @@ table#author_table { background-color: white; width: 100%; padding: 20px; }
 table#author_table th#select { text-align: left; }
 table#author_table th#authorname { vertical-align: middle; text-align: left; min-width: 200px; }
 table#author_table th#authorsmall { vertical-align: middle; font-size:10px; }
-table#author_table th#authorart { vertical-align: middle; max-width: 100px; }
+table#author_table th#authorart { vertical-align: middle; min-width: 50px; }
 table#author_table th#status { text-align: left; min-width: 50px; }
 table#author_table th#book { text-align: left; min-width: 300px; }
 table#author_table th#have { text-align: center; }
