@@ -4,13 +4,14 @@
 %>
 
 <%def name="body()">
-    <table class="display" id="artist_table">
+    <table class="display" id="author_table">
         <thead>
             <tr>
-                <th id="name">Author</th>
-                <th id="status">Status</th>
-                <th id="album">Latest Book</th>
+                <th id="authorname">Author</th>
+                <th id="bookname">Last Book</th>
+                <th id="date">Released</th>
                 <th id="have">Have</th>
+                <th id="status">Status</th>
             </tr>
         </thead>
         <tbody>
@@ -27,31 +28,17 @@
                 except (ZeroDivisionError, TypeError):
                     percent = 0
                     totalbooks = '?'
-                
-                if author['ReleaseDate'] and author['LatestBook']:
-                    releasedate = author['ReleaseDate']
-                    bookdisplay = '<i>%s</i> (%s)' % (author['LatestBook'], author['ReleaseDate'])
-                    if releasedate > formatter.today():
-                        grade = 'A'
-                    else:
-                        grade = 'Z'
-                elif author['LatestBook']:
-                    releasedate = ''
-                    grade = 'Z'
-                    bookdisplay = '<i>%s</i>' % author['LatestBook']
-                else:
-                    releasedate = ''
-                    grade = 'Z'
-                    bookdisplay = '<i>None</i>'
-                
+
                 if author['Status'] == 'Paused':
                     grade = 'X'
-                
+
             %>
-            <tr class="grade${grade}">
+            <tr class="gradeZ">
                 <td id="name"><span title="${author['AuthorName']}"></span><a href="authorPage?AuthorName=${author['AuthorName']}">${author['AuthorName']}</a></td>
+                <td id="bookname"><span title="${author['LastBook']}"></span><a href="${author['LastLink']}">${author['LastBook']}</a></td>
+                <td id="status">${author['LastDate']}</td>
+                <td id="date"><span title="${percent}"></span><div class="progress-container"><div style="width:${percent}%"><div class="havebooks">${havebooks}/${totalbooks}</div></div></div></td>
                 <td id="status">${author['Status']}</td>
-                <td id="have"><span title="${percent}"></span><div class="progress-container"><div style="width:${percent}%"><div class="havetracks">${havebooks}/${totalbooks}</div></div></div></td>
             </tr>
         %endfor
         </tbody>
@@ -67,18 +54,24 @@
     <script>
     $(document).ready(function()
     {
-        $('#artist_table').dataTable(
+        $('#author_table').dataTable(
             {
                 "aoColumns": [
-                    { "sType": "title-string"},
                     null,
-                    { "sType": "title-string"},
-                    { "sType": "title-numeric"}
+                    null,
+                    null,
+                    null,
+                    null
                 ],
-                "bStateSave": true,
-                "iDisplayLength": 50,
+                "oLanguage": {
+                    "sLengthMenu":"Show _MENU_ authors per page",
+                    "sEmptyTable": "No authors found",
+                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ authors",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 authors",
+                    "sInfoFiltered":"(filtered from _MAX_ total authors)"},
+                "iDisplayLength": 25,
                 "sPaginationType": "full_numbers",
-                
+                "aaSorting": [[0, 'asc']],
             });
     });
     </script>

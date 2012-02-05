@@ -148,8 +148,16 @@ def addAuthorToDB(authorname=None):
             myDB.upsert("books", newValueDict, controlValueDict)
             bookscount = bookscount+1 
 
+    lastbook = myDB.action("SELECT BookName, BookLink, BookDate from books WHERE AuthorName='%s' order by BookDate DESC" % authorname).fetchone()
     controlValueDict = {"AuthorName": authorname}
-    newValueDict = {"Status": "Active"}
+    newValueDict = {
+        "Status": "Active",
+        "TotalBooks": bookscount,
+        "LastBook": lastbook['BookName'],
+        "LastLink": lastbook['BookLink'],
+        "LastDate": lastbook['BookDate']
+        }
+
     myDB.upsert("authors", newValueDict, controlValueDict)
     logger.info("Processing complete: Added %s books to the database" % bookscount)
 

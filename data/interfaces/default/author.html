@@ -6,43 +6,45 @@
 <%def name="headerIncludes()">
     <div id="subhead_container">
         <ul id="subhead_menu">
-<!--            <li><a href="refreshAuthor?AuthorID=${author['AuthorID']}">Refresh</a></li>-->
-            <li><a href="deleteAuthor?AuthorID=${author['AuthorID']}">Delete</a></li>
+            <li><a href="deleteAuthor?AuthorID=${author['AuthorID']}"> delete </a></li>
+            <li>/</li>
             %if author['Status'] == 'Paused':
-                <li><a href="resumeAuthor?AuthorID=${author['AuthorID']}">Resume</a></li>
+                <li><a href="resumeAuthor?AuthorID=${author['AuthorID']}"> resume </a></li>
             %else:
-                <li><a href="pauseAuthor?AuthorID=${author['AuthorID']}">Pause</a></li>
+                <li><a href="pauseAuthor?AuthorID=${author['AuthorID']}"> pause </a></li>
             %endif
         </ul>
     </div>
 </%def>
 
 <%def name="body()">
-    <div id="paddingheader">
-    <table class="display" id="author_table">
-        <thead>
-            <tr>
-                <th id="authorart"><img src="${author['AuthorImg']}" height="100" width="100"></th>
-                <th id="authorname">
-                    <h1><a href="${author['AuthorLink']}" target="_new">${author['AuthorName']}<h1><br>
-                    %if author['AuthorDeath']:
-                        <i class="smalltext">${author['AuthorBorn']} - ${author['AuthorDeath']}</i>
-                    %else:
-                        <i class="smalltext">${author['AuthorBorn']}</i>
-                    %endif
-                    %if author['Status'] == 'Loading':
-                        <br><i class="smalltext"><i>(Fetching information for this author ...)</i></h5>
-                    %endif
-                </th>
-            </tr>
-        </thead>
-    </table>
-</div>
+    <div id="authorart_container">
+        <ul id="authorart_menu">
+            <li><img src="${author['AuthorImg']}" height="100"></li>
+        </ul>
+    </div>
+
+    <div id="authorhead_container">
+        <ul id="authorhead_menu">
+            <li><a href="${author['AuthorLink']}" target="_new">${author['AuthorName']}</a></li>
+            %if author['AuthorDeath']:
+                <li>${author['AuthorBorn']} - ${author['AuthorDeath']}</li>
+            %else:
+                <li>${author['AuthorBorn']}</li>
+            %endif
+            <br>
+            %if author['Status'] == 'Loading':
+                <li>(Fetching information for this author ...)</li>
+            %endif
+            <br>            <br>
+            <li>Totalbooks: ${author['TotalBooks']}</li>
+    </div>
+
 <!--    <table class="display">-->
 <!--        <thead>-->
 <!--            <tr>-->
 <!--                <th>-->
-    <p class="leftside">
+    <p class="indented">
         <form action="markBooks" method="get"><input type="hidden" name="AuthorName" value=${author['AuthorName']}>
             <select name="action">
                   <option value="Wanted">Wanted</option>
@@ -55,15 +57,15 @@
 <!--            </tr>-->
 <!--        </thead>-->
 <!--    </table>-->
-
     <table class="display" id="book_table">
         <thead>
             <tr>
                 <th id="select"><input type="checkbox" onClick="toggle(this)" /></th>
                 <th id="bookart"></th>
                 <th id="bookname">Title</th>
-                <th id="stars"><img src="images/0-stars}" width="50" height="10"></td></th>
-                <th id="language"></th>
+                <th id="stars">Rating</th>
+                <th id="date">Released</th>
+                <th id="language">Language</th>
                 <th id="status">Status</th>
             </tr>
         </thead>
@@ -90,8 +92,8 @@
                     <td id="select"><input type="checkbox" name="${result['BookID']}" class="checkbox" /></td>
                     <td id="bookart"><a href="${result['bookimg']}" target="_new"><img src="${result['bookimg']}" height="75" width="50"></a></td>
                     <td id="bookname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a></td>
-
                     <td id="stars"><img src="images/${starimg}" width="50" height="10"></td>
+                    <td id="date">${result['BookDate']}</td>
                     <td id="language">${result['booklang']}</td>
                     <td id="status">${result['Status']}</td>
                 </tr>
@@ -104,7 +106,7 @@
 <%def name="headIncludes()">
     <link rel="stylesheet" href="css/data_table.css">
     %if author['Status'] == 'Loading':
-    <meta http-equiv="refresh" content="10">
+    <meta http-equiv="refresh" content="5">
     %endif
 </%def>
 
@@ -116,6 +118,7 @@
         $('#book_table').dataTable(
             {
                 "aoColumns": [
+                    null,
                     null,
                     null,
                     null,

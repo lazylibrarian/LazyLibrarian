@@ -59,9 +59,9 @@
         <br>
         <table class="configtable" summary="Importsettings">
             <tr>
-                <th>
+                <td>
                     <h3>Language</h3>
-                </th>
+                </td>
             </tr>
             <td>
                 <h5><input type="checkbox" name="imp_onlyisbn" value=1 ${config['use_imp_onlyisbn']} /> Hide books without ISBN</h5>
@@ -99,7 +99,7 @@
                 <td>
                     <h5>Category:</h5><input type="text" name="sab_cat" value="${config['sab_cat']}" size="30">
                     <h5>Directory:</h5><input type="text" name="sab_dir" value="${config['sab_dir']}" size="50">
-                    <i class="smalltext">Full path to the directory where SAB downloads your books.</i>
+                    <i class="smalltext">Full path to the folder where books are downloaded to.</i>
                     <h5><input type="checkbox" name="blackhole" value=1 ${config['use_blackhole']} /> Use blackhole</h5>
                     <input type="text" name="blackholedir" value="${config['blackholedir']}" size="50">
                     <i class="smalltext">The folder your nzb-downloader monitors for nzb-files.</i>

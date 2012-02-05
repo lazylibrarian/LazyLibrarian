@@ -213,7 +213,7 @@ class WebInterface(object):
                 controlValueDict = {'BookID': bookid}
                 newValueDict = {'Status': action}
                 myDB.upsert("books", newValueDict, controlValueDict)
-                logger.info('Status set to %s for BookID: %s' % (action, bookid))
+                logger.debug('Status set to %s for BookID: %s' % (action, bookid))
 
         # start searchthreads
         for bookid in args:
@@ -221,7 +221,7 @@ class WebInterface(object):
             if not bookid == 'book_table_length':
 
                 if action == 'Wanted':
-                    logger.info('Search started for BookID: ' + bookid)
+                    logger.debug('Search started for BookID: ' + bookid)
                     searchbook(bookid)
         if AuthorName:
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)

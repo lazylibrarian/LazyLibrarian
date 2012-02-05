@@ -58,7 +58,7 @@ class GoogleBooks:
                     try:
                         bookdate = item['volumeInfo']['publishedDate']
                     except KeyError:
-                        bookdate = 'Unknown'
+                        bookdate = '0000/00/00'
 
                     try:
                         bookimg = item['volumeInfo']['imageLinks']['thumbnail']
@@ -108,7 +108,7 @@ class GoogleBooks:
                         'bookdesc': bookdesc
                         })
 
-                resultcount = resultcount+len(resultlist)
+                    resultcount = resultcount+1
 
         except KeyError:
             logger.info('Found %s results for %s with name: %s' % (resultcount, self.type, self.name))

@@ -33,7 +33,7 @@ table { border-collapse: collapse; border-spacing: 0; }
 hr { display: block; height: 1px; border: 0; border-top: 1px solid #ccc; margin: 1em 0; padding: 0; }
 input, select { vertical-align: middle; }
 
-body { font:13px/1.231 sans-serif; *font-size:small; } 
+body { font:13px/1.231 sans-serif; *font-size:small; background-image:url('images/background.jpg'); }
 select, input, textarea, button { font:99% sans-serif; }
 pre, code, kbd, samp { font-family: monospace, sans-serif; }
 
@@ -102,18 +102,17 @@ a.blue {
 
 container {  }
 
-body { background-color: #EBF4FB; min-width: 935px; }
+body { background-color: #412821; min-width: 935px; }
 
-header { min-height: 68px; width: 100%; min-width: 935px; padding-left: 0px; padding-right: 10px; background-color: #CDC9C9; position: fixed; z-index: 998; }
+header { min-height: 68px; width: 100%; padding-left: 0px; padding-right: 10px; background-color: #412821; position: fixed; z-index: 998; }
 
 h1 { font-size: 24px; }
 h2 { font-size: 20px; }
-h3 { font-size: 16px; text-align: left;}
+h3 { font-size: 16px; }
 h4 { font-size: 14px; }
 h5 { font-size: 12px; }
 
-p.indented { padding-top: 20px; margin-left: 20px; font-size: 14px; }
-p.leftside { text-align: left; font-size: 10px; }
+p.indented { padding-top: 20px; margin-left: 20%; font-size: 14px; }
 p.center { text-align: center; font-size: 10px; }
 .smalltext2 { font-size: 12px; margin-left: 45px; }
 .smalltext { font-size: 10px }
@@ -123,14 +122,23 @@ div#logo { float: left; padding-left: 10px; }
 
 ul#nav { margin: 25px 0 0 0; float: left; list-style-type: none; }
 ul#nav li { margin: 40px 0px auto 10px;  display: inline; }
-ul#nav li a { padding: 5px; font-size: 16px; font-weight: bold; color: #330000; text-decoration: none; }
-ul#nav li a:hover { background-color: #a3e532; }
+ul#nav li a { padding: 5px; font-size: 16px; font-weight: bold; color: #ffffff; text-decoration: none; }
+ul#nav li a:hover { text-decoration: underline; }
 
-div#subhead_container { height: 30px; width:100%; min-width: 1000px; background-color:#330000; float: left; list-style-type: none; z-index: 998; overflow: hidden; }
-ul#subhead_menu { margin-top: 5px; }
+div#subhead_container { height: 18px; width:100%; min-width: 1000px; background-color:#000000; float: left; list-style-type: none; z-index: 998; overflow: hidden; }
 ul#subhead_menu li { width: 100%; height: 100%; display: inline; }
-ul#subhead_menu li a { padding: 5px 15px 10px 15px; vertical-align: middle; color: white; font-size: 16px; text-decoration: none; }
-ul#subhead_menu li a:hover { width: 100%; height: 100%; background-color: #grey; }
+ul#subhead_menu li a { vertical-align: middle; color: white; font-size: 12px; text-decoration: none; }
+ul#subhead_menu li a:hover { width: 100%; height: 100%; text-decoration: underline }
+
+div#authorart_container { height: 110px; width:10%; min-width: 100px; background-color:#330000; float: left; overflow: hidden; }
+ul#authorart_menu { margin-top: 7px; }
+ul#authorart_menu li { width: 100%; height: 100%; display: inline; vertical-align:middle; }
+
+div#authorhead_container { height: 110px; width:90%; background-color:#330000; float: left; overflow: hidden; }
+ul#authorhead_menu { margin-top: 7px; }
+ul#authorhead_menu li { width: 100%; height: 100%; display: inline-table; }
+ul#authorhead_menu li a { vertical-align: top; color: white; font-size: 20px; text-decoration: none; }
+ul#authorhead_menu li a:hover { width: 100%; height: 100%; text-decoration: underline}
 
 div#searchbar { margin: 24px 30px auto auto; float: right; }
 
@@ -148,53 +156,45 @@ div#main { margin: 0; padding: 80px 0 0 0; }
 table#author_table { background-color: white; width: 100%; padding: 20px; }
 
 table#author_table th#select { text-align: left; }
-table#author_table th#authorname { vertical-align: middle; text-align: left; min-width: 200px; }
-table#author_table th#authorsmall { vertical-align: middle; font-size:10px; }
-table#author_table th#authorart { vertical-align: middle; min-width: 50px; }
+table#author_table th#authorname { text-align: left; min-width: 200px; }
+table#author_table th#bookname { text-align: left; min-width: 200px; }
 table#author_table th#status { text-align: left; min-width: 50px; }
-table#author_table th#book { text-align: left; min-width: 300px; }
-table#author_table th#have { text-align: center; }
-table#author_table th#statustoggle { font-size: 11px; vertical-align: middle; text-align: right; }
+table#author_table th#date { text-align: left; min-width: 50px; }
+table#author_table th#have { text-align: left; min-width: 50px}
+
+table#author_table td#select { text-align: left; }
 table#author_table td#authorname { vertical-align: middle; text-align: left; min-width:200px; }
+table#author_table td#bookname { vertical-align: middle; text-align: left; min-width:300px; }
 table#author_table td#status { vertical-align: middle; text-align: left; min-width: 50px; }
-table#author_table td#book { vertical-align: middle; text-align: left; min-width: 300px; }
+table#author_table td#date { vertical-align: middle; text-align: left; min-width: 50px; }
 table#author_table td#have { vertical-align: middle; }
 
 div#paddingheader { padding-top: 48px; font-size: 24px; font-weight: bold; text-align: center; }
 div#nopaddingheader { font-size: 24px; font-weight: bold; text-align: center; }
 table#book_table { background-color: white; }
 
-table#book_table th#select { vertical-align: middle; text-align: left; min-width: 10px; }
+table#book_table th#select { text-align: left; min-width: 10px; vertical-align: middle; }
 table#book_table th#bookart { text-align: left; min-width: 50px; }
-table#book_table th#bookname { text-align: left; min-width: 150px; }
-table#book_table th#authorname { text-align: left; min-width: 150px; }
-table#book_table th#reldate { width: 175px; text-align: center; min-width: 70px; }
-table#book_table th#status { width: 175px; text-align: center; min-width: 80px; }
-table#book_table th#number { text-align: right; }
-table#book_table th#language { text-align: right; }
-table#book_table th#stars { width: 50px; text-align: right; }
+table#book_table th#bookname { text-align: left; min-width: 300px; }
+table#book_table th#authorname { text-align: left; min-width: 200px; }
+table#book_table th#status { text-align: center; min-width: 50px; }
+table#book_table th#date { text-align: left; min-width: 50px; }
+table#book_table th#number { text-align: center; min-width: 50px; }
+table#book_table th#language { text-align: center; min-width: 25px; }
+table#book_table th#stars { text-align: center; min-width: 50px; }
 
 table#book_table td#select { vertical-align: middle; text-align: left; }
 table#book_table td#bookart { vertical-align: middle; text-align: left; }
 table#book_table td#authorname { vertical-align: middle; text-align: left; }
 table#book_table td#bookname { vertical-align: middle; text-align: left; }
-table#book_table td#reldate { vertical-align: middle; text-align: center; }
-table#book_table td#status { vertical-align: middle; text-align: center; font-size: 12px; }
-table#book_table td#have { vertical-align: middle; }
+table#book_table td#status { vertical-align: middle; text-align: center; }
+table#book_table td#date { vertical-align: middle; text-align:middle; min-width: 50px; }
 table#book_table td#number { vertical-align: middle; text-align: right; }
 table#book_table td#language { vertical-align: middle; text-align: center; }
-table#book_table td#stars { vertical-align: middle; text-align: right; }
+table#book_table td#stars { vertical-align: middle; text-align: center; }
 
 img.bookArt { float: left; padding-right: 5px; }
 div#bookheader { padding-top: 48px; height: 200px; }
-
-table#history_table { background-color: white; width: 100%; font-size: 13px; }
-
-table#history_table td#dateadded { vertical-align: middle; text-align: center; min-width: 150px; font-size: 14px; }
-table#history_table td#filename { vertical-align: middle; text-align: center; min-width: 100px; font-size: 15px; }
-table#history_table td#size { vertical-align: middle; text-align: center; min-width: 75px; font-size: 14px; }
-table#history_table td#status { vertical-align: middle; text-align: center; font-size: 14px; }
-table#history_table td#action { vertical-align: middle; text-align: center; font-size: 14px; }
 
 table#log_table { background-color: white; }
 
@@ -205,34 +205,8 @@ table#log_table td#timestamp { text-align: left; min-width: 150px; font-size: 11
 table#log_table td#level { text-align: left; min-width: 60px; font-size: 11px; }
 table#log_table td#message { text-align: left; min-width: 500px; font-size: 12px; }
 
-table#upcoming_table th#bookart { text-align: center; min-width: 50px; }
-table#upcoming_table th#bookname { text-align: center; min-width: 200px; }
-table#upcoming_table th#authorname { text-align: center; min-width: 150px; }
-table#upcoming_table th#reldate { text-align: center; min-width: 100px; }
-
-table#upcoming_table td#select { vertical-align: middle; text-align: center; }
-table#upcoming_table td#bookart { vertical-align: middle; text-align: center; min-width: 50px; }
-table#upcoming_table td#bookname { vertical-align: middle; text-align: center; min-width: 200px; }
-table#upcoming_table td#authorname { vertical-align: middle; text-align: center; min-width: 150px; }
-table#upcoming_table td#reldate { vertical-align: middle; text-align: center; min-width: 100px; }
-table#upcoming_table td#status { vertical-align: middle; text-align: center; }
-
-table#wanted_table th#bookart { text-align: center; min-width: 50px; }
-table#wanted_table th#bookname { text-align: center; min-width: 200px; }
-table#wanted_table th#authorname { text-align: center; min-width: 150px; }
-table#wanted_table th#reldate { text-align: center; min-width: 100px; }
-
-table#wanted_table td#select { vertical-align: middle; text-align: center; }
-table#wanted_table td#bookart { vertical-align: middle; text-align: center; min-width: 50px; }
-table#wanted_table td#bookname { vertical-align: middle; text-align: center; min-width: 200px; }
-table#wanted_table td#authorname { vertical-align: middle; text-align: center; min-width: 150px; }
-table#wanted_table td#reldate { vertical-align: middle; text-align: center; min-width: 100px; }
-table#wanted_table td#status { vertical-align: middle; text-align: center; }
-
-table#config_table th#
-
 div.progress-container { border: 1px solid #ccc; width: 100px; height: 14px; margin: 2px 5px 2px 0; padding: 1px; float: left; background: white; }
-div.progress-container > div { background-color: #a3e532; height: 14px; }
+div.progress-container > div { background-color: #afa0a0; height: 14px; }
 .havebooks { font-size: 13px; margin-left: 36px; padding-bottom: 3px; vertical-align: middle; }
 
 footer { margin: 20px auto 20px auto; }
