@@ -222,7 +222,8 @@ class WebInterface(object):
 
                 if action == 'Wanted':
                     logger.debug('Search started for BookID: ' + bookid)
-                    searchbook(bookid)
+                    threading.Thread(target=searchbook, args=[bookid]).start()
+#                    searchbook(bookid)
         if AuthorName:
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     markBooks.exposed = True

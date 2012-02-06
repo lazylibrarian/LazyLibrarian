@@ -64,23 +64,22 @@ def searchbook(bookid=None):
                 nzburl = nzb['nzburl']
                 nzbprov = nzb['nzbprov']
 
-                #save nzb's to database for later use
-                snatchedbooks = myDB.action('SELECT * from wanted WHERE BookID=? and Status="Snatched"', [bookid]).fetchone()
-                if snatchedbooks:
-                    "Book with BookID %s allready snatched, skipped this NZB."
-                    controlValueDict = {"BookID": bookid}
-                    newValueDict = {
-                        "NZBprov": nzbprov,
-                        "NZBdate": formatter.today(),
-                        "NZBurl": nzburl,
-                        "NZBtitle": nzbtitle,
-                        "Status": "Skipped"
-                        }
-                    myDB.upsert("wanted", newValueDict, controlValueDict)
+                controlValueDict = {"NZBurl": nzburl}
+                newValueDict = {
+                    "NZBprov": nzbprov,
+                    "BookID": bookid,
+                    "NZBdate": formatter.today(),
+                    "NZBtitle": nzbtitle,
+                    "Status": "Skipped"
+                    }
+                myDB.upsert("wanted", newValueDict, controlValueDict)
 
-                else:
+                snatchedbooks = myDB.action('SELECT * from books WHERE BookID=? and Status="Snatched"', [bookid]).fetchone()
+                if not snatchedbooks:
                     snatch = DownloadMethod(bookid, nzbprov, nzbtitle, nzburl)
-
+                else:
+                    logger.info('Book allready snatched, skipping this nzb.')
+                    break
 
 def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
 
@@ -110,34 +109,16 @@ def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
             logger.error('%s not writable, NZB not saved. Error: %s' % (nzbpath, e))
             download = False
 
+    else:
+        logger.error('No downloadmethod is enabled, check config.')
+        return False
+
     if download:
         myDB.action('UPDATE books SET status = "Snatched" WHERE BookID=?', [bookid])
-
-        controlValueDict = {"BookID": bookid}
-        newValueDict = {
-            "NZBprov": nzbprov,
-            "NZBdate": formatter.now(),
-            "NZBurl": nzburl,
-            "NZBtitle": nzbtitle,
-            "Status": "Snatched"
-            }
-
-        myDB.upsert("wanted", newValueDict, controlValueDict)
-
+        myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl=?', [nzburl])
     else:
-        controlValueDict = {"BookID": bookid}
-        newValueDict = {
-            "NZBprov": nzbprov,
-            "NZBdate": formatter.now(),
-            "NZBurl": nzburl,
-            "NZBtitle": nzbtitle,
-            "Status": "Failed"
-            }
-
-        myDB.upsert("wanted", newValueDict, controlValueDict)
-
-    return download
-
+        logger.debug(u'Failed to download nzb @ <a href="%s">%s</a>' % (nzburl, lazylibrarian.NEWZNAB_HOST))
+        myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl=?', [nzburl])
 
 
 

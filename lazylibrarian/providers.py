@@ -27,7 +27,7 @@ def NewzNab(searchterm=None, resultlist=None):
     logger.debug(u'Parsing results from <a href="%s">%s</a>' % (URL, lazylibrarian.NEWZNAB_HOST))
 
     try:
-        data = ElementTree.parse(urllib2.urlopen(URL, timeout=20))
+        data = ElementTree.parse(urllib2.urlopen(URL, timeout=30))
         rootxml = data.getroot()
         resultxml = rootxml.getiterator('item')
     except urllib2.URLError, e:
