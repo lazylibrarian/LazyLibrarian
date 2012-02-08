@@ -4,47 +4,74 @@ import lazylibrarian
 
 from lazylibrarian import database, logger
 
-def CheckFolder():
-    myDB = database.DBConnection()
-    snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
+class PostProcess:
 
-    if snatched:
-        for book in snatched:
-            pp_pathsub = os.path.join(lazylibrarian.SAB_DIR, book['NZBtitle'])
-            bookid = book['BookID']
-            logger.info('Looking for %s' % pp_pathsub)
+    def __init__(self, processpath=None):
+        self.destination = lazylibrarian.DESTINATION_DIR
+        if processpath:
+            self.processpath = processpath
+        else:
+           self.processpath = lazylibrarian.DOWNLOAD_DIR 
 
-            if os.path.exists(pp_pathsub):
-                logger.debug('Found %s. Processing %s' % (book['NZBtitle'], pp_pathsub))
-                ProcessPath(bookid, pp_pathsub)
-            else:
-                logger.debug('No path found for: %s. Can\'t process it.' % book['NZBtitle'])
-    else:
-        logger.info('No books with status Snatched are found, nothing to process.')
+    def CheckFolder(self):
+        myDB = database.DBConnection()
+        snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
+        downloads = os.listdir(self.processpath)
 
-def ProcessPath(bookid=None, pp_pathsub=None):
-    myDB = database.DBConnection
-    query = 'SELECT * from books WHERE BookID=%s' % bookid
-    metadata = myDB.select(query)
-    dest_path = lazylibrarian.SAB_DIR
+        if not snatched:
+            logger.debug('No books are snatched. Nothing to process.')
+        elif not downloads:
+            logger.debug('%s is empty, nothing to process' % self.processpath)
+        else:
+            for book in snatched:
+                if book['NZBtitle'] in downloads:
+                    self.pp_path = os.path.join(self.processpath, book['NZBtitle'])
+                    logger.info('Found folder %s.' % self.pp_path)
+                    controlValueDict = {"NZBurl": book['NZBurl']}
+                    newValueDict = {"Status": "Success"}
+                    myDB.upsert("wanted", newValueDict, controlValueDict)
 
-    author = metadata['AuthorName']
-    book =  metadata['BookName']
+                    data = myDB.select("SELECT * from books WHERE BookID='%s'" % book['BookID'])
+                    for metadata in data:
+                        self.authorname = metadata[1]
+                        self.authorimg = metadata[2]
+                        self.bookname = metadata[3]
+                        self.bookdesc = metadata[4]
+                        self.bookisbn = metadata[5]
+                        self.bookrate = metadata[6]
+                        self.bookimg = metadata[7]
+                        self.bookpage = metadata[8]
+                        self.booklink = metadata[9]
+                        self.bookdate = metadata[11]
 
-    dest_pathsub = os.path.join(dest_path, author, book)
-    if not os.path.exists(dest_pathsub):
-        logger.info('%s does not exist, so it\'s safe to create it' % dest_pathsub)
-        try:
-            shutil.copytree(pp_pathsub, dest_pathsub)
-            # add author.jpg as folder.jpg in this folder.
-        except OSError:
-            logger.error('Could not create destinationfolder. Check permissions of: ' + dest_path)
+                    processBook = self.ProcessPath()
 
-        logger.info('Successfully moved %s to %s.' % (pp_pathsub, dest_pathsub))
-        processFiles(dest_pathsub, bookid, author, book, new=True)
-    else:
-        logger.info('%s allready exists. Moving files only' % dest_pathsub)
-        processFiles(dest_pathsub, bookid, author, book, new=False)
+
+
+
+    def ProcessPath(self):
+
+        self.final_dest = os.path.join(self.destination, self.authorname, self.bookname)
+        if not os.path.exists(self.final_dest):
+            logger.info('%s does not exist, so it\'s safe to create it' % self.final_dest)
+            try:
+                shutil.copytree(self.pp_path, self.final_dest)
+                return True
+                # add author.jpg as folder.jpg in this folder.
+            except OSError:
+                logger.error('Could not create destinationfolder. Check permissions of: ' + self.destination)
+                return False
+
+            logger.info('Successfully moved %s to %s.' % (self.pp_path, self.final_dest))
+            controlValueDict = {"BookID": book['BookID']}
+            newValueDict = {"Status": "Have"}
+            myDB.upsert("books", newValueDict, controlValueDict)
+
+        else:
+            logger.info('Path allready exists. Skipping for now ...')
+
+
+
 
     #def processFiles(self, dest_pathsub=None, bookid=None, author=None, book=None):
     #    if new:

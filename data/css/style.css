@@ -126,7 +126,7 @@ ul#nav li a { padding: 5px; font-size: 16px; font-weight: bold; color: #ffffff; 
 ul#nav li a:hover { text-decoration: underline; }
 
 div#subhead_container { height: 18px; width:100%; background-color:#000000; float: left; list-style-type: none; z-index: 997; overflow: hidden; }
-ul#subhead_menu li { width: 100%; height: 100%; display: inline; }
+ul#subhead_menu li { width: 100%; height: 100%; vertical-align: middle; color: grey; display: inline; }
 ul#subhead_menu li a { text-align:right; vertical-align: middle; color: white; font-size: 12px; text-decoration: none; }
 ul#subhead_menu li a:hover { width: 100%; height: 100%; text-decoration: underline }
 

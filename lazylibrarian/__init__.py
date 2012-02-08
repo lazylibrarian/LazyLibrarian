@@ -18,6 +18,8 @@ LOGLEVEL = 1
 DAEMON = False
 PIDFILE = None
 
+SYS_ENCODING = None
+
 INIT_LOCK = Lock()
 __INITIALIZED__ = False
 started = False
@@ -44,7 +46,9 @@ SAB_USER = None
 SAB_PASS = None
 SAB_API = None
 SAB_CAT = None
-SAB_DIR = None
+
+DESTINATION_DIR = None
+DOWNLOAD_DIR = None
 BLACKHOLE = False
 BLACKHOLEDIR = None
 USENET_RETENTION = None
@@ -152,7 +156,7 @@ def initialize():
     with INIT_LOCK:
 
         global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, \
-            IMP_ONLYISBN, IMP_PREFLANG, SAB_HOST, SAB_PORT, SAB_API, SAB_USER, SAB_PASS, SAB_DIR, SAB_CAT, USENET_RETENTION, BLACKHOLE, BLACKHOLEDIR, GR_API, \
+            IMP_ONLYISBN, IMP_PREFLANG, SAB_HOST, SAB_PORT, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, BLACKHOLE, BLACKHOLEDIR, GR_API, \
             NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NZBSORG, NZBSORG_UID, NZBSORG_HASH, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS
 
         if __INITIALIZED__:
@@ -187,10 +191,12 @@ def initialize():
         SAB_PASS = check_setting_str(CFG, 'SABnzbd', 'sab_pass', '')
         SAB_API = check_setting_str(CFG, 'SABnzbd', 'sab_api', '')
         SAB_CAT = check_setting_str(CFG, 'SABnzbd', 'sab_cat', '')
-        SAB_DIR = check_setting_str(CFG, 'SABnzbd', 'sab_dir', '')
-        BLACKHOLE = bool(check_setting_int(CFG, 'SABnzbd', 'blackhole', 0))
-        BLACKHOLEDIR = check_setting_str(CFG, 'SABnzbd', 'blackholedir', '')
-        USENET_RETENTION = check_setting_str(CFG, 'SABnzbd', 'usenet_retention', '')
+
+        DESTINATION_DIR = check_setting_str(CFG, 'General','destination_dir', '')
+        DOWNLOAD_DIR = check_setting_str(CFG, 'General', 'download_dir', '')
+        BLACKHOLE = bool(check_setting_int(CFG, 'General', 'blackhole', 0))
+        BLACKHOLEDIR = check_setting_str(CFG, 'General', 'blackholedir', '')
+        USENET_RETENTION = check_setting_str(CFG, 'General', 'usenet_retention', '')
 
         NZBMATRIX = bool(check_setting_int(CFG, 'NZBMatrix', 'nzbmatrix', 0))
         NZBMATRIX_USER = check_setting_str(CFG, 'NZBMatrix', 'nzbmatrix_user', '')
@@ -310,10 +316,12 @@ def config_write():
     new_config['SABnzbd']['sab_pass'] = SAB_PASS
     new_config['SABnzbd']['sab_api'] = SAB_API
     new_config['SABnzbd']['sab_cat'] = SAB_CAT
-    new_config['SABnzbd']['sab_dir'] = SAB_DIR
-    new_config['SABnzbd']['blackhole'] = int(BLACKHOLE)
-    new_config['SABnzbd']['blackholedir'] = BLACKHOLEDIR
-    new_config['SABnzbd']['usenet_retention'] = USENET_RETENTION
+
+    new_config['General']['destination_dir'] = DESTINATION_DIR
+    new_config['General']['download_dir'] = DOWNLOAD_DIR
+    new_config['General']['blackhole'] = int(BLACKHOLE)
+    new_config['General']['blackholedir'] = BLACKHOLEDIR
+    new_config['General']['usenet_retention'] = USENET_RETENTION
 
     new_config['NZBMatrix'] = {}
     new_config['NZBMatrix']['nzbmatrix'] = int(NZBMATRIX)

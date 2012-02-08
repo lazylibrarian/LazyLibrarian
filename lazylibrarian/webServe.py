@@ -8,11 +8,12 @@ import threading, time
 
 import lazylibrarian
 
-from lazylibrarian import logger, importer, database, postprocess
+from lazylibrarian import logger, importer, database
 from lazylibrarian.searchnzb import searchbook
 from lazylibrarian.formatter import checked
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
+from lazylibrarian.postprocess import PostProcess
 
 
 def serve_template(templatename, **kwargs):
@@ -70,17 +71,18 @@ class WebInterface(object):
                     "launch_browser":   checked(lazylibrarian.LAUNCH_BROWSER),
                     "logdir" :          lazylibrarian.LOGDIR,
                     "use_imp_onlyisbn": checked(lazylibrarian.IMP_ONLYISBN),
-                    "imp_preflang":       lazylibrarian.IMP_PREFLANG,
+                    "imp_preflang":     lazylibrarian.IMP_PREFLANG,
                     "sab_host":         lazylibrarian.SAB_HOST,
                     "sab_port":         lazylibrarian.SAB_PORT,
                     "sab_api":          lazylibrarian.SAB_API,
                     "sab_user":         lazylibrarian.SAB_USER,
                     "sab_pass":         lazylibrarian.SAB_PASS,
-                    "sab_dir":          lazylibrarian.SAB_DIR,
+                    "destination_dir":  lazylibrarian.DESTINATION_DIR,
+                    "download_dir":     lazylibrarian.DOWNLOAD_DIR,
                     "sab_cat":          lazylibrarian.SAB_CAT,
-                    "usenet_retention":          lazylibrarian.USENET_RETENTION,
-                    "use_blackhole":       checked(lazylibrarian.BLACKHOLE),
-                    "blackholedir":        lazylibrarian.BLACKHOLEDIR,
+                    "usenet_retention": lazylibrarian.USENET_RETENTION,
+                    "use_blackhole":    checked(lazylibrarian.BLACKHOLE),
+                    "blackholedir":     lazylibrarian.BLACKHOLEDIR,
                     "use_nzbmatrix" :   checked(lazylibrarian.NZBMATRIX),
                     "nzbmatrix_user" :  lazylibrarian.NZBMATRIX_USER,
                     "nzbmatrix_api" :   lazylibrarian.NZBMATRIX_API,
@@ -98,7 +100,7 @@ class WebInterface(object):
     config.exposed = True
 
     def configUpdate(self, http_host='0.0.0.0', http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, imp_onlyisbn=0, imp_preflang=None,
-        sab_host=None, sab_port=None, sab_api=None, sab_user=None, sab_pass=None, sab_dir=None, sab_cat=None, usenet_retention=None, blackhole=0, blackholedir=None,
+        sab_host=None, sab_port=None, sab_api=None, sab_user=None, sab_pass=None, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, blackhole=0, blackholedir=None,
         nzbmatrix=0, nzbmatrix_user=None, nzbmatrix_api=None, newznab=0, newznab_host=None, newznab_api=None, nzbsorg=0, nzbsorg_uid=None, nzbsorg_hash=None, 
         newzbin=0, newzbin_uid=None, newzbin_pass=None):
 
@@ -118,8 +120,10 @@ class WebInterface(object):
         lazylibrarian.SAB_API = sab_api
         lazylibrarian.SAB_USER = sab_user
         lazylibrarian.SAB_PASS = sab_pass
-        lazylibrarian.SAB_DIR = sab_dir
         lazylibrarian.SAB_CAT = sab_cat
+
+        lazylibrarian.DESTINATION_DIR = destination_dir
+        lazylibrarian.DOWNLOAD_DIR = download_dir
         lazylibrarian.USENET_RETENTION = usenet_retention
         lazylibrarian.BLACKHOLE = blackhole
         lazylibrarian.BLACKHOLEDIR = blackholedir
@@ -248,8 +252,8 @@ class WebInterface(object):
     markBooks.exposed = True
 
     def manProcess(self):
-        threading.Thread(target=postprocess.CheckFolder).start()
-        raise cherrypy.HTTPRedirect("manageBooks")
+        threading.Thread(target=PostProcess().CheckFolder).start()
+        raise cherrypy.HTTPRedirect("books")
     manProcess.exposed = True
 
     def logs(self):
