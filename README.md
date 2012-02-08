@@ -12,7 +12,8 @@ There may be many non working options/links during this Work In Progress-stage.
 If you know css very well, feel free to change the look by adding pull-requests, I am aware of the fact that it is one ugly monstrous webapp right now  
 
 ##Screenshot
-<img src="http://tweakers.net/ext/f/nRWbGC8qWH2y2BqYNVHUJuIn/full.png" width="400">&nbsp;&nbsp;<img src="http://tweakers.net/ext/f/4gmyYa6Wf8zcd0WpbanIGFwl/full.png" width="400">
+<img src="http://tweakers.net/ext/f/nRWbGC8qWH2y2BqYNVHUJuIn/full.png" width="800">
+<img src="http://tweakers.net/ext/f/4gmyYa6Wf8zcd0WpbanIGFwl/full.png" width="800">
 
 Yes, there is a lot of headphones references in this project. In fact, I used headphones as a base, but also code from SickBeard and CouchPotato to learn how to write a python program.
 It's a goal to eliminate all references to these other projects, but I need to create a working program first. Taking babysteps ;)
