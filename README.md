@@ -4,10 +4,17 @@ Author: Mar2zz
 Blogs: mar2zz.tweakblogs.net  
 License: GNU GPL v3  
 
-Please do not report bugs/issues, because it isn't finished yet, unless you can write a 'fix/feature' yourself.  
-https://github.com/Mar2zz/LazyLibrarian/issues  
+Feel free to post issues and featurerequests @ https://github.com/Mar2zz/LazyLibrarian/issues,  
+though I am aware of the many bugs right now, and am solving them one at a time, LL is very alpha, so use at own risk!.  
 
-Yes, there is a lot of headphones references in this project. In fact, I used headphones as a base, but also code from SickBeard and lazylibrarian to learn how to write a python program.
+There may be many non working options/links during this Work In Progress-stage.
+
+If you know css very well, feel free to change the look by adding pull-requests, I am aware of the fact that it is one ugly monstrous webapp right now  
+
+##Screenshot
+<img src="http://tweakers.net/ext/f/nRWbGC8qWH2y2BqYNVHUJuIn/full.png" width="400">&nbsp;&nbsp;<img src="http://tweakers.net/ext/f/4gmyYa6Wf8zcd0WpbanIGFwl/full.png" width="400">
+
+Yes, there is a lot of headphones references in this project. In fact, I used headphones as a base, but also code from SickBeard and CouchPotato to learn how to write a python program.
 It's a goal to eliminate all references to these other projects, but I need to create a working program first. Taking babysteps ;)
 
 LazyLibrarian is a program to follow authors and grab metadata for all your digital reading needs. It uses the extensive Goodreads.com website as a source, but I'd like to write locales too (like bol.com for dutch info. Other languages need to be added by others).
