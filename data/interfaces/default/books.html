@@ -7,7 +7,15 @@
 <%def name="headerIncludes()">
     <div id="subhead_container">
         <ul id="subhead_menu">
-            <li><a href="manProcess">Manual processing</a></li>
+            %if len(languages) > 1:
+                <li>Language:&nbsp</li>
+                %for language in languages:
+                    <li>|</li>
+                    <li><a href="books?BookLang=${language['BookLang']}">${language['BookLang']}</a></li>
+                %endfor
+            %endif
+            <li>Action:&nbsp</li>
+            <li><a>manual processing</a></li>
         </ul>
     </div>
 </%def>

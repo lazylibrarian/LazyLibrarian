@@ -41,6 +41,21 @@ class WebInterface(object):
         return serve_template(templatename="index.html", title="Home", authors=authors)
     home.exposed = True
 
+    def books(self, BookLang=None):
+        myDB = database.DBConnection()
+
+        languages = myDB.select('SELECT DISTINCT BookLang from books WHERE NOT STATUS="Skipped"')
+
+        if BookLang:
+            books = myDB.select('SELECT * from books WHERE BookLang=? AND NOT Status="Skipped"', [BookLang])
+        else:
+            books = myDB.select('SELECT * from books WHERE NOT STATUS="Skipped"')
+
+        if books is None:
+            raise cherrypy.HTTPRedirect("books")
+        return serve_template(templatename="books.html", title='Books', books=books, languages=languages)
+    books.exposed = True
+
     def config(self):
         http_look_dir = os.path.join(lazylibrarian.PROG_DIR, 'data/interfaces/')
         http_look_list = [ name for name in os.listdir(http_look_dir) if os.path.isdir(os.path.join(http_look_dir, name)) ]
@@ -139,17 +154,23 @@ class WebInterface(object):
     search.exposed = True
 
 #AUTHOR
-    def authorPage(self, AuthorName):
+    def authorPage(self, AuthorName, BookLang=None):
         myDB = database.DBConnection()
 
+        languages = myDB.select('SELECT DISTINCT BookLang from books WHERE AuthorName=?', [AuthorName])
+
+        if BookLang:
+            querybooks = "SELECT * from books WHERE BookLang='%s' AND AuthorName='%s' order by BookName ASC" % (BookLang, AuthorName)
+        else:
+            querybooks = "SELECT * from books WHERE AuthorName='%s' order by BookName ASC" % AuthorName
+
         queryauthors = "SELECT * from authors WHERE AuthorName='%s'" % AuthorName
-        querybooks = "SELECT * from books WHERE AuthorName='%s' order by BookName ASC" % AuthorName
 
         author = myDB.action(queryauthors).fetchone()
         books = myDB.select(querybooks)
         if author is None:
             raise cherrypy.HTTPRedirect("home")
-        return serve_template(templatename="author.html", title=author['AuthorName'], author=author, books=books)
+        return serve_template(templatename="author.html", title=author['AuthorName'], author=author, books=books, languages=languages)
     authorPage.exposed = True
 
     def pauseAuthor(self, AuthorID):
@@ -202,17 +223,6 @@ class WebInterface(object):
     addResults.exposed = True
 
 #BOOKS
-    def manageBooks(self):
-        myDB = database.DBConnection()
-
-        querybooks = 'SELECT * from books WHERE Status="Snatched" order by BookName ASC'
-
-        books = myDB.select(querybooks)
-        if books is None:
-            raise cherrypy.HTTPRedirect("books")
-        return serve_template(templatename="books.html", title='Manage books', books=books)
-    manageBooks.exposed = True
-
     def markBooks(self, AuthorName=None, action=None, **args):
         myDB = database.DBConnection()
         for bookid in args:

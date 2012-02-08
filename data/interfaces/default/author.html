@@ -6,8 +6,17 @@
 <%def name="headerIncludes()">
     <div id="subhead_container">
         <ul id="subhead_menu">
+            
+            %if len(languages) > 1:
+                <li>Language:&nbsp</li>
+                %for language in languages:
+                    <li><a href="authorPage?AuthorName=${author['AuthorName']}&BookLang=${language['BookLang']}">${language['BookLang']}</a></li>
+                    <li>|</li>
+                %endfor
+            %endif
+            <li>Action:&nbsp</li>
             <li><a href="deleteAuthor?AuthorID=${author['AuthorID']}"> delete </a></li>
-            <li>/</li>
+            <li>|</li>
             %if author['Status'] == 'Paused':
                 <li><a href="resumeAuthor?AuthorID=${author['AuthorID']}"> resume </a></li>
             %else:
