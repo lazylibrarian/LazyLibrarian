@@ -7,24 +7,25 @@ from lazylibrarian import database, logger
 def CheckFolder():
     myDB = database.DBConnection()
     snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
-    pp_path = lazylibrarian.SAB_DIR
 
     if snatched:
         for book in snatched:
-            logger.info(book['BookID'])
-            pp_pathsub = os.path.join(pp_path, book['NZBtitle'])
+            pp_pathsub = os.path.join(lazylibrarian.SAB_DIR, book['NZBtitle'])
+            bookid = book['BookID']
+            logger.info('Looking for %s' % pp_pathsub)
 
             if os.path.exists(pp_pathsub):
                 logger.debug('Found %s. Processing %s' % (book['NZBtitle'], pp_pathsub))
-                processPath(book['BookID'], pp_pathsub)
+                ProcessPath(bookid, pp_pathsub)
             else:
-                logger.error('No path found for: %s. Can\'t process it.' % book['NZBtitle'])
+                logger.debug('No path found for: %s. Can\'t process it.' % book['NZBtitle'])
     else:
         logger.info('No books with status Snatched are found, nothing to process.')
 
 def ProcessPath(bookid=None, pp_pathsub=None):
     myDB = database.DBConnection
-    metadata = myDB.select('SELECT * from books WHERE BookID=?', [bookid])
+    query = 'SELECT * from books WHERE BookID=%s' % bookid
+    metadata = myDB.select(query)
     dest_path = lazylibrarian.SAB_DIR
 
     author = metadata['AuthorName']

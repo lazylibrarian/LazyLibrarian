@@ -8,7 +8,7 @@ import threading, time
 
 import lazylibrarian
 
-from lazylibrarian import logger, importer, database
+from lazylibrarian import logger, importer, database, postprocess
 from lazylibrarian.searchnzb import searchbook
 from lazylibrarian.formatter import checked
 from lazylibrarian.gr import GoodReads
@@ -202,9 +202,18 @@ class WebInterface(object):
     addResults.exposed = True
 
 #BOOKS
-    def markBooks(self, AuthorName=None, action=None, **args):
+    def manageBooks(self):
+        myDB = database.DBConnection()
 
-        # update db first
+        querybooks = 'SELECT * from books WHERE Status="Snatched" order by BookName ASC'
+
+        books = myDB.select(querybooks)
+        if books is None:
+            raise cherrypy.HTTPRedirect("books")
+        return serve_template(templatename="books.html", title='Manage books', books=books)
+    manageBooks.exposed = True
+
+    def markBooks(self, AuthorName=None, action=None, **args):
         myDB = database.DBConnection()
         for bookid in args:
             # ouch dirty workaround...
@@ -227,6 +236,11 @@ class WebInterface(object):
         if AuthorName:
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     markBooks.exposed = True
+
+    def manProcess(self):
+        threading.Thread(target=postprocess.CheckFolder).start()
+        raise cherrypy.HTTPRedirect("manageBooks")
+    manProcess.exposed = True
 
     def logs(self):
         return serve_template(templatename="logs.html", title="Log", lineList=lazylibrarian.LOGLIST)
