@@ -8,6 +8,7 @@ class PostProcess:
 
     def __init__(self, processpath=None):
         self.destination = lazylibrarian.DESTINATION_DIR
+        self.keep_original = lazylibrarian.DESTINATION_COPY
         if processpath:
             self.processpath = processpath
         else:
@@ -46,29 +47,28 @@ class PostProcess:
 
                     processBook = self.ProcessPath()
 
-
-
-
     def ProcessPath(self):
 
         self.final_dest = os.path.join(self.destination, self.authorname, self.bookname)
         if not os.path.exists(self.final_dest):
             logger.info('%s does not exist, so it\'s safe to create it' % self.final_dest)
             try:
-                shutil.copytree(self.pp_path, self.final_dest)
+                if self.keep_original:
+                    shutil.copytree(self.pp_path, self.final_dest)
+                    logger.info('Successfully copied %s to %s.' % (self.pp_path, self.final_dest))
+                else:
+                    shutil.move(self.pp_path, self.final_dest)
+                    logger.info('Successfully moved %s to %s.' % (self.pp_path, self.final_dest))
                 return True
                 # add author.jpg as folder.jpg in this folder.
             except OSError:
                 logger.error('Could not create destinationfolder. Check permissions of: ' + self.destination)
                 return False
 
-            logger.info('Successfully moved %s to %s.' % (self.pp_path, self.final_dest))
             controlValueDict = {"BookID": book['BookID']}
             newValueDict = {"Status": "Have"}
             myDB.upsert("books", newValueDict, controlValueDict)
 
-        else:
-            logger.info('Path allready exists. Skipping for now ...')
 
 
 

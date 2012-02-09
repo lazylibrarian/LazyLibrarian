@@ -69,6 +69,7 @@
             </tr>
             <td>
                 <h5>Destination:</h5><input type="text" name="destination_dir" value="${config['destination_dir']}" size="50">
+                <h5><input type="checkbox" name="destination_copy" value=1 ${config['use_destination_copy']} /> Keep original files</h3>
             </td>
             <td>
 <!--                <h5><input type="checkbox" name="imp_onlyisbn" value=1 ${config['use_imp_onlyisbn']} /> Hide books without ISBN</h5>-->
@@ -123,7 +124,7 @@
         <table class="configtable" summary="Providers">
             <tr>
                 <td>
-                    <h3><input type="checkbox" name="newznab" value=1 ${config['use_newznab']} /> Newznab</h3>
+                    <h5><input type="checkbox" name="newznab" value=1 ${config['use_newznab']} /> Newznab</h5>
                 </td>
 <!--                <td>-->
 <!--                    <h3><input type="checkbox" name="newzbin" value=1 ${config['use_newzbin']} /> NewzBin</h3>-->

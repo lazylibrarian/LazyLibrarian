@@ -47,6 +47,7 @@ SAB_PASS = None
 SAB_API = None
 SAB_CAT = None
 
+DESTINATION_COPY = False
 DESTINATION_DIR = None
 DOWNLOAD_DIR = None
 BLACKHOLE = False
@@ -156,7 +157,7 @@ def initialize():
     with INIT_LOCK:
 
         global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, \
-            IMP_ONLYISBN, IMP_PREFLANG, SAB_HOST, SAB_PORT, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, BLACKHOLE, BLACKHOLEDIR, GR_API, \
+            IMP_ONLYISBN, IMP_PREFLANG, SAB_HOST, SAB_PORT, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, BLACKHOLE, BLACKHOLEDIR, GR_API, \
             NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NZBSORG, NZBSORG_UID, NZBSORG_HASH, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS
 
         if __INITIALIZED__:
@@ -192,6 +193,8 @@ def initialize():
         SAB_API = check_setting_str(CFG, 'SABnzbd', 'sab_api', '')
         SAB_CAT = check_setting_str(CFG, 'SABnzbd', 'sab_cat', '')
 
+
+        DESTINATION_COPY = bool(check_setting_int(CFG, 'General', 'destination_copy', 0))
         DESTINATION_DIR = check_setting_str(CFG, 'General','destination_dir', '')
         DOWNLOAD_DIR = check_setting_str(CFG, 'General', 'download_dir', '')
         BLACKHOLE = bool(check_setting_int(CFG, 'General', 'blackhole', 0))
@@ -318,6 +321,7 @@ def config_write():
     new_config['SABnzbd']['sab_cat'] = SAB_CAT
 
     new_config['General']['destination_dir'] = DESTINATION_DIR
+    new_config['General']['destination_copy'] = DESTINATION_COPY
     new_config['General']['download_dir'] = DOWNLOAD_DIR
     new_config['General']['blackhole'] = int(BLACKHOLE)
     new_config['General']['blackholedir'] = BLACKHOLEDIR
