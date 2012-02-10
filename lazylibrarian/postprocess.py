@@ -19,24 +19,19 @@ class PostProcess:
             self.processpath = processpath
         else:
             self.processpath = lazylibrarian.DOWNLOAD_DIR
+        self.downloads = os.listdir(self.processpath)
 
     def CheckFolder(self):
         myDB = database.DBConnection()
         snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
-        downloads = os.listdir(self.processpath)
 
         if not snatched:
             logger.debug('No books are snatched. Nothing to process.')
-        elif not downloads:
-            logger.debug('%s is empty, nothing to process' % self.processpath)
-        else:
+        elif self.downloads:
             for book in snatched:
-                if book['NZBtitle'] in downloads:
+                if book['NZBtitle'] in self.downloads:
                     self.pp_path = os.path.join(self.processpath, book['NZBtitle'])
                     logger.info('Found folder %s.' % self.pp_path)
-                    controlValueDict = {"NZBurl": book['NZBurl']}
-                    newValueDict = {"Status": "Success"}
-                    myDB.upsert("wanted", newValueDict, controlValueDict)
 
                     data = myDB.select("SELECT * from books WHERE BookID='%s'" % book['BookID'])
                     for metadata in data:
@@ -55,13 +50,28 @@ class PostProcess:
                     processBook = self.ProcessPath()
                     if processBook:
                         logger.info('Postprocessing for %s succeeded.' % self.bookname)
+
+                        #update nzbs
+                        controlValueDict = {"NZBurl": book['NZBurl']}
+                        newValueDict = {"Status": "Success"}
+                        myDB.upsert("wanted", newValueDict, controlValueDict)
+
+                        #update books
                         controlValueDict = {"BookID": book['BookID']}
                         newValueDict = {"Status": "Have"}
                         myDB.upsert("books", newValueDict, controlValueDict)
+
+                        #update authors
+                        query = 'SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND Status="Have"' % self.authorname
+                        countbooks = myDB.action(query).fetchone()
+                        havebooks = int(countbooks[0])
+                        controlValueDict = {"AuthorName": self.authorname}
+                        newValueDict = {"HaveBooks": havebooks}
+                        myDB.upsert("authors", newValueDict, controlValueDict)
                     else:
                         logger.info('Postprocessing %s has failed.' % self.bookname)
-                else:
-                    logger.info('No books are found in %s, nothing to process' % self.processpath)
+        else:
+            logger.info('No books are found in %s, nothing to process' % self.processpath)
 
 
     def ProcessPath(self):

@@ -321,7 +321,7 @@ def config_write():
     new_config['SABnzbd']['sab_cat'] = SAB_CAT
 
     new_config['General']['destination_dir'] = DESTINATION_DIR
-    new_config['General']['destination_copy'] = DESTINATION_COPY
+    new_config['General']['destination_copy'] = int(DESTINATION_COPY)
     new_config['General']['download_dir'] = DOWNLOAD_DIR
     new_config['General']['blackhole'] = int(BLACKHOLE)
     new_config['General']['blackholedir'] = BLACKHOLEDIR
