@@ -1,8 +1,14 @@
-import shutil, os, datetime
+import shutil, os, datetime, urllib, urllib2
+
+from urllib import FancyURLopener
 
 import lazylibrarian
 
 from lazylibrarian import database, logger
+
+class imgGoogle(FancyURLopener):
+    # Hack because Google want's a user agent for downloaing images, which is stupid because it's so easy to circumvent.
+    version = 'Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11'
 
 class PostProcess:
 
@@ -12,7 +18,7 @@ class PostProcess:
         if processpath:
             self.processpath = processpath
         else:
-           self.processpath = lazylibrarian.DOWNLOAD_DIR 
+            self.processpath = lazylibrarian.DOWNLOAD_DIR
 
     def CheckFolder(self):
         myDB = database.DBConnection()
@@ -28,9 +34,9 @@ class PostProcess:
                 if book['NZBtitle'] in downloads:
                     self.pp_path = os.path.join(self.processpath, book['NZBtitle'])
                     logger.info('Found folder %s.' % self.pp_path)
-                    controlValueDict = {"NZBurl": book['NZBurl']}
-                    newValueDict = {"Status": "Success"}
-                    myDB.upsert("wanted", newValueDict, controlValueDict)
+#                    controlValueDict = {"NZBurl": book['NZBurl']}
+#                    newValueDict = {"Status": "Success"}
+#                    myDB.upsert("wanted", newValueDict, controlValueDict)
 
                     data = myDB.select("SELECT * from books WHERE BookID='%s'" % book['BookID'])
                     for metadata in data:
@@ -44,8 +50,19 @@ class PostProcess:
                         self.bookpage = metadata[8]
                         self.booklink = metadata[9]
                         self.bookdate = metadata[11]
+                        self.booklang = metadata[12]
 
                     processBook = self.ProcessPath()
+                    if processBook:
+                        logger.info('Postprocessing success')
+                        controlValueDict = {"BookID": book['BookID']}
+                        newValueDict = {"Status": "Have"}
+                        myDB.upsert("books", newValueDict, controlValueDict)
+                    else:
+                        logger.info('Postprocessing failes')
+                else:
+                    logger.info('No books are found in %s, nothing to process' % self.processpath)
+
 
     def ProcessPath(self):
 
@@ -59,28 +76,56 @@ class PostProcess:
                 else:
                     shutil.move(self.pp_path, self.final_dest)
                     logger.info('Successfully moved %s to %s.' % (self.pp_path, self.final_dest))
-                return True
-                # add author.jpg as folder.jpg in this folder.
+                pp = True
             except OSError:
                 logger.error('Could not create destinationfolder. Check permissions of: ' + self.destination)
-                return False
+                pp = False
 
-            controlValueDict = {"BookID": book['BookID']}
-            newValueDict = {"Status": "Have"}
-            myDB.upsert("books", newValueDict, controlValueDict)
+            #handle pictures
+            try:
+                if not self.bookimg == 'images/nocover.png':
+                    logger.debug('Downloading cover from ' + self.bookimg)
+                    coverpath = os.path.join(self.final_dest, 'cover.jpg')
+                    img = open(coverpath,'wb')
+                    imggoogle = imgGoogle()
+                    img.write(imggoogle.open(self.bookimg).read())
+                    img.close()
+
+            except (IOError, EOFError), e:
+                logger.error('Error fetching cover from url: %s, %s' % (self.bookimg, e))
+
+            #handle metadata
+            opfpath = os.path.join(self.final_dest, 'metadata.opf')
+            if not os.path.exists(opfpath):
+                meta = self.CreateOPF()
+                opf = open(opfpath, 'wb')
+                opf.write(meta)
+                opf.close()
+                logger.info('Saved metadata to: ' + opfpath)
+            else:
+                logger.info('%s allready exists. Did not create one.' % opfpath)
+
+        else:
+            logger.debug('Did not create %s because it allready exists (need to code more for that to work around existing files)' % self.destination)
+            pp = False
+
+        return pp
 
 
+    def CreateOPF(self):
+        opfinfo = '<?xml version="1.0"  encoding="UTF-8"?>\n\
+<package version="2.0" xmlns="http://www.idpf.org/2007/opf" >\n\
+    <metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">\n\
+        <dc:title>%s</dc:title>\n\
+        <creator>%s</creator>\n\
+        <dc:identifier scheme="ISBN">%s</dc:identifier>\n\
+        <dc:date>%s</dc:date> \n\
+        <dc:description>%s</dc:description>\n\
+        <dc:language>%s</dc:language>\n\
+        <guide>\n\
+            <reference href="cover.jpg" type="cover" title="Cover"/>\n\
+        </guide>\n\
+    </metadata>\n\
+</package>' % (self.bookname, self.authorname, self.bookisbn, self.bookdate, self.bookdesc, self.booklang)
 
-
-
-    #def processFiles(self, dest_pathsub=None, bookid=None, author=None, book=None):
-    #    if new:
-    #        rename all
-    #        add folder/cover.jpg if no cover.jpg is found here and BookImgl is not nocover.
-
-#    else:
-#        if os.file.exists(dest_pathsub, bookfile
-#            blahblah
-#            remove old dir in the end or make it optional.
-#            overwrite cover.jpg if found if BookImgl is not nocover
-
+        return opfinfo
