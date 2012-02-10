@@ -15,8 +15,7 @@ If you know css very well, feel free to change the look by adding pull-requests,
 <img src="http://tweakers.net/ext/f/nRWbGC8qWH2y2BqYNVHUJuIn/full.png" width="800">
 <img src="http://tweakers.net/ext/f/4gmyYa6Wf8zcd0WpbanIGFwl/full.png" width="800">
 
-Yes, there is a lot of headphones references in this project. In fact, I used headphones as a base, but also code from SickBeard and CouchPotato to learn how to write a python program.
-It's a goal to eliminate all references to these other projects, but I need to create a working program first. Taking babysteps ;)
+Yes, it looks like headphones, that's because I am using it's datatables also for generating booktables. I also copied a lot of code from Headphones, CouchPotato and Sickbeard. I am learning python, so I hope my coding will become better with practice (consider when you laugh out loud about my code that I didn't know any python a few months ago)...  Taking babysteps ;)
 
 LazyLibrarian is a program to follow authors and grab metadata for all your digital reading needs. It uses the extensive Goodreads.com website as a source, but I'd like to write locales too (like bol.com for dutch info. Other languages need to be added by others).
 
@@ -25,6 +24,7 @@ Right now its capable of the following:
 * list all books of an author and add them as 'wanted'.  
 * LazyLibrarian will search a nzb-file for that book (only Newznab supported (e.g. nzb.su)  
 * If a nzb is found it will be send to sabnzbd or saved in a blackhole where your downloadapp can pick it up.  
+* When processing the downloaded books it will save a coverpicture (if available) and save all metadata into metadata.opf next to the bookfile (calibre compatible format)
 
 ## Install:
 
