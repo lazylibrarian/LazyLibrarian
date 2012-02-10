@@ -4,6 +4,9 @@ Author: Mar2zz
 Blogs: mar2zz.tweakblogs.net  
 License: GNU GPL v3  
 
+
+LazyLibrarian is a program to follow authors and grab metadata for all your digital reading needs. It uses the extensive GoogleBooks (for bookinfo) and Goodreads.com (for authorinfo) websites as a source, but I'd like to write locales too (like bol.com for dutch info. Other languages need to be added by others).  
+
 Feel free to post issues and featurerequests @ https://github.com/Mar2zz/LazyLibrarian/issues,  
 though I am aware of the many bugs right now, and am solving them one at a time, LL is very alpha, so use at own risk!.  
 
@@ -15,9 +18,7 @@ If you know css very well, feel free to change the look by adding pull-requests,
 <img src="http://tweakers.net/ext/f/nRWbGC8qWH2y2BqYNVHUJuIn/full.png" width="800">
 <img src="http://tweakers.net/ext/f/4gmyYa6Wf8zcd0WpbanIGFwl/full.png" width="800">
 
-Yes, it looks like headphones, that's because I am using it's datatables also for generating booktables. I also copied a lot of code from Headphones, CouchPotato and Sickbeard. I am learning python, so I hope my coding will become better with practice (consider when you laugh out loud about my code that I didn't know any python a few months ago)...  Taking babysteps ;)
-
-LazyLibrarian is a program to follow authors and grab metadata for all your digital reading needs. It uses the extensive Goodreads.com website as a source, but I'd like to write locales too (like bol.com for dutch info. Other languages need to be added by others).
+Yes, it looks like headphones, that's because I am using it's datatables also for generating booktables. I also copied a lot of code from Headphones, CouchPotato and Sickbeard. I am learning python, so I hope my coding will become better with practice (consider when you laugh out loud about my code that I didn't know any python a few months ago)...  Taking babysteps ;)  
 
 Right now its capable of the following:  
 * find authors or books and add them to the database  
