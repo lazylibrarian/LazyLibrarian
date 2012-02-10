@@ -7,7 +7,7 @@ import lazylibrarian
 from lazylibrarian import database, logger
 
 class imgGoogle(FancyURLopener):
-    # Hack because Google want's a user agent for downloaing images, which is stupid because it's so easy to circumvent.
+    # Hack because Google wants a user agent for downloading images, which is stupid because it's so easy to circumvent.
     version = 'Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11'
 
 class PostProcess:
@@ -34,9 +34,9 @@ class PostProcess:
                 if book['NZBtitle'] in downloads:
                     self.pp_path = os.path.join(self.processpath, book['NZBtitle'])
                     logger.info('Found folder %s.' % self.pp_path)
-#                    controlValueDict = {"NZBurl": book['NZBurl']}
-#                    newValueDict = {"Status": "Success"}
-#                    myDB.upsert("wanted", newValueDict, controlValueDict)
+                    controlValueDict = {"NZBurl": book['NZBurl']}
+                    newValueDict = {"Status": "Success"}
+                    myDB.upsert("wanted", newValueDict, controlValueDict)
 
                     data = myDB.select("SELECT * from books WHERE BookID='%s'" % book['BookID'])
                     for metadata in data:
@@ -54,12 +54,12 @@ class PostProcess:
 
                     processBook = self.ProcessPath()
                     if processBook:
-                        logger.info('Postprocessing success')
+                        logger.info('Postprocessing for %s succeeded.' % self.bookname)
                         controlValueDict = {"BookID": book['BookID']}
                         newValueDict = {"Status": "Have"}
                         myDB.upsert("books", newValueDict, controlValueDict)
                     else:
-                        logger.info('Postprocessing failes')
+                        logger.info('Postprocessing %s has failed.' % self.bookname)
                 else:
                     logger.info('No books are found in %s, nothing to process' % self.processpath)
 
@@ -119,7 +119,7 @@ class PostProcess:
         <dc:title>%s</dc:title>\n\
         <creator>%s</creator>\n\
         <dc:identifier scheme="ISBN">%s</dc:identifier>\n\
-        <dc:date>%s</dc:date> \n\
+        <dc:date>%s</dc:date>\n\
         <dc:description>%s</dc:description>\n\
         <dc:language>%s</dc:language>\n\
         <guide>\n\
