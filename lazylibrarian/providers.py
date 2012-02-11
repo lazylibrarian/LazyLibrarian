@@ -23,18 +23,17 @@ def NewzNab(searchterm=None, resultlist=None):
 
     URL = HOST + '/api?' + urllib.urlencode(params)
 
-    # to debug because of api
-    logger.debug(u'Parsing results from <a href="%s">%s</a>' % (URL, lazylibrarian.NEWZNAB_HOST))
-
     try:
         data = ElementTree.parse(urllib2.urlopen(URL, timeout=30))
-        rootxml = data.getroot()
-        resultxml = rootxml.getiterator('item')
-    except urllib2.URLError, e:
+    except (urllib2.URLError, IOError, EOFError), e:
         logger.warn('Error fetching data from %s: %s' % (lazylibrarian.NEWZNAB_HOST, e))
         data = None
 
     if data:
+        # to debug because of api
+        logger.debug(u'Parsing results from <a href="%s">%s</a>' % (URL, lazylibrarian.NEWZNAB_HOST))
+        rootxml = data.getroot()
+        resultxml = rootxml.getiterator('item')
         nzbcount = 0
         for nzb in resultxml:
             nzbcount = nzbcount+1
@@ -45,5 +44,7 @@ def NewzNab(searchterm=None, resultlist=None):
                 'nzbdate': nzb[4].text,
                 'nzbsize': nzb[7].attrib.get('length')
                 })
-    logger.info('Provider %s returned %s nzbs for: %s' % (lazylibrarian.NEWZNAB_HOST, nzbcount, searchterm))
+        logger.info('Provider %s returned %s nzbs for: %s' % (lazylibrarian.NEWZNAB_HOST, nzbcount, searchterm))
+    else:
+        logger.info('No results')
     return resultlist

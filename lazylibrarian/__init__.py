@@ -2,11 +2,14 @@ from __future__ import with_statement
 
 import os, sys, subprocess, threading, cherrypy, webbrowser, sqlite3
 
+import datetime
+
 from lib.configobj import ConfigObj
+from lib.apscheduler.scheduler import Scheduler
 
 from threading import Lock
 
-from lazylibrarian import logger
+from lazylibrarian import logger, postprocess, searchnzb
 
 FULL_PATH = None
 PROG_DIR = None
@@ -20,7 +23,9 @@ PIDFILE = None
 
 SYS_ENCODING = None
 
-INIT_LOCK = Lock()
+SCHED = Scheduler()
+
+INIT_LOCK = threading.Lock()
 __INITIALIZED__ = False
 started = False
 
@@ -74,6 +79,9 @@ NZBSORG_HASH = None
 NEWZBIN = False
 NEWZBIN_UID = None
 NEWZBIN_PASSWORD = None
+
+SEARCH_INTERVAL = 360
+SCAN_INTERVAL = 10
 
 def CheckSection(sec):
     """ Check if INI section exists, if not create it """
@@ -364,13 +372,23 @@ def start():
     global __INITIALIZED__, started
 
     if __INITIALIZED__:
-        # Crons and scheduled jobs go here.
+
+        # Crons and scheduled jobs go here
+        starttime = datetime.datetime.now()
+        SCHED.add_interval_job(postprocess.processDir, minutes=SCAN_INTERVAL, start_date=starttime+datetime.timedelta(minutes=1))
+        SCHED.add_interval_job(searchnzb.searchbook, minutes=SEARCH_INTERVAL, start_date=starttime+datetime.timedelta(minutes=2))
+
+        SCHED.start()
+#        for job in SCHED.get_jobs():
+#            print job
         started = True
 
 def shutdown(restart=False):
     config_write()
     logger.info('LazyLibrarian is shutting down ...')
     cherrypy.engine.exit()
+
+    SCHED.shutdown(wait=True)
 
     if PIDFILE :
         logger.info('Removing pidfile %s' % PIDFILE)
@@ -382,7 +400,7 @@ def shutdown(restart=False):
         popen_list += ARGS
         if '--nolaunch' not in popen_list:
             popen_list += ['--nolaunch']
-            logger.info('Restarting Headphones with ' + str(popen_list))
+            logger.info('Restarting LazyLibrarian with ' + str(popen_list))
         subprocess.Popen(popen_list, cwd=os.getcwd())
 
     os._exit(0)

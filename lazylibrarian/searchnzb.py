@@ -19,7 +19,7 @@ def searchbook(bookid=None):
     for searchbook in searchbooks:
         author = searchbook[0]
         book = searchbook[1]
-        logger.info('Searching for %s - %s.' % (author, book))
+        logger.debug('Searching for %s - %s.' % (author, book))
 
         dic = {'...':'', ' & ':' ', ' = ': ' ', '?':'', '$':'s', ' + ':' ', '"':'', ',':'', '*':''}
 
@@ -32,27 +32,27 @@ def searchbook(bookid=None):
         resultlist = []
 
         if not lazylibrarian.SAB_HOST and not lazylibrarian.BLACKHOLE:
-            logger.info('No downloadmethod is set, use SABnzbd or blackhole')
+            logger.debug('No downloadmethod is set, use SABnzbd or blackhole')
 
         if not lazylibrarian.NEWZNAB:
-            logger.info('No providers are set.')
+            logger.debug('No providers are set.')
 
         if lazylibrarian.NEWZNAB:
-            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NEWZNAB_HOST)
+            logger.debug('Searching NZB at provider %s ...' % lazylibrarian.NEWZNAB_HOST)
             resultlist = providers.NewzNab(searchterm, resultlist)
 
 # FUTURE-CODE
 #        if lazylibrarian.NEWZBIN:
-#            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NEWZBIN)
+#            logger.debug('Searching NZB at provider %s ...' % lazylibrarian.NEWZBIN)
 #            resultlist = providers.Newzbin(searchterm, resultlist)
 
 #        if lazylibrarian.NZBMATRIX:
-#            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NZBMATRIX)
+#            logger.debug('Searching NZB at provider %s ...' % lazylibrarian.NZBMATRIX)
 #            resultlist = providers.NZBMatrix(searchterm, resultlist)
 
 
 #        if lazylibrarian.NZBSORG:
-#            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NZBSORG)
+#            logger.debug('Searching NZB at provider %s ...' % lazylibrarian.NZBSORG)
 #            resultlist = providers.NZBsorg(searchterm, resultlist)
 
         if resultlist is None:
@@ -78,7 +78,6 @@ def searchbook(bookid=None):
                 if not snatchedbooks:
                     snatch = DownloadMethod(bookid, nzbprov, nzbtitle, nzburl)
                 else:
-                    logger.info('Book allready snatched, skipping this nzb.')
                     break
 
 def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
@@ -103,7 +102,7 @@ def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
             f = open(nzbpath, 'w')
             f.write(nzbfile)
             f.close()
-            logger.info('NZB file saved to: ' + nzbpath)
+            logger.debug('NZB file saved to: ' + nzbpath)
             download = True
         except Exception, e:
             logger.error('%s not writable, NZB not saved. Error: %s' % (nzbpath, e))
@@ -114,10 +113,11 @@ def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
         return False
 
     if download:
+        logger.info(u'Downloaded nzbfile @ <a href="%s">%s</a>' % (nzburl, lazylibrarian.NEWZNAB_HOST))
         myDB.action('UPDATE books SET status = "Snatched" WHERE BookID=?', [bookid])
         myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl=?', [nzburl])
     else:
-        logger.debug(u'Failed to download nzb @ <a href="%s">%s</a>' % (nzburl, lazylibrarian.NEWZNAB_HOST))
+        logger.error(u'Failed to download nzb @ <a href="%s">%s</a>' % (nzburl, lazylibrarian.NEWZNAB_HOST))
         myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl=?', [nzburl])
 
 

@@ -8,12 +8,11 @@ import threading, time
 
 import lazylibrarian
 
-from lazylibrarian import logger, importer, database
+from lazylibrarian import logger, importer, database, postprocess
 from lazylibrarian.searchnzb import searchbook
 from lazylibrarian.formatter import checked
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
-from lazylibrarian.postprocess import PostProcess
 
 
 def serve_template(templatename, **kwargs):
@@ -254,7 +253,7 @@ class WebInterface(object):
     markBooks.exposed = True
 
     def manProcess(self):
-        threading.Thread(target=PostProcess().CheckFolder).start()
+        threading.Thread(target=postprocess.processDir).start()
         raise cherrypy.HTTPRedirect("books")
     manProcess.exposed = True
 
