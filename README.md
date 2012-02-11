@@ -27,7 +27,8 @@ Right now its capable of the following:
 * If a nzb is found it will be send to sabnzbd or saved in a blackhole where your downloadapp can pick it up.  
 * When processing the downloaded books it will save a coverpicture (if available) and save all metadata into metadata.opf next to the bookfile (calibre compatible format)
 
-## Install:
+## Install:  
+LazyLibrarian runs by default @ port 5299 at http://hostname:5299/home.  
 
 Linux:
 
