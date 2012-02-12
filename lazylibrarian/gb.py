@@ -49,11 +49,20 @@ class GoogleBooks:
                         logger.debug('Skipped a result without authorfield.')
                         break
 
-                    #skip if language is in ignore list
-                    booklang = item['volumeInfo']['language']
-                    if not booklang in lazylibrarian.IMP_PREFLANG:
+                    try:
+                        #skip if language is in ignore list
+                        booklang = item['volumeInfo']['language']
+                        if not booklang in lazylibrarian.IMP_PREFLANG:
+                            ignored = ignored+1
+                            break
+                    except KeyError:
                         ignored = ignored+1
-                        break
+                        logger.debug('Skipped a result where no language is found')
+
+                    try:
+                        booksub = item['volumeInfo']['subtitle']
+                    except KeyError:
+                        booksub = None
 
                     try:
                         bookdate = item['volumeInfo']['publishedDate']
@@ -97,6 +106,7 @@ class GoogleBooks:
                         'authorname': authorname,
                         'bookid': item['id'],
                         'bookname': item['volumeInfo']['title'],
+                        'booksub': booksub,
                         'bookisbn': bookisbn,
                         'bookdate': bookdate,
                         'booklang': item['volumeInfo']['language'],

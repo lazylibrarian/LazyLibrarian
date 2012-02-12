@@ -188,6 +188,7 @@ table#book_table td#select { vertical-align: middle; text-align: left; }
 table#book_table td#bookart { vertical-align: middle; text-align: left; }
 table#book_table td#authorname { vertical-align: middle; text-align: left; }
 table#book_table td#bookname { vertical-align: middle; text-align: left; }
+
 table#book_table td#status { vertical-align: middle; text-align: center; }
 table#book_table td#date { vertical-align: middle; text-align:middle; min-width: 50px; }
 table#book_table td#number { vertical-align: middle; text-align: right; }

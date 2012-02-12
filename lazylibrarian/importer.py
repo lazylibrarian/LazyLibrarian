@@ -1,5 +1,4 @@
-import time
-import os
+import time, os, threading
 
 import lazylibrarian
 from lazylibrarian import logger, formatter, database
@@ -81,6 +80,7 @@ def addBookToDB(bookid, authorname):
         myDB.upsert("authors", newValueDict, controlValueDict)
 
 def addAuthorToDB(authorname=None):
+    threading.currentThread().name = "DBIMPORT"
     type = 'author'
     myDB = database.DBConnection()
 
@@ -133,6 +133,7 @@ def addAuthorToDB(authorname=None):
                 "AuthorID":     authorid,
                 "AuthorLink":   authorimg,
                 "BookName":     book['bookname'],
+                "BookSub":      book['booksub'],
                 "BookDesc":     book['bookdesc'],
                 "BookIsbn":     book['bookisbn'],
                 "BookImg":      book['bookimg'],
