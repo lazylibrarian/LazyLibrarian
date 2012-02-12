@@ -1,4 +1,4 @@
-import shutil, os, datetime, urllib, urllib2
+import shutil, os, datetime, urllib, urllib2, threading
 
 from urllib import FancyURLopener
 
@@ -7,22 +7,24 @@ import lazylibrarian
 from lazylibrarian import database, logger
 
 def processDir():
+    # rename this thread
+    threading.currentThread().name = "POSTPROCESS"
+
     processpath = lazylibrarian.DOWNLOAD_DIR
     downloads = os.listdir(processpath)
     myDB = database.DBConnection()
     snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
 
     if snatched is None:
-        logger.debug('No books are snatched. Nothing to process.')
+        logger.info('No books are snatched. Nothing to process.')
     elif downloads is None:
-        logger.debug('No downloads are found. Nothing to process.')
+        logger.info('No downloads are found. Nothing to process.')
     else:
+        ppcount=0
         for book in snatched:
-            if not book['NZBtitle'] in downloads:
-                logger.debug('No snatched books are found. Nothing to process')
-            else:
+            if book['NZBtitle'] in downloads:
                 pp_path = os.path.join(processpath, book['NZBtitle'])
-                logger.debug('Found folder %s.' % pp_path)
+                logger.info('Found folder %s.' % pp_path)
 
                 data = myDB.select("SELECT * from books WHERE BookID='%s'" % book['BookID'])
                 for metadata in data:
@@ -42,6 +44,8 @@ def processDir():
                 processBook = processDestination(pp_path, dest_path, authorname, bookname)
 
                 if processBook:
+
+                    ppcount = ppcount+1
 
                     # try image
                     processIMG(dest_path, bookimg)
@@ -69,19 +73,20 @@ def processDir():
 
                     logger.info('Successfully processed: %s - %s' % (authorname, bookname))
                 else:
-                    logger.debug('Postprocessing for %s has failed.' % bookname)
+                    logger.info('Postprocessing for %s has failed.' % bookname)
+        logger.info('%s books are downloaded or processed' % ppcount)
 
 def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None):
 
     if not os.path.exists(dest_path):
-        logger.debug('%s does not exist, so it\'s safe to create it' % dest_path)
+        logger.info('%s does not exist, so it\'s safe to create it' % dest_path)
         try:
             if lazylibrarian.DESTINATION_COPY:
                 shutil.copytree(pp_path, dest_path)
-                logger.debug('Successfully copied %s to %s.' % (pp_path, dest_path))
+                logger.info('Successfully copied %s to %s.' % (pp_path, dest_path))
             else:
                 shutil.move(pp_path, dest_path)
-                logger.debug('Successfully moved %s to %s.' % (pp_path, dest_path))
+                logger.info('Successfully moved %s to %s.' % (pp_path, dest_path))
             pp = True
 
         except OSError:
@@ -95,7 +100,7 @@ def processIMG(dest_path=None, bookimg=None):
     #handle pictures
     try:
         if not bookimg == 'images/nocover.png':
-            logger.debug('Downloading cover from ' + bookimg)
+            logger.info('Downloading cover from ' + bookimg)
             coverpath = os.path.join(dest_path, 'cover.jpg')
             img = open(coverpath,'wb')
             imggoogle = imgGoogle()
@@ -128,9 +133,9 @@ def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bo
         opf = open(opfpath, 'wb')
         opf.write(opfinfo)
         opf.close()
-        logger.debug('Saved metadata to: ' + opfpath)
+        logger.info('Saved metadata to: ' + opfpath)
     else:
-        logger.debug('%s allready exists. Did not create one.' % opfpath)
+        logger.info('%s allready exists. Did not create one.' % opfpath)
 
 class imgGoogle(FancyURLopener):
     # Hack because Google wants a user agent for downloading images, which is stupid because it's so easy to circumvent.

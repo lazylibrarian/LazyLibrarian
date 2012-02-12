@@ -7,7 +7,7 @@ import datetime
 from lib.configobj import ConfigObj
 from lib.apscheduler.scheduler import Scheduler
 
-from threading import Lock
+import threading
 
 from lazylibrarian import logger, postprocess, searchnzb
 
@@ -376,7 +376,7 @@ def start():
         # Crons and scheduled jobs go here
         starttime = datetime.datetime.now()
         SCHED.add_interval_job(postprocess.processDir, minutes=SCAN_INTERVAL, start_date=starttime+datetime.timedelta(minutes=1))
-        SCHED.add_interval_job(searchnzb.searchbook, minutes=SEARCH_INTERVAL, start_date=starttime+datetime.timedelta(minutes=2))
+        SCHED.add_interval_job(searchnzb.searchbook, minutes=SEARCH_INTERVAL, start_date=starttime+datetime.timedelta(hours=1))
 
         SCHED.start()
 #        for job in SCHED.get_jobs():

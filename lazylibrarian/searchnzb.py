@@ -9,6 +9,9 @@ from lazylibrarian import logger, database, formatter, providers, sabnzbd
 
 def searchbook(bookid=None):
 
+    # rename this thread
+    threading.currentThread().name = "SEARCHBOOKS"
+
     myDB = database.DBConnection()
 
     if bookid:
@@ -19,7 +22,7 @@ def searchbook(bookid=None):
     for searchbook in searchbooks:
         author = searchbook[0]
         book = searchbook[1]
-        logger.debug('Searching for %s - %s.' % (author, book))
+        logger.info('Searching for %s - %s.' % (author, book))
 
         dic = {'...':'', ' & ':' ', ' = ': ' ', '?':'', '$':'s', ' + ':' ', '"':'', ',':'', '*':''}
 
@@ -32,27 +35,27 @@ def searchbook(bookid=None):
         resultlist = []
 
         if not lazylibrarian.SAB_HOST and not lazylibrarian.BLACKHOLE:
-            logger.debug('No downloadmethod is set, use SABnzbd or blackhole')
+            logger.info('No downloadmethod is set, use SABnzbd or blackhole')
 
         if not lazylibrarian.NEWZNAB:
-            logger.debug('No providers are set.')
+            logger.info('No providers are set.')
 
         if lazylibrarian.NEWZNAB:
-            logger.debug('Searching NZB at provider %s ...' % lazylibrarian.NEWZNAB_HOST)
+            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NEWZNAB_HOST)
             resultlist = providers.NewzNab(searchterm, resultlist)
 
 # FUTURE-CODE
 #        if lazylibrarian.NEWZBIN:
-#            logger.debug('Searching NZB at provider %s ...' % lazylibrarian.NEWZBIN)
+#            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NEWZBIN)
 #            resultlist = providers.Newzbin(searchterm, resultlist)
 
 #        if lazylibrarian.NZBMATRIX:
-#            logger.debug('Searching NZB at provider %s ...' % lazylibrarian.NZBMATRIX)
+#            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NZBMATRIX)
 #            resultlist = providers.NZBMatrix(searchterm, resultlist)
 
 
 #        if lazylibrarian.NZBSORG:
-#            logger.debug('Searching NZB at provider %s ...' % lazylibrarian.NZBSORG)
+#            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NZBSORG)
 #            resultlist = providers.NZBsorg(searchterm, resultlist)
 
         if resultlist is None:
@@ -102,7 +105,7 @@ def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
             f = open(nzbpath, 'w')
             f.write(nzbfile)
             f.close()
-            logger.debug('NZB file saved to: ' + nzbpath)
+            logger.info('NZB file saved to: ' + nzbpath)
             download = True
         except Exception, e:
             logger.error('%s not writable, NZB not saved. Error: %s' % (nzbpath, e))

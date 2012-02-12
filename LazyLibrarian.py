@@ -1,10 +1,13 @@
-import os, sys, time, cherrypy
+import os, sys, time, cherrypy, threading
 from lib.configobj import ConfigObj
 
 import lazylibrarian
 from lazylibrarian import webStart, logger
 
 def main():
+
+    # rename this thread
+    threading.currentThread().name = "MAIN"
 
     # Set paths
     if hasattr(sys, 'frozen'):
@@ -59,10 +62,6 @@ def main():
     if options.nolaunch:
         lazylibrarian.LAUNCH_BROWSER = False
 
-    if options.port:
-        lazylibrarian.HTTP_PORT = int(options.port)
-        logger.info('Starting LazyLibrarian on forced port: %i ...' % lazylibrarian.HTTP_PORT)
-
     if options.datadir:
         lazylibrarian.DATADIR = str(options.datadir)
     else:
@@ -93,12 +92,19 @@ def main():
 
     lazylibrarian.initialize()
 
+    if options.port:
+        HTTP_PORT = int(options.port)
+        logger.info('Starting LazyLibrarian on forced port: %s' % HTTP_PORT)
+    else:
+        HTTP_PORT = int(lazylibrarian.HTTP_PORT)
+        logger.info('Starting LazyLibrarian on port: %s' % lazylibrarian.HTTP_PORT)
+
     if lazylibrarian.DAEMON:
         lazylibrarian.daemonize()
 
     # Try to start the server. 
     webStart.initialize({
-                    'http_port': lazylibrarian.HTTP_PORT,
+                    'http_port': HTTP_PORT,
                     'http_host': lazylibrarian.HTTP_HOST,
                     'http_root': lazylibrarian.HTTP_ROOT,
                     'http_user': lazylibrarian.HTTP_USER,
