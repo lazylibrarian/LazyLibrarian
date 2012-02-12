@@ -7,22 +7,26 @@ import lazylibrarian
 
 from lazylibrarian import logger, database, formatter, providers, sabnzbd
 
-def searchbook(bookid=None):
+def searchbook(books=None):
 
     # rename this thread
     threading.currentThread().name = "SEARCHBOOKS"
-
     myDB = database.DBConnection()
+    searchlist = []
 
-    if bookid:
-        searchbooks = myDB.select('SELECT AuthorName, BookName from books WHERE BookID=? AND Status="Wanted"', [bookid])
+    if books is None:
+        searchbooks = myDB.select('SELECT BookID, AuthorName, Bookname from books WHERE Status="Wanted"')
     else:
-        searchbooks = myDB.select('SELECT AuthorName, Bookname from books WHERE Status="Wanted"')
+        searchbooks = []
+        for book in books:
+            searchbook = myDB.select('SELECT BookID, AuthorName, BookName from books WHERE BookID=? AND Status="Wanted"', [book['bookid']])
+            for terms in searchbook:
+                searchbooks.append(terms)
 
     for searchbook in searchbooks:
-        author = searchbook[0]
-        book = searchbook[1]
-        logger.info('Searching for %s - %s.' % (author, book))
+        bookid = searchbook[0]
+        author = searchbook[1]
+        book = searchbook[2]
 
         dic = {'...':'', ' & ':' ', ' = ': ' ', '?':'', '$':'s', ' + ':' ', '"':'', ',':'', '*':''}
 
@@ -31,57 +35,58 @@ def searchbook(bookid=None):
 
         searchterm = author + ' ' + book
         searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
+        searchlist.append({"bookid": bookid, "searchterm": searchterm})
 
-        resultlist = []
+    resultlist = []
 
-        if not lazylibrarian.SAB_HOST and not lazylibrarian.BLACKHOLE:
-            logger.info('No downloadmethod is set, use SABnzbd or blackhole')
+    if not lazylibrarian.SAB_HOST and not lazylibrarian.BLACKHOLE:
+        logger.info('No downloadmethod is set, use SABnzbd or blackhole')
 
-        if not lazylibrarian.NEWZNAB:
-            logger.info('No providers are set.')
+    if not lazylibrarian.NEWZNAB:
+        logger.info('No providers are set.')
 
-        if lazylibrarian.NEWZNAB:
-            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NEWZNAB_HOST)
-            resultlist = providers.NewzNab(searchterm, resultlist)
+    if lazylibrarian.NEWZNAB:
+        logger.info('Searching NZB\'s at provider %s ...' % lazylibrarian.NEWZNAB_HOST)
+        resultlist = providers.NewzNab(searchlist)
 
-# FUTURE-CODE
-#        if lazylibrarian.NEWZBIN:
-#            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NEWZBIN)
-#            resultlist = providers.Newzbin(searchterm, resultlist)
+#FUTURE-CODE
+#    if lazylibrarian.NEWZBIN:
+#        logger.info('Searching NZB at provider %s ...' % lazylibrarian.NEWZBIN)
+#        resultlist = providers.Newzbin(searchterm, resultlist)
 
-#        if lazylibrarian.NZBMATRIX:
-#            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NZBMATRIX)
-#            resultlist = providers.NZBMatrix(searchterm, resultlist)
+#    if lazylibrarian.NZBMATRIX:
+#        logger.info('Searching NZB at provider %s ...' % lazylibrarian.NZBMATRIX)
+#        resultlist = providers.NZBMatrix(searchterm, resultlist)
 
 
-#        if lazylibrarian.NZBSORG:
-#            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NZBSORG)
-#            resultlist = providers.NZBsorg(searchterm, resultlist)
+#    if lazylibrarian.NZBSORG:
+#        logger.info('Searching NZB at provider %s ...' % lazylibrarian.NZBSORG)
+#        resultlist = providers.NZBsorg(searchterm, resultlist)
 
-        if resultlist is None:
-            logger.info("Search didn't have results. Adding book %s - %s to queue." % (author, book))
+    if resultlist is None:
+        logger.info("Search didn't have results. Adding book %s - %s to queue." % (author, book))
 
-        else:
-            for nzb in resultlist:
-                nzbtitle = nzb['nzbtitle']
-                nzburl = nzb['nzburl']
-                nzbprov = nzb['nzbprov']
+    else:
+        for nzb in resultlist:
+            bookid = nzb['bookid']
+            nzbtitle = nzb['nzbtitle']
+            nzburl = nzb['nzburl']
+            nzbprov = nzb['nzbprov']
 
-                controlValueDict = {"NZBurl": nzburl}
-                newValueDict = {
-                    "NZBprov": nzbprov,
-                    "BookID": bookid,
-                    "NZBdate": formatter.today(),
-                    "NZBtitle": nzbtitle,
-                    "Status": "Skipped"
-                    }
-                myDB.upsert("wanted", newValueDict, controlValueDict)
+            controlValueDict = {"NZBurl": nzburl}
+            newValueDict = {
+                "NZBprov": nzbprov,
+                "BookID": bookid,
+                "NZBdate": formatter.today(),
+                "NZBtitle": nzbtitle,
+                "Status": "Skipped"
+                }
+            myDB.upsert("wanted", newValueDict, controlValueDict)
 
-                snatchedbooks = myDB.action('SELECT * from books WHERE BookID=? and Status="Snatched"', [bookid]).fetchone()
-                if not snatchedbooks:
-                    snatch = DownloadMethod(bookid, nzbprov, nzbtitle, nzburl)
-                else:
-                    break
+            snatchedbooks = myDB.action('SELECT * from books WHERE BookID=? and Status="Snatched"', [bookid]).fetchone()
+            if not snatchedbooks:
+                snatch = DownloadMethod(bookid, nzbprov, nzbtitle, nzburl)
+            time.sleep(1)
 
 def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
 
