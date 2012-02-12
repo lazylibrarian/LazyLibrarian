@@ -28,17 +28,18 @@ def processDir():
 
                 data = myDB.select("SELECT * from books WHERE BookID='%s'" % book['BookID'])
                 for metadata in data:
-                    authorname = metadata[1]
-                    authorimg = metadata[2]
-                    bookname = metadata[3]
-                    bookdesc = metadata[4]
-                    bookisbn = metadata[5]
-                    bookrate = metadata[6]
-                    bookimg = metadata[7]
-                    bookpage = metadata[8]
-                    booklink = metadata[9]
-                    bookdate = metadata[11]
-                    booklang = metadata[12]
+                    authorname = metadata['AuthorName']
+                    authorimg = metadata['AuthorLink']
+                    bookname = metadata['BookName']
+                    bookdesc = metadata['BookDesc']
+                    bookisbn = metadata['BookIsbn']
+                    bookrate = metadata['BookRate']
+                    bookimg = metadata['BookImg']
+                    bookpage = metadata['BookPages']
+                    booklink = metadata['BookLink']
+                    bookdate = metadata['BookDate']
+                    booklang = metadata['BookLang']
+                    bookpub = metadata['BookPub']
 
                 dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, authorname, bookname)
                 processBook = processDestination(pp_path, dest_path, authorname, bookname)
@@ -51,7 +52,7 @@ def processDir():
                     processIMG(dest_path, bookimg)
 
                     # try metadata
-                    processOPF(dest_path, authorname, bookname, bookisbn, book['BookID'], bookdate, bookdesc, booklang)
+                    processOPF(dest_path, authorname, bookname, bookisbn, book['BookID'], bookpub, bookdate, bookdesc, booklang)
 
                     #update nzbs
                     controlValueDict = {"NZBurl": book['NZBurl']}
@@ -74,7 +75,8 @@ def processDir():
                     logger.info('Successfully processed: %s - %s' % (authorname, bookname))
                 else:
                     logger.info('Postprocessing for %s has failed.' % bookname)
-        logger.info('%s books are downloaded or processed' % ppcount)
+        if ppcount:
+            logger.info('%s books are downloaded and processed.' % ppcount)
 
 def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None):
 
@@ -110,22 +112,32 @@ def processIMG(dest_path=None, bookimg=None):
     except (IOError, EOFError), e:
         logger.error('Error fetching cover from url: %s, %s' % (bookimg, e))
 
-def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bookid=None, bookdate=None, bookdesc=None, booklang=None):
+def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bookid=None, bookpub=None, bookdate=None, bookdesc=None, booklang=None):
     opfinfo = '<?xml version="1.0"  encoding="UTF-8"?>\n\
 <package version="2.0" xmlns="http://www.idpf.org/2007/opf" >\n\
     <metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">\n\
         <dc:title>%s</dc:title>\n\
         <creator>%s</creator>\n\
-        <dc:identifier scheme="ISBN">%s</dc:identifier>\n\
-        <dc:identifier scheme="GoogleBooks">%s</dc:identifier>\n\
-        <dc:date>%s</dc:date>\n\
-        <dc:description>%s</dc:description>\n\
         <dc:language>%s</dc:language>\n\
-        <guide>\n\
+        <dc:identifier scheme="GoogleBooks">%s</dc:identifier>\n' % (bookname, authorname, booklang, bookid)
+
+    if bookisbn:
+        opfinfo += '        <dc:identifier scheme="ISBN">%s</dc:identifier>\n' % bookisbn
+
+    if bookpub:
+        opfinfo += '        <dc:publisher>%s</dc:publisher>\n' % bookpub
+
+    if bookdate:
+        opfinfo += '        <dc:date>%s</dc:date>\n' % bookdate
+
+    if bookdesc:
+        opfinfo += '        <dc:description>%s</dc:description>\n' % bookdesc
+
+    opfinfo += '        <guide>\n\
             <reference href="cover.jpg" type="cover" title="Cover"/>\n\
         </guide>\n\
     </metadata>\n\
-</package>' % (bookname, authorname, bookisbn, bookid, bookdate, bookdesc, booklang)
+</package>'
 
     #handle metadata
     opfpath = os.path.join(dest_path, 'metadata.opf')

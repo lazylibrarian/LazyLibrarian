@@ -136,6 +136,8 @@ def addAuthorToDB(authorname=None):
                 "BookSub":      book['booksub'],
                 "BookDesc":     book['bookdesc'],
                 "BookIsbn":     book['bookisbn'],
+                "BookPub":      book['bookpub'],
+                "BookGenre":    book['bookgenre'],
                 "BookImg":      book['bookimg'],
                 "BookLink":     book['booklink'],
                 "BookRate":     book['bookrate'],

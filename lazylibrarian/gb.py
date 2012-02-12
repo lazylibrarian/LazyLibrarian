@@ -58,6 +58,12 @@ class GoogleBooks:
                     except KeyError:
                         ignored = ignored+1
                         logger.debug('Skipped a result where no language is found')
+                        break
+
+                    try:
+                        bookpub = item['volumeInfo']['publisher']
+                    except KeyError:
+                        bookpub = None
 
                     try:
                         booksub = item['volumeInfo']['subtitle']
@@ -85,9 +91,9 @@ class GoogleBooks:
                         bookpages = '0'
 
                     try:
-                        bookgenre = item['volumeInfo']['categories']
+                        bookgenre = item['volumeInfo']['categories'][0]
                     except KeyError:
-                        bookgenre = 'Unknown'
+                        bookgenre = None
 
                     try:
                         bookdesc = item['volumeInfo']['description']
@@ -108,8 +114,9 @@ class GoogleBooks:
                         'bookname': item['volumeInfo']['title'],
                         'booksub': booksub,
                         'bookisbn': bookisbn,
+                        'bookpub': bookpub,
                         'bookdate': bookdate,
-                        'booklang': item['volumeInfo']['language'],
+                        'booklang': booklang,
                         'booklink': item['volumeInfo']['canonicalVolumeLink'],
                         'bookrate': float(bookrate),
                         'bookimg': bookimg,
