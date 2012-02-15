@@ -72,10 +72,6 @@ NEWZNAB = False
 NEWZNAB_HOST = None
 NEWZNAB_API = None
 
-NZBSORG = False
-NZBSORG_UID = None
-NZBSORG_HASH = None
-
 NEWZBIN = False
 NEWZBIN_UID = None
 NEWZBIN_PASSWORD = None
@@ -166,7 +162,7 @@ def initialize():
 
         global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, \
             IMP_ONLYISBN, IMP_PREFLANG, SAB_HOST, SAB_PORT, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, BLACKHOLE, BLACKHOLEDIR, GR_API, \
-            NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NZBSORG, NZBSORG_UID, NZBSORG_HASH, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS
+            NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS
 
         if __INITIALIZED__:
             return False
@@ -216,10 +212,6 @@ def initialize():
         NEWZNAB = bool(check_setting_int(CFG, 'Newznab', 'newznab', 0))
         NEWZNAB_HOST = check_setting_str(CFG, 'Newznab', 'newznab_host', '')
         NEWZNAB_API = check_setting_str(CFG, 'Newznab', 'newznab_api', '')
-        
-        NZBSORG = bool(check_setting_int(CFG, 'NZBsorg', 'nzbsorg', 0))
-        NZBSORG_UID = check_setting_str(CFG, 'NZBsorg', 'nzbsorg_uid', '')
-        NZBSORG_HASH = check_setting_str(CFG, 'NZBsorg', 'nzbsorg_hash', '')
 
         NEWZBIN = bool(check_setting_int(CFG, 'Newzbin', 'newzbin', 0))
         NEWZBIN_UID = check_setting_str(CFG, 'Newzbin', 'newzbin_uid', '')
@@ -345,11 +337,6 @@ def config_write():
     new_config['Newznab']['newznab_host'] = NEWZNAB_HOST
     new_config['Newznab']['newznab_api'] = NEWZNAB_API
 
-    new_config['NZBsorg'] = {}
-    new_config['NZBsorg']['nzbsorg'] = int(NZBSORG)
-    new_config['NZBsorg']['nzbsorg_uid'] = NZBSORG_UID
-    new_config['NZBsorg']['nzbsorg_hash'] = NZBSORG_HASH
-    
     new_config['Newzbin'] = {}
     new_config['Newzbin']['newzbin'] = int(NEWZBIN)
     new_config['Newzbin']['newzbin_uid'] = NEWZBIN_UID

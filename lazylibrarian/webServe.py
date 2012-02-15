@@ -89,9 +89,6 @@ class WebInterface(object):
                     "use_newznab" :     checked(lazylibrarian.NEWZNAB),
                     "newznab_host" :    lazylibrarian.NEWZNAB_HOST,
                     "newznab_api" :     lazylibrarian.NEWZNAB_API,
-                    "use_nzbsorg" :     checked(lazylibrarian.NZBSORG),
-                    "nzbsorg_uid" :     lazylibrarian.NZBSORG_UID,
-                    "nzbsorg_hash" :    lazylibrarian.NZBSORG_HASH,
                     "use_newzbin" :     checked(lazylibrarian.NEWZBIN),
                     "newzbin_uid" :     lazylibrarian.NEWZBIN_UID,
                     "newzbin_pass" :    lazylibrarian.NEWZBIN_PASS,
@@ -101,8 +98,7 @@ class WebInterface(object):
 
     def configUpdate(self, http_host='0.0.0.0', http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, imp_onlyisbn=0, imp_preflang=None,
         sab_host=None, sab_port=None, sab_api=None, sab_user=None, sab_pass=None, destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, blackhole=0, blackholedir=None,
-        nzbmatrix=0, nzbmatrix_user=None, nzbmatrix_api=None, newznab=0, newznab_host=None, newznab_api=None, nzbsorg=0, nzbsorg_uid=None, nzbsorg_hash=None, 
-        newzbin=0, newzbin_uid=None, newzbin_pass=None):
+        nzbmatrix=0, nzbmatrix_user=None, nzbmatrix_api=None, newznab=0, newznab_host=None, newznab_api=None, newzbin=0, newzbin_uid=None, newzbin_pass=None):
 
         lazylibrarian.HTTP_HOST = http_host
         lazylibrarian.HTTP_PORT = http_port
@@ -132,12 +128,11 @@ class WebInterface(object):
         lazylibrarian.NZBMATRIX = nzbmatrix
         lazylibrarian.NZBMATRIX_USER = nzbmatrix_user
         lazylibrarian.NZBMATRIX_API = nzbmatrix_api
+
         lazylibrarian.NEWZNAB = newznab
         lazylibrarian.NEWZNAB_HOST = newznab_host
         lazylibrarian.NEWZNAB_API = newznab_api
-        lazylibrarian.NZBSORG = nzbsorg
-        lazylibrarian.NZBSORG_UID = nzbsorg_uid
-        lazylibrarian.NZBSORG_HASH = nzbsorg_hash
+
         lazylibrarian.NEWZBIN = newzbin
         lazylibrarian.NEWZBIN_UID = newzbin_uid
         lazylibrarian.NEWZBIN_PASS = newzbin_pass
