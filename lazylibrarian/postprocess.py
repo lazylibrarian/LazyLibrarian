@@ -4,7 +4,7 @@ from urllib import FancyURLopener
 
 import lazylibrarian
 
-from lazylibrarian import database, logger
+from lazylibrarian import database, logger, formatter
 
 def processDir():
     # rename this thread
@@ -41,7 +41,7 @@ def processDir():
                     booklang = metadata['BookLang']
                     bookpub = metadata['BookPub']
 
-                dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, authorname, bookname).encode(lazylibrarian.SYS_ENCODING)
+                dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, authorname, bookname)
                 processBook = processDestination(pp_path, dest_path, authorname, bookname)
 
                 if processBook:
@@ -139,11 +139,15 @@ def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bo
     </metadata>\n\
 </package>'
 
+    dic = {'...':'', ' & ':' ', ' = ': ' ', '?':'', '$':'s', ' + ':' ', '"':'', ',':'', '*':''}
+
+    opfinfo = formatter.latinToAscii(formatter.replace_all(opfinfo, dic))
+
     #handle metadata
     opfpath = os.path.join(dest_path, 'metadata.opf')
     if not os.path.exists(opfpath):
         opf = open(opfpath, 'wb')
-        opf.write(opfinfo).encode(lazylibrarian.SYS_ENCODING)
+        opf.write(opfinfo)
         opf.close()
         logger.info('Saved metadata to: ' + opfpath)
     else:

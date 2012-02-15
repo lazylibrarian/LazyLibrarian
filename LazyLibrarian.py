@@ -1,4 +1,4 @@
-import os, sys, time, cherrypy, threading
+import os, sys, time, cherrypy, threading, locale
 from lib.configobj import ConfigObj
 
 import lazylibrarian
@@ -17,6 +17,18 @@ def main():
 
     lazylibrarian.PROG_DIR = os.path.dirname(lazylibrarian.FULL_PATH)
     lazylibrarian.ARGS = sys.argv[1:]
+
+    lazylibrarian.SYS_ENCODING = None
+
+    try:
+        locale.setlocale(locale.LC_ALL, "")
+        lazylibrarian.SYS_ENCODING = locale.getpreferredencoding()
+    except (locale.Error, IOError):
+        pass
+
+    # for OSes that are poorly configured I'll just force UTF-8
+    if not lazylibrarian.SYS_ENCODING or lazylibrarian.SYS_ENCODING in ('ANSI_X3.4-1968', 'US-ASCII', 'ASCII'):
+        lazylibrarian.SYS_ENCODING = 'UTF-8'
 
     # Set arguments
     from optparse import OptionParser
