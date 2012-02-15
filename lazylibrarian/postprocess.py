@@ -1,4 +1,4 @@
-import shutil, os, datetime, urllib, urllib2, threading, encode
+import shutil, os, datetime, urllib, urllib2, threading
 
 from urllib import FancyURLopener
 
