@@ -1,4 +1,4 @@
-import shutil, os, datetime, urllib, urllib2, threading
+import shutil, os, datetime, urllib, urllib2, threading, encode
 
 from urllib import FancyURLopener
 
@@ -41,7 +41,7 @@ def processDir():
                     booklang = metadata['BookLang']
                     bookpub = metadata['BookPub']
 
-                dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, authorname, bookname)
+                dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, authorname, bookname).encode(lazylibrarian.SYS_ENCODING)
                 processBook = processDestination(pp_path, dest_path, authorname, bookname)
 
                 if processBook:
@@ -143,7 +143,7 @@ def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bo
     opfpath = os.path.join(dest_path, 'metadata.opf')
     if not os.path.exists(opfpath):
         opf = open(opfpath, 'wb')
-        opf.write(opfinfo)
+        opf.write(opfinfo).encode(lazylibrarian.SYS_ENCODING)
         opf.close()
         logger.info('Saved metadata to: ' + opfpath)
     else:
