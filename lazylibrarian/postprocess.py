@@ -139,7 +139,7 @@ def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bo
     </metadata>\n\
 </package>'
 
-    dic = {'...':'', ' & ':' ', ' = ': ' ', '?':'', '$':'s', ' + ':' ', '"':'', ',':'', '*':''}
+    dic = {'...':'', ' & ':' ', ' = ': ' ', '$':'s', ' + ':' ', ',':'', '*':''}
 
     opfinfo = formatter.latinToAscii(formatter.replace_all(opfinfo, dic))
 
