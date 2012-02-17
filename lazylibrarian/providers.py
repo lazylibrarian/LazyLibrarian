@@ -38,15 +38,60 @@ def NewzNab(book=None):
         resultxml = rootxml.getiterator('item')
         nzbcount = 0
         for nzb in resultxml:
-            nzbcount = nzbcount+1
-            results.append({
-                'bookid': book['bookid'],
-                'nzbprov': "NewzNab",
-                'nzbtitle': nzb[0].text,
-                'nzburl': nzb[2].text,
-                'nzbdate': nzb[4].text,
-                'nzbsize': nzb[7].attrib.get('length')
-                })
-            logger.info('Found %s nzb for: %s' % (nzbcount, book['searchterm']))
+            try:
+                nzbcount = nzbcount+1
+                results.append({
+                    'bookid': book['bookid'],
+                    'nzbprov': "NewzNab",
+                    'nzbtitle': nzb[0].text,
+                    'nzburl': nzb[2].text,
+                    'nzbdate': nzb[4].text,
+                    'nzbsize': nzb[7].attrib.get('length')
+                    })
+            except IndexError:
+                logger.info('No results')
+        logger.info('Found %s nzb for: %s' % (nzbcount, book['searchterm']))
     return results
 
+def NZBMatrix(book=None):
+
+    results = []
+
+    params = {
+        "page": "download",
+        "username": lazylibrarian.NZBMATRIX_USER,
+        "apikey": lazylibrarian.NZBMATRIX_API,
+        "subcat": 36,
+        "age": lazylibrarian.USENET_RETENTION,
+        "term": book['searchterm']
+        }
+
+    URL = "http://rss.nzbmatrix.com/rss.php?" + urllib.urlencode(params)
+    # to debug because of api
+    logger.debug(u'Parsing results from <a href="%s">NZBMatrix</a>' % (URL))
+
+    try:
+        data = ElementTree.parse(urllib2.urlopen(URL, timeout=30))
+    except (urllib2.URLError, IOError, EOFError), e:
+        logger.warn('Error fetching data from NZBMatrix: %s' % e)
+        data = None
+
+    if data:
+        rootxml = data.getroot()
+        resultxml = rootxml.getiterator('item')
+        nzbcount = 0
+        for nzb in resultxml:
+            try:
+                nzbcount = nzbcount+1
+                results.append({
+                    'bookid': book['bookid'],
+                    'nzbprov': "NZBMatrix",
+                    'nzbtitle': nzb[0].text,
+                    'nzburl': nzb[2].text,
+                    'nzbsize': nzb[7].attrib.get('length')
+                    })
+            except IndexError:
+                logger.info('No results')
+
+        logger.info('Found %s nzb for: %s' % (nzbcount, book['searchterm']))
+    return results

@@ -50,7 +50,7 @@ def searchbook(books=None):
             resultlist = providers.NewzNab(book)
 
         if lazylibrarian.NZBMATRIX and not resultlist:
-            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NZBMATRIX)
+            logger.info('Searching NZB at provider NZBMatrix ...')
             resultlist = providers.NZBMatrix(book)
 
         if not resultlist:
