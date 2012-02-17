@@ -50,7 +50,10 @@ def NewzNab(book=None):
                     })
             except IndexError:
                 logger.info('No results')
-        logger.info('Found %s nzb for: %s' % (nzbcount, book['searchterm']))
+        if nzbcount:
+            logger.info('Found %s nzb for: %s' % (nzbcount, book['searchterm']))
+        else:
+            logger.info('Newznab returned 0 results for: ' + book['searchterm'])
     return results
 
 def NZBMatrix(book=None):
@@ -82,7 +85,6 @@ def NZBMatrix(book=None):
         nzbcount = 0
         for nzb in resultxml:
             try:
-                nzbcount = nzbcount+1
                 results.append({
                     'bookid': book['bookid'],
                     'nzbprov': "NZBMatrix",
@@ -90,8 +92,12 @@ def NZBMatrix(book=None):
                     'nzburl': nzb[2].text,
                     'nzbsize': nzb[7].attrib.get('length')
                     })
+                nzbcount = nzbcount+1
             except IndexError:
                 logger.info('No results')
 
-        logger.info('Found %s nzb for: %s' % (nzbcount, book['searchterm']))
+        if nzbcount:
+            logger.info('Found %s nzb for: %s' % (nzbcount, book['searchterm']))
+        else:
+            logger.info('NZBMatrix returned 0 results for: ' + book['searchterm'])
     return results
