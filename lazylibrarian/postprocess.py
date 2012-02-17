@@ -41,7 +41,11 @@ def processDir():
                     booklang = metadata['BookLang']
                     bookpub = metadata['BookPub']
 
-                dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, authorname, bookname).encode(lazylibrarian.SYS_ENCODING)
+                dest_path = authorname+'/'+bookname
+                dic = {'<':'', '>':'', '=':'', '?':'', '"':'', ',':'', '*':'', ':':'', ';':''}
+                dest_path = formatter.latinToAscii(formatter.replace_all(dest_path, dic))
+                dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(lazylibrarian.SYS_ENCODING)
+
                 processBook = processDestination(pp_path, dest_path, authorname, bookname)
 
                 if processBook:
