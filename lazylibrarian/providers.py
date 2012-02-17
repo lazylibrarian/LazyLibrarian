@@ -7,48 +7,46 @@ import lazylibrarian
 from lazylibrarian import logger
 
 
-def NewzNab(searchlist=None):
+def NewzNab(book=None):
 
     HOST = lazylibrarian.NEWZNAB_HOST
     results = []
 
-    for searchterm in searchlist:
-        logger.info('Searching for %s.' % searchterm['searchterm'])
-        params = {
-            "t": "search",
-            "apikey": lazylibrarian.NEWZNAB_API,
-            "cat": 7020,
-            "q": searchterm['searchterm']
-            }
+    logger.info('Searching for %s.' % book['searchterm'])
+    params = {
+        "t": "search",
+        "apikey": lazylibrarian.NEWZNAB_API,
+        "cat": 7020,
+        "q": book['searchterm']
+        }
 
-        if not str(HOST)[:4] == "http":
-            HOST = 'http://' + HOST
+    if not str(HOST)[:4] == "http":
+        HOST = 'http://' + HOST
 
-        URL = HOST + '/api?' + urllib.urlencode(params)
+    URL = HOST + '/api?' + urllib.urlencode(params)
 
-        try:
-            data = ElementTree.parse(urllib2.urlopen(URL, timeout=30))
-        except (urllib2.URLError, IOError, EOFError), e:
-            logger.warn('Error fetching data from %s: %s' % (lazylibrarian.NEWZNAB_HOST, e))
-            data = None
+    try:
+        data = ElementTree.parse(urllib2.urlopen(URL, timeout=30))
+    except (urllib2.URLError, IOError, EOFError), e:
+        logger.warn('Error fetching data from %s: %s' % (lazylibrarian.NEWZNAB_HOST, e))
+        data = None
 
-        if data:
-            # to debug because of api
-            logger.debug(u'Parsing results from <a href="%s">%s</a>' % (URL, lazylibrarian.NEWZNAB_HOST))
-            rootxml = data.getroot()
-            resultxml = rootxml.getiterator('item')
-            nzbcount = 0
-            for nzb in resultxml:
-                nzbcount = nzbcount+1
-                results.append({
-                    'bookid': searchterm['bookid'],
-                    'nzbprov': "NewzNab",
-                    'nzbtitle': nzb[0].text,
-                    'nzburl': nzb[2].text,
-                    'nzbdate': nzb[4].text,
-                    'nzbsize': nzb[7].attrib.get('length')
-                    })
-                logger.info('Found %s nzb for: %s' % (nzbcount, searchterm['searchterm']))
-        time.sleep(1)
+    if data:
+        # to debug because of api
+        logger.debug(u'Parsing results from <a href="%s">%s</a>' % (URL, lazylibrarian.NEWZNAB_HOST))
+        rootxml = data.getroot()
+        resultxml = rootxml.getiterator('item')
+        nzbcount = 0
+        for nzb in resultxml:
+            nzbcount = nzbcount+1
+            results.append({
+                'bookid': book['bookid'],
+                'nzbprov': "NewzNab",
+                'nzbtitle': nzb[0].text,
+                'nzburl': nzb[2].text,
+                'nzbdate': nzb[4].text,
+                'nzbsize': nzb[7].attrib.get('length')
+                })
+            logger.info('Found %s nzb for: %s' % (nzbcount, book['searchterm']))
     return results
 

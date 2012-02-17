@@ -37,56 +37,46 @@ def searchbook(books=None):
         searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
         searchlist.append({"bookid": bookid, "searchterm": searchterm})
 
-    resultlist = []
-
     if not lazylibrarian.SAB_HOST and not lazylibrarian.BLACKHOLE:
         logger.info('No downloadmethod is set, use SABnzbd or blackhole')
 
     if not lazylibrarian.NEWZNAB:
         logger.info('No providers are set.')
 
-    if lazylibrarian.NEWZNAB:
-        logger.info('Searching NZB\'s at provider %s ...' % lazylibrarian.NEWZNAB_HOST)
-        resultlist = providers.NewzNab(searchlist)
+    for book in searchlist:
+        resultlist = []
+        if lazylibrarian.NEWZNAB and not resultlist:
+            logger.info('Searching NZB\'s at provider %s ...' % lazylibrarian.NEWZNAB_HOST)
+            resultlist = providers.NewzNab(book)
 
-#FUTURE-CODE
-#    if lazylibrarian.NEWZBIN:
-#        logger.info('Searching NZB at provider %s ...' % lazylibrarian.NEWZBIN)
-#        resultlist = providers.Newzbin(searchterm, resultlist)
+        if lazylibrarian.NZBMATRIX and not resultlist:
+            logger.info('Searching NZB at provider %s ...' % lazylibrarian.NZBMATRIX)
+            resultlist = providers.NZBMatrix(book)
 
-#    if lazylibrarian.NZBMATRIX:
-#        logger.info('Searching NZB at provider %s ...' % lazylibrarian.NZBMATRIX)
-#        resultlist = providers.NZBMatrix(searchterm, resultlist)
+        if not resultlist:
+            logger.info("Search didn't have results. Adding book %s to queue." % book['searchterm'])
 
+        else:
+            for nzb in resultlist:
+                bookid = nzb['bookid']
+                nzbtitle = nzb['nzbtitle']
+                nzburl = nzb['nzburl']
+                nzbprov = nzb['nzbprov']
 
-#    if lazylibrarian.NZBSORG:
-#        logger.info('Searching NZB at provider %s ...' % lazylibrarian.NZBSORG)
-#        resultlist = providers.NZBsorg(searchterm, resultlist)
+                controlValueDict = {"NZBurl": nzburl}
+                newValueDict = {
+                    "NZBprov": nzbprov,
+                    "BookID": bookid,
+                    "NZBdate": formatter.today(),
+                    "NZBtitle": nzbtitle,
+                    "Status": "Skipped"
+                    }
+                myDB.upsert("wanted", newValueDict, controlValueDict)
 
-    if resultlist is None:
-        logger.info("Search didn't have results. Adding book %s - %s to queue." % (author, book))
-
-    else:
-        for nzb in resultlist:
-            bookid = nzb['bookid']
-            nzbtitle = nzb['nzbtitle']
-            nzburl = nzb['nzburl']
-            nzbprov = nzb['nzbprov']
-
-            controlValueDict = {"NZBurl": nzburl}
-            newValueDict = {
-                "NZBprov": nzbprov,
-                "BookID": bookid,
-                "NZBdate": formatter.today(),
-                "NZBtitle": nzbtitle,
-                "Status": "Skipped"
-                }
-            myDB.upsert("wanted", newValueDict, controlValueDict)
-
-            snatchedbooks = myDB.action('SELECT * from books WHERE BookID=? and Status="Snatched"', [bookid]).fetchone()
-            if not snatchedbooks:
-                snatch = DownloadMethod(bookid, nzbprov, nzbtitle, nzburl)
-            time.sleep(1)
+                snatchedbooks = myDB.action('SELECT * from books WHERE BookID=? and Status="Snatched"', [bookid]).fetchone()
+                if not snatchedbooks:
+                    snatch = DownloadMethod(bookid, nzbprov, nzbtitle, nzburl)
+                time.sleep(1)
 
 def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
 
