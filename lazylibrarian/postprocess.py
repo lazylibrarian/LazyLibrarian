@@ -41,7 +41,7 @@ def processDir():
                     booklang = metadata['BookLang']
                     bookpub = metadata['BookPub']
 
-                dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, authorname, bookname)
+                dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, authorname, bookname).encode(lazylibrarian.SYS_ENCODING)
                 processBook = processDestination(pp_path, dest_path, authorname, bookname)
 
                 if processBook:
