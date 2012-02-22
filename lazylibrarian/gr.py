@@ -18,7 +18,11 @@ class GoodReads:
         URL = 'http://www.goodreads.com/api/author_url/' + urllib.quote(self.name) + '.xml?' + urllib.urlencode(self.params)
         logger.info("Searching for author with name: %s" % self.name)
 
-        sourcexml = ElementTree.parse(urllib2.urlopen(URL, timeout=20))
+        try:
+            sourcexml = ElementTree.parse(urllib2.urlopen(URL, timeout=20))
+        except (urllib2.URLError, IOError, EOFError), e:
+            logger.error("Error fetching authorid: ", e)
+        
         rootxml = sourcexml.getroot()
         resultxml = rootxml.getiterator('author')
         authorlist = []
