@@ -9,13 +9,13 @@ class GoodReads:
     # http://www.goodreads.com/api/
 
     def __init__(self, name=None, type=None):
-        self.name = name.replace('.', '')
+        self.name = {"id": name}
         self.type = type
         self.params = {"key":  lazylibrarian.GR_API}
 
     def find_author_id(self):
 
-        URL = 'http://www.goodreads.com/api/author_url/' + urllib.quote(self.name) + '.xml?' + urllib.urlencode(self.params)
+        URL = 'http://www.goodreads.com/api/author_url/?' + urllib.urlencode(self.name) + '&' + urllib.urlencode(self.params)
         logger.info("Searching for author with name: %s" % self.name)
 
         try:
