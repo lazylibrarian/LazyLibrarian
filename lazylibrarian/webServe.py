@@ -157,14 +157,14 @@ class WebInterface(object):
     def authorPage(self, AuthorName, BookLang=None):
         myDB = database.DBConnection()
 
-        languages = myDB.select('SELECT DISTINCT BookLang from books WHERE AuthorName=?', [AuthorName])
+        languages = myDB.select('SELECT DISTINCT BookLang from books WHERE AuthorName=?', [AuthorName.replace("'","''")])
 
         if BookLang:
-            querybooks = "SELECT * from books WHERE BookLang='%s' AND AuthorName='%s' order by BookName ASC" % (BookLang, AuthorName)
+            querybooks = "SELECT * from books WHERE BookLang='%s' AND AuthorName='%s' order by BookName ASC" % (BookLang, AuthorName.replace("'","''"))
         else:
-            querybooks = "SELECT * from books WHERE AuthorName='%s' order by BookName ASC" % AuthorName
+            querybooks = "SELECT * from books WHERE AuthorName='%s' order by BookName ASC" % AuthorName.replace("'","''")
 
-        queryauthors = "SELECT * from authors WHERE AuthorName='%s'" % AuthorName
+        queryauthors = "SELECT * from authors WHERE AuthorName='%s'" % AuthorName.replace("'","''")
 
         author = myDB.action(queryauthors).fetchone()
         books = myDB.select(querybooks)

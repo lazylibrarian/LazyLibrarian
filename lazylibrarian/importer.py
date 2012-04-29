@@ -86,8 +86,9 @@ def addAuthorToDB(authorname=None):
 
     GR = GoodReads(authorname, type)
     GB = GoogleBooks(authorname, type)
+    
 
-    query = "SELECT * from authors WHERE AuthorName='%s'" % authorname
+    query = "SELECT * from authors WHERE AuthorName='%s'" % authorname.replace("'","''")
     dbauthor = myDB.action(query).fetchone()
     controlValueDict = {"AuthorName": authorname}
 
@@ -151,7 +152,7 @@ def addAuthorToDB(authorname=None):
             myDB.upsert("books", newValueDict, controlValueDict)
             bookscount = bookscount+1 
 
-    lastbook = myDB.action("SELECT BookName, BookLink, BookDate from books WHERE AuthorName='%s' order by BookDate DESC" % authorname).fetchone()
+    lastbook = myDB.action("SELECT BookName, BookLink, BookDate from books WHERE AuthorName='%s' order by BookDate DESC" % authorname.replace("'","''")).fetchone()
     controlValueDict = {"AuthorName": authorname}
     newValueDict = {
         "Status": "Active",
