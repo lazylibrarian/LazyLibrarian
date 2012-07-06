@@ -1,5 +1,11 @@
 ## LazyLibrarian
 
+#### PLEASE READ THE FOLLOWING
+Due to personal reasons I can't find the time anymore to work on this project. If you like it and know you way around in python, create a master repo of this for yourself and continue developing. Sometimes I have some minutes to spare, so I will contribute to your repo, but between now and a year ahead I am too busy with other projects that consume all 'spare' time that I have. So if you like to be master of a gitproject, feel free to use LazyLibrarian for it. When someone else has started developing in another repo I will delete this one and clone the other repo here.
+
+To create a masterrepo: clone lazylibrarian into a folder, delete the .git folder inside and follow the normal instructions to start/upload your own repo.
+#### IMPORTANT
+
 Author: Mar2zz  
 Blogs: mar2zz.tweakblogs.net  
 License: GNU GPL v3  
