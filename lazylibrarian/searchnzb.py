@@ -29,24 +29,19 @@ def searchbook(books=None):
         bookid = searchbook[0]
         author = searchbook[1]
         book = searchbook[2]
-        
-        
-
-        #dic = {'...':'', ' & ':' ', ' = ': ' ', '?':'', '$':'s', ' + ':' ', '"':'', ',':'', '*':''}
-
-        #author = formatter.latinToAscii(formatter.replace_all(author, dic))
-        #book = formatter.latinToAscii(formatter.replace_all(book, dic))
-        
+               
         author = MakeSearchTermWebSafe(author)
         book   = MakeSearchTermWebSafe(book)
         searchterm = author + ' ' + book
         searchlist.append({"bookid": bookid, "searchterm": searchterm, "author": author, "title":book })
 
     if not lazylibrarian.SAB_HOST and not lazylibrarian.BLACKHOLE:
-        logger.info('No downloadmethod is set, use SABnzbd or blackhole')
+        logger.info('No download method is set, use SABnzbd or blackhole. Now your wasting your time. Check Config page')
+        return
 
-    if not lazylibrarian.NEWZNAB and lazylibrarian.NZBMATRIX and lazylibrarian.UsenetCrawler :
-        logger.info('No providers are set.')
+    if not lazylibrarian.NEWZNAB and not lazylibrarian.NZBMATRIX and not lazylibrarian.USENETCRAWLER  :
+        logger.info('No providers are set. Use Config settings and enable at least 1')
+        return
 
 
     for book in searchlist:
