@@ -15,10 +15,12 @@ def searchbook(books=None):
     searchlist = []
 
     if books is None:
+        logger.debug('Searching for all books with status WANTED')
         searchbooks = myDB.select('SELECT BookID, AuthorName, Bookname from books WHERE Status="Wanted"')
     else:
         searchbooks = []
         for book in books:
+            logger.debug('Looking for BookID %s ' % book['bookid'])
             searchbook = myDB.select('SELECT BookID, AuthorName, BookName from books WHERE BookID=? AND Status="Wanted"', [book['bookid']])
             for terms in searchbook:
                 searchbooks.append(terms)
@@ -27,21 +29,25 @@ def searchbook(books=None):
         bookid = searchbook[0]
         author = searchbook[1]
         book = searchbook[2]
+        
+        
 
-        dic = {'...':'', ' & ':' ', ' = ': ' ', '?':'', '$':'s', ' + ':' ', '"':'', ',':'', '*':''}
+        #dic = {'...':'', ' & ':' ', ' = ': ' ', '?':'', '$':'s', ' + ':' ', '"':'', ',':'', '*':''}
 
-        author = formatter.latinToAscii(formatter.replace_all(author, dic))
-        book = formatter.latinToAscii(formatter.replace_all(book, dic))
-
+        #author = formatter.latinToAscii(formatter.replace_all(author, dic))
+        #book = formatter.latinToAscii(formatter.replace_all(book, dic))
+        
+        author = MakeSearchTermWebSafe(author)
+        book   = MakeSearchTermWebSafe(book)
         searchterm = author + ' ' + book
-        searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
-        searchlist.append({"bookid": bookid, "searchterm": searchterm})
+        searchlist.append({"bookid": bookid, "searchterm": searchterm, "author": author, "title":book })
 
     if not lazylibrarian.SAB_HOST and not lazylibrarian.BLACKHOLE:
         logger.info('No downloadmethod is set, use SABnzbd or blackhole')
 
-    if not lazylibrarian.NEWZNAB:
+    if not lazylibrarian.NEWZNAB and lazylibrarian.NZBMATRIX and lazylibrarian.UsenetCrawler :
         logger.info('No providers are set.')
+
 
     for book in searchlist:
         resultlist = []
@@ -52,6 +58,10 @@ def searchbook(books=None):
         if lazylibrarian.NZBMATRIX and not resultlist:
             logger.info('Searching NZB at provider NZBMatrix ...')
             resultlist = providers.NZBMatrix(book)
+            
+        if lazylibrarian.USENETCRAWLER and not resultlist:
+            logger.info('Searching NZB\'s at provider UsenetCrawler ...')
+            resultlist = providers.UsenetCrawler(book)
 
         if not resultlist:
             logger.info("Search didn't have results. Adding book %s to queue." % book['searchterm'])
@@ -120,5 +130,16 @@ def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
 
 
 
+def MakeSearchTermWebSafe(insearchterm=None):
 
+        dic = {'...':'', ' & ':' ', ' = ': ' ', '?':'', '$':'s', ' + ':' ', '"':'', ',':'', '*':''}
+
+        searchterm = formatter.latinToAscii(formatter.replace_all(insearchterm, dic))
+
+        searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
+        
+        logger.debug("Converting Search Term [%s] to Web Safe Search Term [%s]" % (insearchterm, searchterm))
+        
+        return searchterm
+ 
 

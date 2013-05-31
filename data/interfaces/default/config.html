@@ -132,6 +132,9 @@
                 <td>
                     <h3><input type="checkbox" name="nzbmatrix" value=1 ${config['use_nzbmatrix']} /> NZBMatrix</h3>
                 </td>
+                <td>
+                    <h3><input type="checkbox" name="usenetcrawler" value=1 ${config['use_usenetcrawler']} /> Usenet Crawler</h3>
+                </td>
             </tr>
             <tr>
                 <td>
@@ -145,6 +148,10 @@
                 <td>
                     <h5>User:</h5><input type="text" name="nzbmatrix_user" value="${config['nzbmatrix_user']}" size="15" maxlength="40">
                     <h5>Api:</h5><input type="text" name="nzbmatrix_api" value="${config['nzbmatrix_api']}" size="30" maxlength="40">
+                </td>
+                <td>
+                    <h5>Host (no trailing /):</h5><input type="text" name="usenetcrawler_host" value="${config['usenetcrawler_host']}" size="40" maxlength="40">
+                    <h5>Api:</h5><input type="text" name="usenetcrawler_api" value="${config['usenetcrawler_api']}" size="40" maxlength="40">
                 </td>
             </tr>
         </table>

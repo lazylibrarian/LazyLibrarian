@@ -76,6 +76,10 @@ NEWZBIN = False
 NEWZBIN_UID = None
 NEWZBIN_PASSWORD = None
 
+USENETCRAWLER = False
+USENETCRAWLER_API = None
+USENETCRAWLER_HOST = None
+
 SEARCH_INTERVAL = 360
 SCAN_INTERVAL = 10
 
@@ -162,7 +166,7 @@ def initialize():
 
         global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, \
             IMP_ONLYISBN, IMP_PREFLANG, SAB_HOST, SAB_PORT, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, BLACKHOLE, BLACKHOLEDIR, GR_API, \
-            NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS
+            NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, USENETCRAWLER, USENETCRAWLER_HOST, USENETCRAWLER_API
 
         if __INITIALIZED__:
             return False
@@ -212,6 +216,10 @@ def initialize():
         NEWZNAB = bool(check_setting_int(CFG, 'Newznab', 'newznab', 0))
         NEWZNAB_HOST = check_setting_str(CFG, 'Newznab', 'newznab_host', '')
         NEWZNAB_API = check_setting_str(CFG, 'Newznab', 'newznab_api', '')
+
+        USENETCRAWLER = bool(check_setting_int(CFG, 'UsenetCrawler', 'usenetcrawler', 0))
+        USENETCRAWLER_HOST = check_setting_str(CFG, 'UsenetCrawler', 'usenetcrawler_host', '')
+        USENETCRAWLER_API = check_setting_str(CFG, 'UsenetCrawler', 'usenetcrawler_api', '')
 
         NEWZBIN = bool(check_setting_int(CFG, 'Newzbin', 'newzbin', 0))
         NEWZBIN_UID = check_setting_str(CFG, 'Newzbin', 'newzbin_uid', '')
@@ -337,10 +345,16 @@ def config_write():
     new_config['Newznab']['newznab_host'] = NEWZNAB_HOST
     new_config['Newznab']['newznab_api'] = NEWZNAB_API
 
+
     new_config['Newzbin'] = {}
     new_config['Newzbin']['newzbin'] = int(NEWZBIN)
     new_config['Newzbin']['newzbin_uid'] = NEWZBIN_UID
     new_config['Newzbin']['newzbin_pass'] = NEWZBIN_PASS
+
+    new_config['UsenetCrawler'] = {}
+    new_config['UsenetCrawler']['usenetcrawler'] = int(USENETCRAWLER)
+    new_config['UsenetCrawler']['usenetcrawler_host'] = USENETCRAWLER_HOST
+    new_config['UsenetCrawler']['usenetcrawler_api'] = USENETCRAWLER_API
 
     new_config.write()
 
