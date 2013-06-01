@@ -57,9 +57,6 @@ def processDir():
 
                 processBook = processDestination(pp_path, dest_path, authorname, bookname)
 
-                #TODO - Remove this later - just makes debug easier
-                processAutoAdd(dest_path)
-
 
                 if processBook:
 
@@ -67,7 +64,7 @@ def processDir():
                     
                     # If you use auto add by Calibre you need the book in a single directory, not nested
                     #So take the file you Copied/Moved to Dest_path and copy it to a Calibre auto add folder.
-                    #processAutoAdd(dest_path)
+                    processAutoAdd(dest_path)
 
                     # try image
                     processIMG(dest_path, bookimg)
