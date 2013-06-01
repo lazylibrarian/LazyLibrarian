@@ -145,9 +145,6 @@ def check_setting_int(config, cfg_name, item_name, def_val):
 ################################################################################
 def check_setting_str(config, cfg_name, item_name, def_val, log=True):
 
-    #print "Cfg Name ["+cfg_name+"] Item name ["+item_name + "] -> [" + def_val +"]"
-
-
     try:
         my_val = config[cfg_name][item_name]
     except:
@@ -159,12 +156,10 @@ def check_setting_str(config, cfg_name, item_name, def_val, log=True):
             config[cfg_name][item_name] = my_val
 
     if log:
-        print "Cfg Name ["+cfg_name+"] Item name ["+item_name + "] -> [" + my_val +"]"
         logger.debug(item_name + " -> " + my_val)
     else:
         logger.debug(item_name + " -> ******")
 
-    logger.debug(item_name + " -> " + my_val)
     return my_val
 
 def initialize():
@@ -189,6 +184,22 @@ def initialize():
         if HTTP_PORT < 21 or HTTP_PORT > 65535:
             HTTP_PORT = 5299
 
+        LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
+        if not LOGDIR:
+            LOGDIR = os.path.join(DATADIR, 'Logs')
+        # Create logdir
+        if not os.path.exists(LOGDIR):
+            try:
+                os.makedirs(LOGDIR)
+            except OSError:
+                if LOGLEVEL:
+                    print LOGDIR + ":"
+                    print ' Unable to create folder for logs. Only logging to console.'
+
+        # Start the logger, silence console logging if we need to
+        logger.lazylibrarian_log.initLogger(loglevel=LOGLEVEL)
+
+
         HTTP_HOST = check_setting_str(CFG, 'General', 'http_host', '0.0.0.0')
         HTTP_USER = check_setting_str(CFG, 'General', 'http_user', '')
         HTTP_PASS = check_setting_str(CFG, 'General', 'http_pass', '')
@@ -196,7 +207,6 @@ def initialize():
         HTTP_LOOK = check_setting_str(CFG, 'General', 'http_look', 'default')
 
         LAUNCH_BROWSER = bool(check_setting_int(CFG, 'General', 'launch_browser', 1))
-        LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
 
         IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', IMP_PREFLANG)
         IMP_AUTOADD = check_setting_str(CFG, 'General', 'imp_autoadd', IMP_AUTOADD)
@@ -236,8 +246,7 @@ def initialize():
         NEWZBIN_UID = check_setting_str(CFG, 'Newzbin', 'newzbin_uid', '')
         NEWZBIN_PASS = check_setting_str(CFG, 'Newzbin', 'newzbin_pass', '')
 
-        if not LOGDIR:
-            LOGDIR = os.path.join(DATADIR, 'Logs')
+
 
         # Put the cache dir in the data dir for now
         CACHEDIR = os.path.join(DATADIR, 'cache')
@@ -246,18 +255,6 @@ def initialize():
                 os.makedirs(CACHEDIR)
             except OSError:
                 logger.error('Could not create cachedir. Check permissions of: ' + DATADIR)
-
-        # Create logdir
-        if not os.path.exists(LOGDIR):
-            try:
-                os.makedirs(LOGDIR)
-            except OSError:
-                if LOGLEVEL:
-                    print LOGDIR + ":"
-                    print ' Unable to create folder for logs. Only logging to console.'
-
-        # Start the logger, silence console logging if we need to
-        logger.lazylibrarian_log.initLogger(loglevel=LOGLEVEL)
 
         # Initialize the database
         try:
