@@ -39,7 +39,7 @@ def UsenetCrawler(book=None):
     try:
         data = ElementTree.parse(urllib2.urlopen(URL, timeout=30))
     except (urllib2.URLError, IOError, EOFError), e:
-        logger.warn('Error fetching data from %s: %s' % (HOST, e))
+        logger.Error('Error fetching data from %s: %s' % (HOST, e))
         data = None
 
     if data:

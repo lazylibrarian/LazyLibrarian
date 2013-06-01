@@ -61,6 +61,7 @@ USENET_RETENTION = None
 
 IMP_PREFLANG = 'en'
 IMP_ONLYISBN = False
+IMP_AUTOADD = None
 
 GR_API = 'ckvsiSDsuqh7omh74ZZ6Q'
 
@@ -143,6 +144,10 @@ def check_setting_int(config, cfg_name, item_name, def_val):
 # Check_setting_str                                                            #
 ################################################################################
 def check_setting_str(config, cfg_name, item_name, def_val, log=True):
+
+    #print "Cfg Name ["+cfg_name+"] Item name ["+item_name + "] -> [" + def_val +"]"
+
+
     try:
         my_val = config[cfg_name][item_name]
     except:
@@ -154,10 +159,12 @@ def check_setting_str(config, cfg_name, item_name, def_val, log=True):
             config[cfg_name][item_name] = my_val
 
     if log:
+        print "Cfg Name ["+cfg_name+"] Item name ["+item_name + "] -> [" + my_val +"]"
         logger.debug(item_name + " -> " + my_val)
     else:
         logger.debug(item_name + " -> ******")
 
+    logger.debug(item_name + " -> " + my_val)
     return my_val
 
 def initialize():
@@ -165,7 +172,7 @@ def initialize():
     with INIT_LOCK:
 
         global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, \
-            IMP_ONLYISBN, IMP_PREFLANG, SAB_HOST, SAB_PORT, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, BLACKHOLE, BLACKHOLEDIR, GR_API, \
+            IMP_ONLYISBN, IMP_PREFLANG, IMP_AUTOADD, SAB_HOST, SAB_PORT, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, BLACKHOLE, BLACKHOLEDIR, GR_API, \
             NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, USENETCRAWLER, USENETCRAWLER_HOST, USENETCRAWLER_API
 
         if __INITIALIZED__:
@@ -192,8 +199,12 @@ def initialize():
         LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
 
         IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', IMP_PREFLANG)
+        IMP_AUTOADD = check_setting_str(CFG, 'General', 'imp_autoadd', IMP_AUTOADD)
         IMP_ONLYISBN = bool(check_setting_int(CFG, 'General', 'imp_onlyisbn', 0))
-
+        #TODO - investigate this for future users
+        #Something funny here - putting IMP_AUTOADD after IMP_ONLYISBN resulted in it not working
+        #Couldn't see it
+            
         SAB_HOST = check_setting_str(CFG, 'SABnzbd', 'sab_host', '')
         SAB_PORT = check_setting_str(CFG, 'SABnzbd', 'sab_port', '')
         SAB_USER = check_setting_str(CFG, 'SABnzbd', 'sab_user', '')
@@ -319,6 +330,7 @@ def config_write():
 
     new_config['General']['imp_onlyisbn'] = int(IMP_ONLYISBN)
     new_config['General']['imp_preflang'] = IMP_PREFLANG
+    new_config['General']['imp_autoadd'] =  IMP_AUTOADD
 
     new_config['SABnzbd'] = {}
     new_config['SABnzbd']['sab_host'] = SAB_HOST

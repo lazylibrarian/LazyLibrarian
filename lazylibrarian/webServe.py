@@ -71,6 +71,7 @@ class WebInterface(object):
                     "logdir" :          lazylibrarian.LOGDIR,
                     "use_imp_onlyisbn": checked(lazylibrarian.IMP_ONLYISBN),
                     "imp_preflang":     lazylibrarian.IMP_PREFLANG,
+                    "imp_autoadd":      lazylibrarian.IMP_AUTOADD,
                     "sab_host":         lazylibrarian.SAB_HOST,
                     "sab_port":         lazylibrarian.SAB_PORT,
                     "sab_api":          lazylibrarian.SAB_API,
@@ -99,7 +100,7 @@ class WebInterface(object):
         return serve_template(templatename="config.html", title="Settings", config=config)    
     config.exposed = True
 
-    def configUpdate(self, http_host='0.0.0.0', http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, imp_onlyisbn=0, imp_preflang=None,
+    def configUpdate(self, http_host='0.0.0.0', http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, imp_onlyisbn=0, imp_preflang=None, imp_autoadd=None,
         sab_host=None, sab_port=None, sab_api=None, sab_user=None, sab_pass=None, destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, blackhole=0, blackholedir=None,
         nzbmatrix=0, nzbmatrix_user=None, nzbmatrix_api=None, newznab=0, newznab_host=None, newznab_api=None, newzbin=0, newzbin_uid=None, newzbin_pass=None, usenetcrawler = 0, usenetcrawler_host=None, usenetcrawler_api = None):
 
@@ -113,6 +114,7 @@ class WebInterface(object):
 
         lazylibrarian.IMP_ONLYISBN = imp_onlyisbn
         lazylibrarian.IMP_PREFLANG = imp_preflang
+        lazylibrarian.IMP_AUTOADD  = imp_autoadd
 
         lazylibrarian.SAB_HOST = sab_host
         lazylibrarian.SAB_PORT = sab_port

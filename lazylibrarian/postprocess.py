@@ -11,7 +11,14 @@ def processDir():
     threading.currentThread().name = "POSTPROCESS"
 
     processpath = lazylibrarian.DOWNLOAD_DIR
-    downloads = os.listdir(processpath)
+    
+    #TODO - try exception on os.listdir - it throws debug level 
+    #exception if dir doesn't exist - bloody hard to catch
+    try :
+        downloads = os.listdir(processpath)
+    except OSError:
+            logger.error('Could not access [%s] directory ' % processpath)
+            
     myDB = database.DBConnection()
     snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
 
@@ -48,9 +55,17 @@ def processDir():
 
                 processBook = processDestination(pp_path, dest_path, authorname, bookname)
 
+                #TODO - Remove this later - just makes debug easier
+                processAutoAdd(dest_path)
+
+
                 if processBook:
 
                     ppcount = ppcount+1
+                    
+                    # If you use auto add by Calibre you need the book in a single directory, not nested
+                    #So take the file you Copied/Moved to Dest_path and copy it to a Calibre auto add folder.
+                    processAutoAdd(dest_path)
 
                     # try image
                     processIMG(dest_path, bookimg)
@@ -99,9 +114,31 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             logger.error('Could not create destinationfolder. Check permissions of: ' + lazylibrarian.DESTINATION_DIR)
             pp = False
     else:
+        logger.error('Directory [%s] exists. Playing safe - and not over writing from [%s]' % (dest_path, pp_path))
         pp = False
     return pp
 
+def processAutoAdd(src_path=None):
+    #Called to copy the book files to an auto add directory for the likes of Calibre which can't do nested dirs
+    autoadddir = lazylibrarian.IMP_AUTOADD
+    logger.debug('Attempt to copy from [%s] to [%s]' % (src_path, autoadddir))
+    
+    
+    if not os.path.exists(autoadddir):
+        logger.error('AutoAdd directory [%s] is missing or not set - cannot perform autoadd copy' % autoadddir)
+        return False
+    else:
+        #Now try and copy all the book files into a single dir.
+        try:
+            shutil.copytree(src_path, autoadddir)
+            logger.info('Successfully copied [%s] to [%s].' % (src_path, autoadddir))
+        except OSError:
+            logger.error('Could not create destinationfolder. Check permissions of: [%s]'  % autoadddir)
+            return False
+            
+    logger.info('Auto Add completed for [%s]' % src_path)
+    return True
+    
 def processIMG(dest_path=None, bookimg=None):
     #handle pictures
     try:
