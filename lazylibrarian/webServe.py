@@ -257,6 +257,7 @@ class WebInterface(object):
     markBooks.exposed = True
 
     def manProcess(self):
+        logger.debug('Manual Processing initiated')
         threading.Thread(target=postprocess.processDir).start()
         raise cherrypy.HTTPRedirect("books")
     manProcess.exposed = True

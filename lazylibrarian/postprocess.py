@@ -12,6 +12,8 @@ def processDir():
 
     processpath = lazylibrarian.DOWNLOAD_DIR
     
+    logger.debug(' Checking [%s] for files to post process' % processpath)
+    
     #TODO - try exception on os.listdir - it throws debug level 
     #exception if dir doesn't exist - bloody hard to catch
     try :
@@ -65,7 +67,7 @@ def processDir():
                     
                     # If you use auto add by Calibre you need the book in a single directory, not nested
                     #So take the file you Copied/Moved to Dest_path and copy it to a Calibre auto add folder.
-                    processAutoAdd(dest_path)
+                    #processAutoAdd(dest_path)
 
                     # try image
                     processIMG(dest_path, bookimg)
@@ -93,9 +95,10 @@ def processDir():
 
                     logger.info('Successfully processed: %s - %s' % (authorname, bookname))
                 else:
-                    logger.info('Postprocessing for %s has failed.' % bookname)
+                    logger.error('Postprocessing for %s has failed. Warning - AutoAdd will be repeated' % bookname)
         if ppcount:
             logger.info('%s books are downloaded and processed.' % ppcount)
+    logger.debug(' - Completed all snatched/downloaded files')
 
 def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None):
 
@@ -121,7 +124,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 def processAutoAdd(src_path=None):
     #Called to copy the book files to an auto add directory for the likes of Calibre which can't do nested dirs
     autoadddir = lazylibrarian.IMP_AUTOADD
-    logger.debug('Attempt to copy from [%s] to [%s]' % (src_path, autoadddir))
+    logger.debug('AutoAdd - Attempt to copy from [%s] to [%s]' % (src_path, autoadddir))
     
     
     if not os.path.exists(autoadddir):
@@ -129,13 +132,29 @@ def processAutoAdd(src_path=None):
         return False
     else:
         #Now try and copy all the book files into a single dir.
+        
         try:
-            shutil.copytree(src_path, autoadddir)
-            logger.info('Successfully copied [%s] to [%s].' % (src_path, autoadddir))
-        except OSError:
-            logger.error('Could not create destinationfolder. Check permissions of: [%s]'  % autoadddir)
+            names = os.listdir(src_path)
+            #TODO : 3 files jpg, opf & book should have same name
+            #Caution - book may be pdf, mobi, epub or all 3.
+            #for now simply copy all files, and let the autoadder sort it out
+
+            #os.makedirs(autoadddir)
+            errors = []
+            for name in names:
+                srcname = os.path.join(src_path, name)
+                dstname = os.path.join(autoadddir, name)
+                logger.debug('AutoAdd Coping named file [%s] as copy [%s] to [%s]' % (name, srcname, dstname))
+                try:
+                    shutil.copy2(srcname, dstname)
+                except (IOError, os.error) as why:
+                    logger.error('AutoAdd - Failed to copy file because [%s] ' % str(why))
+
+                    
+        except OSError as why:
+            logger.error('AutoAdd - Failed because [%s]'  % str(why))
             return False
-            
+        
     logger.info('Auto Add completed for [%s]' % src_path)
     return True
     
