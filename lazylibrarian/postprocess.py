@@ -125,14 +125,14 @@ def processAutoAdd(src_path=None):
     
     
     if not os.path.exists(autoadddir):
-        logger.error('AutoAdd directory [%s] is missing or not set - cannot perform autoadd copy' % autoadddir)
+        logger.info('AutoAdd directory [%s] is missing or not set - cannot perform autoadd copy' % autoadddir)
         return False
     else:
         #Now try and copy all the book files into a single dir.
         
         try:
             names = os.listdir(src_path)
-            #TODO : 3 files jpg, opf & book should have same name
+            #TODO : n files jpg, opf & book(s) should have same name
             #Caution - book may be pdf, mobi, epub or all 3.
             #for now simply copy all files, and let the autoadder sort it out
 
