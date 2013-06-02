@@ -41,9 +41,9 @@ def SABnzbd(title=None, nzburl=None):
 
     try:
         request = urllib.urlopen(URL)
-
+        
     except (EOFError, IOError), e:
-        logger.error(u"Unable to connect to SAB with URL: %s" % url)
+        logger.error(u"Unable to connect to SAB with URL: %s" % URL)
         return False
 
     except httplib.InvalidURL, e:
