@@ -209,7 +209,7 @@ def initialize():
         LAUNCH_BROWSER = bool(check_setting_int(CFG, 'General', 'launch_browser', 1))
 
         IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', IMP_PREFLANG)
-        IMP_AUTOADD = check_setting_str(CFG, 'General', 'imp_autoadd', IMP_AUTOADD)
+        IMP_AUTOADD = check_setting_str(CFG, 'General', 'imp_autoadd', '')
         IMP_ONLYISBN = bool(check_setting_int(CFG, 'General', 'imp_onlyisbn', 0))
         #TODO - investigate this for future users
         #Something funny here - putting IMP_AUTOADD after IMP_ONLYISBN resulted in it not working
