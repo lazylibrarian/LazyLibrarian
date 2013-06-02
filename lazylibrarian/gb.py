@@ -2,6 +2,7 @@
 # https://www.googleapis.com/books/v1/volumes?q=+inauthor:george+martin+intitle:song+ice+fire
 
 import urllib, urllib2, json, time
+from urllib2 import HTTPError
 
 import lazylibrarian
 from lazylibrarian import logger, formatter, database
@@ -37,7 +38,11 @@ class GoogleBooks:
                 self.params['startIndex'] = startindex
                 URL = set_url + '&' + urllib.urlencode(self.params)
 
-                jsonresults = json.JSONDecoder().decode(urllib2.urlopen(URL, timeout=30).read())
+                try:
+                    jsonresults = json.JSONDecoder().decode(urllib2.urlopen(URL, timeout=30).read())
+                except HTTPError, err:
+                    logger.Error('Google API returned HTTP Error - probably time/rate limiting - [%s]' % err.msg)
+                    
                 startindex = startindex+40
 
                 for item in jsonresults['items']:
