@@ -47,6 +47,7 @@ LAUNCH_BROWSER = False
 
 SAB_HOST = None
 SAB_PORT = None
+SAN_SUBDIR=None
 SAB_USER = None
 SAB_PASS = None
 SAB_API = None
@@ -167,7 +168,7 @@ def initialize():
     with INIT_LOCK:
 
         global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, \
-            IMP_ONLYISBN, IMP_PREFLANG, IMP_AUTOADD, SAB_HOST, SAB_PORT, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, BLACKHOLE, BLACKHOLEDIR, GR_API, \
+            IMP_ONLYISBN, IMP_PREFLANG, IMP_AUTOADD, SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, BLACKHOLE, BLACKHOLEDIR, GR_API, \
             NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, USENETCRAWLER, USENETCRAWLER_HOST, USENETCRAWLER_API
 
         if __INITIALIZED__:
@@ -217,6 +218,7 @@ def initialize():
             
         SAB_HOST = check_setting_str(CFG, 'SABnzbd', 'sab_host', '')
         SAB_PORT = check_setting_str(CFG, 'SABnzbd', 'sab_port', '')
+        SAB_SUBDIR = check_setting_str(CFG, 'SABnzbd', 'sab_subdir', '')
         SAB_USER = check_setting_str(CFG, 'SABnzbd', 'sab_user', '')
         SAB_PASS = check_setting_str(CFG, 'SABnzbd', 'sab_pass', '')
         SAB_API = check_setting_str(CFG, 'SABnzbd', 'sab_api', '')
@@ -332,6 +334,7 @@ def config_write():
     new_config['SABnzbd'] = {}
     new_config['SABnzbd']['sab_host'] = SAB_HOST
     new_config['SABnzbd']['sab_port'] = SAB_PORT
+    new_config['SABnzbd']['sab_subdir'] = SAB_SUBDIR
     new_config['SABnzbd']['sab_user'] = SAB_USER
     new_config['SABnzbd']['sab_pass'] = SAB_PASS
     new_config['SABnzbd']['sab_api'] = SAB_API

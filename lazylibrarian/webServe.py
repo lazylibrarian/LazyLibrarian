@@ -74,6 +74,7 @@ class WebInterface(object):
                     "imp_autoadd":      lazylibrarian.IMP_AUTOADD,
                     "sab_host":         lazylibrarian.SAB_HOST,
                     "sab_port":         lazylibrarian.SAB_PORT,
+                    "sab_subdir":         lazylibrarian.SAB_SUBDIR,                    
                     "sab_api":          lazylibrarian.SAB_API,
                     "sab_user":         lazylibrarian.SAB_USER,
                     "sab_pass":         lazylibrarian.SAB_PASS,
@@ -101,7 +102,7 @@ class WebInterface(object):
     config.exposed = True
 
     def configUpdate(self, http_host='0.0.0.0', http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, imp_onlyisbn=0, imp_preflang=None, imp_autoadd=None,
-        sab_host=None, sab_port=None, sab_api=None, sab_user=None, sab_pass=None, destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, blackhole=0, blackholedir=None,
+        sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None, destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, blackhole=0, blackholedir=None,
         nzbmatrix=0, nzbmatrix_user=None, nzbmatrix_api=None, newznab=0, newznab_host=None, newznab_api=None, newzbin=0, newzbin_uid=None, newzbin_pass=None, usenetcrawler = 0, usenetcrawler_host=None, usenetcrawler_api = None):
 
         lazylibrarian.HTTP_HOST = http_host
@@ -118,6 +119,7 @@ class WebInterface(object):
 
         lazylibrarian.SAB_HOST = sab_host
         lazylibrarian.SAB_PORT = sab_port
+        lazylibrarian.SAB_SUBDIR = sab_subdir
         lazylibrarian.SAB_API = sab_api
         lazylibrarian.SAB_USER = sab_user
         lazylibrarian.SAB_PASS = sab_pass

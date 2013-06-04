@@ -7,9 +7,13 @@ from lazylibrarian import logger, database
 
 def SABnzbd(title=None, nzburl=None):
 
-    HOST = lazylibrarian.SAB_HOST + ":" + lazylibrarian.SAB_PORT
+    HOST = lazylibrarian.SAB_HOST + ":" + lazylibrarian.SAB_PORT 
     if not str(HOST)[:4] == "http":
         HOST = 'http://' + HOST
+
+
+    if lazylibrarian.SAB_SUBDIR:
+        HOST = HOST + "/" + lazylibrarian.SAB_SUBDIR
 
     params = {}
 
