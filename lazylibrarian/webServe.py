@@ -184,37 +184,44 @@ class WebInterface(object):
         return serve_template(templatename="author.html", title=author['AuthorName'], author=author, books=books, languages=languages)
     authorPage.exposed = True
 
-    def pauseAuthor(self, AuthorID):
+    def pauseAuthor(self, AuthorID, AuthorName):
         logger.info(u"Pausing author: " + AuthorID)
         myDB = database.DBConnection()
         controlValueDict = {'AuthorID': AuthorID}
         newValueDict = {'Status': 'Paused'}
         myDB.upsert("authors", newValueDict, controlValueDict)
-        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+        logger.debug('AuthorID [%s]-[%s] Paused - redirecting to Author home page' % (AuthorID,AuthorName))
+        raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     pauseAuthor.exposed = True
 
-    def resumeAuthor(self, AuthorID):
+    def resumeAuthor(self, AuthorID, AuthorName):
         logger.info(u"Resuming author: " + AuthorID)
         myDB = database.DBConnection()
         controlValueDict = {'AuthorID': AuthorID}
         newValueDict = {'Status': 'Active'}
         myDB.upsert("authors", newValueDict, controlValueDict)
-        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+        logger.debug('AuthorID [%s]-[%s] Restarted - redirecting to Author home page' % (AuthorID,AuthorName))
+        raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     resumeAuthor.exposed = True
 
-    def deleteAuthor(self, AuthorID):
-        logger.info(u"Removing author: " + AuthorID)
+    def deleteAuthor(self, AuthorID, AuthorName):
+        logger.info(u"Removing author: [%s]-[%s]" % (AuthorID,AuthorName))
         myDB = database.DBConnection()
         myDB.action('DELETE from authors WHERE AuthorID=?', [AuthorID])
         myDB.action('DELETE from books WHERE AuthorID=?', [AuthorID])
         raise cherrypy.HTTPRedirect("home")
     deleteAuthor.exposed = True
 
+    #Looks like this one is never called, but if it is will need to change
+    #redirect to authorPage?AuthorName=%s and pass in AuthorName as per
+    #Resume/Delete functions above.
+    #Cannot find how the parameter is decoded, but AuthorID will not work, MUST be authorname
     def refreshAuthor(self, AuthorID):
         importer.addAuthorToDB(AuthorID)
+        logger.debug('Refresh Author page for Author %s '% AuthorID)
         raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
     refreshAuthor.exposed=True
-
+ 
     def addResults(self, action=None, **args):
         for arg in args:
             if not arg == 'book_table_length':

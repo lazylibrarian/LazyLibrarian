@@ -15,16 +15,16 @@
                 %endfor
             %endif
             <li>Action:&nbsp</li>
-            <li><a href="deleteAuthor?AuthorID=${author['AuthorID']}"> delete </a></li>
+            <li><a href="deleteAuthor?AuthorID=${author['AuthorID']}&AuthorName=${author['AuthorName']}"> delete </a></li>
             <li>|</li>
             %if author['Status'] == 'Paused':
-                <li><a href="resumeAuthor?AuthorID=${author['AuthorID']}"> resume </a></li>
+                <li><a href="resumeAuthor?AuthorID=${author['AuthorID']}&AuthorName=${author['AuthorName']}"> resume </a></li>
             %else:
-                <li><a href="pauseAuthor?AuthorID=${author['AuthorID']}"> pause </a></li>
+                <li><a href="pauseAuthor?AuthorID=${author['AuthorID']}&AuthorName=${author['AuthorName']}"> pause </a></li>
             %endif
         </ul>
     </div>
-</%def>
+</%def> 
 
 <%def name="body()">
     <div id="authorart_container">
