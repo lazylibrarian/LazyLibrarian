@@ -14,36 +14,112 @@
     <title>LazyLibrarian - ${title}</title>
     <meta name="description" content="">
     <meta name="author" content="">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="shortcut icon" type="image/png"  href="images/favicon.ico">
     <link rel="apple-touch-icon" href="images/templogo.png">
     <link rel="stylesheet" href="css/style.css?v=2">
-    ${next.headIncludes()}
-
+    <script type="text/javascript" src="js/mootools.js"></script>
+    <script type="text/javascript" src="js/mootools_more.js"></script>
+    <script src="js/jquery-1.8.2.js"></script>
     <script src="js/libs/modernizr-1.7.min.js"></script>
+    <script src="js/script.js"></script>
+    <script src="js/nav.js"></script>
+    <script src="js/jquery.clearsearch.js"></script>
+    <script src="js/question.js"></script>
+    <script src="js/lazylibrarian.js"></script>
+    ${next.headIncludes()}
+	<script>
+	// Edit to suit your needs.
+	var ADAPT_CONFIG = {
+	  // Where is your CSS?
+	  path: 'css/',
+
+	  // false = Only run once, when page first loads.
+	  // true = Change on window resize and page tilt.
+	  dynamic: true,
+
+	  // First range entry is the minimum.
+	  // Last range entry is the maximum.
+	  // Separate ranges by "to" keyword.
+	  range: [
+	    '0px    to 320px  = mobile.css',
+		'321px    to 640px  = iphone4_portrait.css',
+		'641px  to 768px  = ipad_portrait.css',
+		'768px  to 1024px  = ipad_landscape.css',
+	    '1024px  to 2540px  = style.css',
+	  ]
+	};
+	</script>
+	<script src="js/adapt.min.js"></script>
+    <script>
+        // Script to add a clear button to the search author input box
+        $(document).ready(function () {
+            $('input.deletable').wrap('<span class="" id="deleteicon"/>').after($('<span/>').click(function () {
+                $(this).prev('input').val('').focus();
+                $('#deleteicon').removeClass('deleteicon');
+            }));
+
+            $('input.deletable').bind('input', function () {
+                if ($(this).val() == "") // get the current value of the input field.
+                {
+                    $('#deleteicon').removeClass('deleteicon');
+                }
+                else {
+                    $('#deleteicon').addClass('deleteicon');
+                }
+            });
+        });
+    </script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+    <script>!window.jQuery && document.write(unescape('%3Cscript src="js/libs/jquery-1.6.2.min.js"%3E%3C/script%3E'))</script>
+    ${next.javascriptIncludes()}
+    <script language="JavaScript">
+        function toggleAll(source) {
+            checkboxes = document.getElementsByClassName('checkbox');
+            for (var i in checkboxes)
+                checkboxes[i].checked = source.checked;
+        }
+    </script>
+    <script src="js/plugins.js"></script>
+    <script src="js/script.js"></script>
 </head>
 <body>
     <div id="container">
+		<div id="ajaxMsg"></div>
+            % if lazylibrarian.INSTALL_TYPE != 'win':
+				% if not lazylibrarian.CURRENT_VERSION:
+		            <div id="updatebar">
+		                You're running an unknown version of lazylibrarian. <a href="update">Update</a> or 
+		                <a href="#" onclick="$('#updatebar').slideUp('slow');">Close</a>
+		            </div>
+		            % elif lazylibrarian.CURRENT_VERSION != lazylibrarian.LATEST_VERSION and lazylibrarian.INSTALL_TYPE != 'win':
+		            <div id="updatebar">
+		                A <a href="http://github.com/herman-rogers/lazylibrarian-1/compare/${lazylibrarian.CURRENT_VERSION}...${lazylibrarian.LATEST_VERSION}"> newer version</a> is available. You're ${lazylibrarian.COMMITS_BEHIND} commits behind. <a href="update">Update</a> or <a href="#" onclick="$('#updatebar').slideUp('slow');">Close</a>
+		            </div>
+					% endif
+            % endif
+					
         <header>
             <div id="logo">
                 <a href="home"><img src="images/lazylibrarian.png" heigth="64" width="83" alt="lazylibrarian"></a>
             </div>
             <ul id="nav">
-                <li><a href="home">Home</a></li>
-                <li><a href="books">Books</a></li>
-                <li><a href="logs">Logs</a></li>
-                <li><a href="config">Config</a></li>
+                <li ><a href="home" ><div id="home" class="authorsActive"></div></a></li>
+                <li><a href="books" ><div id="books" class="books"></div></a></li>
+                <li><a href="logs" ><div id="logs" class="logs"></div></a></li>
+                <li><a href="config" ><div id="config" class="config"></div></a></li>
             </ul>
             <div id="searchbar">
                 <form action="search" method="get">
-                    <input type="text" value="" onfocus="if(this.value==this.defaultValue) this.value='';" name="name" />
-                    <select name="type">
+                    <input type="text" value="" onfocus="if(this.value==this.defaultValue) this.value='';" name="name" placeholder="Search for an author" class="deletable" id="searchbox" />
+                    <span class="mini-icon"></span>
+                    <select name="type" hidden="true">
                           <option value="author">Author</option>
                           <option value="book">Book</option>
                     </select>
-                    <input type="submit" value="Add"/>
+                    
                 </form>
             </div>
             <div id="subhead">
@@ -56,12 +132,7 @@
         </div>
     </div>
 
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
-    <script>!window.jQuery && document.write(unescape('%3Cscript src="js/libs/jquery-1.6.2.min.js"%3E%3C/script%3E'))</script>
-    ${next.javascriptIncludes()}
     
-    <script src="js/plugins.js"></script>
-    <script src="js/script.js"></script>
 
     <!--[if lt IE 7 ]>
     <script src="js/libs/dd_belatedpng.js"></script>

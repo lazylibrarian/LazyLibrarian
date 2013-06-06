@@ -1,0 +1,1 @@
+LAZYLIBRARIAN_VERSION = "master"

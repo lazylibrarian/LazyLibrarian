@@ -1,0 +1,63 @@
+@media (max-width:640px !important; min-width:640px !important;)
+html {max-width:640px !important; min-width:320px !important;}
+body {}
+
+
+#nav { !important; min-width:200px !important; }
+#searchbar {}
+#searchbox {width:130px; margin-right:0px;}
+div#searchbar { margin-right:5px; }
+
+
+table.display {width:100% !important; }
+
+.dataTables_length {}
+.dataTables_filter {}
+.dataTables_info {display:none;}
+
+
+#author_table { }
+table#author_table {}
+table#author_table th#authorname {min-width:20px !important;}
+table#author_table th#bookname { display:none;}
+table#author_table th#status { min-width:20px; }
+table#author_table th#have { min-width:20px !important; }
+
+table#author_table th#date {  display:none; }
+table#author_table td#date {  display:none; }
+
+table#author_table th#have { text-align: left; width:20px !important;}
+table#author_table td#authorname { min-width:20px !important; vertical-align: middle; text-align: left; }
+table#author_table td#bookname { display:none; }
+table#author_table td#status {  min-width:20px; }
+
+/* Books page */
+table#book_table { }
+table#book_table th#select {  }
+table#book_table th#bookart { display:none; }
+table#book_table th#bookname {  }
+table#book_table th#authorname { }
+table#book_table th#status {  }
+table#book_table th#date { display:none;  }
+table#book_table th#number {  }
+table#book_table th#language {  }
+table#book_table th#stars { display:none; }
+table#book_table td#select {  }
+table#book_table td#bookart { display:none; }
+table#book_table td#bookart img {  }
+table#book_table td#authorname {  }
+table#book_table td#bookname {  }
+table#book_table td#status {  }
+table#book_table td#date { display:none;  }
+table#book_table td#number {  }
+table#book_table td#language {  }
+table#book_table td#stars { display:none; }
+
+/* Log */
+table#log_table { background-color: white; margin-left:5px; margin-right:5px; max-width:100%; width:99%; }
+table#log_table th#timestamp { display:none; }
+table#log_table th#level {  }
+table#log_table th#message { text-align: left; min-width: 90px; }
+table#log_table td#timestamp { display:none; }
+table#log_table td#level {  }
+table#log_table td#message { text-align: left; }

@@ -7,29 +7,32 @@
 <%def name="headerIncludes()">
     <div id="subhead_container">
         <ul id="subhead_menu">
-            %if len(languages) > 1:
+            <li ><a id="button" href="manProcess">Manual Processing</a></li>
+            %if len(languages) >= 1:
                 <li>Language:&nbsp</li>
+                
+                <li><select onchange="window.location = 'books?BookLang=' + this.options[this.selectedIndex].value">
+                    <option>Select</option>
                 %for language in languages:
-                    <li>|</li>
-                    <li><a href="books?BookLang=${language['BookLang']}">${language['BookLang']}</a></li>
+                    <option value="${language['BookLang']}">${language['BookLang']}</option>
                 %endfor
+                </select></li>
             %endif
-            <li>Action:&nbsp</li>
-            <li><a><a href="manProcess">manual processing</a></li>
         </ul>
     </div>
 </%def>
 
 <%def name="body()">
+	<br><br>
     <table class="display" id="book_table">
         <thead>
             <tr>
-                <th id="bookart"></th>
-                <th id="authorname"></th>
+                <th id="bookart">Cover</th>
+                <th id="authorname">Author</th>
                 <th id="bookname">Title</th>
                 <th id="stars">Rating</th>
                 <th id="date">Released</th>
-                <th id="language">Language</th>
+                <th id="language" hidden="true">Language</th>
                 <th id="status">Status</th>
             </tr>
         </thead>
@@ -63,8 +66,20 @@
                     %endif
                     <td id="stars"><img src="images/${starimg}" width="50" height="10"></td>
                     <td id="date">${result['BookDate']}</td>
-                    <td id="language">${result['booklang']}</td>
-                    <td id="status">${result['Status']}</td>
+                    <td id="language" hidden="true">${result['booklang']}</td>
+                    %if result['Status'] == 'Open':
+                        <td id="status"><a class="button green" href="openBook?bookLink=${result['booklink']}" target="_self">${result['Status']}</a></td>
+                    %else:
+                        %if result['Status'] == 'Wanted':
+                            <td id="status"><a class="button red" href="searchForBook?bookLink=${result['booklink']}" target="_self"><span class="a">${result['Status']}</span><span class="b">Search</span></a></td>
+                        %else:
+                            %if result['Status'] == 'Snatched':
+                                <td id="status"><a class="button">${result['Status']}</a></td>
+                            %else:
+                                <td id="status"><a class="button grey">${result['Status']}</a></td>
+                            %endif
+                        %endif
+                    %endif
                 </tr>
         %endfor
         </tbody>
@@ -97,9 +112,12 @@
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
                     "sInfoEmpty":"Showing 0 to 0 of 0 books",
                     "sInfoFiltered":"(filtered from _MAX_ total books)"},
-                "iDisplayLength": 25,
+                "bStateSave": true,
+                "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
+                "iDisplayLength": 10,
                 "sPaginationType": "full_numbers",
             });
+			$('.dataTables_filter input').attr("placeholder", "Seach table here");
     });
     </script>
 </%def>

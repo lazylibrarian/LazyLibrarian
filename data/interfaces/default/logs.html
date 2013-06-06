@@ -44,17 +44,50 @@
         $('#log_table').dataTable(
             {
                 "oLanguage": {
+                    "sSearch":"",
                     "sLengthMenu":"Show _MENU_ lines per page",
                     "sEmptyTable": "No log information available",
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ lines",
                     "sInfoEmpty":"Showing 0 to 0 of 0 lines",
                     "sInfoFiltered":"(filtered from _MAX_ total lines)"},
                 "bStateSave": true,
-                "iDisplayLength": 100,
+                "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
+                "iDisplayLength": 10,
                 "sPaginationType": "full_numbers",
-                "aaSorting": []
-
+                "aaSorting": [],
+                "bServerSide": true,
+                "sAjaxSource": 'getLog',
+                "bFilter": true,
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    if (aData[1] === "WARNING" || aData[1] === "ERROR")
+                    {
+                        $('td', nRow).closest('tr').addClass("gradeX");
+                    }
+                    else
+                    {
+                        $('td', nRow).closest('tr').addClass("gradeZ");
+                    }
+                                                        
+                    return nRow;
+                },
+                "fnServerData": function (sSource, aoData, fnCallback) {
+                    /* Add some extra data to the sender */
+                    $.getJSON(sSource, aoData, function (json) {
+                        fnCallback(json)
+                    });
+                }
             });
+        $('.dataTables_filter input').attr("placeholder", "Seach table here");
+        
+        // dont keep refreshing the log table on mobile devices
+        var isiPad = navigator.userAgent.match(/iPad/i) != null;
+        if (!isiPad && !((navigator.userAgent.match(/iPhone/i)) || (navigator.userAgent.match(/iPod/i)))
+        {
+            // Refresh the log table
+            setInterval(function() {
+                $('#log_table').dataTable().fnDraw();
+            }, 10000);
+        }
     });
     </script>
 </%def>

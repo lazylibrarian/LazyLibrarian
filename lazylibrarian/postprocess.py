@@ -7,22 +7,15 @@ import lazylibrarian
 from lazylibrarian import database, logger, formatter
 
 def processDir():
+    logger.debug('Postprocessing has begun.')
+	
     # rename this thread
     threading.currentThread().name = "POSTPROCESS"
 
     processpath = lazylibrarian.DOWNLOAD_DIR
-    
-    logger.debug(' Checking [%s] for files to post process' % processpath)
-    
-    #TODO - try exception on os.listdir - it throws debug level 
-    #exception if dir doesn't exist - bloody hard to catch
-    try :
-        downloads = os.listdir(processpath)
-    except OSError:
-            logger.error('Could not access [%s] directory ' % processpath)
-            
+    downloads = os.listdir(processpath)
     myDB = database.DBConnection()
-    snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
+    snatched = myDB.select('SELECT * from wanted')
 
     if snatched is None:
         logger.info('No books are snatched. Nothing to process.')
@@ -30,141 +23,124 @@ def processDir():
         logger.info('No downloads are found. Nothing to process.')
     else:
         ppcount=0
-        for book in snatched:
-            if book['NZBtitle'] in downloads:
-                pp_path = os.path.join(processpath, book['NZBtitle'])
-                logger.info('Found folder %s.' % pp_path)
 
-                data = myDB.select("SELECT * from books WHERE BookID='%s'" % book['BookID'])
-                for metadata in data:
-                    authorname = metadata['AuthorName']
-                    authorimg = metadata['AuthorLink']
-                    bookname = metadata['BookName']
-                    bookdesc = metadata['BookDesc']
-                    bookisbn = metadata['BookIsbn']
-                    bookrate = metadata['BookRate']
-                    bookimg = metadata['BookImg']
-                    bookpage = metadata['BookPages']
-                    booklink = metadata['BookLink']
-                    bookdate = metadata['BookDate']
-                    booklang = metadata['BookLang']
-                    bookpub = metadata['BookPub']
+        for directory in downloads:
+            if "LL.(" in directory:
+                bookID = str(directory).split("LL.(")[1].split(")")[0];
+                logger.debug("Book with id: " + str(bookID) + " is in downloads");
+                pp_path = os.path.join(processpath, directory)
 
-                dest_path = authorname+'/'+bookname
-                dic = {'<':'', '>':'', '=':'', '?':'', '"':'', ',':'', '*':'', ':':'', ';':''}
-                dest_path = formatter.latinToAscii(formatter.replace_all(dest_path, dic))
-                dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(lazylibrarian.SYS_ENCODING)
+                if (os.path.exists(pp_path)):
+                	logger.debug('Found folder %s.' % pp_path)
 
-                processBook = processDestination(pp_path, dest_path, authorname, bookname)
+                	data = myDB.select("SELECT * from books WHERE BookID='%s'" % bookID)
+                	for metadata in data:
+                		authorname = metadata['AuthorName']
+                		authorimg = metadata['AuthorLink']
+                		bookname = metadata['BookName']
+                		bookdesc = metadata['BookDesc']
+                		bookisbn = metadata['BookIsbn']
+                		bookrate = metadata['BookRate']
+                		bookimg = metadata['BookImg']
+                		bookpage = metadata['BookPages']
+                		booklink = metadata['BookLink']
+                		bookdate = metadata['BookDate']
+                		booklang = metadata['BookLang']
+                		bookpub = metadata['BookPub']
 
+                		try:
+                		    os.chmod(os.path.join(lazylibrarian.DESTINATION_DIR, authorname).encode(lazylibrarian.SYS_ENCODING), 0777);
+                		except Exception, e:
+                		    logger.debug("Could not chmod author directory");
 
-                if processBook:
+                		dest_path = authorname + os.sep + bookname
+                		dic = {'<':'', '>':'', '...':'', ' & ':' ', ' = ': ' ', '?':'', '$':'s', ' + ':' ', '"':'', ',':'', '*':'', ':':'', ';':'', '\'':''}
+                		dest_path = formatter.latinToAscii(formatter.replace_all(dest_path, dic))
+                		dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(lazylibrarian.SYS_ENCODING)
 
-                    ppcount = ppcount+1
-                    
-                    # If you use auto add by Calibre you need the book in a single directory, not nested
-                    #So take the file you Copied/Moved to Dest_path and copy it to a Calibre auto add folder.
-                    processAutoAdd(dest_path)
+                		processBook = processDestination(pp_path, dest_path, authorname, bookname)
 
-                    # try image
-                    processIMG(dest_path, bookimg)
+                		if processBook:
 
-                    # try metadata
-                    processOPF(dest_path, authorname, bookname, bookisbn, book['BookID'], bookpub, bookdate, bookdesc, booklang)
+                		    ppcount = ppcount+1
 
-                    #update nzbs
-                    controlValueDict = {"NZBurl": book['NZBurl']}
-                    newValueDict = {"Status": "Success"}
-                    myDB.upsert("wanted", newValueDict, controlValueDict)
+                		    # try image
+                		    processIMG(dest_path, bookimg)
 
-                    #update books
-                    controlValueDict = {"BookID": book['BookID']}
-                    newValueDict = {"Status": "Have"}
-                    myDB.upsert("books", newValueDict, controlValueDict)
+                		    # try metadata
+                		    processOPF(dest_path, authorname, bookname, bookisbn, bookID, bookpub, bookdate, bookdesc, booklang)
 
-                    #update authors
-                    query = 'SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND Status="Have"' % authorname
-                    countbooks = myDB.action(query).fetchone()
-                    havebooks = int(countbooks[0])
-                    controlValueDict = {"AuthorName": authorname}
-                    newValueDict = {"HaveBooks": havebooks}
-                    myDB.upsert("authors", newValueDict, controlValueDict)
+                		    #update nzbs
+                		    controlValueDict = {"NZBurl": directory}
+                		    newValueDict = {"Status": "Success"}
+                		    myDB.upsert("wanted", newValueDict, controlValueDict)
 
-                    logger.info('Successfully processed: %s - %s' % (authorname, bookname))
-                else:
-                    logger.error('Postprocessing for %s has failed. Warning - AutoAdd will be repeated' % bookname)
+                		    #update books
+                		    controlValueDict = {"BookID": bookID}
+                		    newValueDict = {"Status": "Open"}
+                		    myDB.upsert("books", newValueDict, controlValueDict)
+
+                		    #update authors
+                		    query = 'SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' % authorname
+                		    countbooks = myDB.action(query).fetchone()
+                		    havebooks = int(countbooks[0])
+                		    controlValueDict = {"AuthorName": authorname}
+                		    newValueDict = {"HaveBooks": havebooks}
+                		    myDB.upsert("authors", newValueDict, controlValueDict)
+
+                		    logger.info('Successfully processed: %s - %s' % (authorname, bookname))
+                		else:
+                		    logger.info('Postprocessing for %s has failed.' % bookname)
         if ppcount:
-            logger.info('%s books are downloaded and processed.' % ppcount)
-    logger.debug(' - Completed all snatched/downloaded files')
+            logger.debug('%s books are downloaded and processed.' % ppcount)
+        else:
+            logger.debug('No snatched books have been found')
 
 def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None):
 
-    if not os.path.exists(dest_path):
-        logger.info('%s does not exist, so it\'s safe to create it' % dest_path)
-        try:
-            if lazylibrarian.DESTINATION_COPY:
-                shutil.copytree(pp_path, dest_path)
-                logger.info('Successfully copied %s to %s.' % (pp_path, dest_path))
-            else:
-                shutil.move(pp_path, dest_path)
-                logger.info('Successfully moved %s to %s.' % (pp_path, dest_path))
-            pp = True
+    try:
+        if not os.path.exists(dest_path):
+            logger.debug('%s does not exist, so it\'s safe to create it' % dest_path)
+        else:
+            logger.debug('%s already exsists. It will be overwritten' % dest_path)
+            logger.debug('Removing exsisting tree')
+            shutil.rmtree(dest_path)
 
-        except OSError:
-            logger.error('Could not create destinationfolder. Check permissions of: ' + lazylibrarian.DESTINATION_DIR)
-            pp = False
-    else:
-        logger.error('Directory [%s] exists. Playing safe - and not over writing from [%s]' % (dest_path, pp_path))
+        logger.debug('Attempting to move tree')
+        shutil.move(pp_path, dest_path)
+        logger.debug('Successfully copied %s to %s.' % (pp_path, dest_path))
+
+        pp = True
+        
+        #try and rename the actual book file
+        for file2 in os.listdir(dest_path):
+            logger.debug('file extension: ' + str(file2).split('.')[-1])
+            if ((file2.lower().find(".jpg") <= 0) & (file2.lower().find(".opf") <= 0)):
+                logger.debug('file: ' + str(file2))
+                os.rename(os.path.join(dest_path, file2), os.path.join(dest_path, bookname + '.' + str(file2).split('.')[-1]))
+        try:
+            os.chmod(dest_path, 0777);
+        except Exception, e:
+            logger.debug("Could not chmod path: " + str(dest_path));
+    except OSError:
+        logger.info('Could not create destination folder or rename the downloaded ebook. Check permissions of: ' + lazylibrarian.DESTINATION_DIR)
         pp = False
     return pp
 
-def processAutoAdd(src_path=None):
-    #Called to copy the book files to an auto add directory for the likes of Calibre which can't do nested dirs
-    autoadddir = lazylibrarian.IMP_AUTOADD
-    logger.debug('AutoAdd - Attempt to copy from [%s] to [%s]' % (src_path, autoadddir))
-    
-    
-    if not os.path.exists(autoadddir):
-        logger.info('AutoAdd directory [%s] is missing or not set - cannot perform autoadd copy' % autoadddir)
-        return False
-    else:
-        #Now try and copy all the book files into a single dir.
-        
-        try:
-            names = os.listdir(src_path)
-            #TODO : n files jpg, opf & book(s) should have same name
-            #Caution - book may be pdf, mobi, epub or all 3.
-            #for now simply copy all files, and let the autoadder sort it out
-
-            #os.makedirs(autoadddir)
-            errors = []
-            for name in names:
-                srcname = os.path.join(src_path, name)
-                dstname = os.path.join(autoadddir, name)
-                logger.debug('AutoAdd Coping named file [%s] as copy [%s] to [%s]' % (name, srcname, dstname))
-                try:
-                    shutil.copy2(srcname, dstname)
-                except (IOError, os.error) as why:
-                    logger.error('AutoAdd - Failed to copy file because [%s] ' % str(why))
-
-                    
-        except OSError as why:
-            logger.error('AutoAdd - Failed because [%s]'  % str(why))
-            return False
-        
-    logger.info('Auto Add completed for [%s]' % src_path)
-    return True
-    
 def processIMG(dest_path=None, bookimg=None):
     #handle pictures
     try:
-        if not bookimg == 'images/nocover.png':
-            logger.info('Downloading cover from ' + bookimg)
+        if not bookimg == ('images/nocover.png'):
+            logger.debug('Downloading cover from ' + bookimg)
             coverpath = os.path.join(dest_path, 'cover.jpg')
             img = open(coverpath,'wb')
             imggoogle = imgGoogle()
             img.write(imggoogle.open(bookimg).read())
             img.close()
+            try:
+                os.chmod(coverpath, 0777);
+            except Exception, e:
+                logger.info("Could not chmod path: " + str(coverpath));
 
     except (IOError, EOFError), e:
         logger.error('Error fetching cover from url: %s, %s' % (bookimg, e))
@@ -206,9 +182,15 @@ def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bo
         opf = open(opfpath, 'wb')
         opf.write(opfinfo)
         opf.close()
-        logger.info('Saved metadata to: ' + opfpath)
+
+        try:
+            os.chmod(opfpath, 0777);
+        except Exception, e:
+            logger.info("Could not chmod path: " + str(opfpath));
+
+        logger.debug('Saved metadata to: ' + opfpath)
     else:
-        logger.info('%s allready exists. Did not create one.' % opfpath)
+        logger.debug('%s allready exists. Did not create one.' % opfpath)
 
 class imgGoogle(FancyURLopener):
     # Hack because Google wants a user agent for downloading images, which is stupid because it's so easy to circumvent.

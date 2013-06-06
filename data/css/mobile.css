@@ -1,0 +1,69 @@
+@media (max-width:320px !important; min-width:320px !important;)
+html {max-width:320px !important; min-width:320px !important;}
+body { min-width:320px !important; }
+
+
+#nav { min-width:320px !important; height:80px; padding-left:20px; }
+#searchbar {position:absolute;float:left;top:40px; left:40px;}
+#searchbox {width:180px; margin-right:0px; float:left;}
+div#searchbar { margin-right:5px; }
+
+
+table.display {width:100% !important; width:300px !important; }
+
+.dataTables_length {display:none; }
+.dataTables_filter {display:none; }
+.dataTables_info {display:none;}
+
+
+#author_table { }
+table#author_table {}
+table#author_table th#authorname { width:100px !important;}
+table#author_table th#bookname { display:none;}
+table#author_table th#status { display:none; }
+table#author_table th#have { width:100px !important; }
+
+table#author_table th#date {  display:none; }
+table#author_table td#date {  display:none; }
+
+table#author_table th#have { text-align: left; }
+table#author_table td#authorname { vertical-align: middle; text-align: left; }
+table#author_table td#bookname { display:none; }
+table#author_table td#status {  display:none; }
+
+/* Books page */
+table#book_table { }
+table#book_table th#select { width:5px; min-width:5px; max-width:5px;  }
+table#book_table th#bookart { display:none; }
+table#book_table th#bookname { width:160px !important; min-width:130px; }
+table#book_table th#authorname { display:none; }
+table#book_table th#status {  }
+table#book_table th#date { display:none;  }
+table#book_table th#number {  }
+table#book_table th#language { display:none;  }
+table#book_table th#stars { display:none; }
+table#book_table td#select {  }
+table#book_table td#bookart { display:none; }
+table#book_table td#bookart img {  }
+table#book_table td#authorname { display:none; }
+table#book_table td#bookname { }
+table#book_table td#status {  }
+table#book_table td#date { display:none;  }
+table#book_table td#number {  }
+table#book_table td#language { display:none;  }
+table#book_table td#stars { display:none; }
+
+/* Log */
+table#log_table { background-color: white; margin-left:5px;margin-top:40px; margin-bottom:20px;}
+table#log_table th#timestamp { display:none; }
+table#log_table th#level { display:none; }
+table#log_table th#message { text-align: left; }
+table#log_table td#timestamp { display:none; }
+table#log_table td#level { display:none; }
+table#log_table td#message { text-align: left; }
+
+.markBooks { display:none; }
+
+div#searchbar .mini-icon {
+    margin-top: 5px;
+}

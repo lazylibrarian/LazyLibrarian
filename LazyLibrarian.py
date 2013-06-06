@@ -5,10 +5,9 @@ import lazylibrarian
 from lazylibrarian import webStart, logger
 
 def main():
-
+	#DIFFEREMT
     # rename this thread
     threading.currentThread().name = "MAIN"
-
     # Set paths
     if hasattr(sys, 'frozen'):
         lazylibrarian.FULL_PATH = os.path.abspath(sys.executable)
@@ -29,6 +28,11 @@ def main():
     # for OSes that are poorly configured I'll just force UTF-8
     if not lazylibrarian.SYS_ENCODING or lazylibrarian.SYS_ENCODING in ('ANSI_X3.4-1968', 'US-ASCII', 'ASCII'):
         lazylibrarian.SYS_ENCODING = 'UTF-8'
+
+	#check the version when the application starts
+    from lazylibrarian import versioncheck
+    lazylibrarian.CURRENT_VERSION = versioncheck.getVersion()
+    LATEST_VERSION = versioncheck.checkGithub()
 
     # Set arguments
     from optparse import OptionParser

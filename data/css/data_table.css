@@ -1,16 +1,15 @@
 .dataTables_wrapper {
-	border-radius: 20px;
-	-webkit-border-radius: 20px;
-	-moz-border-radius: 20px;
-	width: 88%;
+	width: 95%;
 	margin: 20px auto 0 auto;
-	padding: 25px;
-	background-color: white;
+	margin-top:30px;
+	margin-bottom:0px;
+	padding-bottom: 0px;
 	position: relative;
 	min-height: 155px;
 	clear: both;
 	_height: 302px;
 	zoom: 1; /* Feeling sorry for IE */
+	padding-bottom:50px;
 }
 
 .dataTables_processing {
@@ -26,26 +25,37 @@
 	text-align: center;
 	color: #999;
 	font-size: 14px;
-	background-color: white;
+	background-color: #f9f9f9;
 }
+
+
 
 .dataTables_length {
 	width: 40%;
 	float: left;
+	margin-top:-30px;
 }
 
 .dataTables_filter {
 	width: 50%;
 	float: right;
 	text-align: right;
-	margin-bottom: 15px;
+	margin-top: -30px;
+}
+
+.dataTables_filter input {
+	background-color: #F5F6F8;
+	border:1px solid #cecece;
+	line-height:16px;
+	padding:3px;
 }
 
 .dataTables_info {
 	width: 50%;
 	float: left;
-	background-color: white;
+	//background-color: #F9F9F9;
 	font-weight: bold;
+	padding-top:15px;
 }
 
 .dataTables_paginate {
@@ -53,7 +63,8 @@
 	* width: 50px;
 	float: right;
 	text-align: right;
-	background-color: white;
+	//background-color: #F9F9F9;
+	padding-top:15px;
 }
 
 /* Pagination nested */
@@ -86,7 +97,7 @@
  * DataTables display
  */
 table.display {
-	margin: 20px auto; 
+	width:100%;
 	clear: both;
 	
 	/* Note Firefox 3.5 and before have a bug with border-collapse
@@ -196,13 +207,24 @@ table.display tr.even.gradeU {
 	background-color: #eee;
 }
 
+table.display tr.gradeZ {
+	
+}
 
 table.display tr.odd.gradeZ {
-	background-color: #FCFAFA;
+	background-color: #f5f6f8;
+	border-top:#e5e5e6 1px solid;
+	border-bottom:#e5e5e6 1px solid;
+	border-right:#DBDBDB 1px solid;
+	border-left:#DBDBDB 1px solid;
 }
 
 table.display tr.even.gradeZ {
-	background-color: white;
+	background-color: #f8faf9;
+	border-top:#e5e5e6 1px solid;
+	border-bottom:#e5e5e6 1px solid;
+	border-right:#DBDBDB 1px solid;
+	border-left:#DBDBDB 1px solid;
 }
 
 
@@ -265,32 +287,39 @@ td.details {
 }
 
 .paging_full_numbers {
-	width: 400px;
+	width: 500px;
 	height: 22px;
 	line-height: 22px;
 }
 
 .paging_full_numbers span.paginate_button,
  	.paging_full_numbers span.paginate_active {
-	border: 1px solid #aaa;
-	-webkit-border-radius: 5px;
-	-moz-border-radius: 5px;
-	padding: 2px 5px;
-	margin: 0 3px;
-	cursor: pointer;
-	*cursor: hand;
+	border-radius: 2px;
+	line-height: 29px;
+	padding: 0 10px;
+	margin:5px;
+	padding-top:3px;
+	padding-bottom:3px;
+	margin-left:8px;
 }
 
 .paging_full_numbers span.paginate_button {
-	background-color: #ddd;
+	background-color: #ebebeb;
+	border: 1px solid #cecece;
+	color: #444454 !important;
+
 }
 
 .paging_full_numbers span.paginate_button:hover {
-	background-color: #ccc;
+	background-color: #4D90FE;
+	border: 1px solid #3079ED;
+	color: white !important;
 }
 
 .paging_full_numbers span.paginate_active {
-	background-color: #99B3FF;
+	background-color: #4D90FE;
+	border: 1px solid #3079ED;
+	color: white !important;
 }
 
 table.display tr.even.row_selected td {
@@ -307,4 +336,25 @@ div.box {
 	overflow: auto;
 	border: 1px solid #8080FF;
 	background-color: #E5E5FF;
+}
+
+thead {
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#F6F6F6', endColorstr='#E8E8E8');
+	background: -webkit-gradient(linear, left top, left bottom, from(#F6F6F6), to(#E8E8E8));
+	background: -moz-linear-gradient(top,  #F6F6F6,  #E8E8E8);
+}
+
+table.display thead th  {
+	width: 100%;
+	
+	margin-bottom:0px;
+	height:30px;
+	background: #999; /* for non-css3 browsers */
+	border:#DBDBDB 1px solid;
+	border-bottom:0px;
+	line-height: 30px;
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#F6F6F6', endColorstr='#E8E8E8');
+	background: -webkit-gradient(linear, left top, left bottom, from(#F6F6F6), to(#E8E8E8));
+	background: -moz-linear-gradient(top,  #F6F6F6,  #E8E8E8);	
+	border-bottom:#DBDBDB 1px solid;
 }

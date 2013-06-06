@@ -2,35 +2,26 @@
 
 <%def name="body()">
 
-    <div id="paddingheader">
+    <!--<div id="paddingheader">
         <h1>Search Results<h1>
-    </div>
-
-    <p class="leftside">
-    <form action="addResults" method="get">
-            <select name="action">
-                  <option value="author">Add Author</option>
-<!--                  <option value="book">Add Book</option>-->
-            </select>
-        <input type="submit" value="Go">
-    </p>
+    </div>-->
 
     <table class="display" id="book_table">
         <thead>
             <tr>
-                <th id="select"><input type="checkbox" onClick="toggle(this)" /></th>
-                <th id="bookart"></th>
-                <th id="authorname">Author</th>
-                <th id="bookname">Title</th>
-                <th id="stars"><img src="images/0-stars.png}" width="50" height="10"></td>
-                <th id="language">Lang</th>
+				<th id="bookart">Cover</th>
+				<th id="authorname">Author</th>
+				<th id="bookname">Title</th>
+				<th id="date">Released</th>
+				<th id="stars">Rating</th>
+                <th id="addAuthor">Add</th>
              </tr>
         </thead>
 
         <tbody>
             %if searchresults:
                 %for result in searchresults:
-                <%
+                	<%
                     if result['bookrate'] < 0.5:
                         starimg = '0-stars.png'
                     elif result['bookrate'] >= 0.5 and result['bookrate'] < 1.5:
@@ -46,25 +37,19 @@
                     else:
                         starimg = '0-stars.png'
                 %>
-                <tr class="gradeZ">
-                    <td id="select"><input type="checkbox" name="${result['authorname']}&${result['bookid']}" class="checkbox" /></td>
-                    <td id="bookart"><a href="${result['bookimg']}" target="_new"><img src="${result['bookimg']}" height="75" width="50"></a></td>
-                    <td id="authorname">${result['authorname']}</a></td>
-                    %if result['booksub']:
-                        <td id="bookname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a><br>
-                        <i class="smalltext">${result['booksub']}</i></td>
-                    %else:
-                        <td id="bookname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a></td>
-                    %endif
-
-                    <td id="stars"><img src="images/${starimg}" width="50" height="10"><td/>
-                    <td id="language">${result['booklang']}</td>
-                </tr>
-                %endfor
+					<tr class="gradeZ">
+						<td id="bookart"><a href="${result['bookimg']}" target="_new"><img src="${result['bookimg']}" height="75" ></a></td>
+						<td id="authorname">${result['authorname']}</td>
+						<td id="bookname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a></td>
+						<td id="date">${result['bookdate']}</td>
+						<td id="stars"><img src="images/${starimg}" height="10"></td>
+                        <td id="addAuthor"><a class="button" href="addResults?authorname=${result['authorname']}" target="_new">Add Author</a></td>
+					</tr>
+				%endfor
             %endif
         </tbody>
     </table>
-    </form>
+        </form>
 </%def>
 
 <%def name="headIncludes()">
@@ -84,7 +69,6 @@
                     null,
                     null,
                     null,
-                    null,
                     null
                     ],
                 "oLanguage": {
@@ -93,9 +77,10 @@
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
                     "sInfoEmpty":"Showing 0 to 0 of 0 books",
                     "sInfoFiltered":"(filtered from _MAX_ total books)"},
-                "iDisplayLength": 50,
+                "iDisplayLength": 10,
                 "sPaginationType": "full_numbers",
             });
+			$('.dataTables_filter input').attr("placeholder", "Seach table here");
     });
     </script>
 </%def>
