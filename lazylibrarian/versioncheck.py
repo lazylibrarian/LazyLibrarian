@@ -28,7 +28,7 @@ def runGit(args):
             logger.debug('(RunGit)Trying to execute: "' + cmd + '" with shell in ' + lazylibrarian.PROG_DIR)
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, cwd=lazylibrarian.PROG_DIR)
             output, err = p.communicate()
-            logger.debug('(RunGit)Git output: ' + output)
+            logger.debug('(RunGit)Git output: [%s]' % output)
             
         except OSError:
             logger.debug('(RunGit)Command ' + cmd + ' didn\'t work, couldn\'t find git')
@@ -94,6 +94,8 @@ def getCurrentBranch():
     # use git rev-parse --abbrev-ref HEAD which returns the name of the current branch
     output, err = runGit('rev-parse --abbrev-ref HEAD')
     
+    output = output.strip('\n')
+    
     if not output:
         logger.error('failed to return current branch value')
         return 'InvalidBranch'
@@ -120,10 +122,12 @@ def checkGithub():
         result = urllib2.urlopen(url).read()
         git = simplejson.JSONDecoder().decode(result)
         lazylibrarian.LATEST_VERSION = git['sha']
+        logger.debug('Latest Version has been set to %s' % lazylibrarian.LATEST_VERSION)
     except:
         logger.warn('Could not get the latest commit from github')
         lazylibrarian.COMMITS_BEHIND = 0
-        return lazylibrarian.CURRENT_VERSION
+        lazylibrarian.LATEST_VERSION = 'Not_Available_From_GitHUB'
+        return lazylibrarian.LATEST_VERSION
     
     # See how many commits behind we are    
     if lazylibrarian.CURRENT_VERSION:
@@ -138,7 +142,7 @@ def checkGithub():
             
             logger.info('GitHub reports as follows Status [%s] - Ahead [%s] - Behind [%s] ' % (git['status'], git['ahead_by'], git['behind_by']))
         except:
-            logger.warn('Could not get commits behind from github')
+            logger.warn('Could not get commits behind from github. Can happen if you have a local commit not pushed to repo')
             lazylibrarian.COMMITS_BEHIND = 0
             return lazylibrarian.CURRENT_VERSION
             

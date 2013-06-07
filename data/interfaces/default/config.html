@@ -119,10 +119,10 @@
                 </td>
                 <td>
                     <h5>Category:</h5><input type="text" name="sab_cat" value="${config['sab_cat']}" size="30">
-                    <h5>Directory:</h5><input type="text" name="download_dir" value="${config['download_dir']}" size="50">
+                    <h5>Directory:</h5><input type="text" name="download_dir" value="${config['download_dir']}" size="30">
                     <i class="smalltext">Full path to the folder where books are downloaded to.</i>
                     <h5><input type="checkbox" name="blackhole" value=1 ${config['use_blackhole']} /> Use blackhole</h5>
-                    <input type="text" name="blackholedir" value="${config['blackholedir']}" size="50">
+                    <input type="text" name="blackholedir" value="${config['blackholedir']}" size="30">
                     <i class="smalltext">The folder your nzb-downloader monitors for nzb-files.</i>
                 </td>
             </tr>
@@ -147,12 +147,20 @@
                 <td>
                     <h3>Newznab Providers</h3>
                 </td>
+                <td>
+                    <h3>Usenet Crawler</h3>
+                </td>
             </tr>
             <tr>
                 <td>
                     <input type="checkbox" name="newznab" value=1 ${config['use_newznab']} style="margin-bottom:4px;" />
                     <input type="text" placeholder="Enter Host Here" name="newznab_host" value="${config['newznab_host']}" size="20" maxlength="40">
                     <input type="text" placeholder="Enter API Here" name="newznab_api" value="${config['newznab_api']}" size="30" maxlength="40">
+                </td>
+                <td>
+                    <input type="checkbox" name="usenetcrawler" value=1 ${config['use_usenetcrawler']} style="margin-bottom:4px;" />
+                    <input type="text" placeholder="Enter Host Here" name="usenetcrawler_host" value="${config['usenetcrawler_host']}" size="20" maxlength="40">
+                    <input type="text" placeholder="Enter API Here" name="usenetcrawler_api" value="${config['usenetcrawler_api']}" size="30" maxlength="40">
                 </td>
             </tr>
             <tr>
@@ -168,7 +176,7 @@
     <div class="table_wrapper_button">
         <p><input type="submit" value="Save changes" id="add" style="float:right;"></p>
     </div>
-	<p style="text-align:center;position:fixed;bottom:10px;margin-left:20px;color:grey">Current Version: ${lazylibrarian.LATEST_VERSION}</p>
+	<p style="text-align:center;position:fixed;bottom:10px;margin-left:20px;color:grey">Current Version: ${lazylibrarian.CURRENT_VERSION}  : Latest  Version: ${lazylibrarian.LATEST_VERSION}</p>
     </div>
 </form>
 </%def>

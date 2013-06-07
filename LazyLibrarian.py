@@ -107,7 +107,7 @@ def main():
     
     #check the version when the application starts
     lazylibrarian.CURRENT_VERSION = versioncheck.getVersion()
-    LATEST_VERSION = versioncheck.checkGithub()
+    lazylibrarian.LATEST_VERSION = versioncheck.checkGithub()
     logger.debug('Current Version [%s] - Latest remote version [%s]' % (lazylibrarian.CURRENT_VERSION, lazylibrarian.LATEST_VERSION))
 
 
