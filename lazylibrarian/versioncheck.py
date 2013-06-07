@@ -122,6 +122,7 @@ def checkGithub():
         result = urllib2.urlopen(url).read()
         git = simplejson.JSONDecoder().decode(result)
         lazylibrarian.LATEST_VERSION = git['sha']
+        logger.debug('Latest Version has been set to %s' % lazylibrarian.LATEST_VERSION)
     except:
         logger.warn('Could not get the latest commit from github')
         lazylibrarian.COMMITS_BEHIND = 0
