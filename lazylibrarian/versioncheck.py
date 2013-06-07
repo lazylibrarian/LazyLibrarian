@@ -28,7 +28,7 @@ def runGit(args):
             logger.debug('(RunGit)Trying to execute: "' + cmd + '" with shell in ' + lazylibrarian.PROG_DIR)
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, cwd=lazylibrarian.PROG_DIR)
             output, err = p.communicate()
-            logger.debug('(RunGit)Git output: ' + output)
+            logger.debug('(RunGit)Git output: [%s]' % output)
             
         except OSError:
             logger.debug('(RunGit)Command ' + cmd + ' didn\'t work, couldn\'t find git')
@@ -126,7 +126,8 @@ def checkGithub():
     except:
         logger.warn('Could not get the latest commit from github')
         lazylibrarian.COMMITS_BEHIND = 0
-        return lazylibrarian.CURRENT_VERSION
+        lazylibrarian.LATEST_VERSION = 'Not_Available_From_GitHUB'
+        return lazylibrarian.LATEST_VERSION
     
     # See how many commits behind we are    
     if lazylibrarian.CURRENT_VERSION:
