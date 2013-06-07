@@ -5,8 +5,10 @@ from lazylibrarian import logger, version
 
 import lib.simplejson as simplejson
 
-user = "herman-rogers"
+user = "dobytang"
 branch = "master"
+repo="lazylibrarian"
+
 
 def runGit(args):
 
@@ -23,19 +25,20 @@ def runGit(args):
         cmd = cur_git+' '+args
     
         try:
-            logger.debug('Trying to execute: "' + cmd + '" with shell in ' + lazylibrarian.PROG_DIR)
+            logger.debug('(RunGit)Trying to execute: "' + cmd + '" with shell in ' + lazylibrarian.PROG_DIR)
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, cwd=lazylibrarian.PROG_DIR)
             output, err = p.communicate()
-            logger.debug('Git output: ' + output)
+            logger.debug('(RunGit)Git output: ' + output)
+            
         except OSError:
-            logger.debug('Command ' + cmd + ' didn\'t work, couldn\'t find git')
+            logger.debug('(RunGit)Command ' + cmd + ' didn\'t work, couldn\'t find git')
             continue
             
         if 'not found' in output or "not recognized as an internal or external command" in output:
-            logger.debug('Unable to find git with command ' + cmd)
+            logger.debug('(RunGit)Unable to find git with command ' + cmd)
             output = None
         elif 'fatal:' in output or err:
-            logger.error('Git returned bad info. Are you sure this is a git installation?')
+            logger.error('(RunGit)Git returned bad info. Are you sure this is a git installation?')
             output = None
         elif output:
             break
@@ -47,17 +50,17 @@ def getVersion():
     if version.LAZYLIBRARIAN_VERSION.startswith('win32build'):
         
         lazylibrarian.INSTALL_TYPE = 'win'
+        logger.debug('Windows install - no update available')
         
         # Don't have a way to update exe yet, but don't want to set VERSION to None
         return 'Windows Install'
     
     elif os.path.isdir(os.path.join(lazylibrarian.PROG_DIR, '.git')):
-    
         lazylibrarian.INSTALL_TYPE = 'git'
         output, err = runGit('rev-parse HEAD')
         
         if not output:
-            logger.error('Couldn\'t find latest installed version.')
+            logger.error('Couldn\'t find latest git installed version.')
             return None
             
         cur_commit_hash = output.strip()
@@ -86,17 +89,33 @@ def getVersion():
         else:
             return None
 
+
+def getCurrentBranch():
+    # use git rev-parse --abbrev-ref HEAD which returns the name of the current branch
+    output, err = runGit('rev-parse --abbrev-ref HEAD')
+    
+    if not output:
+        logger.error('failed to return current branch value')
+        return 'InvalidBranch'
+
+    logger.debug('Current branch of  repo is [%s] ' % output)
+    return output
+
 def checkForUpdates():
-	# rename this thread
-	threading.currentThread().name = "VERSIONCHECK"
-	s = getVersion()
-	l = checkGithub()
-	
+    # rename this thread
+    threading.currentThread().name = "VERSIONCHECK"
+    s = getVersion()
+    l = checkGithub()
+
+
 def checkGithub():
 
+    #check current branch value of the local git repo as folks may pull from a branch not master
+    branch = getCurrentBranch()
+
     # Get the latest commit available from github
-    url = 'https://api.github.com/repos/%s/LazyLibrarian-1/commits/%s' % (user, branch)
-    logger.info ('Retrieving latest version information from github')
+    url = 'https://api.github.com/repos/%s/%s/commits/%s' % (user, repo, branch)
+    logger.info ('Retrieving latest version information from github command=[%s]' % url)
     try:
         result = urllib2.urlopen(url).read()
         git = simplejson.JSONDecoder().decode(result)
@@ -110,11 +129,14 @@ def checkGithub():
     if lazylibrarian.CURRENT_VERSION:
         logger.info('Comparing currently installed version with latest github version')
         url = 'https://api.github.com/repos/%s/LazyLibrarian/compare/%s...%s' % (user, lazylibrarian.CURRENT_VERSION, lazylibrarian.LATEST_VERSION)
+        logger.debug('Check for differences between local & repo by [%s]' % url)
         
         try:
             result = urllib2.urlopen(url).read()
             git = simplejson.JSONDecoder().decode(result)
             lazylibrarian.COMMITS_BEHIND = git['total_commits']
+            
+            logger.info('GitHub reports as follows Status [%s] - Ahead [%s] - Behind [%s] ' % (git['status'], git['ahead_by'], git['behind_by']))
         except:
             logger.warn('Could not get commits behind from github')
             lazylibrarian.COMMITS_BEHIND = 0
@@ -136,7 +158,7 @@ def update():
 
     
     if lazylibrarian.INSTALL_TYPE == 'win':
-    
+        logger.debug('Windows install - no update available')    
         logger.info('Windows .exe updating not supported yet.')
         pass
     
@@ -160,7 +182,7 @@ def update():
                 
     else:
     
-        tar_download_url = 'https://github.com/%s/lazylibrarian-1/tarball/%s' % (user, branch)
+        tar_download_url = 'https://github.com/%s/%s/tarball/%s' % (user, repo, branch)
         update_dir = os.path.join(lazylibrarian.PROG_DIR, 'update')
         version_path = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
         

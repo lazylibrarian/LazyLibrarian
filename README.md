@@ -1,6 +1,7 @@
 ## LazyLibrarian
 #### Contributers 
-* Current author: LibrarianMike  
+* Current author: DobyTang
+  Branched from Herman-Rodgers
 * Original author: Mar2zz  
 * Previous maintainer: itsmegb   
 

@@ -74,6 +74,10 @@ def searchbook(books=None):
             logger.debug('Searching NZB\'s at provider %s ...' % lazylibrarian.NEWZNAB_HOST2)
             resultlist += providers.NewzNab(book, "2")
 
+        if lazylibrarian.USENETCRAWLER and not resultlist:
+            logger.info('Searching NZB\'s at provider UsenetCrawler ...')
+            resultlist = providers.UsenetCrawler(book)
+
         if not resultlist:
             logger.debug("Adding book %s to queue." % book['searchterm'])
 
@@ -170,3 +174,19 @@ def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
     else:
         logger.error(u'Failed to download nzb @ <a href="%s">%s</a>' % (nzburl, lazylibrarian.NEWZNAB_HOST))
         myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl=?', [nzburl])
+
+
+
+def MakeSearchTermWebSafe(insearchterm=None):
+
+        dic = {'...':'', ' & ':' ', ' = ': ' ', '?':'', '$':'s', ' + ':' ', '"':'', ',':'', '*':''}
+
+        searchterm = formatter.latinToAscii(formatter.replace_all(insearchterm, dic))
+
+        searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
+        
+        logger.debug("Converting Search Term [%s] to Web Safe Search Term [%s]" % (insearchterm, searchterm))
+        
+        return searchterm
+ 
+

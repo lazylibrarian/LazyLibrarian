@@ -11,6 +11,10 @@ def SABnzbd(title=None, nzburl=None):
     if not str(HOST)[:4] == "http":
         HOST = 'http://' + HOST
 
+
+    if lazylibrarian.SAB_SUBDIR:
+        HOST = HOST + "/" + lazylibrarian.SAB_SUBDIR
+
     params = {}
 
     params['mode'] = 'addurl'

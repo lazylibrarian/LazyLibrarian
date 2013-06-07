@@ -7,13 +7,20 @@ import lazylibrarian
 from lazylibrarian import database, logger, formatter
 
 def processDir():
-    logger.debug('Postprocessing has begun.')
-	
     # rename this thread
     threading.currentThread().name = "POSTPROCESS"
 
     processpath = lazylibrarian.DOWNLOAD_DIR
-    downloads = os.listdir(processpath)
+    
+    logger.debug(' Checking [%s] for files to post process' % processpath)
+    
+    #TODO - try exception on os.listdir - it throws debug level 
+    #exception if dir doesn't exist - bloody hard to catch
+    try :
+        downloads = os.listdir(processpath)
+    except OSError:
+            logger.error('Could not access [%s] directory ' % processpath)
+            
     myDB = database.DBConnection()
     snatched = myDB.select('SELECT * from wanted')
 
@@ -62,10 +69,14 @@ def processDir():
 
                 		if processBook:
 
-                		    ppcount = ppcount+1
+                                    ppcount = ppcount+1
+                                    
+                                    # If you use auto add by Calibre you need the book in a single directory, not nested
+                                    #So take the file you Copied/Moved to Dest_path and copy it to a Calibre auto add folder.
+                                    processAutoAdd(dest_path)
 
-                		    # try image
-                		    processIMG(dest_path, bookimg)
+                                    # try image   
+                                    processIMG(dest_path, bookimg)
 
                 		    # try metadata
                 		    processOPF(dest_path, authorname, bookname, bookisbn, bookID, bookpub, bookdate, bookdesc, booklang)
@@ -90,7 +101,7 @@ def processDir():
 
                 		    logger.info('Successfully processed: %s - %s' % (authorname, bookname))
                 		else:
-                		    logger.info('Postprocessing for %s has failed.' % bookname)
+                		    logger.error('Postprocessing for %s has failed. Warning - AutoAdd will be repeated' % bookname)
         if ppcount:
             logger.debug('%s books are downloaded and processed.' % ppcount)
         else:
@@ -127,6 +138,43 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         pp = False
     return pp
 
+def processAutoAdd(src_path=None):
+    #Called to copy the book files to an auto add directory for the likes of Calibre which can't do nested dirs
+    autoadddir = lazylibrarian.IMP_AUTOADD
+    logger.debug('AutoAdd - Attempt to copy from [%s] to [%s]' % (src_path, autoadddir))
+    
+    
+    if not os.path.exists(autoadddir):
+        logger.info('AutoAdd directory [%s] is missing or not set - cannot perform autoadd copy' % autoadddir)
+        return False
+    else:
+        #Now try and copy all the book files into a single dir.
+        
+        try:
+            names = os.listdir(src_path)
+            #TODO : n files jpg, opf & book(s) should have same name
+            #Caution - book may be pdf, mobi, epub or all 3.
+            #for now simply copy all files, and let the autoadder sort it out
+
+            #os.makedirs(autoadddir)
+            errors = []
+            for name in names:
+                srcname = os.path.join(src_path, name)
+                dstname = os.path.join(autoadddir, name)
+                logger.debug('AutoAdd Coping named file [%s] as copy [%s] to [%s]' % (name, srcname, dstname))
+                try:
+                    shutil.copy2(srcname, dstname)
+                except (IOError, os.error) as why:
+                    logger.error('AutoAdd - Failed to copy file because [%s] ' % str(why))
+
+                    
+        except OSError as why:
+            logger.error('AutoAdd - Failed because [%s]'  % str(why))
+            return False
+        
+    logger.info('Auto Add completed for [%s]' % src_path)
+    return True
+    
 def processIMG(dest_path=None, bookimg=None):
     #handle pictures
     try:

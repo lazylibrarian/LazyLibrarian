@@ -2,7 +2,7 @@ import os, sys, time, cherrypy, threading, locale
 from lib.configobj import ConfigObj
 
 import lazylibrarian
-from lazylibrarian import webStart, logger
+from lazylibrarian import webStart, logger, versioncheck
 
 def main():
 	#DIFFEREMT
@@ -28,11 +28,6 @@ def main():
     # for OSes that are poorly configured I'll just force UTF-8
     if not lazylibrarian.SYS_ENCODING or lazylibrarian.SYS_ENCODING in ('ANSI_X3.4-1968', 'US-ASCII', 'ASCII'):
         lazylibrarian.SYS_ENCODING = 'UTF-8'
-
-	#check the version when the application starts
-    from lazylibrarian import versioncheck
-    lazylibrarian.CURRENT_VERSION = versioncheck.getVersion()
-    LATEST_VERSION = versioncheck.checkGithub()
 
     # Set arguments
     from optparse import OptionParser
@@ -106,7 +101,15 @@ def main():
     lazylibrarian.DBFILE = os.path.join(lazylibrarian.DATADIR, 'lazylibrarian.db')
     lazylibrarian.CFG = ConfigObj(lazylibrarian.CONFIGFILE, encoding='utf-8')
 
+    #REMINDER ############ NO LOGGING BEFORE HERE ###############
+    #There is no point putting in any logging above this line, as its not set till after initialize.
     lazylibrarian.initialize()
+    
+    #check the version when the application starts
+    lazylibrarian.CURRENT_VERSION = versioncheck.getVersion()
+    LATEST_VERSION = versioncheck.checkGithub()
+    logger.debug('Current Version [%s] - Latest remote version [%s]' % (lazylibrarian.CURRENT_VERSION, lazylibrarian.LATEST_VERSION))
+
 
     if options.port:
         HTTP_PORT = int(options.port)
