@@ -91,7 +91,7 @@ class WebInterface(object):
                     "use_newznab2" :     checked(lazylibrarian.NEWZNAB2),
                     "newznab_host2" :    lazylibrarian.NEWZNAB_HOST2,
                     "newznab_api2" :     lazylibrarian.NEWZNAB_API2,
-                                        "use_newzbin" :     checked(lazylibrarian.NEWZBIN),
+                    "use_newzbin" :     checked(lazylibrarian.NEWZBIN),
                     "newzbin_uid" :     lazylibrarian.NEWZBIN_UID,
                     "newzbin_pass" :    lazylibrarian.NEWZBIN_PASS,
 
@@ -157,6 +157,7 @@ class WebInterface(object):
 
         lazylibrarian.config_write()
 
+        logger.debug('Config file has been updated')
         raise cherrypy.HTTPRedirect("config")
 
     configUpdate.exposed = True

@@ -94,6 +94,8 @@ def getCurrentBranch():
     # use git rev-parse --abbrev-ref HEAD which returns the name of the current branch
     output, err = runGit('rev-parse --abbrev-ref HEAD')
     
+    output = output.strip('\n')
+    
     if not output:
         logger.error('failed to return current branch value')
         return 'InvalidBranch'
@@ -138,7 +140,7 @@ def checkGithub():
             
             logger.info('GitHub reports as follows Status [%s] - Ahead [%s] - Behind [%s] ' % (git['status'], git['ahead_by'], git['behind_by']))
         except:
-            logger.warn('Could not get commits behind from github')
+            logger.warn('Could not get commits behind from github. Can happen if you have a local commit not pushed to repo')
             lazylibrarian.COMMITS_BEHIND = 0
             return lazylibrarian.CURRENT_VERSION
             
