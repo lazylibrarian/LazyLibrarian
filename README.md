@@ -3,7 +3,26 @@
 * Current author: DobyTang
   Branched from Herman-Rodgers
 * Original author: Mar2zz  
-* Previous maintainer: itsmegb   
+* Previous maintainer: itsmegb   , Herman Rodgers
+
+##### NOTICE JUNE 2013 ######
+DobyTang on vacation - back in July - please note
+
+Two branches currently exist
+- Master - ported from Mar2zz, standard interface with Usenet, Calibre Auto Add and better logging - tested that bit more
+  If you want safer, clone from here as normal git clone ......
+
+- Herman-Rodgers-Branch - merged with changes by Herman which include auto update, 2nd NZB configuration, book type restriction
+  - Stable but only has had a week of verification as of June 10th
+  - if you want better experience, or willing to contribute clone from here 
+  - $> git clone -b herman-rogers-merge https://github.com/DobyTang/LazyLibrarian.git
+
+- If anyone is making changes could the fork this branch rather than master as there is ALOT of changes and if we hope to make this branch the master it would be easier later to meld them.
+
+See ya'll in a few weeks - Niagra falls here I come.
+
+
+
 
 #### LazyLibrarian
 LazyLibrarian is a program to follow authors and grab metadata for all your digital reading needs. 
@@ -16,6 +35,8 @@ Right now its capable of the following:
 * If a nzb is found it will be send to sabnzbd or saved in a blackhole where your downloadapp can pick it up.  
 * When processing the downloaded books it will save a coverpicture (if available) and save all metadata into metadata.opf next to the bookfile (calibre compatible format)
 * The new theme for the site allows it to be accessed (and usable) from devices with a smaller screen (such as an iPad)
+* AutoAdd feature for book management tools like Calibre which must have books in flattened directory structure
+* Added Usenet Crawler configuration + 2 NZB configurations (alas NZBMatrix is gone and removed)
 
 ##Screenshots
 <img src="http://i.imgur.com/O8awy.png" width="600">
@@ -23,7 +44,7 @@ Right now its capable of the following:
 <img src="http://i.imgur.com/AOgh1.png" width="600">
 
 ## Install:  
-LazyLibrarian runs by default on port 8082 at http://localhost:8082/
+LazyLibrarian runs by default on port 5299 at http://localhost:5299/
 
 Linux / Mac OS X:
 
