@@ -74,24 +74,33 @@
                     <h3>Ebook Type</h3>
                 </td>
             </tr>
-            <td>
-                <h5>Destination:</h5><input type="text" name="destination_dir" value="${config['destination_dir']}" size="50">
-                <h5><input type="checkbox" name="destination_copy" value=1 ${config['use_destination_copy']} /> Keep original files</h3>
-            </td>
-            <td>
-<!--                <h5><input type="checkbox" name="imp_onlyisbn" value=1 ${config['use_imp_onlyisbn']} /> Hide books without ISBN</h5>-->
-<!--                <br>-->
-                <h5>Import languages:</h5><input type="text" name="imp_preflang" value="${config['imp_preflang']}" size="20" maxlength="40">
-                <br>
-                <i class="smalltext">Comma separated country shortcodes, e.g.:<br> eng, spa, por</i>
-            </td>
-			<td>
-<!--                <h5><input type="checkbox" name="imp_onlyisbn" value=1 ${config['use_imp_onlyisbn']} /> Hide books without ISBN</h5>-->
-<!--                <br>-->
-                <h5>Ebook Format:</h5><input type="text" name="ebook_type" value="${config['ebook_type']}" size="0" maxlength="4">
-                <br>
-                <i class="smalltext">Spesify one of the following options (or leave blank to search for any format): <br> epub, mobi, txt</i>
-            </td>
+            <tr>
+                <td>
+                    <h5>Destination:</h5><input type="text" name="destination_dir" value="${config['destination_dir']}" size="50">
+                    <h5><input type="checkbox" name="destination_copy" value=1 ${config['use_destination_copy']} /> Keep original files</h3>
+                </td>
+                <td>
+                    <h5>Import languages:</h5><input type="text" name="imp_preflang" value="${config['imp_preflang']}" size="20" maxlength="40">
+                    <br>
+                    <i class="smalltext">Comma separated country shortcodes, e.g.:<br> eng, spa, por</i>
+                </td>
+                <td>
+                    <h5>Ebook Format:</h5><input type="text" name="ebook_type" value="${config['ebook_type']}" size="0" maxlength="4">
+                    <br>
+                    <i class="smalltext">Spesify one of the following options (or leave blank to search for any format): <br> epub, mobi, txt</i>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <h5>Calibre Auto Add:</h5><input type="text" name="imp_autoadd" value="${config['imp_autoadd']}" size="20" maxlength="40">
+                    <br>
+                    <i class="smalltext">Directory for a copy to be placed for auto add process</i>
+                </td>
+                <td>
+                </td>
+                <td>
+                </td>
+        </table>
         </table>
         </div>
     </div>
@@ -109,6 +118,9 @@
                 <td>
                     <h5>Hostname:</h5><input type="text" name="sab_host" value="${config['sab_host']}" size="20" maxlength="40">
                     <h5>Port:</h5><input type="text" name="sab_port" value="${config['sab_port']}" size="20" maxlength="40">
+                    <h5>SubDir:</h5><input type="text" name="sab_subdir" value="${config['sab_subdir']}" size="20" maxlength="40">
+                    </br>
+                    <i class="smalltext">SubDir - SubDirectory setting for SabNZBDb setups like http://HOST:PORT/Subdir?API=</i>
                     <br>
                     <h5>Usenet retention:</h5><input type="text" name="usenet_retention" value="${config['usenet_retention']}" size="20" maxlength="40">
                 </td>

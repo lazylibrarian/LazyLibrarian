@@ -160,6 +160,7 @@ def checkGithub():
         
 def update():
 
+    branch = getCurrentBranch()
     
     if lazylibrarian.INSTALL_TYPE == 'win':
         logger.debug('Windows install - no update available')    
@@ -170,7 +171,7 @@ def update():
     elif lazylibrarian.INSTALL_TYPE == 'git':
 	
         output, err = runGit('stash clear')
-        output, err = runGit('pull origin ' + version.LAZYLIBRARIAN_VERSION)
+        output, err = runGit('pull origin ' + branch)
         	
         if not output:
             logger.error('Couldn\'t download latest version')
