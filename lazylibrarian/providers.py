@@ -11,16 +11,17 @@ def UsenetCrawler(book=None):
 
     HOST = lazylibrarian.USENETCRAWLER_HOST
     results = []
-
-    logger.info('UsenetCrawler: Searching term [%s] for author [%s] and title [%s]' % (book['searchterm'], book['author'], book['title']))
-
-
+    
+    print book.keys()
+    
+    logger.info('UsenetCrawler: Searching term [%s] for author [%s] and title [%s]' % (book['searchterm'], book['authorName'], book['bookName']))
+    
     params = {
         "apikey": lazylibrarian.USENETCRAWLER_API,
 
         "t": "book",
-        "title": book['title'],
-        "author": book['author']
+        "title": book['bookName'],
+        "author": book['authorName']
         }
 	
 	#sample request
@@ -67,7 +68,7 @@ def UsenetCrawler(book=None):
         if nzbcount:
             logger.info('Found %s nzb for: %s' % (nzbcount, book['searchterm']))
         else:
-            logger.info('Newznab returned 0 results for: ' + book['searchterm'])
+            logger.info('UsenetCrawler returned 0 results for: ' + book['searchterm'])
                 
     return results
 

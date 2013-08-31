@@ -17,7 +17,8 @@ PROG_DIR = None
 ARGS = None
 SIGNAL = None
 
-LOGLEVEL = 1
+#Info 1, Debug 2 - Really should be in the config files.
+LOGLEVEL = 2
 DAEMON = False
 PIDFILE = None
 

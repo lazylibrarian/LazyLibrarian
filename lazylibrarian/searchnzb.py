@@ -51,20 +51,21 @@ def searchbook(books=None):
 
         # TRY SEARCH TERM just using author name and book type
         author = formatter.latinToAscii(formatter.replace_all(author, dicSearchFormatting))
-        searchterm1 = author # + ' ' + lazylibrarian.EBOOK_TYPE 
-        searchterm1 = re.sub('[\.\-\/]', ' ', searchterm1).encode('utf-8')
-        searchterm1 = re.sub(r'\(.*?\)', '', searchterm1).encode('utf-8')
-        searchterm1 = re.sub(r"\s\s+" , " ", searchterm1) # strip any double white space
-        searchlist.append({"bookid": bookid, "bookName":searchbook[2], "authorName":searchbook[1], "searchterm": searchterm1.strip()})
+        searchterm = author # + ' ' + lazylibrarian.EBOOK_TYPE 
+        searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
+        searchterm = re.sub(r'\(.*?\)', '', searchterm).encode('utf-8')
+        searchterm = re.sub(r"\s\s+" , " ", searchterm) # strip any double white space
+        searchlist.append({"bookid": bookid, "bookName":searchbook[2], "authorName":searchbook[1], "searchterm": searchterm.strip()})
 
     if not lazylibrarian.SAB_HOST and not lazylibrarian.BLACKHOLE:
         logger.info('No download method is set, use SABnzbd or blackhole')
 
-    if not lazylibrarian.NEWZNAB and not lazylibrarian.NEWZNAB2:
-        logger.info('No providers are set. use NEWZNAB.')
+    if not lazylibrarian.NEWZNAB and not lazylibrarian.NEWZNAB2 and not lazylibrarian.USENETCRAWLER:
+        logger.info('No providers are set. try use NEWZNAB.')
 
     counter = 0
-    for book in searchlist:
+    for book in searchlist: 
+        print book.keys()
         resultlist = []
         if lazylibrarian.NEWZNAB:
             logger.debug('Searching NZB\'s at provider %s ...' % lazylibrarian.NEWZNAB_HOST)
@@ -74,9 +75,10 @@ def searchbook(books=None):
             logger.debug('Searching NZB\'s at provider %s ...' % lazylibrarian.NEWZNAB_HOST2)
             resultlist += providers.NewzNab(book, "2")
 
-        if lazylibrarian.USENETCRAWLER and not resultlist:
+        if lazylibrarian.USENETCRAWLER: 
             logger.info('Searching NZB\'s at provider UsenetCrawler ...')
-            resultlist = providers.UsenetCrawler(book)
+            resultlist += providers.UsenetCrawler(book)
+            #AHHH pass the book not the search book - bloody names the same, so wrong keys passing over
 
         if not resultlist:
             logger.debug("Adding book %s to queue." % book['searchterm'])
