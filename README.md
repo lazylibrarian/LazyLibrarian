@@ -70,8 +70,8 @@ Linux:
 
 Ubuntu (init.d script):
 
-* Copy "initd.ubuntu" to /etc/init.d/lazylibrarian - > "sudo cp initd.ubuntu /etc/init.d/lazylibrarian"  
-* Copy "default.ubuntu" to /etc/default/lazylibrarian - > "sudo cp default.ubuntu /etc/default/lazylibrarian"  
+* Copy "initd.ubuntu" to /etc/init.d/lazylibrarian - > "sudo cp ubuntu.initd /etc/init.d/lazylibrarian"  
+* Copy "default.ubuntu" to /etc/default/lazylibrarian - > "sudo cp ubuntu.default /etc/default/lazylibrarian"  
 * Edit the required daemon settings in /etc/default/lazylibrarian - > editor /etc/default/lazylibrarian  
 * If your LL installation isn't in "/opt/lazylibrarian/", make sure to change the path there also!  
 * Make executable "sudo chmod a+x /etc/init.d/lazylibrarian"  
