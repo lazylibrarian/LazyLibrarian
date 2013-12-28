@@ -6,12 +6,12 @@ from lazylibrarian import logger, version
 import lib.simplejson as simplejson
 
 user = "dobytang"
-branch = "master"
+#branch = "master"
 repo="lazylibrarian"
 
-
+#
+#Function to execute GIT commands taking care of error logging etc
 def runGit(args):
-
 
     git_locations = ['git']
         
@@ -45,6 +45,11 @@ def runGit(args):
             
     return (output, err)
             
+#
+#Badly named function - is really setInstallType 
+#
+#TODO Refactor getVersion to setInstallType
+#TODO extract environmental check for windows/git/source to other function
 def getVersion():
 
     if version.LAZYLIBRARIAN_VERSION.startswith('win32build'):
@@ -78,7 +83,7 @@ def getVersion():
         version_file = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
         
         if not os.path.isfile(version_file):
-            return None
+            return 'No Version File'
     
         fp = open(version_file, 'r')
         current_version = fp.read().strip(' \n\r')
@@ -87,10 +92,18 @@ def getVersion():
         if current_version:
             return current_version
         else:
-            return None
+            return 'No Version file'
 
-
-def getCurrentBranch():
+#
+#Returns current branch name of installed version
+#
+#Should return "NON GIT INSTALL" if INSTALL TYPE is not GIT
+def getCurrentGitBranch():
+    #Can only work for GIT driven installs, so check install type
+    if lazylibrarian.INSTALL_TYPE != 'git':
+        logger.debug('Non GIT Install doing check update. Return NON GIT INSTALL')
+        return 'NON GIT INSTALL'
+    
     # use git rev-parse --abbrev-ref HEAD which returns the name of the current branch
     output, err = runGit('rev-parse --abbrev-ref HEAD')
     
@@ -111,9 +124,14 @@ def checkForUpdates():
 
 
 def checkGithub():
+    
+    #Can only work for GIT driven installs, so check install type
+    if lazylibrarian.INSTALL_TYPE != 'git':
+        logger.debug('Non GIT Install doing check update. Return NON GIT INSTALL')
+        return 'NON GIT INSTALL'
 
     #check current branch value of the local git repo as folks may pull from a branch not master
-    branch = getCurrentBranch()
+    branch = getCurrentGitBranch()
 
     # Get the latest commit available from github
     url = 'https://api.github.com/repos/%s/%s/commits/%s' % (user, repo, branch)
@@ -160,7 +178,6 @@ def checkGithub():
         
 def update():
 
-    branch = getCurrentBranch()
     
     if lazylibrarian.INSTALL_TYPE == 'win':
         logger.debug('Windows install - no update available')    
@@ -169,7 +186,9 @@ def update():
     
 
     elif lazylibrarian.INSTALL_TYPE == 'git':
-	
+
+        branch = getCurrentGitBranch()
+
         output, err = runGit('stash clear')
         output, err = runGit('pull origin ' + branch)
         	
@@ -186,7 +205,11 @@ def update():
                 logger.info('Output: ' + str(output))
                 
     else:
-    
+
+        #As this is a non GIT install, we assume that the comparison is 
+        #always to master.
+        branch = 'master'
+        
         tar_download_url = 'https://github.com/%s/%s/tarball/%s' % (user, repo, branch)
         update_dir = os.path.join(lazylibrarian.PROG_DIR, 'update')
         version_path = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
