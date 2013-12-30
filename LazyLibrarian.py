@@ -105,10 +105,12 @@ def main():
     #There is no point putting in any logging above this line, as its not set till after initialize.
     lazylibrarian.initialize()
     
+    #Set the install type (win,git,source) & 
     #check the version when the application starts
+    versioncheck.getInstallType()
     lazylibrarian.CURRENT_VERSION = versioncheck.getVersion()
     lazylibrarian.LATEST_VERSION = versioncheck.checkGithub()
-    logger.debug('Current Version [%s] - Latest remote version [%s]' % (lazylibrarian.CURRENT_VERSION, lazylibrarian.LATEST_VERSION))
+    logger.debug('Current Version [%s] - Latest remote version [%s] - Install type [%s]' % (lazylibrarian.CURRENT_VERSION, lazylibrarian.LATEST_VERSION, lazylibrarian.INSTALL_TYPE))
 
 
     if options.port:
