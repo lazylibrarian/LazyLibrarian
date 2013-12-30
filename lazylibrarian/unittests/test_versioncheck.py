@@ -13,8 +13,9 @@ from lazylibrarian import  versioncheck,version
 
 class VersionCheckTest(unittest.TestCase):
 
+    
    def setUp(self):
-
+        local_git_sha_value = "ee9dcbed486f0defe733fa47d95d8efe7f8adf65"
         pass
 
    def tearDown(self):
@@ -75,7 +76,7 @@ class VersionCheckTest(unittest.TestCase):
         lazylibrarian.PROG_DIR = os.path.dirname(os.path.abspath(__file__))
         #lazylibrarian.PROG_DIR = 'doesnt matter'
         result = versioncheck.getCurrentVersion()
-        self.assertEquals("5ae63eb9e894b15876f51076baf3f820e2049912",result)
+        self.assertEquals("ee9dcbed486f0defe733fa47d95d8efe7f8adf65",result)
 
    def test_getCurrentVersion_ForWindows(self):
        #Over write the version file value
@@ -95,7 +96,7 @@ class VersionCheckTest(unittest.TestCase):
        lazylibrarian.PROG_DIR = os.path.dirname(os.path.abspath(__file__))
        lazylibrarian.INSTALL_TYPE = 'git'
        result = versioncheck.checkGithub()
-       self.assertEquals("5ae63eb9e894b15876f51076baf3f820e2049912",result)
+       self.assertEquals("ee9dcbed486f0defe733fa47d95d8efe7f8adf65",result)
        
    def test_checkGithub_WinInstall(self):
        lazylibrarian.INSTALL_TYPE = 'win'
@@ -118,7 +119,7 @@ class VersionCheckTest(unittest.TestCase):
        lazylibrarian.PROG_DIR = os.path.dirname(os.path.abspath(__file__))
        result = versioncheck.getLatestVersion()
        self.assertEquals(lazylibrarian.LATEST_VERSION, result)
-#       self.assertEquals("5ae63eb9e894b15876f51076baf3f820e2049912",result)
+#       self.assertEquals("ee9dcbed486f0defe733fa47d95d8efe7f8adf65",result)
        
    def test_getLatestVersion_SOURCE(self):
        lazylibrarian.INSTALL_TYPE = 'source'
@@ -144,7 +145,7 @@ class VersionCheckTest(unittest.TestCase):
        lazylibrarian.INSTALL_TYPE = 'git'
        lazylibrarian.PROG_DIR = os.path.dirname(os.path.abspath(__file__))
        result = versioncheck.getLatestVersionaFromGit()
-       self.assertEquals('5ae63eb9e894b15876f51076baf3f820e2049912',result)
+       self.assertEquals('ee9dcbed486f0defe733fa47d95d8efe7f8adf65',result)
        
 #tests todo
 #OS Install

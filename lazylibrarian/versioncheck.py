@@ -139,6 +139,7 @@ def checkForUpdates():
     getInstallType()
     s = getCurrentVersion()
     lv = getLatestVersion()
+    f = getCommitDifferenceFromGit()
     l = checkGithub()
 
 
@@ -167,68 +168,76 @@ def getLatestVersionaFromGit():
     
     #Can only work for GIT driven installs, so check install type
     if lazylibrarian.INSTALL_TYPE != 'git':
-        logger.debug('(checkGithub) Code Error - function called directly not via getLatestVersion. Should not happen')
+        logger.debug('(getLatestVersionaFromGit) Code Error - function called directly not via getLatestVersion. Should not happen')
         latest_version = 'NON GIT INSTALL'
     else:
         #check current branch value of the local git repo as folks may pull from a branch not master
         branch = getCurrentGitBranch()
         
         if (branch == 'InvalidBranch'):
-            logger.debug('(latestVersionFromGit) - Failed to get a valid branch name from local repo')
+            logger.debug('(getLatestVersionaFromGit) - Failed to get a valid branch name from local repo')
         else:
 
             # Get the latest commit available from github
             url = 'https://api.github.com/repos/%s/%s/commits/%s' % (user, repo, branch)
-            logger.info ('(checkGithub) Retrieving latest version information from github command=[%s]' % url)
+            logger.info ('(getLatestVersionaFromGit) Retrieving latest version information from github command=[%s]' % url)
             try:
                 result = urllib2.urlopen(url).read()
                 git = simplejson.JSONDecoder().decode(result)
                 latest_version = git['sha']
-                logger.debug('(checkGithub) Branch [%s] has Latest Version has been set to %s' % (branch, lazylibrarian.LATEST_VERSION))
+                logger.debug('(getLatestVersionaFromGit) Branch [%s] has Latest Version has been set to [%s]' % (branch, latest_version))
             except:
-                logger.warn('(checkGithub) Could not get the latest commit from github')
+                logger.warn('(getLatestVersionaFromGit) Could not get the latest commit from github')
                 latest_version = 'Not_Available_From_GitHUB'
 
     return latest_version
 
 # See how many commits behind we are    
 def getCommitDifferenceFromGit():
-    #
+    commits = -1
     #Takes current latest version value and trys to diff it with the latest
     #version in the current branch.
     if lazylibrarian.CURRENT_VERSION:
-        logger.info('(checkGithub) Comparing currently installed version with latest github version')
+        logger.info('(getCommitDifferenceFromGit) -  Comparing currently installed version with latest github version')
         url = 'https://api.github.com/repos/%s/LazyLibrarian/compare/%s...%s' % (user, lazylibrarian.CURRENT_VERSION, lazylibrarian.LATEST_VERSION)
-        logger.debug('(checkGithub) Check for differences between local & repo by [%s]' % url)
+        logger.debug('(getCommitDifferenceFromGit) -  Check for differences between local & repo by [%s]' % url)
         
         try:
             result = urllib2.urlopen(url).read()
             git = simplejson.JSONDecoder().decode(result)
-            lazylibrarian.COMMITS_BEHIND = git['total_commits']
+            commits = git['total_commits']
             
-            logger.info('(checkGithub) GitHub reports as follows Status [%s] - Ahead [%s] - Behind [%s] - Total Commits [%s] ' % (git['status'], git['ahead_by'], git['behind_by'], git['total_commits']))
+            logger.info('(getCommitDifferenceFromGit) -  GitHub reports as follows Status [%s] - Ahead [%s] - Behind [%s] - Total Commits [%s] ' % (git['status'], git['ahead_by'], git['behind_by'], git['total_commits']))
         except:
-            logger.warn('(checkGithub) Could not get commits behind from github. Can happen if you have a local commit not pushed to repo')
-            lazylibrarian.COMMITS_BEHIND = 0
-            lazylibrarian.CURRENT_VERSION = 'Invalid Current Version'
-            return lazylibrarian.CURRENT_VERSION
+            logger.warn('(getCommitDifferenceFromGit) -  Could not get commits behind from github. Can happen if you have a local commit not pushed to repo')
             
-        if lazylibrarian.COMMITS_BEHIND >= 1:
-            logger.info('(checkGithub) New version is available. You are %s commits behind' % lazylibrarian.COMMITS_BEHIND)
-        elif lazylibrarian.COMMITS_BEHIND == 0:
-            logger.info('(checkGithub) lazylibrarian is up to date')
-        elif lazylibrarian.COMMITS_BEHIND == -1:
-            logger.info('(checkGithub) You are running an unknown version of lazylibrarian. Run the updater to identify your version')
+        if commits >= 1:
+            logger.info('(getCommitDifferenceFromGit) -  New version is available. You are %s commits behind' % lazylibrarian.COMMITS_BEHIND)
+        elif commits == 0:
+            logger.info('(getCommitDifferenceFromGit) -  lazylibrarian is up to date ')
+        elif commits == -1:
+            logger.info('(getCommitDifferenceFromGit) -  You are running an unknown version of lazylibrarian. Run the updater to identify your version')
             
     else:
         logger.info('You are running an unknown version of lazylibrarian. Run the updater to identify your version')
+        
+    logger.debug('(getCommitDifferenceFromGit) - exiting with commit value of [%s]' % commits)
+    lazylibrarian.COMMITS_BEHIND = commits
+    return commits
     
 
+#
+#simplified to get latest version and figure out deviance
+#and set global variables
+#TODO - remove globals from both functions once testing completed
 def checkGithub():
     
-    
+    lazylibrarian.LATEST_VERSION= getLatestVersion()
+    lazylibrarian.COMMITS_BEHIND = getCommitDifferenceFromGit()
+
+#just in case I forgot something for now
+def old_checkGithub():
     lazylibrarian.COMMITS_BEHIND = 'Unknown'
-    
     
     #Can only work for GIT driven installs, so check install type
     if lazylibrarian.INSTALL_TYPE != 'git':
