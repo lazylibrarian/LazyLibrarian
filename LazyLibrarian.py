@@ -114,10 +114,10 @@ def main():
 
 
     if options.port:
-        HTTP_PORT = int(options.port)
-        logger.info('Starting LazyLibrarian on forced port: %s' % HTTP_PORT)
+        lazylibrarian.HTTP_PORT = int(options.port)
+        logger.info('Starting LazyLibrarian on forced port: %s' % lazylibrarian.HTTP_PORT)
     else:
-        HTTP_PORT = int(lazylibrarian.HTTP_PORT)
+        lazylibrarian.HTTP_PORT = int(lazylibrarian.HTTP_PORT)
         logger.info('Starting LazyLibrarian on port: %s' % lazylibrarian.HTTP_PORT)
 
     if lazylibrarian.DAEMON:
@@ -125,7 +125,7 @@ def main():
 
     # Try to start the server. 
     webStart.initialize({
-                    'http_port': HTTP_PORT,
+                    'http_port': lazylibrarian.HTTP_PORT,
                     'http_host': lazylibrarian.HTTP_HOST,
                     'http_root': lazylibrarian.HTTP_ROOT,
                     'http_user': lazylibrarian.HTTP_USER,
