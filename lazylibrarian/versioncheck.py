@@ -124,7 +124,10 @@ def checkForUpdates():
 
 
 def checkGithub():
-    
+   
+    #PATCH - global variable not set if non git install.
+    lazylibrarian.COMMITS_BEHIND = 0
+ 
     #Can only work for GIT driven installs, so check install type
     if lazylibrarian.INSTALL_TYPE != 'git':
         logger.debug('Non GIT Install doing check update. Return NON GIT INSTALL')
