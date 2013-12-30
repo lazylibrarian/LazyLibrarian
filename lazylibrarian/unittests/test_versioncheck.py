@@ -63,31 +63,31 @@ class VersionCheckTest(unittest.TestCase):
 #No install type set
 #Install type - win, git, source
 #check responses back from each setting is correct.
-   def test_getVersion(self):
-        result = versioncheck.getVersion()
+   def test_getCurrentVersion(self):
+        result = versioncheck.getCurrentVersion()
+        #base is that current version is set to the result no matter what
+        self.assertEquals(lazylibrarian.CURRENT_VERSION,result)
         self.assertEquals("Install type not set",result)
 
 #can never pass as the version should alwayscheck next version
-   def test_getVersionGIT(self):
+   def test_getCurrentVersion_ForGIT(self):
         lazylibrarian.INSTALL_TYPE = 'git'
         lazylibrarian.PROG_DIR = os.path.dirname(os.path.abspath(__file__))
         #lazylibrarian.PROG_DIR = 'doesnt matter'
-        result = versioncheck.getVersion()
-        self.assertEquals("d4cd6da37af04911a16911d187e35d6cb3ac970a",result)
+        result = versioncheck.getCurrentVersion()
+        self.assertEquals("5ae63eb9e894b15876f51076baf3f820e2049912",result)
 
-   def test_getVersionWindows(self):
+   def test_getCurrentVersion_ForWindows(self):
        #Over write the version file value
         lazylibrarian.INSTALL_TYPE = 'win'
-        result = versioncheck.getVersion()
+        result = versioncheck.getCurrentVersion()
         self.assertEquals("Windows Install",result)
 
-   def test_getVersionSource(self):
+   def test_getCurrentVersion_ForSource(self):
        #Over write the version file value
         lazylibrarian.INSTALL_TYPE = 'source'
-        result = versioncheck.getVersion()
+        result = versioncheck.getCurrentVersion()
         self.assertEquals("test-version-file",result)
-
-
 
 
 
@@ -95,7 +95,7 @@ class VersionCheckTest(unittest.TestCase):
        lazylibrarian.PROG_DIR = os.path.dirname(os.path.abspath(__file__))
        lazylibrarian.INSTALL_TYPE = 'git'
        result = versioncheck.checkGithub()
-       self.assertEquals("d4cd6da37af04911a16911d187e35d6cb3ac970a",result)
+       self.assertEquals("5ae63eb9e894b15876f51076baf3f820e2049912",result)
        
    def test_checkGithub_WinInstall(self):
        lazylibrarian.INSTALL_TYPE = 'win'
@@ -113,8 +113,39 @@ class VersionCheckTest(unittest.TestCase):
        output, err = versioncheck.runGit('--version')
        self.assertTrue(output.strip().startswith('git version'))
 
+   def test_getLatestVersion_GIT(self):
+       lazylibrarian.INSTALL_TYPE = 'git'
+       lazylibrarian.PROG_DIR = os.path.dirname(os.path.abspath(__file__))
+       result = versioncheck.getLatestVersion()
+       self.assertEquals(lazylibrarian.LATEST_VERSION, result)
+#       self.assertEquals("5ae63eb9e894b15876f51076baf3f820e2049912",result)
+       
+   def test_getLatestVersion_SOURCE(self):
+       lazylibrarian.INSTALL_TYPE = 'source'
+       result = versioncheck.getLatestVersion()
+       self.assertEquals("SOURCE INSTALL",result)
+
+   def test_getLatestVersion_WIN(self):
+       lazylibrarian.INSTALL_TYPE = 'win'
+       result = versioncheck.getLatestVersion()
+       self.assertEquals("WIN INSTALL",result)
+
+   def test_getLatestVersion(self):
+       result = versioncheck.getLatestVersion()
+       self.assertEquals("UNKNOWN INSTALL",result)
 
 
+   def test_getLatestVersionaFromGit_TypeWin(self):
+       lazylibrarian.INSTALL_TYPE = 'win'
+       result = versioncheck.getLatestVersionaFromGit()
+       self.assertEquals("NON GIT INSTALL",result)
+
+   def test_getLatestVersionaFromGit_TypeGit(self):
+       lazylibrarian.INSTALL_TYPE = 'git'
+       lazylibrarian.PROG_DIR = os.path.dirname(os.path.abspath(__file__))
+       result = versioncheck.getLatestVersionaFromGit()
+       self.assertEquals('5ae63eb9e894b15876f51076baf3f820e2049912',result)
+       
 #tests todo
 #OS Install
 #auto update on/off
