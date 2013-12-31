@@ -163,6 +163,7 @@ class WebInterface(object):
     configUpdate.exposed = True
 
     def update(self):
+        logger.debug('(webServe-Update) - Performing update')
         lazylibrarian.SIGNAL = 'update'
         message = 'Updating...'
         return serve_template(templatename="shutdown.html", title="Updating", message=message, timer=120)
@@ -324,8 +325,12 @@ class WebInterface(object):
     def checkForUpdates(self):
         #check the version when the application starts
         from lazylibrarian import versioncheck
-        lazylibrarian.CURRENT_VERSION = versioncheck.getVersion()
-        versioncheck.checkGithub()
+        #Set the install type (win,git,source) & 
+        #check the version when the application starts
+        versioncheck.getInstallType()
+        lazylibrarian.CURRENT_VERSION = versioncheck.getCurrentVersion()
+        lazylibrarian.LATEST_VERSION = versioncheck.getLatestVersion()
+        lazylibrarian.COMMITS_BEHIND = versioncheck.getCommitDifferenceFromGit()
         raise cherrypy.HTTPRedirect("config")
     checkForUpdates.exposed = True
 

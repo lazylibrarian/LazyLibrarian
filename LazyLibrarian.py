@@ -105,17 +105,20 @@ def main():
     #There is no point putting in any logging above this line, as its not set till after initialize.
     lazylibrarian.initialize()
     
+    #Set the install type (win,git,source) & 
     #check the version when the application starts
-    lazylibrarian.CURRENT_VERSION = versioncheck.getVersion()
-    lazylibrarian.LATEST_VERSION = versioncheck.checkGithub()
-    logger.debug('Current Version [%s] - Latest remote version [%s]' % (lazylibrarian.CURRENT_VERSION, lazylibrarian.LATEST_VERSION))
+    versioncheck.getInstallType()
+    lazylibrarian.CURRENT_VERSION = versioncheck.getCurrentVersion()
+    lazylibrarian.LATEST_VERSION = versioncheck.getLatestVersion()
+    lazylibrarian.COMMITS_BEHIND = versioncheck.getCommitDifferenceFromGit()
+    logger.debug('Current Version [%s] - Latest remote version [%s] - Install type [%s]' % (lazylibrarian.CURRENT_VERSION, lazylibrarian.LATEST_VERSION, lazylibrarian.INSTALL_TYPE))
 
 
     if options.port:
-        HTTP_PORT = int(options.port)
-        logger.info('Starting LazyLibrarian on forced port: %s' % HTTP_PORT)
+        lazylibrarian.HTTP_PORT = int(options.port)
+        logger.info('Starting LazyLibrarian on forced port: %s' % lazylibrarian.HTTP_PORT)
     else:
-        HTTP_PORT = int(lazylibrarian.HTTP_PORT)
+        lazylibrarian.HTTP_PORT = int(lazylibrarian.HTTP_PORT)
         logger.info('Starting LazyLibrarian on port: %s' % lazylibrarian.HTTP_PORT)
 
     if lazylibrarian.DAEMON:
@@ -123,7 +126,7 @@ def main():
 
     # Try to start the server. 
     webStart.initialize({
-                    'http_port': HTTP_PORT,
+                    'http_port': lazylibrarian.HTTP_PORT,
                     'http_host': lazylibrarian.HTTP_HOST,
                     'http_root': lazylibrarian.HTTP_ROOT,
                     'http_user': lazylibrarian.HTTP_USER,
