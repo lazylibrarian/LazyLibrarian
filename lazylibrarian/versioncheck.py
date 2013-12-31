@@ -46,7 +46,7 @@ def runGit(args):
     return (output, err)
             
 #
-#function to determine what type of install we are on
+#function to determine what type of install we are on & sets current Branch value
 # - windows
 # - git based
 # - deployed source code
@@ -54,14 +54,17 @@ def getInstallType():
     
     if version.LAZYLIBRARIAN_VERSION.startswith('win32build'):
         lazylibrarian.INSTALL_TYPE = 'win'
-        logger.debug('(getInstallType) Windows install detected')
+        lazylibrarian.CURRENT_BRANCH = 'Windows'
+        logger.debug('(getInstallType) Windows install detected. Setting Branch to [%s]' % lazylibrarian.CURRENT_BRANCH)
     
     elif os.path.isdir(os.path.join(lazylibrarian.PROG_DIR, '.git')):
         lazylibrarian.INSTALL_TYPE = 'git'
-        logger.debug('(getInstallType) GIT install detected')        
+        lazylibrarian.CURRENT_BRANCH = getCurrentGitBranch()
+        logger.debug('(getInstallType) GIT install detected. Setting Branch to [%s] ' % lazylibrarian.CURRENT_BRANCH)        
     else:      
         lazylibrarian.INSTALL_TYPE = 'source'
-        logger.debug('(getInstallType) Source install detected')
+        lazylibrarian.CURRENT_BRANCH = 'master'
+        logger.debug('(getInstallType) Source install detected. Setting Branch to [%s]' % lazylibrarian.CURRENT_BRANCH)
 
 #
 #Establish the version of the installed app for Source or GIT only
@@ -89,6 +92,7 @@ def getCurrentVersion():
                 version = 'GIT invalid hash return'
             
         version = cur_commit_hash
+        updateVersionFile(version)
         
     elif lazylibrarian.INSTALL_TYPE == 'source':
         
@@ -123,16 +127,17 @@ def getCurrentGitBranch():
         return 'NON GIT INSTALL'
     
     # use git rev-parse --abbrev-ref HEAD which returns the name of the current branch
-    output, err = runGit('rev-parse --abbrev-ref HEAD')
+    current_branch, err = runGit('rev-parse --abbrev-ref HEAD')
     
-    output = output.strip('\n')
+    current_branch = current_branch.strip('\n')
     
-    if not output:
+    if not current_branch:
         logger.error('failed to return current branch value')
         return 'InvalidBranch'
 
-    logger.debug('(getCurrentGitBranch) Current local branch of repo is [%s] ' % output)
-    return output
+    logger.debug('(getCurrentGitBranch) Current local branch of repo is [%s] ' % current_branch)
+
+    return current_branch
 
 #not sure how this is called as we have same function in webServe.py also
 #ensuring both are identical for now
@@ -177,7 +182,7 @@ def getLatestVersionaFromGit():
         latest_version = 'NON GIT INSTALL'
     else:
         #check current branch value of the local git repo as folks may pull from a branch not master
-        branch = getCurrentGitBranch()
+        branch = lazylibrarian.CURRENT_BRANCH
         
         if (branch == 'InvalidBranch'):
             logger.debug('(getLatestVersionaFromGit) - Failed to get a valid branch name from local repo')
@@ -305,6 +310,21 @@ def old_checkGithub():
     
     return lazylibrarian.LATEST_VERSION
         
+        
+#
+#writes a version.txt file in the LL root dir with value of parameter
+def updateVersionFile(new_version_id):
+        # Update version.txt located in LL home dir.
+        version_path = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
+        
+        try:
+            logger.debug("(updateVersionFile) Updating [%s] with value [%s]" % (version_path, new_version_id))
+            ver_file = open(version_path, 'w')
+            ver_file.write(new_version_id)
+            ver_file.close()
+        except IOError, e:
+            logger.error(u"(updateVersionFile) Unable to write current version to version.txt, update not complete: "+ex(e))
+        
 def update():
 
      
@@ -335,7 +355,7 @@ def update():
 
         #As this is a non GIT install, we assume that the comparison is 
         #always to master.
-        branch = 'master'
+        branch = 'versioncheck'
         
         tar_download_url = 'https://github.com/%s/%s/tarball/%s' % (user, repo, branch)
         update_dir = os.path.join(lazylibrarian.PROG_DIR, 'update')
@@ -386,13 +406,7 @@ def update():
                 os.renames(old_path, new_path)
                 
         # Update version.txt
-        try:
-            ver_file = open(version_path, 'w')
-            ver_file.write(lazylibrarian.LATEST_VERSION)
-            ver_file.close()
-        except IOError, e:
-            logger.error(u"(update) Unable to write current version to version.txt, update not complete: "+ex(e))
-            return
+        updateVersionFile(lazylibrarian.LATEST_VERSION)
     else:
         logger.error("(update) Cannot perform update - Install Type not set")
         return

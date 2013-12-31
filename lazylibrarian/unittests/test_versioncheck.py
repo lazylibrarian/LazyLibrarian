@@ -32,11 +32,15 @@ class VersionCheckTest(unittest.TestCase):
        version.LAZYLIBRARIAN_VERSION = 'win32build'
        result = versioncheck.getInstallType()
        self.assertEquals("win",lazylibrarian.INSTALL_TYPE)
+       self.assertEquals("Windows",lazylibrarian.CURRENT_BRANCH)
         
    def test_getInstallTypeSource(self):
        lazylibrarian.PROG_DIR = '/tmp'
        result = versioncheck.getInstallType()
        self.assertEquals("source",lazylibrarian.INSTALL_TYPE)
+       self.assertEquals("master",lazylibrarian.CURRENT_BRANCH)
+       
+
 
 
 
@@ -143,7 +147,12 @@ class VersionCheckTest(unittest.TestCase):
        lazylibrarian.PROG_DIR = os.path.dirname(os.path.abspath(__file__))
        result = versioncheck.getLatestVersionaFromGit()
        self.assertEquals('ac3be411f792c62895ad16bc120d92eaf44345c2',result)
-       
+
+
+   def test_updateVersionFile(self):
+        pass
+        
+        
 #tests todo
 #OS Install
 #auto update on/off
