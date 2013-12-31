@@ -110,6 +110,7 @@ def getCurrentVersion():
         logger.error('(getVersion) Install Type not set - cannot get version value')
         version = 'Install type not set'
    
+    logger.info('(getCurrentVersion) - Local Version is set to [%s] ' % version)
     return version
 
 #
@@ -130,7 +131,7 @@ def getCurrentGitBranch():
         logger.error('failed to return current branch value')
         return 'InvalidBranch'
 
-    logger.debug('Current branch of  repo is [%s] ' % output)
+    logger.debug('(getCurrentGitBranch) Current local branch of repo is [%s] ' % output)
     return output
 
 #not sure how this is called as we have same function in webServe.py also
@@ -207,8 +208,11 @@ def getCommitDifferenceFromGit():
         logger.debug('(getCommitDifferenceFromGit) -  Check for differences between local & repo by [%s]' % url)
         
         try:
+            logger.debug('open url')
             result = urllib2.urlopen(url).read()
+            logger.debug('JSONDecode url')
             git = simplejson.JSONDecoder().decode(result)
+            logger.debug('pull total_commits from json object')
             commits = git['total_commits']
             
             logger.info('(getCommitDifferenceFromGit) -  GitHub reports as follows Status [%s] - Ahead [%s] - Behind [%s] - Total Commits [%s] ' % (git['status'], git['ahead_by'], git['behind_by'], git['total_commits']))
