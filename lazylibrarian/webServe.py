@@ -163,6 +163,7 @@ class WebInterface(object):
     configUpdate.exposed = True
 
     def update(self):
+        logger.debug('(webServe-Update) - Performing update')
         lazylibrarian.SIGNAL = 'update'
         message = 'Updating...'
         return serve_template(templatename="shutdown.html", title="Updating", message=message, timer=120)
