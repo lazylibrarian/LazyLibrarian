@@ -307,7 +307,7 @@ def old_checkGithub():
         
 def update():
 
-    
+     
     if lazylibrarian.INSTALL_TYPE == 'win':
         logger.debug('(update) Windows install - no update available')    
         logger.info('(update) Windows .exe updating not supported yet.')
