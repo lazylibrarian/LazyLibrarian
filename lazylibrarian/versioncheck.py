@@ -208,16 +208,22 @@ def getCommitDifferenceFromGit():
         logger.debug('(getCommitDifferenceFromGit) -  Check for differences between local & repo by [%s]' % url)
         
         try:
-            logger.debug('open url')
             result = urllib2.urlopen(url).read()
-            logger.debug('JSONDecode url')
-            git = simplejson.JSONDecoder().decode(result)
-            logger.debug('pull total_commits from json object')
-            commits = git['total_commits']
-            
-            logger.info('(getCommitDifferenceFromGit) -  GitHub reports as follows Status [%s] - Ahead [%s] - Behind [%s] - Total Commits [%s] ' % (git['status'], git['ahead_by'], git['behind_by'], git['total_commits']))
+
+            try:
+                logger.debug('JSONDecode url')
+                git = simplejson.JSONDecoder().decode(result)
+                logger.debug('pull total_commits from json object')
+                commits = git['total_commits']
+                
+                logger.info('(getCommitDifferenceFromGit) -  GitHub reports as follows Status [%s] - Ahead [%s] - Behind [%s] - Total Commits [%s] ' % (git['status'], git['ahead_by'], git['behind_by'], git['total_commits']))
+            except:
+                logger.warn('(getCommitDifferenceFromGit) -  could not get difference status from GitHub')
+
+
         except:
             logger.warn('(getCommitDifferenceFromGit) -  Could not get commits behind from github. Can happen if you have a local commit not pushed to repo')
+            
             
         if commits >= 1:
             logger.info('(getCommitDifferenceFromGit) -  New version is available. You are %s commits behind' % lazylibrarian.COMMITS_BEHIND)

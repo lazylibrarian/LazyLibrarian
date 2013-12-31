@@ -329,7 +329,7 @@ class WebInterface(object):
         versioncheck.getInstallType()
         lazylibrarian.CURRENT_VERSION = versioncheck.getCurrentVersion()
         lazylibrarian.LATEST_VERSION = versioncheck.getLatestVersion()
-        lazylibrarian.COMMITS_BEHIND = getCommitDifferenceFromGit()
+        lazylibrarian.COMMITS_BEHIND = versioncheck.getCommitDifferenceFromGit()
         raise cherrypy.HTTPRedirect("config")
     checkForUpdates.exposed = True
 
