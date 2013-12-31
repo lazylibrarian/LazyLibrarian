@@ -120,12 +120,12 @@ class VersionCheckTest(unittest.TestCase):
        lazylibrarian.PROG_DIR = os.path.dirname(os.path.abspath(__file__))
        result = versioncheck.getLatestVersion()
        self.assertEquals(lazylibrarian.LATEST_VERSION, result)
-#       self.assertEquals("ac3be411f792c62895ad16bc120d92eaf44345c2",result)
        
    def test_getLatestVersion_SOURCE(self):
        lazylibrarian.INSTALL_TYPE = 'source'
+       lazylibrarian.PROG_DIR = os.path.dirname(os.path.abspath(__file__))
        result = versioncheck.getLatestVersion()
-       self.assertEquals("SOURCE INSTALL",result)
+       self.assertEquals(lazylibrarian.LATEST_VERSION, result)
 
    def test_getLatestVersion_WIN(self):
        lazylibrarian.INSTALL_TYPE = 'win'

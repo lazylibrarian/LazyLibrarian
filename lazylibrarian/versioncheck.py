@@ -161,7 +161,7 @@ def getLatestVersion():
     if lazylibrarian.INSTALL_TYPE == 'git':
         latest_version = getLatestVersionaFromGit()
     elif lazylibrarian.INSTALL_TYPE == 'source':
-        latest_version = 'SOURCE INSTALL'
+        latest_version = getLatestVersionaFromGit()
     elif lazylibrarian.INSTALL_TYPE == 'win':
         latest_version = 'WIN INSTALL'
     else:
@@ -176,10 +176,10 @@ def getLatestVersion():
 def getLatestVersionaFromGit():
     latest_version = 'Unknown'
     
-    #Can only work for GIT driven installs, so check install type
-    if lazylibrarian.INSTALL_TYPE != 'git':
-        logger.debug('(getLatestVersionaFromGit) Code Error - function called directly not via getLatestVersion. Should not happen')
-        latest_version = 'NON GIT INSTALL'
+    #Can only work for non Windows driven installs, so check install type
+    if lazylibrarian.INSTALL_TYPE == 'win':
+        logger.debug('(getLatestVersionaFromGit) Code Error - Windows install - should not be called under a windows install')
+        latest_version = 'WINDOWS INSTALL'
     else:
         #check current branch value of the local git repo as folks may pull from a branch not master
         branch = lazylibrarian.CURRENT_BRANCH
@@ -355,7 +355,7 @@ def update():
 
         #As this is a non GIT install, we assume that the comparison is 
         #always to master.
-        branch = 'versioncheck'
+        branch = lazylibrarian.CURRENT_BRANCH
         
         tar_download_url = 'https://github.com/%s/%s/tarball/%s' % (user, repo, branch)
         update_dir = os.path.join(lazylibrarian.PROG_DIR, 'update')
