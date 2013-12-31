@@ -25,6 +25,8 @@ class VersionCheckTest(unittest.TestCase):
         
 #Check setVersion function
    def test_getInstallTypeGIT(self):
+       lazylibrarian.PROG_DIR = os.path.dirname(os.path.abspath(__file__))
+      
        result = versioncheck.getInstallType()
        self.assertEquals("git",lazylibrarian.INSTALL_TYPE)
        
@@ -93,21 +95,7 @@ class VersionCheckTest(unittest.TestCase):
 
 
 
-   def test_checkGithub(self):
-       lazylibrarian.PROG_DIR = os.path.dirname(os.path.abspath(__file__))
-       lazylibrarian.INSTALL_TYPE = 'git'
-       result = versioncheck.checkGithub()
-       self.assertEquals("ac3be411f792c62895ad16bc120d92eaf44345c2",result)
-       
-   def test_checkGithub_WinInstall(self):
-       lazylibrarian.INSTALL_TYPE = 'win'
-       result = versioncheck.checkGithub()
-       self.assertEquals("NON GIT INSTALL",result)
 
-   def test_checkGithub_SourceInstall(self):
-       lazylibrarian.INSTALL_TYPE = 'source'
-       result = versioncheck.checkGithub()
-       self.assertEquals("NON GIT INSTALL",result)
 
 #simple git test, just check a version is returned but not care about the version number
    def test_runGit(self):
@@ -140,7 +128,7 @@ class VersionCheckTest(unittest.TestCase):
    def test_getLatestVersionaFromGit_TypeWin(self):
        lazylibrarian.INSTALL_TYPE = 'win'
        result = versioncheck.getLatestVersionaFromGit()
-       self.assertEquals("NON GIT INSTALL",result)
+       self.assertEquals("WINDOWS INSTALL",result)
 
    def test_getLatestVersionaFromGit_TypeGit(self):
        lazylibrarian.INSTALL_TYPE = 'git'
