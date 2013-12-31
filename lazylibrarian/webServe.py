@@ -324,8 +324,12 @@ class WebInterface(object):
     def checkForUpdates(self):
         #check the version when the application starts
         from lazylibrarian import versioncheck
-        lazylibrarian.CURRENT_VERSION = versioncheck.getVersion()
-        versioncheck.checkGithub()
+        #Set the install type (win,git,source) & 
+        #check the version when the application starts
+        versioncheck.getInstallType()
+        lazylibrarian.CURRENT_VERSION = versioncheck.getCurrentVersion()
+        lazylibrarian.LATEST_VERSION = versioncheck.getLatestVersion()
+        lazylibrarian.COMMITS_BEHIND = getCommitDifferenceFromGit()
         raise cherrypy.HTTPRedirect("config")
     checkForUpdates.exposed = True
 

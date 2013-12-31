@@ -133,16 +133,20 @@ def getCurrentGitBranch():
     logger.debug('Current branch of  repo is [%s] ' % output)
     return output
 
+#not sure how this is called as we have same function in webServe.py also
+#ensuring both are identical for now
 def checkForUpdates():
     # rename this thread
     threading.currentThread().name = "VERSIONCHECK"
     getInstallType()
-    s = getCurrentVersion()
-    lv = getLatestVersion()
-    f = getCommitDifferenceFromGit()
-    l = checkGithub()
+    lazylibrarian.CURRENT_VERSION = versioncheck.getCurrentVersion()
+    lazylibrarian.LATEST_VERSION = versioncheck.getLatestVersion()
+    lazylibrarian.COMMITS_BEHIND = getCommitDifferenceFromGit()
+    #l = checkGithub()
 
-
+#Return latest version from GITHUB 
+#- if GIT install return latest on current branch
+#- if nonGIT install return latest from master
 def getLatestVersion():
     #Can only work for GIT driven installs, so check install type
     latest_version = 'Unknown'
@@ -222,7 +226,7 @@ def getCommitDifferenceFromGit():
         logger.info('You are running an unknown version of lazylibrarian. Run the updater to identify your version')
         
     logger.debug('(getCommitDifferenceFromGit) - exiting with commit value of [%s]' % commits)
-    lazylibrarian.COMMITS_BEHIND = commits
+    #lazylibrarian.COMMITS_BEHIND = commits
     return commits
     
 
@@ -236,6 +240,7 @@ def checkGithub():
     lazylibrarian.COMMITS_BEHIND = getCommitDifferenceFromGit()
 
 #just in case I forgot something for now
+#TODO - REMOVE Function altogether
 def old_checkGithub():
     lazylibrarian.COMMITS_BEHIND = 'Unknown'
     
