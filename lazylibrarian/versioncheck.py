@@ -226,7 +226,7 @@ def getCommitDifferenceFromGit():
             
             
         if commits >= 1:
-            logger.info('(getCommitDifferenceFromGit) -  New version is available. You are %s commits behind' % lazylibrarian.COMMITS_BEHIND)
+            logger.info('(getCommitDifferenceFromGit) -  New version is available. You are %s commits behind' % commits)
         elif commits == 0:
             logger.info('(getCommitDifferenceFromGit) -  lazylibrarian is up to date ')
         elif commits == -1:
