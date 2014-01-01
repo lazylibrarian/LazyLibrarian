@@ -107,6 +107,7 @@ def main():
     
     #Set the install type (win,git,source) & 
     #check the version when the application starts
+    logger.debug('(LazyLibrarian) Setup install,versions and commit status')
     versioncheck.getInstallType()
     lazylibrarian.CURRENT_VERSION = versioncheck.getCurrentVersion()
     lazylibrarian.LATEST_VERSION = versioncheck.getLatestVersion()

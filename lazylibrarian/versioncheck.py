@@ -55,16 +55,16 @@ def getInstallType():
     if version.LAZYLIBRARIAN_VERSION.startswith('win32build'):
         lazylibrarian.INSTALL_TYPE = 'win'
         lazylibrarian.CURRENT_BRANCH = 'Windows'
-        logger.debug('(getInstallType) Windows install detected. Setting Branch to [%s]' % lazylibrarian.CURRENT_BRANCH)
+        logger.debug('(getInstallType) [Windows] install detected. Setting Branch to [%s]' % lazylibrarian.CURRENT_BRANCH)
     
     elif os.path.isdir(os.path.join(lazylibrarian.PROG_DIR, '.git')):
         lazylibrarian.INSTALL_TYPE = 'git'
         lazylibrarian.CURRENT_BRANCH = getCurrentGitBranch()
-        logger.debug('(getInstallType) GIT install detected. Setting Branch to [%s] ' % lazylibrarian.CURRENT_BRANCH)        
+        logger.debug('(getInstallType) [GIT] install detected. Setting Branch to [%s] ' % lazylibrarian.CURRENT_BRANCH)        
     else:      
         lazylibrarian.INSTALL_TYPE = 'source'
         lazylibrarian.CURRENT_BRANCH = 'master'
-        logger.debug('(getInstallType) Source install detected. Setting Branch to [%s]' % lazylibrarian.CURRENT_BRANCH)
+        logger.debug('(getInstallType) [Source]install detected. Setting Branch to [%s]' % lazylibrarian.CURRENT_BRANCH)
 
 #
 #Establish the version of the installed app for Source or GIT only
@@ -73,7 +73,7 @@ def getCurrentVersion():
     version = ''
 
     if lazylibrarian.INSTALL_TYPE == 'win':
-        logger.debug('(getVersion) Windows install - no update available')
+        logger.debug('(getCurrentVersion) Windows install - no update available')
         
         # Don't have a way to update exe yet, but don't want to set VERSION to None
         version = 'Windows Install'
@@ -82,17 +82,16 @@ def getCurrentVersion():
         output, err = runGit('rev-parse HEAD')
         
         if not output:
-            logger.error('Couldn\'t find latest git installed version.')
+            logger.error('(getCurrentVersion) Couldn\'t find latest git installed version.')
             version = 'GIT Cannot establish version'
         else:
             cur_commit_hash = output.strip()
         
             if not re.match('^[a-z0-9]+$', cur_commit_hash):
-                logger.error('(getVersion) Output doesn\'t look like a hash, not using it')
+                logger.error('(getCurrentVersion) Output doesn\'t look like a hash, not using it')
                 version = 'GIT invalid hash return'
             
         version = cur_commit_hash
-        updateVersionFile(version)
         
     elif lazylibrarian.INSTALL_TYPE == 'source':
         
@@ -100,6 +99,7 @@ def getCurrentVersion():
         
         if not os.path.isfile(version_file):
             version = 'No Version File'
+            logger.debug('(getCurrentVersion) [%s] missing.' % version_file)
         else:
             fp = open(version_file, 'r')
             current_version = fp.read().strip(' \n\r')
@@ -111,10 +111,11 @@ def getCurrentVersion():
                 version =  'No Version set in file'
     
     else:
-        logger.error('(getVersion) Install Type not set - cannot get version value')
+        logger.error('(getCurrentVersion) Install Type not set - cannot get version value')
         version = 'Install type not set'
    
-    logger.info('(getCurrentVersion) - Local Version is set to [%s] ' % version)
+    updateVersionFile(version)
+    logger.info('(getCurrentVersion) - Install type [%s] Local Version is set to [%s] ' % (lazylibrarian.INSTALL_TYPE,version))
     return version
 
 #
@@ -144,10 +145,12 @@ def getCurrentGitBranch():
 def checkForUpdates():
     # rename this thread
     threading.currentThread().name = "VERSIONCHECK"
+    logger.debug('(checkForUpdates) Set Install Type, Current & Latest Version and Commit status')
     getInstallType()
     lazylibrarian.CURRENT_VERSION = versioncheck.getCurrentVersion()
     lazylibrarian.LATEST_VERSION = versioncheck.getLatestVersion()
     lazylibrarian.COMMITS_BEHIND = getCommitDifferenceFromGit()
+    logger.debug('(checkForUpdates) Done')
     #l = checkGithub()
 
 #Return latest version from GITHUB 
