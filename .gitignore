@@ -5,6 +5,7 @@ cache.db*
 config.ini
 Logs/*
 lazylibrarian.db*
+version.txt
 
 #  Compiled source   #
 ######################

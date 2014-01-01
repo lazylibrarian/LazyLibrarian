@@ -94,6 +94,11 @@
 		                You're running an unknown version of lazylibrarian. <a href="update">Update</a> or 
 		                <a href="#" onclick="$('#updatebar').slideUp('slow');">Close</a>
 		            </div>
+		    % elif (lazylibrarian.INSTALL_TYPE == 'source' and lazylibrarian.CURRENT_VERSION == 'No Version File' ):
+		            <div id="updatebar">
+		                Running Unknown version via source install. Update from central area now <a href="update">Update</a> or 
+		                <a href="#" onclick="$('#updatebar').slideUp('slow');">Close</a>
+		            </div>		
 		    % elif lazylibrarian.CURRENT_VERSION != lazylibrarian.LATEST_VERSION :
 			% if lazylibrarian.COMMITS_BEHIND < 0:
 		            <div id="updatebar">
