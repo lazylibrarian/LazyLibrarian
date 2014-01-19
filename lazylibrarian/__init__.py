@@ -48,7 +48,7 @@ LAUNCH_BROWSER = False
 
 SAB_HOST = None
 SAB_PORT = None
-SAN_SUBDIR=None
+SAB_SUBDIR=None
 SAB_USER = None
 SAB_PASS = None
 SAB_API = None
