@@ -6,6 +6,23 @@
 * Previous maintainer: itsmegb , Herman Rodgers
 
 ### 2014 ###
+Jan,20 Exciting news update. TheGuardian has gracefully agreed to review the code base with a view to bringing in his improvements into the new UI. All going well this branch will hopefully include
+- Twitter notifications
+- magasine search
+- improved configurations
+- optimised UI workflow to the Herman-Rodgers UI.
+- 
+
+And a shout out to nncrypted for bring forth changes and enhancement patches also.
+
+Thanks folks, because I was going cross-eyed trying to bring in the huge volume of changes you both have added to the original branch over a new UI.
+
+
+To all other contributors - Patches are gratefully received espically when they can be auto merged :).
+
+Thanks - DobyTang
+
+
 Drive for this year is unit test expansion
 New Features
 Stability
