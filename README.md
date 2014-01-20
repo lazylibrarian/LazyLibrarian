@@ -10,8 +10,7 @@ Jan,20 Exciting news update. TheGuardian has gracefully agreed to review the cod
 - Twitter notifications
 - magasine search
 - improved configurations
-- optimised UI workflow to the Herman-Rodgers UI.
-- 
+- optimised UI workflow to the Herman-Rodgers UI
 
 And a shout out to nncrypted for bring forth changes and enhancement patches also.
 
