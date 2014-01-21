@@ -4,6 +4,7 @@
 %>
 
 <%def name="body()">
+<BR>
     <table class="display" id="log_table">
         <thead>
             <tr>
@@ -43,6 +44,11 @@
     {
         $('#log_table').dataTable(
             {
+                "aoColumns": [
+                    null,
+                    null,
+                    null
+                    ],
                 "oLanguage": {
                     "sSearch":"",
                     "sLengthMenu":"Show _MENU_ lines per page",
@@ -81,7 +87,7 @@
         
         // dont keep refreshing the log table on mobile devices
         var isiPad = navigator.userAgent.match(/iPad/i) != null;
-        if (!isiPad && !((navigator.userAgent.match(/iPhone/i)) || (navigator.userAgent.match(/iPod/i)))
+        if (!isiPad && !((navigator.userAgent.match(/iPhone/i)) || (navigator.userAgent.match(/iPod/i))))
         {
             // Refresh the log table
             setInterval(function() {
