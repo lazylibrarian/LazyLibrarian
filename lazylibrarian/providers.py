@@ -142,5 +142,5 @@ def NewzNab(book=None, newznabNumber=None):
         if nzbcount:
             logger.debug('Found %s nzb for: %s' % (nzbcount, book['searchterm']))
         else:
-            logger.debug(u'Newznab returned 0 results for: ' + book['searchterm'] + '. Adding book to queue.')
+            logger.info(u'Newznab returned 0 results for: ' + book['searchterm'] + '. Adding book to queue.')
     return results
