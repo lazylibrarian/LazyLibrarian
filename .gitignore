@@ -7,6 +7,7 @@ Logs/*
 lazylibrarian.db*
 version.txt
 *.log
+.AuthorCache/*
 
 #  Compiled source   #
 ######################
