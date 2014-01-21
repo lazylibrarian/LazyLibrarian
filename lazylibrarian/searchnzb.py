@@ -43,7 +43,7 @@ def searchbook(books=None):
         author = searchbook[1]
         book = searchbook[2]
 
-        dic = {'...':'', ' & ':' ', ' = ': ' ', '?':'', '$':'s', ' + ':' ', '"':'', ',':'', '*':'', ':':'', ';':''}
+        dic = {'...':'', '.':' ', ' & ':' ', ' = ': ' ', '?':'', '$':'s', ' + ':' ', '"':'', ',':'', '*':'', ':':'', ';':''}
         dicSearchFormatting = {'.':' +', ' + ':' '}
 
         author = formatter.latinToAscii(formatter.replace_all(author, dic))
@@ -51,7 +51,7 @@ def searchbook(books=None):
 
         # TRY SEARCH TERM just using author name and book type
         author = formatter.latinToAscii(formatter.replace_all(author, dicSearchFormatting))
-        searchterm = author # + ' ' + lazylibrarian.EBOOK_TYPE 
+        searchterm = author + ' ' + book # + ' ' + lazylibrarian.EBOOK_TYPE 
         searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
         searchterm = re.sub(r'\(.*?\)', '', searchterm).encode('utf-8')
         searchterm = re.sub(r"\s\s+" , " ", searchterm) # strip any double white space
@@ -65,7 +65,7 @@ def searchbook(books=None):
 
     counter = 0
     for book in searchlist: 
-        print book.keys()
+        #print book.keys()
         resultlist = []
         if lazylibrarian.NEWZNAB:
             logger.debug('Searching NZB\'s at provider %s ...' % lazylibrarian.NEWZNAB_HOST)
@@ -84,24 +84,30 @@ def searchbook(books=None):
             logger.debug("Adding book %s to queue." % book['searchterm'])
 
         else:
-            dictrepl = {'...':'', ' & ':' ', ' = ': ' ', '?':'', '$':'s', ' + ':' ', '"':'', ',':'', '*':'', '(':'', ')':'', '[':'', ']':'', '#':'', '0':'', '1':'', '2':'', '3':'', '4':'', '5':'', '6':'', '7':'', '8':'' , '9':'', '\'':'', ':':'', '!':'', '-':'', '\s\s':' ', ' the ':' ', ' a ':' ', ' and ':' ', ' to ':' ', ' of ':' ', ' for ':' ', ' my ':' ', ' in ':' ', ' at ':' ', ' with ':' ' }
-            bookName = book['bookName']
-            bookID = book['bookid']
-            bookName = re.sub('[\.\-\/]', ' ', bookName)
-            bookName = re.sub(r'\(.*?\)', '', bookName)
-            bookName = formatter.latinToAscii(formatter.replace_all(bookName.lower(), dictrepl)).strip()
-            logger.debug(u'bookName %s' % bookName)
+            dictrepl = {'...':'', '.':' ', ' & ':' ', ' = ': ' ', '?':'', '$':'s', ' + ':' ', '"':'', ',':'', '*':'', '(':'', ')':'', '[':'', ']':'', '#':'', '0':'', '1':'', '2':'', '3':'', '4':'', '5':'', '6':'', '7':'', '8':'' , '9':'', '\'':'', ':':'', '!':'', '-':'', '\s\s':' ', ' the ':' ', ' a ':' ', ' and ':' ', ' to ':' ', ' of ':' ', ' for ':' ', ' my ':' ', ' in ':' ', ' at ':' ', ' with ':' ' }
+            logger.debug(u'searchterm %s' % book['searchterm'])
             addedCounter = 0
 
             for nzb in resultlist:
 				nzbTitle = formatter.latinToAscii(formatter.replace_all(str(nzb['nzbtitle']).lower(), dictrepl)).strip()
-				logger.debug(u'nzbName %s' % nzbTitle)
-				logger.debug("NZB Match %: " + str(fuzz.partial_ratio(bookName, nzbTitle)))	
-				if (fuzz.partial_ratio(bookName, nzbTitle) > 80):
-					logger.debug(u'FOUND %s' % nzbTitle.lower())
+				logger.debug(u'nzbName %s' % nzbTitle)          
+				if " by " in nzbTitle: #Many NZBs are "Book Title" by "Author" and fuzz.partial_ratio won't match it.
+					temp_string = nzbTitle.split(' by ')
+					nzbTitle_flipped = temp_string[1]+' '+temp_string[0]
+				else:
+					nzbTitle_flipped = nzbTitle;
+
+				match_ratio = 80
+				nzbTitle_match = fuzz.partial_ratio(book['searchterm'].lower(), nzbTitle)
+				logger.debug("NZB Title Match %: " + str(nzbTitle_match))
+				nzb_flipped_match = fuzz.partial_ratio(book['searchterm'].lower(), nzbTitle_flipped)
+				logger.debug("NZB Flipped Match %: " + str(nzb_flipped_match))	
+				
+				if (nzbTitle_match > match_ratio) or (nzb_flipped_match > match_ratio):
+					logger.info(u'Found NZB: %s' % nzb['nzbtitle'])
 					addedCounter = addedCounter + 1
-					bookid = nzb['bookid']
-					nzbTitle = (book["authorName"] + ' - ' + book['bookName'] + ' LL.(' + bookID + ')').strip()
+					bookid = book['bookid']
+					nzbTitle = (book["authorName"] + ' - ' + book['bookName'] + ' LL.(' + book['bookid'] + ')').strip()
 					nzburl = nzb['nzburl']
 					nzbprov = nzb['nzbprov']
 
@@ -120,7 +126,7 @@ def searchbook(books=None):
 						snatch = DownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
 					break;
             if addedCounter == 0:
-            	logger.info("No nzb's found for " + (book["authorName"] + ' ' + bookName).strip() + ". Adding book to queue.")
+            	logger.info("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")
         counter = counter + 1
 
 

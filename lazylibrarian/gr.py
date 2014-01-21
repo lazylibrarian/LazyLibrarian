@@ -188,7 +188,7 @@ class GoodReads:
 						for count in bookCount:
 						    controlValueDict = {"AuthorID": authorid}
 						    newValueDict = {
-						            "Status": "Active",
+						            "Status": "Loading",
 						            "TotalBooks": count['counter'],
 						            "LastBook": lastbook['BookName'],
 						            "LastLink": lastbook['BookLink'],
@@ -213,6 +213,12 @@ class GoodReads:
 				sourcexml = ElementTree.parse(resp1)
 				rootxml = sourcexml.getroot()
 				resultxml = rootxml.getiterator('book')
+
+        controlValueDict = {"AuthorID": authorid}
+        newValueDict = {
+                "Status": "Active"
+                }
+        myDB.upsert("authors", newValueDict, controlValueDict)
 				
 					
         logger.debug("Removed %s non-english and no publication year results for author" % removedResults)

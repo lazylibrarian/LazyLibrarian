@@ -73,7 +73,8 @@ def processDir():
                                     
                                     # If you use auto add by Calibre you need the book in a single directory, not nested
                                     #So take the file you Copied/Moved to Dest_path and copy it to a Calibre auto add folder.
-                                    processAutoAdd(dest_path)
+                                    if lazylibrarian.IMP_AUTOADD:
+                                        processAutoAdd(dest_path)
 
                                     # try image   
                                     processIMG(dest_path, bookimg)
@@ -172,7 +173,7 @@ def processAutoAdd(src_path=None):
             logger.error('AutoAdd - Failed because [%s]'  % str(why))
             return False
         
-    logger.info('Auto Add completed for [%s]' % src_path)
+    logger.info('Auto Add completed for [%s]' % dstname)
     return True
     
 def processIMG(dest_path=None, bookimg=None):
