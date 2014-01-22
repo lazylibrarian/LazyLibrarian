@@ -306,6 +306,7 @@ table#book_table th#number { text-align: center; width: 50px; }
 table#book_table th#language { text-align: center; min-width: 25px; display:none;}
 table#book_table th#stars { text-align: center; width: 50px; }
 table#book_table th#addAuthor { text-align: center; width: 100px; min-width:100px; max-width:100px; }
+table#book_table th#fuzz { text-align: left; min-width: 50px; }
 
 table#book_table td#select { vertical-align: middle; text-align: left; }
 table#book_table td#bookart { vertical-align: middle; text-align: center; }
@@ -319,6 +320,7 @@ table#book_table td#number { vertical-align: middle; text-align: right; }
 table#book_table td#language { vertical-align: middle; text-align: center;  display:none;}
 table#book_table td#stars { vertical-align: middle; text-align: center; }
 table#book_table td#addAuthor { text-align: center;  vertical-align: middle; width: 100px; min-width:100px; max-width:100px;}
+table#book_table td#fuzz { vertical-align: middle; text-align: center; }
 
 img.bookArt { float: left; padding-right: 5px; }
 div#bookheader { padding-top: 48px; height: 200px; }

@@ -3,12 +3,13 @@ import time, os, threading
 import lazylibrarian
 from lazylibrarian import logger, formatter, database
 from lazylibrarian.gr import GoodReads
+from lazylibrarian.gb import GoogleBooks
 
 
 def addBookToDB(bookid, authorname):
     type = 'book'
     myDB = database.DBConnection()
-    GR = GoodReads(authorname, type)
+    GR = GoodReads(authorname)
 
 # process book
     dbbook = myDB.action('SELECT * from books WHERE BookID=?', [bookid]).fetchone()
@@ -82,7 +83,7 @@ def addAuthorToDB(authorname=None):
     type = 'author'
     myDB = database.DBConnection()
 
-    GR = GoodReads(authorname, type)
+    GR = GoodReads(authorname)
     
     query = "SELECT * from authors WHERE AuthorName='%s'" % authorname.replace("'","''")
     dbauthor = myDB.action(query).fetchone()
@@ -117,5 +118,8 @@ def addAuthorToDB(authorname=None):
         logger.error("Nothing found")
 
 # process books
-
-    GR.get_author_books(authorid)
+    if lazylibrarian.BOOK_API == "GoogleBooks":
+        book_api = GoogleBooks()
+        book_api.get_author_books(authorid, authorname)
+    elif lazylibrarian.BOOK_API == "GoodReads":
+        GR.get_author_books(authorid)

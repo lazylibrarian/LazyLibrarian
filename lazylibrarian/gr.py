@@ -5,14 +5,17 @@ from xml.etree.ElementTree import Element, SubElement
 import lazylibrarian
 from lazylibrarian import logger, formatter, database, SimpleCache
 
+import lib.fuzzywuzzy as fuzzywuzzy
+from lib.fuzzywuzzy import fuzz, process
+
 import time
 
 class GoodReads:
     # http://www.goodreads.com/api/
 
-    def __init__(self, name=None, type=None):
+    def __init__(self, name=None):
         self.name = {"id": name.encode('utf-8')}
-        self.type = type
+        #self.type = type
         self.params = {"key":  lazylibrarian.GR_API}
 
     def find_author_id(self):
@@ -279,14 +282,26 @@ class GoodReads:
 
                 bookpages = '0'
                 bookgenre = ''
-                bookdesc = 'Not available'
-
-                bookisbn = author.find('./best_book/id').text
+                bookdesc = ''
+                bookisbn = ''
+                booklink = 'http://www.goodreads.com/book/show/'+author.find('./best_book/id').text
 
                 if (author.find('./best_book/title').text == None):
                     bookTitle = ""
                 else:
                     bookTitle = author.find('./best_book/title').text
+
+                author_fuzz = fuzz.ratio(authorNameResult.lower(), authorname.lower())
+                book_fuzz = fuzz.ratio(bookTitle.lower(), authorname.lower())
+                try:
+                    isbn_check = int(authorname[:-1])
+                    if (len(str(isbn_check)) == 9) or (len(str(isbn_check)) == 12):
+                        isbn_fuzz = int(100)
+                    else:
+                        isbn_fuzz = int(0)
+                except:
+                    isbn_fuzz = int(0)
+                highest_fuzz = max(author_fuzz, book_fuzz, isbn_fuzz)
 
                 resultlist.append({
 					'authorname': author.find('./best_book/author/name').text,
@@ -298,12 +313,16 @@ class GoodReads:
 					'bookpub': bookpub,
 					'bookdate': bookdate,
 					'booklang': booklang,
-					'booklink': '/',
+					'booklink': booklink,
 					'bookrate': float(bookrate),
 					'bookimg': bookimg,
 					'bookpages': bookpages,
 					'bookgenre': bookgenre,
-					'bookdesc': bookdesc
+					'bookdesc': bookdesc,
+                    'author_fuzz': author_fuzz,
+                    'book_fuzz': book_fuzz,
+                    'isbn_fuzz': isbn_fuzz,
+                    'highest_fuzz': highest_fuzz
 				})
 
                 resultcount = resultcount+1

@@ -3,6 +3,7 @@ from cherrypy.lib.static import serve_file
 from mako.template import Template
 from mako.lookup import TemplateLookup
 from mako import exceptions
+from operator import itemgetter
 
 import threading, time
 
@@ -12,6 +13,7 @@ from lazylibrarian import logger, importer, database, postprocess, formatter
 from lazylibrarian.searchnzb import searchbook
 from lazylibrarian.formatter import checked
 from lazylibrarian.gr import GoodReads
+from lazylibrarian.gb import GoogleBooks
 
 import lib.simplejson as simplejson
 
@@ -111,13 +113,14 @@ class WebInterface(object):
 
                     "ebook_type" :		lazylibrarian.EBOOK_TYPE,
                     "gr_api" :		lazylibrarian.GR_API,
+                    "book_api" :    lazylibrarian.BOOK_API
                 }
         return serve_template(templatename="config.html", title="Settings", config=config)    
     config.exposed = True
 
     def configUpdate(self, http_host='0.0.0.0', http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, imp_onlyisbn=0, imp_preflang=None, imp_autoadd=None,
         sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None, destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, blackhole=0, blackholedir=None,
-        newznab=0, newznab_host=None, newznab_api=None, newznab2=0, newznab_host2=None, newznab_api2=None,newzbin=0, newzbin_uid=None, newzbin_pass=None, ebook_type=None, gr_api=None, usenetcrawler = 0, usenetcrawler_host=None, usenetcrawler_api = None, 
+        newznab=0, newznab_host=None, newznab_api=None, newznab2=0, newznab_host2=None, newznab_api2=None,newzbin=0, newzbin_uid=None, newzbin_pass=None, ebook_type=None, book_api=None, gr_api=None, usenetcrawler = 0, usenetcrawler_host=None, usenetcrawler_api = None, 
         versioncheck_interval=None, search_interval=None, scan_interval=None, ebook_dest_folder=None, ebook_dest_file=None, mag_dest_folder=None, mag_dest_file=None, use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0):
 
         lazylibrarian.HTTP_HOST = http_host
@@ -164,6 +167,7 @@ class WebInterface(object):
         lazylibrarian.USENETCRAWLER_API = usenetcrawler_api
 
         lazylibrarian.EBOOK_TYPE = ebook_type
+        lazylibrarian.BOOK_API = book_api
         lazylibrarian.GR_API = gr_api
 
         lazylibrarian.SEARCH_INTERVAL = search_interval
@@ -195,13 +199,18 @@ class WebInterface(object):
     update.exposed = True
 
 #SEARCH
-    def search(self, name, type):
-        GR = GoodReads(name, type)
+    def search(self, name):
+        if lazylibrarian.BOOK_API == "GoogleBooks":
+            book_api = GoogleBooks(name)
+        elif lazylibrarian.BOOK_API == "GoodReads":
+            book_api = GoodReads(name)
         if len(name) == 0:
             raise cherrypy.HTTPRedirect("config")
         else:
-            searchresults = GR.find_results(name)
-        return serve_template(templatename="searchresults.html", title='Search Results for: "' + name + '"', searchresults=searchresults, type=type)
+            searchresults = book_api.find_results(name)
+
+        sortedlist_final = sorted(searchresults, key=itemgetter('highest_fuzz', 'author_fuzz', 'book_fuzz', 'bookrate'), reverse=True)
+        return serve_template(templatename="searchresults.html", title='Search Results for: "' + name + '"', searchresults=sortedlist_final, type=type)
     search.exposed = True
 
 #AUTHOR
@@ -263,28 +272,27 @@ class WebInterface(object):
     addResults.exposed = True
 
 #BOOKS
-    def openBook(self, bookLink=None, action=None, **args):
+    def openBook(self, bookid=None, **args):
         myDB = database.DBConnection()
 
         # find book
-        bookdata = myDB.select('SELECT * from books WHERE BookLink=\'' + bookLink + '\'')
-        logger.debug(('SELECT * from books WHERE BookLink=\'' + bookLink + '\''))
+        bookdata = myDB.select('SELECT * from books WHERE BookID=?', [bookid])
         if bookdata:
             authorName = bookdata[0]["AuthorName"];
             bookName = bookdata[0]["BookName"];
 
             dic = {'<':'', '>':'', '=':'', '?':'', '"':'', ',':'', '*':'', ':':'', ';':'', '\'':''}
             bookName = formatter.latinToAscii(formatter.replace_all(bookName, dic))
-            if (lazylibrarian.INSTALL_TYPE == 'win'):
-                dest_dir = lazylibrarian.DESTINATION_DIR + '\\' + authorName + '\\' + bookName
-            else:
-                dest_dir = lazylibrarian.DESTINATION_DIR + '//' + authorName + '//' + bookName
+            
+            pp_dir = lazylibrarian.DESTINATION_DIR
+            ebook_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorName).replace('$Title', bookName)
+            dest_dir = os.path.join(pp_dir, ebook_path)
 
             logger.debug('bookdir ' + dest_dir);
             if os.path.isdir(dest_dir):
                 for file2 in os.listdir(dest_dir):	
                     if ((file2.lower().find(".jpg") <= 0) & (file2.lower().find(".opf") <= 0)):
-                        logger.info('Openning file ' + str(file2))
+                        logger.info('Opening file ' + str(file2))
                         return serve_file(os.path.join(dest_dir, file2), "application/x-download", "attachment")
     openBook.exposed = True
 

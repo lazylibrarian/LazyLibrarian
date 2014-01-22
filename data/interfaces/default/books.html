@@ -69,7 +69,7 @@
                     <td id="date">${result['BookDate']}</td>
                     <td id="language" hidden="true">${result['booklang']}</td>
                     %if result['Status'] == 'Open':
-                        <td id="status"><a class="button green" href="openBook?bookLink=${result['booklink']}" target="_self">${result['Status']}</a></td>
+                        <td id="status"><a class="button green" href="openBook?bookid=${result['bookid']}" target="_self">${result['Status']}</a></td>
                     %else:
                         %if result['Status'] == 'Wanted':
                             <td id="status"><a class="button red" href="searchForBook?bookLink=${result['booklink']}" target="_self"><span class="a">${result['Status']}</span><span class="b">Search</span></a></td>

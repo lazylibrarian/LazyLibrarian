@@ -69,11 +69,12 @@ BLACKHOLE = False
 BLACKHOLEDIR = None
 USENET_RETENTION = None
 
-IMP_PREFLANG = 'eng'
+IMP_PREFLANG = None
 IMP_ONLYISBN = False
 IMP_AUTOADD = None
 
-GR_API = 'ckvsiSDsuqh7omh74ZZ6Q'
+BOOK_API = None
+GR_API = None
 
 NZBMATRIX = False
 NZBMATRIX_USER = None
@@ -90,7 +91,7 @@ NEWZNAB_API2 = None
 NEWZBIN = False
 NEWZBIN_UID = None
 NEWZBIN_PASSWORD = None
-EBOOK_TYPE = 'epub, mobi, pdf'
+EBOOK_TYPE = None
 
 USENETCRAWLER = False
 USENETCRAWLER_API = None
@@ -103,10 +104,10 @@ VERSIONCHECK_INTERVAL = 24 #Every 2 hours
 SEARCH_INTERVAL = 720 #Every 12 hours
 SCAN_INTERVAL = 10 #Every 10 minutes
 
-EBOOK_DEST_FOLDER = '$Author/$Title'
-EBOOK_DEST_FILE = '$Title - $Author'
-MAG_DEST_FOLDER = '_Magazines/$Title/$IssueDate'
-MAG_DEST_FILE = '$IssueDate - $Title'
+EBOOK_DEST_FOLDER = None
+EBOOK_DEST_FILE = None
+MAG_DEST_FOLDER = None
+MAG_DEST_FILE = None
 
 USE_TWITTER = False
 TWITTER_NOTIFY_ONSNATCH = False
@@ -197,7 +198,7 @@ def initialize():
     with INIT_LOCK:
 
         global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, \
-            IMP_ONLYISBN, IMP_PREFLANG, IMP_AUTOADD, SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, BLACKHOLE, BLACKHOLEDIR, GR_API, \
+            IMP_ONLYISBN, IMP_PREFLANG, IMP_AUTOADD, SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, BLACKHOLE, BLACKHOLEDIR, GR_API, BOOK_API, \
             NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, NEWZNAB2, NEWZNAB_HOST2, NEWZNAB_API2, EBOOK_TYPE, USENETCRAWLER, USENETCRAWLER_HOST, USENETCRAWLER_API, \
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_DEST_FOLDER, MAG_DEST_FILE, USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
             GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, LATEST_VERSION, COMMITS_BEHIND
@@ -242,7 +243,7 @@ def initialize():
         LAUNCH_BROWSER = bool(check_setting_int(CFG, 'General', 'launch_browser', 1))
         LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
 
-        IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', IMP_PREFLANG)
+        IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', 'eng')
         IMP_AUTOADD = check_setting_str(CFG, 'General', 'imp_autoadd', '')
         IMP_ONLYISBN = bool(check_setting_int(CFG, 'General', 'imp_onlyisbn', 0))
         #TODO - investigate this for future users
@@ -309,7 +310,8 @@ def initialize():
         TWITTER_PASSWORD = check_setting_str(CFG, 'Twitter', 'twitter_password', '')
         TWITTER_PREFIX = check_setting_str(CFG, 'Twitter', 'twitter_prefix', 'LazyLibrarian')
 
-        GR_API = check_setting_str(CFG, 'General', 'gr_api', 'ckvsiSDsuqh7omh74ZZ6Q')
+        BOOK_API = check_setting_str(CFG, 'API', 'book_api', 'GoodReads')
+        GR_API = check_setting_str(CFG, 'API', 'gr_api', 'ckvsiSDsuqh7omh74ZZ6Q')
 
         if not LOGDIR:
             LOGDIR = os.path.join(DATADIR, 'Logs')
@@ -421,7 +423,10 @@ def config_write():
     new_config['General']['blackhole'] = int(BLACKHOLE)
     new_config['General']['blackholedir'] = BLACKHOLEDIR
     new_config['General']['usenet_retention'] = USENET_RETENTION
-    new_config['General']['gr_api'] = GR_API
+    
+    new_config['API'] = {}
+    new_config['API']['book_api'] = BOOK_API
+    new_config['API']['gr_api'] = GR_API
 
     new_config['NZBMatrix'] = {}
     new_config['NZBMatrix']['nzbmatrix'] = int(NZBMATRIX)

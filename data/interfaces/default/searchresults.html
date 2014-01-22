@@ -15,6 +15,7 @@
 				<th id="date">Released</th>
 				<th id="stars">Rating</th>
                 <th id="addAuthor">Add</th>
+                <th id="fuzz">Match</th>
              </tr>
         </thead>
 
@@ -43,7 +44,8 @@
 						<td id="bookname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a></td>
 						<td id="date">${result['bookdate']}</td>
 						<td id="stars"><img src="images/${starimg}" height="10"></td>
-                        <td id="addAuthor"><a class="button" href="addResults?authorname=${result['authorname']}" target="_new">Add Author</a></td>
+                        <td id="addAuthor"><a class="button" href="addResults?authorname=${result['authorname']}" target="_new">+Author</a></td>
+                        <td id="fuzz">${result['highest_fuzz']}%</td>
 					</tr>
 				%endfor
             %endif
@@ -64,6 +66,7 @@
         $('#book_table').dataTable(
             {
                 "aoColumns": [
+                    null,
                     null,
                     null,
                     null,

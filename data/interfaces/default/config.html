@@ -142,12 +142,31 @@
             </tr>
             <tr>
                 <td>
-                    <h3>Goodreads:</h3>
+                    <h3>Book API</h3>
                 </td>
             </tr>
             <tr>
                 <td>
-                    <h5>API:</h5><input type="text" name="gr_api" value="${config['gr_api']}" size="50" maxlength="40" >
+                    <%
+                        if lazylibrarian.BOOK_API == "GoodReads":
+                            gr_selected = 'selected="selected"'
+                        else:
+                            gr_selected = ''
+
+                        if lazylibrarian.BOOK_API == "GoogleBooks":
+                            gb_selected = 'selected="selected"'
+                        else:
+                            gb_selected = ''
+                    %>
+                    <h5>Book Search API:</h5><select name="book_api">
+                    <option value = "GoodReads" ${gr_selected}>GoodReads</option>
+                    <option value = "GoogleBooks" ${gb_selected}>GoogleBooks</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <h5>Goodreads API:</h5><input type="text" name="gr_api" value="${config['gr_api']}" size="50" maxlength="40" >
                 </td>
             </tr>
         </table>
