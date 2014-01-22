@@ -1,0 +1,62 @@
+<%inherit file="base.html"/>
+<%!
+	from lazylibrarian import database
+%>
+
+<%def name="headerIncludes()">
+	<div id="subhead_container">
+		<ul id="subhead_menu">
+
+		</ul>
+	</div>	
+</%def>
+
+<%def name="body()">
+<BR><BR>
+	<table class="display" id="magazines_table">
+		<thead>
+			<tr>
+				<th id="filename">Coming Soon</th>
+			</tr>
+		</thead>
+		<tbody>
+		%for item in magazines:
+			<%
+				grade = 'U'
+			%>
+			<tr class="grade${grade}">
+				<td id="filename">Coming Soon</td>
+			</tr>
+		%endfor
+		</tbody>
+	</table>
+</%def>
+
+<%def name="headIncludes()">
+	<link rel="stylesheet" href="css/data_table.css">
+</%def>
+
+<%def name="javascriptIncludes()">
+	<script src="js/libs/jquery.dataTables.min.js"></script>
+	<script>
+	$(document).ready(function()
+	{
+		$('#history_table').dataTable(
+			{
+				"aoColumns": [
+                    null
+                    ],
+				"oLanguage": {
+					"sLengthMenu":"Show _MENU_ items per page",
+					"sEmptyTable": "No History to Display",
+					"sInfo":"Showing _START_ to _END_ of _TOTAL_ items",
+					"sInfoEmpty":"Showing 0 to 0 of 0 items",
+					"sInfoFiltered":"(filtered from _MAX_ total items)"},
+				"iDisplayLength": 25,
+				"sPaginationType": "full_numbers",
+				"aaSorting": []
+
+			});
+	});
+	</script>
+</%def>

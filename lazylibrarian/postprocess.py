@@ -22,7 +22,7 @@ def processDir():
             logger.error('Could not access [%s] directory ' % processpath)
             
     myDB = database.DBConnection()
-    snatched = myDB.select('SELECT * from wanted')
+    snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
 
     if snatched is None:
         logger.info('No books are snatched. Nothing to process.')
@@ -83,8 +83,8 @@ def processDir():
                 		    processOPF(dest_path, authorname, bookname, bookisbn, bookID, bookpub, bookdate, bookdesc, booklang)
 
                 		    #update nzbs
-                		    controlValueDict = {"NZBurl": directory}
-                		    newValueDict = {"Status": "Success"}
+                		    controlValueDict = {"BookID": bookID}
+                		    newValueDict = {"Status": "Processed"}
                 		    myDB.upsert("wanted", newValueDict, controlValueDict)
 
                 		    #update books

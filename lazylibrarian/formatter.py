@@ -1,4 +1,5 @@
 import time, datetime
+from time import strptime
 
 import lazylibrarian
 
@@ -20,6 +21,13 @@ def age(histdate):
     date2 = datetime.date(y2, m2, d2)
     age = date1 - date2
     return age.days
+
+def nzbdate2format(nzbdate):
+    mmname = nzbdate.split()[2].zfill(2)
+    day = nzbdate.split()[1]
+    month = str(strptime(mmname, '%b').tm_mon).zfill(2)
+    year = nzbdate.split()[3]
+    return year+'-'+month+'-'+day
 
 def checked(variable):
     if variable:

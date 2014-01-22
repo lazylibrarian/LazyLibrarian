@@ -317,10 +317,16 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     markBooks.exposed = True
 
-    def manProcess(self):
+    #ALL ELSE
+    def forceProcess(self):
         threading.Thread(target=postprocess.processDir).start()
         raise cherrypy.HTTPRedirect("books")
-    manProcess.exposed = True
+    forceProcess.exposed = True
+
+    def forceSearch(self):
+        threading.Thread(target=searchbook).start()
+        raise cherrypy.HTTPRedirect("books")
+    forceSearch.exposed = True
 
     def checkForUpdates(self):
         #check the version when the application starts
@@ -360,6 +366,29 @@ class WebInterface(object):
         s = simplejson.dumps(dict)
         return s
     getLog.exposed = True
+
+    def history(self):
+        myDB = database.DBConnection()
+        history = myDB.select("SELECT * from wanted")
+        return serve_template(templatename="history.html", title="History", history=history)
+    history.exposed = True
+
+    def clearhistory(self, type=None):
+        myDB = database.DBConnection()
+        if type == 'all':
+            logger.info(u"Clearing all history")
+            myDB.action('DELETE from wanted')
+        else:
+            logger.info(u"Clearing history where status is %s" % type)
+            myDB.action('DELETE from wanted WHERE Status=?', [type])
+        raise cherrypy.HTTPRedirect("history")
+    clearhistory.exposed = True
+
+    def magazines(self):
+        myDB = database.DBConnection()
+        magazines = myDB.select("SELECT * from wanted WHERE Status='nomatter'")
+        return serve_template(templatename="magazines.html", title="Magazines", magazines=magazines)
+    magazines.exposed = True
 
     def logs(self):
         return serve_template(templatename="logs.html", title="Log", lineList=lazylibrarian.LOGLIST)

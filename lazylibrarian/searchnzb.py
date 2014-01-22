@@ -5,7 +5,7 @@ from xml.etree.ElementTree import Element, SubElement
 
 import lazylibrarian
 
-from lazylibrarian import logger, database, formatter, providers, sabnzbd
+from lazylibrarian import logger, database, formatter, providers, sabnzbd, SimpleCache
 
 import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
@@ -110,12 +110,17 @@ def searchbook(books=None):
 					nzbTitle = (book["authorName"] + ' - ' + book['bookName'] + ' LL.(' + book['bookid'] + ')').strip()
 					nzburl = nzb['nzburl']
 					nzbprov = nzb['nzbprov']
+					nzbdate_temp = nzb['nzbdate']
+					nzbsize_temp = nzb['nzbsize']
+					nzbsize = str(round(float(nzbsize_temp) / 1048576,2))+' MB'
+					nzbdate = formatter.nzbdate2format(nzbdate_temp)
 
 					controlValueDict = {"NZBurl": nzburl}
 					newValueDict = {
                         "NZBprov": nzbprov,
                         "BookID": bookid,
-                        "NZBdate": formatter.today(),
+                        "NZBdate": nzbdate,
+                        "NZBsize": nzbsize,
                         "NZBtitle": nzbTitle,
                         "Status": "Skipped"
 					}
