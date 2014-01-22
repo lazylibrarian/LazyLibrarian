@@ -55,17 +55,21 @@ def processDir():
                 		booklang = metadata['BookLang']
                 		bookpub = metadata['BookPub']
 
-                		try:
-                		    os.chmod(os.path.join(lazylibrarian.DESTINATION_DIR, authorname).encode(lazylibrarian.SYS_ENCODING), 0777);
-                		except Exception, e:
-                		    logger.debug("Could not chmod author directory");
+		                #Default destination path, should be allowed change per config file.
+		                dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace('$Title', bookname)
+		                #dest_path = authorname+'/'+bookname
+		                global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace('$Title', bookname)
 
-                		dest_path = authorname + os.sep + bookname
+		                try:
+		                    os.chmod(os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(lazylibrarian.SYS_ENCODING), 0777);
+		                except Exception, e:
+		                    logger.debug("Could not chmod post-process directory");
+
                 		dic = {'<':'', '>':'', '...':'', ' & ':' ', ' = ': ' ', '?':'', '$':'s', ' + ':' ', '"':'', ',':'', '*':'', ':':'', ';':'', '\'':''}
                 		dest_path = formatter.latinToAscii(formatter.replace_all(dest_path, dic))
                 		dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(lazylibrarian.SYS_ENCODING)
 
-                		processBook = processDestination(pp_path, dest_path, authorname, bookname)
+                		processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name)
 
                 		if processBook:
 
@@ -77,10 +81,10 @@ def processDir():
                                         processAutoAdd(dest_path)
 
                                     # try image   
-                                    processIMG(dest_path, bookimg)
+                                    processIMG(dest_path, bookimg, global_name)
 
                 		    # try metadata
-                		    processOPF(dest_path, authorname, bookname, bookisbn, bookID, bookpub, bookdate, bookdesc, booklang)
+                		    processOPF(dest_path, authorname, bookname, bookisbn, bookID, bookpub, bookdate, bookdesc, booklang, global_name)
 
                 		    #update nzbs
                 		    controlValueDict = {"BookID": bookID}
@@ -108,28 +112,36 @@ def processDir():
         else:
             logger.debug('No snatched books have been found')
 
-def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None):
+def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None):
 
     try:
         if not os.path.exists(dest_path):
             logger.debug('%s does not exist, so it\'s safe to create it' % dest_path)
         else:
-            logger.debug('%s already exsists. It will be overwritten' % dest_path)
-            logger.debug('Removing exsisting tree')
+            logger.debug('%s already exists. It will be overwritten' % dest_path)
+            logger.debug('Removing existing tree')
             shutil.rmtree(dest_path)
 
-        logger.debug('Attempting to move tree')
-        shutil.move(pp_path, dest_path)
-        logger.debug('Successfully copied %s to %s.' % (pp_path, dest_path))
+        logger.debug('Attempting to copy/move tree')
+        if lazylibrarian.DESTINATION_COPY == 1:
+        	shutil.copytree(pp_path, dest_path)
+        	logger.debug('Successfully copied %s to %s.' % (pp_path, dest_path))
+        else:
+        	shutil.move(pp_path, dest_path)
+        	logger.debug('Successfully moved %s to %s.' % (pp_path, dest_path))
 
         pp = True
         
-        #try and rename the actual book file
+        #try and rename the actual book file & remove non-book files
         for file2 in os.listdir(dest_path):
             logger.debug('file extension: ' + str(file2).split('.')[-1])
             if ((file2.lower().find(".jpg") <= 0) & (file2.lower().find(".opf") <= 0)):
                 logger.debug('file: ' + str(file2))
-                os.rename(os.path.join(dest_path, file2), os.path.join(dest_path, bookname + '.' + str(file2).split('.')[-1]))
+                if ((str(file2).split('.')[-1]) not in lazylibrarian.EBOOK_TYPE):
+                	os.remove(os.path.join(dest_path, file2))
+                else:
+                	os.rename(os.path.join(dest_path, file2), os.path.join(dest_path, global_name + '.' + str(file2).split('.')[-1]))
+
         try:
             os.chmod(dest_path, 0777);
         except Exception, e:
@@ -162,7 +174,7 @@ def processAutoAdd(src_path=None):
             for name in names:
                 srcname = os.path.join(src_path, name)
                 dstname = os.path.join(autoadddir, name)
-                logger.debug('AutoAdd Coping named file [%s] as copy [%s] to [%s]' % (name, srcname, dstname))
+                logger.debug('AutoAdd Copying named file [%s] as copy [%s] to [%s]' % (name, srcname, dstname))
                 try:
                     shutil.copy2(srcname, dstname)
                 except (IOError, os.error) as why:
@@ -176,12 +188,12 @@ def processAutoAdd(src_path=None):
     logger.info('Auto Add completed for [%s]' % dstname)
     return True
     
-def processIMG(dest_path=None, bookimg=None):
+def processIMG(dest_path=None, bookimg=None, global_name=None):
     #handle pictures
     try:
         if not bookimg == ('images/nocover.png'):
             logger.debug('Downloading cover from ' + bookimg)
-            coverpath = os.path.join(dest_path, 'cover.jpg')
+            coverpath = os.path.join(dest_path, global_name+'.jpg')
             img = open(coverpath,'wb')
             imggoogle = imgGoogle()
             img.write(imggoogle.open(bookimg).read())
@@ -194,7 +206,7 @@ def processIMG(dest_path=None, bookimg=None):
     except (IOError, EOFError), e:
         logger.error('Error fetching cover from url: %s, %s' % (bookimg, e))
 
-def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bookid=None, bookpub=None, bookdate=None, bookdesc=None, booklang=None):
+def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bookid=None, bookpub=None, bookdate=None, bookdesc=None, booklang=None, global_name=None):
     opfinfo = '<?xml version="1.0"  encoding="UTF-8"?>\n\
 <package version="2.0" xmlns="http://www.idpf.org/2007/opf" >\n\
     <metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">\n\
@@ -226,7 +238,7 @@ def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bo
     opfinfo = formatter.latinToAscii(formatter.replace_all(opfinfo, dic))
 
     #handle metadata
-    opfpath = os.path.join(dest_path, 'metadata.opf')
+    opfpath = os.path.join(dest_path, global_name+'.opf')
     if not os.path.exists(opfpath):
         opf = open(opfpath, 'wb')
         opf.write(opfinfo)

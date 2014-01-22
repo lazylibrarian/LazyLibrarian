@@ -78,7 +78,7 @@ class WebInterface(object):
                     "sab_api":          lazylibrarian.SAB_API,
                     "sab_user":         lazylibrarian.SAB_USER,
                     "sab_pass":         lazylibrarian.SAB_PASS,
-                    "use_destination_copy": checked(lazylibrarian.DESTINATION_COPY),
+                    "destination_copy": checked(lazylibrarian.DESTINATION_COPY),
                     "destination_dir":  lazylibrarian.DESTINATION_DIR,
                     "download_dir":     lazylibrarian.DOWNLOAD_DIR,
                     "sab_cat":          lazylibrarian.SAB_CAT,

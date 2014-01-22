@@ -79,7 +79,7 @@
             <tr>
                 <td>
                     <h5>Destination:</h5><input type="text" name="destination_dir" value="${config['destination_dir']}" size="50">
-                    <h5><input type="checkbox" name="destination_copy" value=1 ${config['use_destination_copy']} /> Keep original files</h3>
+                    <h5><input type="checkbox" name="destination_copy" value=1 ${config['destination_copy']} /> Keep original files</h3>
                 </td>
                 <td>
                     <h5>Import languages:</h5><input type="text" name="imp_preflang" value="${config['imp_preflang']}" size="20" maxlength="40">
@@ -87,9 +87,9 @@
                     <i class="smalltext">Comma separated country shortcodes, e.g.:<br> eng, spa, por</i>
                 </td>
                 <td>
-                    <h5>Ebook Format:</h5><input type="text" name="ebook_type" value="${config['ebook_type']}" size="0" maxlength="4">
+                    <h5>Ebook Format:</h5><input type="text" name="ebook_type" value="${config['ebook_type']}" size="0" maxlength="40">
                     <br>
-                    <i class="smalltext">Spesify one of the following options (or leave blank to search for any format): <br> epub, mobi, txt</i>
+                    <i class="smalltext">Specify any of the following options: <br> epub, mobi, pdf </i>
                 </td>
             </tr>
             <tr>
@@ -196,6 +196,24 @@
                     <h5>NZB Scan Interval:</h5><input type="text" name="search_interval" value="${config['search_interval']}" size="8" maxlength="40"> mins
                     <h5>Post-Processing Interval</h5><input type="text" name="scan_interval" value="${config['scan_interval']}" size="8" maxlength="40"> mins
                     <h5>Version Check Interval</h5><input type="text" name="versioncheck_interval" value="${config['versioncheck_interval']}" size="8" maxlength="40"> hours
+                </td>
+                <td>
+                    <h5>eBook Destination Folder:</h5><input type="text" name="ebook_dest_folder" value="${config['ebook_dest_folder']}" size="30" maxlength="40">
+                    <h5>eBook Destination File:</h5><input type="text" name="ebook_dest_file" value="${config['ebook_dest_file']}" size="30" maxlength="40">
+                    <BR>
+                    <small>Options include $Author, $Title, any string
+                    <BR>
+                    Current limitation: each file has to be in unique subfolder
+                    </small>
+                </td>
+                <td>
+                    <h5>Magazine Destination Folder:</h5><input type="text" name="mag_dest_folder" value="${config['mag_dest_folder']}" size="30" maxlength="40">
+                    <h5>Magazine Destination File:</h5><input type="text" name="mag_dest_file" value="${config['mag_dest_file']}" size="30" maxlength="40">
+                    <BR>
+                    <small>Options include $Title, $IssueDate, any string
+                    <BR>
+                    Current limitation: each file has to be in unique subfolder
+                    </small>
                 </td>
             </tr>
         </table>

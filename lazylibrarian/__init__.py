@@ -90,7 +90,7 @@ NEWZNAB_API2 = None
 NEWZBIN = False
 NEWZBIN_UID = None
 NEWZBIN_PASSWORD = None
-EBOOK_TYPE = 'epub'
+EBOOK_TYPE = 'epub, mobi, pdf'
 
 USENETCRAWLER = False
 USENETCRAWLER_API = None
@@ -291,7 +291,7 @@ def initialize():
         NEWZBIN = bool(check_setting_int(CFG, 'Newzbin', 'newzbin', 0))
         NEWZBIN_UID = check_setting_str(CFG, 'Newzbin', 'newzbin_uid', '')
         NEWZBIN_PASS = check_setting_str(CFG, 'Newzbin', 'newzbin_pass', '')
-        EBOOK_TYPE = check_setting_str(CFG, 'General', 'ebook_type', 'epub')
+        EBOOK_TYPE = check_setting_str(CFG, 'General', 'ebook_type', 'epub, mobi, pdf')
 
         SEARCH_INTERVAL = int(check_setting_str(CFG, 'SearchScan', 'search_interval', '360'))
         SCAN_INTERVAL = int(check_setting_str(CFG, 'SearchScan', 'scan_interval', '10'))
