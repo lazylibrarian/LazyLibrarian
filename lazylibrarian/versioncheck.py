@@ -5,10 +5,6 @@ from lazylibrarian import logger, version
 
 import lib.simplejson as simplejson
 
-user = "dobytang"
-#branch = "master"
-repo="lazylibrarian"
-
 #
 #Function to execute GIT commands taking care of error logging etc
 def runGit(args):
@@ -52,19 +48,20 @@ def runGit(args):
 # - deployed source code
 def getInstallType():
     
-    if version.LAZYLIBRARIAN_VERSION.startswith('win32build'):
+    try:
+        version.LAZYLIBRARIAN_VERSION.startswith('win32build')
         lazylibrarian.INSTALL_TYPE = 'win'
         lazylibrarian.CURRENT_BRANCH = 'Windows'
         logger.debug('(getInstallType) [Windows] install detected. Setting Branch to [%s]' % lazylibrarian.CURRENT_BRANCH)
-    
-    elif os.path.isdir(os.path.join(lazylibrarian.PROG_DIR, '.git')):
-        lazylibrarian.INSTALL_TYPE = 'git'
-        lazylibrarian.CURRENT_BRANCH = getCurrentGitBranch()
-        logger.debug('(getInstallType) [GIT] install detected. Setting Branch to [%s] ' % lazylibrarian.CURRENT_BRANCH)        
-    else:      
-        lazylibrarian.INSTALL_TYPE = 'source'
-        lazylibrarian.CURRENT_BRANCH = 'master'
-        logger.debug('(getInstallType) [Source]install detected. Setting Branch to [%s]' % lazylibrarian.CURRENT_BRANCH)
+    except:
+        if os.path.isdir(os.path.join(lazylibrarian.PROG_DIR, '.git')):
+            lazylibrarian.INSTALL_TYPE = 'git'
+            lazylibrarian.CURRENT_BRANCH = getCurrentGitBranch()
+            logger.debug('(getInstallType) [GIT] install detected. Setting Branch to [%s] ' % lazylibrarian.CURRENT_BRANCH)        
+        else:      
+            lazylibrarian.INSTALL_TYPE = 'source'
+            lazylibrarian.CURRENT_BRANCH = 'master'
+            logger.debug('(getInstallType) [Source]install detected. Setting Branch to [%s]' % lazylibrarian.CURRENT_BRANCH)
 
 #
 #Establish the version of the installed app for Source or GIT only
@@ -192,7 +189,7 @@ def getLatestVersionaFromGit():
         else:
 
             # Get the latest commit available from github
-            url = 'https://api.github.com/repos/%s/%s/commits/%s' % (user, repo, branch)
+            url = 'https://api.github.com/repos/%s/%s/commits/%s' % (lazylibrarian.GIT_USER, lazylibrarian.GIT_REPO, lazylibrarian.GIT_BRANCH)
             logger.info ('(getLatestVersionaFromGit) Retrieving latest version information from github command=[%s]' % url)
             try:
                 result = urllib2.urlopen(url).read()
@@ -212,7 +209,7 @@ def getCommitDifferenceFromGit():
     #version in the current branch.
     if lazylibrarian.CURRENT_VERSION:
         logger.info('(getCommitDifferenceFromGit) -  Comparing currently installed version with latest github version')
-        url = 'https://api.github.com/repos/%s/LazyLibrarian/compare/%s...%s' % (user, lazylibrarian.CURRENT_VERSION, lazylibrarian.LATEST_VERSION)
+        url = 'https://api.github.com/repos/%s/LazyLibrarian/compare/%s...%s' % (lazylibrarian.GIT_USER, lazylibrarian.CURRENT_VERSION, lazylibrarian.LATEST_VERSION)
         logger.debug('(getCommitDifferenceFromGit) -  Check for differences between local & repo by [%s]' % url)
         
         try:
@@ -294,7 +291,7 @@ def update():
         #always to master.
         branch = lazylibrarian.CURRENT_BRANCH
         
-        tar_download_url = 'https://github.com/%s/%s/tarball/%s' % (user, repo, branch)
+        tar_download_url = 'https://github.com/%s/%s/tarball/%s' % (lazylibrarian.GIT_USER, lazylibrarian.GIT_REPO, lazylibrarian.GIT_BRANCH)
         update_dir = os.path.join(lazylibrarian.PROG_DIR, 'update')
         version_path = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
         

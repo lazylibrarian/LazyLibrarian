@@ -30,6 +30,14 @@ INIT_LOCK = threading.Lock()
 __INITIALIZED__ = False
 started = False
 
+GIT_USER = None
+GIT_REPO = None
+GIT_BRANCH = None
+INSTALL_TYPE = None
+CURRENT_VERSION = None
+LATEST_VERSION = None
+COMMITS_BEHIND = None
+
 DATADIR = None
 DBFILE=None
 CONFIGFILE = None
@@ -91,9 +99,21 @@ USENETCRAWLER_HOST = None
 LATEST_VERSION = None
 CURRENT_VERSION = None
 
-VERSIONCHECK_INTERVAL = 120 #Every 2 hours
+VERSIONCHECK_INTERVAL = 24 #Every 2 hours
 SEARCH_INTERVAL = 720 #Every 12 hours
 SCAN_INTERVAL = 10 #Every 10 minutes
+
+EBOOK_DEST_FOLDER = '$Author/$Title'
+EBOOK_DEST_FILE = '$Title - $Author'
+MAG_DEST_FOLDER = '_Magazines/$Title/$IssueDate'
+MAG_DEST_FILE = '$IssueDate - $Title'
+
+USE_TWITTER = False
+TWITTER_NOTIFY_ONSNATCH = False
+TWITTER_NOTIFY_ONDOWNLOAD = False
+TWITTER_USERNAME = None
+TWITTER_PASSWORD = None
+TWITTER_PREFIX = 'LazyLibrarian'
 
 def CheckSection(sec):
     """ Check if INI section exists, if not create it """
@@ -178,7 +198,9 @@ def initialize():
 
         global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, \
             IMP_ONLYISBN, IMP_PREFLANG, IMP_AUTOADD, SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, BLACKHOLE, BLACKHOLEDIR, GR_API, \
-            NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, NEWZNAB2, NEWZNAB_HOST2, NEWZNAB_API2, EBOOK_TYPE, USENETCRAWLER, USENETCRAWLER_HOST, USENETCRAWLER_API
+            NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, NEWZNAB2, NEWZNAB_HOST2, NEWZNAB_API2, EBOOK_TYPE, USENETCRAWLER, USENETCRAWLER_HOST, USENETCRAWLER_API, \
+            VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_DEST_FOLDER, MAG_DEST_FILE, USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
+            GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, LATEST_VERSION, COMMITS_BEHIND
 
         if __INITIALIZED__:
             return False
@@ -227,6 +249,14 @@ def initialize():
         #Something funny here - putting IMP_AUTOADD after IMP_ONLYISBN resulted in it not working
         #Couldn't see it
             
+        GIT_USER = check_setting_str(CFG, 'Git', 'git_user', 'dobytang')
+        GIT_REPO = check_setting_str(CFG, 'Git', 'git_repo', 'lazylibrarian')
+        GIT_BRANCH = check_setting_str(CFG, 'Git', 'git_branch', 'master')
+        INSTALL_TYPE = check_setting_str(CFG, 'Git', 'install_type', '')
+        CURRENT_VERSION = check_setting_str(CFG, 'Git', 'current_version', '')
+        LATEST_VERSION = check_setting_str(CFG, 'Git', 'latest_version', '')
+        COMMITS_BEHIND = check_setting_str(CFG, 'Git', 'commits_behind', '')
+
         SAB_HOST = check_setting_str(CFG, 'SABnzbd', 'sab_host', '')
         SAB_PORT = check_setting_str(CFG, 'SABnzbd', 'sab_port', '')
         SAB_SUBDIR = check_setting_str(CFG, 'SABnzbd', 'sab_subdir', '')
@@ -262,6 +292,22 @@ def initialize():
         NEWZBIN_UID = check_setting_str(CFG, 'Newzbin', 'newzbin_uid', '')
         NEWZBIN_PASS = check_setting_str(CFG, 'Newzbin', 'newzbin_pass', '')
         EBOOK_TYPE = check_setting_str(CFG, 'General', 'ebook_type', 'epub')
+
+        SEARCH_INTERVAL = int(check_setting_str(CFG, 'SearchScan', 'search_interval', '360'))
+        SCAN_INTERVAL = int(check_setting_str(CFG, 'SearchScan', 'scan_interval', '10'))
+        VERSIONCHECK_INTERVAL = int(check_setting_str(CFG, 'SearchScan', 'versioncheck_interval', '24'))
+
+        EBOOK_DEST_FOLDER = check_setting_str(CFG, 'PostProcess', 'ebook_dest_folder', '$Author/$Title')
+        EBOOK_DEST_FILE = check_setting_str(CFG, 'PostProcess', 'ebook_dest_file', '$Title - $Author')
+        MAG_DEST_FOLDER = check_setting_str(CFG, 'PostProcess', 'mag_dest_folder', '_Magazines/$Title/$IssueDate')
+        MAG_DEST_FILE = check_setting_str(CFG, 'PostProcess', 'mag_dest_file', '$IssueDate - $Title')
+
+        USE_TWITTER = bool(check_setting_int(CFG, 'Twitter', 'use_twitter', 0))
+        TWITTER_NOTIFY_ONSNATCH = bool(check_setting_int(CFG, 'Twitter', 'twitter_notify_onsnatch', 0))
+        TWITTER_NOTIFY_ONDOWNLOAD = bool(check_setting_int(CFG, 'Twitter', 'twitter_notify_ondownload', 0))
+        TWITTER_USERNAME = check_setting_str(CFG, 'Twitter', 'twitter_username', '')
+        TWITTER_PASSWORD = check_setting_str(CFG, 'Twitter', 'twitter_password', '')
+        TWITTER_PREFIX = check_setting_str(CFG, 'Twitter', 'twitter_prefix', 'LazyLibrarian')
 
         GR_API = check_setting_str(CFG, 'General', 'gr_api', 'ckvsiSDsuqh7omh74ZZ6Q')
 
@@ -350,6 +396,16 @@ def config_write():
     new_config['General']['imp_autoadd'] =  IMP_AUTOADD
 
     new_config['General']['ebook_type'] = EBOOK_TYPE
+
+    new_config['Git'] = {}
+    new_config['Git']['git_user'] = GIT_USER
+    new_config['Git']['git_repo'] = GIT_REPO
+    new_config['Git']['git_branch'] = GIT_BRANCH
+    new_config['Git']['install_type'] = INSTALL_TYPE
+    new_config['Git']['current_version'] = CURRENT_VERSION
+    new_config['Git']['latest_version'] = LATEST_VERSION
+    new_config['Git']['commits_behind'] = COMMITS_BEHIND
+
     new_config['SABnzbd'] = {}
     new_config['SABnzbd']['sab_host'] = SAB_HOST
     new_config['SABnzbd']['sab_port'] = SAB_PORT
@@ -391,6 +447,25 @@ def config_write():
     new_config['UsenetCrawler']['usenetcrawler'] = int(USENETCRAWLER)
     new_config['UsenetCrawler']['usenetcrawler_host'] = USENETCRAWLER_HOST
     new_config['UsenetCrawler']['usenetcrawler_api'] = USENETCRAWLER_API
+
+    new_config['SearchScan'] = {}
+    new_config['SearchScan']['search_interval'] = SEARCH_INTERVAL
+    new_config['SearchScan']['scan_interval'] = SCAN_INTERVAL
+    new_config['SearchScan']['versioncheck_interval'] = VERSIONCHECK_INTERVAL
+
+    new_config['PostProcess'] = {}
+    new_config['PostProcess']['ebook_dest_folder'] = EBOOK_DEST_FOLDER
+    new_config['PostProcess']['ebook_dest_file'] = EBOOK_DEST_FILE
+    new_config['PostProcess']['mag_dest_folder'] = MAG_DEST_FOLDER
+    new_config['PostProcess']['mag_dest_file'] = MAG_DEST_FILE
+
+    new_config['Twitter'] = {}
+    new_config['Twitter']['use_twitter'] = int(USE_TWITTER)
+    new_config['Twitter']['twitter_notify_onsnatch'] = int(TWITTER_NOTIFY_ONSNATCH)
+    new_config['Twitter']['twitter_notify_ondownload'] = int(TWITTER_NOTIFY_ONDOWNLOAD)
+    new_config['Twitter']['twitter_username'] = TWITTER_USERNAME
+    new_config['Twitter']['twitter_password'] = TWITTER_PASSWORD
+    new_config['Twitter']['twitter_prefix'] = TWITTER_PREFIX
 
     new_config.write()
 
@@ -454,9 +529,9 @@ def start():
 
         # Crons and scheduled jobs go here
         starttime = datetime.datetime.now()
-        SCHED.add_interval_job(postprocess.processDir, minutes=SCAN_INTERVAL, start_date=starttime+datetime.timedelta(minutes=1))
-        SCHED.add_interval_job(searchnzb.searchbook, minutes=SEARCH_INTERVAL, start_date=starttime+datetime.timedelta(minutes=1))
-        SCHED.add_interval_job(versioncheck.checkForUpdates, minutes=VERSIONCHECK_INTERVAL, start_date=starttime+datetime.timedelta(minutes=1))
+        SCHED.add_interval_job(postprocess.processDir, minutes=SCAN_INTERVAL)
+        SCHED.add_interval_job(searchnzb.searchbook, minutes=SEARCH_INTERVAL)
+        SCHED.add_interval_job(versioncheck.checkForUpdates, hours=VERSIONCHECK_INTERVAL)
 
         SCHED.start()
 #        for job in SCHED.get_jobs():

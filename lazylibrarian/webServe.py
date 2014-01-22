@@ -98,6 +98,16 @@ class WebInterface(object):
                     "use_usenetcrawler" :     checked(lazylibrarian.USENETCRAWLER),
                     "usenetcrawler_host" :     lazylibrarian.USENETCRAWLER_HOST,
                     "usenetcrawler_api" :    lazylibrarian.USENETCRAWLER_API,
+                    "search_interval" :    int(lazylibrarian.SEARCH_INTERVAL),
+                    "scan_interval" :    int(lazylibrarian.SCAN_INTERVAL),
+                    "versioncheck_interval" :    int(lazylibrarian.VERSIONCHECK_INTERVAL),
+                    "ebook_dest_folder": lazylibrarian.EBOOK_DEST_FOLDER,
+                    "ebook_dest_file": lazylibrarian.EBOOK_DEST_FILE,
+                    "mag_dest_folder": lazylibrarian.MAG_DEST_FOLDER,
+                    "mag_dest_file": lazylibrarian.MAG_DEST_FILE,
+                    "use_twitter" :     lazylibrarian.USE_TWITTER,
+                    "twitter_notify_onsnatch" :     lazylibrarian.TWITTER_NOTIFY_ONSNATCH,
+                    "twitter_notify_ondownload" :     lazylibrarian.TWITTER_NOTIFY_ONDOWNLOAD, 
 
                     "ebook_type" :		lazylibrarian.EBOOK_TYPE,
                     "gr_api" :		lazylibrarian.GR_API,
@@ -107,7 +117,8 @@ class WebInterface(object):
 
     def configUpdate(self, http_host='0.0.0.0', http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, imp_onlyisbn=0, imp_preflang=None, imp_autoadd=None,
         sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None, destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, blackhole=0, blackholedir=None,
-        newznab=0, newznab_host=None, newznab_api=None, newznab2=0, newznab_host2=None, newznab_api2=None,newzbin=0, newzbin_uid=None, newzbin_pass=None, ebook_type=None, gr_api=None, usenetcrawler = 0, usenetcrawler_host=None, usenetcrawler_api = None):
+        newznab=0, newznab_host=None, newznab_api=None, newznab2=0, newznab_host2=None, newznab_api2=None,newzbin=0, newzbin_uid=None, newzbin_pass=None, ebook_type=None, gr_api=None, usenetcrawler = 0, usenetcrawler_host=None, usenetcrawler_api = None, 
+        versioncheck_interval=None, search_interval=None, scan_interval=None, ebook_dest_folder=None, ebook_dest_file=None, mag_dest_folder=None, mag_dest_file=None, use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0):
 
         lazylibrarian.HTTP_HOST = http_host
         lazylibrarian.HTTP_PORT = http_port
@@ -154,6 +165,19 @@ class WebInterface(object):
 
         lazylibrarian.EBOOK_TYPE = ebook_type
         lazylibrarian.GR_API = gr_api
+
+        lazylibrarian.SEARCH_INTERVAL = search_interval
+        lazylibrarian.SCAN_INTERVAL = scan_interval
+        lazylibrarian.VERSIONCHECK_INTERVAL = versioncheck_interval
+
+        lazylibrarian.EBOOK_DEST_FOLDER = ebook_dest_folder
+        lazylibrarian.EBOOK_DEST_FILE = ebook_dest_file
+        lazylibrarian.MAG_DEST_FOLDER = mag_dest_folder
+        lazylibrarian.MAG_DEST_FILE = mag_dest_file
+
+        lazylibrarian.USE_TWITTER = use_twitter
+        lazylibrarian.TWITTER_NOTIFY_ONSNATCH = twitter_notify_onsnatch
+        lazylibrarian.TWITTER_NOTIFY_ONDOWNLOAD = twitter_notify_ondownload
 
         lazylibrarian.config_write()
 
