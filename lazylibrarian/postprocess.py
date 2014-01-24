@@ -4,7 +4,7 @@ from urllib import FancyURLopener
 
 import lazylibrarian
 
-from lazylibrarian import database, logger, formatter
+from lazylibrarian import database, logger, formatter, notifiers
 
 def processDir():
     # rename this thread
@@ -105,6 +105,7 @@ def processDir():
                 		    myDB.upsert("authors", newValueDict, controlValueDict)
 
                 		    logger.info('Successfully processed: %s - %s' % (authorname, bookname))
+                		    notifiers.notify_download(global_name+' at '+formatter.now())
                 		else:
                 		    logger.error('Postprocessing for %s has failed. Warning - AutoAdd will be repeated' % bookname)
         if ppcount:

@@ -20,9 +20,11 @@ class GoodReads:
 
     def find_results(self, authorname=None):
         resultlist = []
+        api_hits = 0
         url = urllib.quote_plus(authorname.encode('utf-8'))
         set_url = 'http://www.goodreads.com/search.xml?q=' + url + '&' + urllib.urlencode(self.params)
-        logger.info('Searching for %s at: %s' % (authorname, set_url))
+        logger.info('Now searching GoodReads API with keyword: ' + authorname)
+        logger.debug('Searching for %s at: %s' % (authorname, set_url))
 
         try:
 
@@ -31,6 +33,7 @@ class GoodReads:
                 request = urllib2.Request(set_url)
                 opener = urllib2.build_opener(SimpleCache.CacheHandler(".AuthorCache"), SimpleCache.ThrottlingProcessor(5))
                 resp = opener.open(request)
+                api_hits = api_hits + 1
                 sourcexml = ElementTree.parse(resp)
             except Exception, e:
                 logger.error("Error finding results: " + str(e))
@@ -108,7 +111,8 @@ class GoodReads:
                     'author_fuzz': author_fuzz,
                     'book_fuzz': book_fuzz,
                     'isbn_fuzz': isbn_fuzz,
-                    'highest_fuzz': highest_fuzz
+                    'highest_fuzz': highest_fuzz,
+                    'num_reviews': float(bookrate)
                 })
 
                 resultcount = resultcount+1
@@ -121,14 +125,15 @@ class GoodReads:
             else:
                 logger.info('An unexpected error has occurred when searching for an author')
 
-        logger.info('Found %s results with value: %s' % (resultcount, authorname))
+        logger.info('Found %s results with keyword: %s' % (resultcount, authorname))
+        logger.info('The GoodReads API was hit %s times for keyword %s' % (str(api_hits), authorname))
 
         return resultlist
 
     def find_author_id(self):
 
         URL = 'http://www.goodreads.com/api/author_url/?' + urllib.urlencode(self.name) + '&' + urllib.urlencode(self.params)
-        logger.info("Searching for author with name: %s" % self.name)
+        logger.debug("Searching for author with name: %s" % self.name)
 
         # Cache our request
         request = urllib2.Request(URL)
@@ -192,6 +197,7 @@ class GoodReads:
 
     def get_author_books(self, authorid=None, authorname=None, refresh=False):
 
+        api_hits = 0
         URL = 'http://www.goodreads.com/author/list/' + authorid + '.xml?' + urllib.urlencode(self.params)
 
         #Artist is loading
@@ -205,6 +211,7 @@ class GoodReads:
             request = urllib2.Request(URL)
             opener = urllib2.build_opener(SimpleCache.CacheHandler(".AuthorCache"), SimpleCache.ThrottlingProcessor(5))
             resp = opener.open(request)
+            api_hits = api_hits + 1
             sourcexml = ElementTree.parse(resp)
         except Exception, e:
             logger.error("Error fetching author info: " + str(e))
@@ -217,7 +224,7 @@ class GoodReads:
             logger.info('[%s] No books found for author with ID: %s' % (authorname, authorid))
 
         else:
-            logger.info("[%s] Processing books for author with ID: %s" % (authorname, authorid))
+            logger.info("[%s] Now processing books with GoodReads API" % authorname)
 
             resultsCount = 0
             removedResults = 0
@@ -314,24 +321,28 @@ class GoodReads:
 							logger.info("[%s] Added book: %s" % (authorname, bookname))
 							added_count = added_count + 1
 						else:
+							logger.info("[%s] Updated book: %s" % (authorname, bookname))
 							updated_count = updated_count + 1
 					else:
 						removedResults = removedResults + 1
 
 				loopCount = loopCount + 1
 				URL = 'http://www.goodreads.com/author/list/' + authorid + '.xml?' + urllib.urlencode(self.params) + '&page=' + str(loopCount)
-				
+
 				try:
 				    # Cache our request
 				    request1 = urllib2.Request(URL)
 				    opener1 = urllib2.build_opener(SimpleCache.CacheHandler(".AuthorCache"), SimpleCache.ThrottlingProcessor(5))
 				    resp1 = opener1.open(request1)
+				    api_hits = api_hits + 1
 				except Exception, e:
 				    logger.error("Error finding results: " + str(e))				
 
 				sourcexml = ElementTree.parse(resp1)
 				rootxml = sourcexml.getroot()
 				resultxml = rootxml.getiterator('book')
+
+        logger.info('[%s] The GoodReads API was hit %s times to populate book list' % (authorname, str(api_hits)))
         
         lastbook = myDB.action("SELECT BookName, BookLink, BookDate from books WHERE AuthorID='%s' AND Status != 'Ignored' order by BookDate DESC" % authorid).fetchone()
         unignoredbooks = myDB.select("SELECT COUNT(BookName) as unignored FROM books WHERE AuthorID='%s' AND Status != 'Ignored'" % authorid)

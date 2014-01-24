@@ -9,7 +9,7 @@ import threading, time
 
 import lazylibrarian
 
-from lazylibrarian import logger, importer, database, postprocess, formatter
+from lazylibrarian import logger, importer, database, postprocess, formatter, notifiers
 from lazylibrarian.searchnzb import searchbook
 from lazylibrarian.formatter import checked
 from lazylibrarian.gr import GoodReads
@@ -107,12 +107,13 @@ class WebInterface(object):
                     "ebook_dest_file": lazylibrarian.EBOOK_DEST_FILE,
                     "mag_dest_folder": lazylibrarian.MAG_DEST_FOLDER,
                     "mag_dest_file": lazylibrarian.MAG_DEST_FILE,
-                    "use_twitter" :     lazylibrarian.USE_TWITTER,
-                    "twitter_notify_onsnatch" :     lazylibrarian.TWITTER_NOTIFY_ONSNATCH,
-                    "twitter_notify_ondownload" :     lazylibrarian.TWITTER_NOTIFY_ONDOWNLOAD, 
+                    "use_twitter" :     checked(lazylibrarian.USE_TWITTER),
+                    "twitter_notify_onsnatch" :     checked(lazylibrarian.TWITTER_NOTIFY_ONSNATCH),
+                    "twitter_notify_ondownload" :     checked(lazylibrarian.TWITTER_NOTIFY_ONDOWNLOAD), 
 
                     "ebook_type" :		lazylibrarian.EBOOK_TYPE,
                     "gr_api" :		lazylibrarian.GR_API,
+                    "gb_api" :      lazylibrarian.GB_API,
                     "book_api" :    lazylibrarian.BOOK_API
                 }
         return serve_template(templatename="config.html", title="Settings", config=config)    
@@ -120,7 +121,7 @@ class WebInterface(object):
 
     def configUpdate(self, http_host='0.0.0.0', http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, imp_onlyisbn=0, imp_preflang=None, imp_autoadd=None,
         sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None, destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, blackhole=0, blackholedir=None,
-        newznab=0, newznab_host=None, newznab_api=None, newznab2=0, newznab_host2=None, newznab_api2=None,newzbin=0, newzbin_uid=None, newzbin_pass=None, ebook_type=None, book_api=None, gr_api=None, usenetcrawler = 0, usenetcrawler_host=None, usenetcrawler_api = None, 
+        newznab=0, newznab_host=None, newznab_api=None, newznab2=0, newznab_host2=None, newznab_api2=None,newzbin=0, newzbin_uid=None, newzbin_pass=None, ebook_type=None, book_api=None, gr_api=None, gb_api=None, usenetcrawler = 0, usenetcrawler_host=None, usenetcrawler_api = None, 
         versioncheck_interval=None, search_interval=None, scan_interval=None, ebook_dest_folder=None, ebook_dest_file=None, mag_dest_folder=None, mag_dest_file=None, use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0):
 
         lazylibrarian.HTTP_HOST = http_host
@@ -169,6 +170,7 @@ class WebInterface(object):
         lazylibrarian.EBOOK_TYPE = ebook_type
         lazylibrarian.BOOK_API = book_api
         lazylibrarian.GR_API = gr_api
+        lazylibrarian.GB_API = gb_api
 
         lazylibrarian.SEARCH_INTERVAL = search_interval
         lazylibrarian.SCAN_INTERVAL = scan_interval
@@ -215,7 +217,7 @@ class WebInterface(object):
         for item in authorsearch:
             authorlist.append(item['AuthorName'])
 
-        sortedlist_final = sorted(searchresults, key=itemgetter('highest_fuzz', 'author_fuzz', 'book_fuzz', 'bookrate'), reverse=True)
+        sortedlist_final = sorted(searchresults, key=itemgetter('highest_fuzz', 'num_reviews'), reverse=True)
         return serve_template(templatename="searchresults.html", title='Search Results for: "' + name + '"', searchresults=sortedlist_final, authorlist=authorlist, type=type)
     search.exposed = True
 
@@ -274,7 +276,7 @@ class WebInterface(object):
     deleteAuthor.exposed = True
 
     def refreshAuthor(self, AuthorName):
-        importer.addAuthorToDB(AuthorName, refresh=True)
+        threading.Thread(target=importer.addAuthorToDB(AuthorName, refresh=True)).start()
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     refreshAuthor.exposed=True
 
@@ -314,7 +316,6 @@ class WebInterface(object):
 
         # find book
         bookdata = myDB.select("SELECT * from books WHERE BookID='%s'" % bookid)
-        logger.debug("SELECT * from books WHERE BookID='%s'" % bookid)
         if bookdata:
             AuthorName = bookdata[0]["AuthorName"];
 
@@ -453,6 +454,33 @@ class WebInterface(object):
     def logs(self):
         return serve_template(templatename="logs.html", title="Log", lineList=lazylibrarian.LOGLIST)
     logs.exposed = True
+
+    @cherrypy.expose
+    def twitterStep1(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+
+        return notifiers.twitter_notifier._get_authorization()
+
+    @cherrypy.expose
+    def twitterStep2(self, key):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+
+        result = notifiers.twitter_notifier._get_credentials(key)
+        logger.info(u"result: "+str(result))
+        if result:
+            return "Key verification successful"
+        else:
+            return "Unable to verify key"
+
+    @cherrypy.expose
+    def testTwitter(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+
+        result = notifiers.twitter_notifier.test_notify()
+        if result:
+            return "Tweet successful, check your twitter to make sure it worked"
+        else:
+            return "Error sending tweet"
 
     def shutdown(self):
         lazylibrarian.config_write()

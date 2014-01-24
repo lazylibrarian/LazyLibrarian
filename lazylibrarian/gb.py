@@ -19,20 +19,31 @@ class GoogleBooks:
         self.params = {
             'maxResults': 40,
             'printType': 'books',
+            'key': lazylibrarian.GB_API
             }
 
 
     def find_results(self, authorname=None):
         resultlist = []
-        api_strings = ['inauthor:', 'intitle:', 'isbn:']
+        #See if we should check ISBN field, otherwise ignore it
+        try:
+            isbn_check = int(authorname[:-1])
+            if (len(str(isbn_check)) == 9) or (len(str(isbn_check)) == 12):
+                api_strings = ['isbn:']
+            else:
+                api_strings = ['inauthor:', 'intitle:']
+        except:
+            api_strings = ['inauthor:', 'intitle:']
+
+        api_hits = 0
+        logger.info('Now searching Google Books API with keyword: ' + self.name)
 
         for api_value in api_strings:
+            startindex = 0
             if api_value == "isbn:":
                 set_url = self.url + urllib.quote(api_value + self.name)
             else:
                 set_url = self.url + urllib.quote(api_value + '"' + self.name + '"')
-
-            logger.info('Searching url: ' + set_url)
 
             try:
                 startindex = 0
@@ -45,9 +56,18 @@ class GoogleBooks:
 
                     try:
                         jsonresults = json.JSONDecoder().decode(urllib2.urlopen(URL, timeout=30).read())
+                        api_hits = api_hits + 1
+                        number_results = jsonresults['totalItems']
+                        logger.debug('Searching url: ' + URL)
+                        if number_results == 0:
+                            logger.info('Found no results for %s with value: %s' % (api_value, self.name))
+                            break
+                        else:
+                            pass
                     except HTTPError, err:
-                        logger.Error('Google API returned HTTP Error - probably time/rate limiting - [%s]' % err.msg)
-                        
+                        logger.warn('Google Books API Error [%s]: Check your API key or wait a while' % err.msg)
+                        break
+
                     startindex = startindex+40
 
                     for item in jsonresults['items']:
@@ -57,18 +77,19 @@ class GoogleBooks:
                             Author = item['volumeInfo']['authors'][0]
                         except KeyError:
                             logger.debug('Skipped a result without authorfield.')
-                            break
+                            continue
 
                         try:
                             #skip if language is in ignore list
                             booklang = item['volumeInfo']['language']
                             if not booklang in lazylibrarian.IMP_PREFLANG:
                                 ignored = ignored+1
-                                break
+                                logger.debug('Skipped a result where language did not match preference')
+                                continue
                         except KeyError:
                             ignored = ignored+1
                             logger.debug('Skipped a result where no language is found')
-                            break
+                            continue
 
                         try:
                             bookpub = item['volumeInfo']['publisher']
@@ -112,6 +133,11 @@ class GoogleBooks:
                             bookdesc = 'Not available'
 
                         try:
+                            num_reviews = item['volumeInfo']['ratingsCount']
+                        except KeyError:
+                            num_reviews = 0
+
+                        try:
                             if item['volumeInfo']['industryIdentifiers'][0]['type'] == 'ISBN_10':
                                 bookisbn = item['volumeInfo']['industryIdentifiers'][0]['identifier']
                             else:
@@ -149,24 +175,33 @@ class GoogleBooks:
                             'author_fuzz': author_fuzz,
                             'book_fuzz': book_fuzz,
                             'isbn_fuzz': isbn_fuzz,
-                            'highest_fuzz': highest_fuzz
+                            'highest_fuzz': highest_fuzz,
+                            'num_reviews': num_reviews
                             })
 
                         resultcount = resultcount+1
 
-            except KeyError:
-                logger.info('Found %s results for %s with value: %s' % (resultcount, api_value, self.name))
-                if ignored > 0:
-                    logger.info('Skipped %s results because it is not a preferred language.' % ignored)
+                    if startindex >= number_results:
+                        logger.info('Found %s results for %s with value: %s' % (resultcount, api_value, self.name))
+                        if ignored > 0:
+                            logger.debug('Skipped %s results because it is not a preferred language.' % ignored)
+                        break
+                    else:
+                        continue
 
+            except KeyError:
+                break
+
+        logger.info('The Google Books API was hit %s times for keyword %s' % (str(api_hits), self.name))
         return resultlist
 
     def get_author_books(self, authorid=None, authorname=None, refresh=False):
         books_dict=[]
         set_url = self.url + urllib.quote('inauthor:' + '"' + authorname + '"')
+        URL = set_url + '&' + urllib.urlencode(self.params)
 
-        logger.info('[%s] Now updating book list' % authorname)
-        logger.info('[%s] Searching url: %s' % (authorname, set_url))
+        api_hits = 0
+        logger.info('[%s] Now processing books with Google Books API' % authorname)
 
         #Artist is loading
         myDB = database.DBConnection()
@@ -188,6 +223,14 @@ class GoogleBooks:
 
                 try:
                     jsonresults = json.JSONDecoder().decode(urllib2.urlopen(URL, timeout=30).read())
+                    api_hits = api_hits + 1
+                    number_results = jsonresults['totalItems']
+                    logger.debug('[%s] Searching url: %s' % (authorname, URL))
+                    if number_results == 0:
+                        logger.info('Found no results for %s with value: %s' % (api_value, self.name))
+                        break
+                    else:
+                        pass
                 except HTTPError, err:
                     logger.Error('Google API returned HTTP Error - probably time/rate limiting - [%s]' % err.msg)
                     
@@ -200,18 +243,19 @@ class GoogleBooks:
                         Author = item['volumeInfo']['authors'][0]
                     except KeyError:
                         logger.debug('Skipped a result without authorfield.')
-                        break
+                        continue
 
                     try:
                         #skip if language is in ignore list
                         booklang = item['volumeInfo']['language']
                         if not booklang in lazylibrarian.IMP_PREFLANG:
+                            logger.debug('Skipped a result where language did not match preference')
                             ignored = ignored+1
-                            break
+                            continue
                     except KeyError:
                         ignored = ignored+1
                         logger.debug('Skipped a result where no language is found')
-                        break
+                        continue
 
                     try:
                         bookpub = item['volumeInfo']['publisher']
@@ -304,14 +348,19 @@ class GoogleBooks:
                             added_count = added_count + 1
                         else:
                             updated_count = updated_count + 1
+                            logger.info("[%s] Updated book: %s" % (authorname, bookname))
                     else:
                         removedResults = removedResults + 1
 
-                        
+                    if startindex >= number_results:
+                        break
+                    else:
+                        continue
+
         except KeyError:
-            logger.info('[%s] Found %s results for name: %s' % (authorname, resultcount, authorname))
-            if ignored > 0:
-                logger.info('[%s] Skipped %s results because it is not a preferred language.' % (authorname, ignored))
+            pass
+
+        logger.info('[%s] The Google Books API was hit %s times to populate book list' % (authorname, str(api_hits)))
 
         lastbook = myDB.action("SELECT BookName, BookLink, BookDate from books WHERE AuthorID='%s' AND Status != 'Ignored' order by BookDate DESC" % authorid).fetchone()
         unignoredbooks = myDB.select("SELECT COUNT(BookName) as unignored FROM books WHERE AuthorID='%s' AND Status != 'Ignored'" % authorid)
@@ -329,7 +378,7 @@ class GoogleBooks:
         myDB.upsert("authors", newValueDict, controlValueDict)
 
                    
-        logger.debug("Removed %s non-english and no publication year results for author" % removedResults)
+        logger.debug("Removed %s non-english and/or bad character results for author" % removedResults)
         logger.debug("Found %s books for author" % resultcount)
         if refresh:
             logger.info("[%s] Book processing complete: Added %s books / Updated %s books" % (authorname, str(added_count), str(updated_count)))

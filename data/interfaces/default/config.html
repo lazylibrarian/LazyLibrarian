@@ -169,6 +169,11 @@
                     <h5>Goodreads API:</h5><input type="text" name="gr_api" value="${config['gr_api']}" size="50" maxlength="40" >
                 </td>
             </tr>
+            <tr>
+                <td>
+                    <h5>GoogleBooks API:</h5><input type="text" name="gb_api" value="${config['gb_api']}" size="50" maxlength="40" >
+                </td>
+            </tr>
         </table>
         </div>
     </div>
@@ -242,11 +247,35 @@
     <div class="table_wrapper" style="display:none">
         <div class="tabs-6">
         <table class="configtable" summary="Notifications">
-            <tr>
-                <td>
-                    <h3>Coming Soon<h3>
-                </td>
-            </tr>
+        <tr>
+            <td>
+                <h3>Twitter</h3>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <input type="checkbox" name="use_twitter" id="twitter" value="1" ${config['use_twitter']} />Enable Twitter Notifications
+                <BR>
+                <input type="checkbox" name="twitter_notify_onsnatch" value="1" ${config['twitter_notify_onsnatch']} />Notify on snatch
+                <BR>
+                <input type="checkbox" name="twitter_notify_ondownload" value="1" ${config['twitter_notify_ondownload']} />Notify on download
+            </td>
+            <td>
+                Step One: (Check Pop-Up Blocker)
+                <BR>
+                Step Two: <input type="text" id="twitter_key" value="" size="35" placeholder="Input Authorization Key" />
+                
+                <BR>
+                Step Three: 
+            </td>
+            <td>
+                <input type="button" value="Request Authorization" id="twitterStep1" />
+                <BR>
+                <input type="button" value="Verify Key" id="twitterStep2" />
+                <BR>
+                <input type="button" value="Test Twitter" id="testTwitter" />
+            </td>
+        </tr>
         </table>
         </div>
     </div>
@@ -257,4 +286,30 @@
 	<p style="text-align:center;position:fixed;bottom:10px;margin-left:20px;color:grey">Branch: ${lazylibrarian.CURRENT_BRANCH} Current Version: ${lazylibrarian.CURRENT_VERSION}  : Latest  Version: ${lazylibrarian.LATEST_VERSION}</p>
     </div>
 </form>
+</%def>
+
+<%def name="javascriptIncludes()">
+    <script>
+        $(document).ready(function () {
+            
+            $('#twitterStep1').click(function () {
+                $('#testTwitter-result').html('');
+                $.get("twitterStep1", function (data) {window.open(data); })
+                    .done(function () { $('#testTwitter-result').html('<b>Step1:</b> Confirm Authorization'); });
+            });
+
+            $('#twitterStep2').click(function () {
+                $('#testTwitter-result').html('');
+                var twitter_key = $("#twitter_key").val();
+                $.get("twitterStep2", {'key': twitter_key},
+                    function (data) { $('#testTwitter-result').html(data); });
+            });
+
+            $('#testTwitter').click(function () {
+                $.get("testTwitter",
+                    function (data) { $('#testTwitter-result').html(data); });
+            });
+
+        });
+    </script>
 </%def>
