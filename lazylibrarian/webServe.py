@@ -46,12 +46,12 @@ class WebInterface(object):
     def books(self, BookLang=None):
         myDB = database.DBConnection()
 
-        languages = myDB.select('SELECT DISTINCT BookLang from books WHERE NOT STATUS="Skipped"')
+        languages = myDB.select('SELECT DISTINCT BookLang from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"')
 
         if BookLang:
-            books = myDB.select('SELECT * from books WHERE BookLang=? AND NOT Status="Skipped"', [BookLang])
+            books = myDB.select('SELECT * from books WHERE BookLang=? AND NOT Status="Skipped" AND NOT STATUS="Ignored"', [BookLang])
         else:
-            books = myDB.select('SELECT * from books WHERE NOT STATUS="Skipped"')
+            books = myDB.select('SELECT * from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"')
 
         if books is None:
             raise cherrypy.HTTPRedirect("books")
@@ -200,6 +200,7 @@ class WebInterface(object):
 
 #SEARCH
     def search(self, name):
+        myDB = database.DBConnection()
         if lazylibrarian.BOOK_API == "GoogleBooks":
             book_api = GoogleBooks(name)
         elif lazylibrarian.BOOK_API == "GoodReads":
@@ -209,19 +210,31 @@ class WebInterface(object):
         else:
             searchresults = book_api.find_results(name)
 
+        authorsearch = myDB.select("SELECT * from authors")
+        authorlist = []
+        for item in authorsearch:
+            authorlist.append(item['AuthorName'])
+
         sortedlist_final = sorted(searchresults, key=itemgetter('highest_fuzz', 'author_fuzz', 'book_fuzz', 'bookrate'), reverse=True)
-        return serve_template(templatename="searchresults.html", title='Search Results for: "' + name + '"', searchresults=sortedlist_final, type=type)
+        return serve_template(templatename="searchresults.html", title='Search Results for: "' + name + '"', searchresults=sortedlist_final, authorlist=authorlist, type=type)
     search.exposed = True
 
 #AUTHOR
-    def authorPage(self, AuthorName, BookLang=None):
+    def authorPage(self, AuthorName, BookLang=None, Ignored=False):
         myDB = database.DBConnection()
 
-        languages = myDB.select('SELECT DISTINCT BookLang from books WHERE AuthorName LIKE ?', [AuthorName.replace("'","''")])
-        if BookLang:
-            querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' AND BookLang = '%s' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'","''"), BookLang)
+        if Ignored:
+            languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorName LIKE ? AND Status ='Ignored'", [AuthorName.replace("'","''")])
+            if BookLang:
+                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' AND BookLang = '%s' AND Status ='Ignored' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'","''"), BookLang)
+            else:
+                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' AND (BookLang = '%s' OR BookLang = 'Unknown') and Status ='Ignored' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'","''"), lazylibrarian.IMP_PREFLANG)
         else:
-            querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' AND (BookLang = '%s' OR BookLang = 'Unknown') order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'","''"), lazylibrarian.IMP_PREFLANG)
+            languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorName LIKE ? AND Status !='Ignored'", [AuthorName.replace("'","''")])
+            if BookLang:
+                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' AND BookLang = '%s' AND Status !='Ignored' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'","''"), BookLang)
+            else:
+                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' AND (BookLang = '%s' OR BookLang = 'Unknown') and Status !='Ignored' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'","''"), lazylibrarian.IMP_PREFLANG)
 
         queryauthors = "SELECT * from authors WHERE AuthorName LIKE '%s'" % AuthorName.replace("'","''")
 
@@ -260,9 +273,9 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("home")
     deleteAuthor.exposed = True
 
-    def refreshAuthor(self, AuthorID):
-        importer.addAuthorToDB(AuthorID)
-        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+    def refreshAuthor(self, AuthorName):
+        importer.addAuthorToDB(AuthorName, refresh=True)
+        raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     refreshAuthor.exposed=True
 
     def addResults(self, authorname):
@@ -296,14 +309,13 @@ class WebInterface(object):
                         return serve_file(os.path.join(dest_dir, file2), "application/x-download", "attachment")
     openBook.exposed = True
 
-    def searchForBook(self, bookLink=None, action=None, **args):
+    def searchForBook(self, bookid=None, action=None, **args):
         myDB = database.DBConnection()
 
         # find book
-        bookdata = myDB.select('SELECT * from books WHERE BookLink=\'' + bookLink + '\'')
-        logger.debug(('SELECT * from books WHERE BookLink=\'' + bookLink + '\''))
+        bookdata = myDB.select("SELECT * from books WHERE BookID='%s'" % bookid)
+        logger.debug("SELECT * from books WHERE BookID='%s'" % bookid)
         if bookdata:
-            bookid = bookdata[0]["BookID"];
             AuthorName = bookdata[0]["AuthorName"];
 
             # start searchthreads
@@ -327,14 +339,24 @@ class WebInterface(object):
                 myDB.upsert("books", newValueDict, controlValueDict)
                 logger.debug('Status set to %s for BookID: %s' % (action, bookid))
 
-                #update authors needs to be updated every time a book is marked differently
-                query = 'SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' % AuthorName
-                countbooks = myDB.action(query).fetchone()
-                havebooks = int(countbooks[0])
-                controlValueDict = {"AuthorName": AuthorName}
-                newValueDict = {"HaveBooks": havebooks}
-                myDB.upsert("authors", newValueDict, controlValueDict)
+        #update authors needs to be updated every time a book is marked differently
+        lastbook = myDB.action("SELECT BookName, BookLink, BookDate from books WHERE AuthorName='%s' AND Status != 'Ignored' order by BookDate DESC" % AuthorName).fetchone()
+        unignoredbooks = myDB.select("SELECT COUNT(BookName) as unignored FROM books WHERE AuthorName='%s' AND Status != 'Ignored'" % AuthorName)
+        bookCount = myDB.select("SELECT COUNT(BookName) as counter FROM books WHERE AuthorName='%s'" % AuthorName)  
+        countbooks = myDB.action('SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' % AuthorName).fetchone()
+        havebooks = int(countbooks[0]) 
 
+        controlValueDict = {"AuthorName": AuthorName}
+        newValueDict = {
+                "TotalBooks": bookCount[0]['counter'],
+                "UnignoredBooks": unignoredbooks[0]['unignored'],
+                "HaveBooks": havebooks,
+                "LastBook": lastbook['BookName'],
+                "LastLink": lastbook['BookLink'],
+                "LastDate": lastbook['BookDate']
+                }
+        myDB.upsert("authors", newValueDict, controlValueDict)
+                
         # start searchthreads
         books = []
         for bookid in args:
@@ -421,6 +443,12 @@ class WebInterface(object):
         magazines = myDB.select("SELECT * from wanted WHERE Status='nomatter'")
         return serve_template(templatename="magazines.html", title="Magazines", magazines=magazines)
     magazines.exposed = True
+
+    def forceUpdate(self):
+        from lazylibrarian import updater
+        threading.Thread(target=updater.dbUpdate, args=[False]).start()
+        raise cherrypy.HTTPRedirect("home")
+    forceUpdate.exposed = True
 
     def logs(self):
         return serve_template(templatename="logs.html", title="Log", lineList=lazylibrarian.LOGLIST)

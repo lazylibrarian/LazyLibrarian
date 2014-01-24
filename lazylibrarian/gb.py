@@ -26,11 +26,11 @@ class GoogleBooks:
         resultlist = []
         api_strings = ['inauthor:', 'intitle:', 'isbn:']
 
-        for item in api_strings:
-            if item == "isbn:":
-                set_url = self.url + urllib.quote(item + self.name)
+        for api_value in api_strings:
+            if api_value == "isbn:":
+                set_url = self.url + urllib.quote(api_value + self.name)
             else:
-                set_url = self.url + urllib.quote(item + '"' + self.name + '"')
+                set_url = self.url + urllib.quote(api_value + '"' + self.name + '"')
 
             logger.info('Searching url: ' + set_url)
 
@@ -155,23 +155,32 @@ class GoogleBooks:
                         resultcount = resultcount+1
 
             except KeyError:
-                logger.info('Found %s results for %s with name: %s' % (resultcount, self.type, self.name))
+                logger.info('Found %s results for %s with value: %s' % (resultcount, api_value, self.name))
                 if ignored > 0:
                     logger.info('Skipped %s results because it is not a preferred language.' % ignored)
 
         return resultlist
 
-    def get_author_books(self, authorid=None, authorname=None):
+    def get_author_books(self, authorid=None, authorname=None, refresh=False):
         books_dict=[]
         set_url = self.url + urllib.quote('inauthor:' + '"' + authorname + '"')
 
-        logger.info('Searching url: ' + set_url)
+        logger.info('[%s] Now updating book list' % authorname)
+        logger.info('[%s] Searching url: %s' % (authorname, set_url))
+
+        #Artist is loading
+        myDB = database.DBConnection()
+        controlValueDict = {"AuthorID": authorid}
+        newValueDict = {"Status": "Loading"}
+        myDB.upsert("authors", newValueDict, controlValueDict)
 
         try:
             startindex = 0
             resultcount = 0
             removedResults = 0
             ignored = 0
+            added_count = 0
+            updated_count = 0
             while True:
 
                 self.params['startIndex'] = startindex
@@ -257,8 +266,15 @@ class GoogleBooks:
                     booklink = item['volumeInfo']['canonicalVolumeLink']
                     bookrate = float(bookrate)
 
+                    find_book_status = myDB.select("SELECT * FROM books WHERE BookID = '%s'" % bookid)
+                    if find_book_status:
+                        for resulted in find_book_status:
+                            book_status = resulted['Status']
+                    else:
+                        book_status = "Skipped"
+
+
                     if not (re.match('[^\w-]', bookname)): #remove books with bad caracters in title
-                        myDB = database.DBConnection()
                         controlValueDict = {"BookID": bookid}
                         newValueDict = {
                             "AuthorName":   authorname,
@@ -276,105 +292,47 @@ class GoogleBooks:
                             "BookPages":    bookpages,
                             "BookDate":     bookdate,
                             "BookLang":     booklang,
-                            "Status":       "Skipped",
+                            "Status":       book_status,
                             "BookAdded":    formatter.today()
                         }
                         resultcount = resultcount + 1
 
                         myDB.upsert("books", newValueDict, controlValueDict)
                         logger.debug(u"book found " + bookname + " " + bookdate)
-                        if  (re.match('[^\w-]', bookname)):
-                            removedResults = removedResults + 1
-                        
-                        lastbook = myDB.action("SELECT BookName, BookLink, BookDate from books WHERE AuthorID='%s' order by BookDate DESC" % authorid).fetchone()
-                        bookCount = myDB.select("SELECT COUNT(BookName) as counter FROM books WHERE AuthorID='%s'" % authorid)          
-                        for count in bookCount:
-                            controlValueDict = {"AuthorID": authorid}
-                            newValueDict = {
-                                    "Status": "Loading",
-                                    "TotalBooks": count['counter'],
-                                    "LastBook": lastbook['BookName'],
-                                    "LastLink": lastbook['BookLink'],
-                                    "LastDate": lastbook['BookDate']
-                                    }
-                            myDB.upsert("authors", newValueDict, controlValueDict)
+                        if not find_book_status:
+                            logger.info("[%s] Added book: %s" % (authorname, bookname))
+                            added_count = added_count + 1
+                        else:
+                            updated_count = updated_count + 1
+                    else:
+                        removedResults = removedResults + 1
 
+                        
         except KeyError:
-            logger.info('Found %s results for name: %s' % (resultcount, authorname))
+            logger.info('[%s] Found %s results for name: %s' % (authorname, resultcount, authorname))
             if ignored > 0:
-                logger.info('Skipped %s results because it is not a preferred language.' % ignored)
+                logger.info('[%s] Skipped %s results because it is not a preferred language.' % (authorname, ignored))
+
+        lastbook = myDB.action("SELECT BookName, BookLink, BookDate from books WHERE AuthorID='%s' AND Status != 'Ignored' order by BookDate DESC" % authorid).fetchone()
+        unignoredbooks = myDB.select("SELECT COUNT(BookName) as unignored FROM books WHERE AuthorID='%s' AND Status != 'Ignored'" % authorid)
+        bookCount = myDB.select("SELECT COUNT(BookName) as counter FROM books WHERE AuthorID='%s'" % authorid)   
 
         controlValueDict = {"AuthorID": authorid}
         newValueDict = {
-                "Status": "Active"
+                "Status": "Active",
+                "TotalBooks": bookCount[0]['counter'],
+                "UnignoredBooks": unignoredbooks[0]['unignored'],
+                "LastBook": lastbook['BookName'],
+                "LastLink": lastbook['BookLink'],
+                "LastDate": lastbook['BookDate']
                 }
         myDB.upsert("authors", newValueDict, controlValueDict)
-                
-                    
+
+                   
         logger.debug("Removed %s non-english and no publication year results for author" % removedResults)
         logger.debug("Found %s books for author" % resultcount)
-        logger.info("Processing complete: Added %s books to the database" % str(resultcount))
+        if refresh:
+            logger.info("[%s] Book processing complete: Added %s books / Updated %s books" % (authorname, str(added_count), str(updated_count)))
+        else:
+            logger.info("[%s] Book processing complete: Added %s books to the database" % (authorname, str(added_count)))
         return books_dict
-
-
-    def find_book(self, bookid=None):
-        resultlist = []
-
-        URL = 'https://www.googleapis.com/books/v1/volumes/' + bookid
-        jsonresults = json.JSONDecoder().decode(urllib2.urlopen(URL, timeout=30).read())
-
-        try:
-            bookdate = item['volumeInfo']['publishedDate']
-        except KeyError:
-            bookdate = 'Unknown'
-
-        try:
-            bookimg = item['volumeInfo']['imageLinks']['thumbnail']
-        except KeyError:
-            bookimg = 'images/nocover.png'
-
-        try:
-            bookrate = item['volumeInfo']['averageRating']
-        except KeyError:
-            bookrate = 0
-
-        try:
-            bookpages = item['volumeInfo']['pageCount']
-        except KeyError:
-            bookpages = 0
-
-        try:
-            bookgenre = item['volumeInfo']['categories']
-        except KeyError:
-            bookgenre = 'Unknown'
-
-        try:
-            bookdesc = item['volumeInfo']['description']
-        except KeyError:
-            bookdesc = 'Not available'
-
-        try:
-            if item['volumeInfo']['industryIdentifiers'][0]['type'] == 'ISBN_10':
-                bookisbn = item['volumeInfo']['industryIdentifiers'][0]['identifier']
-            else:
-                bookisbn = 0
-        except KeyError:
-            bookisbn = 0
-
-        resultlist.append({
-            'bookname': item['volumeInfo']['title'],
-            'bookisbn': bookisbn,
-            'bookdate': bookdate,
-            'booklang': item['volumeInfo']['language'],
-            'booklink': item['volumeInfo']['canonicalVolumeLink'],
-            'bookrate': float(bookrate),
-            'bookimg': bookimg,
-            'bookpages': bookpages,
-            'bookgenre': bookgenre,
-            'bookdesc': bookdesc
-            })
-
-        return resultlist
-
-
-

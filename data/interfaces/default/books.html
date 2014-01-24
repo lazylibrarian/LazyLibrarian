@@ -72,7 +72,7 @@
                         <td id="status"><a class="button green" href="openBook?bookid=${result['bookid']}" target="_self">${result['Status']}</a></td>
                     %else:
                         %if result['Status'] == 'Wanted':
-                            <td id="status"><a class="button red" href="searchForBook?bookLink=${result['booklink']}" target="_self"><span class="a">${result['Status']}</span><span class="b">Search</span></a></td>
+                            <td id="status"><a class="button red" href="searchForBook?bookid=${result['BookID']}" target="_self"><span class="a">${result['Status']}</span><span class="b">Search</span></a></td>
                         %else:
                             %if result['Status'] == 'Snatched':
                                 <td id="status"><a class="button">${result['Status']}</a></td>

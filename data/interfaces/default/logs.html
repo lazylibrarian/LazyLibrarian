@@ -87,13 +87,15 @@
         
         // dont keep refreshing the log table on mobile devices
         var isiPad = navigator.userAgent.match(/iPad/i) != null;
-        if (!isiPad && !((navigator.userAgent.match(/iPhone/i)) || (navigator.userAgent.match(/iPod/i))))
-        {
-            // Refresh the log table
-            setInterval(function() {
-                $('#log_table').dataTable().fnDraw();
-            }, 10000);
-        }
+        // Why is the log page auto-refreshing in the first place?
+
+        // if (!isiPad && !((navigator.userAgent.match(/iPhone/i)) || (navigator.userAgent.match(/iPod/i))))
+        // {
+        //     // Refresh the log table
+        //     setInterval(function() {
+        //         $('#log_table').dataTable().fnDraw();
+        //     }, 10000);
+        // }
     });
     </script>
 </%def>
