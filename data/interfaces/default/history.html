@@ -8,20 +8,21 @@
 		<ul id="subhead_menu">
 			<li><a href="clearhistory?type=all" id="button">Clear All History</a></li>
 			<li><a href="clearhistory?type=Processed" id="button">Clear Processed</a></li>
-			<li><a href="clearhistory?type=Unprocessed" id="button">Clear Unprocessed</a></li>
 			<li><a href="clearhistory?type=Snatched" id="button">Clear Snatched</a></li>
+			<li><a href="clearhistory?type=Skipped" id="button">Clear Skipped</a></li>
 		</ul>
 	</div>	
 </%def>
 
 <%def name="body()">
 <BR><BR>
-	<table class="display" id="history_table">
+
+	<table class="display" id="book_table">
 		<thead>
 			<tr>
 				<th id="filename">Title</th>
 				<th id="bookid">ID</th>
-				<th id="size">Provider</th>
+				<th id="provider">Provider</th>
 				<th id="dateadded">Date</th>
 				<th id="size">Size</th>
 				<th id="status">Status</th>
@@ -42,7 +43,7 @@
 			<tr class="grade${grade}">
 				<td id="filename">${item['NZBtitle']}</td>
 				<td id="bookid">${item['BookID']}</td>
-				<td id="size"><a href="${item['NZBurl']}">${item['NZBprov']}</a></td>
+				<td id="provider"><a href="${item['NZBurl']}">${item['NZBprov']}</a></td>
 				<td id="dateadded">${item['NZBdate']}</td>
 				<td id="size">${item['NZBsize']}</td>
 				<td id="status">${item['Status']}</td>
@@ -57,13 +58,15 @@
 </%def>
 
 <%def name="javascriptIncludes()">
-	<script src="js/libs/jquery.dataTables.min.js"></script>
-	<script>
-	$(document).ready(function()
-	{
-		$('#history_table').dataTable(
-			{
-				"aoColumns": [
+    <script src="js/libs/jquery.dataTables.min.js"></script>
+    <script>
+        
+    $(document).ready(function()
+    {
+
+        $('#book_table').dataTable(
+            {
+                "aoColumns": [
                     null,
                     null,
                     null,
@@ -71,17 +74,18 @@
                     null,
                     null
                     ],
-				"oLanguage": {
-					"sLengthMenu":"Show _MENU_ items per page",
-					"sEmptyTable": "No History to Display",
-					"sInfo":"Showing _START_ to _END_ of _TOTAL_ items",
-					"sInfoEmpty":"Showing 0 to 0 of 0 items",
-					"sInfoFiltered":"(filtered from _MAX_ total items)"},
-				"iDisplayLength": 25,
-				"sPaginationType": "full_numbers",
-				"aaSorting": []
-
-			});
-	});
-	</script>
+                "oLanguage": {
+                    "sLengthMenu":"Show _MENU_ books per page",
+                    "sEmptyTable": "No history found",
+                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 books",
+                    "sInfoFiltered":"(filtered from _MAX_ total books)"},
+                "sPaginationType": "full_numbers",
+                "bStateSave": true,
+                "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
+                "iDisplayLength": 10,
+            });
+            $('.dataTables_filter input').attr("placeholder", "Seach table here");
+    });
+    </script>
 </%def>

@@ -143,9 +143,6 @@ def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
 
     if lazylibrarian.SAB_HOST and not lazylibrarian.BLACKHOLE:
         download = sabnzbd.SABnzbd(nzbtitle, nzburl)
-        logger.debug('Nzbfile has been downloaded from ' + str(nzburl))
-        myDB.action('UPDATE books SET status = "Snatched" WHERE BookID=?', [bookid])
-        myDB.action('UPDATE wanted SET status = "Snatched" WHERE BookID=?', [bookid])
 
     elif lazylibrarian.BLACKHOLE:
 
@@ -179,13 +176,13 @@ def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
                 download = False;
 
     else:
-        logger.error('No downloadmethod is enabled, check config.')
+        logger.error('No download method is enabled, check config.')
         return False
 
     if download:
-        logger.debug('Nzbfile has been downloaded')
+        logger.debug('Nzbfile has been downloaded from ' + str(nzburl))
         myDB.action('UPDATE books SET status = "Snatched" WHERE BookID=?', [bookid])
-        myDB.action('UPDATE wanted SET status = "Snatched" WHERE BookID=?', [bookid])
+        myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl=?', [nzburl])
     else:
         logger.error(u'Failed to download nzb @ <a href="%s">%s</a>' % (nzburl, lazylibrarian.NEWZNAB_HOST))
         myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl=?', [nzburl])

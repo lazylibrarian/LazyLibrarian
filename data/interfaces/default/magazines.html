@@ -33,6 +33,7 @@
             <select name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
                   <option value="Active">Active</option>
                   <option value="Paused">Paused</option>
+                  <option value="Reset">Reset</option>
                   <option value="Delete">Delete</option>
             </select>
         <input type="submit" value="Go">
@@ -42,11 +43,11 @@
     <table class="display" id="book_table">
         <thead>
             <tr>
-                <th id="select"><input type="checkbox" onClick="toggle(this)" /></th>
+                <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
                 <th id="magtitle">Title</th>
                 <th id="frequency">Frequency</th>
                 <!-- <th id="regex">Regex</th> -->
-                <th id="lastacquired">Last Acquired</th>
+                <th id="lastacquired">Acquired</th>
                 <th id="issuedate">Issue Date</th>
                 <th id="status">Status</th>
             </tr>
@@ -85,8 +86,10 @@
 <%def name="javascriptIncludes()">
     <script src="js/libs/jquery.dataTables.min.js"></script>
     <script>
+        
     $(document).ready(function()
     {
+
         $('#book_table').dataTable(
             {
                 "aoColumns": [
@@ -98,14 +101,17 @@
                     null
                     ],
                 "oLanguage": {
-                    "sLengthMenu":"Show _MENU_ magazines per page",
+                    "sLengthMenu":"Show _MENU_ books per page",
                     "sEmptyTable": "No magazines found",
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
                     "sInfoEmpty":"Showing 0 to 0 of 0 books",
-                    "sInfoFiltered":"(filtered from _MAX_ total magazines)"},
-                "iDisplayLength": 25,
+                    "sInfoFiltered":"(filtered from _MAX_ total books)"},
                 "sPaginationType": "full_numbers",
+                "bStateSave": true,
+                "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
+                "iDisplayLength": 10,
             });
+            $('.dataTables_filter input').attr("placeholder", "Seach table here");
     });
     </script>
 </%def>

@@ -384,11 +384,6 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("books")
     forceSearch.exposed = True
 
-    def forceMagSearch(self):
-        threading.Thread(target=searchmagazines).start()
-        raise cherrypy.HTTPRedirect("magazines")
-    forceMagSearch.exposed = True
-
     def checkForUpdates(self):
         #check the version when the application starts
         from lazylibrarian import versioncheck
@@ -474,20 +469,31 @@ class WebInterface(object):
 
     def markMagazines(self, action=None, **args):
         myDB = database.DBConnection()
-        for title in args:
+        print args
+        for item in args:
+            print item
             # ouch dirty workaround...
-            if not title == 'book_table_length':
-                if action != "Delete":
-                    controlValueDict = {"Title": title}
+            if not item == 'book_table_length':
+                if (action == "Paused" or action == "Active"):
+                    controlValueDict = {"Title": item}
                     newValueDict = {
                         "Status":       action,
                         }
                     myDB.upsert("magazines", newValueDict, controlValueDict)
-                    logger.info('Status of magazine %s changed to %s' % (title, action))
-                else:
-                    myDB.action('DELETE from magazines WHERE Title=?', [title])
-                    logger.info('Magazine %s removed from database' % title)
-                raise cherrypy.HTTPRedirect("magazines")
+                    logger.info('Status of magazine %s changed to %s' % (item, action))
+                elif (action == "Delete"):
+                    myDB.action('DELETE from magazines WHERE Title=?', [item])
+                    logger.info('Magazine %s removed from database' % item)
+                elif (action == "Reset"):
+                    controlValueDict = {"Title": item}
+                    newValueDict = {
+                        "LastAcquired": None,
+                        "IssueDate":    None
+                        }
+                    myDB.upsert("magazines", newValueDict, controlValueDict)
+                    logger.info('Magazine %s details reset' % item)
+
+        raise cherrypy.HTTPRedirect("magazines")
     markMagazines.exposed = True
 
     def markWanted(self, action=None, **args):

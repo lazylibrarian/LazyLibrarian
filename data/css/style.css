@@ -334,6 +334,30 @@ table#log_table td#timestamp { text-align: left; min-width: 150px; }
 table#log_table td#level { text-align: left;  }
 table#log_table td#message { text-align: left; }
 
+
+table#book_table th#magtitle { vertical-align: middle; text-align: center; }
+table#book_table th#frequency { vertical-align: middle; text-align: right; min-width:100px;}
+table#book_table th#lastacquired { vertical-align: middle; text-align: center; min-width:100px;}
+table#book_table th#issuedate { vertical-align: middle; text-align: center; min-width:100px;}
+
+table#book_table td#magtitle { vertical-align: middle; text-align: center; }
+table#book_table td#frequency { vertical-align: middle; text-align: right; }
+table#book_table td#lastacquired { vertical-align: middle; text-align: center; }
+table#book_table td#issuedate { vertical-align: middle; text-align: center; }
+
+table#book_table th#filename{ vertical-align: middle; text-align: center; }
+table#book_table th#bookid { vertical-align: middle; text-align: right; min-width:150px;}
+table#book_table th#size { vertical-align: middle; text-align: center; min-width:100px;}
+table#book_table th#dateadded { vertical-align: middle; text-align: center; min-width:100px;}
+table#book_table th#provider { vertical-align: middle; text-align: center; min-width:100px;}
+
+table#book_table td#filename{ vertical-align: middle; text-align: center; }
+table#book_table td#bookid { vertical-align: middle; text-align: right; }
+table#book_table td#size { vertical-align: middle; text-align: center; }
+table#book_table td#dateadded { vertical-align: middle; text-align: center; }
+table#book_table td#provider { vertical-align: middle; text-align: center; }
+
+
 div.progress-container { position:relative; width: 100%; height: 14px; margin: 2px 5px 2px 0;  float: left; 
 background-color: #F7F7F7;
 background-image: -moz-linear-gradient(top, whiteSmoke, #F9F9F9);
