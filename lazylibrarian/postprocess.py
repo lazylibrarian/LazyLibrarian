@@ -31,8 +31,8 @@ def processDir():
 	else:
 		ppcount=0
 		for book in snatched:
-			if book['NZBtitle'].lstrip().rstrip() in downloads:
-				pp_path = os.path.join(processpath, book['NZBtitle'].lstrip().rstrip())
+			if book['NZBtitle'] in downloads:
+				pp_path = os.path.join(processpath, book['NZBtitle'])
 				logger.info('Found folder %s.' % pp_path)
 
 				data = myDB.select("SELECT * from books WHERE BookID='%s'" % book['BookID'])
@@ -69,6 +69,9 @@ def processDir():
 					bookname = None
 					global_name = lazylibrarian.MAG_DEST_FILE.replace('$IssueDate', book['AuxInfo']).replace('$Title', title)
 					#global_name = book['AuxInfo']+' - '+title
+			else:
+				logger.info("Snatched NZB %s is not in download directory" % (book['NZBtitle']))
+				continue
 
 			try:
 				os.chmod(os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(lazylibrarian.SYS_ENCODING), 0777);
@@ -118,7 +121,7 @@ def processDir():
 					if countauthor:
 						myDB.upsert("authors", newValueDict, controlValueDict)
 
-				logger.info('Successfully processed: %s - %s' % (authorname, bookname))
+				logger.info('Successfully processed: %s' % (global_name))
 				notifiers.notify_download(global_name+' at '+formatter.now())
 			else:
 				logger.error('Postprocessing for %s has failed. Warning - AutoAdd will be repeated' % bookname)
