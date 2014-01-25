@@ -29,6 +29,57 @@ def nzbdate2format(nzbdate):
     year = nzbdate.split()[3]
     return year+'-'+month+'-'+day
 
+def month2num(month):
+    if month == "January":
+        ret_value = "01"
+    elif month == "February":
+        ret_value = "02"
+    elif month == "March":
+        ret_value = "03"
+    elif month == "April":
+        ret_value = "04"
+    elif month == "May":
+        ret_value = "05"
+    elif month == "June":
+        ret_value = "06"
+    elif month == "July":
+        ret_value = "07"
+    elif month == "August":
+        ret_value = "08"
+    elif month == "September":
+        ret_value = "09"
+    elif month == "October":
+        ret_value = "10"
+    elif month == "November":
+        ret_value = "11"
+    elif month == "December":
+        ret_value = "12"
+    elif month == "Winter":
+        ret_value = "01"
+    elif month == "Spring":
+        ret_value = "04"
+    elif month == "Summer":
+        ret_value = "07"
+    elif month == "Fall":
+        ret_value = "10"
+    elif month == "Autumn":
+        ret_value = "10"
+    else:
+        ret_value = "Invalid"
+    return ret_value
+
+def datecompare(nzbdate, control_date):
+    y1 = int(nzbdate.split('-')[0])
+    m1 = int(nzbdate.split('-')[1])
+    d1 = int(nzbdate.split('-')[2])
+    y2 = int(control_date.split('-')[0])
+    m2 = int(control_date.split('-')[1])
+    d2 = int(control_date.split('-')[2])
+    date1 = datetime.date(y1, m1, d1)
+    date2 = datetime.date(y2, m2, d2)
+    age = date1 - date2
+    return age.days
+
 def checked(variable):
     if variable:
         return 'Checked'

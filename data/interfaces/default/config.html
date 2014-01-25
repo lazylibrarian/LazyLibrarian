@@ -246,33 +246,30 @@
 
     <div class="table_wrapper" style="display:none">
         <div class="tabs-6">
-        <table class="configtable" summary="Notifications">
+        <table class="configtable" summary="Notifications" style="width:300px;">
         <tr>
             <td>
                 <h3>Twitter</h3>
             </td>
         </tr>
         <tr>
-            <td>
+            <td colspan=3>
                 <input type="checkbox" name="use_twitter" id="twitter" value="1" ${config['use_twitter']} />Enable Twitter Notifications
                 <BR>
                 <input type="checkbox" name="twitter_notify_onsnatch" value="1" ${config['twitter_notify_onsnatch']} />Notify on snatch
                 <BR>
                 <input type="checkbox" name="twitter_notify_ondownload" value="1" ${config['twitter_notify_ondownload']} />Notify on download
             </td>
-            <td>
-                Step One: (Check Pop-Up Blocker)
-                <BR>
-                Step Two: <input type="text" id="twitter_key" value="" size="35" placeholder="Input Authorization Key" />
-                
-                <BR>
-                Step Three: 
-            </td>
+        </tr>
+        <tr>
             <td>
                 <input type="button" value="Request Authorization" id="twitterStep1" />
-                <BR>
+            </td>
+            <td>
+                <input type="text" id="twitter_key" value="" size="35" placeholder="Input Authorization Key"/>
                 <input type="button" value="Verify Key" id="twitterStep2" />
-                <BR>
+            </td>
+            <td>
                 <input type="button" value="Test Twitter" id="testTwitter" />
             </td>
         </tr>

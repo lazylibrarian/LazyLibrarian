@@ -11,6 +11,7 @@ import lazylibrarian
 
 from lazylibrarian import logger, importer, database, postprocess, formatter, notifiers
 from lazylibrarian.searchnzb import searchbook
+from lazylibrarian.searchmag import searchmagazines
 from lazylibrarian.formatter import checked
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
@@ -324,7 +325,7 @@ class WebInterface(object):
             books.append({"bookid": bookid})
 
             threading.Thread(target=searchbook, args=[books]).start()
-            logger.info("Searching for book with id: " + str(bookid));
+            logger.debug("Searching for book with id: " + str(bookid));
         if AuthorName:
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     searchForBook.exposed = True
@@ -382,6 +383,11 @@ class WebInterface(object):
         threading.Thread(target=searchbook).start()
         raise cherrypy.HTTPRedirect("books")
     forceSearch.exposed = True
+
+    def forceMagSearch(self):
+        threading.Thread(target=searchmagazines).start()
+        raise cherrypy.HTTPRedirect("magazines")
+    forceMagSearch.exposed = True
 
     def checkForUpdates(self):
         #check the version when the application starts
@@ -441,9 +447,76 @@ class WebInterface(object):
 
     def magazines(self):
         myDB = database.DBConnection()
-        magazines = myDB.select("SELECT * from wanted WHERE Status='nomatter'")
+
+        magazines = myDB.select('SELECT * from magazines')
+
+        if magazines is None:
+            raise cherrypy.HTTPRedirect("magazines")
         return serve_template(templatename="magazines.html", title="Magazines", magazines=magazines)
     magazines.exposed = True
+
+    def addKeyword(self, type=None, title=None, frequency=None, **args):
+        myDB = database.DBConnection()
+        if type == 'magazine':
+            if len(title) == 0:
+                raise cherrypy.HTTPRedirect("config")
+            else:
+                controlValueDict = {"Title": title}
+                newValueDict = {
+                    "Frequency":   frequency,
+                    "Regex":   None,
+                    "Status":       "Active",
+                    "MagazineAdded":    formatter.today(),
+                    }
+                myDB.upsert("magazines", newValueDict, controlValueDict)
+                raise cherrypy.HTTPRedirect("magazines")
+    addKeyword.exposed = True
+
+    def markMagazines(self, action=None, **args):
+        myDB = database.DBConnection()
+        for title in args:
+            # ouch dirty workaround...
+            if not title == 'book_table_length':
+                if action != "Delete":
+                    controlValueDict = {"Title": title}
+                    newValueDict = {
+                        "Status":       action,
+                        }
+                    myDB.upsert("magazines", newValueDict, controlValueDict)
+                    logger.info('Status of magazine %s changed to %s' % (title, action))
+                else:
+                    myDB.action('DELETE from magazines WHERE Title=?', [title])
+                    logger.info('Magazine %s removed from database' % title)
+                raise cherrypy.HTTPRedirect("magazines")
+    markMagazines.exposed = True
+
+    def markWanted(self, action=None, **args):
+        myDB = database.DBConnection()
+        #I think I need to consolidate bookid in args to unique values...
+        for nzbtitle in args:
+            if not nzbtitle == 'book_table_length':
+                if action != "Delete":
+                    controlValueDict = {"NZBtitle": nzbtitle}
+                    newValueDict = {
+                        "Status":       action,
+                        }
+                    myDB.upsert("wanted", newValueDict, controlValueDict)
+                    logger.info('Status of wanted item %s changed to %s' % (nzbtitle, action))
+                else:
+                    myDB.action('DELETE from wanted WHERE NZBtitle=?', [nzbtitle])
+                    logger.info('Item %s removed from wanted' % nzbtitle)
+                raise cherrypy.HTTPRedirect("wanted")
+    markWanted.exposed = True
+
+    def updateRegex(self, action=None, title=None):
+        myDB = database.DBConnection()
+        controlValueDict = {"Title": title}
+        newValueDict = {
+            "Regex":       action,
+            }
+        myDB.upsert("magazines", newValueDict, controlValueDict)
+        raise cherrypy.HTTPRedirect("magazines")
+    updateRegex.exposed = True
 
     def forceUpdate(self):
         from lazylibrarian import updater

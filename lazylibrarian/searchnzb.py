@@ -5,7 +5,7 @@ from xml.etree.ElementTree import Element, SubElement
 
 import lazylibrarian
 
-from lazylibrarian import logger, database, formatter, providers, sabnzbd, SimpleCache, notifiers
+from lazylibrarian import logger, database, formatter, providers, sabnzbd, SimpleCache, notifiers, searchmag
 
 import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
@@ -128,6 +128,13 @@ def searchbook(books=None):
             if addedCounter == 0:
             	logger.info("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")
         counter = counter + 1
+
+    if not books:
+        snatched = searchmag.searchmagazines()
+        for items in snatched:
+            snatch = DownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+            notifiers.notify_snatch(items['nzbtitle']+' at '+formatter.now()) 
+    logger.info("Search for Wanted items complete")
 
 
 def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
