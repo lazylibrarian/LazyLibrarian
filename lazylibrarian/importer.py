@@ -3,86 +3,15 @@ import time, os, threading
 import lazylibrarian
 from lazylibrarian import logger, formatter, database
 from lazylibrarian.gr import GoodReads
+from lazylibrarian.gb import GoogleBooks
 
 
-def addBookToDB(bookid, authorname):
-    type = 'book'
-    myDB = database.DBConnection()
-    GR = GoodReads(authorname, type)
-
-# process book
-    dbbook = myDB.action('SELECT * from books WHERE BookID=?', [bookid]).fetchone()
-    controlValueDict = {"BookID": bookid}
-
-    if dbbook is None:
-        newValueDict = {
-            "BookID":   "BookID: %s" % (bookid),
-            "Status":       "Loading"
-            }
-    else:
-        newValueDict = {"Status": "Loading"}
-    myDB.upsert("books", newValueDict, controlValueDict)
-
-    book = GR.find_book()
-
-    if not book:
-        logger.warn("Error fetching bookinfo for BookID: " + bookid)
-
-    else:
-        controlValueDict = {"BookID": book['bookid']}
-        newValueDict = {
-            "AuthorName":   book['authorname'],
-            "BookName":     book['bookname'],
-            "BookDesc":     book['bookdesc'],
-            "BookIsbn":     book['bookisbn'],
-            "BookImg":      book['bookimg'],
-            "BookLink":     book['booklink'],
-            "BookRate":     book['bookrate'],
-            "BookPages":    book['bookpages'],
-            "BookDate":     book['bookdate'],
-            "BookLang":     book['booklang'],
-            "Status":       "Skipped",
-            "BookAdded":    formatter.today()
-            }
-
-        myDB.upsert("books", newValueDict, controlValueDict)
-
-# process author
-    dbauthor = myDB.action("SELECT * from authors WHERE AuthorName='?'", [authorname]).fetchone()
-    controlValueDict = {"AuthorName": authorname}
-
-    if dbauthor is None:
-        newValueDict = {
-            "AuthorName":   "Authorname: %s" % (authorname),
-            "Status":       "Loading"
-            }
-    else:
-        newValueDict = {"Status": "Loading"}
-
-    author = GR.find_author_id()
-
-    if not author:
-        logger.warn("Error fetching authorinfo with name: " + authorname)
-
-    else:
-        controlValueDict = {"AuthorName": authorname}
-        newValueDict = {
-            "AuthorID":     author['authorid'],
-            "AuthorLink":   author['authorlink'],
-            "AuthorImg":    author['authorimg'],
-            "AuthorBorn":   author['authorborn'],
-            "AuthorDeath":  author['authordeath'],
-            "DateAdded":    formatter.today(),
-            "Status":       "Loading"
-            }
-        myDB.upsert("authors", newValueDict, controlValueDict)
-
-def addAuthorToDB(authorname=None):
+def addAuthorToDB(authorname=None, refresh=False):
     threading.currentThread().name = "DBIMPORT"
     type = 'author'
     myDB = database.DBConnection()
 
-    GR = GoodReads(authorname, type)
+    GR = GoodReads(authorname)
     
     query = "SELECT * from authors WHERE AuthorName='%s'" % authorname.replace("'","''")
     dbauthor = myDB.action(query).fetchone()
@@ -93,8 +22,10 @@ def addAuthorToDB(authorname=None):
             "AuthorID":   "0: %s" % (authorname),
             "Status":       "Loading"
             }
+        logger.info("Now adding new author: %s to database" % authorname)
     else:
         newValueDict = {"Status": "Loading"}
+        logger.info("Now updating author: %s" % authorname)
     myDB.upsert("authors", newValueDict, controlValueDict)
 
     author = GR.find_author_id()
@@ -117,5 +48,10 @@ def addAuthorToDB(authorname=None):
         logger.error("Nothing found")
 
 # process books
+    if lazylibrarian.BOOK_API == "GoogleBooks":
+        book_api = GoogleBooks()
+        book_api.get_author_books(authorid, authorname, refresh=refresh)
+    elif lazylibrarian.BOOK_API == "GoodReads":
+        GR.get_author_books(authorid, authorname, refresh=refresh)
 
-    GR.get_author_books(authorid)
+    logger.info("[%s] Author update complete" % authorname)

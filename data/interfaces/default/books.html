@@ -7,7 +7,8 @@
 <%def name="headerIncludes()">
     <div id="subhead_container">
         <ul id="subhead_menu">
-            <li ><a id="button" href="manProcess">Force Post-Processing</a></li>
+            <li ><a id="button" href="forceSearch?source=books">Force Search</a></li>
+            <li ><a id="button" href="forceProcess?source=books">Force Post-Processing</a></li>
             %if len(languages) >= 1:
                 <li>Language:&nbsp</li>
                 
@@ -23,10 +24,19 @@
 </%def>
 
 <%def name="body()">
-	<br><br><br>
+    <p class="indented">
+        <form action="markBooks" method="get">
+            <select class="markBooks" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
+                  <option value="Wanted">Wanted</option>
+                  <option value="Have">Have</option>
+                <option value="Remove">Remove</option>
+            </select>
+        <input type="submit" class="markBooks" value="Go">
+    </p>
     <table class="display" id="book_table">
         <thead>
             <tr>
+                <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
                 <th id="bookart">Cover</th>
                 <th id="authorname">Author</th>
                 <th id="bookname">Title</th>
@@ -56,6 +66,7 @@
                         starimg = '0-stars.png'
                 %>
                 <tr class="gradeZ">
+                    <td id="select"><input type="checkbox" name="${result['BookID']}" class="checkbox" /></td>
                     <td id="bookart"><a href="${result['bookimg']}" target="_new"><img src="${result['bookimg']}" height="75" width="50"></a></td>
                     <td id="authorname"><a href="authorPage?AuthorName=${result['AuthorName']}">${result['authorname']}</a></td>
                     %if result['booksub']:
@@ -68,10 +79,10 @@
                     <td id="date">${result['BookDate']}</td>
                     <td id="language" hidden="true">${result['booklang']}</td>
                     %if result['Status'] == 'Open':
-                        <td id="status"><a class="button green" href="openBook?bookLink=${result['booklink']}" target="_self">${result['Status']}</a></td>
+                        <td id="status"><a class="button green" href="openBook?bookid=${result['bookid']}" target="_self">${result['Status']}</a></td>
                     %else:
                         %if result['Status'] == 'Wanted':
-                            <td id="status"><a class="button red" href="searchForBook?bookLink=${result['booklink']}" target="_self"><span class="a">${result['Status']}</span><span class="b">Search</span></a></td>
+                            <td id="status"><a class="button red" href="searchForBook?bookid=${result['BookID']}" target="_self"><span class="a">${result['Status']}</span><span class="b">Search</span></a></td>
                         %else:
                             %if result['Status'] == 'Snatched':
                                 <td id="status"><a class="button">${result['Status']}</a></td>
@@ -98,6 +109,7 @@
         $('#book_table').dataTable(
             {
                 "aoColumns": [
+                    null,
                     null,
                     null,
                     null,

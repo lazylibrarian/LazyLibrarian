@@ -7,12 +7,14 @@
     <div id="subhead_container">
         <ul id="subhead_menu">
             
+            <li><a href="refreshAuthor?AuthorName=${author['AuthorName']}" id="button"> Refresh Author </a></li>
             <li><a href="deleteAuthor?AuthorID=${author['AuthorID']}" id="button"> Delete Author </a></li>
             %if author['Status'] == 'Paused':
                 <li><a href="resumeAuthor?AuthorID=${author['AuthorID']}" id="button"> Resume Author</a></li>
             %else:
                 <li><a href="pauseAuthor?AuthorID=${author['AuthorID']}" id="button"> Pause Author</a></li>
             %endif
+            <li><a href="authorPage?AuthorName=${author['AuthorName']}&Ignored=True" id="button"> Ignored Books </a></li>
             %if len(languages) >= 1:
                 <li>Language:&nbsp</li>
                 
@@ -39,16 +41,40 @@
         <ul id="authorhead_menu">
             <li><a href="${author['AuthorLink']}" target="_new">${author['AuthorName']}</a></li></br>
             %if author['AuthorDeath']:
-                <li>${author['AuthorBorn']} - ${author['AuthorDeath']}</li>
+                <li>${author['AuthorBorn']} - ${author['AuthorDeath']}</li><br>
             %else:
-                <li>${author['AuthorBorn']}</li>
+                <li>${author['AuthorBorn']}</li><br>
             %endif
-            <br>
             %if author['Status'] == 'Loading':
-                <li>(Fetching information for this author ...)</li>
+                <li>(Fetching information for this author ...)</li><br>
             %endif
-            <br>            <br>
-            <li>Totalbooks: ${author['TotalBooks']}</li>
+            <li>Totalbooks: ${author['TotalBooks']}</li><br><br>
+
+            <%
+                totalbooks = author['UnignoredBooks']
+                havebooks = author['HaveBooks']
+                if not havebooks:
+                    havebooks = 0
+                try:
+                    percent = (havebooks*100.0)/totalbooks
+                    if percent > 100:
+                        percent = 100
+                    if percent <= 100:
+                        css = "<div class=\"progress-container success\" style=\"width:150px;\">"
+                    if percent <= 75:
+                        css = "<div class=\"progress-container info\" style=\"width:150px;\">"
+                    if percent <= 50:
+                        css = "<div class=\"progress-container warning\" style=\"width:150px;\">"
+                    if percent <= 25:
+                        css = "<div class=\"progress-container danger\" style=\"width:150px;\">"
+                except (ZeroDivisionError, TypeError):
+                    percent = 0
+                    totalbooks = '?'
+                    css = "<div class=\"progress-container danger\" style=\"width:150px;\">"
+            %>
+            <span title="${percent}"></span>${css}
+            <div style="width:${percent}%"><span class="progressbar-front-text">${havebooks}/${totalbooks}</span></div></div>
+
     </div>
 <!--    <table class="display">-->
 <!--        <thead>-->
@@ -59,8 +85,8 @@
             <select class="markBooks" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
                   <option value="Wanted">Wanted</option>
                   <option value="Have">Have</option>
-                  <option value="Downloaded">Downloaded</option>
                 <option value="Skipped">Skipped</option>
+                <option value="Ignored">Ignored</option>
             </select>
         <input type="submit" class="markBooks" value="Go">
     </p>
@@ -113,10 +139,10 @@
                     <td id="language">${result['booklang']}</td>
 
                     %if result['Status'] == 'Open':
-                        <td id="status"><a class="button green" href="openBook?bookLink=${result['booklink']}" target="_self">${result['Status']}</a></td>
+                        <td id="status"><a class="button green" href="openBook?bookid=${result['bookID']}" target="_self">${result['Status']}</a></td>
                     %else:
                         %if result['Status'] == 'Wanted':
-                            <td id="status"><a class="button red" href="searchForBook?bookLink=${result['booklink']}" target="_self"><span class="a">${result['Status']}</span><span class="b">Search</span></a></td>
+                            <td id="status"><a class="button red" href="searchForBook?bookid=${result['bookID']}" target="_self"><span class="a">${result['Status']}</span><span class="b">Search</span></a></td>
                         %else:
                             %if result['Status'] == 'Snatched':
                                 <td id="status"><a class="button">${result['Status']}</a></td>
@@ -139,7 +165,7 @@
     <meta http-equiv="refresh" content="12">
     <script>
         $(document).ready(function () {
-            showMsg("Getting Authors Books", true);
+            showMsg("Getting Author's Books", true);
         });
      </script>
     %endif

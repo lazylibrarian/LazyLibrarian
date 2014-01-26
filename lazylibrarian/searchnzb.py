@@ -5,12 +5,12 @@ from xml.etree.ElementTree import Element, SubElement
 
 import lazylibrarian
 
-from lazylibrarian import logger, database, formatter, providers, sabnzbd
+from lazylibrarian import logger, database, formatter, providers, sabnzbd, SimpleCache, notifiers, searchmag
 
 import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
 
-def searchbook(books=None):
+def searchbook(books=None, mags=None):
 
     # rename this thread
     threading.currentThread().name = "SEARCHBOOKS"
@@ -33,10 +33,11 @@ def searchbook(books=None):
     else:
         # The user has added a new book
         searchbooks = []
-        for book in books:
-            searchbook = myDB.select('SELECT BookID, AuthorName, BookName from books WHERE BookID=? AND Status="Wanted"', [book['bookid']])
-            for terms in searchbook:
-                searchbooks.append(terms)
+        if books != False:
+            for book in books:
+                searchbook = myDB.select('SELECT BookID, AuthorName, BookName from books WHERE BookID=? AND Status="Wanted"', [book['bookid']])
+                for terms in searchbook:
+                    searchbooks.append(terms)
 
     for searchbook in searchbooks:
         bookid = searchbook[0]
@@ -56,7 +57,7 @@ def searchbook(books=None):
         searchterm = re.sub(r'\(.*?\)', '', searchterm).encode('utf-8')
         searchterm = re.sub(r"\s\s+" , " ", searchterm) # strip any double white space
         searchlist.append({"bookid": bookid, "bookName":searchbook[2], "authorName":searchbook[1], "searchterm": searchterm.strip()})
-
+    
     if not lazylibrarian.SAB_HOST and not lazylibrarian.BLACKHOLE:
         logger.info('No download method is set, use SABnzbd or blackhole')
 
@@ -90,32 +91,31 @@ def searchbook(books=None):
 
             for nzb in resultlist:
 				nzbTitle = formatter.latinToAscii(formatter.replace_all(str(nzb['nzbtitle']).lower(), dictrepl)).strip()
+				nzbTitle = re.sub(r"\s\s+" , " ", nzbTitle) #remove extra whitespace
 				logger.debug(u'nzbName %s' % nzbTitle)          
-				if " by " in nzbTitle: #Many NZBs are "Book Title" by "Author" and fuzz.partial_ratio won't match it.
-					temp_string = nzbTitle.split(' by ')
-					nzbTitle_flipped = temp_string[1]+' '+temp_string[0]
-				else:
-					nzbTitle_flipped = nzbTitle;
 
 				match_ratio = 80
-				nzbTitle_match = fuzz.partial_ratio(book['searchterm'].lower(), nzbTitle)
+				nzbTitle_match = fuzz.token_sort_ratio(book['searchterm'].lower(), nzbTitle)
 				logger.debug("NZB Title Match %: " + str(nzbTitle_match))
-				nzb_flipped_match = fuzz.partial_ratio(book['searchterm'].lower(), nzbTitle_flipped)
-				logger.debug("NZB Flipped Match %: " + str(nzb_flipped_match))	
 				
-				if (nzbTitle_match > match_ratio) or (nzb_flipped_match > match_ratio):
+				if (nzbTitle_match > match_ratio):
 					logger.info(u'Found NZB: %s' % nzb['nzbtitle'])
 					addedCounter = addedCounter + 1
 					bookid = book['bookid']
 					nzbTitle = (book["authorName"] + ' - ' + book['bookName'] + ' LL.(' + book['bookid'] + ')').strip()
 					nzburl = nzb['nzburl']
 					nzbprov = nzb['nzbprov']
+					nzbdate_temp = nzb['nzbdate']
+					nzbsize_temp = nzb['nzbsize']
+					nzbsize = str(round(float(nzbsize_temp) / 1048576,2))+' MB'
+					nzbdate = formatter.nzbdate2format(nzbdate_temp)
 
 					controlValueDict = {"NZBurl": nzburl}
 					newValueDict = {
                         "NZBprov": nzbprov,
                         "BookID": bookid,
-                        "NZBdate": formatter.today(),
+                        "NZBdate": nzbdate,
+                        "NZBsize": nzbsize,
                         "NZBtitle": nzbTitle,
                         "Status": "Skipped"
 					}
@@ -124,10 +124,18 @@ def searchbook(books=None):
 					snatchedbooks = myDB.action('SELECT * from books WHERE BookID=? and Status="Snatched"', [bookid]).fetchone()
 					if not snatchedbooks:
 						snatch = DownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
+						notifiers.notify_snatch(nzbTitle+' at '+formatter.now()) 
 					break;
             if addedCounter == 0:
             	logger.info("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")
         counter = counter + 1
+
+    if not books or books==False:
+        snatched = searchmag.searchmagazines(mags)
+        for items in snatched:
+            snatch = DownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+            notifiers.notify_snatch(items['nzbtitle']+' at '+formatter.now()) 
+    logger.info("Search for Wanted items complete")
 
 
 def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
@@ -136,9 +144,6 @@ def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
 
     if lazylibrarian.SAB_HOST and not lazylibrarian.BLACKHOLE:
         download = sabnzbd.SABnzbd(nzbtitle, nzburl)
-        logger.debug('Nzbfile has been downloaded from ' + str(nzburl))
-        myDB.action('UPDATE books SET status = "Snatched" WHERE BookID=?', [bookid])
-        myDB.action('UPDATE wanted SET status = "Snatched" WHERE BookID=?', [bookid])
 
     elif lazylibrarian.BLACKHOLE:
 
@@ -172,13 +177,13 @@ def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
                 download = False;
 
     else:
-        logger.error('No downloadmethod is enabled, check config.')
+        logger.error('No download method is enabled, check config.')
         return False
 
     if download:
-        logger.debug('Nzbfile has been downloaded')
+        logger.debug('Nzbfile has been downloaded from ' + str(nzburl))
         myDB.action('UPDATE books SET status = "Snatched" WHERE BookID=?', [bookid])
-        myDB.action('UPDATE wanted SET status = "Snatched" WHERE BookID=?', [bookid])
+        myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl=?', [nzburl])
     else:
         logger.error(u'Failed to download nzb @ <a href="%s">%s</a>' % (nzburl, lazylibrarian.NEWZNAB_HOST))
         myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl=?', [nzburl])

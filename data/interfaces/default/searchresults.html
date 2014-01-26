@@ -1,4 +1,7 @@
-<%inherit file="base.html" />
+<%inherit file="base.html"/>
+<%!
+    import thread, threading
+%>
 
 <%def name="body()">
 
@@ -15,13 +18,14 @@
 				<th id="date">Released</th>
 				<th id="stars">Rating</th>
                 <th id="addAuthor">Add</th>
+                <th id="fuzz">Match</th>
              </tr>
         </thead>
 
         <tbody>
             %if searchresults:
                 %for result in searchresults:
-                	<%
+                    <%
                     if result['bookrate'] < 0.5:
                         starimg = '0-stars.png'
                     elif result['bookrate'] >= 0.5 and result['bookrate'] < 1.5:
@@ -36,14 +40,59 @@
                         starimg = '5-stars.png'
                     else:
                         starimg = '0-stars.png'
-                %>
-					<tr class="gradeZ">
-						<td id="bookart"><a href="${result['bookimg']}" target="_new"><img src="${result['bookimg']}" height="75" ></a></td>
-						<td id="authorname">${result['authorname']}</td>
-						<td id="bookname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a></td>
-						<td id="date">${result['bookdate']}</td>
-						<td id="stars"><img src="images/${starimg}" height="10"></td>
-                        <td id="addAuthor"><a class="button" href="addResults?authorname=${result['authorname']}" target="_new">Add Author</a></td>
+
+                    if authorlist:
+                        if result['authorname'] in authorlist:
+                            destination = "authorPage?AuthorName="+result['authorname']
+                            value = "Have Author"
+                            but_class = "button green"
+                        else:
+                            destination = "addResults?authorname="+result['authorname']
+                            value = "Add Author"
+                            but_class = "button"
+
+                    else:
+                        destination = "addResults?authorname="+result['authorname']
+                        value = "Add Author"
+                        but_class = "button"
+
+                    if booklist:
+                        if result['bookid'] in booklist:
+                            for item in booksearch:
+                                if item['BookID'] == result['bookid']:
+                                    value2 = item['Status']
+                                    valid_id = item['BookID']
+
+                            if value2 == 'Open':
+                                destination2 = "openBook?bookid="+valid_id
+                                but_class2 = "button green"
+                            elif value2 == 'Wanted':
+                                destination2 = "searchForBook?bookid="+valid_id
+                                but_class2 = "button red"
+                            else:
+                                destination2 = "#"
+                                but_class2 = "button grey"
+
+                        else:
+                            destination2 = "addBook?bookid="+result['bookid']
+                            value2 = "Add Book"
+                            but_class2 = "button"
+
+                    else:
+                        destination2 = "addBook?bookid="+result['bookid']
+                        value2 = "Add Book"
+                        but_class2 = "button"
+                    %>
+                    <tr class="gradeZ">
+                    <td id="bookart"><a href="${result['bookimg']}" target="_new"><img src="${result['bookimg']}" height="75" ></a></td>
+                    <td id="authorname">${result['authorname']}</td>
+                    <td id="bookname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a></td>
+                    <td id="date">${result['bookdate']}</td>
+                    <td id="stars"><img src="images/${starimg}" height="10"></td>
+                    <td id="addAuthor"><a class="${but_class}" href="${destination}">${value}</a>
+                    <BR><BR><a class="${but_class2}" href="${destination2}">${value2}</a>
+                    </td>
+                    <td id="fuzz">${result['highest_fuzz']}%</td>
 					</tr>
 				%endfor
             %endif
@@ -64,6 +113,7 @@
         $('#book_table').dataTable(
             {
                 "aoColumns": [
+                    null,
                     null,
                     null,
                     null,

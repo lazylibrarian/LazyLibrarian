@@ -3,7 +3,16 @@
     from lazylibrarian import formatter
 %>
 
+<%def name="headerIncludes()">
+    <div id="subhead_container">
+        <ul id="subhead_menu">
+            <li><a href="forceUpdate" id="button"> Refresh Active Authors </a></li>
+        </ul>
+    </div>
+</%def>
+
 <%def name="body()">
+<BR><BR>
     <table class="display" id="author_table">
         <thead>
             <tr>
@@ -17,7 +26,7 @@
         <tbody>
         %for author in authors:
             <%
-        		totalbooks = author['TotalBooks']
+        		totalbooks = author['UnignoredBooks']
         		havebooks = author['HaveBooks']
         		if not havebooks:
         			havebooks = 0

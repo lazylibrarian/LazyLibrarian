@@ -137,20 +137,11 @@ div#logo { float: left; padding-left: 10px; }
 div#logo img { width:0px; height:0px;}
 
 ul#nav { margin: 8px 0 0 0; margin-left:10px; float: left; list-style-type: none; }
-ul#nav li { margin-left:-5px; display: inline;
-padding:8px;
-}
-ul#nav li a {  padding: 0px; font-size: 16px; font-weight: bold; color: #9F9D9D; text-decoration: none; }
+ul#nav li { margin-left:-5px; display: inline; padding:8px; }
+ul#nav li a {  padding: 0px; font-size: 14px; font-weight: bold; color: #9F9D9D; text-decoration: none; }
 ul#nav li a:hover { text-decoration: underline; }
 
-.authorsActive { float:left;width:78px; height:30px;background-image:url('../images/nav/authorsActive.jpg');}
-.authors { float:left;width:78px; height:30px;background-image:url('../images/nav/authors.jpg'); }
-.booksActive { float:left;width:70px; height:30px;background-image:url('../images/nav/booksActive.jpg');}
-.books { float:left;width:70px; height:30px;background-image:url('../images/nav/books.jpg'); }
-.logsActive { float:left;width:56px; height:30px;background-image:url('../images/nav/logsActive.jpg');}
-.logs { float:left;width:56px; height:30px;background-image:url('../images/nav/logs.jpg'); }
-.configActive { margin-left:10px;float:left;width:30px; height:30px;background-image:url('../images/nav/configActive.jpg');}
-.config { margin-left:10px;float:left;width:30px; height:30px;background-image:url('../images/nav/config.jpg'); }
+
 
 div#subhead_container { margin-top:8px;height: 28px; line-height:22px;width:100%; background-color:#f2f2f2; float: left; list-style-type: none; z-index: 997; overflow: hidden; color:black;}
 ul#subhead_menu li { width: 100%; height: 100%; vertical-align: middle; color: black; display: inline; }
@@ -315,6 +306,7 @@ table#book_table th#number { text-align: center; width: 50px; }
 table#book_table th#language { text-align: center; min-width: 25px; display:none;}
 table#book_table th#stars { text-align: center; width: 50px; }
 table#book_table th#addAuthor { text-align: center; width: 100px; min-width:100px; max-width:100px; }
+table#book_table th#fuzz { text-align: left; min-width: 50px; }
 
 table#book_table td#select { vertical-align: middle; text-align: left; }
 table#book_table td#bookart { vertical-align: middle; text-align: center; }
@@ -328,6 +320,7 @@ table#book_table td#number { vertical-align: middle; text-align: right; }
 table#book_table td#language { vertical-align: middle; text-align: center;  display:none;}
 table#book_table td#stars { vertical-align: middle; text-align: center; }
 table#book_table td#addAuthor { text-align: center;  vertical-align: middle; width: 100px; min-width:100px; max-width:100px;}
+table#book_table td#fuzz { vertical-align: middle; text-align: center; }
 
 img.bookArt { float: left; padding-right: 5px; }
 div#bookheader { padding-top: 48px; height: 200px; }
@@ -340,6 +333,32 @@ table#log_table th#message { text-align: left; min-width: 200px; }
 table#log_table td#timestamp { text-align: left; min-width: 150px; }
 table#log_table td#level { text-align: left;  }
 table#log_table td#message { text-align: left; }
+
+
+table#book_table th#magtitle { vertical-align: middle; text-align: center; }
+table#book_table th#frequency { vertical-align: middle; text-align: right; min-width:100px;}
+table#book_table th#lastacquired { vertical-align: middle; text-align: center; min-width:100px;}
+table#book_table th#issuedate { vertical-align: middle; text-align: center; min-width:100px;}
+table#book_table th#issue { vertical-align: middle; text-align: center; min-width:100px;}
+
+table#book_table td#magtitle { vertical-align: middle; text-align: center; }
+table#book_table td#frequency { vertical-align: middle; text-align: right; }
+table#book_table td#lastacquired { vertical-align: middle; text-align: center; }
+table#book_table td#issuedate { vertical-align: middle; text-align: center; }
+table#book_table td#issue { vertical-align: middle; text-align: center; min-width:100px;}
+
+table#book_table th#filename{ vertical-align: middle; text-align: center; }
+table#book_table th#bookid { vertical-align: middle; text-align: right; min-width:150px;}
+table#book_table th#size { vertical-align: middle; text-align: center; min-width:100px;}
+table#book_table th#dateadded { vertical-align: middle; text-align: center; min-width:100px;}
+table#book_table th#provider { vertical-align: middle; text-align: center; min-width:100px;}
+
+table#book_table td#filename{ vertical-align: middle; text-align: center; }
+table#book_table td#bookid { vertical-align: middle; text-align: right; }
+table#book_table td#size { vertical-align: middle; text-align: center; }
+table#book_table td#dateadded { vertical-align: middle; text-align: center; }
+table#book_table td#provider { vertical-align: middle; text-align: center; }
+
 
 div.progress-container { position:relative; width: 100%; height: 14px; margin: 2px 5px 2px 0;  float: left; 
 background-color: #F7F7F7;
