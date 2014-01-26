@@ -399,4 +399,82 @@ class GoodReads:
 		else:
 			logger.info("[%s] Book processing complete: Added %s books to the database" % (authorname, str(added_count)))
 		return books_dict
-	
+
+	def find_book(self, bookid=None, queue=None):
+		threading.currentThread().name = "GR-ADD-BOOK"
+		myDB = database.DBConnection()
+
+		URL = 'https://www.goodreads.com/book/show/' + bookid + '?' + urllib.urlencode(self.params)
+
+		try:
+			# Cache our request
+			request = urllib2.Request(URL)
+			opener = urllib2.build_opener(SimpleCache.CacheHandler(".AuthorCache"), SimpleCache.ThrottlingProcessor(5))
+			resp = opener.open(request)
+			sourcexml = ElementTree.parse(resp)
+		except Exception, e:
+			logger.error("Error fetching book info: " + str(e))
+
+		rootxml = sourcexml.getroot()
+
+		bookLanguage = rootxml.find('./book/language_code').text
+
+		if not bookLanguage:
+			bookLanguage = "Unknown"
+		valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
+		if bookLanguage not in valid_langs:
+			logger.debug('Skipped a book with language %s' % bookLanguage)
+
+		if (rootxml.find('./book/publication_year').text == None):
+			bookdate = "0000"
+		else:
+			bookdate = rootxml.find('./book/publication_year').text
+
+		try:
+			bookimg = rootxml.find('./book/img_url').text
+			if (bookimg == 'http://www.goodreads.com/assets/nocover/111x148.png'):
+				bookimg = 'images/nocover.png'
+		except KeyError:
+			bookimg = 'images/nocover.png'
+		except AttributeError:
+			bookimg = 'images/nocover.png'
+
+		authorname = rootxml.find('./book/authors/author/name').text
+		bookname = rootxml.find('./book/title').text
+		bookdesc = rootxml.find('./book/description').text
+		bookisbn = rootxml.find('./book/isbn').text
+		bookpub = rootxml.find('./book/publisher').text
+		booklink = rootxml.find('./book/link').text
+		bookrate = float(rootxml.find('./book/average_rating').text)
+		bookpages = rootxml.find('.book/num_pages').text
+
+		name = authorname
+		GR = GoodReads(name)
+		author = GR.find_author_id()
+		if author:
+			AuthorID = author['authorid']
+
+		controlValueDict = {"BookID": bookid}
+		newValueDict = {
+			"AuthorName":   authorname,
+			"AuthorID":     AuthorID,
+			"AuthorLink":   None,
+			"BookName":     bookname,
+			"BookSub":      None,
+			"BookDesc":     bookdesc,
+			"BookIsbn":     bookisbn,
+			"BookPub":      bookpub,
+			"BookGenre":    None,
+			"BookImg":      bookimg,
+			"BookLink":     booklink,
+			"BookRate":     bookrate,
+			"BookPages":    bookpages,
+			"BookDate":     bookdate,
+			"BookLang":     bookLanguage,
+			"Status":       "Wanted",
+			"BookAdded":    formatter.today()
+			}
+
+		#print newValueDict
+		myDB.upsert("books", newValueDict, controlValueDict)
+		logger.info("%s added to the books database" % bookname)

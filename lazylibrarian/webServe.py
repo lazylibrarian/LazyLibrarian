@@ -497,14 +497,14 @@ class WebInterface(object):
     markBooks.exposed = True
 
     #ALL ELSE
-    def forceProcess(self):
+    def forceProcess(self, source=None):
         threading.Thread(target=postprocess.processDir).start()
-        raise cherrypy.HTTPRedirect("books")
+        raise cherrypy.HTTPRedirect(source)
     forceProcess.exposed = True
 
-    def forceSearch(self):
+    def forceSearch(self, source=None):
         threading.Thread(target=searchbook).start()
-        raise cherrypy.HTTPRedirect("books")
+        raise cherrypy.HTTPRedirect(source)
     forceSearch.exposed = True
 
     def checkForUpdates(self):
@@ -546,9 +546,12 @@ class WebInterface(object):
         return s
     getLog.exposed = True
 
-    def history(self):
+    def history(self, source=None):
         myDB = database.DBConnection()
-        history = myDB.select("SELECT * from wanted")
+        if not source:
+            history = myDB.select("SELECT * from wanted WHERE Status != 'Skipped'")
+        elif source == "magazines":
+            history = myDB.select("SELECT * from wanted WHERE Status = 'Skipped'")
         return serve_template(templatename="history.html", title="History", history=history)
     history.exposed = True
 
@@ -588,6 +591,12 @@ class WebInterface(object):
                     "IssueStatus": "Wanted"
                     }
                 myDB.upsert("magazines", newValueDict, controlValueDict)
+
+                mags = []
+                mags.append({"bookid": title})
+                books=False
+                threading.Thread(target=searchbook, args=[books, mags]).start()
+                logger.debug("Searching for magazine with title: " + str(title));
                 raise cherrypy.HTTPRedirect("magazines")
     addKeyword.exposed = True
 

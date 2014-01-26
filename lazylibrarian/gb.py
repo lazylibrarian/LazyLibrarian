@@ -492,9 +492,6 @@ class GoogleBooks:
         if author:
             AuthorID = author['authorid']
 
-        print AuthorID
-        print name
-
         controlValueDict = {"BookID": bookid}
         newValueDict = {
             "AuthorName":   authorname,
