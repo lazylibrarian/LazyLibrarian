@@ -5,7 +5,7 @@ from mako.lookup import TemplateLookup
 from mako import exceptions
 from operator import itemgetter
 
-import threading, time
+import thread, threading, time, Queue
 
 import lazylibrarian
 
@@ -205,13 +205,20 @@ class WebInterface(object):
     def search(self, name):
         myDB = database.DBConnection()
         if lazylibrarian.BOOK_API == "GoogleBooks":
-            book_api = GoogleBooks(name)
+            GB = GoogleBooks(name)
+            queue = Queue.Queue()
+            search_api = threading.Thread(target=GB.find_results, args=[name, queue])
+            search_api.start()
         elif lazylibrarian.BOOK_API == "GoodReads":
-            book_api = GoodReads(name)
+            queue = Queue.Queue()
+            GR = GoodReads(name)
+            search_api = threading.Thread(target=GR.find_results, args=[name, queue])
+            search_api.start()
         if len(name) == 0:
             raise cherrypy.HTTPRedirect("config")
-        else:
-            searchresults = book_api.find_results(name)
+
+        search_api.join()
+        searchresults = queue.get()
 
         authorsearch = myDB.select("SELECT * from authors")
         authorlist = []
@@ -231,13 +238,13 @@ class WebInterface(object):
             if BookLang:
                 querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' AND BookLang = '%s' AND Status ='Ignored' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'","''"), BookLang)
             else:
-                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' AND (BookLang = '%s' OR BookLang = 'Unknown') and Status ='Ignored' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'","''"), lazylibrarian.IMP_PREFLANG)
+                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' and Status ='Ignored' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'","''"))
         else:
             languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorName LIKE ? AND Status !='Ignored'", [AuthorName.replace("'","''")])
             if BookLang:
                 querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' AND BookLang = '%s' AND Status !='Ignored' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'","''"), BookLang)
             else:
-                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' AND (BookLang = '%s' OR BookLang = 'Unknown') and Status !='Ignored' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'","''"), lazylibrarian.IMP_PREFLANG)
+                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' and Status !='Ignored' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'","''"))
 
         queryauthors = "SELECT * from authors WHERE AuthorName LIKE '%s'" % AuthorName.replace("'","''")
 
@@ -249,35 +256,45 @@ class WebInterface(object):
     authorPage.exposed = True
 
     def pauseAuthor(self, AuthorID):
-        logger.info(u"Pausing author: " + AuthorID)
         myDB = database.DBConnection()
+        authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID=?', [AuthorID])
+        AuthorName = authorsearch[0]['AuthorName']
+        logger.info("Pausing author: %s" % AuthorName)
+
         controlValueDict = {'AuthorID': AuthorID}
         newValueDict = {'Status': 'Paused'}
         myDB.upsert("authors", newValueDict, controlValueDict)
         logger.debug('AuthorID [%s]-[%s] Paused - redirecting to Author home page' % (AuthorID,AuthorName))
-        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+        raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     pauseAuthor.exposed = True
 
     def resumeAuthor(self, AuthorID):
-        logger.info(u"Resuming author: " + AuthorID)
         myDB = database.DBConnection()
+        authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID=?', [AuthorID])
+        AuthorName = authorsearch[0]['AuthorName']
+        logger.info("Resuming author: %s" % AuthorName)
+
         controlValueDict = {'AuthorID': AuthorID}
         newValueDict = {'Status': 'Active'}
         myDB.upsert("authors", newValueDict, controlValueDict)
         logger.debug('AuthorID [%s]-[%s] Restarted - redirecting to Author home page' % (AuthorID,AuthorName))
-        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+        raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     resumeAuthor.exposed = True
 
     def deleteAuthor(self, AuthorID):
-        logger.info(u"Removing author: " + AuthorID)
         myDB = database.DBConnection()
+        authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID=?', [AuthorID])
+        AuthorName = authorsearch[0]['AuthorName']
+        logger.info("Removing all references to author: %s" % AuthorName)
+
         myDB.action('DELETE from authors WHERE AuthorID=?', [AuthorID])
         myDB.action('DELETE from books WHERE AuthorID=?', [AuthorID])
         raise cherrypy.HTTPRedirect("home")
     deleteAuthor.exposed = True
 
     def refreshAuthor(self, AuthorName):
-        threading.Thread(target=importer.addAuthorToDB(AuthorName, refresh=True)).start()
+        refresh = True
+        threading.Thread(target=importer.addAuthorToDB, args=(AuthorName, refresh)).start()
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     refreshAuthor.exposed=True
 
@@ -312,6 +329,30 @@ class WebInterface(object):
                         return serve_file(os.path.join(dest_dir, file2), "application/x-download", "attachment")
     openBook.exposed = True
 
+    def openMag(self, bookid=None, **args):
+        myDB = database.DBConnection()
+
+        # find book
+        bookdata = myDB.select('SELECT * from magazines WHERE Title=?', [bookid])
+        if bookdata:
+            Title = bookdata[0]["Title"];
+            IssueDate = bookdata[0]["IssueDate"];
+
+            dic = {'<':'', '>':'', '=':'', '?':'', '"':'', ',':'', '*':'', ':':'', ';':'', '\'':''}
+            bookName = formatter.latinToAscii(formatter.replace_all(Title, dic))
+            
+            pp_dir = lazylibrarian.DESTINATION_DIR
+            mag_path = lazylibrarian.MAG_DEST_FOLDER.replace('$IssueDate', IssueDate).replace('$Title', Title)
+            dest_dir = os.path.join(pp_dir, mag_path)
+
+            logger.debug('bookdir ' + dest_dir);
+            if os.path.isdir(dest_dir):
+                for file2 in os.listdir(dest_dir):  
+                    if ((file2.lower().find(".jpg") <= 0) & (file2.lower().find(".opf") <= 0)):
+                        logger.info('Opening file ' + str(file2))
+                        return serve_file(os.path.join(dest_dir, file2), "application/x-download", "attachment")
+    openMag.exposed = True
+
     def searchForBook(self, bookid=None, action=None, **args):
         myDB = database.DBConnection()
 
@@ -324,7 +365,9 @@ class WebInterface(object):
             books = []
             books.append({"bookid": bookid})
 
-            threading.Thread(target=searchbook, args=[books]).start()
+            mags=False
+
+            threading.Thread(target=searchbook, args=[books, mags]).start()
             logger.debug("Searching for book with id: " + str(bookid));
         if AuthorName:
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
@@ -462,6 +505,7 @@ class WebInterface(object):
                     "Regex":   None,
                     "Status":       "Active",
                     "MagazineAdded":    formatter.today(),
+                    "IssueStatus": "Wanted"
                     }
                 myDB.upsert("magazines", newValueDict, controlValueDict)
                 raise cherrypy.HTTPRedirect("magazines")
@@ -469,9 +513,7 @@ class WebInterface(object):
 
     def markMagazines(self, action=None, **args):
         myDB = database.DBConnection()
-        print args
         for item in args:
-            print item
             # ouch dirty workaround...
             if not item == 'book_table_length':
                 if (action == "Paused" or action == "Active"):
@@ -488,13 +530,31 @@ class WebInterface(object):
                     controlValueDict = {"Title": item}
                     newValueDict = {
                         "LastAcquired": None,
-                        "IssueDate":    None
+                        "IssueDate":    None,
+                        "IssueStatus":  "Wanted"
                         }
                     myDB.upsert("magazines", newValueDict, controlValueDict)
                     logger.info('Magazine %s details reset' % item)
 
         raise cherrypy.HTTPRedirect("magazines")
     markMagazines.exposed = True
+
+    def searchForMag(self, bookid=None, action=None, **args):
+        myDB = database.DBConnection()
+
+        # find book
+        bookdata = myDB.select("SELECT * from magazines WHERE Title='%s'" % bookid)
+        if bookdata:
+            # start searchthreads
+            mags = []
+            mags.append({"bookid": bookid})
+
+            books=False
+
+            threading.Thread(target=searchbook, args=[books, mags]).start()
+            logger.debug("Searching for magazine with title: " + str(bookid));
+            raise cherrypy.HTTPRedirect("magazines")
+    searchForMag.exposed = True
 
     def markWanted(self, action=None, **args):
         myDB = database.DBConnection()

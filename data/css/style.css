@@ -339,11 +339,13 @@ table#book_table th#magtitle { vertical-align: middle; text-align: center; }
 table#book_table th#frequency { vertical-align: middle; text-align: right; min-width:100px;}
 table#book_table th#lastacquired { vertical-align: middle; text-align: center; min-width:100px;}
 table#book_table th#issuedate { vertical-align: middle; text-align: center; min-width:100px;}
+table#book_table th#issue { vertical-align: middle; text-align: center; min-width:100px;}
 
 table#book_table td#magtitle { vertical-align: middle; text-align: center; }
 table#book_table td#frequency { vertical-align: middle; text-align: right; }
 table#book_table td#lastacquired { vertical-align: middle; text-align: center; }
 table#book_table td#issuedate { vertical-align: middle; text-align: center; }
+table#book_table td#issue { vertical-align: middle; text-align: center; min-width:100px;}
 
 table#book_table th#filename{ vertical-align: middle; text-align: center; }
 table#book_table th#bookid { vertical-align: middle; text-align: right; min-width:150px;}

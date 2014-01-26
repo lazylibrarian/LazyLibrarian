@@ -2,6 +2,7 @@
 # https://www.googleapis.com/books/v1/volumes?q=+inauthor:george+martin+intitle:song+ice+fire
 
 import urllib, urllib2, json, time, sys, re
+import thread, threading, time, Queue
 from urllib2 import HTTPError
 
 import lazylibrarian
@@ -23,7 +24,8 @@ class GoogleBooks:
             }
 
 
-    def find_results(self, authorname=None):
+    def find_results(self, authorname=None, queue=None):
+        threading.currentThread().name = "GB-SEARCH"
         resultlist = []
         #See if we should check ISBN field, otherwise ignore it
         try:
@@ -48,7 +50,11 @@ class GoogleBooks:
             try:
                 startindex = 0
                 resultcount = 0
+                removedResults = 0
                 ignored = 0
+
+                total_count = 0
+                no_author_count = 0
                 while True:
 
                     self.params['startIndex'] = startindex
@@ -72,19 +78,23 @@ class GoogleBooks:
 
                     for item in jsonresults['items']:
 
+                        total_count = total_count + 1
+
                         # skip if no author, no author is no book.
                         try:
                             Author = item['volumeInfo']['authors'][0]
                         except KeyError:
                             logger.debug('Skipped a result without authorfield.')
+                            no_author_count = no_author_count + 1
                             continue
 
                         try:
                             #skip if language is in ignore list
                             booklang = item['volumeInfo']['language']
-                            if not booklang in lazylibrarian.IMP_PREFLANG:
-                                ignored = ignored+1
-                                logger.debug('Skipped a result where language did not match preference')
+                            valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
+                            if booklang not in valid_langs:
+                                logger.debug('Skipped a book with language %s' % booklang)
+                                ignored = ignored + 1
                                 continue
                         except KeyError:
                             ignored = ignored+1
@@ -182,9 +192,10 @@ class GoogleBooks:
                         resultcount = resultcount+1
 
                     if startindex >= number_results:
-                        logger.info('Found %s results for %s with value: %s' % (resultcount, api_value, self.name))
-                        if ignored > 0:
-                            logger.debug('Skipped %s results because it is not a preferred language.' % ignored)
+                        logger.debug("Found %s total results" % total_count)
+                        logger.debug("Removed %s bad language results" % ignored)
+                        logger.debug("Removed %s books with no author" % no_author_count)
+                        logger.info("Showing %s results for (%s) with keyword: %s" % (resultcount, api_value, authorname))
                         break
                     else:
                         continue
@@ -193,7 +204,7 @@ class GoogleBooks:
                 break
 
         logger.info('The Google Books API was hit %s times for keyword %s' % (str(api_hits), self.name))
-        return resultlist
+        queue.put(resultlist)
 
     def get_author_books(self, authorid=None, authorname=None, refresh=False):
         books_dict=[]
@@ -216,6 +227,9 @@ class GoogleBooks:
             ignored = 0
             added_count = 0
             updated_count = 0
+            book_ignore_count = 0
+            total_count = 0
+
             while True:
 
                 self.params['startIndex'] = startindex
@@ -238,6 +252,8 @@ class GoogleBooks:
 
                 for item in jsonresults['items']:
 
+                    total_count = total_count + 1
+
                     # skip if no author, no author is no book.
                     try:
                         Author = item['volumeInfo']['authors'][0]
@@ -248,9 +264,10 @@ class GoogleBooks:
                     try:
                         #skip if language is in ignore list
                         booklang = item['volumeInfo']['language']
-                        if not booklang in lazylibrarian.IMP_PREFLANG:
-                            logger.debug('Skipped a result where language did not match preference')
-                            ignored = ignored+1
+                        valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
+                        if booklang not in valid_langs:
+                            logger.debug('Skipped a book with language %s' % booklang)
+                            ignored = ignored + 1
                             continue
                     except KeyError:
                         ignored = ignored+1
@@ -319,36 +336,39 @@ class GoogleBooks:
 
 
                     if not (re.match('[^\w-]', bookname)): #remove books with bad caracters in title
-                        controlValueDict = {"BookID": bookid}
-                        newValueDict = {
-                            "AuthorName":   authorname,
-                            "AuthorID":     authorid,
-                            "AuthorLink":   "",
-                            "BookName":     bookname,
-                            "BookSub":      booksub,
-                            "BookDesc":     bookdesc,
-                            "BookIsbn":     bookisbn,
-                            "BookPub":      bookpub,
-                            "BookGenre":    bookgenre,
-                            "BookImg":      bookimg,
-                            "BookLink":     booklink,
-                            "BookRate":     bookrate,
-                            "BookPages":    bookpages,
-                            "BookDate":     bookdate,
-                            "BookLang":     booklang,
-                            "Status":       book_status,
-                            "BookAdded":    formatter.today()
-                        }
-                        resultcount = resultcount + 1
+                        if book_status != "Ignored":
+                            controlValueDict = {"BookID": bookid}
+                            newValueDict = {
+                                "AuthorName":   authorname,
+                                "AuthorID":     authorid,
+                                "AuthorLink":   "",
+                                "BookName":     bookname,
+                                "BookSub":      booksub,
+                                "BookDesc":     bookdesc,
+                                "BookIsbn":     bookisbn,
+                                "BookPub":      bookpub,
+                                "BookGenre":    bookgenre,
+                                "BookImg":      bookimg,
+                                "BookLink":     booklink,
+                                "BookRate":     bookrate,
+                                "BookPages":    bookpages,
+                                "BookDate":     bookdate,
+                                "BookLang":     booklang,
+                                "Status":       book_status,
+                                "BookAdded":    formatter.today()
+                            }
+                            resultcount = resultcount + 1
 
-                        myDB.upsert("books", newValueDict, controlValueDict)
-                        logger.debug(u"book found " + bookname + " " + bookdate)
-                        if not find_book_status:
-                            logger.info("[%s] Added book: %s" % (authorname, bookname))
-                            added_count = added_count + 1
+                            myDB.upsert("books", newValueDict, controlValueDict)
+                            logger.debug(u"book found " + bookname + " " + bookdate)
+                            if not find_book_status:
+                                logger.info("[%s] Added book: %s" % (authorname, bookname))
+                                added_count = added_count + 1
+                            else:
+                                updated_count = updated_count + 1
+                                logger.info("[%s] Updated book: %s" % (authorname, bookname))
                         else:
-                            updated_count = updated_count + 1
-                            logger.info("[%s] Updated book: %s" % (authorname, bookname))
+                            book_ignore_count = book_ignore_count + 1
                     else:
                         removedResults = removedResults + 1
 
@@ -378,8 +398,12 @@ class GoogleBooks:
         myDB.upsert("authors", newValueDict, controlValueDict)
 
                    
-        logger.debug("Removed %s non-english and/or bad character results for author" % removedResults)
-        logger.debug("Found %s books for author" % resultcount)
+        logger.debug("Found %s total books for author" % total_count)
+        logger.debug("Removed %s bad language results for author" % ignored)
+        logger.debug("Removed %s bad character results for author" % removedResults)
+        logger.debug("Ignored %s books by author marked as Ignored" % book_ignore_count)
+        logger.debug("Imported/Updated %s books for author" % resultcount)
+
         if refresh:
             logger.info("[%s] Book processing complete: Added %s books / Updated %s books" % (authorname, str(added_count), str(updated_count)))
         else:

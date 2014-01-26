@@ -67,42 +67,48 @@
         <table class="configtable" summary="Importsettings">
             <tr>
                 <td>
-                    <h3>Move and rename<h3>
+                    <h3>Book API</h3>
+                    <BR>
+                    <%
+                        if lazylibrarian.BOOK_API == "GoodReads":
+                            gr_selected = 'selected="selected"'
+                        else:
+                            gr_selected = ''
+
+                        if lazylibrarian.BOOK_API == "GoogleBooks":
+                            gb_selected = 'selected="selected"'
+                        else:
+                            gb_selected = ''
+                    %>
+                    <h5>Book Search API:</h5><select name="book_api">
+                    <option value = "GoodReads" ${gr_selected}>GoodReads</option>
+                    <option value = "GoogleBooks" ${gb_selected}>GoogleBooks</option>
+                    </select>
+                    <BR>
+                    <h5>Goodreads API:</h5><input type="text" name="gr_api" value="${config['gr_api']}" size="50" maxlength="40" >
+                    <BR>
+                    <h5>GoogleBooks API:</h5><input type="text" name="gb_api" value="${config['gb_api']}" size="50" maxlength="40" >
                 </td>
                 <td>
                     <h3>Language</h3>
-                </td>
-				<td>
-                    <h3>Ebook Type</h3>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <h5>Destination:</h5><input type="text" name="destination_dir" value="${config['destination_dir']}" size="50">
-                    <h5><input type="checkbox" name="destination_copy" value=1 ${config['destination_copy']} /> Keep original files</h3>
-                </td>
-                <td>
+                    <BR>
                     <h5>Import languages:</h5><input type="text" name="imp_preflang" value="${config['imp_preflang']}" size="20" maxlength="40">
                     <br>
-                    <i class="smalltext">Comma separated country shortcodes, e.g.:<br> eng, spa, por</i>
+                    <i class="smalltext">Comma separated country shortcodes:
+                    <br> GoodReads e.g: eng, en-US, spa, ita
+                    <BR> GoogleBooks e.g: en, es, it
+                    <BR> Default: en, eng, en-US
+                    <BR> Try adding "Unknown" to list if GoodReads is missing results</i>
                 </td>
                 <td>
+                    <h3>File Formats</h3>
+                    <BR>
                     <h5>Ebook Format:</h5><input type="text" name="ebook_type" value="${config['ebook_type']}" size="0" maxlength="40">
                     <br>
-                    <i class="smalltext">Specify any of the following options: <br> epub, mobi, pdf </i>
+                    <i class="smalltext">Comma separated file extensions:
+                    <BR>Default: epub, mobi, pdf </i>
                 </td>
             </tr>
-            <tr>
-                <td>
-                    <h5>Calibre Auto Add:</h5><input type="text" name="imp_autoadd" value="${config['imp_autoadd']}" size="50" maxlength="90">
-                    <br>
-                    <i class="smalltext">Directory for a copy to be placed for auto add process</i>
-                </td>
-                <td>
-                </td>
-                <td>
-                </td>
-        </table>
         </table>
         </div>
     </div>
@@ -138,40 +144,6 @@
                     <h5><input type="checkbox" name="blackhole" value=1 ${config['use_blackhole']} /> Use blackhole</h5>
                     <input type="text" name="blackholedir" value="${config['blackholedir']}" size="30">
                     <i class="smalltext">The folder your nzb-downloader monitors for nzb-files.</i>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <h3>Book API</h3>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <%
-                        if lazylibrarian.BOOK_API == "GoodReads":
-                            gr_selected = 'selected="selected"'
-                        else:
-                            gr_selected = ''
-
-                        if lazylibrarian.BOOK_API == "GoogleBooks":
-                            gb_selected = 'selected="selected"'
-                        else:
-                            gb_selected = ''
-                    %>
-                    <h5>Book Search API:</h5><select name="book_api">
-                    <option value = "GoodReads" ${gr_selected}>GoodReads</option>
-                    <option value = "GoogleBooks" ${gb_selected}>GoogleBooks</option>
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <h5>Goodreads API:</h5><input type="text" name="gr_api" value="${config['gr_api']}" size="50" maxlength="40" >
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <h5>GoogleBooks API:</h5><input type="text" name="gb_api" value="${config['gb_api']}" size="50" maxlength="40" >
                 </td>
             </tr>
         </table>
@@ -217,10 +189,24 @@
         <table class="configtable" summary="Search & Processing">
             <tr>
                 <td>
+                    <h3>Intervals</h3>
+                    <BR>
                     <h5>NZB Scan Interval:</h5><input type="text" name="search_interval" value="${config['search_interval']}" size="8" maxlength="40"> mins
                     <h5>Post-Processing Interval</h5><input type="text" name="scan_interval" value="${config['scan_interval']}" size="8" maxlength="40"> mins
                     <h5>Version Check Interval</h5><input type="text" name="versioncheck_interval" value="${config['versioncheck_interval']}" size="8" maxlength="40"> hours
                 </td>
+                <td>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <h5>Base Destination Folder:</h5><input type="text" name="destination_dir" value="${config['destination_dir']}" size="50">
+                    <h5><input type="checkbox" name="destination_copy" value=1 ${config['destination_copy']} /> Keep original files</h3>
+                </td>
+                <td>
+                </td>
+            </tr>
+            <tr>
                 <td>
                     <h5>eBook Destination Folder:</h5><input type="text" name="ebook_dest_folder" value="${config['ebook_dest_folder']}" size="30" maxlength="40">
                     <h5>eBook Destination File:</h5><input type="text" name="ebook_dest_file" value="${config['ebook_dest_file']}" size="30" maxlength="40">
@@ -238,6 +224,15 @@
                     <BR>
                     Current limitation: each file has to be in unique subfolder
                     </small>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <h5>Calibre Auto Add:</h5><input type="text" name="imp_autoadd" value="${config['imp_autoadd']}" size="50" maxlength="90">
+                    <br>
+                    <i class="smalltext">Directory for a copy to be placed for auto add process</i>
+                </td>
+                <td>
                 </td>
             </tr>
         </table>

@@ -50,6 +50,7 @@
                 <th id="lastacquired">Acquired</th>
                 <th id="issuedate">Issue Date</th>
                 <th id="status">Status</th>
+                <th id="issue">Issue</th>
             </tr>
         </thead>
 
@@ -57,7 +58,7 @@
         %for result in magazines:
                 <tr class="gradeZ">
                     <td id="select"><input type="checkbox" name="${result['Title']}" class="checkbox" /></td>
-                    <td id="magtitle">${result['Title']}</td>
+                    <td id="magtitle"><BR>${result['Title']}<BR><BR></td>
                     <td id="frequency">${result['Frequency']}</td>
                     <!-- <td id="regex"> -->      
                         <!-- <form action="updateRegex" method="get"><input type="hidden" name="title" value="${result['Title']}">-->
@@ -73,6 +74,19 @@
                     <td id="lastacquired">${result['LastAcquired']}</td>
                     <td id="issuedate">${result['IssueDate']}</td>
                     <td id="status">${result['Status']}</td>
+                    %if result['IssueStatus'] == 'Open':
+                        <td id="issue"><a class="button green" href="openMag?bookid=${result['Title']}" target="_self">${result['IssueStatus']}</a></td>
+                    %else:
+                        %if result['IssueStatus'] == 'Wanted':
+                            <td id="issue"><a class="button red" href="searchForMag?bookid=${result['Title']}" target="_self"><span class="a">${result['IssueStatus']}</span><span class="b">Search</span></a></td>
+                        %else:
+                            %if result['IssueStatus'] == 'Snatched':
+                                <td id="issue"><a class="button">${result['IssueStatus']}</a></td>
+                            %else:
+                                <td id="issue"><a class="button grey">${result['IssueStatus']}</a></td>
+                            %endif
+                        %endif
+                    %endif
                 </tr>
         %endfor
         </tbody>
@@ -93,6 +107,7 @@
         $('#book_table').dataTable(
             {
                 "aoColumns": [
+                    null,
                     null,
                     null,
                     null,

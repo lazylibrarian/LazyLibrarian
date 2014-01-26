@@ -10,7 +10,7 @@ from lazylibrarian import logger, database, formatter, providers, sabnzbd, Simpl
 import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
 
-def searchbook(books=None):
+def searchbook(books=None, mags=None):
 
     # rename this thread
     threading.currentThread().name = "SEARCHBOOKS"
@@ -33,10 +33,11 @@ def searchbook(books=None):
     else:
         # The user has added a new book
         searchbooks = []
-        for book in books:
-            searchbook = myDB.select('SELECT BookID, AuthorName, BookName from books WHERE BookID=? AND Status="Wanted"', [book['bookid']])
-            for terms in searchbook:
-                searchbooks.append(terms)
+        if books != False:
+            for book in books:
+                searchbook = myDB.select('SELECT BookID, AuthorName, BookName from books WHERE BookID=? AND Status="Wanted"', [book['bookid']])
+                for terms in searchbook:
+                    searchbooks.append(terms)
 
     for searchbook in searchbooks:
         bookid = searchbook[0]
@@ -56,7 +57,7 @@ def searchbook(books=None):
         searchterm = re.sub(r'\(.*?\)', '', searchterm).encode('utf-8')
         searchterm = re.sub(r"\s\s+" , " ", searchterm) # strip any double white space
         searchlist.append({"bookid": bookid, "bookName":searchbook[2], "authorName":searchbook[1], "searchterm": searchterm.strip()})
-
+    
     if not lazylibrarian.SAB_HOST and not lazylibrarian.BLACKHOLE:
         logger.info('No download method is set, use SABnzbd or blackhole')
 
@@ -129,8 +130,8 @@ def searchbook(books=None):
             	logger.info("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")
         counter = counter + 1
 
-    if not books:
-        snatched = searchmag.searchmagazines()
+    if not books or books==False:
+        snatched = searchmag.searchmagazines(mags)
         for items in snatched:
             snatch = DownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
             notifiers.notify_snatch(items['nzbtitle']+' at '+formatter.now()) 

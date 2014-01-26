@@ -107,11 +107,11 @@ def processDir():
 
 					#update books
 					controlValueDict = {"BookID": book['BookID']}
-					newValueDict = {"Status": "Have"}
+					newValueDict = {"Status": "Open"}
 					myDB.upsert("books", newValueDict, controlValueDict)
 
 					#update authors
-					query = 'SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND Status="Have"' % authorname
+					query = 'SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' % authorname
 					countbooks = myDB.action(query).fetchone()
 					havebooks = int(countbooks[0])
 					controlValueDict = {"AuthorName": authorname}
@@ -121,10 +121,16 @@ def processDir():
 					if countauthor:
 						myDB.upsert("authors", newValueDict, controlValueDict)
 
+				else:
+					#update mags
+					controlValueDict = {"Title": book['BookID']}
+					newValueDict = {"IssueStatus": "Open"}
+					myDB.upsert("magazines", newValueDict, controlValueDict)
+
 				logger.info('Successfully processed: %s' % (global_name))
 				notifiers.notify_download(global_name+' at '+formatter.now())
 			else:
-				logger.error('Postprocessing for %s has failed. Warning - AutoAdd will be repeated' % bookname)
+				logger.error('Postprocessing for %s has failed. Warning - AutoAdd will be repeated' % global_name)
 		if ppcount:
 			logger.debug('%s books are downloaded and processed.' % ppcount)
 		else:

@@ -244,7 +244,7 @@ def initialize():
         LAUNCH_BROWSER = bool(check_setting_int(CFG, 'General', 'launch_browser', 1))
         LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
 
-        IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', 'eng')
+        IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', 'en, eng, en-US')
         IMP_AUTOADD = check_setting_str(CFG, 'General', 'imp_autoadd', '')
         IMP_ONLYISBN = bool(check_setting_int(CFG, 'General', 'imp_onlyisbn', 0))
         #TODO - investigate this for future users
@@ -484,7 +484,7 @@ def dbcheck():
     c.execute('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT, AuthorName TEXT UNIQUE, AuthorImg TEXT, AuthorLink TEXT, DateAdded TEXT, Status TEXT, LastBook TEXT, LastLink Text, LastDate TEXT, HaveBooks INTEGER, TotalBooks INTEGER, AuthorBorn TEXT, AuthorDeath TEXT, UnignoredBooks INTEGER)')
     c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT)')
-    c.execute('CREATE TABLE IF NOT EXISTS magazines (Title TEXT, Frequency TEXT, Regex TEXT, Status TEXT, MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT)')
+    c.execute('CREATE TABLE IF NOT EXISTS magazines (Title TEXT, Frequency TEXT, Regex TEXT, Status TEXT, MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT)')
 
     try:
         logger.info('Checking database')
@@ -522,6 +522,12 @@ def dbcheck():
     except sqlite3.OperationalError:
         logger.info('Updating database to hold UnignoredBooks')
         c.execute('ALTER TABLE authors ADD COLUMN UnignoredBooks INTEGER')
+
+    try:
+        c.execute('SELECT IssueStatus from magazines')
+    except sqlite3.OperationalError:
+        logger.info('Updating database to hold IssueStatus')
+        c.execute('ALTER TABLE magazines ADD COLUMN IssueStatus TEXT')
 
     conn.commit()
     c.close()

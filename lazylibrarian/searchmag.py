@@ -10,19 +10,18 @@ from lazylibrarian import logger, database, formatter, providers, sabnzbd, Simpl
 import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
 
-def searchmagazines(magazines=None):
+def searchmagazines(mags=None):
 	maglist = []
-	threading.currentThread().name = "SEARCHBOOKS"
 	myDB = database.DBConnection()
 	searchlist = []
 
-	if magazines is None:
+	if mags is None:
 		searchmags = myDB.select('SELECT Title, Frequency, LastAcquired, IssueDate from magazines WHERE Status="Active"')
 	else:
 		searchmags = []
-		for magazine in magazines:
-			searchmags = myDB.select('SELECT Title, Frequency, LastAcquired, IssueDate from magazines WHERE Title=? AND Status="Active"', [magazine['Title']])
-			for terms in searchbook:
+		for magazine in mags:
+			searchmags_temp = myDB.select('SELECT Title, Frequency, LastAcquired, IssueDate from magazines WHERE Title=? AND Status="Active"', [magazine['bookid']])
+			for terms in searchmags_temp:
 				searchmags.append(terms)
 
 	for searchmag in searchmags:
@@ -66,7 +65,12 @@ def searchmagazines(magazines=None):
 			logger.debug("Adding book %s to queue." % book['searchterm'])
 
 		else:
+			bad_regex = 0
+			old_date = 0
+			total_nzbs = 0
+			new_date = 0
 			for nzb in resultlist:
+				total_nzbs = total_nzbs + 1
 				bookid = nzb['bookid']
 				nzbtitle = nzb['nzbtitle']
 				nzburl = nzb['nzburl']
@@ -142,7 +146,8 @@ def searchmagazines(magazines=None):
 										int(newdatish_regexC)
 										newdatish = regexC_year+'-'+regexC_month+'-'+regexC_day
 									except:
-										logger.info('NZB %s not in proper date format.' % nzbtitle_formatted)
+										logger.debug('NZB %s not in proper date format.' % nzbtitle_formatted)
+										bad_regex = bad_regex + 1
 										continue
 
 						else:
@@ -178,6 +183,7 @@ def searchmagazines(magazines=None):
 								'nzbtitle': nzbtitle,
 								'nzburl': nzburl
 								})
+							new_date = new_date + 1
 						else:
 							comp_date = formatter.datecompare(newdatish, control_date)
 							if comp_date > 0:
@@ -188,8 +194,13 @@ def searchmagazines(magazines=None):
 									'nzbtitle': nzbtitle,
 									'nzburl': nzburl
 									})
+								new_date = new_date + 1
 							else:
-								logger.info('This issue of %s is old; skipping.' % nzbtitle_formatted)
-					#else:
-						#logger.info('NZB %s does not completely match search term %s.' % (nzbtitle, bookid))
+								logger.debug('This issue of %s is old; skipping.' % nzbtitle_formatted)
+								old_date = old_date + 1
+					else:
+						logger.debug('NZB %s does not completely match search term %s.' % (nzbtitle, bookid))
+						bad_regex = bad_regex + 1
+
+			logger.info('Found %s NZBs for %s.  %s are new, %s are old, and %s have bad date formatting' % (total_nzbs, bookid, new_date, old_date, bad_regex) )
 	return maglist
