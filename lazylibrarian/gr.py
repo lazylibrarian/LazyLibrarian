@@ -387,7 +387,7 @@ class GoodReads:
 		myDB.upsert("authors", newValueDict, controlValueDict)
 
 		#This is here because GoodReads sometimes has several entries with the same BookID!
-		#modified_count = added_count + updated_count
+		modified_count = added_count + updated_count
 					
 		logger.debug("Found %s total books for author" % total_count)
 		logger.debug("Removed %s bad language results for author" % ignored)
