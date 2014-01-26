@@ -225,8 +225,13 @@ class WebInterface(object):
         for item in authorsearch:
             authorlist.append(item['AuthorName'])
 
+        booksearch = myDB.select("SELECT * from books")
+        booklist = []
+        for item in booksearch:
+            booklist.append(item['BookID'])
+
         sortedlist_final = sorted(searchresults, key=itemgetter('highest_fuzz', 'num_reviews'), reverse=True)
-        return serve_template(templatename="searchresults.html", title='Search Results for: "' + name + '"', searchresults=sortedlist_final, authorlist=authorlist, type=type)
+        return serve_template(templatename="searchresults.html", title='Search Results for: "' + name + '"', searchresults=sortedlist_final, authorlist=authorlist, booklist=booklist, booksearch=booksearch, type=type)
     search.exposed = True
 
 #AUTHOR
@@ -304,6 +309,57 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % authorname)
     addResults.exposed = True
 
+    def addBook(self, bookid=None):
+        myDB = database.DBConnection()
+
+        booksearch = myDB.select("SELECT * from books WHERE BookID=?", [bookid])
+        if booksearch:
+            myDB.upsert("books", {'Status': 'Wanted'}, {'BookID': bookid})
+            for book in booksearch:
+                AuthorName = book['AuthorName']
+                authorsearch = myDB.select("SELECT * from authors WHERE AuthorName=?", [AuthorName])
+                if authorsearch:
+                    #update authors needs to be updated every time a book is marked differently
+                    lastbook = myDB.action("SELECT BookName, BookLink, BookDate from books WHERE AuthorName='%s' AND Status != 'Ignored' order by BookDate DESC" % AuthorName).fetchone()
+                    unignoredbooks = myDB.select("SELECT COUNT(BookName) as unignored FROM books WHERE AuthorName='%s' AND Status != 'Ignored'" % AuthorName)
+                    bookCount = myDB.select("SELECT COUNT(BookName) as counter FROM books WHERE AuthorName='%s'" % AuthorName)  
+                    countbooks = myDB.action('SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' % AuthorName).fetchone()
+                    havebooks = int(countbooks[0]) 
+
+                    controlValueDict = {"AuthorName": AuthorName}
+                    newValueDict = {
+                            "TotalBooks": bookCount[0]['counter'],
+                            "UnignoredBooks": unignoredbooks[0]['unignored'],
+                            "HaveBooks": havebooks,
+                            "LastBook": lastbook['BookName'],
+                            "LastLink": lastbook['BookLink'],
+                            "LastDate": lastbook['BookDate']
+                            }
+                    myDB.upsert("authors", newValueDict, controlValueDict)
+        else:
+            if lazylibrarian.BOOK_API == "GoogleBooks":
+                GB = GoogleBooks(bookid)
+                queue = Queue.Queue()
+                find_book = threading.Thread(target=GB.find_book, args=[bookid, queue])
+                find_book.start()
+            elif lazylibrarian.BOOK_API == "GoodReads":
+                queue = Queue.Queue()
+                GR = GoodReads(bookid)
+                find_book = threading.Thread(target=GR.find_book, args=[bookid, queue])
+                find_book.start()
+            if len(bookid) == 0:
+                raise cherrypy.HTTPRedirect("config")
+
+            find_book.join()
+
+        books = []
+        mags = False
+        books.append({"bookid": bookid})
+        threading.Thread(target=searchbook, args=[books, mags]).start()
+
+        raise cherrypy.HTTPRedirect("books")
+    addBook.exposed = True
+
 #BOOKS
     def openBook(self, bookid=None, **args):
         myDB = database.DBConnection()
@@ -375,45 +431,69 @@ class WebInterface(object):
 
     def markBooks(self, AuthorName=None, action=None, **args):
         myDB = database.DBConnection()
-        for bookid in args:
-            # ouch dirty workaround...
-            if not bookid == 'book_table_length':
-
-                controlValueDict = {'BookID': bookid}
-                newValueDict = {'Status': action}
-                myDB.upsert("books", newValueDict, controlValueDict)
-                logger.debug('Status set to %s for BookID: %s' % (action, bookid))
-
-        #update authors needs to be updated every time a book is marked differently
-        lastbook = myDB.action("SELECT BookName, BookLink, BookDate from books WHERE AuthorName='%s' AND Status != 'Ignored' order by BookDate DESC" % AuthorName).fetchone()
-        unignoredbooks = myDB.select("SELECT COUNT(BookName) as unignored FROM books WHERE AuthorName='%s' AND Status != 'Ignored'" % AuthorName)
-        bookCount = myDB.select("SELECT COUNT(BookName) as counter FROM books WHERE AuthorName='%s'" % AuthorName)  
-        countbooks = myDB.action('SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' % AuthorName).fetchone()
-        havebooks = int(countbooks[0]) 
-
-        controlValueDict = {"AuthorName": AuthorName}
-        newValueDict = {
-                "TotalBooks": bookCount[0]['counter'],
-                "UnignoredBooks": unignoredbooks[0]['unignored'],
-                "HaveBooks": havebooks,
-                "LastBook": lastbook['BookName'],
-                "LastLink": lastbook['BookLink'],
-                "LastDate": lastbook['BookDate']
-                }
-        myDB.upsert("authors", newValueDict, controlValueDict)
-                
-        # start searchthreads
-        books = []
-        for bookid in args:
-            # ouch dirty workaround...
-            if not bookid == 'book_table_length':
-                if action == 'Wanted':
-                    books.append({"bookid": bookid})
-
-        threading.Thread(target=searchbook, args=[books]).start()
-
         if AuthorName:
+            redirect = "author"
+        else:
+            redirect = "books"
+        authorcheck = None
+        for bookid in args:
+            # ouch dirty workaround...
+            if not bookid == 'book_table_length':
+                if action != "Remove":
+                    controlValueDict = {'BookID': bookid}
+                    newValueDict = {'Status': action}
+                    myDB.upsert("books", newValueDict, controlValueDict)
+                    title = myDB.select("SELECT * from books WHERE BookID = ?", [bookid])
+                    for item in title:
+                        bookname = item['BookName']
+                    logger.info('Status set to %s for %s' % (action, bookname))
+              
+                else:
+                    authorsearch = myDB.select("SELECT * from books WHERE BookID = ?", [bookid])
+                    for item in authorsearch:
+                        AuthorName = item['AuthorName']
+                        bookname = item['BookName']
+                    authorcheck = myDB.select("SELECT * from authors WHERE AuthorName = ?", [AuthorName])
+                    if authorcheck:
+                        myDB.upsert("books", {"Status": "Skipped"}, {"BookID": bookid})
+                        logger.info('Status set to Skipped for %s' % bookname)
+                    else:
+                        myDB.action('DELETE from books WHERE BookID = ?', [bookid])
+                        logger.info('%s removed from database' % bookname)
+
+        if redirect == "author" or authorcheck:
+            #update authors needs to be updated every time a book is marked differently
+            lastbook = myDB.action("SELECT BookName, BookLink, BookDate from books WHERE AuthorName='%s' AND Status != 'Ignored' order by BookDate DESC" % AuthorName).fetchone()
+            unignoredbooks = myDB.select("SELECT COUNT(BookName) as unignored FROM books WHERE AuthorName='%s' AND Status != 'Ignored'" % AuthorName)
+            bookCount = myDB.select("SELECT COUNT(BookName) as counter FROM books WHERE AuthorName='%s'" % AuthorName)  
+            countbooks = myDB.action('SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' % AuthorName).fetchone()
+            havebooks = int(countbooks[0]) 
+
+            controlValueDict = {"AuthorName": AuthorName}
+            newValueDict = {
+                    "TotalBooks": bookCount[0]['counter'],
+                    "UnignoredBooks": unignoredbooks[0]['unignored'],
+                    "HaveBooks": havebooks,
+                    "LastBook": lastbook['BookName'],
+                    "LastLink": lastbook['BookLink'],
+                    "LastDate": lastbook['BookDate']
+                    }
+            myDB.upsert("authors", newValueDict, controlValueDict)
+
+        # start searchthreads
+        if action == 'Wanted':
+            books = []
+            for bookid in args:
+                # ouch dirty workaround...
+                if not bookid == 'book_table_length':
+                    books.append({"bookid": bookid})
+            mags=False
+            threading.Thread(target=searchbook, args=[books, mags]).start()
+
+        if redirect == "author":
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
+        else:
+            raise cherrypy.HTTPRedirect("books")
     markBooks.exposed = True
 
     #ALL ELSE

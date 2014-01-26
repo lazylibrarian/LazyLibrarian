@@ -7,6 +7,7 @@ from urllib2 import HTTPError
 
 import lazylibrarian
 from lazylibrarian import logger, formatter, database, SimpleCache
+from lazylibrarian.gr import GoodReads
 
 import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
@@ -409,3 +410,112 @@ class GoogleBooks:
         else:
             logger.info("[%s] Book processing complete: Added %s books to the database" % (authorname, str(added_count)))
         return books_dict
+
+    
+    def find_book(self, bookid=None, queue=None):
+        threading.currentThread().name = "GB-ADD-BOOK"
+        myDB = database.DBConnection()
+
+        URL = 'https://www.googleapis.com/books/v1/volumes/' + str(bookid) + "?key="+lazylibrarian.GB_API
+        jsonresults = json.JSONDecoder().decode(urllib2.urlopen(URL, timeout=30).read())
+
+        bookname = jsonresults['volumeInfo']['title']
+        
+        try:
+            authorname = jsonresults['volumeInfo']['authors'][0]
+        except KeyError:
+            logger.debug('Book %s does not contain author field' % bookname)
+
+        try:
+            #skip if language is in ignore list
+            booklang = jsonresults['volumeInfo']['language']
+            valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
+            if booklang not in valid_langs:
+                logger.debug('Book %s language does not match preference' % bookname)
+        except KeyError:
+            logger.debug('Book does not have language field')
+
+        try:
+            bookpub = jsonresults['volumeInfo']['publisher']
+        except KeyError:
+            bookpub = None
+
+        try:
+            booksub = jsonresults['volumeInfo']['subtitle']
+        except KeyError:
+            booksub = None
+
+        try:
+            bookdate = jsonresults['volumeInfo']['publishedDate']
+        except KeyError:
+            bookdate = '0000-00-00'
+
+        try:
+            bookimg = jsonresults['volumeInfo']['imageLinks']['thumbnail']
+        except KeyError:
+            bookimg = 'images/nocover.png'
+
+        try:
+            bookrate = jsonresults['volumeInfo']['averageRating']
+        except KeyError:
+            bookrate = 0
+
+        try:
+            bookpages = jsonresults['volumeInfo']['pageCount']
+        except KeyError:
+            bookpages = 0
+
+        try:
+            bookgenre = jsonresults['volumeInfo']['categories'][0]
+        except KeyError:
+            bookgenre = None
+
+        try:
+            bookdesc = jsonresults['volumeInfo']['description']
+        except KeyError:
+            bookdesc = None
+
+        try:
+            if jsonresults['volumeInfo']['industryIdentifiers'][0]['type'] == 'ISBN_10':
+                bookisbn = jsonresults['volumeInfo']['industryIdentifiers'][0]['identifier']
+            else:
+                bookisbn = None
+        except KeyError:
+            bookisbn = None
+
+        booklink = jsonresults['volumeInfo']['canonicalVolumeLink']
+        bookrate = float(bookrate)
+
+        name = jsonresults['volumeInfo']['authors'][0]
+        GR = GoodReads(name)
+        author = GR.find_author_id()
+        if author:
+            AuthorID = author['authorid']
+
+        print AuthorID
+        print name
+
+        controlValueDict = {"BookID": bookid}
+        newValueDict = {
+            "AuthorName":   authorname,
+            "AuthorID":     AuthorID,
+            "AuthorLink":   "",
+            "BookName":     bookname,
+            "BookSub":      booksub,
+            "BookDesc":     bookdesc,
+            "BookIsbn":     bookisbn,
+            "BookPub":      bookpub,
+            "BookGenre":    bookgenre,
+            "BookImg":      bookimg,
+            "BookLink":     booklink,
+            "BookRate":     bookrate,
+            "BookPages":    bookpages,
+            "BookDate":     bookdate,
+            "BookLang":     booklang,
+            "Status":       "Wanted",
+            "BookAdded":    formatter.today()
+            }
+
+        myDB.upsert("books", newValueDict, controlValueDict)
+        logger.info("%s added to the books database" % bookname)
+

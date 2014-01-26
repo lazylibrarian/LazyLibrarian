@@ -161,7 +161,7 @@ class GoodReads:
 				logger.info('Found author: %s with GoodReads-id: %s' % (authorname, authorid))
 
 			authorlist = self.get_author_info(authorid, authorname)
-		
+
 		return authorlist
 
 	def get_author_info(self, authorid=None, authorname=None, refresh=False):
