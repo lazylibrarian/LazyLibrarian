@@ -67,19 +67,12 @@ def searchbook(books=None, mags=None):
     counter = 0
     for book in searchlist: 
         #print book.keys()
-        resultlist = []
-        if lazylibrarian.NEWZNAB:
-            logger.debug('Searching NZB\'s at provider %s ...' % lazylibrarian.NEWZNAB_HOST)
-            resultlist = providers.NewzNab(book, "1")
+        resultlist = providers.IterateOverNewzNabSites(book,'book')
 
-        if lazylibrarian.NEWZNAB2:
-            logger.debug('Searching NZB\'s at provider %s ...' % lazylibrarian.NEWZNAB_HOST2)
-            resultlist += providers.NewzNab(book, "2")
-
-        if lazylibrarian.USENETCRAWLER: 
-            logger.info('Searching NZB\'s at provider UsenetCrawler ...')
-            resultlist += providers.UsenetCrawler(book)
-            #AHHH pass the book not the search book - bloody names the same, so wrong keys passing over
+        #if you can't find teh book specifically, you might find under general search
+        if not resultlist:
+            logger.info("Searching for type book failed to find any books...moving to general search")
+            resultlist = providers.IterateOverNewzNabSites(book,'general')
 
         if not resultlist:
             logger.debug("Adding book %s to queue." % book['searchterm'])

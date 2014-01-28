@@ -58,8 +58,8 @@ def searchmagazines(mags=None):
 
 		if lazylibrarian.USENETCRAWLER: 
 			logger.info('Searching NZB\'s at provider UsenetCrawler ...')
-			#resultlist += providers.UsenetCrawler(book)
-			logger.error('Searching Magasines under UsenetCrawler currently not working...resolution soon')
+			resultlist += providers.UsenetCrawler(book, 'mag')
+			#logger.error('Searching Magasines under UsenetCrawler currently not working...resolution soon')
 			#AHHH pass the book not the search book - bloody names the same, so wrong keys passing over
 
 		if not resultlist:
