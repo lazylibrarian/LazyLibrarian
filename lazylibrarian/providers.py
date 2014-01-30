@@ -11,7 +11,7 @@ def UsenetCrawler(book=None, searchType=None):
 
     results = []
     
-    print book.keys()
+    #print book.keys()
     
     results = NewzNabPlus(book, lazylibrarian.USENETCRAWLER_HOST, lazylibrarian.USENETCRAWLER_API, searchType)
     return results
@@ -327,6 +327,7 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None,
     #</item>    
     
     resultFields=None
+
     
     if searchType == "book":
         resultFields= {

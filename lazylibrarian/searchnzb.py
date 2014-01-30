@@ -61,6 +61,7 @@ def searchbook(books=None, mags=None):
     if not lazylibrarian.SAB_HOST and not lazylibrarian.BLACKHOLE:
         logger.info('No download method is set, use SABnzbd or blackhole')
 
+    #TODO - Move the newznab test to providers.py
     if not lazylibrarian.NEWZNAB and not lazylibrarian.NEWZNAB2 and not lazylibrarian.USENETCRAWLER:
         logger.info('No providers are set. try use NEWZNAB.')
 
