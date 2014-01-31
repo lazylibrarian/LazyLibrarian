@@ -246,13 +246,13 @@ def ReturnSearchTypeStructure(api_key, book, searchType):
             "apikey": api_key,
             "title": book['bookName'],
             "author": book['authorName'],         
-            "cat": 7020,
+            "cat": 7020,                #7020=ebook
         }
     elif searchType == "mag":
         params = {
             "t": "search",
             "apikey": api_key,
-            "cat": 7020,
+            "cat": "7000,7010,7020",    #7000=Other,7010=Misc,7020 Ebook
             "q": book['searchterm'],
             "extended": 1,
         }
@@ -260,7 +260,7 @@ def ReturnSearchTypeStructure(api_key, book, searchType):
                 params = {
             "t": "search",
             "apikey": api_key,
-            "cat": 7020,
+            #"cat": 7020,
             "q": book['searchterm'],
             "extended": 1,
         }        

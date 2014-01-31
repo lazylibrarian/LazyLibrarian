@@ -15,6 +15,9 @@ def searchmagazines(mags=None):
 	myDB = database.DBConnection()
 	searchlist = []
 
+	threading.currentThread().name = "SEARCHMAGS"
+
+
 	if mags is None:
 		searchmags = myDB.select('SELECT Title, Frequency, LastAcquired, IssueDate from magazines WHERE Status="Active"')
 	else:
@@ -98,6 +101,7 @@ def searchmagazines(mags=None):
 					bookid_exploded = bookid.split(' ')
 
 					#Make sure that NZB contains exact magazine phrase, and that NZB title begins with magazine title
+					#logger.debug('[%s] !=[%s] & [%s] == [%s]' %(keyword_check.lower(),nzbtitle_formatted.lower(),nzbtitle_exploded[0].lower(),bookid_exploded[0].lower()))
 					if keyword_check.lower() != nzbtitle_formatted.lower() and nzbtitle_exploded[0].lower() == bookid_exploded[0].lower():
 						
 						if len(nzbtitle_exploded) > 1:
@@ -200,7 +204,7 @@ def searchmagazines(mags=None):
 								logger.debug('This issue of %s is old; skipping.' % nzbtitle_formatted)
 								old_date = old_date + 1
 					else:
-						logger.debug('NZB %s does not completely match search term %s.' % (nzbtitle, bookid))
+						logger.debug('NZB [%s] does not completely match search term [%s].' % (nzbtitle, bookid))
 						bad_regex = bad_regex + 1
 
 			logger.info('Found %s NZBs for %s.  %s are new, %s are old, and %s have bad date formatting' % (total_nzbs, bookid, new_date, old_date, bad_regex) )
