@@ -117,20 +117,17 @@
                 <a href="home"><img src="images/lazylibrarian.png" heigth="64" width="83" alt="lazylibrarian"></a>
             </div>
             <ul id="nav">
-                <li ><a href="home" ><div id="home" class="authorsActive"></div></a></li>
-                <li><a href="books" ><div id="books" class="books"></div></a></li>
-                <li><a href="logs" ><div id="logs" class="logs"></div></a></li>
-                <li><a href="config" ><div id="config" class="config"></div></a></li>
+                <li><a href="home"><button id="home">Authors</button></a></li>
+                <li><a href="books" ><button id="books">Books</button></a></li>
+                <li><a href="magazines" ><button id="magazines">Magazines</button></a></li>
+                <li><a href="history" ><button id="hist">History</button></a></li>
+                <li><a href="logs" ><button id="logs">Logs</button></a></li>
+                <li><a href="config" ><button id="config">Config</button></a></li>
             </ul>
             <div id="searchbar">
                 <form action="search" method="get">
-                    <input type="text" value="" onfocus="if(this.value==this.defaultValue) this.value='';" name="name" placeholder="Search for an author" class="deletable" id="searchbox" />
-                    <span class="mini-icon"></span>
-                    <select name="type" hidden="true">
-                          <option value="author">Author</option>
-                          <option value="book">Book</option>
-                    </select>
-                    
+                    <input type="text" value="" onfocus="if(this.value==this.defaultValue) this.value='';" name="name" placeholder="Title / Author / ISBN" class="deletable" id="searchbox" />
+                    <span class="mini-icon"></span>                   
                 </form>
             </div>
             <div id="subhead">
