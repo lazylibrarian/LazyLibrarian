@@ -100,7 +100,7 @@ def searchbook(books=None, mags=None):
 					nzburl = nzb['nzburl']
 					nzbprov = nzb['nzbprov']
 					nzbdate_temp = nzb['nzbdate']
-					nzbsize_temp = nzb['nzbsize']
+					nzbsize_temp = nzb['nzbsize']  #Need to cater for when this is NONE (Issue 35)
 					nzbsize = str(round(float(nzbsize_temp) / 1048576,2))+' MB'
 					nzbdate = formatter.nzbdate2format(nzbdate_temp)
 
