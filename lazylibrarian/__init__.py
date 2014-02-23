@@ -17,8 +17,6 @@ PROG_DIR = None
 ARGS = None
 SIGNAL = None
 
-#Info 1, Debug 2 - Really should be in the config files.
-LOGLEVEL = 2
 DAEMON = False
 PIDFILE = None
 
@@ -45,6 +43,8 @@ CFG = None
 
 LOGDIR = None
 LOGLIST = []
+#Info 1, Debug 2 - Really should be in the config files.
+LOGLEVEL = 2
 
 HTTP_HOST = None
 HTTP_PORT = None
@@ -232,7 +232,16 @@ def initialize():
                     print ' Unable to create folder for logs. Only logging to console.'
 
         # Start the logger, silence console logging if we need to
+        CFGLOGLEVEL = check_setting_int(CFG, 'General', 'loglevel', 3)
+        if CFGLOGLEVEL == 3:    #default value if none in config
+            LOGLEVEL=2    #If not set in Config, then lets set to DEBUG
+        else:
+            LOGLEVEL = CFGLOGLEVEL  #Config setting picked up
+            
+            
+            
         logger.lazylibrarian_log.initLogger(loglevel=LOGLEVEL)
+        logger.info("Log level set to [%s]- Log Directory is [%s] - Config level is [%s]" % (LOGLEVEL,LOGDIR,CFGLOGLEVEL))
 
 
         HTTP_HOST = check_setting_str(CFG, 'General', 'http_host', '0.0.0.0')
@@ -240,6 +249,8 @@ def initialize():
         HTTP_PASS = check_setting_str(CFG, 'General', 'http_pass', '')
         HTTP_ROOT = check_setting_str(CFG, 'General', 'http_root', '')
         HTTP_LOOK = check_setting_str(CFG, 'General', 'http_look', 'default')
+
+
 
         LAUNCH_BROWSER = bool(check_setting_int(CFG, 'General', 'launch_browser', 1))
         LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
@@ -394,6 +405,7 @@ def config_write():
     new_config['General']['http_look'] = HTTP_LOOK
     new_config['General']['launch_browser'] = int(LAUNCH_BROWSER)
     new_config['General']['logdir'] = LOGDIR
+    new_config['General']['loglevel'] = int(LOGLEVEL)
 
     new_config['General']['imp_onlyisbn'] = int(IMP_ONLYISBN)
     new_config['General']['imp_preflang'] = IMP_PREFLANG

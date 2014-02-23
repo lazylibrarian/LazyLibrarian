@@ -22,16 +22,19 @@ class RotatingLogger(object):
 
         l = logging.getLogger('lazylibrarian')
         l.setLevel(logging.DEBUG)
+        
 
         self.filename = os.path.join(lazylibrarian.LOGDIR, self.filename)
 
         filehandler = handlers.RotatingFileHandler(self.filename, maxBytes=self.max_size, backupCount=self.max_files)
         filehandler.setLevel(logging.DEBUG)
+        
 
         fileformatter = logging.Formatter('%(asctime)s - %(levelname)-7s :: %(message)s', '%d-%b-%Y %H:%M:%S')
 
         filehandler.setFormatter(fileformatter)
         l.addHandler(filehandler)
+
 
         if loglevel:
             consolehandler = logging.StreamHandler()
