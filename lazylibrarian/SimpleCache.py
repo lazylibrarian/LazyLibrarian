@@ -1,3 +1,5 @@
+import warnings
+warnings.simplefilter("ignore", DeprecationWarning)
 import sys
 import time
 import re
@@ -6,7 +8,7 @@ import urllib2
 import httplib
 import unittest
 import md5
-
+import hashlib
 import StringIO
 
 __version__ = (0,1)
