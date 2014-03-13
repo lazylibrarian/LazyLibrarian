@@ -1,9 +1,4 @@
 ## LazyLibrarian
-#### Contributers 
-* Current author: DobyTang
-  Branched from Herman-Rodgers
-* Original author: Mar2zz  
-* Previous maintainer: itsmegb , Herman Rodgers
 
 ### 2014 ###
 Jan,20 Exciting news update. TheGuardian has gracefully agreed to review the code base with a view to bringing in his improvements into the new UI. All going well this branch will hopefully include
@@ -18,8 +13,6 @@ Thanks folks, because I was going cross-eyed trying to bring in the huge volume 
 
 
 To all other contributors - Patches are gratefully received espically when they can be auto merged :).
-## Please create Pull Requests against  [master-2014-01-21-Snapshot] as this will be the latest code base at any time. I will periodically move updates back to Master for general release.
-
 
 Thanks - DobyTang
 
