@@ -268,6 +268,26 @@
                 <input type="button" value="Test Twitter" id="testTwitter" />
             </td>
         </tr>
+        <tr>
+            <td>
+                <h3>Boxcar</h3>
+            </td>
+        </tr>
+        <tr>
+            <td colspan=3>
+                <input type="checkbox" name="use_boxcar" id="boxcar" value="1" ${config['use_boxcar']} />Enable boxcar Notifications
+                <BR>
+                <input type="checkbox" name="boxcar_notify_onsnatch" value="1" ${config['boxcar_notify_onsnatch']} />Notify on snatch
+                <BR>
+                <input type="checkbox" name="boxcar_notify_ondownload" value="1" ${config['boxcar_notify_ondownload']} />Notify on download
+            </td>
+        </tr>
+        <tr>
+            <td>
+	    	<input type="text" name="boxcar_username" value="${config['boxcar_username']}" size="35" placeholder="Boxcar username">
+            </td>
+        </tr>
+
         </table>
         </div>
     </div>
