@@ -114,7 +114,7 @@ class WebInterface(object):
 		    "use_boxcar" : 	checked(lazylibrarian.USE_BOXCAR),
 		    "boxcar_notify_onsnatch" :     checked(lazylibrarian.BOXCAR_NOTIFY_ONSNATCH),
 		    "boxcar_notify_ondownload" :     checked(lazylibrarian.BOXCAR_NOTIFY_ONDOWNLOAD),
-		    "boxcar_username" :		lazylibrarian.BOXCAR_USERNAME,
+		    "boxcar_token" :		lazylibrarian.BOXCAR_TOKEN,
 
                     "ebook_type" :		lazylibrarian.EBOOK_TYPE,
                     "gr_api" :		lazylibrarian.GR_API,
@@ -128,7 +128,7 @@ class WebInterface(object):
         sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None, destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, blackhole=0, blackholedir=None,
         newznab=0, newznab_host=None, newznab_api=None, newznab2=0, newznab_host2=None, newznab_api2=None,newzbin=0, newzbin_uid=None, newzbin_pass=None, ebook_type=None, book_api=None, gr_api=None, gb_api=None, usenetcrawler = 0, usenetcrawler_host=None, usenetcrawler_api = None, 
         versioncheck_interval=None, search_interval=None, scan_interval=None, ebook_dest_folder=None, ebook_dest_file=None, mag_dest_folder=None, mag_dest_file=None, use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
-	use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_username=None):
+	use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token=None):
 
         lazylibrarian.HTTP_HOST = http_host
         lazylibrarian.HTTP_PORT = http_port
@@ -194,7 +194,7 @@ class WebInterface(object):
 	lazylibrarian.USE_BOXCAR = use_boxcar
 	lazylibrarian.BOXCAR_NOTIFY_ONSNATCH = boxcar_notify_onsnatch
 	lazylibrarian.BOXCAR_NOTIFY_ONDOWNLOAD = boxcar_notify_ondownload
-	lazylibrarian.BOXCAR_USERNAME = boxcar_username
+	lazylibrarian.BOXCAR_TOKEN = boxcar_token
 
         lazylibrarian.config_write()
 
