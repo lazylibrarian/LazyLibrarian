@@ -19,15 +19,18 @@
 import lazylibrarian
 
 import tweet
+import boxcar
 
 from lazylibrarian.common import *
 
 # online
 twitter_notifier = tweet.TwitterNotifier()
+boxcar_notifier = boxcar.BoxcarNotifier()
 
 
 notifiers = [
     twitter_notifier,
+    boxcar_notifier
 ]
 
 

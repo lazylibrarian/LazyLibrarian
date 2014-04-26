@@ -117,6 +117,10 @@ TWITTER_USERNAME = None
 TWITTER_PASSWORD = None
 TWITTER_PREFIX = 'LazyLibrarian'
 
+USE_BOXCAR = False
+BOXCAR_TOKEN = None
+BOXCAR_NOTIFY_ONSNATCH = False
+BOXCAR_NOTIFY_ONDOWNLOAD = False
 def CheckSection(sec):
     """ Check if INI section exists, if not create it """
     try:
@@ -202,6 +206,7 @@ def initialize():
             IMP_ONLYISBN, IMP_PREFLANG, IMP_AUTOADD, SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, BLACKHOLE, BLACKHOLEDIR, GR_API, GB_API, BOOK_API, \
             NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, NEWZNAB2, NEWZNAB_HOST2, NEWZNAB_API2, EBOOK_TYPE, USENETCRAWLER, USENETCRAWLER_HOST, USENETCRAWLER_API, \
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_DEST_FOLDER, MAG_DEST_FILE, USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
+	    USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, \
             GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, LATEST_VERSION, COMMITS_BEHIND
 
         if __INITIALIZED__:
@@ -321,6 +326,12 @@ def initialize():
         TWITTER_USERNAME = check_setting_str(CFG, 'Twitter', 'twitter_username', '')
         TWITTER_PASSWORD = check_setting_str(CFG, 'Twitter', 'twitter_password', '')
         TWITTER_PREFIX = check_setting_str(CFG, 'Twitter', 'twitter_prefix', 'LazyLibrarian')
+
+	USE_BOXCAR = bool(check_setting_int(CFG, 'Boxcar', 'use_boxcar',0))
+	BOXCAR_NOTIFY_ONSNATCH = bool(check_setting_int(CFG, 'Boxcar', 'boxcar_notify_onsnatch', 0))
+	BOXCAR_NOTIFY_ONDOWNLOAD = bool(check_setting_int(CFG, 'Boxcar', 'boxcar_notify_ondownload', 0))
+	BOXCAR_TOKEN = check_setting_str(CFG, 'Boxcar', 'boxcar_token', '')
+
 
         BOOK_API = check_setting_str(CFG, 'API', 'book_api', 'GoodReads')
         GR_API = check_setting_str(CFG, 'API', 'gr_api', 'ckvsiSDsuqh7omh74ZZ6Q')
@@ -486,6 +497,12 @@ def config_write():
     new_config['Twitter']['twitter_username'] = TWITTER_USERNAME
     new_config['Twitter']['twitter_password'] = TWITTER_PASSWORD
     new_config['Twitter']['twitter_prefix'] = TWITTER_PREFIX
+
+    new_config['Boxcar'] = {}
+    new_config['Boxcar']['use_boxcar'] = int(USE_BOXCAR)
+    new_config['Boxcar']['boxcar_notify_onsnatch'] = int(BOXCAR_NOTIFY_ONSNATCH)
+    new_config['Boxcar']['boxcar_notify_ondownload'] = int(BOXCAR_NOTIFY_ONDOWNLOAD)
+    new_config['Boxcar']['boxcar_token'] = BOXCAR_TOKEN
 
     new_config.write()
 
