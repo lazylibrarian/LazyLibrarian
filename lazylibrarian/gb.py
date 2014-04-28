@@ -168,10 +168,23 @@ class GoogleBooks:
                             isbn_fuzz = int(0)
                         highest_fuzz = max(author_fuzz, book_fuzz, isbn_fuzz)
 
+#  Darkie67:
+#        replacing German Umlauts and filtering out ":"
+#
+                        booknamealt = item['volumeInfo']['title']
+                        booknametmp1=booknamealt.replace(u'\xf6',u'oe')
+                        booknametmp2=booknametmp1.replace(u'\xe4',u'ae')
+                        booknametmp3=booknametmp2.replace(u'\xdf',u'ss')
+                        booknametmp4=booknametmp3.replace(u'\xc4',u'Ae')
+                        booknametmp5=booknametmp4.replace(u'\xdc',u'Ue')
+                        booknametmp6=booknametmp5.replace(u'\xd6',u'Oe')
+                        booknametmp7=booknametmp6.replace(':','')  
+                        bookname=booknametmp7.replace(u'\xfc',u'ue')
+# Darkie67 end                        
                         resultlist.append({
                             'authorname': Author,
                             'bookid': item['id'],
-                            'bookname': item['volumeInfo']['title'],
+                            'bookname': bookname,
                             'booksub': booksub,
                             'bookisbn': bookisbn,
                             'bookpub': bookpub,
@@ -324,7 +337,19 @@ class GoogleBooks:
                         bookisbn = None
 
                     bookid = item['id']
-                    bookname = item['volumeInfo']['title']
+#  Darkie67:
+#        replacing German Umlauts and filtering out ":"
+#
+                    booknamealt = item['volumeInfo']['title']
+                    booknametmp1=booknamealt.replace(u'\xf6',u'oe')
+                    booknametmp2=booknametmp1.replace(u'\xe4',u'ae')
+                    booknametmp3=booknametmp2.replace(u'\xdf',u'ss')
+                    booknametmp4=booknametmp3.replace(u'\xc4',u'Ae')
+                    booknametmp5=booknametmp4.replace(u'\xdc',u'Ue')
+                    booknametmp6=booknametmp5.replace(u'\xd6',u'Oe')
+                    booknametmp7=booknametmp6.replace(':','')
+                    bookname=booknametmp7.replace(u'\xfc',u'ue')
+# Darkie67 end
                     booklink = item['volumeInfo']['canonicalVolumeLink']
                     bookrate = float(bookrate)
 
@@ -419,7 +444,19 @@ class GoogleBooks:
         URL = 'https://www.googleapis.com/books/v1/volumes/' + str(bookid) + "?key="+lazylibrarian.GB_API
         jsonresults = json.JSONDecoder().decode(urllib2.urlopen(URL, timeout=30).read())
 
-        bookname = jsonresults['volumeInfo']['title']
+#  Darkie67:
+#        replacing German Umlauts and filtering out ":"
+#
+        booknamealt = jsonresults['volumeInfo']['title']
+        booknametmp1=booknamealt.replace(u'\xf6',u'oe')
+        booknametmp2=booknametmp1.replace(u'\xe4',u'ae')
+        booknametmp3=booknametmp2.replace(u'\xdf',u'ss')
+        booknametmp4=booknametmp3.replace(u'\xc4',u'Ae')
+        booknametmp5=booknametmp4.replace(u'\xdc',u'Ue')
+        booknametmp6=booknametmp5.replace(u'\xd6',u'Oe')
+        booknametmp7=booknametmp6.replace(':','')
+        bookname=booknametmp7.replace(u'\xfc',u'ue')
+# Darkie67 end        
         
         try:
             authorname = jsonresults['volumeInfo']['authors'][0]
