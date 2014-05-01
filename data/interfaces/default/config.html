@@ -144,6 +144,8 @@
                     <h5><input type="checkbox" name="blackhole" value=1 ${config['use_blackhole']} /> Use blackhole</h5>
                     <input type="text" name="blackholedir" value="${config['blackholedir']}" size="30">
                     <i class="smalltext">The folder your nzb-downloader monitors for nzb-files.</i>
+		    <h5>Torrent Blackhole Directory:</h5>
+		    <input type="text" name="torrent_dir" value="${config['torrent_dir']}" size="30">
                 </td>
             </tr>
         </table>
@@ -157,6 +159,9 @@
                 <td>
                     <h3>Newznab Providers</h3>
                 </td>
+		<td>
+		    <h3>Torrent Providers</h3>
+		</td>
                 <td>
                     <h3>Usenet Crawler</h3>
                 </td>
@@ -167,6 +172,9 @@
                     <input type="text" placeholder="Enter Host Here" name="newznab_host" value="${config['newznab_host']}" size="20" maxlength="100">
                     <input type="text" placeholder="Enter API Here" name="newznab_api" value="${config['newznab_api']}" size="30" maxlength="40">
                 </td>
+		<td>
+		    <input type="checkbox" name="kat" value=1 ${config['use_kat']} style="margin-bottom:4px;" /> KAT
+		</td>
                 <td>
                     <input type="checkbox" name="usenetcrawler" value=1 ${config['use_usenetcrawler']} style="margin-bottom:4px;" />
                     <input type="text" placeholder="Enter Host Here" name="usenetcrawler_host" value="${config['usenetcrawler_host']}" size="20" maxlength="40">

@@ -94,6 +94,7 @@ NEWZBIN_UID = None
 NEWZBIN_PASSWORD = None
 EBOOK_TYPE = None
 
+KAT = False
 USENETCRAWLER = False
 USENETCRAWLER_API = None
 USENETCRAWLER_HOST = None
@@ -204,9 +205,9 @@ def initialize():
 
         global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, \
             IMP_ONLYISBN, IMP_PREFLANG, IMP_AUTOADD, SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, BLACKHOLE, BLACKHOLEDIR, GR_API, GB_API, BOOK_API, \
-            NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, NEWZNAB2, NEWZNAB_HOST2, NEWZNAB_API2, EBOOK_TYPE, USENETCRAWLER, USENETCRAWLER_HOST, USENETCRAWLER_API, \
+            NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, NEWZNAB2, NEWZNAB_HOST2, NEWZNAB_API2, EBOOK_TYPE, KAT, USENETCRAWLER, USENETCRAWLER_HOST, USENETCRAWLER_API, \
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_DEST_FOLDER, MAG_DEST_FILE, USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
-	    USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, \
+	    USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, TORRENT_DIR, \
             GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, LATEST_VERSION, COMMITS_BEHIND
 
         if __INITIALIZED__:
@@ -290,6 +291,7 @@ def initialize():
         BLACKHOLE = bool(check_setting_int(CFG, 'General', 'blackhole', 0))
         BLACKHOLEDIR = check_setting_str(CFG, 'General', 'blackholedir', '')
         USENET_RETENTION = check_setting_str(CFG, 'General', 'usenet_retention', '')
+	TORRENT_DIR  = check_setting_str(CFG, 'General', 'torrent_dir', '')
 
         NZBMATRIX = bool(check_setting_int(CFG, 'NZBMatrix', 'nzbmatrix', 0))
         NZBMATRIX_USER = check_setting_str(CFG, 'NZBMatrix', 'nzbmatrix_user', '')
@@ -301,6 +303,8 @@ def initialize():
         NEWZNAB2 = bool(check_setting_int(CFG, 'Newznab2', 'newznab2', 0))
         NEWZNAB_HOST2 = check_setting_str(CFG, 'Newznab2', 'newznab_host2', '')
         NEWZNAB_API2 = check_setting_str(CFG, 'Newznab2', 'newznab_api2', '')
+
+	KAT = bool(check_setting_int(CFG, 'KAT', 'kat', 0))
 
         USENETCRAWLER = bool(check_setting_int(CFG, 'UsenetCrawler', 'usenetcrawler', 0))
         USENETCRAWLER_HOST = check_setting_str(CFG, 'UsenetCrawler', 'usenetcrawler_host', '')
@@ -447,6 +451,7 @@ def config_write():
     new_config['General']['download_dir'] = DOWNLOAD_DIR
     new_config['General']['blackhole'] = int(BLACKHOLE)
     new_config['General']['blackholedir'] = BLACKHOLEDIR
+    new_config['General']['torrent_dir'] = TORRENT_DIR
     new_config['General']['usenet_retention'] = USENET_RETENTION
     
     new_config['API'] = {}
@@ -473,6 +478,9 @@ def config_write():
     new_config['Newzbin']['newzbin'] = int(NEWZBIN)
     new_config['Newzbin']['newzbin_uid'] = NEWZBIN_UID
     new_config['Newzbin']['newzbin_pass'] = NEWZBIN_PASS
+
+    new_config['KAT'] = {}
+    new_config['KAT']['kat'] = int(KAT)
 
     new_config['UsenetCrawler'] = {}
     new_config['UsenetCrawler']['usenetcrawler'] = int(USENETCRAWLER)

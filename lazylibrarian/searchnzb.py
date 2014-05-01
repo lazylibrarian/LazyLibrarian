@@ -10,6 +10,10 @@ from lazylibrarian import logger, database, formatter, providers, sabnzbd, Simpl
 import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
 
+#new to support torrents
+from StringIO import StringIO
+import gzip
+
 def searchbook(books=None, mags=None):
 
     # rename this thread
@@ -58,11 +62,11 @@ def searchbook(books=None, mags=None):
         searchterm = re.sub(r"\s\s+" , " ", searchterm) # strip any double white space
         searchlist.append({"bookid": bookid, "bookName":searchbook[2], "authorName":searchbook[1], "searchterm": searchterm.strip()})
     
-    if not lazylibrarian.SAB_HOST and not lazylibrarian.BLACKHOLE:
+    if not lazylibrarian.SAB_HOST and not lazylibrarian.BLACKHOLE and not lazylibrarian.KAT:
         logger.info('No download method is set, use SABnzbd or blackhole')
 
     #TODO - Move the newznab test to providers.py
-    if not lazylibrarian.NEWZNAB and not lazylibrarian.NEWZNAB2 and not lazylibrarian.USENETCRAWLER:
+    if not lazylibrarian.NEWZNAB and not lazylibrarian.NEWZNAB2 and not lazylibrarian.USENETCRAWLER and not lazylibrarian.KAT:
         logger.info('No providers are set. try use NEWZNAB.')
 
     counter = 0
@@ -171,7 +175,29 @@ def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
             except Exception, e:
                 logger.error('%s not writable, NZB not saved. Error: %s' % (nzbpath, e));
                 download = False;
+    elif lazylibrarian.KAT:
+        request = urllib2.Request(nzburl)
+        request.add_header('Accept-encoding', 'gzip')
+    
+        if nzbprov == 'KAT':
+            request.add_header('Referer', 'http://kat.ph/')
+        
+        response = urllib2.urlopen(request)
+        if response.info().get('Content-Encoding') == 'gzip':
+            buf = StringIO(response.read())
+            f = gzip.GzipFile(fileobj=buf)
+            torrent = f.read()
+        else:
+            torrent = response.read()
 
+        nzbname = str.replace(str(nzbtitle), ' ', '_') + '.torrent'
+        nzbpath = os.path.join(lazylibrarian.TORRENT_DIR, nzbname)
+
+        torrent_file = open(nzbpath , 'wb')
+        torrent_file.write(torrent)
+        torrent_file.close()
+        logger.info('Torrent file saved: %s' % nzbtitle)
+        download = True 
     else:
         logger.error('No download method is enabled, check config.')
         return False
