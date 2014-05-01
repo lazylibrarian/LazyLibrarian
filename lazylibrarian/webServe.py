@@ -70,6 +70,7 @@ class WebInterface(object):
                     "http_pass":        lazylibrarian.HTTP_PASS,
                     "http_look":        lazylibrarian.HTTP_LOOK,
                     "http_look_list":   http_look_list,
+		    "match_ratio":	lazylibrarian.MATCH_RATIO,
                     "launch_browser":   checked(lazylibrarian.LAUNCH_BROWSER),
                     "logdir" :          lazylibrarian.LOGDIR,
                     "use_imp_onlyisbn": checked(lazylibrarian.IMP_ONLYISBN),
@@ -137,6 +138,7 @@ class WebInterface(object):
         lazylibrarian.HTTP_LOOK = http_look
         lazylibrarian.LAUNCH_BROWSER = launch_browser
         lazylibrarian.LOGDIR = logdir
+	lazylibrarian.MATCH_RATIO = match_ratio
 
         lazylibrarian.IMP_ONLYISBN = imp_onlyisbn
         lazylibrarian.IMP_PREFLANG = imp_preflang

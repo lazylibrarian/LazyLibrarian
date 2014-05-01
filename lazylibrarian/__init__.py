@@ -46,6 +46,8 @@ LOGLIST = []
 #Info 1, Debug 2 - Really should be in the config files.
 LOGLEVEL = 2
 
+MATCH_RATIO = 80
+
 HTTP_HOST = None
 HTTP_PORT = None
 HTTP_USER = None
@@ -202,7 +204,7 @@ def initialize():
 
     with INIT_LOCK:
 
-        global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, \
+        global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, MATCH_RATIO, \
             IMP_ONLYISBN, IMP_PREFLANG, IMP_AUTOADD, SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, BLACKHOLE, BLACKHOLEDIR, GR_API, GB_API, BOOK_API, \
             NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, NEWZNAB2, NEWZNAB_HOST2, NEWZNAB_API2, EBOOK_TYPE, USENETCRAWLER, USENETCRAWLER_HOST, USENETCRAWLER_API, \
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_DEST_FOLDER, MAG_DEST_FILE, USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
@@ -248,7 +250,7 @@ def initialize():
         logger.lazylibrarian_log.initLogger(loglevel=LOGLEVEL)
         logger.info("Log level set to [%s]- Log Directory is [%s] - Config level is [%s]" % (LOGLEVEL,LOGDIR,CFGLOGLEVEL))
 
-
+	MATCH_RATIO = check_setting_int(CFG, 'General', 'match_ratio', 80)
         HTTP_HOST = check_setting_str(CFG, 'General', 'http_host', '0.0.0.0')
         HTTP_USER = check_setting_str(CFG, 'General', 'http_user', '')
         HTTP_PASS = check_setting_str(CFG, 'General', 'http_pass', '')
@@ -417,6 +419,8 @@ def config_write():
     new_config['General']['launch_browser'] = int(LAUNCH_BROWSER)
     new_config['General']['logdir'] = LOGDIR
     new_config['General']['loglevel'] = int(LOGLEVEL)
+
+    new_config['General']['match_ratio'] = MATCH_RATIO
 
     new_config['General']['imp_onlyisbn'] = int(IMP_ONLYISBN)
     new_config['General']['imp_preflang'] = IMP_PREFLANG
