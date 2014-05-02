@@ -4,6 +4,9 @@ import re
 import lazylibrarian
 from lazylibrarian import logger, database, importer
 from lazylibrarian.gr import GoodReads
+import lib.fuzzywuzzy as fuzzywuzzy
+from lib.fuzzywuzzy import fuzz, process
+
 
 #assuming your directory structor is basedir/Author
 def AuthorAdd(dir=None):
@@ -52,6 +55,12 @@ def AuthorAdd(dir=None):
 		author = GR.find_author_id()
 		if author:
 			authorid = author['authorid']
-			print (authorid)
-			#importer.addAuthorToDB(authorid)
+			authorname  = author['authorlink'][(author['authorlink'].rfind('/'))+1:]
+			logger.info(authorname)
+
+			match_ratio = lazylibrarian.MATCH_RATIO
+			author_match = fuzz.token_sort_ratio(authorname, authorid+"."+auth)
+			logger.info("Author match %: "+ str(author_match))
+			if (author_match > match_ratio):
+				importer.addAuthorToDB(auth)
 
