@@ -9,7 +9,7 @@ import thread, threading, time, Queue
 
 import lazylibrarian
 
-from lazylibrarian import logger, importer, database, postprocess, formatter, notifiers
+from lazylibrarian import logger, importer, database, postprocess, formatter, notifiers, librarysync
 from lazylibrarian.searchnzb import searchbook
 from lazylibrarian.searchmag import searchmagazines
 from lazylibrarian.formatter import checked
@@ -318,6 +318,13 @@ class WebInterface(object):
         threading.Thread(target=importer.addAuthorToDB, args=(AuthorName, refresh)).start()
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     refreshAuthor.exposed=True
+
+     def authorAdd(self, path):
+        try:
+	     threading.Thread(target=librarysync.AuthorAdd(path)).start()
+        except Exception, e:
+             logger.error('Unable to complete the scan: %s' % e)
+    authorAdd.exposed = True
 
     def addResults(self, authorname):
         args = None;
