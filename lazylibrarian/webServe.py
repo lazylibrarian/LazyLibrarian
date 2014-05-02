@@ -319,7 +319,7 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     refreshAuthor.exposed=True
 
-     def authorAdd(self):
+    def authorAdd(self):
         try:
 	     threading.Thread(target=librarysync.AuthorAdd(lazylibrarian.DESTINATION_DIR)).start()
         except Exception, e:
