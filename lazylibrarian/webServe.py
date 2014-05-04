@@ -10,7 +10,8 @@ import thread, threading, time, Queue
 import lazylibrarian
 
 from lazylibrarian import logger, importer, database, postprocess, formatter, notifiers
-from lazylibrarian.searchnzb import searchbook
+from lazylibrarian.searchnzb import search_nzb_book
+from lazylibrarian.searchtorrents import search_tor_book
 from lazylibrarian.searchmag import searchmagazines
 from lazylibrarian.formatter import checked
 from lazylibrarian.gr import GoodReads
@@ -384,7 +385,8 @@ class WebInterface(object):
         books = []
         mags = False
         books.append({"bookid": bookid})
-        threading.Thread(target=searchbook, args=[books, mags]).start()
+        threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+        threading.Thread(target=search_tor_book, args=[books, mags]).start()
 
         raise cherrypy.HTTPRedirect("books")
     addBook.exposed = True
@@ -452,7 +454,8 @@ class WebInterface(object):
 
             mags=False
 
-            threading.Thread(target=searchbook, args=[books, mags]).start()
+            threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+            threading.Thread(target=search_tor_book, args=[books, mags]).start()
             logger.debug("Searching for book with id: " + str(bookid));
         if AuthorName:
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
@@ -517,7 +520,8 @@ class WebInterface(object):
                 if not bookid == 'book_table_length':
                     books.append({"bookid": bookid})
             mags=False
-            threading.Thread(target=searchbook, args=[books, mags]).start()
+            threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+            threading.Thread(target=search_tor_book, args=[books, mags]).start()
 
         if redirect == "author":
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
@@ -532,7 +536,8 @@ class WebInterface(object):
     forceProcess.exposed = True
 
     def forceSearch(self, source=None):
-        threading.Thread(target=searchbook).start()
+        threading.Thread(target=search_nzb_book).start()
+        threading.Thread(target=search_tor_book).start()
         raise cherrypy.HTTPRedirect(source)
     forceSearch.exposed = True
 
@@ -624,7 +629,8 @@ class WebInterface(object):
                 mags = []
                 mags.append({"bookid": title})
                 books=False
-                threading.Thread(target=searchbook, args=[books, mags]).start()
+                threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+                threading.Thread(target=search_tor_book, args=[books, mags]).start()
                 logger.debug("Searching for magazine with title: " + str(title));
                 raise cherrypy.HTTPRedirect("magazines")
     addKeyword.exposed = True
@@ -669,7 +675,8 @@ class WebInterface(object):
 
             books=False
 
-            threading.Thread(target=searchbook, args=[books, mags]).start()
+            threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+            threading.Thread(target=search_tor_book, args=[books, mags]).start()
             logger.debug("Searching for magazine with title: " + str(bookid));
             raise cherrypy.HTTPRedirect("magazines")
     searchForMag.exposed = True

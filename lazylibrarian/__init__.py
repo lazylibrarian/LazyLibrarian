@@ -9,7 +9,7 @@ from lib.apscheduler.scheduler import Scheduler
 
 import threading
 
-from lazylibrarian import logger, postprocess, searchnzb, SimpleCache
+from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, SimpleCache
 
 FULL_PATH = None
 PROG_DIR = None
@@ -612,7 +612,8 @@ def start():
         # Crons and scheduled jobs go here
         starttime = datetime.datetime.now()
         SCHED.add_interval_job(postprocess.processDir, minutes=SCAN_INTERVAL)
-        SCHED.add_interval_job(searchnzb.searchbook, minutes=SEARCH_INTERVAL)
+        SCHED.add_interval_job(searchnzb.search_nzb_book, minutes=SEARCH_INTERVAL)
+        SCHED.add_interval_job(searchnzb.search_tor_book, minutes=SEARCH_INTERVAL)
         SCHED.add_interval_job(versioncheck.checkForUpdates, hours=VERSIONCHECK_INTERVAL)
 
         SCHED.start()

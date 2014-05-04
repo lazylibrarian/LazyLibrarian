@@ -69,11 +69,10 @@ def KAT(book=None):
                     
                     results.append({
                         'bookid': book['bookid'],
-                        'nzbprov': "KAT",
-                        'nzbtitle': title,
-                        'nzburl': url,
-                        'nzbdate': '',
-                        'nzbsize': str(size),
+                        'tor_prov': "KAT",
+                        'tor_title': title,
+                        'tor_url': url,
+                        'tor_size': str(size),
                         })
 
                     logger.info('Found %s. Size: %s' % (title, size))
@@ -256,9 +255,16 @@ def IterateOverNewzNabSites(book=None, searchType=None):
         resultslist += NewzNabPlus(book, lazylibrarian.USENETCRAWLER_HOST,
                                     lazylibrarian.USENETCRAWLER_API,
                                     searchType)
+    return resultslist
+
+
+
+def IterateOverTorrentSites(book=None, searchType=None):
+
+    resultslist = []
     if (lazylibrarian.KAT):
-    	logger.debug('[Search - Torrents] - KAT')
-	resultslist += KAT(book)
+         logger.debug('[IterateOverTorrentSites] - KAT')
+         resultslist += KAT(book)
 
     return resultslist
 
