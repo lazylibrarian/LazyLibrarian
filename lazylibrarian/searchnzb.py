@@ -108,8 +108,11 @@ def searchbook(books=None, mags=None):
 					if nzbsize_temp is None:
 						nzbsize_temp = 1000
 					nzbsize = str(round(float(nzbsize_temp) / 1048576,2))+' MB'
-					nzbdate = formatter.nzbdate2format(nzbdate_temp)
-
+					#if (lazylibrarian.KAT):
+					nzbdate = None
+					#else:
+					#	nzbdate = formatter.nzbdate2format(nzbdate_temp)
+					
 					controlValueDict = {"NZBurl": nzburl}
 					newValueDict = {
                         "NZBprov": nzbprov,

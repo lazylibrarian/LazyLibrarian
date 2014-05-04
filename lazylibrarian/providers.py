@@ -27,10 +27,10 @@ def KAT(book=None):
 
 
     provider = "KAT"
-    providerurl = url_fix("http://www.kat.ph/search/" + book['searchterm'])
+    providerurl = url_fix("http://kickass.to/usearch/" + book['searchterm'])
 
     params = {
-                "categories[0]": "books",
+                "category": "books",
                 "field": "seeders",
                 "sorder": "desc",
                 "rss": "1"
@@ -40,6 +40,7 @@ def KAT(book=None):
     try:
         data = urllib2.urlopen(searchURL, timeout=20)
     except urllib2.URLError, e:
+        logger.warn(searchURL)
         logger.warn('Error fetching data from %s: %s' % (provider, e))
         data = False
         
@@ -256,8 +257,8 @@ def IterateOverNewzNabSites(book=None, searchType=None):
                                     lazylibrarian.USENETCRAWLER_API,
                                     searchType)
     if (lazylibrarian.KAT):
-    	logger.debug('[IterateOverNewzNabSites] - KAT')
-	resultslist += providers.KAT(book)
+    	logger.debug('[Search - Torrents] - KAT')
+	resultslist += KAT(book)
 
     return resultslist
 

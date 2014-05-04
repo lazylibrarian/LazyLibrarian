@@ -267,10 +267,10 @@ div#searchbar input {background-color:#282D34; box-shadow: inset 0 1px 8px rgba(
 div#main { margin: 0; padding: 60px 0 0 0; }
 
 .table_wrapper_button { width: 88%; margin: 0px auto 0 auto; padding: 25px; position: relative; clear: both;zoom: 1; padding-right:-25px;}
-.table_wrapper { border-radius: 5px; -webkit-border-radius: 5px; -moz-border-radius: 5px; width: 88%; margin: 0px auto 0 auto; background-color: #f5f6f8; position: relative; min-height: 200px; clear: both;zoom: 1; 	border:#cecece 1px solid; padding:25px;}
-.manage_wrapper { width: 88%; margin: 15px auto 0 auto; padding: 15px; min-height: 150px; clear: both; zoom: 1; }
-.table_wrapper_left { padding: 15px; background-color: #f9f9f9; float: left; width: 40%; min-height: 100px; margin-top: 15px; margin-left: 15px; margin-right: auto; -moz-border-radius: 20px; border-radius: 20px; }
-.table_wrapper_right{ padding: 15px; background-color: #f9f9f9; width: 40%; min-height: 100px; margin-top: 15px; margin-left: auto; margin-right: 15px; -moz-border-radius: 20px; border-radius: 20px; }
+.table_wrapper { border-radius: 20px; -webkit-border-radius: 20px; -moz-border-radius: 20px; width: 88%; margin: 20px auto 0 auto; padding: 25px; background-color: white; position: relative; min-height: 200px; clear: both; _height: 302px; zoom: 1; border:#cecece 1px solid; padding:25px;}
+.manage_wrapper { width: 88%; margin: 20px auto 0 auto; padding: 25px; min-height: 150px; clear: both; _height: 302px; zoom: 1; }
+.table_wrapper_left { padding: 25px; background-color: #ffffff; float: left; width: 40%; min-height: 100px; margin-top: 25px; margin-left: 30px; margin-right: auto; -moz-border-radius: 20px; border-radius: 20px; }
+.table_wrapper_right{ padding: 25px; background-color: #ffffff; width: 40%; min-height: 100px; margin-top: 25px; margin-left: auto; margin-right: 30px; -moz-border-radius: 20px; border-radius: 20px; }
 
 .configtable { font-size: 12px; line-height:18px; }
 .configtable td { width: 350px; padding: 10px; }
