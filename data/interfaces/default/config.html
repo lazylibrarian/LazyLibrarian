@@ -250,53 +250,80 @@
 
     <div class="table_wrapper" style="display:none">
         <div class="tabs-6">
-        <table class="configtable" summary="Notifications" style="width:300px;">
+        <table class="configtable" summary="Notifications">
         <tr>
             <td>
-                <h3>Twitter</h3>
-            </td>
-        </tr>
-        <tr>
-            <td colspan=3>
-                <input type="checkbox" name="use_twitter" id="twitter" value="1" ${config['use_twitter']} />Enable Twitter Notifications
-                <BR>
-                <input type="checkbox" name="twitter_notify_onsnatch" value="1" ${config['twitter_notify_onsnatch']} />Notify on snatch
-                <BR>
-                <input type="checkbox" name="twitter_notify_ondownload" value="1" ${config['twitter_notify_ondownload']} />Notify on download
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <input type="button" value="Request Authorization" id="twitterStep1" />
-            </td>
-            <td>
-                <input type="text" id="twitter_key" value="" size="35" placeholder="Input Authorization Key"/>
-                <input type="button" value="Verify Key" id="twitterStep2" />
-            </td>
-            <td>
-                <input type="button" value="Test Twitter" id="testTwitter" />
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <h3>Boxcar</h3>
-            </td>
-        </tr>
-        <tr>
-            <td colspan=3>
-                <input type="checkbox" name="use_boxcar" id="boxcar" value="1" ${config['use_boxcar']} />Enable boxcar Notifications
-                <BR>
-                <input type="checkbox" name="boxcar_notify_onsnatch" value="1" ${config['boxcar_notify_onsnatch']} />Notify on snatch
-                <BR>
-                <input type="checkbox" name="boxcar_notify_ondownload" value="1" ${config['boxcar_notify_ondownload']} />Notify on download
-            </td>
-        </tr>
-        <tr>
-            <td>
-	    	<input type="text" name="boxcar_token" value="${config['boxcar_token']}" size="35" placeholder="Boxcar token">
-            </td>
-        </tr>
-
+				<fieldset>
+					<h3>Twitter</h3>
+					<div class="row checkbox">
+						<input type="checkbox" name="use_twitter" id="twitter" value="1" ${config['use_twitter']} />
+						<label>Enable Twitter Notifications</label>
+					</div>
+					<div id="twitteroptions">
+						<div class="row">
+							<input type="checkbox" name="twitter_notify_onsnatch" value="1" ${config['twitter_notify_onsnatch']} />Notify on snatch
+						</div>
+						<div class="row">
+							<input type="checkbox" name="twitter_notify_ondownload" value="1" ${config['twitter_notify_ondownload']} />Notify on download
+						</div>
+						<div class="row">
+							<input type="button" value="Request Authorization" id="twitterStep1" />
+						</div>
+						<div class="row">
+							<input type="text" id="twitter_key" value="" size="35" placeholder="Input Authorization Key"/>
+						</div>
+						<div class="row">		
+							<input type="button" value="Verify Key" id="twitterStep2" />
+						</div>
+						<div class="row">
+							<input type="button" value="Test Twitter" id="testTwitter" />
+						</div>
+					</div>
+				</fieldset>
+			</td>
+			<td>
+				<fieldset>
+					<h3>Boxcar2</h3>
+					<div class="row checkbox">
+						<input type="checkbox" name="use_boxcar" id="boxcar" value="1" ${config['use_boxcar']} />
+						<label>Enable boxcar Notifications</label>
+					</div>
+					<div id="boxcaroptions">
+						<div class="row">
+							<input type="checkbox" name="boxcar_notify_onsnatch" value="1" ${config['boxcar_notify_onsnatch']} />Notify on snatch
+						</div>
+						<div class="row">	
+							<input type="checkbox" name="boxcar_notify_ondownload" value="1" ${config['boxcar_notify_ondownload']} />Notify on download
+						</div>
+						<div class="row">
+							<input type="text" name="boxcar_token" value="${config['boxcar_token']}" size="35" placeholder="Boxcar token">
+						</div>
+					</div>
+				</fieldset>
+			</td>
+			<td>
+				<fieldset>
+					<h3>Pushbullet</h3>
+					<div class="row checkbox">
+						<input type="checkbox" name="use_pushbullet" id="pushbullet" value="1" ${config['use_pushbullet']} />
+						<label>Enable Pushbullet Notifications</label>
+					</div>
+					<div id="pushbulletoptions">
+						<div class="row">
+							<input type="checkbox" name="pushbullet_notify_onsnatch" value="1" ${config['pushbullet_notify_onsnatch']} />Notify on snatch
+						</div>
+						<div class="row">	
+							<input type="checkbox" name="pushbullet_notify_ondownload" value="1" ${config['pushbullet_notify_ondownload']} />Notify on download
+						</div>
+						<div class="row">
+							<input type="text" name="pushbullet_token" value="${config['pushbullet_token']}" size="35" placeholder="Pushbullet API">
+						</div>
+						<div class="row">
+							<input type="text" name="pushbullet_deviceid" value="${config['pushbullet_deviceid']}" size="35" placeholder="Pushbullet DeviceID">
+						</div>						
+					</div>
+				</fieldset>			
+			</td>
         </table>
         </div>
     </div>
@@ -311,8 +338,71 @@
 
 <%def name="javascriptIncludes()">
     <script>
-        $(document).ready(function () {
-            
+        function initThisPage()
+
+        {
+		
+			if ($("#twitter").is(":checked"))
+					{
+							$("#twitteroptions").show();
+					}
+			else
+					{
+							$("#twitteroptions").hide();
+					}
+
+			$("#twitter").click(function(){
+					if ($("#twitter").is(":checked"))
+					{
+							$("#twitteroptions").slideDown();
+					}
+					else
+					{
+							$("#twitteroptions").slideUp();
+					}
+			});		
+		
+			if ($("#boxcar").is(":checked"))
+					{
+							$("#boxcaroptions").show();
+					}
+			else
+					{
+							$("#boxcaroptions").hide();
+					}
+
+			$("#boxcar").click(function(){
+					if ($("#boxcar").is(":checked"))
+					{
+							$("#boxcaroptions").slideDown();
+					}
+					else
+					{
+							$("#boxcaroptions").slideUp();
+					}
+			});
+		
+		
+			if ($("#pushbullet").is(":checked"))
+					{
+							$("#pushbulletoptions").show();
+					}
+			else
+					{
+							$("#pushbulletoptions").hide();
+					}
+
+			$("#pushbullet").click(function(){
+					if ($("#pushbullet").is(":checked"))
+					{
+							$("#pushbulletoptions").slideDown();
+					}
+					else
+					{
+							$("#pushbulletoptions").slideUp();
+					}
+			});
+			
             $('#twitterStep1').click(function () {
                 $('#testTwitter-result').html('');
                 $.get("twitterStep1", function (data) {window.open(data); })
@@ -331,6 +421,10 @@
                     function (data) { $('#testTwitter-result').html(data); });
             });
 
-        });
+        }
+		
+        $(document).ready(function() {
+            initThisPage();
+        });		
     </script>
 </%def>

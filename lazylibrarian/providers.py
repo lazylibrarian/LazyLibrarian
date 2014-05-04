@@ -27,10 +27,10 @@ def KAT(book=None):
 
 
     provider = "KAT"
-    providerurl = url_fix("http://www.kat.ph/search/" + book['searchterm'])
+    providerurl = url_fix("http://kickass.to/usearch/" + book['searchterm'])
 
     params = {
-                "categories[0]": "books",
+                "category": "books",
                 "field": "seeders",
                 "sorder": "desc",
                 "rss": "1"
@@ -40,6 +40,7 @@ def KAT(book=None):
     try:
         data = urllib2.urlopen(searchURL, timeout=20)
     except urllib2.URLError, e:
+        logger.warn(searchURL)
         logger.warn('Error fetching data from %s: %s' % (provider, e))
         data = False
         
@@ -68,11 +69,10 @@ def KAT(book=None):
                     
                     results.append({
                         'bookid': book['bookid'],
-                        'nzbprov': "KAT",
-                        'nzbtitle': title,
-                        'nzburl': url,
-                        'nzbdate': '',
-                        'nzbsize': str(size),
+                        'tor_prov': "KAT",
+                        'tor_title': title,
+                        'tor_url': url,
+                        'tor_size': str(size),
                         })
 
                     logger.info('Found %s. Size: %s' % (title, size))
@@ -255,9 +255,16 @@ def IterateOverNewzNabSites(book=None, searchType=None):
         resultslist += NewzNabPlus(book, lazylibrarian.USENETCRAWLER_HOST,
                                     lazylibrarian.USENETCRAWLER_API,
                                     searchType)
+    return resultslist
+
+
+
+def IterateOverTorrentSites(book=None, searchType=None):
+
+    resultslist = []
     if (lazylibrarian.KAT):
-    	logger.debug('[IterateOverNewzNabSites] - KAT')
-	resultslist += providers.KAT(book)
+         logger.debug('[IterateOverTorrentSites] - KAT')
+         resultslist += KAT(book)
 
     return resultslist
 

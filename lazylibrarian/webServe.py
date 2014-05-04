@@ -10,7 +10,8 @@ import thread, threading, time, Queue
 import lazylibrarian
 
 from lazylibrarian import logger, importer, database, postprocess, formatter, notifiers
-from lazylibrarian.searchnzb import searchbook
+from lazylibrarian.searchnzb import search_nzb_book
+from lazylibrarian.searchtorrents import search_tor_book
 from lazylibrarian.searchmag import searchmagazines
 from lazylibrarian.formatter import checked
 from lazylibrarian.gr import GoodReads
@@ -119,6 +120,13 @@ class WebInterface(object):
 		    "boxcar_notify_ondownload" :     checked(lazylibrarian.BOXCAR_NOTIFY_ONDOWNLOAD),
 		    "boxcar_token" :		lazylibrarian.BOXCAR_TOKEN,
 
+			"use_pushbullet": checked(lazylibrarian.USE_PUSHBULLET),
+		    "pushbullet_notify_onsnatch" :     checked(lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH),
+		    "pushbullet_notify_ondownload" :     checked(lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD),
+		    "pushbullet_token" :		lazylibrarian.PUSHBULLET_TOKEN,			
+			"pushbullet_deviceid" :		lazylibrarian.PUSHBULLET_DEVICEID,	
+			
+			
                     "ebook_type" :		lazylibrarian.EBOOK_TYPE,
                     "gr_api" :		lazylibrarian.GR_API,
                     "gb_api" :      lazylibrarian.GB_API,
@@ -131,7 +139,7 @@ class WebInterface(object):
         sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None, destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, blackhole=0, blackholedir=None, torrent_dir=None,
         newznab=0, newznab_host=None, newznab_api=None, newznab2=0, newznab_host2=None, newznab_api2=None,newzbin=0, newzbin_uid=None, newzbin_pass=None, kat=0, ebook_type=None, book_api=None, gr_api=None, gb_api=None, usenetcrawler = 0, usenetcrawler_host=None, usenetcrawler_api = None, 
         versioncheck_interval=None, search_interval=None, scan_interval=None, ebook_dest_folder=None, ebook_dest_file=None, mag_dest_folder=None, mag_dest_file=None, use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
-	use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token=None):
+		use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token=None, use_pushbullet=0, pushbullet_notify_onsnatch=0, pushbullet_notify_ondownload=0, pushbullet_token=None, pushbullet_deviceid=None):
 
         lazylibrarian.HTTP_HOST = http_host
         lazylibrarian.HTTP_PORT = http_port
@@ -201,7 +209,13 @@ class WebInterface(object):
 	lazylibrarian.BOXCAR_NOTIFY_ONSNATCH = boxcar_notify_onsnatch
 	lazylibrarian.BOXCAR_NOTIFY_ONDOWNLOAD = boxcar_notify_ondownload
 	lazylibrarian.BOXCAR_TOKEN = boxcar_token
-
+	
+	lazylibrarian.USE_PUSHBULLET = use_pushbullet
+	lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH = pushbullet_notify_onsnatch
+	lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD = pushbullet_notify_ondownload
+	lazylibrarian.PUSHBULLET_TOKEN = pushbullet_token
+	lazylibrarian.PUSHBULLET_DEVICEID = pushbullet_deviceid
+	
         lazylibrarian.config_write()
 
         logger.debug('Config file has been updated')
@@ -371,7 +385,8 @@ class WebInterface(object):
         books = []
         mags = False
         books.append({"bookid": bookid})
-        threading.Thread(target=searchbook, args=[books, mags]).start()
+        threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+        threading.Thread(target=search_tor_book, args=[books, mags]).start()
 
         raise cherrypy.HTTPRedirect("books")
     addBook.exposed = True
@@ -439,7 +454,8 @@ class WebInterface(object):
 
             mags=False
 
-            threading.Thread(target=searchbook, args=[books, mags]).start()
+            threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+            threading.Thread(target=search_tor_book, args=[books, mags]).start()
             logger.debug("Searching for book with id: " + str(bookid));
         if AuthorName:
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
@@ -504,7 +520,8 @@ class WebInterface(object):
                 if not bookid == 'book_table_length':
                     books.append({"bookid": bookid})
             mags=False
-            threading.Thread(target=searchbook, args=[books, mags]).start()
+            threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+            threading.Thread(target=search_tor_book, args=[books, mags]).start()
 
         if redirect == "author":
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
@@ -519,7 +536,8 @@ class WebInterface(object):
     forceProcess.exposed = True
 
     def forceSearch(self, source=None):
-        threading.Thread(target=searchbook).start()
+        threading.Thread(target=search_nzb_book).start()
+        threading.Thread(target=search_tor_book).start()
         raise cherrypy.HTTPRedirect(source)
     forceSearch.exposed = True
 
@@ -611,7 +629,8 @@ class WebInterface(object):
                 mags = []
                 mags.append({"bookid": title})
                 books=False
-                threading.Thread(target=searchbook, args=[books, mags]).start()
+                threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+                threading.Thread(target=search_tor_book, args=[books, mags]).start()
                 logger.debug("Searching for magazine with title: " + str(title));
                 raise cherrypy.HTTPRedirect("magazines")
     addKeyword.exposed = True
@@ -656,7 +675,8 @@ class WebInterface(object):
 
             books=False
 
-            threading.Thread(target=searchbook, args=[books, mags]).start()
+            threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+            threading.Thread(target=search_tor_book, args=[books, mags]).start()
             logger.debug("Searching for magazine with title: " + str(bookid));
             raise cherrypy.HTTPRedirect("magazines")
     searchForMag.exposed = True

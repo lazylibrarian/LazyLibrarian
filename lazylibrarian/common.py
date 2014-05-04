@@ -31,5 +31,3 @@ NOTIFY_DOWNLOAD = 2
 notifyStrings = {}
 notifyStrings[NOTIFY_SNATCH] = "Started Download"
 notifyStrings[NOTIFY_DOWNLOAD] = "Download Finished"
-
-
