@@ -16,14 +16,14 @@
     <form action="configUpdate" method="post">
     <div id="form">
     <div id="tabs">
-		<ul>
-			<li id="tabs1" class="active"><a  href="#tabs-1" onclick="$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('.table_wrapper').hide();$('.tabs-1').parent().show();$('#tabs1').addClass('active');">Web Interface</a></li>
-			<li id="tabs2" ><a  href="#tabs-2" onclick="$('#tabs1').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('.table_wrapper').hide();$('.tabs-2').parent().show();$('#tabs2').addClass('active');">Import Options</a></li>
-			<li id="tabs3" ><a  href="#tabs-3" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('.table_wrapper').hide();$('.tabs-3').parent().show();$('#tabs3').addClass('active');">Download Settings</a></li>
-			<li id="tabs4" ><a  href="#tabs-4" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('.table_wrapper').hide();$('.tabs-4').parent().show();$('#tabs4').addClass('active');">Providers</a></li>
-			<li id="tabs5" ><a  href="#tabs-5" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs6').removeClass('active');$('.table_wrapper').hide();$('.tabs-5').parent().show();$('#tabs5').addClass('active');">Search & Processing</a></li>
-			<li id="tabs6" ><a  href="#tabs-6" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('.table_wrapper').hide();$('.tabs-6').parent().show();$('#tabs6').addClass('active');">Notifications</a></li>
-		</ul>
+        <ul>
+            <li id="tabs1" class="active"><a  href="#tabs-1" onclick="$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('.table_wrapper').hide();$('.tabs-1').parent().show();$('#tabs1').addClass('active');">Web Interface</a></li>
+            <li id="tabs2" ><a  href="#tabs-2" onclick="$('#tabs1').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('.table_wrapper').hide();$('.tabs-2').parent().show();$('#tabs2').addClass('active');">Import Options</a></li>
+            <li id="tabs3" ><a  href="#tabs-3" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('.table_wrapper').hide();$('.tabs-3').parent().show();$('#tabs3').addClass('active');">Download Settings</a></li>
+            <li id="tabs4" ><a  href="#tabs-4" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('.table_wrapper').hide();$('.tabs-4').parent().show();$('#tabs4').addClass('active');">Providers</a></li>
+            <li id="tabs5" ><a  href="#tabs-5" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs6').removeClass('active');$('.table_wrapper').hide();$('.tabs-5').parent().show();$('#tabs5').addClass('active');">Search & Processing</a></li>
+            <li id="tabs6" ><a  href="#tabs-6" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('.table_wrapper').hide();$('.tabs-6').parent().show();$('#tabs6').addClass('active');">Notifications</a></li>
+        </ul>
     </div>
     <div class="table_wrapper">
         
@@ -119,33 +119,101 @@
         <table class="configtable" summary="Downloadsettings">
             <tr>
                 <td>
-                    <h3>SABnzbd+:</h3>
+                    <fieldset>
+                        <legend>Usenet</legend>
+                        <div class="row checkbox">
+                            <input type="checkbox" name="use_nzb" id="nzb" value="1" ${config['use_nzb']} />
+                            <label>Enable NZB Search</label>
+                        </div>
+                        <fieldset id="usenet_options">
+                            <div class="row checkbox">
+                                <input type="checkbox" name="nzb_downloader_sabnzbd" id="nzb_downloader_sabnzbd" value="1" ${config['nzb_downloader_sabnzbd']} />
+                                <label>Use Sabnzbd+</label>
+                            </div>
+                            <fieldset id="sabnzbd_options">
+                                <div class="row">
+                                    <label>SABnzbd Host:</label>
+                                    <input type="text" name="sab_host" value="${config['sab_host']}" size="30" align="right">
+                                </div>
+                                <div class="row">
+                                    <label>SABnzbd Port:</label>
+                                    <input type="text" name="sab_port" value="${config['sab_port']}" size="30">
+                                </div>
+                                <div class="row">
+                                    <label>SABnzbd Username</label>
+                                    <input type="text" name="sab_user" value="${config['sab_user']}" size="30">
+                                </div>
+                                <div class="row">
+                                    <label>SABnzbd Password:</label>
+                                    <input type="password" name="sab_pass" value="${config['sab_pass']}" size="30">
+                                </div>
+                                <div class="row">
+                                    <label>SABnzbd API:</label>
+                                    <input type="text" name="sab_api" value="${config['sab_api']}" size="30">
+                                </div>
+                                <div class="row">
+                                    <label>SABnzbd Category:</label>
+                                    <input type="text" name="sab_cat" value="${config['sab_cat']}" size="30">
+                                </div>
+                                <div class="row">
+                                    <label>SABnzbd SubDir:</label>
+                                    <input type="text" name="sab_subdir" value="${config['sab_subdir']}" size="30">
+                                </div>
+                            </fieldset>
+                            <div class="row checkbox">
+                                 <input type="checkbox" name="nzb_downloader_blackhole" id="nzb_downloader_blackhole" value="1" ${config['nzb_downloader_blackhole']} />
+                                 <label>Use NZB Blackhole</label>
+                            </div>
+                            <fieldset id="nzb_blackhole_options">
+                                <div class="row">
+                                    <label>NZB Blackhole Directory:</label>
+                                    <input type="text" name="nzb_blackholedir" value="${config['nzb_blackholedir']}" size="30">
+                            </fieldset>
+                        </fieldset>
+                    </fieldset>
                 </td>
-            </tr>
-            <tr>
                 <td>
-                    <h5>Hostname:</h5><input type="text" name="sab_host" value="${config['sab_host']}" size="20" maxlength="40">
-                    <h5>Port:</h5><input type="text" name="sab_port" value="${config['sab_port']}" size="20" maxlength="40">
-                    <h5>SubDir:</h5><input type="text" name="sab_subdir" value="${config['sab_subdir']}" size="20" maxlength="90">
-                    </br>
-                    <i class="smalltext">SubDir - SubDirectory setting for SabNZBDb setups like http://HOST:PORT/Subdir?API=</i>
-                    <br>
-                    <h5>Usenet retention:</h5><input type="text" name="usenet_retention" value="${config['usenet_retention']}" size="20" maxlength="40">
-                </td>
-                <td>
-                    <h5>API Key:</h5><input type="text" name="sab_api" value="${config['sab_api']}" size="30" maxlength="40">
-                    <h5>Username:</h5><input type="text" name="sab_user" value="${config['sab_user']}" size="30" maxlength="40">
-                    <h5>Password:</h5><input type="password" name="sab_pass" value="${config['sab_pass']}" size="30" maxlength="40">
-                </td>
-                <td>
-                    <h5>Category:</h5><input type="text" name="sab_cat" value="${config['sab_cat']}" size="30">
-                    <h5>Directory:</h5><input type="text" name="download_dir" value="${config['download_dir']}" size="30">
-                    <i class="smalltext">Full path to the folder where books are downloaded to.</i>
-                    <h5><input type="checkbox" name="blackhole" value=1 ${config['use_blackhole']} /> Use blackhole</h5>
-                    <input type="text" name="blackholedir" value="${config['blackholedir']}" size="30">
-                    <i class="smalltext">The folder your nzb-downloader monitors for nzb-files.</i>
-		    <h5>Torrent Blackhole Directory:</h5>
-		    <input type="text" name="torrent_dir" value="${config['torrent_dir']}" size="30">
+                    <fieldset>
+                        <legend>Torrents</legend>
+                        <div class="row checkbox">
+                            <input type="checkbox" name="use_tor" id="tor" value="1" ${config['use_tor']} />
+                            <label>Enable Torrent Search</label>
+                        </div>
+                        <fieldset id="torrent_options">
+                            <div class="row checkbox">
+                                 <input type="checkbox" name="tor_downloader_utorrent" id="tor_downloader_utorrent" value="1" ${config['tor_downloader_utorrent']} />
+                                 <label>Use uTorrent</label>
+                            </div>
+                            <fieldset id="utorrent_options">
+                                <div class="row">
+                                    <label>uTorrent Host:</label>
+                                    <input type="text" name="utorrent_host" value="${config['utorrent_host']}" size="30">
+                                </div>
+                                <div class="row">
+                                    <label>uTorrent Username:</label>
+                                    <input type="text" name="utorrent_user" value="${config['utorrent_user']}" size="30">
+                                </div>
+                                <div class="row">
+                                    <label>uTorrent Password:</label>
+                                    <input type="password" name="utorrent_pass" value="${config['utorrent_pass']}" size="30">
+                                </div>
+                                <div class="row">
+                                    <label>uTorrent Label:</label>
+                                    <input type="text" name="utorrent_label" value="${config['utorrent_label']}" size="30">
+                                </div>
+                            </fieldset>
+                            <div class="row checkbox">
+                                 <input type="checkbox" name="tor_downloader_blackhole" id="tor_downloader_blackhole" value="1" ${config['tor_downloader_blackhole']} />
+                                 <label>Use Torrent Blackhole</label>
+                            </div>
+                            <fieldset id="tor_blackhole_options">
+                                <div class="row">
+                                    <label>Torrent Blackhole Directory:</label>
+                                    <input type="text" name="torrent_dir" value="${config['torrent_dir']}" size="30">
+                                </div>
+                            </fieldset>
+                        </fieldset>
+                    </fieldset>
                 </td>
             </tr>
         </table>
@@ -159,9 +227,9 @@
                 <td>
                     <h3>Newznab Providers</h3>
                 </td>
-		<td>
-		    <h3>Torrent Providers</h3>
-		</td>
+        <td>
+            <h3>Torrent Providers</h3>
+        </td>
                 <td>
                     <h3>Usenet Crawler</h3>
                 </td>
@@ -172,9 +240,9 @@
                     <input type="text" placeholder="Enter Host Here" name="newznab_host" value="${config['newznab_host']}" size="20" maxlength="100">
                     <input type="text" placeholder="Enter API Here" name="newznab_api" value="${config['newznab_api']}" size="30" maxlength="40">
                 </td>
-		<td>
-		    <input type="checkbox" name="kat" value=1 ${config['use_kat']} style="margin-bottom:4px;" /> KAT
-		</td>
+        <td>
+            <input type="checkbox" name="kat" value=1 ${config['use_kat']} style="margin-bottom:4px;" /> KAT
+        </td>
                 <td>
                     <input type="checkbox" name="usenetcrawler" value=1 ${config['use_usenetcrawler']} style="margin-bottom:4px;" />
                     <input type="text" placeholder="Enter Host Here" name="usenetcrawler_host" value="${config['usenetcrawler_host']}" size="20" maxlength="40">
@@ -202,7 +270,7 @@
                     <h5>NZB Scan Interval:</h5><input type="text" name="search_interval" value="${config['search_interval']}" size="8" maxlength="40"> mins
                     <h5>Post-Processing Interval</h5><input type="text" name="scan_interval" value="${config['scan_interval']}" size="8" maxlength="40"> mins
                     <h5>Version Check Interval</h5><input type="text" name="versioncheck_interval" value="${config['versioncheck_interval']}" size="8" maxlength="40"> hours
-		    <h5>Match Ratio</h5><input type="text" name="match_ratio"  value="${config['match_ratio']}" size="8" maxlength="40"> percent
+            <h5>Match Ratio</h5><input type="text" name="match_ratio"  value="${config['match_ratio']}" size="8" maxlength="40"> percent
                 </td>
                 <td>
                 </td>
@@ -253,77 +321,77 @@
         <table class="configtable" summary="Notifications">
         <tr>
             <td>
-				<fieldset>
-					<h3>Twitter</h3>
-					<div class="row checkbox">
-						<input type="checkbox" name="use_twitter" id="twitter" value="1" ${config['use_twitter']} />
-						<label>Enable Twitter Notifications</label>
-					</div>
-					<div id="twitteroptions">
-						<div class="row">
-							<input type="checkbox" name="twitter_notify_onsnatch" value="1" ${config['twitter_notify_onsnatch']} />Notify on snatch
-						</div>
-						<div class="row">
-							<input type="checkbox" name="twitter_notify_ondownload" value="1" ${config['twitter_notify_ondownload']} />Notify on download
-						</div>
-						<div class="row">
-							<input type="button" value="Request Authorization" id="twitterStep1" />
-						</div>
-						<div class="row">
-							<input type="text" id="twitter_key" value="" size="35" placeholder="Input Authorization Key"/>
-						</div>
-						<div class="row">		
-							<input type="button" value="Verify Key" id="twitterStep2" />
-						</div>
-						<div class="row">
-							<input type="button" value="Test Twitter" id="testTwitter" />
-						</div>
-					</div>
-				</fieldset>
-			</td>
-			<td>
-				<fieldset>
-					<h3>Boxcar2</h3>
-					<div class="row checkbox">
-						<input type="checkbox" name="use_boxcar" id="boxcar" value="1" ${config['use_boxcar']} />
-						<label>Enable boxcar Notifications</label>
-					</div>
-					<div id="boxcaroptions">
-						<div class="row">
-							<input type="checkbox" name="boxcar_notify_onsnatch" value="1" ${config['boxcar_notify_onsnatch']} />Notify on snatch
-						</div>
-						<div class="row">	
-							<input type="checkbox" name="boxcar_notify_ondownload" value="1" ${config['boxcar_notify_ondownload']} />Notify on download
-						</div>
-						<div class="row">
-							<input type="text" name="boxcar_token" value="${config['boxcar_token']}" size="35" placeholder="Boxcar token">
-						</div>
-					</div>
-				</fieldset>
-			</td>
-			<td>
-				<fieldset>
-					<h3>Pushbullet</h3>
-					<div class="row checkbox">
-						<input type="checkbox" name="use_pushbullet" id="pushbullet" value="1" ${config['use_pushbullet']} />
-						<label>Enable Pushbullet Notifications</label>
-					</div>
-					<div id="pushbulletoptions">
-						<div class="row">
-							<input type="checkbox" name="pushbullet_notify_onsnatch" value="1" ${config['pushbullet_notify_onsnatch']} />Notify on snatch
-						</div>
-						<div class="row">	
-							<input type="checkbox" name="pushbullet_notify_ondownload" value="1" ${config['pushbullet_notify_ondownload']} />Notify on download
-						</div>
-						<div class="row">
-							<input type="text" name="pushbullet_token" value="${config['pushbullet_token']}" size="35" placeholder="Pushbullet API">
-						</div>
-						<div class="row">
-							<input type="text" name="pushbullet_deviceid" value="${config['pushbullet_deviceid']}" size="35" placeholder="Pushbullet DeviceID">
-						</div>						
-					</div>
-				</fieldset>			
-			</td>
+                <fieldset>
+                    <h3>Twitter</h3>
+                    <div class="row checkbox">
+                        <input type="checkbox" name="use_twitter" id="twitter" value="1" ${config['use_twitter']} />
+                        <label>Enable Twitter Notifications</label>
+                    </div>
+                    <div id="twitteroptions">
+                        <div class="row">
+                            <input type="checkbox" name="twitter_notify_onsnatch" value="1" ${config['twitter_notify_onsnatch']} />Notify on snatch
+                        </div>
+                        <div class="row">
+                            <input type="checkbox" name="twitter_notify_ondownload" value="1" ${config['twitter_notify_ondownload']} />Notify on download
+                        </div>
+                        <div class="row">
+                            <input type="button" value="Request Authorization" id="twitterStep1" />
+                        </div>
+                        <div class="row">
+                            <input type="text" id="twitter_key" value="" size="35" placeholder="Input Authorization Key"/>
+                        </div>
+                        <div class="row">        
+                            <input type="button" value="Verify Key" id="twitterStep2" />
+                        </div>
+                        <div class="row">
+                            <input type="button" value="Test Twitter" id="testTwitter" />
+                        </div>
+                    </div>
+                </fieldset>
+            </td>
+            <td>
+                <fieldset>
+                    <h3>Boxcar2</h3>
+                    <div class="row checkbox">
+                        <input type="checkbox" name="use_boxcar" id="boxcar" value="1" ${config['use_boxcar']} />
+                        <label>Enable boxcar Notifications</label>
+                    </div>
+                    <div id="boxcaroptions">
+                        <div class="row">
+                            <input type="checkbox" name="boxcar_notify_onsnatch" value="1" ${config['boxcar_notify_onsnatch']} />Notify on snatch
+                        </div>
+                        <div class="row">    
+                            <input type="checkbox" name="boxcar_notify_ondownload" value="1" ${config['boxcar_notify_ondownload']} />Notify on download
+                        </div>
+                        <div class="row">
+                            <input type="text" name="boxcar_token" value="${config['boxcar_token']}" size="35" placeholder="Boxcar token">
+                        </div>
+                    </div>
+                </fieldset>
+            </td>
+            <td>
+                <fieldset>
+                    <h3>Pushbullet</h3>
+                    <div class="row checkbox">
+                        <input type="checkbox" name="use_pushbullet" id="pushbullet" value="1" ${config['use_pushbullet']} />
+                        <label>Enable Pushbullet Notifications</label>
+                    </div>
+                    <div id="pushbulletoptions">
+                        <div class="row">
+                            <input type="checkbox" name="pushbullet_notify_onsnatch" value="1" ${config['pushbullet_notify_onsnatch']} />Notify on snatch
+                        </div>
+                        <div class="row">    
+                            <input type="checkbox" name="pushbullet_notify_ondownload" value="1" ${config['pushbullet_notify_ondownload']} />Notify on download
+                        </div>
+                        <div class="row">
+                            <input type="text" name="pushbullet_token" value="${config['pushbullet_token']}" size="35" placeholder="Pushbullet API">
+                        </div>
+                        <div class="row">
+                            <input type="text" name="pushbullet_deviceid" value="${config['pushbullet_deviceid']}" size="35" placeholder="Pushbullet DeviceID">
+                        </div>                        
+                    </div>
+                </fieldset>            
+            </td>
         </table>
         </div>
     </div>
@@ -331,7 +399,7 @@
     <div class="table_wrapper_button">
         <p><input type="submit" value="Save changes" id="add" style="float:right;"></p>
     </div>
-	<p style="text-align:center;position:fixed;bottom:10px;margin-left:20px;color:grey">Branch: ${lazylibrarian.CURRENT_BRANCH} Current Version: ${lazylibrarian.CURRENT_VERSION}  : Latest  Version: ${lazylibrarian.LATEST_VERSION}</p>
+    <p style="text-align:center;position:fixed;bottom:10px;margin-left:20px;color:grey">Branch: ${lazylibrarian.CURRENT_BRANCH} Current Version: ${lazylibrarian.CURRENT_VERSION}  : Latest  Version: ${lazylibrarian.LATEST_VERSION}</p>
     </div>
 </form>
 </%def>
@@ -341,68 +409,186 @@
         function initThisPage()
 
         {
-		
-			if ($("#twitter").is(":checked"))
-					{
-							$("#twitteroptions").show();
-					}
-			else
-					{
-							$("#twitteroptions").hide();
-					}
+            if ($("#nzb").is(":checked"))
+                    {
+                            $("#usenet_options").show();
+                    }
+            else
+                    {
+                            $("#usenet_options").hide();
+                    }
 
-			$("#twitter").click(function(){
-					if ($("#twitter").is(":checked"))
-					{
-							$("#twitteroptions").slideDown();
-					}
-					else
-					{
-							$("#twitteroptions").slideUp();
-					}
-			});		
-		
-			if ($("#boxcar").is(":checked"))
-					{
-							$("#boxcaroptions").show();
-					}
-			else
-					{
-							$("#boxcaroptions").hide();
-					}
+            $("#nzb").click(function(){
+                    if ($("#nzb").is(":checked"))
+                    {
+                            $("#usenet_options").slideDown();
+                    }
+                    else
+                    {
+                            $("#usenet_options").slideUp();
+                    }
+            });
+            if ($("#tor").is(":checked"))
+                    {
+                            $("#torrent_options").show();
+                    }
+            else
+                    {
+                            $("#torrent_options").hide();
+                    }
 
-			$("#boxcar").click(function(){
-					if ($("#boxcar").is(":checked"))
-					{
-							$("#boxcaroptions").slideDown();
-					}
-					else
-					{
-							$("#boxcaroptions").slideUp();
-					}
-			});
-		
-		
-			if ($("#pushbullet").is(":checked"))
-					{
-							$("#pushbulletoptions").show();
-					}
-			else
-					{
-							$("#pushbulletoptions").hide();
-					}
+            $("#tor").click(function(){
+                    if ($("#tor").is(":checked"))
+                    {
+                            $("#torrent_options").slideDown();
+                    }
+                    else
+                    {
+                            $("#torrent_options").slideUp();
+                    }
+            });
 
-			$("#pushbullet").click(function(){
-					if ($("#pushbullet").is(":checked"))
-					{
-							$("#pushbulletoptions").slideDown();
-					}
-					else
-					{
-							$("#pushbulletoptions").slideUp();
-					}
-			});
-			
+            if ($("#tor_downloader_blackhole").is(":checked"))
+                {
+                        $("#tor_blackhole_options").show();
+                }
+            else
+                {
+                        $("#tor_blackhole_options").hide();
+                }
+
+            $("#tor_downloader_blackhole").click(function(){
+                    if ($("#tor_downloader_blackhole").is(":checked"))
+                    {
+                            $("#tor_blackhole_options").slideDown();
+                    }
+                    else
+                    {
+                            $("#tor_blackhole_options").slideUp();
+                    }
+            });
+
+            if ($("#tor_downloader_utorrent").is(":checked"))
+                {
+                        $("#utorrent_options").show();
+                }
+            else
+                {
+                        $("#utorrent_options").hide();
+                }
+
+            $("#tor_downloader_utorrent").click(function(){
+                    if ($("#tor_downloader_utorrent").is(":checked"))
+                    {
+                            $("#utorrent_options").slideDown();
+                    }
+                    else
+                    {
+                            $("#utorrent_options").slideUp();
+                    }
+            });
+
+            if ($("#nzb_downloader_blackhole").is(":checked"))
+                {
+                        $("#nzb_blackhole_options").show();
+                }
+            else
+                {
+                        $("#nzb_blackhole_options").hide();
+                }
+
+            $("#nzb_downloader_blackhole").click(function(){
+                    if ($("#nzb_downloader_blackhole").is(":checked"))
+                    {
+                            $("#nzb_blackhole_options").slideDown();
+                    }
+                    else
+                    {
+                            $("#nzb_blackhole_options").slideUp();
+                    }
+            });
+
+            if ($("#nzb_downloader_sabnzbd").is(":checked"))
+                {
+                        $("#sabnzbd_options").show();
+                }
+            else
+                {
+                        $("#sabnzbd_options").hide();
+                }
+                
+            $("#nzb_downloader_sabnzbd").click(function(){
+                    if ($("#nzb_downloader_sabnzbd").is(":checked"))
+                    {
+                            $("#sabnzbd_options").slideDown();
+                    }
+                    else
+                    {
+                            $("#sabnzbd_options").slideUp();
+                    }
+            });
+
+            if ($("#twitter").is(":checked"))
+                    {
+                            $("#twitteroptions").show();
+                    }
+            else
+                    {
+                            $("#twitteroptions").hide();
+                    }
+
+            $("#twitter").click(function(){
+                    if ($("#twitter").is(":checked"))
+                    {
+                            $("#twitteroptions").slideDown();
+                    }
+                    else
+                    {
+                            $("#twitteroptions").slideUp();
+                    }
+            });
+        
+            if ($("#boxcar").is(":checked"))
+                    {
+                            $("#boxcaroptions").show();
+                    }
+            else
+                    {
+                            $("#boxcaroptions").hide();
+                    }
+
+            $("#boxcar").click(function(){
+                    if ($("#boxcar").is(":checked"))
+                    {
+                            $("#boxcaroptions").slideDown();
+                    }
+                    else
+                    {
+                            $("#boxcaroptions").slideUp();
+                    }
+            });
+        
+        
+            if ($("#pushbullet").is(":checked"))
+                    {
+                            $("#pushbulletoptions").show();
+                    }
+            else
+                    {
+                            $("#pushbulletoptions").hide();
+                    }
+
+            $("#pushbullet").click(function(){
+                    if ($("#pushbullet").is(":checked"))
+                    {
+                            $("#pushbulletoptions").slideDown();
+                    }
+                    else
+                    {
+                            $("#pushbulletoptions").slideUp();
+                    }
+            });
+            
             $('#twitterStep1').click(function () {
                 $('#testTwitter-result').html('');
                 $.get("twitterStep1", function (data) {window.open(data); })
@@ -420,11 +606,10 @@
                 $.get("testTwitter",
                     function (data) { $('#testTwitter-result').html(data); });
             });
-
         }
-		
+
         $(document).ready(function() {
             initThisPage();
-        });		
+        });
     </script>
 </%def>

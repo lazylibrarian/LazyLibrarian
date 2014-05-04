@@ -15,7 +15,8 @@ from StringIO import StringIO
 import gzip
 
 def search_nzb_book(books=None, mags=None):
-
+    if not(lazylibrarian.USE_NZB):
+        return
     # rename this thread
     threading.currentThread().name = "SEARCHNZBBOOKS"
     myDB = database.DBConnection()
@@ -62,11 +63,11 @@ def search_nzb_book(books=None, mags=None):
         searchterm = re.sub(r"\s\s+" , " ", searchterm) # strip any double white space
         searchlist.append({"bookid": bookid, "bookName":searchbook[2], "authorName":searchbook[1], "searchterm": searchterm.strip()})
     
-    if not lazylibrarian.SAB_HOST and not lazylibrarian.BLACKHOLE and not lazylibrarian.KAT:
+    if not lazylibrarian.SAB_HOST and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
         logger.info('No download method is set, use SABnzbd or blackhole')
 
     #TODO - Move the newznab test to providers.py
-    if not lazylibrarian.NEWZNAB and not lazylibrarian.NEWZNAB2 and not lazylibrarian.USENETCRAWLER and not lazylibrarian.KAT:
+    if not lazylibrarian.NEWZNAB and not lazylibrarian.NEWZNAB2 and not lazylibrarian.USENETCRAWLER:
         logger.info('No providers are set. try use NEWZNAB.')
 
     counter = 0
@@ -88,46 +89,46 @@ def search_nzb_book(books=None, mags=None):
             addedCounter = 0
 
             for nzb in resultlist:
-				nzbTitle = formatter.latinToAscii(formatter.replace_all(str(nzb['nzbtitle']).lower(), dictrepl)).strip()
-				nzbTitle = re.sub(r"\s\s+" , " ", nzbTitle) #remove extra whitespace
-				logger.debug(u'nzbName %s' % nzbTitle)          
+                nzbTitle = formatter.latinToAscii(formatter.replace_all(str(nzb['nzbtitle']).lower(), dictrepl)).strip()
+                nzbTitle = re.sub(r"\s\s+" , " ", nzbTitle) #remove extra whitespace
+                logger.debug(u'nzbName %s' % nzbTitle)          
 
-				match_ratio = lazylibrarian.MATCH_RATIO 
-				nzbTitle_match = fuzz.token_sort_ratio(book['searchterm'].lower(), nzbTitle)
-				logger.debug("NZB Title Match %: " + str(nzbTitle_match))
-				
-				if (nzbTitle_match > match_ratio):
-					logger.info(u'Found NZB: %s' % nzb['nzbtitle'])
-					addedCounter = addedCounter + 1
-					bookid = book['bookid']
-					nzbTitle = (book["authorName"] + ' - ' + book['bookName'] + ' LL.(' + book['bookid'] + ')').strip()
-					nzburl = nzb['nzburl']
-					nzbprov = nzb['nzbprov']
-					nzbdate_temp = nzb['nzbdate']
-					nzbsize_temp = nzb['nzbsize']  #Need to cater for when this is NONE (Issue 35)
-					if nzbsize_temp is None:
-						nzbsize_temp = 1000
-					nzbsize = str(round(float(nzbsize_temp) / 1048576,2))+' MB'
-					nzbdate = formatter.nzbdate2format(nzbdate_temp)
-					
-					controlValueDict = {"NZBurl": nzburl}
-					newValueDict = {
+                match_ratio = lazylibrarian.MATCH_RATIO 
+                nzbTitle_match = fuzz.token_sort_ratio(book['searchterm'].lower(), nzbTitle)
+                logger.debug("NZB Title Match %: " + str(nzbTitle_match))
+                
+                if (nzbTitle_match > match_ratio):
+                    logger.info(u'Found NZB: %s' % nzb['nzbtitle'])
+                    addedCounter = addedCounter + 1
+                    bookid = book['bookid']
+                    nzbTitle = (book["authorName"] + ' - ' + book['bookName'] + ' LL.(' + book['bookid'] + ')').strip()
+                    nzburl = nzb['nzburl']
+                    nzbprov = nzb['nzbprov']
+                    nzbdate_temp = nzb['nzbdate']
+                    nzbsize_temp = nzb['nzbsize']  #Need to cater for when this is NONE (Issue 35)
+                    if nzbsize_temp is None:
+                        nzbsize_temp = 1000
+                    nzbsize = str(round(float(nzbsize_temp) / 1048576,2))+' MB'
+                    nzbdate = formatter.nzbdate2format(nzbdate_temp)
+                    
+                    controlValueDict = {"NZBurl": nzburl}
+                    newValueDict = {
                         "NZBprov": nzbprov,
                         "BookID": bookid,
                         "NZBdate": nzbdate,
                         "NZBsize": nzbsize,
                         "NZBtitle": nzbTitle,
                         "Status": "Skipped"
-					}
-					myDB.upsert("wanted", newValueDict, controlValueDict)
+                    }
+                    myDB.upsert("wanted", newValueDict, controlValueDict)
 
-					snatchedbooks = myDB.action('SELECT * from books WHERE BookID=? and Status="Snatched"', [bookid]).fetchone()
-					if not snatchedbooks:
-						snatch = DownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
-						notifiers.notify_snatch(nzbTitle+' at '+formatter.now()) 
-					break;
+                    snatchedbooks = myDB.action('SELECT * from books WHERE BookID=? and Status="Snatched"', [bookid]).fetchone()
+                    if not snatchedbooks:
+                        snatch = DownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
+                        notifiers.notify_snatch(nzbTitle+' at '+formatter.now()) 
+                    break;
             if addedCounter == 0:
-            	logger.info("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")
+                logger.info("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")
         counter = counter + 1
 
     if not books or books==False:
@@ -175,29 +176,7 @@ def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
             except Exception, e:
                 logger.error('%s not writable, NZB not saved. Error: %s' % (nzbpath, e));
                 download = False;
-    elif lazylibrarian.KAT:
-        request = urllib2.Request(nzburl)
-        request.add_header('Accept-encoding', 'gzip')
-    
-        if nzbprov == 'KAT':
-            request.add_header('Referer', 'http://kat.ph/')
-        
-        response = urllib2.urlopen(request)
-        if response.info().get('Content-Encoding') == 'gzip':
-            buf = StringIO(response.read())
-            f = gzip.GzipFile(fileobj=buf)
-            torrent = f.read()
-        else:
-            torrent = response.read()
 
-        nzbname = str.replace(str(nzbtitle), ' ', '_') + '.torrent'
-        nzbpath = os.path.join(lazylibrarian.TORRENT_DIR, nzbname)
-
-        torrent_file = open(nzbpath , 'wb')
-        torrent_file.write(torrent)
-        torrent_file.close()
-        logger.info('Torrent file saved: %s' % nzbtitle)
-        download = True 
     else:
         logger.error('No download method is enabled, check config.')
         return False
