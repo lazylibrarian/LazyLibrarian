@@ -657,15 +657,10 @@ def start():
         # Crons and scheduled jobs go here
         starttime = datetime.datetime.now()
         SCHED.add_interval_job(postprocess.processDir, minutes=SCAN_INTERVAL)
-<<<<<<< HEAD
-        if USE_NZB:
+
+        if (USE_NZB):
             SCHED.add_interval_job(searchnzb.search_nzb_book, minutes=SEARCH_INTERVAL)
-        if USE_TOR:
-=======
-        if (lazylibrarian.USE_NZB):
-            SCHED.add_interval_job(searchnzb.search_nzb_book, minutes=SEARCH_INTERVAL)
-        if (lazylibrarian.USE_TOR):
->>>>>>> origin/development
+        if (USE_TOR):
             SCHED.add_interval_job(searchtorrents.search_tor_book, minutes=SEARCH_INTERVAL)
         SCHED.add_interval_job(versioncheck.checkForUpdates, hours=VERSIONCHECK_INTERVAL)
 

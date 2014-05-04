@@ -5,11 +5,7 @@ from xml.etree.ElementTree import Element, SubElement
 
 import lazylibrarian
 
-<<<<<<< HEAD
-from lazylibrarian import logger, database, formatter, providers, SimpleCache, notifiers, searchmag, utorrent, request
-=======
 from lazylibrarian import logger, database, formatter, providers, SimpleCache, notifiers, searchmag, utorrent
->>>>>>> origin/development
 
 import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
@@ -141,11 +137,7 @@ def search_tor_book(books=None, mags=None):
 def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
 
     myDB = database.DBConnection()
-<<<<<<< HEAD
-
-=======
     download = False
->>>>>>> origin/development
     if (lazylibrarian.USE_TOR):
         request = urllib2.Request(tor_url)
         request.add_header('Accept-encoding', 'gzip')
@@ -175,11 +167,8 @@ def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             download = True
 
         if (lazylibrarian.TOR_DOWNLOADER_UTORRENT) and not(lazylibrarian.TOR_DOWNLOADER_BLACKHOLE):            
-<<<<<<< HEAD
-            download = utorrent.addTorrent(tor_url)
-=======
             download = utorrent.addTorrent(link=str(tor_url))
->>>>>>> origin/development
+
 
    
         

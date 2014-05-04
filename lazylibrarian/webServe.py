@@ -191,12 +191,6 @@ class WebInterface(object):
         lazylibrarian.NEWZBIN_UID = newzbin_uid
         lazylibrarian.NEWZBIN_PASS = newzbin_pass
 
-<<<<<<< HEAD
-        lazylibrarian.USE_NZB = use_nzb
-        lazylibrarian.USE_TOR = use_tor
-=======
->>>>>>> origin/development
-
         lazylibrarian.UTORRENT_HOST = utorrent_host
         lazylibrarian.UTORRENT_USER = utorrent_user
         lazylibrarian.UTORRENT_PASS = utorrent_pass
@@ -204,12 +198,10 @@ class WebInterface(object):
 
         lazylibrarian.KAT = kat
 
-<<<<<<< HEAD
-=======
+
         lazylibrarian.USE_NZB = use_nzb
         lazylibrarian.USE_TOR = use_tor
 
->>>>>>> origin/development
         lazylibrarian.USENETCRAWLER = usenetcrawler
         lazylibrarian.USENETCRAWLER_HOST = usenetcrawler_host
         lazylibrarian.USENETCRAWLER_API = usenetcrawler_api
@@ -415,15 +407,10 @@ class WebInterface(object):
         books = []
         mags = False
         books.append({"bookid": bookid})
-<<<<<<< HEAD
-        if lazylibrarian.USE_NZB:
-            threading.Thread(target=search_nzb_book, args=[books, mags]).start()
-        if lazylibrarian.USE_TOR:
-=======
+
         if (lazylibrarian.USE_NZB):
             threading.Thread(target=search_nzb_book, args=[books, mags]).start()
         if (lazylibrarian.USE_TOR):
->>>>>>> origin/development
             threading.Thread(target=search_tor_book, args=[books, mags]).start()
 
         raise cherrypy.HTTPRedirect("books")
@@ -491,15 +478,9 @@ class WebInterface(object):
             books.append({"bookid": bookid})
 
             mags=False
-<<<<<<< HEAD
-            if lazylibrarian.USE_NZB:
-                threading.Thread(target=search_nzb_book, args=[books, mags]).start()
-            if lazylibrarian.USE_TOR:
-=======
             if (lazylibrarian.USE_NZB):
                 threading.Thread(target=search_nzb_book, args=[books, mags]).start()
             if (lazylibrarian.USE_TOR):
->>>>>>> origin/development
                 threading.Thread(target=search_tor_book, args=[books, mags]).start()
 
             logger.debug("Searching for book with id: " + str(bookid));
@@ -566,15 +547,9 @@ class WebInterface(object):
                 if not bookid == 'book_table_length':
                     books.append({"bookid": bookid})
             mags=False
-<<<<<<< HEAD
-            if lazylibrarian.USE_NZB:
-                threading.Thread(target=search_nzb_book, args=[books, mags]).start()
-            if lazylibrarian.USE_TOR:
-=======
             if (lazylibrarian.USE_NZB):
                 threading.Thread(target=search_nzb_book, args=[books, mags]).start()
             if (lazylibrarian.USE_TOR):
->>>>>>> origin/development
                 threading.Thread(target=search_tor_book, args=[books, mags]).start()
 
         if redirect == "author":
@@ -590,15 +565,9 @@ class WebInterface(object):
     forceProcess.exposed = True
 
     def forceSearch(self, source=None):
-<<<<<<< HEAD
-        if lazylibrarian.USE_NZB:
-            threading.Thread(target=search_nzb_book).start()
-        if lazylibrarian.USE_TOR:
-=======
         if (lazylibrarian.USE_NZB):
             threading.Thread(target=search_nzb_book).start()
         if (lazylibrarian.USE_TOR):
->>>>>>> origin/development
             threading.Thread(target=search_tor_book).start()
         raise cherrypy.HTTPRedirect(source)
     forceSearch.exposed = True
@@ -691,15 +660,9 @@ class WebInterface(object):
                 mags = []
                 mags.append({"bookid": title})
                 books=False
-<<<<<<< HEAD
-                if lazylibrarian.USE_NZB:
-                    threading.Thread(target=search_nzb_book, args=[books, mags]).start()
-                if lazylibrarian.USE_TOR:
-=======
                 if (lazylibrarian.USE_NZB):
                     threading.Thread(target=search_nzb_book, args=[books, mags]).start()
                 if (lazylibrarian.USE_TOR):
->>>>>>> origin/development
                     threading.Thread(target=search_tor_book, args=[books, mags]).start()
                 logger.debug("Searching for magazine with title: " + str(title));
                 raise cherrypy.HTTPRedirect("magazines")
@@ -744,15 +707,9 @@ class WebInterface(object):
             mags.append({"bookid": bookid})
 
             books=False
-<<<<<<< HEAD
-            if lazylibrarian.USE_NZB:
-                threading.Thread(target=search_nzb_book, args=[books, mags]).start()
-            if lazylibrarian.USE_TOR:
-=======
             if (lazylibrarian.USE_NZB):
                 threading.Thread(target=search_nzb_book, args=[books, mags]).start()
             if (lazylibrarian.USE_TOR):
->>>>>>> origin/development
                 threading.Thread(target=search_tor_book, args=[books, mags]).start()
             logger.debug("Searching for magazine with title: " + str(bookid));
             raise cherrypy.HTTPRedirect("magazines")
