@@ -19,6 +19,7 @@ from lazylibrarian.gb import GoogleBooks
 
 import lib.simplejson as simplejson
 
+
 def serve_template(templatename, **kwargs):
 
     interface_dir = os.path.join(str(lazylibrarian.PROG_DIR), 'data/interfaces/')
@@ -71,7 +72,7 @@ class WebInterface(object):
                     "http_pass":        lazylibrarian.HTTP_PASS,
                     "http_look":        lazylibrarian.HTTP_LOOK,
                     "http_look_list":   http_look_list,
-		    "match_ratio":	lazylibrarian.MATCH_RATIO,
+                    "match_ratio":      lazylibrarian.MATCH_RATIO,
                     "launch_browser":   checked(lazylibrarian.LAUNCH_BROWSER),
                     "logdir" :          lazylibrarian.LOGDIR,
                     "use_imp_onlyisbn": checked(lazylibrarian.IMP_ONLYISBN),
@@ -79,7 +80,7 @@ class WebInterface(object):
                     "imp_autoadd":      lazylibrarian.IMP_AUTOADD,
                     "sab_host":         lazylibrarian.SAB_HOST,
                     "sab_port":         lazylibrarian.SAB_PORT,
-                    "sab_subdir":         lazylibrarian.SAB_SUBDIR,                    
+                    "sab_subdir":       lazylibrarian.SAB_SUBDIR,                    
                     "sab_api":          lazylibrarian.SAB_API,
                     "sab_user":         lazylibrarian.SAB_USER,
                     "sab_pass":         lazylibrarian.SAB_PASS,
@@ -88,58 +89,63 @@ class WebInterface(object):
                     "download_dir":     lazylibrarian.DOWNLOAD_DIR,
                     "sab_cat":          lazylibrarian.SAB_CAT,
                     "usenet_retention": lazylibrarian.USENET_RETENTION,
-                    "use_blackhole":    checked(lazylibrarian.BLACKHOLE),
-                    "blackholedir":     lazylibrarian.BLACKHOLEDIR,
-		    "torrent_dir":	lazylibrarian.TORRENT_DIR,
+                    "nzb_blackholedir": lazylibrarian.NZB_BLACKHOLEDIR,
+                    "torrent_dir":      lazylibrarian.TORRENT_DIR,
                     "use_newznab" :     checked(lazylibrarian.NEWZNAB),
                     "newznab_host" :    lazylibrarian.NEWZNAB_HOST,
                     "newznab_api" :     lazylibrarian.NEWZNAB_API,
-                    "use_newznab2" :     checked(lazylibrarian.NEWZNAB2),
-                    "newznab_host2" :    lazylibrarian.NEWZNAB_HOST2,
-                    "newznab_api2" :     lazylibrarian.NEWZNAB_API2,
+                    "use_newznab2" :    checked(lazylibrarian.NEWZNAB2),
+                    "newznab_host2" :   lazylibrarian.NEWZNAB_HOST2,
+                    "newznab_api2" :    lazylibrarian.NEWZNAB_API2,
                     "use_newzbin" :     checked(lazylibrarian.NEWZBIN),
                     "newzbin_uid" :     lazylibrarian.NEWZBIN_UID,
                     "newzbin_pass" :    lazylibrarian.NEWZBIN_PASS,
-
-		    "use_kat" :     checked(lazylibrarian.KAT),
+                    "use_kat" :         checked(lazylibrarian.KAT),
                     "use_usenetcrawler" :     checked(lazylibrarian.USENETCRAWLER),
-                    "usenetcrawler_host" :     lazylibrarian.USENETCRAWLER_HOST,
-                    "usenetcrawler_api" :    lazylibrarian.USENETCRAWLER_API,
-                    "search_interval" :    int(lazylibrarian.SEARCH_INTERVAL),
-                    "scan_interval" :    int(lazylibrarian.SCAN_INTERVAL),
-                    "versioncheck_interval" :    int(lazylibrarian.VERSIONCHECK_INTERVAL),
-                    "ebook_dest_folder": lazylibrarian.EBOOK_DEST_FOLDER,
-                    "ebook_dest_file": lazylibrarian.EBOOK_DEST_FILE,
-                    "mag_dest_folder": lazylibrarian.MAG_DEST_FOLDER,
-                    "mag_dest_file": lazylibrarian.MAG_DEST_FILE,
-                    "use_twitter" :     checked(lazylibrarian.USE_TWITTER),
-                    "twitter_notify_onsnatch" :     checked(lazylibrarian.TWITTER_NOTIFY_ONSNATCH),
+                    "usenetcrawler_host" :    lazylibrarian.USENETCRAWLER_HOST,
+                    "usenetcrawler_api" :     lazylibrarian.USENETCRAWLER_API,
+                    "search_interval" :       int(lazylibrarian.SEARCH_INTERVAL),
+                    "scan_interval" :         int(lazylibrarian.SCAN_INTERVAL),
+                    "versioncheck_interval" : int(lazylibrarian.VERSIONCHECK_INTERVAL),
+                    "ebook_dest_folder":      lazylibrarian.EBOOK_DEST_FOLDER,
+                    "ebook_dest_file":        lazylibrarian.EBOOK_DEST_FILE,
+                    "mag_dest_folder":        lazylibrarian.MAG_DEST_FOLDER,
+                    "mag_dest_file":          lazylibrarian.MAG_DEST_FILE,
+                    "use_twitter" :           checked(lazylibrarian.USE_TWITTER),
+                    "twitter_notify_onsnatch" :       checked(lazylibrarian.TWITTER_NOTIFY_ONSNATCH),
                     "twitter_notify_ondownload" :     checked(lazylibrarian.TWITTER_NOTIFY_ONDOWNLOAD), 
-		    "use_boxcar" : 	checked(lazylibrarian.USE_BOXCAR),
-		    "boxcar_notify_onsnatch" :     checked(lazylibrarian.BOXCAR_NOTIFY_ONSNATCH),
-		    "boxcar_notify_ondownload" :     checked(lazylibrarian.BOXCAR_NOTIFY_ONDOWNLOAD),
-		    "boxcar_token" :		lazylibrarian.BOXCAR_TOKEN,
-
-			"use_pushbullet": checked(lazylibrarian.USE_PUSHBULLET),
-		    "pushbullet_notify_onsnatch" :     checked(lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH),
-		    "pushbullet_notify_ondownload" :     checked(lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD),
-		    "pushbullet_token" :		lazylibrarian.PUSHBULLET_TOKEN,			
-			"pushbullet_deviceid" :		lazylibrarian.PUSHBULLET_DEVICEID,	
-			
-			
-                    "ebook_type" :		lazylibrarian.EBOOK_TYPE,
-                    "gr_api" :		lazylibrarian.GR_API,
-                    "gb_api" :      lazylibrarian.GB_API,
-                    "book_api" :    lazylibrarian.BOOK_API
+                    "use_boxcar" :                    checked(lazylibrarian.USE_BOXCAR),
+                    "boxcar_notify_onsnatch" :        checked(lazylibrarian.BOXCAR_NOTIFY_ONSNATCH),
+                    "boxcar_notify_ondownload" :      checked(lazylibrarian.BOXCAR_NOTIFY_ONDOWNLOAD),
+                    "boxcar_token" :                  lazylibrarian.BOXCAR_TOKEN,
+                    "use_pushbullet":                 checked(lazylibrarian.USE_PUSHBULLET),
+                    "pushbullet_notify_onsnatch" :    checked(lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH),
+                    "pushbullet_notify_ondownload" :  checked(lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD),
+                    "pushbullet_token" :              lazylibrarian.PUSHBULLET_TOKEN,
+                    "pushbullet_deviceid" :           lazylibrarian.PUSHBULLET_DEVICEID,
+                    "ebook_type" :                    lazylibrarian.EBOOK_TYPE,
+                    "gr_api" :                        lazylibrarian.GR_API,
+                    "gb_api" :                        lazylibrarian.GB_API,
+                    "book_api" :                      lazylibrarian.BOOK_API,
+                    "use_nzb" :                       checked(lazylibrarian.USE_NZB),
+                    "use_tor" :                       checked(lazylibrarian.USE_TOR),
+                    "nzb_downloader_sabnzbd" :        checked(lazylibrarian.NZB_DOWNLOADER_SABNZBD),
+                    "nzb_downloader_blackhole" :      checked(lazylibrarian.NZB_DOWNLOADER_BLACKHOLE),
+                    "tor_downloader_utorrent" :       checked(lazylibrarian.TOR_DOWNLOADER_UTORRENT),
+                    "tor_downloader_blackhole" :      checked(lazylibrarian.TOR_DOWNLOADER_BLACKHOLE),
+                    "utorrent_host":                  lazylibrarian.UTORRENT_HOST,
+                    "utorrent_user":                  lazylibrarian.UTORRENT_USER,
+                    "utorrent_pass":                  lazylibrarian.UTORRENT_PASS,
+                    "utorrent_label":                 lazylibrarian.UTORRENT_LABEL
                 }
         return serve_template(templatename="config.html", title="Settings", config=config)    
     config.exposed = True
 
-    def configUpdate(self, http_host='0.0.0.0', http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, imp_onlyisbn=0, imp_preflang=None, imp_autoadd=None, match_ratio=80,
-        sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None, destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, blackhole=0, blackholedir=None, torrent_dir=None,
+    def configUpdate(self, http_host='0.0.0.0', http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, imp_onlyisbn=0, imp_preflang=None, imp_autoadd=None, match_ratio=80, nzb_downloader_sabnzbd=0, nzb_downloader_blackhole=0, use_nzb=0, use_tor=0,
+        sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None, destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, nzb_blackholedir=None, torrent_dir=None, tor_downloader_blackhole=0, tor_downloader_utorrent=0,
         newznab=0, newznab_host=None, newznab_api=None, newznab2=0, newznab_host2=None, newznab_api2=None,newzbin=0, newzbin_uid=None, newzbin_pass=None, kat=0, ebook_type=None, book_api=None, gr_api=None, gb_api=None, usenetcrawler = 0, usenetcrawler_host=None, usenetcrawler_api = None, 
-        versioncheck_interval=None, search_interval=None, scan_interval=None, ebook_dest_folder=None, ebook_dest_file=None, mag_dest_folder=None, mag_dest_file=None, use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
-		use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token=None, use_pushbullet=0, pushbullet_notify_onsnatch=0, pushbullet_notify_ondownload=0, pushbullet_token=None, pushbullet_deviceid=None):
+        versioncheck_interval=None, search_interval=None, scan_interval=None, ebook_dest_folder=None, ebook_dest_file=None, mag_dest_folder=None, mag_dest_file=None, use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0, utorrent_host=None, utorrent_user=None, utorrent_pass=None,
+        utorrent_label=None, use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token=None, use_pushbullet=0, pushbullet_notify_onsnatch=0, pushbullet_notify_ondownload=0, pushbullet_token=None, pushbullet_deviceid=None):
 
         lazylibrarian.HTTP_HOST = http_host
         lazylibrarian.HTTP_PORT = http_port
@@ -148,7 +154,7 @@ class WebInterface(object):
         lazylibrarian.HTTP_LOOK = http_look
         lazylibrarian.LAUNCH_BROWSER = launch_browser
         lazylibrarian.LOGDIR = logdir
-	lazylibrarian.MATCH_RATIO = match_ratio
+        lazylibrarian.MATCH_RATIO = match_ratio
 
         lazylibrarian.IMP_ONLYISBN = imp_onlyisbn
         lazylibrarian.IMP_PREFLANG = imp_preflang
@@ -166,9 +172,12 @@ class WebInterface(object):
         lazylibrarian.DESTINATION_DIR = destination_dir
         lazylibrarian.DOWNLOAD_DIR = download_dir
         lazylibrarian.USENET_RETENTION = usenet_retention
-        lazylibrarian.BLACKHOLE = blackhole
-        lazylibrarian.BLACKHOLEDIR = blackholedir
-	lazylibrarian.TORRENT_DIR = torrent_dir
+        lazylibrarian.NZB_BLACKHOLEDIR = nzb_blackholedir
+        lazylibrarian.NZB_DOWNLOADER_SABNZBD = nzb_downloader_sabnzbd
+        lazylibrarian.NZB_DOWNLOADER_BLACKHOLE = nzb_downloader_blackhole
+        lazylibrarian.TORRENT_DIR = torrent_dir
+        lazylibrarian.TOR_DOWNLOADER_BLACKHOLE = tor_downloader_blackhole
+        lazylibrarian.TOR_DOWNLOADER_UTORRENT = tor_downloader_utorrent
 
         lazylibrarian.NEWZNAB = newznab
         lazylibrarian.NEWZNAB_HOST = newznab_host
@@ -182,7 +191,25 @@ class WebInterface(object):
         lazylibrarian.NEWZBIN_UID = newzbin_uid
         lazylibrarian.NEWZBIN_PASS = newzbin_pass
 
-	lazylibrarian.KAT = kat
+<<<<<<< HEAD
+        lazylibrarian.USE_NZB = use_nzb
+        lazylibrarian.USE_TOR = use_tor
+=======
+>>>>>>> origin/development
+
+        lazylibrarian.UTORRENT_HOST = utorrent_host
+        lazylibrarian.UTORRENT_USER = utorrent_user
+        lazylibrarian.UTORRENT_PASS = utorrent_pass
+        lazylibrarian.UTORRENT_LABEL = utorrent_label
+
+        lazylibrarian.KAT = kat
+
+<<<<<<< HEAD
+=======
+        lazylibrarian.USE_NZB = use_nzb
+        lazylibrarian.USE_TOR = use_tor
+
+>>>>>>> origin/development
         lazylibrarian.USENETCRAWLER = usenetcrawler
         lazylibrarian.USENETCRAWLER_HOST = usenetcrawler_host
         lazylibrarian.USENETCRAWLER_API = usenetcrawler_api
@@ -201,21 +228,24 @@ class WebInterface(object):
         lazylibrarian.MAG_DEST_FOLDER = mag_dest_folder
         lazylibrarian.MAG_DEST_FILE = mag_dest_file
 
+        lazylibrarian.USE_NZB = use_nzb
+        lazylibrarian.USE_TOR = use_tor
+
         lazylibrarian.USE_TWITTER = use_twitter
         lazylibrarian.TWITTER_NOTIFY_ONSNATCH = twitter_notify_onsnatch
         lazylibrarian.TWITTER_NOTIFY_ONDOWNLOAD = twitter_notify_ondownload
 
-	lazylibrarian.USE_BOXCAR = use_boxcar
-	lazylibrarian.BOXCAR_NOTIFY_ONSNATCH = boxcar_notify_onsnatch
-	lazylibrarian.BOXCAR_NOTIFY_ONDOWNLOAD = boxcar_notify_ondownload
-	lazylibrarian.BOXCAR_TOKEN = boxcar_token
-	
-	lazylibrarian.USE_PUSHBULLET = use_pushbullet
-	lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH = pushbullet_notify_onsnatch
-	lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD = pushbullet_notify_ondownload
-	lazylibrarian.PUSHBULLET_TOKEN = pushbullet_token
-	lazylibrarian.PUSHBULLET_DEVICEID = pushbullet_deviceid
-	
+        lazylibrarian.USE_BOXCAR = use_boxcar
+        lazylibrarian.BOXCAR_NOTIFY_ONSNATCH = boxcar_notify_onsnatch
+        lazylibrarian.BOXCAR_NOTIFY_ONDOWNLOAD = boxcar_notify_ondownload
+        lazylibrarian.BOXCAR_TOKEN = boxcar_token
+        
+        lazylibrarian.USE_PUSHBULLET = use_pushbullet
+        lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH = pushbullet_notify_onsnatch
+        lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD = pushbullet_notify_ondownload
+        lazylibrarian.PUSHBULLET_TOKEN = pushbullet_token
+        lazylibrarian.PUSHBULLET_DEVICEID = pushbullet_deviceid
+
         lazylibrarian.config_write()
 
         logger.debug('Config file has been updated')
@@ -385,8 +415,16 @@ class WebInterface(object):
         books = []
         mags = False
         books.append({"bookid": bookid})
-        threading.Thread(target=search_nzb_book, args=[books, mags]).start()
-        threading.Thread(target=search_tor_book, args=[books, mags]).start()
+<<<<<<< HEAD
+        if lazylibrarian.USE_NZB:
+            threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+        if lazylibrarian.USE_TOR:
+=======
+        if (lazylibrarian.USE_NZB):
+            threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+        if (lazylibrarian.USE_TOR):
+>>>>>>> origin/development
+            threading.Thread(target=search_tor_book, args=[books, mags]).start()
 
         raise cherrypy.HTTPRedirect("books")
     addBook.exposed = True
@@ -410,7 +448,7 @@ class WebInterface(object):
 
             logger.debug('bookdir ' + dest_dir);
             if os.path.isdir(dest_dir):
-                for file2 in os.listdir(dest_dir):	
+                for file2 in os.listdir(dest_dir):    
                     if ((file2.lower().find(".jpg") <= 0) & (file2.lower().find(".opf") <= 0)):
                         logger.info('Opening file ' + str(file2))
                         return serve_file(os.path.join(dest_dir, file2), "application/x-download", "attachment")
@@ -453,9 +491,17 @@ class WebInterface(object):
             books.append({"bookid": bookid})
 
             mags=False
+<<<<<<< HEAD
+            if lazylibrarian.USE_NZB:
+                threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+            if lazylibrarian.USE_TOR:
+=======
+            if (lazylibrarian.USE_NZB):
+                threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+            if (lazylibrarian.USE_TOR):
+>>>>>>> origin/development
+                threading.Thread(target=search_tor_book, args=[books, mags]).start()
 
-            threading.Thread(target=search_nzb_book, args=[books, mags]).start()
-            threading.Thread(target=search_tor_book, args=[books, mags]).start()
             logger.debug("Searching for book with id: " + str(bookid));
         if AuthorName:
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
@@ -520,8 +566,16 @@ class WebInterface(object):
                 if not bookid == 'book_table_length':
                     books.append({"bookid": bookid})
             mags=False
-            threading.Thread(target=search_nzb_book, args=[books, mags]).start()
-            threading.Thread(target=search_tor_book, args=[books, mags]).start()
+<<<<<<< HEAD
+            if lazylibrarian.USE_NZB:
+                threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+            if lazylibrarian.USE_TOR:
+=======
+            if (lazylibrarian.USE_NZB):
+                threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+            if (lazylibrarian.USE_TOR):
+>>>>>>> origin/development
+                threading.Thread(target=search_tor_book, args=[books, mags]).start()
 
         if redirect == "author":
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
@@ -536,8 +590,16 @@ class WebInterface(object):
     forceProcess.exposed = True
 
     def forceSearch(self, source=None):
-        threading.Thread(target=search_nzb_book).start()
-        threading.Thread(target=search_tor_book).start()
+<<<<<<< HEAD
+        if lazylibrarian.USE_NZB:
+            threading.Thread(target=search_nzb_book).start()
+        if lazylibrarian.USE_TOR:
+=======
+        if (lazylibrarian.USE_NZB):
+            threading.Thread(target=search_nzb_book).start()
+        if (lazylibrarian.USE_TOR):
+>>>>>>> origin/development
+            threading.Thread(target=search_tor_book).start()
         raise cherrypy.HTTPRedirect(source)
     forceSearch.exposed = True
 
@@ -629,8 +691,16 @@ class WebInterface(object):
                 mags = []
                 mags.append({"bookid": title})
                 books=False
-                threading.Thread(target=search_nzb_book, args=[books, mags]).start()
-                threading.Thread(target=search_tor_book, args=[books, mags]).start()
+<<<<<<< HEAD
+                if lazylibrarian.USE_NZB:
+                    threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+                if lazylibrarian.USE_TOR:
+=======
+                if (lazylibrarian.USE_NZB):
+                    threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+                if (lazylibrarian.USE_TOR):
+>>>>>>> origin/development
+                    threading.Thread(target=search_tor_book, args=[books, mags]).start()
                 logger.debug("Searching for magazine with title: " + str(title));
                 raise cherrypy.HTTPRedirect("magazines")
     addKeyword.exposed = True
@@ -674,9 +744,16 @@ class WebInterface(object):
             mags.append({"bookid": bookid})
 
             books=False
-
-            threading.Thread(target=search_nzb_book, args=[books, mags]).start()
-            threading.Thread(target=search_tor_book, args=[books, mags]).start()
+<<<<<<< HEAD
+            if lazylibrarian.USE_NZB:
+                threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+            if lazylibrarian.USE_TOR:
+=======
+            if (lazylibrarian.USE_NZB):
+                threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+            if (lazylibrarian.USE_TOR):
+>>>>>>> origin/development
+                threading.Thread(target=search_tor_book, args=[books, mags]).start()
             logger.debug("Searching for magazine with title: " + str(bookid));
             raise cherrypy.HTTPRedirect("magazines")
     searchForMag.exposed = True

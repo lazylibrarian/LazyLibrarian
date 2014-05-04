@@ -5,7 +5,11 @@ from xml.etree.ElementTree import Element, SubElement
 
 import lazylibrarian
 
-from lazylibrarian import logger, database, formatter, providers, SimpleCache, notifiers, searchmag
+<<<<<<< HEAD
+from lazylibrarian import logger, database, formatter, providers, SimpleCache, notifiers, searchmag, utorrent, request
+=======
+from lazylibrarian import logger, database, formatter, providers, SimpleCache, notifiers, searchmag, utorrent
+>>>>>>> origin/development
 
 import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
@@ -15,7 +19,8 @@ from StringIO import StringIO
 import gzip
 
 def search_tor_book(books=None, mags=None):
-
+    if not(lazylibrarian.USE_TOR):
+        return
     # rename this thread
     threading.currentThread().name = "SEARCHTORBOOKS"
     myDB = database.DBConnection()
@@ -85,59 +90,63 @@ def search_tor_book(books=None, mags=None):
             addedCounter = 0
 
             for tor in resultlist:
-				tor_Title = formatter.latinToAscii(formatter.replace_all(str(tor['tor_title']).lower(), dictrepl)).strip()
-				tor_Title = re.sub(r"\s\s+" , " ", tor_Title) #remove extra whitespace
-				logger.debug(u'torName %s' % tor_Title)          
+                tor_Title = formatter.latinToAscii(formatter.replace_all(str(tor['tor_title']).lower(), dictrepl)).strip()
+                tor_Title = re.sub(r"\s\s+" , " ", tor_Title) #remove extra whitespace
+                logger.debug(u'torName %s' % tor_Title)          
 
-				match_ratio = lazylibrarian.MATCH_RATIO 
-				tor_Title_match = fuzz.token_sort_ratio(book['searchterm'].lower(), tor_Title)
-				logger.debug("Torrent Title Match %: " + str(tor_Title_match))
-				
-				if (tor_Title_match > match_ratio):
-					logger.info(u'Found Torrent: %s' % tor['tor_title'])
-					addedCounter = addedCounter + 1
-					bookid = book['bookid']
-					tor_Title = (book["authorName"] + ' - ' + book['bookName'] + ' LL.(' + book['bookid'] + ')').strip()
-					tor_url = tor['tor_url']
-					tor_prov = tor['tor_prov']
-					
-					tor_size_temp = tor['tor_size']  #Need to cater for when this is NONE (Issue 35)
-					if tor_size_temp is None:
-						tor_size_temp = 1000
-					tor_size = str(round(float(tor_size_temp) / 1048576,2))+' MB'
-					
-					controlValueDict = {"NZBurl": tor_url}
-					newValueDict = {
+                match_ratio = lazylibrarian.MATCH_RATIO 
+                tor_Title_match = fuzz.token_sort_ratio(book['searchterm'].lower(), tor_Title)
+                logger.debug("Torrent Title Match %: " + str(tor_Title_match))
+                
+                if (tor_Title_match > match_ratio):
+                    logger.info(u'Found Torrent: %s' % tor['tor_title'])
+                    addedCounter = addedCounter + 1
+                    bookid = book['bookid']
+                    tor_Title = (book["authorName"] + ' - ' + book['bookName'] + ' LL.(' + book['bookid'] + ')').strip()
+                    tor_url = tor['tor_url']
+                    tor_prov = tor['tor_prov']
+                    
+                    tor_size_temp = tor['tor_size']  #Need to cater for when this is NONE (Issue 35)
+                    if tor_size_temp is None:
+                        tor_size_temp = 1000
+                    tor_size = str(round(float(tor_size_temp) / 1048576,2))+' MB'
+                    
+                    controlValueDict = {"NZBurl": tor_url}
+                    newValueDict = {
                         "NZBprov": tor_prov,
                         "BookID": bookid,
                         "NZBsize": tor_size,
                         "NZBtitle": tor_Title,
                         "Status": "Skipped"
-					}
-					myDB.upsert("wanted", newValueDict, controlValueDict)
+                    }
+                    myDB.upsert("wanted", newValueDict, controlValueDict)
 
-					snatchedbooks = myDB.action('SELECT * from books WHERE BookID=? and Status="Snatched"', [bookid]).fetchone()
-					if not snatchedbooks:
-						snatch = DownloadMethod(bookid, tor_prov, tor_Title, tor_url)
-						notifiers.notify_snatch(tor_Title+' at '+formatter.now()) 
-					break;
+                    snatchedbooks = myDB.action('SELECT * from books WHERE BookID=? and Status="Snatched"', [bookid]).fetchone()
+                    if not snatchedbooks:
+                        snatch = DownloadMethod(bookid, tor_prov, tor_Title, tor_url)
+                        notifiers.notify_snatch(tor_Title+' at '+formatter.now()) 
+                    break;
             if addedCounter == 0:
-            	logger.info("No torrent's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")
+                logger.info("No torrent's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")
         counter = counter + 1
 
-    if not books or books==False:
-        snatched = searchmag.searchmagazines(mags)
-        for items in snatched:
-            snatch = DownloadMethod(items['bookid'], items['tor_prov'], items['tor_title'], items['tor_url'])
-            notifiers.notify_snatch(items['tor_title']+' at '+formatter.now()) 
+   # if not books or books==False:
+   #     snatched = searchmag.searchmagazines(mags)
+   #     for items in snatched:
+   #         snatch = DownloadMethod(items['bookid'], items['tor_prov'], items['tor_title'], items['tor_url'])
+   #         notifiers.notify_snatch(items['tor_title']+' at '+formatter.now()) 
     logger.info("Search for Wanted items complete")
 
 
 def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
 
     myDB = database.DBConnection()
+<<<<<<< HEAD
 
-    if lazylibrarian.KAT:
+=======
+    download = False
+>>>>>>> origin/development
+    if (lazylibrarian.USE_TOR):
         request = urllib2.Request(tor_url)
         request.add_header('Accept-encoding', 'gzip')
     
@@ -152,14 +161,28 @@ def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         else:
             torrent = response.read()
 
-        tor_name = str.replace(str(tor_title), ' ', '_') + '.torrent'
-        tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
+        if not(lazylibrarian.TOR_DOWNLOADER_BLACKHOLE) and not(lazylibrarian.TOR_DOWNLOADER_UTORRENT):
+            logger.error("Torrents Enabled, with no method selected... Choose Blackhole or uTorrent.")
 
-        torrent_file = open(tor_path , 'wb')
-        torrent_file.write(torrent)
-        torrent_file.close()
-        logger.info('Torrent file saved: %s' % tor_title)
-        download = True 
+        if (lazylibrarian.TOR_DOWNLOADER_BLACKHOLE) and not(lazylibrarian.TOR_DOWNLOADER_UTORRENT):
+            tor_name = str.replace(str(tor_title), ' ', '_') + '.torrent'
+            tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
+
+            torrent_file = open(tor_path , 'wb')
+            torrent_file.write(torrent)
+            torrent_file.close()
+            logger.info('Torrent file saved: %s' % tor_title)
+            download = True
+
+        if (lazylibrarian.TOR_DOWNLOADER_UTORRENT) and not(lazylibrarian.TOR_DOWNLOADER_BLACKHOLE):            
+<<<<<<< HEAD
+            download = utorrent.addTorrent(tor_url)
+=======
+            download = utorrent.addTorrent(link=str(tor_url))
+>>>>>>> origin/development
+
+   
+        
     
     else:
         logger.error('No download method is enabled, check config.')
