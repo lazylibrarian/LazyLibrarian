@@ -21,12 +21,11 @@ import json
 import re
 import os
 import time
-import lib.bencode
 import base64
 import lazylibrarian
 
 
-from lazylibrarian import logger, request
+from lazylibrarian import logger
 
 class utorrentclient(object):
     TOKEN_REGEX = "<div id='token' style='display:none;'>([^<>]+)</div>"
