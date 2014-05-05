@@ -319,13 +319,13 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     refreshAuthor.exposed=True
 
-    def authorAdd(self):
+    def libraryScan(self):
         try:
-	     threading.Thread(target=librarysync.AuthorAdd(lazylibrarian.DESTINATION_DIR)).start()
+	     threading.Thread(target=librarysync.LibraryScan(lazylibrarian.DESTINATION_DIR)).start()
         except Exception, e:
              logger.error('Unable to complete the scan: %s' % e)
 	raise cherrypy.HTTPRedirect("home")
-    authorAdd.exposed = True
+    libraryScan.exposed = True
 
     def addResults(self, authorname):
         args = None;
