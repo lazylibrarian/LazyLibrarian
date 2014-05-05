@@ -167,7 +167,7 @@ def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             download = True
 
         if (lazylibrarian.TOR_DOWNLOADER_UTORRENT) and not(lazylibrarian.TOR_DOWNLOADER_BLACKHOLE):            
-            download = utorrent.addTorrent(link=str(tor_url))
+            download = utorrent.addTorrent(tor_url)
 
 
    
