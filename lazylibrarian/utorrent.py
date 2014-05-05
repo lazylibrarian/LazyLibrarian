@@ -21,11 +21,8 @@ import lazylibrarian
 
 #import simplejson as json
 
-<<<<<<< HEAD
-from lazylibrarian import logger, notifiers, request
-=======
+
 from lazylibrarian import logger, notifiers
->>>>>>> origin/development
 
 
 
