@@ -12,8 +12,6 @@ def getList(st):
         my_splitter.whitespace_split = True
 	return list(my_splitter)
 
-
-#assuming your directory structor is basedir/Author
 def LibraryScan(dir=None):
 	if not dir:
 		if not lazylibrarian.DOWNLOAD_DIR:
@@ -38,11 +36,14 @@ def LibraryScan(dir=None):
 
 	for book in books:
 		for book_type in getList(lazylibrarian.EBOOK_TYPE):
-			#assuming download_dir/author/book/author - book.ebook_type
-			#please update this to read config values
 			bookName = book['BookName']
 			bookAuthor = book['AuthorName']
-			encoded_book_path = os.path.join(dir,bookAuthor,bookName,bookAuthor+" - "+bookName + "." + book_type).encode(lazylibrarian.SYS_ENCODING)
+                        #Default destination path, should be allowed change per config file.
+			dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', bookAuthor).replace('$Title', bookName)
+			#dest_path = authorname+'/'+bookname
+			global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', bookAuthor).replace('$Title', bookName)
+
+			encoded_book_path = os.path.join(dir,dest_path,global_name + "." + book_type).encode(lazylibrarian.SYS_ENCODING)
 			if os.path.isfile(encoded_book_path):
 				book_exists = True	
 		if not book_exists:
