@@ -2,10 +2,15 @@ import os
 import glob
 import re
 import lazylibrarian
+import shlex
 from lazylibrarian import logger, database, importer
 from lazylibrarian.gr import GoodReads
-import lib.fuzzywuzzy as fuzzywuzzy
-from lib.fuzzywuzzy import fuzz, process
+
+def getList(st):
+        my_splitter = shlex.shlex(st, posix=True)
+        my_splitter.whitespace += ','
+        my_splitter.whitespace_split = True
+	return list(my_splitter)
 
 
 #assuming your directory structor is basedir/Author
@@ -28,39 +33,73 @@ def AuthorAdd(dir=None):
 	book_list = []
 	new_book_count = 0
 	file_count = 0 
+	book_exists = False
+	books = myDB.select('select AuthorName, BookName from books where Status=?',[u'Open'])
+
+	for book in books:
+		for book_type in getList(lazylibrarian.EBOOK_TYPE):
+			#assuming download_dir/author/book/author - book.ebook_type
+			#please update this to read config values
+			bookName = book['BookName']
+			bookAuthor = book['AuthorName']
+			encoded_book_path = os.path.join(dir,bookAuthor,bookName,bookAuthor+" - "+bookName + "." + book_type).encode(lazylibrarian.SYS_ENCODING)
+			if os.path.isfile(encoded_book_path):
+				book_exists = True	
+		if not book_exists:
+			myDB.action('update books set Status=? where AuthorName=? and BookName=?',['Skipped',bookAuthor,bookName])
+			logger.info('Book %s marked as skipped as not found on disk' % encoded_book_path.decode(lazylibrarian.SYS_ENCODING, 'replace'))
+			new_authors.append(bookAuthor)
 
 	latest_subdirectory = []
 	for r,d,f in os.walk(dir):
 		for directory in d[:]:
 			if directory.startswith("."):
 				d.remove(directory)
+			#prevent magazine being scanned
 			if directory.startswith("_"):
 				d.remove(directory)
-		
-		for directory in d[:]:
-			activeauthors = myDB.select('SELECT AuthorName,AuthorID from authors WHERE Status="Active" or Status="Loading" order by DateAdded ASC')
-			found = 0
-			for authors in activeauthors:
-				if directory == authors[0]:
-					found = 1
-			if r == dir:
-				if found == 0:
-					new_authors.append(directory)
+		for files in f:
+			 subdirectory = r.replace(dir,'')
+			 latest_subdirectory.append(subdirectory)
+			 logger.info("[%s] Now scanning subdirectory %s" % (dir.decode(lazylibrarian.SYS_ENCODING, 'replace'), subdirectory.decode(lazylibrarian.SYS_ENCODING, 'replace')))
+			 #assumed file name pattern, should be updated from the configuration string?
+			 pattern = re.compile(r'(?P<author>.*?)\s\-\s(?P<book>.*?)\.(?P<format>.*?)', re.VERBOSE)
+			 match = pattern.match(files)
+			 if match:
+				author = match.group("author")
+				book = match.group("book")
+			 	#check if book is in database, and not marked as in library
+				check_exist_book = myDB.action("SELECT * FROM books where AuthorName=? and BookName=? and Status!=?",[author,book,'Open']).fetchone()
+				if not check_exist_book:
+					check_exist_author = myDB.action("SELECT * FROM authors where AuthorName=?",[author]).fetchone()
+					if not check_exist_author:
+						#GR = GoodReads(author)
+						#author_gr = GR.find_author_id()
+						author_gr = False
+						if author_gr:
+							authorid = author_gr['authorid']
+							authorlink  = author_gr['authorlink'][(author['authorlink'].rfind('/'))+1:]
+							if authorid+"."+author == authorlink:
+								logger.info('Adding %s',author)
+								importer.addAuthorToDB(author)
+								check_exist_book = myDB.action("SELECT * FROM books where AuthorName=? and BookName=?",[author,book]).fetchone()
+								if check_exist_book:
+									new_authors.append(author)
+									myDB.action('UPDATE books set Status=? where AuthorName=? and BookName=?',['Open',author,book])
+									new_book_count += 1
+							
 
+				else:
+					new_authors.append(author)
+					myDB.action('UPDATE books set Status=? where AuthorName=? and BookName=?',['Open',author,book])
+					new_book_count += 1
+				
+				file_count += 1
+	
+	logger.info("%s new/modified books found and added to the database" % new_book_count)
 	logger.info('Found %i new authors' % len(new_authors))
-
 	for auth in new_authors:
-		#make sure you can find before adding
-		GR = GoodReads(auth)
-		author = GR.find_author_id()
-		if author:
-			authorid = author['authorid']
-			authorname  = author['authorlink'][(author['authorlink'].rfind('/'))+1:]
-			logger.info(authorname)
+		havebooks = len(myDB.select('select BookName from Books where status=? and AuthorName=?',['Open',auth]))
+		myDB.action('UPDATE authors set HaveBooks=? where AuthorName=?',[havebooks,auth])
 
-			match_ratio = lazylibrarian.MATCH_RATIO
-			author_match = fuzz.token_sort_ratio(authorname, authorid+"."+auth)
-			logger.info("Author match %: "+ str(author_match))
-			if (author_match > match_ratio):
-				importer.addAuthorToDB(auth)
-
+	logger.info('Library scan complete')
