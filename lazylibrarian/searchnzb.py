@@ -143,10 +143,10 @@ def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
 
     myDB = database.DBConnection()
 
-    if lazylibrarian.SAB_HOST and not lazylibrarian.BLACKHOLE:
+    if lazylibrarian.SAB_HOST and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
         download = sabnzbd.SABnzbd(nzbtitle, nzburl)
 
-    elif lazylibrarian.BLACKHOLE:
+    elif lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
 
         try:
             req = urllib2.Request(nzburl)
@@ -161,7 +161,7 @@ def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
         if (nzbfile):
 
             nzbname = str(nzbtitle) + '.nzb';
-            nzbpath = os.path.join(lazylibrarian.BLACKHOLEDIR, nzbname);
+            nzbpath = os.path.join(lazylibrarian.NZB_BLACKHOLEDIR, nzbname);
 
             try:
                 f = open(nzbpath, 'w');
