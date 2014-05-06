@@ -12,7 +12,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with LazyLibrarian.  If not, see <http://www.gnu.org/licenses/>.
-#coding=utf8
+
 import urllib
 import urllib2
 import urlparse
@@ -21,9 +21,7 @@ import json
 import re
 import os
 import time
-import base64
 import lazylibrarian
-
 
 from lazylibrarian import logger
 
@@ -47,29 +45,32 @@ class utorrentclient(object):
         self.base_url = host
         self.username = lazylibrarian.UTORRENT_USER
         self.password = lazylibrarian.UTORRENT_PASS
-        self.opener = self._make_opener('uTorrent', base_url, username, password)
+        self.opener = self._make_opener('uTorrent', self.base_url, self.username, self.password)
         self.token = self._get_token()
         #TODO refresh token, when necessary
 
     def _make_opener(self, realm, base_url, username, password):
         """uTorrent API need HTTP Basic Auth and cookie support for token verify."""
-
-        auth_handler = urllib2.HTTPBasicAuthHandler()
-        auth_handler.add_password(realm=realm,uri=base_url,user=username,passwd=password)
-        opener = urllib2.build_opener(auth_handler)
+        auth = urllib2.HTTPBasicAuthHandler()
+        auth.add_password(realm=realm,uri=base_url,user=username,passwd=password)
+        opener = urllib2.build_opener(auth)
         urllib2.install_opener(opener)
 
         cookie_jar = cookielib.CookieJar()
         cookie_handler = urllib2.HTTPCookieProcessor(cookie_jar)
 
-        handlers = [auth_handler, cookie_handler]
+        handlers = [auth, cookie_handler]
         opener = urllib2.build_opener(*handlers)
         return opener
 
     def _get_token(self):
-        auth = (self.username, self.password) if self.username and self.password else None
-        response = request.request_response(self.base_url + '/gui/token.html')
-        match = re.search(UTorrentClient.TOKEN_REGEX, response.read())
+        url = urlparse.urljoin(self.base_url, 'gui/token.html')
+        try:
+            response = self.opener.open(url)
+        except urllib2.HTTPError as err:
+            logger.debug('URL: ' + str(url))
+            logger.debug('Error getting Token. uTorrent responded with error: ' + str(err))
+        match = re.search(utorrentclient.TOKEN_REGEX, response.read())
         return match.group(1)
 
     def list(self, **kwargs):
@@ -114,12 +115,8 @@ class utorrentclient(object):
         params = [('action', 'getprops'), ('hash', hash)]
         return self._action(params)
 
-    def setprops(self, hash, **kvpairs):
-        params = [('action', 'setprops'), ('hash', hash)]
-        for k, v in kvpairs.iteritems():
-            params.append(("s", k))
-            params.append(("v", v))
-
+    def setprops(self, hash, s, v):
+        params = [('action', 'setprops'), ('hash', hash), ("s", s), ("v", v)]
         return self._action(params)
 
     def setprio(self, hash, priority, *files):
@@ -142,21 +139,21 @@ class utorrentclient(object):
         try:
             response = self.opener.open(request)
             return response.code, json.loads(response.read())
-        except urllib2.HTTPError, e:
-            raise
+        except urllib2.HTTPError as err:
+            logger.debug('URL: ' + str(url))
+            logger.debug('uTorrent webUI raised the following error: ' + str(err))
 
-def addTorrent(link):
+
+def addTorrent(link, hash):
+
     label = lazylibrarian.UTORRENT_LABEL
-    token = ''
-    if link.startswith('magnet'):
-        hash = re.findall('urn:btih:([\w]{32,40})', link)[0]
-        if len(tor_hash) == 32:
-            hash = b16encode(b32decode(tor_hash)).lower()
-    #else:
-    #    info = bdecode(link.content)["info"]
-    #    hash = sha1(bencode(info)).hexdigest()
-    
     uTorrentClient = utorrentclient()
     uTorrentClient.add_url(link)
-    #utorrentclient.setprops(hash,'label',label) #labels our torrent with label
-    return True
+    time.sleep(1) #need to ensure file is loaded uTorrent...
+    uTorrentClient.setprops(hash,'label', label)
+    torrentList = uTorrentClient.list()
+    for torrent in torrentList[1].get('torrents'):
+        if (torrent[0].lower()==hash):
+            return torrent[26]
+
+    return False
