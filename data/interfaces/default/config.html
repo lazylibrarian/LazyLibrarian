@@ -188,9 +188,16 @@
                             <label>Enable Torrent Search</label>
                         </div>
                         <fieldset id="torrent_options">
-                            <div class="row checkbox">
-                                 <input type="checkbox" name="tor_downloader_utorrent" id="tor_downloader_utorrent" value="1" ${config['tor_downloader_utorrent']} />
-                                 <label>Use uTorrent</label>
+
+                            <div>
+                                <label>Minimum seeders:</label>
+                                <input type="text" name="numberofseeders" value="${config['numberofseeders']}" size="5">
+                                <BR>
+                                <small>Number of minimum seeders a torrent must have to be accepted</small>
+                            </div>
+                             <div class="row checkbox">
+                                <input type="checkbox" name="tor_downloader_utorrent" id="tor_downloader_utorrent" value="1" ${config['tor_downloader_utorrent']} />
+                                <label>Use uTorrent</label>
                             </div>
                             <fieldset id="utorrent_options">
                                 <div class="row">
@@ -221,6 +228,16 @@
                                 </div>
                             </fieldset>
                         </fieldset>
+                    </fieldset>
+                </td>
+                <td>
+                    <fieldset>
+                        <h3>Download Settings</h3>
+                        <div class="row">
+                            <label>Directory:</label><input type="text" name="download_dir" value="${config['download_dir']}" size="30">
+                            <BR>
+                            <small>Full path to the folder where books are downloaded to.</small>
+                        </div>
                     </fieldset>
                 </td>
             </tr>

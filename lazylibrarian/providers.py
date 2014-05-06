@@ -28,6 +28,8 @@ def KAT(book=None):
 
     provider = "KAT"
     providerurl = url_fix("http://kickass.to/usearch/" + book['searchterm'])
+    minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
+
 
     params = {
                 "category": "books",
@@ -66,14 +68,14 @@ def KAT(book=None):
                     url = item['links'][1]['href']
                     size = int(item['links'][1]['length'])
                     
-                    
-                    results.append({
-                        'bookid': book['bookid'],
-                        'tor_prov': "KAT",
-                        'tor_title': title,
-                        'tor_url': url,
-                        'tor_size': str(size),
-                        })
+                    if minimumseeders < int(seeders):
+                        results.append({
+                            'bookid': book['bookid'],
+                            'tor_prov': "KAT",
+                            'tor_title': title,
+                            'tor_url': url,
+                            'tor_size': str(size),
+                            })
 
                     logger.info('Found %s. Size: %s' % (title, size))
                 
@@ -108,17 +110,17 @@ def OLDUsenetCrawler(book=None):
         "title": book['bookName'],
         "author": book['authorName']
         }
-	
-	#sample request
-	#http://www.usenet-crawler.com/api?apikey=7xxxxxxxxxxxxxyyyyyyyyyyyyyyzzz4&t=book&author=Daniel
+    
+    #sample request
+    #http://www.usenet-crawler.com/api?apikey=7xxxxxxxxxxxxxyyyyyyyyyyyyyyzzz4&t=book&author=Daniel
 
     logger.debug("%s" % params)
-	
+    
     if not str(HOST)[:4] == "http":
         HOST = 'http://' + HOST
-	
+    
     URL = HOST + '/api?' + urllib.urlencode(params)
-	
+    
     logger.debug('UsenetCrawler: searching on [%s] ' % URL)
     
     data = None    

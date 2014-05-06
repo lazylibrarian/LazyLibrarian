@@ -91,6 +91,7 @@ class WebInterface(object):
                     "usenet_retention": lazylibrarian.USENET_RETENTION,
                     "nzb_blackholedir": lazylibrarian.NZB_BLACKHOLEDIR,
                     "torrent_dir":      lazylibrarian.TORRENT_DIR,
+                    "numberofseeders":  lazylibrarian.NUMBEROFSEEDERS,
                     "use_newznab" :     checked(lazylibrarian.NEWZNAB),
                     "newznab_host" :    lazylibrarian.NEWZNAB_HOST,
                     "newznab_api" :     lazylibrarian.NEWZNAB_API,
@@ -142,7 +143,7 @@ class WebInterface(object):
     config.exposed = True
 
     def configUpdate(self, http_host='0.0.0.0', http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, imp_onlyisbn=0, imp_preflang=None, imp_autoadd=None, match_ratio=80, nzb_downloader_sabnzbd=0, nzb_downloader_blackhole=0, use_nzb=0, use_tor=0,
-        sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None, destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, nzb_blackholedir=None, torrent_dir=None, tor_downloader_blackhole=0, tor_downloader_utorrent=0,
+        sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None, destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, nzb_blackholedir=None, torrent_dir=None, numberofseeders=0, tor_downloader_blackhole=0, tor_downloader_utorrent=0,
         newznab=0, newznab_host=None, newznab_api=None, newznab2=0, newznab_host2=None, newznab_api2=None,newzbin=0, newzbin_uid=None, newzbin_pass=None, kat=0, ebook_type=None, book_api=None, gr_api=None, gb_api=None, usenetcrawler = 0, usenetcrawler_host=None, usenetcrawler_api = None, 
         versioncheck_interval=None, search_interval=None, scan_interval=None, ebook_dest_folder=None, ebook_dest_file=None, mag_dest_folder=None, mag_dest_file=None, use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0, utorrent_host=None, utorrent_user=None, utorrent_pass=None,
         utorrent_label=None, use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token=None, use_pushbullet=0, pushbullet_notify_onsnatch=0, pushbullet_notify_ondownload=0, pushbullet_token=None, pushbullet_deviceid=None):
@@ -176,6 +177,7 @@ class WebInterface(object):
         lazylibrarian.NZB_DOWNLOADER_SABNZBD = nzb_downloader_sabnzbd
         lazylibrarian.NZB_DOWNLOADER_BLACKHOLE = nzb_downloader_blackhole
         lazylibrarian.TORRENT_DIR = torrent_dir
+        lazylibrarian.NUMBEROFSEEDERS = numberofseeders
         lazylibrarian.TOR_DOWNLOADER_BLACKHOLE = tor_downloader_blackhole
         lazylibrarian.TOR_DOWNLOADER_UTORRENT = tor_downloader_utorrent
 
