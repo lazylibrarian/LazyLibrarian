@@ -1,5 +1,7 @@
 import time, threading, urllib, urllib2, os, re
-
+from base64 import b16encode, b32decode
+from lib.bencode import bencode as bencode, bdecode
+from hashlib import sha1
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, SubElement
 
@@ -153,10 +155,7 @@ def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         else:
             torrent = response.read()
 
-        if not(lazylibrarian.TOR_DOWNLOADER_BLACKHOLE) and not(lazylibrarian.TOR_DOWNLOADER_UTORRENT):
-            logger.error("Torrents Enabled, with no method selected... Choose Blackhole or uTorrent.")
-
-        if (lazylibrarian.TOR_DOWNLOADER_BLACKHOLE) and not(lazylibrarian.TOR_DOWNLOADER_UTORRENT):
+        if (lazylibrarian.TOR_DOWNLOADER_BLACKHOLE):
             tor_name = str.replace(str(tor_title), ' ', '_') + '.torrent'
             tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
 
@@ -166,15 +165,12 @@ def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             logger.info('Torrent file saved: %s' % tor_title)
             download = True
 
-        if (lazylibrarian.TOR_DOWNLOADER_UTORRENT) and not(lazylibrarian.TOR_DOWNLOADER_BLACKHOLE):            
-            download = utorrent.addTorrent(tor_url)
+        if (lazylibrarian.TOR_DOWNLOADER_UTORRENT):            
+            hash = CalcTorrentHash(torrent)
+            download = utorrent.addTorrent(tor_url, hash)
 
-
-   
-        
-    
     else:
-        logger.error('No download method is enabled, check config.')
+        logger.error('No torrent download method is enabled, check config.')
         return False
 
     if download:
@@ -185,6 +181,18 @@ def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         logger.error(u'Failed to download torrent @ <a href="%s">%s</a>' % (tor_url, lazylibrarian.NEWZNAB_HOST))
         myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl=?', [tor_url])
 
+        
+def CalcTorrentHash(torrent):
+
+    if torrent.startswith('magnet'):
+        hash = re.findall('urn:btih:([\w]{32,40})', torrent)[0]
+        if len(hash) == 32:
+            hash = b16encode(b32decode(hash)).lower()
+    else:
+        info = bdecode(torrent)["info"]
+        hash = sha1(bencode(info)).hexdigest()
+    logger.debug('Torrent Hash: ' + hash)
+    return hash
 
 
 def MakeSearchTermWebSafe(insearchterm=None):
@@ -198,5 +206,3 @@ def MakeSearchTermWebSafe(insearchterm=None):
         logger.debug("Converting Search Term [%s] to Web Safe Search Term [%s]" % (insearchterm, searchterm))
         
         return searchterm
- 
-

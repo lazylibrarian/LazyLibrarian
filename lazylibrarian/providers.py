@@ -8,7 +8,7 @@ from lazylibrarian import logger, SimpleCache
 
 #new libraries to support torrents
 #import lib.feedparser as feedparser
-import lib.feedparser
+import lib.feedparser as feedparser
 #from bs4 import BeautifulSoup
 #import cookielib
 #import socket
