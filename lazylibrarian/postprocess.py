@@ -10,11 +10,8 @@ def processDir():
 	# rename this thread
 	threading.currentThread().name = "POSTPROCESS"
 
-	if (lazylibrarian.USE_NZB):
-		processpath = lazylibrarian.NZB_BLACKHOLEDIR
-	else:
-		processpath = lazylibrarian.TOR_BLACKHOLEDIR
-
+	processpath = lazylibrarian.DOWNLOAD_DIR
+	
 	logger.debug(' Checking [%s] for files to post process' % processpath)
 	
 	#TODO - try exception on os.listdir - it throws debug level 
