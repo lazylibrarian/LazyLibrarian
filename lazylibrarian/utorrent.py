@@ -12,7 +12,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with LazyLibrarian.  If not, see <http://www.gnu.org/licenses/>.
-#coding=utf8
+
 import urllib
 import urllib2
 import urlparse
@@ -143,9 +143,17 @@ class utorrentclient(object):
             logger.debug('URL: ' + str(url))
             logger.debug('uTorrent webUI raised the following error: ' + str(err))
 
-def addTorrent(link, hash):    
+
+def addTorrent(link, hash):
+
+    label = lazylibrarian.UTORRENT_LABEL
     uTorrentClient = utorrentclient()
     uTorrentClient.add_url(link)
     time.sleep(1) #need to ensure file is loaded uTorrent...
-    uTorrentClient.setprops(hash,'label',lazylibrarian.UTORRENT_LABEL)
-    return True
+    uTorrentClient.setprops(hash,'label', label)
+    torrentList = uTorrentClient.list()
+    for torrent in torrentList[1].get('torrents'):
+        if (torrent[0].lower()==hash):
+            return torrent[26]
+
+    return False
