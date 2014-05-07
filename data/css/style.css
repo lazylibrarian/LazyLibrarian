@@ -1,4 +1,4 @@
-/*HTML5 ✰ Boilerplate*/
+﻿/*HTML5 ✰ Boilerplate*/
 HTML, BODY, DIV, SPAN, OBJECT, IFRAME, H1, H2, H3, H4, H5, H6, P, BLOCKQUOTE, PRE, ABBR, ADDRESS, CITE, CODE, DEL, DFN, EM, IMG, INS, KBD, Q, SAMP, SMALL, STRONG, SUB, SUP, VAR, B, I, DL, DT, DD, OL, UL, LI, FIELDSET, FORM, LABEL, LEGEND, TABLE, CAPTION, TBODY, TFOOT, THEAD, TR, TH, TD, ARTICLE, ASIDE, CANVAS, DETAILS, FIGCAPTION, FIGURE, FOOTER, HEADER, HGROUP, MENU, NAV, SECTION, SUMMARY, TIME, MARK, AUDIO, VIDEO
 {
 	margin: 0;
@@ -842,6 +842,16 @@ TABLE#book_table TH#bookname
 	text-align: left;
 	min-width: 250px;
 }
+TABLE#book_table TH#series
+{
+	text-align: center;
+	width: 90px !important;
+}
+TABLE#book_table TH#seriesOrder
+{
+	text-align: center;
+	width: 40px;
+}
 TABLE#book_table TH#status
 {
 	text-align: center;
@@ -903,6 +913,16 @@ TABLE#book_table TD#bookname
 {
 	vertical-align: middle;
 	text-align: left;
+}
+TABLE#book_table TD#series
+{
+	vertical-align: middle;
+	text-align: center;
+}
+TABLE#book_table TD#seriesOrder
+{
+	vertical-align: middle;
+	text-align: center;
 }
 TABLE#book_table TD#status
 {
