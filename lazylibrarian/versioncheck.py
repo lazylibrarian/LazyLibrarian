@@ -80,7 +80,7 @@ def getCurrentVersion():
         
         if not output:
             logger.error('(getCurrentVersion) Couldn\'t find latest git installed version.')
-            version = 'GIT Cannot establish version'
+            cur_commit_hash = 'GIT Cannot establish version'
         else:
             cur_commit_hash = output.strip()
         
@@ -126,7 +126,7 @@ def getCurrentGitBranch():
     
     # use git rev-parse --abbrev-ref HEAD which returns the name of the current branch
     current_branch, err = runGit('rev-parse --abbrev-ref HEAD')
-    
+    current_branch = str(current_branch)
     current_branch = current_branch.strip('\n')
     
     if not current_branch:
@@ -272,7 +272,7 @@ def update():
 
         output, err = runGit('stash clear')
         output, err = runGit('pull origin ' + branch)
-        	
+            
         if not output:
             logger.error('(update) Couldn\'t download latest version')
             

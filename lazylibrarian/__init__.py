@@ -9,7 +9,7 @@ from lib.apscheduler.scheduler import Scheduler
 
 import threading
 
-from lazylibrarian import logger, postprocess, searchnzb, SimpleCache, librarysync
+from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, SimpleCache, librarysync
 
 FULL_PATH = None
 PROG_DIR = None
@@ -67,9 +67,6 @@ SAB_CAT = None
 DESTINATION_COPY = False
 DESTINATION_DIR = None
 DOWNLOAD_DIR = None
-BLACKHOLE = False
-BLACKHOLEDIR = None
-USENET_RETENTION = None
 
 IMP_PREFLANG = None
 IMP_ONLYISBN = False
@@ -96,7 +93,26 @@ NEWZBIN_UID = None
 NEWZBIN_PASSWORD = None
 EBOOK_TYPE = None
 
+TOR_DOWNLOADER_BLACKHOLE = False
+TOR_DOWNLOADER_UTORRENT = False
+NUMBEROFSEEDERS = 10
+TORRENT_DIR = None
+
+UTORRENT_HOST = None
+UTORRENT_USER = None
+UTORRENT_PASS = None
+UTORRENT_LABEL = None
+
 KAT = False
+
+USE_NZB = False
+USE_TOR = False
+
+NZB_DOWNLOADER_SABNZBD = False
+NZB_DOWNLOADER_BLACKHOLE = False
+NZB_BLACKHOLEDIR = None
+USENET_RETENTION = None
+
 USENETCRAWLER = False
 USENETCRAWLER_API = None
 USENETCRAWLER_HOST = None
@@ -124,6 +140,13 @@ USE_BOXCAR = False
 BOXCAR_TOKEN = None
 BOXCAR_NOTIFY_ONSNATCH = False
 BOXCAR_NOTIFY_ONDOWNLOAD = False
+
+USE_PUSHBULLET = False
+PUSHBULLET_TOKEN = None
+PUSHBULLET_DEVICEID = None
+PUSHBULLET_NOTIFY_ONSNATCH = False
+PUSHBULLET_NOTIFY_ONDOWNLOAD = False
+
 def CheckSection(sec):
     """ Check if INI section exists, if not create it """
     try:
@@ -206,11 +229,12 @@ def initialize():
     with INIT_LOCK:
 
         global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, MATCH_RATIO, \
-            IMP_ONLYISBN, IMP_PREFLANG, IMP_AUTOADD, SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, BLACKHOLE, BLACKHOLEDIR, GR_API, GB_API, BOOK_API, \
+            IMP_ONLYISBN, IMP_PREFLANG, IMP_AUTOADD, SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, NZB_BLACKHOLEDIR, GR_API, GB_API, BOOK_API, \
             NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, NEWZNAB2, NEWZNAB_HOST2, NEWZNAB_API2, EBOOK_TYPE, KAT, USENETCRAWLER, USENETCRAWLER_HOST, USENETCRAWLER_API, \
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_DEST_FOLDER, MAG_DEST_FILE, USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
-	    USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, TORRENT_DIR, \
-            GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, LATEST_VERSION, COMMITS_BEHIND
+            USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, USE_TOR, USE_NZB, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
+            USE_PUSHBULLET, PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, UTORRENT_HOST, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
+            GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS
 
         if __INITIALIZED__:
             return False
@@ -251,7 +275,7 @@ def initialize():
         logger.lazylibrarian_log.initLogger(loglevel=LOGLEVEL)
         logger.info("Log level set to [%s]- Log Directory is [%s] - Config level is [%s]" % (LOGLEVEL,LOGDIR,CFGLOGLEVEL))
 
-	MATCH_RATIO = check_setting_int(CFG, 'General', 'match_ratio', 80)
+        MATCH_RATIO = check_setting_int(CFG, 'General', 'match_ratio', 80)
         HTTP_HOST = check_setting_str(CFG, 'General', 'http_host', '0.0.0.0')
         HTTP_USER = check_setting_str(CFG, 'General', 'http_user', '')
         HTTP_PASS = check_setting_str(CFG, 'General', 'http_pass', '')
@@ -290,10 +314,14 @@ def initialize():
         DESTINATION_COPY = bool(check_setting_int(CFG, 'General', 'destination_copy', 0))
         DESTINATION_DIR = check_setting_str(CFG, 'General','destination_dir', '')
         DOWNLOAD_DIR = check_setting_str(CFG, 'General', 'download_dir', '')
-        BLACKHOLE = bool(check_setting_int(CFG, 'General', 'blackhole', 0))
-        BLACKHOLEDIR = check_setting_str(CFG, 'General', 'blackholedir', '')
-        USENET_RETENTION = check_setting_str(CFG, 'General', 'usenet_retention', '')
-	TORRENT_DIR  = check_setting_str(CFG, 'General', 'torrent_dir', '')
+                
+        USE_NZB = bool(check_setting_int(CFG, 'DLMethod', 'use_nzb', 0))
+        USE_TOR = bool(check_setting_int(CFG, 'DLMethod', 'use_tor', 0))
+
+        NZB_DOWNLOADER_SABNZBD = bool(check_setting_int(CFG, 'USENET', 'nzb_downloader_sabnzbd', 0))
+        NZB_DOWNLOADER_BLACKHOLE = bool(check_setting_int(CFG, 'USENET', 'nzb_downloader_blackhole', 0))
+        NZB_BLACKHOLEDIR = check_setting_str(CFG, 'USENET', 'nzb_blackholedir', '')
+        USENET_RETENTION = check_setting_str(CFG, 'USENET', 'usenet_retention', '')
 
         NZBMATRIX = bool(check_setting_int(CFG, 'NZBMatrix', 'nzbmatrix', 0))
         NZBMATRIX_USER = check_setting_str(CFG, 'NZBMatrix', 'nzbmatrix_user', '')
@@ -306,7 +334,17 @@ def initialize():
         NEWZNAB_HOST2 = check_setting_str(CFG, 'Newznab2', 'newznab_host2', '')
         NEWZNAB_API2 = check_setting_str(CFG, 'Newznab2', 'newznab_api2', '')
 
-	KAT = bool(check_setting_int(CFG, 'KAT', 'kat', 0))
+        TOR_DOWNLOADER_BLACKHOLE = bool(check_setting_int(CFG, 'TORRENT', 'tor_downloader_blackhole', 0))
+        TOR_DOWNLOADER_UTORRENT = bool(check_setting_int(CFG, 'TORRENT', 'tor_downloader_utorrent', 0))
+        NUMBEROFSEEDERS = check_setting_int(CFG, 'TORRENT', 'numberofseeders', 10)
+        TORRENT_DIR  = check_setting_str(CFG, 'TORRENT', 'torrent_dir', '')
+
+        UTORRENT_HOST  = check_setting_str(CFG, 'UTORRENT', 'utorrent_host', '')
+        UTORRENT_USER  = check_setting_str(CFG, 'UTORRENT', 'utorrent_user', '')
+        UTORRENT_PASS  = check_setting_str(CFG, 'UTORRENT', 'utorrent_pass', '')
+        UTORRENT_LABEL = check_setting_str(CFG, 'UTORRENT', 'utorrent_label', '')
+
+        KAT = bool(check_setting_int(CFG, 'KAT', 'kat', 0))
 
         USENETCRAWLER = bool(check_setting_int(CFG, 'UsenetCrawler', 'usenetcrawler', 0))
         USENETCRAWLER_HOST = check_setting_str(CFG, 'UsenetCrawler', 'usenetcrawler_host', '')
@@ -333,11 +371,16 @@ def initialize():
         TWITTER_PASSWORD = check_setting_str(CFG, 'Twitter', 'twitter_password', '')
         TWITTER_PREFIX = check_setting_str(CFG, 'Twitter', 'twitter_prefix', 'LazyLibrarian')
 
-	USE_BOXCAR = bool(check_setting_int(CFG, 'Boxcar', 'use_boxcar',0))
-	BOXCAR_NOTIFY_ONSNATCH = bool(check_setting_int(CFG, 'Boxcar', 'boxcar_notify_onsnatch', 0))
-	BOXCAR_NOTIFY_ONDOWNLOAD = bool(check_setting_int(CFG, 'Boxcar', 'boxcar_notify_ondownload', 0))
-	BOXCAR_TOKEN = check_setting_str(CFG, 'Boxcar', 'boxcar_token', '')
+        USE_BOXCAR = bool(check_setting_int(CFG, 'Boxcar', 'use_boxcar',0))
+        BOXCAR_NOTIFY_ONSNATCH = bool(check_setting_int(CFG, 'Boxcar', 'boxcar_notify_onsnatch', 0))
+        BOXCAR_NOTIFY_ONDOWNLOAD = bool(check_setting_int(CFG, 'Boxcar', 'boxcar_notify_ondownload', 0))
+        BOXCAR_TOKEN = check_setting_str(CFG, 'Boxcar', 'boxcar_token', '')
 
+        USE_PUSHBULLET = bool(check_setting_int(CFG, 'Pushbullet', 'use_pushbullet',0))
+        PUSHBULLET_NOTIFY_ONSNATCH = bool(check_setting_int(CFG, 'Pushbullet', 'pushbullet_notify_onsnatch', 0))
+        PUSHBULLET_NOTIFY_ONDOWNLOAD = bool(check_setting_int(CFG, 'Pushbullet', 'pushbullet_notify_ondownload', 0))
+        PUSHBULLET_TOKEN = check_setting_str(CFG, 'Pushbullet', 'pushbullet_token', '')
+        PUSHBULLET_DEVICEID = check_setting_str(CFG, 'Pushbullet', 'pushbullet_deviceid', '')
 
         BOOK_API = check_setting_str(CFG, 'API', 'book_api', 'GoodReads')
         GR_API = check_setting_str(CFG, 'API', 'gr_api', 'ckvsiSDsuqh7omh74ZZ6Q')
@@ -441,6 +484,12 @@ def config_write():
     new_config['Git']['latest_version'] = LATEST_VERSION
     new_config['Git']['commits_behind'] = COMMITS_BEHIND
 
+    new_config['USENET'] = {}
+    new_config['USENET']['nzb_downloader_sabnzbd'] = NZB_DOWNLOADER_SABNZBD
+    new_config['USENET']['nzb_downloader_blackhole'] = NZB_DOWNLOADER_BLACKHOLE
+    new_config['USENET']['nzb_blackholedir'] = NZB_BLACKHOLEDIR
+    new_config['USENET']['usenet_retention'] = USENET_RETENTION
+
     new_config['SABnzbd'] = {}
     new_config['SABnzbd']['sab_host'] = SAB_HOST
     new_config['SABnzbd']['sab_port'] = SAB_PORT
@@ -453,11 +502,11 @@ def config_write():
     new_config['General']['destination_dir'] = DESTINATION_DIR
     new_config['General']['destination_copy'] = int(DESTINATION_COPY)
     new_config['General']['download_dir'] = DOWNLOAD_DIR
-    new_config['General']['blackhole'] = int(BLACKHOLE)
-    new_config['General']['blackholedir'] = BLACKHOLEDIR
-    new_config['General']['torrent_dir'] = TORRENT_DIR
-    new_config['General']['usenet_retention'] = USENET_RETENTION
-    
+
+    new_config['DLMethod'] = {}
+    new_config['DLMethod']['use_tor'] = int(USE_TOR)
+    new_config['DLMethod']['use_nzb'] = int(USE_NZB)
+
     new_config['API'] = {}
     new_config['API']['book_api'] = BOOK_API
     new_config['API']['gr_api'] = GR_API
@@ -482,6 +531,18 @@ def config_write():
     new_config['Newzbin']['newzbin'] = int(NEWZBIN)
     new_config['Newzbin']['newzbin_uid'] = NEWZBIN_UID
     new_config['Newzbin']['newzbin_pass'] = NEWZBIN_PASS
+
+    new_config['TORRENT'] = {}
+    new_config['TORRENT']['tor_downloader_blackhole'] = TOR_DOWNLOADER_BLACKHOLE
+    new_config['TORRENT']['tor_downloader_utorrent'] = TOR_DOWNLOADER_UTORRENT
+    new_config['General']['numberofseeders'] = NUMBEROFSEEDERS
+    new_config['TORRENT']['torrent_dir'] = TORRENT_DIR
+
+    new_config['UTORRENT'] = {}
+    new_config['UTORRENT']['utorrent_host'] = UTORRENT_HOST
+    new_config['UTORRENT']['utorrent_user'] = UTORRENT_USER
+    new_config['UTORRENT']['utorrent_pass'] = UTORRENT_PASS
+    new_config['UTORRENT']['utorrent_label'] = UTORRENT_LABEL
 
     new_config['KAT'] = {}
     new_config['KAT']['kat'] = int(KAT)
@@ -515,6 +576,13 @@ def config_write():
     new_config['Boxcar']['boxcar_notify_onsnatch'] = int(BOXCAR_NOTIFY_ONSNATCH)
     new_config['Boxcar']['boxcar_notify_ondownload'] = int(BOXCAR_NOTIFY_ONDOWNLOAD)
     new_config['Boxcar']['boxcar_token'] = BOXCAR_TOKEN
+
+    new_config['Pushbullet'] = {}
+    new_config['Pushbullet']['use_pushbullet'] = int(USE_PUSHBULLET)
+    new_config['Pushbullet']['pushbullet_notify_onsnatch'] = int(PUSHBULLET_NOTIFY_ONSNATCH)
+    new_config['Pushbullet']['pushbullet_notify_ondownload'] = int(PUSHBULLET_NOTIFY_ONDOWNLOAD)
+    new_config['Pushbullet']['pushbullet_token'] = PUSHBULLET_TOKEN
+    new_config['Pushbullet']['pushbullet_deviceid'] = PUSHBULLET_DEVICEID
 
     new_config.write()
 
@@ -592,7 +660,11 @@ def start():
         # Crons and scheduled jobs go here
         starttime = datetime.datetime.now()
         SCHED.add_interval_job(postprocess.processDir, minutes=SCAN_INTERVAL)
-        SCHED.add_interval_job(searchnzb.searchbook, minutes=SEARCH_INTERVAL)
+
+        if (USE_NZB):
+            SCHED.add_interval_job(searchnzb.search_nzb_book, minutes=SEARCH_INTERVAL)
+        if (USE_TOR):
+            SCHED.add_interval_job(searchtorrents.search_tor_book, minutes=SEARCH_INTERVAL)
         SCHED.add_interval_job(versioncheck.checkForUpdates, hours=VERSIONCHECK_INTERVAL)
 
         SCHED.start()

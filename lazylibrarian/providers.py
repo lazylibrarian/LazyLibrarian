@@ -8,7 +8,7 @@ from lazylibrarian import logger, SimpleCache
 
 #new libraries to support torrents
 #import lib.feedparser as feedparser
-import feedparser
+import lib.feedparser as feedparser
 #from bs4 import BeautifulSoup
 #import cookielib
 #import socket
@@ -27,10 +27,12 @@ def KAT(book=None):
 
 
     provider = "KAT"
-    providerurl = url_fix("http://www.kat.ph/search/" + book['searchterm'])
+    providerurl = url_fix("http://kickass.to/usearch/" + book['searchterm'])
+    minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
+
 
     params = {
-                "categories[0]": "books",
+                "category": "books",
                 "field": "seeders",
                 "sorder": "desc",
                 "rss": "1"
@@ -40,6 +42,7 @@ def KAT(book=None):
     try:
         data = urllib2.urlopen(searchURL, timeout=20)
     except urllib2.URLError, e:
+        logger.warn(searchURL)
         logger.warn('Error fetching data from %s: %s' % (provider, e))
         data = False
         
@@ -65,15 +68,14 @@ def KAT(book=None):
                     url = item['links'][1]['href']
                     size = int(item['links'][1]['length'])
                     
-                    
-                    results.append({
-                        'bookid': book['bookid'],
-                        'nzbprov': "KAT",
-                        'nzbtitle': title,
-                        'nzburl': url,
-                        'nzbdate': '',
-                        'nzbsize': str(size),
-                        })
+                    if minimumseeders < int(seeders):
+                        results.append({
+                            'bookid': book['bookid'],
+                            'tor_prov': "KAT",
+                            'tor_title': title,
+                            'tor_url': url,
+                            'tor_size': str(size),
+                            })
 
                     logger.info('Found %s. Size: %s' % (title, size))
                 
@@ -108,17 +110,17 @@ def OLDUsenetCrawler(book=None):
         "title": book['bookName'],
         "author": book['authorName']
         }
-	
-	#sample request
-	#http://www.usenet-crawler.com/api?apikey=7xxxxxxxxxxxxxyyyyyyyyyyyyyyzzz4&t=book&author=Daniel
+    
+    #sample request
+    #http://www.usenet-crawler.com/api?apikey=7xxxxxxxxxxxxxyyyyyyyyyyyyyyzzz4&t=book&author=Daniel
 
     logger.debug("%s" % params)
-	
+    
     if not str(HOST)[:4] == "http":
         HOST = 'http://' + HOST
-	
+    
     URL = HOST + '/api?' + urllib.urlencode(params)
-	
+    
     logger.debug('UsenetCrawler: searching on [%s] ' % URL)
     
     data = None    
@@ -255,9 +257,16 @@ def IterateOverNewzNabSites(book=None, searchType=None):
         resultslist += NewzNabPlus(book, lazylibrarian.USENETCRAWLER_HOST,
                                     lazylibrarian.USENETCRAWLER_API,
                                     searchType)
+    return resultslist
+
+
+
+def IterateOverTorrentSites(book=None, searchType=None):
+
+    resultslist = []
     if (lazylibrarian.KAT):
-    	logger.debug('[IterateOverNewzNabSites] - KAT')
-	resultslist += providers.KAT(book)
+         logger.debug('[IterateOverTorrentSites] - KAT')
+         resultslist += KAT(book)
 
     return resultslist
 
