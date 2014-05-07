@@ -66,7 +66,6 @@ def LibraryScan(dir=None):
 			 subdirectory = r.replace(dir,'')
 			 latest_subdirectory.append(subdirectory)
 			 logger.info("[%s] Now scanning subdirectory %s" % (dir.decode(lazylibrarian.SYS_ENCODING, 'replace'), subdirectory.decode(lazylibrarian.SYS_ENCODING, 'replace')))
-			 #assumed file name pattern, should be updated from the configuration string?
 			 matchString = ''
 			 for char in lazylibrarian.EBOOK_DEST_FILE:
 				matchString = matchString + '\\' + char
