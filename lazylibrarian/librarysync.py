@@ -52,7 +52,8 @@ def LibraryScan(dir=None):
 			if not book_exists:
 				myDB.action('update books set Status=? where AuthorName=? and BookName=?',[status,bookAuthor,bookName])
 				logger.info('Book %s updated as not found on disk' % encoded_book_path.decode(lazylibrarian.SYS_ENCODING, 'replace') )
-				new_authors.append(bookAuthor)
+				if bookAuthor not in new_authors:
+					new_authors.append(bookAuthor)
 
 	latest_subdirectory = []
 	for r,d,f in os.walk(dir):
@@ -73,7 +74,6 @@ def LibraryScan(dir=None):
 			 matchString = matchString.replace("\\$\\A\\u\\t\\h\\o\\r", "(?P<author>.*?)").replace("\\$\\T\\i\\t\\l\\e","(?P<book>.*?)")+'\.(?P<format>.*?)'
 			 #pattern = re.compile(r'(?P<author>.*?)\s\-\s(?P<book>.*?)\.(?P<format>.*?)', re.VERBOSE)
 			 pattern = re.compile(matchString, re.VERBOSE)
-			 print (matchString)
 			 match = pattern.match(files)
 			 if match:
 				author = match.group("author")
@@ -94,7 +94,8 @@ def LibraryScan(dir=None):
 								importer.addAuthorToDB(author)
 								check_exist_book = myDB.action("SELECT * FROM books where AuthorName=? and BookName=?",[author,book]).fetchone()
 								if check_exist_book:
-									new_authors.append(author)
+									if author not in new_authors:
+										new_authors.append(author)
 									myDB.action('UPDATE books set Status=? where AuthorName=? and BookName=?',['Open',author,book])
 									new_book_count += 1
 							else:
@@ -102,14 +103,15 @@ def LibraryScan(dir=None):
 							
 
 				else:
-					new_authors.append(author)
+					if author not in new_authors:
+						new_authors.append(author)
 					myDB.action('UPDATE books set Status=? where AuthorName=? and BookName=?',['Open',author,book])
 					new_book_count += 1
 				
 				file_count += 1
 	
 	logger.info("%s new/modified books found and added to the database" % new_book_count)
-	#logger.info('Updating %i authors' % len(new_authors))
+	logger.info('Updating %i authors' % len(new_authors))
 	for auth in new_authors:
 		havebooks = len(myDB.select('select BookName from Books where status=? and AuthorName=?',['Open',auth]))
 		myDB.action('UPDATE authors set HaveBooks=? where AuthorName=?',[havebooks,auth])
