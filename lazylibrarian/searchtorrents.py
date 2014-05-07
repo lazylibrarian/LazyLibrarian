@@ -1,11 +1,13 @@
 import time, threading, urllib, urllib2, os, re
-
+from base64 import b16encode, b32decode
+from lib.bencode import bencode as bencode, bdecode
+from hashlib import sha1
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, SubElement
 
 import lazylibrarian
 
-from lazylibrarian import logger, database, formatter, providers, sabnzbd, SimpleCache, notifiers, searchmag
+from lazylibrarian import logger, database, formatter, providers, SimpleCache, notifiers, searchmag, utorrent
 
 import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
@@ -14,11 +16,11 @@ from lib.fuzzywuzzy import fuzz, process
 from StringIO import StringIO
 import gzip
 
-def search_nzb_book(books=None, mags=None):
-    if not(lazylibrarian.USE_NZB):
+def search_tor_book(books=None, mags=None):
+    if not(lazylibrarian.USE_TOR):
         return
     # rename this thread
-    threading.currentThread().name = "SEARCHNZBBOOKS"
+    threading.currentThread().name = "SEARCHTORBOOKS"
     myDB = database.DBConnection()
     searchlist = []
     searchlist1 = []
@@ -63,22 +65,19 @@ def search_nzb_book(books=None, mags=None):
         searchterm = re.sub(r"\s\s+" , " ", searchterm) # strip any double white space
         searchlist.append({"bookid": bookid, "bookName":searchbook[2], "authorName":searchbook[1], "searchterm": searchterm.strip()})
     
-    if not lazylibrarian.SAB_HOST and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
+    if not lazylibrarian.KAT:
         logger.info('No download method is set, use SABnzbd or blackhole')
 
-    #TODO - Move the newznab test to providers.py
-    if not lazylibrarian.NEWZNAB and not lazylibrarian.NEWZNAB2 and not lazylibrarian.USENETCRAWLER:
-        logger.info('No providers are set. try use NEWZNAB.')
 
     counter = 0
     for book in searchlist: 
         #print book.keys()
-        resultlist = providers.IterateOverNewzNabSites(book,'book')
+        resultlist = providers.IterateOverTorrentSites(book,'book')
 
         #if you can't find teh book specifically, you might find under general search
         if not resultlist:
             logger.info("Searching for type book failed to find any books...moving to general search")
-            resultlist = providers.IterateOverNewzNabSites(book,'general')
+            resultlist = providers.IterateOverTorrentSites(book,'general')
 
         if not resultlist:
             logger.debug("Adding book %s to queue." % book['searchterm'])
@@ -88,107 +87,112 @@ def search_nzb_book(books=None, mags=None):
             logger.debug(u'searchterm %s' % book['searchterm'])
             addedCounter = 0
 
-            for nzb in resultlist:
-                nzbTitle = formatter.latinToAscii(formatter.replace_all(str(nzb['nzbtitle']).lower(), dictrepl)).strip()
-                nzbTitle = re.sub(r"\s\s+" , " ", nzbTitle) #remove extra whitespace
-                logger.debug(u'nzbName %s' % nzbTitle)          
+            for tor in resultlist:
+                tor_Title = formatter.latinToAscii(formatter.replace_all(str(tor['tor_title']).lower(), dictrepl)).strip()
+                tor_Title = re.sub(r"\s\s+" , " ", tor_Title) #remove extra whitespace
+                logger.debug(u'torName %s' % tor_Title)          
 
                 match_ratio = lazylibrarian.MATCH_RATIO 
-                nzbTitle_match = fuzz.token_sort_ratio(book['searchterm'].lower(), nzbTitle)
-                logger.debug("NZB Title Match %: " + str(nzbTitle_match))
+                tor_Title_match = fuzz.token_sort_ratio(book['searchterm'].lower(), tor_Title)
+                logger.debug("Torrent Title Match %: " + str(tor_Title_match))
                 
-                if (nzbTitle_match > match_ratio):
-                    logger.info(u'Found NZB: %s' % nzb['nzbtitle'])
+                if (tor_Title_match > match_ratio):
+                    logger.info(u'Found Torrent: %s' % tor['tor_title'])
                     addedCounter = addedCounter + 1
                     bookid = book['bookid']
-                    nzbTitle = (book["authorName"] + ' - ' + book['bookName'] + ' LL.(' + book['bookid'] + ')').strip()
-                    nzburl = nzb['nzburl']
-                    nzbprov = nzb['nzbprov']
-                    nzbdate_temp = nzb['nzbdate']
-                    nzbsize_temp = nzb['nzbsize']  #Need to cater for when this is NONE (Issue 35)
-                    if nzbsize_temp is None:
-                        nzbsize_temp = 1000
-                    nzbsize = str(round(float(nzbsize_temp) / 1048576,2))+' MB'
-                    nzbdate = formatter.nzbdate2format(nzbdate_temp)
+                    tor_Title = (book["authorName"] + ' - ' + book['bookName'] + ' LL.(' + book['bookid'] + ')').strip()
+                    tor_url = tor['tor_url']
+                    tor_prov = tor['tor_prov']
                     
-                    controlValueDict = {"NZBurl": nzburl}
+                    tor_size_temp = tor['tor_size']  #Need to cater for when this is NONE (Issue 35)
+                    if tor_size_temp is None:
+                        tor_size_temp = 1000
+                    tor_size = str(round(float(tor_size_temp) / 1048576,2))+' MB'
+                    
+                    controlValueDict = {"NZBurl": tor_url}
                     newValueDict = {
-                        "NZBprov": nzbprov,
+                        "NZBprov": tor_prov,
                         "BookID": bookid,
-                        "NZBdate": nzbdate,
-                        "NZBsize": nzbsize,
-                        "NZBtitle": nzbTitle,
+                        "NZBsize": tor_size,
+                        "NZBtitle": tor_Title,
                         "Status": "Skipped"
                     }
                     myDB.upsert("wanted", newValueDict, controlValueDict)
 
                     snatchedbooks = myDB.action('SELECT * from books WHERE BookID=? and Status="Snatched"', [bookid]).fetchone()
                     if not snatchedbooks:
-                        snatch = DownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
-                        notifiers.notify_snatch(nzbTitle+' at '+formatter.now()) 
+                        snatch = DownloadMethod(bookid, tor_prov, tor_Title, tor_url)
+                        notifiers.notify_snatch(tor_Title+' at '+formatter.now()) 
                     break;
             if addedCounter == 0:
-                logger.info("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")
+                logger.info("No torrent's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")
         counter = counter + 1
 
-    if not books or books==False:
-        snatched = searchmag.searchmagazines(mags)
-        for items in snatched:
-            snatch = DownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-            notifiers.notify_snatch(items['nzbtitle']+' at '+formatter.now()) 
+   # if not books or books==False:
+   #     snatched = searchmag.searchmagazines(mags)
+   #     for items in snatched:
+   #         snatch = DownloadMethod(items['bookid'], items['tor_prov'], items['tor_title'], items['tor_url'])
+   #         notifiers.notify_snatch(items['tor_title']+' at '+formatter.now()) 
     logger.info("Search for Wanted items complete")
 
 
-def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
+def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
 
     myDB = database.DBConnection()
+    download = False
+    if (lazylibrarian.USE_TOR):
+        request = urllib2.Request(tor_url)
+        request.add_header('Accept-encoding', 'gzip')
+    
+        if tor_prov == 'KAT':
+            request.add_header('Referer', 'http://kat.ph/')
+        
+        response = urllib2.urlopen(request)
+        if response.info().get('Content-Encoding') == 'gzip':
+            buf = StringIO(response.read())
+            f = gzip.GzipFile(fileobj=buf)
+            torrent = f.read()
+        else:
+            torrent = response.read()
 
-    if lazylibrarian.SAB_HOST and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
-        download = sabnzbd.SABnzbd(nzbtitle, nzburl)
+        if (lazylibrarian.TOR_DOWNLOADER_BLACKHOLE):
+            tor_name = str.replace(str(tor_title), ' ', '_') + '.torrent'
+            tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
 
-    elif lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
+            torrent_file = open(tor_path , 'wb')
+            torrent_file.write(torrent)
+            torrent_file.close()
+            logger.info('Torrent file saved: %s' % tor_title)
+            download = True
 
-        try:
-            req = urllib2.Request(nzburl)
-            req.add_header('User-Agent', 'lazylibrary/0.0 +https://github.com/herman-rogers/LazyLibrarian-1')
-            nzbfile = urllib2.urlopen(req, timeout=90).read()
-   
-
-        except urllib2.URLError, e:
-            logger.warn('Error fetching nzb from url: ' + nzburl + ' %s' % e)
-            nzbfile = False;
-
-        if (nzbfile):
-
-            nzbname = str(nzbtitle) + '.nzb';
-            nzbpath = os.path.join(lazylibrarian.NZB_BLACKHOLEDIR, nzbname);
-
-            try:
-                f = open(nzbpath, 'w');
-                f.write(nzbfile);
-                f.close();
-                logger.info('NZB file saved to: ' + nzbpath);
-                download = True;
-                try:
-                    os.chmod(nzbpath, 0777);
-                except Exception, e:
-                    logger.info("Could not chmod path: " + str(file2));
-            except Exception, e:
-                logger.error('%s not writable, NZB not saved. Error: %s' % (nzbpath, e));
-                download = False;
+        if (lazylibrarian.TOR_DOWNLOADER_UTORRENT):            
+            hash = CalcTorrentHash(torrent)
+            download = utorrent.addTorrent(tor_url, hash)
 
     else:
-        logger.error('No download method is enabled, check config.')
+        logger.error('No torrent download method is enabled, check config.')
         return False
 
     if download:
-        logger.debug('Nzbfile has been downloaded from ' + str(nzburl))
+        logger.debug('Torrent file has been downloaded from ' + str(tor_url))
         myDB.action('UPDATE books SET status = "Snatched" WHERE BookID=?', [bookid])
-        myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl=?', [nzburl])
+        myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl=?', [tor_url])
     else:
-        logger.error(u'Failed to download nzb @ <a href="%s">%s</a>' % (nzburl, lazylibrarian.NEWZNAB_HOST))
-        myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl=?', [nzburl])
+        logger.error(u'Failed to download torrent @ <a href="%s">%s</a>' % (tor_url, lazylibrarian.NEWZNAB_HOST))
+        myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl=?', [tor_url])
 
+        
+def CalcTorrentHash(torrent):
+
+    if torrent.startswith('magnet'):
+        hash = re.findall('urn:btih:([\w]{32,40})', torrent)[0]
+        if len(hash) == 32:
+            hash = b16encode(b32decode(hash)).lower()
+    else:
+        info = bdecode(torrent)["info"]
+        hash = sha1(bencode(info)).hexdigest()
+    logger.debug('Torrent Hash: ' + hash)
+    return hash
 
 
 def MakeSearchTermWebSafe(insearchterm=None):
@@ -202,5 +206,3 @@ def MakeSearchTermWebSafe(insearchterm=None):
         logger.debug("Converting Search Term [%s] to Web Safe Search Term [%s]" % (insearchterm, searchterm))
         
         return searchterm
- 
-
