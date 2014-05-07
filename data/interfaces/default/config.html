@@ -44,6 +44,7 @@
 		  <br>
 		  <div>
 		  <label>Full Scan:</label><input type="checkbox" name="full_scan" value=1 ${config['full_scan']} />
+		  <i class="smalltext">This will remove entries if ebooks are not found in the download location</i>
 		  </div>
 		  <div>
 		  <label>Missing Book Status:</label>
@@ -57,6 +58,7 @@
 		  <option value="${nf_status}" ${selected}>${nf_status}</option>
 		  %endfor
 		  </select>
+		  <i class="smalltext">Value to update ebooks to if not found</i>
 		  </div>
                 </td>
                 <td>
