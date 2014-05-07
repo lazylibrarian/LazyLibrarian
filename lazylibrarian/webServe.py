@@ -64,7 +64,7 @@ class WebInterface(object):
     def config(self):
         http_look_dir = os.path.join(lazylibrarian.PROG_DIR, 'data/interfaces/')
         http_look_list = [ name for name in os.listdir(http_look_dir) if os.path.isdir(os.path.join(http_look_dir, name)) ]
-
+	status_list = [ 'Skipped','Wanted', 'Open', 'Ignored' ]
         config = {
                     "http_host":        lazylibrarian.HTTP_HOST,
                     "http_user":        lazylibrarian.HTTP_USER,
@@ -108,6 +108,9 @@ class WebInterface(object):
                     "search_interval" :       int(lazylibrarian.SEARCH_INTERVAL),
                     "scan_interval" :         int(lazylibrarian.SCAN_INTERVAL),
                     "versioncheck_interval" : int(lazylibrarian.VERSIONCHECK_INTERVAL),
+		    "full_scan":	      checked(lazylibrarian.FULL_SCAN),	
+		    "notfound_status":	      lazylibrarian.NOTFOUND_STATUS,
+		    "status_list":	      status_list,
                     "ebook_dest_folder":      lazylibrarian.EBOOK_DEST_FOLDER,
                     "ebook_dest_file":        lazylibrarian.EBOOK_DEST_FILE,
                     "mag_dest_folder":        lazylibrarian.MAG_DEST_FOLDER,
@@ -145,7 +148,7 @@ class WebInterface(object):
     def configUpdate(self, http_host='0.0.0.0', http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, imp_onlyisbn=0, imp_preflang=None, imp_autoadd=None, match_ratio=80, nzb_downloader_sabnzbd=0, nzb_downloader_blackhole=0, use_nzb=0, use_tor=0,
         sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None, destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, nzb_blackholedir=None, torrent_dir=None, numberofseeders=0, tor_downloader_blackhole=0, tor_downloader_utorrent=0,
         newznab=0, newznab_host=None, newznab_api=None, newznab2=0, newznab_host2=None, newznab_api2=None,newzbin=0, newzbin_uid=None, newzbin_pass=None, kat=0, ebook_type=None, book_api=None, gr_api=None, gb_api=None, usenetcrawler = 0, usenetcrawler_host=None, usenetcrawler_api = None, 
-        versioncheck_interval=None, search_interval=None, scan_interval=None, ebook_dest_folder=None, ebook_dest_file=None, mag_dest_folder=None, mag_dest_file=None, use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0, utorrent_host=None, utorrent_user=None, utorrent_pass=None,
+        versioncheck_interval=None, search_interval=None, scan_interval=None, ebook_dest_folder=None, ebook_dest_file=None, mag_dest_folder=None, mag_dest_file=None, use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0, utorrent_host=None, utorrent_user=None, utorrent_pass=None,  notfound_status='Wanted', full_scan=0, 
         utorrent_label=None, use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token=None, use_pushbullet=0, pushbullet_notify_onsnatch=0, pushbullet_notify_ondownload=0, pushbullet_token=None, pushbullet_deviceid=None):
 
         lazylibrarian.HTTP_HOST = http_host
@@ -216,6 +219,9 @@ class WebInterface(object):
         lazylibrarian.SEARCH_INTERVAL = search_interval
         lazylibrarian.SCAN_INTERVAL = scan_interval
         lazylibrarian.VERSIONCHECK_INTERVAL = versioncheck_interval
+
+	lazylibrarian.FULL_SCAN = full_scan
+	lazylibrarian.NOTFOUND_STATUS = notfound_status
 
         lazylibrarian.EBOOK_DEST_FOLDER = ebook_dest_folder
         lazylibrarian.EBOOK_DEST_FILE = ebook_dest_file
@@ -359,7 +365,7 @@ class WebInterface(object):
 
     def libraryScan(self):
         try:
-	     threading.Thread(target=librarysync.LibraryScan(lazylibrarian.DESTINATION_DIR)).start()
+		threading.Thread(target=librarysync.LibraryScan(lazylibrarian.DESTINATION_DIR)).start()
         except Exception, e:
              logger.error('Unable to complete the scan: %s' % e)
 	raise cherrypy.HTTPRedirect("home")

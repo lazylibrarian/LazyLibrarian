@@ -40,6 +40,24 @@
                   <br>
                   <br>
                   <label>Logdir:</label><input type="text" name="logdir" value="${config['logdir']}" size="50"><br>
+		  <br>
+		  <br>
+		  <div>
+		  <label>Full Scan:</label><input type="checkbox" name="full_scan" value=1 ${config['full_scan']} />
+		  </div>
+		  <div>
+		  <label>Missing Book Status:</label>
+		  <select name="notfound_status">
+		  %for nf_status in config['status_list']:
+		  <%
+		  	selected = ''
+		  	if nf_status == config['notfound_status']:
+				selected = 'selected="selected"'
+		  %>
+		  <option value="${nf_status}" ${selected}>${nf_status}</option>
+		  %endfor
+		  </select>
+		  </div>
                 </td>
                 <td>
                     <div>
