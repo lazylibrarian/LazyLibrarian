@@ -543,7 +543,7 @@ def config_write():
     new_config['TORRENT'] = {}
     new_config['TORRENT']['tor_downloader_blackhole'] = TOR_DOWNLOADER_BLACKHOLE
     new_config['TORRENT']['tor_downloader_utorrent'] = TOR_DOWNLOADER_UTORRENT
-    new_config['General']['numberofseeders'] = NUMBEROFSEEDERS
+    new_config['TORRENT']['numberofseeders'] = NUMBEROFSEEDERS
     new_config['TORRENT']['torrent_dir'] = TORRENT_DIR
 
     new_config['UTORRENT'] = {}
