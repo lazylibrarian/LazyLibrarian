@@ -651,6 +651,18 @@ def dbcheck():
         logger.info('Updating database to hold IssueStatus')
         c.execute('ALTER TABLE magazines ADD COLUMN IssueStatus TEXT')
 
+    try:
+        c.execute('SELECT Series from books')
+    except sqlite3.OperationalError:
+        logger.info('Updating database to hold Series')
+        c.execute('ALTER TABLE books ADD COLUMN Series TEXT')
+
+    try:
+        c.execute('SELECT SeriesOrder from books')
+    except sqlite3.OperationalError:
+        logger.info('Updating database to hold SeriesOrder')
+        c.execute('ALTER TABLE books ADD COLUMN SeriesOrder INTEGER')
+
     conn.commit()
     c.close()
 
