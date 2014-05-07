@@ -9,7 +9,7 @@ from lib.apscheduler.scheduler import Scheduler
 
 import threading
 
-from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, SimpleCache
+from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, SimpleCache, librarysync
 
 FULL_PATH = None
 PROG_DIR = None
