@@ -67,7 +67,14 @@ def LibraryScan(dir=None):
 			 latest_subdirectory.append(subdirectory)
 			 logger.info("[%s] Now scanning subdirectory %s" % (dir.decode(lazylibrarian.SYS_ENCODING, 'replace'), subdirectory.decode(lazylibrarian.SYS_ENCODING, 'replace')))
 			 #assumed file name pattern, should be updated from the configuration string?
-			 pattern = re.compile(r'(?P<author>.*?)\s\-\s(?P<book>.*?)\.(?P<format>.*?)', re.VERBOSE)
+			 matchString = ''
+			 for char in lazylibrarian.EBOOK_DEST_FILE:
+				matchString = matchString + '\\' + char
+			 #massage the EBOOK_DEST_FILE config parameter into something we can use with regular expression matching
+			 matchString = matchString.replace("\\$\\A\\u\\t\\h\\o\\r", "(?P<author>.*?)").replace("\\$\\T\\i\\t\\l\\e","(?P<book>.*?)")+'\.(?P<format>.*?)'
+			 #pattern = re.compile(r'(?P<author>.*?)\s\-\s(?P<book>.*?)\.(?P<format>.*?)', re.VERBOSE)
+			 pattern = re.compile(matchString, re.VERBOSE)
+			 print (matchString)
 			 match = pattern.match(files)
 			 if match:
 				author = match.group("author")
