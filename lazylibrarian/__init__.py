@@ -123,6 +123,9 @@ CURRENT_VERSION = None
 VERSIONCHECK_INTERVAL = 24 #Every 2 hours
 SEARCH_INTERVAL = 720 #Every 12 hours
 SCAN_INTERVAL = 10 #Every 10 minutes
+FULL_SCAN = 0 #full scan would remove books from db
+NOTFOUND_STATUS = 'Skipped' #value to marke missing books in db, can be 'Open', 'Ignored',' 'Wanted','Skipped'
+ADD_AUTHOR = 1 #auto add authors not found in db from goodreads
 
 EBOOK_DEST_FOLDER = None
 EBOOK_DEST_FILE = None
@@ -234,6 +237,7 @@ def initialize():
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_DEST_FOLDER, MAG_DEST_FILE, USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
             USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, USE_TOR, USE_NZB, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
             USE_PUSHBULLET, PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, UTORRENT_HOST, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
+	    NOTFOUND_STATUS, FULL_SCAN, ADD_AUTHOR, \
             GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS
 
         if __INITIALIZED__:
@@ -358,6 +362,10 @@ def initialize():
         SEARCH_INTERVAL = int(check_setting_str(CFG, 'SearchScan', 'search_interval', '360'))
         SCAN_INTERVAL = int(check_setting_str(CFG, 'SearchScan', 'scan_interval', '10'))
         VERSIONCHECK_INTERVAL = int(check_setting_str(CFG, 'SearchScan', 'versioncheck_interval', '24'))
+
+        FULL_SCAN = bool(check_setting_int(CFG, 'LibraryScan', 'full_scan', 0))
+	NOTFOUND_STATUS = check_setting_str(CFG, 'LibraryScan', 'notfound_status','Skipped')
+	ADD_AUTHOR = bool(check_setting_int(CFG, 'LibraryScan', 'add_author', 0))
 
         EBOOK_DEST_FOLDER = check_setting_str(CFG, 'PostProcess', 'ebook_dest_folder', '$Author/$Title')
         EBOOK_DEST_FILE = check_setting_str(CFG, 'PostProcess', 'ebook_dest_file', '$Title - $Author')
@@ -535,7 +543,7 @@ def config_write():
     new_config['TORRENT'] = {}
     new_config['TORRENT']['tor_downloader_blackhole'] = TOR_DOWNLOADER_BLACKHOLE
     new_config['TORRENT']['tor_downloader_utorrent'] = TOR_DOWNLOADER_UTORRENT
-    new_config['General']['numberofseeders'] = NUMBEROFSEEDERS
+    new_config['TORRENT']['numberofseeders'] = NUMBEROFSEEDERS
     new_config['TORRENT']['torrent_dir'] = TORRENT_DIR
 
     new_config['UTORRENT'] = {}
@@ -556,6 +564,11 @@ def config_write():
     new_config['SearchScan']['search_interval'] = SEARCH_INTERVAL
     new_config['SearchScan']['scan_interval'] = SCAN_INTERVAL
     new_config['SearchScan']['versioncheck_interval'] = VERSIONCHECK_INTERVAL
+
+    new_config['LibraryScan'] = {}
+    new_config['LibraryScan']['full_scan'] = FULL_SCAN
+    new_config['LibraryScan']['notfound_status'] = NOTFOUND_STATUS
+    new_config['LibraryScan']['add_author'] = ADD_AUTHOR
 
     new_config['PostProcess'] = {}
     new_config['PostProcess']['ebook_dest_folder'] = EBOOK_DEST_FOLDER
