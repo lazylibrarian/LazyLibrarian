@@ -93,7 +93,7 @@ def search_nzb_book(books=None, mags=None):
                 nzbTitle = re.sub(r"\s\s+" , " ", nzbTitle) #remove extra whitespace
                 logger.debug(u'nzbName %s' % nzbTitle)          
 
-                match_ratio = lazylibrarian.MATCH_RATIO 
+                match_ratio = int(lazylibrarian.MATCH_RATIO)
                 nzbTitle_match = fuzz.token_sort_ratio(book['searchterm'].lower(), nzbTitle)
                 logger.debug("NZB Title Match %: " + str(nzbTitle_match))
                 

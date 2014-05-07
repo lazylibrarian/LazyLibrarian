@@ -92,7 +92,7 @@ def search_tor_book(books=None, mags=None):
                 tor_Title = re.sub(r"\s\s+" , " ", tor_Title) #remove extra whitespace
                 logger.debug(u'torName %s' % tor_Title)          
 
-                match_ratio = lazylibrarian.MATCH_RATIO 
+                match_ratio = int(lazylibrarian.MATCH_RATIO)
                 tor_Title_match = fuzz.token_sort_ratio(book['searchterm'].lower(), tor_Title)
                 logger.debug("Torrent Title Match %: " + str(tor_Title_match))
                 
