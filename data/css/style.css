@@ -638,6 +638,10 @@ DIV#searchbar INPUT
 	padding-left: 30px;
 	padding-right: 25px;
 }
+DIV#form
+{
+	margin-top: -21px;
+}
 #searchbox
 {
 	min-width: 100px;
@@ -718,21 +722,11 @@ DIV#main
 {
 	font-size: 12px;
 	line-height: 18px;
-	/*+placement:shift 0px 0px;*/
-	position: relative;
-	left: 0px;
-	top: 0px;
-	padding-top: 0px;
 }
 .configtable TD
 {
 	width: 350px;
-	padding: 10px;
-	/*+placement:shift 0px 0px;*/
-	position: relative;
-	left: 0px;
-	top: 0px;
-	margin-top: 55px;
+	padding: 0px 10px 10px;
 }
 .configtable TD#middle
 {
