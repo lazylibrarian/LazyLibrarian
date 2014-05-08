@@ -71,7 +71,16 @@ def LibraryScan(dir=None):
 			 for char in lazylibrarian.EBOOK_DEST_FILE:
 				matchString = matchString + '\\' + char
 			 #massage the EBOOK_DEST_FILE config parameter into something we can use with regular expression matching
-			 matchString = matchString.replace("\\$\\A\\u\\t\\h\\o\\r", "(?P<author>.*?)").replace("\\$\\T\\i\\t\\l\\e","(?P<book>.*?)")+'\.(?P<format>.*?)'
+			 booktypes = ''
+			 count=-1;
+			 booktype_list =  getList(lazylibrarian.EBOOK_TYPE)
+			 for book_type in booktype_list:
+			 	count+=1
+				if count == 0:
+					booktypes = book_type
+				else
+					booktypes = booktypes + '|'+book_type
+			 matchString = matchString.replace("\\$\\A\\u\\t\\h\\o\\r", "(?P<author>.*?)").replace("\\$\\T\\i\\t\\l\\e","(?P<book>.*?)")+'\.['+booktypes+']'
 			 #pattern = re.compile(r'(?P<author>.*?)\s\-\s(?P<book>.*?)\.(?P<format>.*?)', re.VERBOSE)
 			 pattern = re.compile(matchString, re.VERBOSE)
 			 match = pattern.match(files)
