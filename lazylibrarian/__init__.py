@@ -1,6 +1,6 @@
 from __future__ import with_statement
 
-import os, sys, subprocess, threading, cherrypy, webbrowser, sqlite3
+import os, sys, subprocess, threading, cherrypy, webbrowser, sqlite3, re
 
 import datetime
 
@@ -651,11 +651,13 @@ def dbcheck():
         logger.info('Updating database to hold IssueStatus')
         c.execute('ALTER TABLE magazines ADD COLUMN IssueStatus TEXT')
 
+    addedSeries = False
     try:
         c.execute('SELECT Series from books')
     except sqlite3.OperationalError:
         logger.info('Updating database to hold Series')
         c.execute('ALTER TABLE books ADD COLUMN Series TEXT')
+        addedSeries = True
 
     try:
         c.execute('SELECT SeriesOrder from books')
@@ -665,6 +667,32 @@ def dbcheck():
 
     conn.commit()
     c.close()
+
+    if addedSeries:
+        try:
+            myDB = database.DBConnection()
+            books = myDB.select('SELECT BookID, BookName FROM books')
+            if books:
+                logger.info('Adding series to existing books')
+                for book in books:
+                    result = re.search(r"\(([\S\s]+)\, #(\d+)|\(([\S\s]+) #(\d+)", book["BookName"])
+                    if result:
+                        if result.group(1) == None:
+                            series = result.group(3)
+                            seriesOrder = result.group(4)
+                        else:
+                            series = result.group(1)
+                            seriesOrder = result.group(2)
+                            
+                        controlValueDict = {"BookID": book["BookID"]}
+                        newValueDict = {
+                            "series":   series,
+                            "seriesOrder": seriesOrder
+			}
+        		myDB.upsert("books", newValueDict, controlValueDict)
+        except Exception, z:
+            logger.info('Error: ' + str(z))
+                    
 
     try:
         myDB = database.DBConnection()
