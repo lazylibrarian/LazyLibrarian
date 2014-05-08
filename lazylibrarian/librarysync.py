@@ -78,7 +78,7 @@ def LibraryScan(dir=None):
 			 	count+=1
 				if count == 0:
 					booktypes = book_type
-				else
+				else:
 					booktypes = booktypes + '|'+book_type
 			 matchString = matchString.replace("\\$\\A\\u\\t\\h\\o\\r", "(?P<author>.*?)").replace("\\$\\T\\i\\t\\l\\e","(?P<book>.*?)")+'\.['+booktypes+']'
 			 #pattern = re.compile(r'(?P<author>.*?)\s\-\s(?P<book>.*?)\.(?P<format>.*?)', re.VERBOSE)
