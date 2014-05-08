@@ -93,14 +93,25 @@ def LibraryScan(dir=None):
 					check_exist_author = myDB.action("SELECT * FROM authors where AuthorName=?",[author]).fetchone()
 					if not check_exist_author and lazylibrarian.ADD_AUTHOR:
 						GR = GoodReads(author)
-						author_gr = GR.find_author_id()
+						try:
+							author_gr = GR.find_author_id()
+						except:
+							continue
 						#only try to add if GR data matches found author data
 						if author_gr:
 							authorid = author_gr['authorid']
-							authorlink  = author_gr['authorlink'][(author['authorlink'].rfind('/'))+1:]
-							if authorid+"."+author == authorlink:
+							authorlink  = author_gr['authorlink']
+							pageIdx = authorlink.rfind('/')
+							authorlink  = authorlink[pageIdx+1:]
+							match_auth = authorid+"."+author.replace('. ','_')
+							logger.debug(match_auth)
+							logger.debug(authorlink)
+							if match_auth == authorlink:
 								logger.info("Adding %s" % author)
-								importer.addAuthorToDB(author)
+								try:
+									importer.addAuthorToDB(author)
+								except:
+									continue
 								check_exist_book = myDB.action("SELECT * FROM books where AuthorName=? and BookName=?",[author,book]).fetchone()
 								if check_exist_book:
 									if author not in new_authors:
