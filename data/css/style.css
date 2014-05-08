@@ -1,26 +1,4 @@
 /*HTML5 ✰ Boilerplate*/
-/*+clearfix {*/
-DIV#navbar:after
-{
-	content: ".";
-	display: block;
-	height: 0;
-	clear: both;
-	visibility: hidden;
-	font-size: 0;
-}
-DIV#navbar
-{
-	display: inline-block;
-}
-DIV#navbar
-{
-	/*\*/
-	display: block;
-	/**/
-	-height: 1px;
-}
-/*+}*/
 HTML, BODY, DIV, SPAN, OBJECT, IFRAME, H1, H2, H3, H4, H5, H6, P, BLOCKQUOTE, PRE, ABBR, ADDRESS, CITE, CODE, DEL, DFN, EM, IMG, INS, KBD, Q, SAMP, SMALL, STRONG, SUB, SUP, VAR, B, I, DL, DT, DD, OL, UL, LI, FIELDSET, FORM, LABEL, LEGEND, TABLE, CAPTION, TBODY, TFOOT, THEAD, TR, TH, TD, ARTICLE, ASIDE, CANVAS, DETAILS, FIGCAPTION, FIGURE, FOOTER, HEADER, HGROUP, MENU, NAV, SECTION, SUMMARY, TIME, MARK, AUDIO, VIDEO
 {
 	margin: 0;
@@ -617,14 +595,6 @@ UL#authorhead_menu LI A
 	text-decoration: none;
 	/*[empty]margin-top:;*/
 }
-/*[clearfix]*/DIV#navbar
-{
-	border: 0px solid #000000;
-	border-left: 0px solid #000000;
-	padding-bottom: 0px;
-	padding-left: 0px;
-	/*[empty]padding-top:;*/
-}
 UL#authorhead_menu LI A:hover
 {
 	height: 100%;
@@ -636,11 +606,12 @@ A.navbarlogo
 	margin-left: 10px;
 	float: left;
 	margin-top: 5px;
+	margin-bottom: -5px;
 }
 A.navbarcfg
 {
 	float: left;
-	padding-top: 17px;
+	padding-top: 22px;
 	margin-left: 10px;
 }
 A.navbarele
@@ -648,13 +619,13 @@ A.navbarele
 	margin-right: -3px;
 	float: left;
 	padding-top: 28px;
-	padding: 17px 0 0;
+	padding: 22px 0 0;
 }
 DIV#searchbar
 {
 	float: right;
 	padding-right: 17px;
-	padding-top: 14px;
+	padding-top: 22px;
 }
 DIV#searchbar INPUT
 {
