@@ -381,7 +381,9 @@ class GoogleBooks:
                                 "BookDate":     bookdate,
                                 "BookLang":     booklang,
                                 "Status":       book_status,
-                                "BookAdded":    formatter.today()
+                                "BookAdded":    formatter.today(),
+                                "Series":       None,
+                                "SeriesOrder":  None
                             }
                             resultcount = resultcount + 1
 

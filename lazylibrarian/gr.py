@@ -308,6 +308,18 @@ class GoodReads:
 					bookrate = float(book.find('average_rating').text)
 					bookpages = book.find('num_pages').text
 
+                                        result = re.search(r"\(([\S\s]+)\, #(\d+)|\(([\S\s]+) #(\d+)", bookname)
+                                        if result:
+                                                if result.group(1) == None:
+                                                        series = result.group(3)
+                                                        seriesOrder = result.group(4)
+                                                else:
+                                                        series = result.group(1)
+                                                        seriesOrder = result.group(2)
+                                        else:
+                                                series = None
+                                                seriesOrder = None
+                            
 					find_book_status = myDB.select("SELECT * FROM books WHERE BookID = '%s'" % bookid)
 					if find_book_status:
 						for resulted in find_book_status:
@@ -335,7 +347,9 @@ class GoodReads:
 								"BookDate":     pubyear,
 								"BookLang":     bookLanguage,
 								"Status":       book_status,
-								"BookAdded":    formatter.today()
+								"BookAdded":    formatter.today(),
+                                                                "Series":       series,
+                                                                "SeriesOrder":  seriesOrder
 							}
 
 							resultsCount = resultsCount + 1
