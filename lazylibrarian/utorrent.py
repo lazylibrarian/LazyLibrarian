@@ -149,11 +149,13 @@ def addTorrent(link, hash):
     label = lazylibrarian.UTORRENT_LABEL
     uTorrentClient = utorrentclient()
     uTorrentClient.add_url(link)
-    time.sleep(1) #need to ensure file is loaded uTorrent...
-    uTorrentClient.setprops(hash,'label', label)
-    torrentList = uTorrentClient.list()
-    for torrent in torrentList[1].get('torrents'):
-        if (torrent[0].lower()==hash):
-            return torrent[26]
-
+    #time.sleep(1) #need to ensure file is loaded uTorrent...
+    settinglabel = True
+    while settinglabel:
+        torrentList = uTorrentClient.list()
+        for torrent in torrentList[1].get('torrents'):
+            if (torrent[0].lower() == hash):
+                uTorrentClient.setprops(hash,'label',label)
+                settinglabel = False
+                return torrent[26]
     return False
