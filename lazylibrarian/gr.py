@@ -386,6 +386,15 @@ class GoodReads:
 		logger.info('[%s] The GoodReads API was hit %s times to populate book list' % (authorname, str(api_hits)))
 		
 		lastbook = myDB.action("SELECT BookName, BookLink, BookDate from books WHERE AuthorID='%s' AND Status != 'Ignored' order by BookDate DESC" % authorid).fetchone()
+		if lastbook:
+                        lastbookname = lastbook['BookName']
+                        lastbooklink = lastbook['BookLink']
+                        lastbookdate = lastbook['BookDate']
+                else:
+                        lastbookname = None
+                        lastbooklink = None
+                        lastbookdate = None
+                        
 		unignoredbooks = myDB.select("SELECT COUNT(BookName) as unignored FROM books WHERE AuthorID='%s' AND Status != 'Ignored'" % authorid)
 		bookCount = myDB.select("SELECT COUNT(BookName) as counter FROM books WHERE AuthorID='%s'" % authorid)   
 
@@ -394,9 +403,9 @@ class GoodReads:
 				"Status": "Active",
 				"TotalBooks": bookCount[0]['counter'],
 				"UnignoredBooks": unignoredbooks[0]['unignored'],
-				"LastBook": lastbook['BookName'],
-				"LastLink": lastbook['BookLink'],
-				"LastDate": lastbook['BookDate']
+				"LastBook": lastbookname,
+				"LastLink": lastbooklink,
+				"LastDate": lastbookdate
 				}
 		myDB.upsert("authors", newValueDict, controlValueDict)
 
