@@ -144,12 +144,9 @@ class utorrentclient(object):
             logger.debug('uTorrent webUI raised the following error: ' + str(err))
 
 
-def addTorrent(link, hash):
-
+def labelTorrent(hash):
     label = lazylibrarian.UTORRENT_LABEL
     uTorrentClient = utorrentclient()
-    uTorrentClient.add_url(link)
-    #time.sleep(1) #need to ensure file is loaded uTorrent...
     settinglabel = True
     while settinglabel:
         torrentList = uTorrentClient.list()
@@ -157,5 +154,20 @@ def addTorrent(link, hash):
             if (torrent[0].lower() == hash):
                 uTorrentClient.setprops(hash,'label',label)
                 settinglabel = False
-                return torrent[26]
+                return True
+
+
+def dirTorrent(hash):
+    uTorrentClient = utorrentclient()
+    torrentList = uTorrentClient.list()
+    for torrent in torrentList[1].get('torrents'):
+        if (torrent[0].lower() == hash):
+            return torrent[26]
     return False
+
+
+def addTorrent(link, hash):
+    uTorrentClient = utorrentclient()
+    uTorrentClient.add_url(link)
+    labelTorrent(hash)
+    return dirTorrent(hash)
