@@ -1,4 +1,4 @@
-/*HTML5 ✰ Boilerplate*/
+﻿/*HTML5 ✰ Boilerplate*/
 HTML, BODY, DIV, SPAN, OBJECT, IFRAME, H1, H2, H3, H4, H5, H6, P, BLOCKQUOTE, PRE, ABBR, ADDRESS, CITE, CODE, DEL, DFN, EM, IMG, INS, KBD, Q, SAMP, SMALL, STRONG, SUB, SUP, VAR, B, I, DL, DT, DD, OL, UL, LI, FIELDSET, FORM, LABEL, LEGEND, TABLE, CAPTION, TBODY, TFOOT, THEAD, TR, TH, TD, ARTICLE, ASIDE, CANVAS, DETAILS, FIGCAPTION, FIGURE, FOOTER, HEADER, HGROUP, MENU, NAV, SECTION, SUMMARY, TIME, MARK, AUDIO, VIDEO
 {
 	margin: 0;
@@ -115,11 +115,17 @@ OL
 {
 	list-style-type: decimal;
 }
-NAV UL, NAV LI
+TABLE .navbar
 {
-	margin: 0;
-	list-style: none;
-	list-style-image: none;
+	float: left;
+}
+#NAVBAR #SEARCHBAR
+{
+	float: right;
+}
+#LOGO DIV
+{
+	float: left;
 }
 SMALL
 {
@@ -372,7 +378,7 @@ DIV#updatebar
 {
 	text-align: center;
 	width: 100%;
-	background-color: light-blue;
+	background-color: #00FFA6;
 	float: left;
 }
 DIV#logo
@@ -382,33 +388,8 @@ DIV#logo
 }
 DIV#logo IMG
 {
-	width: 0px;
-	height: 0px;
-}
-UL#nav
-{
-	margin: 8px 0 0;
-	margin-left: 10px;
-	float: left;
-	list-style-type: none;
-}
-UL#nav LI
-{
-	margin-left: -5px;
-	display: inline;
-	padding: 8px;
-}
-UL#nav LI A
-{
-	padding: 0px;
-	font-size: 14px;
-	font-weight: bold;
-	color: #9F9D9D;
-	text-decoration: none;
-}
-UL#nav LI A:hover
-{
-	text-decoration: underline;
+	width: 64px;
+	height: 83px;
 }
 DIV#subhead_container
 {
@@ -612,16 +593,39 @@ UL#authorhead_menu LI A
 	color: #444444;
 	font-size: 20px;
 	text-decoration: none;
+	/*[empty]margin-top:;*/
 }
 UL#authorhead_menu LI A:hover
 {
 	height: 100%;
 	text-decoration: underline;
 }
+A.navbarlogo
+{
+	margin-right: 10px;
+	margin-left: 10px;
+	float: left;
+	margin-top: 5px;
+	margin-bottom: -5px;
+}
+A.navbarcfg
+{
+	float: left;
+	padding-top: 22px;
+	margin-left: 10px;
+}
+A.navbarele
+{
+	margin-right: -3px;
+	float: left;
+	padding-top: 28px;
+	padding: 22px 0 0;
+}
 DIV#searchbar
 {
-	margin: 10px 30px auto auto;
 	float: right;
+	padding-right: 17px;
+	padding-top: 22px;
 }
 DIV#searchbar INPUT
 {
@@ -634,15 +638,23 @@ DIV#searchbar INPUT
 	padding-left: 30px;
 	padding-right: 25px;
 }
+DIV#form
+{
+	margin-top: -21px;
+}
 #searchbox
 {
 	min-width: 100px;
 	max-width: 220px;
 }
+DIV#log_table_wrapper
+{
+	padding-top: 17px;
+}
 DIV#main
 {
 	margin: 0;
-	padding: 60px 0 0;
+	padding: 86px 0 0 0px;
 }
 .table_wrapper_button
 {
@@ -669,7 +681,6 @@ DIV#main
 	-height: 302px;
 	zoom: 1;
 	border: 1px solid #CECECE;
-	padding: 25px;
 }
 .manage_wrapper
 {
@@ -680,6 +691,7 @@ DIV#main
 	clear: both;
 	-height: 302px;
 	zoom: 1;
+	border-bottom: 0px solid #000000;
 }
 .table_wrapper_left
 {
@@ -710,19 +722,11 @@ DIV#main
 {
 	font-size: 12px;
 	line-height: 18px;
-	/*+placement:shift 0px 0px;*/
-	position: relative;
-	left: 0px;
-	top: 0px;
 }
 .configtable TD
 {
 	width: 350px;
-	padding: 10px;
-	/*+placement:shift 0px 0px;*/
-	position: relative;
-	left: 0px;
-	top: 0px;
+	padding: 0px 10px 10px;
 }
 .configtable TD#middle
 {
@@ -842,6 +846,16 @@ TABLE#book_table TH#bookname
 	text-align: left;
 	min-width: 250px;
 }
+TABLE#book_table TH#series
+{
+	text-align: center;
+	width: 90px !important;
+}
+TABLE#book_table TH#seriesOrder
+{
+	text-align: center;
+	width: 40px;
+}
 TABLE#book_table TH#status
 {
 	text-align: center;
@@ -903,6 +917,16 @@ TABLE#book_table TD#bookname
 {
 	vertical-align: middle;
 	text-align: left;
+}
+TABLE#book_table TD#series
+{
+	vertical-align: middle;
+	text-align: center;
+}
+TABLE#book_table TD#seriesOrder
+{
+	vertical-align: middle;
+	text-align: center;
 }
 TABLE#book_table TD#status
 {
@@ -1323,7 +1347,7 @@ DIV#shutdown
 }
 .visuallyhidden.focusable:active, .visuallyhidden.focusable:focus
 {
-	clip: rect(auto auto auto auto);
+	clip: rect(auto, auto, auto, auto);
 	height: auto;
 	margin: 0;
 	overflow: visible;

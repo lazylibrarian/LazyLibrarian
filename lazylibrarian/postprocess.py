@@ -131,6 +131,81 @@ def processDir():
 				notifiers.notify_download(global_name+' at '+formatter.now())
 			else:
 				logger.error('Postprocessing for %s has failed. Warning - AutoAdd will be repeated' % global_name)
+
+		for directory in downloads:
+		    if "LL.(" in directory:
+			bookID = str(directory).split("LL.(")[1].split(")")[0];
+			logger.debug("Book with id: " + str(bookID) + " is in downloads");
+			pp_path = os.path.join(processpath, directory)
+
+			if (os.path.exists(pp_path)):
+				 logger.debug('Found folder %s.' % pp_path)
+
+				 data = myDB.select("SELECT * from books WHERE BookID='%s'" % bookID)
+				 for metadata in data:
+					 authorname = metadata['AuthorName']
+					 authorimg = metadata['AuthorLink']
+					 bookname = metadata['BookName']
+					 bookdesc = metadata['BookDesc']
+					 bookisbn = metadata['BookIsbn']
+					 bookrate = metadata['BookRate']
+					 bookimg = metadata['BookImg']
+					 bookpage = metadata['BookPages']
+					 booklink = metadata['BookLink']
+					 bookdate = metadata['BookDate']
+					 booklang = metadata['BookLang']
+					 bookpub = metadata['BookPub']
+
+					 try:
+						os.chmod(os.path.join(lazylibrarian.DESTINATION_DIR, authorname).encode(lazylibrarian.SYS_ENCODING), 0777);
+					 except Exception, e:
+						logger.debug("Could not chmod author directory");
+					 dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace('$Title', bookname)
+					 global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace('$Title', bookname)
+					 dic = {'<':'', '>':'', '...':'', ' & ':' ', ' = ': ' ', '?':'', '$':'s', ' + ':' ', '"':'', ',':'', '*':'', ':':'', ';':'', '\'':''}
+					 dest_path = formatter.latinToAscii(formatter.replace_all(dest_path, dic))
+					 dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(lazylibrarian.SYS_ENCODING)
+
+					 processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name)
+
+
+					 if processBook:
+
+						ppcount = ppcount+1
+
+						# If you use auto add by Calibre you need the book in a single directory, not nested
+						#So take the file you Copied/Moved to Dest_path and copy it to a Calibre auto add folder.
+						if lazylibrarian.IMP_AUTOADD:
+							processAutoAdd(dest_path)
+
+						#update nzbs
+						controlValueDict = {"NZBurl": directory}
+						newValueDict = {"Status": "Processed"}
+						myDB.upsert("wanted", newValueDict, controlValueDict)
+
+						# try image
+						if bookname is not None:
+							processIMG(dest_path, bookimg, global_name)
+
+						# try metadata
+						processOPF(dest_path, authorname, bookname, bookisbn, bookID, bookpub, bookdate, bookdesc, booklang, global_name)
+
+						#update books
+						controlValueDict = {"BookID": bookID}
+						newValueDict = {"Status": "Open"}
+						myDB.upsert("books", newValueDict, controlValueDict)
+
+						#update authors
+						query = 'SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' % authorname
+						countbooks = myDB.action(query).fetchone()
+						havebooks = int(countbooks[0])
+						controlValueDict = {"AuthorName": authorname}
+						newValueDict = {"HaveBooks": havebooks}
+						author_query = 'SELECT * FROM authors WHERE AuthorName="%s"' % authorname
+						countauthor = myDB.action(author_query).fetchone()
+						if countauthor:
+							myDB.upsert("authors", newValueDict, controlValueDict)
+
 		if ppcount:
 			logger.debug('%s books are downloaded and processed.' % ppcount)
 		else:
