@@ -130,10 +130,10 @@ class utorrentclient(object):
 
     def _action(self, params, body=None, content_type=None):
         url = self.base_url + '/gui/' + '?token=' + self.token + '&' + urllib.urlencode(params)
-	request = urllib2.Request(url)
-	request.add_header('User-Agent', USER_AGENT)
+        request = urllib2.Request(url)
+        request.add_header('User-Agent', USER_AGENT)
 
-        if body:
+	if body:
             request.add_data(body)
             request.add_header('Content-length', len(body))
         if content_type:
