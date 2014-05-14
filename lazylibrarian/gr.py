@@ -35,6 +35,8 @@ class GoodReads:
 			try:
 				# Cache our request
 				request = urllib2.Request(set_url)
+				if lazylibrarian.PROXY_HOST:
+					request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
 				request.add_header('User-Agent', USER_AGENT)
 				opener = urllib2.build_opener(SimpleCache.CacheHandler(".AuthorCache"), SimpleCache.ThrottlingProcessor(5))
 				resp = opener.open(request)
@@ -142,6 +144,8 @@ class GoodReads:
 
 		# Cache our request
 		request = urllib2.Request(URL)
+		if lazylibrarian.PROXY_HOST:
+			request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
 		request.add_header('User-Agent', USER_AGENT)
 		opener = urllib2.build_opener(SimpleCache.CacheHandler(".AuthorCache"), SimpleCache.ThrottlingProcessor(5))
 		resp = opener.open(request)
@@ -174,6 +178,8 @@ class GoodReads:
 
 		# Cache our request
 		request = urllib2.Request(URL)
+		if lazylibrarian.PROXY_HOST:
+			request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
 		request.add_header('User-Agent', USER_AGENT)
 		opener = urllib2.build_opener(SimpleCache.CacheHandler(".AuthorCache"), SimpleCache.ThrottlingProcessor(5))
 		resp = opener.open(request)
@@ -216,6 +222,8 @@ class GoodReads:
 		try:
 			# Cache our request
 			request = urllib2.Request(URL)
+			if lazylibrarian.PROXY_HOST:
+				request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
 			request.add_header('User-Agent', USER_AGENT)
 			opener = urllib2.build_opener(SimpleCache.CacheHandler(".AuthorCache"), SimpleCache.ThrottlingProcessor(5))
 			resp = opener.open(request)
@@ -279,6 +287,8 @@ class GoodReads:
 							try:
 								# Cache our request
 								request = urllib2.Request(BOOK_URL)
+								if lazylibrarian.PROXY_HOST:
+									request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
 								request.add_header('User-Agent', USER_AGENT)
 								opener = urllib2.build_opener(SimpleCache.CacheHandler(".AuthorCache"), SimpleCache.ThrottlingProcessor(5))
 								resp = opener.open(request)
@@ -380,6 +390,8 @@ class GoodReads:
 				try:
 					# Cache our request
 					request1 = urllib2.Request(URL)
+					if lazylibrarian.PROXY_HOST:
+						request1.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
 					request1.add_header('User-Agent', USER_AGENT)
 					opener1 = urllib2.build_opener(SimpleCache.CacheHandler(".AuthorCache"), SimpleCache.ThrottlingProcessor(5))
 					resp1 = opener1.open(request1)
@@ -440,6 +452,8 @@ class GoodReads:
 		try:
 			# Cache our request
 			request = urllib2.Request(URL)
+			if lazylibrarian.PROXY_HOST:
+				request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
 			request.add_header('User-Agent', USER_AGENT)
 			opener = urllib2.build_opener(SimpleCache.CacheHandler(".AuthorCache"), SimpleCache.ThrottlingProcessor(5))
 			resp = opener.open(request)
