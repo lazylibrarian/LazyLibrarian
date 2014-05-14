@@ -6,6 +6,8 @@ from xml.etree.ElementTree import Element, SubElement
 import lazylibrarian
 from lazylibrarian import logger, formatter, database, SimpleCache
 
+from lazylibrarian.common import USER_AGENT
+
 import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
 
@@ -33,6 +35,7 @@ class GoodReads:
 			try:
 				# Cache our request
 				request = urllib2.Request(set_url)
+				request.add_header('User-Agent', USER_AGENT)
 				opener = urllib2.build_opener(SimpleCache.CacheHandler(".AuthorCache"), SimpleCache.ThrottlingProcessor(5))
 				resp = opener.open(request)
 				api_hits = api_hits + 1
@@ -139,6 +142,7 @@ class GoodReads:
 
 		# Cache our request
 		request = urllib2.Request(URL)
+		request.add_header('User-Agent', USER_AGENT)
 		opener = urllib2.build_opener(SimpleCache.CacheHandler(".AuthorCache"), SimpleCache.ThrottlingProcessor(5))
 		resp = opener.open(request)
 
@@ -170,6 +174,7 @@ class GoodReads:
 
 		# Cache our request
 		request = urllib2.Request(URL)
+		request.add_header('User-Agent', USER_AGENT)
 		opener = urllib2.build_opener(SimpleCache.CacheHandler(".AuthorCache"), SimpleCache.ThrottlingProcessor(5))
 		resp = opener.open(request)
 
@@ -211,6 +216,7 @@ class GoodReads:
 		try:
 			# Cache our request
 			request = urllib2.Request(URL)
+			request.add_header('User-Agent', USER_AGENT)
 			opener = urllib2.build_opener(SimpleCache.CacheHandler(".AuthorCache"), SimpleCache.ThrottlingProcessor(5))
 			resp = opener.open(request)
 			api_hits = api_hits + 1
@@ -273,6 +279,7 @@ class GoodReads:
 							try:
 								# Cache our request
 								request = urllib2.Request(BOOK_URL)
+								request.add_header('User-Agent', USER_AGENT)
 								opener = urllib2.build_opener(SimpleCache.CacheHandler(".AuthorCache"), SimpleCache.ThrottlingProcessor(5))
 								resp = opener.open(request)
 							except Exception, e:
@@ -373,6 +380,7 @@ class GoodReads:
 				try:
 					# Cache our request
 					request1 = urllib2.Request(URL)
+					request1.add_header('User-Agent', USER_AGENT)
 					opener1 = urllib2.build_opener(SimpleCache.CacheHandler(".AuthorCache"), SimpleCache.ThrottlingProcessor(5))
 					resp1 = opener1.open(request1)
 					api_hits = api_hits + 1
@@ -432,6 +440,7 @@ class GoodReads:
 		try:
 			# Cache our request
 			request = urllib2.Request(URL)
+			request.add_header('User-Agent', USER_AGENT)
 			opener = urllib2.build_opener(SimpleCache.CacheHandler(".AuthorCache"), SimpleCache.ThrottlingProcessor(5))
 			resp = opener.open(request)
 			sourcexml = ElementTree.parse(resp)
