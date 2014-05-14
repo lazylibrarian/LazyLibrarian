@@ -133,7 +133,7 @@ class utorrentclient(object):
         request = urllib2.Request(url)
         request.add_header('User-Agent', USER_AGENT)
 
-	if body:
+        if body:
             request.add_data(body)
             request.add_header('Content-length', len(body))
         if content_type:
