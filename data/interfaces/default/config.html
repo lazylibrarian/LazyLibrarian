@@ -43,6 +43,17 @@
 		  <br>
 		  <br>
 		  <div>
+		  <label>Proxy Host:</label><input type="text" name="proxy_host" value="${config['proxy_host']}" size="20"><br>
+		  <i class="smalltext">Set this value if you are behind a proxy</i>
+		  </div>
+		  <br>
+		  <div>
+		  <label>Proxy Type:</label><input type="text" name="proxy_type" value="${config['proxy_type']}" size="10"><br>
+                  <i class="smalltext">http, https, etc</i>
+		  </div>
+		  <br>
+		  <br>
+		  <div>
 		  <label>Full Scan:</label><input type="checkbox" name="full_scan" value=1 ${config['full_scan']} />
 		  <br>
 		  <i class="smalltext">This will remove entries if ebooks are not found in the download location</i>

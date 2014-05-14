@@ -195,6 +195,8 @@ def NewzNab(book=None, newznabNumber=None):
 
     try :
         request = urllib2.Request(URL)
+	if lazylibrarian.PROXY_HOST:
+		request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
         request.add_header('User-Agent', USER_AGENT)
         opener = urllib2.build_opener(SimpleCache.CacheHandler(".ProviderCache"), SimpleCache.ThrottlingProcessor(5))
         resp = opener.open(request)
@@ -293,6 +295,8 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None):
 
     try :
         request = urllib2.Request(URL)
+	if lazylibrarian.PROXY_HOST:
+		request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
         request.add_header('User-Agent', USER_AGENT)
         opener = urllib2.build_opener(SimpleCache.CacheHandler(".ProviderCache"), SimpleCache.ThrottlingProcessor(5))
         resp = opener.open(request)
