@@ -25,6 +25,8 @@ import lazylibrarian
 
 from lazylibrarian import logger
 
+from lazylibrarian.common import USER_AGENT
+
 class utorrentclient(object):
     TOKEN_REGEX = "<div id='token' style='display:none;'>([^<>]+)</div>"
 
@@ -129,6 +131,7 @@ class utorrentclient(object):
     def _action(self, params, body=None, content_type=None):
         url = self.base_url + '/gui/' + '?token=' + self.token + '&' + urllib.urlencode(params)
         request = urllib2.Request(url)
+        request.add_header('User-Agent', USER_AGENT)
 
         if body:
             request.add_data(body)

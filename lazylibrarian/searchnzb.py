@@ -10,6 +10,8 @@ from lazylibrarian import logger, database, formatter, providers, sabnzbd, Simpl
 import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
 
+from lazylibrarian.common import USER_AGENT
+
 #new to support torrents
 from StringIO import StringIO
 import gzip
@@ -150,7 +152,7 @@ def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
 
         try:
             req = urllib2.Request(nzburl)
-            req.add_header('User-Agent', 'lazylibrary/0.0 +https://github.com/herman-rogers/LazyLibrarian-1')
+            req.add_header('User-Agent', USER_AGENT)
             nzbfile = urllib2.urlopen(req, timeout=90).read()
    
 
