@@ -6,70 +6,44 @@
 
 <%def name="headerIncludes()">
     <div id="subhead_container">
-        <ul id="subhead_menu">
-            <li ><a id="button" href="forceSearch?source=books">Force Search</a></li>
-            <li ><a id="button" href="forceProcess?source=books">Force Post-Processing</a></li>
-            %if len(languages) >= 1:
-                <li>Language:&nbsp</li>
-                
-                <li><select onchange="window.location = 'books?BookLang=' + this.options[this.selectedIndex].value">
-                    <option>Select</option>
-                %for language in languages:
-                    <option value="${language['BookLang']}">${language['BookLang']}</option>
-                %endfor
-                </select></li>
-            %endif
-        </ul>
     </div>
 </%def>
 
 <%def name="body()">
-    <p class="indented">
-        <form action="markBooks" method="get">
-            <select class="markBooks" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
-                  <option value="Wanted">Wanted</option>
-                  <option value="Have">Have</option>
-                <option value="Remove">Remove</option>
-            </select>
-        <input type="submit" class="markBooks" value="Go">
-    </p>
+    <br><br>
+    <form action="manage" method="get">
+    Manage books with status <select name="whichStatus">
+        %for item in ['Skipped', 'Wanted', 'Snatched', 'Have', 'Ignored']:
+            <option value="${item}"
+                %if whichStatus == item:
+                    selected = "selected"
+                %endif
+            >${item}</option>
+        %endfor
+    </select>
+    <input  class="btn" type="submit" value="Manage" />
+    </form>
+    <br>
+    %if len(books) > 0:
+    <h3>Books with status ${whichStatus}</h3>
+        <br>
+    <form action="markBooks" method="get"><input type="hidden" name="redirect" value="manage">
     <table class="display" id="book_table">
         <thead>
             <tr>
                 <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
-                <th id="bookart">Cover</th>
                 <th id="authorname">Author</th>
                 <th id="bookname">Title</th>
-		<th id="series">Series</th>
-		<th id="seriesOrder">Num</th>
-                <th id="stars">Rating</th>
+        		<th id="series">Series</th>
+		        <th id="seriesOrder">Num</th>
                 <th id="date">Released</th>
-                <th id="language" hidden="true">Language</th>
-                <th id="status">Status</th>
             </tr>
         </thead>
 
         <tbody>
         %for result in books:
-                <%
-                    if result['bookrate'] < 0.5:
-                        starimg = '0-stars.png'
-                    elif result['bookrate'] >= 0.5 and result['bookrate'] < 1.5:
-                        starimg = '1-stars.png'
-                    elif result['bookrate'] >= 1.5 and result['bookrate'] < 2.5:
-                        starimg = '2-stars.png'
-                    elif result['bookrate'] >= 2.5 and result['bookrate'] < 3.5:
-                        starimg = '3-stars.png'
-                    elif result['bookrate'] >= 3.5 and result['bookrate'] < 4.5:
-                        starimg = '4-stars.png'
-                    elif result['bookrate'] >= 4.5:
-                        starimg = '5-stars.png'
-                    else:
-                        starimg = '0-stars.png'
-                %>
                 <tr class="gradeZ">
                     <td id="select"><input type="checkbox" name="${result['BookID']}" class="checkbox" /></td>
-                    <td id="bookart"><a href="${result['bookimg']}" target="_new"><img src="${result['bookimg']}" height="75" width="50"></a></td>
                     <td id="authorname"><a href="authorPage?AuthorName=${result['AuthorName']}">${result['authorname']}</a></td>
                     %if result['booksub']:
                         <td id="bookname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a><br>
@@ -79,26 +53,25 @@
                     %endif
                     <td id="series">${result['Series']}</td>
                     <td id="seriesOrder">${result['SeriesOrder']}</td>
-                    <td id="stars"><img src="images/${starimg}" width="50" height="10"></td>
                     <td id="date">${result['BookDate']}</td>
-                    <td id="language" hidden="true">${result['booklang']}</td>
-                    %if result['Status'] == 'Open':
-                        <td id="status"><a class="button green" href="openBook?bookid=${result['bookid']}" target="_self">${result['Status']}</a></td>
-                    %else:
-                        %if result['Status'] == 'Wanted':
-                            <td id="status"><a class="button red" href="searchForBook?bookid=${result['BookID']}" target="_self"><span class="a">${result['Status']}</span><span class="b">Search</span></a></td>
-                        %else:
-                            %if result['Status'] == 'Snatched':
-                                <td id="status"><a class="button">${result['Status']}</a></td>
-                            %else:
-                                <td id="status"><a class="button grey">${result['Status']}</a></td>
-                            %endif
-                        %endif
-                    %endif
                 </tr>
         %endfor
         </tbody>
     </table>
+    <p>
+
+    Change selected books to <select class="markBooks" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
+        %for item in ['Skipped', 'Wanted', 'Snatched', 'Have', 'Ignored']:
+            %if whichStatus != item:
+                <option value="${item}">${item}</option>
+            %endif
+        %endfor
+            </select>
+        <input type="submit" class="markBooks" value="Go">
+    </p>
+    </form>
+    %endif
+
 </%def>
 
 <%def name="headIncludes()">
@@ -118,10 +91,6 @@
                     null,
                     null,
                     null,
-                    null,
-                    null,
-                    null,
-                    null,
                     null
                     ],
                 "oLanguage": {
@@ -135,7 +104,7 @@
                 "iDisplayLength": 10,
                 "sPaginationType": "full_numbers",
             });
-			$('.dataTables_filter input').attr("placeholder", "Seach table here");
+			$('.dataTables_filter input').attr("placeholder", "Search table here");
     });
     </script>
 </%def>

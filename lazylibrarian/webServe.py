@@ -506,11 +506,9 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     searchForBook.exposed = True
 
-    def markBooks(self, AuthorName=None, action=None, **args):
+    def markBooks(self, AuthorName=None, action=None, redirect=None, **args):
         myDB = database.DBConnection()
-        if AuthorName:
-            redirect = "author"
-        else:
+        if not redirect:
             redirect = "books"
         authorcheck = None
         for bookid in args:
@@ -572,8 +570,10 @@ class WebInterface(object):
 
         if redirect == "author":
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
-        else:
+        elif redirect == "books":
             raise cherrypy.HTTPRedirect("books")
+        else:
+            raise cherrypy.HTTPRedirect("manage")
     markBooks.exposed = True
 
     #ALL ELSE
@@ -628,6 +628,12 @@ class WebInterface(object):
         s = simplejson.dumps(dict)
         return s
     getLog.exposed = True
+
+    def manage(self, AuthorName=None, action=None, whichStatus=None, **args):
+        myDB = database.DBConnection()
+        books = myDB.select('SELECT * FROM books WHERE Status = ?', [whichStatus])
+        return serve_template(templatename="managebooks.html", title="Book Status Management", books=books, whichStatus=whichStatus)
+    manage.exposed = True
 
     def history(self, source=None):
         myDB = database.DBConnection()
