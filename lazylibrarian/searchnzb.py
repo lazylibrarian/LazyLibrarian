@@ -152,6 +152,8 @@ def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
 
         try:
             req = urllib2.Request(nzburl)
+	    if lazylibrarian.PROXY_HOST:
+	    	req.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
             req.add_header('User-Agent', USER_AGENT)
             nzbfile = urllib2.urlopen(req, timeout=90).read()
    

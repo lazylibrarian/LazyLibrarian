@@ -142,7 +142,10 @@ def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
     download = False
     if (lazylibrarian.USE_TOR):
         request = urllib2.Request(tor_url)
+	if lazylibrarian.PROXY_HOST:
+		request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
         request.add_header('Accept-encoding', 'gzip')
+	request.add_header('User-Agent', USER_AGENT)
     
         if tor_prov == 'KAT':
             request.add_header('Referer', 'http://kat.ph/')
