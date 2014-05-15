@@ -367,12 +367,12 @@
 	    <tr>
                 <td>
                                   <div>
-                  <label>Full Scan:</label><input type="checkbox" name="full_scan" value=1 ${config['full_scan']} />
+                  <label>Full Scan:</label><input type="checkbox" name="full_scan" id="fullscan" value=1 ${config['full_scan']} />
                   <br>
                   <i class="smalltext">This will remove entries if ebooks are not found in the download location</i>
  
                   </div>
-                  <div>
+                  <div id="fullscanoptions">
                   <label>Missing Book Status:</label>
                   <select name="notfound_status">
                   %for nf_status in config['status_list']:
@@ -695,8 +695,27 @@
                             $("#boxcaroptions").slideUp();
                     }
             });
-        
-        
+
+            if ($("#fullscan").is(":checked"))
+                    {
+                            $("#fullscanoptions").show();
+                    }
+            else
+                    {
+                            $("#fullscanoptions").hide();
+                    }
+
+            $("#fullscan").click(function(){
+                    if ($("#fullscan").is(":checked"))
+                    {
+                            $("#fullscanoptions").slideDown();
+                    }
+                    else
+                    {
+                            $("#fullscanoptions").slideUp();
+                    }
+            });
+
             if ($("#pushbullet").is(":checked"))
                     {
                             $("#pushbulletoptions").show();
