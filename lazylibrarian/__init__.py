@@ -56,6 +56,9 @@ HTTP_ROOT = None
 HTTP_LOOK = None
 LAUNCH_BROWSER = False
 
+PROXY_HOST = None
+PROXY_TYPE = None
+
 SAB_HOST = None
 SAB_PORT = None
 SAB_SUBDIR=None
@@ -232,6 +235,7 @@ def initialize():
     with INIT_LOCK:
 
         global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, MATCH_RATIO, \
+	    PROXY_HOST, PROXY_TYPE, \
             IMP_ONLYISBN, IMP_PREFLANG, IMP_AUTOADD, SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, NZB_BLACKHOLEDIR, GR_API, GB_API, BOOK_API, \
             NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, NEWZNAB2, NEWZNAB_HOST2, NEWZNAB_API2, EBOOK_TYPE, KAT, USENETCRAWLER, USENETCRAWLER_HOST, USENETCRAWLER_API, \
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_DEST_FOLDER, MAG_DEST_FILE, USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
@@ -289,6 +293,10 @@ def initialize():
 
 
         LAUNCH_BROWSER = bool(check_setting_int(CFG, 'General', 'launch_browser', 1))
+	
+	PROXY_HOST = check_setting_str(CFG, 'General','proxy_host', '')
+	PROXY_TYPE = check_setting_str(CFG, 'General','proxy_type', '')
+
         LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
 
         IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', 'en, eng, en-US')
@@ -472,6 +480,8 @@ def config_write():
     new_config['General']['http_root'] = HTTP_ROOT
     new_config['General']['http_look'] = HTTP_LOOK
     new_config['General']['launch_browser'] = int(LAUNCH_BROWSER)
+    new_config['General']['proxy_host'] = PROXY_HOST
+    new_config['General']['proxy_type'] = PROXY_TYPE
     new_config['General']['logdir'] = LOGDIR
     new_config['General']['loglevel'] = int(LOGLEVEL)
 
