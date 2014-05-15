@@ -477,6 +477,49 @@
                     </div>
                 </fieldset>            
             </td>
+	    <td>
+            	<fieldset>
+                                <h3>NotifyMyAndroid</h3>
+                                <div class="checkbox row">
+                                    <input type="checkbox" name="nma_enabled" id="nma" value="1" ${config['nma_enabled']} /><label>Enable NotifyMyAndroid</label>
+                                </div>
+                                <div id="nmaoptions">
+                                    <div class="row checkbox">
+                                        <input type="checkbox" name="nma_onsnatch" value="1" ${config['nma_onsnatch']} /><label>Notify on snatch?</label>
+                                    </div>
+                                    <div class="row">
+                                        <label>NotifyMyAndroid API Key</label>
+                                        <input type="text" name="nma_apikey" value="${config['nma_apikey']}" size="30">
+                                        <small>Separate multiple api keys with commas</small>
+                                    </div>
+                                    <div class="row">
+                                        <label>Priority</label>
+                                        <select name="nma_priority">
+                                        %for x in [-2,-1,0,1,2]:
+                                        <%
+                                            if config['nma_priority'] == x:
+                                                nma_priority_selected = 'selected'
+                                            else:
+                                                nma_priority_selected = ''
+
+                                            if x == -2:
+                                                nma_priority_value = 'Very Low'
+                                            elif x == -1:
+                                                nma_priority_value = 'Moderate'
+                                            elif x == 0:
+                                                nma_priority_value = 'Normal'
+                                            elif x == 1:
+                                                nma_priority_value = 'High'
+                                            else:
+                                                nma_priority_value = 'Emergency'
+                                        %>
+                                            <option value=${x} ${nma_priority_selected}>${nma_priority_value}</option>
+                                        %endfor
+                                        </select>
+                                    </div>
+                                </div>
+		</fieldset>
+            </td>
         </table>
         </div>
     </div>
@@ -673,6 +716,26 @@
                             $("#pushbulletoptions").slideUp();
                     }
             });
+
+                if ($("#nma").is(":checked"))
+                        {
+                                $("#nmaoptions").show();
+                        }
+                else
+                        {
+                                $("#nmaoptions").hide();
+                        }
+
+                $("#nma").click(function(){
+                        if ($("#nma").is(":checked"))
+                        {
+                                $("#nmaoptions").slideDown();
+                        }
+                        else
+                        {
+                                $("#nmaoptions").slideUp();
+                        }
+                });
             
             $('#twitterStep1').click(function () {
                 $('#testTwitter-result').html('');
