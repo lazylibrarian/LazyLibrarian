@@ -131,6 +131,10 @@ class WebInterface(object):
                     "pushbullet_notify_ondownload" :  checked(lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD),
                     "pushbullet_token" :              lazylibrarian.PUSHBULLET_TOKEN,
                     "pushbullet_deviceid" :           lazylibrarian.PUSHBULLET_DEVICEID,
+                    "nma_enabled":		      checked(lazylibrarian.NMA_ENABLED),
+		    "nma_apikey": 		      lazylibrarian.NMA_APIKEY,
+		    "nma_priority": 		      int(lazylibrarian.NMA_PRIORITY),
+		    "nma_onsnatch":                   checked(lazylibrarian.NMA_ONSNATCH),
                     "ebook_type" :                    lazylibrarian.EBOOK_TYPE,
                     "gr_api" :                        lazylibrarian.GR_API,
                     "gb_api" :                        lazylibrarian.GB_API,
@@ -153,7 +157,8 @@ class WebInterface(object):
         sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None, destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, nzb_blackholedir=None, torrent_dir=None, numberofseeders=0, tor_downloader_blackhole=0, tor_downloader_utorrent=0,
         newznab=0, newznab_host=None, newznab_api=None, newznab2=0, newznab_host2=None, newznab_api2=None,newzbin=0, newzbin_uid=None, newzbin_pass=None, kat=0, ebook_type=None, book_api=None, gr_api=None, gb_api=None, usenetcrawler = 0, usenetcrawler_host=None, usenetcrawler_api = None, 
         versioncheck_interval=None, search_interval=None, scan_interval=None, ebook_dest_folder=None, ebook_dest_file=None, mag_dest_folder=None, mag_dest_file=None, use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0, utorrent_host=None, utorrent_user=None, utorrent_pass=None,  notfound_status='Wanted', full_scan=0, add_author=1, 
-        utorrent_label=None, use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token=None, use_pushbullet=0, pushbullet_notify_onsnatch=0, pushbullet_notify_ondownload=0, pushbullet_token=None, pushbullet_deviceid=None):
+        utorrent_label=None, use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token=None, use_pushbullet=0, pushbullet_notify_onsnatch=0, pushbullet_notify_ondownload=0, pushbullet_token=None, pushbullet_deviceid=None,
+	nma_enabled=False, nma_apikey=None, nma_priority=0, nma_onsnatch=0):
 
         lazylibrarian.HTTP_HOST = http_host
 	lazylibrarian.HTTP_ROOT = http_root
@@ -253,6 +258,11 @@ class WebInterface(object):
         lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD = pushbullet_notify_ondownload
         lazylibrarian.PUSHBULLET_TOKEN = pushbullet_token
         lazylibrarian.PUSHBULLET_DEVICEID = pushbullet_deviceid
+
+	lazylibrarian.NMA_ENABLED = nma_enabled
+	lazylibrarian.NMA_APIKEY = nma_apikey
+	lazylibrarian.NMA_PRIORITY = nma_priority
+	lazylibrarian.NMA_ONSNATCH = nma_onsnatch
 
         lazylibrarian.config_write()
 
@@ -512,11 +522,9 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     searchForBook.exposed = True
 
-    def markBooks(self, AuthorName=None, action=None, **args):
+    def markBooks(self, AuthorName=None, action=None, redirect=None, **args):
         myDB = database.DBConnection()
-        if AuthorName:
-            redirect = "author"
-        else:
+        if not redirect:
             redirect = "books"
         authorcheck = None
         for bookid in args:
@@ -578,8 +586,10 @@ class WebInterface(object):
 
         if redirect == "author":
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
-        else:
+        elif redirect == "books":
             raise cherrypy.HTTPRedirect("books")
+        else:
+            raise cherrypy.HTTPRedirect("manage")
     markBooks.exposed = True
 
     #ALL ELSE
@@ -634,6 +644,12 @@ class WebInterface(object):
         s = simplejson.dumps(dict)
         return s
     getLog.exposed = True
+
+    def manage(self, AuthorName=None, action=None, whichStatus=None, **args):
+        myDB = database.DBConnection()
+        books = myDB.select('SELECT * FROM books WHERE Status = ?', [whichStatus])
+        return serve_template(templatename="managebooks.html", title="Book Status Management", books=books, whichStatus=whichStatus)
+    manage.exposed = True
 
     def history(self, source=None):
         myDB = database.DBConnection()

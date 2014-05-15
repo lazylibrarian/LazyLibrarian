@@ -153,6 +153,11 @@ PUSHBULLET_DEVICEID = None
 PUSHBULLET_NOTIFY_ONSNATCH = False
 PUSHBULLET_NOTIFY_ONDOWNLOAD = False
 
+NMA_ENABLED = False
+NMA_APIKEY = None
+NMA_PRIORITY = None
+NMA_ONSNATCH = None
+
 def CheckSection(sec):
     """ Check if INI section exists, if not create it """
     try:
@@ -241,7 +246,7 @@ def initialize():
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_DEST_FOLDER, MAG_DEST_FILE, USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
             USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, USE_TOR, USE_NZB, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
             USE_PUSHBULLET, PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, UTORRENT_HOST, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
-	    NOTFOUND_STATUS, FULL_SCAN, ADD_AUTHOR, \
+	    NOTFOUND_STATUS, FULL_SCAN, ADD_AUTHOR, NMA_ENABLED, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, \
             GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS
 
         if __INITIALIZED__:
@@ -397,6 +402,11 @@ def initialize():
         PUSHBULLET_NOTIFY_ONDOWNLOAD = bool(check_setting_int(CFG, 'Pushbullet', 'pushbullet_notify_ondownload', 0))
         PUSHBULLET_TOKEN = check_setting_str(CFG, 'Pushbullet', 'pushbullet_token', '')
         PUSHBULLET_DEVICEID = check_setting_str(CFG, 'Pushbullet', 'pushbullet_deviceid', '')
+
+        NMA_ENABLED = bool(check_setting_int(CFG, 'NMA', 'nma_enabled', 0))
+        NMA_APIKEY = check_setting_str(CFG, 'NMA', 'nma_apikey', '')
+	NMA_PRIORITY = check_setting_int(CFG, 'NMA', 'nma_priority', 0)
+	NMA_ONSNATCH = bool(check_setting_int(CFG, 'NMA', 'nma_onsnatch', 0))
 
         BOOK_API = check_setting_str(CFG, 'API', 'book_api', 'GoodReads')
         GR_API = check_setting_str(CFG, 'API', 'gr_api', 'ckvsiSDsuqh7omh74ZZ6Q')
@@ -606,6 +616,12 @@ def config_write():
     new_config['Pushbullet']['pushbullet_notify_ondownload'] = int(PUSHBULLET_NOTIFY_ONDOWNLOAD)
     new_config['Pushbullet']['pushbullet_token'] = PUSHBULLET_TOKEN
     new_config['Pushbullet']['pushbullet_deviceid'] = PUSHBULLET_DEVICEID
+
+    new_config['NMA'] = {}
+    new_config['NMA']['nma_enabled'] = int(NMA_ENABLED)
+    new_config['NMA']['nma_apikey'] = NMA_APIKEY
+    new_config['NMA']['nma_priority'] = NMA_PRIORITY
+    new_config['NMA']['nma_onsnatch'] = int(NMA_ONSNATCH)
 
     new_config.write()
 
