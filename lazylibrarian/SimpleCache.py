@@ -71,11 +71,11 @@ class CacheHandler(urllib2.BaseHandler):
 
     def http_response(self, request, response):
         if request.get_method() == "GET":
-            if 'x-cache' not in response.info():
+            if 'x-local-cache' in response.info():
+                return CachedResponse(self.cacheLocation, request.get_full_url(), setCacheHeader=True)
+            else:
                 CachedResponse.StoreInCache(self.cacheLocation, request.get_full_url(), response)
                 return CachedResponse(self.cacheLocation, request.get_full_url(), setCacheHeader=False)
-            else:
-                return CachedResponse(self.cacheLocation, request.get_full_url(), setCacheHeader=True)
         else:
             return response
     
@@ -83,7 +83,7 @@ class CachedResponse(StringIO.StringIO):
     """An urllib2.response-like object for cached responses.
 
     To determine wheter a response is cached or coming directly from
-    the network, check the x-cache header rather than the object type."""
+    the network, check the x-local-cache header rather than the object type."""
     
     def ExistsInCache(cacheLocation, url):
         hash = md5.new(url).hexdigest()
@@ -111,7 +111,7 @@ class CachedResponse(StringIO.StringIO):
         self.msg     = "OK"
         headerbuf = file(self.cacheLocation + os.sep + hash+".headers").read()
         if setCacheHeader:
-            headerbuf += "x-cache: %s/%s\r\n" % (self.cacheLocation,hash)
+            headerbuf += "x-local-cache: %s/%s\r\n" % (self.cacheLocation,hash)
         self.headers = httplib.HTTPMessage(StringIO.StringIO(headerbuf))
 
     def info(self):
