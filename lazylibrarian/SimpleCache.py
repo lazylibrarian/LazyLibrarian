@@ -10,6 +10,7 @@ import unittest
 import md5
 import hashlib
 import StringIO
+import lazylibrarian
 
 __version__ = (0,1)
 __author__ = "Staffan Malmgren <staffan@tomtebo.org>"
@@ -56,7 +57,7 @@ class CacheHandler(urllib2.BaseHandler):
     response is returned, saving time, resources and bandwith"""
     def __init__(self,cacheLocation):
         """The location of the cache directory"""
-        self.cacheLocation = cacheLocation
+        self.cacheLocation = lazylibrarian.DATADIR + os.sep + cacheLocation
         if not os.path.exists(self.cacheLocation):
             os.mkdir(self.cacheLocation)
             
