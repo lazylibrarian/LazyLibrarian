@@ -103,7 +103,13 @@ def LibraryScan(dir=None):
 							authorlink  = author_gr['authorlink']
 							pageIdx = authorlink.rfind('/')
 							authorlink  = authorlink[pageIdx+1:]
-							match_auth = authorid+"."+author.replace('. ','_')
+							#match_auth = authorid+"."+author.replace('. ','_')
+							#Original Line does not allow author match.
+							match_auth = author.replace('.','_')
+                                                        match_auth = match_auth.replace(' ','_')
+                                                        match_auth = match_auth.replace('__','_')
+                                                        match_auth = authorid+"."+match_auth
+							# Hopefully someone can come up with a more efficient way of doing this.
 							logger.debug(match_auth)
 							logger.debug(authorlink)
 							if match_auth == authorlink:
