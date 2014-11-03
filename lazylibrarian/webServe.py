@@ -241,9 +241,6 @@ class WebInterface(object):
         lazylibrarian.MAG_DEST_FOLDER = mag_dest_folder
         lazylibrarian.MAG_DEST_FILE = mag_dest_file
 
-        lazylibrarian.USE_NZB = use_nzb
-        lazylibrarian.USE_TOR = use_tor
-
         lazylibrarian.USE_TWITTER = use_twitter
         lazylibrarian.TWITTER_NOTIFY_ONSNATCH = twitter_notify_onsnatch
         lazylibrarian.TWITTER_NOTIFY_ONDOWNLOAD = twitter_notify_ondownload
