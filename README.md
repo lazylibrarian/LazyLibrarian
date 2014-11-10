@@ -1,5 +1,8 @@
 ## LazyLibrarian
 
+
+[![Build Status](https://travis-ci.org/lazylibrarian/LazyLibrarian.svg?branch=master)](https://travis-ci.org/lazylibrarian/LazyLibrarian)
+
 ### 2014 ###
 Jan,20 Exciting news update. TheGuardian has gracefully agreed to review the code base with a view to bringing in his improvements into the new UI. All going well this branch will hopefully include
 - Twitter notifications
