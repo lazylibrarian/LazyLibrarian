@@ -23,6 +23,7 @@ version.txt
 *.cproject
 *.tmproj
 *.tmproject
+.ropeproject
 
 # OS generated files #
 ######################
