@@ -76,6 +76,8 @@ def search_nzb_book(books=None, mags=None):
     for book in searchlist: 
         #print book.keys()
         resultlist = providers.IterateOverNewzNabSites(book,'book')
+        
+        lazylibrarian.SAB_CAT = "books"
 
         #if you can't find teh book specifically, you might find under general search
         if not resultlist:
@@ -135,6 +137,9 @@ def search_nzb_book(books=None, mags=None):
 
     if not books or books==False:
         snatched = searchmag.searchmagazines(mags)
+        
+        lazylibrarian.SAB_CAT = "magazines"
+        
         for items in snatched:
             snatch = DownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
             notifiers.notify_snatch(items['nzbtitle']+' at '+formatter.now()) 
