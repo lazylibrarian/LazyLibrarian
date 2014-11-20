@@ -91,7 +91,7 @@ def searchmagazines(mags=None):
 						frequency = results['Frequency']
 						regex = results['Regex']
 
-					nzbtitle_formatted = nzb['nzbtitle'].replace('.',' ').replace('/',' ').replace('+',' ').replace('_',' ').replace('(','').replace(')','')
+					nzbtitle_formatted = nzb['nzbtitle'].replace('.-.',' ').replace('-',' ').replace('[','').replace(']','').replace('.',' ').replace('/',' ').replace('+',' ').replace('_',' ').replace('(','').replace(')','')
 					#Need to make sure that substrings of magazine titles don't get found (e.g. Maxim USA will find Maximum PC USA)
 					keyword_check = nzbtitle_formatted.replace(bookid,'')
 					#remove extra spaces if they're in a row
