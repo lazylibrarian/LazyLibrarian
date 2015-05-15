@@ -212,6 +212,26 @@
                                 <BR>
                                 <small>Number of minimum seeders a torrent must have to be accepted</small>
                             </div>
+
+                             <div class="row checkbox">
+                                <input type="checkbox" name="tor_downloader_transmission" id="tor_downloader_transmission" value="1" ${config['tor_downloader_transmission']} />
+                                <label>Use Transmission</label>
+                            </div>
+                            <fieldset id="transmission_options">
+                                <div class="row">
+                                    <label>Transmission Host:</label>
+                                    <input type="text" name="transmission_host" value="${config['transmission_host']}" size="30">
+                                </div>
+                                <div class="row">
+                                    <label>Transmission Username:</label>
+                                    <input type="text" name="transmission_user" value="${config['transmission_user']}" size="30">
+                                </div>
+                                <div class="row">
+                                    <label>Transmission Password:</label>
+                                    <input type="password" name="transmission_pass" value="${config['transmission_pass']}" size="30">
+                                </div>
+                            </fieldset>
+
                              <div class="row checkbox">
                                 <input type="checkbox" name="tor_downloader_utorrent" id="tor_downloader_utorrent" value="1" ${config['tor_downloader_utorrent']} />
                                 <label>Use uTorrent</label>
@@ -597,6 +617,25 @@
                     else
                     {
                             $("#tor_blackhole_options").slideUp();
+                    }
+            });
+
+            if ($("#tor_downloader_transmission").is(":checked"))
+                {
+                        $("#transmission_options").show();
+                }
+            else
+                {
+                        $("#transmission_options").hide();
+                }
+            $("#tor_downloader_transmission").click(function(){
+                    if ($("#tor_downloader_transmission").is(":checked"))
+                    {
+                            $("#transmission_options").slideDown();
+                    }
+                    else
+                    {
+                            $("#transmission_options").slideUp();
                     }
             });
 
