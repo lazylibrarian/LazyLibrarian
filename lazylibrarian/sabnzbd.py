@@ -31,7 +31,7 @@ def SABnzbd(title=None, nzburl=None):
         params['cat'] = lazylibrarian.SAB_CAT
 
     if lazylibrarian.USENET_RETENTION:
-        params["maxage"] = lazylibrarian.USENET_RETENTION
+        params["maxage"] = lazylibrarian.RETENTION_MAXAGE
 
 ## FUTURE-CODE
 #    if lazylibrarian.SAB_PRIO:

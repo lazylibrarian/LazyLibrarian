@@ -147,6 +147,16 @@
                             <label>Enable NZB Search</label>
                         </div>
                         <fieldset id="usenet_options">
+			    <div class="row checkbox">
+			        <input type="checkbox" name="usenet_retention" id="usenet_retention" value="1" ${config['usenet_retention']} />
+				<label>Usenet Retention</label>
+			    </div>
+			    <fieldset id="retention_options">
+			    	<div class="row">
+				    <label>Retention max age</label>
+				    <input type="text" name="retention_maxage"  value="${config['retention_maxage']}" size="30">
+				</div>
+			    </fieldset>
                             <div class="row checkbox">
                                 <input type="checkbox" name="nzb_downloader_sabnzbd" id="nzb_downloader_sabnzbd" value="1" ${config['nzb_downloader_sabnzbd']} />
                                 <label>Use Sabnzbd+</label>
@@ -644,7 +654,6 @@
                 {
                         $("#sabnzbd_options").hide();
                 }
-                
             $("#nzb_downloader_sabnzbd").click(function(){
                     if ($("#nzb_downloader_sabnzbd").is(":checked"))
                     {
@@ -653,6 +662,25 @@
                     else
                     {
                             $("#sabnzbd_options").slideUp();
+                    }
+            });
+
+            if ($("#usenet_retention").is(":checked"))
+                    {
+                            $("#retention_options").show();
+                    }
+            else
+                    {
+                            $("#retention_options").hide();
+                    }
+            $("#usenet_retention").click(function(){
+                    if ($("#usenet_retention").is(":checked"))
+                    {
+                            $("#retention_options").slideDown();
+                    }
+                    else
+                    {
+                            $("#retention_options").slideUp();
                     }
             });
 
