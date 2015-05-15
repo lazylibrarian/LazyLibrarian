@@ -17,7 +17,7 @@ class GoodReads:
 	# http://www.goodreads.com/api/
 
 	def __init__(self, name=None):
-		self.name = {"id": name.encode('utf-8')}
+		self.name = name.encode('utf-8')
 		#self.type = type
 		self.params = {"key":  lazylibrarian.GR_API}
 
@@ -139,7 +139,7 @@ class GoodReads:
 
 	def find_author_id(self):
 
-		URL = 'http://www.goodreads.com/api/author_url/?' + urllib.urlencode(self.name) + '&' + urllib.urlencode(self.params)
+		URL = 'http://www.goodreads.com/api/author_url/' + urllib.quote(self.name) + '?' + urllib.urlencode(self.params)
 		logger.debug("Searching for author with name: %s" % self.name)
 
 		# Cache our request
@@ -153,7 +153,7 @@ class GoodReads:
 		try:
 			sourcexml = ElementTree.parse(resp)
 		except Exception, e:
-			logger.error("Error fetching authorid: " + str(e))
+			logger.error("Error fetching authorid: " + str(e) + str(URL))
 		
 		rootxml = sourcexml.getroot()
 		resultxml = rootxml.getiterator('author')
