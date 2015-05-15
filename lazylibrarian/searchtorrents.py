@@ -1,4 +1,4 @@
-import time, threading, urllib, urllib2, os, re
+import time, threading, urllib, urllib2, os, re, sys
 from base64 import b16encode, b32decode
 from lib.bencode import bencode as bencode, bdecode
 from hashlib import sha1
@@ -11,6 +11,8 @@ from lazylibrarian import logger, database, formatter, providers, SimpleCache, n
 
 import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
+
+from lazylibrarian.common import USER_AGENT
 
 #new to support torrents
 from StringIO import StringIO
@@ -160,7 +162,7 @@ def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
 
         if (lazylibrarian.TOR_DOWNLOADER_BLACKHOLE):
             tor_name = str.replace(str(tor_title), ' ', '_') + '.torrent'
-            tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
+            tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name.encode(sys.getdefaultencoding()))
 
             torrent_file = open(tor_path , 'wb')
             torrent_file.write(torrent)
