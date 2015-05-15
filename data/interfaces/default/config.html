@@ -180,6 +180,10 @@
                                     <label>SABnzbd SubDir:</label>
                                     <input type="text" name="sab_subdir" value="${config['sab_subdir']}" size="30">
                                 </div>
+				<div class="row">
+				    <label>Retention Max Age:</label>
+				    <input type="text" name="usenet_retention" value="${config['usenet_retention']}" size="30">
+				</div>
                             </fieldset>
                             <div class="row checkbox">
                                  <input type="checkbox" name="nzb_downloader_blackhole" id="nzb_downloader_blackhole" value="1" ${config['nzb_downloader_blackhole']} />
@@ -644,7 +648,6 @@
                 {
                         $("#sabnzbd_options").hide();
                 }
-                
             $("#nzb_downloader_sabnzbd").click(function(){
                     if ($("#nzb_downloader_sabnzbd").is(":checked"))
                     {
