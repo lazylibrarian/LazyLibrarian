@@ -98,7 +98,6 @@ EBOOK_TYPE = None
 
 TOR_DOWNLOADER_BLACKHOLE = False
 TOR_DOWNLOADER_UTORRENT = False
-TOR_DOWNLOADER_TRANSMISSION = False
 NUMBEROFSEEDERS = 10
 TORRENT_DIR = None
 
@@ -106,10 +105,6 @@ UTORRENT_HOST = None
 UTORRENT_USER = None
 UTORRENT_PASS = None
 UTORRENT_LABEL = None
-
-TRANSMISSION_HOST = None
-TRANSMISSION_USER = None
-TRANSMISSION_PASS = None
 
 KAT = False
 
@@ -251,7 +246,6 @@ def initialize():
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_DEST_FOLDER, MAG_DEST_FILE, USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
             USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, USE_TOR, USE_NZB, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
             USE_PUSHBULLET, PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, UTORRENT_HOST, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
-            TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PASS, TRANSMISSION_USER, \
 	    NOTFOUND_STATUS, FULL_SCAN, ADD_AUTHOR, NMA_ENABLED, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, \
             GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS
 
@@ -359,7 +353,6 @@ def initialize():
 
         TOR_DOWNLOADER_BLACKHOLE = bool(check_setting_int(CFG, 'TORRENT', 'tor_downloader_blackhole', 0))
         TOR_DOWNLOADER_UTORRENT = bool(check_setting_int(CFG, 'TORRENT', 'tor_downloader_utorrent', 0))
-        TOR_DOWNLOADER_TRANSMISSION = bool(check_setting_int(CFG, 'TORRENT', 'tor_downloader_transmission', 0))
         NUMBEROFSEEDERS = check_setting_int(CFG, 'TORRENT', 'numberofseeders', 10)
         TORRENT_DIR  = check_setting_str(CFG, 'TORRENT', 'torrent_dir', '')
 
@@ -367,10 +360,6 @@ def initialize():
         UTORRENT_USER  = check_setting_str(CFG, 'UTORRENT', 'utorrent_user', '')
         UTORRENT_PASS  = check_setting_str(CFG, 'UTORRENT', 'utorrent_pass', '')
         UTORRENT_LABEL = check_setting_str(CFG, 'UTORRENT', 'utorrent_label', '')
-
-        TRANSMISSION_HOST  = check_setting_str(CFG, 'UTORRENT', 'utorrent_host', '')
-        TRANSMISSION_USER  = check_setting_str(CFG, 'UTORRENT', 'utorrent_user', '')
-        TRANSMISSION_PASS  = check_setting_str(CFG, 'UTORRENT', 'utorrent_pass', '')
 
         KAT = bool(check_setting_int(CFG, 'KAT', 'kat', 0))
 
@@ -574,7 +563,6 @@ def config_write():
     new_config['TORRENT'] = {}
     new_config['TORRENT']['tor_downloader_blackhole'] = TOR_DOWNLOADER_BLACKHOLE
     new_config['TORRENT']['tor_downloader_utorrent'] = TOR_DOWNLOADER_UTORRENT
-    new_config['TORRENT']['tor_downloader_transmission'] = TOR_DOWNLOADER_TRANSMISSION
     new_config['TORRENT']['numberofseeders'] = NUMBEROFSEEDERS
     new_config['TORRENT']['torrent_dir'] = TORRENT_DIR
 
@@ -583,11 +571,6 @@ def config_write():
     new_config['UTORRENT']['utorrent_user'] = UTORRENT_USER
     new_config['UTORRENT']['utorrent_pass'] = UTORRENT_PASS
     new_config['UTORRENT']['utorrent_label'] = UTORRENT_LABEL
-
-    new_config['TRANSMISSION'] = {}
-    new_config['TRANSMISSION']['transmission_host'] = TRANSMISSION_HOST
-    new_config['TRANSMISSION']['transmission_user'] = TRANSMISSION_USER
-    new_config['TRANSMISSION']['transmission_pass'] = TRANSMISSION_PASS
 
     new_config['KAT'] = {}
     new_config['KAT']['kat'] = int(KAT)
