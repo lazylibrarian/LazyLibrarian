@@ -7,7 +7,7 @@ from xml.etree.ElementTree import Element, SubElement
 
 import lazylibrarian
 
-from lazylibrarian import logger, database, formatter, providers, SimpleCache, notifiers, searchmag, utorrent, transmission
+from lazylibrarian import logger, database, formatter, providers, SimpleCache, notifiers, searchmag, utorrent
 
 import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
@@ -173,9 +173,6 @@ def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         if (lazylibrarian.TOR_DOWNLOADER_UTORRENT):            
             hash = CalcTorrentHash(torrent)
             download = utorrent.addTorrent(tor_url, hash)
-
-        if (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
-            download = transmission.addTorrent(tor_url)
 
     else:
         logger.error('No torrent download method is enabled, check config.')
