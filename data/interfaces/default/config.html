@@ -185,6 +185,34 @@
 				    <input type="text" name="usenet_retention" value="${config['usenet_retention']}" size="30">
 				</div>
                             </fieldset>
+
+                            <div class="row checkbox">
+                                <input type="checkbox" name="nzb_downloader_nzbget" id="nzb_downloader_nzbget" value="1" ${config['nzb_downloader_nzbget']} />
+                                <label>Use NZBGet</label>
+                            </div>
+                            <fieldset id="nzbget_options">
+                                <div class="row">
+                                    <label>NZBGet Host:</label>
+                                    <input type="text" name="nzbget_host" value="${config['nzbget_host']}" size="30" align="right">
+                                </div>
+                                <div class="row">
+                                    <label>NZBGet Username</label>
+                                    <input type="text" name="nzbget_user" value="${config['nzbget_user']}" size="30">
+                                </div>
+                                <div class="row">
+                                    <label>NZBGet Password:</label>
+                                    <input type="password" name="nzbget_pass" value="${config['nzbget_pass']}" size="30">
+                                </div>
+                                <div class="row">
+                                    <label>NZBGet Category:</label>
+                                    <input type="text" name="nzbget_cat" value="${config['nzbget_cat']}" size="30">
+                                </div>
+                                <div class="row">
+                                    <label>NZBGet Priority:</label>
+                                    <input type="text" name="nzbget_priority" value="${config['nzbget_priority']}" size="30">
+                                </div>
+                            </fieldset>
+
                             <div class="row checkbox">
                                  <input type="checkbox" name="nzb_downloader_blackhole" id="nzb_downloader_blackhole" value="1" ${config['nzb_downloader_blackhole']} />
                                  <label>Use NZB Blackhole</label>
@@ -695,6 +723,25 @@
                     else
                     {
                             $("#sabnzbd_options").slideUp();
+                    }
+            });
+
+            if ($("#nzb_downloader_nzbget").is(":checked"))
+                {
+                        $("#nzbget_options").show();
+                }
+            else
+                {
+                        $("#nzbget_options").hide();
+                }
+            $("#nzb_downloader_nzbget").click(function(){
+                    if ($("#nzb_downloader_nzbget").is(":checked"))
+                    {
+                            $("#nzbget_options").slideDown();
+                    }
+                    else
+                    {
+                            $("#nzbget_options").slideUp();
                     }
             });
 
