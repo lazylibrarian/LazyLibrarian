@@ -67,6 +67,12 @@ SAB_PASS = None
 SAB_API = None
 SAB_CAT = None
 
+NZBGET_HOST = None
+NZBGET_USER = None
+NZBGET_PASS = None
+NZBGET_CATEGORY = None
+NZBGET_PRIORITY = None
+
 DESTINATION_COPY = False
 DESTINATION_DIR = None
 DOWNLOAD_DIR = None
@@ -117,6 +123,7 @@ USE_NZB = False
 USE_TOR = False
 
 NZB_DOWNLOADER_SABNZBD = False
+NZB_DOWNLOADER_NZBGET = False
 NZB_DOWNLOADER_BLACKHOLE = False
 NZB_BLACKHOLEDIR = None
 USENET_RETENTION = None 
@@ -247,6 +254,7 @@ def initialize():
         global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, MATCH_RATIO, \
 	    PROXY_HOST, PROXY_TYPE, \
             IMP_ONLYISBN, IMP_PREFLANG, IMP_AUTOADD, SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, NZB_BLACKHOLEDIR, GR_API, GB_API, BOOK_API, \
+            NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, NZB_DOWNLOADER_NZBGET, \
             NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, NEWZNAB2, NEWZNAB_HOST2, NEWZNAB_API2, EBOOK_TYPE, KAT, USENETCRAWLER, USENETCRAWLER_HOST, USENETCRAWLER_API, \
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_DEST_FOLDER, MAG_DEST_FILE, USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
             USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, USE_TOR, USE_NZB, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
@@ -333,6 +341,11 @@ def initialize():
         SAB_API = check_setting_str(CFG, 'SABnzbd', 'sab_api', '')
         SAB_CAT = check_setting_str(CFG, 'SABnzbd', 'sab_cat', '')
 
+        NZBGET_HOST = check_setting_str(CFG, 'NZBGet', 'nzbget_host', '')
+        NZBGET_USER = check_setting_str(CFG, 'NZBGet', 'nzbget_user', '')
+        NZBGET_PASS = check_setting_str(CFG, 'NZBGet', 'nzbget_pass', '')
+        NZBGET_CATEGORY = check_setting_str(CFG, 'NZBGet', 'nzbget_cat', '')
+        NZBGET_PRIORITY = check_setting_str(CFG, 'NZBGet', 'nzbget_priority', '')
 
         DESTINATION_COPY = bool(check_setting_int(CFG, 'General', 'destination_copy', 0))
         DESTINATION_DIR = check_setting_str(CFG, 'General','destination_dir', '')
@@ -342,6 +355,7 @@ def initialize():
         USE_TOR = bool(check_setting_int(CFG, 'DLMethod', 'use_tor', 0))
 
         NZB_DOWNLOADER_SABNZBD = bool(check_setting_int(CFG, 'USENET', 'nzb_downloader_sabnzbd', 0))
+        NZB_DOWNLOADER_NZBGET = bool(check_setting_int(CFG, 'USENET', 'nzb_downloader_nzbget', 0))
         NZB_DOWNLOADER_BLACKHOLE = bool(check_setting_int(CFG, 'USENET', 'nzb_downloader_blackhole', 0))
         NZB_BLACKHOLEDIR = check_setting_str(CFG, 'USENET', 'nzb_blackholedir', '')
         USENET_RETENTION = check_setting_str(CFG, 'USENET', 'usenet_retention', '')
@@ -525,6 +539,7 @@ def config_write():
 
     new_config['USENET'] = {}
     new_config['USENET']['nzb_downloader_sabnzbd'] = NZB_DOWNLOADER_SABNZBD
+    new_config['USENET']['nzb_downloader_nzbget'] = NZB_DOWNLOADER_NZBGET
     new_config['USENET']['nzb_downloader_blackhole'] = NZB_DOWNLOADER_BLACKHOLE
     new_config['USENET']['nzb_blackholedir'] = NZB_BLACKHOLEDIR
     new_config['USENET']['usenet_retention'] = USENET_RETENTION
@@ -537,6 +552,13 @@ def config_write():
     new_config['SABnzbd']['sab_pass'] = SAB_PASS
     new_config['SABnzbd']['sab_api'] = SAB_API
     new_config['SABnzbd']['sab_cat'] = SAB_CAT
+
+    new_config['NZBGet'] = {}
+    new_config['NZBGet']['nzbget_host'] = NZBGET_HOST
+    new_config['NZBGet']['nzbget_user'] = NZBGET_USER
+    new_config['NZBGet']['nzbget_pass'] = NZBGET_PASS
+    new_config['NZBGet']['nzbget_cat'] = NZBGET_CATEGORY
+    new_config['NZBGet']['nzbget_priority'] = NZBGET_PRIORITY
 
     new_config['General']['destination_dir'] = DESTINATION_DIR
     new_config['General']['destination_copy'] = int(DESTINATION_COPY)

@@ -40,7 +40,7 @@ def searchmagazines(mags=None):
 		searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
 		searchlist.append({"bookid": bookid, "searchterm": searchterm})
 
-	if not lazylibrarian.SAB_HOST and not lazylibrarian.BLACKHOLE:
+	if not lazylibrarian.SAB_HOST and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
 		logger.info('No download method is set, use SABnzbd or blackhole')
 
 	if not lazylibrarian.NEWZNAB and not lazylibrarian.NEWZNAB2 and not lazylibrarian.USENETCRAWLER:
