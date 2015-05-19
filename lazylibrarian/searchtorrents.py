@@ -18,6 +18,15 @@ from lazylibrarian.common import USER_AGENT
 from StringIO import StringIO
 import gzip
 
+import unicodedata
+import string
+validFilenameChars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+
+def removeDisallowedFilenameChars(filename):
+    
+    cleanedFilename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore')
+    return ''.join(c for c in cleanedFilename if c in validFilenameChars)
+
 def search_tor_book(books=None, mags=None):
     if not(lazylibrarian.USE_TOR):
         return
@@ -161,8 +170,9 @@ def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             torrent = response.read()
 
         if (lazylibrarian.TOR_DOWNLOADER_BLACKHOLE):
+            tor_title = removeDisallowedFilenameChars(tor_title)
             tor_name = str.replace(str(tor_title), ' ', '_') + '.torrent'
-            tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name.encode(sys.getdefaultencoding()))
+            tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
 
             torrent_file = open(tor_path , 'wb')
             torrent_file.write(torrent)
