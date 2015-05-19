@@ -65,8 +65,8 @@ def search_nzb_book(books=None, mags=None):
         searchterm = re.sub(r"\s\s+" , " ", searchterm) # strip any double white space
         searchlist.append({"bookid": bookid, "bookName":searchbook[2], "authorName":searchbook[1], "searchterm": searchterm.strip()})
     
-    if not lazylibrarian.SAB_HOST and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
-        logger.info('No download method is set, use SABnzbd or blackhole')
+    if not lazylibrarian.SAB_HOST and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE and not lazylibrarian.NZBGET_HOST:
+        logger.info('No download method is set, use SABnzbd/NZBGet or blackhole')
 
     #TODO - Move the newznab test to providers.py
     if not lazylibrarian.NEWZNAB and not lazylibrarian.NEWZNAB2 and not lazylibrarian.USENETCRAWLER:
