@@ -17,7 +17,7 @@ from lazylibrarian import logger
 
 from xml.dom import minidom
 
-import request
+import lib.requests as requests
 import lib.feedparser as feedparser
 import lazylibrarian
 import collections
