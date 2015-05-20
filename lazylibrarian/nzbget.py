@@ -80,7 +80,9 @@ def sendNZB(nzb):
         # Find out if nzbget supports priority (Version 9.0+), old versions beginning with a 0.x will use the old command
         nzbget_version_str = nzbGetRPC.version()
         nzbget_version = int(nzbget_version_str[:nzbget_version_str.find(".")])
-        if nzbget_version == 0:
+        logger.debug("NZB Version %s" % nzbget_version)
+        #for some reason 14 seems to not work with >= 13 method? I get invalid param autoAdd
+        if nzbget_version == 0 or nzbget_version == 14:
             if nzbcontent64 is not None:
                 nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", lazylibrarian.NZBGET_CATEGORY, addToTop, nzbcontent64)
             else:
@@ -105,8 +107,7 @@ def sendNZB(nzb):
         # (Positive number representing NZBID of the queue item. 0 and negative numbers represent error codes.)
         elif nzbget_version >= 13:
             nzbget_result = True if nzbGetRPC.append(nzb.name + ".nzb", nzbcontent64 if nzbcontent64 is not None else nzb.url,
-                                                     lazylibrarian.NZBGET_CATEGORY, lazylibrarian.NZBGET_PRIORITY, False, False, dupekey, dupescore,
-                                                     "score") > 0 else False
+                                                     lazylibrarian.NZBGET_CATEGORY, lazylibrarian.NZBGET_PRIORITY, "False", "False", dupekey, dupescore, "score") > 0 else False
         else:
             if nzbcontent64 is not None:
                 nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", lazylibrarian.NZBGET_CATEGORY, lazylibrarian.NZBGET_PRIORITY, False,
@@ -121,6 +122,6 @@ def sendNZB(nzb):
         else:
             logger.error(u"NZBget could not add %s to the queue" % (nzb.name + ".nzb"))
             return False
-    except:
-        logger.error(u"Connect Error to NZBget: could not add %s to the queue" % (nzb.name + ".nzb"))
+    except Exception, e:
+        logger.error(u"Connect Error to NZBget: could not add %s to the queue: %s" % (nzb.name + ".nzb", e))
         return False
