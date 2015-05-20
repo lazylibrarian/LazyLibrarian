@@ -286,11 +286,11 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None):
     
     
     results = []  
-    params = ReturnSearchTypeStructure(api_key, book, searchType)
+    params = ReturnSearchTypeStructure(api_key, book, common.removeDisallowedFilenameChars(searchType))
 
     if not str(host)[:4] == "http":
         host = 'http://' + host
-
+    
     URL = host + '/api?' + urllib.urlencode(params)
 
     try :

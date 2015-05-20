@@ -12,20 +12,12 @@ from lazylibrarian import logger, database, formatter, providers, SimpleCache, n
 import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
 
-from lazylibrarian.common import USER_AGENT
+#from lazylibrarian.common import USER_AGENT
 
+import lazylibrarian.common as common
 #new to support torrents
 from StringIO import StringIO
 import gzip
-
-import unicodedata
-import string
-validFilenameChars = "-_.() %s%s" % (string.ascii_letters, string.digits)
-
-def removeDisallowedFilenameChars(filename):
-    
-    cleanedFilename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore')
-    return ''.join(c for c in cleanedFilename if c in validFilenameChars)
 
 def search_tor_book(books=None, mags=None):
     if not(lazylibrarian.USE_TOR):
@@ -156,7 +148,7 @@ def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
 	if lazylibrarian.PROXY_HOST:
 		request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
         request.add_header('Accept-encoding', 'gzip')
-	request.add_header('User-Agent', USER_AGENT)
+	request.add_header('User-Agent', common.USER_AGENT)
     
         if tor_prov == 'KAT':
             request.add_header('Referer', 'http://kat.ph/')
@@ -170,7 +162,7 @@ def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             torrent = response.read()
 
         if (lazylibrarian.TOR_DOWNLOADER_BLACKHOLE):
-            tor_title = removeDisallowedFilenameChars(tor_title)
+            tor_title = common.removeDisallowedFilenameChars(tor_title)
             tor_name = str.replace(str(tor_title), ' ', '_') + '.torrent'
             tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
 

@@ -31,3 +31,11 @@ NOTIFY_DOWNLOAD = 2
 notifyStrings = {}
 notifyStrings[NOTIFY_SNATCH] = "Started Download"
 notifyStrings[NOTIFY_DOWNLOAD] = "Download Finished"
+
+import unicodedata
+import string
+validFilenameChars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+def removeDisallowedFilenameChars(filename):
+    cleanedFilename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore')
+    return ''.join(c for c in cleanedFilename if c in validFilenameChars)
+
