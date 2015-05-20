@@ -150,19 +150,6 @@ def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
         download = sabnzbd.SABnzbd(nzbtitle, nzburl)
 
     elif lazylibrarian.NZBGET_HOST and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
-        """
-        try:
-            req = urllib2.Request(nzburl)
-            if lazylibrarian.PROXY_HOST:
-                req.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-            req.add_header('User-Agent', USER_AGENT)
-            nzbfile = urllib2.urlopen(req, timeout=90).read()
-   
-        except urllib2.URLError, e:
-            logger.warn('Error fetching nzb from url: ' + nzburl + ' %s' % e)
-            nzbfile = False;
-        if (nzbfile):
-        """
         headers = {'User-Agent': USER_AGENT}
         data = request.request_content(url=nzburl, headers=headers)
         nzb = classes.NZBDataSearchResult()
