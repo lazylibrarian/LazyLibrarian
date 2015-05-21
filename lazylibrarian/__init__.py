@@ -165,6 +165,13 @@ PUSHBULLET_DEVICEID = None
 PUSHBULLET_NOTIFY_ONSNATCH = False
 PUSHBULLET_NOTIFY_ONDOWNLOAD = False
 
+USE_PUSHOVER = False
+PUSHOVER_APITOKEN = None
+PUSHOVER_KEYS = None
+PUSHOVER_ONSNATCH = False
+PUSHOVER_ONDOWNLOAD = False
+PUSHOVER_PRIORITY = None
+
 NMA_ENABLED = False
 NMA_APIKEY = None
 NMA_PRIORITY = None
@@ -259,6 +266,7 @@ def initialize():
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_DEST_FOLDER, MAG_DEST_FILE, USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
             USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, USE_TOR, USE_NZB, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
             USE_PUSHBULLET, PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, UTORRENT_HOST, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
+            USE_PUSHOVER, PUSHOVER_ONSNATCH, PUSHOVER_KEYS, PUSHOVER_APITOKEN, PUSHOVER_PRIORITY, PUSHOVER_ONDOWNLOAD, \
             TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PASS, TRANSMISSION_USER, \
 	    NOTFOUND_STATUS, FULL_SCAN, ADD_AUTHOR, NMA_ENABLED, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, \
             GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS
@@ -345,7 +353,7 @@ def initialize():
         NZBGET_USER = check_setting_str(CFG, 'NZBGet', 'nzbget_user', '')
         NZBGET_PASS = check_setting_str(CFG, 'NZBGet', 'nzbget_pass', '')
         NZBGET_CATEGORY = check_setting_str(CFG, 'NZBGet', 'nzbget_cat', '')
-        NZBGET_PRIORITY = check_setting_str(CFG, 'NZBGet', 'nzbget_priority', '')
+        NZBGET_PRIORITY = check_setting_int(CFG, 'NZBGet', 'nzbget_priority', '0')
 
         DESTINATION_COPY = bool(check_setting_int(CFG, 'General', 'destination_copy', 0))
         DESTINATION_DIR = check_setting_str(CFG, 'General','destination_dir', '')
@@ -427,6 +435,13 @@ def initialize():
         PUSHBULLET_NOTIFY_ONDOWNLOAD = bool(check_setting_int(CFG, 'Pushbullet', 'pushbullet_notify_ondownload', 0))
         PUSHBULLET_TOKEN = check_setting_str(CFG, 'Pushbullet', 'pushbullet_token', '')
         PUSHBULLET_DEVICEID = check_setting_str(CFG, 'Pushbullet', 'pushbullet_deviceid', '')
+
+        USE_PUSHOVER = bool(check_setting_int(CFG, 'Pushover', 'use_pushover',0))
+        PUSHOVER_ONSNATCH = bool(check_setting_int(CFG, 'Pushover', 'pushover_onsnatch',0))
+        PUSHOVER_ONDOWNLOAD = bool(check_setting_int(CFG, 'Pushover', 'pushover_ondownload',0))
+        PUSHOVER_KEYS = check_setting_str(CFG, 'Pushover', 'pushover_keys','')
+        PUSHOVER_APITOKEN =  check_setting_str(CFG, 'Pushover', 'pushover_apitoken','')
+        PUSHOVER_PRIORITY = check_setting_int(CFG, 'Pushover', 'pushover_priority','')
 
         NMA_ENABLED = bool(check_setting_int(CFG, 'NMA', 'nma_enabled', 0))
         NMA_APIKEY = check_setting_str(CFG, 'NMA', 'nma_apikey', '')
@@ -655,6 +670,14 @@ def config_write():
     new_config['Pushbullet']['pushbullet_notify_ondownload'] = int(PUSHBULLET_NOTIFY_ONDOWNLOAD)
     new_config['Pushbullet']['pushbullet_token'] = PUSHBULLET_TOKEN
     new_config['Pushbullet']['pushbullet_deviceid'] = PUSHBULLET_DEVICEID
+
+    new_config['Pushover'] = {}
+    new_config['Pushover']['use_pushover'] = int(USE_PUSHBULLET)
+    new_config['Pushover']['pushover_onsnatch'] = int(PUSHOVER_ONSNATCH)
+    new_config['Pushover']['pushover_ondownload'] = int(PUSHOVER_ONDOWNLOAD)
+    new_config['Pushover']['pushover_priority'] = int(PUSHOVER_PRIORITY)
+    new_config['Pushover']['pushover_keys'] = PUSHOVER_KEYS
+    new_config['Pushover']['pushover_apitoken'] = PUSHOVER_APITOKEN
 
     new_config['NMA'] = {}
     new_config['NMA']['nma_enabled'] = int(NMA_ENABLED)
