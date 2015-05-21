@@ -5,7 +5,7 @@ from xml.etree import ElementTree
 import lazylibrarian
 
 from lazylibrarian import logger, SimpleCache
-from lazylibrarian.common import USER_AGENT
+import lazylibrarian.common as common
 
 #new libraries to support torrents
 #import lib.feedparser as feedparser
@@ -197,7 +197,7 @@ def NewzNab(book=None, newznabNumber=None):
         request = urllib2.Request(URL)
 	if lazylibrarian.PROXY_HOST:
 		request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-        request.add_header('User-Agent', USER_AGENT)
+        request.add_header('User-Agent', common.USER_AGENT)
         opener = urllib2.build_opener(SimpleCache.CacheHandler(".ProviderCache"), SimpleCache.ThrottlingProcessor(5))
         resp = opener.open(request)
 
@@ -286,7 +286,7 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None):
     
     
     results = []  
-    params = ReturnSearchTypeStructure(api_key, book, common.removeDisallowedFilenameChars(searchType))
+    params = ReturnSearchTypeStructure(api_key, book, searchType)
 
     if not str(host)[:4] == "http":
         host = 'http://' + host
