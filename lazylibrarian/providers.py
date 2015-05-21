@@ -286,6 +286,12 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None):
     
     
     results = []  
+
+    try:
+        searchType = common.removeDisallowedFilenameChars(searchType)
+    except Exception, e:
+        logger.warn('searchType did not convert: %s' % e)
+
     params = ReturnSearchTypeStructure(api_key, book, searchType)
 
     if not str(host)[:4] == "http":
