@@ -136,6 +136,12 @@ class WebInterface(object):
                     "pushbullet_notify_ondownload" :  checked(lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD),
                     "pushbullet_token" :              lazylibrarian.PUSHBULLET_TOKEN,
                     "pushbullet_deviceid" :           lazylibrarian.PUSHBULLET_DEVICEID,
+                    "use_pushover":                   checked(lazylibrarian.USE_PUSHOVER),
+                    "pushover_onsnatch":              checked(lazylibrarian.PUSHOVER_ONSNATCH),
+                    "pushover_ondownload":            checked(lazylibrarian.PUSHOVER_ONDOWNLOAD),
+                    "pushover_priority":              lazylibrarian.PUSHOVER_PRIORITY,
+                    "pushover_keys":                  lazylibrarian.PUSHOVER_KEYS,
+                    "pushover_apitoken":              lazylibrarian.PUSHOVER_APITOKEN,
                     "nma_enabled":		      checked(lazylibrarian.NMA_ENABLED),
 		    "nma_apikey": 		      lazylibrarian.NMA_APIKEY,
 		    "nma_priority": 		      int(lazylibrarian.NMA_PRIORITY),
@@ -165,11 +171,12 @@ class WebInterface(object):
 
     def configUpdate(self, http_host='0.0.0.0', http_root=None, http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, imp_onlyisbn=0, imp_preflang=None, imp_autoadd=None, match_ratio=80, nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0, nzb_downloader_blackhole=0, use_nzb=0, use_tor=0, proxy_host=None, proxy_type=None,
         sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None, destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, nzb_blackholedir=None, torrent_dir=None, numberofseeders=0, tor_downloader_blackhole=0, tor_downloader_utorrent=0,
-        nzbget_host=None, nzbget_user=None, nzbget_pass=None, nzbget_cat=None, nzbget_priority=None,
+        nzbget_host=None, nzbget_user=None, nzbget_pass=None, nzbget_cat=None, nzbget_priority=0,
         newznab=0, newznab_host=None, newznab_api=None, newznab2=0, newznab_host2=None, newznab_api2=None,newzbin=0, newzbin_uid=None, newzbin_pass=None, kat=0, ebook_type=None, book_api=None, gr_api=None, gb_api=None, usenetcrawler = 0, usenetcrawler_host=None, usenetcrawler_api = None, 
         versioncheck_interval=None, search_interval=None, scan_interval=None, ebook_dest_folder=None, ebook_dest_file=None, mag_dest_folder=None, mag_dest_file=None, use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0, utorrent_host=None, utorrent_user=None, utorrent_pass=None,  notfound_status='Wanted', full_scan=0, add_author=1, 
         tor_downloader_transmission=0, transmission_host=None, transmission_user=None, transmission_pass=None,
         utorrent_label=None, use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token=None, use_pushbullet=0, pushbullet_notify_onsnatch=0, pushbullet_notify_ondownload=0, pushbullet_token=None, pushbullet_deviceid=None,
+        use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys=None, pushover_apitoken=None, pushover_ondownload=0,
 	nma_enabled=False, nma_apikey=None, nma_priority=0, nma_onsnatch=0):
 
         lazylibrarian.HTTP_HOST = http_host
@@ -279,6 +286,13 @@ class WebInterface(object):
         lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD = pushbullet_notify_ondownload
         lazylibrarian.PUSHBULLET_TOKEN = pushbullet_token
         lazylibrarian.PUSHBULLET_DEVICEID = pushbullet_deviceid
+
+        lazylibrarian.USE_PUSHOVER = use_pushover
+        lazylibrarian.PUSHOVER_ONSNATCH = pushover_onsnatch
+        lazylibrarian.PUSHOVER_ONDOWNLOAD = pushover_ondownload
+        lazylibrarian.PUSHOVER_KEYS = pushover_keys
+        lazylibrarian.PUSHOVER_APITOKEN = pushover_apitoken
+        lazylibrarian.PUSHOVER_PRIORITY =pushover_priority
 
 	lazylibrarian.NMA_ENABLED = nma_enabled
 	lazylibrarian.NMA_APIKEY = nma_apikey
