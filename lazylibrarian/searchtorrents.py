@@ -9,6 +9,8 @@ import lazylibrarian
 
 from lazylibrarian import logger, database, formatter, providers, SimpleCache, notifiers, searchmag, utorrent, transmission
 
+from lib.deluge_client import DelugeRPCClient
+
 import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
 
@@ -178,6 +180,15 @@ def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
 
         if (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
             download = transmission.addTorrent(tor_url)
+
+        if (lazylibrarian.TOR_DOWNLOADER_DELUGE):
+            client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
+                    int(lazylibrarian.DELUGE_PORT),
+                    lazylibrarian.DELUGE_USER,
+                    lazylibrarian.DELUGE_PASS)
+            client.connect()
+            download = client.call('add_torrent_url',tor_url, {"name": tor_title})
+            logger.info('Deluge return value: %s' % download)
 
     else:
         logger.error('No torrent download method is enabled, check config.')

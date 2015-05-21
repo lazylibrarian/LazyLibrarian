@@ -240,6 +240,28 @@
                                 <BR>
                                 <small>Number of minimum seeders a torrent must have to be accepted</small>
                             </div>
+                             <div class="row checkbox">
+                                <input type="checkbox" name="tor_downloader_deluge" id="tor_downloader_deluge" value="1" ${config['tor_downloader_deluge']} />
+                                <label>Use Deluge</label>
+                            </div>
+                            <fieldset id="deluge_options">
+                                <div class="row">
+                                    <label>Deluge Host:</label>
+                                    <input type="text" name="deluge_host" value="${config['deluge_host']}" size="30">
+                                </div>
+                                <div class="row">
+                                    <label>Deluge Port:</label>
+                                    <input type="text" name="deluge_port" value="${config['deluge_port']}" size="30">
+                                </div>
+                                <div class="row">
+                                    <label>Deluge Username:</label>
+                                    <input type="text" name="deluge_user" value="${config['deluge_user']}" size="30">
+                                </div>
+                                <div class="row">
+                                    <label>Deluge Password:</label>
+                                    <input type="password" name="deluge_pass" value="${config['deluge_pass']}" size="30">
+                                </div>
+                            </fieldset>
 
                              <div class="row checkbox">
                                 <input type="checkbox" name="tor_downloader_transmission" id="tor_downloader_transmission" value="1" ${config['tor_downloader_transmission']} />
@@ -672,6 +694,25 @@
                     else
                     {
                             $("#tor_blackhole_options").slideUp();
+                    }
+            });
+
+            if ($("#tor_downloader_deluge").is(":checked"))
+                {
+                        $("#deluge_options").show();
+                }
+            else
+                {
+                        $("#deluge_options").hide();
+                }
+            $("#tor_downloader_deluge").click(function(){
+                    if ($("#tor_downloader_deluge").is(":checked"))
+                    {
+                            $("#deluge_options").slideDown();
+                    }
+                    else
+                    {
+                            $("#deluge_options").slideUp();
                     }
             });
 
