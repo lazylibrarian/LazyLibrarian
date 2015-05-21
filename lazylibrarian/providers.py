@@ -286,7 +286,7 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None):
     
     
     results = []  
-
+    
     try:
         searchType = common.removeDisallowedFilenameChars(searchType)
     except Exception, e:
@@ -303,7 +303,7 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None):
         request = urllib2.Request(URL)
 	if lazylibrarian.PROXY_HOST:
 		request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-        request.add_header('User-Agent', USER_AGENT)
+        request.add_header('User-Agent', common.USER_AGENT)
         opener = urllib2.build_opener(SimpleCache.CacheHandler(".ProviderCache"), SimpleCache.ThrottlingProcessor(5))
         resp = opener.open(request)
 
@@ -314,7 +314,7 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None):
             data = None
 
     except Exception, e:
-        logger.error("Error 403 openning url")
+        logger.error("Error 403 openning url %s" % e)
         data = None
 
     if data:
