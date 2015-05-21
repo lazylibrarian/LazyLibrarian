@@ -157,6 +157,7 @@ class WebInterface(object):
                     "nzb_downloader_blackhole" :      checked(lazylibrarian.NZB_DOWNLOADER_BLACKHOLE),
                     "tor_downloader_utorrent" :       checked(lazylibrarian.TOR_DOWNLOADER_UTORRENT),
                     "tor_downloader_transmission" :   checked(lazylibrarian.TOR_DOWNLOADER_TRANSMISSION),
+                    "tor_downloader_deluge" :         checked(lazylibrarian.TOR_DOWNLOADER_DELUGE),
                     "tor_downloader_blackhole" :      checked(lazylibrarian.TOR_DOWNLOADER_BLACKHOLE),
                     "utorrent_host":                  lazylibrarian.UTORRENT_HOST,
                     "utorrent_user":                  lazylibrarian.UTORRENT_USER,
@@ -164,7 +165,11 @@ class WebInterface(object):
                     "utorrent_label":                 lazylibrarian.UTORRENT_LABEL,
                     "transmission_host":              lazylibrarian.TRANSMISSION_HOST,
                     "transmission_user":              lazylibrarian.TRANSMISSION_USER,
-                    "transmission_pass":              lazylibrarian.TRANSMISSION_PASS
+                    "transmission_pass":              lazylibrarian.TRANSMISSION_PASS,
+                    "deluge_host":                    lazylibrarian.DELUGE_HOST,
+                    "deluge_port":                    lazylibrarian.DELUGE_PORT,
+                    "deluge_user":                    lazylibrarian.DELUGE_USER,
+                    "deluge_pass":                    lazylibrarian.DELUGE_PASS
                 }
         return serve_template(templatename="config.html", title="Settings", config=config)    
     config.exposed = True
@@ -175,6 +180,7 @@ class WebInterface(object):
         newznab=0, newznab_host=None, newznab_api=None, newznab2=0, newznab_host2=None, newznab_api2=None,newzbin=0, newzbin_uid=None, newzbin_pass=None, kat=0, ebook_type=None, book_api=None, gr_api=None, gb_api=None, usenetcrawler = 0, usenetcrawler_host=None, usenetcrawler_api = None, 
         versioncheck_interval=None, search_interval=None, scan_interval=None, ebook_dest_folder=None, ebook_dest_file=None, mag_dest_folder=None, mag_dest_file=None, use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0, utorrent_host=None, utorrent_user=None, utorrent_pass=None,  notfound_status='Wanted', full_scan=0, add_author=1, 
         tor_downloader_transmission=0, transmission_host=None, transmission_user=None, transmission_pass=None,
+        tor_downloader_deluge=0, deluge_host=None, deluge_user=None, deluge_pass=None, deluge_port=None, 
         utorrent_label=None, use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token=None, use_pushbullet=0, pushbullet_notify_onsnatch=0, pushbullet_notify_ondownload=0, pushbullet_token=None, pushbullet_deviceid=None,
         use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys=None, pushover_apitoken=None, pushover_ondownload=0,
 	nma_enabled=False, nma_apikey=None, nma_priority=0, nma_onsnatch=0):
@@ -222,6 +228,7 @@ class WebInterface(object):
         lazylibrarian.TOR_DOWNLOADER_BLACKHOLE = tor_downloader_blackhole
         lazylibrarian.TOR_DOWNLOADER_UTORRENT = tor_downloader_utorrent
         lazylibrarian.TOR_DOWNLOADER_TRANSMISSION = tor_downloader_transmission
+        lazylibrarian.TOR_DOWNLOADER_DELUGE = tor_downloader_deluge
 
         lazylibrarian.NEWZNAB = newznab
         lazylibrarian.NEWZNAB_HOST = newznab_host
@@ -243,6 +250,11 @@ class WebInterface(object):
         lazylibrarian.TRANSMISSION_HOST = transmission_host
         lazylibrarian.TRANSMISSION_USER = transmission_user
         lazylibrarian.TRANSMISSION_PASS = transmission_pass
+
+        lazylibrarian.DELUGE_HOST = deluge_host
+        lazylibrarian.DELUGE_PORT = deluge_port
+        lazylibrarian.DELUGE_USER = deluge_user
+        lazylibrarian.DELUGE_PASS = deluge_pass
 
         lazylibrarian.KAT = kat
 

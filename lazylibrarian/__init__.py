@@ -105,6 +105,7 @@ EBOOK_TYPE = None
 TOR_DOWNLOADER_BLACKHOLE = False
 TOR_DOWNLOADER_UTORRENT = False
 TOR_DOWNLOADER_TRANSMISSION = False
+TOR_DOWNLOADER_DELUGE = False
 NUMBEROFSEEDERS = 10
 TORRENT_DIR = None
 
@@ -116,6 +117,11 @@ UTORRENT_LABEL = None
 TRANSMISSION_HOST = None
 TRANSMISSION_USER = None
 TRANSMISSION_PASS = None
+
+DELUGE_PORT = None
+DELUGE_HOST = None
+DELUGE_USER = None
+DELUGE_PASS = None
 
 KAT = False
 
@@ -268,6 +274,7 @@ def initialize():
             USE_PUSHBULLET, PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, UTORRENT_HOST, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
             USE_PUSHOVER, PUSHOVER_ONSNATCH, PUSHOVER_KEYS, PUSHOVER_APITOKEN, PUSHOVER_PRIORITY, PUSHOVER_ONDOWNLOAD, \
             TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PASS, TRANSMISSION_USER, \
+            TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, \
 	    NOTFOUND_STATUS, FULL_SCAN, ADD_AUTHOR, NMA_ENABLED, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, \
             GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS
 
@@ -382,6 +389,7 @@ def initialize():
         TOR_DOWNLOADER_BLACKHOLE = bool(check_setting_int(CFG, 'TORRENT', 'tor_downloader_blackhole', 0))
         TOR_DOWNLOADER_UTORRENT = bool(check_setting_int(CFG, 'TORRENT', 'tor_downloader_utorrent', 0))
         TOR_DOWNLOADER_TRANSMISSION = bool(check_setting_int(CFG, 'TORRENT', 'tor_downloader_transmission', 0))
+        TOR_DOWNLOADER_DELUGE =  bool(check_setting_int(CFG, 'TORRENT', 'tor_downloader_deluge',0))
         NUMBEROFSEEDERS = check_setting_int(CFG, 'TORRENT', 'numberofseeders', 10)
         TORRENT_DIR  = check_setting_str(CFG, 'TORRENT', 'torrent_dir', '')
 
@@ -390,9 +398,14 @@ def initialize():
         UTORRENT_PASS  = check_setting_str(CFG, 'UTORRENT', 'utorrent_pass', '')
         UTORRENT_LABEL = check_setting_str(CFG, 'UTORRENT', 'utorrent_label', '')
 
-        TRANSMISSION_HOST  = check_setting_str(CFG, 'UTORRENT', 'utorrent_host', '')
-        TRANSMISSION_USER  = check_setting_str(CFG, 'UTORRENT', 'utorrent_user', '')
-        TRANSMISSION_PASS  = check_setting_str(CFG, 'UTORRENT', 'utorrent_pass', '')
+        TRANSMISSION_HOST  = check_setting_str(CFG, 'TRANSMISSION', 'transmission_host', '')
+        TRANSMISSION_USER  = check_setting_str(CFG, 'TRANSMISSION', 'transmission_user', '')
+        TRANSMISSION_PASS  = check_setting_str(CFG, 'TRANSMISSION', 'transmission_pass', '')
+
+        DELUGE_HOST = check_setting_str(CFG, 'DELUGE', 'deluge_host', '') 
+        DELUGE_PORT = check_setting_int(CFG, 'DELUGE', 'deluge_port', '')
+        DELUGE_USER = check_setting_str(CFG, 'DELUGE', 'deluge_user', '')
+        DELUGE_PASS = check_setting_str(CFG, 'DELUGE', 'deluge_pass', '')
 
         KAT = bool(check_setting_int(CFG, 'KAT', 'kat', 0))
 
@@ -612,6 +625,7 @@ def config_write():
     new_config['TORRENT']['tor_downloader_blackhole'] = TOR_DOWNLOADER_BLACKHOLE
     new_config['TORRENT']['tor_downloader_utorrent'] = TOR_DOWNLOADER_UTORRENT
     new_config['TORRENT']['tor_downloader_transmission'] = TOR_DOWNLOADER_TRANSMISSION
+    new_config['TORRENT']['tor_downloader_deluge'] = TOR_DOWNLOADER_DELUGE
     new_config['TORRENT']['numberofseeders'] = NUMBEROFSEEDERS
     new_config['TORRENT']['torrent_dir'] = TORRENT_DIR
 
@@ -626,6 +640,12 @@ def config_write():
     new_config['TRANSMISSION']['transmission_user'] = TRANSMISSION_USER
     new_config['TRANSMISSION']['transmission_pass'] = TRANSMISSION_PASS
 
+    new_config['DELUGE'] = {}
+    new_config['DELUGE']['deluge_host'] = DELUGE_HOST
+    new_config['DELUGE']['deluge_port'] = DELUGE_PORT
+    new_config['DELUGE']['deluge_user'] = DELUGE_USER
+    new_config['DELUGE']['deluge_pass'] = DELUGE_PASS
+    
     new_config['KAT'] = {}
     new_config['KAT']['kat'] = int(KAT)
 
