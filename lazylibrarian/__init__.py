@@ -454,7 +454,7 @@ def initialize():
         PUSHOVER_ONDOWNLOAD = bool(check_setting_int(CFG, 'Pushover', 'pushover_ondownload',0))
         PUSHOVER_KEYS = check_setting_str(CFG, 'Pushover', 'pushover_keys','')
         PUSHOVER_APITOKEN =  check_setting_str(CFG, 'Pushover', 'pushover_apitoken','')
-        PUSHOVER_PRIORITY = check_setting_int(CFG, 'Pushover', 'pushover_priority','')
+        PUSHOVER_PRIORITY = check_setting_int(CFG, 'Pushover', 'pushover_priority',0)
 
         NMA_ENABLED = bool(check_setting_int(CFG, 'NMA', 'nma_enabled', 0))
         NMA_APIKEY = check_setting_str(CFG, 'NMA', 'nma_apikey', '')
