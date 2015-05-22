@@ -145,7 +145,8 @@ def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
 
     myDB = database.DBConnection()
     download = False
-    if (lazylibrarian.USE_TOR):
+    if (lazylibrarian.USE_TOR) and (lazylibrarian.TOR_DOWNLOADER_DELUGE or  lazylibrarian.TOR_DOWNLOADER_UTORRENT
+                                    or lazylibrarian.TOR_DOWNLOADER_BLACKHOLE or lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
         request = urllib2.Request(tor_url)
 	if lazylibrarian.PROXY_HOST:
 		request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
@@ -164,6 +165,7 @@ def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             torrent = response.read()
 
         if (lazylibrarian.TOR_DOWNLOADER_BLACKHOLE):
+            logger.info('Torrent blackhole')
             tor_title = common.removeDisallowedFilenameChars(tor_title)
             tor_name = str.replace(str(tor_title), ' ', '_') + '.torrent'
             tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
@@ -175,10 +177,12 @@ def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             download = True
 
         if (lazylibrarian.TOR_DOWNLOADER_UTORRENT):            
+            logger.info('Utorrent')
             hash = CalcTorrentHash(torrent)
             download = utorrent.addTorrent(tor_url, hash)
 
         if (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
+            logger.info('Transmission')
             download = transmission.addTorrent(tor_url)
 
         if (lazylibrarian.TOR_DOWNLOADER_DELUGE):
@@ -199,7 +203,7 @@ def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         myDB.action('UPDATE books SET status = "Snatched" WHERE BookID=?', [bookid])
         myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl=?', [tor_url])
     else:
-        logger.error(u'Failed to download torrent @ <a href="%s">%s</a>' % (tor_url, lazylibrarian.NEWZNAB_HOST))
+        logger.error(u'Failed to download torrent @ <a href="%s">%s</a>' % (tor_url, tor_url))
         myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl=?', [tor_url])
 
         

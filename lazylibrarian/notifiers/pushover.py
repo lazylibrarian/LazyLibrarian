@@ -22,6 +22,7 @@ import urllib
 import urllib2
 import time
 import lazylibrarian
+import lazylibrarian.common as common
 
 from httplib import HTTPSConnection, HTTPException
 from urllib import urlencode
@@ -108,7 +109,10 @@ class PushoverNotifier:
         username: The username to send the notification to (optional, defaults to the username in the config)
         force: If True then the notification will be sent even if pushover is disabled in the config
         """
-
+        try:
+            message = common.removeDisallowedFilenameChars(message)
+        except Exception, e:
+            logger.warn("Pushover: could not convert  message: %s" % e)
         # suppress notifications if the notifier is disabled but the notify options are checked
         if not lazylibrarian.USE_PUSHOVER and not force:
             return False
