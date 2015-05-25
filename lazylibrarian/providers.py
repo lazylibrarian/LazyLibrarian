@@ -65,6 +65,7 @@ def KAT(book=None):
                 try:
                     rightformat = True
                     title = item['title']
+
                     seeders = item['torrent_seeds']
                     url = item['links'][1]['href']
                     size = int(item['links'][1]['length'])
@@ -287,11 +288,6 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None):
     
     results = []  
     
-    try:
-        searchType = common.removeDisallowedFilenameChars(searchType)
-    except Exception, e:
-        logger.warn('searchType did not convert: %s' % e)
-
     params = ReturnSearchTypeStructure(api_key, book, searchType)
 
     if not str(host)[:4] == "http":
@@ -344,8 +340,8 @@ def ReturnSearchTypeStructure(api_key, book, searchType):
         params = {
             "t": "book",
             "apikey": api_key,
-            "title": book['bookName'],
-            "author": book['authorName'],         
+            "title": common.removeDisallowedFilenameChars(book['bookName']),
+            "author": common.removeDisallowedFilenameChars(book['authorName']),
             "cat": 7020,                #7020=ebook
         }
     elif searchType == "mag":
@@ -353,7 +349,7 @@ def ReturnSearchTypeStructure(api_key, book, searchType):
             "t": "search",
             "apikey": api_key,
             "cat": "7000,7010,7020",    #7000=Other,7010=Misc,7020 Ebook
-            "q": book['searchterm'],
+            "q": common.removeDisallowedFilenameChars(book['searchterm']),
             "extended": 1,
         }
     else:
