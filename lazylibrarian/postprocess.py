@@ -31,7 +31,6 @@ def processDir():
 	else:
 		ppcount=0
 		for book in snatched:
-                        print book['NZBtitle']
 			if book['NZBtitle'] in downloads:
 				pp_path = os.path.join(processpath, book['NZBtitle'])
 				logger.info('Found folder %s.' % pp_path)
