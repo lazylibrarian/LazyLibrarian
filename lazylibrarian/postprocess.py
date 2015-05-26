@@ -31,6 +31,7 @@ def processDir():
 	else:
 		ppcount=0
 		for book in snatched:
+                        print book['NZBtitle']
 			if book['NZBtitle'] in downloads:
 				pp_path = os.path.join(processpath, book['NZBtitle'])
 				logger.info('Found folder %s.' % pp_path)
@@ -82,7 +83,7 @@ def processDir():
 			dest_path = formatter.latinToAscii(formatter.replace_all(dest_path, dic))
 			dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(lazylibrarian.SYS_ENCODING)
 
-			processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name)
+			processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name, book['BookID'])
 
 			if processBook:
 
@@ -138,6 +139,9 @@ def processDir():
 			logger.debug("Book with id: " + str(bookID) + " is in downloads");
 			pp_path = os.path.join(processpath, directory)
 
+                        if os.path.isfile(pp_path):
+                            pp_path = os.path.join(processpath)
+
 			if (os.path.exists(pp_path)):
 				 logger.debug('Found folder %s.' % pp_path)
 
@@ -166,7 +170,7 @@ def processDir():
 					 dest_path = formatter.latinToAscii(formatter.replace_all(dest_path, dic))
 					 dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(lazylibrarian.SYS_ENCODING)
 
-					 processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name)
+					 processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name, bookID)
 
 
 					 if processBook:
@@ -211,7 +215,7 @@ def processDir():
 		else:
 			logger.debug('No snatched books have been found')
 
-def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None):
+def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, book_id=None):
 
 	try:
 		if not os.path.exists(dest_path):
@@ -222,9 +226,23 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 			shutil.rmtree(dest_path)
 
 		logger.debug('Attempting to copy/move tree')
-		if lazylibrarian.DESTINATION_COPY == 1:
+		if lazylibrarian.DESTINATION_COPY == 1 and lazylibrarian.DOWNLOAD_DIR != pp_path:
 			shutil.copytree(pp_path, dest_path)
 			logger.debug('Successfully copied %s to %s.' % (pp_path, dest_path))
+                elif lazylibrarian.DOWNLOAD_DIR == pp_path:
+                    for file3 in os.listdir(pp_path):
+                        if ((str(file3).split('.')[-1]) in lazylibrarian.EBOOK_TYPE):
+                            bookID = str(file3).split("LL.(")[1].split(")")[0];
+                            if bookID == book_id:
+                                logger.info('Proccessing %s' % bookID)
+                                if lazylibrarian.DESTINATION_COPY == 1:
+                                    shutil.copytree(os.path.join(pp_path, file3), os.path.join(dest_path, file3))
+                                else:
+                                    try:
+                                        os.makedirs(dest_path)
+                                    except Exception, e:
+                                        logger.debug(str(e))
+                                    shutil.move(os.path.join(pp_path, file3), os.path.join(dest_path, file3))
 		else:
 			shutil.move(pp_path, dest_path)
 			logger.debug('Successfully moved %s to %s.' % (pp_path, dest_path))
@@ -245,8 +263,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 			os.chmod(dest_path, 0777);
 		except Exception, e:
 			logger.debug("Could not chmod path: " + str(dest_path));
-	except OSError:
+	except OSError, e:
 		logger.info('Could not create destination folder or rename the downloaded ebook. Check permissions of: ' + lazylibrarian.DESTINATION_DIR)
+                logger.info(str(e))
 		pp = False
 	return pp
 
