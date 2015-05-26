@@ -234,13 +234,14 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                             bookID = str(file3).split("LL.(")[1].split(")")[0];
                             if bookID == book_id:
                                 logger.info('Proccessing %s' % bookID)
-                                if lazylibrarian.DESTINATION_COPY == 1:
-                                    shutil.copytree(os.path.join(pp_path, file3), os.path.join(dest_path, file3))
-                                else:
+                                if not os.path.exists(dest_path):
                                     try:
                                         os.makedirs(dest_path)
                                     except Exception, e:
                                         logger.debug(str(e))
+                                if lazylibrarian.DESTINATION_COPY == 1:
+                                    shutil.copyfile(os.path.join(pp_path, file3), os.path.join(dest_path, file3))
+                                else:
                                     shutil.move(os.path.join(pp_path, file3), os.path.join(dest_path, file3))
 		else:
 			shutil.move(pp_path, dest_path)
