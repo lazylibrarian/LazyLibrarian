@@ -78,7 +78,8 @@ class WebInterface(object):
 		    "proxy_host":	lazylibrarian.PROXY_HOST,
 		    "proxy_type":	lazylibrarian.PROXY_TYPE,
                     "logdir" :          lazylibrarian.LOGDIR,
-                    "use_imp_onlyisbn": checked(lazylibrarian.IMP_ONLYISBN),
+                    "imp_onlyisbn": 	checked(lazylibrarian.IMP_ONLYISBN),
+                    "imp_singlebook": 	checked(lazylibrarian.IMP_SINGLEBOOK),
                     "imp_preflang":     lazylibrarian.IMP_PREFLANG,
                     "imp_autoadd":      lazylibrarian.IMP_AUTOADD,
                     "sab_host":         lazylibrarian.SAB_HOST,
@@ -174,7 +175,7 @@ class WebInterface(object):
         return serve_template(templatename="config.html", title="Settings", config=config)    
     config.exposed = True
 
-    def configUpdate(self, http_host='0.0.0.0', http_root=None, http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, imp_onlyisbn=0, imp_preflang=None, imp_autoadd=None, match_ratio=80, nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0, nzb_downloader_blackhole=0, use_nzb=0, use_tor=0, proxy_host=None, proxy_type=None,
+    def configUpdate(self, http_host='0.0.0.0', http_root=None, http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, imp_onlyisbn=0, imp_singlebook=1, imp_preflang=None, imp_autoadd=None, match_ratio=80, nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0, nzb_downloader_blackhole=0, use_nzb=0, use_tor=0, proxy_host=None, proxy_type=None,
         sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None, destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, nzb_blackholedir=None, torrent_dir=None, numberofseeders=0, tor_downloader_blackhole=0, tor_downloader_utorrent=0,
         nzbget_host=None, nzbget_user=None, nzbget_pass=None, nzbget_cat=None, nzbget_priority=0,
         newznab=0, newznab_host=None, newznab_api=None, newznab2=0, newznab_host2=None, newznab_api2=None,newzbin=0, newzbin_uid=None, newzbin_pass=None, kat=0, ebook_type=None, book_api=None, gr_api=None, gb_api=None, usenetcrawler = 0, usenetcrawler_host=None, usenetcrawler_api = None, 
@@ -198,6 +199,7 @@ class WebInterface(object):
         lazylibrarian.MATCH_RATIO = match_ratio
 
         lazylibrarian.IMP_ONLYISBN = imp_onlyisbn
+        lazylibrarian.IMP_SINGLEBOOK = imp_singlebook
         lazylibrarian.IMP_PREFLANG = imp_preflang
         lazylibrarian.IMP_AUTOADD  = imp_autoadd
 
