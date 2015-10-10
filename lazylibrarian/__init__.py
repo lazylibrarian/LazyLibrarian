@@ -79,6 +79,7 @@ DOWNLOAD_DIR = None
 
 IMP_PREFLANG = None
 IMP_ONLYISBN = False
+IMP_SINGLEBOOK = True
 IMP_AUTOADD = None
 
 BOOK_API = None
@@ -145,8 +146,8 @@ VERSIONCHECK_INTERVAL = 24 #Every 2 hours
 SEARCH_INTERVAL = 720 #Every 12 hours
 SCAN_INTERVAL = 10 #Every 10 minutes
 FULL_SCAN = 0 #full scan would remove books from db
-NOTFOUND_STATUS = 'Skipped' #value to marke missing books in db, can be 'Open', 'Ignored',' 'Wanted','Skipped'
 ADD_AUTHOR = 1 #auto add authors not found in db from goodreads
+NOTFOUND_STATUS = 'Skipped' #value to mark missing books in db, can be 'Open', 'Ignored',' 'Wanted','Skipped'
 
 EBOOK_DEST_FOLDER = None
 EBOOK_DEST_FILE = None
@@ -266,7 +267,7 @@ def initialize():
 
         global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, MATCH_RATIO, \
 	    PROXY_HOST, PROXY_TYPE, \
-            IMP_ONLYISBN, IMP_PREFLANG, IMP_AUTOADD, SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, NZB_BLACKHOLEDIR, GR_API, GB_API, BOOK_API, \
+            IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_AUTOADD, SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, NZB_BLACKHOLEDIR, GR_API, GB_API, BOOK_API, \
             NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, NZB_DOWNLOADER_NZBGET, \
             NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, NEWZNAB2, NEWZNAB_HOST2, NEWZNAB_API2, EBOOK_TYPE, KAT, USENETCRAWLER, USENETCRAWLER_HOST, USENETCRAWLER_API, \
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_DEST_FOLDER, MAG_DEST_FILE, USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
@@ -275,7 +276,7 @@ def initialize():
             USE_PUSHOVER, PUSHOVER_ONSNATCH, PUSHOVER_KEYS, PUSHOVER_APITOKEN, PUSHOVER_PRIORITY, PUSHOVER_ONDOWNLOAD, \
             TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PASS, TRANSMISSION_USER, \
             TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, \
-	    NOTFOUND_STATUS, FULL_SCAN, ADD_AUTHOR, NMA_ENABLED, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, \
+	    FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NMA_ENABLED, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, \
             GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS
 
         if __INITIALIZED__:
@@ -339,7 +340,8 @@ def initialize():
         #TODO - investigate this for future users
         #Something funny here - putting IMP_AUTOADD after IMP_ONLYISBN resulted in it not working
         #Couldn't see it
-            
+        IMP_SINGLEBOOK = bool(check_setting_int(CFG, 'General', 'imp_singlebook', 0))
+           
         GIT_USER = check_setting_str(CFG, 'Git', 'git_user', 'dobytang')
         GIT_REPO = check_setting_str(CFG, 'Git', 'git_repo', 'lazylibrarian')
         GIT_BRANCH = check_setting_str(CFG, 'Git', 'git_branch', 'master')
@@ -423,9 +425,9 @@ def initialize():
         VERSIONCHECK_INTERVAL = int(check_setting_str(CFG, 'SearchScan', 'versioncheck_interval', '24'))
 
         FULL_SCAN = bool(check_setting_int(CFG, 'LibraryScan', 'full_scan', 0))
+	ADD_AUTHOR = bool(check_setting_int(CFG, 'LibraryScan', 'add_author', 1))
 	NOTFOUND_STATUS = check_setting_str(CFG, 'LibraryScan', 'notfound_status','Skipped')
-	ADD_AUTHOR = bool(check_setting_int(CFG, 'LibraryScan', 'add_author', 0))
-
+	
         EBOOK_DEST_FOLDER = check_setting_str(CFG, 'PostProcess', 'ebook_dest_folder', '$Author/$Title')
         EBOOK_DEST_FILE = check_setting_str(CFG, 'PostProcess', 'ebook_dest_file', '$Title - $Author')
         MAG_DEST_FOLDER = check_setting_str(CFG, 'PostProcess', 'mag_dest_folder', '_Magazines/$Title/$IssueDate')
@@ -551,6 +553,7 @@ def config_write():
     new_config['General']['match_ratio'] = MATCH_RATIO
 
     new_config['General']['imp_onlyisbn'] = int(IMP_ONLYISBN)
+    new_config['General']['imp_singlebook'] = int(IMP_SINGLEBOOK)
     new_config['General']['imp_preflang'] = IMP_PREFLANG
     new_config['General']['imp_autoadd'] =  IMP_AUTOADD
 
@@ -661,9 +664,9 @@ def config_write():
 
     new_config['LibraryScan'] = {}
     new_config['LibraryScan']['full_scan'] = FULL_SCAN
-    new_config['LibraryScan']['notfound_status'] = NOTFOUND_STATUS
     new_config['LibraryScan']['add_author'] = ADD_AUTHOR
-
+    new_config['LibraryScan']['notfound_status'] = NOTFOUND_STATUS
+    
     new_config['PostProcess'] = {}
     new_config['PostProcess']['ebook_dest_folder'] = EBOOK_DEST_FOLDER
     new_config['PostProcess']['ebook_dest_file'] = EBOOK_DEST_FILE
@@ -715,7 +718,8 @@ def dbcheck():
     c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesOrder INTEGER)')
     c.execute('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS magazines (Title TEXT, Frequency TEXT, Regex TEXT, Status TEXT, MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT)')
-
+    c.execute('CREATE TABLE IF NOT EXISTS languages ( isbn TEXT, lang TEXT )')
+	
     try:
         logger.info('Checking database')
         c.execute('SELECT BookSub from books')
