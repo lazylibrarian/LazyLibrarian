@@ -11,6 +11,7 @@ from lazylibrarian.gr import GoodReads
 
 import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
+import unidecode
 
 class GoogleBooks:
 
@@ -53,10 +54,11 @@ class GoogleBooks:
                 resultcount = 0
                 removedResults = 0
                 ignored = 0
-
+		number_results = 1
                 total_count = 0
                 no_author_count = 0
-                while True:
+
+                while startindex < number_results:
 
                     self.params['startIndex'] = startindex
                     URL = set_url + '&' + urllib.urlencode(self.params)
@@ -80,7 +82,7 @@ class GoogleBooks:
                     for item in jsonresults['items']:
 
                         total_count = total_count + 1
-
+			
                         # skip if no author, no author is no book.
                         try:
                             Author = item['volumeInfo']['authors'][0]
@@ -88,20 +90,22 @@ class GoogleBooks:
                             logger.debug('Skipped a result without authorfield.')
                             no_author_count = no_author_count + 1
                             continue
-
-                        try:
-                            #skip if language is in ignore list
+                       
+			valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
+			
+			if "All" not in valid_langs: # don't care about languages, accept all
+                          try:
+                            #skip if language is not in valid list - 
                             booklang = item['volumeInfo']['language']
-                            valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
                             if booklang not in valid_langs:
                                 logger.debug('Skipped a book with language %s' % booklang)
                                 ignored = ignored + 1
                                 continue
-                        except KeyError:
+                          except KeyError:
                             ignored = ignored+1
                             logger.debug('Skipped a result where no language is found')
                             continue
-
+			
                         try:
                             bookpub = item['volumeInfo']['publisher']
                         except KeyError:
@@ -155,7 +159,7 @@ class GoogleBooks:
                                 bookisbn = 0
                         except KeyError:
                             bookisbn = 0
-
+			
                         author_fuzz = fuzz.ratio(Author.lower(), authorname.lower())
                         book_fuzz = fuzz.ratio(item['volumeInfo']['title'].lower(), authorname.lower())
                         try:
@@ -167,19 +171,26 @@ class GoogleBooks:
                         except:
                             isbn_fuzz = int(0)
                         highest_fuzz = max(author_fuzz, book_fuzz, isbn_fuzz)
-
+		
 #  Darkie67:
 #        replacing German Umlauts and filtering out ":"
 #
-                        booknamealt = item['volumeInfo']['title']
-                        booknametmp1=booknamealt.replace(u'\xf6',u'oe')
-                        booknametmp2=booknametmp1.replace(u'\xe4',u'ae')
-                        booknametmp3=booknametmp2.replace(u'\xdf',u'ss')
-                        booknametmp4=booknametmp3.replace(u'\xc4',u'Ae')
-                        booknametmp5=booknametmp4.replace(u'\xdc',u'Ue')
-                        booknametmp6=booknametmp5.replace(u'\xd6',u'Oe')
-                        booknametmp7=booknametmp6.replace(':','')  
-                        bookname=booknametmp7.replace(u'\xfc',u'ue')
+# PAB I think this is to avoid removing the book for bad characters?
+# Do we need to remove books with bad characters in their name anyway?
+# Use unidecode as a more thorough way to strip and see what still gets marked "bad"
+#
+#                        booknamealt = item['volumeInfo']['title']
+#                        booknametmp1=booknamealt.replace(u'\xf6',u'oe')
+#                        booknametmp2=booknametmp1.replace(u'\xe4',u'ae')
+#                        booknametmp3=booknametmp2.replace(u'\xdf',u'ss')
+#                        booknametmp4=booknametmp3.replace(u'\xc4',u'Ae')
+#                        booknametmp5=booknametmp4.replace(u'\xdc',u'Ue')
+#                        booknametmp6=booknametmp5.replace(u'\xd6',u'Oe')
+#                        booknametmp7=booknametmp6.replace(':','')  
+#                        bookname=booknametmp7.replace(u'\xfc',u'ue')
+			bookname = item['volumeInfo']['title']
+			bookname = bookname.replace(':','')
+			bookname = unidecode.unidecode(u'%s' % bookname)
 # Darkie67 end                        
                         resultlist.append({
                             'authorname': Author,
@@ -205,35 +216,39 @@ class GoogleBooks:
 
                         resultcount = resultcount+1
 
-                    if startindex >= number_results:
-                        logger.debug("Found %s total results" % total_count)
-                        logger.debug("Removed %s bad language results" % ignored)
-                        logger.debug("Removed %s books with no author" % no_author_count)
-                        logger.info("Showing %s results for (%s) with keyword: %s" % (resultcount, api_value, authorname))
-                        break
-                    else:
-                        continue
-
             except KeyError:
                 break
 
+        logger.debug("Found %s total results" % total_count)
+        logger.debug("Removed %s bad language results" % ignored)
+        logger.debug("Removed %s books with no author" % no_author_count)
+        logger.info("Showing %s results for (%s) with keyword: %s" % (resultcount, api_value, authorname))
         logger.info('The Google Books API was hit %s times for keyword %s' % (str(api_hits), self.name))
         queue.put(resultlist)
 
     def get_author_books(self, authorid=None, authorname=None, refresh=False):
-        books_dict=[]
-        set_url = self.url + urllib.quote('inauthor:' + '"' + authorname + '"')
+        
+	logger.info('[%s] Now processing books with Google Books API' % authorname)
+	# google doesnt like accents in author names
+	aname = unidecode.unidecode(u'%s' % authorname)
+
+	set_url = self.url + urllib.quote('inauthor:' + '"' + aname + '"')
         URL = set_url + '&' + urllib.urlencode(self.params)
 
+ 	books_dict=[]
         api_hits = 0
-        logger.info('[%s] Now processing books with Google Books API' % authorname)
+        gr_lang_hits = 0
+        lt_lang_hits = 0 
+	gb_lang_change = 0
+	cache_hits = 0
+	not_cached = 0
 
         #Artist is loading
         myDB = database.DBConnection()
         controlValueDict = {"AuthorID": authorid}
         newValueDict = {"Status": "Loading"}
         myDB.upsert("authors", newValueDict, controlValueDict)
-
+	
         try:
             startindex = 0
             resultcount = 0
@@ -243,56 +258,112 @@ class GoogleBooks:
             updated_count = 0
             book_ignore_count = 0
             total_count = 0
+	    number_results = 1
 
-            while True:
-
+	    valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
+                        
+            while startindex < number_results:
+		
                 self.params['startIndex'] = startindex
                 URL = set_url + '&' + urllib.urlencode(self.params)
-
+		
                 try:
                     jsonresults = json.JSONDecoder().decode(urllib2.urlopen(URL, timeout=30).read())
                     api_hits = api_hits + 1
-                    number_results = jsonresults['totalItems']
-                    logger.debug('[%s] Searching url: %s' % (authorname, URL))
-                    if number_results == 0:
-                        logger.info('Found no results for %s with value: %s' % (api_value, self.name))
-                        break
-                    else:
-                        pass
+                   
+		    number_results = jsonresults['totalItems']
                 except HTTPError, err:
-                    logger.Error('Google API returned HTTP Error - probably time/rate limiting - [%s]' % err.msg)
+                        logger.warn('Google Books API Error [%s]: Check your API key or wait a while' % err.msg)
+                        break
+
+                if number_results == 0:
+                    	logger.info('Found no results for %s' % (authorname))
+                    	break
+                else:
+               		logger.info('Found %s results for %s' % (number_results, authorname))
+                       
                     
                 startindex = startindex+40
-
+		
                 for item in jsonresults['items']:
-
-                    total_count = total_count + 1
-
+		    
+		    total_count = total_count + 1
+		  
                     # skip if no author, no author is no book.
                     try:
                         Author = item['volumeInfo']['authors'][0]
                     except KeyError:
                         logger.debug('Skipped a result without authorfield.')
                         continue
-
+		    
                     try:
+                        if item['volumeInfo']['industryIdentifiers'][0]['type'] == 'ISBN_10':
+                            bookisbn = item['volumeInfo']['industryIdentifiers'][0]['identifier']
+                        else:
+                            bookisbn = ""
+                    except KeyError:
+                        bookisbn = ""
+
+                    isbnhead = ""
+		    if len(bookisbn) == 10:
+		    	isbnhead = bookisbn[0:3]
+
+		    try:
+			booklang = item['volumeInfo']['language']
+		    except KeyError:
+			booklang = "Unknown"
+ 
+		    # do we care about language?
+                    if "All" not in valid_langs:
+			if bookisbn != "":
+				# seems google lies to us, sometimes tells us books are in english when they are not
+			    	if booklang == "Unknown" or booklang == "en":
+					googlelang = booklang
+					match = myDB.action('SELECT lang FROM languages where isbn = "%s"' % (isbnhead)).fetchone()
+					if (match):
+						booklang=match['lang']
+						cache_hits = cache_hits + 1
+				    		logger.debug("Found cached language [%s] for [%s]" % (booklang, isbnhead))
+							
+					else:
+						# no match in cache, try searching librarything for a language code using the isbn
+						# if no language found, librarything return value is "invalid" or "unknown"
+						# librarything returns plain text, not xml
+ 						BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + bookisbn
+ 						try:
+							time.sleep(1) #sleep 1 second to respect librarything api terms
+							resp = urllib2.urlopen(BOOK_URL, timeout=30).read()
+                        				lt_lang_hits = lt_lang_hits + 1
+							logger.debug("LibraryThing reports language [%s] for %s" % (resp, isbnhead))
+							
+							if (resp != 'invalid' and resp != 'unknown'):
+								booklang=resp # found a language code
+								myDB.action('insert into languages values ("%s", "%s")' % (isbnhead, booklang))
+								logger.debug(u"LT language: " + str(booklang))
+						except Exception, e:
+							logger.error("Error finding results: ", e)
+					
+					if googlelang == "en" and not booklang in "en-US, en-GB, eng": # these are all english
+						booknamealt = item['volumeInfo']['title']			
+					 	logger.debug("%s Google thinks [%s], we think [%s]" % (booknamealt, googlelang, booklang))
+						gb_lang_change = gb_lang_change + 1	
+				else:
+					match = myDB.action('SELECT lang FROM languages where isbn = "%s"' % (isbnhead)).fetchone()
+					if (not match):
+						myDB.action('insert into languages values ("%s", "%s")' % (isbnhead, booklang))
+						logger.debug(u"GB language: " + str(booklang))
+
                         #skip if language is in ignore list
-                        booklang = item['volumeInfo']['language']
-                        valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
                         if booklang not in valid_langs:
-                            logger.debug('Skipped a book with language %s' % booklang)
+			    booknamealt = item['volumeInfo']['title']
+                            logger.debug('Skipped [%s] with language %s' % (booknamealt, booklang))
                             ignored = ignored + 1
                             continue
-                    except KeyError:
-                        ignored = ignored+1
-                        logger.debug('Skipped a result where no language is found')
-                        continue
-
+                    
                     try:
                         bookpub = item['volumeInfo']['publisher']
                     except KeyError:
                         bookpub = None
-
                     try:
                         booksub = item['volumeInfo']['subtitle']
                     except KeyError:
@@ -327,32 +398,27 @@ class GoogleBooks:
                         bookdesc = item['volumeInfo']['description']
                     except KeyError:
                         bookdesc = None
-
-                    try:
-                        if item['volumeInfo']['industryIdentifiers'][0]['type'] == 'ISBN_10':
-                            bookisbn = item['volumeInfo']['industryIdentifiers'][0]['identifier']
-                        else:
-                            bookisbn = None
-                    except KeyError:
-                        bookisbn = None
-
+		   
                     bookid = item['id']
 #  Darkie67:
 #        replacing German Umlauts and filtering out ":"
 #
-                    booknamealt = item['volumeInfo']['title']
-                    booknametmp1=booknamealt.replace(u'\xf6',u'oe')
-                    booknametmp2=booknametmp1.replace(u'\xe4',u'ae')
-                    booknametmp3=booknametmp2.replace(u'\xdf',u'ss')
-                    booknametmp4=booknametmp3.replace(u'\xc4',u'Ae')
-                    booknametmp5=booknametmp4.replace(u'\xdc',u'Ue')
-                    booknametmp6=booknametmp5.replace(u'\xd6',u'Oe')
-                    booknametmp7=booknametmp6.replace(':','')
-                    bookname=booknametmp7.replace(u'\xfc',u'ue')
+#                    booknamealt = item['volumeInfo']['title']
+#                    booknametmp1=booknamealt.replace(u'\xf6',u'oe')
+#                    booknametmp2=booknametmp1.replace(u'\xe4',u'ae')
+#                    booknametmp3=booknametmp2.replace(u'\xdf',u'ss')
+#                    booknametmp4=booknametmp3.replace(u'\xc4',u'Ae')
+#                    booknametmp5=booknametmp4.replace(u'\xdc',u'Ue')
+#                    booknametmp6=booknametmp5.replace(u'\xd6',u'Oe')
+#                    booknametmp7=booknametmp6.replace(':','')
+#                    bookname=booknametmp7.replace(u'\xfc',u'ue')
+		    bookname = item['volumeInfo']['title']
+		    bookname = bookname.replace(':','')
+		    bookname = unidecode.unidecode(u'%s' % bookname)
 # Darkie67 end
                     booklink = item['volumeInfo']['canonicalVolumeLink']
                     bookrate = float(bookrate)
-
+		    
                     find_book_status = myDB.select("SELECT * FROM books WHERE BookID = '%s'" % bookid)
                     if find_book_status:
                         for resulted in find_book_status:
@@ -360,8 +426,12 @@ class GoogleBooks:
                     else:
                         book_status = "Skipped"
 
+    		    bookname = item['volumeInfo']['title']
+		    bookname = bookname.replace(':','')
+		    bookname = unidecode.unidecode(u'%s' % bookname)
+		    bookname = bookname.strip() # strip whitespace
 
-                    if not (re.match('[^\w-]', bookname)): #remove books with bad caracters in title
+		    if not (re.match('[^\w-]', bookname)): #remove books with bad characters in title
                         if book_status != "Ignored":
                             controlValueDict = {"BookID": bookid}
                             newValueDict = {
@@ -390,7 +460,7 @@ class GoogleBooks:
                             myDB.upsert("books", newValueDict, controlValueDict)
                             logger.debug(u"book found " + bookname + " " + bookdate)
                             if not find_book_status:
-                                logger.info("[%s] Added book: %s" % (authorname, bookname))
+                                logger.info("[%s] Added book: %s [%s]" % (authorname, bookname, booklang))
                                 added_count = added_count + 1
                             else:
                                 updated_count = updated_count + 1
@@ -398,33 +468,38 @@ class GoogleBooks:
                         else:
                             book_ignore_count = book_ignore_count + 1
                     else:
-                        removedResults = removedResults + 1
+			    logger.info("[%s] removed book for bad characters" % (bookname))                    
+			    removedResults = removedResults + 1  
 
-                    if startindex >= number_results:
-                        break
-                    else:
-                        continue
-
-        except KeyError:
+        except Keyerror:
             pass
 
         logger.info('[%s] The Google Books API was hit %s times to populate book list' % (authorname, str(api_hits)))
 
-        lastbook = myDB.action("SELECT BookName, BookLink, BookDate from books WHERE AuthorID='%s' AND Status != 'Ignored' order by BookDate DESC" % authorid).fetchone()
         unignoredbooks = myDB.select("SELECT COUNT(BookName) as unignored FROM books WHERE AuthorID='%s' AND Status != 'Ignored'" % authorid)
         bookCount = myDB.select("SELECT COUNT(BookName) as counter FROM books WHERE AuthorID='%s'" % authorid)   
+	lastbook = myDB.action("SELECT BookName, BookLink, BookDate from books WHERE AuthorID='%s' AND Status != 'Ignored' order by BookDate DESC" % authorid).fetchone()
+       	
+	if lastbook: # maybe there are no books [remaining] for this author
+		lastbookname = lastbook['BookName']
+		lastbooklink = lastbook['BookLink']
+		lastbookdate = lastbook['BookDate']
+	else:
+		lastbookname = None
+		lastbooklink = None
+		lastbookdate = None
 
         controlValueDict = {"AuthorID": authorid}
         newValueDict = {
                 "Status": "Active",
                 "TotalBooks": bookCount[0]['counter'],
                 "UnignoredBooks": unignoredbooks[0]['unignored'],
-                "LastBook": lastbook['BookName'],
-                "LastLink": lastbook['BookLink'],
-                "LastDate": lastbook['BookDate']
+		"LastBook": lastbookname,
+                "LastLink": lastbooklink,
+                "LastDate": lastbookdate
                 }
-        myDB.upsert("authors", newValueDict, controlValueDict)
 
+        myDB.upsert("authors", newValueDict, controlValueDict)
                    
         logger.debug("Found %s total books for author" % total_count)
         logger.debug("Removed %s bad language results for author" % ignored)
@@ -432,10 +507,13 @@ class GoogleBooks:
         logger.debug("Ignored %s books by author marked as Ignored" % book_ignore_count)
         logger.debug("Imported/Updated %s books for author" % resultcount)
 
+	myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' % (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits, ignored, removedResults, not_cached))
+
         if refresh:
             logger.info("[%s] Book processing complete: Added %s books / Updated %s books" % (authorname, str(added_count), str(updated_count)))
         else:
             logger.info("[%s] Book processing complete: Added %s books to the database" % (authorname, str(added_count)))
+	    
         return books_dict
 
     
@@ -449,15 +527,18 @@ class GoogleBooks:
 #  Darkie67:
 #        replacing German Umlauts and filtering out ":"
 #
-        booknamealt = jsonresults['volumeInfo']['title']
-        booknametmp1=booknamealt.replace(u'\xf6',u'oe')
-        booknametmp2=booknametmp1.replace(u'\xe4',u'ae')
-        booknametmp3=booknametmp2.replace(u'\xdf',u'ss')
-        booknametmp4=booknametmp3.replace(u'\xc4',u'Ae')
-        booknametmp5=booknametmp4.replace(u'\xdc',u'Ue')
-        booknametmp6=booknametmp5.replace(u'\xd6',u'Oe')
-        booknametmp7=booknametmp6.replace(':','')
-        bookname=booknametmp7.replace(u'\xfc',u'ue')
+#        booknamealt = jsonresults['volumeInfo']['title']
+#        booknametmp1=booknamealt.replace(u'\xf6',u'oe')
+#        booknametmp2=booknametmp1.replace(u'\xe4',u'ae')
+#        booknametmp3=booknametmp2.replace(u'\xdf',u'ss')
+#        booknametmp4=booknametmp3.replace(u'\xc4',u'Ae')
+#        booknametmp5=booknametmp4.replace(u'\xdc',u'Ue')
+#        booknametmp6=booknametmp5.replace(u'\xd6',u'Oe')
+#        booknametmp7=booknametmp6.replace(':','')
+#        bookname=booknametmp7.replace(u'\xfc',u'ue')
+	bookname = jsonresults['volumeInfo']['title']
+	bookname = bookname.replace(':','')
+	bookname = unidecode.unidecode(u'%s' % bookname)
 # Darkie67 end        
         
         try:
@@ -466,13 +547,14 @@ class GoogleBooks:
             logger.debug('Book %s does not contain author field' % bookname)
 
         try:
-            #skip if language is in ignore list
+            # warn if language is in ignore list, but user said they wanted this book
             booklang = jsonresults['volumeInfo']['language']
             valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
             if booklang not in valid_langs:
                 logger.debug('Book %s language does not match preference' % bookname)
         except KeyError:
             logger.debug('Book does not have language field')
+	    booklang = "Unknown"
 
         try:
             bookpub = jsonresults['volumeInfo']['publisher']
