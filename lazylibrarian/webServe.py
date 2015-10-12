@@ -81,7 +81,7 @@ class WebInterface(object):
                     "imp_onlyisbn": 	checked(lazylibrarian.IMP_ONLYISBN),
                     "imp_singlebook": 	checked(lazylibrarian.IMP_SINGLEBOOK),
                     "imp_preflang":     lazylibrarian.IMP_PREFLANG,
-                    "imp_autoadd":      lazylibrarian.IMP_AUTOADD,
+                    "imp_autoadd":      checked(lazylibrarian.IMP_AUTOADD),
                     "sab_host":         lazylibrarian.SAB_HOST,
                     "sab_port":         lazylibrarian.SAB_PORT,
                     "sab_subdir":       lazylibrarian.SAB_SUBDIR,                    
@@ -120,6 +120,7 @@ class WebInterface(object):
 		    "full_scan":	      checked(lazylibrarian.FULL_SCAN),	
 		    "add_author":	      checked(lazylibrarian.ADD_AUTHOR),
 		    "notfound_status":	      lazylibrarian.NOTFOUND_STATUS,
+		    "newbook_status":	      lazylibrarian.NEWBOOK_STATUS,
 		    "status_list":	      status_list,
                     "ebook_dest_folder":      lazylibrarian.EBOOK_DEST_FOLDER,
                     "ebook_dest_file":        lazylibrarian.EBOOK_DEST_FILE,
@@ -179,7 +180,7 @@ class WebInterface(object):
         sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None, destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, nzb_blackholedir=None, torrent_dir=None, numberofseeders=0, tor_downloader_blackhole=0, tor_downloader_utorrent=0,
         nzbget_host=None, nzbget_user=None, nzbget_pass=None, nzbget_cat=None, nzbget_priority=0,
         newznab=0, newznab_host=None, newznab_api=None, newznab2=0, newznab_host2=None, newznab_api2=None,newzbin=0, newzbin_uid=None, newzbin_pass=None, kat=0, ebook_type=None, book_api=None, gr_api=None, gb_api=None, usenetcrawler = 0, usenetcrawler_host=None, usenetcrawler_api = None, 
-        versioncheck_interval=None, search_interval=None, scan_interval=None, ebook_dest_folder=None, ebook_dest_file=None, mag_dest_folder=None, mag_dest_file=None, use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0, utorrent_host=None, utorrent_user=None, utorrent_pass=None,  notfound_status='Wanted', full_scan=0, add_author=1, 
+        versioncheck_interval=None, search_interval=None, scan_interval=None, ebook_dest_folder=None, ebook_dest_file=None, mag_dest_folder=None, mag_dest_file=None, use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0, utorrent_host=None, utorrent_user=None, utorrent_pass=None,  notfound_status='Skipped', newbook_status='Skipped', full_scan=0, add_author=1, 
         tor_downloader_transmission=0, transmission_host=None, transmission_user=None, transmission_pass=None,
         tor_downloader_deluge=0, deluge_host=None, deluge_user=None, deluge_pass=None, deluge_port=None, 
         utorrent_label=None, use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token=None, use_pushbullet=0, pushbullet_notify_onsnatch=0, pushbullet_notify_ondownload=0, pushbullet_token=None, pushbullet_deviceid=None,
@@ -279,6 +280,7 @@ class WebInterface(object):
 
 	lazylibrarian.FULL_SCAN = full_scan
 	lazylibrarian.NOTFOUND_STATUS = notfound_status
+	lazylibrarian.NEWBOOK_STATUS = newbook_status
 	lazylibrarian.ADD_AUTHOR = add_author
 
         lazylibrarian.EBOOK_DEST_FOLDER = ebook_dest_folder

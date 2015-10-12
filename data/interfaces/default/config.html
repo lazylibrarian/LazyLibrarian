@@ -459,7 +459,21 @@
                   %endfor
                   </select>
                   <br>
-                  <i class="smalltext">Value to update ebooks to if not found</i>
+                  <i class="smalltext">Value to update ebooks to if missing (removed)</i>
+                  <br>
+                  <label>New Found Book Status:</label>
+                  <select name="newbook_status">
+                  %for nb_status in config['status_list']:
+                  <%
+                        selected = ''
+                        if nb_status == config['newbook_status']:
+                                selected = 'selected="selected"'
+                  %>
+                  <option value="${nb_status}" ${selected}>${nb_status}</option>
+                  %endfor
+                  </select>
+                  <br>
+                  <i class="smalltext">Value to update ebooks to if new book available</i>
                   </div>
                   <div>
                   <label>Add Authors:</label><input type="checkbox" name="add_author" value=1 ${config['add_author']} />

@@ -424,7 +424,7 @@ class GoogleBooks:
                         for resulted in find_book_status:
                             book_status = resulted['Status']
                     else:
-                        book_status = "Skipped"
+                        book_status = lazylibrarian.NEWBOOK_STATUS
 
     		    bookname = item['volumeInfo']['title']
 		    bookname = bookname.replace(':','')

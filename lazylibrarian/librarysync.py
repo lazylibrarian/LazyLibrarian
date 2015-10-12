@@ -176,24 +176,35 @@ def LibraryScan(dir=None):
 	book_exists = False
 
 	if (lazylibrarian.FULL_SCAN):
-		books = myDB.select('select AuthorName, BookName from books where Status=?',[u'Open'])
+		books = myDB.select('select AuthorName, BookName, BookFile, BookID from books where Status=?',[u'Open'])
 		status = lazylibrarian.NOTFOUND_STATUS
 		logger.info('Missing books will be marked as %s' % status)
 		for book in books:
-			for book_type in getList(lazylibrarian.EBOOK_TYPE):
-				bookName = book['BookName']
-				bookAuthor = book['AuthorName']
-				#Default destination path, should be allowed change per config file.
-				dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', bookAuthor).replace('$Title', bookName)
-				#dest_path = authorname+'/'+bookname
-				global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', bookAuthor).replace('$Title', bookName)
-
-				encoded_book_path = os.path.join(dir,dest_path,global_name + "." + book_type).encode(lazylibrarian.SYS_ENCODING)
-				if os.path.isfile(encoded_book_path):
-					book_exists = True	
-			if not book_exists:
-				myDB.action('update books set Status=? where AuthorName=? and BookName=?',[status,bookAuthor,bookName])
-				logger.info('Book %s updated as not found on disk' % encoded_book_path.decode(lazylibrarian.SYS_ENCODING, 'replace') )
+			bookName = book['BookName']
+			bookAuthor = book['AuthorName']
+			bookID = book['BookID']
+			bookfile = book['BookFile']
+			
+			if os.path.isfile(bookfile):
+				book_exists = True
+			else:
+				myDB.action('update books set Status=? where BookID=?',[status,bookID])
+				myDB.action('update books set BookFile="" where BookID=?',[bookID])
+				logger.info('Book %s updated as not found on disk' % bookfile)			
+			#for book_type in getList(lazylibrarian.EBOOK_TYPE):
+			#	bookName = book['BookName']
+			#	bookAuthor = book['AuthorName']
+			#	#Default destination path, should be allowed change per config file.
+			#	dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', bookAuthor).replace('$Title', bookName)
+			#	#dest_path = authorname+'/'+bookname
+			#	global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', bookAuthor).replace('$Title', bookName)
+#
+			#	encoded_book_path = os.path.join(dir,dest_path,global_name + "." + book_type).encode(lazylibrarian.SYS_ENCODING)
+			#	if os.path.isfile(encoded_book_path):
+			#		book_exists = True	
+			#if not book_exists:
+			#	myDB.action('update books set Status=? where AuthorName=? and BookName=?',[status,bookAuthor,bookName])
+			#	logger.info('Book %s updated as not found on disk' % encoded_book_path.decode(lazylibrarian.SYS_ENCODING, 'replace') )
 				if bookAuthor not in new_authors:
 					new_authors.append(bookAuthor)
 
@@ -247,7 +258,7 @@ def LibraryScan(dir=None):
 			if (extn in booktypes):
  				# see if there is a metadata file in this folder with the info we need
 				try:
-					metafile = r + "/metadata.opf"
+					metafile = os.path.join(r,"metadata.opf").encode(lazylibrarian.SYS_ENCODING)
 					res = get_book_info(metafile)
 					if res:
 						book = res['title']
@@ -264,7 +275,7 @@ def LibraryScan(dir=None):
 					# it's a book, but no external metadata found
 					# if it's an epub or a mobi we can try to read metadata from it
 					if (extn == "epub") or (extn == "mobi"):
-						book_file = r + "/" + files
+						book_file = os.path.join(r,files).encode(lazylibrarian.SYS_ENCODING)
 						res = get_book_info(book_file)
 						if res:
 							book = res['title']
@@ -384,8 +395,11 @@ def LibraryScan(dir=None):
 						# check if book is already marked as "Open" (if so, we already had it)
 						check_status = myDB.action('SELECT Status from books where BookID=?',[bookid]).fetchone()
 						if check_status['Status'] != 'Open':
-							# update status as its a new found book
+							# update status as we've got this book
 							myDB.action('UPDATE books set Status=? where BookID=?',[u'Open',bookid])
+							book_file = os.path.join(r,files).encode(lazylibrarian.SYS_ENCODING)
+							# update book location so we can check if it gets removed, or maybe allow click-to-open?
+							myDB.action('UPDATE books set BookFile=? where BookID=?',[book_file,bookid])
 							new_book_count += 1
 
 				

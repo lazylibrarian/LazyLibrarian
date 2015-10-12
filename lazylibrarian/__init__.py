@@ -147,8 +147,8 @@ SEARCH_INTERVAL = 720 #Every 12 hours
 SCAN_INTERVAL = 10 #Every 10 minutes
 FULL_SCAN = 0 #full scan would remove books from db
 ADD_AUTHOR = 1 #auto add authors not found in db from goodreads
-NOTFOUND_STATUS = 'Skipped' #value to mark missing books in db, can be 'Open', 'Ignored',' 'Wanted','Skipped'
-
+NOTFOUND_STATUS = 'Skipped' # value to mark missing books (deleted/removed) in db, can be 'Open', 'Ignored',' 'Wanted','Skipped'
+NEWBOOK_STATUS = 'Skipped' # value to mark new books (when importing a new author) in db, can be 'Open', 'Ignored',' 'Wanted','Skipped'
 EBOOK_DEST_FOLDER = None
 EBOOK_DEST_FILE = None
 MAG_DEST_FOLDER = None
@@ -276,7 +276,7 @@ def initialize():
             USE_PUSHOVER, PUSHOVER_ONSNATCH, PUSHOVER_KEYS, PUSHOVER_APITOKEN, PUSHOVER_PRIORITY, PUSHOVER_ONDOWNLOAD, \
             TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PASS, TRANSMISSION_USER, \
             TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, \
-	    FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NMA_ENABLED, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, \
+	    FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, NMA_ENABLED, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, \
             GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS
 
         if __INITIALIZED__:
@@ -427,6 +427,7 @@ def initialize():
         FULL_SCAN = bool(check_setting_int(CFG, 'LibraryScan', 'full_scan', 0))
 	ADD_AUTHOR = bool(check_setting_int(CFG, 'LibraryScan', 'add_author', 1))
 	NOTFOUND_STATUS = check_setting_str(CFG, 'LibraryScan', 'notfound_status','Skipped')
+	NEWBOOK_STATUS = check_setting_str(CFG, 'LibraryScan', 'newbook_status','Skipped')
 	
         EBOOK_DEST_FOLDER = check_setting_str(CFG, 'PostProcess', 'ebook_dest_folder', '$Author/$Title')
         EBOOK_DEST_FILE = check_setting_str(CFG, 'PostProcess', 'ebook_dest_file', '$Title - $Author')
@@ -666,6 +667,7 @@ def config_write():
     new_config['LibraryScan']['full_scan'] = FULL_SCAN
     new_config['LibraryScan']['add_author'] = ADD_AUTHOR
     new_config['LibraryScan']['notfound_status'] = NOTFOUND_STATUS
+    new_config['LibraryScan']['newbook_status'] = NEWBOOK_STATUS
     
     new_config['PostProcess'] = {}
     new_config['PostProcess']['ebook_dest_folder'] = EBOOK_DEST_FOLDER
@@ -738,6 +740,12 @@ def dbcheck():
     except sqlite3.OperationalError:
         logger.info('Updating database to hold bookgenre')
         c.execute('ALTER TABLE books ADD COLUMN BookGenre TEXT')
+
+    try:
+        c.execute('SELECT BookFile from books')
+    except sqlite3.OperationalError:
+        logger.info('Updating database to hold book filename')
+        c.execute('ALTER TABLE books ADD COLUMN BookFile TEXT')
 
     try:
         c.execute('SELECT AuxInfo from wanted')
