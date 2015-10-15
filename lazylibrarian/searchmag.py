@@ -50,23 +50,11 @@ def searchmagazines(mags=None):
 		logger.info('There is nothing to search for.  Mark some magazines as active.')
 
 	for book in searchlist:
-		resultlist = []
-		if lazylibrarian.NEWZNAB:
-			logger.debug('Searching NZB\'s at provider %s ...' % lazylibrarian.NEWZNAB_HOST)
-			resultlist = providers.NewzNab(book, "1")
-
-		if lazylibrarian.NEWZNAB2:
-			logger.debug('Searching NZB\'s at provider %s ...' % lazylibrarian.NEWZNAB_HOST2)
-			resultlist += providers.NewzNab(book, "2")
-
-		if lazylibrarian.USENETCRAWLER: 
-			logger.info('Searching NZB\'s at provider UsenetCrawler ...')
-			resultlist += providers.UsenetCrawler(book, 'mag')
-
-			#AHHH pass the book not the search book - bloody names the same, so wrong keys passing over
+		
+		resultlist = providers.IterateOverNewzNabSites(book,'mag')
 
 		if not resultlist:
-			logger.debug("Adding book %s to queue." % book['searchterm'])
+			logger.debug("Adding magazine %s to queue." % book['searchterm'])
 
 		else:
 			bad_regex = 0
@@ -91,7 +79,7 @@ def searchmagazines(mags=None):
 						frequency = results['Frequency']
 						regex = results['Regex']
 
-					nzbtitle_formatted = nzb['nzbtitle'].replace('.',' ').replace('/',' ').replace('+',' ').replace('_',' ').replace('(','').replace(')','')
+					nzbtitle_formatted = nzb['nzbtitle'].replace('.',' ').replace('-',' ').replace('/',' ').replace('+',' ').replace('_',' ').replace('(','').replace(')','')
 					#Need to make sure that substrings of magazine titles don't get found (e.g. Maxim USA will find Maximum PC USA)
 					keyword_check = nzbtitle_formatted.replace(bookid,'')
 					#remove extra spaces if they're in a row
@@ -100,10 +88,19 @@ def searchmagazines(mags=None):
 
 					bookid_exploded = bookid.split(' ')
 
-					#Make sure that NZB contains exact magazine phrase, and that NZB title begins with magazine title
-					#logger.debug('[%s] !=[%s] & [%s] == [%s]' %(keyword_check.lower(),nzbtitle_formatted.lower(),nzbtitle_exploded[0].lower(),bookid_exploded[0].lower()))
-					if keyword_check.lower() != nzbtitle_formatted.lower() and nzbtitle_exploded[0].lower() == bookid_exploded[0].lower():
-						
+					# check nzb starts with magazine title, and ends with a date
+					# eg The MagPI Issue 22 - July 2015
+					# do something like check left n words match title
+					# then check last n words are a date
+					
+					name_match = 1 # assume name matches for now
+					name_len = len(bookid_exploded)
+					if len(nzbtitle_exploded) > name_len: # needs to be longer as it should include a date
+					    while name_len:
+						name_len = name_len - 1
+						if nzbtitle_exploded[name_len].lower() != bookid_exploded[name_len].lower():
+							name_match = 0 # name match failed
+					if name_match:	
 						if len(nzbtitle_exploded) > 1:
 							#regexA = DD MonthName YYYY OR MonthName YYYY
 							regexA_year = nzbtitle_exploded[len(nzbtitle_exploded)-1]
@@ -177,10 +174,17 @@ def searchmagazines(mags=None):
 							"NZBsize": nzbsize
 							}
 						myDB.upsert("wanted", newValueDict, controlValueDict)
-						#print nzbtitle_formatted
-						#print newdatish
 
-						if control_date is None:
+						if control_date is None: # we haven't got any copies of this magazine yet
+							# get a rough time just over a month ago to compare to, in format yyyy-mm-dd
+							# could perhaps calc differently for weekly, biweekly etc
+							start_time = time.time()
+							start_time -= 31*24*60*60 # number of seconds in 31 days
+							control_date = time.strftime("%Y-%m-%d", time.localtime(start_time))
+					
+						# only grab a copy if it's newer than the most recent we have, or newer than a month ago if we have none
+						comp_date = formatter.datecompare(newdatish, control_date)
+						if comp_date > 0:
 							myDB.upsert("magazines", {"LastAcquired": nzbdate, "IssueDate": newdatish}, {"Title": bookid})
 							maglist.append({
 								'bookid': bookid,
@@ -188,24 +192,14 @@ def searchmagazines(mags=None):
 								'nzbtitle': nzbtitle,
 								'nzburl': nzburl
 								})
+							logger.debug('This issue of %s is new, downloading' % nzbtitle_formatted)
 							new_date = new_date + 1
 						else:
-							comp_date = formatter.datecompare(newdatish, control_date)
-							if comp_date > 0:
-								myDB.upsert("magazines", {"LastAcquired": nzbdate, "IssueDate": newdatish}, {"Title": bookid})
-								maglist.append({
-									'bookid': bookid,
-									'nzbprov': nzbprov,
-									'nzbtitle': nzbtitle,
-									'nzburl': nzburl
-									})
-								new_date = new_date + 1
-							else:
-								logger.debug('This issue of %s is old; skipping.' % nzbtitle_formatted)
-								old_date = old_date + 1
+							logger.debug('This issue of %s is old; skipping.' % nzbtitle_formatted)
+							old_date = old_date + 1
 					else:
 						logger.debug('NZB [%s] does not completely match search term [%s].' % (nzbtitle, bookid))
 						bad_regex = bad_regex + 1
 
-			logger.info('Found %s NZBs for %s.  %s are new, %s are old, and %s have bad date formatting' % (total_nzbs, bookid, new_date, old_date, bad_regex) )
+			logger.info('Found %s NZBs for %s.  %s are new, %s are old, and %s fail name or date matching' % (total_nzbs, bookid, new_date, old_date, bad_regex) )
 	return maglist

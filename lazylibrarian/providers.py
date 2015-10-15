@@ -161,81 +161,6 @@ def OLDUsenetCrawler(book=None):
                 
     return results
 
-#deprecated once update searchmag.py
-def NewzNab(book=None, newznabNumber=None):
-
-    if (newznabNumber == "1"):
-        HOST = lazylibrarian.NEWZNAB_HOST
-        logger.info('Searching for %s.' % book['searchterm'] + " at: " + lazylibrarian.NEWZNAB_HOST)
-    if (newznabNumber == "2"):
-        HOST = lazylibrarian.NEWZNAB_HOST2
-        logger.info('Searching for %s.' % book['searchterm'] + " at: " + lazylibrarian.NEWZNAB_HOST2)
-
-    results = []
-
-    if lazylibrarian.EBOOK_TYPE == None:
-        params = {
-            "t": "book",
-            "apikey": lazylibrarian.NEWZNAB_API,
-            #"cat": 7020,
-            "author": book['searchterm']
-        }
-    else:
-        params = {
-            "t": "search",
-            "apikey": lazylibrarian.NEWZNAB_API,
-            "cat": 7020,
-            "q": book['searchterm'],
-            "extended": 1,
-        }
-
-    if not str(HOST)[:4] == "http":
-        HOST = 'http://' + HOST
-
-    URL = HOST + '/api?' + urllib.urlencode(params)
-
-    try :
-        request = urllib2.Request(URL)
-	if lazylibrarian.PROXY_HOST:
-		request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-        request.add_header('User-Agent', common.USER_AGENT)
-        opener = urllib2.build_opener(SimpleCache.CacheHandler(".ProviderCache"), SimpleCache.ThrottlingProcessor(5))
-        resp = opener.open(request)
-
-        try:
-            data = ElementTree.parse(resp)
-        except (urllib2.URLError, IOError, EOFError), e:
-            logger.warn('Error fetching data from %s: %s' % (lazylibrarian.NEWZNAB_HOST, e))
-            data = None
-
-    except Exception, e:
-        logger.error("Error 403 openning url")
-        data = None
-
-    if data:
-        # to debug because of api
-        logger.debug(u'Parsing results from <a href="%s">%s</a>' % (URL, lazylibrarian.NEWZNAB_HOST))
-        rootxml = data.getroot()
-        resultxml = rootxml.getiterator('item')
-        nzbcount = 0
-        for nzb in resultxml:
-            try:
-                nzbcount = nzbcount+1
-                results.append({
-                    'bookid': book['bookid'],
-                    'nzbprov': "NewzNab",
-                    'nzbtitle': nzb[0].text,
-                    'nzburl': nzb[2].text,
-                    'nzbdate': nzb[4].text,
-                    'nzbsize': nzb[7].attrib.get('length')
-                    })
-            except IndexError:
-                logger.debug('No results')
-        if nzbcount:
-            logger.debug('Found %s nzb for: %s' % (nzbcount, book['searchterm']))
-        else:
-            logger.info(u'Newznab returned 0 results for: ' + book['searchterm'] + '. Adding book to queue.')
-    return results
 
 #
 #Purpose of this function is to read the config file, and loop through all active NewsNab+
@@ -294,7 +219,7 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None):
         host = 'http://' + host
     
     URL = host + '/api?' + urllib.urlencode(params)
-
+   
     try :
         request = urllib2.Request(URL)
 	if lazylibrarian.PROXY_HOST:
@@ -349,7 +274,7 @@ def ReturnSearchTypeStructure(api_key, book, searchType):
             "t": "search",
             "apikey": api_key,
             "cat": "7000,7010,7020",    #7000=Other,7010=Misc,7020 Ebook
-            "q": common.removeDisallowedFilenameChars(book['searchterm']),
+            "q": book['searchterm'],
             "extended": 1,
         }
     else:
