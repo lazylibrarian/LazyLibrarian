@@ -12,7 +12,7 @@ import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
 
 import time
-import unidecode
+from lib.unidecode import unidecode
 
 class GoodReads:
 	# http://www.goodreads.com/api/
@@ -26,7 +26,7 @@ class GoodReads:
 		threading.currentThread().name = "GR-SEARCH"
 		resultlist = []
 		api_hits = 0
-		
+
 		url = urllib.quote_plus(authorname.encode('utf-8'))
 		set_url = 'http://www.goodreads.com/search.xml?q=' + url + '&' + urllib.urlencode(self.params)
 		logger.info('Now searching GoodReads API with keyword: ' + authorname)
@@ -62,7 +62,7 @@ class GoodReads:
 				authorNameResult = author.find('./best_book/author/name').text
 				booksub = ""
 				bookpub = ""
-				booklang = "Unknown" 
+				booklang = "Unknown"
 
 				try:
 					bookimg = author.find('./best_book/image_url').text
@@ -126,7 +126,7 @@ class GoodReads:
 
 				resultcount = resultcount+1
 
-		except urllib2.HTTPError, err:                  
+		except urllib2.HTTPError, err:
 			if err.code == 404:
 				logger.info('Received a 404 error when searching for author')
 			if err.code == 403:
@@ -146,7 +146,7 @@ class GoodReads:
 		author = author.replace('  ',' ')
 		URL = 'http://www.goodreads.com/api/author_url/' + urllib.quote(author) + '?' + urllib.urlencode(self.params)
 		logger.debug("Searching for author with name: %s" % author)
-		
+
 		# Cache our request
 		request = urllib2.Request(URL)
 		if lazylibrarian.PROXY_HOST:
@@ -159,19 +159,19 @@ class GoodReads:
 			sourcexml = ElementTree.parse(resp)
 		except Exception, e:
 			logger.error("Error fetching authorid: " + str(e) + str(URL))
-		
+
 		rootxml = sourcexml.getroot()
 		resultxml = rootxml.getiterator('author')
 		authorlist = []
-	
+
 		if not len(resultxml):
 			logger.info('No authors found with name: %s' % self.name)
 		else:
 			# In spite of how this looks, goodreads only returns one result, even if there are multiple matches
 			# we just have to hope we get the right one. eg search for "James Lovelock" returns "James E. Lovelock"
 			# who only has one book listed under googlebooks, the rest are under "James Lovelock"
-			# goodreads has all his books under "James E. Lovelock". Can't come up with a good solution yet. 
-			# For now we'll have to let the user handle this by selecting/adding the author manually 
+			# goodreads has all his books under "James E. Lovelock". Can't come up with a good solution yet.
+			# For now we'll have to let the user handle this by selecting/adding the author manually
 			for author in resultxml:
 				authorid = author.attrib.get("id")
 				authorname = author[0].text
@@ -218,7 +218,7 @@ class GoodReads:
 		return author_dict
 
 	def get_author_books(self, authorid=None, authorname=None, refresh=False):
-		
+
 		api_hits = 0
 		gr_lang_hits = 0
 		lt_lang_hits = 0
@@ -232,7 +232,7 @@ class GoodReads:
 		controlValueDict = {"AuthorID": authorid}
 		newValueDict = {"Status": "Loading"}
 		myDB.upsert("authors", newValueDict, controlValueDict)
-		
+
 		try:
 			# Cache our request
 			request = urllib2.Request(URL)
@@ -250,7 +250,7 @@ class GoodReads:
 		resultxml = rootxml.getiterator('book')
 		books_dict = []
 		valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
-					
+
 		if not len(resultxml):
 			logger.info('[%s] No books found for author with ID: %s' % (authorname, authorid))
 
@@ -269,7 +269,7 @@ class GoodReads:
 			authorNameResult = rootxml.find('./author/name').text
 			logger.debug(u"author name " + authorNameResult)
 			loopCount = 1;
-			
+
 			while (len(resultxml)):
 				for book in resultxml:
 					total_count = total_count + 1
@@ -278,7 +278,7 @@ class GoodReads:
 						pubyear = "0000"
 					else:
 						pubyear = book.find('publication_year').text
-	
+
 					try:
 						bookimg = book.find('image_url').text
 						if (bookimg == 'http://www.goodreads.com/assets/nocover/111x148.png'):
@@ -288,8 +288,8 @@ class GoodReads:
 					except AttributeError:
 						bookimg = 'images/nocover.png'
 
-					
-# PAB this next section tries to get the book language using the isbn13 to look it up. If no isbn13 we skip the book entirely, rather than 
+
+# PAB this next section tries to get the book language using the isbn13 to look it up. If no isbn13 we skip the book entirely, rather than
 # including it with an "Unknown" language. Changed this so we can still include the book with language set to "Unknown"
 # There is a setting in config.ini to allow or skip books with "Unknown" language if you really don't want to include them.
 # Not all GR books have isbn13 filled in, but all have a GR bookid, which we've already got, so use that.
@@ -297,14 +297,14 @@ class GoodReads:
 # We sleep for one second per book that GR knows about for each author you have in your library.
 # The libraryThing API has the same 1 second restriction, and is limited to 1000 hits per day, but has fewer books with unknown language
 # To get around this and speed up the process, see if we already have a book in the database with a similar start to the ISBN.
-# The way ISBNs work, digits 3-5 of a 13 char ISBN or digits 0-2 of a 10 digit ISBN indicate the region/language 
+# The way ISBNs work, digits 3-5 of a 13 char ISBN or digits 0-2 of a 10 digit ISBN indicate the region/language
 # so if two books have the same 3 digit isbn code, they _should_ be the same language.
 # I ran a simple python script on my library of 1500 books, and these codes were 100% correct on matching book languages, no mis-matches.
-# It did result in a small number of books with "unknown" language being wrongly matched, but most "unknown" were matched to the correct language. 
+# It did result in a small number of books with "unknown" language being wrongly matched, but most "unknown" were matched to the correct language.
 # We could look up ISBNs we already know about in the database, but this only holds books in the languages we want to keep, which reduces the number of
 # cache hits, so we create a new database table, holding ALL results including the ISBNs for languages we don't want and books we reject.
-# The new table is created (if not exists) in init.py so by the time we get here there is an existing table. 
-# 
+# The new table is created (if not exists) in init.py so by the time we get here there is an existing table.
+#
 # If we haven't an already matching partial ISBN, look up language code from libraryThing  "http://www.librarything.com/api/thingLang.php?isbn=1234567890"
 # If you find a matching language, add it to the database.  If "unknown" or "invalid", try GR as maybe GR can provide a match.
 # If both LT and GR return unknown, add isbn to db as "unknown". No point in repeatedly asking LT for a code it's told you it doesn't know.
@@ -327,7 +327,7 @@ class GoodReads:
 						    		isbn=book.find('isbn13').text
 						    		isbnhead=isbn[3:6]
 					    	if (find_field != 'id'): # isbn or isbn13 found
-							
+
 							match = myDB.action('SELECT lang FROM languages where isbn = "%s"' % (isbnhead)).fetchone()
 					        	if (match):
 						    		bookLanguage=match['lang']
@@ -343,9 +343,9 @@ class GoodReads:
 									resp = urllib2.urlopen(BOOK_URL, timeout=30).read()
                         						lt_lang_hits = lt_lang_hits + 1
 									logger.debug("LibraryThing reports language [%s] for %s" % (resp, isbnhead))
-									
+
 									if (resp == 'invalid' or resp == 'unknown'):
-										find_field="id" # reset the field to force search on goodreads	
+										find_field="id" # reset the field to force search on goodreads
 									else:
 										bookLanguage=resp # found a language code
 										myDB.action('insert into languages values ("%s", "%s")' % (isbnhead, bookLanguage))
@@ -353,13 +353,13 @@ class GoodReads:
 								except Exception, e:
 									find_field="id" # reset the field to search on goodreads
 					    				logger.error("Error finding results: ", e)
-							
+
 						if (find_field == 'id'): # [or bookLanguage == "Unknown"] no earlier match, we'll have to search the goodreads api
 					    		try:
 						   		if (book.find(find_field).text is not None):
-									BOOK_URL = 'http://www.goodreads.com/book/show?id=' + book.find(find_field).text + '&' + urllib.urlencode(self.params) 
+									BOOK_URL = 'http://www.goodreads.com/book/show?id=' + book.find(find_field).text + '&' + urllib.urlencode(self.params)
 									logger.debug(u"Book URL: " + str(BOOK_URL))
-							
+
 									try:
 										# Cache our request
 										if (isbnhead == ""): # no isbn found, so we didn't try librarything
@@ -380,7 +380,7 @@ class GoodReads:
 									bookLanguage = BOOK_rootxml.find('./book/language_code').text
 									if not bookLanguage:
 										bookLanguage = "Unknown"
-									
+
 									if (isbnhead != ""): # GR didn't give an isbn so we can't cache it, just use for this book
 										myDB.action('insert into languages values ("%s", "%s")' % (isbnhead, bookLanguage))
 										logger.debug("GoodReads reports language [%s] for %s" % (bookLanguage, isbnhead))
@@ -394,7 +394,7 @@ class GoodReads:
 
 					  		except Exception, e:
 								logger.debug(u"An error has occured: " + str(e))
-			
+
 						if bookLanguage not in valid_langs:
 							logger.debug('Skipped a book with language %s' % bookLanguage)
 							ignored = ignored + 1
@@ -420,7 +420,7 @@ class GoodReads:
                                         else:
                                                 series = None
                                                 seriesOrder = None
-                            
+
 					find_book_status = myDB.select("SELECT * FROM books WHERE BookID = '%s'" % bookid)
 					if find_book_status:
 						for resulted in find_book_status:
@@ -431,7 +431,7 @@ class GoodReads:
     					bookname = bookname.replace(':','')
 					bookname = unidecode.unidecode(u'%s' % bookname)
 					bookname = bookname.strip() # strip whitespace
-					
+
 					if not (re.match('[^\w-]', bookname)): #remove books with bad characters in title
 						if book_status != "Ignored":
 							controlValueDict = {"BookID": bookid}
@@ -486,7 +486,7 @@ class GoodReads:
 					resp1 = opener1.open(request1)
 					api_hits = api_hits + 1
 				except Exception, e:
-					logger.error("Error finding results: " + str(e))				
+					logger.error("Error finding results: " + str(e))
 
 				sourcexml = ElementTree.parse(resp1)
 				rootxml = sourcexml.getroot()
@@ -502,10 +502,10 @@ class GoodReads:
                         lastbookname = None
                         lastbooklink = None
                         lastbookdate = None
-                        
+
 		unignoredbooks = myDB.select("SELECT COUNT(BookName) as unignored FROM books WHERE AuthorID='%s' AND Status != 'Ignored'" % authorid)
-		bookCount = myDB.select("SELECT COUNT(BookName) as counter FROM books WHERE AuthorID='%s'" % authorid)   
-		
+		bookCount = myDB.select("SELECT COUNT(BookName) as counter FROM books WHERE AuthorID='%s'" % authorid)
+
 		controlValueDict = {"AuthorID": authorid}
 		newValueDict = {
 				"Status": "Active",
@@ -519,20 +519,20 @@ class GoodReads:
 
 		#This is here because GoodReads sometimes has several entries with the same BookID!
 		modified_count = added_count + updated_count
-					
+
 		logger.debug("Found %s total books for author" % total_count)
 		logger.debug("Removed %s bad language results for author" % ignored)
 		logger.debug("Removed %s bad character results for author" % removedResults)
 		logger.debug("Ignored %s books by author marked as Ignored" % book_ignore_count)
 		logger.debug("Imported/Updated %s books for author" % modified_count)
-		
+
 		myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' % (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits, ignored, removedResults, not_cached))
 
 		if refresh:
 			logger.info("[%s] Book processing complete: Added %s books / Updated %s books" % (authorname, str(added_count), str(updated_count)))
 		else:
 			logger.info("[%s] Book processing complete: Added %s books to the database" % (authorname, str(added_count)))
-		
+
 		return books_dict
 
 	def find_book(self, bookid=None, queue=None):
@@ -557,7 +557,7 @@ class GoodReads:
 
 		bookLanguage = rootxml.find('./book/language_code').text
 		bookname = rootxml.find('./book/title').text
-		
+
 		if not bookLanguage:
 			bookLanguage = "Unknown"
 #
