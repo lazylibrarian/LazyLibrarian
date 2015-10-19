@@ -12,7 +12,7 @@ import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
 
 import time
-import lib.unidecode as unidecode
+from lib.unidecode import unidecode
 
 class GoodReads:
 	# http://www.goodreads.com/api/

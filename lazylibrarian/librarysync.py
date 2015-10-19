@@ -10,7 +10,7 @@ from lib.fuzzywuzzy import fuzz, process
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, SubElement
 import lib.zipfile as zipfile 
-from lxml import etree
+
 from mobi import Mobi 
 
 def get_book_info(fname):
