@@ -190,7 +190,7 @@ class GoogleBooks:
 #                        bookname=booknametmp7.replace(u'\xfc',u'ue')
 			bookname = item['volumeInfo']['title']
 			bookname = bookname.replace(':','')
-			bookname = unidecode.unidecode(u'%s' % bookname)
+			bookname = unidecode(u'%s' % bookname)
 # Darkie67 end                        
                         resultlist.append({
                             'authorname': Author,
@@ -230,7 +230,7 @@ class GoogleBooks:
         
 	logger.info('[%s] Now processing books with Google Books API' % authorname)
 	# google doesnt like accents in author names
-	aname = unidecode.unidecode(u'%s' % authorname)
+	aname = unidecode(u'%s' % authorname)
 
 	set_url = self.url + urllib.quote('inauthor:' + '"' + aname + '"')
         URL = set_url + '&' + urllib.urlencode(self.params)
@@ -414,7 +414,7 @@ class GoogleBooks:
 #                    bookname=booknametmp7.replace(u'\xfc',u'ue')
 		    bookname = item['volumeInfo']['title']
 		    bookname = bookname.replace(':','')
-		    bookname = unidecode.unidecode(u'%s' % bookname)
+		    bookname = unidecode(u'%s' % bookname)
 # Darkie67 end
                     booklink = item['volumeInfo']['canonicalVolumeLink']
                     bookrate = float(bookrate)
@@ -428,7 +428,7 @@ class GoogleBooks:
 
     		    bookname = item['volumeInfo']['title']
 		    bookname = bookname.replace(':','')
-		    bookname = unidecode.unidecode(u'%s' % bookname)
+		    bookname = unidecode(u'%s' % bookname)
 		    bookname = bookname.strip() # strip whitespace
 
 		    if not (re.match('[^\w-]', bookname)): #remove books with bad characters in title
@@ -538,7 +538,7 @@ class GoogleBooks:
 #        bookname=booknametmp7.replace(u'\xfc',u'ue')
 	bookname = jsonresults['volumeInfo']['title']
 	bookname = bookname.replace(':','')
-	bookname = unidecode.unidecode(u'%s' % bookname)
+	bookname = unidecode(u'%s' % bookname)
 # Darkie67 end        
         
         try:

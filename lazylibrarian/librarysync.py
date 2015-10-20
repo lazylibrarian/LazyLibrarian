@@ -9,16 +9,16 @@ import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, SubElement
+from lxml import etree
 import lib.zipfile as zipfile 
-
-from mobi import Mobi 
+from lib.mobi import Mobi 
 
 def get_book_info(fname):
     # only handles epub, mobi and opf for now, 
     # for pdf see below
     words = fname.split('.')
     extn = words[len(words)-1]
-
+    
     if (extn == "mobi"):
 	book = Mobi(fname)
 	book.parse()
@@ -26,7 +26,7 @@ def get_book_info(fname):
 	res['creator'] = book.author()
 	res['title'] =  book.title()
 	res['language'] = book.language()
-	res['isbn'] = book.isbn()
+	res['identifier'] = book.isbn()
         return res
 
     ns = {

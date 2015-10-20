@@ -429,7 +429,7 @@ class GoodReads:
 						book_status = lazylibrarian.NEWBOOK_STATUS
 
     					bookname = bookname.replace(':','')
-					bookname = unidecode.unidecode(u'%s' % bookname)
+					bookname = unidecode(u'%s' % bookname)
 					bookname = bookname.strip() # strip whitespace
 					
 					if not (re.match('[^\w-]', bookname)): #remove books with bad characters in title
