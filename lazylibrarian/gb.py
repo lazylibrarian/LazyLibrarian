@@ -507,8 +507,7 @@ class GoogleBooks:
         logger.debug("Ignored %s books by author marked as Ignored" % book_ignore_count)
         logger.debug("Imported/Updated %s books for author" % resultcount)
 
-    #The following was removed because there's no db action in __init__.py (line 723) to create this table!
-    #myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' % (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits, ignored, removedResults, not_cached))
+    	myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' % (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits, ignored, removedResults, not_cached))
 
         if refresh:
             logger.info("[%s] Book processing complete: Added %s books / Updated %s books" % (authorname, str(added_count), str(updated_count)))
@@ -541,7 +540,6 @@ class GoogleBooks:
 	bookname = bookname.replace(':','')
 	bookname = unidecode(u'%s' % bookname)
 # Darkie67 end
-
         try:
             authorname = jsonresults['volumeInfo']['authors'][0]
         except KeyError:

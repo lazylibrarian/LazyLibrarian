@@ -11,7 +11,9 @@ import sys
 import os
 import unittest
 from struct import *
-from mobilz77 import uncompress_lz77
+from pprint import pprint
+import utils
+from lz77 import uncompress_lz77
 
 mobilangdict = {
 		54 : {0 : 'af'}, # Afrikaans
@@ -102,13 +104,6 @@ mobilangdict = {
   	
 
 class Mobi:
-
-  def toDict(tuples):
-    resultsDict = {}
-    for field, value in tuples:
-      if len(field) > 0 and field[0] != "-":
-        resultsDict[field] = value
-    return resultsDict;
  	
   def parse(self):
     """ reads in the file, then parses record tables"""
@@ -383,7 +378,7 @@ class MobiTests(unittest.TestCase):
     self.mobitest = Mobi("../test/CharlesDarwin.mobi");
   def testParse(self):
     self.mobitest.parse();
-    print (self.mobitest.config)
+    pprint (self.mobitest.config)
   def testRead(self):
     self.mobitest.parse();
     content = ""
@@ -391,7 +386,7 @@ class MobiTests(unittest.TestCase):
       content += self.mobitest.readRecord(i);
   def testImage(self):
     self.mobitest.parse();
-    print (self.mobitest.records);
+    pprint (self.mobitest.records);
     for record in range(4):
       f = open("imagerecord%d.jpg" % record, 'w')
       f.write(self.mobitest.readImageRecord(record));

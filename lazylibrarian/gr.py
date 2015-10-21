@@ -154,15 +154,15 @@ class GoodReads:
 		request.add_header('User-Agent', USER_AGENT)
 		opener = urllib2.build_opener(SimpleCache.CacheHandler(".AuthorCache"), SimpleCache.ThrottlingProcessor(5))
 		resp = opener.open(request)
-
+		authorlist = []
 		try:
 			sourcexml = ElementTree.parse(resp)
 		except Exception, e:
 			logger.error("Error fetching authorid: " + str(e) + str(URL))
+			return authorlist
 
 		rootxml = sourcexml.getroot()
 		resultxml = rootxml.getiterator('author')
-		authorlist = []
 
 		if not len(resultxml):
 			logger.info('No authors found with name: %s' % self.name)
@@ -526,8 +526,7 @@ class GoodReads:
 		logger.debug("Ignored %s books by author marked as Ignored" % book_ignore_count)
 		logger.debug("Imported/Updated %s books for author" % modified_count)
 
-		#The following was removed because there's no db action in __init__.py (line 723) to create this table!
-		#myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' % (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits, ignored, removedResults, not_cached))
+		myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' % (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits, ignored, removedResults, not_cached))
 
 		if refresh:
 			logger.info("[%s] Book processing complete: Added %s books / Updated %s books" % (authorname, str(added_count), str(updated_count)))

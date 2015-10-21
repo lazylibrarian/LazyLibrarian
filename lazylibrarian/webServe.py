@@ -10,7 +10,7 @@ import thread, threading, time, Queue
 import lazylibrarian
 
 from lazylibrarian import logger, importer, database, postprocess, formatter, notifiers, librarysync
-from lazylibrarian.searchnzb import search_nzb_book
+from lazylibrarian.searchnzb import search_nzb_book, DownloadMethod
 from lazylibrarian.searchtorrents import search_tor_book
 from lazylibrarian.searchmag import searchmagazines
 from lazylibrarian.formatter import checked
@@ -643,6 +643,41 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("manage")
     markBooks.exposed = True
 
+    def markMags(self, AuthorName=None, action=None, redirect=None, **args):
+        myDB = database.DBConnection()
+        if not redirect:
+            redirect = "magazines"
+        authorcheck = None
+	maglist = []
+        for nzburl in args:
+            # ouch dirty workaround...
+            if not nzburl == 'book_table_length':
+                    controlValueDict = {'NZBurl': nzburl}
+                    newValueDict = {'Status': action}
+                    myDB.upsert("wanted", newValueDict, controlValueDict)
+                    title = myDB.select("SELECT * from wanted WHERE NZBurl = ?", [nzburl])
+                    for item in title:
+			bookid = item['BookID']    
+			nzbprov = item['NZBprov']                    
+			nzbtitle = item['NZBtitle']
+			nzburl = item['NZBurl']
+			maglist.append({
+				'bookid': bookid,
+				'nzbprov': nzbprov,
+				'nzbtitle': nzbtitle,
+				'nzburl': nzburl
+				})
+                    logger.info('Status set to %s for %s' % (action, nzbtitle))
+
+        # start searchthreads
+        if action == 'Wanted':
+          	for items in maglist:
+			logger.debug('Snatching %s' % items['nzbtitle'])
+            		snatch = DownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+            		notifiers.notify_snatch(items['nzbtitle']+' at '+formatter.now()) 
+      		raise cherrypy.HTTPRedirect("magazines")
+    markMags.exposed = True
+
     #ALL ELSE
     def forceProcess(self, source=None):
         threading.Thread(target=postprocess.processDir).start()
@@ -696,19 +731,20 @@ class WebInterface(object):
         return s
     getLog.exposed = True
 
-    def manage(self, AuthorName=None, action=None, whichStatus=None, **args):
+    def manage(self, AuthorName=None, action=None, whichStatus=None, source=None, **args):
         myDB = database.DBConnection()
         books = myDB.select('SELECT * FROM books WHERE Status = ?', [whichStatus])
         return serve_template(templatename="managebooks.html", title="Book Status Management", books=books, whichStatus=whichStatus)
     manage.exposed = True
-
+ 
     def history(self, source=None):
         myDB = database.DBConnection()
         if not source:
             history = myDB.select("SELECT * from wanted WHERE Status != 'Skipped'")
-        elif source == "magazines":
-            history = myDB.select("SELECT * from wanted WHERE Status = 'Skipped'")
-        return serve_template(templatename="history.html", title="History", history=history)
+	    return serve_template(templatename="history.html", title="History", history=history)        
+	elif source == "magazines":
+            books = myDB.select("SELECT * from wanted WHERE Status = 'Skipped' or Status = 'Snatched'")
+        return serve_template(templatename="managemags.html", title="Magazine Status Management", books=books, whichStatus='Skipped')
     history.exposed = True
 
     def clearhistory(self, type=None):

@@ -1,4 +1,17 @@
 data = (
+<<<<<<< HEAD
+# Code points u+007f and below are equivalent to ASCII and are handled by a
+# special case in the code. Hence they are not present in this table.
+'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+
+=======
 '\x00',    # 0x00
 '\x01',    # 0x01
 '\x02',    # 0x02
@@ -127,6 +140,7 @@ data = (
 '}',    # 0x7d
 '~',    # 0x7e
 '',    # 0x7f
+>>>>>>> 0e86a10a41d8af04cb8edf078a5055f7c45fe01f
 '',    # 0x80
 '',    # 0x81
 '',    # 0x82
@@ -162,7 +176,14 @@ data = (
 ' ',    # 0xa0
 '!',    # 0xa1
 'C/',    # 0xa2
+<<<<<<< HEAD
+
+# Not "GBP" - Pound Sign is used for more than just British Pounds.
 'PS',    # 0xa3
+
+=======
+'PS',    # 0xa3
+>>>>>>> 0e86a10a41d8af04cb8edf078a5055f7c45fe01f
 '$?',    # 0xa4
 'Y=',    # 0xa5
 '|',    # 0xa6
@@ -177,8 +198,16 @@ data = (
 '-',    # 0xaf
 'deg',    # 0xb0
 '+-',    # 0xb1
+<<<<<<< HEAD
+
+# These might be combined with other superscript digits (u+2070 - u+2079)
 '2',    # 0xb2
 '3',    # 0xb3
+
+=======
+'2',    # 0xb2
+'3',    # 0xb3
+>>>>>>> 0e86a10a41d8af04cb8edf078a5055f7c45fe01f
 '\'',    # 0xb4
 'u',    # 0xb5
 'P',    # 0xb6
@@ -195,7 +224,14 @@ data = (
 'A',    # 0xc1
 'A',    # 0xc2
 'A',    # 0xc3
+<<<<<<< HEAD
+
+# Not "AE" - used in languages other than German
 'A',    # 0xc4
+
+=======
+'A',    # 0xc4
+>>>>>>> 0e86a10a41d8af04cb8edf078a5055f7c45fe01f
 'A',    # 0xc5
 'AE',    # 0xc6
 'C',    # 0xc7
@@ -213,13 +249,27 @@ data = (
 'O',    # 0xd3
 'O',    # 0xd4
 'O',    # 0xd5
+<<<<<<< HEAD
+
+# Not "OE" - used in languages other than German
 'O',    # 0xd6
+
+=======
+'O',    # 0xd6
+>>>>>>> 0e86a10a41d8af04cb8edf078a5055f7c45fe01f
 'x',    # 0xd7
 'O',    # 0xd8
 'U',    # 0xd9
 'U',    # 0xda
 'U',    # 0xdb
+<<<<<<< HEAD
+
+# Not "UE" - used in languages other than German
 'U',    # 0xdc
+
+=======
+'U',    # 0xdc
+>>>>>>> 0e86a10a41d8af04cb8edf078a5055f7c45fe01f
 'Y',    # 0xdd
 'Th',    # 0xde
 'ss',    # 0xdf
@@ -227,7 +277,14 @@ data = (
 'a',    # 0xe1
 'a',    # 0xe2
 'a',    # 0xe3
+<<<<<<< HEAD
+
+# Not "ae" - used in languages other than German
 'a',    # 0xe4
+
+=======
+'a',    # 0xe4
+>>>>>>> 0e86a10a41d8af04cb8edf078a5055f7c45fe01f
 'a',    # 0xe5
 'ae',    # 0xe6
 'c',    # 0xe7
@@ -245,13 +302,27 @@ data = (
 'o',    # 0xf3
 'o',    # 0xf4
 'o',    # 0xf5
+<<<<<<< HEAD
+
+# Not "oe" - used in languages other than German
 'o',    # 0xf6
+
+=======
+'o',    # 0xf6
+>>>>>>> 0e86a10a41d8af04cb8edf078a5055f7c45fe01f
 '/',    # 0xf7
 'o',    # 0xf8
 'u',    # 0xf9
 'u',    # 0xfa
 'u',    # 0xfb
+<<<<<<< HEAD
+
+# Not "ue" - used in languages other than German
 'u',    # 0xfc
+
+=======
+'u',    # 0xfc
+>>>>>>> 0e86a10a41d8af04cb8edf078a5055f7c45fe01f
 'y',    # 0xfd
 'th',    # 0xfe
 'y',    # 0xff
