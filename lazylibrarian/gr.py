@@ -154,15 +154,15 @@ class GoodReads:
 		request.add_header('User-Agent', USER_AGENT)
 		opener = urllib2.build_opener(SimpleCache.CacheHandler(".AuthorCache"), SimpleCache.ThrottlingProcessor(5))
 		resp = opener.open(request)
-
+		authorlist = []
 		try:
 			sourcexml = ElementTree.parse(resp)
 		except Exception, e:
 			logger.error("Error fetching authorid: " + str(e) + str(URL))
-		
+			return authorlist
+
 		rootxml = sourcexml.getroot()
 		resultxml = rootxml.getiterator('author')
-		authorlist = []
 	
 		if not len(resultxml):
 			logger.info('No authors found with name: %s' % self.name)
