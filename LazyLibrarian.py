@@ -4,6 +4,17 @@ from lib.configobj import ConfigObj
 import lazylibrarian
 from lazylibrarian import webStart, logger, versioncheck
 
+#The following should probably be made configurable at the settings level
+#This fix is put in place for systems with broken SSL (like QNAP)
+opt_out_of_certificate_verification = True
+if opt_out_of_certificate_verification:
+    try:
+        import ssl
+        ssl._create_default_https_context = ssl._create_unverified_context
+    except:
+        pass
+#==== end block (should be configurable at settings level)
+
 def main():
 	#DIFFEREMT
     # rename this thread
@@ -104,8 +115,8 @@ def main():
     #REMINDER ############ NO LOGGING BEFORE HERE ###############
     #There is no point putting in any logging above this line, as its not set till after initialize.
     lazylibrarian.initialize()
-    
-    #Set the install type (win,git,source) & 
+
+    #Set the install type (win,git,source) &
     #check the version when the application starts
     logger.debug('(LazyLibrarian) Setup install,versions and commit status')
     versioncheck.getInstallType()
@@ -125,7 +136,7 @@ def main():
     if lazylibrarian.DAEMON:
         lazylibrarian.daemonize()
 
-    # Try to start the server. 
+    # Try to start the server.
     webStart.initialize({
                     'http_port': lazylibrarian.HTTP_PORT,
                     'http_host': lazylibrarian.HTTP_HOST,

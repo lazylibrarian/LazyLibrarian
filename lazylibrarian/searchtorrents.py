@@ -154,7 +154,7 @@ def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
 	request.add_header('User-Agent', common.USER_AGENT)
     
         if tor_prov == 'KAT':
-            request.add_header('Referer', 'http://kat.ph/')
+            request.add_header('Referer', 'http://kat.cr/')
         
         response = urllib2.urlopen(request)
         if response.info().get('Content-Encoding') == 'gzip':

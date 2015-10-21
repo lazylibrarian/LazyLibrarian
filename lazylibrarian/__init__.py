@@ -133,7 +133,7 @@ NZB_DOWNLOADER_SABNZBD = False
 NZB_DOWNLOADER_NZBGET = False
 NZB_DOWNLOADER_BLACKHOLE = False
 NZB_BLACKHOLEDIR = None
-USENET_RETENTION = None 
+USENET_RETENTION = None
 
 USENETCRAWLER = False
 USENETCRAWLER_API = None
@@ -312,9 +312,9 @@ def initialize():
             LOGLEVEL=2    #If not set in Config, then lets set to DEBUG
         else:
             LOGLEVEL = CFGLOGLEVEL  #Config setting picked up
-            
-            
-            
+
+
+
         logger.lazylibrarian_log.initLogger(loglevel=LOGLEVEL)
         logger.info("Log level set to [%s]- Log Directory is [%s] - Config level is [%s]" % (LOGLEVEL,LOGDIR,CFGLOGLEVEL))
 
@@ -328,7 +328,7 @@ def initialize():
 
 
         LAUNCH_BROWSER = bool(check_setting_int(CFG, 'General', 'launch_browser', 1))
-	
+
 	PROXY_HOST = check_setting_str(CFG, 'General','proxy_host', '')
 	PROXY_TYPE = check_setting_str(CFG, 'General','proxy_type', '')
 
@@ -341,7 +341,7 @@ def initialize():
         #Something funny here - putting IMP_AUTOADD after IMP_ONLYISBN resulted in it not working
         #Couldn't see it
         IMP_SINGLEBOOK = bool(check_setting_int(CFG, 'General', 'imp_singlebook', 0))
-           
+
         GIT_USER = check_setting_str(CFG, 'Git', 'git_user', 'dobytang')
         GIT_REPO = check_setting_str(CFG, 'Git', 'git_repo', 'lazylibrarian')
         GIT_BRANCH = check_setting_str(CFG, 'Git', 'git_branch', 'master')
@@ -367,7 +367,7 @@ def initialize():
         DESTINATION_COPY = bool(check_setting_int(CFG, 'General', 'destination_copy', 0))
         DESTINATION_DIR = check_setting_str(CFG, 'General','destination_dir', '')
         DOWNLOAD_DIR = check_setting_str(CFG, 'General', 'download_dir', '')
-                
+
         USE_NZB = bool(check_setting_int(CFG, 'DLMethod', 'use_nzb', 0))
         USE_TOR = bool(check_setting_int(CFG, 'DLMethod', 'use_tor', 0))
 
@@ -380,7 +380,7 @@ def initialize():
         NZBMATRIX = bool(check_setting_int(CFG, 'NZBMatrix', 'nzbmatrix', 0))
         NZBMATRIX_USER = check_setting_str(CFG, 'NZBMatrix', 'nzbmatrix_user', '')
         NZBMATRIX_API = check_setting_str(CFG, 'NZBMatrix', 'nzbmatrix_api', '')
-        
+
         NEWZNAB = bool(check_setting_int(CFG, 'Newznab', 'newznab', 0))
         NEWZNAB_HOST = check_setting_str(CFG, 'Newznab', 'newznab_host', '')
         NEWZNAB_API = check_setting_str(CFG, 'Newznab', 'newznab_api', '')
@@ -404,7 +404,7 @@ def initialize():
         TRANSMISSION_USER  = check_setting_str(CFG, 'TRANSMISSION', 'transmission_user', '')
         TRANSMISSION_PASS  = check_setting_str(CFG, 'TRANSMISSION', 'transmission_pass', '')
 
-        DELUGE_HOST = check_setting_str(CFG, 'DELUGE', 'deluge_host', '') 
+        DELUGE_HOST = check_setting_str(CFG, 'DELUGE', 'deluge_host', '')
         DELUGE_PORT = check_setting_int(CFG, 'DELUGE', 'deluge_port', '')
         DELUGE_USER = check_setting_str(CFG, 'DELUGE', 'deluge_user', '')
         DELUGE_PASS = check_setting_str(CFG, 'DELUGE', 'deluge_pass', '')
@@ -428,7 +428,7 @@ def initialize():
 	ADD_AUTHOR = bool(check_setting_int(CFG, 'LibraryScan', 'add_author', 1))
 	NOTFOUND_STATUS = check_setting_str(CFG, 'LibraryScan', 'notfound_status','Skipped')
 	NEWBOOK_STATUS = check_setting_str(CFG, 'LibraryScan', 'newbook_status','Skipped')
-	
+
         EBOOK_DEST_FOLDER = check_setting_str(CFG, 'PostProcess', 'ebook_dest_folder', '$Author/$Title')
         EBOOK_DEST_FILE = check_setting_str(CFG, 'PostProcess', 'ebook_dest_file', '$Title - $Author')
         MAG_DEST_FOLDER = check_setting_str(CFG, 'PostProcess', 'mag_dest_folder', '_Magazines/$Title/$IssueDate')
@@ -649,7 +649,7 @@ def config_write():
     new_config['DELUGE']['deluge_port'] = DELUGE_PORT
     new_config['DELUGE']['deluge_user'] = DELUGE_USER
     new_config['DELUGE']['deluge_pass'] = DELUGE_PASS
-    
+
     new_config['KAT'] = {}
     new_config['KAT']['kat'] = int(KAT)
 
@@ -668,7 +668,7 @@ def config_write():
     new_config['LibraryScan']['add_author'] = ADD_AUTHOR
     new_config['LibraryScan']['notfound_status'] = NOTFOUND_STATUS
     new_config['LibraryScan']['newbook_status'] = NEWBOOK_STATUS
-    
+
     new_config['PostProcess'] = {}
     new_config['PostProcess']['ebook_dest_folder'] = EBOOK_DEST_FOLDER
     new_config['PostProcess']['ebook_dest_file'] = EBOOK_DEST_FILE
@@ -721,7 +721,7 @@ def dbcheck():
     c.execute('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS magazines (Title TEXT, Frequency TEXT, Regex TEXT, Status TEXT, MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS languages ( isbn TEXT, lang TEXT )')
-	
+
     try:
         logger.info('Checking database')
         c.execute('SELECT BookSub from books')
@@ -803,7 +803,7 @@ def dbcheck():
                         else:
                             series = result.group(1)
                             seriesOrder = result.group(2)
-                            
+
                         controlValueDict = {"BookID": book["BookID"]}
                         newValueDict = {
                             "series":   series,
@@ -812,7 +812,7 @@ def dbcheck():
         		myDB.upsert("books", newValueDict, controlValueDict)
         except Exception, z:
             logger.info('Error: ' + str(z))
-                    
+
 
     try:
         myDB = database.DBConnection()
@@ -858,7 +858,7 @@ def shutdown(restart=False, update=False):
         try:
             versioncheck.update()
         except Exception, e:
-            logger.warn('LazyLibrarian failed to update: %s. Restarting.' % e) 
+            logger.warn('LazyLibrarian failed to update: %s. Restarting.' % e)
 
     if PIDFILE :
         logger.info('Removing pidfile %s' % PIDFILE)

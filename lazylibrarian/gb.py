@@ -190,7 +190,7 @@ class GoogleBooks:
 #                        bookname=booknametmp7.replace(u'\xfc',u'ue')
 			bookname = item['volumeInfo']['title']
 			bookname = bookname.replace(':','')
-			bookname = unidecode.unidecode(u'%s' % bookname)
+			bookname = unidecode(u'%s' % bookname)
 # Darkie67 end
                         resultlist.append({
                             'authorname': Author,
@@ -230,7 +230,7 @@ class GoogleBooks:
 
 	logger.info('[%s] Now processing books with Google Books API' % authorname)
 	# google doesnt like accents in author names
-	aname = unidecode.unidecode(u'%s' % authorname)
+	aname = unidecode(u'%s' % authorname)
 
 	set_url = self.url + urllib.quote('inauthor:' + '"' + aname + '"')
         URL = set_url + '&' + urllib.urlencode(self.params)
@@ -414,7 +414,7 @@ class GoogleBooks:
 #                    bookname=booknametmp7.replace(u'\xfc',u'ue')
 		    bookname = item['volumeInfo']['title']
 		    bookname = bookname.replace(':','')
-		    bookname = unidecode.unidecode(u'%s' % bookname)
+		    bookname = unidecode(u'%s' % bookname)
 # Darkie67 end
                     booklink = item['volumeInfo']['canonicalVolumeLink']
                     bookrate = float(bookrate)
@@ -428,7 +428,7 @@ class GoogleBooks:
 
     		    bookname = item['volumeInfo']['title']
 		    bookname = bookname.replace(':','')
-		    bookname = unidecode.unidecode(u'%s' % bookname)
+		    bookname = unidecode(u'%s' % bookname)
 		    bookname = bookname.strip() # strip whitespace
 
 		    if not (re.match('[^\w-]', bookname)): #remove books with bad characters in title
@@ -507,7 +507,8 @@ class GoogleBooks:
         logger.debug("Ignored %s books by author marked as Ignored" % book_ignore_count)
         logger.debug("Imported/Updated %s books for author" % resultcount)
 
-	myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' % (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits, ignored, removedResults, not_cached))
+    #The following was removed because there's no db action in __init__.py (line 723) to create this table!
+    #myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' % (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits, ignored, removedResults, not_cached))
 
         if refresh:
             logger.info("[%s] Book processing complete: Added %s books / Updated %s books" % (authorname, str(added_count), str(updated_count)))
@@ -538,7 +539,7 @@ class GoogleBooks:
 #        bookname=booknametmp7.replace(u'\xfc',u'ue')
 	bookname = jsonresults['volumeInfo']['title']
 	bookname = bookname.replace(':','')
-	bookname = unidecode.unidecode(u'%s' % bookname)
+	bookname = unidecode(u'%s' % bookname)
 # Darkie67 end
 
         try:

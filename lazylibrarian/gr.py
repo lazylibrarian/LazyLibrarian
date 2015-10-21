@@ -429,7 +429,7 @@ class GoodReads:
 						book_status = lazylibrarian.NEWBOOK_STATUS
 
     					bookname = bookname.replace(':','')
-					bookname = unidecode.unidecode(u'%s' % bookname)
+					bookname = unidecode(u'%s' % bookname)
 					bookname = bookname.strip() # strip whitespace
 
 					if not (re.match('[^\w-]', bookname)): #remove books with bad characters in title
@@ -526,7 +526,8 @@ class GoodReads:
 		logger.debug("Ignored %s books by author marked as Ignored" % book_ignore_count)
 		logger.debug("Imported/Updated %s books for author" % modified_count)
 
-		myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' % (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits, ignored, removedResults, not_cached))
+		#The following was removed because there's no db action in __init__.py (line 723) to create this table!
+		#myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' % (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits, ignored, removedResults, not_cached))
 
 		if refresh:
 			logger.info("[%s] Book processing complete: Added %s books / Updated %s books" % (authorname, str(added_count), str(updated_count)))
