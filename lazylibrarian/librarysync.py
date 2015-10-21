@@ -51,12 +51,10 @@ def get_book_info(fname):
       n = 0
       cfname = ""
       while n < len(tree[0]):
-	tag = tree[0][n].tag
 	att = tree[0][n].attrib
 	if 'full-path' in att:
-		cfname = ("%s" % att)
+		cfname = ("%s" % att) # extract metadata filename
 		cfname = cfname.split(',')[1].split(':')[1].strip('\' }')
-		print cfname
 	n = n + 1
 
       # grab the metadata block from the contents metafile		
