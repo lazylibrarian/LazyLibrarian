@@ -9,7 +9,6 @@ import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, SubElement
-from lxml import etree
 import lib.zipfile as zipfile 
 from lib.mobi import Mobi 
 
@@ -29,11 +28,6 @@ def get_book_info(fname):
 	res['identifier'] = book.isbn()
         return res
 
-    ns = {
-        'n':'urn:oasis:names:tc:opendocument:xmlns:container',
-        'pkg':'http://www.idpf.org/2007/opf',
-        'dc':'http://purl.org/dc/elements/1.1/'
-    }
     # none of the pdfs in my library had language,isbn
     # most didn't have author, or had the wrong author
     # (author set to publisher, or software used)
@@ -53,37 +47,54 @@ def get_book_info(fname):
       zip = zipfile.ZipFile(fname)
       # find the contents metafile
       txt = zip.read('META-INF/container.xml')	
-      tree = etree.fromstring(txt)
-      cfname = tree.xpath('n:rootfiles/n:rootfile/@full-path',namespaces=ns)[0]
+      tree = ElementTree.fromstring(txt)
+      n = 0
+      cfname = ""
+      while n < len(tree[0]):
+	tag = tree[0][n].tag
+	att = tree[0][n].attrib
+	if 'full-path' in att:
+		cfname = ("%s" % att)
+		cfname = cfname.split(',')[1].split(':')[1].strip('\' }')
+		print cfname
+	n = n + 1
+
       # grab the metadata block from the contents metafile		
       txt = zip.read(cfname)			
-      tree = etree.fromstring(txt)
+      tree = ElementTree.fromstring(txt)
     else:
       if (extn == "opf"):
 	txt = open(fname).read()
-        tree = etree.fromstring(txt)
+        tree = ElementTree.fromstring(txt)
       else:
         return ""
 					
-    p = tree.xpath('/pkg:package/pkg:metadata',namespaces=ns)[0]
     # repackage the data - not too happy with this as there can be
     # several "identifier", only one of which is an isbn, how can we tell?
     # I just strip formatting, check for length, and check is only digits 
     # except the last digit of an isbn10 may be 'X'
     res = {}
-    for s in ['title','language','creator']:
-        res[s] = p.xpath('dc:%s/text()'%(s),namespaces=ns)[0]
-	s='identifier'
-	isbn=""
-        for i in p.xpath('dc:identifier/text()',namespaces=ns):
-		i = re.sub('[- ]', '', i)
-		if len(i) == 13:
-		    if i.isdigit():
-			isbn = i
-		elif len(i) == 10:
-			if i[:8].isdigit():
-				isbn = i
-	res[s] = isbn
+    n = 0
+    while n < len(tree[0]):
+	tag = tree[0][n].tag.split('}')[1]
+	txt = tree[0][n].text
+	isbn = ""
+	if 'title' in tag.lower():
+		res['title'] = txt
+	elif 'language' in tag.lower():
+		res['language'] = txt
+	elif 'creator' in tag.lower():
+		res['creator'] = txt
+	elif 'identifier' in tag.lower():
+		if len(txt) == 13:
+		    if txt.isdigit():
+			isbn = txt
+		elif len(txt) == 10:
+			if txt[:8].isdigit():
+				isbn = txt
+		
+    		res['identifier'] = isbn
+	n = n + 1
     return res
 
 def getList(st):
