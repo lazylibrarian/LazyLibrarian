@@ -13,7 +13,7 @@ import lib.zipfile as zipfile
 from lib.mobi import Mobi 
 
 def get_book_info(fname):
-    # only handles epub, mobi and opf for now, 
+    # only handles epub, mobi and opf for now,
     # for pdf see below
     words = fname.split('.')
     extn = words[len(words)-1]
@@ -32,7 +32,7 @@ def get_book_info(fname):
     # most didn't have author, or had the wrong author
     # (author set to publisher, or software used)
     # so probably not much point in looking at pdfs
-    # 
+    #
     #if (extn == "pdf"):
     #	  pdf = PdfFileReader(open(fname, "rb"))
     #	  txt = pdf.getDocumentInfo()
@@ -42,7 +42,7 @@ def get_book_info(fname):
     #         res[s] = txt[s]
     #	  return res
 
-    if (extn == "epub"):	
+    if (extn == "epub"):
       # prepare to read from the .epub file
       zip = zipfile.ZipFile(fname)
       # find the contents metafile
@@ -68,10 +68,10 @@ def get_book_info(fname):
         tree = ElementTree.fromstring(txt)
       else:
         return ""
-					
+
     # repackage the data - not too happy with this as there can be
     # several "identifier", only one of which is an isbn, how can we tell?
-    # I just strip formatting, check for length, and check is only digits 
+    # I just strip formatting, check for length, and check is only digits
     # except the last digit of an isbn10 may be 'X'
     res = {}
     n = 0
@@ -103,7 +103,7 @@ def getList(st):
         my_splitter.whitespace_split = True
 	return list(my_splitter)
 
-##PAB fuzzy search for book in library, return LL bookid if found or zero if not, return bookid to more easily update status 
+##PAB fuzzy search for book in library, return LL bookid if found or zero if not, return bookid to more easily update status
 def find_book_in_db(myDB,author,book):
    	# prefer an exact match on author & book
         match = myDB.action("SELECT BookID FROM books where AuthorName=? and BookName=?",[author,book]).fetchone()
@@ -116,7 +116,7 @@ def find_book_in_db(myDB,author,book):
 		# Using hard-coded ratios for now, ratio high (>90), partial_ratio lower (>65)
 		# These are results that work well on my library, minimal false matches and no misses on books that should be matched
 		# Maybe make ratios configurable in config.ini later
-# 
+#
 		books = myDB.select('SELECT BookID,BookName FROM books where AuthorName="%s"' % author)
 		best_ratio = 0
 		best_partial = 0
@@ -140,7 +140,7 @@ def find_book_in_db(myDB,author,book):
 				best_partial = partial
 				partial_name = a_book['BookName']
 				partial_id = a_book['BookID']
-			
+
 			else:
 		 		if partial == best_partial:
 					# prefer the match closest to the left, ie prefer starting with a match and ignoring the rest
@@ -150,15 +150,15 @@ def find_book_in_db(myDB,author,book):
 						best_partial = partial
 						partial_name = a_book['BookName']
 						partial_id = a_book['BookID']
-			#		
+			#
 		if best_ratio > 90:
 			logger.debug("Fuzz match   ratio [%d] [%s] [%s]" % (best_ratio, book, ratio_name))
 			return(ratio_id)
-		if best_partial > 65:	
+		if best_partial > 65:
 			logger.debug("Fuzz match partial [%d] [%s] [%s]" % (best_partial, book, partial_name))
 			return(partial_id)
-	
-		logger.debug('Fuzz failed [%s - %s] ratio [%d,%s], partial [%d,%s]' % (author, book, best_ratio, ratio_name, best_partial, partial_name))	
+
+		logger.debug('Fuzz failed [%s - %s] ratio [%d,%s], partial [%d,%s]' % (author, book, best_ratio, ratio_name, best_partial, partial_name))
 		return 0
 
 def LibraryScan(dir=None):
@@ -171,19 +171,19 @@ def LibraryScan(dir=None):
 	if not os.path.isdir(dir):
 		logger.warn('Cannot find directory: %s. Not scanning' % dir.decode(lazylibrarian.SYS_ENCODING, 'replace'))
 		return
-	
+
 	myDB = database.DBConnection()
-	
+
 	myDB.action('drop table if exists stats')
 	myDB.action('create table stats ( authorname text, GR_book_hits int, GR_lang_hits int, LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int )')
 
 	new_authors = []
-	
+
 	logger.info('Scanning ebook directory: %s' % dir.decode(lazylibrarian.SYS_ENCODING, 'replace'))
 
 	book_list = []
 	new_book_count = 0
-	file_count = 0 
+	file_count = 0
 	book_exists = False
 
 	if (lazylibrarian.FULL_SCAN):
@@ -195,13 +195,13 @@ def LibraryScan(dir=None):
 			bookAuthor = book['AuthorName']
 			bookID = book['BookID']
 			bookfile = book['BookFile']
-			
+
 			if os.path.isfile(bookfile):
 				book_exists = True
 			else:
 				myDB.action('update books set Status=? where BookID=?',[status,bookID])
 				myDB.action('update books set BookFile="" where BookID=?',[bookID])
-				logger.info('Book %s updated as not found on disk' % bookfile)			
+				logger.info('Book %s updated as not found on disk' % bookfile)
 			#for book_type in getList(lazylibrarian.EBOOK_TYPE):
 			#	bookName = book['BookName']
 			#	bookAuthor = book['AuthorName']
@@ -212,7 +212,7 @@ def LibraryScan(dir=None):
 #
 			#	encoded_book_path = os.path.join(dir,dest_path,global_name + "." + book_type).encode(lazylibrarian.SYS_ENCODING)
 			#	if os.path.isfile(encoded_book_path):
-			#		book_exists = True	
+			#		book_exists = True
 			#if not book_exists:
 			#	myDB.action('update books set Status=? where AuthorName=? and BookName=?',[status,bookAuthor,bookName])
 			#	logger.info('Book %s updated as not found on disk' % encoded_book_path.decode(lazylibrarian.SYS_ENCODING, 'replace') )
@@ -222,7 +222,7 @@ def LibraryScan(dir=None):
 	# guess this was meant to save repeat-scans of the same directory
 	# if it contains multiple formats of the same book, but there was no code
 	# that looked at the array. renamed from latest to processed to make purpose clearer
-	processed_subdirectories = [] 
+	processed_subdirectories = []
 
 	matchString = ''
         for char in lazylibrarian.EBOOK_DEST_FILE:
@@ -239,7 +239,7 @@ def LibraryScan(dir=None):
                        booktypes = booktypes + '|'+book_type
         matchString = matchString.replace("\\$\\A\\u\\t\\h\\o\\r", "(?P<author>.*?)").replace("\\$\\T\\i\\t\\l\\e","(?P<book>.*?)")+'\.['+booktypes+']'
         pattern = re.compile(matchString, re.VERBOSE)
-                               
+
 	for r,d,f in os.walk(dir):
 		for directory in d[:]:
 			if directory.startswith("."):
@@ -248,7 +248,7 @@ def LibraryScan(dir=None):
 			if directory.startswith("_"):
 				d.remove(directory)
 		for files in f:
-		    file_count += 1 
+		    file_count += 1
 		    subdirectory = r.replace(dir,'')
 		    # Added new code to skip if we've done this directory before. Made this conditional with a switch in config.ini
 		    # in case user keeps multiple different books in the same subdirectory
@@ -256,7 +256,7 @@ def LibraryScan(dir=None):
 		        logger.debug("[%s] already scanned" % subdirectory)
                     else:
 			logger.info("[%s] Now scanning subdirectory %s" % (dir.decode(lazylibrarian.SYS_ENCODING, 'replace'), subdirectory.decode(lazylibrarian.SYS_ENCODING, 'replace')))
-						 
+
 # 			If this is a book, try to get author/title/isbn/language
 # 			If metadata.opf exists, use that
 # 			else if epub or mobi, read metadata from the book
@@ -278,10 +278,10 @@ def LibraryScan(dir=None):
 						isbn = res['identifier']
 						match = 1
 						logger.debug("file meta [%s] [%s] [%s] [%s]" % (isbn,language,author,book))
-					
-				except:	
+
+				except:
 					logger.debug("No metadata file in %s" % r)
-				
+
 				if not match:
 					# it's a book, but no external metadata found
 					# if it's an epub or a mobi we can try to read metadata from it
@@ -295,7 +295,7 @@ def LibraryScan(dir=None):
 							isbn = res['identifier']
 							match = 1
 							logger.debug("book meta [%s] [%s] [%s] [%s]" % (isbn,language,author,book))
-						
+
 			if not match:
 				match = pattern.match(files)
 				if match:
@@ -303,10 +303,10 @@ def LibraryScan(dir=None):
 					book = match.group("book")
 				else:
 					logger.debug("Pattern match failed [%s]" % files)
-				
+
 			else:
 			 	processed_subdirectories.append(subdirectory) # flag that we found a book in this subdirectory
-				# 
+				#
 				# If we have a valid looking isbn, and language != "Unknown", add it to cache
 				#
 				if not language:
@@ -319,7 +319,7 @@ def LibraryScan(dir=None):
 				if not isbn.isdigit():
 					isbn=""
 				if (isbn != "" and language != "Unknown"):
-					logger.debug("Found Language [%s] ISBN [%s]" % (language, isbn)) 
+					logger.debug("Found Language [%s] ISBN [%s]" % (language, isbn))
 					# we need to add it to language cache if not already there
 					if len(isbn) == 10:
 						isbnhead=isbn[0:3]
@@ -328,22 +328,22 @@ def LibraryScan(dir=None):
 					match = myDB.action('SELECT lang FROM languages where isbn = "%s"' % (isbnhead)).fetchone()
 					if not match:
 						myDB.action('insert into languages values ("%s", "%s")' % (isbnhead, language))
-						logger.debug("Cached Lang [%s] ISBN [%s]" % (language, isbnhead)) 
+						logger.debug("Cached Lang [%s] ISBN [%s]" % (language, isbnhead))
 					else:
-						logger.debug("Already cached Lang [%s] ISBN [%s]" % (language, isbnhead)) 
-				
-						    	
+						logger.debug("Already cached Lang [%s] ISBN [%s]" % (language, isbnhead))
+
+
 				# get authors name in a consistent format
 				if ("," in author):	# "surname, forename"
 					words = author.split(',')
 					author = words[1].strip() + ' ' + words[0].strip() # "forename surname"
-				author = author.replace('. ',' ')	
-				author = author.replace('.',' ')				
-				author = author.replace('  ',' ')	
-				
-				# Check if the author exists, and import the author if not,  
+				author = author.replace('. ',' ')
+				author = author.replace('.',' ')
+				author = author.replace('  ',' ')
+
+				# Check if the author exists, and import the author if not,
 				# before starting any complicated book-name matching to save repeating the search
-				# 						
+				#
 			 	check_exist_author = myDB.action("SELECT * FROM authors where AuthorName=?",[author]).fetchone()
 			 	if not check_exist_author and lazylibrarian.ADD_AUTHOR:
 					# no match for supplied author, but we're allowed to add new ones
@@ -354,12 +354,12 @@ def LibraryScan(dir=None):
 					except:
 						logger.error("Error finding author id for [%s]" % author)
 						continue
-				
+
 					# only try to add if GR data matches found author data
 					# not sure what this is for, never seems to fail??
 					if author_gr:
 						authorname = author_gr['authorname']
-						
+
 						# "J.R.R. Tolkien" is the same person as "J. R. R. Tolkien" and "J R R Tolkien"
 						match_auth = author.replace('.','_')
 	                               	 	match_auth = match_auth.replace(' ','_')
@@ -367,20 +367,20 @@ def LibraryScan(dir=None):
 						match_name = authorname.replace('.','_')
 	                               	 	match_name = match_name.replace(' ','_')
 	                                	match_name = match_name.replace('__','_')
-	
+
 						# allow a degree of fuzziness to cater for different accented character handling.
-						# some author names have accents, 
+						# some author names have accents,
 						# filename may have the accented or un-accented version of the character
 						# The (currently non-configurable) value of fuzziness works for one accented character
 						# We stored GoodReads unmodified author name in author_gr, so store in LL db under that
 						match_fuzz = fuzz.ratio(match_auth, match_name)
-						if (match_fuzz < 90):						
+						if (match_fuzz < 90):
 							logger.info("Failed to match author [%s] fuzz [%d]" % (author, match_fuzz))
 							logger.info("match author [%s] authorname [%s]" % (match_auth, match_name))
-							
+
 						# To save loading hundreds of books by unknown authors at GR or GB, ignore if author "Unknown"
 						if (author != "Unknown") and (match_fuzz >= 90):
-							# use "intact" name for author that we stored in 
+							# use "intact" name for author that we stored in
 							# GR author_dict, not one of the various mangled versions
 							# otherwise the books appear to be by a different author!
 							author = author_gr['authorname']
@@ -395,11 +395,11 @@ def LibraryScan(dir=None):
 									check_exist_author = myDB.action("SELECT * FROM authors where AuthorName=?",[author]).fetchone()
 								except:
 									continue
-							 					
+
 				# check author exists in db, either newly loaded or already there
 			 	if not check_exist_author:
 					logger.info("Failed to match author [%s] in database" % author)
-				else:			
+				else:
 					# author exists, check if this book by this author is in our database
 	                		bookid = find_book_in_db(myDB, author, book)
 	 				if bookid:
@@ -413,7 +413,7 @@ def LibraryScan(dir=None):
 							myDB.action('UPDATE books set BookFile=? where BookID=?',[book_file,bookid])
 							new_book_count += 1
 
-				
+
 	cachesize = myDB.action("select count(*) from languages").fetchone()
 	logger.info("%s new/modified books found and added to the database" % new_book_count)
 	logger.info("%s files processed" % file_count)
@@ -432,12 +432,12 @@ def LibraryScan(dir=None):
 	logger.info("ISBN Language cache holds %s entries" % cachesize['count(*)'])
 	stats = len(myDB.select('select BookID from Books where status=? and BookLang=?',['Open','Unknown']))
 	logger.info("There are %s books in your library with unknown language" % stats)
-		
+
 	logger.info('Updating %i authors' % len(new_authors))
 	for auth in new_authors:
 		havebooks = len(myDB.select('select BookName from Books where status=? and AuthorName=?',['Open',auth]))
 		myDB.action('UPDATE authors set HaveBooks=? where AuthorName=?',[havebooks,auth])
 		totalbooks = len(myDB.select('select BookName from Books where status!=? and AuthorName=?',['Ignored',auth]))
-		myDB.action('UPDATE authors set UnignoredBooks=? where AuthorName=?',[totalbooks,auth]) 
-		
+		myDB.action('UPDATE authors set UnignoredBooks=? where AuthorName=?',[totalbooks,auth])
+
 	logger.info('Library scan complete')

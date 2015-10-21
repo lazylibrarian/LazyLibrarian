@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
+<<<<<<< HEAD
 # vi:tabstop=4:expandtab:sw=4
+=======
+>>>>>>> 0e86a10a41d8af04cb8edf078a5055f7c45fe01f
 """Transliterate Unicode text into plain 7-bit ASCII.
 
 Example usage:
@@ -40,6 +43,7 @@ def unidecode(string):
         if codepoint < 0x80: # Basic ASCII
             retval.append(str(char))
             continue
+<<<<<<< HEAD
         
         if codepoint > 0xeffff:
             continue # Characters in Private Use Area and above are ignored
@@ -49,6 +53,12 @@ def unidecode(string):
                             "You might be using a narrow Python build." % (char,),
                             RuntimeWarning, 2)
 
+=======
+
+        if codepoint > 0xeffff:
+            continue # Characters in Private Use Area and above are ignored
+
+>>>>>>> 0e86a10a41d8af04cb8edf078a5055f7c45fe01f
         section = codepoint >> 8   # Chop off the last two hex digits
         position = codepoint % 256 # Last two hex digits
 
@@ -56,7 +66,11 @@ def unidecode(string):
             table = Cache[section]
         except KeyError:
             try:
+<<<<<<< HEAD
                 mod = __import__('unidecode.x%03x'%(section), globals(), locals(), ['data'])
+=======
+                mod = __import__('unidecode.x%03x'%(section), [], [], ['data'])
+>>>>>>> 0e86a10a41d8af04cb8edf078a5055f7c45fe01f
             except ImportError:
                 Cache[section] = None
                 continue   # No match: ignore this character and carry on.

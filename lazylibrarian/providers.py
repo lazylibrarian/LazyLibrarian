@@ -114,7 +114,7 @@ def OLDUsenetCrawler(book=None):
         }
     
     #sample request
-    #http://www.usenet-crawler.com/api?apikey=7xxxxxxxxxxxxxyyyyyyyyyyyyyyzzz4&t=book&author=Daniel
+    #https://www.usenet-crawler.com/api?apikey=7xxxxxxxxxxxxxyyyyyyyyyyyyyyzzz4&t=book&author=Daniel
 
     logger.debug("%s" % params)
     
@@ -300,18 +300,18 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None,
     #    <item>
     #       <title>David Gemmell - Troy 03 - Fall of Kings</title>
     #       <guid isPermaLink="true">
-    #           http://www.usenet-crawler.com/details/091c8c0e18ca34201899b91add52e8c0
+    #           https://www.usenet-crawler.com/details/091c8c0e18ca34201899b91add52e8c0
     #       </guid>
     #       <link>
-    #           http://www.usenet-crawler.com/getnzb/091c8c0e18ca34201899b91add52e8c0.nzb&i=155518&r=78c0509bc6bb91742ae0a0b6231e75e4
+    #           https://www.usenet-crawler.com/getnzb/091c8c0e18ca34201899b91add52e8c0.nzb&i=155518&r=78c0509bc6bb91742ae0a0b6231e75e4
     #       </link>
     #       <comments>
-    #           http://www.usenet-crawler.com/details/091c8c0e18ca34201899b91add52e8c0#comments
+    #           https://www.usenet-crawler.com/details/091c8c0e18ca34201899b91add52e8c0#comments
     #       </comments>
     #       <pubDate>Fri, 11 Jan 2013 16:49:34 +0100</pubDate>
     #       <category>Books > Ebook</category>
     #       <description>David Gemmell - Troy 03 - Fall of Kings</description>
-    #       <enclosure url="http://www.usenet-crawler.com/getnzb/091c8c0e18ca34201899b91add52e8c0.nzb&i=155518&r=78c0509bc6bb91742ae0a0b6231e75e4" length="4909563" type="application/x-nzb"/>
+    #       <enclosure url="https://www.usenet-crawler.com/getnzb/091c8c0e18ca34201899b91add52e8c0.nzb&i=155518&r=78c0509bc6bb91742ae0a0b6231e75e4" length="4909563" type="application/x-nzb"/>
     #       <newznab:attr name="category" value="7000"/>
     #       <newznab:attr name="category" value="7020"/>
     #       <newznab:attr name="size" value="4909563"/>
@@ -322,18 +322,18 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None,
     #<item>
     #   <title>David Gemmell - [Troy 03] - Fall of Kings</title>
     #   <guid isPermaLink="true">
-    #       http://www.usenet-crawler.com/details/5d7394b2386683d079d8bd8f16652b18
+    #       https://www.usenet-crawler.com/details/5d7394b2386683d079d8bd8f16652b18
     #   </guid>
     #   <link>
-    #       http://www.usenet-crawler.com/getnzb/5d7394b2386683d079d8bd8f16652b18.nzb&i=155518&r=78c0509bc6bb91742ae0a0b6231e75e4
+    #       https://www.usenet-crawler.com/getnzb/5d7394b2386683d079d8bd8f16652b18.nzb&i=155518&r=78c0509bc6bb91742ae0a0b6231e75e4
     #   </link>
     #   <comments>
-    #       http://www.usenet-crawler.com/details/5d7394b2386683d079d8bd8f16652b18#comments
+    #       https://www.usenet-crawler.com/details/5d7394b2386683d079d8bd8f16652b18#comments
     #   </comments>
     #   <pubDate>Mon, 27 May 2013 02:12:09 +0200</pubDate>
     #   <category>Books > Ebook</category>
     #   <description>David Gemmell - [Troy 03] - Fall of Kings</description>
-    #   <enclosure url="http://www.usenet-crawler.com/getnzb/5d7394b2386683d079d8bd8f16652b18.nzb&i=155518&r=78c0509bc6bb91742ae0a0b6231e75e4" length="4909563" type="application/x-nzb"/>
+    #   <enclosure url="https://www.usenet-crawler.com/getnzb/5d7394b2386683d079d8bd8f16652b18.nzb&i=155518&r=78c0509bc6bb91742ae0a0b6231e75e4" length="4909563" type="application/x-nzb"/>
     #   <newznab:attr name="category" value="7000"/>
     #   <newznab:attr name="category" value="7020"/>
     #   <newznab:attr name="size" value="4909563"/>
