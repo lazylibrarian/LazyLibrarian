@@ -61,10 +61,10 @@ def searchmagazines(mags=None):
 			old_date = 0
 			total_nzbs = 0
 			new_date = 0
-			for nzb in resultlist:
+			for nzb in resultlist:                		
 				total_nzbs = total_nzbs + 1
 				bookid = nzb['bookid']
-				nzbtitle = nzb['nzbtitle']
+				nzbtitle = (u"%s" % nzb['nzbtitle'])
 				nzburl = nzb['nzburl']
 				nzbprov = nzb['nzbprov']
 				nzbdate_temp = nzb['nzbdate']
