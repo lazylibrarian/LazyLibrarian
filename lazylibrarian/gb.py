@@ -471,7 +471,7 @@ class GoogleBooks:
 			    logger.info("[%s] removed book for bad characters" % (bookname))
 			    removedResults = removedResults + 1
 
-        except Keyerror:
+        except KeyError:
             pass
 
         logger.info('[%s] The Google Books API was hit %s times to populate book list' % (authorname, str(api_hits)))
