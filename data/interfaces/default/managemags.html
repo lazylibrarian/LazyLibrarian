@@ -11,6 +11,7 @@
 
 <%def name="body()">
     <br><br>
+<!-- 
     <form action="manage" method="get">
     Manage magazines with status <select name="whichStatus">
         %for item in ['Skipped', 'Wanted', 'Snatched', 'Have', 'Ignored']:
@@ -24,6 +25,7 @@
     <input  class="btn" type="submit" value="Manage" />
     </form>
     <br>
+-->
     %if len(books) > 0:
     <h3>Magazines with status ${whichStatus}</h3>
         <br>

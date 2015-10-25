@@ -23,7 +23,7 @@ def searchmagazines(mags=None):
 	else:
 		searchmags = []
 		for magazine in mags:
-			searchmags_temp = myDB.select('SELECT Title, Frequency, LastAcquired, IssueDate from magazines WHERE Title=? AND Status="Active"', [magazine['bookid']])
+			searchmags_temp = myDB.select('SELECT Title, Frequency, LastAcquired, IssueDate from magazines WHERE Title="%s" AND Status="Active"' % (magazine['bookid']))
 			for terms in searchmags_temp:
 				searchmags.append(terms)
 
@@ -58,13 +58,15 @@ def searchmagazines(mags=None):
 
 		else:
 			bad_regex = 0
+			bad_date = 0
 			old_date = 0
 			total_nzbs = 0
 			new_date = 0
 			for nzb in resultlist:                		
 				total_nzbs = total_nzbs + 1
 				bookid = nzb['bookid']
-				nzbtitle = (u"%s" % nzb['nzbtitle'])
+				nzbtitle = (u'%s' % nzb['nzbtitle'])
+				nzbtitle = nzbtitle.replace('"','') # suppress " in titles
 				nzburl = nzb['nzburl']
 				nzbprov = nzb['nzbprov']
 				nzbdate_temp = nzb['nzbdate']
@@ -72,14 +74,14 @@ def searchmagazines(mags=None):
 				nzbsize = str(round(float(nzbsize_temp) / 1048576,2))+' MB'
 				nzbdate = formatter.nzbdate2format(nzbdate_temp)
 
-				checkifmag = myDB.select('SELECT * from magazines WHERE Title=?', [bookid])
+				checkifmag = myDB.select('SELECT * from magazines WHERE Title="%s"' % bookid)
 				if checkifmag:
 					for results in checkifmag:
 						control_date = results['IssueDate']
 						frequency = results['Frequency']
 						regex = results['Regex']
 
-					nzbtitle_formatted = nzb['nzbtitle'].replace('.',' ').replace('-',' ').replace('/',' ').replace('+',' ').replace('_',' ').replace('(','').replace(')','')
+					nzbtitle_formatted = nzbtitle.replace('.',' ').replace('-',' ').replace('/',' ').replace('+',' ').replace('_',' ').replace('(','').replace(')','')
 					#Need to make sure that substrings of magazine titles don't get found (e.g. Maxim USA will find Maximum PC USA)
 					keyword_check = nzbtitle_formatted.replace(bookid,'')
 					#remove extra spaces if they're in a row
@@ -131,19 +133,19 @@ def searchmagazines(mags=None):
 									int(newdatish_regexB)
 									newdatish = regexB_year+'-'+regexB_month+'-'+regexB_day
 								except:
-									#regexC = YYYY-MM
-									regexC_last = nzbtitle_exploded[len(nzbtitle_exploded)-1]
-									regexC_exploded = regexC_last.split('-')
-									if len(regexC_exploded) == 2:
-										regexC_year = regexC_exploded[0]
-										regexC_month = regexC_exploded[1].zfill(2)
+									#regexC = YYYY MM or YYYY MM DD
+									regxC_temp = nzbtitle_exploded[len(nzbtitle_exploded)-2]
+									if regxC_temp.isdigit():
+									    regxC_temp = int(regxC_temp)
+									    if regxC_temp > 12: # not MM, could be YYYY
+										regexC_year = nzbtitle_exploded[len(nzbtitle_exploded)-2]
+										regexC_month = nzbtitle_exploded[len(nzbtitle_exploded)-1].zfill(2)
 										regexC_day = '01'
-										newdatish_regexC = regexC_year+regexC_month+regexC_day
-									elif len(regexC_exploded) == 3:
-										regexC_year = regexC_exploded[0]
-										regexC_month = regexC_exploded[1].zfill(2)
-										regexC_day = regexC_exploded[2].zfill(2)
-										newdatish_regexC = regexC_year+regexC_month+regexC_day
+									    else:
+										regexC_year = nzbtitle_exploded[len(nzbtitle_exploded)-3]
+										regexC_month = nzbtitle_exploded[len(nzbtitle_exploded)-2].zfill(2)
+										regexC_day = nzbtitle_exploded[len(nzbtitle_exploded)-1].zfill(2)
+									    newdatish_regexC = regexC_year+regexC_month+regexC_day
 									else:
 										newdatish_regexC = 'Invalid'
 
@@ -152,14 +154,16 @@ def searchmagazines(mags=None):
 										newdatish = regexC_year+'-'+regexC_month+'-'+regexC_day
 									except:
 										logger.debug('NZB %s not in proper date format.' % nzbtitle_formatted)
-										bad_regex = bad_regex + 1
-										continue
+										bad_date = bad_date + 1
+										# allow issues with good name but bad date to be included so user can manually select them
+										newdatish = "1970-01-01" # provide a fake date for bad-date issues
+										#continue
 
 						else:
 							continue
 
 						#Don't want to overwrite status = Skipped for NZBs that have been previously found
-						wanted_status = myDB.select('SELECT * from wanted WHERE NZBtitle=?', [nzbtitle])
+						wanted_status = myDB.select('SELECT * from wanted WHERE NZBtitle="%s"' % nzbtitle)
 						if wanted_status:
 							for results in wanted_status:
 								status = results['Status']
@@ -198,11 +202,12 @@ def searchmagazines(mags=None):
 							logger.debug('This issue of %s is new, downloading' % nzbtitle_formatted)
 							new_date = new_date + 1
 						else:
-							logger.debug('This issue of %s is old; skipping.' % nzbtitle_formatted)
-							old_date = old_date + 1
+							if newdatish != "1970-01-01": # this is our fake date for ones we can't decipher
+								logger.debug('This issue of %s is old; skipping.' % nzbtitle_formatted)
+								old_date = old_date + 1
 					else:
 						logger.debug('NZB [%s] does not completely match search term [%s].' % (nzbtitle, bookid))
 						bad_regex = bad_regex + 1
 
-			logger.info('Found %s NZBs for %s.  %s are new, %s are old, and %s fail name or date matching' % (total_nzbs, bookid, new_date, old_date, bad_regex) )
+			logger.info('Found %s NZBs for %s.  %s are new, %s are old, %s fail date, %s fail name matching' % (total_nzbs, bookid, new_date, old_date, bad_date, bad_regex) )
 	return maglist

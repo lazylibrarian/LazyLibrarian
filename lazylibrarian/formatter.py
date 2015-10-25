@@ -30,43 +30,67 @@ def nzbdate2format(nzbdate):
     return year+'-'+month+'-'+day
 
 def month2num(month):
+# return month number given month name in English or current locale
     if month == "January":
-        ret_value = "01"
+        return "01"
     elif month == "February":
-        ret_value = "02"
+        return "02"
     elif month == "March":
-        ret_value = "03"
+        return "03"
     elif month == "April":
-        ret_value = "04"
+        return "04"
     elif month == "May":
-        ret_value = "05"
+        return "05"
     elif month == "June":
-        ret_value = "06"
+        return "06"
     elif month == "July":
-        ret_value = "07"
+        return "07"
     elif month == "August":
-        ret_value = "08"
+        return "08"
     elif month == "September":
-        ret_value = "09"
+        return "09"
     elif month == "October":
-        ret_value = "10"
+        return "10"
     elif month == "November":
-        ret_value = "11"
+        return "11"
     elif month == "December":
-        ret_value = "12"
+        return "12"
     elif month == "Winter":
-        ret_value = "01"
+        return "01"
     elif month == "Spring":
-        ret_value = "04"
+        return "04"
     elif month == "Summer":
-        ret_value = "07"
+        return "07"
     elif month == "Fall":
-        ret_value = "10"
+        return "10"
     elif month == "Autumn":
-        ret_value = "10"
-    else:
-        ret_value = "Invalid"
-    return ret_value
+        return "10"
+    elif month == datetime.date(2015, 1, 1).strftime("%B")
+	return "01"
+    elif month == datetime.date(2015, 2, 1).strftime("%B")
+	return "02"
+    elif month == datetime.date(2015, 3, 1).strftime("%B")
+	return "03"
+    elif month == datetime.date(2015, 4, 1).strftime("%B")
+	return "04"
+    elif month == datetime.date(2015, 5, 1).strftime("%B")
+	return "05"
+    elif month == datetime.date(2015, 6, 1).strftime("%B")
+	return "06"
+    elif month == datetime.date(2015, 7, 1).strftime("%B")
+	return "07"
+    elif month == datetime.date(2015, 8, 1).strftime("%B")
+	return "08"
+    elif month == datetime.date(2015, 9, 1).strftime("%B")
+	return "09"
+    elif month == datetime.date(2015, 10, 1).strftime("%B")
+	return "10"
+    elif month == datetime.date(2015, 11, 1).strftime("%B")
+	return "11"
+    elif month == datetime.date(2015, 12, 1).strftime("%B")
+	return "12"
+    else:	
+        return "Invalid" 
 
 def datecompare(nzbdate, control_date):
     y1 = int(nzbdate.split('-')[0])

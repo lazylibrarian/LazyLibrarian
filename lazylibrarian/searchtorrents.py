@@ -47,7 +47,7 @@ def search_tor_book(books=None, mags=None):
         searchbooks = []
         if books != False:
             for book in books:
-                searchbook = myDB.select('SELECT BookID, AuthorName, BookName from books WHERE BookID=? AND Status="Wanted"', [book['bookid']])
+                searchbook = myDB.select('SELECT BookID, AuthorName, BookName from books WHERE BookID="%s" AND Status="Wanted"' % book['bookid'])
                 for terms in searchbook:
                     searchbooks.append(terms)
 
@@ -124,7 +124,7 @@ def search_tor_book(books=None, mags=None):
                     }
                     myDB.upsert("wanted", newValueDict, controlValueDict)
 
-                    snatchedbooks = myDB.action('SELECT * from books WHERE BookID=? and Status="Snatched"', [bookid]).fetchone()
+                    snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' % bookid).fetchone()
                     if not snatchedbooks:
                         snatch = DownloadMethod(bookid, tor_prov, tor_Title, tor_url)
                         notifiers.notify_snatch(tor_Title+' at '+formatter.now()) 
@@ -199,12 +199,12 @@ def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         return False
 
     if download:
-        logger.debug('Torrent file has been downloaded from ' + str(tor_url))
-        myDB.action('UPDATE books SET status = "Snatched" WHERE BookID=?', [bookid])
-        myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl=?', [tor_url])
+        logger.debug(u'Torrent file has been downloaded from %s' % tor_url)
+        myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
+        myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl="%s"' % tor_url)
     else:
         logger.error(u'Failed to download torrent @ <a href="%s">%s</a>' % (tor_url, tor_url))
-        myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl=?', [tor_url])
+        myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl="%s"' % tor_url)
 
         
 def CalcTorrentHash(torrent):

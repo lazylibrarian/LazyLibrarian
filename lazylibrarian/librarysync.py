@@ -104,7 +104,7 @@ def getList(st):
 ##PAB fuzzy search for book in library, return LL bookid if found or zero if not, return bookid to more easily update status
 def find_book_in_db(myDB,author,book):
    	# prefer an exact match on author & book
-        match = myDB.action("SELECT BookID FROM books where AuthorName=? and BookName=?",[author,book]).fetchone()
+        match = myDB.action('SELECT BookID FROM books where AuthorName="%s" and BookName="%s"' % (author,book)).fetchone()
     	if match:
 		logger.debug('Exact match [%s]' % book)
       		return match['BookID']
@@ -185,7 +185,7 @@ def LibraryScan(dir=None):
 	book_exists = False
 
 	if (lazylibrarian.FULL_SCAN):
-		books = myDB.select('select AuthorName, BookName, BookFile, BookID from books where Status=?',[u'Open'])
+		books = myDB.select('select AuthorName, BookName, BookFile, BookID from books where Status="Open"')
 		status = lazylibrarian.NOTFOUND_STATUS
 		logger.info('Missing books will be marked as %s' % status)
 		for book in books:
@@ -197,8 +197,8 @@ def LibraryScan(dir=None):
 			if os.path.isfile(bookfile):
 				book_exists = True
 			else:
-				myDB.action('update books set Status=? where BookID=?',[status,bookID])
-				myDB.action('update books set BookFile="" where BookID=?',[bookID])
+				myDB.action('update books set Status="%s" where BookID="%s"' % (status,bookID))
+				myDB.action('update books set BookFile="" where BookID="%s"' % bookID)
 				logger.info('Book %s updated as not found on disk' % bookfile)
 			#for book_type in getList(lazylibrarian.EBOOK_TYPE):
 			#	bookName = book['BookName']
@@ -340,7 +340,7 @@ def LibraryScan(dir=None):
 				# Check if the author exists, and import the author if not,
 				# before starting any complicated book-name matching to save repeating the search
 				#
-			 	check_exist_author = myDB.action("SELECT * FROM authors where AuthorName=?",[author]).fetchone()
+			 	check_exist_author = myDB.action('SELECT * FROM authors where AuthorName="%s"' % author).fetchone()
 			 	if not check_exist_author and lazylibrarian.ADD_AUTHOR:
 					# no match for supplied author, but we're allowed to add new ones
 
@@ -381,14 +381,14 @@ def LibraryScan(dir=None):
 							# otherwise the books appear to be by a different author!
 							author = author_gr['authorname']
 							# this new authorname may already be in the database, so check again
-							check_exist_author = myDB.action("SELECT * FROM authors where AuthorName=?",[author]).fetchone()
+							check_exist_author = myDB.action('SELECT * FROM authors where AuthorName="%s"' % author).fetchone()
 			 				if not check_exist_author:
 								logger.info("Adding new author [%s]" % author)
 								if author not in new_authors:
 									new_authors.append(author)
 								try:
 									importer.addAuthorToDB(author)
-									check_exist_author = myDB.action("SELECT * FROM authors where AuthorName=?",[author]).fetchone()
+									check_exist_author = myDB.action('SELECT * FROM authors where AuthorName="%s"' % author).fetchone()
 								except:
 									continue
 
@@ -400,13 +400,13 @@ def LibraryScan(dir=None):
 	                		bookid = find_book_in_db(myDB, author, book)
 	 				if bookid:
 						# check if book is already marked as "Open" (if so, we already had it)
-						check_status = myDB.action('SELECT Status from books where BookID=?',[bookid]).fetchone()
+						check_status = myDB.action('SELECT Status from books where BookID="%s"' % bookid).fetchone()
 						if check_status['Status'] != 'Open':
 							# update status as we've got this book
-							myDB.action('UPDATE books set Status=? where BookID=?',[u'Open',bookid])
+							myDB.action('UPDATE books set Status="Open" where BookID="%s"' % bookid)
 							book_file = os.path.join(r,files).encode(lazylibrarian.SYS_ENCODING)
 							# update book location so we can check if it gets removed, or maybe allow click-to-open?
-							myDB.action('UPDATE books set BookFile=? where BookID=?',[book_file,bookid])
+							myDB.action('UPDATE books set BookFile="%s" where BookID="%s"' % (book_file,bookid))
 							new_book_count += 1
 
 
@@ -426,14 +426,14 @@ def LibraryScan(dir=None):
 	logger.info("Unwanted characters removed %s books" % stats['sum(bad_char)'])
 	logger.info("Unable to cache %s books with missing ISBN" % stats['sum(uncached)'])
 	logger.info("ISBN Language cache holds %s entries" % cachesize['count(*)'])
-	stats = len(myDB.select('select BookID from Books where status=? and BookLang=?',['Open','Unknown']))
+	stats = len(myDB.select('select BookID from Books where status="Open" and BookLang="Unknown"'))
 	logger.info("There are %s books in your library with unknown language" % stats)
 
 	logger.info('Updating %i authors' % len(new_authors))
 	for auth in new_authors:
-		havebooks = len(myDB.select('select BookName from Books where status=? and AuthorName=?',['Open',auth]))
-		myDB.action('UPDATE authors set HaveBooks=? where AuthorName=?',[havebooks,auth])
-		totalbooks = len(myDB.select('select BookName from Books where status!=? and AuthorName=?',['Ignored',auth]))
-		myDB.action('UPDATE authors set UnignoredBooks=? where AuthorName=?',[totalbooks,auth])
+		havebooks = len(myDB.select('select BookName from Books where status="%s" and AuthorName="%s"' % ('Open',auth)))
+		myDB.action('UPDATE authors set HaveBooks="%s" where AuthorName="%s"' % (havebooks,auth))
+		totalbooks = len(myDB.select('select BookName from Books where status!="%s" and AuthorName="%s"' % ('Ignored',auth)))
+		myDB.action('UPDATE authors set UnignoredBooks="%s" where AuthorName="%s"' % (totalbooks,auth))
 
 	logger.info('Library scan complete')

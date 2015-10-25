@@ -821,8 +821,8 @@ def dbcheck():
         if author:
             logger.info('Removing un-named author from database')
             authorid = author[0]["AuthorID"];
-            myDB.action('DELETE from authors WHERE AuthorID=?', [authorid])
-            myDB.action('DELETE from books WHERE AuthorID=?', [authorid])
+            myDB.action('DELETE from authors WHERE AuthorID="%s"' % authorid)
+            myDB.action('DELETE from books WHERE AuthorID="%s"' % authorid)
     except Exception, z:
         logger.info('Error: ' + str(z))
 
