@@ -43,7 +43,7 @@ def search_nzb_book(books=None, mags=None):
         searchbooks = []
         if books != False:
             for book in books:
-                searchbook = myDB.select('SELECT BookID, AuthorName, BookName from books WHERE BookID=? AND Status="Wanted"', [book['bookid']])
+                searchbook = myDB.select('SELECT BookID, AuthorName, BookName from books WHERE BookID="%s" AND Status="Wanted"' % book['bookid'])
                 for terms in searchbook:
                     searchbooks.append(terms)
 
@@ -125,7 +125,7 @@ def search_nzb_book(books=None, mags=None):
                     }
                     myDB.upsert("wanted", newValueDict, controlValueDict)
 
-                    snatchedbooks = myDB.action('SELECT * from books WHERE BookID=? and Status="Snatched"', [bookid]).fetchone()
+                    snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' % bookid).fetchone()
                     if not snatchedbooks:
                         snatch = DownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
                         notifiers.notify_snatch(nzbTitle+' at '+formatter.now()) 
@@ -197,11 +197,11 @@ def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
 
     if download:
         logger.debug('Nzbfile has been downloaded from ' + str(nzburl))
-        myDB.action('UPDATE books SET status = "Snatched" WHERE BookID=?', [bookid])
-        myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl=?', [nzburl])
+        myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
+        myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl="%s"' % nzburl)
     else:
         logger.error(u'Failed to download nzb @ <a href="%s">%s</a>' % (nzburl, lazylibrarian.NEWZNAB_HOST))
-        myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl=?', [nzburl])
+        myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl="%s"' % nzburl)
 
 
 

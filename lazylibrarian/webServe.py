@@ -52,7 +52,7 @@ class WebInterface(object):
         languages = myDB.select('SELECT DISTINCT BookLang from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"')
 
         if BookLang:
-            books = myDB.select('SELECT * from books WHERE BookLang=? AND NOT Status="Skipped" AND NOT STATUS="Ignored"', [BookLang])
+            books = myDB.select('SELECT * from books WHERE BookLang="%s" AND NOT Status="Skipped" AND NOT STATUS="Ignored"' % BookLang)
         else:
             books = myDB.select('SELECT * from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"')
 
@@ -391,7 +391,7 @@ class WebInterface(object):
 
     def pauseAuthor(self, AuthorID):
         myDB = database.DBConnection()
-        authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID=?', [AuthorID])
+        authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         AuthorName = authorsearch[0]['AuthorName']
         logger.info("Pausing author: %s" % AuthorName)
 
@@ -404,7 +404,7 @@ class WebInterface(object):
 
     def resumeAuthor(self, AuthorID):
         myDB = database.DBConnection()
-        authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID=?', [AuthorID])
+        authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         AuthorName = authorsearch[0]['AuthorName']
         logger.info("Resuming author: %s" % AuthorName)
 
@@ -417,12 +417,12 @@ class WebInterface(object):
 
     def deleteAuthor(self, AuthorID):
         myDB = database.DBConnection()
-        authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID=?', [AuthorID])
+        authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         AuthorName = authorsearch[0]['AuthorName']
         logger.info("Removing all references to author: %s" % AuthorName)
 
-        myDB.action('DELETE from authors WHERE AuthorID=?', [AuthorID])
-        myDB.action('DELETE from books WHERE AuthorID=?', [AuthorID])
+        myDB.action('DELETE from authors WHERE AuthorID="%s"' % AuthorID)
+        myDB.action('DELETE from books WHERE AuthorID="%s"' % AuthorID)
         raise cherrypy.HTTPRedirect("home")
     deleteAuthor.exposed = True
 
@@ -449,17 +449,17 @@ class WebInterface(object):
     def addBook(self, bookid=None):
         myDB = database.DBConnection()
 
-        booksearch = myDB.select("SELECT * from books WHERE BookID=?", [bookid])
+        booksearch = myDB.select('SELECT * from books WHERE BookID="%s"' % bookid)
         if booksearch:
             myDB.upsert("books", {'Status': 'Wanted'}, {'BookID': bookid})
             for book in booksearch:
                 AuthorName = book['AuthorName']
-                authorsearch = myDB.select("SELECT * from authors WHERE AuthorName=?", [AuthorName])
+                authorsearch = myDB.select('SELECT * from authors WHERE AuthorName="%s"' % AuthorName)
                 if authorsearch:
                     #update authors needs to be updated every time a book is marked differently
-                    lastbook = myDB.action("SELECT BookName, BookLink, BookDate from books WHERE AuthorName='%s' AND Status != 'Ignored' order by BookDate DESC" % AuthorName).fetchone()
-                    unignoredbooks = myDB.select("SELECT COUNT(BookName) as unignored FROM books WHERE AuthorName='%s' AND Status != 'Ignored'" % AuthorName)
-                    bookCount = myDB.select("SELECT COUNT(BookName) as counter FROM books WHERE AuthorName='%s'" % AuthorName)  
+                    lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorName="%s" AND Status != "Ignored" order by BookDate DESC' % AuthorName).fetchone()
+                    unignoredbooks = myDB.select('SELECT COUNT(BookName) as unignored FROM books WHERE AuthorName="%s" AND Status != "Ignored"' % AuthorName)
+                    bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE AuthorName="%s"' % AuthorName)  
                     countbooks = myDB.action('SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' % AuthorName).fetchone()
                     havebooks = int(countbooks[0]) 
 
@@ -506,7 +506,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
 
         # find book
-        bookdata = myDB.select('SELECT * from books WHERE BookID=?', [bookid])
+        bookdata = myDB.select('SELECT * from books WHERE BookID="%s"' % bookid)
         if bookdata:
             authorName = bookdata[0]["AuthorName"];
             bookName = bookdata[0]["BookName"];
@@ -530,7 +530,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
 
         # find book
-        bookdata = myDB.select('SELECT * from magazines WHERE Title=?', [bookid])
+        bookdata = myDB.select('SELECT * from magazines WHERE Title="%s"' % bookid)
         if bookdata:
             Title = bookdata[0]["Title"];
             IssueDate = bookdata[0]["IssueDate"];
@@ -554,7 +554,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
 
         # find book
-        bookdata = myDB.select("SELECT * from books WHERE BookID='%s'" % bookid)
+        bookdata = myDB.select('SELECT * from books WHERE BookID="%s"' % bookid)
         if bookdata:
             AuthorName = bookdata[0]["AuthorName"];
 
@@ -585,29 +585,29 @@ class WebInterface(object):
                     controlValueDict = {'BookID': bookid}
                     newValueDict = {'Status': action}
                     myDB.upsert("books", newValueDict, controlValueDict)
-                    title = myDB.select("SELECT * from books WHERE BookID = ?", [bookid])
+                    title = myDB.select('SELECT * from books WHERE BookID = "%s"' % bookid)
                     for item in title:
                         bookname = item['BookName']
-                    logger.info('Status set to %s for %s' % (action, bookname))
+                        logger.info('Status set to "%s" for "%s"' % (action, bookname))
               
                 else:
-                    authorsearch = myDB.select("SELECT * from books WHERE BookID = ?", [bookid])
+                    authorsearch = myDB.select('SELECT * from books WHERE BookID = "%s"' % bookid)
                     for item in authorsearch:
                         AuthorName = item['AuthorName']
                         bookname = item['BookName']
-                    authorcheck = myDB.select("SELECT * from authors WHERE AuthorName = ?", [AuthorName])
+                    authorcheck = myDB.select('SELECT * from authors WHERE AuthorName = "%s"' % AuthorName)
                     if authorcheck:
                         myDB.upsert("books", {"Status": "Skipped"}, {"BookID": bookid})
-                        logger.info('Status set to Skipped for %s' % bookname)
+                        logger.info('Status set to Skipped for "%s"' % bookname)
                     else:
-                        myDB.action('DELETE from books WHERE BookID = ?', [bookid])
-                        logger.info('%s removed from database' % bookname)
+                        myDB.action('DELETE from books WHERE BookID = "%s"' % bookid)
+                        logger.info('Removed "%s" from database' % bookname)
 
         if redirect == "author" or authorcheck:
             #update authors needs to be updated every time a book is marked differently
-            lastbook = myDB.action("SELECT BookName, BookLink, BookDate from books WHERE AuthorName='%s' AND Status != 'Ignored' order by BookDate DESC" % AuthorName).fetchone()
-            unignoredbooks = myDB.select("SELECT COUNT(BookName) as unignored FROM books WHERE AuthorName='%s' AND Status != 'Ignored'" % AuthorName)
-            bookCount = myDB.select("SELECT COUNT(BookName) as counter FROM books WHERE AuthorName='%s'" % AuthorName)  
+            lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorName="%s" AND Status != "Ignored" order by BookDate DESC' % AuthorName).fetchone()
+            unignoredbooks = myDB.select('SELECT COUNT(BookName) as unignored FROM books WHERE AuthorName="%s" AND Status != "Ignored"' % AuthorName)
+            bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE AuthorName="%s"' % AuthorName)  
             countbooks = myDB.action('SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' % AuthorName).fetchone()
             havebooks = int(countbooks[0]) 
 
@@ -743,7 +743,7 @@ class WebInterface(object):
             history = myDB.select("SELECT * from wanted WHERE Status != 'Skipped'")
 	    return serve_template(templatename="history.html", title="History", history=history)        
 	elif source == "magazines":
-            books = myDB.select("SELECT * from wanted WHERE Status = 'Skipped' or Status = 'Snatched'")
+            books = myDB.select("SELECT * from wanted WHERE Status = 'Skipped'") # or Status = 'Snatched'")
         return serve_template(templatename="managemags.html", title="Magazine Status Management", books=books, whichStatus='Skipped')
     history.exposed = True
 
@@ -754,7 +754,7 @@ class WebInterface(object):
             myDB.action('DELETE from wanted')
         else:
             logger.info(u"Clearing history where status is %s" % type)
-            myDB.action('DELETE from wanted WHERE Status=?', [type])
+            myDB.action('DELETE from wanted WHERE Status="%s"' % type)
         raise cherrypy.HTTPRedirect("history")
     clearhistory.exposed = True
 
@@ -808,8 +808,9 @@ class WebInterface(object):
                     myDB.upsert("magazines", newValueDict, controlValueDict)
                     logger.info('Status of magazine %s changed to %s' % (item, action))
                 elif (action == "Delete"):
-		    myDB.action('DELETE from magazines WHERE Title=\"%s\"' % item)
-                    logger.info('Magazine %s removed from database' % item)
+		    myDB.action('DELETE from magazines WHERE Title="%s"' % item)
+                    myDB.action('DELETE from wanted WHERE BookID="%s"' % item)
+ 		    logger.info('Magazine %s removed from database' % item)
                 elif (action == "Reset"):
                     controlValueDict = {"Title": item}
                     newValueDict = {
@@ -827,7 +828,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
 
         # find book
-        bookdata = myDB.select("SELECT * from magazines WHERE Title='%s'" % bookid)
+        bookdata = myDB.select('SELECT * from magazines WHERE Title="%s"' % bookid)
         if bookdata:
             # start searchthreads
             mags = []
@@ -855,7 +856,7 @@ class WebInterface(object):
                     myDB.upsert("wanted", newValueDict, controlValueDict)
                     logger.info('Status of wanted item %s changed to %s' % (nzbtitle, action))
                 else:
-                    myDB.action('DELETE from wanted WHERE NZBtitle=\"%s\"' % nzb['nzbtitle'])
+                    myDB.action('DELETE from wanted WHERE NZBtitle="%s"' % nzb['nzbtitle'])
                     logger.info('Item %s removed from wanted' % nzbtitle)
                 raise cherrypy.HTTPRedirect("wanted")
     markWanted.exposed = True

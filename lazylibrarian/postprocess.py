@@ -35,7 +35,7 @@ def processDir():
 				pp_path = os.path.join(processpath, book['NZBtitle'])
 				logger.info('Found folder %s.' % pp_path)
 
-				data = myDB.select("SELECT * from books WHERE BookID='%s'" % book['BookID'])
+				data = myDB.select('SELECT * from books WHERE BookID="%s"' % book['BookID'])
 				if data:
 					for metadata in data:
 						authorname = metadata['AuthorName']
@@ -57,7 +57,7 @@ def processDir():
 					global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace('$Title', bookname)
 					#global_name = bookname + ' - ' + authorname
 				else:
-					data = myDB.select("SELECT * from magazines WHERE Title='%s'" % book['BookID'])
+					data = myDB.select('SELECT * from magazines WHERE Title="%s"' % book['BookID'])
 					for metadata in data:
 						title = metadata['Title']
 					#AuxInfo was added for magazine release date, normally housed in 'magazines' but if multiple
@@ -144,7 +144,7 @@ def processDir():
 			if (os.path.exists(pp_path)):
 				 logger.debug('Found folder %s.' % pp_path)
 
-				 data = myDB.select("SELECT * from books WHERE BookID='%s'" % bookID)
+				 data = myDB.select('SELECT * from books WHERE BookID="%s"' % bookID)
 				 for metadata in data:
 					 authorname = metadata['AuthorName']
 					 authorimg = metadata['AuthorLink']

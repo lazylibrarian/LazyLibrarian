@@ -349,7 +349,7 @@ class GoodReads:
 									else:
 										bookLanguage=resp # found a language code
 										myDB.action('insert into languages values ("%s", "%s")' % (isbnhead, bookLanguage))
-										logger.debug(u"LT language: " + str(bookLanguage))
+										logger.debug(u"LT language: " + bookLanguage)
 								except Exception, e:
 									find_field="id" # reset the field to search on goodreads
 					    				logger.error("Error finding results: ", e)
@@ -358,7 +358,7 @@ class GoodReads:
 					    		try:
 						   		if (book.find(find_field).text is not None):
 									BOOK_URL = 'http://www.goodreads.com/book/show?id=' + book.find(find_field).text + '&' + urllib.urlencode(self.params)
-									logger.debug(u"Book URL: " + str(BOOK_URL))
+									logger.debug(u"Book URL: " + BOOK_URL)
 
 									try:
 										# Cache our request
@@ -387,7 +387,7 @@ class GoodReads:
 									else:
 										not_cached = not_cached + 1
 
-									logger.debug(u"GR language: " + str(bookLanguage))
+									logger.debug(u"GR language: " + bookLanguage)
 						   		else:
 									logger.debug("No %s provided for [%s]" % (find_field, book.find('title').text))
 									#continue
@@ -421,7 +421,7 @@ class GoodReads:
                                                 series = None
                                                 seriesOrder = None
 
-					find_book_status = myDB.select("SELECT * FROM books WHERE BookID = '%s'" % bookid)
+					find_book_status = myDB.select('SELECT * FROM books WHERE BookID = "%s"' % bookid)
 					if find_book_status:
 						for resulted in find_book_status:
 							book_status = resulted['Status']
@@ -493,7 +493,7 @@ class GoodReads:
 				resultxml = rootxml.getiterator('book')
 
 
-		lastbook = myDB.action("SELECT BookName, BookLink, BookDate from books WHERE AuthorID='%s' AND Status != 'Ignored' order by BookDate DESC" % authorid).fetchone()
+		lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorID="%s" AND Status != "Ignored" order by BookDate DESC' % authorid).fetchone()
 		if lastbook:
                         lastbookname = lastbook['BookName']
                         lastbooklink = lastbook['BookLink']
@@ -503,8 +503,8 @@ class GoodReads:
                         lastbooklink = None
                         lastbookdate = None
 
-		unignoredbooks = myDB.select("SELECT COUNT(BookName) as unignored FROM books WHERE AuthorID='%s' AND Status != 'Ignored'" % authorid)
-		bookCount = myDB.select("SELECT COUNT(BookName) as counter FROM books WHERE AuthorID='%s'" % authorid)
+		unignoredbooks = myDB.select('SELECT COUNT(BookName) as unignored FROM books WHERE AuthorID="%s" AND Status != "Ignored"' % authorid)
+		bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE AuthorID="%s"' % authorid)
 
 		controlValueDict = {"AuthorID": authorid}
 		newValueDict = {

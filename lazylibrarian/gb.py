@@ -339,7 +339,7 @@ class GoogleBooks:
 							if (resp != 'invalid' and resp != 'unknown'):
 								booklang=resp # found a language code
 								myDB.action('insert into languages values ("%s", "%s")' % (isbnhead, booklang))
-								logger.debug(u"LT language: " + str(booklang))
+								logger.debug(u"LT language: " + booklang)
 						except Exception, e:
 							logger.error("Error finding results: ", e)
 
@@ -351,7 +351,7 @@ class GoogleBooks:
 					match = myDB.action('SELECT lang FROM languages where isbn = "%s"' % (isbnhead)).fetchone()
 					if (not match):
 						myDB.action('insert into languages values ("%s", "%s")' % (isbnhead, booklang))
-						logger.debug(u"GB language: " + str(booklang))
+						logger.debug(u"GB language: " + booklang)
 
                         #skip if language is in ignore list
                         if booklang not in valid_langs:
@@ -419,7 +419,7 @@ class GoogleBooks:
                     booklink = item['volumeInfo']['canonicalVolumeLink']
                     bookrate = float(bookrate)
 
-                    find_book_status = myDB.select("SELECT * FROM books WHERE BookID = '%s'" % bookid)
+                    find_book_status = myDB.select('SELECT * FROM books WHERE BookID = "%s"' % bookid)
                     if find_book_status:
                         for resulted in find_book_status:
                             book_status = resulted['Status']
@@ -476,9 +476,9 @@ class GoogleBooks:
 
         logger.info('[%s] The Google Books API was hit %s times to populate book list' % (authorname, str(api_hits)))
 
-        unignoredbooks = myDB.select("SELECT COUNT(BookName) as unignored FROM books WHERE AuthorID='%s' AND Status != 'Ignored'" % authorid)
-        bookCount = myDB.select("SELECT COUNT(BookName) as counter FROM books WHERE AuthorID='%s'" % authorid)
-	lastbook = myDB.action("SELECT BookName, BookLink, BookDate from books WHERE AuthorID='%s' AND Status != 'Ignored' order by BookDate DESC" % authorid).fetchone()
+        unignoredbooks = myDB.select('SELECT COUNT(BookName) as unignored FROM books WHERE AuthorID="%s" AND Status != "Ignored"' % authorid)
+        bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE AuthorID="%s"' % authorid)
+	lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorID="%s" AND Status != "Ignored" order by BookDate DESC' % authorid).fetchone()
 
 	if lastbook: # maybe there are no books [remaining] for this author
 		lastbookname = lastbook['BookName']
