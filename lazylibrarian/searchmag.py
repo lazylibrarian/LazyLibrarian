@@ -137,7 +137,7 @@ def searchmagazines(mags=None):
 									regxC_temp = nzbtitle_exploded[len(nzbtitle_exploded)-2]
 									if regxC_temp.isdigit():
 									    regxC_temp = int(regxC_temp)
-									    if regxC_temp > 12: # not MM, looks like YYYY
+									    if regxC_temp > 12: # not MM, could be YYYY
 										regexC_year = nzbtitle_exploded[len(nzbtitle_exploded)-2]
 										regexC_month = nzbtitle_exploded[len(nzbtitle_exploded)-1].zfill(2)
 										regexC_day = '01'
@@ -155,7 +155,7 @@ def searchmagazines(mags=None):
 									except:
 										logger.debug('NZB %s not in proper date format.' % nzbtitle_formatted)
 										bad_date = bad_date + 1
-										# allow issues with bad date to be included so user can manually select them
+										# allow issues with good name but bad date to be included so user can manually select them
 										newdatish = "1970-01-01" # provide a fake date for bad-date issues
 										#continue
 
