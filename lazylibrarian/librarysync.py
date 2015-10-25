@@ -38,8 +38,9 @@ def get_book_info(fname):
     #	  txt = pdf.getDocumentInfo()
 	  # repackage the data here to get components we need
     #     res = {}
-    #     for s in ['title','language','creator','isbn']:
+    #     for s in ['title','language','creator']:
     #         res[s] = txt[s]
+    #	  res['identifier'] = txt['isbn']
     #	  return res
 
     if (extn == "epub"):
@@ -89,8 +90,7 @@ def get_book_info(fname):
 			isbn = txt
 		elif len(txt) == 10:
 			if txt[:8].isdigit():
-				isbn = txt
-		
+				isbn = txt	
     		res['identifier'] = isbn
 	n = n + 1
     return res
@@ -269,14 +269,12 @@ def LibraryScan(dir=None):
 				try:
 					metafile = os.path.join(r,"metadata.opf").encode(lazylibrarian.SYS_ENCODING)
 					res = get_book_info(metafile)
-					if res:
-						book = res['title']
-						author = res['creator']
-						language = res['language']
-						isbn = res['identifier']
-						match = 1
-						logger.debug("file meta [%s] [%s] [%s] [%s]" % (isbn,language,author,book))
-
+					book = res['title']
+					author = res['creator']
+					language = res['language']
+					isbn = res['identifier']
+					match = 1
+					logger.debug("file meta [%s] [%s] [%s] [%s]" % (isbn,language,author,book))
 				except:
 					logger.debug("No metadata file in %s" % r)
 

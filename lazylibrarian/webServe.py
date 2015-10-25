@@ -18,7 +18,7 @@ from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
 
 import lib.simplejson as simplejson
-
+from lib.unidecode import unidecode
 
 def serve_template(templatename, **kwargs):
 
@@ -522,7 +522,7 @@ class WebInterface(object):
             if os.path.isdir(dest_dir):
                 for file2 in os.listdir(dest_dir):    
                     if ((file2.lower().find(".jpg") <= 0) & (file2.lower().find(".opf") <= 0)):
-                        logger.info('Opening file ' + str(file2))
+                        logger.info('Opening file ' + file2)
                         return serve_file(os.path.join(dest_dir, file2), "application/x-download", "attachment")
     openBook.exposed = True
 
@@ -546,7 +546,7 @@ class WebInterface(object):
             if os.path.isdir(dest_dir):
                 for file2 in os.listdir(dest_dir):  
                     if ((file2.lower().find(".jpg") <= 0) & (file2.lower().find(".opf") <= 0)):
-                        logger.info('Opening file ' + str(file2))
+                        logger.info('Opening file ' + file2)
                         return serve_file(os.path.join(dest_dir, file2), "application/x-download", "attachment")
     openMag.exposed = True
 
@@ -568,7 +568,7 @@ class WebInterface(object):
             if (lazylibrarian.USE_TOR):
                 threading.Thread(target=search_tor_book, args=[books, mags]).start()
 
-            logger.debug("Searching for book with id: " + str(bookid));
+            logger.debug("Searching for book with id: " + bookid);
         if AuthorName:
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     searchForBook.exposed = True
@@ -791,7 +791,7 @@ class WebInterface(object):
                     threading.Thread(target=search_nzb_book, args=[books, mags]).start()
                 if (lazylibrarian.USE_TOR):
                     threading.Thread(target=search_tor_book, args=[books, mags]).start()
-                logger.debug("Searching for magazine with title: " + str(title));
+                logger.debug("Searching for magazine with title: " + title);
                 raise cherrypy.HTTPRedirect("magazines")
     addKeyword.exposed = True
 
@@ -808,7 +808,7 @@ class WebInterface(object):
                     myDB.upsert("magazines", newValueDict, controlValueDict)
                     logger.info('Status of magazine %s changed to %s' % (item, action))
                 elif (action == "Delete"):
-                    myDB.action('DELETE from magazines WHERE Title=?', [item])
+		    myDB.action('DELETE from magazines WHERE Title=\"%s\"' % item)
                     logger.info('Magazine %s removed from database' % item)
                 elif (action == "Reset"):
                     controlValueDict = {"Title": item}
@@ -838,7 +838,7 @@ class WebInterface(object):
                 threading.Thread(target=search_nzb_book, args=[books, mags]).start()
             if (lazylibrarian.USE_TOR):
                 threading.Thread(target=search_tor_book, args=[books, mags]).start()
-            logger.debug("Searching for magazine with title: " + str(bookid));
+            logger.debug("Searching for magazine with title: " + bookid);
             raise cherrypy.HTTPRedirect("magazines")
     searchForMag.exposed = True
 
@@ -855,7 +855,7 @@ class WebInterface(object):
                     myDB.upsert("wanted", newValueDict, controlValueDict)
                     logger.info('Status of wanted item %s changed to %s' % (nzbtitle, action))
                 else:
-                    myDB.action('DELETE from wanted WHERE NZBtitle=?', [nzbtitle])
+                    myDB.action('DELETE from wanted WHERE NZBtitle=\"%s\"' % nzb['nzbtitle'])
                     logger.info('Item %s removed from wanted' % nzbtitle)
                 raise cherrypy.HTTPRedirect("wanted")
     markWanted.exposed = True

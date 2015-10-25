@@ -98,7 +98,10 @@ def searchmagazines(mags=None):
 					if len(nzbtitle_exploded) > name_len: # needs to be longer as it should include a date
 					    while name_len:
 						name_len = name_len - 1
-						if nzbtitle_exploded[name_len].lower() != bookid_exploded[name_len].lower():
+						# fuzzy check on each word in the magazine name
+						ratio = fuzz.ratio(nzbtitle_exploded[name_len].lower(), bookid_exploded[name_len].lower())
+						if ratio < 80: # hard coded fuzz ratio for now, works for close matches
+							logger.debug("Magazine fuzz ratio failed [%d] [%s] [%s]" % (ratio, bookid, nzbtitle_formatted))
 							name_match = 0 # name match failed
 					if name_match:	
 						if len(nzbtitle_exploded) > 1:
