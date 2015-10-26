@@ -65,29 +65,29 @@ def month2num(month):
         return "10"
     elif month == "Autumn":
         return "10"
-    elif month == datetime.date(2015, 1, 1).strftime("%B")
+    elif month == datetime.date(2015, 1, 1).strftime("%B"):
 	return "01"
-    elif month == datetime.date(2015, 2, 1).strftime("%B")
+    elif month == datetime.date(2015, 2, 1).strftime("%B"):
 	return "02"
-    elif month == datetime.date(2015, 3, 1).strftime("%B")
+    elif month == datetime.date(2015, 3, 1).strftime("%B"):
 	return "03"
-    elif month == datetime.date(2015, 4, 1).strftime("%B")
+    elif month == datetime.date(2015, 4, 1).strftime("%B"):
 	return "04"
-    elif month == datetime.date(2015, 5, 1).strftime("%B")
+    elif month == datetime.date(2015, 5, 1).strftime("%B"):
 	return "05"
-    elif month == datetime.date(2015, 6, 1).strftime("%B")
+    elif month == datetime.date(2015, 6, 1).strftime("%B"):
 	return "06"
-    elif month == datetime.date(2015, 7, 1).strftime("%B")
+    elif month == datetime.date(2015, 7, 1).strftime("%B"):
 	return "07"
-    elif month == datetime.date(2015, 8, 1).strftime("%B")
+    elif month == datetime.date(2015, 8, 1).strftime("%B"):
 	return "08"
-    elif month == datetime.date(2015, 9, 1).strftime("%B")
+    elif month == datetime.date(2015, 9, 1).strftime("%B"):
 	return "09"
-    elif month == datetime.date(2015, 10, 1).strftime("%B")
+    elif month == datetime.date(2015, 10, 1).strftime("%B"):
 	return "10"
-    elif month == datetime.date(2015, 11, 1).strftime("%B")
+    elif month == datetime.date(2015, 11, 1).strftime("%B"):
 	return "11"
-    elif month == datetime.date(2015, 12, 1).strftime("%B")
+    elif month == datetime.date(2015, 12, 1).strftime("%B"):
 	return "12"
     else:	
         return "Invalid" 
