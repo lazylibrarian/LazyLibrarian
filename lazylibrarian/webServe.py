@@ -510,20 +510,22 @@ class WebInterface(object):
         if bookdata:
             authorName = bookdata[0]["AuthorName"];
             bookName = bookdata[0]["BookName"];
-
-            dic = {'<':'', '>':'', '=':'', '?':'', '"':'', ',':'', '*':'', ':':'', ';':'', '\'':''}
-            bookName = formatter.latinToAscii(formatter.replace_all(bookName, dic))
+	    bookfile = bookdata[0]["BookFile"];
+            #dic = {'<':'', '>':'', '=':'', '?':'', '"':'', ',':'', '*':'', ':':'', ';':'', '\'':''}
+            #bookName = formatter.latinToAscii(formatter.replace_all(bookName, dic))
             
-            pp_dir = lazylibrarian.DESTINATION_DIR
-            ebook_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorName).replace('$Title', bookName)
-            dest_dir = os.path.join(pp_dir, ebook_path)
+            #pp_dir = lazylibrarian.DESTINATION_DIR
+            #ebook_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorName).replace('$Title', bookName)
+            #dest_dir = os.path.join(pp_dir, ebook_path)
 
-            logger.debug('bookdir ' + dest_dir);
-            if os.path.isdir(dest_dir):
-                for file2 in os.listdir(dest_dir):    
-                    if ((file2.lower().find(".jpg") <= 0) & (file2.lower().find(".opf") <= 0)):
-                        logger.info('Opening file ' + file2)
-                        return serve_file(os.path.join(dest_dir, file2), "application/x-download", "attachment")
+            #logger.debug('bookdir ' + dest_dir);
+            #if os.path.isdir(dest_dir):
+            #    for file2 in os.listdir(dest_dir):    
+            #        if ((file2.lower().find(".jpg") <= 0) & (file2.lower().find(".opf") <= 0)):
+            #            logger.info('Opening file ' + file2)
+            #            return serve_file(os.path.join(dest_dir, file2), "application/x-download", "attachment")
+	    logger.debug('Opening %s - %s ' % (authorName, bookName));
+	    return serve_file(bookfile, "application/x-download", "attachment")
     openBook.exposed = True
 
     def openMag(self, bookid=None, **args):

@@ -74,9 +74,10 @@ def processDir():
 				continue
 
 			try:
-				os.chmod(os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(lazylibrarian.SYS_ENCODING), 0777);
+				post_dir = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(lazylibrarian.SYS_ENCODING)
+				os.chmod(post_dir, 0777);
 			except Exception, e:
-				logger.debug("Could not chmod post-process directory");
+				logger.debug("Could not chmod post-process directory: " + str(post_dir));
 
 			dic = {'<':'', '>':'', '...':'', ' & ':' ', ' = ': ' ', '?':'', '$':'s', ' + ':' ', '"':'', ',':'', '*':'', ':':'', ';':'', '\'':''}
 			dest_path = formatter.latinToAscii(formatter.replace_all(dest_path, dic))
@@ -160,9 +161,10 @@ def processDir():
 					 bookpub = metadata['BookPub']
 
 					 try:
-						os.chmod(os.path.join(lazylibrarian.DESTINATION_DIR, authorname).encode(lazylibrarian.SYS_ENCODING), 0777);
+						auth_dir = os.path.join(lazylibrarian.DESTINATION_DIR, authorname).encode(lazylibrarian.SYS_ENCODING)
+						os.chmod(auth_dir, 0777);
 					 except Exception, e:
-						logger.debug("Could not chmod author directory");
+						logger.debug("Could not chmod author directory: " + str(auth_dir));
 					 dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace('$Title', bookname)
 					 global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace('$Title', bookname)
 					 dic = {'<':'', '>':'', '...':'', ' & ':' ', ' = ': ' ', '?':'', '$':'s', ' + ':' ', '"':'', ',':'', '*':'', ':':'', ';':'', '\'':''}

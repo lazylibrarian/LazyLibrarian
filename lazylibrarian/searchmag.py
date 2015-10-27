@@ -133,22 +133,29 @@ def searchmagazines(mags=None):
 									int(newdatish_regexB)
 									newdatish = regexB_year+'-'+regexB_month+'-'+regexB_day
 								except:
-									#regexC = YYYY MM or YYYY MM DD
+									#regexC = YYYY MM or YYYY MM DD or Issue nn YYYY (can't get MM/DD if named Issue nn)
+									newdatish_regexC = 'Invalid' # invalid unless works out otherwise
+									print nzbtitle
 									regxC_temp = nzbtitle_exploded[len(nzbtitle_exploded)-2]
 									if regxC_temp.isdigit():
 									    regxC_temp = int(regxC_temp)
-									    if regxC_temp > 12: # not MM, could be YYYY
+									    if regxC_temp > 1900: # YYYY MM  or YYYY nn
 										regexC_year = nzbtitle_exploded[len(nzbtitle_exploded)-2]
 										regexC_month = nzbtitle_exploded[len(nzbtitle_exploded)-1].zfill(2)
 										regexC_day = '01'
+										if regexC_month.isdigit(): # could be YYYY nn where nn is issue number
+											if int(regexC_month) < 13: # if issue number > 12 date matching will fail
+												newdatish_regexC = regexC_year+regexC_month+regexC_day
 									    else:
-										regexC_year = nzbtitle_exploded[len(nzbtitle_exploded)-3]
-										regexC_month = nzbtitle_exploded[len(nzbtitle_exploded)-2].zfill(2)
-										regexC_day = nzbtitle_exploded[len(nzbtitle_exploded)-1].zfill(2)
-									    newdatish_regexC = regexC_year+regexC_month+regexC_day
-									else:
-										newdatish_regexC = 'Invalid'
-
+										regxC_temp =  nzbtitle_exploded[len(nzbtitle_exploded)-3]
+										if regxC_temp.isdigit():
+											regxC_temp = int(regxC_temp)
+											if regxC_temp > 1900: # YYYY MM DD
+												regexC_year = nzbtitle_exploded[len(nzbtitle_exploded)-3]
+												regexC_month = nzbtitle_exploded[len(nzbtitle_exploded)-2].zfill(2)
+												regexC_day = nzbtitle_exploded[len(nzbtitle_exploded)-1].zfill(2)
+									    			newdatish_regexC = regexC_year+regexC_month+regexC_day
+									
 									try:
 										int(newdatish_regexC)
 										newdatish = regexC_year+'-'+regexC_month+'-'+regexC_day
@@ -188,7 +195,7 @@ def searchmagazines(mags=None):
 							start_time = time.time()
 							start_time -= 31*24*60*60 # number of seconds in 31 days
 							control_date = time.strftime("%Y-%m-%d", time.localtime(start_time))
-					
+					        
 						# only grab a copy if it's newer than the most recent we have, or newer than a month ago if we have none
 						comp_date = formatter.datecompare(newdatish, control_date)
 						if comp_date > 0:
