@@ -697,7 +697,7 @@ def config_write():
     new_config['Pushbullet']['pushbullet_deviceid'] = PUSHBULLET_DEVICEID
 
     new_config['Pushover'] = {}
-    new_config['Pushover']['use_pushover'] = int(USE_PUSHBULLET)
+    new_config['Pushover']['use_pushover'] = int(USE_PUSHOVER)
     new_config['Pushover']['pushover_onsnatch'] = int(PUSHOVER_ONSNATCH)
     new_config['Pushover']['pushover_ondownload'] = int(PUSHOVER_ONDOWNLOAD)
     new_config['Pushover']['pushover_priority'] = int(PUSHOVER_PRIORITY)
