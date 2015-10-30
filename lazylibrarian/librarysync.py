@@ -397,6 +397,8 @@ def LibraryScan(dir=None):
 					logger.info("Failed to match author [%s] in database" % author)
 				else:
 					# author exists, check if this book by this author is in our database
+					# metadata might have quotes in book name
+					book = book.replace('"','').replace("'","")
 	                		bookid = find_book_in_db(myDB, author, book)
 	 				if bookid:
 						# check if book is already marked as "Open" (if so, we already had it)
@@ -405,26 +407,26 @@ def LibraryScan(dir=None):
 							# update status as we've got this book
 							myDB.action('UPDATE books set Status="Open" where BookID="%s"' % bookid)
 							book_file = os.path.join(r,files).encode(lazylibrarian.SYS_ENCODING)
-							# update book location so we can check if it gets removed, or maybe allow click-to-open?
+							# update book location so we can check if it gets removed, or allow click-to-open
 							myDB.action('UPDATE books set BookFile="%s" where BookID="%s"' % (book_file,bookid))
 							new_book_count += 1
-
-
+						
 	cachesize = myDB.action("select count(*) from languages").fetchone()
 	logger.info("%s new/modified books found and added to the database" % new_book_count)
 	logger.info("%s files processed" % file_count)
-	stats = myDB.action("SELECT sum(GR_book_hits), sum(GR_lang_hits), sum(LT_lang_hits), sum(GB_lang_change), sum(cache_hits), sum(bad_lang), sum(bad_char), sum(uncached) FROM stats").fetchone()
-	if lazylibrarian.BOOK_API == "GoogleBooks":
-		logger.info("GoogleBooks was hit %s times for books" % stats['sum(GR_book_hits)'])
-		logger.info("GoogleBooks language was changed %s times" % stats['sum(GB_lang_change)'])
-	if lazylibrarian.BOOK_API == "GoodReads":
-    		logger.info("GoodReads was hit %s times for books" % stats['sum(GR_book_hits)'])
-		logger.info("GoodReads was hit %s times for languages" % stats['sum(GR_lang_hits)'])
-	logger.info("LibraryThing was hit %s times for languages" % stats['sum(LT_lang_hits)'])
-	logger.info("Language cache was hit %s times" % stats['sum(cache_hits)'])
-	logger.info("Unwanted language removed %s books" % stats['sum(bad_lang)'])
-	logger.info("Unwanted characters removed %s books" % stats['sum(bad_char)'])
-	logger.info("Unable to cache %s books with missing ISBN" % stats['sum(uncached)'])
+	if new_book_count:
+		stats = myDB.action("SELECT sum(GR_book_hits), sum(GR_lang_hits), sum(LT_lang_hits), sum(GB_lang_change), sum(cache_hits), sum(bad_lang), sum(bad_char), sum(uncached) FROM stats").fetchone()
+		if lazylibrarian.BOOK_API == "GoogleBooks":
+			logger.info("GoogleBooks was hit %s times for books" % stats['sum(GR_book_hits)'])
+			logger.info("GoogleBooks language was changed %s times" % stats['sum(GB_lang_change)'])
+		if lazylibrarian.BOOK_API == "GoodReads":
+    			logger.info("GoodReads was hit %s times for books" % stats['sum(GR_book_hits)'])
+			logger.info("GoodReads was hit %s times for languages" % stats['sum(GR_lang_hits)'])
+		logger.info("LibraryThing was hit %s times for languages" % stats['sum(LT_lang_hits)'])
+		logger.info("Language cache was hit %s times" % stats['sum(cache_hits)'])
+		logger.info("Unwanted language removed %s books" % stats['sum(bad_lang)'])
+		logger.info("Unwanted characters removed %s books" % stats['sum(bad_char)'])
+		logger.info("Unable to cache %s books with missing ISBN" % stats['sum(uncached)'])
 	logger.info("ISBN Language cache holds %s entries" % cachesize['count(*)'])
 	stats = len(myDB.select('select BookID from Books where status="Open" and BookLang="Unknown"'))
 	logger.info("There are %s books in your library with unknown language" % stats)
