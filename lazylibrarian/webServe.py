@@ -12,7 +12,7 @@ import lazylibrarian
 from lazylibrarian import logger, importer, database, postprocess, formatter, notifiers, librarysync
 from lazylibrarian.searchnzb import search_nzb_book, DownloadMethod
 from lazylibrarian.searchtorrents import search_tor_book
-from lazylibrarian.searchmag import searchmagazines
+#from lazylibrarian.searchmag import searchmagazines
 from lazylibrarian.formatter import checked
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
@@ -508,10 +508,9 @@ class WebInterface(object):
         # find book
         bookdata = myDB.select('SELECT * from books WHERE BookID="%s"' % bookid)
         if bookdata:
-            authorName = bookdata[0]["AuthorName"];
-            bookName = bookdata[0]["BookName"];
-	    bookfile = bookdata[0]["BookFile"];
-            #dic = {'<':'', '>':'', '=':'', '?':'', '"':'', ',':'', '*':'', ':':'', ';':'', '\'':''}
+            #authorName = bookdata[0]["AuthorName"];
+            #bookName = bookdata[0]["BookName"];
+	    #dic = {'<':'', '>':'', '=':'', '?':'', '"':'', ',':'', '*':'', ':':'', ';':'', '\'':''}
             #bookName = formatter.latinToAscii(formatter.replace_all(bookName, dic))
             
             #pp_dir = lazylibrarian.DESTINATION_DIR
@@ -524,7 +523,8 @@ class WebInterface(object):
             #        if ((file2.lower().find(".jpg") <= 0) & (file2.lower().find(".opf") <= 0)):
             #            logger.info('Opening file ' + file2)
             #            return serve_file(os.path.join(dest_dir, file2), "application/x-download", "attachment")
-	    logger.debug('Opening %s - %s ' % (authorName, bookName));
+	    bookfile = bookdata[0]["BookFile"];
+            logger.info('Opening file ' + bookfile);
 	    return serve_file(bookfile, "application/x-download", "attachment")
     openBook.exposed = True
 
@@ -677,7 +677,6 @@ class WebInterface(object):
 			logger.debug('Snatching %s' % items['nzbtitle'])
             		snatch = DownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
             		notifiers.notify_snatch(items['nzbtitle']+' at '+formatter.now()) 
-      		raise cherrypy.HTTPRedirect("magazines")
     markMags.exposed = True
 
     #ALL ELSE
