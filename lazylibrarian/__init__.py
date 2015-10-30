@@ -37,7 +37,7 @@ LATEST_VERSION = None
 COMMITS_BEHIND = None
 
 DATADIR = None
-DBFILE=None
+DBFILE = None
 CONFIGFILE = None
 CFG = None
 
@@ -54,14 +54,14 @@ HTTP_USER = None
 HTTP_PASS = None
 HTTP_ROOT = None
 HTTP_LOOK = None
-LAUNCH_BROWSER = False
+LAUNCH_BROWSER = 0
 
 PROXY_HOST = None
 PROXY_TYPE = None
 
 SAB_HOST = None
 SAB_PORT = None
-SAB_SUBDIR=None
+SAB_SUBDIR = None
 SAB_USER = None
 SAB_PASS = None
 SAB_API = None
@@ -73,40 +73,40 @@ NZBGET_PASS = None
 NZBGET_CATEGORY = None
 NZBGET_PRIORITY = None
 
-DESTINATION_COPY = False
+DESTINATION_COPY = 0
 DESTINATION_DIR = None
 DOWNLOAD_DIR = None
 
 IMP_PREFLANG = None
-IMP_ONLYISBN = False
-IMP_SINGLEBOOK = True
+IMP_ONLYISBN = 0
+IMP_SINGLEBOOK = 1
 IMP_AUTOADD = None
 
 BOOK_API = None
 GR_API = None
 GB_API = None
 
-NZBMATRIX = False
+NZBMATRIX = 0
 NZBMATRIX_USER = None
 NZBMATRIX_API = None
 
-NEWZNAB = False
+NEWZNAB = 0
 NEWZNAB_HOST = None
 NEWZNAB_API = None
 
-NEWZNAB2 = False
+NEWZNAB2 = 0
 NEWZNAB_HOST2 = None
 NEWZNAB_API2 = None
 
-NEWZBIN = False
+NEWZBIN = 0
 NEWZBIN_UID = None
 NEWZBIN_PASSWORD = None
 EBOOK_TYPE = None
 
-TOR_DOWNLOADER_BLACKHOLE = False
-TOR_DOWNLOADER_UTORRENT = False
-TOR_DOWNLOADER_TRANSMISSION = False
-TOR_DOWNLOADER_DELUGE = False
+TOR_DOWNLOADER_BLACKHOLE = 0
+TOR_DOWNLOADER_UTORRENT = 0
+TOR_DOWNLOADER_TRANSMISSION = 0
+TOR_DOWNLOADER_DELUGE = 0
 NUMBEROFSEEDERS = 10
 TORRENT_DIR = None
 
@@ -124,18 +124,18 @@ DELUGE_HOST = None
 DELUGE_USER = None
 DELUGE_PASS = None
 
-KAT = False
+KAT = 0
 
-USE_NZB = False
-USE_TOR = False
+USE_NZB = 0
+USE_TOR = 0
 
-NZB_DOWNLOADER_SABNZBD = False
-NZB_DOWNLOADER_NZBGET = False
-NZB_DOWNLOADER_BLACKHOLE = False
+NZB_DOWNLOADER_SABNZBD = 0
+NZB_DOWNLOADER_NZBGET = 0
+NZB_DOWNLOADER_BLACKHOLE = 0
 NZB_BLACKHOLEDIR = None
 USENET_RETENTION = None
 
-USENETCRAWLER = False
+USENETCRAWLER = 0
 USENETCRAWLER_API = None
 USENETCRAWLER_HOST = None
 
@@ -154,32 +154,32 @@ EBOOK_DEST_FILE = None
 MAG_DEST_FOLDER = None
 MAG_DEST_FILE = None
 
-USE_TWITTER = False
-TWITTER_NOTIFY_ONSNATCH = False
-TWITTER_NOTIFY_ONDOWNLOAD = False
+USE_TWITTER = 0
+TWITTER_NOTIFY_ONSNATCH = 0
+TWITTER_NOTIFY_ONDOWNLOAD = 0
 TWITTER_USERNAME = None
 TWITTER_PASSWORD = None
 TWITTER_PREFIX = 'LazyLibrarian'
 
-USE_BOXCAR = False
+USE_BOXCAR = 0
 BOXCAR_TOKEN = None
-BOXCAR_NOTIFY_ONSNATCH = False
-BOXCAR_NOTIFY_ONDOWNLOAD = False
+BOXCAR_NOTIFY_ONSNATCH = 0
+BOXCAR_NOTIFY_ONDOWNLOAD = 0
 
-USE_PUSHBULLET = False
+USE_PUSHBULLET = 0
 PUSHBULLET_TOKEN = None
 PUSHBULLET_DEVICEID = None
-PUSHBULLET_NOTIFY_ONSNATCH = False
-PUSHBULLET_NOTIFY_ONDOWNLOAD = False
+PUSHBULLET_NOTIFY_ONSNATCH = 0
+PUSHBULLET_NOTIFY_ONDOWNLOAD = 0
 
-USE_PUSHOVER = False
+USE_PUSHOVER = 0
 PUSHOVER_APITOKEN = None
 PUSHOVER_KEYS = None
-PUSHOVER_ONSNATCH = False
-PUSHOVER_ONDOWNLOAD = False
+PUSHOVER_ONSNATCH = 0
+PUSHOVER_ONDOWNLOAD = 0
 PUSHOVER_PRIORITY = None
 
-NMA_ENABLED = False
+NMA_ENABLED = 0
 NMA_APIKEY = None
 NMA_PRIORITY = None
 NMA_ONSNATCH = None
@@ -309,7 +309,7 @@ def initialize():
         # Start the logger, silence console logging if we need to
         CFGLOGLEVEL = check_setting_int(CFG, 'General', 'loglevel', 3)
         if CFGLOGLEVEL == 3:    #default value if none in config
-            LOGLEVEL=2    #If not set in Config, then lets set to DEBUG
+            LOGLEVEL = 2    #If not set in Config, then lets set to DEBUG
         else:
             LOGLEVEL = CFGLOGLEVEL  #Config setting picked up
 
@@ -327,7 +327,7 @@ def initialize():
 
 
 
-        LAUNCH_BROWSER = bool(check_setting_int(CFG, 'General', 'launch_browser', 1))
+        LAUNCH_BROWSER = check_setting_int(CFG, 'General', 'launch_browser', 1)
 
 	PROXY_HOST = check_setting_str(CFG, 'General','proxy_host', '')
 	PROXY_TYPE = check_setting_str(CFG, 'General','proxy_type', '')
@@ -336,11 +336,11 @@ def initialize():
 
         IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', 'en, eng, en-US')
         IMP_AUTOADD = check_setting_str(CFG, 'General', 'imp_autoadd', '')
-        IMP_ONLYISBN = bool(check_setting_int(CFG, 'General', 'imp_onlyisbn', 0))
+        IMP_ONLYISBN = check_setting_int(CFG, 'General', 'imp_onlyisbn', 0)
         #TODO - investigate this for future users
         #Something funny here - putting IMP_AUTOADD after IMP_ONLYISBN resulted in it not working
-        #Couldn't see it
-        IMP_SINGLEBOOK = bool(check_setting_int(CFG, 'General', 'imp_singlebook', 0))
+        #Couldn't see it  - PAB seems to be related to bool, removed that, just use int now
+        IMP_SINGLEBOOK = check_setting_int(CFG, 'General', 'imp_singlebook', 0)
 
         GIT_USER = check_setting_str(CFG, 'Git', 'git_user', 'dobytang')
         GIT_REPO = check_setting_str(CFG, 'Git', 'git_repo', 'lazylibrarian')
@@ -364,34 +364,34 @@ def initialize():
         NZBGET_CATEGORY = check_setting_str(CFG, 'NZBGet', 'nzbget_cat', '')
         NZBGET_PRIORITY = check_setting_int(CFG, 'NZBGet', 'nzbget_priority', '0')
 
-        DESTINATION_COPY = bool(check_setting_int(CFG, 'General', 'destination_copy', 0))
+        DESTINATION_COPY = check_setting_int(CFG, 'General', 'destination_copy', 0)
         DESTINATION_DIR = check_setting_str(CFG, 'General','destination_dir', '')
         DOWNLOAD_DIR = check_setting_str(CFG, 'General', 'download_dir', '')
 
-        USE_NZB = bool(check_setting_int(CFG, 'DLMethod', 'use_nzb', 0))
-        USE_TOR = bool(check_setting_int(CFG, 'DLMethod', 'use_tor', 0))
+        USE_NZB = check_setting_int(CFG, 'DLMethod', 'use_nzb', 0)
+        USE_TOR = check_setting_int(CFG, 'DLMethod', 'use_tor', 0)
 
-        NZB_DOWNLOADER_SABNZBD = bool(check_setting_int(CFG, 'USENET', 'nzb_downloader_sabnzbd', 0))
-        NZB_DOWNLOADER_NZBGET = bool(check_setting_int(CFG, 'USENET', 'nzb_downloader_nzbget', 0))
-        NZB_DOWNLOADER_BLACKHOLE = bool(check_setting_int(CFG, 'USENET', 'nzb_downloader_blackhole', 0))
+        NZB_DOWNLOADER_SABNZBD = check_setting_int(CFG, 'USENET', 'nzb_downloader_sabnzbd', 0)
+        NZB_DOWNLOADER_NZBGET = check_setting_int(CFG, 'USENET', 'nzb_downloader_nzbget', 0)
+        NZB_DOWNLOADER_BLACKHOLE = check_setting_int(CFG, 'USENET', 'nzb_downloader_blackhole', 0)
         NZB_BLACKHOLEDIR = check_setting_str(CFG, 'USENET', 'nzb_blackholedir', '')
         USENET_RETENTION = check_setting_str(CFG, 'USENET', 'usenet_retention', '')
 
-        NZBMATRIX = bool(check_setting_int(CFG, 'NZBMatrix', 'nzbmatrix', 0))
+        NZBMATRIX = check_setting_int(CFG, 'NZBMatrix', 'nzbmatrix', 0)
         NZBMATRIX_USER = check_setting_str(CFG, 'NZBMatrix', 'nzbmatrix_user', '')
         NZBMATRIX_API = check_setting_str(CFG, 'NZBMatrix', 'nzbmatrix_api', '')
 
-        NEWZNAB = bool(check_setting_int(CFG, 'Newznab', 'newznab', 0))
+        NEWZNAB = check_setting_int(CFG, 'Newznab', 'newznab', 0)
         NEWZNAB_HOST = check_setting_str(CFG, 'Newznab', 'newznab_host', '')
         NEWZNAB_API = check_setting_str(CFG, 'Newznab', 'newznab_api', '')
-        NEWZNAB2 = bool(check_setting_int(CFG, 'Newznab2', 'newznab2', 0))
+        NEWZNAB2 = check_setting_int(CFG, 'Newznab2', 'newznab2', 0)
         NEWZNAB_HOST2 = check_setting_str(CFG, 'Newznab2', 'newznab_host2', '')
         NEWZNAB_API2 = check_setting_str(CFG, 'Newznab2', 'newznab_api2', '')
 
-        TOR_DOWNLOADER_BLACKHOLE = bool(check_setting_int(CFG, 'TORRENT', 'tor_downloader_blackhole', 0))
-        TOR_DOWNLOADER_UTORRENT = bool(check_setting_int(CFG, 'TORRENT', 'tor_downloader_utorrent', 0))
-        TOR_DOWNLOADER_TRANSMISSION = bool(check_setting_int(CFG, 'TORRENT', 'tor_downloader_transmission', 0))
-        TOR_DOWNLOADER_DELUGE =  bool(check_setting_int(CFG, 'TORRENT', 'tor_downloader_deluge',0))
+        TOR_DOWNLOADER_BLACKHOLE = check_setting_int(CFG, 'TORRENT', 'tor_downloader_blackhole', 0)
+        TOR_DOWNLOADER_UTORRENT = check_setting_int(CFG, 'TORRENT', 'tor_downloader_utorrent', 0)
+        TOR_DOWNLOADER_TRANSMISSION = check_setting_int(CFG, 'TORRENT', 'tor_downloader_transmission', 0)
+        TOR_DOWNLOADER_DELUGE =  check_setting_int(CFG, 'TORRENT', 'tor_downloader_deluge',0)
         NUMBEROFSEEDERS = check_setting_int(CFG, 'TORRENT', 'numberofseeders', 10)
         TORRENT_DIR  = check_setting_str(CFG, 'TORRENT', 'torrent_dir', '')
 
@@ -409,13 +409,13 @@ def initialize():
         DELUGE_USER = check_setting_str(CFG, 'DELUGE', 'deluge_user', '')
         DELUGE_PASS = check_setting_str(CFG, 'DELUGE', 'deluge_pass', '')
 
-        KAT = bool(check_setting_int(CFG, 'KAT', 'kat', 0))
+        KAT = check_setting_int(CFG, 'KAT', 'kat', 0)
 
-        USENETCRAWLER = bool(check_setting_int(CFG, 'UsenetCrawler', 'usenetcrawler', 0))
+        USENETCRAWLER = check_setting_int(CFG, 'UsenetCrawler', 'usenetcrawler', 0)
         USENETCRAWLER_HOST = check_setting_str(CFG, 'UsenetCrawler', 'usenetcrawler_host', '')
         USENETCRAWLER_API = check_setting_str(CFG, 'UsenetCrawler', 'usenetcrawler_api', '')
 
-        NEWZBIN = bool(check_setting_int(CFG, 'Newzbin', 'newzbin', 0))
+        NEWZBIN = check_setting_int(CFG, 'Newzbin', 'newzbin', 0)
         NEWZBIN_UID = check_setting_str(CFG, 'Newzbin', 'newzbin_uid', '')
         NEWZBIN_PASS = check_setting_str(CFG, 'Newzbin', 'newzbin_pass', '')
         EBOOK_TYPE = check_setting_str(CFG, 'General', 'ebook_type', 'epub, mobi, pdf')
@@ -424,8 +424,8 @@ def initialize():
         SCAN_INTERVAL = int(check_setting_str(CFG, 'SearchScan', 'scan_interval', '10'))
         VERSIONCHECK_INTERVAL = int(check_setting_str(CFG, 'SearchScan', 'versioncheck_interval', '24'))
 
-        FULL_SCAN = bool(check_setting_int(CFG, 'LibraryScan', 'full_scan', 0))
-	ADD_AUTHOR = bool(check_setting_int(CFG, 'LibraryScan', 'add_author', 1))
+        FULL_SCAN = check_setting_int(CFG, 'LibraryScan', 'full_scan', 0)
+	ADD_AUTHOR = check_setting_int(CFG, 'LibraryScan', 'add_author', 1)
 	NOTFOUND_STATUS = check_setting_str(CFG, 'LibraryScan', 'notfound_status','Skipped')
 	NEWBOOK_STATUS = check_setting_str(CFG, 'LibraryScan', 'newbook_status','Skipped')
 
@@ -434,35 +434,35 @@ def initialize():
         MAG_DEST_FOLDER = check_setting_str(CFG, 'PostProcess', 'mag_dest_folder', '_Magazines/$Title/$IssueDate')
         MAG_DEST_FILE = check_setting_str(CFG, 'PostProcess', 'mag_dest_file', '$IssueDate - $Title')
 
-        USE_TWITTER = bool(check_setting_int(CFG, 'Twitter', 'use_twitter', 0))
-        TWITTER_NOTIFY_ONSNATCH = bool(check_setting_int(CFG, 'Twitter', 'twitter_notify_onsnatch', 0))
-        TWITTER_NOTIFY_ONDOWNLOAD = bool(check_setting_int(CFG, 'Twitter', 'twitter_notify_ondownload', 0))
+        USE_TWITTER = check_setting_int(CFG, 'Twitter', 'use_twitter', 0)
+        TWITTER_NOTIFY_ONSNATCH = check_setting_int(CFG, 'Twitter', 'twitter_notify_onsnatch', 0)
+        TWITTER_NOTIFY_ONDOWNLOAD = check_setting_int(CFG, 'Twitter', 'twitter_notify_ondownload', 0)
         TWITTER_USERNAME = check_setting_str(CFG, 'Twitter', 'twitter_username', '')
         TWITTER_PASSWORD = check_setting_str(CFG, 'Twitter', 'twitter_password', '')
         TWITTER_PREFIX = check_setting_str(CFG, 'Twitter', 'twitter_prefix', 'LazyLibrarian')
 
-        USE_BOXCAR = bool(check_setting_int(CFG, 'Boxcar', 'use_boxcar',0))
-        BOXCAR_NOTIFY_ONSNATCH = bool(check_setting_int(CFG, 'Boxcar', 'boxcar_notify_onsnatch', 0))
-        BOXCAR_NOTIFY_ONDOWNLOAD = bool(check_setting_int(CFG, 'Boxcar', 'boxcar_notify_ondownload', 0))
+        USE_BOXCAR = check_setting_int(CFG, 'Boxcar', 'use_boxcar',0)
+        BOXCAR_NOTIFY_ONSNATCH = check_setting_int(CFG, 'Boxcar', 'boxcar_notify_onsnatch', 0)
+        BOXCAR_NOTIFY_ONDOWNLOAD = check_setting_int(CFG, 'Boxcar', 'boxcar_notify_ondownload', 0)
         BOXCAR_TOKEN = check_setting_str(CFG, 'Boxcar', 'boxcar_token', '')
 
-        USE_PUSHBULLET = bool(check_setting_int(CFG, 'Pushbullet', 'use_pushbullet',0))
-        PUSHBULLET_NOTIFY_ONSNATCH = bool(check_setting_int(CFG, 'Pushbullet', 'pushbullet_notify_onsnatch', 0))
-        PUSHBULLET_NOTIFY_ONDOWNLOAD = bool(check_setting_int(CFG, 'Pushbullet', 'pushbullet_notify_ondownload', 0))
+        USE_PUSHBULLET = check_setting_int(CFG, 'Pushbullet', 'use_pushbullet',0)
+        PUSHBULLET_NOTIFY_ONSNATCH = check_setting_int(CFG, 'Pushbullet', 'pushbullet_notify_onsnatch', 0)
+        PUSHBULLET_NOTIFY_ONDOWNLOAD = check_setting_int(CFG, 'Pushbullet', 'pushbullet_notify_ondownload', 0)
         PUSHBULLET_TOKEN = check_setting_str(CFG, 'Pushbullet', 'pushbullet_token', '')
         PUSHBULLET_DEVICEID = check_setting_str(CFG, 'Pushbullet', 'pushbullet_deviceid', '')
 
-        USE_PUSHOVER = bool(check_setting_int(CFG, 'Pushover', 'use_pushover',0))
-        PUSHOVER_ONSNATCH = bool(check_setting_int(CFG, 'Pushover', 'pushover_onsnatch',0))
-        PUSHOVER_ONDOWNLOAD = bool(check_setting_int(CFG, 'Pushover', 'pushover_ondownload',0))
+        USE_PUSHOVER = check_setting_int(CFG, 'Pushover', 'use_pushover',0)
+        PUSHOVER_ONSNATCH = check_setting_int(CFG, 'Pushover', 'pushover_onsnatch',0)
+        PUSHOVER_ONDOWNLOAD = check_setting_int(CFG, 'Pushover', 'pushover_ondownload',0)
         PUSHOVER_KEYS = check_setting_str(CFG, 'Pushover', 'pushover_keys','')
         PUSHOVER_APITOKEN =  check_setting_str(CFG, 'Pushover', 'pushover_apitoken','')
         PUSHOVER_PRIORITY = check_setting_int(CFG, 'Pushover', 'pushover_priority',0)
 
-        NMA_ENABLED = bool(check_setting_int(CFG, 'NMA', 'nma_enabled', 0))
+        NMA_ENABLED = check_setting_int(CFG, 'NMA', 'nma_enabled', 0)
         NMA_APIKEY = check_setting_str(CFG, 'NMA', 'nma_apikey', '')
 	NMA_PRIORITY = check_setting_int(CFG, 'NMA', 'nma_priority', 0)
-	NMA_ONSNATCH = bool(check_setting_int(CFG, 'NMA', 'nma_onsnatch', 0))
+	NMA_ONSNATCH = check_setting_int(CFG, 'NMA', 'nma_onsnatch', 0)
 
         BOOK_API = check_setting_str(CFG, 'API', 'book_api', 'GoodReads')
         GR_API = check_setting_str(CFG, 'API', 'gr_api', 'ckvsiSDsuqh7omh74ZZ6Q')
@@ -551,7 +551,7 @@ def config_write():
     new_config['General']['logdir'] = LOGDIR
     new_config['General']['loglevel'] = int(LOGLEVEL)
 
-    new_config['General']['match_ratio'] = MATCH_RATIO
+    new_config['General']['match_ratio'] = int(MATCH_RATIO)
 
     new_config['General']['imp_onlyisbn'] = int(IMP_ONLYISBN)
     new_config['General']['imp_singlebook'] = int(IMP_SINGLEBOOK)
@@ -570,9 +570,9 @@ def config_write():
     new_config['Git']['commits_behind'] = COMMITS_BEHIND
 
     new_config['USENET'] = {}
-    new_config['USENET']['nzb_downloader_sabnzbd'] = NZB_DOWNLOADER_SABNZBD
-    new_config['USENET']['nzb_downloader_nzbget'] = NZB_DOWNLOADER_NZBGET
-    new_config['USENET']['nzb_downloader_blackhole'] = NZB_DOWNLOADER_BLACKHOLE
+    new_config['USENET']['nzb_downloader_sabnzbd'] = int(NZB_DOWNLOADER_SABNZBD)
+    new_config['USENET']['nzb_downloader_nzbget'] = int(NZB_DOWNLOADER_NZBGET)
+    new_config['USENET']['nzb_downloader_blackhole'] = int(NZB_DOWNLOADER_BLACKHOLE)
     new_config['USENET']['nzb_blackholedir'] = NZB_BLACKHOLEDIR
     new_config['USENET']['usenet_retention'] = USENET_RETENTION
 
@@ -626,11 +626,11 @@ def config_write():
     new_config['Newzbin']['newzbin_pass'] = NEWZBIN_PASS
 
     new_config['TORRENT'] = {}
-    new_config['TORRENT']['tor_downloader_blackhole'] = TOR_DOWNLOADER_BLACKHOLE
-    new_config['TORRENT']['tor_downloader_utorrent'] = TOR_DOWNLOADER_UTORRENT
-    new_config['TORRENT']['tor_downloader_transmission'] = TOR_DOWNLOADER_TRANSMISSION
-    new_config['TORRENT']['tor_downloader_deluge'] = TOR_DOWNLOADER_DELUGE
-    new_config['TORRENT']['numberofseeders'] = NUMBEROFSEEDERS
+    new_config['TORRENT']['tor_downloader_blackhole'] = int(TOR_DOWNLOADER_BLACKHOLE)
+    new_config['TORRENT']['tor_downloader_utorrent'] = int(TOR_DOWNLOADER_UTORRENT)
+    new_config['TORRENT']['tor_downloader_transmission'] = int(TOR_DOWNLOADER_TRANSMISSION)
+    new_config['TORRENT']['tor_downloader_deluge'] = int(TOR_DOWNLOADER_DELUGE)
+    new_config['TORRENT']['numberofseeders'] = int(NUMBEROFSEEDERS)
     new_config['TORRENT']['torrent_dir'] = TORRENT_DIR
 
     new_config['UTORRENT'] = {}
@@ -659,13 +659,13 @@ def config_write():
     new_config['UsenetCrawler']['usenetcrawler_api'] = USENETCRAWLER_API
 
     new_config['SearchScan'] = {}
-    new_config['SearchScan']['search_interval'] = SEARCH_INTERVAL
-    new_config['SearchScan']['scan_interval'] = SCAN_INTERVAL
-    new_config['SearchScan']['versioncheck_interval'] = VERSIONCHECK_INTERVAL
+    new_config['SearchScan']['search_interval'] = int(SEARCH_INTERVAL)
+    new_config['SearchScan']['scan_interval'] = int(SCAN_INTERVAL)
+    new_config['SearchScan']['versioncheck_interval'] = int(VERSIONCHECK_INTERVAL)
 
     new_config['LibraryScan'] = {}
-    new_config['LibraryScan']['full_scan'] = FULL_SCAN
-    new_config['LibraryScan']['add_author'] = ADD_AUTHOR
+    new_config['LibraryScan']['full_scan'] = int(FULL_SCAN)
+    new_config['LibraryScan']['add_author'] = int(ADD_AUTHOR)
     new_config['LibraryScan']['notfound_status'] = NOTFOUND_STATUS
     new_config['LibraryScan']['newbook_status'] = NEWBOOK_STATUS
 
