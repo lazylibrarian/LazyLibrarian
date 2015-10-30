@@ -524,8 +524,13 @@ class WebInterface(object):
             #            logger.info('Opening file ' + file2)
             #            return serve_file(os.path.join(dest_dir, file2), "application/x-download", "attachment")
 	    bookfile = bookdata[0]["BookFile"];
-            logger.info('Opening file ' + bookfile);
-	    return serve_file(bookfile, "application/x-download", "attachment")
+	    if bookfile and os.path.isfile(bookfile):
+            	logger.info('Opening file ' + bookfile);
+	    	return serve_file(bookfile, "application/x-download", "attachment")
+	    else:
+            	authorName = bookdata[0]["AuthorName"];
+            	bookName = bookdata[0]["BookName"];
+		logger.info('Missing book %s,%s' % (authorname, bookname))
     openBook.exposed = True
 
     def openMag(self, bookid=None, **args):

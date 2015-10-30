@@ -194,7 +194,7 @@ def LibraryScan(dir=None):
 			bookID = book['BookID']
 			bookfile = book['BookFile']
 
-			if os.path.isfile(bookfile):
+			if bookfile and os.path.isfile(bookfile):
 				book_exists = True
 			else:
 				myDB.action('update books set Status="%s" where BookID="%s"' % (status,bookID))
