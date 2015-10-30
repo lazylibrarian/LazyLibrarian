@@ -428,9 +428,9 @@ class GoodReads:
 					else:
 						book_status = lazylibrarian.NEWBOOK_STATUS
 
-    					bookname = bookname.replace(':','')
-					bookname = unidecode(u'%s' % bookname)
-					bookname = bookname.strip() # strip whitespace
+		    			bookname = bookname.replace(':','').replace('"','').replace("'","")
+		    			bookname = unidecode(u'%s' % bookname)
+		    			bookname = bookname.strip() # strip whitespace
 
 					if not (re.match('[^\w-]', bookname)): #remove books with bad characters in title
 						if book_status != "Ignored":
@@ -594,6 +594,10 @@ class GoodReads:
 		author = GR.find_author_id()
 		if author:
 			AuthorID = author['authorid']
+		    
+		bookname = bookname.replace(':','').replace('"','').replace("'","")
+		bookname = unidecode(u'%s' % bookname)
+		bookname = bookname.strip() # strip whitespace
 
 		controlValueDict = {"BookID": bookid}
 		newValueDict = {

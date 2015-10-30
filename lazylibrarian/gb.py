@@ -188,9 +188,10 @@ class GoogleBooks:
 #                        booknametmp6=booknametmp5.replace(u'\xd6',u'Oe')
 #                        booknametmp7=booknametmp6.replace(':','')
 #                        bookname=booknametmp7.replace(u'\xfc',u'ue')
-			bookname = item['volumeInfo']['title']
-			bookname = bookname.replace(':','')
-			bookname = unidecode(u'%s' % bookname)
+		    	bookname = item['volumeInfo']['title']
+		    	bookname = bookname.replace(':','').replace('"','').replace("'","")
+		    	bookname = unidecode(u'%s' % bookname)
+		    	bookname = bookname.strip() # strip whitespace
 # Darkie67 end
                         resultlist.append({
                             'authorname': Author,
@@ -401,7 +402,7 @@ class GoogleBooks:
 
                     bookid = item['id']
 #  Darkie67:
-#        replacing German Umlauts and filtering out ":"
+#        replacing German Umlauts and filtering out ":"  ## PAB no idea why we filter out ':' ??
 #
 #                    booknamealt = item['volumeInfo']['title']
 #                    booknametmp1=booknamealt.replace(u'\xf6',u'oe')
@@ -413,8 +414,9 @@ class GoogleBooks:
 #                    booknametmp7=booknametmp6.replace(':','')
 #                    bookname=booknametmp7.replace(u'\xfc',u'ue')
 		    bookname = item['volumeInfo']['title']
-		    bookname = bookname.replace(':','')
+		    bookname = bookname.replace(':','').replace('"','').replace("'","")
 		    bookname = unidecode(u'%s' % bookname)
+		    bookname = bookname.strip() # strip whitespace
 # Darkie67 end
                     booklink = item['volumeInfo']['canonicalVolumeLink']
                     bookrate = float(bookrate)
@@ -425,11 +427,6 @@ class GoogleBooks:
                             book_status = resulted['Status']
                     else:
                         book_status = lazylibrarian.NEWBOOK_STATUS
-
-    		    bookname = item['volumeInfo']['title']
-		    bookname = bookname.replace(':','')
-		    bookname = unidecode(u'%s' % bookname)
-		    bookname = bookname.strip() # strip whitespace
 
 		    if not (re.match('[^\w-]', bookname)): #remove books with bad characters in title
                         if book_status != "Ignored":
@@ -537,8 +534,9 @@ class GoogleBooks:
 #        booknametmp7=booknametmp6.replace(':','')
 #        bookname=booknametmp7.replace(u'\xfc',u'ue')
 	bookname = jsonresults['volumeInfo']['title']
-	bookname = bookname.replace(':','')
+    	bookname = bookname.replace(':','').replace('"','').replace("'","")
 	bookname = unidecode(u'%s' % bookname)
+	bookname = bookname.strip() # strip whitespace
 # Darkie67 end
         try:
             authorname = jsonresults['volumeInfo']['authors'][0]
