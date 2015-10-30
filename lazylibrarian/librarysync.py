@@ -199,7 +199,7 @@ def LibraryScan(dir=None):
 			else:
 				myDB.action('update books set Status="%s" where BookID="%s"' % (status,bookID))
 				myDB.action('update books set BookFile="" where BookID="%s"' % bookID)
-				logger.info('Book %s updated as not found on disk' % bookfile)
+				logger.info('Book %s - %s updated as not found on disk' % (bookAuthor, bookName))
 			#for book_type in getList(lazylibrarian.EBOOK_TYPE):
 			#	bookName = book['BookName']
 			#	bookAuthor = book['AuthorName']
