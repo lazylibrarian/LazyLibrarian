@@ -71,7 +71,7 @@ def search_tor_book(books=None, mags=None):
         searchlist.append({"bookid": bookid, "bookName":searchbook[2], "authorName":searchbook[1], "searchterm": searchterm.strip()})
     
     if not lazylibrarian.KAT:
-        logger.info('No download method is set, use SABnzbd or blackhole')
+        logger.info('No providers are set, please enable KAT')
 
 
     counter = 0
@@ -154,7 +154,10 @@ def DownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
 	request.add_header('User-Agent', common.USER_AGENT)
     
         if tor_prov == 'KAT':
-            request.add_header('Referer', 'http://kat.cr/')
+    	    host = lazylibrarian.KAT_HOST
+            if not str(host)[:4] == "http":
+        	host = 'http://' + host
+            request.add_header('Referer', host)
         
         response = urllib2.urlopen(request)
         if response.info().get('Content-Encoding') == 'gzip':
