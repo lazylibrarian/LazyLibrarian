@@ -440,6 +440,15 @@ class WebInterface(object):
 	raise cherrypy.HTTPRedirect("home")
     libraryScan.exposed = True
 
+    def clearLog(self):
+        # Clear the log
+        if os.path.exists(lazylibrarian.LOGDIR):
+            for f in os.listdir(lazylibrarian.LOGDIR):
+                os.unlink("%s/%s" % (lazylibrarian.LOGDIR, f))
+	lazylibrarian.LOGLIST = []
+	raise cherrypy.HTTPRedirect("logs")
+    clearLog.exposed = True
+
     def addResults(self, authorname):
         args = None;
         threading.Thread(target=importer.addAuthorToDB, args=[authorname]).start()
