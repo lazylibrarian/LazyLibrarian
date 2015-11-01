@@ -125,6 +125,7 @@ DELUGE_USER = None
 DELUGE_PASS = None
 
 KAT = 0
+KAT_HOST = None
 
 USE_NZB = 0
 USE_TOR = 0
@@ -153,6 +154,7 @@ EBOOK_DEST_FOLDER = None
 EBOOK_DEST_FILE = None
 MAG_DEST_FOLDER = None
 MAG_DEST_FILE = None
+MAG_RELATIVE = 1
 
 USE_TWITTER = 0
 TWITTER_NOTIFY_ONSNATCH = 0
@@ -265,14 +267,19 @@ def initialize():
 
     with INIT_LOCK:
 
-        global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, MATCH_RATIO, \
-	    PROXY_HOST, PROXY_TYPE, \
-            IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_AUTOADD, SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, NZB_BLACKHOLEDIR, GR_API, GB_API, BOOK_API, \
-            NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, NZB_DOWNLOADER_NZBGET, \
-            NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, NEWZNAB2, NEWZNAB_HOST2, NEWZNAB_API2, EBOOK_TYPE, KAT, USENETCRAWLER, USENETCRAWLER_HOST, USENETCRAWLER_API, \
-            VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_DEST_FOLDER, MAG_DEST_FILE, USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
-            USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, USE_TOR, USE_NZB, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
-            USE_PUSHBULLET, PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, UTORRENT_HOST, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
+        global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, \
+	    HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_AUTOADD, \
+	    SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, NZB_BLACKHOLEDIR, \
+	    GR_API, GB_API, BOOK_API, NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, NZB_DOWNLOADER_NZBGET, \
+            NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, \
+	    NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NEWZNAB2, NEWZNAB_HOST2, NEWZNAB_API2, NEWZNAB3, NEWZNAB_HOST3, NEWZNAB_API3, NEWZNAB4, NEWZNAB_HOST4, NEWZNAB_API4, \
+	    EBOOK_TYPE, KAT, KAT_HOST, USENETCRAWLER, USENETCRAWLER_HOST, USENETCRAWLER_API, \
+            VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_DEST_FOLDER, MAG_DEST_FILE, MAG_RELATIVE, \
+	    USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
+            USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, \
+	    USE_TOR, USE_NZB, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, USE_PUSHBULLET, \
+	    PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, \
+	    UTORRENT_HOST, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
             USE_PUSHOVER, PUSHOVER_ONSNATCH, PUSHOVER_KEYS, PUSHOVER_APITOKEN, PUSHOVER_PRIORITY, PUSHOVER_ONDOWNLOAD, \
             TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PASS, TRANSMISSION_USER, \
             TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, \
@@ -388,6 +395,12 @@ def initialize():
         NEWZNAB2 = check_setting_int(CFG, 'Newznab2', 'newznab2', 0)
         NEWZNAB_HOST2 = check_setting_str(CFG, 'Newznab2', 'newznab_host2', '')
         NEWZNAB_API2 = check_setting_str(CFG, 'Newznab2', 'newznab_api2', '')
+        NEWZNAB3 = check_setting_int(CFG, 'Newznab3', 'newznab3', 0)
+        NEWZNAB_HOST3 = check_setting_str(CFG, 'Newznab3', 'newznab_host3', '')
+        NEWZNAB_API3 = check_setting_str(CFG, 'Newznab3', 'newznab_api3', '')
+        NEWZNAB4 = check_setting_int(CFG, 'Newznab4', 'newznab4', 0)
+        NEWZNAB_HOST4 = check_setting_str(CFG, 'Newznab4', 'newznab_host4', '')
+        NEWZNAB_API4 = check_setting_str(CFG, 'Newznab4', 'newznab_api4', '')
 
         TOR_DOWNLOADER_BLACKHOLE = check_setting_int(CFG, 'TORRENT', 'tor_downloader_blackhole', 0)
         TOR_DOWNLOADER_UTORRENT = check_setting_int(CFG, 'TORRENT', 'tor_downloader_utorrent', 0)
@@ -411,6 +424,7 @@ def initialize():
         DELUGE_PASS = check_setting_str(CFG, 'DELUGE', 'deluge_pass', '')
 
         KAT = check_setting_int(CFG, 'KAT', 'kat', 0)
+	KAT_HOST = check_setting_str(CFG, 'KAT', 'kat_host', 'kat.cr')
 
         USENETCRAWLER = check_setting_int(CFG, 'UsenetCrawler', 'usenetcrawler', 0)
         USENETCRAWLER_HOST = check_setting_str(CFG, 'UsenetCrawler', 'usenetcrawler_host', '')
@@ -434,6 +448,7 @@ def initialize():
         EBOOK_DEST_FILE = check_setting_str(CFG, 'PostProcess', 'ebook_dest_file', '$Title - $Author')
         MAG_DEST_FOLDER = check_setting_str(CFG, 'PostProcess', 'mag_dest_folder', '_Magazines/$Title/$IssueDate')
         MAG_DEST_FILE = check_setting_str(CFG, 'PostProcess', 'mag_dest_file', '$IssueDate - $Title')
+	MAG_RELATIVE = check_setting_int(CFG, 'PostProcess', 'mag_relative', 1)
 
         USE_TWITTER = check_setting_int(CFG, 'Twitter', 'use_twitter', 0)
         TWITTER_NOTIFY_ONSNATCH = check_setting_int(CFG, 'Twitter', 'twitter_notify_onsnatch', 0)
@@ -621,6 +636,16 @@ def config_write():
     new_config['Newznab2']['newznab_host2'] = NEWZNAB_HOST2
     new_config['Newznab2']['newznab_api2'] = NEWZNAB_API2
 
+    new_config['Newznab3'] = {}
+    new_config['Newznab3']['newznab3'] = int(NEWZNAB3)
+    new_config['Newznab3']['newznab_host3'] = NEWZNAB_HOST3
+    new_config['Newznab3']['newznab_api3'] = NEWZNAB_API3
+
+    new_config['Newznab4'] = {}
+    new_config['Newznab4']['newznab4'] = int(NEWZNAB4)
+    new_config['Newznab4']['newznab_host4'] = NEWZNAB_HOST4
+    new_config['Newznab4']['newznab_api4'] = NEWZNAB_API4
+
     new_config['Newzbin'] = {}
     new_config['Newzbin']['newzbin'] = int(NEWZBIN)
     new_config['Newzbin']['newzbin_uid'] = NEWZBIN_UID
@@ -653,6 +678,7 @@ def config_write():
 
     new_config['KAT'] = {}
     new_config['KAT']['kat'] = int(KAT)
+    new_config['KAT']['kat_host'] = KAT_HOST
 
     new_config['UsenetCrawler'] = {}
     new_config['UsenetCrawler']['usenetcrawler'] = int(USENETCRAWLER)
@@ -675,6 +701,7 @@ def config_write():
     new_config['PostProcess']['ebook_dest_file'] = EBOOK_DEST_FILE
     new_config['PostProcess']['mag_dest_folder'] = MAG_DEST_FOLDER
     new_config['PostProcess']['mag_dest_file'] = MAG_DEST_FILE
+    new_config['PostProcess']['mag_relative'] = int(MAG_RELATIVE)
 
     new_config['Twitter'] = {}
     new_config['Twitter']['use_twitter'] = int(USE_TWITTER)

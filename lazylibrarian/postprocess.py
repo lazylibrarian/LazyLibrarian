@@ -74,7 +74,12 @@ def processDir():
 				continue
 
 			try:
-				post_dir = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(lazylibrarian.SYS_ENCODING)
+				if lazylibrarian.MAG_RELATIVE:
+					if dest_path[0] not in '._':
+						dest_path = '_' + dest_path
+					post_dir = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(lazylibrarian.SYS_ENCODING)
+				else:
+					post_dir = dest_path.encode(lazylibrarian.SYS_ENCODING)
 				os.chmod(post_dir, 0777);
 			except Exception, e:
 				logger.debug("Could not chmod post-process directory: " + str(post_dir));

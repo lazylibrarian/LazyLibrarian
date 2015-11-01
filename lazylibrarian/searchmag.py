@@ -43,9 +43,6 @@ def searchmagazines(mags=None):
 	if not lazylibrarian.SAB_HOST and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE and not lazylibrarian.NZB_DOWNLOADER_NZBGET:
 		logger.info('No download method is set, use SABnzbd/NZBGet or blackhole')
 
-	if not lazylibrarian.NEWZNAB and not lazylibrarian.NEWZNAB2 and not lazylibrarian.USENETCRAWLER:
-		logger.info('No providers are set. try use NEWZNAB.')
-
 	if searchlist == []:
 		logger.info('There is nothing to search for.  Mark some magazines as active.')
 
