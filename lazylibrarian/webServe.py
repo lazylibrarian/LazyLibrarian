@@ -81,7 +81,7 @@ class WebInterface(object):
                     "imp_onlyisbn": 	checked(lazylibrarian.IMP_ONLYISBN),
                     "imp_singlebook": 	checked(lazylibrarian.IMP_SINGLEBOOK),
                     "imp_preflang":     lazylibrarian.IMP_PREFLANG,
-                    "imp_autoadd":      checked(lazylibrarian.IMP_AUTOADD),
+                    "imp_autoadd":      lazylibrarian.IMP_AUTOADD,
                     "sab_host":         lazylibrarian.SAB_HOST,
                     "sab_port":         lazylibrarian.SAB_PORT,
                     "sab_subdir":       lazylibrarian.SAB_SUBDIR,                    
@@ -107,10 +107,17 @@ class WebInterface(object):
                     "use_newznab2" :    checked(lazylibrarian.NEWZNAB2),
                     "newznab_host2" :   lazylibrarian.NEWZNAB_HOST2,
                     "newznab_api2" :    lazylibrarian.NEWZNAB_API2,
+                    "use_newznab3" :    checked(lazylibrarian.NEWZNAB3),
+                    "newznab_host3" :   lazylibrarian.NEWZNAB_HOST3,
+                    "newznab_api3" :    lazylibrarian.NEWZNAB_API3,
+                    "use_newznab4" :    checked(lazylibrarian.NEWZNAB4),
+                    "newznab_host4" :   lazylibrarian.NEWZNAB_HOST4,
+                    "newznab_api4" :    lazylibrarian.NEWZNAB_API4,
                     "use_newzbin" :     checked(lazylibrarian.NEWZBIN),
                     "newzbin_uid" :     lazylibrarian.NEWZBIN_UID,
                     "newzbin_pass" :    lazylibrarian.NEWZBIN_PASS,
                     "use_kat" :         checked(lazylibrarian.KAT),
+		    "kat_host" : 	lazylibrarian.KAT_HOST,
                     "use_usenetcrawler" :     checked(lazylibrarian.USENETCRAWLER),
                     "usenetcrawler_host" :    lazylibrarian.USENETCRAWLER_HOST,
                     "usenetcrawler_api" :     lazylibrarian.USENETCRAWLER_API,
@@ -126,6 +133,7 @@ class WebInterface(object):
                     "ebook_dest_file":        lazylibrarian.EBOOK_DEST_FILE,
                     "mag_dest_folder":        lazylibrarian.MAG_DEST_FOLDER,
                     "mag_dest_file":          lazylibrarian.MAG_DEST_FILE,
+		    "mag_relative":    	      checked(lazylibrarian.MAG_RELATIVE),
                     "use_twitter" :           checked(lazylibrarian.USE_TWITTER),
                     "twitter_notify_onsnatch" :       checked(lazylibrarian.TWITTER_NOTIFY_ONSNATCH),
                     "twitter_notify_ondownload" :     checked(lazylibrarian.TWITTER_NOTIFY_ONDOWNLOAD), 
@@ -176,14 +184,23 @@ class WebInterface(object):
         return serve_template(templatename="config.html", title="Settings", config=config)    
     config.exposed = True
 
-    def configUpdate(self, http_host='0.0.0.0', http_root=None, http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, imp_onlyisbn=0, imp_singlebook=1, imp_preflang=None, imp_autoadd=None, match_ratio=80, nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0, nzb_downloader_blackhole=0, use_nzb=0, use_tor=0, proxy_host=None, proxy_type=None,
-        sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None, destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, nzb_blackholedir=None, torrent_dir=None, numberofseeders=0, tor_downloader_blackhole=0, tor_downloader_utorrent=0,
-        nzbget_host=None, nzbget_user=None, nzbget_pass=None, nzbget_cat=None, nzbget_priority=0,
-        newznab=0, newznab_host=None, newznab_api=None, newznab2=0, newznab_host2=None, newznab_api2=None,newzbin=0, newzbin_uid=None, newzbin_pass=None, kat=0, ebook_type=None, book_api=None, gr_api=None, gb_api=None, usenetcrawler = 0, usenetcrawler_host=None, usenetcrawler_api = None, 
-        versioncheck_interval=None, search_interval=None, scan_interval=None, ebook_dest_folder=None, ebook_dest_file=None, mag_dest_folder=None, mag_dest_file=None, use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0, utorrent_host=None, utorrent_user=None, utorrent_pass=None,  notfound_status='Skipped', newbook_status='Skipped', full_scan=0, add_author=1, 
-        tor_downloader_transmission=0, transmission_host=None, transmission_user=None, transmission_pass=None,
+    def configUpdate(self, http_host='0.0.0.0', http_root=None, http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, 
+	imp_onlyisbn=0, imp_singlebook=0, imp_preflang=None, imp_autoadd=None, match_ratio=80, 
+	nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0, nzb_downloader_blackhole=0, use_nzb=0, use_tor=0, 
+	proxy_host=None, proxy_type=None,sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None, 
+	destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, nzb_blackholedir=None, 
+	torrent_dir=None, numberofseeders=0, tor_downloader_blackhole=0, tor_downloader_utorrent=0, 
+	nzbget_host=None, nzbget_user=None, nzbget_pass=None, nzbget_cat=None, nzbget_priority=0, 
+	newznab=0, newznab_host=None, newznab_api=None, newznab2=0, newznab_host2=None, newznab_api2=None, newznab3=0, newznab_host3=None, newznab_api3=None, 
+	newznab4=0, newznab_host4=None, newznab_api4=None, newzbin=0, newzbin_uid=None, newzbin_pass=None, kat=0, kat_host=None, ebook_type=None, book_api=None, 
+	gr_api=None, gb_api=None, usenetcrawler=0, usenetcrawler_host=None, usenetcrawler_api = None, versioncheck_interval=None, search_interval=None, scan_interval=None,
+ 	ebook_dest_folder=None, ebook_dest_file=None, mag_relative=0, mag_dest_folder=None, mag_dest_file=None,
+	use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0, utorrent_host=None, utorrent_user=None, utorrent_pass=None,  
+	notfound_status='Skipped', newbook_status='Skipped', full_scan=0, add_author=0, 
+	tor_downloader_transmission=0, transmission_host=None, transmission_user=None, transmission_pass=None,
         tor_downloader_deluge=0, deluge_host=None, deluge_user=None, deluge_pass=None, deluge_port=None, 
-        utorrent_label=None, use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token=None, use_pushbullet=0, pushbullet_notify_onsnatch=0, pushbullet_notify_ondownload=0, pushbullet_token=None, pushbullet_deviceid=None,
+        utorrent_label=None, use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token=None, 
+	use_pushbullet=0, pushbullet_notify_onsnatch=0, pushbullet_notify_ondownload=0, pushbullet_token=None, pushbullet_deviceid=None,
         use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys=None, pushover_apitoken=None, pushover_ondownload=0,
 	nma_enabled=False, nma_apikey=None, nma_priority=0, nma_onsnatch=0):
 
@@ -193,14 +210,14 @@ class WebInterface(object):
         lazylibrarian.HTTP_USER = http_user
         lazylibrarian.HTTP_PASS = http_pass
         lazylibrarian.HTTP_LOOK = http_look
-        lazylibrarian.LAUNCH_BROWSER = launch_browser
+        lazylibrarian.LAUNCH_BROWSER = int(launch_browser)
 	lazylibrarian.PROXY_HOST = proxy_host
 	lazylibrarian.PROXY_TYPE = proxy_type
         lazylibrarian.LOGDIR = logdir
         lazylibrarian.MATCH_RATIO = match_ratio
 
-        lazylibrarian.IMP_ONLYISBN = imp_onlyisbn
-        lazylibrarian.IMP_SINGLEBOOK = imp_singlebook
+        lazylibrarian.IMP_ONLYISBN = int(imp_onlyisbn)
+        lazylibrarian.IMP_SINGLEBOOK = int(imp_singlebook)
         lazylibrarian.IMP_PREFLANG = imp_preflang
         lazylibrarian.IMP_AUTOADD  = imp_autoadd
 
@@ -218,30 +235,38 @@ class WebInterface(object):
         lazylibrarian.NZBGET_CATEGORY = nzbget_cat
         lazylibrarian.NZBGET_PRIORITY = nzbget_priority
 
-        lazylibrarian.DESTINATION_COPY = destination_copy
+        lazylibrarian.DESTINATION_COPY = int(destination_copy)
         lazylibrarian.DESTINATION_DIR = destination_dir
         lazylibrarian.DOWNLOAD_DIR = download_dir
         lazylibrarian.USENET_RETENTION = usenet_retention
         lazylibrarian.NZB_BLACKHOLEDIR = nzb_blackholedir
-        lazylibrarian.NZB_DOWNLOADER_SABNZBD = nzb_downloader_sabnzbd
-        lazylibrarian.NZB_DOWNLOADER_NZBGET = nzb_downloader_nzbget
-        lazylibrarian.NZB_DOWNLOADER_BLACKHOLE = nzb_downloader_blackhole
+        lazylibrarian.NZB_DOWNLOADER_SABNZBD = int(nzb_downloader_sabnzbd)
+        lazylibrarian.NZB_DOWNLOADER_NZBGET = int(nzb_downloader_nzbget)
+        lazylibrarian.NZB_DOWNLOADER_BLACKHOLE = int(nzb_downloader_blackhole)
         lazylibrarian.TORRENT_DIR = torrent_dir
         lazylibrarian.NUMBEROFSEEDERS = numberofseeders
-        lazylibrarian.TOR_DOWNLOADER_BLACKHOLE = tor_downloader_blackhole
-        lazylibrarian.TOR_DOWNLOADER_UTORRENT = tor_downloader_utorrent
-        lazylibrarian.TOR_DOWNLOADER_TRANSMISSION = tor_downloader_transmission
-        lazylibrarian.TOR_DOWNLOADER_DELUGE = tor_downloader_deluge
+        lazylibrarian.TOR_DOWNLOADER_BLACKHOLE = int(tor_downloader_blackhole)
+        lazylibrarian.TOR_DOWNLOADER_UTORRENT = int(tor_downloader_utorrent)
+        lazylibrarian.TOR_DOWNLOADER_TRANSMISSION = int(tor_downloader_transmission)
+        lazylibrarian.TOR_DOWNLOADER_DELUGE = int(tor_downloader_deluge)
 
-        lazylibrarian.NEWZNAB = newznab
+        lazylibrarian.NEWZNAB = int(newznab)
         lazylibrarian.NEWZNAB_HOST = newznab_host
         lazylibrarian.NEWZNAB_API = newznab_api
 
-        lazylibrarian.NEWZNAB2 = newznab2
+        lazylibrarian.NEWZNAB2 = int(newznab2)
         lazylibrarian.NEWZNAB_HOST2 = newznab_host2
         lazylibrarian.NEWZNAB_API2 = newznab_api2
 
-        lazylibrarian.NEWZBIN = newzbin
+        lazylibrarian.NEWZNAB3 = int(newznab3)
+        lazylibrarian.NEWZNAB_HOST3 = newznab_host3
+        lazylibrarian.NEWZNAB_API3 = newznab_api3
+
+        lazylibrarian.NEWZNAB4 = int(newznab4)
+        lazylibrarian.NEWZNAB_HOST4 = newznab_host4
+        lazylibrarian.NEWZNAB_API4 = newznab_api4
+
+        lazylibrarian.NEWZBIN = int(newzbin)
         lazylibrarian.NEWZBIN_UID = newzbin_uid
         lazylibrarian.NEWZBIN_PASS = newzbin_pass
 
@@ -259,13 +284,13 @@ class WebInterface(object):
         lazylibrarian.DELUGE_USER = deluge_user
         lazylibrarian.DELUGE_PASS = deluge_pass
 
-        lazylibrarian.KAT = kat
+        lazylibrarian.KAT = int(kat)
+	lazylibrarian.KAT_HOST = kat_host
 
+        lazylibrarian.USE_NZB = int(use_nzb)
+        lazylibrarian.USE_TOR = int(use_tor)
 
-        lazylibrarian.USE_NZB = use_nzb
-        lazylibrarian.USE_TOR = use_tor
-
-        lazylibrarian.USENETCRAWLER = usenetcrawler
+        lazylibrarian.USENETCRAWLER = int(usenetcrawler)
         lazylibrarian.USENETCRAWLER_HOST = usenetcrawler_host
         lazylibrarian.USENETCRAWLER_API = usenetcrawler_api
 
@@ -278,42 +303,43 @@ class WebInterface(object):
         lazylibrarian.SCAN_INTERVAL = scan_interval
         lazylibrarian.VERSIONCHECK_INTERVAL = versioncheck_interval
 
-	lazylibrarian.FULL_SCAN = full_scan
+	lazylibrarian.FULL_SCAN = int(full_scan)
 	lazylibrarian.NOTFOUND_STATUS = notfound_status
 	lazylibrarian.NEWBOOK_STATUS = newbook_status
-	lazylibrarian.ADD_AUTHOR = add_author
+	lazylibrarian.ADD_AUTHOR = int(add_author)
 
         lazylibrarian.EBOOK_DEST_FOLDER = ebook_dest_folder
         lazylibrarian.EBOOK_DEST_FILE = ebook_dest_file
         lazylibrarian.MAG_DEST_FOLDER = mag_dest_folder
         lazylibrarian.MAG_DEST_FILE = mag_dest_file
+	lazylibrarian.MAG_RELATIVE = int(mag_relative)
 
-        lazylibrarian.USE_TWITTER = use_twitter
-        lazylibrarian.TWITTER_NOTIFY_ONSNATCH = twitter_notify_onsnatch
-        lazylibrarian.TWITTER_NOTIFY_ONDOWNLOAD = twitter_notify_ondownload
+        lazylibrarian.USE_TWITTER = int(use_twitter)
+        lazylibrarian.TWITTER_NOTIFY_ONSNATCH = int(twitter_notify_onsnatch)
+        lazylibrarian.TWITTER_NOTIFY_ONDOWNLOAD = int(twitter_notify_ondownload)
 
-        lazylibrarian.USE_BOXCAR = use_boxcar
-        lazylibrarian.BOXCAR_NOTIFY_ONSNATCH = boxcar_notify_onsnatch
-        lazylibrarian.BOXCAR_NOTIFY_ONDOWNLOAD = boxcar_notify_ondownload
+        lazylibrarian.USE_BOXCAR = int(use_boxcar)
+        lazylibrarian.BOXCAR_NOTIFY_ONSNATCH = int(boxcar_notify_onsnatch)
+        lazylibrarian.BOXCAR_NOTIFY_ONDOWNLOAD = int(boxcar_notify_ondownload)
         lazylibrarian.BOXCAR_TOKEN = boxcar_token
         
-        lazylibrarian.USE_PUSHBULLET = use_pushbullet
-        lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH = pushbullet_notify_onsnatch
-        lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD = pushbullet_notify_ondownload
+        lazylibrarian.USE_PUSHBULLET = int(use_pushbullet)
+        lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH = int(pushbullet_notify_onsnatch)
+        lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD = int(pushbullet_notify_ondownload)
         lazylibrarian.PUSHBULLET_TOKEN = pushbullet_token
         lazylibrarian.PUSHBULLET_DEVICEID = pushbullet_deviceid
 
-        lazylibrarian.USE_PUSHOVER = use_pushover
-        lazylibrarian.PUSHOVER_ONSNATCH = pushover_onsnatch
-        lazylibrarian.PUSHOVER_ONDOWNLOAD = pushover_ondownload
+        lazylibrarian.USE_PUSHOVER = int(use_pushover)
+        lazylibrarian.PUSHOVER_ONSNATCH = int(pushover_onsnatch)
+        lazylibrarian.PUSHOVER_ONDOWNLOAD = int(pushover_ondownload)
         lazylibrarian.PUSHOVER_KEYS = pushover_keys
         lazylibrarian.PUSHOVER_APITOKEN = pushover_apitoken
         lazylibrarian.PUSHOVER_PRIORITY =pushover_priority
 
-	lazylibrarian.NMA_ENABLED = nma_enabled
+	lazylibrarian.NMA_ENABLED = int(nma_enabled)
 	lazylibrarian.NMA_APIKEY = nma_apikey
 	lazylibrarian.NMA_PRIORITY = nma_priority
-	lazylibrarian.NMA_ONSNATCH = nma_onsnatch
+	lazylibrarian.NMA_ONSNATCH = int(nma_onsnatch)
 
         lazylibrarian.config_write()
 
@@ -556,7 +582,12 @@ class WebInterface(object):
             
             pp_dir = lazylibrarian.DESTINATION_DIR
             mag_path = lazylibrarian.MAG_DEST_FOLDER.replace('$IssueDate', IssueDate).replace('$Title', Title)
-            dest_dir = os.path.join(pp_dir, mag_path)
+	    if lazylibrarian.MAG_RELATIVE:
+		if mag_path[0] not in '._':
+			mag_path = '_' + mag_path
+            	dest_dir = os.path.join(pp_dir, mag_path)
+	    else:
+		dest_dir = mag_path
 
             logger.debug('bookdir ' + dest_dir);
             if os.path.isdir(dest_dir):
@@ -691,6 +722,7 @@ class WebInterface(object):
 			logger.debug('Snatching %s' % items['nzbtitle'])
             		snatch = DownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
             		notifiers.notify_snatch(items['nzbtitle']+' at '+formatter.now()) 
+	raise cherrypy.HTTPRedirect("history?source=magazines")
     markMags.exposed = True
 
     #ALL ELSE

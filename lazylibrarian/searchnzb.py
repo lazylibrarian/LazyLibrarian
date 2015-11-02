@@ -69,13 +69,8 @@ def search_nzb_book(books=None, mags=None):
     if not lazylibrarian.SAB_HOST and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE and not lazylibrarian.NZBGET_HOST:
         logger.info('No download method is set, use SABnzbd/NZBGet or blackhole')
 
-    #TODO - Move the newznab test to providers.py
-    if not lazylibrarian.NEWZNAB and not lazylibrarian.NEWZNAB2 and not lazylibrarian.USENETCRAWLER:
-        logger.info('No providers are set. try use NEWZNAB.')
-
     counter = 0
     for book in searchlist: 
-        #print book.keys()
         resultlist = providers.IterateOverNewzNabSites(book,'book')
 
         #if you can't find teh book specifically, you might find under general search

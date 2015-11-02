@@ -8,7 +8,7 @@ from lazylibrarian import logger, SimpleCache
 import lazylibrarian.common as common
 
 #new libraries to support torrents
-#import lib.feedparser as feedparser
+
 import lib.feedparser as feedparser
 #from bs4 import BeautifulSoup
 #import cookielib
@@ -26,9 +26,12 @@ def url_fix(s, charset='utf-8'):
 
 def KAT(book=None):
 
-
     provider = "KAT"
-    providerurl = url_fix("http://kickass.to/usearch/" + book['searchterm'])
+    host = lazylibrarian.KAT_HOST
+    if not str(host)[:4] == "http":
+        host = 'http://' + host
+
+    providerurl = url_fix(host + "/usearch/" + book['searchterm'])
     minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
 
 
@@ -85,7 +88,7 @@ def KAT(book=None):
                     logger.error(u"An unknown error occurred in the KAT parser: %s" % e)
 
     return results
-
+# this function is now redundant, all newznabs go through IterateOverNewzNabSites
 def UsenetCrawler(book=None, searchType=None):
 
 
@@ -95,7 +98,7 @@ def UsenetCrawler(book=None, searchType=None):
     
     results = NewzNabPlus(book, lazylibrarian.USENETCRAWLER_HOST, lazylibrarian.USENETCRAWLER_API, searchType)
     return results
-    
+# this function is redundant    
 def OLDUsenetCrawler(book=None):
 
 
@@ -115,7 +118,8 @@ def OLDUsenetCrawler(book=None):
     
     #sample request
     #https://www.usenet-crawler.com/api?apikey=7xxxxxxxxxxxxxyyyyyyyyyyyyyyzzz4&t=book&author=Daniel
-
+    # sample jackett request
+    #http://192.168.2.2:9117/torznab/strike/api?q=Competence+mac&apikey=pkl4u83iz41up73m4zsigqsd4zyie50r&t=search&extended=1&cat=8000
     logger.debug("%s" % params)
     
     if not str(HOST)[:4] == "http":
@@ -168,24 +172,45 @@ def OLDUsenetCrawler(book=None):
 def IterateOverNewzNabSites(book=None, searchType=None):
 
     resultslist = []
-    
+    providers = 0
+
     if (lazylibrarian.NEWZNAB):
+	providers += 1
         logger.debug('[IterateOverNewzNabSites] - NewzNab1')
         resultslist += NewzNabPlus(book, lazylibrarian.NEWZNAB_HOST, 
                                     lazylibrarian.NEWZNAB_API,
                                     searchType)
 
     if (lazylibrarian.NEWZNAB2):
+	providers += 1
         logger.debug('[IterateOverNewzNabSites] - NewzNab2')
         resultslist += NewzNabPlus(book, lazylibrarian.NEWZNAB_HOST2, 
                                     lazylibrarian.NEWZNAB_API2,
                                     searchType)
                                     
+    if (lazylibrarian.NEWZNAB3):
+	providers += 1
+        logger.debug('[IterateOverNewzNabSites] - NewzNab3')
+        resultslist += NewzNabPlus(book, lazylibrarian.NEWZNAB_HOST3, 
+                                    lazylibrarian.NEWZNAB_API3,
+                                    searchType)
+                                    
+    if (lazylibrarian.NEWZNAB4):
+	providers += 1
+        logger.debug('[IterateOverNewzNabSites] - NewzNab4')
+        resultslist += NewzNabPlus(book, lazylibrarian.NEWZNAB_HOST4, 
+                                    lazylibrarian.NEWZNAB_API4,
+                                    searchType)
+                                    
     if (lazylibrarian.USENETCRAWLER):
+	providers += 1
         logger.debug('[IterateOverNewzNabSites] - USenetCrawler')
         resultslist += NewzNabPlus(book, lazylibrarian.USENETCRAWLER_HOST,
                                     lazylibrarian.USENETCRAWLER_API,
                                     searchType)
+    if not providers:
+ 	logger.info('No providers are set. try use NEWZNAB.')
+
     return resultslist
 
 
