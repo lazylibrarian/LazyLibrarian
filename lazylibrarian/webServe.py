@@ -722,6 +722,7 @@ class WebInterface(object):
 			logger.debug('Snatching %s' % items['nzbtitle'])
             		snatch = DownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
             		notifiers.notify_snatch(items['nzbtitle']+' at '+formatter.now()) 
+	raise cherrypy.HTTPRedirect("history?source=magazines")
     markMags.exposed = True
 
     #ALL ELSE
