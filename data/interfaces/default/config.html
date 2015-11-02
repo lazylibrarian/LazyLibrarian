@@ -349,9 +349,7 @@
                 <td>
                     <input type="checkbox" name="usenetcrawler" value=1 ${config['use_usenetcrawler']} style="margin-bottom:4px;" />
                     <input type="text" placeholder="Enter Host Here" name="usenetcrawler_host" value="${config['usenetcrawler_host']}" size="26" maxlength="100">
-		</td>
-		<td>    
-		    <input type="text" placeholder="Enter API Here" name="usenetcrawler_api" value="${config['usenetcrawler_api']}" size="40" maxlength="40">
+		    <input type="text" placeholder="Enter API Here" name="usenetcrawler_api" value="${config['usenetcrawler_api']}" size="30" maxlength="40">
 		</td>
         	<td>
             		<input type="checkbox" name="kat" value=1 ${config['use_kat']} style="margin-bottom:4px;" /> KAT
@@ -362,36 +360,28 @@
                 <td>
                     <input type="checkbox" name="newznab" value=1 ${config['use_newznab']} style="margin-bottom:4px;" />
                     <input type="text" placeholder="Enter Host Here" name="newznab_host" value="${config['newznab_host']}" size="26" maxlength="100">
-		</td>
-		<td>    
-		    <input type="text" placeholder="Enter API Here" name="newznab_api" value="${config['newznab_api']}" size="40" maxlength="40">
+		    <input type="text" placeholder="Enter API Here" name="newznab_api" value="${config['newznab_api']}" size="30" maxlength="40">
                 </td>
             </tr>
 	    <tr>
                <td>
                     <input type="checkbox" name="newznab2" value=1 ${config['use_newznab2']} style="margin-bottom:4px;" />
                     <input type="text" placeholder="Enter Host Here" name="newznab_host2" value="${config['newznab_host2']}" size="26" maxlength="100">
-		</td>
-		<td>    
-		    <input type="text" placeholder="Enter API Here" name="newznab_api2" value="${config['newznab_api2']}" size="40" maxlength="40">
+		    <input type="text" placeholder="Enter API Here" name="newznab_api2" value="${config['newznab_api2']}" size="30" maxlength="40">
                 </td>
             </tr>
 	    <tr>
                 <td>
                     <input type="checkbox" name="newznab3" value=1 ${config['use_newznab3']} style="margin-bottom:4px;" />
                     <input type="text" placeholder="Enter Host Here" name="newznab_host3" value="${config['newznab_host3']}" size="26" maxlength="100">
-		</td>
-		<td>    
-		    <input type="text" placeholder="Enter API Here" name="newznab_api3" value="${config['newznab_api3']}" size="40" maxlength="40">
+		    <input type="text" placeholder="Enter API Here" name="newznab_api3" value="${config['newznab_api3']}" size="30" maxlength="40">
                 </td>
             </tr>
 	    <tr>
                 <td>
                     <input type="checkbox" name="newznab4" value=1 ${config['use_newznab4']} style="margin-bottom:4px;" />
                     <input type="text" placeholder="Enter Host Here" name="newznab_host4" value="${config['newznab_host4']}" size="26" maxlength="100">
-		</td>
-		<td>    
-		    <input type="text" placeholder="Enter API Here" name="newznab_api4" value="${config['newznab_api4']}" size="40" maxlength="40">
+		    <input type="text" placeholder="Enter API Here" name="newznab_api4" value="${config['newznab_api4']}" size="30" maxlength="40">
                 </td>
             </tr>
         </table>
@@ -436,7 +426,7 @@
             </tr>
             <tr>
                 <td>
-                    <label>eBook Destination Folder:</label><input type="text" name="ebook_dest_folder" value="${config['ebook_dest_folder']}" size="30" maxlength="40">
+                    <label>eBook Destination Folder:</label><input type="text" name="ebook_dest_folder" value="${config['ebook_dest_folder']}" size="30" maxlength="100">
                     <label>eBook Destination File:</label><input type="text" name="ebook_dest_file" value="${config['ebook_dest_file']}" size="30" maxlength="40">
                     <BR>
                     <small>Options include $Author, $Title, any string
@@ -445,11 +435,11 @@
                     </small>
                 </td>
                 <td>
-		    <input type="checkbox" name="mag_relative" value=1 ${config['mag_relative']} /><label>Magazines inside book folder</label>
-		    <BR>
-                    <label>Magazine Destination Folder:</label><input type="text" name="mag_dest_folder" value="${config['mag_dest_folder']}" size="30" maxlength="40">
+		    <label>Magazine Destination Folder:</label><input type="text" name="mag_dest_folder" value="${config['mag_dest_folder']}" size="30" maxlength="100">
                     <label>Magazine Destination File:</label><input type="text" name="mag_dest_file" value="${config['mag_dest_file']}" size="30" maxlength="40">
                     <BR>
+                    <input type="checkbox" name="mag_relative" value=1 ${config['mag_relative']} /><label>Magazines inside book folder</label>
+		    <BR>
                     <small>Options include $Title, $IssueDate, any string
                     <BR>
                     Current limitation: each magazine has to be in unique subfolder
