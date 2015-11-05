@@ -34,8 +34,17 @@ notifyStrings[NOTIFY_DOWNLOAD] = "Download Finished"
 
 import unicodedata
 import string
+
+def to_unicode(unicode_or_str):
+    if isinstance(unicode_or_str, str):
+	value = unicode_or_str.decode('utf-8')
+    else:
+	value = unicode_or_str
+    return value # always return unicode
+
 validFilenameChars = "-_.() %s%s" % (string.ascii_letters, string.digits)
 def removeDisallowedFilenameChars(filename):
+    filename = to_unicode(filename)
     cleanedFilename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore')
     return ''.join(c for c in cleanedFilename if c in validFilenameChars)
 

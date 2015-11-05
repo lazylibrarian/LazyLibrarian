@@ -14,6 +14,7 @@ from lib.fuzzywuzzy import fuzz, process
 from lazylibrarian.common import USER_AGENT
 
 #new to support torrents
+from lazylibrarian.searchtorrents import TORDownloadMethod
 from StringIO import StringIO
 import gzip
 
@@ -71,13 +72,17 @@ def search_nzb_book(books=None, mags=None):
 
     counter = 0
     for book in searchlist: 
-        resultlist = providers.IterateOverNewzNabSites(book,'book')
+        resultlist, nproviders = providers.IterateOverNewzNabSites(book,'book')
+
+	if not nproviders:
+		logger.info('No providers are set. try use NEWZNAB or TORZNAB')
+		return
 
         #if you can't find teh book specifically, you might find under general search
         if not resultlist:
             logger.info("Searching for type book failed to find any books...moving to general search")
-            resultlist = providers.IterateOverNewzNabSites(book,'general')
-
+            resultlist, nproviders = providers.IterateOverNewzNabSites(book,'general')
+	
         if not resultlist:
             logger.debug("Adding book %s to queue." % book['searchterm'])
 
@@ -108,6 +113,7 @@ def search_nzb_book(books=None, mags=None):
                         nzbsize_temp = 1000
                     nzbsize = str(round(float(nzbsize_temp) / 1048576,2))+' MB'
                     nzbdate = formatter.nzbdate2format(nzbdate_temp)
+		    nzbmode = nzb['nzbmode']
                     
                     controlValueDict = {"NZBurl": nzburl}
                     newValueDict = {
@@ -116,13 +122,17 @@ def search_nzb_book(books=None, mags=None):
                         "NZBdate": nzbdate,
                         "NZBsize": nzbsize,
                         "NZBtitle": nzbTitle,
+			"NZBmode": nzbmode,
                         "Status": "Skipped"
                     }
                     myDB.upsert("wanted", newValueDict, controlValueDict)
 
                     snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' % bookid).fetchone()
                     if not snatchedbooks:
-                        snatch = DownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
+			if nzbmode == "torznab":
+				snatch = TORDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
+			else:
+                        	snatch = NZBDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
                         notifiers.notify_snatch(nzbTitle+' at '+formatter.now()) 
                     break;
             if addedCounter == 0:
@@ -132,15 +142,19 @@ def search_nzb_book(books=None, mags=None):
     if not books or books==False:
         snatched = searchmag.searchmagazines(mags)
         for items in snatched:
-            snatch = DownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-            notifiers.notify_snatch(items['nzbtitle']+' at '+formatter.now()) 
-    logger.info("Search for Wanted items complete")
+		if items['nzbmode'] == "torznab":
+			snatch = TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+		elif items['nzbmode'] == "torrent":
+			snatch = TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+		else:
+            		snatch = NZBDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+            	notifiers.notify_snatch(items['nzbtitle']+' at '+formatter.now()) 
+    logger.info("NZBSearch for Wanted items complete")
 
 
-def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
+def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
 
     myDB = database.DBConnection()
-
     if lazylibrarian.SAB_HOST and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
         download = sabnzbd.SABnzbd(nzbtitle, nzburl)
 
@@ -187,7 +201,7 @@ def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
                 download = False;
 
     else:
-        logger.error('No download method is enabled, check config.')
+        logger.error('No NZB download method is enabled, check config.')
         return False
 
     if download:
@@ -197,8 +211,6 @@ def DownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
     else:
         logger.error(u'Failed to download nzb @ <a href="%s">%s</a>' % (nzburl, lazylibrarian.NEWZNAB_HOST))
         myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl="%s"' % nzburl)
-
-
 
 def MakeSearchTermWebSafe(insearchterm=None):
 

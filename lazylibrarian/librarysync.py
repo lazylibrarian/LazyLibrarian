@@ -68,15 +68,15 @@ def get_book_info(fname):
       else:
         return ""
 
-    # repackage the data - not too happy with this as there can be
-    # several "identifier", only one of which is an isbn, how can we tell?
-    # I just strip formatting, check for length, and check is only digits
+    # repackage the data
+    # for ISBN strip formatting, check for length, and check is only digits
     # except the last digit of an isbn10 may be 'X'
     res = {}
     n = 0
     while n < len(tree[0]):
 	tag = tree[0][n].tag.split('}')[1]
 	txt = tree[0][n].text
+	attrib = tree[0][n].attrib
 	isbn = ""
 	if 'title' in tag.lower():
 		res['title'] = txt
@@ -84,7 +84,7 @@ def get_book_info(fname):
 		res['language'] = txt
 	elif 'creator' in tag.lower():
 		res['creator'] = txt
-	elif 'identifier' in tag.lower():
+	elif 'identifier' in tag.lower() and 'isbn' in attrib.lower():
 		if len(txt) == 13:
 		    if txt.isdigit():
 			isbn = txt
