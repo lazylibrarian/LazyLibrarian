@@ -253,8 +253,6 @@ def LibraryScan(dir=None):
 		    if (lazylibrarian.IMP_SINGLEBOOK) and (subdirectory in processed_subdirectories):
 		        logger.debug("[%s] already scanned" % subdirectory)
                     else:
-			logger.info("[%s] Now scanning subdirectory %s" % (dir.decode(lazylibrarian.SYS_ENCODING, 'replace'), subdirectory.decode(lazylibrarian.SYS_ENCODING, 'replace')))
-
 # 			If this is a book, try to get author/title/isbn/language
 # 			If metadata.opf exists, use that
 # 			else if epub or mobi, read metadata from the book
@@ -266,6 +264,7 @@ def LibraryScan(dir=None):
 			extn = words[len(words)-1]
 			if (extn in booktypes):
  				# see if there is a metadata file in this folder with the info we need
+				logger.info("[%s] Now scanning subdirectory %s" % (dir.decode(lazylibrarian.SYS_ENCODING, 'replace'), subdirectory.decode(lazylibrarian.SYS_ENCODING, 'replace')))
 				try:
 					metafile = os.path.join(r,"metadata.opf").encode(lazylibrarian.SYS_ENCODING)
 					res = get_book_info(metafile)
