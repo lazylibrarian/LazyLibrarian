@@ -221,7 +221,7 @@ def searchmagazines(mags=None):
 					        
 						# only grab a copy if it's newer than the most recent we have, or newer than a month ago if we have none
 						# TODO we should maybe store frequency in the table too - would allow us to recreate the table on a scan
-						# similar to importing a book library
+						# similar to importing a book library. Also need number of seeders collecting and storing for torznab
 						comp_date = formatter.datecompare(newdatish, control_date)
 						if comp_date > 0:
 							myDB.upsert("magazines", {"LastAcquired": nzbdate, "IssueDate": newdatish}, {"Title": bookid})
