@@ -371,10 +371,6 @@ def initialize():
         IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', 'en, eng, en-US')
         IMP_AUTOADD = check_setting_str(CFG, 'General', 'imp_autoadd', '')
         IMP_ONLYISBN = check_setting_int(CFG, 'General', 'imp_onlyisbn', 0)
-        #TODO - investigate this for future users
-        #Something funny here - putting IMP_AUTOADD after IMP_ONLYISBN resulted in it not working
-        #Couldn't see it  - PAB seems to be related to bool, removed that, just use int now
-	#we used to read bool as int and true/false are not int so default value is forced
         IMP_SINGLEBOOK = check_setting_int(CFG, 'General', 'imp_singlebook', 0)
 
         GIT_USER = check_setting_str(CFG, 'Git', 'git_user', 'dobytang')
