@@ -20,7 +20,7 @@ import gzip
 
 def search_nzb_book(books=None, mags=None):
     if not(lazylibrarian.USE_NZB):
-	logger.debug('USE_NZB is disabled')
+	logger.debug('NZB Search is disabled')
         return
     # rename this thread
     threading.currentThread().name = "SEARCHNZBBOOKS"

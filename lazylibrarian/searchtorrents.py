@@ -23,7 +23,7 @@ import gzip
 
 def search_tor_book(books=None, mags=None):
     if not(lazylibrarian.USE_TOR):
-	logger.debug('USE_TOR is disabled')
+	logger.debug('Torrent search is disabled')
         return
     # rename this thread
     threading.currentThread().name = "SEARCHTORBOOKS"
