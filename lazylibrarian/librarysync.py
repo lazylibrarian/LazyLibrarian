@@ -388,7 +388,7 @@ def LibraryScan(dir=None):
 						match_fuzz = fuzz.ratio(match_auth, match_name)
 						if (match_fuzz < 90):
 							logger.info("Failed to match author [%s] fuzz [%d]" % (author, match_fuzz))
-							logger.info("match author [%s] authorname [%s]" % (match_auth, match_name))
+							logger.debug("Failed to match author [%s] to authorname [%s]" % (match_auth, match_name))
 
 						# To save loading hundreds of books by unknown authors at GR or GB, ignore if author "Unknown"
 						if (author != "Unknown") and (match_fuzz >= 90):
