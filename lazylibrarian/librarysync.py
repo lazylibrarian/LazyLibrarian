@@ -52,7 +52,7 @@ def get_book_info(fname):
       n = 0
       cfname = ""
       while n < len(tree[0]):
-	att = tree[0][n].attrib
+	att = str(tree[0][n].attrib)
 	if 'full-path' in att:
 		cfname = ("%s" % att) # extract metadata filename
 		cfname = cfname.split(',')[1].split(':')[1].strip('\' }')
@@ -74,9 +74,9 @@ def get_book_info(fname):
     res = {}
     n = 0
     while n < len(tree[0]):
-	tag = tree[0][n].tag.split('}')[1]
+	tag = str(tree[0][n].tag).split('}')[1]
 	txt = tree[0][n].text
-	attrib = tree[0][n].attrib
+	attrib = str(tree[0][n].attrib)
 	isbn = ""
 	if 'title' in tag.lower():
 		res['title'] = txt
@@ -269,12 +269,21 @@ def LibraryScan(dir=None):
 				try:
 					metafile = os.path.join(r,"metadata.opf").encode(lazylibrarian.SYS_ENCODING)
 					res = get_book_info(metafile)
-					book = res['title']
-					author = res['creator']
-					language = res['language']
-					isbn = res['identifier']
-					match = 1
-					logger.debug("file meta [%s] [%s] [%s] [%s]" % (isbn,language,author,book))
+					if 'title' in res and 'creator' in res: # this is the minimum we need
+						book = res['title']
+						author = res['creator']
+						if 'language' in res:
+							language = res['language']
+						else:
+							language = ""
+						if 'identifier' in res:
+							isbn = res['identifier']
+						else:
+							isbn = ""
+						match = 1						
+						logger.debug("file meta [%s] [%s] [%s] [%s]" % (isbn,language,author,book))
+					else:
+						logger.debug("file meta incomplete in %s" % r)
 				except:
 					logger.debug("No metadata file in %s" % r)
 
@@ -284,13 +293,21 @@ def LibraryScan(dir=None):
 					if (extn == "epub") or (extn == "mobi"):
 						book_file = os.path.join(r,files).encode(lazylibrarian.SYS_ENCODING)
 						res = get_book_info(book_file)
-						if res:
+						if 'title' in res and 'creator' in res: # this is the minimum we need
 							book = res['title']
 							author = res['creator']
-							language = res['language']
-							isbn = res['identifier']
-							match = 1
+							if 'language' in res:
+								language = res['language']
+							else:
+								language = ""
+							if 'identifier' in res:
+								isbn = res['identifier']
+							else:
+								isbn = ""
 							logger.debug("book meta [%s] [%s] [%s] [%s]" % (isbn,language,author,book))
+							match = 1							
+						else:
+							logger.debug("book meta incomplete in %s" % book_file)
 
 			if not match:
 				match = pattern.match(files)
