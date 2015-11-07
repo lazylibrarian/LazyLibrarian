@@ -1,5 +1,5 @@
-import time, datetime
-from time import strptime
+import time, datetime, calendar
+#from time import strptime
 
 import lazylibrarian
 
@@ -25,7 +25,7 @@ def age(histdate):
 def nzbdate2format(nzbdate):
     mmname = nzbdate.split()[2].zfill(2)
     day = nzbdate.split()[1]
-    #PAB don't assume users locale is english. nzbdates are (always?) english short month names
+    #PAB don't assume users locale is english. nzbdates are mostly english short month names, but not always
     #month = str(strptime(mmname, '%b').tm_mon).zfill(2)
     month = month2num(mmname)
     if month == "Invalid":
@@ -34,30 +34,30 @@ def nzbdate2format(nzbdate):
     return year+'-'+month+'-'+day
 
 def month2num(month):
-# return month number given month name (long or short) in English or current locale
-    if month == "January" or month == "Jan":
+# return month number given month name (long or short) in English or default locale
+    if month in ["January", "Jan"]:
         return "01"
-    elif month == "February" or month == "Feb":
+    elif month in ["February", "Feb"]:
         return "02"
-    elif month == "March" or month == "Mar":
+    elif month in ["March", "Mar"]:
         return "03"
-    elif month == "April" or month == "Apr":
+    elif month in ["April", "Apr"]:
         return "04"
     elif month == "May":
         return "05"
-    elif month == "June" or month == "Jun":
+    elif month in ["June", "Jun"]:
         return "06"
-    elif month == "July" or month == "Jul":
+    elif month in ["July", "Jul"]:
         return "07"
-    elif month == "August" or month == "Aug":
+    elif month in ["August", "Aug"]:
         return "08"
-    elif month == "September" or month == "Sep":
+    elif month in ["September", "Sep"]:
         return "09"
-    elif month == "October" or month == "Oct":
+    elif month in ["October", "Oct"]:
         return "10"
-    elif month == "November" or month == "Nov":
+    elif month in ["November", "Nov"]:
         return "11"
-    elif month == "December" or month == "Dec":
+    elif month in ["December", "Dec"]:
         return "12"
     elif month == "Winter":
         return "01"
@@ -69,32 +69,13 @@ def month2num(month):
         return "10"
     elif month == "Autumn":
         return "10"
-    elif month == datetime.date(2015, 1, 1).strftime("%B") or month == datetime.date(2015, 1, 1).strftime("%b"):
-	return "01"
-    elif month == datetime.date(2015, 2, 1).strftime("%B") or month == datetime.date(2015, 1, 2).strftime("%b"):
-	return "02"
-    elif month == datetime.date(2015, 3, 1).strftime("%B") or month == datetime.date(2015, 1, 3).strftime("%b"):
-	return "03"
-    elif month == datetime.date(2015, 4, 1).strftime("%B") or month == datetime.date(2015, 1, 4).strftime("%b"):
-	return "04"
-    elif month == datetime.date(2015, 5, 1).strftime("%B") or month == datetime.date(2015, 1, 5).strftime("%b"):
-	return "05"
-    elif month == datetime.date(2015, 6, 1).strftime("%B") or month == datetime.date(2015, 1, 6).strftime("%b"):
-	return "06"
-    elif month == datetime.date(2015, 7, 1).strftime("%B") or month == datetime.date(2015, 1, 7).strftime("%b"):
-	return "07"
-    elif month == datetime.date(2015, 8, 1).strftime("%B") or month == datetime.date(2015, 1, 8).strftime("%b"):
-	return "08"
-    elif month == datetime.date(2015, 9, 1).strftime("%B") or month == datetime.date(2015, 1, 9).strftime("%b"):
-	return "09"
-    elif month == datetime.date(2015, 10, 1).strftime("%B") or month == datetime.date(2015, 1, 10).strftime("%b"):
-	return "10"
-    elif month == datetime.date(2015, 11, 1).strftime("%B") or month == datetime.date(2015, 1, 11).strftime("%b"):
-	return "11"
-    elif month == datetime.date(2015, 12, 1).strftime("%B") or month == datetime.date(2015, 1, 12).strftime("%b"):
-	return "12"
-    else:	
-        return "Invalid" 
+# no match in English, try default locale, which may be the same
+# I don't check as en_GB, en_US and others use English month names
+    else:
+	    for monthnum in range(1,13):
+		if month in [calendar.month_name[monthnum], calendar.month_abbr[monthnum]]:
+			return str(monthnum).zfill(2)
+    return "Invalid" 
 
 def datecompare(nzbdate, control_date):
     y1 = int(nzbdate.split('-')[0])
@@ -115,10 +96,17 @@ def checked(variable):
         return ''
 
 def is_valid_isbn(isbn):
-    last = 10 if isbn[-1] in ["X", "x"] else int(isbn[-1])
-    weighted = [int(num)*weight for num, weight in
-              zip(isbn[:-1], reversed(range(2, 11)))]
-    return (sum(weighted) + last) %11==0
+    isbn = re.sub('[- ]', '', isbn)
+    if len(isbn) == 13:
+	if isbn.isdigit():
+	    return 1
+	elif len(isbn) == 10:
+	    if isbn[:9].isdigit():
+		return 1
+	    else:
+		if isbn[9] in ["X", "x"] and isbn[:8].isdigit():
+		    return 1
+    return 0
 
 def latinToAscii(unicrap):
     """

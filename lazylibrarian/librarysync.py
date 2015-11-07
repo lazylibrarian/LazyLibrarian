@@ -3,7 +3,7 @@ import glob
 import re, time
 import lazylibrarian
 import shlex
-from lazylibrarian import logger, database, importer
+from lazylibrarian import logger, database, importer, formatter
 from lazylibrarian.gr import GoodReads
 import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
@@ -69,8 +69,6 @@ def get_book_info(fname):
         return ""
 
     # repackage the data
-    # for ISBN strip formatting, check for length, and check is only digits
-    # except the last digit of an isbn10 may be 'X'
     res = {}
     n = 0
     while n < len(tree[0]):
@@ -85,13 +83,8 @@ def get_book_info(fname):
 	elif 'creator' in tag.lower():
 		res['creator'] = txt
 	elif 'identifier' in tag.lower() and 'isbn' in attrib.lower():
-		if len(txt) == 13:
-		    if txt.isdigit():
-			isbn = txt
-		elif len(txt) == 10:
-			if txt[:8].isdigit():
-				isbn = txt	
-    		res['identifier'] = isbn
+		if is_valid_isbn(txt):	
+    		    res['identifier'] = isbn
 	n = n + 1
     return res
 
@@ -324,11 +317,7 @@ def LibraryScan(dir=None):
 				if not language:
 					language = "Unknown"
 
-				# strip any formatting from the isbn
-				isbn = re.sub('[- ]', '', isbn)
-				if len(isbn) != 10 and len(isbn) != 13:
-					isbn=""
-				if not isbn.isdigit():
+				if not is_valid_isbn(isbn):
 					isbn=""
 				if (isbn != "" and language != "Unknown"):
 					logger.debug("Found Language [%s] ISBN [%s]" % (language, isbn))
