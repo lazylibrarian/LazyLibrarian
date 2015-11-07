@@ -192,17 +192,16 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=
 
     #logger.info('[NewzNabPlus] Searching term [%s] for author [%s] and title [%s] on host [%s] for a [%s] item' % (book['searchterm'], book['authorName'], book['bookName'], host, searchType))
     logger.info('[NewzNabPlus] searchType [%s] with Host [%s] mode [%s] using api [%s] for item [%s]'%(searchType, host, searchMode, api_key, str(book)))
-    
-    
+       
     results = []  
     
     params = ReturnSearchTypeStructure(api_key, book, searchType, searchMode)
-
+    print "PAB1"
     if not str(host)[:4] == "http":
         host = 'http://' + host
     
     URL = host + '/api?' + urllib.urlencode(params)
-   
+    print "PAB2"
     try :
         request = urllib2.Request(URL)
 	if lazylibrarian.PROXY_HOST:
@@ -220,7 +219,7 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=
     except Exception, e:
         logger.error("Error 403 opening url %s" % e)
         data = None
-
+    print "PAB3"
     if data:
         # to debug because of api
         logger.debug(u'Parsing results from <a href="%s">%s</a>' % (URL, host))
@@ -234,7 +233,7 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=
             except IndexError:
                 logger.debug('No results from %s' % host)
         if nzbcount:
-            logger.debug(u'Found %s nzb at %s for: %s' % (nzbcount, host, book['searchterm']))
+            logger.info(u'Found %s nzb at %s for: %s' % (nzbcount, host, book['searchterm']))
         else:
             logger.info(u'Found %s nzb at %s for: %s - Adding book to queue' % (nzbcount, host, book['searchterm']))
     else:
