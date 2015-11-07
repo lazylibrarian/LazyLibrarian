@@ -25,35 +25,39 @@ def age(histdate):
 def nzbdate2format(nzbdate):
     mmname = nzbdate.split()[2].zfill(2)
     day = nzbdate.split()[1]
-    month = str(strptime(mmname, '%b').tm_mon).zfill(2)
+    #PAB don't assume users locale is english. nzbdates are (always?) english short month names
+    #month = str(strptime(mmname, '%b').tm_mon).zfill(2)
+    month = month2num(mmname)
+    if month == "Invalid":
+	month = "01" # hopefully won't hit this, but return a default value rather than error
     year = nzbdate.split()[3]
     return year+'-'+month+'-'+day
 
 def month2num(month):
-# return month number given month name in English or current locale
-    if month == "January":
+# return month number given month name (long or short) in English or current locale
+    if month == "January" or month == "Jan":
         return "01"
-    elif month == "February":
+    elif month == "February" or month == "Feb":
         return "02"
-    elif month == "March":
+    elif month == "March" or month == "Mar":
         return "03"
-    elif month == "April":
+    elif month == "April" or month == "Apr":
         return "04"
     elif month == "May":
         return "05"
-    elif month == "June":
+    elif month == "June" or month == "Jun":
         return "06"
-    elif month == "July":
+    elif month == "July" or month == "Jul":
         return "07"
-    elif month == "August":
+    elif month == "August" or month == "Aug":
         return "08"
-    elif month == "September":
+    elif month == "September" or month == "Sep":
         return "09"
-    elif month == "October":
+    elif month == "October" or month == "Oct":
         return "10"
-    elif month == "November":
+    elif month == "November" or month == "Nov":
         return "11"
-    elif month == "December":
+    elif month == "December" or month == "Dec":
         return "12"
     elif month == "Winter":
         return "01"
@@ -65,29 +69,29 @@ def month2num(month):
         return "10"
     elif month == "Autumn":
         return "10"
-    elif month == datetime.date(2015, 1, 1).strftime("%B"):
+    elif month == datetime.date(2015, 1, 1).strftime("%B") or month == datetime.date(2015, 1, 1).strftime("%b"):
 	return "01"
-    elif month == datetime.date(2015, 2, 1).strftime("%B"):
+    elif month == datetime.date(2015, 2, 1).strftime("%B") or month == datetime.date(2015, 1, 2).strftime("%b"):
 	return "02"
-    elif month == datetime.date(2015, 3, 1).strftime("%B"):
+    elif month == datetime.date(2015, 3, 1).strftime("%B") or month == datetime.date(2015, 1, 3).strftime("%b"):
 	return "03"
-    elif month == datetime.date(2015, 4, 1).strftime("%B"):
+    elif month == datetime.date(2015, 4, 1).strftime("%B") or month == datetime.date(2015, 1, 4).strftime("%b"):
 	return "04"
-    elif month == datetime.date(2015, 5, 1).strftime("%B"):
+    elif month == datetime.date(2015, 5, 1).strftime("%B") or month == datetime.date(2015, 1, 5).strftime("%b"):
 	return "05"
-    elif month == datetime.date(2015, 6, 1).strftime("%B"):
+    elif month == datetime.date(2015, 6, 1).strftime("%B") or month == datetime.date(2015, 1, 6).strftime("%b"):
 	return "06"
-    elif month == datetime.date(2015, 7, 1).strftime("%B"):
+    elif month == datetime.date(2015, 7, 1).strftime("%B") or month == datetime.date(2015, 1, 7).strftime("%b"):
 	return "07"
-    elif month == datetime.date(2015, 8, 1).strftime("%B"):
+    elif month == datetime.date(2015, 8, 1).strftime("%B") or month == datetime.date(2015, 1, 8).strftime("%b"):
 	return "08"
-    elif month == datetime.date(2015, 9, 1).strftime("%B"):
+    elif month == datetime.date(2015, 9, 1).strftime("%B") or month == datetime.date(2015, 1, 9).strftime("%b"):
 	return "09"
-    elif month == datetime.date(2015, 10, 1).strftime("%B"):
+    elif month == datetime.date(2015, 10, 1).strftime("%B") or month == datetime.date(2015, 1, 10).strftime("%b"):
 	return "10"
-    elif month == datetime.date(2015, 11, 1).strftime("%B"):
+    elif month == datetime.date(2015, 11, 1).strftime("%B") or month == datetime.date(2015, 1, 11).strftime("%b"):
 	return "11"
-    elif month == datetime.date(2015, 12, 1).strftime("%B"):
+    elif month == datetime.date(2015, 12, 1).strftime("%B") or month == datetime.date(2015, 1, 12).strftime("%b"):
 	return "12"
     else:	
         return "Invalid" 

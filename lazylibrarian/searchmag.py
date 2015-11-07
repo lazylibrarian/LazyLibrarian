@@ -87,6 +87,7 @@ def searchmagazines(mags=None):
                     		if nzbsize_temp is None: # not all torrents returned by torznab have a size
                         		nzbsize_temp = 1000
 				nzbsize = str(round(float(nzbsize_temp) / 1048576,2))+' MB'
+				# seems not all return a valid date 
 				nzbdate = formatter.nzbdate2format(nzbdate_temp)
 				nzbmode = nzb['nzbmode']
 				checkifmag = myDB.select('SELECT * from magazines WHERE Title="%s"' % bookid)

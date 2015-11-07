@@ -927,8 +927,8 @@ class WebInterface(object):
             books=False
             if (lazylibrarian.USE_NZB):
                 threading.Thread(target=search_nzb_book, args=[books, mags]).start()
-            if (lazylibrarian.USE_TOR):
-                threading.Thread(target=search_tor_book, args=[books, mags]).start()
+            #if (lazylibrarian.USE_TOR): # magazine search handles nzb/torznab/torrent together, no need to call search_tor_book separately
+            #    threading.Thread(target=search_tor_book, args=[books, mags]).start()
             logger.debug("Searching for magazine with title: " + bookid);
             raise cherrypy.HTTPRedirect("magazines")
     searchForMag.exposed = True

@@ -218,7 +218,7 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=
             data = None
 
     except Exception, e:
-        logger.error("Error 403 openning url %s" % e)
+        logger.error("Error 403 opening url %s" % e)
         data = None
 
     if data:
@@ -229,15 +229,16 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=
         nzbcount = 0
         for nzb in resultxml:
             try:
-                nzbcount = nzbcount+1
-                
+                nzbcount = nzbcount+1               
                 results.append(ReturnResultsFieldsBySearchType(book, nzb, searchType, host, searchMode))
             except IndexError:
-                logger.debug('No results')
+                logger.debug('No results from %s' % host)
         if nzbcount:
-            logger.debug('Found %s nzb for: %s' % (nzbcount, book['searchterm']))
+            logger.debug(u'Found %s nzb at %s for: %s' % (nzbcount, host, book['searchterm']))
         else:
-            logger.info(u'Newznab returned 0 results for: ' + book['searchterm'] + '. Adding book to queue.')
+            logger.info(u'Found %s nzb at %s for: %s - Adding book to queue' % (nzbcount, host, book['searchterm']))
+    else:
+    	logger.debug('No data returned from %s' % host)
     return results
     
 def ReturnSearchTypeStructure(api_key, book, searchType, searchMode):
@@ -293,7 +294,7 @@ def ReturnSearchTypeStructure(api_key, book, searchType, searchMode):
             "q": book['searchterm'],
             "extended": 1,
         }
-    logger.debug('NewzNabPlus] - Search parameters set to '+str(params))
+    logger.debug('[NewzNabPlus] - Search parameters set to '+str(params))
 
     return params
 
