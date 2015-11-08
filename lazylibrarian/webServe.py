@@ -17,7 +17,6 @@ from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
 
 import lib.simplejson as simplejson
-from lib.unidecode import unidecode
 
 def serve_template(templatename, **kwargs):
 

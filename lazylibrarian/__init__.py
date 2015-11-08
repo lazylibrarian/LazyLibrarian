@@ -577,16 +577,25 @@ def initialize():
 
 def build_monthtable():
   current_locale = locale.getdefaultlocale() # save current state
+  # ensure current locale is in the list...
+  lang = str(current_locale[0]) + '.utf8'
+  MONTHNAMES[0].append(lang)
+  for f in range(1, 13):
+        MONTHNAMES[f].append(remove_accents(calendar.month_name[f]).lower())
+  MONTHNAMES[0].append(lang)
+  for f in range(1, 13):
+           MONTHNAMES[f].append(remove_accents(calendar.month_abbr[f]).lower().strip('.'))
+  logger.info("Added month names for locale [%s]" % lang)
+  
 
   for lang in IMP_MONTHLANG.split(','): 
     try:
 	lang = str(lang).strip()
         locale.setlocale(locale.LC_ALL, lang)
-        MONTHNAMES[0].append(locale.getlocale())
+        MONTHNAMES[0].append(lang)
         for f in range(1, 13):
            MONTHNAMES[f].append(remove_accents(calendar.month_name[f]).lower())
-
-        MONTHNAMES[0].append(locale.getlocale())
+        MONTHNAMES[0].append(lang)
         for f in range(1, 13):
            MONTHNAMES[f].append(remove_accents(calendar.month_abbr[f]).lower().strip('.'))
 	logger.info("Added month names for locale [%s]" % lang)
@@ -597,7 +606,7 @@ def build_monthtable():
   # quick sanity check, warn if no english names in table
   eng = 0
   for lang in MONTHNAMES[0]:
-	if lang[0].startswith('en_'):
+	if lang.startswith('en_'):
 		eng = 1
   if not eng:
 	logger.warn("No English language loaded - Magazine name matching will probably fail")
