@@ -82,9 +82,9 @@ def KAT(book=None):
                             'tor_size': str(size),
                             })
 
-                    	logger.info('Found %s. Size: %s' % (title, size))
+                    	logger.debug('Found %s. Size: %s' % (title, size))
 		    else:
-			logger.info('Found %s but only %s seeders' % (title, int(seeders)))
+			logger.debug('Found %s but only %s seeders' % (title, int(seeders)))
                 
                 except Exception, e:
                     logger.error(u"An unknown error occurred in the KAT parser: %s" % e)
