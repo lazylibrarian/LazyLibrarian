@@ -82,169 +82,126 @@ def KAT(book=None):
                             'tor_size': str(size),
                             })
 
-                    logger.info('Found %s. Size: %s' % (title, size))
+                    	logger.info('Found %s. Size: %s' % (title, size))
+		    else:
+			logger.info('Found %s but only %s seeders' % (title, int(seeders)))
                 
                 except Exception, e:
                     logger.error(u"An unknown error occurred in the KAT parser: %s" % e)
 
     return results
-# this function is now redundant, all newznabs go through IterateOverNewzNabSites
-def UsenetCrawler(book=None, searchType=None):
-
-
-    results = []
-    
-    #print book.keys()
-    
-    results = NewzNabPlus(book, lazylibrarian.USENETCRAWLER_HOST, lazylibrarian.USENETCRAWLER_API, searchType)
-    return results
-# this function is redundant    
-def OLDUsenetCrawler(book=None):
-
-
-    HOST = lazylibrarian.USENETCRAWLER_HOST
-    results = []
-    
-    print book.keys()
-    
-    logger.info('UsenetCrawler: Searching term [%s] for author [%s] and title [%s]' % (book['searchterm'], book['authorName'], book['bookName']))
-    
-    params = {
-        "apikey": lazylibrarian.USENETCRAWLER_API,
-        "t": "book",
-        "title": book['bookName'],
-        "author": book['authorName']
-        }
-    
-    #sample request
-    #https://www.usenet-crawler.com/api?apikey=7xxxxxxxxxxxxxyyyyyyyyyyyyyyzzz4&t=book&author=Daniel
-    # sample jackett request
-    #http://192.168.2.2:9117/torznab/strike/api?q=Competence+mac&apikey=pkl4u83iz41up73m4zsigqsd4zyie50r&t=search&extended=1&cat=8000
-    logger.debug("%s" % params)
-    
-    if not str(HOST)[:4] == "http":
-        HOST = 'http://' + HOST
-    
-    URL = HOST + '/api?' + urllib.urlencode(params)
-    
-    logger.debug('UsenetCrawler: searching on [%s] ' % URL)
-    
-    data = None    
-    try:
-        data = ElementTree.parse(urllib2.urlopen(URL, timeout=30))
-    except (urllib2.URLError, IOError, EOFError), e:
-        logger.Error('Error fetching data from %s: %s' % (HOST, e))
-        data = None
-
-    if data:
-        # to debug because of api
-        logger.debug(u'Parsing results from <a href="%s">%s</a>' % (URL, HOST))
-        rootxml = data.getroot()
-        resultxml = rootxml.getiterator('item')
-        nzbcount = 0
-        for nzb in resultxml:
-            try:
-                nzbcount = nzbcount+1
-                results.append({
-                    'bookid': book['bookid'],
-                    'nzbprov': "UsenetCrawler",
-                    'nzbtitle': nzb[0].text,
-                    'nzburl': nzb[2].text,
-                    'nzbdate': nzb[4].text,
-                    'nzbsize': nzb[10].attrib.get('size')
-                    })
-                    
-                logger.debug('NZB Details BookID: [%s] NZBUrl [%s] NZBDate [%s] NZBSize [%s]' % (book['bookid'],nzb[2].text,nzb[4].text,nzb[10].attrib.get('size')))
-              
-            except IndexError:
-                logger.info('No results')
-        if nzbcount:
-            logger.info('Found %s nzb for: %s' % (nzbcount, book['searchterm']))
-        else:
-            logger.info('UsenetCrawler returned 0 results for: ' + book['searchterm'])
-                
-    return results
-
 
 #
 #Purpose of this function is to read the config file, and loop through all active NewsNab+
 #sites and return the compiled results list from all sites back to the caller
+# We get called with searchType of "book", "mag", "general"
+# 
 def IterateOverNewzNabSites(book=None, searchType=None):
 
     resultslist = []
     providers = 0
 
-    if (lazylibrarian.NEWZNAB):
+    if (lazylibrarian.NEWZNAB0):
+	providers += 1
+        logger.debug('[IterateOverNewzNabSites] - NewzNab0')
+        resultslist += NewzNabPlus(book, lazylibrarian.NEWZNAB_HOST0,
+                                    lazylibrarian.NEWZNAB_API0,
+                                    searchType, "nzb")
+
+    if (lazylibrarian.NEWZNAB1):
 	providers += 1
         logger.debug('[IterateOverNewzNabSites] - NewzNab1')
-        resultslist += NewzNabPlus(book, lazylibrarian.NEWZNAB_HOST, 
-                                    lazylibrarian.NEWZNAB_API,
-                                    searchType)
+        resultslist += NewzNabPlus(book, lazylibrarian.NEWZNAB_HOST1, 
+                                    lazylibrarian.NEWZNAB_API1,
+                                    searchType, "nzb")
 
     if (lazylibrarian.NEWZNAB2):
 	providers += 1
         logger.debug('[IterateOverNewzNabSites] - NewzNab2')
         resultslist += NewzNabPlus(book, lazylibrarian.NEWZNAB_HOST2, 
                                     lazylibrarian.NEWZNAB_API2,
-                                    searchType)
+                                    searchType, "nzb")
                                     
     if (lazylibrarian.NEWZNAB3):
 	providers += 1
         logger.debug('[IterateOverNewzNabSites] - NewzNab3')
         resultslist += NewzNabPlus(book, lazylibrarian.NEWZNAB_HOST3, 
                                     lazylibrarian.NEWZNAB_API3,
-                                    searchType)
+                                    searchType, "nzb")
                                     
     if (lazylibrarian.NEWZNAB4):
 	providers += 1
         logger.debug('[IterateOverNewzNabSites] - NewzNab4')
         resultslist += NewzNabPlus(book, lazylibrarian.NEWZNAB_HOST4, 
                                     lazylibrarian.NEWZNAB_API4,
-                                    searchType)
-                                    
-    if (lazylibrarian.USENETCRAWLER):
-	providers += 1
-        logger.debug('[IterateOverNewzNabSites] - USenetCrawler')
-        resultslist += NewzNabPlus(book, lazylibrarian.USENETCRAWLER_HOST,
-                                    lazylibrarian.USENETCRAWLER_API,
-                                    searchType)
-    if not providers:
- 	logger.info('No providers are set. try use NEWZNAB.')
+                                    searchType, "nzb")
 
-    return resultslist
+    if (lazylibrarian.TORZNAB0):
+	providers += 1
+        logger.debug('[IterateOverNewzNabSites] - TorzNab0')
+        resultslist += NewzNabPlus(book, lazylibrarian.TORZNAB_HOST0, 
+                                    lazylibrarian.TORZNAB_API0,
+                                    searchType, "torznab")
+    if (lazylibrarian.TORZNAB1):
+	providers += 1
+        logger.debug('[IterateOverNewzNabSites] - TorzNab1')
+        resultslist += NewzNabPlus(book, lazylibrarian.TORZNAB_HOST1, 
+                                    lazylibrarian.TORZNAB_API1,
+                                    searchType, "torznab")
+    if (lazylibrarian.TORZNAB2):
+	providers += 1
+        logger.debug('[IterateOverNewzNabSites] - TorzNab2')
+        resultslist += NewzNabPlus(book, lazylibrarian.TORZNAB_HOST2, 
+                                    lazylibrarian.TORZNAB_API2,
+                                    searchType, "torznab")
+    if (lazylibrarian.TORZNAB3):
+	providers += 1
+        logger.debug('[IterateOverNewzNabSites] - TorzNab3')
+        resultslist += NewzNabPlus(book, lazylibrarian.TORZNAB_HOST3, 
+                                    lazylibrarian.TORZNAB_API3,
+                                    searchType, "torznab")
+    if (lazylibrarian.TORZNAB4):
+	providers += 1
+        logger.debug('[IterateOverNewzNabSites] - TorzNab4')
+        resultslist += NewzNabPlus(book, lazylibrarian.TORZNAB_HOST4, 
+                                    lazylibrarian.TORZNAB_API4,
+                                    searchType, "torznab")
+ 	
+    return resultslist, providers
 
 
 
 def IterateOverTorrentSites(book=None, searchType=None):
 
     resultslist = []
+    providers = 0
     if (lazylibrarian.KAT):
+	 providers += 1
          logger.debug('[IterateOverTorrentSites] - KAT')
          resultslist += KAT(book)
 
-    return resultslist
+    return resultslist, providers
 
 #
 #Generic NewzNabplus query function
 #takes in host+key+type and returns the result set regardless of who
 #based on site running NewzNab+
 #ref http://usenetreviewz.com/nzb-sites/
-def NewzNabPlus(book=None, host=None, api_key=None, searchType=None):
+def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=None):
 
 
     #logger.info('[NewzNabPlus] Searching term [%s] for author [%s] and title [%s] on host [%s] for a [%s] item' % (book['searchterm'], book['authorName'], book['bookName'], host, searchType))
-    logger.info('[NewzNabPlus] searchType [%s] with Host [%s] using api [%s] for item [%s]'%(searchType, host, api_key,str(book)))
-    
-    
+    logger.info('[NewzNabPlus] searchType [%s] with Host [%s] mode [%s] using api [%s] for item [%s]'%(searchType, host, searchMode, api_key, str(book)))
+       
     results = []  
     
-    params = ReturnSearchTypeStructure(api_key, book, searchType)
+    params = ReturnSearchTypeStructure(api_key, book, searchType, searchMode)
 
     if not str(host)[:4] == "http":
         host = 'http://' + host
     
     URL = host + '/api?' + urllib.urlencode(params)
-   
+
     try :
         request = urllib2.Request(URL)
 	if lazylibrarian.PROXY_HOST:
@@ -260,9 +217,9 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None):
             data = None
 
     except Exception, e:
-        logger.error("Error 403 openning url %s" % e)
+        logger.error("Error 403 opening url %s" % e)
         data = None
-
+  
     if data:
         # to debug because of api
         logger.debug(u'Parsing results from <a href="%s">%s</a>' % (URL, host))
@@ -271,22 +228,20 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None):
         nzbcount = 0
         for nzb in resultxml:
             try:
-                nzbcount = nzbcount+1
-                
-                results.append(ReturnResultsFieldsBySearchType(book, nzb, searchType, host))
+                nzbcount = nzbcount+1               
+                results.append(ReturnResultsFieldsBySearchType(book, nzb, searchType, host, searchMode))
             except IndexError:
-                logger.debug('No results')
-        if nzbcount:
-            logger.debug('Found %s nzb for: %s' % (nzbcount, book['searchterm']))
-        else:
-            logger.info(u'Newznab returned 0 results for: ' + book['searchterm'] + '. Adding book to queue.')
+                logger.debug('No results from %s' % host)
+        logger.info(u'Found %s nzb at %s for: %s' % (nzbcount, host, book['searchterm']))
+    else:
+    	logger.debug('No data returned from %s' % host)
     return results
     
-def ReturnSearchTypeStructure(api_key, book, searchType):
+def ReturnSearchTypeStructure(api_key, book, searchType, searchMode):
   
     params = None
-    
-    if searchType == "book":
+    if searchMode == "nzb":
+      if searchType == "book":
         params = {
             "t": "book",
             "apikey": api_key,
@@ -294,7 +249,7 @@ def ReturnSearchTypeStructure(api_key, book, searchType):
             "author": common.removeDisallowedFilenameChars(book['authorName']),
             "cat": 7020,                #7020=ebook
         }
-    elif searchType == "mag":
+      elif searchType == "mag":
         params = {
             "t": "search",
             "apikey": api_key,
@@ -302,21 +257,45 @@ def ReturnSearchTypeStructure(api_key, book, searchType):
             "q": book['searchterm'],
             "extended": 1,
         }
-    else:
-                params = {
+      else:
+        params = {
             "t": "search",
             "apikey": api_key,
-            #"cat": 7020,
+            #this is a general search
             "q": book['searchterm'],
             "extended": 1,
-        }        
-        
-    logger.debug('NewzNabPlus] - Search parameters set to '+str(params))
+        } 
+    if searchMode == "torznab":       
+      if searchType == "book":
+        params = {
+            "t": "search",
+            "apikey": api_key,
+            "cat": "8000,8010",    #8000=book, 8010=ebook
+            "q": book['searchterm'],
+            "extended": 1,
+        }
+      elif searchType == "mag":
+        params = {
+            "t": "search",
+            "apikey": api_key,
+            "cat": "8030",    #8030=magazines
+            "q": book['searchterm'],
+            "extended": 1,
+        }
+      else:
+        params = {
+            "t": "search",
+            "apikey": api_key,
+            #this is a general search
+            "q": book['searchterm'],
+            "extended": 1,
+        }
+    logger.debug('[NewzNabPlus] - Search parameters set to '+str(params))
 
     return params
 
 
-def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None, host=None):
+def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None, host=None, searchMode=None):
     #searchType has multiple query params for t=, which return different results sets. 
     #books have a dedicated check, so will use that.
     #mags don't so will have more generic search term.
@@ -370,38 +349,117 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None,
     #   <newznab:attr name="password" value="0"/>
     #   <newznab:attr name="usenetdate" value="Fri, 11 Mar 2011 13:45:15 +0100"/>
     #   <newznab:attr name="group" value="alt.binaries.e-book.flood"/>
-    #</item>    
+    #</item>
+    #-------------------------------TORZNAB RETURN DATA-- book ----------------------------------------------------------------------  
+    #<item>
+    #  <title>Tom Holt - Blonde Bombshell (Dystop; SFX; Humour) ePUB+MOBI</title>
+    #  <guid>https://getstrike.net/torrents/1FDBE6466738EED3C7FD915E1376BA0A63088D4D</guid>
+    #  <comments>https://getstrike.net/torrents/1FDBE6466738EED3C7FD915E1376BA0A63088D4D</comments>
+    #  <pubDate>Sun, 27 Sep 2015 23:10:56 +0200</pubDate>
+    #  <size>24628</size>
+    #  <description>Tom Holt - Blonde Bombshell (Dystop; SFX; Humour) ePUB+MOBI</description>
+    #  <link>http://192.168.2.2:9117/dl/strike/pkl4u83iz41up73m4zsigqsd4zyie50r/aHR0cHM6Ly9nZXRzdHJpa2UubmV0L3RvcnJlbnRzL2FwaS9kb3dubG9hZC8xRkRCRTY0NjY3MzhFRUQzQzdGRDkxNUUxMzc2QkEwQTYzMDg4RDRELnRvcnJlbnQ1/t.torrent</link>
+    #  <category>8000</category>
+    #  <enclosure url="http://192.168.2.2:9117/dl/strike/pkl4u83iz41up73m4zsigqsd4zyie50r/aHR0cHM6Ly9nZXRzdHJpa2UubmV0L3RvcnJlbnRzL2FwaS9kb3dubG9hZC8xRkRCRTY0NjY3MzhFRUQzQzdGRDkxNUUxMzc2QkEwQTYzMDg4RDRELnRvcnJlbnQ1/t.torrent" length="24628" type="application/x-bittorrent" />
+    #  <torznab:attr name="magneturl" value="magnet:?xt=urn:btih:1FDBE6466738EED3C7FD915E1376BA0A63088D4D&amp;dn=Tom+Holt+-+Blonde+Bombshell+(Dystop%3B+SFX%3B+Humour)+ePUB%2BMOBI&amp;tr=udp://open.demonii.com:1337&amp;tr=udp://tracker.coppersurfer.tk:6969&amp;tr=udp://tracker.leechers-paradise.org:6969&amp;tr=udp://exodus.desync.com:6969" />
+    #  <torznab:attr name="seeders" value="1" />
+    #  <torznab:attr name="peers" value="2" />
+    #  <torznab:attr name="infohash" value="1FDBE6466738EED3C7FD915E1376BA0A63088D4D" />
+    #  <torznab:attr name="minimumratio" value="1" />
+    #  <torznab:attr name="minimumseedtime" value="172800" />
+    #</item>
+#---------------------------------------- magazine ----------------------------------------  
+    #<item>
+    #  <title>Linux Format Issue 116 - KDE Issue</title>
+    #  <guid>https://getstrike.net/torrents/f3fc8df4fdd850132072a435a7d112d6c9d77d16</guid>
+    #  <comments>https://getstrike.net/torrents/f3fc8df4fdd850132072a435a7d112d6c9d77d16</comments>
+    #  <pubDate>Wed, 04 Mar 2009 01:57:20 +0100</pubDate>
+    #  <size>1309195</size>
+    #  <description>Linux Format Issue 116 - KDE Issue</description>
+    #  <link>http://192.168.2.2:9117/dl/strike/pkl4u83iz41up73m4zsigqsd4zyie50r/aHR0cHM6Ly9nZXRzdHJpa2UubmV0L3RvcnJlbnRzL2FwaS9kb3dubG9hZC9mM2ZjOGRmNGZkZDg1MDEzMjA3MmE0MzVhN2QxMTJkNmM5ZDc3ZDE2LnRvcnJlbnQ1/t.torrent</link>
+    #  <enclosure url="http://192.168.2.2:9117/dl/strike/pkl4u83iz41up73m4zsigqsd4zyie50r/aHR0cHM6Ly9nZXRzdHJpa2UubmV0L3RvcnJlbnRzL2FwaS9kb3dubG9hZC9mM2ZjOGRmNGZkZDg1MDEzMjA3MmE0MzVhN2QxMTJkNmM5ZDc3ZDE2LnRvcnJlbnQ1/t.torrent" length="1309195" type="application/x-bittorrent" />
+     # <torznab:attr name="magneturl" value="magnet:?xt=urn:btih:f3fc8df4fdd850132072a435a7d112d6c9d77d16&amp;dn=Linux+Format+Issue+116+-+KDE+Issue&amp;tr=udp://open.demonii.com:1337&amp;tr=udp://tracker.coppersurfer.tk:6969&amp;tr=udp://tracker.leechers-paradise.org:6969&amp;tr=udp://exodus.desync.com:6969" />
+     # <torznab:attr name="seeders" value="2" />
+     # <torznab:attr name="peers" value="3" />
+     # <torznab:attr name="infohash" value="f3fc8df4fdd850132072a435a7d112d6c9d77d16" />
+     # <torznab:attr name="minimumratio" value="1" />
+     # <torznab:attr name="minimumseedtime" value="172800" />
+    #</item>
     
     resultFields=None
 
-    
-    if searchType == "book":
+    nzbtitle = nzbdetails[0].text # title is currently the same field for all searchtypes
+    nzbtitle = common.removeDisallowedFilenameChars(nzbtitle)
+       
+    if searchMode == "torznab": # For torznab results, either 8 or 9 contain a magnet link
+      if nzbdetails[8].attrib.get('name') == 'magneturl':
+	nzburl = nzbdetails[8].attrib.get('value')
+      elif nzbdetails[9].attrib.get('name') == 'magneturl':
+	nzburl = nzbdetails[9].attrib.get('value')
+      else:
+        nzburl = nzbdetails[6].text
+
+      if searchType == "book":
         resultFields= {
                     'bookid': book['bookid'],
                     'nzbprov': host,
-                    'nzbtitle': nzbdetails[0].text,
-                    'nzburl': nzbdetails[2].text,
-                    'nzbdate': nzbdetails[4].text,
-                    'nzbsize': nzbdetails[10].attrib.get('size')
+                    'nzbtitle': nzbtitle,
+                    'nzburl': nzburl,
+                    'nzbdate': nzbdetails[3].text,
+                    'nzbsize': nzbdetails[4].text,
+		    'nzbmode': searchMode
                     }
-    elif searchType == "mag":
+      elif searchType == "mag":
         resultFields = {
                     'bookid': book['bookid'],
                     'nzbprov': host,
-                    'nzbtitle': nzbdetails[0].text,
-                    'nzburl': nzbdetails[2].text,
-                    'nzbdate': nzbdetails[4].text,
-                    'nzbsize': nzbdetails[7].attrib.get('length')
+                    'nzbtitle': nzbtitle,
+                    'nzburl': nzburl,
+                    'nzbdate': nzbdetails[3].text,
+                    'nzbsize': nzbdetails[4].text,
+                    'nzbmode': searchMode
+                    }
+      else:
+        resultFields = {
+                    'bookid': book['bookid'],
+                    'nzbprov': host,
+                    'nzbtitle': nzbtitle,
+                    'nzburl': nzburl,
+                    'nzbdate': nzbdetails[3].text,
+                    'nzbsize': nzbdetails[4].text,
+                    'nzbmode': searchMode
                     }
     else:
+      if searchType == "book":
+        resultFields= {
+                    'bookid': book['bookid'],
+                    'nzbprov': host,
+                    'nzbtitle': nzbtitle,
+                    'nzburl': nzbdetails[2].text,
+                    'nzbdate': nzbdetails[4].text,
+                    'nzbsize': nzbdetails[10].attrib.get('size'),
+		    'nzbmode': searchMode
+                    }
+      elif searchType == "mag":
         resultFields = {
                     'bookid': book['bookid'],
                     'nzbprov': host,
-                    'nzbtitle': nzbdetails[0].text,
+                    'nzbtitle': nzbtitle,
                     'nzburl': nzbdetails[2].text,
                     'nzbdate': nzbdetails[4].text,
-                    'nzbsize': nzbdetails[7].attrib.get('length')
+                    'nzbsize': nzbdetails[7].attrib.get('length'),
+                    'nzbmode': searchMode
                     }
-    
+      else:
+        resultFields = {
+                    'bookid': book['bookid'],
+                    'nzbprov': host,
+                    'nzbtitle': nzbtitle,
+                    'nzburl': nzbdetails[2].text,
+                    'nzbdate': nzbdetails[4].text,
+                    'nzbsize': nzbdetails[7].attrib.get('length'),
+                    'nzbmode': searchMode
+                    }
+	
     logger.debug('[NewzNabPlus] - result fields from NZB are ' + str(resultFields))
     return resultFields

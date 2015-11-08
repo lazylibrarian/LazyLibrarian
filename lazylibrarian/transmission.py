@@ -133,7 +133,7 @@ def torrentAction(method, arguments):
 
     if host.endswith('/'):
         host = host[:-1]
-
+   
     # Fix the URL. We assume that the user does not point to the RPC endpoint,
     # so add it if it is missing.
     parts = list(urlparse.urlparse(host))
@@ -177,8 +177,6 @@ def torrentAction(method, arguments):
 
     response = request.request_json(host, method="POST", data=json.dumps(data),
         headers=headers, auth=auth)
-
-    print response
 
     if not response:
         logger.error("Error sending torrent to Transmission")

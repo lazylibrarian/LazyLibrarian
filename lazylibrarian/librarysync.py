@@ -3,7 +3,7 @@ import glob
 import re, time
 import lazylibrarian
 import shlex
-from lazylibrarian import logger, database, importer
+from lazylibrarian import logger, database, importer, formatter
 from lazylibrarian.gr import GoodReads
 import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
@@ -52,7 +52,7 @@ def get_book_info(fname):
       n = 0
       cfname = ""
       while n < len(tree[0]):
-	att = tree[0][n].attrib
+	att = str(tree[0][n].attrib)
 	if 'full-path' in att:
 		cfname = ("%s" % att) # extract metadata filename
 		cfname = cfname.split(',')[1].split(':')[1].strip('\' }')
@@ -68,15 +68,13 @@ def get_book_info(fname):
       else:
         return ""
 
-    # repackage the data - not too happy with this as there can be
-    # several "identifier", only one of which is an isbn, how can we tell?
-    # I just strip formatting, check for length, and check is only digits
-    # except the last digit of an isbn10 may be 'X'
+    # repackage the data
     res = {}
     n = 0
     while n < len(tree[0]):
-	tag = tree[0][n].tag.split('}')[1]
+	tag = str(tree[0][n].tag).split('}')[1]
 	txt = tree[0][n].text
+	attrib = str(tree[0][n].attrib)
 	isbn = ""
 	if 'title' in tag.lower():
 		res['title'] = txt
@@ -84,14 +82,9 @@ def get_book_info(fname):
 		res['language'] = txt
 	elif 'creator' in tag.lower():
 		res['creator'] = txt
-	elif 'identifier' in tag.lower():
-		if len(txt) == 13:
-		    if txt.isdigit():
-			isbn = txt
-		elif len(txt) == 10:
-			if txt[:8].isdigit():
-				isbn = txt	
-    		res['identifier'] = isbn
+	elif 'identifier' in tag.lower() and 'isbn' in attrib.lower():
+		if is_valid_isbn(txt):	
+    		    res['identifier'] = isbn
 	n = n + 1
     return res
 
@@ -253,8 +246,6 @@ def LibraryScan(dir=None):
 		    if (lazylibrarian.IMP_SINGLEBOOK) and (subdirectory in processed_subdirectories):
 		        logger.debug("[%s] already scanned" % subdirectory)
                     else:
-			logger.info("[%s] Now scanning subdirectory %s" % (dir.decode(lazylibrarian.SYS_ENCODING, 'replace'), subdirectory.decode(lazylibrarian.SYS_ENCODING, 'replace')))
-
 # 			If this is a book, try to get author/title/isbn/language
 # 			If metadata.opf exists, use that
 # 			else if epub or mobi, read metadata from the book
@@ -266,15 +257,25 @@ def LibraryScan(dir=None):
 			extn = words[len(words)-1]
 			if (extn in booktypes):
  				# see if there is a metadata file in this folder with the info we need
+				logger.info("[%s] Now scanning subdirectory %s" % (dir.decode(lazylibrarian.SYS_ENCODING, 'replace'), subdirectory.decode(lazylibrarian.SYS_ENCODING, 'replace')))
 				try:
 					metafile = os.path.join(r,"metadata.opf").encode(lazylibrarian.SYS_ENCODING)
 					res = get_book_info(metafile)
-					book = res['title']
-					author = res['creator']
-					language = res['language']
-					isbn = res['identifier']
-					match = 1
-					logger.debug("file meta [%s] [%s] [%s] [%s]" % (isbn,language,author,book))
+					if 'title' in res and 'creator' in res: # this is the minimum we need
+						book = res['title']
+						author = res['creator']
+						if 'language' in res:
+							language = res['language']
+						else:
+							language = ""
+						if 'identifier' in res:
+							isbn = res['identifier']
+						else:
+							isbn = ""
+						match = 1						
+						logger.debug("file meta [%s] [%s] [%s] [%s]" % (isbn,language,author,book))
+					else:
+						logger.debug("file meta incomplete in %s" % r)
 				except:
 					logger.debug("No metadata file in %s" % r)
 
@@ -284,13 +285,21 @@ def LibraryScan(dir=None):
 					if (extn == "epub") or (extn == "mobi"):
 						book_file = os.path.join(r,files).encode(lazylibrarian.SYS_ENCODING)
 						res = get_book_info(book_file)
-						if res:
+						if 'title' in res and 'creator' in res: # this is the minimum we need
 							book = res['title']
 							author = res['creator']
-							language = res['language']
-							isbn = res['identifier']
-							match = 1
+							if 'language' in res:
+								language = res['language']
+							else:
+								language = ""
+							if 'identifier' in res:
+								isbn = res['identifier']
+							else:
+								isbn = ""
 							logger.debug("book meta [%s] [%s] [%s] [%s]" % (isbn,language,author,book))
+							match = 1							
+						else:
+							logger.debug("book meta incomplete in %s" % book_file)
 
 			if not match:
 				match = pattern.match(files)
@@ -308,11 +317,7 @@ def LibraryScan(dir=None):
 				if not language:
 					language = "Unknown"
 
-				# strip any formatting from the isbn
-				isbn = re.sub('[- ]', '', isbn)
-				if len(isbn) != 10 and len(isbn) != 13:
-					isbn=""
-				if not isbn.isdigit():
+				if not is_valid_isbn(isbn):
 					isbn=""
 				if (isbn != "" and language != "Unknown"):
 					logger.debug("Found Language [%s] ISBN [%s]" % (language, isbn))
@@ -372,7 +377,7 @@ def LibraryScan(dir=None):
 						match_fuzz = fuzz.ratio(match_auth, match_name)
 						if (match_fuzz < 90):
 							logger.info("Failed to match author [%s] fuzz [%d]" % (author, match_fuzz))
-							logger.info("match author [%s] authorname [%s]" % (match_auth, match_name))
+							logger.debug("Failed to match author [%s] to authorname [%s]" % (match_auth, match_name))
 
 						# To save loading hundreds of books by unknown authors at GR or GB, ignore if author "Unknown"
 						if (author != "Unknown") and (match_fuzz >= 90):

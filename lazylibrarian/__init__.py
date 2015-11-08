@@ -2,7 +2,7 @@ from __future__ import with_statement
 
 import os, sys, subprocess, threading, cherrypy, webbrowser, sqlite3, re
 
-import datetime
+import datetime, locale, calendar
 
 from lib.configobj import ConfigObj
 from lib.apscheduler.scheduler import Scheduler
@@ -10,6 +10,7 @@ from lib.apscheduler.scheduler import Scheduler
 import threading
 
 from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, SimpleCache, librarysync
+from common import remove_accents
 
 FULL_PATH = None
 PROG_DIR = None
@@ -78,6 +79,7 @@ DESTINATION_DIR = None
 DOWNLOAD_DIR = None
 
 IMP_PREFLANG = None
+IMP_MONTHLANG = None
 IMP_ONLYISBN = 0
 IMP_SINGLEBOOK = 1
 IMP_AUTOADD = None
@@ -90,13 +92,45 @@ NZBMATRIX = 0
 NZBMATRIX_USER = None
 NZBMATRIX_API = None
 
-NEWZNAB = 0
-NEWZNAB_HOST = None
-NEWZNAB_API = None
+NEWZNAB0 = 0
+NEWZNAB_HOST0 = None
+NEWZNAB_API0 = None
+
+NEWZNAB1 = 0
+NEWZNAB_HOST1 = None
+NEWZNAB_API1 = None
 
 NEWZNAB2 = 0
 NEWZNAB_HOST2 = None
 NEWZNAB_API2 = None
+
+NEWZNAB3 = 0
+NEWZNAB_HOST3 = None
+NEWZNAB_API3 = None
+
+NEWZNAB4 = 0
+NEWZNAB_HOST4 = None
+NEWZNAB_API4 = None
+
+TORZNAB0 = 0
+TORZNAB_HOST0 = None
+TORZNAB_API0 = None
+
+TORZNAB1 = 0
+TORZNAB_HOST1 = None
+TORZNAB_API1 = None
+
+TORZNAB2 = 0
+TORZNAB_HOST2 = None
+TORZNAB_API2 = None
+
+TORZNAB3 = 0
+TORZNAB_HOST3 = None
+TORZNAB_API3 = None
+
+TORZNAB4 = 0
+TORZNAB_HOST4 = None
+TORZNAB_API4 = None
 
 NEWZBIN = 0
 NEWZBIN_UID = None
@@ -135,10 +169,6 @@ NZB_DOWNLOADER_NZBGET = 0
 NZB_DOWNLOADER_BLACKHOLE = 0
 NZB_BLACKHOLEDIR = None
 USENET_RETENTION = None
-
-USENETCRAWLER = 0
-USENETCRAWLER_API = None
-USENETCRAWLER_HOST = None
 
 LATEST_VERSION = None
 CURRENT_VERSION = None
@@ -185,6 +215,24 @@ NMA_ENABLED = 0
 NMA_APIKEY = None
 NMA_PRIORITY = None
 NMA_ONSNATCH = None
+# Month names table to hold long/short month names for multiple languages
+# which we can match against magazine issues
+# Defined as global and initialised early, because locale changes are not thread safe
+# This means changes to languages require a restart
+MONTH0 = []  # This holds the language code
+MONTH1 = []  # multiple names for first month
+MONTH2 = []  # etc...
+MONTH3 = []
+MONTH4 = []
+MONTH5 = []
+MONTH6 = []
+MONTH7 = []
+MONTH8 = []
+MONTH9 = []
+MONTH10= []
+MONTH11= []
+MONTH12= []
+MONTHNAMES = [MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, MONTH8, MONTH9, MONTH10, MONTH11, MONTH12]
 
 def CheckSection(sec):
     """ Check if INI section exists, if not create it """
@@ -268,12 +316,14 @@ def initialize():
     with INIT_LOCK:
 
         global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, \
-	    HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_AUTOADD, \
+	    HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, \
+	    MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, \
 	    SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, NZB_BLACKHOLEDIR, \
 	    GR_API, GB_API, BOOK_API, NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, NZB_DOWNLOADER_NZBGET, \
-            NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, \
-	    NEWZNAB, NEWZNAB_HOST, NEWZNAB_API, NEWZNAB2, NEWZNAB_HOST2, NEWZNAB_API2, NEWZNAB3, NEWZNAB_HOST3, NEWZNAB_API3, NEWZNAB4, NEWZNAB_HOST4, NEWZNAB_API4, \
-	    EBOOK_TYPE, KAT, KAT_HOST, USENETCRAWLER, USENETCRAWLER_HOST, USENETCRAWLER_API, \
+            NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, NEWZNAB0, NEWZNAB_HOST0, NEWZNAB_API0, \
+	    NEWZNAB1, NEWZNAB_HOST1, NEWZNAB_API1, NEWZNAB2, NEWZNAB_HOST2, NEWZNAB_API2, NEWZNAB3, NEWZNAB_HOST3, NEWZNAB_API3, NEWZNAB4, NEWZNAB_HOST4, NEWZNAB_API4, \
+	    TORZNAB0, TORZNAB_HOST0, TORZNAB_API0, TORZNAB1, TORZNAB_HOST1, TORZNAB_API1, TORZNAB2, TORZNAB_HOST2, TORZNAB_API2, \
+	    TORZNAB3, TORZNAB_HOST3, TORZNAB_API3, TORZNAB4, TORZNAB_HOST4, TORZNAB_API4, EBOOK_TYPE, KAT, KAT_HOST, \
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, \
 	    USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
             USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, \
@@ -320,8 +370,6 @@ def initialize():
         else:
             LOGLEVEL = CFGLOGLEVEL  #Config setting picked up
 
-
-
         logger.lazylibrarian_log.initLogger(loglevel=LOGLEVEL)
         logger.info("Log level set to [%s]- Log Directory is [%s] - Config level is [%s]" % (LOGLEVEL,LOGDIR,CFGLOGLEVEL))
 
@@ -332,8 +380,6 @@ def initialize():
         HTTP_ROOT = check_setting_str(CFG, 'General', 'http_root', '')
         HTTP_LOOK = check_setting_str(CFG, 'General', 'http_look', 'default')
 
-
-
         LAUNCH_BROWSER = check_setting_int(CFG, 'General', 'launch_browser', 1)
 
 	PROXY_HOST = check_setting_str(CFG, 'General','proxy_host', '')
@@ -342,12 +388,9 @@ def initialize():
         LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
 
         IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', 'en, eng, en-US')
+        IMP_MONTHLANG = check_setting_str(CFG, 'General', 'imp_monthlang', 'en_US.utf8')
         IMP_AUTOADD = check_setting_str(CFG, 'General', 'imp_autoadd', '')
         IMP_ONLYISBN = check_setting_int(CFG, 'General', 'imp_onlyisbn', 0)
-        #TODO - investigate this for future users
-        #Something funny here - putting IMP_AUTOADD after IMP_ONLYISBN resulted in it not working
-        #Couldn't see it  - PAB seems to be related to bool, removed that, just use int now
-	#we used to read bool as int and true/false are not int so default value is forced
         IMP_SINGLEBOOK = check_setting_int(CFG, 'General', 'imp_singlebook', 0)
 
         GIT_USER = check_setting_str(CFG, 'Git', 'git_user', 'dobytang')
@@ -389,9 +432,23 @@ def initialize():
         NZBMATRIX_USER = check_setting_str(CFG, 'NZBMatrix', 'nzbmatrix_user', '')
         NZBMATRIX_API = check_setting_str(CFG, 'NZBMatrix', 'nzbmatrix_api', '')
 
-        NEWZNAB = check_setting_int(CFG, 'Newznab', 'newznab', 0)
-        NEWZNAB_HOST = check_setting_str(CFG, 'Newznab', 'newznab_host', '')
-        NEWZNAB_API = check_setting_str(CFG, 'Newznab', 'newznab_api', '')
+# legacy names here - have changed some config names for consistency
+# these entries convert the old name to the new one so we don't break existing configs
+        NEWZNAB0 = check_setting_int(CFG, 'UsenetCrawler', 'usenetcrawler', 0)
+        NEWZNAB_HOST0 = check_setting_str(CFG, 'UsenetCrawler', 'usenetcrawler_host', '')
+        NEWZNAB_API0 = check_setting_str(CFG, 'UsenetCrawler', 'usenetcrawler_api', '')
+        NEWZNAB1 = check_setting_int(CFG, 'Newznab', 'newznab', 0)
+        NEWZNAB_HOST1 = check_setting_str(CFG, 'Newznab', 'newznab_host', '')
+        NEWZNAB_API1 = check_setting_str(CFG, 'Newznab', 'newznab_api', '')
+	if  NEWZNAB_HOST0 == '': # did we pick up anything under the old name
+            NEWZNAB0 = check_setting_int(CFG, 'Newznab0', 'newznab0', 0)
+            NEWZNAB_HOST0 = check_setting_str(CFG, 'Newznab0', 'newznab_host0', '')
+            NEWZNAB_API0 = check_setting_str(CFG, 'Newznab0', 'newznab_api0', '')
+	if  NEWZNAB_HOST1 == '':
+            NEWZNAB1 = check_setting_int(CFG, 'Newznab1', 'newznab1', 0)
+            NEWZNAB_HOST1 = check_setting_str(CFG, 'Newznab1', 'newznab_host1', '')
+            NEWZNAB_API1 = check_setting_str(CFG, 'Newznab1', 'newznab_api1', '')
+# end of legacy conversions
         NEWZNAB2 = check_setting_int(CFG, 'Newznab2', 'newznab2', 0)
         NEWZNAB_HOST2 = check_setting_str(CFG, 'Newznab2', 'newznab_host2', '')
         NEWZNAB_API2 = check_setting_str(CFG, 'Newznab2', 'newznab_api2', '')
@@ -401,6 +458,22 @@ def initialize():
         NEWZNAB4 = check_setting_int(CFG, 'Newznab4', 'newznab4', 0)
         NEWZNAB_HOST4 = check_setting_str(CFG, 'Newznab4', 'newznab_host4', '')
         NEWZNAB_API4 = check_setting_str(CFG, 'Newznab4', 'newznab_api4', '')
+
+        TORZNAB0 = check_setting_int(CFG, 'Torznab0', 'torznab0', 0)
+        TORZNAB_HOST0 = check_setting_str(CFG, 'Torznab0', 'torznab_host0', '')
+        TORZNAB_API0 = check_setting_str(CFG, 'Torznab0', 'torznab_api0', '')
+        TORZNAB1 = check_setting_int(CFG, 'Torznab1', 'torznab1', 0)
+        TORZNAB_HOST1 = check_setting_str(CFG, 'Torznab1', 'torznab_host1', '')
+        TORZNAB_API1 = check_setting_str(CFG, 'Torznab1', 'torznab_api1', '')
+        TORZNAB2 = check_setting_int(CFG, 'Torznab2', 'torznab2', 0)
+        TORZNAB_HOST2 = check_setting_str(CFG, 'Torznab2', 'torznab_host2', '')
+        TORZNAB_API2 = check_setting_str(CFG, 'Torznab2', 'torznab_api2', '')
+        TORZNAB3 = check_setting_int(CFG, 'Torznab3', 'torznab3', 0)
+        TORZNAB_HOST3 = check_setting_str(CFG, 'Torznab3', 'torznab_host3', '')
+        TORZNAB_API3 = check_setting_str(CFG, 'Torznab3', 'torznab_api3', '')
+        TORZNAB4 = check_setting_int(CFG, 'Torznab4', 'torznab4', 0)
+        TORZNAB_HOST4 = check_setting_str(CFG, 'Torznab4', 'torznab_host4', '')
+        TORZNAB_API4 = check_setting_str(CFG, 'Torznab4', 'torznab_api4', '')
 
         TOR_DOWNLOADER_BLACKHOLE = check_setting_int(CFG, 'TORRENT', 'tor_downloader_blackhole', 0)
         TOR_DOWNLOADER_UTORRENT = check_setting_int(CFG, 'TORRENT', 'tor_downloader_utorrent', 0)
@@ -425,10 +498,6 @@ def initialize():
 
         KAT = check_setting_int(CFG, 'KAT', 'kat', 0)
 	KAT_HOST = check_setting_str(CFG, 'KAT', 'kat_host', 'kat.cr')
-
-        USENETCRAWLER = check_setting_int(CFG, 'UsenetCrawler', 'usenetcrawler', 0)
-        USENETCRAWLER_HOST = check_setting_str(CFG, 'UsenetCrawler', 'usenetcrawler_host', '')
-        USENETCRAWLER_API = check_setting_str(CFG, 'UsenetCrawler', 'usenetcrawler_api', '')
 
         NEWZBIN = check_setting_int(CFG, 'Newzbin', 'newzbin', 0)
         NEWZBIN_UID = check_setting_str(CFG, 'Newzbin', 'newzbin_uid', '')
@@ -501,8 +570,46 @@ def initialize():
         except Exception, e:
             logger.error("Can't connect to the database: %s" % e)
 
+	build_monthtable()
+
         __INITIALIZED__ = True
         return True
+
+def build_monthtable():
+  current_locale = locale.getdefaultlocale() # save current state
+  # ensure current locale is in the list...
+  lang = str(current_locale[0]) + '.utf8'
+  MONTHNAMES[0].append(lang)
+  for f in range(1, 13):
+        MONTHNAMES[f].append(remove_accents(calendar.month_name[f]).lower())
+  MONTHNAMES[0].append(lang)
+  for f in range(1, 13):
+           MONTHNAMES[f].append(remove_accents(calendar.month_abbr[f]).lower().strip('.'))
+  logger.info("Added month names for locale [%s]" % lang)
+  
+
+  for lang in IMP_MONTHLANG.split(','): 
+    try:
+	lang = str(lang).strip()
+        locale.setlocale(locale.LC_ALL, lang)
+        MONTHNAMES[0].append(lang)
+        for f in range(1, 13):
+           MONTHNAMES[f].append(remove_accents(calendar.month_name[f]).lower())
+        MONTHNAMES[0].append(lang)
+        for f in range(1, 13):
+           MONTHNAMES[f].append(remove_accents(calendar.month_abbr[f]).lower().strip('.'))
+	logger.info("Added month names for locale [%s]" % lang)
+    except:
+        logger.warn("Unable to load requested locale [%s]" % lang)
+
+  locale.setlocale(locale.LC_ALL, current_locale) # restore entry state
+  # quick sanity check, warn if no english names in table
+  eng = 0
+  for lang in MONTHNAMES[0]:
+	if lang.startswith('en_'):
+		eng = 1
+  if not eng:
+	logger.warn("No English language loaded - Magazine name matching will probably fail")
 
 def daemonize():
     """
@@ -572,6 +679,7 @@ def config_write():
     new_config['General']['imp_onlyisbn'] = int(IMP_ONLYISBN)
     new_config['General']['imp_singlebook'] = int(IMP_SINGLEBOOK)
     new_config['General']['imp_preflang'] = IMP_PREFLANG
+    new_config['General']['imp_monthlang'] = IMP_MONTHLANG
     new_config['General']['imp_autoadd'] =  IMP_AUTOADD
 
     new_config['General']['ebook_type'] = EBOOK_TYPE
@@ -626,10 +734,15 @@ def config_write():
     new_config['NZBMatrix']['nzbmatrix_user'] = NZBMATRIX_USER
     new_config['NZBMatrix']['nzbmatrix_api'] = NZBMATRIX_API
 
-    new_config['Newznab'] = {}
-    new_config['Newznab']['newznab'] = int(NEWZNAB)
-    new_config['Newznab']['newznab_host'] = NEWZNAB_HOST
-    new_config['Newznab']['newznab_api'] = NEWZNAB_API
+    new_config['Newznab0'] = {}
+    new_config['Newznab0']['newznab0'] = int(NEWZNAB0)
+    new_config['Newznab0']['newznab_host0'] = NEWZNAB_HOST0
+    new_config['Newznab0']['newznab_api0'] = NEWZNAB_API0
+
+    new_config['Newznab1'] = {}
+    new_config['Newznab1']['newznab1'] = int(NEWZNAB1)
+    new_config['Newznab1']['newznab_host1'] = NEWZNAB_HOST1
+    new_config['Newznab1']['newznab_api1'] = NEWZNAB_API1
 
     new_config['Newznab2'] = {}
     new_config['Newznab2']['newznab2'] = int(NEWZNAB2)
@@ -645,6 +758,31 @@ def config_write():
     new_config['Newznab4']['newznab4'] = int(NEWZNAB4)
     new_config['Newznab4']['newznab_host4'] = NEWZNAB_HOST4
     new_config['Newznab4']['newznab_api4'] = NEWZNAB_API4
+
+    new_config['Torznab0'] = {}
+    new_config['Torznab0']['torznab0'] = int(TORZNAB0)
+    new_config['Torznab0']['torznab_host0'] = TORZNAB_HOST0
+    new_config['Torznab0']['torznab_api0'] = TORZNAB_API0
+
+    new_config['Torznab1'] = {}
+    new_config['Torznab1']['torznab1'] = int(TORZNAB1)
+    new_config['Torznab1']['torznab_host1'] = TORZNAB_HOST1
+    new_config['Torznab1']['torznab_api1'] = TORZNAB_API1
+
+    new_config['Torznab2'] = {}
+    new_config['Torznab2']['torznab2'] = int(TORZNAB2)
+    new_config['Torznab2']['torznab_host2'] = TORZNAB_HOST2
+    new_config['Torznab2']['torznab_api2'] = TORZNAB_API2
+
+    new_config['Torznab3'] = {}
+    new_config['Torznab3']['torznab3'] = int(TORZNAB3)
+    new_config['Torznab3']['torznab_host3'] = TORZNAB_HOST3
+    new_config['Torznab3']['torznab_api3'] = TORZNAB_API3
+
+    new_config['Torznab4'] = {}
+    new_config['Torznab4']['torznab4'] = int(TORZNAB4)
+    new_config['Torznab4']['torznab_host4'] = TORZNAB_HOST4
+    new_config['Torznab4']['torznab_api4'] = TORZNAB_API4
 
     new_config['Newzbin'] = {}
     new_config['Newzbin']['newzbin'] = int(NEWZBIN)
@@ -679,11 +817,6 @@ def config_write():
     new_config['KAT'] = {}
     new_config['KAT']['kat'] = int(KAT)
     new_config['KAT']['kat_host'] = KAT_HOST
-
-    new_config['UsenetCrawler'] = {}
-    new_config['UsenetCrawler']['usenetcrawler'] = int(USENETCRAWLER)
-    new_config['UsenetCrawler']['usenetcrawler_host'] = USENETCRAWLER_HOST
-    new_config['UsenetCrawler']['usenetcrawler_api'] = USENETCRAWLER_API
 
     new_config['SearchScan'] = {}
     new_config['SearchScan']['search_interval'] = int(SEARCH_INTERVAL)
@@ -787,6 +920,12 @@ def dbcheck():
     except sqlite3.OperationalError:
         logger.info('Updating database to hold NZBside')
         c.execute('ALTER TABLE wanted ADD COLUMN NZBsize TEXT')
+
+    try:
+        c.execute('SELECT NZBmode from wanted')
+    except sqlite3.OperationalError:
+        logger.info('Updating database to hold NZBmode')
+        c.execute('ALTER TABLE wanted ADD COLUMN NZBmode TEXT')
 
     try:
         c.execute('SELECT UnignoredBooks from authors')

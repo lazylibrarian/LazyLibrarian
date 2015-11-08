@@ -124,8 +124,7 @@ def main():
     lazylibrarian.LATEST_VERSION = versioncheck.getLatestVersion()
     lazylibrarian.COMMITS_BEHIND = versioncheck.getCommitDifferenceFromGit()
     logger.debug('Current Version [%s] - Latest remote version [%s] - Install type [%s]' % (lazylibrarian.CURRENT_VERSION, lazylibrarian.LATEST_VERSION, lazylibrarian.INSTALL_TYPE))
-
-
+    
     if options.port:
         lazylibrarian.HTTP_PORT = int(options.port)
         logger.info('Starting LazyLibrarian on forced port: %s' % lazylibrarian.HTTP_PORT)
