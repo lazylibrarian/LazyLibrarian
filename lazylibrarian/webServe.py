@@ -80,6 +80,7 @@ class WebInterface(object):
                     "imp_onlyisbn": 	checked(lazylibrarian.IMP_ONLYISBN),
                     "imp_singlebook": 	checked(lazylibrarian.IMP_SINGLEBOOK),
                     "imp_preflang":     lazylibrarian.IMP_PREFLANG,
+                    "imp_monthlang":     lazylibrarian.IMP_MONTHLANG,
                     "imp_autoadd":      lazylibrarian.IMP_AUTOADD,
                     "sab_host":         lazylibrarian.SAB_HOST,
                     "sab_port":         lazylibrarian.SAB_PORT,
@@ -199,7 +200,7 @@ class WebInterface(object):
     config.exposed = True
 
     def configUpdate(self, http_host='0.0.0.0', http_root=None, http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, 
-	imp_onlyisbn=0, imp_singlebook=0, imp_preflang=None, imp_autoadd=None, match_ratio=80, 
+	imp_onlyisbn=0, imp_singlebook=0, imp_preflang=None, imp_monthlang=None, imp_autoadd=None, match_ratio=80, 
 	nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0, nzb_downloader_blackhole=0, use_nzb=0, use_tor=0, 
 	proxy_host=None, proxy_type=None,sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None, 
 	destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, nzb_blackholedir=None, 
@@ -235,6 +236,7 @@ class WebInterface(object):
         lazylibrarian.IMP_ONLYISBN = int(imp_onlyisbn)
         lazylibrarian.IMP_SINGLEBOOK = int(imp_singlebook)
         lazylibrarian.IMP_PREFLANG = imp_preflang
+        lazylibrarian.IMP_MONTHLANG = imp_monthlang
         lazylibrarian.IMP_AUTOADD  = imp_autoadd
 
         lazylibrarian.SAB_HOST = sab_host

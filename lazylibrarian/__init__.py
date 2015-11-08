@@ -2,7 +2,7 @@ from __future__ import with_statement
 
 import os, sys, subprocess, threading, cherrypy, webbrowser, sqlite3, re
 
-import datetime
+import datetime, locale, calendar
 
 from lib.configobj import ConfigObj
 from lib.apscheduler.scheduler import Scheduler
@@ -10,6 +10,7 @@ from lib.apscheduler.scheduler import Scheduler
 import threading
 
 from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, SimpleCache, librarysync
+from common import remove_accents
 
 FULL_PATH = None
 PROG_DIR = None
@@ -78,6 +79,7 @@ DESTINATION_DIR = None
 DOWNLOAD_DIR = None
 
 IMP_PREFLANG = None
+IMP_MONTHLANG = None
 IMP_ONLYISBN = 0
 IMP_SINGLEBOOK = 1
 IMP_AUTOADD = None
@@ -213,6 +215,24 @@ NMA_ENABLED = 0
 NMA_APIKEY = None
 NMA_PRIORITY = None
 NMA_ONSNATCH = None
+# Month names table to hold long/short month names for multiple languages
+# which we can match against magazine issues
+# Defined as global and initialised early, because locale changes are not thread safe
+# This means changes to languages require a restart
+MONTH0 = []  # This holds the language code
+MONTH1 = []  # multiple names for first month
+MONTH2 = []  # etc...
+MONTH3 = []
+MONTH4 = []
+MONTH5 = []
+MONTH6 = []
+MONTH7 = []
+MONTH8 = []
+MONTH9 = []
+MONTH10= []
+MONTH11= []
+MONTH12= []
+MONTHNAMES = [MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, MONTH8, MONTH9, MONTH10, MONTH11, MONTH12]
 
 def CheckSection(sec):
     """ Check if INI section exists, if not create it """
@@ -296,7 +316,8 @@ def initialize():
     with INIT_LOCK:
 
         global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, \
-	    HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_AUTOADD, \
+	    HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, \
+	    MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, \
 	    SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, NZB_BLACKHOLEDIR, \
 	    GR_API, GB_API, BOOK_API, NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, NZB_DOWNLOADER_NZBGET, \
             NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, NEWZNAB0, NEWZNAB_HOST0, NEWZNAB_API0, \
@@ -349,8 +370,6 @@ def initialize():
         else:
             LOGLEVEL = CFGLOGLEVEL  #Config setting picked up
 
-
-
         logger.lazylibrarian_log.initLogger(loglevel=LOGLEVEL)
         logger.info("Log level set to [%s]- Log Directory is [%s] - Config level is [%s]" % (LOGLEVEL,LOGDIR,CFGLOGLEVEL))
 
@@ -369,6 +388,7 @@ def initialize():
         LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
 
         IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', 'en, eng, en-US')
+        IMP_MONTHLANG = check_setting_str(CFG, 'General', 'imp_monthlang', 'en_US.utf8')
         IMP_AUTOADD = check_setting_str(CFG, 'General', 'imp_autoadd', '')
         IMP_ONLYISBN = check_setting_int(CFG, 'General', 'imp_onlyisbn', 0)
         IMP_SINGLEBOOK = check_setting_int(CFG, 'General', 'imp_singlebook', 0)
@@ -550,8 +570,37 @@ def initialize():
         except Exception, e:
             logger.error("Can't connect to the database: %s" % e)
 
+	build_monthtable()
+
         __INITIALIZED__ = True
         return True
+
+def build_monthtable():
+  current_locale = locale.getdefaultlocale() # save current state
+
+  for lang in IMP_MONTHLANG.split(','): 
+    try:
+	lang = str(lang).strip()
+        locale.setlocale(locale.LC_ALL, lang)
+        MONTHNAMES[0].append(locale.getlocale())
+        for f in range(1, 13):
+           MONTHNAMES[f].append(remove_accents(calendar.month_name[f]).lower())
+
+        MONTHNAMES[0].append(locale.getlocale())
+        for f in range(1, 13):
+           MONTHNAMES[f].append(remove_accents(calendar.month_abbr[f]).lower().strip('.'))
+	logger.info("Added month names for locale [%s]" % lang)
+    except:
+        logger.warn("Unable to load requested locale [%s]" % lang)
+
+  locale.setlocale(locale.LC_ALL, current_locale) # restore entry state
+  # quick sanity check, warn if no english names in table
+  eng = 0
+  for lang in MONTHNAMES[0]:
+	if lang[0].startswith('en_'):
+		eng = 1
+  if not eng:
+	logger.warn("No English language loaded - Magazine name matching will probably fail")
 
 def daemonize():
     """
@@ -621,6 +670,7 @@ def config_write():
     new_config['General']['imp_onlyisbn'] = int(IMP_ONLYISBN)
     new_config['General']['imp_singlebook'] = int(IMP_SINGLEBOOK)
     new_config['General']['imp_preflang'] = IMP_PREFLANG
+    new_config['General']['imp_monthlang'] = IMP_MONTHLANG
     new_config['General']['imp_autoadd'] =  IMP_AUTOADD
 
     new_config['General']['ebook_type'] = EBOOK_TYPE

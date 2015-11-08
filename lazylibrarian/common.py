@@ -23,7 +23,6 @@ import re
 
 USER_AGENT = 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
 
-
 ### Notification Types
 NOTIFY_SNATCH = 1
 NOTIFY_DOWNLOAD = 2
@@ -34,6 +33,11 @@ notifyStrings[NOTIFY_DOWNLOAD] = "Download Finished"
 
 import unicodedata
 import string
+
+def remove_accents(input_str):
+    nfkd_form = unicodedata.normalize('NFKD', to_unicode(input_str))
+    return u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
+
 
 def to_unicode(unicode_or_str):
     if isinstance(unicode_or_str, str):

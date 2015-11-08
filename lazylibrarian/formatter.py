@@ -25,7 +25,7 @@ def age(histdate):
 def nzbdate2format(nzbdate):
     mmname = nzbdate.split()[2].zfill(2)
     day = nzbdate.split()[1]
-    #PAB don't assume users locale is english. nzbdates are mostly english short month names, but not always
+    # nzbdates are mostly english short month names, but not always
     #month = str(strptime(mmname, '%b').tm_mon).zfill(2)
     month = month2num(mmname)
     if month == "Invalid":
@@ -34,48 +34,26 @@ def nzbdate2format(nzbdate):
     return year+'-'+month+'-'+day
 
 def month2num(month):
-# return month number given month name (long or short) in English or default locale
-    if month in ["January", "Jan"]:
+# return month number given month name (long or short) in requested locales
+# or season name (only in English currently)
+
+    month = month.lower()
+    for f in range(1, 13):
+      if month in lazylibrarian.MONTHNAMES[f]:
+        return str(f).zfill(2)
+    
+    if month == "winter":
         return "01"
-    elif month in ["February", "Feb"]:
-        return "02"
-    elif month in ["March", "Mar"]:
-        return "03"
-    elif month in ["April", "Apr"]:
+    elif month == "spring":
         return "04"
-    elif month == "May":
-        return "05"
-    elif month in ["June", "Jun"]:
-        return "06"
-    elif month in ["July", "Jul"]:
+    elif month == "summer":
         return "07"
-    elif month in ["August", "Aug"]:
-        return "08"
-    elif month in ["September", "Sep"]:
-        return "09"
-    elif month in ["October", "Oct"]:
+    elif month == "fall":
         return "10"
-    elif month in ["November", "Nov"]:
-        return "11"
-    elif month in ["December", "Dec"]:
-        return "12"
-    elif month == "Winter":
-        return "01"
-    elif month == "Spring":
-        return "04"
-    elif month == "Summer":
-        return "07"
-    elif month == "Fall":
+    elif month == "autumn":
         return "10"
-    elif month == "Autumn":
-        return "10"
-# no match in English, try default locale, which may be the same
-# I don't check as en_GB, en_US and others use English month names
     else:
-	    for monthnum in range(1,13):
-		if month in [calendar.month_name[monthnum], calendar.month_abbr[monthnum]]:
-			return str(monthnum).zfill(2)
-    return "Invalid" 
+        return "Invalid" 
 
 def datecompare(nzbdate, control_date):
     y1 = int(nzbdate.split('-')[0])
