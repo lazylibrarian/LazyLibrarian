@@ -152,14 +152,15 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
 	if tor_url.startswith('magnet'):
 		torrent = tor_url # allow magnet link to write to blackhole	
 	else:
-		url = tor_url.split('&file=')[0]
-		value = tor_url.split('&file=')[1]
-		if isinstance(value, str):
+		if '&file=' in tor_url: # torznab results need to be re-encoded
+		    url = tor_url.split('&file=')[0]
+		    value = tor_url.split('&file=')[1]
+		    if isinstance(value, str):
 		  	value = value.decode('utf-8') # make unicode
-		value = unicodedata.normalize('NFC', value) # normalize to short form
-		value = value.encode('unicode-escape') # then escape the result
-		value = value.replace(' ', '%20') # and encode any spaces
-		tor_url = url + '&file=' + value
+		    value = unicodedata.normalize('NFC', value) # normalize to short form
+		    value = value.encode('unicode-escape') # then escape the result
+		    value = value.replace(' ', '%20') # and encode any spaces
+		    tor_url = url + '&file=' + value
 
 	        request = urllib2.Request(ur'%s' % tor_url)
 		if lazylibrarian.PROXY_HOST:
