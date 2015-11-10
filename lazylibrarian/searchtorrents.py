@@ -150,7 +150,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                                     or lazylibrarian.TOR_DOWNLOADER_BLACKHOLE or lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
       
 	if tor_url.startswith('magnet'):
-		torrent = tor_url # allow magnet link to write to blackhole	
+		torrent = tor_url # allow magnet link to write to blackhole and hash to utorrent	
 	else:
 		if '&file=' in tor_url: # torznab results need to be re-encoded
 		    url = tor_url.split('&file=')[0]
@@ -202,15 +202,12 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                	logger.info('Torrent file saved: %s' % tor_title)
                	download = True
 
-       	if (lazylibrarian.TOR_DOWNLOADER_UTORRENT): # can utorrent do magnets?            
-		if tor_url.startswith('magnet'):
-			logger.info('can uTorrent handle magnet links??')
-		else:
-               		logger.info('Utorrent')
-               		hash = CalcTorrentHash(torrent)
-               		download = utorrent.addTorrent(tor_url, hash)
+       	if (lazylibrarian.TOR_DOWNLOADER_UTORRENT):            
+		logger.info('Utorrent')
+               	hash = CalcTorrentHash(torrent)
+               	download = utorrent.addTorrent(tor_url, hash)
 
-        if (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION): # transmission and deluge can do both
+        if (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
                 logger.info('Transmission')
 		download = transmission.addTorrent(tor_url)
 
