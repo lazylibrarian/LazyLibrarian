@@ -30,13 +30,13 @@ import lazylibrarian
 
 def addTorrent(link):
     method = 'torrent-add'
-
-    if link.endswith('.torrent'):
-        with open(link, 'rb') as f:
-            metainfo = str(base64.b64encode(f.read()))
-        arguments = {'metainfo': metainfo }
-    else:
-        arguments = {'filename': link }
+    #print type(link), link
+    #if link.endswith('.torrent'):
+    #    with open(link, 'rb') as f:
+    #        metainfo = str(base64.b64encode(f.read()))
+    #    arguments = {'metainfo': metainfo }
+    #else:
+    arguments = {'filename': link }
 
     response = torrentAction(method, arguments)
 
