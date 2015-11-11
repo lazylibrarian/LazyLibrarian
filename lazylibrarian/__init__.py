@@ -576,17 +576,23 @@ def initialize():
         return True
 
 def build_monthtable():
-  current_locale = locale.getdefaultlocale() # save current state
-  # ensure current locale is in the list...
-  lang = str(current_locale[0]) + '.utf8'
+  current_locale = locale.setlocale(locale.LC_ALL, '') # read current state. 
+# getdefaultlocale() doesnt seem to work as expected on windows, returns 'None'
+# ensure current locale is in the list...
+# actually I'm not sure if this is a good idea. I Added this as my Raspberry Pi
+# defaults to en_GB and does not have en_US loaded, but it's probably better in
+# this case for the user to put en_GB in the config setting instead of en_US??
+# Or have an empty config setting?
+# Or at least remove en_US from the config list so we don't check the same names twice?
+# 
+  lang = str(current_locale)
   MONTHNAMES[0].append(lang)
   for f in range(1, 13):
         MONTHNAMES[f].append(remove_accents(calendar.month_name[f]).lower())
   MONTHNAMES[0].append(lang)
   for f in range(1, 13):
            MONTHNAMES[f].append(remove_accents(calendar.month_abbr[f]).lower().strip('.'))
-  logger.info("Added month names for locale [%s]" % lang)
-  
+  logger.info("Added month names for locale [%s], %s, %s ..." % (lang, MONTHNAMES[1][len(MONTHNAMES[1])-2], MONTHNAMES[1][len(MONTHNAMES[1])-1]))
 
   for lang in IMP_MONTHLANG.split(','): 
     try:
@@ -598,10 +604,10 @@ def build_monthtable():
         MONTHNAMES[0].append(lang)
         for f in range(1, 13):
            MONTHNAMES[f].append(remove_accents(calendar.month_abbr[f]).lower().strip('.'))
-	logger.info("Added month names for locale [%s]" % lang)
+  	logger.info("Added month names for locale [%s], %s, %s ..." % (lang, MONTHNAMES[1][len(MONTHNAMES[1])-2], MONTHNAMES[1][len(MONTHNAMES[1])-1]))  
     except:
         logger.warn("Unable to load requested locale [%s]" % lang)
-
+  logger.info("Setting locale back to entry state %s" % current_locale)
   locale.setlocale(locale.LC_ALL, current_locale) # restore entry state
   # quick sanity check, warn if no english names in table
   eng = 0

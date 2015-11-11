@@ -82,9 +82,9 @@ def KAT(book=None):
                             'tor_size': str(size),
                             })
 
-                    	logger.info('Found %s. Size: %s' % (title, size))
+                    	logger.debug('Found %s. Size: %s' % (title, size))
 		    else:
-			logger.info('Found %s but only %s seeders' % (title, int(seeders)))
+			logger.debug('Found %s but only %s seeders' % (title, int(seeders)))
                 
                 except Exception, e:
                     logger.error(u"An unknown error occurred in the KAT parser: %s" % e)
@@ -389,7 +389,7 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None,
     resultFields=None
 
     nzbtitle = nzbdetails[0].text # title is currently the same field for all searchtypes
-    nzbtitle = common.removeDisallowedFilenameChars(nzbtitle)
+    #nzbtitle = common.removeDisallowedFilenameChars(nzbtitle)
        
     if searchMode == "torznab": # For torznab results, either 8 or 9 contain a magnet link
       if nzbdetails[8].attrib.get('name') == 'magneturl':

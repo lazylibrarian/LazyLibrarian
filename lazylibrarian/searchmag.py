@@ -5,7 +5,7 @@ from xml.etree.ElementTree import Element, SubElement
 
 import lazylibrarian
 
-from lazylibrarian import logger, database, formatter, providers, sabnzbd, SimpleCache, notifiers
+from lazylibrarian import logger, database, formatter, providers, sabnzbd, SimpleCache, notifiers, common
 
 import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
@@ -87,7 +87,6 @@ def searchmagazines(mags=None):
                     		if nzbsize_temp is None: # not all torrents returned by torznab have a size
                         		nzbsize_temp = 1000
 				nzbsize = str(round(float(nzbsize_temp) / 1048576,2))+' MB'
-				# seems not all return a valid date 
 				nzbdate = formatter.nzbdate2format(nzbdate_temp)
 				nzbmode = nzb['nzbmode']
 				checkifmag = myDB.select('SELECT * from magazines WHERE Title="%s"' % bookid)
@@ -97,8 +96,7 @@ def searchmagazines(mags=None):
 						frequency = results['Frequency']
 						regex = results['Regex']
 
-					nzbtitle_formatted = nzbtitle.replace('.',' ').replace('-',' ').replace('/',' ').replace('+',' ').replace('_',' ').replace('(','').replace(')','')
-					nzbtitle_formatted = unidecode(u'%s' % nzbtitle_formatted.strip())
+					nzbtitle_formatted = nzbtitle.replace('.',' ').replace('-',' ').replace('/',' ').replace('+',' ').replace('_',' ').replace('(','').replace(')','').strip()
 					#Need to make sure that substrings of magazine titles don't get found (e.g. Maxim USA will find Maximum PC USA)
 					keyword_check = nzbtitle_formatted.replace(bookid,'')
 					#remove extra spaces if they're in a row
@@ -117,8 +115,8 @@ def searchmagazines(mags=None):
 					if len(nzbtitle_exploded) > name_len: # needs to be longer as it should include a date
 					    while name_len:
 						name_len = name_len - 1
-						# fuzzy check on each word in the magazine name
-						ratio = fuzz.ratio(nzbtitle_exploded[name_len].lower(), bookid_exploded[name_len].lower())
+						# fuzzy check on each word in the magazine name with any accents stripped
+						ratio = fuzz.ratio(common.remove_accents(nzbtitle_exploded[name_len]).lower(), common.remove_accents(bookid_exploded[name_len]).lower())
 						if ratio < 80: # hard coded fuzz ratio for now, works for close matches
 							logger.debug("Magazine fuzz ratio failed [%d] [%s] [%s]" % (ratio, bookid, nzbtitle_formatted))
 							name_match = 0 # name match failed
@@ -130,7 +128,7 @@ def searchmagazines(mags=None):
 							#regexA = DD MonthName YYYY OR MonthName YYYY or nn MonthName YYYY
 							regexA_year = nzbtitle_exploded[len(nzbtitle_exploded)-1]
 							regexA_month_temp = nzbtitle_exploded[len(nzbtitle_exploded)-2]
-							regexA_month = formatter.month2num(regexA_month_temp)
+							regexA_month = formatter.month2num(common.remove_accents(regexA_month_temp))
 
 							if frequency == "Weekly" or frequency == "BiWeekly":
 								regexA_day = nzbtitle_exploded[len(nzbtitle_exploded)-3].zfill(2)
@@ -152,7 +150,7 @@ def searchmagazines(mags=None):
 								regexB_year = nzbtitle_exploded[len(nzbtitle_exploded)-1]
 								regexB_day = nzbtitle_exploded[len(nzbtitle_exploded)-2].zfill(2)
 								regexB_month_temp = nzbtitle_exploded[len(nzbtitle_exploded)-3]
-								regexB_month = formatter.month2num(regexB_month_temp)
+								regexB_month = formatter.month2num(common.remove_accents(regexB_month_temp))
 								newdatish_regexB = regexB_year+regexB_month+regexB_day
 
 								try:

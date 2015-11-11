@@ -14,7 +14,7 @@ from lib.deluge_client import DelugeRPCClient
 import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz, process
 
-#from lazylibrarian.common import USER_AGENT
+import unicodedata
 
 import lazylibrarian.common as common
 #new to support torrents
@@ -149,8 +149,20 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
     if (lazylibrarian.USE_TOR) and (lazylibrarian.TOR_DOWNLOADER_DELUGE or  lazylibrarian.TOR_DOWNLOADER_UTORRENT
                                     or lazylibrarian.TOR_DOWNLOADER_BLACKHOLE or lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
       
-	if not tor_url.startswith('magnet'):	
-	        request = urllib2.Request(tor_url)
+	if tor_url.startswith('magnet'):
+		torrent = tor_url # allow magnet link to write to blackhole and hash to utorrent	
+	else:
+		if '&file=' in tor_url: # torznab results need to be re-encoded
+		    url = tor_url.split('&file=')[0]
+		    value = tor_url.split('&file=')[1]
+		    if isinstance(value, str):
+		  	value = value.decode('utf-8') # make unicode
+		    value = unicodedata.normalize('NFC', value) # normalize to short form
+		    value = value.encode('unicode-escape') # then escape the result
+		    value = value.replace(' ', '%20') # and encode any spaces
+		    tor_url = url + '&file=' + value
+
+	        request = urllib2.Request(ur'%s' % tor_url)
 		if lazylibrarian.PROXY_HOST:
 			request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
 	        request.add_header('Accept-encoding', 'gzip')
@@ -176,28 +188,26 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
 	 	    return
 
         if (lazylibrarian.TOR_DOWNLOADER_BLACKHOLE): 
-		if tor_url.startswith('magnet'): # blackhole can't do magnets, only torrents
-			logger.info('Torrent blackhole cannot handle magnet links')
-		else:
-               		logger.info('Torrent blackhole')		
-                	tor_title = common.removeDisallowedFilenameChars(tor_title)
-               		tor_name = str.replace(str(tor_title), ' ', '_') + '.torrent'
-               		tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
-               		torrent_file = open(tor_path , 'wb')
-               		torrent_file.write(torrent)
-               		torrent_file.close()
-               		logger.info('Torrent file saved: %s' % tor_title)
-               		download = True
-
-       	if (lazylibrarian.TOR_DOWNLOADER_UTORRENT): # can utorrent do magnets?            
+		logger.info('Torrent blackhole')		
+                tor_title = common.removeDisallowedFilenameChars(tor_title)
+               	tor_name = str.replace(str(tor_title), ' ', '_')
 		if tor_url.startswith('magnet'):
-			logger.info('uTorrent cannot handle magnet links')
+			tor_name = tor_name + '.magnet'
 		else:
-               		logger.info('Utorrent')
-               		hash = CalcTorrentHash(torrent)
-               		download = utorrent.addTorrent(tor_url, hash)
+			tor_name = tor_name + '.torrent'
+               	tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
+               	torrent_file = open(tor_path , 'wb')
+               	torrent_file.write(torrent)
+               	torrent_file.close()
+               	logger.info('Torrent file saved: %s' % tor_title)
+               	download = True
 
-        if (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION): # transmission and deluge can do both
+       	if (lazylibrarian.TOR_DOWNLOADER_UTORRENT):            
+		logger.info('Utorrent')
+               	hash = CalcTorrentHash(torrent)
+               	download = utorrent.addTorrent(tor_url, hash)
+
+        if (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
                 logger.info('Transmission')
 		download = transmission.addTorrent(tor_url)
 
