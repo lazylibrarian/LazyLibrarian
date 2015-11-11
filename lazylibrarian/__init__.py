@@ -576,11 +576,13 @@ def initialize():
         return True
 
 def build_monthtable():
-  current_locale = locale.setlocale(locale.LC_ALL, '') # read current state
+  current_locale = locale.setlocale(locale.LC_ALL, '') # read current state. 
+# getdefaultlocale() doesnt seem to work as expected on windows, returns 'None'
 # ensure current locale is in the list...
 # actually I'm not sure if this is a good idea. I Added this as my Raspberry Pi
 # defaults to en_GB and does not have en_US loaded, but it's probably better in
 # this case for the user to put en_GB in the config setting instead of en_US??
+# Or have an empty config setting?
 # Or at least remove en_US from the config list so we don't check the same names twice?
 # 
   lang = str(current_locale)

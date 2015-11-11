@@ -389,7 +389,7 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None,
     resultFields=None
 
     nzbtitle = nzbdetails[0].text # title is currently the same field for all searchtypes
-    nzbtitle = common.removeDisallowedFilenameChars(nzbtitle)
+    #nzbtitle = common.removeDisallowedFilenameChars(nzbtitle)
        
     if searchMode == "torznab": # For torznab results, either 8 or 9 contain a magnet link
       if nzbdetails[8].attrib.get('name') == 'magneturl':
