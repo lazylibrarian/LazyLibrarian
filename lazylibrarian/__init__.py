@@ -608,19 +608,22 @@ def build_monthtable():
     MONTHNAMES[0].append(lang)
     for f in range(1, 13):
         MONTHNAMES[f].append(remove_accents(calendar.month_abbr[f]).lower().strip('.'))
-    logger.info("Added month names for locale [%s], %s, %s ..." % (lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
+    logger.info("Added month names for locale [%s], %s, %s ..." % (
+        lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
 
     for lang in IMP_MONTHLANG.split(','):
         try:
             lang = str(lang).strip()
-            locale.setlocale(locale.LC_ALL, lang)
-            MONTHNAMES[0].append(lang)
-            for f in range(1, 13):
-                MONTHNAMES[f].append(remove_accents(calendar.month_name[f]).lower())
-            MONTHNAMES[0].append(lang)
-            for f in range(1, 13):
-                MONTHNAMES[f].append(remove_accents(calendar.month_abbr[f]).lower().strip('.'))
-            logger.info("Added month names for locale [%s], %s, %s ..." % (lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
+            if len(lang) > 1:
+                locale.setlocale(locale.LC_ALL, lang)
+                MONTHNAMES[0].append(lang)
+                for f in range(1, 13):
+                    MONTHNAMES[f].append(remove_accents(calendar.month_name[f]).lower())
+                MONTHNAMES[0].append(lang)
+                for f in range(1, 13):
+                    MONTHNAMES[f].append(remove_accents(calendar.month_abbr[f]).lower().strip('.'))
+                logger.info("Added month names for locale [%s], %s, %s ..." % (
+                    lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
         except:
             logger.warn("Unable to load requested locale [%s]" % lang)
     logger.info("Setting locale back to entry state %s" % current_locale)

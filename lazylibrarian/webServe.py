@@ -808,15 +808,15 @@ class WebInterface(object):
             print str(job)
             jobname = str(job).split(' ')[0].split('.')[2]
             if jobname == "searchmagazines":
-                jobname = "CRON - Check for New Magazine Issues"
+                jobname = "[CRON] - Check for new magazine issues"
             elif jobname == "checkForUpdates":
-                jobname = "CRON - Check for LazyLibrarian Update"
+                jobname = "[CRON] - Check for LazyLibrarian update"
             elif jobname == "search_tor_book":
-                jobname = "CRON - TOR book search"
+                jobname = "[CRON] - TOR book search"
             elif jobname == "search_nzb_book":
-                jobname = "CRON - NZB book search"
+                jobname = "[CRON] - NZB book search"
             elif jobname == "processDir":
-                jobname = "CRON - Process Download Dir"
+                jobname = "[CRON] - Process download directory"
             jobtime = str(job).split(']')[1].split('.')[0]
             logger.info("%s%s" % (jobname, jobtime))
         raise cherrypy.HTTPRedirect("logs")
