@@ -31,7 +31,7 @@ from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
 
 class PushbulletNotifier:
 
-    def _sendPushbullet(self, message=None, event=None, pushbullet_token=None, pushbullet_deviceid=None, 
+    def _sendPushbullet(self, message=None, event=None, pushbullet_token=None, pushbullet_deviceid=None,
                         notificationType=None, method=None, force=False):
 
         if not lazylibrarian.USE_PUSHBULLET and not force:
@@ -69,12 +69,12 @@ class PushbulletNotifier:
             testMessage = False
             try:
                 data = {
-                        'title': event.encode('utf-8'),
+                    'title': event.encode('utf-8'),
                         'body': message.encode('utf-8'),
                         'device_iden': pushbullet_deviceid,
                         'type': notificationType}
                 http_handler.request(method, uri, body=urlencode(data),
-                             headers={'Authorization': 'Basic %s' % authString})
+                                     headers={'Authorization': 'Basic %s' % authString})
                 pass
             except (SSLError, HTTPException):
                 return False
@@ -97,7 +97,7 @@ class PushbulletNotifier:
             logger.error("Pushbullet notification failed.")
             return False
 
-    def _notify(self, message=None, event=None, pushbullet_token=None, pushbullet_deviceid=None, 
+    def _notify(self, message=None, event=None, pushbullet_token=None, pushbullet_deviceid=None,
                 notificationType=None, method=None, force=False):
         """
         Sends a pushbullet notification based on the provided info or LL config
@@ -114,12 +114,12 @@ class PushbulletNotifier:
 
         logger.debug("Pushbullet: Sending notification for " + str(message))
 
-        self._sendPushbullet(message,event,pushbullet_token,pushbullet_deviceid,notificationType,method)
+        self._sendPushbullet(message, event, pushbullet_token, pushbullet_deviceid, notificationType, method)
         return True
 
-##############################################################################
+#
 # Public functions
-##############################################################################
+#
 
     def notify_snatch(self, title):
         if lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH:
@@ -127,7 +127,7 @@ class PushbulletNotifier:
 
     def notify_download(self, title):
         if lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD:
-            self._notify( message=title, event=notifyStrings[NOTIFY_DOWNLOAD], notificationType='note', method='POST')
+            self._notify(message=title, event=notifyStrings[NOTIFY_DOWNLOAD], notificationType='note', method='POST')
 
     def test_notify(self, token, title="Test"):
         return self._sendPushbullet("This is a test notification from LazyLibrarian", title, token)

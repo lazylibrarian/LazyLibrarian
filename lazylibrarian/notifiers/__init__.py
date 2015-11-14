@@ -22,7 +22,7 @@ import tweet
 import boxcar
 import pushbullet
 import pushover
-import nma 
+import nma
 
 from lazylibrarian.common import *
 

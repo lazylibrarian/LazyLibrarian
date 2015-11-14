@@ -1,11 +1,16 @@
-import os, cherrypy, urllib
+import os
+import cherrypy
+#import urllib
 from cherrypy.lib.static import serve_file
-from mako.template import Template
+#from mako.template import Template
 from mako.lookup import TemplateLookup
 from mako import exceptions
 from operator import itemgetter
 
-import thread, threading, time, Queue
+#import thread
+import threading
+#import time
+import Queue
 
 import lazylibrarian
 
@@ -17,6 +22,7 @@ from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
 
 import lib.simplejson as simplejson
+
 
 def serve_template(templatename, **kwargs):
 
@@ -36,7 +42,7 @@ class WebInterface(object):
 
     def index(self):
         raise cherrypy.HTTPRedirect("home")
-    index.exposed=True
+    index.exposed = True
 
     def home(self):
         myDB = database.DBConnection()
@@ -61,11 +67,11 @@ class WebInterface(object):
 
     def config(self):
         http_look_dir = os.path.join(lazylibrarian.PROG_DIR, 'data/interfaces/')
-        http_look_list = [ name for name in os.listdir(http_look_dir) if os.path.isdir(os.path.join(http_look_dir, name)) ]
-	status_list = [ 'Skipped','Wanted', 'Open', 'Ignored' ]
+        http_look_list = [name for name in os.listdir(http_look_dir) if os.path.isdir(os.path.join(http_look_dir, name))]
+        status_list = ['Skipped', 'Wanted', 'Open', 'Ignored']
         config = {
-                    "http_host":        lazylibrarian.HTTP_HOST,
-		    "http_root":	lazylibrarian.HTTP_ROOT,
+            "http_host":        lazylibrarian.HTTP_HOST,
+                    "http_root":	lazylibrarian.HTTP_ROOT,
                     "http_user":        lazylibrarian.HTTP_USER,
                     "http_port":        lazylibrarian.HTTP_PORT,
                     "http_pass":        lazylibrarian.HTTP_PASS,
@@ -73,9 +79,9 @@ class WebInterface(object):
                     "http_look_list":   http_look_list,
                     "match_ratio":      lazylibrarian.MATCH_RATIO,
                     "launch_browser":   checked(lazylibrarian.LAUNCH_BROWSER),
-		    "proxy_host":	lazylibrarian.PROXY_HOST,
-		    "proxy_type":	lazylibrarian.PROXY_TYPE,
-                    "logdir" :          lazylibrarian.LOGDIR,
+                    "proxy_host":	lazylibrarian.PROXY_HOST,
+                    "proxy_type":	lazylibrarian.PROXY_TYPE,
+                    "logdir":          lazylibrarian.LOGDIR,
                     "imp_onlyisbn": 	checked(lazylibrarian.IMP_ONLYISBN),
                     "imp_singlebook": 	checked(lazylibrarian.IMP_SINGLEBOOK),
                     "imp_preflang":     lazylibrarian.IMP_PREFLANG,
@@ -83,7 +89,7 @@ class WebInterface(object):
                     "imp_autoadd":      lazylibrarian.IMP_AUTOADD,
                     "sab_host":         lazylibrarian.SAB_HOST,
                     "sab_port":         lazylibrarian.SAB_PORT,
-                    "sab_subdir":       lazylibrarian.SAB_SUBDIR,                    
+                    "sab_subdir":       lazylibrarian.SAB_SUBDIR,
                     "sab_api":          lazylibrarian.SAB_API,
                     "sab_user":         lazylibrarian.SAB_USER,
                     "sab_pass":         lazylibrarian.SAB_PASS,
@@ -100,66 +106,66 @@ class WebInterface(object):
                     "nzb_blackholedir": lazylibrarian.NZB_BLACKHOLEDIR,
                     "torrent_dir":      lazylibrarian.TORRENT_DIR,
                     "numberofseeders":  lazylibrarian.NUMBEROFSEEDERS,
-                    "use_newznab0" :    checked(lazylibrarian.NEWZNAB0),
-                    "newznab_host0" :    lazylibrarian.NEWZNAB_HOST0,
-                    "newznab_api0" :     lazylibrarian.NEWZNAB_API0,
-                    "use_newznab1" :    checked(lazylibrarian.NEWZNAB1),
-                    "newznab_host1" :    lazylibrarian.NEWZNAB_HOST1,
-                    "newznab_api1" :     lazylibrarian.NEWZNAB_API1,
-                    "use_newznab2" :    checked(lazylibrarian.NEWZNAB2),
-                    "newznab_host2" :   lazylibrarian.NEWZNAB_HOST2,
-                    "newznab_api2" :    lazylibrarian.NEWZNAB_API2,
-                    "use_newznab3" :    checked(lazylibrarian.NEWZNAB3),
-                    "newznab_host3" :   lazylibrarian.NEWZNAB_HOST3,
-                    "newznab_api3" :    lazylibrarian.NEWZNAB_API3,
-                    "use_newznab4" :    checked(lazylibrarian.NEWZNAB4),
-                    "newznab_host4" :   lazylibrarian.NEWZNAB_HOST4,
-                    "newznab_api4" :    lazylibrarian.NEWZNAB_API4,
-                    "use_torznab0" :    checked(lazylibrarian.TORZNAB0),
-                    "torznab_host0" :   lazylibrarian.TORZNAB_HOST0,
-                    "torznab_api0" :    lazylibrarian.TORZNAB_API0,
-                    "use_torznab1" :    checked(lazylibrarian.TORZNAB1),
-                    "torznab_host1" :   lazylibrarian.TORZNAB_HOST1,
-                    "torznab_api1" :    lazylibrarian.TORZNAB_API1,
-                    "use_torznab2" :    checked(lazylibrarian.TORZNAB2),
-                    "torznab_host2" :   lazylibrarian.TORZNAB_HOST2,
-                    "torznab_api2" :    lazylibrarian.TORZNAB_API2,
-                    "use_torznab3" :    checked(lazylibrarian.TORZNAB3),
-                    "torznab_host3" :   lazylibrarian.TORZNAB_HOST3,
-                    "torznab_api3" :    lazylibrarian.TORZNAB_API3,
-                    "use_torznab4" :    checked(lazylibrarian.TORZNAB4),
-                    "torznab_host4" :   lazylibrarian.TORZNAB_HOST4,
-                    "torznab_api4" :    lazylibrarian.TORZNAB_API4,
-                    "use_newzbin" :     checked(lazylibrarian.NEWZBIN),
-                    "newzbin_uid" :     lazylibrarian.NEWZBIN_UID,
-                    "newzbin_pass" :    lazylibrarian.NEWZBIN_PASS,
-                    "use_kat" :         checked(lazylibrarian.KAT),
-		    "kat_host" : 	lazylibrarian.KAT_HOST,
-                    "search_interval" :       int(lazylibrarian.SEARCH_INTERVAL),
-                    "scan_interval" :         int(lazylibrarian.SCAN_INTERVAL),
-                    "versioncheck_interval" : int(lazylibrarian.VERSIONCHECK_INTERVAL),
-		    "full_scan":	      checked(lazylibrarian.FULL_SCAN),	
-		    "add_author":	      checked(lazylibrarian.ADD_AUTHOR),
-		    "notfound_status":	      lazylibrarian.NOTFOUND_STATUS,
-		    "newbook_status":	      lazylibrarian.NEWBOOK_STATUS,
-		    "status_list":	      status_list,
+                    "use_newznab0":    checked(lazylibrarian.NEWZNAB0),
+                    "newznab_host0":    lazylibrarian.NEWZNAB_HOST0,
+                    "newznab_api0":     lazylibrarian.NEWZNAB_API0,
+                    "use_newznab1":    checked(lazylibrarian.NEWZNAB1),
+                    "newznab_host1":    lazylibrarian.NEWZNAB_HOST1,
+                    "newznab_api1":     lazylibrarian.NEWZNAB_API1,
+                    "use_newznab2":    checked(lazylibrarian.NEWZNAB2),
+                    "newznab_host2":   lazylibrarian.NEWZNAB_HOST2,
+                    "newznab_api2":    lazylibrarian.NEWZNAB_API2,
+                    "use_newznab3":    checked(lazylibrarian.NEWZNAB3),
+                    "newznab_host3":   lazylibrarian.NEWZNAB_HOST3,
+                    "newznab_api3":    lazylibrarian.NEWZNAB_API3,
+                    "use_newznab4":    checked(lazylibrarian.NEWZNAB4),
+                    "newznab_host4":   lazylibrarian.NEWZNAB_HOST4,
+                    "newznab_api4":    lazylibrarian.NEWZNAB_API4,
+                    "use_torznab0":    checked(lazylibrarian.TORZNAB0),
+                    "torznab_host0":   lazylibrarian.TORZNAB_HOST0,
+                    "torznab_api0":    lazylibrarian.TORZNAB_API0,
+                    "use_torznab1":    checked(lazylibrarian.TORZNAB1),
+                    "torznab_host1":   lazylibrarian.TORZNAB_HOST1,
+                    "torznab_api1":    lazylibrarian.TORZNAB_API1,
+                    "use_torznab2":    checked(lazylibrarian.TORZNAB2),
+                    "torznab_host2":   lazylibrarian.TORZNAB_HOST2,
+                    "torznab_api2":    lazylibrarian.TORZNAB_API2,
+                    "use_torznab3":    checked(lazylibrarian.TORZNAB3),
+                    "torznab_host3":   lazylibrarian.TORZNAB_HOST3,
+                    "torznab_api3":    lazylibrarian.TORZNAB_API3,
+                    "use_torznab4":    checked(lazylibrarian.TORZNAB4),
+                    "torznab_host4":   lazylibrarian.TORZNAB_HOST4,
+                    "torznab_api4":    lazylibrarian.TORZNAB_API4,
+                    "use_newzbin":     checked(lazylibrarian.NEWZBIN),
+                    "newzbin_uid":     lazylibrarian.NEWZBIN_UID,
+                    "newzbin_pass":    lazylibrarian.NEWZBIN_PASS,
+                    "use_kat":         checked(lazylibrarian.KAT),
+                    "kat_host": 	lazylibrarian.KAT_HOST,
+                    "search_interval":       int(lazylibrarian.SEARCH_INTERVAL),
+                    "scan_interval":         int(lazylibrarian.SCAN_INTERVAL),
+                    "versioncheck_interval": int(lazylibrarian.VERSIONCHECK_INTERVAL),
+                    "full_scan":	      checked(lazylibrarian.FULL_SCAN),
+                    "add_author":	      checked(lazylibrarian.ADD_AUTHOR),
+                    "notfound_status":	      lazylibrarian.NOTFOUND_STATUS,
+                    "newbook_status":	      lazylibrarian.NEWBOOK_STATUS,
+                    "status_list":	      status_list,
                     "ebook_dest_folder":      lazylibrarian.EBOOK_DEST_FOLDER,
                     "ebook_dest_file":        lazylibrarian.EBOOK_DEST_FILE,
                     "mag_dest_folder":        lazylibrarian.MAG_DEST_FOLDER,
                     "mag_dest_file":          lazylibrarian.MAG_DEST_FILE,
-		    "mag_relative":    	      checked(lazylibrarian.MAG_RELATIVE),
-                    "use_twitter" :           checked(lazylibrarian.USE_TWITTER),
-                    "twitter_notify_onsnatch" :       checked(lazylibrarian.TWITTER_NOTIFY_ONSNATCH),
-                    "twitter_notify_ondownload" :     checked(lazylibrarian.TWITTER_NOTIFY_ONDOWNLOAD), 
-                    "use_boxcar" :                    checked(lazylibrarian.USE_BOXCAR),
-                    "boxcar_notify_onsnatch" :        checked(lazylibrarian.BOXCAR_NOTIFY_ONSNATCH),
-                    "boxcar_notify_ondownload" :      checked(lazylibrarian.BOXCAR_NOTIFY_ONDOWNLOAD),
-                    "boxcar_token" :                  lazylibrarian.BOXCAR_TOKEN,
+                    "mag_relative":    	      checked(lazylibrarian.MAG_RELATIVE),
+                    "use_twitter":           checked(lazylibrarian.USE_TWITTER),
+                    "twitter_notify_onsnatch":       checked(lazylibrarian.TWITTER_NOTIFY_ONSNATCH),
+                    "twitter_notify_ondownload":     checked(lazylibrarian.TWITTER_NOTIFY_ONDOWNLOAD),
+                    "use_boxcar":                    checked(lazylibrarian.USE_BOXCAR),
+                    "boxcar_notify_onsnatch":        checked(lazylibrarian.BOXCAR_NOTIFY_ONSNATCH),
+                    "boxcar_notify_ondownload":      checked(lazylibrarian.BOXCAR_NOTIFY_ONDOWNLOAD),
+                    "boxcar_token":                  lazylibrarian.BOXCAR_TOKEN,
                     "use_pushbullet":                 checked(lazylibrarian.USE_PUSHBULLET),
-                    "pushbullet_notify_onsnatch" :    checked(lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH),
-                    "pushbullet_notify_ondownload" :  checked(lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD),
-                    "pushbullet_token" :              lazylibrarian.PUSHBULLET_TOKEN,
-                    "pushbullet_deviceid" :           lazylibrarian.PUSHBULLET_DEVICEID,
+                    "pushbullet_notify_onsnatch":    checked(lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH),
+                    "pushbullet_notify_ondownload":  checked(lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD),
+                    "pushbullet_token":              lazylibrarian.PUSHBULLET_TOKEN,
+                    "pushbullet_deviceid":           lazylibrarian.PUSHBULLET_DEVICEID,
                     "use_pushover":                   checked(lazylibrarian.USE_PUSHOVER),
                     "pushover_onsnatch":              checked(lazylibrarian.PUSHOVER_ONSNATCH),
                     "pushover_ondownload":            checked(lazylibrarian.PUSHOVER_ONDOWNLOAD),
@@ -167,22 +173,22 @@ class WebInterface(object):
                     "pushover_keys":                  lazylibrarian.PUSHOVER_KEYS,
                     "pushover_apitoken":              lazylibrarian.PUSHOVER_APITOKEN,
                     "nma_enabled":		      checked(lazylibrarian.NMA_ENABLED),
-		    "nma_apikey": 		      lazylibrarian.NMA_APIKEY,
-		    "nma_priority": 		      int(lazylibrarian.NMA_PRIORITY),
-		    "nma_onsnatch":                   checked(lazylibrarian.NMA_ONSNATCH),
-                    "ebook_type" :                    lazylibrarian.EBOOK_TYPE,
-                    "gr_api" :                        lazylibrarian.GR_API,
-                    "gb_api" :                        lazylibrarian.GB_API,
-                    "book_api" :                      lazylibrarian.BOOK_API,
-                    "use_nzb" :                       checked(lazylibrarian.USE_NZB),
-                    "use_tor" :                       checked(lazylibrarian.USE_TOR),
-                    "nzb_downloader_sabnzbd" :        checked(lazylibrarian.NZB_DOWNLOADER_SABNZBD),
-                    "nzb_downloader_nzbget" :         checked(lazylibrarian.NZB_DOWNLOADER_NZBGET),
-                    "nzb_downloader_blackhole" :      checked(lazylibrarian.NZB_DOWNLOADER_BLACKHOLE),
-                    "tor_downloader_utorrent" :       checked(lazylibrarian.TOR_DOWNLOADER_UTORRENT),
-                    "tor_downloader_transmission" :   checked(lazylibrarian.TOR_DOWNLOADER_TRANSMISSION),
-                    "tor_downloader_deluge" :         checked(lazylibrarian.TOR_DOWNLOADER_DELUGE),
-                    "tor_downloader_blackhole" :      checked(lazylibrarian.TOR_DOWNLOADER_BLACKHOLE),
+                    "nma_apikey": 		      lazylibrarian.NMA_APIKEY,
+                    "nma_priority": 		      int(lazylibrarian.NMA_PRIORITY),
+                    "nma_onsnatch":                   checked(lazylibrarian.NMA_ONSNATCH),
+                    "ebook_type":                    lazylibrarian.EBOOK_TYPE,
+                    "gr_api":                        lazylibrarian.GR_API,
+                    "gb_api":                        lazylibrarian.GB_API,
+                    "book_api":                      lazylibrarian.BOOK_API,
+                    "use_nzb":                       checked(lazylibrarian.USE_NZB),
+                    "use_tor":                       checked(lazylibrarian.USE_TOR),
+                    "nzb_downloader_sabnzbd":        checked(lazylibrarian.NZB_DOWNLOADER_SABNZBD),
+                    "nzb_downloader_nzbget":         checked(lazylibrarian.NZB_DOWNLOADER_NZBGET),
+                    "nzb_downloader_blackhole":      checked(lazylibrarian.NZB_DOWNLOADER_BLACKHOLE),
+                    "tor_downloader_utorrent":       checked(lazylibrarian.TOR_DOWNLOADER_UTORRENT),
+                    "tor_downloader_transmission":   checked(lazylibrarian.TOR_DOWNLOADER_TRANSMISSION),
+                    "tor_downloader_deluge":         checked(lazylibrarian.TOR_DOWNLOADER_DELUGE),
+                    "tor_downloader_blackhole":      checked(lazylibrarian.TOR_DOWNLOADER_BLACKHOLE),
                     "utorrent_host":                  lazylibrarian.UTORRENT_HOST,
                     "utorrent_user":                  lazylibrarian.UTORRENT_USER,
                     "utorrent_pass":                  lazylibrarian.UTORRENT_PASS,
@@ -194,41 +200,41 @@ class WebInterface(object):
                     "deluge_port":                    lazylibrarian.DELUGE_PORT,
                     "deluge_user":                    lazylibrarian.DELUGE_USER,
                     "deluge_pass":                    lazylibrarian.DELUGE_PASS
-                }
-        return serve_template(templatename="config.html", title="Settings", config=config)    
+        }
+        return serve_template(templatename="config.html", title="Settings", config=config)
     config.exposed = True
 
-    def configUpdate(self, http_host='0.0.0.0', http_root=None, http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None, 
-	imp_onlyisbn=0, imp_singlebook=0, imp_preflang=None, imp_monthlang=None, imp_autoadd=None, match_ratio=80, 
-	nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0, nzb_downloader_blackhole=0, use_nzb=0, use_tor=0, 
-	proxy_host=None, proxy_type=None,sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None, 
-	destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, nzb_blackholedir=None, 
-	torrent_dir=None, numberofseeders=0, tor_downloader_blackhole=0, tor_downloader_utorrent=0, 
-	nzbget_host=None, nzbget_user=None, nzbget_pass=None, nzbget_cat=None, nzbget_priority=0, newznab0=0, newznab_host0=None, newznab_api0=None, 
-	newznab1=0, newznab_host1=None, newznab_api1=None, newznab2=0, newznab_host2=None, newznab_api2=None, newznab3=0, newznab_host3=None, newznab_api3=None, 
-	newznab4=0, newznab_host4=None, newznab_api4=None, newzbin=0, newzbin_uid=None, newzbin_pass=None, kat=0, kat_host=None, ebook_type=None, book_api=None, 
-	torznab0=0, torznab_host0=None, torznab_api0=None, torznab1=0, torznab_host1=None, torznab_api1=None, torznab2=0, torznab_host2=None, torznab_api2=None, 
-	torznab3=0, torznab_host3=None, torznab_api3=None, torznab4=0, torznab_host4=None, torznab_api4=None, 
-	gr_api=None, gb_api=None, versioncheck_interval=None, search_interval=None, scan_interval=None,
- 	ebook_dest_folder=None, ebook_dest_file=None, mag_relative=0, mag_dest_folder=None, mag_dest_file=None,
-	use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0, utorrent_host=None, utorrent_user=None, utorrent_pass=None,  
-	notfound_status='Skipped', newbook_status='Skipped', full_scan=0, add_author=0, 
-	tor_downloader_transmission=0, transmission_host=None, transmission_user=None, transmission_pass=None,
-        tor_downloader_deluge=0, deluge_host=None, deluge_user=None, deluge_pass=None, deluge_port=None, 
-        utorrent_label=None, use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token=None, 
-	use_pushbullet=0, pushbullet_notify_onsnatch=0, pushbullet_notify_ondownload=0, pushbullet_token=None, pushbullet_deviceid=None,
-        use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys=None, pushover_apitoken=None, pushover_ondownload=0,
-	nma_enabled=False, nma_apikey=None, nma_priority=0, nma_onsnatch=0):
+    def configUpdate(self, http_host='0.0.0.0', http_root=None, http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None,
+                     imp_onlyisbn=0, imp_singlebook=0, imp_preflang=None, imp_monthlang=None, imp_autoadd=None, match_ratio=80,
+                     nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0, nzb_downloader_blackhole=0, use_nzb=0, use_tor=0,
+                     proxy_host=None, proxy_type=None, sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None,
+                     destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, nzb_blackholedir=None,
+                     torrent_dir=None, numberofseeders=0, tor_downloader_blackhole=0, tor_downloader_utorrent=0,
+                     nzbget_host=None, nzbget_user=None, nzbget_pass=None, nzbget_cat=None, nzbget_priority=0, newznab0=0, newznab_host0=None, newznab_api0=None,
+                     newznab1=0, newznab_host1=None, newznab_api1=None, newznab2=0, newznab_host2=None, newznab_api2=None, newznab3=0, newznab_host3=None, newznab_api3=None,
+                     newznab4=0, newznab_host4=None, newznab_api4=None, newzbin=0, newzbin_uid=None, newzbin_pass=None, kat=0, kat_host=None, ebook_type=None, book_api=None,
+                     torznab0=0, torznab_host0=None, torznab_api0=None, torznab1=0, torznab_host1=None, torznab_api1=None, torznab2=0, torznab_host2=None, torznab_api2=None,
+                     torznab3=0, torznab_host3=None, torznab_api3=None, torznab4=0, torznab_host4=None, torznab_api4=None,
+                     gr_api=None, gb_api=None, versioncheck_interval=None, search_interval=None, scan_interval=None,
+                     ebook_dest_folder=None, ebook_dest_file=None, mag_relative=0, mag_dest_folder=None, mag_dest_file=None,
+                     use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0, utorrent_host=None, utorrent_user=None, utorrent_pass=None,
+                     notfound_status='Skipped', newbook_status='Skipped', full_scan=0, add_author=0,
+                     tor_downloader_transmission=0, transmission_host=None, transmission_user=None, transmission_pass=None,
+                     tor_downloader_deluge=0, deluge_host=None, deluge_user=None, deluge_pass=None, deluge_port=None,
+                     utorrent_label=None, use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token=None,
+                     use_pushbullet=0, pushbullet_notify_onsnatch=0, pushbullet_notify_ondownload=0, pushbullet_token=None, pushbullet_deviceid=None,
+                     use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys=None, pushover_apitoken=None, pushover_ondownload=0,
+                     nma_enabled=False, nma_apikey=None, nma_priority=0, nma_onsnatch=0):
 
         lazylibrarian.HTTP_HOST = http_host
-	lazylibrarian.HTTP_ROOT = http_root
+        lazylibrarian.HTTP_ROOT = http_root
         lazylibrarian.HTTP_PORT = http_port
         lazylibrarian.HTTP_USER = http_user
         lazylibrarian.HTTP_PASS = http_pass
         lazylibrarian.HTTP_LOOK = http_look
         lazylibrarian.LAUNCH_BROWSER = int(launch_browser)
-	lazylibrarian.PROXY_HOST = proxy_host
-	lazylibrarian.PROXY_TYPE = proxy_type
+        lazylibrarian.PROXY_HOST = proxy_host
+        lazylibrarian.PROXY_TYPE = proxy_type
         lazylibrarian.LOGDIR = logdir
         lazylibrarian.MATCH_RATIO = match_ratio
 
@@ -236,7 +242,7 @@ class WebInterface(object):
         lazylibrarian.IMP_SINGLEBOOK = int(imp_singlebook)
         lazylibrarian.IMP_PREFLANG = imp_preflang
         lazylibrarian.IMP_MONTHLANG = imp_monthlang
-        lazylibrarian.IMP_AUTOADD  = imp_autoadd
+        lazylibrarian.IMP_AUTOADD = imp_autoadd
 
         lazylibrarian.SAB_HOST = sab_host
         lazylibrarian.SAB_PORT = sab_port
@@ -326,7 +332,7 @@ class WebInterface(object):
         lazylibrarian.DELUGE_PASS = deluge_pass
 
         lazylibrarian.KAT = int(kat)
-	lazylibrarian.KAT_HOST = kat_host
+        lazylibrarian.KAT_HOST = kat_host
 
         lazylibrarian.USE_NZB = int(use_nzb)
         lazylibrarian.USE_TOR = int(use_tor)
@@ -340,16 +346,16 @@ class WebInterface(object):
         lazylibrarian.SCAN_INTERVAL = scan_interval
         lazylibrarian.VERSIONCHECK_INTERVAL = versioncheck_interval
 
-	lazylibrarian.FULL_SCAN = int(full_scan)
-	lazylibrarian.NOTFOUND_STATUS = notfound_status
-	lazylibrarian.NEWBOOK_STATUS = newbook_status
-	lazylibrarian.ADD_AUTHOR = int(add_author)
+        lazylibrarian.FULL_SCAN = int(full_scan)
+        lazylibrarian.NOTFOUND_STATUS = notfound_status
+        lazylibrarian.NEWBOOK_STATUS = newbook_status
+        lazylibrarian.ADD_AUTHOR = int(add_author)
 
         lazylibrarian.EBOOK_DEST_FOLDER = ebook_dest_folder
         lazylibrarian.EBOOK_DEST_FILE = ebook_dest_file
         lazylibrarian.MAG_DEST_FOLDER = mag_dest_folder
         lazylibrarian.MAG_DEST_FILE = mag_dest_file
-	lazylibrarian.MAG_RELATIVE = int(mag_relative)
+        lazylibrarian.MAG_RELATIVE = int(mag_relative)
 
         lazylibrarian.USE_TWITTER = int(use_twitter)
         lazylibrarian.TWITTER_NOTIFY_ONSNATCH = int(twitter_notify_onsnatch)
@@ -359,7 +365,7 @@ class WebInterface(object):
         lazylibrarian.BOXCAR_NOTIFY_ONSNATCH = int(boxcar_notify_onsnatch)
         lazylibrarian.BOXCAR_NOTIFY_ONDOWNLOAD = int(boxcar_notify_ondownload)
         lazylibrarian.BOXCAR_TOKEN = boxcar_token
-        
+
         lazylibrarian.USE_PUSHBULLET = int(use_pushbullet)
         lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH = int(pushbullet_notify_onsnatch)
         lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD = int(pushbullet_notify_ondownload)
@@ -371,12 +377,12 @@ class WebInterface(object):
         lazylibrarian.PUSHOVER_ONDOWNLOAD = int(pushover_ondownload)
         lazylibrarian.PUSHOVER_KEYS = pushover_keys
         lazylibrarian.PUSHOVER_APITOKEN = pushover_apitoken
-        lazylibrarian.PUSHOVER_PRIORITY =pushover_priority
+        lazylibrarian.PUSHOVER_PRIORITY = pushover_priority
 
-	lazylibrarian.NMA_ENABLED = int(nma_enabled)
-	lazylibrarian.NMA_APIKEY = nma_apikey
-	lazylibrarian.NMA_PRIORITY = nma_priority
-	lazylibrarian.NMA_ONSNATCH = int(nma_onsnatch)
+        lazylibrarian.NMA_ENABLED = int(nma_enabled)
+        lazylibrarian.NMA_APIKEY = nma_apikey
+        lazylibrarian.NMA_PRIORITY = nma_priority
+        lazylibrarian.NMA_ONSNATCH = int(nma_onsnatch)
 
         lazylibrarian.config_write()
 
@@ -390,10 +396,10 @@ class WebInterface(object):
         lazylibrarian.SIGNAL = 'update'
         message = 'Updating...'
         return serve_template(templatename="shutdown.html", title="Updating", message=message, timer=120)
-        return page
+#        return page
     update.exposed = True
 
-#SEARCH
+# SEARCH
     def search(self, name):
         myDB = database.DBConnection()
         if lazylibrarian.BOOK_API == "GoogleBooks":
@@ -426,24 +432,24 @@ class WebInterface(object):
         return serve_template(templatename="searchresults.html", title='Search Results for: "' + name + '"', searchresults=sortedlist_final, authorlist=authorlist, booklist=booklist, booksearch=booksearch, type=type)
     search.exposed = True
 
-#AUTHOR
+# AUTHOR
     def authorPage(self, AuthorName, BookLang=None, Ignored=False):
         myDB = database.DBConnection()
 
         if Ignored:
-            languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorName LIKE ? AND Status ='Ignored'", [AuthorName.replace("'","''")])
+            languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorName LIKE ? AND Status ='Ignored'", [AuthorName.replace("'", "''")])
             if BookLang:
-                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' AND BookLang = '%s' AND Status ='Ignored' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'","''"), BookLang)
+                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' AND BookLang = '%s' AND Status ='Ignored' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'", "''"), BookLang)
             else:
-                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' and Status ='Ignored' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'","''"))
+                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' and Status ='Ignored' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'", "''"))
         else:
-            languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorName LIKE ? AND Status !='Ignored'", [AuthorName.replace("'","''")])
+            languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorName LIKE ? AND Status !='Ignored'", [AuthorName.replace("'", "''")])
             if BookLang:
-                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' AND BookLang = '%s' AND Status !='Ignored' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'","''"), BookLang)
+                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' AND BookLang = '%s' AND Status !='Ignored' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'", "''"), BookLang)
             else:
-                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' and Status !='Ignored' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'","''"))
+                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' and Status !='Ignored' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'", "''"))
 
-        queryauthors = "SELECT * from authors WHERE AuthorName LIKE '%s'" % AuthorName.replace("'","''")
+        queryauthors = "SELECT * from authors WHERE AuthorName LIKE '%s'" % AuthorName.replace("'", "''")
 
         author = myDB.action(queryauthors).fetchone()
         books = myDB.select(querybooks)
@@ -461,7 +467,7 @@ class WebInterface(object):
         controlValueDict = {'AuthorID': AuthorID}
         newValueDict = {'Status': 'Paused'}
         myDB.upsert("authors", newValueDict, controlValueDict)
-        logger.debug('AuthorID [%s]-[%s] Paused - redirecting to Author home page' % (AuthorID,AuthorName))
+        logger.debug('AuthorID [%s]-[%s] Paused - redirecting to Author home page' % (AuthorID, AuthorName))
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     pauseAuthor.exposed = True
 
@@ -474,7 +480,7 @@ class WebInterface(object):
         controlValueDict = {'AuthorID': AuthorID}
         newValueDict = {'Status': 'Active'}
         myDB.upsert("authors", newValueDict, controlValueDict)
-        logger.debug('AuthorID [%s]-[%s] Restarted - redirecting to Author home page' % (AuthorID,AuthorName))
+        logger.debug('AuthorID [%s]-[%s] Restarted - redirecting to Author home page' % (AuthorID, AuthorName))
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     resumeAuthor.exposed = True
 
@@ -493,14 +499,14 @@ class WebInterface(object):
         refresh = True
         threading.Thread(target=importer.addAuthorToDB, args=(AuthorName, refresh)).start()
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
-    refreshAuthor.exposed=True
+    refreshAuthor.exposed = True
 
     def libraryScan(self):
         try:
-		threading.Thread(target=librarysync.LibraryScan(lazylibrarian.DESTINATION_DIR)).start()
+            threading.Thread(target=librarysync.LibraryScan(lazylibrarian.DESTINATION_DIR)).start()
         except Exception, e:
-             logger.error('Unable to complete the scan: %s' % e)
-	raise cherrypy.HTTPRedirect("home")
+            logger.error('Unable to complete the scan: %s' % e)
+        raise cherrypy.HTTPRedirect("home")
     libraryScan.exposed = True
 
     def clearLog(self):
@@ -508,12 +514,12 @@ class WebInterface(object):
         if os.path.exists(lazylibrarian.LOGDIR):
             for f in os.listdir(lazylibrarian.LOGDIR):
                 os.unlink("%s/%s" % (lazylibrarian.LOGDIR, f))
-	lazylibrarian.LOGLIST = []
-	raise cherrypy.HTTPRedirect("logs")
+        lazylibrarian.LOGLIST = []
+        raise cherrypy.HTTPRedirect("logs")
     clearLog.exposed = True
 
     def addResults(self, authorname):
-        args = None;
+        args = None
         threading.Thread(target=importer.addAuthorToDB, args=[authorname]).start()
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % authorname)
     addResults.exposed = True
@@ -528,22 +534,22 @@ class WebInterface(object):
                 AuthorName = book['AuthorName']
                 authorsearch = myDB.select('SELECT * from authors WHERE AuthorName="%s"' % AuthorName)
                 if authorsearch:
-                    #update authors needs to be updated every time a book is marked differently
+                    # update authors needs to be updated every time a book is marked differently
                     lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorName="%s" AND Status != "Ignored" order by BookDate DESC' % AuthorName).fetchone()
                     unignoredbooks = myDB.select('SELECT COUNT(BookName) as unignored FROM books WHERE AuthorName="%s" AND Status != "Ignored"' % AuthorName)
-                    bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE AuthorName="%s"' % AuthorName)  
+                    bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE AuthorName="%s"' % AuthorName)
                     countbooks = myDB.action('SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' % AuthorName).fetchone()
-                    havebooks = int(countbooks[0]) 
+                    havebooks = int(countbooks[0])
 
                     controlValueDict = {"AuthorName": AuthorName}
                     newValueDict = {
-                            "TotalBooks": bookCount[0]['counter'],
+                        "TotalBooks": bookCount[0]['counter'],
                             "UnignoredBooks": unignoredbooks[0]['unignored'],
                             "HaveBooks": havebooks,
                             "LastBook": lastbook['BookName'],
                             "LastLink": lastbook['BookLink'],
                             "LastDate": lastbook['BookDate']
-                            }
+                    }
                     myDB.upsert("authors", newValueDict, controlValueDict)
         else:
             if lazylibrarian.BOOK_API == "GoogleBooks":
@@ -573,36 +579,36 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("books")
     addBook.exposed = True
 
-#BOOKS
+# BOOKS
     def openBook(self, bookid=None, **args):
         myDB = database.DBConnection()
 
         # find book
         bookdata = myDB.select('SELECT * from books WHERE BookID="%s"' % bookid)
         if bookdata:
-            #authorName = bookdata[0]["AuthorName"];
-            #bookName = bookdata[0]["BookName"];
-	    #dic = {'<':'', '>':'', '=':'', '?':'', '"':'', ',':'', '*':'', ':':'', ';':'', '\'':''}
-            #bookName = formatter.latinToAscii(formatter.replace_all(bookName, dic))
-            
-            #pp_dir = lazylibrarian.DESTINATION_DIR
-            #ebook_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorName).replace('$Title', bookName)
-            #dest_dir = os.path.join(pp_dir, ebook_path)
+            # authorName = bookdata[0]["AuthorName"];
+            # bookName = bookdata[0]["BookName"];
+            # dic = {'<':'', '>':'', '=':'', '?':'', '"':'', ',':'', '*':'', ':':'', ';':'', '\'':''}
+            # bookName = formatter.latinToAscii(formatter.replace_all(bookName, dic))
 
-            #logger.debug('bookdir ' + dest_dir);
-            #if os.path.isdir(dest_dir):
-            #    for file2 in os.listdir(dest_dir):    
+            # pp_dir = lazylibrarian.DESTINATION_DIR
+            # ebook_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorName).replace('$Title', bookName)
+            # dest_dir = os.path.join(pp_dir, ebook_path)
+
+            # logger.debug('bookdir ' + dest_dir);
+            # if os.path.isdir(dest_dir):
+            #    for file2 in os.listdir(dest_dir):
             #        if ((file2.lower().find(".jpg") <= 0) & (file2.lower().find(".opf") <= 0)):
             #            logger.info('Opening file ' + file2)
             #            return serve_file(os.path.join(dest_dir, file2), "application/x-download", "attachment")
-	    bookfile = bookdata[0]["BookFile"];
-	    if bookfile and os.path.isfile(bookfile):
-            	logger.info('Opening file ' + bookfile);
-	    	return serve_file(bookfile, "application/x-download", "attachment")
-	    else:
-            	authorName = bookdata[0]["AuthorName"];
-            	bookName = bookdata[0]["BookName"];
-		logger.info('Missing book %s,%s' % (authorname, bookname))
+            bookfile = bookdata[0]["BookFile"]
+            if bookfile and os.path.isfile(bookfile):
+                logger.info('Opening file ' + bookfile)
+                return serve_file(bookfile, "application/x-download", "attachment")
+            else:
+                authorName = bookdata[0]["AuthorName"]
+                bookName = bookdata[0]["BookName"]
+                logger.info('Missing book %s,%s' % (authorName, bookName))
     openBook.exposed = True
 
     def openMag(self, bookid=None, **args):
@@ -611,24 +617,24 @@ class WebInterface(object):
         # find book
         bookdata = myDB.select('SELECT * from magazines WHERE Title="%s"' % bookid)
         if bookdata:
-            Title = bookdata[0]["Title"];
-            IssueDate = bookdata[0]["IssueDate"];
+            Title = bookdata[0]["Title"]
+            IssueDate = bookdata[0]["IssueDate"]
 
-            dic = {'<':'', '>':'', '=':'', '?':'', '"':'', ',':'', '*':'', ':':'', ';':'', '\'':''}
+            dic = {'<': '', '>': '', '=': '', '?': '', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
             bookName = formatter.latinToAscii(formatter.replace_all(Title, dic))
-            
+
             pp_dir = lazylibrarian.DESTINATION_DIR
             mag_path = lazylibrarian.MAG_DEST_FOLDER.replace('$IssueDate', IssueDate).replace('$Title', Title)
-	    if lazylibrarian.MAG_RELATIVE:
-		if mag_path[0] not in '._':
-			mag_path = '_' + mag_path
-            	dest_dir = os.path.join(pp_dir, mag_path)
-	    else:
-		dest_dir = mag_path
+            if lazylibrarian.MAG_RELATIVE:
+                if mag_path[0] not in '._':
+                    mag_path = '_' + mag_path
+                dest_dir = os.path.join(pp_dir, mag_path)
+            else:
+                dest_dir = mag_path
 
-            logger.debug('bookdir ' + dest_dir);
+            logger.debug('bookdir ' + dest_dir)
             if os.path.isdir(dest_dir):
-                for file2 in os.listdir(dest_dir):  
+                for file2 in os.listdir(dest_dir):
                     if ((file2.lower().find(".jpg") <= 0) & (file2.lower().find(".opf") <= 0)):
                         logger.info('Opening file ' + file2)
                         return serve_file(os.path.join(dest_dir, file2), "application/x-download", "attachment")
@@ -640,19 +646,19 @@ class WebInterface(object):
         # find book
         bookdata = myDB.select('SELECT * from books WHERE BookID="%s"' % bookid)
         if bookdata:
-            AuthorName = bookdata[0]["AuthorName"];
+            AuthorName = bookdata[0]["AuthorName"]
 
             # start searchthreads
             books = []
             books.append({"bookid": bookid})
 
-            mags=False
+            mags = False
             if (lazylibrarian.USE_NZB):
                 threading.Thread(target=search_nzb_book, args=[books, mags]).start()
             if (lazylibrarian.USE_TOR):
                 threading.Thread(target=search_tor_book, args=[books, mags]).start()
 
-            logger.debug("Searching for book with id: " + bookid);
+            logger.debug("Searching for book with id: " + bookid)
         if AuthorName:
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     searchForBook.exposed = True
@@ -673,7 +679,7 @@ class WebInterface(object):
                     for item in title:
                         bookname = item['BookName']
                         logger.info('Status set to "%s" for "%s"' % (action, bookname))
-              
+
                 else:
                     authorsearch = myDB.select('SELECT * from books WHERE BookID = "%s"' % bookid)
                     for item in authorsearch:
@@ -688,22 +694,22 @@ class WebInterface(object):
                         logger.info('Removed "%s" from database' % bookname)
 
         if redirect == "author" or authorcheck:
-            #update authors needs to be updated every time a book is marked differently
+            # update authors needs to be updated every time a book is marked differently
             lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorName="%s" AND Status != "Ignored" order by BookDate DESC' % AuthorName).fetchone()
             unignoredbooks = myDB.select('SELECT COUNT(BookName) as unignored FROM books WHERE AuthorName="%s" AND Status != "Ignored"' % AuthorName)
-            bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE AuthorName="%s"' % AuthorName)  
+            bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE AuthorName="%s"' % AuthorName)
             countbooks = myDB.action('SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' % AuthorName).fetchone()
-            havebooks = int(countbooks[0]) 
+            havebooks = int(countbooks[0])
 
             controlValueDict = {"AuthorName": AuthorName}
             newValueDict = {
-                    "TotalBooks": bookCount[0]['counter'],
+                "TotalBooks": bookCount[0]['counter'],
                     "UnignoredBooks": unignoredbooks[0]['unignored'],
                     "HaveBooks": havebooks,
                     "LastBook": lastbook['BookName'],
                     "LastLink": lastbook['BookLink'],
                     "LastDate": lastbook['BookDate']
-                    }
+            }
             myDB.upsert("authors", newValueDict, controlValueDict)
 
         # start searchthreads
@@ -713,7 +719,7 @@ class WebInterface(object):
                 # ouch dirty workaround...
                 if not bookid == 'book_table_length':
                     books.append({"bookid": bookid})
-            mags=False
+            mags = False
             if (lazylibrarian.USE_NZB):
                 threading.Thread(target=search_nzb_book, args=[books, mags]).start()
             if (lazylibrarian.USE_TOR):
@@ -732,44 +738,44 @@ class WebInterface(object):
         if not redirect:
             redirect = "magazines"
         authorcheck = None
-	maglist = []
+        maglist = []
         for nzburl in args:
             # ouch dirty workaround...
             if not nzburl == 'book_table_length':
-                    controlValueDict = {'NZBurl': nzburl}
-                    newValueDict = {'Status': action}
-                    myDB.upsert("wanted", newValueDict, controlValueDict)
-                    title = myDB.select("SELECT * from wanted WHERE NZBurl = ?", [nzburl])
-                    for item in title:
-			bookid = item['BookID']    
-			nzbprov = item['NZBprov']                    
-			nzbtitle = item['NZBtitle']
-			nzburl = item['NZBurl']
-			nzbmode = item['NZBmode']
-			maglist.append({
-				'bookid': bookid,
-				'nzbprov': nzbprov,
-				'nzbtitle': nzbtitle,
-				'nzburl': nzburl,
-				'nzbmode': nzbmode
-				})
-                    logger.info('Status set to %s for %s' % (action, nzbtitle))
+                controlValueDict = {'NZBurl': nzburl}
+                newValueDict = {'Status': action}
+                myDB.upsert("wanted", newValueDict, controlValueDict)
+                title = myDB.select("SELECT * from wanted WHERE NZBurl = ?", [nzburl])
+                for item in title:
+                    bookid = item['BookID']
+                    nzbprov = item['NZBprov']
+                    nzbtitle = item['NZBtitle']
+                    nzburl = item['NZBurl']
+                    nzbmode = item['NZBmode']
+                    maglist.append({
+                        'bookid': bookid,
+                            'nzbprov': nzbprov,
+                            'nzbtitle': nzbtitle,
+                            'nzburl': nzburl,
+                            'nzbmode': nzbmode
+                    })
+                logger.info('Status set to %s for %s' % (action, nzbtitle))
 
         # start searchthreads
         if action == 'Wanted':
-          	for items in maglist:
-			logger.debug('Snatching %s' % items['nzbtitle'])
-			if items['nzbmode'] == 'torznab':
-            			snatch = TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-			elif items['nzbmode'] == "torrent":
-				snatch = TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-            		else:
-            			snatch = NZBDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-            		notifiers.notify_snatch(items['nzbtitle']+' at '+formatter.now()) 
-	raise cherrypy.HTTPRedirect("history?source=magazines")
+            for items in maglist:
+                logger.debug('Snatching %s' % items['nzbtitle'])
+                if items['nzbmode'] == 'torznab':
+                    snatch = TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+                elif items['nzbmode'] == "torrent":
+                    snatch = TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+                else:
+                    snatch = NZBDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+                notifiers.notify_snatch(items['nzbtitle'] + ' at ' + formatter.now())
+        raise cherrypy.HTTPRedirect("history?source=magazines")
     markMags.exposed = True
 
-    #ALL ELSE
+    # ALL ELSE
     def forceProcess(self, source=None):
         threading.Thread(target=postprocess.processDir).start()
         raise cherrypy.HTTPRedirect(source)
@@ -784,10 +790,10 @@ class WebInterface(object):
     forceSearch.exposed = True
 
     def checkForUpdates(self):
-        #check the version when the application starts
+        # check the version when the application starts
         from lazylibrarian import versioncheck
-        #Set the install type (win,git,source) & 
-        #check the version when the application starts
+        # Set the install type (win,git,source) &
+        # check the version when the application starts
         versioncheck.getInstallType()
         lazylibrarian.CURRENT_VERSION = versioncheck.getCurrentVersion()
         lazylibrarian.LATEST_VERSION = versioncheck.getLatestVersion()
@@ -795,7 +801,28 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("config")
     checkForUpdates.exposed = True
 
-    def getLog(self,iDisplayStart=0,iDisplayLength=100,iSortCol_0=0,sSortDir_0="desc",sSearch="",**kwargs):
+    def showJobs(self):
+        # show the current status of LL cron jobs in the log
+        from lib.apscheduler.scheduler import Scheduler
+        for job in lazylibrarian.SCHED.get_jobs():
+            print str(job)
+            jobname = str(job).split(' ')[0].split('.')[2]
+            if jobname == "searchmagazines":
+                jobname = "CRON - Check for New Magazine Issues"
+            elif jobname == "checkForUpdates":
+                jobname = "CRON - Check for LazyLibrarian Update"
+            elif jobname == "search_tor_book":
+                jobname = "CRON - TOR book search"
+            elif jobname == "search_nzb_book":
+                jobname = "CRON - NZB book search"
+            elif jobname == "processDir":
+                jobname = "CRON - Process Download Dir"
+            jobtime = str(job).split(']')[1].split('.')[0]
+            logger.info("%s%s" % (jobname, jobtime))
+        raise cherrypy.HTTPRedirect("logs")
+    showJobs.exposed = True
+
+    def getLog(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
         filtered = []
@@ -809,14 +836,14 @@ class WebInterface(object):
             sortcolumn = 2
         elif iSortCol_0 == '2':
             sortcolumn = 1
-        filtered.sort(key=lambda x:x[sortcolumn],reverse=sSortDir_0 == "desc")        
+        filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
 
-        rows = filtered[iDisplayStart:(iDisplayStart+iDisplayLength)]
-        rows = [[row[0],row[2],row[1]] for row in rows]
+        rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+        rows = [[row[0], row[2], row[1]] for row in rows]
 
-        dict = {'iTotalDisplayRecords':len(filtered),
-                'iTotalRecords':len(lazylibrarian.LOGLIST),
-                'aaData':rows,
+        dict = {'iTotalDisplayRecords': len(filtered),
+                'iTotalRecords': len(lazylibrarian.LOGLIST),
+                'aaData': rows,
                 }
         s = simplejson.dumps(dict)
         return s
@@ -827,14 +854,14 @@ class WebInterface(object):
         books = myDB.select('SELECT * FROM books WHERE Status = ?', [whichStatus])
         return serve_template(templatename="managebooks.html", title="Book Status Management", books=books, whichStatus=whichStatus)
     manage.exposed = True
- 
+
     def history(self, source=None):
         myDB = database.DBConnection()
         if not source:
             history = myDB.select("SELECT * from wanted WHERE Status != 'Skipped'")
-	    return serve_template(templatename="history.html", title="History", history=history)        
-	elif source == "magazines":
-            books = myDB.select("SELECT * from wanted WHERE Status = 'Skipped'") # or Status = 'Snatched'")
+            return serve_template(templatename="history.html", title="History", history=history)
+        elif source == "magazines":
+            books = myDB.select("SELECT * from wanted WHERE Status = 'Skipped'")  # or Status = 'Snatched'")
         return serve_template(templatename="managemags.html", title="Magazine Status Management", books=books, whichStatus='Skipped')
     history.exposed = True
 
@@ -872,17 +899,17 @@ class WebInterface(object):
                     "Status":       "Active",
                     "MagazineAdded":    formatter.today(),
                     "IssueStatus": "Wanted"
-                    }
+                }
                 myDB.upsert("magazines", newValueDict, controlValueDict)
 
                 mags = []
                 mags.append({"bookid": title})
-                books=False
+                books = False
                 if (lazylibrarian.USE_NZB):
                     threading.Thread(target=search_nzb_book, args=[books, mags]).start()
                 if (lazylibrarian.USE_TOR):
                     threading.Thread(target=search_tor_book, args=[books, mags]).start()
-                logger.debug("Searching for magazine with title: " + title);
+                logger.debug("Searching for magazine with title: " + title)
                 raise cherrypy.HTTPRedirect("magazines")
     addKeyword.exposed = True
 
@@ -895,20 +922,20 @@ class WebInterface(object):
                     controlValueDict = {"Title": item}
                     newValueDict = {
                         "Status":       action,
-                        }
+                    }
                     myDB.upsert("magazines", newValueDict, controlValueDict)
                     logger.info('Status of magazine %s changed to %s' % (item, action))
                 elif (action == "Delete"):
-		    myDB.action('DELETE from magazines WHERE Title="%s"' % item)
+                    myDB.action('DELETE from magazines WHERE Title="%s"' % item)
                     myDB.action('DELETE from wanted WHERE BookID="%s"' % item)
- 		    logger.info('Magazine %s removed from database' % item)
+                    logger.info('Magazine %s removed from database' % item)
                 elif (action == "Reset"):
                     controlValueDict = {"Title": item}
                     newValueDict = {
                         "LastAcquired": None,
                         "IssueDate":    None,
                         "IssueStatus":  "Wanted"
-                        }
+                    }
                     myDB.upsert("magazines", newValueDict, controlValueDict)
                     logger.info('Magazine %s details reset' % item)
 
@@ -925,29 +952,29 @@ class WebInterface(object):
             mags = []
             mags.append({"bookid": bookid})
 
-            books=False
+            books = False
             if (lazylibrarian.USE_NZB):
                 threading.Thread(target=search_nzb_book, args=[books, mags]).start()
-            #if (lazylibrarian.USE_TOR): # magazine search handles nzb/torznab/torrent together, no need to call search_tor_book separately
+            # if (lazylibrarian.USE_TOR): # magazine search handles nzb/torznab/torrent together, no need to call search_tor_book separately
             #    threading.Thread(target=search_tor_book, args=[books, mags]).start()
-            logger.debug("Searching for magazine with title: " + bookid);
+            logger.debug("Searching for magazine with title: " + bookid)
             raise cherrypy.HTTPRedirect("magazines")
     searchForMag.exposed = True
 
     def markWanted(self, action=None, **args):
         myDB = database.DBConnection()
-        #I think I need to consolidate bookid in args to unique values...
+        # I think I need to consolidate bookid in args to unique values...
         for nzbtitle in args:
             if not nzbtitle == 'book_table_length':
                 if action != "Delete":
                     controlValueDict = {"NZBtitle": nzbtitle}
                     newValueDict = {
                         "Status":       action,
-                        }
+                    }
                     myDB.upsert("wanted", newValueDict, controlValueDict)
                     logger.info('Status of wanted item %s changed to %s' % (nzbtitle, action))
                 else:
-                    myDB.action('DELETE from wanted WHERE NZBtitle="%s"' % nzb['nzbtitle'])
+                    myDB.action('DELETE from wanted WHERE NZBtitle="%s"' % nzbtitle)
                     logger.info('Item %s removed from wanted' % nzbtitle)
                 raise cherrypy.HTTPRedirect("wanted")
     markWanted.exposed = True
@@ -957,7 +984,7 @@ class WebInterface(object):
         controlValueDict = {"Title": title}
         newValueDict = {
             "Regex":       action,
-            }
+        }
         myDB.upsert("magazines", newValueDict, controlValueDict)
         raise cherrypy.HTTPRedirect("magazines")
     updateRegex.exposed = True
@@ -983,7 +1010,7 @@ class WebInterface(object):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
 
         result = notifiers.twitter_notifier._get_credentials(key)
-        logger.info(u"result: "+str(result))
+        logger.info(u"result: " + str(result))
         if result:
             return "Key verification successful"
         else:
@@ -1004,7 +1031,7 @@ class WebInterface(object):
         lazylibrarian.SIGNAL = 'shutdown'
         message = 'closing ...'
         return serve_template(templatename="shutdown.html", title="Close library", message=message, timer=15)
-        return page
+#        return page
     shutdown.exposed = True
 
     def restart(self):

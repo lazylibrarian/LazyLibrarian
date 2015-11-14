@@ -9,6 +9,7 @@
             <li><a onclick="self.shutdownQA(this)" id="button">Shutdown</a></li>
             <li><a id="button" onclick="self.restartQA(this, '', '')">Restart</a></li>
             <li ><a id="button" href="checkForUpdates">Check for Updates</a></li>
+            <li ><a id="button" href="showJobs">Show Job Status</a></li>
         </ul>
     </div>
 </%def>
@@ -420,7 +421,7 @@
 		    <BR>
                     <small>Current limitation: TORZNAB results are returned as magnet links
                     <BR>
-                    which will only work with Transmission and Deluge downloaders
+                    where possible, which may not work automatically with blackhole
                     </small>
     </div>
 
@@ -442,6 +443,10 @@
                     </div>
                     <div>
                     <label>Match Ratio</label><input type="text" name="match_ratio"  value="${config['match_ratio']}" size="8" maxlength="40"> percent
+                    <small>
+                    <BR>
+                    Changes to any of the above only take effect after a restart
+                    </small>
                     </div>
                 </td>
                 <td>

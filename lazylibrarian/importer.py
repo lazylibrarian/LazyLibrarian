@@ -1,4 +1,6 @@
-import time, os, threading
+#import time
+#import os
+import threading
 
 import lazylibrarian
 from lazylibrarian import logger, formatter, database
@@ -8,12 +10,12 @@ from lazylibrarian.gb import GoogleBooks
 
 def addAuthorToDB(authorname=None, refresh=False):
     threading.currentThread().name = "DBIMPORT"
-    type = 'author'
+    #type = 'author'
     myDB = database.DBConnection()
 
     GR = GoodReads(authorname)
-    
-    query = "SELECT * from authors WHERE AuthorName='%s'" % authorname.replace("'","''")
+
+    query = "SELECT * from authors WHERE AuthorName='%s'" % authorname.replace("'", "''")
     dbauthor = myDB.action(query).fetchone()
     controlValueDict = {"AuthorName": authorname}
 
@@ -21,7 +23,7 @@ def addAuthorToDB(authorname=None, refresh=False):
         newValueDict = {
             "AuthorID":   "0: %s" % (authorname),
             "Status":       "Loading"
-            }
+        }
         logger.info("Now adding new author: %s to database" % authorname)
     else:
         newValueDict = {"Status": "Loading"}
@@ -42,7 +44,7 @@ def addAuthorToDB(authorname=None, refresh=False):
             "AuthorDeath":  author['authordeath'],
             "DateAdded":    formatter.today(),
             "Status":       "Loading"
-            }
+        }
         myDB.upsert("authors", newValueDict, controlValueDict)
     else:
         logger.error("Nothing found")

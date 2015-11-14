@@ -1,16 +1,18 @@
-import os, urllib, urllib2
+import os
+import urllib
+import urllib2
 import datetime
 
 import lazylibrarian
 
 from lazylibrarian import logger, database
 
+
 def SABnzbd(title=None, nzburl=None):
 
     HOST = lazylibrarian.SAB_HOST + ":" + lazylibrarian.SAB_PORT
     if not str(HOST)[:4] == "http":
         HOST = 'http://' + HOST
-
 
     if lazylibrarian.SAB_SUBDIR:
         HOST = HOST + "/" + lazylibrarian.SAB_SUBDIR
@@ -33,13 +35,13 @@ def SABnzbd(title=None, nzburl=None):
     if lazylibrarian.USENET_RETENTION:
         params["maxage"] = lazylibrarian.USENET_RETENTION
 
-## FUTURE-CODE
+# FUTURE-CODE
 #    if lazylibrarian.SAB_PRIO:
 #        params["priority"] = lazylibrarian.SAB_PRIO
 #    if lazylibrarian.SAB_PP:
 #        params["script"] = lazylibrarian.SAB_SCRIPT
 
-    URL = HOST + "/api?" + urllib.urlencode(params) 
+    URL = HOST + "/api?" + urllib.urlencode(params)
 
     # to debug because of api
     logger.debug(u'Request url for <a href="%s">SABnzbd</a>' % URL)

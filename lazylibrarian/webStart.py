@@ -1,7 +1,10 @@
-import os, sys, cherrypy
+import os
+import sys
+import cherrypy
 import lazylibrarian
 
 from lazylibrarian.webServe import WebInterface
+
 
 def initialize(options={}):
 
@@ -14,29 +17,29 @@ def initialize(options={}):
         'tools.encode.on': True,
         'tools.encode.encoding': 'utf-8',
         'tools.decode.on': True,
-        })
+    })
 
     conf = {
         '/': {
             'tools.staticdir.root': os.path.join(lazylibrarian.PROG_DIR, 'data')
         },
-        '/interfaces':{
+        '/interfaces': {
             'tools.staticdir.on': True,
             'tools.staticdir.dir': "interfaces"
         },
-        '/images':{
+        '/images': {
             'tools.staticdir.on': True,
             'tools.staticdir.dir': "images"
         },
-        '/css':{
+        '/css': {
             'tools.staticdir.on': True,
             'tools.staticdir.dir': "css"
         },
-        '/js':{
+        '/js': {
             'tools.staticdir.on': True,
             'tools.staticdir.dir': "js"
         },
-        '/favicon.ico':{
+        '/favicon.ico': {
             'tools.staticfile.on': True,
             'tools.staticfile.filename': "images/favicon.ico"
         }
@@ -47,13 +50,12 @@ def initialize(options={}):
             'tools.auth_basic.on': True,
             'tools.auth_basic.realm': 'LazyLibrarian',
             'tools.auth_basic.checkpassword':  cherrypy.lib.auth_basic.checkpassword_dict(
-                {options['http_user']:options['http_pass']})
+                {options['http_user']: options['http_pass']})
         })
-
 
     # Prevent time-outs
     cherrypy.engine.timeout_monitor.unsubscribe()
-    cherrypy.tree.mount(WebInterface(), options['http_root'], config = conf)
+    cherrypy.tree.mount(WebInterface(), options['http_root'], config=conf)
 
     cherrypy.engine.autoreload.subscribe()
 

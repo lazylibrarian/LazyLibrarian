@@ -17,7 +17,7 @@ from lazylibrarian import logger, request
 
 import time
 import json
-import base64
+#import base64
 import urlparse
 import lazylibrarian
 
@@ -30,13 +30,13 @@ import lazylibrarian
 
 def addTorrent(link):
     method = 'torrent-add'
-    #print type(link), link
-    #if link.endswith('.torrent'):
+    # print type(link), link
+    # if link.endswith('.torrent'):
     #    with open(link, 'rb') as f:
     #        metainfo = str(base64.b64encode(f.read()))
     #    arguments = {'metainfo': metainfo }
-    #else:
-    arguments = {'filename': link }
+    # else:
+    arguments = {'filename': link}
 
     response = torrentAction(method, arguments)
 
@@ -133,7 +133,7 @@ def torrentAction(method, arguments):
 
     if host.endswith('/'):
         host = host[:-1]
-   
+
     # Fix the URL. We assume that the user does not point to the RPC endpoint,
     # so add it if it is missing.
     parts = list(urlparse.urlparse(host))
@@ -149,7 +149,7 @@ def torrentAction(method, arguments):
     # Retrieve session id
     auth = (username, password) if username and password else None
     response = request.request_response(host, auth=auth,
-        whitelist_status_code=[401, 409])
+                                        whitelist_status_code=[401, 409])
 
     if response is None:
         logger.error("Error gettings Transmission session ID")
@@ -158,8 +158,8 @@ def torrentAction(method, arguments):
     # Parse response
     if response.status_code == 401:
         if auth:
-            logger.error("Username and/or password not accepted by " \
-                "Transmission")
+            logger.error("Username and/or password not accepted by "
+                         "Transmission")
         else:
             logger.error("Transmission authorization required")
 
@@ -176,7 +176,7 @@ def torrentAction(method, arguments):
     data = {'method': method, 'arguments': arguments}
 
     response = request.request_json(host, method="POST", data=json.dumps(data),
-        headers=headers, auth=auth)
+                                    headers=headers, auth=auth)
 
     if not response:
         logger.error("Error sending torrent to Transmission")

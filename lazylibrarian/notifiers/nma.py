@@ -42,9 +42,9 @@ class NMA_Notifier:
         else:
             return True
 
-##############################################################################
+#
 # Public functions
-##############################################################################
+#
 
     def notify_snatch(self, title):
         if lazylibrarian.NMA_ONSNATCH:

@@ -25,10 +25,10 @@ import lazylibrarian
 
 from lazylibrarian import logger
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
-#from lazylibrarian.exceptions import ex
+# from lazylibrarian.exceptions import ex
 
-#API_URL = "https://boxcar.io/devices/providers/MH0S7xOFSwVLNvNhTpiC/notifications"
-#changed to boxcar2
+# API_URL = "https://boxcar.io/devices/providers/MH0S7xOFSwVLNvNhTpiC/notifications"
+# changed to boxcar2
 API_URL = 'https://new.boxcar.io/api/notifications'
 
 
@@ -57,18 +57,18 @@ class BoxcarNotifier:
 
         # for normal requests we need all these parameters
         else:
-            #data = urllib.urlencode({
+            # data = urllib.urlencode({
             #    'email': email,
             #    'notification[from_screen_name]': title,
             #    'notification[message]': msg.encode('utf-8'),
             #    'notification[from_remote_service_id]': int(time.time())
             #    })
-	    data = urllib.urlencode({
-	         'user_credentials': token,
-	         'notification[title]': title.encode('utf-8'),
-	         'notification[long_message]':msg.encode('utf-8'),
-	         'notification[sound]': "done"
-	         })
+            data = urllib.urlencode({
+                'user_credentials': token,
+                 'notification[title]': title.encode('utf-8'),
+                 'notification[long_message]': msg.encode('utf-8'),
+                 'notification[sound]': "done"
+            })
 
         # send the request to boxcar
         try:
@@ -140,9 +140,9 @@ class BoxcarNotifier:
         self._sendBoxcar(message, title, username)
         return True
 
-##############################################################################
+#
 # Public functions
-##############################################################################
+#
 
     def notify_snatch(self, title):
         if lazylibrarian.BOXCAR_NOTIFY_ONSNATCH:
