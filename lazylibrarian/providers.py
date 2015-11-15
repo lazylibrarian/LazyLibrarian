@@ -49,9 +49,13 @@ def KAT(book=None):
 
     try:
         data = urllib2.urlopen(searchURL, timeout=20)
-    except urllib2.URLError, e:
-        logger.warn(searchURL)
-        logger.warn('Error fetching data from %s: %s' % (provider, e))
+    except urllib2.URLError as e:
+        # seems KAT returns 404 if no results, not really an error
+        if not e.code == 404: 
+            logger.warn(searchURL)
+            logger.warn('Error fetching data from %s: %s' % (provider, e.reason))
+        else:
+            logger.info(u"No results found from %s for %s" % (provider, book['searchterm']))    
         data = False
 
     results = []
