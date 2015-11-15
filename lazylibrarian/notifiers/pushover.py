@@ -32,8 +32,8 @@ from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
 
 class PushoverNotifier:
 
-    def _sendPushover(self, message=None, event=None, pushover_apitoken=None, pushover_keys=None, 
-                        notificationType=None, method=None, force=False):
+    def _sendPushover(self, message=None, event=None, pushover_apitoken=None, pushover_keys=None,
+                      notificationType=None, method=None, force=False):
 
         if not lazylibrarian.USE_PUSHOVER and not force:
             return False
@@ -68,14 +68,14 @@ class PushoverNotifier:
             testMessage = False
             try:
                 data = {'token': lazylibrarian.PUSHOVER_APITOKEN,
-                    'user': pushover_keys,
-                    'title': event.encode('utf-8'),
-                    'message': message.encode("utf-8"),
-                    'priority': lazylibrarian.PUSHOVER_PRIORITY}
+                        'user': pushover_keys,
+                        'title': event.encode('utf-8'),
+                        'message': message.encode("utf-8"),
+                        'priority': lazylibrarian.PUSHOVER_PRIORITY}
                 http_handler.request("POST",
-                                "/1/messages.json",
-                                headers={'Content-type': "application/x-www-form-urlencoded"},
-                                body=urlencode(data))
+                                     "/1/messages.json",
+                                     headers={'Content-type': "application/x-www-form-urlencoded"},
+                                     body=urlencode(data))
                 pass
             except Exception, e:
                 logger.error(str(e))
@@ -92,14 +92,14 @@ class PushoverNotifier:
             else:
                 logger.debug("Pushover notifications sent.")
                 return True
-        elif request_status  >= 400 and request_status < 500:
+        elif request_status >= 400 and request_status < 500:
             logger.error("Pushover reqeust failed: %s" % response.reason)
             return False
         else:
             logger.error("Pushover notification failed.")
             return False
 
-    def _notify(self, message=None, event=None, pushover_apitoken=None, pushover_keys=None, 
+    def _notify(self, message=None, event=None, pushover_apitoken=None, pushover_keys=None,
                 notificationType=None, method=None, force=False):
         """
         Sends a pushover notification based on the provided info or LL config
@@ -119,12 +119,12 @@ class PushoverNotifier:
 
         logger.debug("Pushover: Sending notification for " + str(message))
 
-        self._sendPushover(message,event,pushover_apitoken,pushover_keys,notificationType,method)
+        self._sendPushover(message, event, pushover_apitoken, pushover_keys, notificationType, method)
         return True
 
-##############################################################################
+#
 # Public functions
-##############################################################################
+#
 
     def notify_snatch(self, title):
         if lazylibrarian.PUSHOVER_ONSNATCH:
@@ -132,7 +132,7 @@ class PushoverNotifier:
 
     def notify_download(self, title):
         if lazylibrarian.PUSHOVER_ONDOWNLOAD:
-            self._notify( message=title, event=notifyStrings[NOTIFY_DOWNLOAD], notificationType='note', method='POST')
+            self._notify(message=title, event=notifyStrings[NOTIFY_DOWNLOAD], notificationType='note', method='POST')
 
     def test_notify(self, apitoken, title="Test"):
         return self._sendPushover("This is a test notification from LazyLibrarian", title, apitoken)

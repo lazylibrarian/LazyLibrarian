@@ -16,14 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with Sick Beard.  If not, see <http://www.gnu.org/licenses/>.
 
-import os.path
-import operator
+#import os.path
+#import operator
 import platform
-import re
+#import re
 
 USER_AGENT = 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
 
-### Notification Types
+# Notification Types
 NOTIFY_SNATCH = 1
 NOTIFY_DOWNLOAD = 2
 
@@ -34,6 +34,7 @@ notifyStrings[NOTIFY_DOWNLOAD] = "Download Finished"
 import unicodedata
 import string
 
+
 def remove_accents(input_str):
     nfkd_form = unicodedata.normalize('NFKD', to_unicode(input_str))
     return u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
@@ -41,14 +42,15 @@ def remove_accents(input_str):
 
 def to_unicode(unicode_or_str):
     if isinstance(unicode_or_str, str):
-	value = unicode_or_str.decode('utf-8')
+        value = unicode_or_str.decode('utf-8')
     else:
-	value = unicode_or_str
-    return value # always return unicode
+        value = unicode_or_str
+    return value  # always return unicode
 
 validFilenameChars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+
+
 def removeDisallowedFilenameChars(filename):
     filename = to_unicode(filename)
     cleanedFilename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore')
     return ''.join(c for c in cleanedFilename if c in validFilenameChars)
-
