@@ -10,6 +10,7 @@
             <li><a id="button" onclick="self.restartQA(this, '', '')">Restart</a></li>
             <li ><a id="button" href="checkForUpdates">Check for Updates</a></li>
             <li ><a id="button" href="showJobs">Show Job Status</a></li>
+            <li ><a id="button" href="restartJobs">Restart Jobs</a></li>
         </ul>
     </div>
 </%def>
@@ -445,7 +446,7 @@
                     <label>Match Ratio</label><input type="text" name="match_ratio"  value="${config['match_ratio']}" size="8" maxlength="40"> percent
                     <small>
                     <BR>
-                    Changes to any of the above only take effect after a restart
+                    Changes to any of the above only take effect after restart
                     </small>
                     </div>
                 </td>

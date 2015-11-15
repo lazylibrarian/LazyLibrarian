@@ -14,9 +14,10 @@ import Queue
 
 import lazylibrarian
 
-from lazylibrarian import logger, importer, database, postprocess, formatter, notifiers, librarysync
+from lazylibrarian import logger, importer, database, postprocess, formatter, notifiers, librarysync, versioncheck
 from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
 from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
+from lazylibrarian.searchmag import searchmagazines
 from lazylibrarian.formatter import checked
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
@@ -791,7 +792,6 @@ class WebInterface(object):
 
     def checkForUpdates(self):
         # check the version when the application starts
-        from lazylibrarian import versioncheck
         # Set the install type (win,git,source) &
         # check the version when the application starts
         versioncheck.getInstallType()
@@ -803,9 +803,8 @@ class WebInterface(object):
 
     def showJobs(self):
         # show the current status of LL cron jobs in the log
-        from lib.apscheduler.scheduler import Scheduler
         for job in lazylibrarian.SCHED.get_jobs():
-            print str(job)
+            #print str(job)
             jobname = str(job).split(' ')[0].split('.')[2]
             if jobname == "searchmagazines":
                 jobname = "[CRON] - Check for new magazine issues"
@@ -817,10 +816,28 @@ class WebInterface(object):
                 jobname = "[CRON] - NZB book search"
             elif jobname == "processDir":
                 jobname = "[CRON] - Process download directory"
-            jobtime = str(job).split(']')[1].split('.')[0]
-            logger.info("%s%s" % (jobname, jobtime))
+            jobtime = str(job).split('[')[1].split('.')[0]
+            logger.info("%s [%s" % (jobname, jobtime))
         raise cherrypy.HTTPRedirect("logs")
     showJobs.exposed = True
+
+    def restartJobs(self):
+        # stop all of the LL cron jobs
+        for job in lazylibrarian.SCHED.get_jobs():
+            lazylibrarian.SCHED.unschedule_job(job)
+        # and now restart them
+        lazylibrarian.SCHED.add_interval_job(postprocess.processDir, minutes=lazylibrarian.SCAN_INTERVAL)
+
+        if lazylibrarian.USE_NZB:
+            lazylibrarian.SCHED.add_interval_job(search_nzb_book, minutes=lazylibrarian.SEARCH_INTERVAL)
+        if lazylibrarian.USE_TOR:
+            lazylibrarian.SCHED.add_interval_job(search_tor_book, minutes=lazylibrarian.SEARCH_INTERVAL)
+        lazylibrarian.SCHED.add_interval_job(versioncheck.checkForUpdates, hours=lazylibrarian.VERSIONCHECK_INTERVAL)
+        if lazylibrarian.USE_TOR or lazylibrarian.USE_NZB:
+            lazylibrarian.SCHED.add_interval_job(searchmagazines, minutes=lazylibrarian.SEARCH_INTERVAL)
+        # and list the new run-times in the log
+        self.showJobs()
+    restartJobs.exposed = True
 
     def getLog(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         iDisplayStart = int(iDisplayStart)

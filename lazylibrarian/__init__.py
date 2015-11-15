@@ -1028,7 +1028,7 @@ def start():
     if __INITIALIZED__:
 
         # Crons and scheduled jobs go here
-        #starttime = datetime.datetime.now()
+        # list is duplicated in webServe so we can reschedule them
         SCHED.add_interval_job(postprocess.processDir, minutes=SCAN_INTERVAL)
 
         if USE_NZB:
