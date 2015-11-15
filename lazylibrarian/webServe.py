@@ -783,10 +783,13 @@ class WebInterface(object):
     forceProcess.exposed = True
 
     def forceSearch(self, source=None):
-        if (lazylibrarian.USE_NZB):
-            threading.Thread(target=search_nzb_book).start()
-        if (lazylibrarian.USE_TOR):
-            threading.Thread(target=search_tor_book).start()
+        if source == "magazines":
+            threading.Thread(target=searchmagazines).start()
+        else:
+            if (lazylibrarian.USE_NZB):
+                threading.Thread(target=search_nzb_book).start()
+            if (lazylibrarian.USE_TOR):
+                threading.Thread(target=search_tor_book).start()
         raise cherrypy.HTTPRedirect(source)
     forceSearch.exposed = True
 
