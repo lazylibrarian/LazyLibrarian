@@ -55,6 +55,11 @@ def search_nzb_book(books=None, mags=None):
                 for terms in searchbook:
                     searchbooks.append(terms)
 
+    if len(searchbooks) == 1:
+        logger.info('NZB Searching for one book')
+    else:
+        logger.info('NZB Searching for %i books'  % len(searchbooks))
+
     for searchbook in searchbooks:
         bookid = searchbook[0]
         author = searchbook[1]

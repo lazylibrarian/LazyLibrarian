@@ -33,6 +33,11 @@ def searchmagazines(mags=None):
             for terms in searchmags_temp:
                 searchmags.append(terms)
 
+    if len(searchmags) == 1:
+        logger.info('Searching for one magazine')
+    else:
+        logger.info('Searching for %i magazines'  % len(searchmags))
+
     for searchmag in searchmags:
         bookid = searchmag[0]
         searchterm = searchmag[0]
