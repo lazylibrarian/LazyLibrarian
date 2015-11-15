@@ -1042,6 +1042,7 @@ def start():
         SCHED.start()
         #for job in SCHED.get_jobs():
         #    print job
+        #SCHED.print_jobs()
         started = True
 
 
