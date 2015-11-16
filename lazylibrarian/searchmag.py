@@ -266,5 +266,5 @@ def search_magazines(mags=None):
                     TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
                 else:
                     NZBDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-                notifiers.notify_snatch(common.to_str(items['nzbtitle']) + ' at ' + formatter.now())
+                notifiers.notify_snatch(formatter.latinToAscii(items['nzbtitle']) + ' at ' + formatter.now())
 
