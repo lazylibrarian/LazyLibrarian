@@ -10,14 +10,16 @@ import re
 
 import lazylibrarian
 
-from lazylibrarian import logger, database, formatter, providers, SimpleCache, common
+from lazylibrarian import logger, database, formatter, providers, notifiers, SimpleCache, common
 
 #import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz
 #from lib.unidecode import unidecode
+from lazylibrarian.searchtorrents import TORDownloadMethod
+from lazylibrarian.searchnzb import NZBDownloadMethod
 
-
-def searchmagazines(mags=None):
+def search_magazines(mags=None):
+# produce a list of magazines to search for, tor, nzb, torznab
     maglist = []
     myDB = database.DBConnection()
     searchlist = []
@@ -256,4 +258,13 @@ def searchmagazines(mags=None):
                         bad_regex = bad_regex + 1
 
             logger.info('Found %s results for %s.  %s are new, %s are old, %s fail date, %s fail name matching' % (total_nzbs, bookid, new_date, old_date, bad_date, bad_regex))
-    return maglist
+            
+            for items in maglist:
+                if items['nzbmode'] == "torznab":
+                    TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+                elif items['nzbmode'] == "torrent":
+                    TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+                else:
+                    NZBDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+                notifiers.notify_snatch(common.to_str(items['nzbtitle']) + ' at ' + formatter.now())
+

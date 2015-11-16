@@ -1037,7 +1037,7 @@ def start():
             SCHED.add_interval_job(searchtorrents.search_tor_book, minutes=SEARCH_INTERVAL)
         SCHED.add_interval_job(versioncheck.checkForUpdates, hours=VERSIONCHECK_INTERVAL)
         if USE_TOR or USE_NZB:
-            SCHED.add_interval_job(searchmag.searchmagazines, minutes=SEARCH_INTERVAL)
+            SCHED.add_interval_job(searchmag.search_magazines, minutes=SEARCH_INTERVAL)
             
         SCHED.start()
         #for job in SCHED.get_jobs():

@@ -145,13 +145,6 @@ def search_tor_book(books=None, mags=None):
             if addedCounter == 0:
                 logger.info("No torrent's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")
         counter = counter + 1
-# searchmagazines searches nzb,torznab,torrents so no need to call it again from here
-#    if not books or books=="False":
-#        print mags
-#        snatched = searchmag.searchmagazines(mags)
-#        for items in snatched:
-#            snatch = TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-#            notifiers.notify_snatch(items['tor_title']+' at '+formatter.now())
     logger.info("TORSearch for Wanted items complete")
 
 

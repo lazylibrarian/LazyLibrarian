@@ -17,7 +17,7 @@ import lazylibrarian
 from lazylibrarian import logger, importer, database, postprocess, formatter, notifiers, librarysync, versioncheck
 from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
 from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
-from lazylibrarian.searchmag import searchmagazines
+from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.formatter import checked
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
@@ -784,7 +784,7 @@ class WebInterface(object):
 
     def forceSearch(self, source=None):
         if source == "magazines":
-            threading.Thread(target=searchmagazines).start()
+            threading.Thread(target=search_magazines).start()
         else:
             if (lazylibrarian.USE_NZB):
                 threading.Thread(target=search_nzb_book).start()
@@ -809,7 +809,7 @@ class WebInterface(object):
         for job in lazylibrarian.SCHED.get_jobs():
             #print str(job)
             jobname = str(job).split(' ')[0].split('.')[2]
-            if jobname == "searchmagazines":
+            if jobname == "search_magazines":
                 jobname = "[CRON] - Check for new magazine issues"
             elif jobname == "checkForUpdates":
                 jobname = "[CRON] - Check for LazyLibrarian update"
@@ -837,7 +837,7 @@ class WebInterface(object):
             lazylibrarian.SCHED.add_interval_job(search_tor_book, minutes=lazylibrarian.SEARCH_INTERVAL)
         lazylibrarian.SCHED.add_interval_job(versioncheck.checkForUpdates, hours=lazylibrarian.VERSIONCHECK_INTERVAL)
         if lazylibrarian.USE_TOR or lazylibrarian.USE_NZB:
-            lazylibrarian.SCHED.add_interval_job(searchmagazines, minutes=lazylibrarian.SEARCH_INTERVAL)
+            lazylibrarian.SCHED.add_interval_job(search_magazines, minutes=lazylibrarian.SEARCH_INTERVAL)
         # and list the new run-times in the log
         self.showJobs()
     restartJobs.exposed = True
@@ -925,11 +925,11 @@ class WebInterface(object):
                 mags = []
                 mags.append({"bookid": title})
                 books = False
-                if (lazylibrarian.USE_NZB):
-                    threading.Thread(target=search_nzb_book, args=[books, mags]).start()
-                if (lazylibrarian.USE_TOR):
-                    threading.Thread(target=search_tor_book, args=[books, mags]).start()
-                logger.debug("Searching for magazine with title: " + title)
+                if lazylibrarian.USE_NZB or lazylibrarian.USE_TOR:
+                    threading.Thread(target=search_magazines, args=[mags]).start()
+                    logger.debug("Searching for magazine with title: " + title)
+                else:
+                    logger.debug("Not searching for magazine, no download methods set")
                 raise cherrypy.HTTPRedirect("magazines")
     addKeyword.exposed = True
 
@@ -973,11 +973,11 @@ class WebInterface(object):
             mags.append({"bookid": bookid})
 
             books = False
-            if (lazylibrarian.USE_NZB):
-                threading.Thread(target=search_nzb_book, args=[books, mags]).start()
-            # if (lazylibrarian.USE_TOR): # magazine search handles nzb/torznab/torrent together, no need to call search_tor_book separately
-            #    threading.Thread(target=search_tor_book, args=[books, mags]).start()
-            logger.debug("Searching for magazine with title: " + bookid)
+            if lazylibrarian.USE_NZB or lazylibrarian.USE_TOR:
+                threading.Thread(target=search_magazines, args=[mags]).start()
+                logger.debug("Searching for magazine with title: " + bookid)
+            else:
+                logger.debug("Not searching for magazine, no download methods set")
             raise cherrypy.HTTPRedirect("magazines")
     searchForMag.exposed = True
 

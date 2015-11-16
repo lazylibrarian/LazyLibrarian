@@ -11,7 +11,7 @@ import re
 import lazylibrarian
 import request
 
-from lazylibrarian import logger, database, formatter, providers, nzbget, sabnzbd, SimpleCache, notifiers, searchmag, classes
+from lazylibrarian import logger, database, formatter, providers, nzbget, sabnzbd, SimpleCache, notifiers, classes
 
 #import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz #, process
@@ -151,16 +151,6 @@ def search_nzb_book(books=None, mags=None):
                 logger.info("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")
         counter = counter + 1
 
-    if not books or books == False:
-        snatched = searchmag.searchmagazines(mags)
-        for items in snatched:
-            if items['nzbmode'] == "torznab":
-                TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-            elif items['nzbmode'] == "torrent":
-                TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-            else:
-                NZBDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-            notifiers.notify_snatch(items['nzbtitle'] + ' at ' + formatter.now())
     logger.info("NZBSearch for Wanted items complete")
 
 
