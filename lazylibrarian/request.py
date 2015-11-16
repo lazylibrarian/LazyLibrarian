@@ -46,7 +46,7 @@ def request_response(url, method="get", auto_raise=True,
 
     # Disable verification of SSL certificates if requested. Note: this could
     # pose a security issue!
-    #kwargs["verify"] = bool(lazylibrarian.VERIFY_SSL_CERT)
+    # kwargs["verify"] = bool(lazylibrarian.VERIFY_SSL_CERT)
 
     # Map method to the request.XXX method. This is a simple hack, but it
     # allows requests to apply more magic per method. See lib/requests/api.py.
@@ -54,9 +54,9 @@ def request_response(url, method="get", auto_raise=True,
 
     try:
         # Request URL and wait for response
-        #with lock:
+        # with lock:
         logger.debug(
-                "Requesting URL via %s method: %s" % (method.upper(), url))
+            "Requesting URL via %s method: %s" % (method.upper(), url))
         response = request_method(url, **kwargs)
 
         # If status code != OK, then raise exception, except if the status code

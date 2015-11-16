@@ -1,3 +1,3 @@
 import lazylibrarian
-#This may not be required
-LAZYLIBRARIAN_VERSION = lazylibrarian.GIT_BRANCH
+# This may not be required
+#LAZYLIBRARIAN_VERSION = lazylibrarian.GIT_BRANCH

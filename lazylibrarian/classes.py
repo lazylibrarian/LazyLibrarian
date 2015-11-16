@@ -13,9 +13,9 @@
 #  You should have received a copy of the GNU General Public License
 #  along with LazyLibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-#########################################
-## Stolen from Sick-Beard's classes.py ##
-#########################################
+#
+# Stolen from Sick-Beard's classes.py ##
+#
 
 
 import urllib
@@ -28,6 +28,7 @@ class LazyLibrarianURLopener(urllib.FancyURLopener):
 
 
 class AuthURLOpener(LazyLibrarianURLopener):
+
     """
     URLOpener class that supports http auth without needing interactive password entry.
     If the provided username/password don't work it simply fails.
@@ -68,6 +69,7 @@ class AuthURLOpener(LazyLibrarianURLopener):
 
 
 class SearchResult:
+
     """
     Represents a search result from an indexer.
     """
@@ -100,6 +102,7 @@ class SearchResult:
 
 
 class NZBSearchResult(SearchResult):
+
     """
     Regular NZB result with an URL to the NZB
     """
@@ -107,6 +110,7 @@ class NZBSearchResult(SearchResult):
 
 
 class NZBDataSearchResult(SearchResult):
+
     """
     NZB result where the actual NZB XML data is stored in the extraInfo
     """
@@ -114,6 +118,7 @@ class NZBDataSearchResult(SearchResult):
 
 
 class TorrentSearchResult(SearchResult):
+
     """
     Torrent result with an URL to the torrent
     """
@@ -121,6 +126,7 @@ class TorrentSearchResult(SearchResult):
 
 
 class Proper:
+
     def __init__(self, name, url, date):
         self.name = name
         self.url = url

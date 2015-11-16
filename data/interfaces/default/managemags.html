@@ -1,0 +1,107 @@
+<%inherit file="base.html" />
+<%!
+    import lazylibrarian
+    from lazylibrarian.formatter import checked
+%>
+
+<%def name="headerIncludes()">
+    <div id="subhead_container">
+    </div>
+</%def>
+
+<%def name="body()">
+    <br><br>
+<!-- 
+    <form action="manage" method="get">
+    Manage magazines with status <select name="whichStatus">
+        %for item in ['Skipped', 'Wanted', 'Snatched', 'Have', 'Ignored']:
+            <option value="${item}"
+                %if whichStatus == item:
+                    selected = "selected"
+                %endif
+            >${item}</option>
+        %endfor
+    </select>
+    <input  class="btn" type="submit" value="Manage" />
+    </form>
+    <br>
+-->
+    %if len(books) > 0:
+    <h3>Magazines with status ${whichStatus}</h3>
+        <br>
+    <form action="markMags" method="get"><input type="hidden" name="redirect" value="manage">
+    <table class="display" id="book_table">
+        <thead>
+            <tr>
+                <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
+                <th id="magtitle">Title</th>
+                <th id="lastacquired">NZBdate</th>
+                <th id="issuedate">Issue Date</th>
+                <th id="Provider">NZBprov</th>
+                <th id="status">Status</th>
+           </tr>
+        </thead>
+
+        <tbody>
+        %for result in books:
+                <tr class="gradeZ">
+                    <td id="select"><input type="checkbox" name="${result['NZBurl']}" class="checkbox" /></td>
+                    <td id="magtitle"><BR>${result['NZBtitle']}<BR><BR></td>
+                    <td id="lastacquired">${result['NZBdate']}</td>
+                    <td id="issuedate">${result['Auxinfo']}</td>
+                    <td id="provider">${result['NZBprov']}</td>
+                    <td id="status">${result['Status']}</td>
+                </tr>
+        %endfor
+        </tbody>
+    </table>
+    <p>
+
+    Change selected magazines to <select class="markMags" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
+        %for item in ['Skipped', 'Wanted', 'Snatched', 'Have', 'Ignored']:
+            %if whichStatus != item:
+                <option value="${item}">${item}</option>
+            %endif
+        %endfor
+            </select>
+        <input type="submit" class="markMags" value="Go">
+    </p>
+    </form>
+    %endif
+
+</%def>
+
+<%def name="headIncludes()">
+    <link rel="stylesheet" href="css/data_table.css">
+</%def>
+
+<%def name="javascriptIncludes()">
+    <script src="js/libs/jquery.dataTables.min.js"></script>
+    <script>
+    $(document).ready(function()
+    {
+        $('#book_table').dataTable(
+            {
+                "aoColumns": [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                    ],
+                "oLanguage": {
+                    "sLengthMenu":"Show _MENU_ magazines per page",
+                    "sEmptyTable": "No magazines found",
+                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 magazines",
+                    "sInfoFiltered":"(filtered from _MAX_ total magazines)"},
+                "bStateSave": true,
+                "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
+                "iDisplayLength": 10,
+                "sPaginationType": "full_numbers",
+            });
+			$('.dataTables_filter input').attr("placeholder", "Search table here");
+    });
+    </script>
+</%def>

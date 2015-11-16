@@ -9,6 +9,7 @@
             <li><a onclick="self.shutdownQA(this)" id="button">Shutdown</a></li>
             <li><a id="button" onclick="self.restartQA(this, '', '')">Restart</a></li>
             <li ><a id="button" href="checkForUpdates">Check for Updates</a></li>
+            <li ><a id="button" href="showJobs">Show Job Status</a></li>
         </ul>
     </div>
 </%def>
@@ -120,6 +121,11 @@
                     <BR> GoogleBooks e.g: en, es, it
                     <BR> Default: en, eng, en-US
                     <BR> Try adding "Unknown" to list if GoodReads is missing results</i>
+		    <BR><BR>
+                    <label>Languages for month names:</label><input type="text" name="imp_monthlang" value="${config['imp_monthlang']}" size="20" maxlength="40">
+                    <br><i class="smalltext">Comma separated language codes for magazine issues:
+                    <br> e.g: en_US.uf8, fr_FR.utf8, es_ES.utf8        
+                    <BR>Default: en_US.utf8   Changes to this setting require a restart</i>
                 </td>
                 <td>
                     <h3>File Formats</h3>
@@ -269,15 +275,15 @@
                             </div>
                             <fieldset id="transmission_options">
                                 <div class="row">
-                                    <label>Transmission Host:</label>
+                                    <label>Transmission Host:port :</label>
                                     <input type="text" name="transmission_host" value="${config['transmission_host']}" size="30">
                                 </div>
                                 <div class="row">
-                                    <label>Transmission Username:</label>
+                                    <label>Transmission Username :</label>
                                     <input type="text" name="transmission_user" value="${config['transmission_user']}" size="30">
                                 </div>
                                 <div class="row">
-                                    <label>Transmission Password:</label>
+                                    <label>Transmission Password :</label>
                                     <input type="password" name="transmission_pass" value="${config['transmission_pass']}" size="30">
                                 </div>
                             </fieldset>
@@ -339,37 +345,84 @@
                 <td>
                     <h3>Newznab Providers</h3>
                 </td>
-        <td>
-            <h3>Torrent Providers</h3>
-        </td>
-                <td>
-                    <h3>Usenet Crawler</h3>
-                </td>
+		<td>
+		     <h3>Torznab Providers</h3>
+               </td>
+		<td>
+            	    <h3>Torrent Providers</h3>
+        	</td>
             </tr>
             <tr>
                 <td>
-                    <input type="checkbox" name="newznab" value=1 ${config['use_newznab']} style="margin-bottom:4px;" />
-                    <input type="text" placeholder="Enter Host Here" name="newznab_host" value="${config['newznab_host']}" size="20" maxlength="100">
-                    <input type="text" placeholder="Enter API Here" name="newznab_api" value="${config['newznab_api']}" size="30" maxlength="40">
-                </td>
-        <td>
-            <input type="checkbox" name="kat" value=1 ${config['use_kat']} style="margin-bottom:4px;" /> KAT
-        </td>
-                <td>
-                    <input type="checkbox" name="usenetcrawler" value=1 ${config['use_usenetcrawler']} style="margin-bottom:4px;" />
-                    <input type="text" placeholder="Enter Host Here" name="usenetcrawler_host" value="${config['usenetcrawler_host']}" size="20" maxlength="40">
-                    <input type="text" placeholder="Enter API Here" name="usenetcrawler_api" value="${config['usenetcrawler_api']}" size="30" maxlength="40">
-                </td>
+                    <input type="checkbox" name="newznab0" value=1 ${config['use_newznab0']} style="margin-bottom:4px;" />
+                    <input type="text" placeholder="Enter Host Here" name="newznab_host0" value="${config['newznab_host0']}" size="26" maxlength="100">
+		    <input type="text" placeholder="Enter API Here" name="newznab_api0" value="${config['newznab_api0']}" size="26" maxlength="40">
+		</td>
+        	<td>
+                    <input type="checkbox" name="torznab0" value=1 ${config['use_torznab0']} style="margin-bottom:4px;" />
+                    <input type="text" placeholder="Enter Host Here" name="torznab_host0" value="${config['torznab_host0']}" size="26" maxlength="100">
+		    <input type="text" placeholder="Enter API Here" name="torznab_api0" value="${config['torznab_api0']}" size="26" maxlength="40">
+            	</td>
+        	<td>
+            		<input type="checkbox" name="kat" value=1 ${config['use_kat']} style="margin-bottom:4px;" /> KAT
+ 	    		<input type="text" placeholder="Enter Host Here" name="kat_host" value="${config['kat_host']}" size="20" maxlength="100">
+        	</td>
             </tr>
-            <tr>
-                <td>
+	    <tr>
+		<td>
+                    <input type="checkbox" name="newznab1" value=1 ${config['use_newznab1']} style="margin-bottom:4px;" />
+                    <input type="text" placeholder="Enter Host Here" name="newznab_host1" value="${config['newznab_host1']}" size="26" maxlength="100">
+		    <input type="text" placeholder="Enter API Here" name="newznab_api1" value="${config['newznab_api1']}" size="26" maxlength="40">
+                </td>
+        	<td>
+                    <input type="checkbox" name="torznab1" value=1 ${config['use_torznab1']} style="margin-bottom:4px;" />
+                    <input type="text" placeholder="Enter Host Here" name="torznab_host1" value="${config['torznab_host1']}" size="26" maxlength="100">
+		    <input type="text" placeholder="Enter API Here" name="torznab_api1" value="${config['torznab_api1']}" size="26" maxlength="40">
+            	</td>
+            </tr>
+	    <tr>
+               <td>
                     <input type="checkbox" name="newznab2" value=1 ${config['use_newznab2']} style="margin-bottom:4px;" />
-                    <input type="text" placeholder="Enter Host Here" name="newznab_host2" value="${config['newznab_host2']}" size="20" maxlength="100">
-                    <input type="text" placeholder="Enter API Here" name="newznab_api2" value="${config['newznab_api2']}" size="30" maxlength="40">
+                    <input type="text" placeholder="Enter Host Here" name="newznab_host2" value="${config['newznab_host2']}" size="26" maxlength="100">
+		    <input type="text" placeholder="Enter API Here" name="newznab_api2" value="${config['newznab_api2']}" size="26" maxlength="40">
                 </td>
+        	<td>
+                    <input type="checkbox" name="torznab2" value=1 ${config['use_torznab2']} style="margin-bottom:4px;" />
+                    <input type="text" placeholder="Enter Host Here" name="torznab_host2" value="${config['torznab_host2']}" size="26" maxlength="100">
+		    <input type="text" placeholder="Enter API Here" name="torznab_api2" value="${config['torznab_api2']}" size="26" maxlength="40">
+            	</td>
+            </tr>
+	    <tr>
+                <td>
+                    <input type="checkbox" name="newznab3" value=1 ${config['use_newznab3']} style="margin-bottom:4px;" />
+                    <input type="text" placeholder="Enter Host Here" name="newznab_host3" value="${config['newznab_host3']}" size="26" maxlength="100">
+		    <input type="text" placeholder="Enter API Here" name="newznab_api3" value="${config['newznab_api3']}" size="26" maxlength="40">
+                </td>
+        	<td>
+                    <input type="checkbox" name="torznab3" value=1 ${config['use_torznab3']} style="margin-bottom:4px;" />
+                    <input type="text" placeholder="Enter Host Here" name="torznab_host3" value="${config['torznab_host3']}" size="26" maxlength="100">
+		    <input type="text" placeholder="Enter API Here" name="torznab_api3" value="${config['torznab_api3']}" size="26" maxlength="40">
+            	</td>
+            </tr>
+	    <tr>
+                <td>
+                    <input type="checkbox" name="newznab4" value=1 ${config['use_newznab4']} style="margin-bottom:4px;" />
+                    <input type="text" placeholder="Enter Host Here" name="newznab_host4" value="${config['newznab_host4']}" size="26" maxlength="100">
+		    <input type="text" placeholder="Enter API Here" name="newznab_api4" value="${config['newznab_api4']}" size="26" maxlength="40">
+                </td>
+        	<td>
+                    <input type="checkbox" name="torznab4" value=1 ${config['use_torznab4']} style="margin-bottom:4px;" />
+                    <input type="text" placeholder="Enter Host Here" name="torznab_host4" value="${config['torznab_host4']}" size="26" maxlength="100">
+		    <input type="text" placeholder="Enter API Here" name="torznab_api4" value="${config['torznab_api4']}" size="26" maxlength="40">
+            	</td>
             </tr>
         </table>
         </div>
+		    <BR>
+                    <small>Current limitation: TORZNAB results are returned as magnet links
+                    <BR>
+                    where possible, which may not work automatically with blackhole
+                    </small>
     </div>
 
     <div class="table_wrapper" style="display:none">
@@ -390,6 +443,10 @@
                     </div>
                     <div>
                     <label>Match Ratio</label><input type="text" name="match_ratio"  value="${config['match_ratio']}" size="8" maxlength="40"> percent
+                    <small>
+                    <BR>
+                    Changes to any of the above only take effect after a restart
+                    </small>
                     </div>
                 </td>
                 <td>
@@ -410,7 +467,7 @@
             </tr>
             <tr>
                 <td>
-                    <label>eBook Destination Folder:</label><input type="text" name="ebook_dest_folder" value="${config['ebook_dest_folder']}" size="30" maxlength="40">
+                    <label>eBook Destination Folder:</label><input type="text" name="ebook_dest_folder" value="${config['ebook_dest_folder']}" size="30" maxlength="100">
                     <label>eBook Destination File:</label><input type="text" name="ebook_dest_file" value="${config['ebook_dest_file']}" size="30" maxlength="40">
                     <BR>
                     <small>Options include $Author, $Title, any string
@@ -419,12 +476,16 @@
                     </small>
                 </td>
                 <td>
-                    <label>Magazine Destination Folder:</label><input type="text" name="mag_dest_folder" value="${config['mag_dest_folder']}" size="30" maxlength="40">
+		    <label>Magazine Destination Folder:</label><input type="text" name="mag_dest_folder" value="${config['mag_dest_folder']}" size="30" maxlength="100">
                     <label>Magazine Destination File:</label><input type="text" name="mag_dest_file" value="${config['mag_dest_file']}" size="30" maxlength="40">
                     <BR>
+                    <input type="checkbox" name="mag_relative" value=1 ${config['mag_relative']} /><label>Magazines inside book folder</label>
+		    <BR>
                     <small>Options include $Title, $IssueDate, any string
                     <BR>
-                    Current limitation: each file has to be in unique subfolder
+                    Current limitation: each magazine has to be in unique subfolder
+		    <BR>
+		    If inside book folder, magazine folder must start with _
                     </small>
                 </td>
             </tr>
@@ -459,12 +520,31 @@
                   %endfor
                   </select>
                   <br>
-                  <i class="smalltext">Value to update ebooks to if not found</i>
+                  <i class="smalltext">Value to update ebooks to if missing (removed)</i>
+                  <br>
+                  <label>New Found Book Status:</label>
+                  <select name="newbook_status">
+                  %for nb_status in config['status_list']:
+                  <%
+                        selected = ''
+                        if nb_status == config['newbook_status']:
+                                selected = 'selected="selected"'
+                  %>
+                  <option value="${nb_status}" ${selected}>${nb_status}</option>
+                  %endfor
+                  </select>
+                  <br>
+                  <i class="smalltext">Value to update ebooks to if new book available</i>
                   </div>
                   <div>
                   <label>Add Authors:</label><input type="checkbox" name="add_author" value=1 ${config['add_author']} />
                   <br>
                   <i class="smalltext">This will auto add new authors from GoodReads</i>
+                  </div>
+		  <div>
+                  <label>One book per directory:</label><input type="checkbox" name="imp_singlebook" value=1 ${config['imp_singlebook']} />
+                  <br>
+                  <i class="smalltext">This imports one book per directory, tick this if you keep multiple formats of the same book in the same directory</i>
                   </div>
 
 		</td>
