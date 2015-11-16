@@ -10,14 +10,16 @@ import re
 
 import lazylibrarian
 
-from lazylibrarian import logger, database, formatter, providers, SimpleCache, common
+from lazylibrarian import logger, database, formatter, providers, notifiers, SimpleCache, common
 
 #import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz
 #from lib.unidecode import unidecode
+from lazylibrarian.searchtorrents import TORDownloadMethod
+from lazylibrarian.searchnzb import NZBDownloadMethod
 
-
-def searchmagazines(mags=None):
+def search_magazines(mags=None):
+# produce a list of magazines to search for, tor, nzb, torznab
     maglist = []
     myDB = database.DBConnection()
     searchlist = []
@@ -32,6 +34,11 @@ def searchmagazines(mags=None):
             searchmags_temp = myDB.select('SELECT Title, Frequency, LastAcquired, IssueDate from magazines WHERE Title="%s" AND Status="Active"' % (magazine['bookid']))
             for terms in searchmags_temp:
                 searchmags.append(terms)
+
+    if len(searchmags) == 1:
+        logger.info('Searching for one magazine')
+    else:
+        logger.info('Searching for %i magazines'  % len(searchmags))
 
     for searchmag in searchmags:
         bookid = searchmag[0]
@@ -109,7 +116,10 @@ def searchmagazines(mags=None):
                     nzbtitle_exploded_temp = " ".join(nzbtitle_formatted.split())
                     nzbtitle_exploded = nzbtitle_exploded_temp.split(' ')
 
-                    bookid_exploded = bookid.split(' ')
+                    if ' ' in bookid:
+                        bookid_exploded = bookid.split(' ')
+                    else:
+                        bookid_exploded = [bookid]
 
                     # check nzb starts with magazine title, and ends with a date
                     # eg The MagPI Issue 22 - July 2015
@@ -248,4 +258,13 @@ def searchmagazines(mags=None):
                         bad_regex = bad_regex + 1
 
             logger.info('Found %s results for %s.  %s are new, %s are old, %s fail date, %s fail name matching' % (total_nzbs, bookid, new_date, old_date, bad_date, bad_regex))
-    return maglist
+            
+            for items in maglist:
+                if items['nzbmode'] == "torznab":
+                    TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+                elif items['nzbmode'] == "torrent":
+                    TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+                else:
+                    NZBDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+                notifiers.notify_snatch(formatter.latinToAscii(items['nzbtitle']) + ' at ' + formatter.now())
+

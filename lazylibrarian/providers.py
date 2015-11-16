@@ -49,9 +49,13 @@ def KAT(book=None):
 
     try:
         data = urllib2.urlopen(searchURL, timeout=20)
-    except urllib2.URLError, e:
-        logger.warn(searchURL)
-        logger.warn('Error fetching data from %s: %s' % (provider, e))
+    except urllib2.URLError as e:
+        # seems KAT returns 404 if no results, not really an error
+        if not e.code == 404: 
+            logger.warn(searchURL)
+            logger.warn('Error fetching data from %s: %s' % (provider, e.reason))
+        else:
+            logger.info(u"No results found from %s for %s" % (provider, book['searchterm']))    
         data = False
 
     results = []
@@ -67,6 +71,7 @@ def KAT(book=None):
             pass
 
         else:
+            logger.info(u"Found %i results from %s for %s" % (len(d.entries), provider, book['searchterm']))
             for item in d.entries:
                 try:
                     #rightformat = True
@@ -196,7 +201,7 @@ def IterateOverTorrentSites(book=None, searchType=None):
 def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=None):
 
     # logger.info('[NewzNabPlus] Searching term [%s] for author [%s] and title [%s] on host [%s] for a [%s] item' % (book['searchterm'], book['authorName'], book['bookName'], host, searchType))
-    logger.info('[NewzNabPlus] searchType [%s] with Host [%s] mode [%s] using api [%s] for item [%s]' % (searchType, host, searchMode, api_key, str(book)))
+    logger.debug('[NewzNabPlus] searchType [%s] with Host [%s] mode [%s] using api [%s] for item [%s]' % (searchType, host, searchMode, api_key, str(book)))
 
     results = []
 

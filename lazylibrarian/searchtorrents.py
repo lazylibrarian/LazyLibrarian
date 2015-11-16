@@ -59,6 +59,11 @@ def search_tor_book(books=None, mags=None):
                 for terms in searchbook:
                     searchbooks.append(terms)
 
+    if len(searchbooks) == 1:
+        logger.info('TOR Searching for one book')
+    else:
+        logger.info('TOR Searching for %i books'  % len(searchbooks))
+
     for searchbook in searchbooks:
         bookid = searchbook[0]
         author = searchbook[1]
@@ -140,13 +145,6 @@ def search_tor_book(books=None, mags=None):
             if addedCounter == 0:
                 logger.info("No torrent's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")
         counter = counter + 1
-# searchmagazines searches nzb,torznab,torrents so no need to call it again from here
-#    if not books or books=="False":
-#        print mags
-#        snatched = searchmag.searchmagazines(mags)
-#        for items in snatched:
-#            snatch = TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-#            notifiers.notify_snatch(items['tor_title']+' at '+formatter.now())
     logger.info("TORSearch for Wanted items complete")
 
 
@@ -190,8 +188,8 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                 else:
                     torrent = response.read()
 
-            except urllib2.URLError, e:
-                logger.warn('Error fetching torrent from url: ' + tor_url + ' %s' % e)
+            except urllib2.URLError as e:
+                logger.warn('Error fetching torrent from url: ' + tor_url + ' %s' % e.reason)
                 return
 
         if (lazylibrarian.TOR_DOWNLOADER_BLACKHOLE):

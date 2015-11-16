@@ -311,12 +311,12 @@ def update():
 
         tar_download_url = 'https://github.com/%s/%s/tarball/%s' % (lazylibrarian.GIT_USER, lazylibrarian.GIT_REPO, lazylibrarian.GIT_BRANCH)
         update_dir = os.path.join(lazylibrarian.PROG_DIR, 'update')
-        version_path = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
+        #version_path = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
 
         try:
             logger.info('(update) Downloading update from: ' + tar_download_url)
             data = urllib2.urlopen(tar_download_url)
-        except (IOError): #PAB removed undefined variable , URLError):
+        except (IOError, urllib2.URLError):
             logger.error("(update) Unable to retrieve new version from " + tar_download_url + ", can't update")
             return
 

@@ -40,6 +40,7 @@ class NMA_Notifier:
             logger.error(u"NMA: Could not send notification to NotifyMyAndroid")
             return False
         else:
+            logger.debug(u"NMA: Send notification to NotifyMyAndroid returned : %s" % response[nma_api][u'code'])
             return True
 
 #

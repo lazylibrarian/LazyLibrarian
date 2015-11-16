@@ -11,7 +11,7 @@ import re
 import lazylibrarian
 import request
 
-from lazylibrarian import logger, database, formatter, providers, nzbget, sabnzbd, SimpleCache, notifiers, searchmag, classes
+from lazylibrarian import logger, database, formatter, providers, nzbget, sabnzbd, SimpleCache, notifiers, classes
 
 #import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz #, process
@@ -54,6 +54,11 @@ def search_nzb_book(books=None, mags=None):
                 searchbook = myDB.select('SELECT BookID, AuthorName, BookName from books WHERE BookID="%s" AND Status="Wanted"' % book['bookid'])
                 for terms in searchbook:
                     searchbooks.append(terms)
+
+    if len(searchbooks) == 1:
+        logger.info('NZB Searching for one book')
+    else:
+        logger.info('NZB Searching for %i books'  % len(searchbooks))
 
     for searchbook in searchbooks:
         bookid = searchbook[0]
@@ -146,16 +151,6 @@ def search_nzb_book(books=None, mags=None):
                 logger.info("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")
         counter = counter + 1
 
-    if not books or books == False:
-        snatched = searchmag.searchmagazines(mags)
-        for items in snatched:
-            if items['nzbmode'] == "torznab":
-                TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-            elif items['nzbmode'] == "torrent":
-                TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-            else:
-                NZBDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-            notifiers.notify_snatch(items['nzbtitle'] + ' at ' + formatter.now())
     logger.info("NZBSearch for Wanted items complete")
 
 
@@ -183,8 +178,8 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
             req.add_header('User-Agent', USER_AGENT)
             nzbfile = urllib2.urlopen(req, timeout=90).read()
 
-        except urllib2.URLError, e:
-            logger.warn('Error fetching nzb from url: ' + nzburl + ' %s' % e)
+        except urllib2.URLError as e:
+            logger.warn('Error fetching nzb from url: ' + nzburl + ' %s' % e.reason)
             nzbfile = False
 
         if (nzbfile):
