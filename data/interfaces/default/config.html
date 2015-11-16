@@ -658,7 +658,35 @@
                     </div>
                 </fieldset>
             </td>
-
+            <td>
+                <fieldset>
+                    <h3>AndroidPN</h3>
+                    <div class="row checkbox">
+                        <input type="checkbox" name="use_androidpn" id="androidpn" value="1" ${config['use_androidpn']} />
+                        <label>Enable AndroidPN Notifications</label>
+                    </div>
+                    <div id="androidpnoptions">
+                        <div class="row">
+                            <input type="checkbox" name="androidpn_notify_onsnatch" value="1" ${config['androidpn_notify_onsnatch']} />Notify on snatch
+                        </div>
+                        <div class="row">
+                            <input type="checkbox" name="androidpn_notify_ondownload" value="1" ${config['androidpn_notify_ondownload']} />Notify on download
+                        </div>
+                        <div class="row">
+                            <input type="checkbox" name="androidpn_broadcast" id="androidpn_broadcast" value="1" ${config['androidpn_broadcast']} />Broadcast notification
+                        </div>
+                        <div class="row">
+                            <input type="text" name="androidpn_url" value="${config['androidpn_url']}" size="35" placeholder="AndroidPN notification url" />
+                        </div>
+                        <div class="row" id="androidpn_username">
+                           <input type="text" name="androidpn_username"  value="${config['androidpn_username']}" size="35" placeholder="AndroidPN username" /> 
+                        </div>
+                        <div class="row">
+                            <input type="button" value="Test AndroidPN" id="testAndroidPN">
+                        </div>
+                    </div>
+                </fieldset>
+            </td>
 	    <td>
             	<fieldset>
                                 <h3>NotifyMyAndroid</h3>
@@ -993,6 +1021,44 @@
                     }
             });
 
+            if ($("#androidpn").is(":checked"))
+                    {
+                            $("#androidpnoptions").show();
+                    }
+            else
+                    {
+                            $("#androidpnoptions").hide();
+                    }
+            $("#androidpn").click(function(){
+                    if ($("#androidpn").is(":checked"))
+                    {
+                        $("#androidpnoptions").slideDown();
+                    }
+                    else
+                    {
+                        $("#androidpnoptions").slideUp();
+                    }
+            });
+
+            if ($("#androidpn_broadcast").is(":checked"))
+                    {
+                            $("#androidpn_username").hide();
+                    }
+            else
+                    {
+                            $("#androidpn_username").show();
+                    }
+            $("#androidpn_broadcast").click(function(){
+                    if ($("#androidpn_broadcast").is(":checked"))
+                    {
+                        $("#androidpn_username").slideUp();
+                    }
+                    else
+                    {
+                        $("#androidpn_username").slideDown();
+                    }
+            });
+    
                 if ($("#nma").is(":checked"))
                         {
                                 $("#nmaoptions").show();
@@ -1030,6 +1096,16 @@
                 $.get("testTwitter",
                     function (data) { $('#testTwitter-result').html(data); });
             });
+
+            $("#testAndroidPN").click(function () {
+                var androidpn_url = $.trim($("#androidpn_url").val());
+                var androidpn_username = $.trim($("#androidpn_username").val());
+                var androidpn_broadcast = ($("#androidpn_broadcast").prop('checked') == true) ? 'Y' : 'N';
+                $.get("/testAndroidPN", {'url': androidpn_url, 'username': androidpn_username, 'broadcast': androidpn_broadcast})
+                    .done(function (data) {
+                        $("#testAndroidPN-result").html(data);
+                    });
+                });
         }
 
         $(document).ready(function() {
