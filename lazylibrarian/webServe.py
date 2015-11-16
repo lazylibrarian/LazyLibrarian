@@ -172,6 +172,12 @@ class WebInterface(object):
                     "pushover_priority":              lazylibrarian.PUSHOVER_PRIORITY,
                     "pushover_keys":                  lazylibrarian.PUSHOVER_KEYS,
                     "pushover_apitoken":              lazylibrarian.PUSHOVER_APITOKEN,
+                    "use_androidpn":                  checked(lazylibrarian.USE_ANDROIDPN),
+                    "androidpn_notify_onsnatch":             checked(lazylibrarian.ANDROIDPN_NOTIFY_ONSNATCH),
+                    "androidpn_notify_ondownload":           checked(lazylibrarian.ANDROIDPN_NOTIFY_ONDOWNLOAD),
+                    "androidpn_url":                  lazylibrarian.ANDROIDPN_URL,
+                    "androidpn_username":             lazylibrarian.ANDROIDPN_USERNAME,
+                    "androidpn_broadcast":            checked(lazylibrarian.ANDROIDPN_BROADCAST),
                     "nma_enabled":		      checked(lazylibrarian.NMA_ENABLED),
                     "nma_apikey": 		      lazylibrarian.NMA_APIKEY,
                     "nma_priority": 		      int(lazylibrarian.NMA_PRIORITY),
@@ -224,6 +230,7 @@ class WebInterface(object):
                      utorrent_label=None, use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token=None,
                      use_pushbullet=0, pushbullet_notify_onsnatch=0, pushbullet_notify_ondownload=0, pushbullet_token=None, pushbullet_deviceid=None,
                      use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys=None, pushover_apitoken=None, pushover_ondownload=0,
+                     use_androidpn=0, androidpn_notify_onsnatch=0, androidpn_notify_ondownload=0, androidpn_url=None, androidpn_username=None, androidpn_broadcast=1,
                      nma_enabled=False, nma_apikey=None, nma_priority=0, nma_onsnatch=0):
 
         lazylibrarian.HTTP_HOST = http_host
@@ -378,6 +385,13 @@ class WebInterface(object):
         lazylibrarian.PUSHOVER_KEYS = pushover_keys
         lazylibrarian.PUSHOVER_APITOKEN = pushover_apitoken
         lazylibrarian.PUSHOVER_PRIORITY = pushover_priority
+
+        lazylibrarian.USE_ANDROIDPN = int(use_androidpn)
+        lazylibrarian.ANDROIDPN_NOTIFY_ONSNATCH = int(androidpn_notify_onsnatch)
+        lazylibrarian.ANDROIDPN_NOTIFY_ONDOWNLOAD = int(androidpn_notify_ondownload)
+        lazylibrarian.ANDROIDPN_URL = androidpn_url
+        lazylibrarian.ANDROIDPN_USERNAME = androidpn_username
+        lazylibrarian.ANDROIDPN_BROADCAST = int(androidpn_broadcast)
 
         lazylibrarian.NMA_ENABLED = int(nma_enabled)
         lazylibrarian.NMA_APIKEY = nma_apikey
@@ -1025,6 +1039,16 @@ class WebInterface(object):
             return "Tweet successful, check your twitter to make sure it worked"
         else:
             return "Error sending tweet"
+
+    @cherrypy.expose
+    def testAndroidPN(self, url=None, username=None, broadcast=None):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+
+        result = notifiers.androidpn_notifier.test_notify(url, username, broadcast)
+        if result:
+            return "Test AndroidPN notice sent successfully"
+        else:
+            return "Test AndroidPN notice failed"
 
     def shutdown(self):
         lazylibrarian.config_write()
