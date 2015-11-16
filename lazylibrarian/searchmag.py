@@ -114,7 +114,10 @@ def searchmagazines(mags=None):
                     nzbtitle_exploded_temp = " ".join(nzbtitle_formatted.split())
                     nzbtitle_exploded = nzbtitle_exploded_temp.split(' ')
 
-                    bookid_exploded = bookid.split(' ')
+                    if ' ' in bookid:
+                        bookid_exploded = bookid.split(' ')
+                    else:
+                        bookid_exploded = [bookid]
 
                     # check nzb starts with magazine title, and ends with a date
                     # eg The MagPI Issue 22 - July 2015
