@@ -145,7 +145,7 @@ def search_nzb_book(books=None, mags=None):
                             TORDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
                         else:
                             NZBDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
-                        notifiers.notify_snatch(nzbTitle + ' at ' + formatter.now())
+                        notifiers.notify_snatch(formatter.latinToAscii(nzbTitle) + ' at ' + formatter.now())
                     break
             if addedCounter == 0:
                 logger.info("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")

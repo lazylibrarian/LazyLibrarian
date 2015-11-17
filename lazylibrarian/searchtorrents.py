@@ -140,7 +140,7 @@ def search_tor_book(books=None, mags=None):
                     snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' % bookid).fetchone()
                     if not snatchedbooks:
                         TORDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
-                        notifiers.notify_snatch(tor_Title + ' at ' + formatter.now())
+                        notifiers.notify_snatch(formatter.latinToAscii(tor_Title) + ' at ' + formatter.now())
                     break
             if addedCounter == 0:
                 logger.info("No torrent's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")

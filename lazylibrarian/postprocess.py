@@ -139,8 +139,8 @@ def processDir():
                     newValueDict = {"IssueStatus": "Open"}
                     myDB.upsert("magazines", newValueDict, controlValueDict)
 
-                logger.info('Successfully processed: %s' % (global_name))
-                notifiers.notify_download(global_name + ' at ' + formatter.now())
+                logger.info('Successfully processed: %s' % global_name)
+                notifiers.notify_download(formatter.latinToAscii(global_name) + ' at ' + formatter.now())
             else:
                 logger.error('Postprocessing for %s has failed. Warning - AutoAdd will be repeated' % global_name)
 
