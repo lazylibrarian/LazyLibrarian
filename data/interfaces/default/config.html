@@ -629,7 +629,10 @@
                         <div class="row">
                             <input type="text" name="pushbullet_deviceid" value="${config['pushbullet_deviceid']}" size="35" placeholder="Pushbullet DeviceID">
                         </div>                        
-                    </div>
+                        <div class="row">
+                            <input type="button" value="Test Pushbullet" id="testPushbullet">
+                        </div>
+                     </div>
                 </fieldset>            
             </td>
             <td>
@@ -1095,6 +1098,11 @@
             $('#testTwitter').click(function () {
                 $.get("testTwitter",
                     function (data) { $('#testTwitter-result').html(data); });
+            });
+
+            $('#testPushbullet').click(function () {
+                $.get("testPushbullet",
+                    function (data) { $('#testPushbullet-result').html(data); });
             });
 
             $("#testAndroidPN").click(function () {

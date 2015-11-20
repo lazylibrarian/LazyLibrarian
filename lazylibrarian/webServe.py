@@ -1070,6 +1070,16 @@ class WebInterface(object):
         else:
             return "Test AndroidPN notice failed"
 
+    @cherrypy.expose
+    def testPushbullet(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+
+        result = notifiers.pushbullet_notifier.test_notify()
+        if result:
+            return "Test Pushbullet notice sent successfully"
+        else:
+            return "Test Pushbullet notice failed"
+
     def shutdown(self):
         lazylibrarian.config_write()
         lazylibrarian.SIGNAL = 'shutdown'
