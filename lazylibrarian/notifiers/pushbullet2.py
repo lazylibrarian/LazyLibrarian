@@ -11,7 +11,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import json
+import lib.simplejson as json
 import lib.requests as requests
 #import websocket
 from requests.auth import HTTPBasicAuth
