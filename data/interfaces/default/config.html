@@ -694,11 +694,14 @@
             	<fieldset>
                                 <h3>NotifyMyAndroid</h3>
                                 <div class="checkbox row">
-                                    <input type="checkbox" name="nma_enabled" id="nma" value="1" ${config['nma_enabled']} /><label>Enable NotifyMyAndroid</label>
+                                    <input type="checkbox" name="use_nma" id="nma" value="1" ${config['use_nma']} /><label>Enable NotifyMyAndroid</label>
                                 </div>
                                 <div id="nmaoptions">
                                     <div class="row checkbox">
                                         <input type="checkbox" name="nma_onsnatch" value="1" ${config['nma_onsnatch']} /><label>Notify on snatch?</label>
+                                    </div>
+                                    <div class="row checkbox">
+                                        <input type="checkbox" name="nma_ondownload" value="1" ${config['nma_ondownload']} /><label>Notify on download?</label>
                                     </div>
                                     <div class="row">
                                         <label>NotifyMyAndroid API Key</label>
@@ -729,6 +732,9 @@
                                             <option value=${x} ${nma_priority_selected}>${nma_priority_value}</option>
                                         %endfor
                                         </select>
+                                    </div>
+                                    <div class="row">
+                                        <input type="button" value="Test NMA" id="testNMA">
                                     </div>
                                 </div>
 		</fieldset>
@@ -1103,6 +1109,11 @@
             $('#testPushbullet').click(function () {
                 $.get("testPushbullet",
                     function (data) { $('#testPushbullet-result').html(data); });
+            });
+
+            $('#testNMA').click(function () {
+                $.get("testNMA",
+                    function (data) { $('#testNMA-result').html(data); });
             });
 
             $("#testAndroidPN").click(function () {

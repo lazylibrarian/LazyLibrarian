@@ -240,7 +240,7 @@ def search_magazines(mags=None):
                         # Could also store number of seeders for torrents, but this changes all the time??
                         comp_date = formatter.datecompare(newdatish, control_date)
                         if comp_date > 0:
-                            # TODO - should probably only upsert when downloaded and processed in case snatch fails
+                            # Moved this - Should probably only upsert when downloaded and processed in case snatch fails
                             #myDB.upsert("magazines", {"LastAcquired": nzbdate, "IssueDate": newdatish}, {"Title": bookid})
                             maglist.append({
                                 'bookid': bookid,

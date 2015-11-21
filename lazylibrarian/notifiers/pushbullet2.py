@@ -12,7 +12,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import json
-import requests
+import lib.requests as requests
 #import websocket
 from requests.auth import HTTPBasicAuth
 #from websocket import create_connection

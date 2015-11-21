@@ -227,10 +227,12 @@ ANDROIDPN_URL = None
 ANDROIDPN_BROADCAST = 1 
 ANDROIDPN_USERNAME = None
 
-NMA_ENABLED = 0
+USE_NMA = 0
 NMA_APIKEY = None
 NMA_PRIORITY = None
 NMA_ONSNATCH = None
+NMA_ONDOWNLOAD = None
+
 # Month names table to hold long/short month names for multiple languages
 # which we can match against magazine issues
 # Defined as global and initialised early, because locale changes are not thread safe
@@ -356,7 +358,7 @@ def initialize():
             USE_ANDROIDPN, ANDROIDPN_NOTIFY_ONSNATCH, ANDROIDPN_NOTIFY_ONDOWNLOAD, ANDROIDPN_URL, ANDROIDPN_USERNAME, ANDROIDPN_BROADCAST, \
             TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PASS, TRANSMISSION_USER, \
             TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, \
-            FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, NMA_ENABLED, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, \
+            FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
             GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, SCHED
 
         if __INITIALIZED__:
@@ -574,10 +576,11 @@ def initialize():
         ANDROIDPN_USERNAME = check_setting_str(CFG, 'AndroidPN', 'androidpn_username', '')
         ANDROIDPN_BROADCAST = check_setting_int(CFG, 'AndroidPN', 'androidpn_broadcast', 1)
 
-        NMA_ENABLED = check_setting_int(CFG, 'NMA', 'nma_enabled', 0)
+        USE_NMA = check_setting_int(CFG, 'NMA', 'use_nma', 0)
         NMA_APIKEY = check_setting_str(CFG, 'NMA', 'nma_apikey', '')
         NMA_PRIORITY = check_setting_int(CFG, 'NMA', 'nma_priority', 0)
         NMA_ONSNATCH = check_setting_int(CFG, 'NMA', 'nma_onsnatch', 0)
+        NMA_ONDOWNLOAD = check_setting_int(CFG, 'NMA', 'nma_ondownload', 0)
 
         BOOK_API = check_setting_str(CFG, 'API', 'book_api', 'GoodReads')
         GR_API = check_setting_str(CFG, 'API', 'gr_api', 'ckvsiSDsuqh7omh74ZZ6Q')
@@ -917,10 +920,11 @@ def config_write():
     new_config['AndroidPN']['androidpn_broadcast'] = ANDROIDPN_BROADCAST
 
     new_config['NMA'] = {}
-    new_config['NMA']['nma_enabled'] = int(NMA_ENABLED)
+    new_config['NMA']['use_nma'] = int(USE_NMA)
     new_config['NMA']['nma_apikey'] = NMA_APIKEY
     new_config['NMA']['nma_priority'] = NMA_PRIORITY
     new_config['NMA']['nma_onsnatch'] = int(NMA_ONSNATCH)
+    new_config['NMA']['nma_ondownload'] = int(NMA_ONDOWNLOAD)
 
     new_config.write()
 

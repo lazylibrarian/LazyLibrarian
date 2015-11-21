@@ -179,10 +179,11 @@ class WebInterface(object):
             "androidpn_url":                  lazylibrarian.ANDROIDPN_URL,
             "androidpn_username":             lazylibrarian.ANDROIDPN_USERNAME,
             "androidpn_broadcast":            checked(lazylibrarian.ANDROIDPN_BROADCAST),
-            "nma_enabled":		              checked(lazylibrarian.NMA_ENABLED),
+            "use_nma":		                  checked(lazylibrarian.USE_NMA),
             "nma_apikey": 		              lazylibrarian.NMA_APIKEY,
             "nma_priority": 		          int(lazylibrarian.NMA_PRIORITY),
             "nma_onsnatch":                   checked(lazylibrarian.NMA_ONSNATCH),
+            "nma_ondownload":                 checked(lazylibrarian.NMA_ONDOWNLOAD),
             "ebook_type":                     lazylibrarian.EBOOK_TYPE,
             "gr_api":                         lazylibrarian.GR_API,
             "gb_api":                         lazylibrarian.GB_API,
@@ -232,7 +233,7 @@ class WebInterface(object):
                      use_pushbullet=0, pushbullet_notify_onsnatch=0, pushbullet_notify_ondownload=0, pushbullet_token=None, pushbullet_deviceid=None,
                      use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys=None, pushover_apitoken=None, pushover_ondownload=0,
                      use_androidpn=0, androidpn_notify_onsnatch=0, androidpn_notify_ondownload=0, androidpn_url=None, androidpn_username=None, androidpn_broadcast=1,
-                     nma_enabled=False, nma_apikey=None, nma_priority=0, nma_onsnatch=0):
+                     use_nma=0, nma_apikey=None, nma_priority=0, nma_onsnatch=0, nma_ondownload=0):
 
         lazylibrarian.HTTP_HOST = http_host
         lazylibrarian.HTTP_ROOT = http_root
@@ -296,7 +297,6 @@ class WebInterface(object):
         lazylibrarian.NEWZNAB3 = int(newznab3)
         lazylibrarian.NEWZNAB_HOST3 = newznab_host3
         lazylibrarian.NEWZNAB_API3 = newznab_api3
-
         lazylibrarian.NEWZNAB4 = int(newznab4)
         lazylibrarian.NEWZNAB_HOST4 = newznab_host4
         lazylibrarian.NEWZNAB_API4 = newznab_api4
@@ -394,10 +394,11 @@ class WebInterface(object):
         lazylibrarian.ANDROIDPN_USERNAME = androidpn_username
         lazylibrarian.ANDROIDPN_BROADCAST = int(androidpn_broadcast)
 
-        lazylibrarian.NMA_ENABLED = int(nma_enabled)
+        lazylibrarian.USE_NMA = int(use_nma)
         lazylibrarian.NMA_APIKEY = nma_apikey
         lazylibrarian.NMA_PRIORITY = nma_priority
         lazylibrarian.NMA_ONSNATCH = int(nma_onsnatch)
+        lazylibrarian.NMA_ONDOWNLOAD = int(nma_ondownload)
 
         lazylibrarian.config_write()
 
@@ -1079,6 +1080,16 @@ class WebInterface(object):
             return "Test Pushbullet notice sent successfully"
         else:
             return "Test Pushbullet notice failed"
+
+    @cherrypy.expose
+    def testNMA(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+
+        result = notifiers.nma_notifier.test_notify()
+        if result:
+            return "Test NMA notice sent successfully"
+        else:
+            return "Test NMA notice failed"
 
     def shutdown(self):
         lazylibrarian.config_write()
