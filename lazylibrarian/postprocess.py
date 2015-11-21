@@ -136,9 +136,9 @@ def processDir():
                 else:
                     # update mags
                     controlValueDict = {"Title": book['BookID']}
-                    newValueDict = {"IssueStatus": "Open"}
+                    newValueDict = {"LastAcquired": formatter.today(), "IssueDate": book['AuxInfo'], "IssueStatus": "Open"}
                     myDB.upsert("magazines", newValueDict, controlValueDict)
-
+                    
                 logger.info('Successfully processed: %s' % global_name)
                 notifiers.notify_download(formatter.latinToAscii(global_name) + ' at ' + formatter.now())
             else:
