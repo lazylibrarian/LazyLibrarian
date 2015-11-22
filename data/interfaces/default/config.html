@@ -1114,7 +1114,7 @@
 
             $('#testNMA').click(function () {
                 $.get("testNMA",
-                    function (data) { $('#testNMA-result').html(data); });
+                    function (data) { window.alert(data) });
             });
 
             $("#testAndroidPN").click(function () {
