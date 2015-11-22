@@ -1108,7 +1108,8 @@
 
             $('#testPushbullet').click(function () {
                 $.get("testPushbullet",
-                    function (data) { $('#testPushbullet-result').html(data); });
+                    function (data) { window.alert(data) });
+                    
             });
 
             $('#testNMA').click(function () {

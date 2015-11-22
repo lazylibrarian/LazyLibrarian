@@ -51,10 +51,12 @@ class PushbulletNotifier:
         
         if event == 'LLTest': # special case, return device list
             devices = pb.getDevices()
+            ret = ""
             for device in devices:
-                logger.info("Pushbullet: %s, %s" % (device["nickname"], device["iden"]))
+                logger.info("Pushbullet: %s [%s]" % (device["nickname"], device["iden"]))
+                ret += "\nPushbullet: %s [%s]" % (device["nickname"], device["iden"])
             push = pb.pushNote(pushbullet_deviceid, str(event), str(message))
-            return devices
+            return ret
         else:
             push = pb.pushNote(pushbullet_deviceid, str(event), str(message))
             return push
@@ -75,8 +77,7 @@ class PushbulletNotifier:
 
         logger.debug("Pushbullet: Sending notification " + str(message))
 
-        self._sendPushbullet(message, event, pushbullet_token, pushbullet_deviceid)
-        return True
+        return self._sendPushbullet(message, event, pushbullet_token, pushbullet_deviceid)
 
 #
 # Public functions

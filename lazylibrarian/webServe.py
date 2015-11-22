@@ -1077,9 +1077,9 @@ class WebInterface(object):
 
         result = notifiers.pushbullet_notifier.test_notify()
         if result:
-            return "Test Pushbullet notice sent successfully"
+            return "successful\n%s" % result
         else:
-            return "Test Pushbullet notice failed"
+            return "failed"
 
     @cherrypy.expose
     def testNMA(self):
