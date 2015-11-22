@@ -14,7 +14,7 @@
 import lib.simplejson as json
 import lib.requests as requests
 #import websocket
-from requests.auth import HTTPBasicAuth
+from lib.requests.auth import HTTPBasicAuth
 #from websocket import create_connection
 
 HOST = "https://api.pushbullet.com/v2"
