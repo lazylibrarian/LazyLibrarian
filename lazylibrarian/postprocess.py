@@ -93,7 +93,9 @@ def processDir():
             dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
             dest_path = formatter.latinToAscii(formatter.replace_all(dest_path, dic))
             dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(lazylibrarian.SYS_ENCODING)
-
+            logger.debug("dest_path = %s %s" % (type(dest_path), formatter.to_str(dest_path))
+            logger.debug("pp_path = %s %s" % (type(pp_path), formatter.to_str(pp_path))
+            
             processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name, book['BookID'])
 
             if processBook:
