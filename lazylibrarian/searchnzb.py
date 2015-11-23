@@ -3,6 +3,7 @@ import threading
 #import urllib
 import urllib2
 import os
+import shutil
 import re
 
 #from xml.etree import ElementTree
@@ -39,9 +40,17 @@ def search_nzb_book(books=None, mags=None):
         searchbooks = myDB.select('SELECT BookID, AuthorName, Bookname from books WHERE Status="Wanted"')
 
         # Clear cache
-        if os.path.exists(".ProviderCache"):
-            for f in os.listdir(".ProviderCache"):
-                os.unlink("%s/%s" % (".ProviderCache", f))
+        providercache = os.path.join(lazylibrarian.DATADIR, ".ProviderCache")
+        if os.path.exists(providercache):
+            try:
+                shutil.rmtree(providercache)
+                os.mkdir(providercache)
+            except OSError, e:
+                logger.info('Failed to clear cache: ' + str(e))
+            
+        #if os.path.exists(".ProviderCache"):
+        #    for f in os.listdir(".ProviderCache"):
+        #        os.unlink("%s/%s" % (".ProviderCache", f))
 
         # Clearing throttling timeouts
         t = SimpleCache.ThrottlingProcessor()
@@ -145,7 +154,7 @@ def search_nzb_book(books=None, mags=None):
                             TORDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
                         else:
                             NZBDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
-                        notifiers.notify_snatch(nzbTitle + ' at ' + formatter.now())
+                        notifiers.notify_snatch(formatter.latinToAscii(nzbTitle) + ' at ' + formatter.now())
                     break
             if addedCounter == 0:
                 logger.info("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")

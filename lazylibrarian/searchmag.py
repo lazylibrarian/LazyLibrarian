@@ -235,11 +235,13 @@ def search_magazines(mags=None):
                             control_date = time.strftime("%Y-%m-%d", time.localtime(start_time))
 
                         # only grab a copy if it's newer than the most recent we have, or newer than a month ago if we have none
-                        # TODO we should maybe store frequency in the table too - would allow us to recreate the table on a scan
-                        # similar to importing a book library. Also need number of seeders collecting and storing for torznab
+                        # TODO we should maybe store frequency somewhere too - would allow us to recreate the table on a scan
+                        # similar to importing a book library, but not in the database in case starting from scratch.
+                        # Could also store number of seeders for torrents, but this changes all the time??
                         comp_date = formatter.datecompare(newdatish, control_date)
                         if comp_date > 0:
-                            myDB.upsert("magazines", {"LastAcquired": nzbdate, "IssueDate": newdatish}, {"Title": bookid})
+                            # Moved this - Should probably only upsert when downloaded and processed in case snatch fails
+                            #myDB.upsert("magazines", {"LastAcquired": nzbdate, "IssueDate": newdatish}, {"Title": bookid})
                             maglist.append({
                                 'bookid': bookid,
                                     'nzbprov': nzbprov,
@@ -258,13 +260,13 @@ def search_magazines(mags=None):
                         bad_regex = bad_regex + 1
 
             logger.info('Found %s results for %s.  %s are new, %s are old, %s fail date, %s fail name matching' % (total_nzbs, bookid, new_date, old_date, bad_date, bad_regex))
-            
-            for items in maglist:
-                if items['nzbmode'] == "torznab":
-                    TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-                elif items['nzbmode'] == "torrent":
-                    TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-                else:
-                    NZBDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-                notifiers.notify_snatch(formatter.latinToAscii(items['nzbtitle']) + ' at ' + formatter.now())
+             
+    for items in maglist:
+        if items['nzbmode'] == "torznab":
+            TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+        elif items['nzbmode'] == "torrent":
+            TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+        else:
+            NZBDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+        notifiers.notify_snatch(formatter.latinToAscii(items['nzbtitle']) + ' at ' + formatter.now())
 

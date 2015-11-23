@@ -3,6 +3,7 @@ import threading
 #import urllib
 import urllib2
 import os
+import shutil
 import re
 #import sys
 from base64 import b16encode, b32decode
@@ -43,9 +44,13 @@ def search_tor_book(books=None, mags=None):
         searchbooks = myDB.select('SELECT BookID, AuthorName, Bookname from books WHERE Status="Wanted"')
 
         # Clear cache
-        if os.path.exists(".ProviderCache"):
-            for f in os.listdir(".ProviderCache"):
-                os.unlink("%s/%s" % (".ProviderCache", f))
+        providercache = os.path.join(lazylibrarian.DATADIR, ".ProviderCache")
+        if os.path.exists(providercache):
+            try:
+                shutil.rmtree(providercache)
+                os.mkdir(providercache)
+            except OSError, e:
+                logger.info('Failed to clear cache: ' + str(e))
 
         # Clearing throttling timeouts
         t = SimpleCache.ThrottlingProcessor()
@@ -140,7 +145,7 @@ def search_tor_book(books=None, mags=None):
                     snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' % bookid).fetchone()
                     if not snatchedbooks:
                         TORDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
-                        notifiers.notify_snatch(tor_Title + ' at ' + formatter.now())
+                        notifiers.notify_snatch(formatter.latinToAscii(tor_Title) + ' at ' + formatter.now())
                     break
             if addedCounter == 0:
                 logger.info("No torrent's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")

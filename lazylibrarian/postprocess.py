@@ -9,7 +9,7 @@ from urllib import FancyURLopener
 
 import lazylibrarian
 
-from lazylibrarian import database, logger, formatter, notifiers
+from lazylibrarian import database, logger, formatter, notifiers, common
 
 
 def processDir():
@@ -136,11 +136,11 @@ def processDir():
                 else:
                     # update mags
                     controlValueDict = {"Title": book['BookID']}
-                    newValueDict = {"IssueStatus": "Open"}
+                    newValueDict = {"LastAcquired": formatter.today(), "IssueDate": book['AuxInfo'], "IssueStatus": "Open"}
                     myDB.upsert("magazines", newValueDict, controlValueDict)
-
-                logger.info('Successfully processed: %s' % (global_name))
-                notifiers.notify_download(global_name + ' at ' + formatter.now())
+                    
+                logger.info('Successfully processed: %s' % global_name)
+                notifiers.notify_download(formatter.latinToAscii(global_name) + ' at ' + formatter.now())
             else:
                 logger.error('Postprocessing for %s has failed. Warning - AutoAdd will be repeated' % global_name)
 
@@ -228,6 +228,14 @@ def processDir():
 
 
 def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, book_id=None):
+
+    logger.debug("dest_path = %s %s" % (type(dest_path), common.to_str(dest_path)))
+    logger.debug("pp_path = %s %s" % (type(pp_path), common.to_str(pp_path)))
+    # user reported a unicode exception in shutil.move but I can't reproduce it.
+    # Can't change characters by stripping accents as filename already exists with them.
+    # Maybe just need to make sure pp_path is encoded utf-8?
+    # alternatively, use shutil.copytree followed by shutil.rmtree?? 
+    pp_path = pp_path.encode(lazylibrarian.SYS_ENCODING)
 
     try:
         if not os.path.exists(dest_path):

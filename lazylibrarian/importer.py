@@ -1,5 +1,5 @@
 #import time
-#import os
+import os
 import threading
 
 import lazylibrarian
@@ -11,6 +11,7 @@ from lazylibrarian.gb import GoogleBooks
 def addAuthorToDB(authorname=None, refresh=False):
     threading.currentThread().name = "DBIMPORT"
     #type = 'author'
+
     myDB = database.DBConnection()
 
     GR = GoodReads(authorname)

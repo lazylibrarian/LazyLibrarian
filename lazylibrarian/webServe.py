@@ -1,4 +1,5 @@
 import os
+import shutil
 import cherrypy
 #import urllib
 from cherrypy.lib.static import serve_file
@@ -72,141 +73,142 @@ class WebInterface(object):
         status_list = ['Skipped', 'Wanted', 'Open', 'Ignored']
         config = {
             "http_host":        lazylibrarian.HTTP_HOST,
-                    "http_root":	lazylibrarian.HTTP_ROOT,
-                    "http_user":        lazylibrarian.HTTP_USER,
-                    "http_port":        lazylibrarian.HTTP_PORT,
-                    "http_pass":        lazylibrarian.HTTP_PASS,
-                    "http_look":        lazylibrarian.HTTP_LOOK,
-                    "http_look_list":   http_look_list,
-                    "match_ratio":      lazylibrarian.MATCH_RATIO,
-                    "launch_browser":   checked(lazylibrarian.LAUNCH_BROWSER),
-                    "proxy_host":	lazylibrarian.PROXY_HOST,
-                    "proxy_type":	lazylibrarian.PROXY_TYPE,
-                    "logdir":          lazylibrarian.LOGDIR,
-                    "imp_onlyisbn": 	checked(lazylibrarian.IMP_ONLYISBN),
-                    "imp_singlebook": 	checked(lazylibrarian.IMP_SINGLEBOOK),
-                    "imp_preflang":     lazylibrarian.IMP_PREFLANG,
-                    "imp_monthlang":     lazylibrarian.IMP_MONTHLANG,
-                    "imp_autoadd":      lazylibrarian.IMP_AUTOADD,
-                    "sab_host":         lazylibrarian.SAB_HOST,
-                    "sab_port":         lazylibrarian.SAB_PORT,
-                    "sab_subdir":       lazylibrarian.SAB_SUBDIR,
-                    "sab_api":          lazylibrarian.SAB_API,
-                    "sab_user":         lazylibrarian.SAB_USER,
-                    "sab_pass":         lazylibrarian.SAB_PASS,
-                    "nzbget_host":      lazylibrarian.NZBGET_HOST,
-                    "nzbget_user":      lazylibrarian.NZBGET_USER,
-                    "nzbget_pass":      lazylibrarian.NZBGET_PASS,
-                    "nzbget_cat":       lazylibrarian.NZBGET_CATEGORY,
-                    "nzbget_priority":  lazylibrarian.NZBGET_PRIORITY,
-                    "destination_copy": checked(lazylibrarian.DESTINATION_COPY),
-                    "destination_dir":  lazylibrarian.DESTINATION_DIR,
-                    "download_dir":     lazylibrarian.DOWNLOAD_DIR,
-                    "sab_cat":          lazylibrarian.SAB_CAT,
-                    "usenet_retention": lazylibrarian.USENET_RETENTION,
-                    "nzb_blackholedir": lazylibrarian.NZB_BLACKHOLEDIR,
-                    "torrent_dir":      lazylibrarian.TORRENT_DIR,
-                    "numberofseeders":  lazylibrarian.NUMBEROFSEEDERS,
-                    "use_newznab0":    checked(lazylibrarian.NEWZNAB0),
-                    "newznab_host0":    lazylibrarian.NEWZNAB_HOST0,
-                    "newznab_api0":     lazylibrarian.NEWZNAB_API0,
-                    "use_newznab1":    checked(lazylibrarian.NEWZNAB1),
-                    "newznab_host1":    lazylibrarian.NEWZNAB_HOST1,
-                    "newznab_api1":     lazylibrarian.NEWZNAB_API1,
-                    "use_newznab2":    checked(lazylibrarian.NEWZNAB2),
-                    "newznab_host2":   lazylibrarian.NEWZNAB_HOST2,
-                    "newznab_api2":    lazylibrarian.NEWZNAB_API2,
-                    "use_newznab3":    checked(lazylibrarian.NEWZNAB3),
-                    "newznab_host3":   lazylibrarian.NEWZNAB_HOST3,
-                    "newznab_api3":    lazylibrarian.NEWZNAB_API3,
-                    "use_newznab4":    checked(lazylibrarian.NEWZNAB4),
-                    "newznab_host4":   lazylibrarian.NEWZNAB_HOST4,
-                    "newznab_api4":    lazylibrarian.NEWZNAB_API4,
-                    "use_torznab0":    checked(lazylibrarian.TORZNAB0),
-                    "torznab_host0":   lazylibrarian.TORZNAB_HOST0,
-                    "torznab_api0":    lazylibrarian.TORZNAB_API0,
-                    "use_torznab1":    checked(lazylibrarian.TORZNAB1),
-                    "torznab_host1":   lazylibrarian.TORZNAB_HOST1,
-                    "torznab_api1":    lazylibrarian.TORZNAB_API1,
-                    "use_torznab2":    checked(lazylibrarian.TORZNAB2),
-                    "torznab_host2":   lazylibrarian.TORZNAB_HOST2,
-                    "torznab_api2":    lazylibrarian.TORZNAB_API2,
-                    "use_torznab3":    checked(lazylibrarian.TORZNAB3),
-                    "torznab_host3":   lazylibrarian.TORZNAB_HOST3,
-                    "torznab_api3":    lazylibrarian.TORZNAB_API3,
-                    "use_torznab4":    checked(lazylibrarian.TORZNAB4),
-                    "torznab_host4":   lazylibrarian.TORZNAB_HOST4,
-                    "torznab_api4":    lazylibrarian.TORZNAB_API4,
-                    "use_newzbin":     checked(lazylibrarian.NEWZBIN),
-                    "newzbin_uid":     lazylibrarian.NEWZBIN_UID,
-                    "newzbin_pass":    lazylibrarian.NEWZBIN_PASS,
-                    "use_kat":         checked(lazylibrarian.KAT),
-                    "kat_host": 	lazylibrarian.KAT_HOST,
-                    "search_interval":       int(lazylibrarian.SEARCH_INTERVAL),
-                    "scan_interval":         int(lazylibrarian.SCAN_INTERVAL),
-                    "versioncheck_interval": int(lazylibrarian.VERSIONCHECK_INTERVAL),
-                    "full_scan":	      checked(lazylibrarian.FULL_SCAN),
-                    "add_author":	      checked(lazylibrarian.ADD_AUTHOR),
-                    "notfound_status":	      lazylibrarian.NOTFOUND_STATUS,
-                    "newbook_status":	      lazylibrarian.NEWBOOK_STATUS,
-                    "status_list":	      status_list,
-                    "ebook_dest_folder":      lazylibrarian.EBOOK_DEST_FOLDER,
-                    "ebook_dest_file":        lazylibrarian.EBOOK_DEST_FILE,
-                    "mag_dest_folder":        lazylibrarian.MAG_DEST_FOLDER,
-                    "mag_dest_file":          lazylibrarian.MAG_DEST_FILE,
-                    "mag_relative":    	      checked(lazylibrarian.MAG_RELATIVE),
-                    "use_twitter":           checked(lazylibrarian.USE_TWITTER),
-                    "twitter_notify_onsnatch":       checked(lazylibrarian.TWITTER_NOTIFY_ONSNATCH),
-                    "twitter_notify_ondownload":     checked(lazylibrarian.TWITTER_NOTIFY_ONDOWNLOAD),
-                    "use_boxcar":                    checked(lazylibrarian.USE_BOXCAR),
-                    "boxcar_notify_onsnatch":        checked(lazylibrarian.BOXCAR_NOTIFY_ONSNATCH),
-                    "boxcar_notify_ondownload":      checked(lazylibrarian.BOXCAR_NOTIFY_ONDOWNLOAD),
-                    "boxcar_token":                  lazylibrarian.BOXCAR_TOKEN,
-                    "use_pushbullet":                 checked(lazylibrarian.USE_PUSHBULLET),
-                    "pushbullet_notify_onsnatch":    checked(lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH),
-                    "pushbullet_notify_ondownload":  checked(lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD),
-                    "pushbullet_token":              lazylibrarian.PUSHBULLET_TOKEN,
-                    "pushbullet_deviceid":           lazylibrarian.PUSHBULLET_DEVICEID,
-                    "use_pushover":                   checked(lazylibrarian.USE_PUSHOVER),
-                    "pushover_onsnatch":              checked(lazylibrarian.PUSHOVER_ONSNATCH),
-                    "pushover_ondownload":            checked(lazylibrarian.PUSHOVER_ONDOWNLOAD),
-                    "pushover_priority":              lazylibrarian.PUSHOVER_PRIORITY,
-                    "pushover_keys":                  lazylibrarian.PUSHOVER_KEYS,
-                    "pushover_apitoken":              lazylibrarian.PUSHOVER_APITOKEN,
-                    "use_androidpn":                  checked(lazylibrarian.USE_ANDROIDPN),
-                    "androidpn_notify_onsnatch":             checked(lazylibrarian.ANDROIDPN_NOTIFY_ONSNATCH),
-                    "androidpn_notify_ondownload":           checked(lazylibrarian.ANDROIDPN_NOTIFY_ONDOWNLOAD),
-                    "androidpn_url":                  lazylibrarian.ANDROIDPN_URL,
-                    "androidpn_username":             lazylibrarian.ANDROIDPN_USERNAME,
-                    "androidpn_broadcast":            checked(lazylibrarian.ANDROIDPN_BROADCAST),
-                    "nma_enabled":		      checked(lazylibrarian.NMA_ENABLED),
-                    "nma_apikey": 		      lazylibrarian.NMA_APIKEY,
-                    "nma_priority": 		      int(lazylibrarian.NMA_PRIORITY),
-                    "nma_onsnatch":                   checked(lazylibrarian.NMA_ONSNATCH),
-                    "ebook_type":                    lazylibrarian.EBOOK_TYPE,
-                    "gr_api":                        lazylibrarian.GR_API,
-                    "gb_api":                        lazylibrarian.GB_API,
-                    "book_api":                      lazylibrarian.BOOK_API,
-                    "use_nzb":                       checked(lazylibrarian.USE_NZB),
-                    "use_tor":                       checked(lazylibrarian.USE_TOR),
-                    "nzb_downloader_sabnzbd":        checked(lazylibrarian.NZB_DOWNLOADER_SABNZBD),
-                    "nzb_downloader_nzbget":         checked(lazylibrarian.NZB_DOWNLOADER_NZBGET),
-                    "nzb_downloader_blackhole":      checked(lazylibrarian.NZB_DOWNLOADER_BLACKHOLE),
-                    "tor_downloader_utorrent":       checked(lazylibrarian.TOR_DOWNLOADER_UTORRENT),
-                    "tor_downloader_transmission":   checked(lazylibrarian.TOR_DOWNLOADER_TRANSMISSION),
-                    "tor_downloader_deluge":         checked(lazylibrarian.TOR_DOWNLOADER_DELUGE),
-                    "tor_downloader_blackhole":      checked(lazylibrarian.TOR_DOWNLOADER_BLACKHOLE),
-                    "utorrent_host":                  lazylibrarian.UTORRENT_HOST,
-                    "utorrent_user":                  lazylibrarian.UTORRENT_USER,
-                    "utorrent_pass":                  lazylibrarian.UTORRENT_PASS,
-                    "utorrent_label":                 lazylibrarian.UTORRENT_LABEL,
-                    "transmission_host":              lazylibrarian.TRANSMISSION_HOST,
-                    "transmission_user":              lazylibrarian.TRANSMISSION_USER,
-                    "transmission_pass":              lazylibrarian.TRANSMISSION_PASS,
-                    "deluge_host":                    lazylibrarian.DELUGE_HOST,
-                    "deluge_port":                    lazylibrarian.DELUGE_PORT,
-                    "deluge_user":                    lazylibrarian.DELUGE_USER,
-                    "deluge_pass":                    lazylibrarian.DELUGE_PASS
+            "http_root":	    lazylibrarian.HTTP_ROOT,
+            "http_user":        lazylibrarian.HTTP_USER,
+            "http_port":        lazylibrarian.HTTP_PORT,
+            "http_pass":        lazylibrarian.HTTP_PASS,
+            "http_look":        lazylibrarian.HTTP_LOOK,
+            "http_look_list":   http_look_list,
+            "match_ratio":      lazylibrarian.MATCH_RATIO,
+            "launch_browser":   checked(lazylibrarian.LAUNCH_BROWSER),
+            "proxy_host":	    lazylibrarian.PROXY_HOST,
+            "proxy_type":	    lazylibrarian.PROXY_TYPE,
+            "logdir":           lazylibrarian.LOGDIR,
+            "imp_onlyisbn": 	checked(lazylibrarian.IMP_ONLYISBN),
+            "imp_singlebook": 	checked(lazylibrarian.IMP_SINGLEBOOK),
+            "imp_preflang":     lazylibrarian.IMP_PREFLANG,
+            "imp_monthlang":    lazylibrarian.IMP_MONTHLANG,
+            "imp_autoadd":      lazylibrarian.IMP_AUTOADD,
+            "sab_host":         lazylibrarian.SAB_HOST,
+            "sab_port":         lazylibrarian.SAB_PORT,
+            "sab_subdir":       lazylibrarian.SAB_SUBDIR,
+            "sab_api":          lazylibrarian.SAB_API,
+            "sab_user":         lazylibrarian.SAB_USER,
+            "sab_pass":         lazylibrarian.SAB_PASS,
+            "nzbget_host":      lazylibrarian.NZBGET_HOST,
+            "nzbget_user":      lazylibrarian.NZBGET_USER,
+            "nzbget_pass":      lazylibrarian.NZBGET_PASS,
+            "nzbget_cat":       lazylibrarian.NZBGET_CATEGORY,
+            "nzbget_priority":  lazylibrarian.NZBGET_PRIORITY,
+            "destination_copy": checked(lazylibrarian.DESTINATION_COPY),
+            "destination_dir":  lazylibrarian.DESTINATION_DIR,
+            "download_dir":     lazylibrarian.DOWNLOAD_DIR,
+            "sab_cat":          lazylibrarian.SAB_CAT,
+            "usenet_retention": lazylibrarian.USENET_RETENTION,
+            "nzb_blackholedir": lazylibrarian.NZB_BLACKHOLEDIR,
+            "torrent_dir":      lazylibrarian.TORRENT_DIR,
+            "numberofseeders":  lazylibrarian.NUMBEROFSEEDERS,
+            "use_newznab0":     checked(lazylibrarian.NEWZNAB0),
+            "newznab_host0":    lazylibrarian.NEWZNAB_HOST0,
+            "newznab_api0":     lazylibrarian.NEWZNAB_API0,
+            "use_newznab1":     checked(lazylibrarian.NEWZNAB1),
+            "newznab_host1":    lazylibrarian.NEWZNAB_HOST1,
+            "newznab_api1":     lazylibrarian.NEWZNAB_API1,
+            "use_newznab2":     checked(lazylibrarian.NEWZNAB2),
+            "newznab_host2":    lazylibrarian.NEWZNAB_HOST2,
+            "newznab_api2":     lazylibrarian.NEWZNAB_API2,
+            "use_newznab3":     checked(lazylibrarian.NEWZNAB3),
+            "newznab_host3":    lazylibrarian.NEWZNAB_HOST3,
+            "newznab_api3":     lazylibrarian.NEWZNAB_API3,
+            "use_newznab4":     checked(lazylibrarian.NEWZNAB4),
+            "newznab_host4":    lazylibrarian.NEWZNAB_HOST4,
+            "newznab_api4":     lazylibrarian.NEWZNAB_API4,
+            "use_torznab0":     checked(lazylibrarian.TORZNAB0),
+            "torznab_host0":    lazylibrarian.TORZNAB_HOST0,
+            "torznab_api0":     lazylibrarian.TORZNAB_API0,
+            "use_torznab1":     checked(lazylibrarian.TORZNAB1),
+            "torznab_host1":    lazylibrarian.TORZNAB_HOST1,
+            "torznab_api1":     lazylibrarian.TORZNAB_API1,
+            "use_torznab2":     checked(lazylibrarian.TORZNAB2),
+            "torznab_host2":    lazylibrarian.TORZNAB_HOST2,
+            "torznab_api2":     lazylibrarian.TORZNAB_API2,
+            "use_torznab3":     checked(lazylibrarian.TORZNAB3),
+            "torznab_host3":    lazylibrarian.TORZNAB_HOST3,
+            "torznab_api3":     lazylibrarian.TORZNAB_API3,
+            "use_torznab4":     checked(lazylibrarian.TORZNAB4),
+            "torznab_host4":    lazylibrarian.TORZNAB_HOST4,
+            "torznab_api4":     lazylibrarian.TORZNAB_API4,
+            "use_newzbin":      checked(lazylibrarian.NEWZBIN),
+            "newzbin_uid":      lazylibrarian.NEWZBIN_UID,
+            "newzbin_pass":     lazylibrarian.NEWZBIN_PASS,
+            "use_kat":          checked(lazylibrarian.KAT),
+            "kat_host": 	    lazylibrarian.KAT_HOST,
+            "search_interval":        int(lazylibrarian.SEARCH_INTERVAL),
+            "scan_interval":          int(lazylibrarian.SCAN_INTERVAL),
+            "versioncheck_interval":  int(lazylibrarian.VERSIONCHECK_INTERVAL),
+            "full_scan":	          checked(lazylibrarian.FULL_SCAN),
+            "add_author":	          checked(lazylibrarian.ADD_AUTHOR),
+            "notfound_status":	      lazylibrarian.NOTFOUND_STATUS,
+            "newbook_status":	      lazylibrarian.NEWBOOK_STATUS,
+            "status_list":	          status_list,
+            "ebook_dest_folder":      lazylibrarian.EBOOK_DEST_FOLDER,
+            "ebook_dest_file":        lazylibrarian.EBOOK_DEST_FILE,
+            "mag_dest_folder":        lazylibrarian.MAG_DEST_FOLDER,
+            "mag_dest_file":          lazylibrarian.MAG_DEST_FILE,
+            "mag_relative":    	      checked(lazylibrarian.MAG_RELATIVE),
+            "use_twitter":            checked(lazylibrarian.USE_TWITTER),
+            "twitter_notify_onsnatch":        checked(lazylibrarian.TWITTER_NOTIFY_ONSNATCH),
+            "twitter_notify_ondownload":      checked(lazylibrarian.TWITTER_NOTIFY_ONDOWNLOAD),
+            "use_boxcar":                     checked(lazylibrarian.USE_BOXCAR),
+            "boxcar_notify_onsnatch":         checked(lazylibrarian.BOXCAR_NOTIFY_ONSNATCH),
+            "boxcar_notify_ondownload":       checked(lazylibrarian.BOXCAR_NOTIFY_ONDOWNLOAD),
+            "boxcar_token":                   lazylibrarian.BOXCAR_TOKEN,
+            "use_pushbullet":                 checked(lazylibrarian.USE_PUSHBULLET),
+            "pushbullet_notify_onsnatch":     checked(lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH),
+            "pushbullet_notify_ondownload":   checked(lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD),
+            "pushbullet_token":               lazylibrarian.PUSHBULLET_TOKEN,
+            "pushbullet_deviceid":            lazylibrarian.PUSHBULLET_DEVICEID,
+            "use_pushover":                   checked(lazylibrarian.USE_PUSHOVER),
+            "pushover_onsnatch":              checked(lazylibrarian.PUSHOVER_ONSNATCH),
+            "pushover_ondownload":            checked(lazylibrarian.PUSHOVER_ONDOWNLOAD),
+            "pushover_priority":              lazylibrarian.PUSHOVER_PRIORITY,
+            "pushover_keys":                  lazylibrarian.PUSHOVER_KEYS,
+            "pushover_apitoken":              lazylibrarian.PUSHOVER_APITOKEN,
+            "use_androidpn":                  checked(lazylibrarian.USE_ANDROIDPN),
+            "androidpn_notify_onsnatch":      checked(lazylibrarian.ANDROIDPN_NOTIFY_ONSNATCH),
+            "androidpn_notify_ondownload":    checked(lazylibrarian.ANDROIDPN_NOTIFY_ONDOWNLOAD),
+            "androidpn_url":                  lazylibrarian.ANDROIDPN_URL,
+            "androidpn_username":             lazylibrarian.ANDROIDPN_USERNAME,
+            "androidpn_broadcast":            checked(lazylibrarian.ANDROIDPN_BROADCAST),
+            "use_nma":		                  checked(lazylibrarian.USE_NMA),
+            "nma_apikey": 		              lazylibrarian.NMA_APIKEY,
+            "nma_priority": 		          int(lazylibrarian.NMA_PRIORITY),
+            "nma_onsnatch":                   checked(lazylibrarian.NMA_ONSNATCH),
+            "nma_ondownload":                 checked(lazylibrarian.NMA_ONDOWNLOAD),
+            "ebook_type":                     lazylibrarian.EBOOK_TYPE,
+            "gr_api":                         lazylibrarian.GR_API,
+            "gb_api":                         lazylibrarian.GB_API,
+            "book_api":                       lazylibrarian.BOOK_API,
+            "use_nzb":                        checked(lazylibrarian.USE_NZB),
+            "use_tor":                        checked(lazylibrarian.USE_TOR),
+            "nzb_downloader_sabnzbd":         checked(lazylibrarian.NZB_DOWNLOADER_SABNZBD),
+            "nzb_downloader_nzbget":          checked(lazylibrarian.NZB_DOWNLOADER_NZBGET),
+            "nzb_downloader_blackhole":       checked(lazylibrarian.NZB_DOWNLOADER_BLACKHOLE),
+            "tor_downloader_utorrent":        checked(lazylibrarian.TOR_DOWNLOADER_UTORRENT),
+            "tor_downloader_transmission":    checked(lazylibrarian.TOR_DOWNLOADER_TRANSMISSION),
+            "tor_downloader_deluge":          checked(lazylibrarian.TOR_DOWNLOADER_DELUGE),
+            "tor_downloader_blackhole":       checked(lazylibrarian.TOR_DOWNLOADER_BLACKHOLE),
+            "utorrent_host":                  lazylibrarian.UTORRENT_HOST,
+            "utorrent_user":                  lazylibrarian.UTORRENT_USER,
+            "utorrent_pass":                  lazylibrarian.UTORRENT_PASS,
+            "utorrent_label":                 lazylibrarian.UTORRENT_LABEL,
+            "transmission_host":              lazylibrarian.TRANSMISSION_HOST,
+            "transmission_user":              lazylibrarian.TRANSMISSION_USER,
+            "transmission_pass":              lazylibrarian.TRANSMISSION_PASS,
+            "deluge_host":                    lazylibrarian.DELUGE_HOST,
+            "deluge_port":                    lazylibrarian.DELUGE_PORT,
+            "deluge_user":                    lazylibrarian.DELUGE_USER,
+            "deluge_pass":                    lazylibrarian.DELUGE_PASS
         }
         return serve_template(templatename="config.html", title="Settings", config=config)
     config.exposed = True
@@ -232,7 +234,7 @@ class WebInterface(object):
                      use_pushbullet=0, pushbullet_notify_onsnatch=0, pushbullet_notify_ondownload=0, pushbullet_token=None, pushbullet_deviceid=None,
                      use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys=None, pushover_apitoken=None, pushover_ondownload=0,
                      use_androidpn=0, androidpn_notify_onsnatch=0, androidpn_notify_ondownload=0, androidpn_url=None, androidpn_username=None, androidpn_broadcast=1,
-                     nma_enabled=False, nma_apikey=None, nma_priority=0, nma_onsnatch=0):
+                     use_nma=0, nma_apikey=None, nma_priority=0, nma_onsnatch=0, nma_ondownload=0):
 
         lazylibrarian.HTTP_HOST = http_host
         lazylibrarian.HTTP_ROOT = http_root
@@ -296,7 +298,6 @@ class WebInterface(object):
         lazylibrarian.NEWZNAB3 = int(newznab3)
         lazylibrarian.NEWZNAB_HOST3 = newznab_host3
         lazylibrarian.NEWZNAB_API3 = newznab_api3
-
         lazylibrarian.NEWZNAB4 = int(newznab4)
         lazylibrarian.NEWZNAB_HOST4 = newznab_host4
         lazylibrarian.NEWZNAB_API4 = newznab_api4
@@ -386,7 +387,7 @@ class WebInterface(object):
         lazylibrarian.PUSHOVER_KEYS = pushover_keys
         lazylibrarian.PUSHOVER_APITOKEN = pushover_apitoken
         lazylibrarian.PUSHOVER_PRIORITY = pushover_priority
-
+        
         lazylibrarian.USE_ANDROIDPN = int(use_androidpn)
         lazylibrarian.ANDROIDPN_NOTIFY_ONSNATCH = int(androidpn_notify_onsnatch)
         lazylibrarian.ANDROIDPN_NOTIFY_ONDOWNLOAD = int(androidpn_notify_ondownload)
@@ -394,10 +395,11 @@ class WebInterface(object):
         lazylibrarian.ANDROIDPN_USERNAME = androidpn_username
         lazylibrarian.ANDROIDPN_BROADCAST = int(androidpn_broadcast)
 
-        lazylibrarian.NMA_ENABLED = int(nma_enabled)
+        lazylibrarian.USE_NMA = int(use_nma)
         lazylibrarian.NMA_APIKEY = nma_apikey
         lazylibrarian.NMA_PRIORITY = nma_priority
         lazylibrarian.NMA_ONSNATCH = int(nma_onsnatch)
+        lazylibrarian.NMA_ONDOWNLOAD = int(nma_ondownload)
 
         lazylibrarian.config_write()
 
@@ -527,8 +529,11 @@ class WebInterface(object):
     def clearLog(self):
         # Clear the log
         if os.path.exists(lazylibrarian.LOGDIR):
-            for f in os.listdir(lazylibrarian.LOGDIR):
-                os.unlink("%s/%s" % (lazylibrarian.LOGDIR, f))
+            try:
+                shutil.rmtree(lazylibrarian.LOGDIR)
+                os.mkdir(lazylibrarian.LOGDIR)
+            except OSError, e:
+                logger.info('Failed to clear log: ' + str(e))
         lazylibrarian.LOGLIST = []
         raise cherrypy.HTTPRedirect("logs")
     clearLog.exposed = True
@@ -1069,6 +1074,26 @@ class WebInterface(object):
             return "Test AndroidPN notice sent successfully"
         else:
             return "Test AndroidPN notice failed"
+
+    @cherrypy.expose
+    def testPushbullet(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+
+        result = notifiers.pushbullet_notifier.test_notify()
+        if result:
+            return "Pushbullet notification successful\n%s" % result
+        else:
+            return "Pushbullet notification failed"
+
+    @cherrypy.expose
+    def testNMA(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+
+        result = notifiers.nma_notifier.test_notify()
+        if result:
+            return "Test NMA notice sent successfully"
+        else:
+            return "Test NMA notice failed"
 
     def shutdown(self):
         lazylibrarian.config_write()

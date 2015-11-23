@@ -394,9 +394,9 @@ def LibraryScan(dir=None):
                         words = author.split(',')
                         author = words[1].strip() + ' ' + words[
                             0].strip()  # "forename surname"
-                    author = author.replace('. ', ' ')
-                    author = author.replace('.', ' ')
-                    author = author.replace('  ', ' ')
+                    if author[1] == ' ':        
+                        author = author.replace(' ', '.')
+                        author = author.replace('..', '.')
 
                     # Check if the author exists, and import the author if not,
                     # before starting any complicated book-name matching to save repeating the search
