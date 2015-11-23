@@ -39,9 +39,13 @@ def search_nzb_book(books=None, mags=None):
         searchbooks = myDB.select('SELECT BookID, AuthorName, Bookname from books WHERE Status="Wanted"')
 
         # Clear cache
-        if os.path.exists(".ProviderCache"):
-            for f in os.listdir(".ProviderCache"):
-                os.unlink("%s/%s" % (".ProviderCache", f))
+        providercache = os.path.join(lazylibrarian.DATADIR, ".ProviderCache")
+        if os.path.exists(providercache):
+            shutil.rmtree(providercache)
+            os.mkdir(providercache)
+        #if os.path.exists(".ProviderCache"):
+        #    for f in os.listdir(".ProviderCache"):
+        #        os.unlink("%s/%s" % (".ProviderCache", f))
 
         # Clearing throttling timeouts
         t = SimpleCache.ThrottlingProcessor()

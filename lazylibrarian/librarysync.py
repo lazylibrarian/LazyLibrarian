@@ -180,11 +180,6 @@ def LibraryScan(dir=None):
             dir.decode(lazylibrarian.SYS_ENCODING, 'replace'))
         return
 
-    # Clear cache
-    if os.path.exists(".AuthorCache"):
-        for f in os.listdir(".AuthorCache"):
-            os.unlink("%s/%s" % (".AuthorCache", f))
-
     myDB = database.DBConnection()
 
     myDB.action('drop table if exists stats')
