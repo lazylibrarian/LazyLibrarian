@@ -1,4 +1,5 @@
 import os
+import shutil
 import cherrypy
 #import urllib
 from cherrypy.lib.static import serve_file
@@ -528,8 +529,11 @@ class WebInterface(object):
     def clearLog(self):
         # Clear the log
         if os.path.exists(lazylibrarian.LOGDIR):
-            for f in os.listdir(lazylibrarian.LOGDIR):
-                os.unlink("%s/%s" % (lazylibrarian.LOGDIR, f))
+            try:
+                shutil.rmtree(lazylibrarian.LOGDIR)
+                os.mkdir(lazylibrarian.LOGDIR)
+            except OSError, e:
+                logger.info('Failed to clear log: ' + str(e))
         lazylibrarian.LOGLIST = []
         raise cherrypy.HTTPRedirect("logs")
     clearLog.exposed = True
