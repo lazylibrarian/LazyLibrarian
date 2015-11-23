@@ -93,9 +93,7 @@ def processDir():
             dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
             dest_path = formatter.latinToAscii(formatter.replace_all(dest_path, dic))
             dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(lazylibrarian.SYS_ENCODING)
-            logger.debug("dest_path = %s %s" % (type(dest_path), common.to_str(dest_path)))
-            logger.debug("pp_path = %s %s" % (type(pp_path), common.to_str(pp_path)))
-            
+
             processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name, book['BookID'])
 
             if processBook:
@@ -230,6 +228,14 @@ def processDir():
 
 
 def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, book_id=None):
+
+    logger.debug("dest_path = %s %s" % (type(dest_path), common.to_str(dest_path)))
+    logger.debug("pp_path = %s %s" % (type(pp_path), common.to_str(pp_path)))
+    # user reported a unicode exception in shutil.move but I can't reproduce it.
+    # Can't change characters by stripping accents as filename already exists with them.
+    # Maybe just need to make sure pp_path is encoded utf-8?
+    # alternatively, use shutil.copytree followed by shutil.rmtree?? 
+    pp_path = pp_path.encode(lazylibrarian.SYS_ENCODING)
 
     try:
         if not os.path.exists(dest_path):
