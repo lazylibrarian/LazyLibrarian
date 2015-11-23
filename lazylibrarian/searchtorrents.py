@@ -3,6 +3,7 @@ import threading
 #import urllib
 import urllib2
 import os
+import shutil
 import re
 #import sys
 from base64 import b16encode, b32decode
@@ -45,8 +46,11 @@ def search_tor_book(books=None, mags=None):
         # Clear cache
         providercache = os.path.join(lazylibrarian.DATADIR, ".ProviderCache")
         if os.path.exists(providercache):
-            shutil.rmtree(providercache)
-            os.mkdir(providercache)
+            try:
+                shutil.rmtree(providercache)
+                os.mkdir(providercache)
+            except OSError, e:
+                logger.info('Failed to clear cache: ' + str(e))
 
         # Clearing throttling timeouts
         t = SimpleCache.ThrottlingProcessor()

@@ -3,6 +3,7 @@ import threading
 #import urllib
 import urllib2
 import os
+import shutil
 import re
 
 #from xml.etree import ElementTree
@@ -41,8 +42,12 @@ def search_nzb_book(books=None, mags=None):
         # Clear cache
         providercache = os.path.join(lazylibrarian.DATADIR, ".ProviderCache")
         if os.path.exists(providercache):
-            shutil.rmtree(providercache)
-            os.mkdir(providercache)
+            try:
+                shutil.rmtree(providercache)
+                os.mkdir(providercache)
+            except OSError, e:
+                logger.info('Failed to clear cache: ' + str(e))
+            
         #if os.path.exists(".ProviderCache"):
         #    for f in os.listdir(".ProviderCache"):
         #        os.unlink("%s/%s" % (".ProviderCache", f))
