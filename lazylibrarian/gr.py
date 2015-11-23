@@ -33,6 +33,11 @@ class GoodReads:
         threading.currentThread().name = "GR-SEARCH"
         resultlist = []
         api_hits = 0
+        # Goodreads doesn't like initials followed by spaces, eg "M L Hamilton", needs "M. L. Hamilton" or "M.L.Hamilton"
+        # but DOES need spaces if not initials eg "Tom.Holt" fails, but "Tom Holt" works
+        if authorname[1] == ' ':
+            authorname = authorname.replace(' ', '.')
+            authorname = authorname.replace('..', '.')
 
         url = urllib.quote_plus(authorname.encode('utf-8'))
         set_url = 'http://www.goodreads.com/search.xml?q=' + url + '&' + urllib.urlencode(self.params)
@@ -148,9 +153,11 @@ class GoodReads:
 
     def find_author_id(self):
         author = self.name
-        author = author.replace('. ', ' ')
-        author = author.replace('.', ' ')
-        author = author.replace('  ', ' ')
+        # Goodreads doesn't like initials followed by spaces, eg "M L Hamilton", needs "M. L. Hamilton" or "M.L.Hamilton"
+        # but DOES need spaces if not initials eg "Tom.Holt" fails, but "Tom Holt" works
+        if author[1] == ' ':
+            author = author.replace(' ', '.')
+            author = author.replace('..', '.')
         URL = 'http://www.goodreads.com/api/author_url/' + urllib.quote(author) + '?' + urllib.urlencode(self.params)
         logger.debug("Searching for author with name: %s" % author)
 
