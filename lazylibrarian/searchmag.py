@@ -240,8 +240,9 @@ def search_magazines(mags=None):
                         # Could also store number of seeders for torrents, but this changes all the time??
                         comp_date = formatter.datecompare(newdatish, control_date)
                         if comp_date > 0:
-                            # Moved this - Should probably only upsert when downloaded and processed in case snatch fails
-                            #myDB.upsert("magazines", {"LastAcquired": nzbdate, "IssueDate": newdatish}, {"Title": bookid})
+                            # Should probably only upsert when downloaded and processed in case snatch fails
+                            # but if we don't, if we have multiple providers we can download lots of copies of the same issue from different places
+                            myDB.upsert("magazines", {"LastAcquired": nzbdate, "IssueDate": newdatish}, {"Title": bookid})
                             maglist.append({
                                 'bookid': bookid,
                                     'nzbprov': nzbprov,
@@ -261,12 +262,12 @@ def search_magazines(mags=None):
 
             logger.info('Found %s results for %s.  %s are new, %s are old, %s fail date, %s fail name matching' % (total_nzbs, bookid, new_date, old_date, bad_date, bad_regex))
              
-    for items in maglist:
-        if items['nzbmode'] == "torznab":
-            TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-        elif items['nzbmode'] == "torrent":
-            TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-        else:
-            NZBDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-        notifiers.notify_snatch(formatter.latinToAscii(items['nzbtitle']) + ' at ' + formatter.now())
-
+            for items in maglist:
+                if items['nzbmode'] == "torznab":
+                    TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+                elif items['nzbmode'] == "torrent":
+                    TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+                else:
+                    NZBDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+                notifiers.notify_snatch(formatter.latinToAscii(items['nzbtitle']) + ' at ' + formatter.now())
+            maglist = []
