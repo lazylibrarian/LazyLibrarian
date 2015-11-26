@@ -20,7 +20,7 @@ from lazylibrarian.searchnzb import NZBDownloadMethod
 
 def search_magazines(mags=None):
 # produce a list of magazines to search for, tor, nzb, torznab
-    maglist = []
+
     myDB = database.DBConnection()
     searchlist = []
 
@@ -88,6 +88,9 @@ def search_magazines(mags=None):
             old_date = 0
             total_nzbs = 0
             new_date = 0
+            to_snatch = 0
+            maglist = []
+            issues = []
             for nzb in resultlist:
                 total_nzbs = total_nzbs + 1
                 bookid = nzb['bookid']
@@ -240,17 +243,24 @@ def search_magazines(mags=None):
                         # Could also store number of seeders for torrents, but this changes all the time??
                         comp_date = formatter.datecompare(newdatish, control_date)
                         if comp_date > 0:
-                            # Moved this - Should probably only upsert when downloaded and processed in case snatch fails
+                            # Should probably only upsert when downloaded and processed in case snatch fails
+                            # keep track of what we're going to download so we don't download dupes
                             #myDB.upsert("magazines", {"LastAcquired": nzbdate, "IssueDate": newdatish}, {"Title": bookid})
-                            maglist.append({
-                                'bookid': bookid,
-                                    'nzbprov': nzbprov,
-                                    'nzbtitle': nzbtitle,
-                                    'nzburl': nzburl,
-                                    'nzbmode': nzbmode
-                            })
-                            logger.debug('This issue of %s is new, downloading' % nzbtitle_formatted)
                             new_date = new_date + 1
+                            issue = bookid + ',' + newdatish
+                            if issue not in issues:
+                                maglist.append({
+                                    'bookid': bookid,
+                                        'nzbprov': nzbprov,
+                                        'nzbtitle': nzbtitle,
+                                        'nzburl': nzburl,
+                                        'nzbmode': nzbmode
+                                })
+                                logger.debug('This issue of %s is new, downloading' % nzbtitle_formatted)
+                                to_snatch  = to_snatch + 1
+                                issues.append(issue)
+                            else:
+                                logger.debug('This issue of %s is already flagged for download' % issue) 
                         else:
                             if newdatish != "1970-01-01":  # this is our fake date for ones we can't decipher
                                 logger.debug('This issue of %s is old; skipping.' % nzbtitle_formatted)
@@ -260,13 +270,15 @@ def search_magazines(mags=None):
                         bad_regex = bad_regex + 1
 
             logger.info('Found %s results for %s.  %s are new, %s are old, %s fail date, %s fail name matching' % (total_nzbs, bookid, new_date, old_date, bad_date, bad_regex))
+            logger.info ("%s, %s issues to download" % (bookid, to_snatch))
              
-    for items in maglist:
-        if items['nzbmode'] == "torznab":
-            TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-        elif items['nzbmode'] == "torrent":
-            TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-        else:
-            NZBDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-        notifiers.notify_snatch(formatter.latinToAscii(items['nzbtitle']) + ' at ' + formatter.now())
-
+            for items in maglist:
+                if items['nzbmode'] == "torznab":
+                    TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+                elif items['nzbmode'] == "torrent":
+                    TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+                else:
+                    NZBDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+                notifiers.notify_snatch(formatter.latinToAscii(items['nzbtitle']) + ' at ' + formatter.now())
+            maglist = []
+    logger.info("Search for magazines complete")

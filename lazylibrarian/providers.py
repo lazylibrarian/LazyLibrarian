@@ -62,7 +62,7 @@ def KAT(book=None):
 
     if data:
 
-        logger.info(u'Parsing results from <a href="%s">KAT</a>' % searchURL)
+        logger.debug(u'Parsing results from <a href="%s">KAT</a>' % searchURL)
 
         d = feedparser.parse(data)
 
@@ -71,7 +71,7 @@ def KAT(book=None):
             pass
 
         else:
-            logger.info(u"Found %i results from %s for %s" % (len(d.entries), provider, book['searchterm']))
+            logger.debug(u"Found %i results from %s for %s, checking seeders" % (len(d.entries), provider, book['searchterm']))
             for item in d.entries:
                 try:
                     #rightformat = True
@@ -96,7 +96,8 @@ def KAT(book=None):
 
                 except Exception, e:
                     logger.error(u"An unknown error occurred in the KAT parser: %s" % e)
-
+    
+    logger.info(u"Found %i results from %s for %s" % (len(results), provider, book['searchterm']))        
     return results
 
 #

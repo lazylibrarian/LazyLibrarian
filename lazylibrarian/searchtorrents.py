@@ -50,7 +50,7 @@ def search_tor_book(books=None, mags=None):
                 shutil.rmtree(providercache)
                 os.mkdir(providercache)
             except OSError, e:
-                logger.info('Failed to clear cache: ' + str(e))
+                logger.error('Failed to clear cache: ' + str(e))
 
         # Clearing throttling timeouts
         t = SimpleCache.ThrottlingProcessor()
@@ -198,7 +198,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                 return
 
         if (lazylibrarian.TOR_DOWNLOADER_BLACKHOLE):
-            logger.info('Torrent blackhole')
+            logger.debug('Torrent blackhole')
             tor_title = common.removeDisallowedFilenameChars(tor_title)
             tor_name = str.replace(str(tor_title), ' ', '_')
             if tor_url.startswith('magnet'):
@@ -213,12 +213,12 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             download = True
 
         if (lazylibrarian.TOR_DOWNLOADER_UTORRENT):
-            logger.info('Utorrent')
+            logger.debug('Utorrent')
             hash = CalcTorrentHash(torrent)
             download = utorrent.addTorrent(tor_url, hash)
 
         if (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
-            logger.info('Transmission')
+            logger.debug('Transmission')
             download = transmission.addTorrent(tor_url)
 
         if (lazylibrarian.TOR_DOWNLOADER_DELUGE):
@@ -228,7 +228,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                                      lazylibrarian.DELUGE_PASS)
             client.connect()
             download = client.call('add_torrent_url', tor_url, {"name": tor_title})
-            logger.info('Deluge return value: %s' % download)
+            logger.debug('Deluge return value: %s' % download)
 
     else:
         logger.error('No torrent download method is enabled, check config.')

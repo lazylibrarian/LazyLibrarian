@@ -62,7 +62,7 @@ class CacheHandler(urllib2.BaseHandler):
 
     def __init__(self, cacheLocation):
         """The location of the cache directory"""
-        self.cacheLocation = lazylibrarian.DATADIR + os.sep + cacheLocation
+        self.cacheLocation = os.path.join(lazylibrarian.CACHEDIR, cacheLocation)
         if not os.path.exists(self.cacheLocation):
             os.mkdir(self.cacheLocation)
 
