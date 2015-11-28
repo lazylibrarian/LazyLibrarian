@@ -13,13 +13,18 @@ from lib.mobi import Mobi
 def get_book_info(fname):
     # only handles epub, mobi and opf for now,
     # for pdf see below
+    res = {}
+    if not '.' in fname:
+        return res
     words = fname.split('.')
     extn = words[len(words) - 1]
 
     if extn == "mobi":
-        book = Mobi(fname)
-        book.parse()
-        res = {}
+        try:
+            book = Mobi(fname)
+            book.parse()
+        except:
+            return res
         res['creator'] = book.author()
         res['title'] = book.title()
         res['language'] = book.language()
@@ -49,6 +54,8 @@ def get_book_info(fname):
         tree = ElementTree.fromstring(txt)
         n = 0
         cfname = ""
+        if not tree:
+            return res
         while n < len(tree[0]):
             att = str(tree[0][n].attrib)
             if 'full-path' in att:
@@ -67,7 +74,8 @@ def get_book_info(fname):
             return ""
 
     # repackage the data
-    res = {}
+    if not tree:
+        return res
     n = 0
     while n < len(tree[0]):
         tag = str(tree[0][n].tag).split('}')[1]
@@ -289,42 +297,40 @@ def LibraryScan(dir=None):
                     logger.info(
                         "[%s] Now scanning subdirectory %s" %
                         (dir.decode(lazylibrarian.SYS_ENCODING, 'replace'), subdirectory.decode(lazylibrarian.SYS_ENCODING, 'replace')))
+                    
+                    metafile = os.path.join(r, "metadata.opf").encode(lazylibrarian.SYS_ENCODING)
                     try:
-                        metafile = os.path.join(
-                            r,
-                            "metadata.opf").encode(
-                                lazylibrarian.SYS_ENCODING)
                         res = get_book_info(metafile)
-                        if 'title' in res and 'creator' in res:  # this is the minimum we need
-                            book = res['title']
-                            author = res['creator']
-                            if 'language' in res:
-                                language = res['language']
-                            else:
-                                language = ""
-                            if 'identifier' in res:
-                                isbn = res['identifier']
-                            else:
-                                isbn = ""
-                            match = 1
-                            logger.debug(
-                                "file meta [%s] [%s] [%s] [%s]" %
-                                (isbn, language, author, book))
-                        else:
-                            logger.debug("file meta incomplete in %s" % r)
                     except:
-                        logger.debug("No metadata file in %s" % r)
+                        res = {}
+                    if 'title' in res and 'creator' in res:  # this is the minimum we need
+                        book = res['title']
+                        author = res['creator']
+                        if 'language' in res:
+                            language = res['language']
+                        else:
+                            language = ""
+                        if 'identifier' in res:
+                            isbn = res['identifier']
+                        else:
+                            isbn = ""
+                        match = 1
+                        logger.debug(
+                            "file meta [%s] [%s] [%s] [%s]" %
+                            (isbn, language, author, book))
+                    else:
+                        logger.debug("File meta incomplete in %s" % metafile)
 
                     if not match:
                         # it's a book, but no external metadata found
                         # if it's an epub or a mobi we can try to read metadata
                         # from it
                         if (extn == "epub") or (extn == "mobi"):
-                            book_file = os.path.join(
-                                r,
-                                files).encode(
-                                    lazylibrarian.SYS_ENCODING)
-                            res = get_book_info(book_file)
+                            book_file = os.path.join(r, files).encode(lazylibrarian.SYS_ENCODING)
+                            try:
+                                res = get_book_info(book_file)
+                            except:
+                                res = {}
                             if 'title' in res and 'creator' in res:  # this is the minimum we need
                                 book = res['title']
                                 author = res['creator']
@@ -336,14 +342,11 @@ def LibraryScan(dir=None):
                                     isbn = res['identifier']
                                 else:
                                     isbn = ""
-                                logger.debug(
-                                    "book meta [%s] [%s] [%s] [%s]" %
+                                logger.debug("book meta [%s] [%s] [%s] [%s]" %
                                     (isbn, language, author, book))
                                 match = 1
                             else:
-                                logger.debug(
-                                    "book meta incomplete in %s" %
-                                    book_file)
+                                logger.debug("Book meta incomplete in %s" % book_file)
 
                 if not match:
                     match = pattern.match(files)
@@ -392,8 +395,7 @@ def LibraryScan(dir=None):
                     # get authors name in a consistent format
                     if "," in author:  # "surname, forename"
                         words = author.split(',')
-                        author = words[1].strip() + ' ' + words[
-                            0].strip()  # "forename surname"
+                        author = words[1].strip() + ' ' + words[0].strip()  # "forename surname"
                     if author[1] == ' ':        
                         author = author.replace(' ', '.')
                         author = author.replace('..', '.')
