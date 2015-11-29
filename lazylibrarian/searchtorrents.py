@@ -227,7 +227,9 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                                      lazylibrarian.DELUGE_USER,
                                      lazylibrarian.DELUGE_PASS)
             client.connect()
-            download = client.call('add_torrent_url', tor_url, {"name": tor_title})
+            if '?' in tor_url:
+                tor_url = tor_url.split('?')[0]
+            download = client.call('core.add_torrent_url', tor_url, {"name": tor_title})
             logger.debug('Deluge return value: %s' % download)
 
     else:
