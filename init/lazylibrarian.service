@@ -56,7 +56,7 @@
 Description=LazyLibrarian
 
 [Service]
-ExecStart=/home/lazylibrarian/LazyLibrarian.py --daemon --config /home/lazylibrarian/lazylibrarian.ini --datadir /home/lazylibrarian/.lazylibrarian --nolaunch --quiet
+ExecStart=/usr/bin/python /home/lazylibrarian/LazyLibrarian.py --daemon --config /home/lazylibrarian/lazylibrarian.ini --datadir /home/lazylibrarian/.lazylibrarian --nolaunch --quiet
 GuessMainPID=no
 Type=forking
 User=lazylibrarian
