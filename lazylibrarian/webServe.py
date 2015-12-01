@@ -15,7 +15,7 @@ import Queue
 
 import lazylibrarian
 
-from lazylibrarian import logger, importer, database, postprocess, formatter, notifiers, librarysync, versioncheck
+from lazylibrarian import logger, importer, database, postprocess, formatter, notifiers, librarysync, versioncheck, magazinescan
 from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
 from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
 from lazylibrarian.searchmag import search_magazines
@@ -174,6 +174,7 @@ class WebInterface(object):
             "pushover_priority":              lazylibrarian.PUSHOVER_PRIORITY,
             "pushover_keys":                  lazylibrarian.PUSHOVER_KEYS,
             "pushover_apitoken":              lazylibrarian.PUSHOVER_APITOKEN,
+            "pushover_device":                lazylibrarian.PUSHOVER_DEVICE,
             "use_androidpn":                  checked(lazylibrarian.USE_ANDROIDPN),
             "androidpn_notify_onsnatch":      checked(lazylibrarian.ANDROIDPN_NOTIFY_ONSNATCH),
             "androidpn_notify_ondownload":    checked(lazylibrarian.ANDROIDPN_NOTIFY_ONDOWNLOAD),
@@ -232,7 +233,7 @@ class WebInterface(object):
                      tor_downloader_deluge=0, deluge_host=None, deluge_user=None, deluge_pass=None, deluge_port=None,
                      utorrent_label=None, use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token=None,
                      use_pushbullet=0, pushbullet_notify_onsnatch=0, pushbullet_notify_ondownload=0, pushbullet_token=None, pushbullet_deviceid=None,
-                     use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys=None, pushover_apitoken=None, pushover_ondownload=0,
+                     use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys=None, pushover_apitoken=None, pushover_ondownload=0, pushover_device=None,
                      use_androidpn=0, androidpn_notify_onsnatch=0, androidpn_notify_ondownload=0, androidpn_url=None, androidpn_username=None, androidpn_broadcast=1,
                      use_nma=0, nma_apikey=None, nma_priority=0, nma_onsnatch=0, nma_ondownload=0):
 
@@ -387,6 +388,7 @@ class WebInterface(object):
         lazylibrarian.PUSHOVER_KEYS = pushover_keys
         lazylibrarian.PUSHOVER_APITOKEN = pushover_apitoken
         lazylibrarian.PUSHOVER_PRIORITY = pushover_priority
+        lazylibrarian.PUSHOVER_DEVICE = pushover_device
         
         lazylibrarian.USE_ANDROIDPN = int(use_androidpn)
         lazylibrarian.ANDROIDPN_NOTIFY_ONSNATCH = int(androidpn_notify_onsnatch)
@@ -526,6 +528,14 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("home")
     libraryScan.exposed = True
 
+    def magazineScan(self):
+        try:
+            threading.Thread(target=magazinescan.magazineScan()).start()
+        except Exception, e:
+            logger.error('Unable to complete the scan: %s' % e)
+        raise cherrypy.HTTPRedirect("magazines")
+    magazineScan.exposed = True
+
     def clearLog(self):
         # Clear the log
         if os.path.exists(lazylibrarian.LOGDIR):
@@ -631,33 +641,35 @@ class WebInterface(object):
                 logger.info('Missing book %s,%s' % (authorName, bookName))
     openBook.exposed = True
 
-    def openMag(self, bookid=None, **args):
+# MAGAZINES    
+    def issuePage(self, title):
         myDB = database.DBConnection()
+        #magazines = myDB.select('SELECT * from magazines')
 
-        # find book
-        bookdata = myDB.select('SELECT * from magazines WHERE Title="%s"' % bookid)
-        if bookdata:
-            Title = bookdata[0]["Title"]
-            IssueDate = bookdata[0]["IssueDate"]
+        issues = myDB.select('SELECT * from issues WHERE Title="%s" order by IssueDate DESC' % (title))
 
-            dic = {'<': '', '>': '', '=': '', '?': '', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
-            bookName = formatter.latinToAscii(formatter.replace_all(Title, dic))
+        if issues is None:
+            raise cherrypy.HTTPRedirect("magazines")
+        return serve_template(templatename="issues.html", title=title, issues=issues)
+    issuePage.exposed = True
 
-            pp_dir = lazylibrarian.DESTINATION_DIR
-            mag_path = lazylibrarian.MAG_DEST_FOLDER.replace('$IssueDate', IssueDate).replace('$Title', Title)
-            if lazylibrarian.MAG_RELATIVE:
-                if mag_path[0] not in '._':
-                    mag_path = '_' + mag_path
-                dest_dir = os.path.join(pp_dir, mag_path)
-            else:
-                dest_dir = mag_path
+    def openMag(self, bookid=None, **args):
+        # we may want to open an issue with the full filename
+        if bookid and os.path.isfile(bookid):
+            logger.info('Opening file ' + bookid)
+            return serve_file(bookid, "application/x-download", "attachment")
 
-            logger.debug('bookdir ' + dest_dir)
-            if os.path.isdir(dest_dir):
-                for file2 in os.listdir(dest_dir):
-                    if ((file2.lower().find(".jpg") <= 0) & (file2.lower().find(".opf") <= 0)):
-                        logger.info('Opening file ' + file2)
-                        return serve_file(os.path.join(dest_dir, file2), "application/x-download", "attachment")
+        # or we may just have a title to find magazine in issues table
+        myDB = database.DBConnection()
+        mag_data = myDB.select('SELECT * from issues WHERE Title="%s"' % bookid)
+        if len(mag_data) == 1: # we only have one issue, get it
+            IssueDate = mag_data[0]["IssueDate"]
+            IssueFile = mag_data[0]["IssueFile"]
+            logger.info('Opening %s - %s' % (bookid, IssueDate))
+            return serve_file(IssueFile, "application/x-download", "attachment")
+        if len(mag_data) > 1: # multiple issues, show a list
+            logger.debug("%s has %s issues" % (bookid, len(mag_data)))
+            raise cherrypy.HTTPRedirect("issuePage?title=%s" % bookid )
     openMag.exposed = True
 
     def searchForBook(self, bookid=None, action=None, **args):
@@ -763,7 +775,7 @@ class WebInterface(object):
             # ouch dirty workaround...
             if not nzburl == 'book_table_length':
                 controlValueDict = {'NZBurl': nzburl}
-                newValueDict = {'Status': action}
+                newValueDict = {'Status': action, 'NZBdate': formatter.today()}
                 myDB.upsert("wanted", newValueDict, controlValueDict)
                 title = myDB.select("SELECT * from wanted WHERE NZBurl = ?", [nzburl])
                 for item in title:
@@ -918,7 +930,7 @@ class WebInterface(object):
     def magazines(self):
         myDB = database.DBConnection()
 
-        magazines = myDB.select('SELECT * from magazines')
+        magazines = myDB.select('SELECT * from magazines ORDER by Title')
 
         if magazines is None:
             raise cherrypy.HTTPRedirect("magazines")
@@ -967,6 +979,7 @@ class WebInterface(object):
                 elif (action == "Delete"):
                     myDB.action('DELETE from magazines WHERE Title="%s"' % item)
                     myDB.action('DELETE from wanted WHERE BookID="%s"' % item)
+                    myDB.action('DELETE from issues WHERE Title="%s"' % item)
                     logger.info('Magazine %s removed from database' % item)
                 elif (action == "Reset"):
                     controlValueDict = {"Title": item}
@@ -1008,7 +1021,8 @@ class WebInterface(object):
                 if action != "Delete":
                     controlValueDict = {"NZBtitle": nzbtitle}
                     newValueDict = {
-                        "Status":       action,
+                        "Status": action,
+                        "NZBDate": formatter.today() # mark when we wanted it
                     }
                     myDB.upsert("wanted", newValueDict, controlValueDict)
                     logger.info('Status of wanted item %s changed to %s' % (nzbtitle, action))
@@ -1081,9 +1095,19 @@ class WebInterface(object):
 
         result = notifiers.pushbullet_notifier.test_notify()
         if result:
-            return "Pushbullet notification successful\n%s" % result
+            return "Pushbullet notification successful,\n%s" % result
         else:
             return "Pushbullet notification failed"
+
+    @cherrypy.expose
+    def testPushover(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+
+        result = notifiers.pushover_notifier.test_notify()
+        if result:
+            return "Pushover notification successful,\n%s" % result
+        else:
+            return "Pushover notification failed"
 
     @cherrypy.expose
     def testNMA(self):

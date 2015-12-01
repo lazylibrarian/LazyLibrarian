@@ -88,7 +88,7 @@ def is_valid_isbn(isbn):
             if isbn[:9].isdigit():
                 return 1
             else:
-                if isbn[9] in ["X", "x"] and isbn[:8].isdigit():
+                if isbn[9] in ["Xx"] and isbn[:8].isdigit():
                     return 1
     return 0
 

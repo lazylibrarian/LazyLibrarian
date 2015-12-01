@@ -18,7 +18,7 @@ from lib.apscheduler.scheduler import Scheduler
 
 import threading
 
-from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, SimpleCache, librarysync, versioncheck, database, searchmag
+from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, SimpleCache, librarysync, versioncheck, database, searchmag, magazinescan
 from common import remove_accents
 
 FULL_PATH = None
@@ -216,6 +216,7 @@ PUSHBULLET_NOTIFY_ONDOWNLOAD = 0
 USE_PUSHOVER = 0
 PUSHOVER_APITOKEN = None
 PUSHOVER_KEYS = None
+PUSHOVER_DEVICE = None
 PUSHOVER_ONSNATCH = 0
 PUSHOVER_ONDOWNLOAD = 0
 PUSHOVER_PRIORITY = None
@@ -354,7 +355,7 @@ def initialize():
             USE_TOR, USE_NZB, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, USE_PUSHBULLET, \
             PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, \
             UTORRENT_HOST, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
-            USE_PUSHOVER, PUSHOVER_ONSNATCH, PUSHOVER_KEYS, PUSHOVER_APITOKEN, PUSHOVER_PRIORITY, PUSHOVER_ONDOWNLOAD, \
+            USE_PUSHOVER, PUSHOVER_ONSNATCH, PUSHOVER_KEYS, PUSHOVER_APITOKEN, PUSHOVER_PRIORITY, PUSHOVER_ONDOWNLOAD, PUSHOVER_DEVICE, \
             USE_ANDROIDPN, ANDROIDPN_NOTIFY_ONSNATCH, ANDROIDPN_NOTIFY_ONDOWNLOAD, ANDROIDPN_URL, ANDROIDPN_USERNAME, ANDROIDPN_BROADCAST, \
             TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PASS, TRANSMISSION_USER, \
             TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, \
@@ -568,6 +569,7 @@ def initialize():
         PUSHOVER_KEYS = check_setting_str(CFG, 'Pushover', 'pushover_keys', '')
         PUSHOVER_APITOKEN = check_setting_str(CFG, 'Pushover', 'pushover_apitoken', '')
         PUSHOVER_PRIORITY = check_setting_int(CFG, 'Pushover', 'pushover_priority', 0)
+        PUSHOVER_DEVICE = check_setting_str(CFG, 'Pushover', 'pushover_device', '')
 
         USE_ANDROIDPN = check_setting_int(CFG, 'AndroidPN', 'use_androidpn', 0)
         ANDROIDPN_NOTIFY_ONSNATCH = check_setting_int(CFG, 'AndroidPN', 'androidpn_notify_onsnatch', 0)
@@ -910,6 +912,7 @@ def config_write():
     new_config['Pushover']['pushover_priority'] = int(PUSHOVER_PRIORITY)
     new_config['Pushover']['pushover_keys'] = PUSHOVER_KEYS
     new_config['Pushover']['pushover_apitoken'] = PUSHOVER_APITOKEN
+    new_config['Pushover']['pushover_device'] = PUSHOVER_DEVICE
 
     new_config['AndroidPN'] = {}
     new_config['AndroidPN']['use_androidpn'] = int(USE_ANDROIDPN)
@@ -1009,9 +1012,23 @@ def dbcheck():
         logger.info('Updating database to hold SeriesOrder')
         c.execute('ALTER TABLE books ADD COLUMN SeriesOrder INTEGER')
 
+    addedIssues = False
+    try:
+        c.execute('SELECT Title from issues')
+    except sqlite3.OperationalError:
+        logger.info('Updating database to hold Issues')
+        c.execute('CREATE TABLE issues ( Title TEXT, IssueAcquired TEXT, IssueDate TEXT, IssueFile TEXT )')
+        addedIssues = True
+            
     conn.commit()
     c.close()
 
+    if addedIssues:
+        try:
+            magazinescan.magazineScan(thread='MAIN')
+        except:
+            logger.debug("Failed to scan magazines")
+        
     if addedSeries:
         try:
             myDB = database.DBConnection()

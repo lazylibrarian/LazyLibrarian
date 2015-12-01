@@ -372,7 +372,7 @@ def LibraryScan(dir=None):
                             "Found Language [%s] ISBN [%s]" %
                             (language, isbn))
                         # we need to add it to language cache if not already
-                        # there
+                        # there, is_valid_isbn has checked length is 10 or 13
                         if len(isbn) == 10:
                             isbnhead = isbn[0:3]
                         else:
