@@ -13,7 +13,7 @@
     <br><br>
     <form action="manage" method="get">
     Manage books with status <select name="whichStatus">
-        %for item in ['Skipped', 'Wanted', 'Snatched', 'Have', 'Ignored']:
+        %for item in ['Skipped', 'Wanted', 'Open', 'Have', 'Ignored']:
             <option value="${item}"
                 %if whichStatus == item:
                     selected = "selected"

@@ -902,6 +902,8 @@ class WebInterface(object):
 
     def manage(self, AuthorName=None, action=None, whichStatus=None, source=None, **args):
         myDB = database.DBConnection()
+        # books only holds status of skipped wanted open have ignored
+        # wanted holds status of snatched processed
         books = myDB.select('SELECT * FROM books WHERE Status = ?', [whichStatus])
         return serve_template(templatename="managebooks.html", title="Book Status Management", books=books, whichStatus=whichStatus)
     manage.exposed = True
@@ -909,6 +911,7 @@ class WebInterface(object):
     def history(self, source=None):
         myDB = database.DBConnection()
         if not source:
+            # wanted status holds snatched processed for all, plus skipped for magazines
             history = myDB.select("SELECT * from wanted WHERE Status != 'Skipped'")
             return serve_template(templatename="history.html", title="History", history=history)
         elif source == "magazines":
