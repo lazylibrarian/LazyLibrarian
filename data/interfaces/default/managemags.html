@@ -11,22 +11,7 @@
 
 <%def name="body()">
     <br><br>
-<!-- 
-    <form action="manage" method="get">
-    Manage magazines with status <select name="whichStatus">
-        %for item in ['Skipped', 'Wanted', 'Snatched', 'Have', 'Ignored']:
-            <option value="${item}"
-                %if whichStatus == item:
-                    selected = "selected"
-                %endif
-            >${item}</option>
-        %endfor
-    </select>
-    <input  class="btn" type="submit" value="Manage" />
-    </form>
-    <br>
--->
-    %if len(books) > 0:
+
     <h3>Magazines with status ${whichStatus}</h3>
         <br>
     <form action="markMags" method="get"><input type="hidden" name="redirect" value="manage">
@@ -67,7 +52,6 @@
         <input type="submit" class="markMags" value="Go">
     </p>
     </form>
-    %endif
 
 </%def>
 
@@ -92,16 +76,16 @@
                     ],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ magazines per page",
-                    "sEmptyTable": "No magazines found",
+                    "sEmptyTable": "No skipped issues found",
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
                     "sInfoEmpty":"Showing 0 to 0 of 0 magazines",
                     "sInfoFiltered":"(filtered from _MAX_ total magazines)"},
+                "sPaginationType": "full_numbers",
                 "bStateSave": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": 10,
-                "sPaginationType": "full_numbers",
             });
-			$('.dataTables_filter input').attr("placeholder", "Search table here");
+            $('.dataTables_filter input').attr("placeholder", "Seach table here");
     });
     </script>
 </%def>
