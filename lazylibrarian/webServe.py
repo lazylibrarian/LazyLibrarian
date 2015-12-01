@@ -912,8 +912,8 @@ class WebInterface(object):
     def history(self, source=None):
         myDB = database.DBConnection()
         if not source:
-            # wanted status holds snatched processed for all, plus skipped for magazines
-            history = myDB.select("SELECT * from wanted WHERE Status != 'Skipped'")
+            # wanted status holds snatched processed for all, plus skipped and ignored for magazine back issues
+            history = myDB.select("SELECT * from wanted WHERE Status != 'Skipped' and Status != 'Ignored'")
             return serve_template(templatename="history.html", title="History", history=history)
         elif source == "magazines":
             books = myDB.select("SELECT * from wanted WHERE Status = 'Skipped'")  # or Status = 'Snatched'")
