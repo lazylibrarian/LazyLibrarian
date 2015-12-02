@@ -25,10 +25,10 @@ def addAuthorToDB(authorname=None, refresh=False):
             "AuthorID":   "0: %s" % (authorname),
             "Status":       "Loading"
         }
-        logger.info("Now adding new author: %s to database" % authorname)
+        logger.debug("Now adding new author: %s to database" % authorname)
     else:
         newValueDict = {"Status": "Loading"}
-        logger.info("Now updating author: %s" % authorname)
+        logger.debug("Now updating author: %s" % authorname)
     myDB.upsert("authors", newValueDict, controlValueDict)
 
     author = GR.find_author_id()
@@ -48,7 +48,7 @@ def addAuthorToDB(authorname=None, refresh=False):
         }
         myDB.upsert("authors", newValueDict, controlValueDict)
     else:
-        logger.error("Nothing found")
+        logger.warn("Nothing found for %s" % authorname)
 
 # process books
     if lazylibrarian.BOOK_API == "GoogleBooks":
@@ -57,4 +57,4 @@ def addAuthorToDB(authorname=None, refresh=False):
     elif lazylibrarian.BOOK_API == "GoodReads":
         GR.get_author_books(authorid, authorname, refresh=refresh)
 
-    logger.info("[%s] Author update complete" % authorname)
+    logger.debug("[%s] Author update complete" % authorname)
