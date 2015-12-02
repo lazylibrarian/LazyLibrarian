@@ -45,20 +45,21 @@ def magazineScan(thread=None):
                     
     logger.info(' Checking [%s] for magazines' % mag_path)
 
-    booktype_list = formatter.getlist(lazylibrarian.EBOOK_TYPE)
     for dirname, dirnames, filenames in os.walk(mag_path):
       for fname in filenames[:]:
         #if fname.endswith('.pdf'): maybe not all magazines will be pdf?
-        words = fname.split('.')
-        extn = words[len(words) - 1]
-        if extn in booktype_list:
-            title = fname.split('-')[3]
-            title = title.split('.')[-2]
-            title = title.strip()
-            issuedate = fname.split(' ')[0]
-            issuefile = os.path.join(dirname, fname) # full path to issue.pdf
-            logger.debug("Found Issue %s" % fname)
-            
+        if formatter.is_valid_booktype(fname):
+            try:
+                title = fname.split('-')[3]
+                title = title.split('.')[-2]
+                title = title.strip()
+                issuedate = fname.split(' ')[0]
+                issuefile = os.path.join(dirname, fname) # full path to issue.pdf
+                logger.debug("Found Issue %s" % fname)
+            except:
+                logger.debug("Invalid name format for %s" % fname)
+                continue
+                
             mtime = os.path.getmtime(issuefile)
             iss_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
 

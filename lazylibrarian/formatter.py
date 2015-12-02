@@ -92,6 +92,14 @@ def is_valid_isbn(isbn):
                     return 1
     return 0
 
+def is_valid_booktype(filename):
+    booktype_list = formatter.getlist(lazylibrarian.EBOOK_TYPE)
+    if '.' in filename:
+        words = filename.split('.')
+        extn = words[len(words) - 1]
+        if extn in booktype_list:
+            return True
+    return False 
 
 def getList(st):
     # split a string into a list

@@ -173,14 +173,10 @@ def processDir():
 def book_file(search_dir=None):
     # find a book file in this directory, any book will do
     # return full pathname of book, or empty string if no book found
-    booktype_list = formatter.getlist(lazylibrarian.EBOOK_TYPE)
     if search_dir and os.path.isdir(search_dir):
         for fname in os.listdir(search_dir):
-            if '.' in fname:
-                words = fname.split('.')
-                extn = words[len(words) - 1]
-                if extn in booktype_list:
-                    return os.path.join(search_dir, fname)
+            if formatter.is_valid_booktype(fname):
+                return os.path.join(search_dir, fname)
     return ""                           
 
 def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
