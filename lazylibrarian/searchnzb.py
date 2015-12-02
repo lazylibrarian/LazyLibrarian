@@ -27,7 +27,7 @@ from lazylibrarian.searchtorrents import TORDownloadMethod
 
 def search_nzb_book(books=None, mags=None):
     if not(lazylibrarian.USE_NZB):
-        logger.debug('NZB Search is disabled')
+        logger.warn('NZB Search is disabled')
         return
     # rename this thread
     threading.currentThread().name = "SEARCHNZBBOOKS"
@@ -46,7 +46,7 @@ def search_nzb_book(books=None, mags=None):
                 shutil.rmtree(providercache)
                 os.mkdir(providercache)
             except OSError, e:
-                logger.info('Failed to clear cache: ' + str(e))
+                logger.error('Failed to clear cache: ' + str(e))
             
         #if os.path.exists(".ProviderCache"):
         #    for f in os.listdir(".ProviderCache"):
@@ -89,19 +89,19 @@ def search_nzb_book(books=None, mags=None):
         searchlist.append({"bookid": bookid, "bookName": searchbook[2], "authorName": searchbook[1], "searchterm": searchterm.strip()})
 
     if not lazylibrarian.SAB_HOST and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE and not lazylibrarian.NZBGET_HOST:
-        logger.info('No download method is set, use SABnzbd/NZBGet or blackhole')
+        logger.warn('No download method is set, use SABnzbd/NZBGet or blackhole')
 
     counter = 0
     for book in searchlist:
         resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'book')
 
         if not nproviders:
-            logger.info('No providers are set. try use NEWZNAB or TORZNAB')
+            logger.warn('No providers are set. try use NEWZNAB or TORZNAB')
             return
 
         # if you can't find teh book specifically, you might find under general search
         if not resultlist:
-            logger.info("Searching for type book failed to find any books...moving to general search")
+            logger.debug("Searching for type book failed to find any books...moving to general search")
             resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'general')
 
         if not resultlist:
@@ -122,7 +122,7 @@ def search_nzb_book(books=None, mags=None):
                 logger.debug("NZB Title Match %: " + str(nzbTitle_match))
 
                 if (nzbTitle_match > match_ratio):
-                    logger.info(u'Found NZB: %s' % nzb['nzbtitle'])
+                    logger.debug(u'Found NZB: %s' % nzb['nzbtitle'])
                     addedCounter = addedCounter + 1
                     bookid = book['bookid']
                     nzbTitle = (book["authorName"] + ' - ' + book['bookName'] + ' LL.(' + book['bookid'] + ')').strip()
@@ -157,7 +157,7 @@ def search_nzb_book(books=None, mags=None):
                         notifiers.notify_snatch(formatter.latinToAscii(nzbTitle) + ' at ' + formatter.now())
                     break
             if addedCounter == 0:
-                logger.info("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")
+                logger.debug("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")
         counter = counter + 1
 
     logger.info("NZBSearch for Wanted items complete")
@@ -200,18 +200,18 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
                 f = open(nzbpath, 'w')
                 f.write(nzbfile)
                 f.close()
-                logger.info('NZB file saved to: ' + nzbpath)
+                logger.debug('NZB file saved to: ' + nzbpath)
                 download = True
                 try:
                     os.chmod(nzbpath, 0777)
                 except Exception, e:
-                    logger.info("Could not chmod path: " + str(nzbpath))
+                    logger.error("Could not chmod path: " + str(nzbpath))
             except Exception, e:
                 logger.error('%s not writable, NZB not saved. Error: %s' % (nzbpath, e))
                 download = False
 
     else:
-        logger.error('No NZB download method is enabled, check config.')
+        logger.warn('No NZB download method is enabled, check config.')
         return False
 
     if download:

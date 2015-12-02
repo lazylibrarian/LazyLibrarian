@@ -39,7 +39,7 @@ def processDir():
         for book in snatched:
             if book['NZBtitle'] in downloads:
                 pp_path = os.path.join(processpath, book['NZBtitle'])
-                logger.info('Found book/mag folder %s.' % pp_path)
+                logger.debug('Found book/mag folder %s.' % pp_path)
 
                 data = myDB.select('SELECT * from books WHERE BookID="%s"' % book['BookID'])
                 if data:
@@ -72,10 +72,10 @@ def processDir():
                         global_name = lazylibrarian.MAG_DEST_FILE.replace('$IssueDate', book['AuxInfo']).replace('$Title', book['BookID'])
                         # global_name = book['AuxInfo']+' - '+title
                     else:
-                        logger.info("Snatched magazine %s is not in download directory" % (book['BookID']))
+                        logger.debug("Snatched magazine %s is not in download directory" % (book['BookID']))
                         continue                    
             else:
-                logger.info("Snatched NZB %s is not in download directory" % (book['NZBtitle']))
+                logger.debug("Snatched NZB %s is not in download directory" % (book['NZBtitle']))
                 continue
 
             dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
@@ -166,7 +166,7 @@ def processDir():
                             logger.error('Postprocessing for %s has failed.' % global_name)
                             logger.error('Warning - Residual files remain in %s' % pp_path)
         if ppcount:
-            logger.info('%s books/mags are downloaded and processed.' % ppcount)
+            logger.info('%s books/mags have been processed.' % ppcount)
         else:
             logger.info('No snatched books/mags have been found')
 
@@ -230,7 +230,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
     # check we got a book in the downloaded files
     pp = False
-    booktype_list = formatter.getlist(lazylibrarian.EBOOK_TYPE)
+    booktype_list = formatter.getList(lazylibrarian.EBOOK_TYPE)
     for bookfile in os.listdir(pp_path):
         if ((str(bookfile).split('.')[-1]) in booktype_list):    
             pp = True
@@ -251,12 +251,12 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             shutil.copytree(pp_path, dest_path)
             logger.debug('Successfully copied %s to %s.' % (pp_path, dest_path))
         elif lazylibrarian.DOWNLOAD_DIR == pp_path:
-            booktype_list = formatter.getlist(lazylibrarian.EBOOK_TYPE)
+            booktype_list = formatter.getList(lazylibrarian.EBOOK_TYPE)
             for file3 in os.listdir(pp_path):
                 if ((str(file3).split('.')[-1]) in booktype_list):
                     bookID = str(file3).split("LL.(")[1].split(")")[0]
                     if bookID == book_id:
-                        logger.info('Processing %s' % bookID)
+                        logger.debug('Processing %s' % bookID)
                         if not os.path.exists(dest_path):
                             try:
                                 os.makedirs(dest_path)
@@ -273,7 +273,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         pp = True
 
         # try and rename the actual book file & remove non-book files
-        booktype_list = formatter.getlist(lazylibrarian.EBOOK_TYPE)
+        booktype_list = formatter.getList(lazylibrarian.EBOOK_TYPE)
         for file2 in os.listdir(dest_path):
             #logger.debug('file extension: ' + str(file2).split('.')[-1])
             if ((file2.lower().find(".jpg") <= 0) & (file2.lower().find(".opf") <= 0)):
@@ -288,8 +288,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         except Exception, e:
             logger.debug("Could not chmod path: " + str(dest_path))
     except OSError, e:
-        logger.info('Could not create destination folder or rename the downloaded ebook. Check permissions of: ' + lazylibrarian.DESTINATION_DIR)
-        logger.info(str(e))
+        logger.error('Could not create destination folder or rename the downloaded ebook. Check permissions of: ' + lazylibrarian.DESTINATION_DIR)
+        logger.error(str(e))
         pp = False
     return pp
 
@@ -300,7 +300,7 @@ def processAutoAdd(src_path=None):
     logger.debug('AutoAdd - Attempt to copy from [%s] to [%s]' % (src_path, autoadddir))
 
     if not os.path.exists(autoadddir):
-        logger.info('AutoAdd directory [%s] is missing or not set - cannot perform autoadd copy' % autoadddir)
+        logger.error('AutoAdd directory [%s] is missing or not set - cannot perform autoadd copy' % autoadddir)
         return False
     else:
         # Now try and copy all the book files into a single dir.
@@ -343,7 +343,7 @@ def processIMG(dest_path=None, bookimg=None, global_name=None):
             try:
                 os.chmod(coverpath, 0777)
             except Exception, e:
-                logger.info("Could not chmod path: " + str(coverpath))
+                logger.error("Could not chmod path: " + str(coverpath))
 
     except (IOError, EOFError), e:
         logger.error('Error fetching cover from url: %s, %s' % (bookimg, e))
@@ -390,7 +390,7 @@ def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bo
         try:
             os.chmod(opfpath, 0777)
         except Exception, e:
-            logger.info("Could not chmod path: " + str(opfpath))
+            logger.error("Could not chmod path: " + str(opfpath))
 
         logger.debug('Saved metadata to: ' + opfpath)
     else:

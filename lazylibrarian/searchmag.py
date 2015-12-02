@@ -54,19 +54,19 @@ def search_magazines(mags=None):
         searchlist.append({"bookid": bookid, "searchterm": searchterm})
 
     if searchlist == []:
-        logger.info('There is nothing to search for.  Mark some magazines as active.')
+        logger.warn('There is nothing to search for.  Mark some magazines as active.')
 
     for book in searchlist:
 
         if lazylibrarian.USE_NZB:
             resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'mag')
             if not nproviders:
-                logger.info('No nzb providers are set. Check config for NEWZNAB or TORZNAB providers')
+                logger.warn('No nzb providers are set. Check config for NEWZNAB or TORZNAB providers')
 
         if lazylibrarian.USE_TOR:
             tor_resultlist, nproviders = providers.IterateOverTorrentSites(book, 'mag')
             if not nproviders:
-                logger.info('No torrent providers are set. Check config for TORRENT providers')
+                logger.warn('No torrent providers are set. Check config for TORRENT providers')
 
             for item in tor_resultlist:  # reformat the torrent results so they look like nzbs
                 resultlist.append({

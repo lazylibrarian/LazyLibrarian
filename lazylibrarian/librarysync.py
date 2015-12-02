@@ -1,7 +1,6 @@
 import os
 import re
 import lazylibrarian
-import shlex
 from lazylibrarian import logger, database, importer, formatter
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz

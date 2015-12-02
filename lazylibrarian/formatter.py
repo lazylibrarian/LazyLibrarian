@@ -1,7 +1,7 @@
 import datetime
 import re
 import lazylibrarian
-
+import shlex
 
 def now():
     dtnow = datetime.datetime.now()
@@ -93,7 +93,7 @@ def is_valid_isbn(isbn):
     return 0
 
 def is_valid_booktype(filename):
-    booktype_list = formatter.getlist(lazylibrarian.EBOOK_TYPE)
+    booktype_list = getList(lazylibrarian.EBOOK_TYPE)
     if '.' in filename:
         words = filename.split('.')
         extn = words[len(words) - 1]
