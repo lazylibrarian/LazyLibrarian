@@ -94,13 +94,6 @@ def get_book_info(fname):
         n = n + 1
     return res
 
-
-def getList(st):
-    my_splitter = shlex.shlex(st, posix=True)
-    my_splitter.whitespace += ','
-    my_splitter.whitespace_split = True
-    return list(my_splitter)
-
 # PAB fuzzy search for book in library, return LL bookid if found or zero
 # if not, return bookid to more easily update status
 
@@ -255,7 +248,7 @@ def LibraryScan(dir=None):
     # with regular expression matching
     booktypes = ''
     count = -1
-    booktype_list = getList(lazylibrarian.EBOOK_TYPE)
+    booktype_list = formatter.getList(lazylibrarian.EBOOK_TYPE)
     for book_type in booktype_list:
         count += 1
         if count == 0:

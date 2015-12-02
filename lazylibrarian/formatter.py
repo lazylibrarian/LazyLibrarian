@@ -93,6 +93,14 @@ def is_valid_isbn(isbn):
     return 0
 
 
+def getList(st):
+    # split a string into a list
+    my_splitter = shlex.shlex(st, posix=True)
+    my_splitter.whitespace += ','
+    my_splitter.whitespace_split = True
+    return list(my_splitter)
+
+
 def latinToAscii(unicrap):
     """
     From couch potato

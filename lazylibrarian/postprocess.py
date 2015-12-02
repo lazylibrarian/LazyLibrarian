@@ -173,12 +173,13 @@ def processDir():
 def book_file(search_dir=None):
     # find a book file in this directory, any book will do
     # return full pathname of book, or empty string if no book found
+    booktype_list = formatter.getlist(lazylibrarian.EBOOK_TYPE)
     if search_dir and os.path.isdir(search_dir):
         for fname in os.listdir(search_dir):
             if '.' in fname:
                 words = fname.split('.')
                 extn = words[len(words) - 1]
-                if extn in lazylibrarian.EBOOK_TYPE:
+                if extn in booktype_list:
                     return os.path.join(search_dir, fname)
     return ""                           
 
@@ -233,8 +234,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
     # check we got a book in the downloaded files
     pp = False
+    booktype_list = formatter.getlist(lazylibrarian.EBOOK_TYPE)
     for bookfile in os.listdir(pp_path):
-        if ((str(bookfile).split('.')[-1]) in lazylibrarian.EBOOK_TYPE):    
+        if ((str(bookfile).split('.')[-1]) in booktype_list):    
             pp = True
     if pp == False:
         # no book found in a format we wanted. Leave for the user to delete or convert manually
@@ -253,8 +255,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             shutil.copytree(pp_path, dest_path)
             logger.debug('Successfully copied %s to %s.' % (pp_path, dest_path))
         elif lazylibrarian.DOWNLOAD_DIR == pp_path:
+            booktype_list = formatter.getlist(lazylibrarian.EBOOK_TYPE)
             for file3 in os.listdir(pp_path):
-                if ((str(file3).split('.')[-1]) in lazylibrarian.EBOOK_TYPE):
+                if ((str(file3).split('.')[-1]) in booktype_list):
                     bookID = str(file3).split("LL.(")[1].split(")")[0]
                     if bookID == book_id:
                         logger.info('Processing %s' % bookID)
@@ -274,10 +277,11 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         pp = True
 
         # try and rename the actual book file & remove non-book files
+        booktype_list = formatter.getlist(lazylibrarian.EBOOK_TYPE)
         for file2 in os.listdir(dest_path):
             #logger.debug('file extension: ' + str(file2).split('.')[-1])
             if ((file2.lower().find(".jpg") <= 0) & (file2.lower().find(".opf") <= 0)):
-                if ((str(file2).split('.')[-1]) not in lazylibrarian.EBOOK_TYPE):
+                if ((str(file2).split('.')[-1]) not in booktype_list):
                     logger.debug('Removing unwanted file: %s' % str(file2))
                     os.remove(os.path.join(dest_path, file2))
                 else:
