@@ -48,7 +48,7 @@ class GoogleBooks:
             api_strings = ['inauthor:', 'intitle:']
 
         api_hits = 0
-        logger.info('Now searching Google Books API with keyword: ' + self.name)
+        logger.debug('Now searching Google Books API with keyword: ' + self.name)
 
         for api_value in api_strings:
             startindex = 0
@@ -77,7 +77,7 @@ class GoogleBooks:
                         number_results = jsonresults['totalItems']
                         logger.debug('Searching url: ' + URL)
                         if number_results == 0:
-                            logger.info('Found no results for %s with value: %s' % (api_value, self.name))
+                            logger.warn('Found no results for %s with value: %s' % (api_value, self.name))
                             break
                         else:
                             pass
@@ -231,13 +231,13 @@ class GoogleBooks:
         logger.debug("Found %s total results" % total_count)
         logger.debug("Removed %s bad language results" % ignored)
         logger.debug("Removed %s books with no author" % no_author_count)
-        logger.info("Showing %s results for (%s) with keyword: %s" % (resultcount, api_value, authorname))
-        logger.info('The Google Books API was hit %s times for keyword %s' % (str(api_hits), self.name))
+        logger.debug("Showing %s results for (%s) with keyword: %s" % (resultcount, api_value, authorname))
+        logger.debug('The Google Books API was hit %s times for keyword %s' % (str(api_hits), self.name))
         queue.put(resultlist)
 
     def get_author_books(self, authorid=None, authorname=None, refresh=False):
 
-        logger.info('[%s] Now processing books with Google Books API' % authorname)
+        logger.debug('[%s] Now processing books with Google Books API' % authorname)
         # google doesnt like accents in author names
         aname = unidecode(u'%s' % authorname)
 
@@ -286,10 +286,10 @@ class GoogleBooks:
                     break
 
                 if number_results == 0:
-                    logger.info('Found no results for %s' % (authorname))
+                    logger.warn('Found no results for %s' % (authorname))
                     break
                 else:
-                    logger.info('Found %s results for %s' % (number_results, authorname))
+                    logger.debug('Found %s results for %s' % (number_results, authorname))
 
                 startindex = startindex + 40
 
@@ -464,21 +464,21 @@ class GoogleBooks:
                             myDB.upsert("books", newValueDict, controlValueDict)
                             logger.debug(u"book found " + bookname + " " + bookdate)
                             if not find_book_status:
-                                logger.info("[%s] Added book: %s [%s]" % (authorname, bookname, booklang))
+                                logger.debug("[%s] Added book: %s [%s]" % (authorname, bookname, booklang))
                                 added_count = added_count + 1
                             else:
                                 updated_count = updated_count + 1
-                                logger.info("[%s] Updated book: %s" % (authorname, bookname))
+                                logger.debug("[%s] Updated book: %s" % (authorname, bookname))
                         else:
                             book_ignore_count = book_ignore_count + 1
                     else:
-                        logger.info("[%s] removed book for bad characters" % (bookname))
+                        logger.debug("[%s] removed book for bad characters" % (bookname))
                         removedResults = removedResults + 1
 
         except KeyError:
             pass
 
-        logger.info('[%s] The Google Books API was hit %s times to populate book list' % (authorname, str(api_hits)))
+        logger.debug('[%s] The Google Books API was hit %s times to populate book list' % (authorname, str(api_hits)))
 
         unignoredbooks = myDB.select('SELECT COUNT(BookName) as unignored FROM books WHERE AuthorID="%s" AND Status != "Ignored"' % authorid)
         bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE AuthorID="%s"' % authorid)
@@ -638,4 +638,4 @@ class GoogleBooks:
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
-        logger.info("%s added to the books database" % bookname)
+        logger.debug("%s added to the books database" % bookname)
