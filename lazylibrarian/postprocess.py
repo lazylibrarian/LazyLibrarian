@@ -13,6 +13,12 @@ from lazylibrarian import database, logger, formatter, notifiers, common, librar
 
 def processAlternate(source_dir=None):
 # import a book from an alternate directory
+    if source_dir == None or source_dir == "":
+        logger.warn('Alternate directory must not be empty')
+        return
+    if source_dir == lazylibrarian.DESTINATION_DIR:
+        logger.warn('Alternate directory must not be the same as destination')
+        return
     new_book = book_file(source_dir)
     if new_book:
         metadata = librarysync.get_book_info(new_book)

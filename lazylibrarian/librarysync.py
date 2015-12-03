@@ -53,7 +53,7 @@ def get_book_info(fname):
         tree = ElementTree.fromstring(txt)
         n = 0
         cfname = ""
-        if not tree:
+        if not len(tree):
             return res
         while n < len(tree[0]):
             att = str(tree[0][n].attrib)
@@ -73,7 +73,7 @@ def get_book_info(fname):
             return ""
 
     # repackage the data
-    if not tree:
+    if not len(tree):
         return res
     n = 0
     while n < len(tree[0]):

@@ -522,6 +522,14 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     refreshAuthor.exposed = True
 
+    def importAlternate(self):
+        try:
+            threading.Thread(target=postprocess.processAlternate(lazylibrarian.ALTERNATE_DIR)).start()
+        except Exception, e:
+            logger.error(u'Unable to complete the import: %s' % e)
+        raise cherrypy.HTTPRedirect("home")
+    importAlternate.exposed = True
+
     def libraryScan(self):
         try:
             threading.Thread(target=librarysync.LibraryScan(lazylibrarian.DESTINATION_DIR)).start()
