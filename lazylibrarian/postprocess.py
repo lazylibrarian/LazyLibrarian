@@ -22,14 +22,17 @@ def processAlternate(source_dir=None):
     new_book = book_file(source_dir)
     if new_book:
         metadata = librarysync.get_book_info(new_book)
-        authorname = metadata['creator']
-        bookname = metadata['title']
-        myDB = database.DBConnection()
-        bookid = librarysync.find_book_in_db(myDB, authorname, bookname)
-        if bookid:
-            import_book(source_dir, bookid)
+        if 'title' in metadata and 'creator' in metadata:
+            authorname = metadata['creator']
+            bookname = metadata['title']
+            myDB = database.DBConnection()
+            bookid = librarysync.find_book_in_db(myDB, authorname, bookname)
+            if bookid:
+                import_book(source_dir, bookid)
+            else:
+                logger.warn("Book %s by %s not found in database" % (bookname, authorname))
         else:
-            logger.warn("Book %s by %s not found in database" % (bookname, authorname))
+            logger.warn('Book %s has no embedded metadata, unable to import' % new_book)
     else:
         logger.warn("No book found in %s" % source_dir)
 
