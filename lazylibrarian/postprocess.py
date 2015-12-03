@@ -131,44 +131,56 @@ def processDir():
                 logger.debug("Book with id: " + str(bookID) + " is in downloads")
                 pp_path = os.path.join(processpath, directory)
 
-                if os.path.isfile(pp_path): # ?? what is this supposed to do
-                    pp_path = os.path.join(processpath) # this is missing a parameter, join what?
+                if os.path.isfile(pp_path):
+                    pp_path = os.path.join(processpath) 
 
                 if (os.path.isdir(pp_path)):
                     logger.debug('Found LL folder %s.' % pp_path)
-
-                    data = myDB.select('SELECT * from books WHERE BookID="%s"' % bookID)
-                    if data:
-                        authorname = data[0]['AuthorName']
-                        bookname = data[0]['BookName']
-                        
-                        try:
-                            auth_dir = os.path.join(lazylibrarian.DESTINATION_DIR, authorname).encode(lazylibrarian.SYS_ENCODING)
-                            os.chmod(auth_dir, 0777)
-                        except Exception, e:
-                            logger.debug("Could not chmod author directory: " + str(auth_dir))
-                        dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace('$Title', bookname)
-                        global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace('$Title', bookname)
-                        dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
-                        dest_path = formatter.latinToAscii(formatter.replace_all(dest_path, dic))
-                        dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(lazylibrarian.SYS_ENCODING)
-
-                        processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name, bookID)
-
-                        if processBook:
-                            # update nzbs
-                            controlValueDict = {"BookID": bookID}
-                            newValueDict = {"Status": "Processed", "NZBDate": formatter.today()} # say when we processed it
-                            myDB.upsert("wanted", newValueDict, controlValueDict)
-                            ppcount = ppcount + 1
-                            processExtras(myDB, dest_path, global_name, data)
-                        else:
-                            logger.error('Postprocessing for %s has failed.' % global_name)
-                            logger.error('Warning - Residual files remain in %s' % pp_path)
+                if import_book(pp_path, bookID):
+                    ppcount = ppcount + 1
         if ppcount:
             logger.info('%s books/mags have been processed.' % ppcount)
         else:
             logger.info('No snatched books/mags have been found')
+
+def import_book(pp_path=None, bookID=None):
+
+    # Separated this into a function so we can more easily import books from an alternate directory 
+    # and move them into LL folder structure given just the bookID, returns True or False
+    # eg if import_book(source_directory, bookID): 
+    #         ppcount = ppcount + 1
+    #          
+    myDB = database.DBConnection()
+    data = myDB.select('SELECT * from books WHERE BookID="%s"' % bookID)
+    if data:
+        authorname = data[0]['AuthorName']
+        bookname = data[0]['BookName']
+                        
+        try:
+            auth_dir = os.path.join(lazylibrarian.DESTINATION_DIR, authorname).encode(lazylibrarian.SYS_ENCODING)
+            os.chmod(auth_dir, 0777)
+        except Exception, e:
+            logger.debug("Could not chmod author directory: " + str(auth_dir))
+            
+        dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace('$Title', bookname)
+        global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace('$Title', bookname)
+        dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
+        dest_path = formatter.latinToAscii(formatter.replace_all(dest_path, dic))
+        dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(lazylibrarian.SYS_ENCODING)
+
+        processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name, bookID)
+
+        if processBook:
+            # update nzbs
+            controlValueDict = {"BookID": bookID}
+            newValueDict = {"Status": "Processed", "NZBDate": formatter.today()} # say when we processed it
+            myDB.upsert("wanted", newValueDict, controlValueDict)
+            processExtras(myDB, dest_path, global_name, data)
+            return True
+        else:
+            logger.error('Postprocessing for %s has failed.' % global_name)
+            logger.error('Warning - Residual files remain in %s' % pp_path)
+            return False
 
 def book_file(search_dir=None):
     # find a book file in this directory, any book will do
