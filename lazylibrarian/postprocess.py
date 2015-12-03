@@ -9,7 +9,23 @@ from urllib import FancyURLopener
 
 import lazylibrarian
 
-from lazylibrarian import database, logger, formatter, notifiers, common
+from lazylibrarian import database, logger, formatter, notifiers, common, librarysync
+
+def processAlternate(source_dir=None):
+# import a book from an alternate directory
+    new_book = book_file(source_dir)
+    if new_book:
+        metadata = librarysync.get_book_info(new_book)
+        authorname = metadata['creator']
+        bookname = metadata['title']
+        myDB = database.DBConnection()
+        bookid = librarysync.find_book_in_db(myDB, authorname, bookname)
+        if bookid:
+            import_book(source_dir, bookid)
+        else:
+            logger.warn("Book %s by %s not found in database" % (bookname, authorname))
+    else:
+        logger.warn("No book found in %s" % source_dir)
 
 def processDir():
     # rename this thread

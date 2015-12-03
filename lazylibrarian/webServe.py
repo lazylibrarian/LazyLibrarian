@@ -102,6 +102,7 @@ class WebInterface(object):
             "nzbget_priority":  lazylibrarian.NZBGET_PRIORITY,
             "destination_copy": checked(lazylibrarian.DESTINATION_COPY),
             "destination_dir":  lazylibrarian.DESTINATION_DIR,
+            "alternate_dir":    lazylibrarian.ALTERNATE_DIR,
             "download_dir":     lazylibrarian.DOWNLOAD_DIR,
             "sab_cat":          lazylibrarian.SAB_CAT,
             "usenet_retention": lazylibrarian.USENET_RETENTION,
@@ -219,7 +220,7 @@ class WebInterface(object):
                      nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0, nzb_downloader_blackhole=0, use_nzb=0, use_tor=0,
                      proxy_host=None, proxy_type=None, sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None,
                      destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, nzb_blackholedir=None,
-                     torrent_dir=None, numberofseeders=0, tor_downloader_blackhole=0, tor_downloader_utorrent=0,
+                     alternate_dir=None, torrent_dir=None, numberofseeders=0, tor_downloader_blackhole=0, tor_downloader_utorrent=0,
                      nzbget_host=None, nzbget_user=None, nzbget_pass=None, nzbget_cat=None, nzbget_priority=0, newznab0=0, newznab_host0=None, newznab_api0=None,
                      newznab1=0, newznab_host1=None, newznab_api1=None, newznab2=0, newznab_host2=None, newznab_api2=None, newznab3=0, newznab_host3=None, newznab_api3=None,
                      newznab4=0, newznab_host4=None, newznab_api4=None, newzbin=0, newzbin_uid=None, newzbin_pass=None, kat=0, kat_host=None, ebook_type=None, book_api=None,
@@ -271,6 +272,7 @@ class WebInterface(object):
 
         lazylibrarian.DESTINATION_COPY = int(destination_copy)
         lazylibrarian.DESTINATION_DIR = destination_dir
+        lazylibrarian.ALTERNATE_DIR = alternate_dir
         lazylibrarian.DOWNLOAD_DIR = download_dir
         lazylibrarian.USENET_RETENTION = usenet_retention
         lazylibrarian.NZB_BLACKHOLEDIR = nzb_blackholedir

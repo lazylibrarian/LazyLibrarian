@@ -18,8 +18,7 @@ from lib.apscheduler.scheduler import Scheduler
 
 import threading
 
-from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, SimpleCache, librarysync, versioncheck, database, searchmag, magazinescan
-from common import remove_accents
+from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, SimpleCache, librarysync, versioncheck, database, searchmag, magazinescan, common
 
 FULL_PATH = None
 PROG_DIR = None
@@ -85,6 +84,7 @@ NZBGET_PRIORITY = None
 
 DESTINATION_COPY = 0
 DESTINATION_DIR = None
+ALTERNATE_DIR = None
 DOWNLOAD_DIR = None
 
 IMP_PREFLANG = None
@@ -344,7 +344,7 @@ def initialize():
             HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, \
             MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, \
             SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, NZB_BLACKHOLEDIR, \
-            GR_API, GB_API, BOOK_API, NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, NZB_DOWNLOADER_NZBGET, \
+            ALTERNATE_DIR, GR_API, GB_API, BOOK_API, NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, NZB_DOWNLOADER_NZBGET, \
             NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, NEWZNAB0, NEWZNAB_HOST0, NEWZNAB_API0, \
             NEWZNAB1, NEWZNAB_HOST1, NEWZNAB_API1, NEWZNAB2, NEWZNAB_HOST2, NEWZNAB_API2, NEWZNAB3, NEWZNAB_HOST3, NEWZNAB_API3, NEWZNAB4, NEWZNAB_HOST4, NEWZNAB_API4, \
             TORZNAB0, TORZNAB_HOST0, TORZNAB_API0, TORZNAB1, TORZNAB_HOST1, TORZNAB_API1, TORZNAB2, TORZNAB_HOST2, TORZNAB_API2, \
@@ -443,6 +443,7 @@ def initialize():
 
         DESTINATION_COPY = check_setting_int(CFG, 'General', 'destination_copy', 0)
         DESTINATION_DIR = check_setting_str(CFG, 'General', 'destination_dir', '')
+        ALTERNATE_DIR = check_setting_str(CFG, 'General', 'alternate_dir', '')
         DOWNLOAD_DIR = check_setting_str(CFG, 'General', 'download_dir', '')
 
         USE_NZB = check_setting_int(CFG, 'DLMethod', 'use_nzb', 0)
@@ -624,10 +625,10 @@ def build_monthtable():
     lang = str(current_locale)
     MONTHNAMES[0].append(lang)
     for f in range(1, 13):
-        MONTHNAMES[f].append(remove_accents(calendar.month_name[f]).lower())
+        MONTHNAMES[f].append(common.remove_accents(calendar.month_name[f]).lower())
     MONTHNAMES[0].append(lang)
     for f in range(1, 13):
-        MONTHNAMES[f].append(remove_accents(calendar.month_abbr[f]).lower().strip('.'))
+        MONTHNAMES[f].append(common.remove_accents(calendar.month_abbr[f]).lower().strip('.'))
     logger.info("Added month names for locale [%s], %s, %s ..." % (
         lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
 
@@ -638,10 +639,10 @@ def build_monthtable():
                 locale.setlocale(locale.LC_ALL, lang)
                 MONTHNAMES[0].append(lang)
                 for f in range(1, 13):
-                    MONTHNAMES[f].append(remove_accents(calendar.month_name[f]).lower())
+                    MONTHNAMES[f].append(common.remove_accents(calendar.month_name[f]).lower())
                 MONTHNAMES[0].append(lang)
                 for f in range(1, 13):
-                    MONTHNAMES[f].append(remove_accents(calendar.month_abbr[f]).lower().strip('.'))
+                    MONTHNAMES[f].append(common.remove_accents(calendar.month_abbr[f]).lower().strip('.'))
                 logger.info("Added month names for locale [%s], %s, %s ..." % (
                     lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
         except:
@@ -765,6 +766,7 @@ def config_write():
     new_config['NZBGet']['nzbget_priority'] = NZBGET_PRIORITY
 
     new_config['General']['destination_dir'] = DESTINATION_DIR
+    new_config['General']['alternate_dir'] = ALTERNATE_DIR
     new_config['General']['destination_copy'] = int(DESTINATION_COPY)
     new_config['General']['download_dir'] = DOWNLOAD_DIR
 
