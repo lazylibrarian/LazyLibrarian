@@ -1,7 +1,7 @@
 import datetime
 import re
 import lazylibrarian
-
+import shlex
 
 def now():
     dtnow = datetime.datetime.now()
@@ -88,9 +88,25 @@ def is_valid_isbn(isbn):
             if isbn[:9].isdigit():
                 return 1
             else:
-                if isbn[9] in ["X", "x"] and isbn[:8].isdigit():
+                if isbn[9] in ["Xx"] and isbn[:8].isdigit():
                     return 1
     return 0
+
+def is_valid_booktype(filename):
+    booktype_list = getList(lazylibrarian.EBOOK_TYPE)
+    if '.' in filename:
+        words = filename.split('.')
+        extn = words[len(words) - 1]
+        if extn in booktype_list:
+            return True
+    return False 
+
+def getList(st):
+    # split a string into a list
+    my_splitter = shlex.shlex(st, posix=True)
+    my_splitter.whitespace += ','
+    my_splitter.whitespace_split = True
+    return list(my_splitter)
 
 
 def latinToAscii(unicrap):

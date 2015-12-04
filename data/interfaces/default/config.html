@@ -464,6 +464,7 @@
                     </div>
                 </td>
                 <td>
+                <label>Alternate Import Folder:</label><input type="text" name="alternate_dir" value="${config['alternate_dir']}" size="50">
                 </td>
             </tr>
             <tr>
@@ -646,9 +647,9 @@
                         <div class="row">
                             <input type="checkbox" name="pushover_onsnatch" value="1" ${config['pushover_onsnatch']} />Notify on snatch
                         </div>
-			<div class="row">
-			    <input type="checkbox" name="pushover_ondownload" value="1" ${config['pushover_ondownload']} />Notify on download
-			</div>
+			            <div class="row">
+			                <input type="checkbox" name="pushover_ondownload" value="1" ${config['pushover_ondownload']} />Notify on download
+			            </div>
                         <div class="row">
                             <input type="text" name="pushover_apitoken" value="${config['pushover_apitoken']}" size="35" placeholder="Pushover API Token">
                         </div>
@@ -656,7 +657,13 @@
                             <input type="text" name="pushover_keys" value="${config['pushover_keys']}" size="35" placeholder="Pushover Keys">
                         </div>
                         <div class="row">
+                            <input type="text" name="pushover_device" value="${config['pushover_device']}" size="35" placeholder="Pushover Device">
+                        </div>                        
+                        <div class="row">
                             <input type="text" name="pushover_priority" value="${config['pushover_priority']}" size="35" placeholder="Pushover Priority">
+                        </div>
+                        <div class="row">
+                            <input type="button" value="Test Pushover" id="testPushover">
                         </div>
                     </div>
                 </fieldset>
@@ -1108,6 +1115,12 @@
 
             $('#testPushbullet').click(function () {
                 $.get("testPushbullet",
+                    function (data) { window.alert(data) });
+                    
+            });
+
+            $('#testPushover').click(function () {
+                $.get("testPushover",
                     function (data) { window.alert(data) });
                     
             });

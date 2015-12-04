@@ -8,7 +8,7 @@ import lazylibrarian
 from lazylibrarian import formatter
 
 MAX_SIZE = 51200  # 5 Bytes
-MAX_FILES = 5
+MAX_FILES = 10
 
 
 # Simple rotating log handler that uses RotatingFileHandler

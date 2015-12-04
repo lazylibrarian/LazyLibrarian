@@ -1,7 +1,6 @@
 import os
 import re
 import lazylibrarian
-import shlex
 from lazylibrarian import logger, database, importer, formatter
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
@@ -10,16 +9,31 @@ import lib.zipfile as zipfile
 from lib.mobi import Mobi
 
 
+def opf_file(search_dir=None):
+    # find an .opf file in this directory
+    # return full pathname of file, or empty string if no opf found
+    if search_dir and os.path.isdir(search_dir):
+        for fname in os.listdir(search_dir):
+            if fname.endswith('.opf'):
+                return os.path.join(search_dir, fname).encode(lazylibrarian.SYS_ENCODING)
+    return ""                           
+
+
 def get_book_info(fname):
     # only handles epub, mobi and opf for now,
     # for pdf see below
+    res = {}
+    if not '.' in fname:
+        return res
     words = fname.split('.')
     extn = words[len(words) - 1]
 
     if extn == "mobi":
-        book = Mobi(fname)
-        book.parse()
-        res = {}
+        try:
+            book = Mobi(fname)
+            book.parse()
+        except:
+            return res
         res['creator'] = book.author()
         res['title'] = book.title()
         res['language'] = book.language()
@@ -49,6 +63,8 @@ def get_book_info(fname):
         tree = ElementTree.fromstring(txt)
         n = 0
         cfname = ""
+        if not len(tree):
+            return res
         while n < len(tree[0]):
             att = str(tree[0][n].attrib)
             if 'full-path' in att:
@@ -67,7 +83,8 @@ def get_book_info(fname):
             return ""
 
     # repackage the data
-    res = {}
+    if not len(tree):
+        return res
     n = 0
     while n < len(tree[0]):
         tag = str(tree[0][n].tag).split('}')[1]
@@ -87,17 +104,9 @@ def get_book_info(fname):
     return res
 
 
-def getList(st):
-    my_splitter = shlex.shlex(st, posix=True)
-    my_splitter.whitespace += ','
-    my_splitter.whitespace_split = True
-    return list(my_splitter)
-
+def find_book_in_db(myDB, author, book):
 # PAB fuzzy search for book in library, return LL bookid if found or zero
 # if not, return bookid to more easily update status
-
-
-def find_book_in_db(myDB, author, book):
     # prefer an exact match on author & book
     match = myDB.action(
         'SELECT BookID FROM books where AuthorName="%s" and BookName="%s"' %
@@ -213,7 +222,7 @@ def LibraryScan(dir=None):
                 myDB.action(
                     'update books set BookFile="" where BookID="%s"' %
                     bookID)
-                logger.info(
+                logger.warn(
                     'Book %s - %s updated as not found on disk' %
                     (bookAuthor, bookName))
             # for book_type in getList(lazylibrarian.EBOOK_TYPE):
@@ -247,7 +256,7 @@ def LibraryScan(dir=None):
     # with regular expression matching
     booktypes = ''
     count = -1
-    booktype_list = getList(lazylibrarian.EBOOK_TYPE)
+    booktype_list = formatter.getList(lazylibrarian.EBOOK_TYPE)
     for book_type in booktype_list:
         count += 1
         if count == 0:
@@ -277,54 +286,55 @@ def LibraryScan(dir=None):
 # 			If this is a book, try to get author/title/isbn/language
 # 			If metadata.opf exists, use that
 # 			else if epub or mobi, read metadata from the book
-# 			else have to try pattern match for author/title	and look up isbn/lang from LT or GR later
-#
-#			Is it a book (extension found in booktypes)
+# 			else have to try pattern match for author/title	and look up isbn/lang from LT or GR late
                 match = 0
-                words = files.split('.')
-                extn = words[len(words) - 1]
-                if extn in booktypes:
-                # see if there is a metadata file in this folder with the info
-                # we need
-                    logger.info(
+                extn = ""
+                
+                if '.' in files:
+                    words = files.split('.')
+                    extn = words[len(words) - 1]
+                    
+                if formatter.is_valid_booktype(files):
+                    logger.debug(
                         "[%s] Now scanning subdirectory %s" %
                         (dir.decode(lazylibrarian.SYS_ENCODING, 'replace'), subdirectory.decode(lazylibrarian.SYS_ENCODING, 'replace')))
+                    
+                    # calibre uses "metadata.opf", LL uses "bookname - authorname.opf"
+                    # just look for any .opf file in the current directory since we don't know 
+                    # LL preferred authorname/bookname at this point
+                    metafile = opf_file(r)
                     try:
-                        metafile = os.path.join(
-                            r,
-                            "metadata.opf").encode(
-                                lazylibrarian.SYS_ENCODING)
                         res = get_book_info(metafile)
-                        if 'title' in res and 'creator' in res:  # this is the minimum we need
-                            book = res['title']
-                            author = res['creator']
-                            if 'language' in res:
-                                language = res['language']
-                            else:
-                                language = ""
-                            if 'identifier' in res:
-                                isbn = res['identifier']
-                            else:
-                                isbn = ""
-                            match = 1
-                            logger.debug(
-                                "file meta [%s] [%s] [%s] [%s]" %
-                                (isbn, language, author, book))
-                        else:
-                            logger.debug("file meta incomplete in %s" % r)
                     except:
-                        logger.debug("No metadata file in %s" % r)
+                        res = {}
+                    if 'title' in res and 'creator' in res:  # this is the minimum we need
+                        book = res['title']
+                        author = res['creator']
+                        if 'language' in res:
+                            language = res['language']
+                        else:
+                            language = ""
+                        if 'identifier' in res:
+                            isbn = res['identifier']
+                        else:
+                            isbn = ""
+                        match = 1
+                        logger.debug(
+                            "file meta [%s] [%s] [%s] [%s]" %
+                            (isbn, language, author, book))
+                    else:
+                        logger.debug("File meta incomplete in %s" % metafile)
 
                     if not match:
                         # it's a book, but no external metadata found
                         # if it's an epub or a mobi we can try to read metadata
                         # from it
                         if (extn == "epub") or (extn == "mobi"):
-                            book_file = os.path.join(
-                                r,
-                                files).encode(
-                                    lazylibrarian.SYS_ENCODING)
-                            res = get_book_info(book_file)
+                            book_filename = os.path.join(r, files).encode(lazylibrarian.SYS_ENCODING)
+                            try:
+                                res = get_book_info(book_filename)
+                            except:
+                                res = {}
                             if 'title' in res and 'creator' in res:  # this is the minimum we need
                                 book = res['title']
                                 author = res['creator']
@@ -336,14 +346,11 @@ def LibraryScan(dir=None):
                                     isbn = res['identifier']
                                 else:
                                     isbn = ""
-                                logger.debug(
-                                    "book meta [%s] [%s] [%s] [%s]" %
+                                logger.debug("book meta [%s] [%s] [%s] [%s]" %
                                     (isbn, language, author, book))
                                 match = 1
                             else:
-                                logger.debug(
-                                    "book meta incomplete in %s" %
-                                    book_file)
+                                logger.debug("Book meta incomplete in %s" % book_filename)
 
                 if not match:
                     match = pattern.match(files)
@@ -353,7 +360,7 @@ def LibraryScan(dir=None):
                     else:
                         logger.debug("Pattern match failed [%s]" % files)
 
-                else:
+                if match:
                     processed_subdirectories.append(
                         subdirectory)  # flag that we found a book in this subdirectory
                     #
@@ -369,7 +376,7 @@ def LibraryScan(dir=None):
                             "Found Language [%s] ISBN [%s]" %
                             (language, isbn))
                         # we need to add it to language cache if not already
-                        # there
+                        # there, is_valid_isbn has checked length is 10 or 13
                         if len(isbn) == 10:
                             isbnhead = isbn[0:3]
                         else:
@@ -392,8 +399,7 @@ def LibraryScan(dir=None):
                     # get authors name in a consistent format
                     if "," in author:  # "surname, forename"
                         words = author.split(',')
-                        author = words[1].strip() + ' ' + words[
-                            0].strip()  # "forename surname"
+                        author = words[1].strip() + ' ' + words[0].strip()  # "forename surname"
                     if author[1] == ' ':        
                         author = author.replace(' ', '.')
                         author = author.replace('..', '.')
@@ -412,7 +418,7 @@ def LibraryScan(dir=None):
                         try:
                             author_gr = GR.find_author_id()
                         except:
-                            logger.error(
+                            logger.warn(
                                 "Error finding author id for [%s]" %
                                 author)
                             continue
@@ -438,7 +444,7 @@ def LibraryScan(dir=None):
                             # author_gr, so store in LL db under that
                             match_fuzz = fuzz.ratio(match_auth, match_name)
                             if match_fuzz < 90:
-                                logger.info(
+                                logger.debug(
                                     "Failed to match author [%s] fuzz [%d]" %
                                     (author, match_fuzz))
                                 logger.debug(
@@ -459,7 +465,7 @@ def LibraryScan(dir=None):
                                     'SELECT * FROM authors where AuthorName="%s"' %
                                     author).fetchone()
                                 if not check_exist_author:
-                                    logger.info(
+                                    logger.debug(
                                         "Adding new author [%s]" %
                                         author)
                                     if author not in new_authors:
@@ -475,7 +481,7 @@ def LibraryScan(dir=None):
                     # check author exists in db, either newly loaded or already
                     # there
                     if not check_exist_author:
-                        logger.info(
+                        logger.debug(
                             "Failed to match author [%s] in database" %
                             author)
                     else:
@@ -494,7 +500,7 @@ def LibraryScan(dir=None):
                                 myDB.action(
                                     'UPDATE books set Status="Open" where BookID="%s"' %
                                     bookid)
-                                book_file = os.path.join(
+                                book_filename = os.path.join(
                                     r,
                                     files).encode(
                                         lazylibrarian.SYS_ENCODING)
@@ -502,7 +508,7 @@ def LibraryScan(dir=None):
                                 # gets removed, or allow click-to-open
                                 myDB.action(
                                     'UPDATE books set BookFile="%s" where BookID="%s"' %
-                                    (book_file, bookid))
+                                    (book_filename, bookid))
                                 new_book_count += 1
 
     cachesize = myDB.action("select count(*) from languages").fetchone()
@@ -514,42 +520,43 @@ def LibraryScan(dir=None):
         stats = myDB.action(
             "SELECT sum(GR_book_hits), sum(GR_lang_hits), sum(LT_lang_hits), sum(GB_lang_change), sum(cache_hits), sum(bad_lang), sum(bad_char), sum(uncached) FROM stats").fetchone()
         if lazylibrarian.BOOK_API == "GoogleBooks":
-            logger.info(
+            logger.debug(
                 "GoogleBooks was hit %s times for books" %
                 stats['sum(GR_book_hits)'])
-            logger.info(
+            logger.debug(
                 "GoogleBooks language was changed %s times" %
                 stats['sum(GB_lang_change)'])
         if lazylibrarian.BOOK_API == "GoodReads":
-            logger.info(
+            logger.debug(
                 "GoodReads was hit %s times for books" %
                 stats['sum(GR_book_hits)'])
-            logger.info(
+            logger.debug(
                 "GoodReads was hit %s times for languages" %
                 stats['sum(GR_lang_hits)'])
-        logger.info(
+        logger.debug(
             "LibraryThing was hit %s times for languages" %
             stats['sum(LT_lang_hits)'])
-        logger.info(
+        logger.debug(
             "Language cache was hit %s times" %
             stats['sum(cache_hits)'])
-        logger.info(
+        logger.debug(
             "Unwanted language removed %s books" %
             stats['sum(bad_lang)'])
-        logger.info(
+        logger.debug(
             "Unwanted characters removed %s books" %
             stats['sum(bad_char)'])
-        logger.info(
+        logger.debug(
             "Unable to cache %s books with missing ISBN" %
             stats['sum(uncached)'])
-    logger.info("ISBN Language cache holds %s entries" % cachesize['count(*)'])
+    logger.debug("ISBN Language cache holds %s entries" % cachesize['count(*)'])
     stats = len(
         myDB.select('select BookID from Books where status="Open" and BookLang="Unknown"'))
-    logger.info(
-        "There are %s books in your library with unknown language" %
-        stats)
+    if stats:
+        logger.warn(
+            "There are %s books in your library with unknown language" %
+            stats)
 
-    logger.info('Updating %i authors' % len(new_authors))
+    logger.debug('Updating %i authors' % len(new_authors))
     for auth in new_authors:
         havebooks = len(
             myDB.select('select BookName from Books where status="%s" and AuthorName="%s"' %

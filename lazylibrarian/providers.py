@@ -52,10 +52,10 @@ def KAT(book=None):
     except urllib2.URLError as e:
         # seems KAT returns 404 if no results, not really an error
         if not e.code == 404: 
-            logger.warn(searchURL)
-            logger.warn('Error fetching data from %s: %s' % (provider, e.reason))
+            logger.debug(searchURL)
+            logger.debug('Error fetching data from %s: %s' % (provider, e.reason))
         else:
-            logger.info(u"No results found from %s for %s" % (provider, book['searchterm']))    
+            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))    
         data = False
 
     results = []
@@ -67,7 +67,7 @@ def KAT(book=None):
         d = feedparser.parse(data)
 
         if not len(d.entries):
-            logger.info(u"No results found from %s for %s" % (provider, book['searchterm']))
+            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
             pass
 
         else:
@@ -97,7 +97,7 @@ def KAT(book=None):
                 except Exception, e:
                     logger.error(u"An unknown error occurred in the KAT parser: %s" % e)
     
-    logger.info(u"Found %i results from %s for %s" % (len(results), provider, book['searchterm']))        
+    logger.debug(u"Found %i results from %s for %s" % (len(results), provider, book['searchterm']))        
     return results
 
 #
@@ -224,7 +224,7 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=
         try:
             data = ElementTree.parse(resp)
         except (urllib2.URLError, IOError, EOFError), e:
-            logger.warn('Error fetching data from %s: %s' % (host, e))
+            logger.error('Error fetching data from %s: %s' % (host, e))
             data = None
 
     except Exception, e:
@@ -243,7 +243,7 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=
                 results.append(ReturnResultsFieldsBySearchType(book, nzb, searchType, host, searchMode))
             except IndexError:
                 logger.debug('No results from %s' % host)
-        logger.info(u'Found %s nzb at %s for: %s' % (nzbcount, host, book['searchterm']))
+        logger.debug(u'Found %s nzb at %s for: %s' % (nzbcount, host, book['searchterm']))
     else:
         logger.debug('No data returned from %s' % host)
     return results

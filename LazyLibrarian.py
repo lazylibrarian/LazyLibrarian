@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os, sys, time, cherrypy, threading, locale
 from lib.configobj import ConfigObj
 

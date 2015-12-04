@@ -18,8 +18,7 @@ from lib.apscheduler.scheduler import Scheduler
 
 import threading
 
-from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, SimpleCache, librarysync, versioncheck, database, searchmag
-from common import remove_accents
+from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, SimpleCache, librarysync, versioncheck, database, searchmag, magazinescan, common
 
 FULL_PATH = None
 PROG_DIR = None
@@ -85,6 +84,7 @@ NZBGET_PRIORITY = None
 
 DESTINATION_COPY = 0
 DESTINATION_DIR = None
+ALTERNATE_DIR = None
 DOWNLOAD_DIR = None
 
 IMP_PREFLANG = None
@@ -216,6 +216,7 @@ PUSHBULLET_NOTIFY_ONDOWNLOAD = 0
 USE_PUSHOVER = 0
 PUSHOVER_APITOKEN = None
 PUSHOVER_KEYS = None
+PUSHOVER_DEVICE = None
 PUSHOVER_ONSNATCH = 0
 PUSHOVER_ONDOWNLOAD = 0
 PUSHOVER_PRIORITY = None
@@ -343,7 +344,7 @@ def initialize():
             HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, \
             MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, \
             SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, NZB_BLACKHOLEDIR, \
-            GR_API, GB_API, BOOK_API, NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, NZB_DOWNLOADER_NZBGET, \
+            ALTERNATE_DIR, GR_API, GB_API, BOOK_API, NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, NZB_DOWNLOADER_NZBGET, \
             NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, NEWZNAB0, NEWZNAB_HOST0, NEWZNAB_API0, \
             NEWZNAB1, NEWZNAB_HOST1, NEWZNAB_API1, NEWZNAB2, NEWZNAB_HOST2, NEWZNAB_API2, NEWZNAB3, NEWZNAB_HOST3, NEWZNAB_API3, NEWZNAB4, NEWZNAB_HOST4, NEWZNAB_API4, \
             TORZNAB0, TORZNAB_HOST0, TORZNAB_API0, TORZNAB1, TORZNAB_HOST1, TORZNAB_API1, TORZNAB2, TORZNAB_HOST2, TORZNAB_API2, \
@@ -354,7 +355,7 @@ def initialize():
             USE_TOR, USE_NZB, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, USE_PUSHBULLET, \
             PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, \
             UTORRENT_HOST, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
-            USE_PUSHOVER, PUSHOVER_ONSNATCH, PUSHOVER_KEYS, PUSHOVER_APITOKEN, PUSHOVER_PRIORITY, PUSHOVER_ONDOWNLOAD, \
+            USE_PUSHOVER, PUSHOVER_ONSNATCH, PUSHOVER_KEYS, PUSHOVER_APITOKEN, PUSHOVER_PRIORITY, PUSHOVER_ONDOWNLOAD, PUSHOVER_DEVICE, \
             USE_ANDROIDPN, ANDROIDPN_NOTIFY_ONSNATCH, ANDROIDPN_NOTIFY_ONDOWNLOAD, ANDROIDPN_URL, ANDROIDPN_USERNAME, ANDROIDPN_BROADCAST, \
             TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PASS, TRANSMISSION_USER, \
             TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, \
@@ -442,6 +443,7 @@ def initialize():
 
         DESTINATION_COPY = check_setting_int(CFG, 'General', 'destination_copy', 0)
         DESTINATION_DIR = check_setting_str(CFG, 'General', 'destination_dir', '')
+        ALTERNATE_DIR = check_setting_str(CFG, 'General', 'alternate_dir', '')
         DOWNLOAD_DIR = check_setting_str(CFG, 'General', 'download_dir', '')
 
         USE_NZB = check_setting_int(CFG, 'DLMethod', 'use_nzb', 0)
@@ -568,6 +570,7 @@ def initialize():
         PUSHOVER_KEYS = check_setting_str(CFG, 'Pushover', 'pushover_keys', '')
         PUSHOVER_APITOKEN = check_setting_str(CFG, 'Pushover', 'pushover_apitoken', '')
         PUSHOVER_PRIORITY = check_setting_int(CFG, 'Pushover', 'pushover_priority', 0)
+        PUSHOVER_DEVICE = check_setting_str(CFG, 'Pushover', 'pushover_device', '')
 
         USE_ANDROIDPN = check_setting_int(CFG, 'AndroidPN', 'use_androidpn', 0)
         ANDROIDPN_NOTIFY_ONSNATCH = check_setting_int(CFG, 'AndroidPN', 'androidpn_notify_onsnatch', 0)
@@ -622,10 +625,10 @@ def build_monthtable():
     lang = str(current_locale)
     MONTHNAMES[0].append(lang)
     for f in range(1, 13):
-        MONTHNAMES[f].append(remove_accents(calendar.month_name[f]).lower())
+        MONTHNAMES[f].append(common.remove_accents(calendar.month_name[f]).lower())
     MONTHNAMES[0].append(lang)
     for f in range(1, 13):
-        MONTHNAMES[f].append(remove_accents(calendar.month_abbr[f]).lower().strip('.'))
+        MONTHNAMES[f].append(common.remove_accents(calendar.month_abbr[f]).lower().strip('.'))
     logger.info("Added month names for locale [%s], %s, %s ..." % (
         lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
 
@@ -636,10 +639,10 @@ def build_monthtable():
                 locale.setlocale(locale.LC_ALL, lang)
                 MONTHNAMES[0].append(lang)
                 for f in range(1, 13):
-                    MONTHNAMES[f].append(remove_accents(calendar.month_name[f]).lower())
+                    MONTHNAMES[f].append(common.remove_accents(calendar.month_name[f]).lower())
                 MONTHNAMES[0].append(lang)
                 for f in range(1, 13):
-                    MONTHNAMES[f].append(remove_accents(calendar.month_abbr[f]).lower().strip('.'))
+                    MONTHNAMES[f].append(common.remove_accents(calendar.month_abbr[f]).lower().strip('.'))
                 logger.info("Added month names for locale [%s], %s, %s ..." % (
                     lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
         except:
@@ -763,6 +766,7 @@ def config_write():
     new_config['NZBGet']['nzbget_priority'] = NZBGET_PRIORITY
 
     new_config['General']['destination_dir'] = DESTINATION_DIR
+    new_config['General']['alternate_dir'] = ALTERNATE_DIR
     new_config['General']['destination_copy'] = int(DESTINATION_COPY)
     new_config['General']['download_dir'] = DOWNLOAD_DIR
 
@@ -910,6 +914,7 @@ def config_write():
     new_config['Pushover']['pushover_priority'] = int(PUSHOVER_PRIORITY)
     new_config['Pushover']['pushover_keys'] = PUSHOVER_KEYS
     new_config['Pushover']['pushover_apitoken'] = PUSHOVER_APITOKEN
+    new_config['Pushover']['pushover_device'] = PUSHOVER_DEVICE
 
     new_config['AndroidPN'] = {}
     new_config['AndroidPN']['use_androidpn'] = int(USE_ANDROIDPN)
@@ -1009,9 +1014,23 @@ def dbcheck():
         logger.info('Updating database to hold SeriesOrder')
         c.execute('ALTER TABLE books ADD COLUMN SeriesOrder INTEGER')
 
+    addedIssues = False
+    try:
+        c.execute('SELECT Title from issues')
+    except sqlite3.OperationalError:
+        logger.info('Updating database to hold Issues')
+        c.execute('CREATE TABLE issues ( Title TEXT, IssueAcquired TEXT, IssueDate TEXT, IssueFile TEXT )')
+        addedIssues = True
+            
     conn.commit()
     c.close()
 
+    if addedIssues:
+        try:
+            magazinescan.magazineScan(thread='MAIN')
+        except:
+            logger.debug("Failed to scan magazines")
+        
     if addedSeries:
         try:
             myDB = database.DBConnection()

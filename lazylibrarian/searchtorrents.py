@@ -31,7 +31,7 @@ import gzip
 
 def search_tor_book(books=None, mags=None):
     if not(lazylibrarian.USE_TOR):
-        logger.debug('Torrent search is disabled')
+        logger.warn('Torrent search is disabled')
         return
     # rename this thread
     threading.currentThread().name = "SEARCHTORBOOKS"
@@ -93,12 +93,12 @@ def search_tor_book(books=None, mags=None):
         # print book.keys()
         resultlist, nproviders = providers.IterateOverTorrentSites(book, 'book')
         if not nproviders:
-            logger.info('No torrent providers are set, check config for TORRENT providers')
+            logger.warn('No torrent providers are set, check config for TORRENT providers')
             return
 
         # if you can't find teh book specifically, you might find under general search
         if not resultlist:
-            logger.info("Searching for type book failed to find any books...moving to general search")
+            logger.debug("Searching for type book failed to find any books...moving to general search")
             resultlist, nproviders = providers.IterateOverTorrentSites(book, 'general')
 
         if not resultlist:
@@ -119,7 +119,7 @@ def search_tor_book(books=None, mags=None):
                 logger.debug("Torrent Title Match %: " + str(tor_Title_match))
 
                 if (tor_Title_match > match_ratio):
-                    logger.info(u'Found Torrent: %s' % tor['tor_title'])
+                    logger.debug(u'Found Torrent: %s' % tor['tor_title'])
                     addedCounter = addedCounter + 1
                     bookid = book['bookid']
                     tor_Title = (book["authorName"] + ' - ' + book['bookName'] + ' LL.(' + book['bookid'] + ')').strip()
@@ -148,7 +148,7 @@ def search_tor_book(books=None, mags=None):
                         notifiers.notify_snatch(formatter.latinToAscii(tor_Title) + ' at ' + formatter.now())
                     break
             if addedCounter == 0:
-                logger.info("No torrent's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")
+                logger.debug("No torrent's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")
         counter = counter + 1
     logger.info("TORSearch for Wanted items complete")
 
@@ -156,6 +156,7 @@ def search_tor_book(books=None, mags=None):
 def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
     myDB = database.DBConnection()
     download = False
+    full_url = tor_url # keep the url as stored in "wanted" table
     if (lazylibrarian.USE_TOR) and (lazylibrarian.TOR_DOWNLOADER_DELUGE or lazylibrarian.TOR_DOWNLOADER_UTORRENT
                                     or lazylibrarian.TOR_DOWNLOADER_BLACKHOLE or lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
 
@@ -196,7 +197,13 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             except urllib2.URLError as e:
                 logger.warn('Error fetching torrent from url: ' + tor_url + ' %s' % e.reason)
                 return
-
+                
+        # strip url back to the .torrent for passing to downloaders
+        # deluge needs it stripping, transmission doesn't mind
+        # not sure about utorrent
+        if '?' in tor_url: 
+            tor_url = tor_url.split('?')[0]
+            
         if (lazylibrarian.TOR_DOWNLOADER_BLACKHOLE):
             logger.debug('Torrent blackhole')
             tor_title = common.removeDisallowedFilenameChars(tor_title)
@@ -209,7 +216,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             torrent_file = open(tor_path, 'wb')
             torrent_file.write(torrent)
             torrent_file.close()
-            logger.info('Torrent file saved: %s' % tor_title)
+            logger.debug('Torrent file saved: %s' % tor_title)
             download = True
 
         if (lazylibrarian.TOR_DOWNLOADER_UTORRENT):
@@ -226,21 +233,23 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                                      int(lazylibrarian.DELUGE_PORT),
                                      lazylibrarian.DELUGE_USER,
                                      lazylibrarian.DELUGE_PASS)
-            client.connect()
-            download = client.call('add_torrent_url', tor_url, {"name": tor_title})
-            logger.debug('Deluge return value: %s' % download)
-
+            if lazylibrarian.DELUGE_USER and lazylibrarian.DELUGE_PASS:
+                client.connect()
+                download = client.call('core.add_torrent_url', tor_url, {"name": tor_title})
+                logger.debug('Deluge return value: %s' % download)
+            else:
+                logger.warn('Need user & pass for deluge, check config.')
     else:
-        logger.error('No torrent download method is enabled, check config.')
+        logger.warn('No torrent download method is enabled, check config.')
         return False
 
     if download:
         logger.debug(u'Torrent file has been downloaded from %s' % tor_url)
         myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
-        myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl="%s"' % tor_url)
+        myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl="%s"' % full_url)
     else:
-        logger.error(u'Failed to download torrent @ <a href="%s">%s</a>' % (tor_url, tor_url))
-        myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl="%s"' % tor_url)
+        logger.error(u'Failed to download torrent @ <a href="%s">%s</a>' % (full_url, tor_url))
+        myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl="%s"' % full_url)
 
 
 def CalcTorrentHash(torrent):

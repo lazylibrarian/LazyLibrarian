@@ -41,7 +41,7 @@ class GoodReads:
 
         url = urllib.quote_plus(authorname.encode('utf-8'))
         set_url = 'http://www.goodreads.com/search.xml?q=' + url + '&' + urllib.urlencode(self.params)
-        logger.info('Now searching GoodReads API with keyword: ' + authorname)
+        logger.debug('Now searching GoodReads API with keyword: ' + authorname)
         logger.debug('Searching for %s at: %s' % (authorname, set_url))
 
         try:
@@ -140,11 +140,11 @@ class GoodReads:
 
         except urllib2.HTTPError, err:
             if err.code == 404:
-                logger.info('Received a 404 error when searching for author')
+                logger.error('Received a 404 error when searching for author')
             if err.code == 403:
-                logger.info('Access to api is denied: usage exceeded')
+                logger.warn('Access to api is denied: usage exceeded')
             else:
-                logger.info('An unexpected error has occurred when searching for an author')
+                logger.error('An unexpected error has occurred when searching for an author')
 
         logger.debug('Found %s results with keyword: %s' % (resultcount, authorname))
         logger.debug('The GoodReads API was hit %s times for keyword %s' % (str(api_hits), authorname))
@@ -179,7 +179,7 @@ class GoodReads:
         resultxml = rootxml.getiterator('author')
 
         if not len(resultxml):
-            logger.info('No authors found with name: %s' % self.name)
+            logger.warn('No authors found with name: %s' % self.name)
         else:
             # In spite of how this looks, goodreads only returns one result, even if there are multiple matches
             # we just have to hope we get the right one. eg search for "James Lovelock" returns "James E. Lovelock"
@@ -214,10 +214,10 @@ class GoodReads:
             logger.error("Error fetching author ID: " + str(e))
 
         if not len(resultxml):
-            logger.info('No author found with ID: ' + authorid)
+            logger.warn('No author found with ID: ' + authorid)
 
         else:
-            logger.info("[%s] Processing info for authorID: %s" % (authorname, authorid))
+            logger.debug("[%s] Processing info for authorID: %s" % (authorname, authorid))
 
             # PAB added authorname to author_dict - this holds the intact name preferred by GR
             author_dict = {
@@ -266,10 +266,10 @@ class GoodReads:
         valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
 
         if not len(resultxml):
-            logger.info('[%s] No books found for author with ID: %s' % (authorname, authorid))
+            logger.warn('[%s] No books found for author with ID: %s' % (authorname, authorid))
 
         else:
-            logger.info("[%s] Now processing books with GoodReads API" % authorname)
+            logger.debug("[%s] Now processing books with GoodReads API" % authorname)
 
             resultsCount = 0
             removedResults = 0
@@ -476,10 +476,10 @@ class GoodReads:
                             myDB.upsert("books", newValueDict, controlValueDict)
                             logger.debug(u"book found " + book.find('title').text + " " + pubyear)
                             if not find_book_status:
-                                logger.info("[%s] Added book: %s" % (authorname, bookname))
+                                logger.debug("[%s] Added book: %s" % (authorname, bookname))
                                 added_count = added_count + 1
                             else:
-                                logger.info("[%s] Updated book: %s" % (authorname, bookname))
+                                logger.debug("[%s] Updated book: %s" % (authorname, bookname))
                                 updated_count = updated_count + 1
                         else:
                             book_ignore_count = book_ignore_count + 1
@@ -578,7 +578,7 @@ class GoodReads:
 #
         valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
         if bookLanguage not in valid_langs:
-            logger.info('Book %s language does not match preference' % bookname)
+            logger.debug('Book %s language does not match preference' % bookname)
 
         if (rootxml.find('./book/publication_year').text == None):
             bookdate = "0000"
@@ -635,4 +635,4 @@ class GoodReads:
 
         # print newValueDict
         myDB.upsert("books", newValueDict, controlValueDict)
-        logger.info("%s added to the books database" % bookname)
+        logger.debug("%s added to the books database" % bookname)
