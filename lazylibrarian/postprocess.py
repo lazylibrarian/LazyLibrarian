@@ -21,7 +21,21 @@ def processAlternate(source_dir=None):
         return
     new_book = book_file(source_dir)
     if new_book:
-        metadata = librarysync.get_book_info(new_book)
+        # see if there is a metadata file in this folder with the info we need
+        metafile = librarysync.opf_file(source_dir)
+        try:
+            metadata = librarysync.get_book_info(metafile)
+        except:
+            metadata = {}
+        if 'title' in metadata and 'creator' in metadata:
+            authorname = metadata['creator']
+            bookname = metadata['title']
+        # if not, try to get metadata from the book file
+        else:            
+            try:
+                metadata = librarysync.get_book_info(new_book)
+            except:
+                metadata = {}
         if 'title' in metadata and 'creator' in metadata:
             authorname = metadata['creator']
             bookname = metadata['title']
@@ -32,7 +46,7 @@ def processAlternate(source_dir=None):
             else:
                 logger.warn("Book %s by %s not found in database" % (bookname, authorname))
         else:
-            logger.warn('Book %s has no embedded metadata, unable to import' % new_book)
+            logger.warn('Book %s has no metadata, unable to import' % new_book)
     else:
         logger.warn("No book found in %s" % source_dir)
 
@@ -213,8 +227,9 @@ def book_file(search_dir=None):
     if search_dir and os.path.isdir(search_dir):
         for fname in os.listdir(search_dir):
             if formatter.is_valid_booktype(fname):
-                return os.path.join(search_dir, fname)
+                return os.path.join(search_dir, fname).encode(lazylibrarian.SYS_ENCODING)
     return ""                           
+
 
 def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
     # given book data, handle calibre autoadd, book image, opf,

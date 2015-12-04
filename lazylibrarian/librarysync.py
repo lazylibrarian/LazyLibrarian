@@ -9,6 +9,16 @@ import lib.zipfile as zipfile
 from lib.mobi import Mobi
 
 
+def opf_file(search_dir=None):
+    # find an .opf file in this directory
+    # return full pathname of file, or empty string if no opf found
+    if search_dir and os.path.isdir(search_dir):
+        for fname in os.listdir(search_dir):
+            if fname.endswith('.opf'):
+                return os.path.join(search_dir, fname).encode(lazylibrarian.SYS_ENCODING)
+    return ""                           
+
+
 def get_book_info(fname):
     # only handles epub, mobi and opf for now,
     # for pdf see below
@@ -93,11 +103,10 @@ def get_book_info(fname):
         n = n + 1
     return res
 
-# PAB fuzzy search for book in library, return LL bookid if found or zero
-# if not, return bookid to more easily update status
-
 
 def find_book_in_db(myDB, author, book):
+# PAB fuzzy search for book in library, return LL bookid if found or zero
+# if not, return bookid to more easily update status
     # prefer an exact match on author & book
     match = myDB.action(
         'SELECT BookID FROM books where AuthorName="%s" and BookName="%s"' %
@@ -286,13 +295,14 @@ def LibraryScan(dir=None):
                     extn = words[len(words) - 1]
                     
                 if formatter.is_valid_booktype(files):
-                # see if there is a metadata file in this folder with the info
-                # we need
                     logger.debug(
                         "[%s] Now scanning subdirectory %s" %
                         (dir.decode(lazylibrarian.SYS_ENCODING, 'replace'), subdirectory.decode(lazylibrarian.SYS_ENCODING, 'replace')))
                     
-                    metafile = os.path.join(r, "metadata.opf").encode(lazylibrarian.SYS_ENCODING)
+                    # calibre uses "metadata.opf", LL uses "bookname - authorname.opf"
+                    # just look for any .opf file in the current directory since we don't know 
+                    # LL preferred authorname/bookname at this point
+                    metafile = opf_file(r)
                     try:
                         res = get_book_info(metafile)
                     except:
@@ -320,9 +330,9 @@ def LibraryScan(dir=None):
                         # if it's an epub or a mobi we can try to read metadata
                         # from it
                         if (extn == "epub") or (extn == "mobi"):
-                            book_file = os.path.join(r, files).encode(lazylibrarian.SYS_ENCODING)
+                            book_filename = os.path.join(r, files).encode(lazylibrarian.SYS_ENCODING)
                             try:
-                                res = get_book_info(book_file)
+                                res = get_book_info(book_filename)
                             except:
                                 res = {}
                             if 'title' in res and 'creator' in res:  # this is the minimum we need
@@ -340,7 +350,7 @@ def LibraryScan(dir=None):
                                     (isbn, language, author, book))
                                 match = 1
                             else:
-                                logger.debug("Book meta incomplete in %s" % book_file)
+                                logger.debug("Book meta incomplete in %s" % book_filename)
 
                 if not match:
                     match = pattern.match(files)
@@ -490,7 +500,7 @@ def LibraryScan(dir=None):
                                 myDB.action(
                                     'UPDATE books set Status="Open" where BookID="%s"' %
                                     bookid)
-                                book_file = os.path.join(
+                                book_filename = os.path.join(
                                     r,
                                     files).encode(
                                         lazylibrarian.SYS_ENCODING)
@@ -498,7 +508,7 @@ def LibraryScan(dir=None):
                                 # gets removed, or allow click-to-open
                                 myDB.action(
                                     'UPDATE books set BookFile="%s" where BookID="%s"' %
-                                    (book_file, bookid))
+                                    (book_filename, bookid))
                                 new_book_count += 1
 
     cachesize = myDB.action("select count(*) from languages").fetchone()
