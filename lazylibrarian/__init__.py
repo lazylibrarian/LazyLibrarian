@@ -13,7 +13,7 @@ import datetime
 import locale
 import calendar
 
-from lib.configobj import ConfigObj
+import ConfigParser
 from lib.apscheduler.scheduler import Scheduler
 
 import threading
@@ -179,9 +179,6 @@ NZB_DOWNLOADER_BLACKHOLE = 0
 NZB_BLACKHOLEDIR = None
 USENET_RETENTION = None
 
-LATEST_VERSION = None
-CURRENT_VERSION = None
-
 VERSIONCHECK_INTERVAL = 24  # Every 2 hours
 SEARCH_INTERVAL = 720  # Every 12 hours
 SCAN_INTERVAL = 10  # Every 10 minutes
@@ -254,80 +251,47 @@ MONTH12 = []
 MONTHNAMES = [MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, MONTH8, MONTH9, MONTH10, MONTH11, MONTH12]
 
 
-def CheckSection(sec):
+def check_section(sec):
     """ Check if INI section exists, if not create it """
-    try:
-        CFG[sec]
+    if CFG.has_section(sec):
         return True
-    except:
-        CFG[sec] = {}
+    else:
+        CFG.add_section(sec)
         return False
 
-#
-# Check_setting_int                                                            #
-#
-# def minimax(val, low, high):
-#    """ Return value forced within range """
-#    try:
-#        val = int(val)
-#    except:
-#        val = 0
-#    if val < low:
-#        return low
-#    if val > high:
-#        return high
-#    return val
-
-#
-# Check_setting_int                                                            #
-#
+def check_setting_boolean(config, cfg_name, item_name, def_val):
+    """ Check if option exists and coerce to boolean, if not create it """
+    try:
+        my_val = config.getboolean(cfg_name, item_name)
+    except:
+        my_val = def_val
+        check_section(cfg_name)
+        config.set(cfg_name, item_name, my_val)
+    logger.debug(item_name + " -> " + str(my_val))
+    return my_val
 
 
 def check_setting_int(config, cfg_name, item_name, def_val):
     try:
-        my_val = int(config[cfg_name][item_name])
+        my_val = config.getint(cfg_name, item_name)
     except:
         my_val = def_val
-        try:
-            config[cfg_name][item_name] = my_val
-        except:
-            config[cfg_name] = {}
-            config[cfg_name][item_name] = my_val
+        check_section(cfg_name)
+        config.set(cfg_name, item_name, my_val)
     logger.debug(item_name + " -> " + str(my_val))
     return my_val
 
-#
-# Check_setting_float                                                          #
-#
-# def check_setting_float(config, cfg_name, item_name, def_val):
-# try:
-# my_val = float(config[cfg_name][item_name])
-# except:
-# my_val = def_val
-# try:
-# config[cfg_name][item_name] = my_val
-# except:
-# config[cfg_name] = {}
-# config[cfg_name][item_name] = my_val
-
-# return my_val
-
-#
-# Check_setting_str                                                            #
-#
-
-
 def check_setting_str(config, cfg_name, item_name, def_val, log=True):
     try:
-        my_val = config[cfg_name][item_name]
+        my_val = config.get(cfg_name, item_name)
+        if my_val.startswith('"'):
+            my_val = my_val[1:]
+        if my_val.endswith('"'):
+            my_val = my_val[:-1]
     except:
         my_val = def_val
-        try:
-            config[cfg_name][item_name] = my_val
-        except:
-            config[cfg_name] = {}
-            config[cfg_name][item_name] = my_val
-
+        check_section(cfg_name)
+        config.set(cfg_name, item_name, my_val)
     if log:
         logger.debug(item_name + " -> " + my_val)
     else:
@@ -365,10 +329,8 @@ def initialize():
         if __INITIALIZED__:
             return False
 
-        CheckSection('General')
-        CheckSection('SABnzbd')
-        CheckSection('Version')
-
+        check_section('General')
+        
         try:
             HTTP_PORT = check_setting_int(CFG, 'General', 'http_port', 5299)
         except:
@@ -386,8 +348,7 @@ def initialize():
                 os.makedirs(LOGDIR)
             except OSError:
                 if LOGLEVEL:
-                    print LOGDIR + ":"
-                    print ' Unable to create folder for logs. Only logging to console.'
+                    print '%s : Unable to create folder for logs. Only logging to console.' % LOGDIR
 
         # Start the logger, silence console logging if we need to
         CFGLOGLEVEL = check_setting_int(CFG, 'General', 'loglevel', 3)
@@ -461,17 +422,35 @@ def initialize():
 
 # legacy names here - have changed some config names for consistency
 # these entries convert the old name to the new one so we don't break existing configs
-        NEWZNAB0 = check_setting_int(CFG, 'UsenetCrawler', 'usenetcrawler', 0)
-        NEWZNAB_HOST0 = check_setting_str(CFG, 'UsenetCrawler', 'usenetcrawler_host', '')
-        NEWZNAB_API0 = check_setting_str(CFG, 'UsenetCrawler', 'usenetcrawler_api', '')
-        NEWZNAB1 = check_setting_int(CFG, 'Newznab', 'newznab', 0)
-        NEWZNAB_HOST1 = check_setting_str(CFG, 'Newznab', 'newznab_host', '')
-        NEWZNAB_API1 = check_setting_str(CFG, 'Newznab', 'newznab_api', '')
-        if NEWZNAB_HOST0 == '':  # did we pick up anything under the old name
+        if CFG.has_section('UsenetCrawler'):
+            NEWZNAB0 = check_setting_int(CFG, 'UsenetCrawler', 'usenetcrawler', 0)
+            NEWZNAB_HOST0 = check_setting_str(CFG, 'UsenetCrawler', 'usenetcrawler_host', '')
+            NEWZNAB_API0 = check_setting_str(CFG, 'UsenetCrawler', 'usenetcrawler_api', '')
+            CFG.remove_option('UsenetCrawler', 'usenetcrawler')
+            CFG.remove_option('UsenetCrawler', 'usenetcrawler_host')
+            CFG.remove_option('UsenetCrawler', 'usenetcrawler_api')
+            CFG.remove_section('UsenetCrawler')
+            check_section('Newznab0')
+            CFG.set('Newznab0', 'newznab0', NEWZNAB0)
+            CFG.set('Newznab0', 'newznab_host0', NEWZNAB_HOST0)
+            CFG.set('Newznab0', 'newznab_api0', NEWZNAB_API0)            
+        if CFG.has_section('Newznab'):    
+            NEWZNAB1 = check_setting_int(CFG, 'Newznab', 'newznab', 0)
+            NEWZNAB_HOST1 = check_setting_str(CFG, 'Newznab', 'newznab_host', '')
+            NEWZNAB_API1 = check_setting_str(CFG, 'Newznab', 'newznab_api', '')
+            CFG.remove_option('Newznab', 'newznab')
+            CFG.remove_option('Newznab', 'newznab_host')
+            CFG.remove_option('Newznab', 'newznab_api')
+            CFG.remove_section('Newznab')
+            check_section('Newznab1')
+            CFG.set('Newznab1', 'newznab1', NEWZNAB1)
+            CFG.set('Newznab1', 'newznab_host1', NEWZNAB_HOST1)
+            CFG.set('Newznab1', 'newznab_api1', NEWZNAB_API1)            
+        if not NEWZNAB_HOST0:  # did we pick up anything under the old name
             NEWZNAB0 = check_setting_int(CFG, 'Newznab0', 'newznab0', 0)
             NEWZNAB_HOST0 = check_setting_str(CFG, 'Newznab0', 'newznab_host0', '')
             NEWZNAB_API0 = check_setting_str(CFG, 'Newznab0', 'newznab_api0', '')
-        if NEWZNAB_HOST1 == '':
+        if not NEWZNAB_HOST1:
             NEWZNAB1 = check_setting_int(CFG, 'Newznab1', 'newznab1', 0)
             NEWZNAB_HOST1 = check_setting_str(CFG, 'Newznab1', 'newznab_host1', '')
             NEWZNAB_API1 = check_setting_str(CFG, 'Newznab1', 'newznab_api1', '')
@@ -643,12 +622,13 @@ def build_monthtable():
                 MONTHNAMES[0].append(lang)
                 for f in range(1, 13):
                     MONTHNAMES[f].append(common.remove_accents(calendar.month_abbr[f]).lower().strip('.'))
+                locale.setlocale(locale.LC_ALL, current_locale)  # restore entry state
                 logger.info("Added month names for locale [%s], %s, %s ..." % (
                     lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
         except:
+            locale.setlocale(locale.LC_ALL, current_locale)  # restore entry state
             logger.warn("Unable to load requested locale [%s]" % lang)
-    logger.info("Setting locale back to entry state %s" % current_locale)
-    locale.setlocale(locale.LC_ALL, current_locale)  # restore entry state
+            logger.info("Set locale back to entry state %s" % current_locale)
     # quick sanity check, warn if no english names in table
     eng = 0
     for lang in MONTHNAMES[0]:
@@ -706,232 +686,226 @@ def launch_browser(host, port, root):
         logger.error('Could not launch browser: %s' % e)
 
 
-def config_write():
-    new_config = ConfigObj()
-    new_config.filename = CONFIGFILE
+def config_write():   
+    check_section('General')
+    CFG.set('General', 'http_port', HTTP_PORT)
+    CFG.set('General', 'http_host', HTTP_HOST)
+    CFG.set('General', 'http_user', HTTP_USER)
+    CFG.set('General', 'http_pass', HTTP_PASS)
+    CFG.set('General', 'http_root', HTTP_ROOT)
+    CFG.set('General', 'http_look', HTTP_LOOK)
+    CFG.set('General', 'launch_browser', LAUNCH_BROWSER)
+    CFG.set('General', 'proxy_host', PROXY_HOST)
+    CFG.set('General', 'proxy_type', PROXY_TYPE)
+    CFG.set('General', 'logdir', LOGDIR)
+    CFG.set('General', 'loglevel', LOGLEVEL)
+    CFG.set('General', 'match_ratio', MATCH_RATIO)
+    CFG.set('General', 'imp_onlyisbn', IMP_ONLYISBN)
+    CFG.set('General', 'imp_singlebook', IMP_SINGLEBOOK)
+    CFG.set('General', 'imp_preflang', IMP_PREFLANG)
+    CFG.set('General', 'imp_monthlang', IMP_MONTHLANG)
+    CFG.set('General', 'imp_autoadd', IMP_AUTOADD)
+    CFG.set('General', 'ebook_type', EBOOK_TYPE)
+    CFG.set('General', 'destination_dir', DESTINATION_DIR)
+    CFG.set('General', 'alternate_dir', ALTERNATE_DIR)
+    CFG.set('General', 'destination_copy', DESTINATION_COPY)
+    CFG.set('General', 'download_dir', DOWNLOAD_DIR)
+#
+    check_section('Git')
+    CFG.set('Git', 'git_user', GIT_USER)
+    CFG.set('Git', 'git_repo', GIT_REPO)
+    CFG.set('Git', 'git_branch', GIT_BRANCH)
+    CFG.set('Git', 'install_type', INSTALL_TYPE)
+    CFG.set('Git', 'current_version', CURRENT_VERSION)
+    CFG.set('Git', 'latest_version', LATEST_VERSION)
+    CFG.set('Git', 'commits_behind', COMMITS_BEHIND)
+#
+    check_section('USENET')
+    CFG.set('USENET', 'nzb_downloader_sabnzbd', NZB_DOWNLOADER_SABNZBD)
+    CFG.set('USENET', 'nzb_downloader_nzbget', NZB_DOWNLOADER_NZBGET)
+    CFG.set('USENET', 'nzb_downloader_blackhole', NZB_DOWNLOADER_BLACKHOLE)
+    CFG.set('USENET', 'nzb_blackholedir', NZB_BLACKHOLEDIR)
+    CFG.set('USENET', 'usenet_retention', USENET_RETENTION)
+#
+    check_section('SABnzbd')
+    CFG.set('SABnzbd', 'sab_host', SAB_HOST)
+    CFG.set('SABnzbd', 'sab_port', SAB_PORT)
+    CFG.set('SABnzbd', 'sab_subdir', SAB_SUBDIR)
+    CFG.set('SABnzbd', 'sab_user', SAB_USER)
+    CFG.set('SABnzbd', 'sab_pass', SAB_PASS)
+    CFG.set('SABnzbd', 'sab_api', SAB_API)
+    CFG.set('SABnzbd', 'sab_cat', SAB_CAT)
+#
+    check_section('NZBGet')
+    CFG.set('NZBGet', 'nzbget_host', NZBGET_HOST)
+    CFG.set('NZBGet', 'nzbget_user', NZBGET_USER)
+    CFG.set('NZBGet', 'nzbget_pass', NZBGET_PASS)
+    CFG.set('NZBGet', 'nzbget_cat', NZBGET_CATEGORY)
+    CFG.set('NZBGet', 'nzbget_priority', NZBGET_PRIORITY)
+#
+    check_section('DLMethod')
+    CFG.set('DLMethod', 'use_tor', USE_TOR)
+    CFG.set('DLMethod', 'use_nzb', USE_NZB)
+#
+    check_section('API')
+    CFG.set('API', 'book_api', BOOK_API)
+    CFG.set('API', 'gr_api', GR_API)
+    CFG.set('API', 'gb_api', GB_API)
+#
+    check_section('NZBMatrix')
+    CFG.set('NZBMatrix', 'nzbmatrix', NZBMATRIX)
+    CFG.set('NZBMatrix', 'nzbmatrix_user', NZBMATRIX_USER)
+    CFG.set('NZBMatrix', 'nzbmatrix_api', NZBMATRIX_API)
+#
+    check_section('Newznab0')
+    CFG.set('Newznab0', 'newznab0', NEWZNAB0)
+    CFG.set('Newznab0', 'newznab_host0', NEWZNAB_HOST0)
+    CFG.set('Newznab0', 'newznab_api0', NEWZNAB_API0)
+#
+    check_section('Newznab1')
+    CFG.set('Newznab1', 'newznab1', NEWZNAB1)
+    CFG.set('Newznab1', 'newznab_host1', NEWZNAB_HOST1)
+    CFG.set('Newznab1', 'newznab_api1', NEWZNAB_API1)
+#
+    check_section('Newznab2')
+    CFG.set('Newznab2', 'newznab2', NEWZNAB2)
+    CFG.set('Newznab2', 'newznab_host2', NEWZNAB_HOST2)
+    CFG.set('Newznab2', 'newznab_api2', NEWZNAB_API2)
+#
+    check_section('Newznab3')
+    CFG.set('Newznab3', 'newznab3', NEWZNAB3)
+    CFG.set('Newznab3', 'newznab_host3', NEWZNAB_HOST3)
+    CFG.set('Newznab3', 'newznab_api3', NEWZNAB_API3)
+#
+    check_section('Newznab4')
+    CFG.set('Newznab4', 'newznab4', NEWZNAB4)
+    CFG.set('Newznab4', 'newznab_host4', NEWZNAB_HOST4)
+    CFG.set('Newznab4', 'newznab_api4', NEWZNAB_API4)
+#
+    check_section('Torznab0')
+    CFG.set('Torznab0', 'torznab0', TORZNAB0)
+    CFG.set('Torznab0', 'torznab_host0', TORZNAB_HOST0)
+    CFG.set('Torznab0', 'torznab_api0', TORZNAB_API0)
+#
+    check_section('Torznab1')
+    CFG.set('Torznab1', 'torznab1', TORZNAB1)
+    CFG.set('Torznab1', 'torznab_host1', TORZNAB_HOST1)
+    CFG.set('Torznab1', 'torznab_api1', TORZNAB_API1)
+#
+    check_section('Torznab2')
+    CFG.set('Torznab2', 'torznab2', TORZNAB2)
+    CFG.set('Torznab2', 'torznab_host2', TORZNAB_HOST2)
+    CFG.set('Torznab2', 'torznab_api2', TORZNAB_API2)
+#
+    check_section('Torznab3')
+    CFG.set('Torznab3', 'torznab3', TORZNAB3)
+    CFG.set('Torznab3', 'torznab_host3', TORZNAB_HOST3)
+    CFG.set('Torznab3', 'torznab_api3', TORZNAB_API3)
+#
+    check_section('Torznab4')
+    CFG.set('Torznab4', 'torznab4', TORZNAB4)
+    CFG.set('Torznab4', 'torznab_host4', TORZNAB_HOST4)
+    CFG.set('Torznab4', 'torznab_api4', TORZNAB_API4)
+#
+    check_section('Newzbin')
+    CFG.set('Newzbin', 'newzbin', NEWZBIN)
+    CFG.set('Newzbin', 'newzbin_uid', NEWZBIN_UID)
+    CFG.set('Newzbin', 'newzbin_pass', NEWZBIN_PASS)
+#
+    check_section('TORRENT')
+    CFG.set('TORRENT', 'tor_downloader_blackhole', TOR_DOWNLOADER_BLACKHOLE)
+    CFG.set('TORRENT', 'tor_downloader_utorrent', TOR_DOWNLOADER_UTORRENT)
+    CFG.set('TORRENT', 'tor_downloader_transmission', TOR_DOWNLOADER_TRANSMISSION)
+    CFG.set('TORRENT', 'tor_downloader_deluge', TOR_DOWNLOADER_DELUGE)
+    CFG.set('TORRENT', 'numberofseeders', NUMBEROFSEEDERS)
+    CFG.set('TORRENT', 'torrent_dir', TORRENT_DIR)
+#
+    check_section('UTORRENT')
+    CFG.set('UTORRENT', 'utorrent_host', UTORRENT_HOST)
+    CFG.set('UTORRENT', 'utorrent_user', UTORRENT_USER)
+    CFG.set('UTORRENT', 'utorrent_pass', UTORRENT_PASS)
+    CFG.set('UTORRENT', 'utorrent_label', UTORRENT_LABEL)
+#
+    check_section('TRANSMISSION')
+    CFG.set('TRANSMISSION', 'transmission_host', TRANSMISSION_HOST)
+    CFG.set('TRANSMISSION', 'transmission_user', TRANSMISSION_USER)
+    CFG.set('TRANSMISSION', 'transmission_pass', TRANSMISSION_PASS)
+#
+    check_section('DELUGE')
+    CFG.set('DELUGE', 'deluge_host', DELUGE_HOST)
+    CFG.set('DELUGE', 'deluge_port', DELUGE_PORT)
+    CFG.set('DELUGE', 'deluge_user', DELUGE_USER)
+    CFG.set('DELUGE', 'deluge_pass', DELUGE_PASS)
+#
+    check_section('KAT')
+    CFG.set('KAT', 'kat', KAT)
+    CFG.set('KAT', 'kat_host', KAT_HOST)
+#
+    check_section('SearchScan')
+    CFG.set('SearchScan', 'search_interval', SEARCH_INTERVAL)
+    CFG.set('SearchScan', 'scan_interval', SCAN_INTERVAL)
+    CFG.set('SearchScan', 'versioncheck_interval', VERSIONCHECK_INTERVAL)
+#
+    check_section('LibraryScan')
+    CFG.set('LibraryScan', 'full_scan', FULL_SCAN)
+    CFG.set('LibraryScan', 'add_author', ADD_AUTHOR)
+    CFG.set('LibraryScan', 'notfound_status', NOTFOUND_STATUS)
+    CFG.set('LibraryScan', 'newbook_status', NEWBOOK_STATUS)
+#
+    check_section('PostProcess')
+    CFG.set('PostProcess', 'ebook_dest_folder', EBOOK_DEST_FOLDER)
+    CFG.set('PostProcess', 'ebook_dest_file', EBOOK_DEST_FILE)
+    CFG.set('PostProcess', 'mag_dest_folder', MAG_DEST_FOLDER)
+    CFG.set('PostProcess', 'mag_dest_file', MAG_DEST_FILE)
+    CFG.set('PostProcess', 'mag_relative', MAG_RELATIVE)
+#
+    check_section('Twitter')
+    CFG.set('Twitter', 'use_twitter', USE_TWITTER)
+    CFG.set('Twitter', 'twitter_notify_onsnatch', TWITTER_NOTIFY_ONSNATCH)
+    CFG.set('Twitter', 'twitter_notify_ondownload', TWITTER_NOTIFY_ONDOWNLOAD)
+    CFG.set('Twitter', 'twitter_username', TWITTER_USERNAME)
+    CFG.set('Twitter', 'twitter_password', TWITTER_PASSWORD)
+    CFG.set('Twitter', 'twitter_prefix', TWITTER_PREFIX)
+#
+    check_section('Boxcar')
+    CFG.set('Boxcar', 'use_boxcar', USE_BOXCAR)
+    CFG.set('Boxcar', 'boxcar_notify_onsnatch', BOXCAR_NOTIFY_ONSNATCH)
+    CFG.set('Boxcar', 'boxcar_notify_ondownload', BOXCAR_NOTIFY_ONDOWNLOAD)
+    CFG.set('Boxcar', 'boxcar_token', BOXCAR_TOKEN)
+#
+    check_section('Pushbullet')
+    CFG.set('Pushbullet', 'use_pushbullet', USE_PUSHBULLET)
+    CFG.set('Pushbullet', 'pushbullet_notify_onsnatch', PUSHBULLET_NOTIFY_ONSNATCH)
+    CFG.set('Pushbullet', 'pushbullet_notify_ondownload', PUSHBULLET_NOTIFY_ONDOWNLOAD)
+    CFG.set('Pushbullet', 'pushbullet_token', PUSHBULLET_TOKEN)
+    CFG.set('Pushbullet', 'pushbullet_deviceid', PUSHBULLET_DEVICEID)
+#
+    check_section('Pushover')
+    CFG.set('Pushover', 'use_pushover', USE_PUSHOVER)
+    CFG.set('Pushover', 'pushover_onsnatch', PUSHOVER_ONSNATCH)
+    CFG.set('Pushover', 'pushover_ondownload', PUSHOVER_ONDOWNLOAD)
+    CFG.set('Pushover', 'pushover_priority', PUSHOVER_PRIORITY)
+    CFG.set('Pushover', 'pushover_keys', PUSHOVER_KEYS)
+    CFG.set('Pushover', 'pushover_apitoken', PUSHOVER_APITOKEN)
+    CFG.set('Pushover', 'pushover_device', PUSHOVER_DEVICE)
+#
+    check_section('AndroidPN')
+    CFG.set('AndroidPN', 'use_androidpn', USE_ANDROIDPN)
+    CFG.set('AndroidPN', 'androidpn_notify_onsnatch', ANDROIDPN_NOTIFY_ONSNATCH)
+    CFG.set('AndroidPN', 'androidpn_notify_ondownload', ANDROIDPN_NOTIFY_ONDOWNLOAD)
+    CFG.set('AndroidPN', 'androidpn_url', ANDROIDPN_URL)
+    CFG.set('AndroidPN', 'androidpn_username', ANDROIDPN_USERNAME)
+    CFG.set('AndroidPN', 'androidpn_broadcast', ANDROIDPN_BROADCAST)
+#
+    check_section('NMA')
+    CFG.set('NMA', 'use_nma', USE_NMA)
+    CFG.set('NMA', 'nma_apikey', NMA_APIKEY)
+    CFG.set('NMA', 'nma_priority', NMA_PRIORITY)
+    CFG.set('NMA', 'nma_onsnatch', NMA_ONSNATCH)
+    CFG.set('NMA', 'nma_ondownload', NMA_ONDOWNLOAD)
 
-    new_config['General'] = {}
-    new_config['General']['http_port'] = HTTP_PORT
-    new_config['General']['http_host'] = HTTP_HOST
-    new_config['General']['http_user'] = HTTP_USER
-    new_config['General']['http_pass'] = HTTP_PASS
-    new_config['General']['http_root'] = HTTP_ROOT
-    new_config['General']['http_look'] = HTTP_LOOK
-    new_config['General']['launch_browser'] = int(LAUNCH_BROWSER)
-    new_config['General']['proxy_host'] = PROXY_HOST
-    new_config['General']['proxy_type'] = PROXY_TYPE
-    new_config['General']['logdir'] = LOGDIR
-    new_config['General']['loglevel'] = int(LOGLEVEL)
-
-    new_config['General']['match_ratio'] = int(MATCH_RATIO)
-
-    new_config['General']['imp_onlyisbn'] = int(IMP_ONLYISBN)
-    new_config['General']['imp_singlebook'] = int(IMP_SINGLEBOOK)
-    new_config['General']['imp_preflang'] = IMP_PREFLANG
-    new_config['General']['imp_monthlang'] = IMP_MONTHLANG
-    new_config['General']['imp_autoadd'] = IMP_AUTOADD
-
-    new_config['General']['ebook_type'] = EBOOK_TYPE
-
-    new_config['Git'] = {}
-    new_config['Git']['git_user'] = GIT_USER
-    new_config['Git']['git_repo'] = GIT_REPO
-    new_config['Git']['git_branch'] = GIT_BRANCH
-    new_config['Git']['install_type'] = INSTALL_TYPE
-    new_config['Git']['current_version'] = CURRENT_VERSION
-    new_config['Git']['latest_version'] = LATEST_VERSION
-    new_config['Git']['commits_behind'] = COMMITS_BEHIND
-
-    new_config['USENET'] = {}
-    new_config['USENET']['nzb_downloader_sabnzbd'] = int(NZB_DOWNLOADER_SABNZBD)
-    new_config['USENET']['nzb_downloader_nzbget'] = int(NZB_DOWNLOADER_NZBGET)
-    new_config['USENET']['nzb_downloader_blackhole'] = int(NZB_DOWNLOADER_BLACKHOLE)
-    new_config['USENET']['nzb_blackholedir'] = NZB_BLACKHOLEDIR
-    new_config['USENET']['usenet_retention'] = USENET_RETENTION
-
-    new_config['SABnzbd'] = {}
-    new_config['SABnzbd']['sab_host'] = SAB_HOST
-    new_config['SABnzbd']['sab_port'] = SAB_PORT
-    new_config['SABnzbd']['sab_subdir'] = SAB_SUBDIR
-    new_config['SABnzbd']['sab_user'] = SAB_USER
-    new_config['SABnzbd']['sab_pass'] = SAB_PASS
-    new_config['SABnzbd']['sab_api'] = SAB_API
-    new_config['SABnzbd']['sab_cat'] = SAB_CAT
-
-    new_config['NZBGet'] = {}
-    new_config['NZBGet']['nzbget_host'] = NZBGET_HOST
-    new_config['NZBGet']['nzbget_user'] = NZBGET_USER
-    new_config['NZBGet']['nzbget_pass'] = NZBGET_PASS
-    new_config['NZBGet']['nzbget_cat'] = NZBGET_CATEGORY
-    new_config['NZBGet']['nzbget_priority'] = NZBGET_PRIORITY
-
-    new_config['General']['destination_dir'] = DESTINATION_DIR
-    new_config['General']['alternate_dir'] = ALTERNATE_DIR
-    new_config['General']['destination_copy'] = int(DESTINATION_COPY)
-    new_config['General']['download_dir'] = DOWNLOAD_DIR
-
-    new_config['DLMethod'] = {}
-    new_config['DLMethod']['use_tor'] = int(USE_TOR)
-    new_config['DLMethod']['use_nzb'] = int(USE_NZB)
-
-    new_config['API'] = {}
-    new_config['API']['book_api'] = BOOK_API
-    new_config['API']['gr_api'] = GR_API
-    new_config['API']['gb_api'] = GB_API
-
-    new_config['NZBMatrix'] = {}
-    new_config['NZBMatrix']['nzbmatrix'] = int(NZBMATRIX)
-    new_config['NZBMatrix']['nzbmatrix_user'] = NZBMATRIX_USER
-    new_config['NZBMatrix']['nzbmatrix_api'] = NZBMATRIX_API
-
-    new_config['Newznab0'] = {}
-    new_config['Newznab0']['newznab0'] = int(NEWZNAB0)
-    new_config['Newznab0']['newznab_host0'] = NEWZNAB_HOST0
-    new_config['Newznab0']['newznab_api0'] = NEWZNAB_API0
-
-    new_config['Newznab1'] = {}
-    new_config['Newznab1']['newznab1'] = int(NEWZNAB1)
-    new_config['Newznab1']['newznab_host1'] = NEWZNAB_HOST1
-    new_config['Newznab1']['newznab_api1'] = NEWZNAB_API1
-
-    new_config['Newznab2'] = {}
-    new_config['Newznab2']['newznab2'] = int(NEWZNAB2)
-    new_config['Newznab2']['newznab_host2'] = NEWZNAB_HOST2
-    new_config['Newznab2']['newznab_api2'] = NEWZNAB_API2
-
-    new_config['Newznab3'] = {}
-    new_config['Newznab3']['newznab3'] = int(NEWZNAB3)
-    new_config['Newznab3']['newznab_host3'] = NEWZNAB_HOST3
-    new_config['Newznab3']['newznab_api3'] = NEWZNAB_API3
-
-    new_config['Newznab4'] = {}
-    new_config['Newznab4']['newznab4'] = int(NEWZNAB4)
-    new_config['Newznab4']['newznab_host4'] = NEWZNAB_HOST4
-    new_config['Newznab4']['newznab_api4'] = NEWZNAB_API4
-
-    new_config['Torznab0'] = {}
-    new_config['Torznab0']['torznab0'] = int(TORZNAB0)
-    new_config['Torznab0']['torznab_host0'] = TORZNAB_HOST0
-    new_config['Torznab0']['torznab_api0'] = TORZNAB_API0
-
-    new_config['Torznab1'] = {}
-    new_config['Torznab1']['torznab1'] = int(TORZNAB1)
-    new_config['Torznab1']['torznab_host1'] = TORZNAB_HOST1
-    new_config['Torznab1']['torznab_api1'] = TORZNAB_API1
-
-    new_config['Torznab2'] = {}
-    new_config['Torznab2']['torznab2'] = int(TORZNAB2)
-    new_config['Torznab2']['torznab_host2'] = TORZNAB_HOST2
-    new_config['Torznab2']['torznab_api2'] = TORZNAB_API2
-
-    new_config['Torznab3'] = {}
-    new_config['Torznab3']['torznab3'] = int(TORZNAB3)
-    new_config['Torznab3']['torznab_host3'] = TORZNAB_HOST3
-    new_config['Torznab3']['torznab_api3'] = TORZNAB_API3
-
-    new_config['Torznab4'] = {}
-    new_config['Torznab4']['torznab4'] = int(TORZNAB4)
-    new_config['Torznab4']['torznab_host4'] = TORZNAB_HOST4
-    new_config['Torznab4']['torznab_api4'] = TORZNAB_API4
-
-    new_config['Newzbin'] = {}
-    new_config['Newzbin']['newzbin'] = int(NEWZBIN)
-    new_config['Newzbin']['newzbin_uid'] = NEWZBIN_UID
-    new_config['Newzbin']['newzbin_pass'] = NEWZBIN_PASS
-
-    new_config['TORRENT'] = {}
-    new_config['TORRENT']['tor_downloader_blackhole'] = int(TOR_DOWNLOADER_BLACKHOLE)
-    new_config['TORRENT']['tor_downloader_utorrent'] = int(TOR_DOWNLOADER_UTORRENT)
-    new_config['TORRENT']['tor_downloader_transmission'] = int(TOR_DOWNLOADER_TRANSMISSION)
-    new_config['TORRENT']['tor_downloader_deluge'] = int(TOR_DOWNLOADER_DELUGE)
-    new_config['TORRENT']['numberofseeders'] = int(NUMBEROFSEEDERS)
-    new_config['TORRENT']['torrent_dir'] = TORRENT_DIR
-
-    new_config['UTORRENT'] = {}
-    new_config['UTORRENT']['utorrent_host'] = UTORRENT_HOST
-    new_config['UTORRENT']['utorrent_user'] = UTORRENT_USER
-    new_config['UTORRENT']['utorrent_pass'] = UTORRENT_PASS
-    new_config['UTORRENT']['utorrent_label'] = UTORRENT_LABEL
-
-    new_config['TRANSMISSION'] = {}
-    new_config['TRANSMISSION']['transmission_host'] = TRANSMISSION_HOST
-    new_config['TRANSMISSION']['transmission_user'] = TRANSMISSION_USER
-    new_config['TRANSMISSION']['transmission_pass'] = TRANSMISSION_PASS
-
-    new_config['DELUGE'] = {}
-    new_config['DELUGE']['deluge_host'] = DELUGE_HOST
-    new_config['DELUGE']['deluge_port'] = DELUGE_PORT
-    new_config['DELUGE']['deluge_user'] = DELUGE_USER
-    new_config['DELUGE']['deluge_pass'] = DELUGE_PASS
-
-    new_config['KAT'] = {}
-    new_config['KAT']['kat'] = int(KAT)
-    new_config['KAT']['kat_host'] = KAT_HOST
-
-    new_config['SearchScan'] = {}
-    new_config['SearchScan']['search_interval'] = int(SEARCH_INTERVAL)
-    new_config['SearchScan']['scan_interval'] = int(SCAN_INTERVAL)
-    new_config['SearchScan']['versioncheck_interval'] = int(VERSIONCHECK_INTERVAL)
-
-    new_config['LibraryScan'] = {}
-    new_config['LibraryScan']['full_scan'] = int(FULL_SCAN)
-    new_config['LibraryScan']['add_author'] = int(ADD_AUTHOR)
-    new_config['LibraryScan']['notfound_status'] = NOTFOUND_STATUS
-    new_config['LibraryScan']['newbook_status'] = NEWBOOK_STATUS
-
-    new_config['PostProcess'] = {}
-    new_config['PostProcess']['ebook_dest_folder'] = EBOOK_DEST_FOLDER
-    new_config['PostProcess']['ebook_dest_file'] = EBOOK_DEST_FILE
-    new_config['PostProcess']['mag_dest_folder'] = MAG_DEST_FOLDER
-    new_config['PostProcess']['mag_dest_file'] = MAG_DEST_FILE
-    new_config['PostProcess']['mag_relative'] = int(MAG_RELATIVE)
-
-    new_config['Twitter'] = {}
-    new_config['Twitter']['use_twitter'] = int(USE_TWITTER)
-    new_config['Twitter']['twitter_notify_onsnatch'] = int(TWITTER_NOTIFY_ONSNATCH)
-    new_config['Twitter']['twitter_notify_ondownload'] = int(TWITTER_NOTIFY_ONDOWNLOAD)
-    new_config['Twitter']['twitter_username'] = TWITTER_USERNAME
-    new_config['Twitter']['twitter_password'] = TWITTER_PASSWORD
-    new_config['Twitter']['twitter_prefix'] = TWITTER_PREFIX
-
-    new_config['Boxcar'] = {}
-    new_config['Boxcar']['use_boxcar'] = int(USE_BOXCAR)
-    new_config['Boxcar']['boxcar_notify_onsnatch'] = int(BOXCAR_NOTIFY_ONSNATCH)
-    new_config['Boxcar']['boxcar_notify_ondownload'] = int(BOXCAR_NOTIFY_ONDOWNLOAD)
-    new_config['Boxcar']['boxcar_token'] = BOXCAR_TOKEN
-
-    new_config['Pushbullet'] = {}
-    new_config['Pushbullet']['use_pushbullet'] = int(USE_PUSHBULLET)
-    new_config['Pushbullet']['pushbullet_notify_onsnatch'] = int(PUSHBULLET_NOTIFY_ONSNATCH)
-    new_config['Pushbullet']['pushbullet_notify_ondownload'] = int(PUSHBULLET_NOTIFY_ONDOWNLOAD)
-    new_config['Pushbullet']['pushbullet_token'] = PUSHBULLET_TOKEN
-    new_config['Pushbullet']['pushbullet_deviceid'] = PUSHBULLET_DEVICEID
-
-    new_config['Pushover'] = {}
-    new_config['Pushover']['use_pushover'] = int(USE_PUSHOVER)
-    new_config['Pushover']['pushover_onsnatch'] = int(PUSHOVER_ONSNATCH)
-    new_config['Pushover']['pushover_ondownload'] = int(PUSHOVER_ONDOWNLOAD)
-    new_config['Pushover']['pushover_priority'] = int(PUSHOVER_PRIORITY)
-    new_config['Pushover']['pushover_keys'] = PUSHOVER_KEYS
-    new_config['Pushover']['pushover_apitoken'] = PUSHOVER_APITOKEN
-    new_config['Pushover']['pushover_device'] = PUSHOVER_DEVICE
-
-    new_config['AndroidPN'] = {}
-    new_config['AndroidPN']['use_androidpn'] = int(USE_ANDROIDPN)
-    new_config['AndroidPN']['androidpn_notify_onsnatch'] = int(ANDROIDPN_NOTIFY_ONSNATCH)
-    new_config['AndroidPN']['androidpn_notify_ondownload'] = int(ANDROIDPN_NOTIFY_ONDOWNLOAD)
-    new_config['AndroidPN']['androidpn_url'] = ANDROIDPN_URL
-    new_config['AndroidPN']['androidpn_username'] = ANDROIDPN_USERNAME
-    new_config['AndroidPN']['androidpn_broadcast'] = ANDROIDPN_BROADCAST
-
-    new_config['NMA'] = {}
-    new_config['NMA']['use_nma'] = int(USE_NMA)
-    new_config['NMA']['nma_apikey'] = NMA_APIKEY
-    new_config['NMA']['nma_priority'] = NMA_PRIORITY
-    new_config['NMA']['nma_onsnatch'] = int(NMA_ONSNATCH)
-    new_config['NMA']['nma_ondownload'] = int(NMA_ONDOWNLOAD)
-
-    new_config.write()
+    with open(CONFIGFILE, 'wb') as configfile:
+        CFG.write(configfile)
 
 
 def dbcheck():
@@ -1086,9 +1060,6 @@ def start():
             SCHED.add_interval_job(searchmag.search_magazines, minutes=SEARCH_INTERVAL)
             
         SCHED.start()
-        #for job in SCHED.get_jobs():
-        #    print job
-        #SCHED.print_jobs()
         started = True
 
 

@@ -1,7 +1,7 @@
 import os
 import re
 import lazylibrarian
-from lazylibrarian import logger, database, importer, formatter
+from lazylibrarian import logger, database, importer, formatter, common
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 from xml.etree import ElementTree
@@ -132,9 +132,9 @@ def find_book_in_db(myDB, author, book):
         partial_id = 0
         logger.debug("Found %s books for %s" % (len(books), author))
         for a_book in books:
-            # lowercase everything to raise fuzziness scores
-            book_lower = book.lower()
-            a_book_lower = a_book['BookName'].lower()
+            # tidy up everything to raise fuzziness scores
+            book_lower = common.remove_accents(book.lower())
+            a_book_lower = common.remove_accents(a_book['BookName'].lower())
             #
             ratio = fuzz.ratio(book_lower, a_book_lower)
             partial = fuzz.partial_ratio(book_lower, a_book_lower)
@@ -435,11 +435,12 @@ def LibraryScan(dir=None):
                             match_name = authorname.replace('.', '_')
                             match_name = match_name.replace(' ', '_')
                             match_name = match_name.replace('__', '_')
-
+                            match_name = common.remove_accents(match_name)
+                            match_auth = common.remove_accents(match_auth)
                             # allow a degree of fuzziness to cater for different accented character handling.
                             # some author names have accents,
                             # filename may have the accented or un-accented version of the character
-                            # The (currently non-configurable) value of fuzziness works for one accented character
+                            # The currently non-configurable value of fuzziness might need to go in config
                             # We stored GoodReads unmodified author name in
                             # author_gr, so store in LL db under that
                             match_fuzz = fuzz.ratio(match_auth, match_name)

@@ -40,7 +40,7 @@ class ThrottlingProcessor(urllib2.BaseHandler):
                 (time.time() - self.lastRequestTime[request.host] < self.throttleDelay)):
             self.throttleTime = (self.throttleDelay -
                                  (currentTime - self.lastRequestTime[request.host]))
-            # print "ThrottlingProcessor: Sleeping for %s seconds" % self.throttleTime
+            # logger.debug("ThrottlingProcessor: Sleeping for %s seconds" % self.throttleTime)
             time.sleep(self.throttleTime)
         self.lastRequestTime[request.host] = currentTime
 
@@ -69,7 +69,7 @@ class CacheHandler(urllib2.BaseHandler):
     def default_open(self, request):
         if ((request.get_method() == "GET") and
                 (CachedResponse.ExistsInCache(self.cacheLocation, request.get_full_url()))):
-            # print "CacheHandler: Returning CACHED response for %s" % request.get_full_url()
+            # logger.debug("CacheHandler: Returning CACHED response for %s" % request.get_full_url())
             return CachedResponse(self.cacheLocation, request.get_full_url(), setCacheHeader=True)
         else:
             return None  # let the next handler try to handle the request

@@ -530,6 +530,22 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("home")
     importAlternate.exposed = True
 
+    def importCSV(self):
+        try:
+            threading.Thread(target=postprocess.processCSV(lazylibrarian.ALTERNATE_DIR)).start()
+        except Exception, e:
+            logger.error(u'Unable to complete the import: %s' % e)
+        raise cherrypy.HTTPRedirect("home")
+    importCSV.exposed = True
+
+    def exportCSV(self):
+        try:
+            threading.Thread(target=postprocess.exportCSV(lazylibrarian.ALTERNATE_DIR)).start()
+        except Exception, e:
+            logger.error(u'Unable to complete the export: %s' % e)
+        raise cherrypy.HTTPRedirect("home")
+    exportCSV.exposed = True
+
     def libraryScan(self):
         try:
             threading.Thread(target=librarysync.LibraryScan(lazylibrarian.DESTINATION_DIR)).start()
@@ -626,21 +642,6 @@ class WebInterface(object):
         # find book
         bookdata = myDB.select('SELECT * from books WHERE BookID="%s"' % bookid)
         if bookdata:
-            # authorName = bookdata[0]["AuthorName"];
-            # bookName = bookdata[0]["BookName"];
-            # dic = {'<':'', '>':'', '=':'', '?':'', '"':'', ',':'', '*':'', ':':'', ';':'', '\'':''}
-            # bookName = formatter.latinToAscii(formatter.replace_all(bookName, dic))
-
-            # pp_dir = lazylibrarian.DESTINATION_DIR
-            # ebook_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorName).replace('$Title', bookName)
-            # dest_dir = os.path.join(pp_dir, ebook_path)
-
-            # logger.debug('bookdir ' + dest_dir);
-            # if os.path.isdir(dest_dir):
-            #    for file2 in os.listdir(dest_dir):
-            #        if ((file2.lower().find(".jpg") <= 0) & (file2.lower().find(".opf") <= 0)):
-            #            logger.info('Opening file ' + file2)
-            #            return serve_file(os.path.join(dest_dir, file2), "application/x-download", "attachment")
             bookfile = bookdata[0]["BookFile"]
             if bookfile and os.path.isfile(bookfile):
                 logger.info(u'Opening file ' + bookfile)
@@ -784,7 +785,9 @@ class WebInterface(object):
         for nzburl in args:
             # ouch dirty workaround...
             if not nzburl == 'book_table_length':
-                nzburl = common.to_unicode(nzburl)
+                #nzburl = common.to_unicode(nzburl)
+                if hasattr(nzburl, 'decode'):
+                    nzburl = nzburl.decode('utf-8')
                 controlValueDict = {'NZBurl': nzburl}
                 newValueDict = {'Status': action, 'NZBdate': formatter.today()}
                 myDB.upsert("wanted", newValueDict, controlValueDict)
@@ -849,7 +852,6 @@ class WebInterface(object):
     def showJobs(self):
         # show the current status of LL cron jobs in the log
         for job in lazylibrarian.SCHED.get_jobs():
-            #print str(job)
             jobname = str(job).split(' ')[0].split('.')[2]
             if jobname == "search_magazines":
                 jobname = "[CRON] - Check for new magazine issues"

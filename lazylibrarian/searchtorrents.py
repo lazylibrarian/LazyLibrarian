@@ -90,7 +90,6 @@ def search_tor_book(books=None, mags=None):
 
     counter = 0
     for book in searchlist:
-        # print book.keys()
         resultlist, nproviders = providers.IterateOverTorrentSites(book, 'book')
         if not nproviders:
             logger.warn('No torrent providers are set, check config for TORRENT providers')
