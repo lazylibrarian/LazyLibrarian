@@ -22,6 +22,7 @@ import urllib
 import urllib2
 import time
 import lazylibrarian
+import lazylibrarian.common as common
 
 from httplib import HTTPSConnection, HTTPException
 from urllib import urlencode
@@ -70,6 +71,10 @@ class PushbulletNotifier:
         username: The username to send the notification to (optional, defaults to the username in the config)
         force: If True then the notification will be sent even if pushbullet is disabled in the config
         """
+        try:
+            message = common.remove_accents(message)
+        except Exception, e:
+            logger.warn("Pushbullet: could not convert  message: %s" % e)
 
         # suppress notifications if the notifier is disabled but the notify options are checked
         if not lazylibrarian.USE_PUSHBULLET and not force:

@@ -110,7 +110,7 @@ class PushoverNotifier:
         force: If True then the notification will be sent even if pushover is disabled in the config
         """
         try:
-            message = common.removeDisallowedFilenameChars(message)
+            message = common.remove_accents(message)
         except Exception, e:
             logger.warn("Pushover: could not convert  message: %s" % e)
         # suppress notifications if the notifier is disabled but the notify options are checked
