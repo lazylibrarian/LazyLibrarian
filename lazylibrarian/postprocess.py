@@ -4,12 +4,15 @@ import os
 #import urllib
 #import urllib2
 import threading
+import csv
 
 from urllib import FancyURLopener
 
 import lazylibrarian
 
 from lazylibrarian import database, logger, formatter, notifiers, common, librarysync
+from lazylibrarian import importer, gr
+
 
 def processAlternate(source_dir=None):
 # import a book from an alternate directory
@@ -40,6 +43,15 @@ def processAlternate(source_dir=None):
             authorname = metadata['creator']
             bookname = metadata['title']
             myDB = database.DBConnection()
+            
+            authmatch = myDB.action('SELECT * FROM authors where AuthorName="%s"' % (authorname)).fetchone()
+        
+            if authmatch:
+                logger.debug("ALT: Author %s found in database" % (authorname))
+            else:
+                logger.debug("ALT: Author %s not found, adding to database" % (authorname))
+                importer.addAuthorToDB(authorname)
+                
             bookid = librarysync.find_book_in_db(myDB, authorname, bookname)
             if bookid:
                 import_book(source_dir, bookid)
@@ -48,7 +60,7 @@ def processAlternate(source_dir=None):
         else:
             logger.warn('Book %s has no metadata, unable to import' % new_book)
     else:
-        logger.warn("No book found in %s" % source_dir)
+        logger.warn("No book file found in %s" % source_dir)
 
 def processDir():
     # rename this thread
@@ -276,8 +288,6 @@ def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
     
 def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, book_id=None):
 
-    logger.debug("dest_path = %s %s" % (type(dest_path), common.to_str(dest_path)))
-    logger.debug("pp_path = %s %s" % (type(pp_path), common.to_str(pp_path)))
     pp_path = pp_path.encode(lazylibrarian.SYS_ENCODING)
 
     # check we got a book in the downloaded files
@@ -449,6 +459,109 @@ def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bo
         logger.debug('%s allready exists. Did not create one.' % opfpath)
 
 
+def csv_file(search_dir=None):
+    # find a csv file in this directory, any will do
+    # return full pathname of file, or empty string if none found
+    if search_dir and os.path.isdir(search_dir):
+        for fname in os.listdir(search_dir):
+            if fname.endswith('.csv'):
+                return os.path.join(search_dir, fname).encode(lazylibrarian.SYS_ENCODING)
+    return ""
+    
+def processCSV(search_dir=None):
+    """ Find a csv file in the search_dir and process all the books in it, 
+    adding authors to the database if not found, and marking the books as "Wanted" """
+     
+    if not search_dir:
+        logger.warn("Alternate Directory must not be empty")
+        return False
+        
+    csvFile = csv_file(search_dir)
+
+    headers = None
+    content = {}
+
+    if not csvFile:
+        logger.warn("No CSV file found in %s" % search_dir)
+    else:
+        logger.debug('Reading file %s' % csvFile)
+        reader=csv.reader(open(csvFile))
+        for row in reader:
+            if reader.line_num == 1:
+                # If we are on the first line, create the headers list from the first row
+                # by taking a slice from item 1  as we don't need the very first header.
+                headers = row[1:]
+            else:
+                # Otherwise, the key in the content dictionary is the first item in the
+                # row and we can create the sub-dictionary by using the zip() function.
+                content[row[0]] = dict(zip(headers, row[1:]))
+            
+        # We can now get to the content by using the resulting dictionary, so to see
+        # the list of lines, we can do:
+        #print content.keys() # to get a list of bookIDs
+        # To see the list of fields available for each book
+        #print headers
+        
+        if 'Author' not in headers or 'Title' not in headers:
+            logger.warn('Invalid CSV file found %s' % csvFile)
+            return
+            
+        myDB = database.DBConnection() 
+        bookcount = 0
+        authcount = 0
+        skipcount = 0    
+        for bookid in content.keys():
+            
+            authorname = content[bookid]['Author']
+            authmatch = myDB.action('SELECT * FROM authors where AuthorName="%s"' % (authorname)).fetchone()
+        
+            if authmatch:
+                logger.debug("CSV: Author %s found in database" % (authorname))
+            else:
+                logger.debug("CSV: Author %s not found, adding to database" % (authorname))
+                importer.addAuthorToDB(authorname)
+                authcount = authcount + 1
+
+            bookmatch = 0
+            isbn10=""
+            isbn13=""    
+            bookname = content[bookid]['Title']
+            if 'ISBN' in headers:
+                isbn10 = content[bookid]['ISBN']
+            if 'ISBN13' in headers:
+                isbn13 = content[bookid]['ISBN13']
+
+            # try to find book in our database using isbn, or if that fails, fuzzy name matching
+            if formatter.is_valid_isbn(isbn10):
+                bookmatch = myDB.action('SELECT * FROM books where Bookisbn=%s' % (isbn10)).fetchone()
+            if not bookmatch:
+                if formatter.is_valid_isbn(isbn13):
+                    bookmatch = myDB.action('SELECT * FROM books where BookIsbn=%s' % (isbn13)).fetchone()
+            if not bookmatch: 
+                bookid = librarysync.find_book_in_db(myDB, authorname, bookname)
+                if bookid:
+                    bookmatch = myDB.action('SELECT * FROM books where BookID="%s"' % (bookid)).fetchone()
+            if bookmatch:
+                authorname = bookmatch['AuthorName']
+                bookname = bookmatch['BookName']
+                bookid = bookmatch['BookID']
+                bookstatus = bookmatch['Status']
+                if bookstatus == 'Open' or bookstatus == 'Wanted' or bookstatus == 'Have':
+                    logger.info('Found book %s by %s, already marked as "%s"' % (bookname, authorname, bookstatus))
+                else: # skipped/ignored
+                    logger.info('Found book %s by %s, marking as "Wanted"' % (bookname, authorname))
+                    controlValueDict = {"BookID": bookid}
+                    newValueDict = {"Status": "Wanted"}                  
+                    myDB.upsert("books", newValueDict, controlValueDict)
+                    bookcount = bookcount + 1
+            else:    
+                logger.warn("Skipping book %s by %s, not found in database" % (bookname, authorname))
+                skipcount = skipcount + 1
+        logger.info("Added %i new authors, marked %i books as 'Wanted', %i books not found" % (authcount, bookcount, skipcount))    
+        
+            
 class imgGoogle(FancyURLopener):
     # Hack because Google wants a user agent for downloading images, which is stupid because it's so easy to circumvent.
     version = 'Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11'
+    
+

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import os, sys, time, cherrypy, threading, locale
-from lib.configobj import ConfigObj
+import ConfigParser
 
 import lazylibrarian
 from lazylibrarian import webStart, logger, versioncheck
@@ -111,7 +111,8 @@ def main():
 
     # create database and config
     lazylibrarian.DBFILE = os.path.join(lazylibrarian.DATADIR, 'lazylibrarian.db')
-    lazylibrarian.CFG = ConfigObj(lazylibrarian.CONFIGFILE, encoding='utf-8')
+    lazylibrarian.CFG = ConfigParser.RawConfigParser()
+    lazylibrarian.CFG.read(lazylibrarian.CONFIGFILE)
 
     #REMINDER ############ NO LOGGING BEFORE HERE ###############
     #There is no point putting in any logging above this line, as its not set till after initialize.
