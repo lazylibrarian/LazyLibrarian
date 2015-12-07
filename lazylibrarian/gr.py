@@ -633,6 +633,5 @@ class GoodReads:
                 "BookAdded":    formatter.today()
         }
 
-        # print newValueDict
         myDB.upsert("books", newValueDict, controlValueDict)
         logger.debug("%s added to the books database" % bookname)
