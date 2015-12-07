@@ -4,7 +4,7 @@ import os
 #import urllib
 #import urllib2
 import threading
-import csv
+import lib.csv as csv
 
 from urllib import FancyURLopener
 
@@ -468,14 +468,50 @@ def csv_file(search_dir=None):
                 return os.path.join(search_dir, fname).encode(lazylibrarian.SYS_ENCODING)
     return ""
     
-def processCSV(search_dir=None):
+def exportCSV(search_dir=None, status="Wanted"):
+    """ Write a csv file to the search_dir containing all books marked as "Wanted" """
+     
+    if not search_dir:
+        logger.warn("Alternate Directory must not be empty")
+        return False
+    
+    csvFile = os.path.join(search_dir, "%s - %s.csv" % (status, formatter.now()))  
+    
+    myDB = database.DBConnection() 
+    
+    find_status = myDB.select('SELECT * FROM books WHERE Status = "%s"' % status)
+    
+    if not find_status:
+        logger.warn("No books marked as %s" % status)
+    else:
+        with open(csvFile, 'wb') as csvfile:
+            csvwrite = csv.writer(csvfile, delimiter=',',
+                quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                
+            # write headers, change AuthorName BookName BookIsbn to match import csv names (Author, Title, ISBN10)
+            csvwrite.writerow([
+                'BookID', 'Author', 'Title', 
+                'ISBN', 'AuthorID'
+                ])
+        
+            for resulted in find_status:
+                logger.debug("Exported CSV for book %s" % resulted['BookName'].encode('utf-8'))
+                row = ([
+                    resulted['BookID'], resulted['AuthorName'], resulted['BookName'], 
+                    resulted['BookIsbn'], resulted['AuthorID']       
+                    ])
+                csvwrite.writerow([("%s" % s).encode('utf-8') for s in row])
+        logger.info("CSV exported to %s" % csvFile)
+
+
+def processCSV(search_dir=None):        
     """ Find a csv file in the search_dir and process all the books in it, 
     adding authors to the database if not found, and marking the books as "Wanted" """
      
     if not search_dir:
         logger.warn("Alternate Directory must not be empty")
         return False
-        
+
     csvFile = csv_file(search_dir)
 
     headers = None
@@ -509,7 +545,8 @@ def processCSV(search_dir=None):
         myDB = database.DBConnection() 
         bookcount = 0
         authcount = 0
-        skipcount = 0    
+        skipcount = 0  
+        logger.debug("CSV: Found %s entries in csv file" % len(content.keys()))  
         for bookid in content.keys():
             
             authorname = content[bookid]['Author']

@@ -538,6 +538,14 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("home")
     importCSV.exposed = True
 
+    def exportCSV(self):
+        try:
+            threading.Thread(target=postprocess.exportCSV(lazylibrarian.ALTERNATE_DIR)).start()
+        except Exception, e:
+            logger.error(u'Unable to complete the export: %s' % e)
+        raise cherrypy.HTTPRedirect("home")
+    exportCSV.exposed = True
+
     def libraryScan(self):
         try:
             threading.Thread(target=librarysync.LibraryScan(lazylibrarian.DESTINATION_DIR)).start()
