@@ -904,7 +904,7 @@ def config_write():
     CFG.set('NMA', 'nma_onsnatch', NMA_ONSNATCH)
     CFG.set('NMA', 'nma_ondownload', NMA_ONDOWNLOAD)
 
-    with open(CONFIGFILE, 'wb') as configfile:
+    with open(CONFIGFILE, 'w') as configfile:
         CFG.write(configfile)
 
 

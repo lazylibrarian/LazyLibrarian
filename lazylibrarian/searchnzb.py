@@ -40,7 +40,7 @@ def search_nzb_book(books=None, mags=None):
         searchbooks = myDB.select('SELECT BookID, AuthorName, Bookname from books WHERE Status="Wanted"')
 
         # Clear cache
-        providercache = os.path.join(lazylibrarian.DATADIR, ".ProviderCache")
+        providercache = os.path.join(lazylibrarian.CACHEDIR, ".ProviderCache")
         if os.path.exists(providercache):
             try:
                 shutil.rmtree(providercache)
@@ -48,10 +48,6 @@ def search_nzb_book(books=None, mags=None):
             except OSError, e:
                 logger.error('Failed to clear cache: ' + str(e))
             
-        #if os.path.exists(".ProviderCache"):
-        #    for f in os.listdir(".ProviderCache"):
-        #        os.unlink("%s/%s" % (".ProviderCache", f))
-
         # Clearing throttling timeouts
         t = SimpleCache.ThrottlingProcessor()
         t.lastRequestTime.clear()

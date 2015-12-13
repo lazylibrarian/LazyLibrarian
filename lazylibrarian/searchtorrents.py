@@ -44,7 +44,7 @@ def search_tor_book(books=None, mags=None):
         searchbooks = myDB.select('SELECT BookID, AuthorName, Bookname from books WHERE Status="Wanted"')
 
         # Clear cache
-        providercache = os.path.join(lazylibrarian.DATADIR, ".ProviderCache")
+        providercache = os.path.join(lazylibrarian.CACHEDIR, ".ProviderCache")
         if os.path.exists(providercache):
             try:
                 shutil.rmtree(providercache)

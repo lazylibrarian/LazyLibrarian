@@ -83,14 +83,14 @@ def is_valid_isbn(isbn):
     isbn = re.sub('[- ]', '', isbn)
     if len(isbn) == 13:
         if isbn.isdigit():
-            return 1
+            return True
         elif len(isbn) == 10:
             if isbn[:9].isdigit():
-                return 1
+                return True
             else:
                 if isbn[9] in ["Xx"] and isbn[:8].isdigit():
-                    return 1
-    return 0
+                    return True
+    return False
 
 def is_valid_booktype(filename):
     booktype_list = getList(lazylibrarian.EBOOK_TYPE)

@@ -484,6 +484,7 @@ def exportCSV(search_dir=None, status="Wanted"):
     if not find_status:
         logger.warn("No books marked as %s" % status)
     else:
+        count = 0
         with open(csvFile, 'wb') as csvfile:
             csvwrite = csv.writer(csvfile, delimiter=',',
                 quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -501,7 +502,8 @@ def exportCSV(search_dir=None, status="Wanted"):
                     resulted['BookIsbn'], resulted['AuthorID']       
                     ])
                 csvwrite.writerow([("%s" % s).encode('utf-8') for s in row])
-        logger.info("CSV exported to %s" % csvFile)
+                count = count + 1
+        logger.info("CSV exported %s books to %s" % (count, csvFile))
 
 
 def processCSV(search_dir=None):        
