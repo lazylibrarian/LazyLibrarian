@@ -48,8 +48,9 @@ def addAuthorToDB(authorname=None, refresh=False):
         }
         myDB.upsert("authors", newValueDict, controlValueDict)
     else:
-        logger.warn("Nothing found for %s" % authorname)
-
+        logger.warn(u"Nothing found for %s" % authorname)
+        myDB.action('DELETE from authors WHERE AuthorName="%s"' % authorname)
+        return
 # process books
     if lazylibrarian.BOOK_API == "GoogleBooks":
         book_api = GoogleBooks()
