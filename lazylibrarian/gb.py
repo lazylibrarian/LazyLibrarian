@@ -5,20 +5,16 @@ import urllib
 import urllib2
 import json
 import time
-#import sys
 import re
-#import thread
 import threading
 import time
-#import Queue
 from urllib2 import HTTPError
 
 import lazylibrarian
-from lazylibrarian import logger, formatter, database #, SimpleCache
+from lazylibrarian import logger, formatter, database
 from lazylibrarian.gr import GoodReads
 
-#import lib.fuzzywuzzy as fuzzywuzzy
-from lib.fuzzywuzzy import fuzz #, process
+from lib.fuzzywuzzy import fuzz
 from lib.unidecode import unidecode
 
 
@@ -349,6 +345,7 @@ class GoogleBooks:
                                             myDB.action('insert into languages values ("%s", "%s")' % (isbnhead, booklang))
                                             logger.debug(u"LT language: " + booklang)
                                     except Exception, e:
+                                        booklang = ""
                                         logger.error("Error finding results: ", e)
 
                                 if googlelang == "en" and not booklang in "en-US, en-GB, eng":  # these are all english
@@ -480,8 +477,6 @@ class GoogleBooks:
 
         logger.debug('[%s] The Google Books API was hit %s times to populate book list' % (authorname, str(api_hits)))
 
-        unignoredbooks = myDB.select('SELECT COUNT(BookName) as unignored FROM books WHERE AuthorID="%s" AND Status != "Ignored"' % authorid)
-        bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE AuthorID="%s"' % authorid)
         lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorID="%s" AND Status != "Ignored" order by BookDate DESC' % authorid).fetchone()
 
         if lastbook:  # maybe there are no books [remaining] for this author
@@ -493,11 +488,22 @@ class GoogleBooks:
             lastbooklink = None
             lastbookdate = None
 
+        unignored_count = 0
+        totalbook_count = 0
+        
+        unignoredbooks = myDB.select('SELECT COUNT(BookName) as unignored FROM books WHERE AuthorID="%s" AND Status != "Ignored"' % authorid)
+        if unignoredbooks:
+            unignored_count = unignoredbooks[0]['unignored']
+            
+        bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE AuthorID="%s"' % authorid)
+        if bookCount:
+            totalbook_count = bookCount[0]['counter']
+
         controlValueDict = {"AuthorID": authorid}
         newValueDict = {
             "Status": "Active",
-                "TotalBooks": bookCount[0]['counter'],
-                "UnignoredBooks": unignoredbooks[0]['unignored'],
+                "TotalBooks": totalbook_count,
+                "UnignoredBooks": unignored_count,
                 "LastBook": lastbookname,
                 "LastLink": lastbooklink,
                 "LastDate": lastbookdate
@@ -547,8 +553,8 @@ class GoogleBooks:
         try:
             authorname = jsonresults['volumeInfo']['authors'][0]
         except KeyError:
-            logger.debug('Book %s does not contain author field' % bookname)
-
+            logger.debug('Book %s does not contain author field, skipping' % bookname)
+            return
         try:
             # warn if language is in ignore list, but user said they wanted this book
             booklang = jsonresults['volumeInfo']['language']

@@ -18,7 +18,7 @@ from lib.apscheduler.scheduler import Scheduler
 
 import threading
 
-from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, SimpleCache, librarysync, versioncheck, database, searchmag, magazinescan, common
+from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, librarysync, versioncheck, database, searchmag, magazinescan, common
 
 FULL_PATH = None
 PROG_DIR = None

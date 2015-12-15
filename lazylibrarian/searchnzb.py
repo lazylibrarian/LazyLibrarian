@@ -12,7 +12,7 @@ import re
 import lazylibrarian
 import request
 
-from lazylibrarian import logger, database, formatter, providers, nzbget, sabnzbd, SimpleCache, notifiers, classes
+from lazylibrarian import logger, database, formatter, providers, nzbget, sabnzbd, notifiers, classes
 
 #import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz #, process
@@ -49,8 +49,8 @@ def search_nzb_book(books=None, mags=None):
                 logger.error('Failed to clear cache: ' + str(e))
             
         # Clearing throttling timeouts
-        t = SimpleCache.ThrottlingProcessor()
-        t.lastRequestTime.clear()
+        #t = SimpleCache.ThrottlingProcessor()
+        #t.lastRequestTime.clear()
     else:
         # The user has added a new book
         searchbooks = []

@@ -8,7 +8,7 @@ from xml.etree import ElementTree
 
 import lazylibrarian
 
-from lazylibrarian import logger, SimpleCache
+from lazylibrarian import logger
 import lazylibrarian.common as common
 
 # new libraries to support torrents
@@ -218,7 +218,8 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=
         if lazylibrarian.PROXY_HOST:
             request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
         request.add_header('User-Agent', common.USER_AGENT)
-        opener = urllib2.build_opener(SimpleCache.CacheHandler(".ProviderCache"), SimpleCache.ThrottlingProcessor(5))
+        # do we really want to cache this, new feeds are added all the time
+        opener = urllib2.build_opener()#SimpleCache.CacheHandler(".ProviderCache"), SimpleCache.ThrottlingProcessor(5))
         resp = opener.open(request)
 
         try:

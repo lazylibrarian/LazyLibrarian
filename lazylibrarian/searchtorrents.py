@@ -1,25 +1,19 @@
-#import time
 import threading
-#import urllib
 import urllib2
 import os
 import shutil
 import re
-#import sys
 from base64 import b16encode, b32decode
 from lib.bencode import bencode as bencode, bdecode
 from hashlib import sha1
-#from xml.etree import ElementTree
-#from xml.etree.ElementTree import Element, SubElement
 
 import lazylibrarian
 
-from lazylibrarian import logger, database, formatter, providers, SimpleCache, notifiers, utorrent, transmission
+from lazylibrarian import logger, database, formatter, providers, notifiers, utorrent, transmission
 
 from lib.deluge_client import DelugeRPCClient
 
-#import lib.fuzzywuzzy as fuzzywuzzy
-from lib.fuzzywuzzy import fuzz #, process
+from lib.fuzzywuzzy import fuzz
 
 import unicodedata
 
@@ -53,8 +47,8 @@ def search_tor_book(books=None, mags=None):
                 logger.error('Failed to clear cache: ' + str(e))
 
         # Clearing throttling timeouts
-        t = SimpleCache.ThrottlingProcessor()
-        t.lastRequestTime.clear()
+        #t = SimpleCache.ThrottlingProcessor()
+        #t.lastRequestTime.clear()
     else:
         # The user has added a new book
         searchbooks = []
