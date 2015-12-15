@@ -31,7 +31,7 @@ class GoodReads:
         # we can simply cache the xml with...
         # hashfilename = hash url
         # if hashfilename exists, return its contents
-        # if not, urllib.request.urlopen()
+        # if not, urllib2.urlopen()
         # store the xml
         # Need to expire the cache entries, or we won't search for anything new
         # Hard coded default to 30 days for now. Authors dont write that quickly.
@@ -58,7 +58,7 @@ class GoodReads:
             source_xml = f.read()
             f.close()
         else:
-            resp = urllib2.urlopen(request, timeout = 20) # don't get stuck
+            resp = urllib2.urlopen(request, timeout = 30) # don't get stuck
             if str(resp.getcode()).startswith("2"): # (200 OK etc)
                 logger.debug(u"CacheHandler: Caching response for %s" % request.get_full_url())
                 source_xml = resp.read()#.decode('utf-8')

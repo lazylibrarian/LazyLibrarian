@@ -210,7 +210,7 @@ def getLatestVersionaFromGit():
             url = 'https://api.github.com/repos/%s/%s/commits/%s' % (lazylibrarian.GIT_USER, lazylibrarian.GIT_REPO, lazylibrarian.GIT_BRANCH)
             logger.debug('(getLatestVersionaFromGit) Retrieving latest version information from github command=[%s]' % url)
             try:
-                result = urllib2.urlopen(url).read()
+                result = urllib2.urlopen(url, timeout=30).read()
                 git = simplejson.JSONDecoder().decode(result)
                 latest_version = git['sha']
                 logger.debug('(getLatestVersionaFromGit) Branch [%s] has Latest Version has been set to [%s]' % (branch, latest_version))
@@ -233,7 +233,7 @@ def getCommitDifferenceFromGit():
         logger.debug('(getCommitDifferenceFromGit) -  Check for differences between local & repo by [%s]' % url)
 
         try:
-            result = urllib2.urlopen(url).read()
+            result = urllib2.urlopen(url, timeout=30).read()
 
             try:
                 logger.debug('JSONDecode url')
@@ -315,7 +315,7 @@ def update():
 
         try:
             logger.info('(update) Downloading update from: ' + tar_download_url)
-            data = urllib2.urlopen(tar_download_url)
+            data = urllib2.urlopen(tar_download_url, timeout=30)
         except (IOError, urllib2.URLError):
             logger.error("(update) Unable to retrieve new version from " + tar_download_url + ", can't update")
             return

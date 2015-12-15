@@ -38,19 +38,6 @@ def search_nzb_book(books=None, mags=None):
     if books is None:
         # We are performing a backlog search
         searchbooks = myDB.select('SELECT BookID, AuthorName, Bookname from books WHERE Status="Wanted"')
-
-        # Clear cache
-        providercache = os.path.join(lazylibrarian.CACHEDIR, ".ProviderCache")
-        if os.path.exists(providercache):
-            try:
-                shutil.rmtree(providercache)
-                os.mkdir(providercache)
-            except OSError, e:
-                logger.error('Failed to clear cache: ' + str(e))
-            
-        # Clearing throttling timeouts
-        #t = SimpleCache.ThrottlingProcessor()
-        #t.lastRequestTime.clear()
     else:
         # The user has added a new book
         searchbooks = []

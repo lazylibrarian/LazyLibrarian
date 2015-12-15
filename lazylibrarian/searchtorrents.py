@@ -36,19 +36,6 @@ def search_tor_book(books=None, mags=None):
     if books is None:
         # We are performing a backlog search
         searchbooks = myDB.select('SELECT BookID, AuthorName, Bookname from books WHERE Status="Wanted"')
-
-        # Clear cache
-        providercache = os.path.join(lazylibrarian.CACHEDIR, ".ProviderCache")
-        if os.path.exists(providercache):
-            try:
-                shutil.rmtree(providercache)
-                os.mkdir(providercache)
-            except OSError, e:
-                logger.error('Failed to clear cache: ' + str(e))
-
-        # Clearing throttling timeouts
-        #t = SimpleCache.ThrottlingProcessor()
-        #t.lastRequestTime.clear()
     else:
         # The user has added a new book
         searchbooks = []
@@ -179,7 +166,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                 request.add_header('Referer', host)
 
             try:
-                response = urllib2.urlopen(request)
+                response = urllib2.urlopen(request, timeout=90)
                 if response.info().get('Content-Encoding') == 'gzip':
                     buf = StringIO(response.read())
                     f = gzip.GzipFile(fileobj=buf)
