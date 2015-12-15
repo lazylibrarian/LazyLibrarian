@@ -10,7 +10,7 @@ import re
 
 import lazylibrarian
 
-from lazylibrarian import logger, database, formatter, providers, notifiers, SimpleCache, common
+from lazylibrarian import logger, database, formatter, providers, notifiers, common
 
 #import lib.fuzzywuzzy as fuzzywuzzy
 from lib.fuzzywuzzy import fuzz

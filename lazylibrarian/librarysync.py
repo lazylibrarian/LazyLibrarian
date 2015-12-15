@@ -298,7 +298,8 @@ def LibraryScan(dir=None):
                     logger.debug(
                         "[%s] Now scanning subdirectory %s" %
                         (dir.decode(lazylibrarian.SYS_ENCODING, 'replace'), subdirectory.decode(lazylibrarian.SYS_ENCODING, 'replace')))
-                    
+                    language = "Unknown"
+                    isbn = ""
                     # calibre uses "metadata.opf", LL uses "bookname - authorname.opf"
                     # just look for any .opf file in the current directory since we don't know 
                     # LL preferred authorname/bookname at this point
@@ -311,13 +312,9 @@ def LibraryScan(dir=None):
                         book = res['title']
                         author = res['creator']
                         if 'language' in res:
-                            language = res['language']
-                        else:
-                            language = ""
+                            language = res['language']  
                         if 'identifier' in res:
                             isbn = res['identifier']
-                        else:
-                            isbn = ""
                         match = 1
                         logger.debug(
                             "file meta [%s] [%s] [%s] [%s]" %
@@ -340,12 +337,8 @@ def LibraryScan(dir=None):
                                 author = res['creator']
                                 if 'language' in res:
                                     language = res['language']
-                                else:
-                                    language = ""
                                 if 'identifier' in res:
                                     isbn = res['identifier']
-                                else:
-                                    isbn = ""
                                 logger.debug("book meta [%s] [%s] [%s] [%s]" %
                                     (isbn, language, author, book))
                                 match = 1
@@ -366,9 +359,6 @@ def LibraryScan(dir=None):
                     #
                     # If we have a valid looking isbn, and language != "Unknown", add it to cache
                     #
-                    if not language:
-                        language = "Unknown"
-
                     if not formatter.is_valid_isbn(isbn):
                         isbn = ""
                     if isbn != "" and language != "Unknown":

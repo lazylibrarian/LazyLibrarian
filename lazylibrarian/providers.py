@@ -1,22 +1,14 @@
-#import time
-#import threading
 import urllib
 import urllib2
-#import re
 
 from xml.etree import ElementTree
 
 import lazylibrarian
-
-from lazylibrarian import logger, SimpleCache
+from lazylibrarian import logger
 import lazylibrarian.common as common
 
 # new libraries to support torrents
-
 import lib.feedparser as feedparser
-# from bs4 import BeautifulSoup
-# import cookielib
-# import socket
 import urlparse
 
 
@@ -48,7 +40,7 @@ def KAT(book=None):
     searchURL = providerurl + "/?%s" % urllib.urlencode(params)
 
     try:
-        data = urllib2.urlopen(searchURL, timeout=20)
+        data = urllib2.urlopen(searchURL, timeout=90)
     except urllib2.URLError as e:
         # seems KAT returns 404 if no results, not really an error
         if not e.code == 404: 
@@ -218,9 +210,11 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=
         if lazylibrarian.PROXY_HOST:
             request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
         request.add_header('User-Agent', common.USER_AGENT)
-        opener = urllib2.build_opener(SimpleCache.CacheHandler(".ProviderCache"), SimpleCache.ThrottlingProcessor(5))
-        resp = opener.open(request)
-
+        # do we really want to cache this, new feeds/torrents are added all the time
+        # if we do, call goodreads.get_request(request, expireafter) 
+        # where expireafter is max cache age in days (0 for non-cached, 7 for up to a week old, etc. 
+        # Default is 30 days)
+        resp = urllib2.urlopen(request, timeout = 90)
         try:
             data = ElementTree.parse(resp)
         except (urllib2.URLError, IOError, EOFError), e:

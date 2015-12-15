@@ -475,15 +475,16 @@ def exportCSV(search_dir=None, status="Wanted"):
         logger.warn("Alternate Directory must not be empty")
         return False
     
-    csvFile = os.path.join(search_dir, "%s - %s.csv" % (status, formatter.now()))  
+    csvFile = os.path.join(search_dir, "%s - %s.csv" % (status, formatter.now().replace(':', '-')))  
     
     myDB = database.DBConnection() 
     
     find_status = myDB.select('SELECT * FROM books WHERE Status = "%s"' % status)
     
     if not find_status:
-        logger.warn("No books marked as %s" % status)
+        logger.warn(u"No books marked as %s" % status)
     else:
+        count = 0
         with open(csvFile, 'wb') as csvfile:
             csvwrite = csv.writer(csvfile, delimiter=',',
                 quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -495,13 +496,14 @@ def exportCSV(search_dir=None, status="Wanted"):
                 ])
         
             for resulted in find_status:
-                logger.debug("Exported CSV for book %s" % resulted['BookName'].encode('utf-8'))
+                logger.debug(u"Exported CSV for book %s" % resulted['BookName'].encode('utf-8'))
                 row = ([
                     resulted['BookID'], resulted['AuthorName'], resulted['BookName'], 
                     resulted['BookIsbn'], resulted['AuthorID']       
                     ])
                 csvwrite.writerow([("%s" % s).encode('utf-8') for s in row])
-        logger.info("CSV exported to %s" % csvFile)
+                count = count + 1
+        logger.info(u"CSV exported %s books to %s" % (count, csvFile))
 
 
 def processCSV(search_dir=None):        
@@ -509,7 +511,7 @@ def processCSV(search_dir=None):
     adding authors to the database if not found, and marking the books as "Wanted" """
      
     if not search_dir:
-        logger.warn("Alternate Directory must not be empty")
+        logger.warn(u"Alternate Directory must not be empty")
         return False
 
     csvFile = csv_file(search_dir)
@@ -518,9 +520,9 @@ def processCSV(search_dir=None):
     content = {}
 
     if not csvFile:
-        logger.warn("No CSV file found in %s" % search_dir)
+        logger.warn(u"No CSV file found in %s" % search_dir)
     else:
-        logger.debug('Reading file %s' % csvFile)
+        logger.debug(u'Reading file %s' % csvFile)
         reader=csv.reader(open(csvFile))
         for row in reader:
             if reader.line_num == 1:
@@ -539,30 +541,30 @@ def processCSV(search_dir=None):
         #print headers
         
         if 'Author' not in headers or 'Title' not in headers:
-            logger.warn('Invalid CSV file found %s' % csvFile)
+            logger.warn(u'Invalid CSV file found %s' % csvFile)
             return
             
         myDB = database.DBConnection() 
         bookcount = 0
         authcount = 0
         skipcount = 0  
-        logger.debug("CSV: Found %s entries in csv file" % len(content.keys()))  
+        logger.debug(u"CSV: Found %s entries in csv file" % len(content.keys()))  
         for bookid in content.keys():
             
-            authorname = content[bookid]['Author']
+            authorname = formatter.latinToAscii(content[bookid]['Author'])
             authmatch = myDB.action('SELECT * FROM authors where AuthorName="%s"' % (authorname)).fetchone()
         
             if authmatch:
-                logger.debug("CSV: Author %s found in database" % (authorname))
+                logger.debug(u"CSV: Author %s found in database" % (authorname))
             else:
-                logger.debug("CSV: Author %s not found, adding to database" % (authorname))
+                logger.debug(u"CSV: Author %s not found, adding to database" % (authorname))
                 importer.addAuthorToDB(authorname)
                 authcount = authcount + 1
 
             bookmatch = 0
             isbn10=""
             isbn13=""    
-            bookname = content[bookid]['Title']
+            bookname = formatter.latinToAscii(content[bookid]['Title'])
             if 'ISBN' in headers:
                 isbn10 = content[bookid]['ISBN']
             if 'ISBN13' in headers:
@@ -584,17 +586,17 @@ def processCSV(search_dir=None):
                 bookid = bookmatch['BookID']
                 bookstatus = bookmatch['Status']
                 if bookstatus == 'Open' or bookstatus == 'Wanted' or bookstatus == 'Have':
-                    logger.info('Found book %s by %s, already marked as "%s"' % (bookname, authorname, bookstatus))
+                    logger.info(u'Found book %s by %s, already marked as "%s"' % (bookname, authorname, bookstatus))
                 else: # skipped/ignored
-                    logger.info('Found book %s by %s, marking as "Wanted"' % (bookname, authorname))
+                    logger.info(u'Found book %s by %s, marking as "Wanted"' % (bookname, authorname))
                     controlValueDict = {"BookID": bookid}
                     newValueDict = {"Status": "Wanted"}                  
                     myDB.upsert("books", newValueDict, controlValueDict)
                     bookcount = bookcount + 1
             else:    
-                logger.warn("Skipping book %s by %s, not found in database" % (bookname, authorname))
+                logger.warn(u"Skipping book %s by %s, not found in database" % (bookname, authorname))
                 skipcount = skipcount + 1
-        logger.info("Added %i new authors, marked %i books as 'Wanted', %i books not found" % (authcount, bookcount, skipcount))    
+        logger.info(u"Added %i new authors, marked %i books as 'Wanted', %i books not found" % (authcount, bookcount, skipcount))    
         
             
 class imgGoogle(FancyURLopener):

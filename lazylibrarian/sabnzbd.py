@@ -47,7 +47,7 @@ def SABnzbd(title=None, nzburl=None):
     logger.debug(u'Request url for <a href="%s">SABnzbd</a>' % URL)
 
     try:
-        request = urllib.urlopen(URL)
+        request = urllib.urlopen(URL, timeout=30)
         logger.debug(u'Sending Nzbfile to SAB <a href="%s">URL</a>' % URL)
         logger.debug(u'Sending Nzbfile to SAB')
     except (EOFError, IOError), e:

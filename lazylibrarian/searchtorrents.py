@@ -1,25 +1,19 @@
-#import time
 import threading
-#import urllib
 import urllib2
 import os
 import shutil
 import re
-#import sys
 from base64 import b16encode, b32decode
 from lib.bencode import bencode as bencode, bdecode
 from hashlib import sha1
-#from xml.etree import ElementTree
-#from xml.etree.ElementTree import Element, SubElement
 
 import lazylibrarian
 
-from lazylibrarian import logger, database, formatter, providers, SimpleCache, notifiers, utorrent, transmission
+from lazylibrarian import logger, database, formatter, providers, notifiers, utorrent, transmission
 
 from lib.deluge_client import DelugeRPCClient
 
-#import lib.fuzzywuzzy as fuzzywuzzy
-from lib.fuzzywuzzy import fuzz #, process
+from lib.fuzzywuzzy import fuzz
 
 import unicodedata
 
@@ -42,19 +36,6 @@ def search_tor_book(books=None, mags=None):
     if books is None:
         # We are performing a backlog search
         searchbooks = myDB.select('SELECT BookID, AuthorName, Bookname from books WHERE Status="Wanted"')
-
-        # Clear cache
-        providercache = os.path.join(lazylibrarian.DATADIR, ".ProviderCache")
-        if os.path.exists(providercache):
-            try:
-                shutil.rmtree(providercache)
-                os.mkdir(providercache)
-            except OSError, e:
-                logger.error('Failed to clear cache: ' + str(e))
-
-        # Clearing throttling timeouts
-        t = SimpleCache.ThrottlingProcessor()
-        t.lastRequestTime.clear()
     else:
         # The user has added a new book
         searchbooks = []
@@ -185,7 +166,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                 request.add_header('Referer', host)
 
             try:
-                response = urllib2.urlopen(request)
+                response = urllib2.urlopen(request, timeout=90)
                 if response.info().get('Content-Encoding') == 'gzip':
                     buf = StringIO(response.read())
                     f = gzip.GzipFile(fileobj=buf)

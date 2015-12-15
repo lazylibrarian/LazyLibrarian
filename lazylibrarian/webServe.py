@@ -568,9 +568,9 @@ class WebInterface(object):
             try:
                 shutil.rmtree(lazylibrarian.LOGDIR)
                 os.mkdir(lazylibrarian.LOGDIR)
+                lazylibrarian.LOGLIST = []
             except OSError, e:
                 logger.info(u'Failed to clear log: ' + str(e))
-        lazylibrarian.LOGLIST = []
         raise cherrypy.HTTPRedirect("logs")
     clearLog.exposed = True
 
@@ -901,10 +901,11 @@ class WebInterface(object):
         elif iSortCol_0 == '2':
             sortcolumn = 1
         filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
-
-        rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+        if iDisplayLength < 0: # display = all
+            rows = filtered
+        else:
+            rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
         rows = [[row[0], row[2], row[1]] for row in rows]
-
         dict = {'iTotalDisplayRecords': len(filtered),
                 'iTotalRecords': len(lazylibrarian.LOGLIST),
                 'aaData': rows,

@@ -18,7 +18,7 @@ from lib.apscheduler.scheduler import Scheduler
 
 import threading
 
-from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, SimpleCache, librarysync, versioncheck, database, searchmag, magazinescan, common
+from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, librarysync, versioncheck, database, searchmag, magazinescan, common
 
 FULL_PATH = None
 PROG_DIR = None
@@ -904,7 +904,7 @@ def config_write():
     CFG.set('NMA', 'nma_onsnatch', NMA_ONSNATCH)
     CFG.set('NMA', 'nma_ondownload', NMA_ONDOWNLOAD)
 
-    with open(CONFIGFILE, 'wb') as configfile:
+    with open(CONFIGFILE, 'w') as configfile:
         CFG.write(configfile)
 
 
