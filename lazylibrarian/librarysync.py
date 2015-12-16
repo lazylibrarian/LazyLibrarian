@@ -283,225 +283,219 @@ def LibraryScan(dir=None):
             if (lazylibrarian.IMP_SINGLEBOOK) and (subdirectory in processed_subdirectories):
                 logger.debug("[%s] already scanned" % subdirectory)
             else:
-# 			If this is a book, try to get author/title/isbn/language
-# 			If metadata.opf exists, use that
-# 			else if epub or mobi, read metadata from the book
-# 			else have to try pattern match for author/title	and look up isbn/lang from LT or GR late
+                # If this is a book, try to get author/title/isbn/language
+                # if epub or mobi, read metadata from the book
+                # If metadata.opf exists, use that allowing it to override
+                # embedded metadata. User may have edited metadata.opf
+                # to merge author aliases together
+                # If all else fails, try pattern match for author/title 
+                # and look up isbn/lang from LT or GR later
                 match = 0
-                extn = ""
-                
-                if '.' in files:
-                    words = files.split('.')
-                    extn = words[len(words) - 1]
                     
                 if formatter.is_valid_booktype(files):
-                    logger.debug(
-                        "[%s] Now scanning subdirectory %s" %
+                    logger.debug("[%s] Now scanning subdirectory %s" %
                         (dir.decode(lazylibrarian.SYS_ENCODING, 'replace'), subdirectory.decode(lazylibrarian.SYS_ENCODING, 'replace')))
                     language = "Unknown"
                     isbn = ""
+                    book = ""
+                    author = ""
+                    words = files.split('.')
+                    extn = words[len(words) - 1]
+                    
+                    # if it's an epub or a mobi we can try to read metadata from it
+                    if (extn == "epub") or (extn == "mobi"):
+                        book_filename = os.path.join(r, files).encode(lazylibrarian.SYS_ENCODING)
+                        try:
+                            res = get_book_info(book_filename)
+                        except:
+                            res = {}
+                        if 'title' in res and 'creator' in res:  # this is the minimum we need
+                            match = 1
+                            book = res['title']
+                            author = res['creator']
+                            if 'language' in res:
+                                language = res['language']
+                            if 'identifier' in res:
+                                isbn = res['identifier']
+                            logger.debug("book meta [%s] [%s] [%s] [%s]" %
+                                (isbn, language, author, book))
+                        else:
+                            logger.debug("Book meta incomplete in %s" % book_filename)
+
                     # calibre uses "metadata.opf", LL uses "bookname - authorname.opf"
                     # just look for any .opf file in the current directory since we don't know 
-                    # LL preferred authorname/bookname at this point
+                    # LL preferred authorname/bookname at this point.
+                    # Allow metadata in file to override book contents as may be users pref
                     metafile = opf_file(r)
                     try:
                         res = get_book_info(metafile)
                     except:
                         res = {}
                     if 'title' in res and 'creator' in res:  # this is the minimum we need
+                        match = 1
                         book = res['title']
                         author = res['creator']
                         if 'language' in res:
                             language = res['language']  
                         if 'identifier' in res:
                             isbn = res['identifier']
-                        match = 1
                         logger.debug(
                             "file meta [%s] [%s] [%s] [%s]" %
                             (isbn, language, author, book))
                     else:
                         logger.debug("File meta incomplete in %s" % metafile)
+                    
+                    if not match: # no author/book from metadata file, and not embedded either
+                        match = pattern.match(files)
+                        if match:
+                            author = match.group("author")
+                            book = match.group("book")
+                        else:
+                            logger.debug("Pattern match failed [%s]" % files)
 
-                    if not match:
-                        # it's a book, but no external metadata found
-                        # if it's an epub or a mobi we can try to read metadata
-                        # from it
-                        if (extn == "epub") or (extn == "mobi"):
-                            book_filename = os.path.join(r, files).encode(lazylibrarian.SYS_ENCODING)
-                            try:
-                                res = get_book_info(book_filename)
-                            except:
-                                res = {}
-                            if 'title' in res and 'creator' in res:  # this is the minimum we need
-                                book = res['title']
-                                author = res['creator']
-                                if 'language' in res:
-                                    language = res['language']
-                                if 'identifier' in res:
-                                    isbn = res['identifier']
-                                logger.debug("book meta [%s] [%s] [%s] [%s]" %
-                                    (isbn, language, author, book))
-                                match = 1
-                            else:
-                                logger.debug("Book meta incomplete in %s" % book_filename)
-
-                if not match:
-                    match = pattern.match(files)
                     if match:
-                        author = match.group("author")
-                        book = match.group("book")
-                    else:
-                        logger.debug("Pattern match failed [%s]" % files)
+                        # flag that we found a book in this subdirectory
+                        processed_subdirectories.append(subdirectory)  
 
-                if match:
-                    processed_subdirectories.append(
-                        subdirectory)  # flag that we found a book in this subdirectory
-                    #
-                    # If we have a valid looking isbn, and language != "Unknown", add it to cache
-                    #
-                    if not formatter.is_valid_isbn(isbn):
-                        isbn = ""
-                    if isbn != "" and language != "Unknown":
-                        logger.debug(
-                            "Found Language [%s] ISBN [%s]" %
-                            (language, isbn))
-                        # we need to add it to language cache if not already
-                        # there, is_valid_isbn has checked length is 10 or 13
-                        if len(isbn) == 10:
-                            isbnhead = isbn[0:3]
-                        else:
-                            isbnhead = isbn[3:6]
-                        match = myDB.action(
-                            'SELECT lang FROM languages where isbn = "%s"' %
-                            (isbnhead)).fetchone()
-                        if not match:
-                            myDB.action(
-                                'insert into languages values ("%s", "%s")' %
-                                (isbnhead, language))
+                        # If we have a valid looking isbn, and language != "Unknown", add it to cache
+                        if language != "Unknown" and formatter.is_valid_isbn(isbn):
                             logger.debug(
-                                "Cached Lang [%s] ISBN [%s]" %
-                                (language, isbnhead))
-                        else:
-                            logger.debug(
-                                "Already cached Lang [%s] ISBN [%s]" %
-                                (language, isbnhead))
-
-                    # get authors name in a consistent format
-                    if "," in author:  # "surname, forename"
-                        words = author.split(',')
-                        author = words[1].strip() + ' ' + words[0].strip()  # "forename surname"
-                    if author[1] == ' ':        
-                        author = author.replace(' ', '.')
-                        author = author.replace('..', '.')
-
-                    # Check if the author exists, and import the author if not,
-                    # before starting any complicated book-name matching to save repeating the search
-                    #
-                    check_exist_author = myDB.action(
-                        'SELECT * FROM authors where AuthorName="%s"' %
-                        author).fetchone()
-                    if not check_exist_author and lazylibrarian.ADD_AUTHOR:
-                        # no match for supplied author, but we're allowed to
-                        # add new ones
-
-                        GR = GoodReads(author)
-                        try:
-                            author_gr = GR.find_author_id()
-                        except:
-                            logger.warn(
-                                "Error finding author id for [%s]" %
-                                author)
-                            continue
-
-                        # only try to add if GR data matches found author data
-                        # not sure what this is for, never seems to fail??
-                        if author_gr:
-                            authorname = author_gr['authorname']
-
-                            # "J.R.R. Tolkien" is the same person as "J. R. R. Tolkien" and "J R R Tolkien"
-                            match_auth = author.replace('.', '_')
-                            match_auth = match_auth.replace(' ', '_')
-                            match_auth = match_auth.replace('__', '_')
-                            match_name = authorname.replace('.', '_')
-                            match_name = match_name.replace(' ', '_')
-                            match_name = match_name.replace('__', '_')
-                            match_name = common.remove_accents(match_name)
-                            match_auth = common.remove_accents(match_auth)
-                            # allow a degree of fuzziness to cater for different accented character handling.
-                            # some author names have accents,
-                            # filename may have the accented or un-accented version of the character
-                            # The currently non-configurable value of fuzziness might need to go in config
-                            # We stored GoodReads unmodified author name in
-                            # author_gr, so store in LL db under that
-                            match_fuzz = fuzz.ratio(match_auth, match_name)
-                            if match_fuzz < 90:
+                                "Found Language [%s] ISBN [%s]" %
+                                (language, isbn))
+                            # we need to add it to language cache if not already
+                            # there, is_valid_isbn has checked length is 10 or 13
+                            if len(isbn) == 10:
+                                isbnhead = isbn[0:3]
+                            else:
+                                isbnhead = isbn[3:6]
+                            match = myDB.action(
+                                'SELECT lang FROM languages where isbn = "%s"' %
+                                (isbnhead)).fetchone()
+                            if not match:
+                                myDB.action(
+                                    'insert into languages values ("%s", "%s")' %
+                                    (isbnhead, language))
                                 logger.debug(
-                                    "Failed to match author [%s] fuzz [%d]" %
-                                    (author, match_fuzz))
+                                    "Cached Lang [%s] ISBN [%s]" %
+                                    (language, isbnhead))
+                            else:
                                 logger.debug(
-                                    "Failed to match author [%s] to authorname [%s]" %
-                                    (match_auth, match_name))
+                                    "Already cached Lang [%s] ISBN [%s]" %
+                                    (language, isbnhead))
+    
+                        # get authors name in a consistent format
+                        if "," in author:  # "surname, forename"
+                            words = author.split(',')
+                            author = words[1].strip() + ' ' + words[0].strip()  # "forename surname"
+                        if author[1] == ' ':        
+                            author = author.replace(' ', '.')
+                            author = author.replace('..', '.')
+    
+                        # Check if the author exists, and import the author if not,
+                        # before starting any complicated book-name matching to save repeating the search
+                        #
+                        check_exist_author = myDB.action(
+                            'SELECT * FROM authors where AuthorName="%s"' %
+                            author).fetchone()
+                        if not check_exist_author and lazylibrarian.ADD_AUTHOR:
+                            # no match for supplied author, but we're allowed to
+                            # add new ones
+    
+                            GR = GoodReads(author)
+                            try:
+                                author_gr = GR.find_author_id()
+                            except:
+                                logger.warn(
+                                    "Error finding author id for [%s]" %
+                                    author)
+                                continue
 
-                            # To save loading hundreds of books by unknown
-                            # authors at GR or GB, ignore if author "Unknown"
-                            if (author != "Unknown") and (match_fuzz >= 90):
-                                # use "intact" name for author that we stored in
-                                # GR author_dict, not one of the various mangled versions
-                                # otherwise the books appear to be by a
-                                # different author!
-                                author = author_gr['authorname']
-                                # this new authorname may already be in the
-                                # database, so check again
-                                check_exist_author = myDB.action(
-                                    'SELECT * FROM authors where AuthorName="%s"' %
-                                    author).fetchone()
-                                if not check_exist_author:
+                            # only try to add if GR data matches found author data
+                            if author_gr:
+                                authorname = author_gr['authorname']
+    
+                                # "J.R.R. Tolkien" is the same person as "J. R. R. Tolkien" and "J R R Tolkien"
+                                match_auth = author.replace('.', '_')
+                                match_auth = match_auth.replace(' ', '_')
+                                match_auth = match_auth.replace('__', '_')
+                                match_name = authorname.replace('.', '_')
+                                match_name = match_name.replace(' ', '_')
+                                match_name = match_name.replace('__', '_')
+                                match_name = common.remove_accents(match_name)
+                                match_auth = common.remove_accents(match_auth)
+                                # allow a degree of fuzziness to cater for different accented character handling.
+                                # some author names have accents,
+                                # filename may have the accented or un-accented version of the character
+                                # The currently non-configurable value of fuzziness might need to go in config
+                                # We stored GoodReads unmodified author name in
+                                # author_gr, so store in LL db under that
+                                match_fuzz = fuzz.ratio(match_auth, match_name)
+                                if match_fuzz < 90:
                                     logger.debug(
-                                        "Adding new author [%s]" %
-                                        author)
-                                    if author not in new_authors:
-                                        new_authors.append(author)
-                                    try:
-                                        importer.addAuthorToDB(author)
-                                        check_exist_author = myDB.action(
-                                            'SELECT * FROM authors where AuthorName="%s"' %
-                                            author).fetchone()
-                                    except:
-                                        continue
-
-                    # check author exists in db, either newly loaded or already
-                    # there
-                    if not check_exist_author:
-                        logger.debug(
-                            "Failed to match author [%s] in database" %
-                            author)
-                    else:
-                        # author exists, check if this book by this author is in our database
-                        # metadata might have quotes in book name
-                        book = book.replace('"', '').replace("'", "")
-                        bookid = find_book_in_db(myDB, author, book)
-                        if bookid:
-                            # check if book is already marked as "Open" (if so,
-                            # we already had it)
-                            check_status = myDB.action(
-                                'SELECT Status from books where BookID="%s"' %
-                                bookid).fetchone()
-                            if check_status['Status'] != 'Open':
-                                # update status as we've got this book
-                                myDB.action(
-                                    'UPDATE books set Status="Open" where BookID="%s"' %
-                                    bookid)
-                                book_filename = os.path.join(
-                                    r,
-                                    files).encode(
-                                        lazylibrarian.SYS_ENCODING)
-                                # update book location so we can check if it
-                                # gets removed, or allow click-to-open
-                                myDB.action(
-                                    'UPDATE books set BookFile="%s" where BookID="%s"' %
-                                    (book_filename, bookid))
-                                new_book_count += 1
-
+                                        "Failed to match author [%s] fuzz [%d]" %
+                                        (author, match_fuzz))
+                                    logger.debug(
+                                        "Failed to match author [%s] to authorname [%s]" %
+                                        (match_auth, match_name))
+    
+                                # To save loading hundreds of books by unknown
+                                # authors at GR or GB, ignore if author "Unknown"
+                                if (author != "Unknown") and (match_fuzz >= 90):
+                                    # use "intact" name for author that we stored in
+                                    # GR author_dict, not one of the various mangled versions
+                                    # otherwise the books appear to be by a different author!
+                                    author = author_gr['authorname']
+                                    # this new authorname may already be in the
+                                    # database, so check again
+                                    check_exist_author = myDB.action(
+                                        'SELECT * FROM authors where AuthorName="%s"' %
+                                        author).fetchone()
+                                    if not check_exist_author:
+                                        logger.debug(
+                                            "Adding new author [%s]" %
+                                            author)
+                                        if author not in new_authors:
+                                            new_authors.append(author)
+                                        try:
+                                            importer.addAuthorToDB(author)
+                                            check_exist_author = myDB.action(
+                                                'SELECT * FROM authors where AuthorName="%s"' %
+                                                author).fetchone()
+                                        except:
+                                            continue
+    
+                        # check author exists in db, either newly loaded or already there
+                        if not check_exist_author:
+                            logger.debug(
+                                "Failed to match author [%s] in database" %
+                                author)
+                        else:
+                            # author exists, check if this book by this author is in our database
+                            # metadata might have quotes in book name
+                            book = book.replace('"', '').replace("'", "")
+                            bookid = find_book_in_db(myDB, author, book)
+                            if bookid:
+                                # check if book is already marked as "Open" (if so,
+                                # we already had it)
+                                check_status = myDB.action(
+                                    'SELECT Status from books where BookID="%s"' %
+                                    bookid).fetchone()
+                                if check_status['Status'] != 'Open':
+                                    # update status as we've got this book
+                                    myDB.action(
+                                        'UPDATE books set Status="Open" where BookID="%s"' %
+                                        bookid)
+                                    book_filename = os.path.join(
+                                        r,
+                                        files).encode(
+                                            lazylibrarian.SYS_ENCODING)
+                                    # update book location so we can check if it
+                                    # gets removed, or allow click-to-open
+                                    myDB.action(
+                                        'UPDATE books set BookFile="%s" where BookID="%s"' %
+                                        (book_filename, bookid))
+                                    new_book_count += 1
+    
     cachesize = myDB.action("select count(*) from languages").fetchone()
     logger.info(
         "%s new/modified books found and added to the database" %
