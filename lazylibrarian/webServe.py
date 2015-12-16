@@ -407,7 +407,7 @@ class WebInterface(object):
 
         lazylibrarian.config_write()
 
-        logger.debug('Config file has been updated')
+        logger.info('Config file has been updated')
         raise cherrypy.HTTPRedirect("config")
 
     configUpdate.exposed = True
