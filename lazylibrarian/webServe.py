@@ -865,6 +865,7 @@ class WebInterface(object):
                 jobname = "[CRON] - Process download directory"
             jobtime = str(job).split('[')[1].split('.')[0]
             logger.info(u"%s [%s" % (jobname, jobtime))
+        logger.info(u"XMLCache %s hits, %s miss" % (int(lazylibrarian.CACHE_HIT), int(lazylibrarian.CACHE_MISS)))
         raise cherrypy.HTTPRedirect("logs")
     showJobs.exposed = True
 
