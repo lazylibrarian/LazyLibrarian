@@ -41,7 +41,7 @@ def KAT(book=None):
 
     try:
         data = urllib2.urlopen(searchURL, timeout=90)
-    except urllib2.URLError as e:
+    except urllib2.HTTPError as e:
         # seems KAT returns 404 if no results, not really an error
         if not e.code == 404: 
             logger.debug(searchURL)
