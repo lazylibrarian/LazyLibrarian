@@ -38,6 +38,7 @@ def get_book_info(fname):
         res['title'] = book.title()
         res['language'] = book.language()
         res['identifier'] = book.isbn()
+        res['type'] = "mobi"
         return res
 
     # none of the pdfs in my library had language,isbn
@@ -53,6 +54,7 @@ def get_book_info(fname):
     #     for s in ['title','language','creator']:
     #         res[s] = txt[s]
     #	  res['identifier'] = txt['isbn']
+    #     res['type'] = "pdf"
     #	  return res
 
     if extn == "epub":
@@ -65,20 +67,24 @@ def get_book_info(fname):
         cfname = ""
         if not len(tree):
             return res
+            
         while n < len(tree[0]):
-            att = str(tree[0][n].attrib)
+            att = tree[0][n].attrib
             if 'full-path' in att:
-                cfname = ("%s" % att)  # extract metadata filename
-                cfname = cfname.split(',')[1].split(':')[1].strip('\' }')
+#                cfname = ("%s" % att)  # extract metadata filename
+#                cfname = cfname.split(',')[1].split(':')[1].strip('\' }')
+                cfname = att['full-path']
             n = n + 1
 
         # grab the metadata block from the contents metafile
         txt = zipdata.read(cfname)
         tree = ElementTree.fromstring(txt)
+        res['type'] = "epub"
     else:
         if extn == "opf":
             txt = open(fname).read()
             tree = ElementTree.fromstring(txt)
+            res['type'] = "opf"
         else:
             return ""
 
@@ -99,7 +105,7 @@ def get_book_info(fname):
             res['creator'] = txt
         elif 'identifier' in tag.lower() and 'isbn' in attrib.lower():
             if formatter.is_valid_isbn(txt):
-                res['identifier'] = isbn
+                res['identifier'] = txt
         n = n + 1
     return res
 
@@ -317,8 +323,10 @@ def LibraryScan(dir=None):
                                 language = res['language']
                             if 'identifier' in res:
                                 isbn = res['identifier']
-                            logger.debug("book meta [%s] [%s] [%s] [%s]" %
-                                (isbn, language, author, book))
+                            if 'type' in res:
+                                extn = res['type']
+                            logger.debug("book meta [%s] [%s] [%s] [%s] [%s]" %
+                                (isbn, language, author, book, extn))
                         else:
                             logger.debug("Book meta incomplete in %s" % book_filename)
 

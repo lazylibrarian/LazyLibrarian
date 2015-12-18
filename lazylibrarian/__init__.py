@@ -510,9 +510,9 @@ def initialize():
         NEWZBIN_PASS = check_setting_str(CFG, 'Newzbin', 'newzbin_pass', '')
         EBOOK_TYPE = check_setting_str(CFG, 'General', 'ebook_type', 'epub, mobi, pdf')
 
-        SEARCH_INTERVAL = int(check_setting_str(CFG, 'SearchScan', 'search_interval', '360'))
-        SCAN_INTERVAL = int(check_setting_str(CFG, 'SearchScan', 'scan_interval', '10'))
-        VERSIONCHECK_INTERVAL = int(check_setting_str(CFG, 'SearchScan', 'versioncheck_interval', '24'))
+        SEARCH_INTERVAL = check_setting_int(CFG, 'SearchScan', 'search_interval', '360')
+        SCAN_INTERVAL = check_setting_int(CFG, 'SearchScan', 'scan_interval', '10')
+        VERSIONCHECK_INTERVAL = check_setting_int(CFG, 'SearchScan', 'versioncheck_interval', '24')
 
         FULL_SCAN = check_setting_int(CFG, 'LibraryScan', 'full_scan', 0)
         ADD_AUTHOR = check_setting_int(CFG, 'LibraryScan', 'add_author', 1)
@@ -1049,15 +1049,15 @@ def start():
 
         # Crons and scheduled jobs go here
         # list is duplicated in webServe so we can reschedule them
-        SCHED.add_interval_job(postprocess.processDir, minutes=SCAN_INTERVAL)
+        SCHED.add_interval_job(postprocess.processDir, minutes=int(SCAN_INTERVAL))
 
         if USE_NZB:
-            SCHED.add_interval_job(searchnzb.search_nzb_book, minutes=SEARCH_INTERVAL)
+            SCHED.add_interval_job(searchnzb.search_nzb_book, minutes=int(SEARCH_INTERVAL))
         if USE_TOR:
-            SCHED.add_interval_job(searchtorrents.search_tor_book, minutes=SEARCH_INTERVAL)
-        SCHED.add_interval_job(versioncheck.checkForUpdates, hours=VERSIONCHECK_INTERVAL)
+            SCHED.add_interval_job(searchtorrents.search_tor_book, minutes=int(SEARCH_INTERVAL))
+        SCHED.add_interval_job(versioncheck.checkForUpdates, hours=int(VERSIONCHECK_INTERVAL))
         if USE_TOR or USE_NZB:
-            SCHED.add_interval_job(searchmag.search_magazines, minutes=SEARCH_INTERVAL)
+            SCHED.add_interval_job(searchmag.search_magazines, minutes=int(SEARCH_INTERVAL))
             
         SCHED.start()
         started = True

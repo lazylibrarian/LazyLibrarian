@@ -873,15 +873,15 @@ class WebInterface(object):
         for job in lazylibrarian.SCHED.get_jobs():
             lazylibrarian.SCHED.unschedule_job(job)
         # and now restart them
-        lazylibrarian.SCHED.add_interval_job(postprocess.processDir, minutes=lazylibrarian.SCAN_INTERVAL)
+        lazylibrarian.SCHED.add_interval_job(postprocess.processDir, minutes=int(lazylibrarian.SCAN_INTERVAL))
 
         if lazylibrarian.USE_NZB:
-            lazylibrarian.SCHED.add_interval_job(search_nzb_book, minutes=lazylibrarian.SEARCH_INTERVAL)
+            lazylibrarian.SCHED.add_interval_job(search_nzb_book, minutes=int(lazylibrarian.SEARCH_INTERVAL))
         if lazylibrarian.USE_TOR:
-            lazylibrarian.SCHED.add_interval_job(search_tor_book, minutes=lazylibrarian.SEARCH_INTERVAL)
-        lazylibrarian.SCHED.add_interval_job(versioncheck.checkForUpdates, hours=lazylibrarian.VERSIONCHECK_INTERVAL)
+            lazylibrarian.SCHED.add_interval_job(search_tor_book, minutes=int(lazylibrarian.SEARCH_INTERVAL))
+        lazylibrarian.SCHED.add_interval_job(versioncheck.checkForUpdates, hours=int(lazylibrarian.VERSIONCHECK_INTERVAL))
         if lazylibrarian.USE_TOR or lazylibrarian.USE_NZB:
-            lazylibrarian.SCHED.add_interval_job(search_magazines, minutes=lazylibrarian.SEARCH_INTERVAL)
+            lazylibrarian.SCHED.add_interval_job(search_magazines, minutes=int(lazylibrarian.SEARCH_INTERVAL))
         # and list the new run-times in the log
         self.showJobs()
     restartJobs.exposed = True
