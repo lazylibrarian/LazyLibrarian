@@ -527,7 +527,7 @@ class WebInterface(object):
             threading.Thread(target=postprocess.processAlternate(lazylibrarian.ALTERNATE_DIR)).start()
         except Exception, e:
             logger.error(u'Unable to complete the import: %s' % e)
-        raise cherrypy.HTTPRedirect("home")
+        raise cherrypy.HTTPRedirect("manage")
     importAlternate.exposed = True
 
     def importCSV(self):
@@ -535,7 +535,7 @@ class WebInterface(object):
             threading.Thread(target=postprocess.processCSV(lazylibrarian.ALTERNATE_DIR)).start()
         except Exception, e:
             logger.error(u'Unable to complete the import: %s' % e)
-        raise cherrypy.HTTPRedirect("home")
+        raise cherrypy.HTTPRedirect("manage")
     importCSV.exposed = True
 
     def exportCSV(self):
@@ -543,7 +543,7 @@ class WebInterface(object):
             threading.Thread(target=postprocess.exportCSV(lazylibrarian.ALTERNATE_DIR)).start()
         except Exception, e:
             logger.error(u'Unable to complete the export: %s' % e)
-        raise cherrypy.HTTPRedirect("home")
+        raise cherrypy.HTTPRedirect("manage")
     exportCSV.exposed = True
 
     def libraryScan(self):

@@ -90,12 +90,12 @@ def search_tor_book(books=None, mags=None):
             addedCounter = 0
 
             for tor in resultlist:
-                tor_Title = formatter.latinToAscii(formatter.replace_all(str(tor['tor_title']).lower(), dictrepl)).strip()
+                tor_Title = formatter.latinToAscii(formatter.replace_all(str(tor['tor_title']), dictrepl)).strip()
                 tor_Title = re.sub(r"\s\s+", " ", tor_Title)  # remove extra whitespace
                 logger.debug(u'torName %s' % tor_Title)
 
                 match_ratio = int(lazylibrarian.MATCH_RATIO)
-                tor_Title_match = fuzz.token_sort_ratio(book['searchterm'].lower(), tor_Title)
+                tor_Title_match = fuzz.token_sort_ratio(book['searchterm'], tor_Title)
                 logger.debug("Torrent Title Match %: " + str(tor_Title_match))
 
                 if (tor_Title_match > match_ratio):

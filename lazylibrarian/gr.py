@@ -95,9 +95,7 @@ class GoodReads:
                 logger.error("Error finding results: " + str(e))
                 return
                 
-            rootxml = sourcexml.getroot()
             resultxml = rootxml.getiterator('work')
-            #author_dict = []
             resultcount = 0
             for author in resultxml:
                 bookdate = "0001-01-01"
@@ -137,8 +135,8 @@ class GoodReads:
                 else:
                     bookTitle = author.find('./best_book/title').text
 
-                author_fuzz = fuzz.ratio(authorNameResult.lower(), authorname.lower())
-                book_fuzz = fuzz.ratio(bookTitle.lower(), authorname.lower())
+                author_fuzz = fuzz.ratio(authorNameResult, authorname)
+                book_fuzz = fuzz.ratio(bookTitle, authorname)
                 try:
                     isbn_check = int(authorname[:-1])
                     if (len(str(isbn_check)) == 9) or (len(str(isbn_check)) == 12):

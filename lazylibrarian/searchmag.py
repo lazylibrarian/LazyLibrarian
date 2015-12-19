@@ -135,7 +135,7 @@ def search_magazines(mags=None):
                         while name_len:
                             name_len = name_len - 1
                             # fuzzy check on each word in the magazine name with any accents stripped
-                            ratio = fuzz.ratio(common.remove_accents(nzbtitle_exploded[name_len]).lower(), common.remove_accents(bookid_exploded[name_len]).lower())
+                            ratio = fuzz.ratio(common.remove_accents(nzbtitle_exploded[name_len]), common.remove_accents(bookid_exploded[name_len]))
                             if ratio < 80:  # hard coded fuzz ratio for now, works for close matches
                                 logger.debug("Magazine fuzz ratio failed [%d] [%s] [%s]" % (ratio, bookid, nzbtitle_formatted))
                                 name_match = 0  # name match failed

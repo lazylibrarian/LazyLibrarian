@@ -139,6 +139,7 @@ def find_book_in_db(myDB, author, book):
         logger.debug("Found %s books for %s" % (len(books), author))
         for a_book in books:
             # tidy up everything to raise fuzziness scores
+            # still need to lowercase for matching against partial_name later on
             book_lower = common.remove_accents(book.lower())
             a_book_lower = common.remove_accents(a_book['BookName'].lower())
             #
