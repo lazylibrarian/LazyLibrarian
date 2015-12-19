@@ -574,6 +574,25 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("logs")
     clearLog.exposed = True
 
+    def toggleLog(self):
+        # Toggle the debug log 
+        # LOGLEVEL 0, quiet
+        # 1 normal
+        # 2 debug
+        # >2 do not turn off file/console log
+        if lazylibrarian.LOGFULL: # if LOGLIST logging on, turn off
+            lazylibrarian.LOGFULL = False
+            if lazylibrarian.LOGLEVEL < 3:
+                lazylibrarian.LOGLEVEL = 1
+            logger.info(u'Debug log display OFF, loglevel is %s' % lazylibrarian.LOGLEVEL)
+        else:
+            lazylibrarian.LOGFULL = True
+            if lazylibrarian.LOGLEVEL < 2:
+                lazylibrarian.LOGLEVEL = 2 # Make sure debug ON
+            logger.info(u'Debug log display ON, loglevel is %s' % lazylibrarian.LOGLEVEL)
+        raise cherrypy.HTTPRedirect("logs")
+    toggleLog.exposed = True
+
     def addResults(self, authorname):
         args = None
         threading.Thread(target=importer.addAuthorToDB, args=[authorname]).start()

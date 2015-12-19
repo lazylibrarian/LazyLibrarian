@@ -52,8 +52,9 @@ CFG = None
 
 LOGDIR = None
 LOGLIST = []
-# Info 1, Debug 2 - Really should be in the config files.
+# Info 1, Debug 2, >2 don't toggle console/file
 LOGLEVEL = 2
+LOGFULL = False # include debug on screen if true
 
 MATCH_RATIO = 80
 
@@ -305,7 +306,7 @@ def initialize():
 
     with INIT_LOCK:
 
-        global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, \
+        global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, LOGFULL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, \
             HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, \
             MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, \
             SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, NZB_BLACKHOLEDIR, \
@@ -360,6 +361,8 @@ def initialize():
 
         logger.lazylibrarian_log.initLogger(loglevel=LOGLEVEL)
         logger.info("Log level set to [%s]- Log Directory is [%s] - Config level is [%s]" % (LOGLEVEL, LOGDIR, CFGLOGLEVEL))
+        if LOGLEVEL > 2:
+            LOGFULL = True
 
         MATCH_RATIO = check_setting_int(CFG, 'General', 'match_ratio', 80)
         HTTP_HOST = check_setting_str(CFG, 'General', 'http_host', '0.0.0.0')

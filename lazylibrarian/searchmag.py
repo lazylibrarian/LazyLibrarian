@@ -23,7 +23,7 @@ def search_magazines(mags=None):
 
     myDB = database.DBConnection()
     searchlist = []
-
+    resultlist = []
     threading.currentThread().name = "SEARCHMAGS"
 
     if mags is None:  # backlog search
