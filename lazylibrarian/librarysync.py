@@ -510,9 +510,10 @@ def LibraryScan(dir=None):
         "%s new/modified books found and added to the database" %
         new_book_count)
     logger.info("%s files processed" % file_count)
-    if new_book_count:
-        stats = myDB.action(
-            "SELECT sum(GR_book_hits), sum(GR_lang_hits), sum(LT_lang_hits), sum(GB_lang_change), sum(cache_hits), sum(bad_lang), sum(bad_char), sum(uncached) FROM stats").fetchone()
+    stats = myDB.action(
+        "SELECT sum(GR_book_hits), sum(GR_lang_hits), sum(LT_lang_hits), sum(GB_lang_change), sum(cache_hits), sum(bad_lang), sum(bad_char), sum(uncached) FROM stats").fetchone()
+    if stats['sum(GR_book_hits)'] is not None:
+        # only show stats if new books added
         if lazylibrarian.BOOK_API == "GoogleBooks":
             logger.debug(
                 "GoogleBooks was hit %s times for books" %
@@ -542,6 +543,7 @@ def LibraryScan(dir=None):
         logger.debug(
             "Unable to cache %s books with missing ISBN" %
             stats['sum(uncached)'])
+    logger.debug("XMLCache %s hits, %s miss" % (lazylibrarian.CACHE_HIT, lazylibrarian.CACHE_MISS))
     logger.debug("ISBN Language cache holds %s entries" % cachesize['count(*)'])
     stats = len(
         myDB.select('select BookID from Books where status="Open" and BookLang="Unknown"'))

@@ -135,7 +135,7 @@ def getCurrentVersion():
 def getCurrentGitBranch():
     # Can only work for GIT driven installs, so check install type
     if lazylibrarian.INSTALL_TYPE != 'git':
-        logger.debug('Non GIT Install doing check update. Return NON GIT INSTALL')
+        logger.debug('Non GIT Install doing getCurrentGitBranch')
         return 'NON GIT INSTALL'
 
     # use git rev-parse --abbrev-ref HEAD which returns the name of the current branch
@@ -151,10 +151,7 @@ def getCurrentGitBranch():
 
     return current_branch
 
-# not sure how this is called as we have same function in webServe.py also
-# ensuring both are identical for now - PAB this is the cron job
-
-
+# This is the cron job
 def checkForUpdates():
     # rename this thread
     threading.currentThread().name = "VERSIONCHECK"
@@ -177,9 +174,9 @@ def getLatestVersion():
     lazylibrarian.COMMITS_BEHIND = 'Unknown'
 
     if lazylibrarian.INSTALL_TYPE == 'git':
-        latest_version = getLatestVersionaFromGit()
+        latest_version = getLatestVersion_FromGit()
     elif lazylibrarian.INSTALL_TYPE == 'source':
-        latest_version = getLatestVersionaFromGit()
+        latest_version = getLatestVersion_FromGit()
     elif lazylibrarian.INSTALL_TYPE == 'win':
         latest_version = 'WIN INSTALL'
     else:
@@ -191,31 +188,31 @@ def getLatestVersion():
 
 # Don't call directly, use getLatestVersion as wrapper.
 # Also removed reference to global variable setting.
-def getLatestVersionaFromGit():
+def getLatestVersion_FromGit():
     latest_version = 'Unknown'
 
     # Can only work for non Windows driven installs, so check install type
     if lazylibrarian.INSTALL_TYPE == 'win':
-        logger.debug('(getLatestVersionaFromGit) Code Error - Windows install - should not be called under a windows install')
+        logger.debug('(getLatestVersion_FromGit) Code Error - Windows install - should not be called under a windows install')
         latest_version = 'WINDOWS INSTALL'
     else:
         # check current branch value of the local git repo as folks may pull from a branch not master
         branch = lazylibrarian.CURRENT_BRANCH
 
         if (branch == 'InvalidBranch'):
-            logger.debug('(getLatestVersionaFromGit) - Failed to get a valid branch name from local repo')
+            logger.debug('(getLatestVersion_FromGit) - Failed to get a valid branch name from local repo')
         else:
 
             # Get the latest commit available from github
             url = 'https://api.github.com/repos/%s/%s/commits/%s' % (lazylibrarian.GIT_USER, lazylibrarian.GIT_REPO, lazylibrarian.GIT_BRANCH)
-            logger.debug('(getLatestVersionaFromGit) Retrieving latest version information from github command=[%s]' % url)
+            logger.debug('(getLatestVersion_FromGit) Retrieving latest version information from github command=[%s]' % url)
             try:
                 result = urllib2.urlopen(url, timeout=30).read()
                 git = simplejson.JSONDecoder().decode(result)
                 latest_version = git['sha']
-                logger.debug('(getLatestVersionaFromGit) Branch [%s] has Latest Version has been set to [%s]' % (branch, latest_version))
+                logger.debug('(getLatestVersion_FromGit) Branch [%s] has Latest Version has been set to [%s]' % (branch, latest_version))
             except:
-                logger.warn('(getLatestVersionaFromGit) Could not get the latest commit from github')
+                logger.warn('(getLatestVersion_FromGit) Could not get the latest commit from github')
                 latest_version = 'Not_Available_From_GitHUB'
 
     return latest_version

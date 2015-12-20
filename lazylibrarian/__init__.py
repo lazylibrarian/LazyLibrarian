@@ -12,6 +12,7 @@ import re
 import datetime
 import locale
 import calendar
+import time
 
 import ConfigParser
 from lib.apscheduler.scheduler import Scheduler
@@ -252,6 +253,8 @@ MONTH12 = []
 MONTHNAMES = [MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, MONTH8, MONTH9, MONTH10, MONTH11, MONTH12]
 CACHE_HIT = 0
 CACHE_MISS = 0
+LAST_GOODREADS = 0
+LAST_LIBRARYTHING = 0
 
 def check_section(sec):
     """ Check if INI section exists, if not create it """
@@ -326,7 +329,8 @@ def initialize():
             TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PASS, TRANSMISSION_USER, \
             TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, \
             FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
-            GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, SCHED, CACHE_HIT, CACHE_MISS
+            GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, SCHED, \
+            CACHE_HIT, CACHE_MISS, LAST_GOODREADS, LAST_LIBRARYTHING
 
         if __INITIALIZED__:
             return False
@@ -363,6 +367,16 @@ def initialize():
         logger.info("Log level set to [%s]- Log Directory is [%s] - Config level is [%s]" % (LOGLEVEL, LOGDIR, CFGLOGLEVEL))
         if LOGLEVEL > 2:
             LOGFULL = True
+            logger.info("Screen Log is DEBUG")
+        else:
+            LOGFULL = False
+            logger.info("Screen Log is INFO/WARN/ERROR")
+        
+        # keep track of last api calls so we don't call more than once per second
+        # to respect api terms, but don't wait un-necessarily either
+        time_now = int(time.time())
+        LAST_LIBRARYTHING = time_now 
+        LAST_GOODREADS = time_now
 
         MATCH_RATIO = check_setting_int(CFG, 'General', 'match_ratio', 80)
         HTTP_HOST = check_setting_str(CFG, 'General', 'http_host', '0.0.0.0')

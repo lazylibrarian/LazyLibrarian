@@ -33,6 +33,7 @@ class GoodReads:
         # if hashfilename exists, return its contents
         # if not, urllib2.urlopen()
         # store the xml
+        # return the xml, and whether it was found in the cache
         # Need to expire the cache entries, or we won't search for anything new
         # Hard coded default to 30 days for now. Authors dont write that quickly.
         # TODO make this configurable
@@ -69,9 +70,9 @@ class GoodReads:
                 o.close()
             else:
                 logger.warn(u"Unable to cache response for %s, got %s" % (request.get_full_url(), resp.getcode()))
-                return ""
+                return "", False
         root = ElementTree.fromstring(source_xml)
-        return root   
+        return root, valid_cache   
         
     def find_results(self, authorname=None, queue=None):
         threading.currentThread().name = "GR-SEARCH"
@@ -90,7 +91,7 @@ class GoodReads:
 
         try:
             try:
-                rootxml = self.get_request(set_url)
+                rootxml, in_cache = self.get_request(set_url)
             except Exception, e:
                 logger.error("Error finding results: " + str(e))
                 return
@@ -197,7 +198,7 @@ class GoodReads:
 
         authorlist = []
         try:
-            rootxml = self.get_request(URL)
+            rootxml, in_cache = self.get_request(URL)
         except Exception, e:
             logger.error("Error finding authorid: " + str(e) + str(URL))
             return authorlist
@@ -224,7 +225,7 @@ class GoodReads:
         author_dict = {}
         
         try:
-            rootxml = self.get_request(URL)
+            rootxml, in_cache = self.get_request(URL)
         except Exception, e:
             logger.error("Error getting author info: " + str(e))
             return author_dict
@@ -257,7 +258,7 @@ class GoodReads:
         cache_hits = 0
         not_cached = 0
         URL = 'http://www.goodreads.com/author/list/' + authorid + '.xml?' + urllib.urlencode(self.params)
-
+        
         # Artist is loading
         myDB = database.DBConnection()
         controlValueDict = {"AuthorID": authorid}
@@ -265,12 +266,12 @@ class GoodReads:
         myDB.upsert("authors", newValueDict, controlValueDict)
         books_dict = []
         try:
-           rootxml = self.get_request(URL)
+           rootxml, in_cache = self.get_request(URL)
         except Exception, e:
             logger.error("Error fetching author books: " + str(e))
             return books_dict
-            
-        api_hits = api_hits + 1
+        if not in_cache:    
+            api_hits = api_hits + 1
         resultxml = rootxml.getiterator('book')
         
         valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
@@ -362,8 +363,12 @@ class GoodReads:
                                 # returns plain text, not xml
                                 BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + isbn
                                 try:
-                                    time.sleep(1)  # sleep 1 second to respect librarything api terms
+                                    time_now = int(time.time())
+                                    if time_now <= lazylibrarian.LAST_LIBRARYTHING: # called within the last second?
+                                        time.sleep(1)  # sleep 1 second to respect librarything api terms
+                                    
                                     resp = urllib2.urlopen(BOOK_URL, timeout=30).read()
+                                    lazylibrarian.LAST_LIBRARYTHING = time_now
                                     lt_lang_hits = lt_lang_hits + 1
                                     logger.debug("LibraryThing reports language [%s] for %s" % (resp, isbnhead))
 
@@ -384,18 +389,22 @@ class GoodReads:
                                     logger.debug(u"Book URL: " + BOOK_URL)
 
                                     try:
-                                        if (isbnhead == ""):  # no isbn found, so we didn't try librarything
-                                            time.sleep(1)  # only sleep for GR API if we didn't sleep for librarything
-                                        BOOK_rootxml = self.get_request(BOOK_URL)
+                                        time_now = int(time.time())
+                                        if time_now <= lazylibrarian.LAST_GOODREADS:
+                                            time.sleep(1)
+                                            
+                                        BOOK_rootxml, in_cache = self.get_request(BOOK_URL)
+                                        if not in_cache: # only update last_goodreads if the result wasn't found in the cache
+                                            lazylibrarian.LAST_GOODREADS = time_now
                                         bookLanguage = BOOK_rootxml.find('./book/language_code').text
                                     except Exception, e:
                                         logger.error("Error finding book results: ", e)
-
-                                    gr_lang_hits = gr_lang_hits + 1
+                                    if not in_cache:
+                                        gr_lang_hits = gr_lang_hits + 1
                                     if not bookLanguage:
                                         bookLanguage = "Unknown"
 
-                                    if (isbnhead != ""):  # GR didn't give an isbn so we can't cache it, just use for this book
+                                    if (isbnhead != ""):  # GR didn't give an isbn so we can't cache it, just use language for this book
                                         myDB.action('insert into languages values ("%s", "%s")' % (isbnhead, bookLanguage))
                                         logger.debug("GoodReads reports language [%s] for %s" % (bookLanguage, isbnhead))
                                     else:
@@ -491,9 +500,10 @@ class GoodReads:
                 URL = 'http://www.goodreads.com/author/list/' + authorid + '.xml?' + urllib.urlencode(self.params) + '&page=' + str(loopCount)
                 resultxml = None
                 try:
-                    rootxml = self.get_request(URL)
+                    rootxml, in_cache = self.get_request(URL)
                     resultxml = rootxml.getiterator('book')
-                    api_hits = api_hits + 1
+                    if not in_cache:
+                        api_hits = api_hits + 1
                 except Exception, e:
                     resultxml = None
                     logger.error("Error finding next page of results: " + str(e))
@@ -559,7 +569,7 @@ class GoodReads:
         URL = 'https://www.goodreads.com/book/show/' + bookid + '?' + urllib.urlencode(self.params)
 
         try:
-            rootxml = self.get_request(URL)
+            rootxml, in_cache = self.get_request(URL)
         except Exception, e:
             logger.error("Error finding book: " + str(e))
             return
