@@ -527,7 +527,7 @@ class WebInterface(object):
             threading.Thread(target=postprocess.processAlternate(lazylibrarian.ALTERNATE_DIR)).start()
         except Exception, e:
             logger.error(u'Unable to complete the import: %s' % e)
-        raise cherrypy.HTTPRedirect("home")
+        raise cherrypy.HTTPRedirect("manage")
     importAlternate.exposed = True
 
     def importCSV(self):
@@ -535,7 +535,7 @@ class WebInterface(object):
             threading.Thread(target=postprocess.processCSV(lazylibrarian.ALTERNATE_DIR)).start()
         except Exception, e:
             logger.error(u'Unable to complete the import: %s' % e)
-        raise cherrypy.HTTPRedirect("home")
+        raise cherrypy.HTTPRedirect("manage")
     importCSV.exposed = True
 
     def exportCSV(self):
@@ -543,7 +543,7 @@ class WebInterface(object):
             threading.Thread(target=postprocess.exportCSV(lazylibrarian.ALTERNATE_DIR)).start()
         except Exception, e:
             logger.error(u'Unable to complete the export: %s' % e)
-        raise cherrypy.HTTPRedirect("home")
+        raise cherrypy.HTTPRedirect("manage")
     exportCSV.exposed = True
 
     def libraryScan(self):
@@ -573,6 +573,25 @@ class WebInterface(object):
                 logger.info(u'Failed to clear log: ' + str(e))
         raise cherrypy.HTTPRedirect("logs")
     clearLog.exposed = True
+
+    def toggleLog(self):
+        # Toggle the debug log 
+        # LOGLEVEL 0, quiet
+        # 1 normal
+        # 2 debug
+        # >2 do not turn off file/console log
+        if lazylibrarian.LOGFULL: # if LOGLIST logging on, turn off
+            lazylibrarian.LOGFULL = False
+            if lazylibrarian.LOGLEVEL < 3:
+                lazylibrarian.LOGLEVEL = 1
+            logger.info(u'Debug log display OFF, loglevel is %s' % lazylibrarian.LOGLEVEL)
+        else:
+            lazylibrarian.LOGFULL = True
+            if lazylibrarian.LOGLEVEL < 2:
+                lazylibrarian.LOGLEVEL = 2 # Make sure debug ON
+            logger.info(u'Debug log display ON, loglevel is %s' % lazylibrarian.LOGLEVEL)
+        raise cherrypy.HTTPRedirect("logs")
+    toggleLog.exposed = True
 
     def addResults(self, authorname):
         args = None
@@ -865,6 +884,7 @@ class WebInterface(object):
                 jobname = "[CRON] - Process download directory"
             jobtime = str(job).split('[')[1].split('.')[0]
             logger.info(u"%s [%s" % (jobname, jobtime))
+        logger.info(u"XMLCache %s hits, %s miss" % (int(lazylibrarian.CACHE_HIT), int(lazylibrarian.CACHE_MISS)))
         raise cherrypy.HTTPRedirect("logs")
     showJobs.exposed = True
 

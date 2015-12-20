@@ -164,8 +164,8 @@ class GoogleBooks:
                         except KeyError:
                             bookisbn = 0
 
-                        author_fuzz = fuzz.ratio(Author.lower(), authorname.lower())
-                        book_fuzz = fuzz.ratio(item['volumeInfo']['title'].lower(), authorname.lower())
+                        author_fuzz = fuzz.ratio(Author, authorname)
+                        book_fuzz = fuzz.ratio(item['volumeInfo']['title'], authorname)
                         try:
                             isbn_check = int(authorname[:-1])
                             if (len(str(isbn_check)) == 9) or (len(str(isbn_check)) == 12):

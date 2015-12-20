@@ -53,11 +53,13 @@ class GoodReads:
                 valid_cache = True
              
         if valid_cache:
+            lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
             logger.debug(u"CacheHandler: Returning CACHED response for %s" % request.get_full_url())
             f = open(hashname, "r")
             source_xml = f.read()
             f.close()
         else:
+            lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
             resp = urllib2.urlopen(request, timeout = 30) # don't get stuck
             if str(resp.getcode()).startswith("2"): # (200 OK etc)
                 logger.debug(u"CacheHandler: Caching response for %s" % request.get_full_url())
@@ -93,9 +95,7 @@ class GoodReads:
                 logger.error("Error finding results: " + str(e))
                 return
                 
-            rootxml = sourcexml.getroot()
             resultxml = rootxml.getiterator('work')
-            #author_dict = []
             resultcount = 0
             for author in resultxml:
                 bookdate = "0001-01-01"
@@ -135,8 +135,8 @@ class GoodReads:
                 else:
                     bookTitle = author.find('./best_book/title').text
 
-                author_fuzz = fuzz.ratio(authorNameResult.lower(), authorname.lower())
-                book_fuzz = fuzz.ratio(bookTitle.lower(), authorname.lower())
+                author_fuzz = fuzz.ratio(authorNameResult, authorname)
+                book_fuzz = fuzz.ratio(bookTitle, authorname)
                 try:
                     isbn_check = int(authorname[:-1])
                     if (len(str(isbn_check)) == 9) or (len(str(isbn_check)) == 12):

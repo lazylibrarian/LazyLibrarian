@@ -96,12 +96,12 @@ def search_nzb_book(books=None, mags=None):
             addedCounter = 0
 
             for nzb in resultlist:
-                nzbTitle = formatter.latinToAscii(formatter.replace_all(str(nzb['nzbtitle']).lower(), dictrepl)).strip()
+                nzbTitle = formatter.latinToAscii(formatter.replace_all(str(nzb['nzbtitle']), dictrepl)).strip()
                 nzbTitle = re.sub(r"\s\s+", " ", nzbTitle)  # remove extra whitespace
                 logger.debug(u'nzbName %s' % nzbTitle)
 
                 match_ratio = int(lazylibrarian.MATCH_RATIO)
-                nzbTitle_match = fuzz.token_sort_ratio(book['searchterm'].lower(), nzbTitle)
+                nzbTitle_match = fuzz.token_sort_ratio(book['searchterm'], nzbTitle)
                 logger.debug("NZB Title Match %: " + str(nzbTitle_match))
 
                 if (nzbTitle_match > match_ratio):
