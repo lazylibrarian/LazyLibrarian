@@ -31,7 +31,6 @@ def search_tor_book(books=None, mags=None):
     threading.currentThread().name = "SEARCHTORBOOKS"
     myDB = database.DBConnection()
     searchlist = []
-    #searchlist1 = []
 
     if books is None:
         # We are performing a backlog search
@@ -39,23 +38,25 @@ def search_tor_book(books=None, mags=None):
     else:
         # The user has added a new book
         searchbooks = []
-        if books != False:
+        if books is not False:
             for book in books:
-                searchbook = myDB.select('SELECT BookID, AuthorName, BookName from books WHERE BookID="%s" AND Status="Wanted"' % book['bookid'])
+                searchbook = myDB.select('SELECT BookID, AuthorName, BookName from books WHERE BookID="%s" \
+                                         AND Status="Wanted"' % book['bookid'])
                 for terms in searchbook:
                     searchbooks.append(terms)
 
     if len(searchbooks) == 1:
         logger.info('TOR Searching for one book')
     else:
-        logger.info('TOR Searching for %i books'  % len(searchbooks))
+        logger.info('TOR Searching for %i books' % len(searchbooks))
 
     for searchbook in searchbooks:
         bookid = searchbook[0]
         author = searchbook[1]
         book = searchbook[2]
 
-        dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': ''}
+        dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
+               ',': '', '*': '', ':': '', ';': ''}
         dicSearchFormatting = {'.': ' +', ' + ': ' '}
 
         author = formatter.latinToAscii(formatter.replace_all(author, dic))
@@ -67,7 +68,8 @@ def search_tor_book(books=None, mags=None):
         searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
         searchterm = re.sub(r'\(.*?\)', '', searchterm).encode('utf-8')
         searchterm = re.sub(r"\s\s+", " ", searchterm)  # strip any double white space
-        searchlist.append({"bookid": bookid, "bookName": searchbook[2], "authorName": searchbook[1], "searchterm": searchterm.strip()})
+        searchlist.append({"bookid": bookid, "bookName": searchbook[2], "authorName": searchbook[1],
+                           "searchterm": searchterm.strip()})
 
     counter = 0
     for book in searchlist:
@@ -85,7 +87,11 @@ def search_tor_book(books=None, mags=None):
             logger.debug("Adding book %s to queue." % book['searchterm'])
 
         else:
-            dictrepl = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': '', '(': '', ')': '', '[': '', ']': '', '#': '', '0': '', '1': '', '2': '', '3': '', '4': '', '5': '', '6': '', '7': '', '8': '', '9': '', '\'': '', ':': '', '!': '', '-': '', '\s\s': ' ', ' the ': ' ', ' a ': ' ', ' and ': ' ', ' to ': ' ', ' of ': ' ', ' for ': ' ', ' my ': ' ', ' in ': ' ', ' at ': ' ', ' with ': ' '}
+            dictrepl = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
+                        ',': '', '*': '', '(': '', ')': '', '[': '', ']': '', '#': '', '0': '', '1': '', '2': '',
+                        '3': '', '4': '', '5': '', '6': '', '7': '', '8': '', '9': '', '\'': '', ':': '', '!': '',
+                        '-': '', '\s\s': ' ', ' the ': ' ', ' a ': ' ', ' and ': ' ', ' to ': ' ', ' of ': ' ',
+                        ' for ': ' ', ' my ': ' ', ' in ': ' ', ' at ': ' ', ' with ': ' '}
             logger.debug(u'searchterm %s' % book['searchterm'])
             addedCounter = 0
 
@@ -102,7 +108,8 @@ def search_tor_book(books=None, mags=None):
                     logger.debug(u'Found Torrent: %s' % tor['tor_title'])
                     addedCounter = addedCounter + 1
                     bookid = book['bookid']
-                    tor_Title = (book["authorName"] + ' - ' + book['bookName'] + ' LL.(' + book['bookid'] + ')').strip()
+                    tor_Title = (book["authorName"] + ' - ' + book['bookName'] +
+                                 ' LL.(' + book['bookid'] + ')').strip()
                     tor_url = tor['tor_url']
                     tor_prov = tor['tor_prov']
 
@@ -122,13 +129,15 @@ def search_tor_book(books=None, mags=None):
                     }
                     myDB.upsert("wanted", newValueDict, controlValueDict)
 
-                    snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' % bookid).fetchone()
+                    snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
+                                                bookid).fetchone()
                     if not snatchedbooks:
                         TORDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
                         notifiers.notify_snatch(formatter.latinToAscii(tor_Title) + ' at ' + formatter.now())
                     break
             if addedCounter == 0:
-                logger.debug("No torrent's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")
+                logger.debug("No torrent's found for " + (book["authorName"] + ' ' +
+                             book['bookName']).strip() + ". Adding book to queue.")
         counter = counter + 1
     logger.info("TORSearch for Wanted items complete")
 
@@ -136,9 +145,11 @@ def search_tor_book(books=None, mags=None):
 def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
     myDB = database.DBConnection()
     download = False
-    full_url = tor_url # keep the url as stored in "wanted" table
-    if (lazylibrarian.USE_TOR) and (lazylibrarian.TOR_DOWNLOADER_DELUGE or lazylibrarian.TOR_DOWNLOADER_UTORRENT
-                                    or lazylibrarian.TOR_DOWNLOADER_BLACKHOLE or lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
+    full_url = tor_url  # keep the url as stored in "wanted" table
+    if (lazylibrarian.USE_TOR) and (lazylibrarian.TOR_DOWNLOADER_DELUGE or
+                                    lazylibrarian.TOR_DOWNLOADER_UTORRENT or
+                                    lazylibrarian.TOR_DOWNLOADER_BLACKHOLE or
+                                    lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
 
         if tor_url.startswith('magnet'):
             torrent = tor_url  # allow magnet link to write to blackhole and hash to utorrent
@@ -177,13 +188,13 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             except urllib2.URLError as e:
                 logger.warn('Error fetching torrent from url: ' + tor_url + ' %s' % e.reason)
                 return
-                
+
         # strip url back to the .torrent for passing to downloaders
         # deluge needs it stripping, transmission doesn't mind
         # not sure about utorrent
-        if '?' in tor_url: 
+        if '?' in tor_url:
             tor_url = tor_url.split('?')[0]
-            
+
         if (lazylibrarian.TOR_DOWNLOADER_BLACKHOLE):
             logger.debug('Torrent blackhole')
             tor_title = common.removeDisallowedFilenameChars(tor_title)

@@ -7,7 +7,8 @@ def dbUpdate(forcefull=False):
 
     myDB = database.DBConnection()
 
-    activeauthors = myDB.select('SELECT AuthorID, AuthorName from authors WHERE Status="Active" or Status="Loading" order by DateAdded ASC')
+    activeauthors = myDB.select('SELECT AuthorID, AuthorName from authors WHERE Status="Active" \
+                                or Status="Loading" order by DateAdded ASC')
     logger.info('Starting update for %i active authors' % len(activeauthors))
 
     for author in activeauthors:

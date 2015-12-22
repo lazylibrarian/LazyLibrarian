@@ -1,4 +1,3 @@
-#import time
 import os
 import threading
 
@@ -10,7 +9,6 @@ from lazylibrarian.gb import GoogleBooks
 
 def addAuthorToDB(authorname=None, refresh=False):
     threading.currentThread().name = "DBIMPORT"
-    #type = 'author'
 
     myDB = database.DBConnection()
 

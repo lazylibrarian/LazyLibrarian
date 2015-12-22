@@ -27,7 +27,7 @@ class DBConnection:
     def action(self, query, args=None):
         with db_lock:
 
-            if query == None:
+            if not query:
                 return
 
             sqlResult = None
@@ -36,7 +36,7 @@ class DBConnection:
             while attempt < 5:
 
                 try:
-                    if args == None:
+                    if not args:
                         # logger.debug(self.filename+": "+query)
                         sqlResult = self.connection.execute(query)
                     else:
@@ -63,17 +63,21 @@ class DBConnection:
     def select(self, query, args=None):
         sqlResults = self.action(query, args).fetchall()
 
-        if sqlResults == None:
+        if not sqlResults:
             return []
 
         return sqlResults
 
+    def genParams(myDict):
+        return [x + " = ?" for x in myDict.keys()]
+
     def upsert(self, tableName, valueDict, keyDict):
         changesBefore = self.connection.total_changes
 
-        genParams = lambda myDict: [x + " = ?" for x in myDict.keys()]
+        # genParams = lambda myDict: [x + " = ?" for x in myDict.keys()]
 
-        query = "UPDATE " + tableName + " SET " + ", ".join(genParams(valueDict)) + " WHERE " + " AND ".join(genParams(keyDict))
+        query = "UPDATE " + tableName + " SET " + ", ".join(genParams(valueDict)) + \
+            " WHERE " + " AND ".join(genParams(keyDict))
 
         self.action(query, valueDict.values() + keyDict.values())
 

@@ -1,21 +1,19 @@
 import os
 import shutil
 import cherrypy
-#import urllib
+
 from cherrypy.lib.static import serve_file
-#from mako.template import Template
 from mako.lookup import TemplateLookup
 from mako import exceptions
 from operator import itemgetter
 
-#import thread
 import threading
-#import time
 import Queue
 
 import lazylibrarian
 
-from lazylibrarian import logger, importer, database, postprocess, formatter, notifiers, librarysync, versioncheck, magazinescan, common
+from lazylibrarian import logger, importer, database, postprocess, formatter, \
+                          notifiers, librarysync, versioncheck, magazinescan, common
 from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
 from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
 from lazylibrarian.searchmag import search_magazines
@@ -55,10 +53,12 @@ class WebInterface(object):
     def books(self, BookLang=None):
         myDB = database.DBConnection()
 
-        languages = myDB.select('SELECT DISTINCT BookLang from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"')
+        languages = myDB.select('SELECT DISTINCT BookLang from books WHERE NOT \
+                                STATUS="Skipped" AND NOT STATUS="Ignored"')
 
         if BookLang:
-            books = myDB.select('SELECT * from books WHERE BookLang="%s" AND NOT Status="Skipped" AND NOT STATUS="Ignored"' % BookLang)
+            books = myDB.select('SELECT * from books WHERE BookLang="%s" AND NOT \
+                                Status="Skipped" AND NOT STATUS="Ignored"' % BookLang)
         else:
             books = myDB.select('SELECT * from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"')
 
@@ -69,7 +69,8 @@ class WebInterface(object):
 
     def config(self):
         http_look_dir = os.path.join(lazylibrarian.PROG_DIR, 'data/interfaces/')
-        http_look_list = [name for name in os.listdir(http_look_dir) if os.path.isdir(os.path.join(http_look_dir, name))]
+        http_look_list = [name for name in os.listdir(http_look_dir)
+                          if os.path.isdir(os.path.join(http_look_dir, name))]
         status_list = ['Skipped', 'Wanted', 'Open', 'Ignored']
         config = {
             "http_host":        lazylibrarian.HTTP_HOST,
@@ -215,27 +216,37 @@ class WebInterface(object):
         return serve_template(templatename="config.html", title="Settings", config=config)
     config.exposed = True
 
-    def configUpdate(self, http_host='0.0.0.0', http_root=None, http_user=None, http_port=5299, http_pass=None, http_look=None, launch_browser=0, logdir=None,
-                     imp_onlyisbn=0, imp_singlebook=0, imp_preflang=None, imp_monthlang=None, imp_autoadd=None, match_ratio=80,
-                     nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0, nzb_downloader_blackhole=0, use_nzb=0, use_tor=0,
-                     proxy_host=None, proxy_type=None, sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None,
-                     destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None, nzb_blackholedir=None,
-                     alternate_dir=None, torrent_dir=None, numberofseeders=0, tor_downloader_blackhole=0, tor_downloader_utorrent=0,
-                     nzbget_host=None, nzbget_user=None, nzbget_pass=None, nzbget_cat=None, nzbget_priority=0, newznab0=0, newznab_host0=None, newznab_api0=None,
-                     newznab1=0, newznab_host1=None, newznab_api1=None, newznab2=0, newznab_host2=None, newznab_api2=None, newznab3=0, newznab_host3=None, newznab_api3=None,
-                     newznab4=0, newznab_host4=None, newznab_api4=None, newzbin=0, newzbin_uid=None, newzbin_pass=None, kat=0, kat_host=None, ebook_type=None, book_api=None,
-                     torznab0=0, torznab_host0=None, torznab_api0=None, torznab1=0, torznab_host1=None, torznab_api1=None, torznab2=0, torznab_host2=None, torznab_api2=None,
-                     torznab3=0, torznab_host3=None, torznab_api3=None, torznab4=0, torznab_host4=None, torznab_api4=None,
-                     gr_api=None, gb_api=None, versioncheck_interval=None, search_interval=None, scan_interval=None,
-                     ebook_dest_folder=None, ebook_dest_file=None, mag_relative=0, mag_dest_folder=None, mag_dest_file=None,
-                     use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0, utorrent_host=None, utorrent_user=None, utorrent_pass=None,
+    def configUpdate(self, http_host='0.0.0.0', http_root=None, http_user=None, http_port=5299,
+                     http_pass=None, http_look=None, launch_browser=0, logdir=None,
+                     imp_onlyisbn=0, imp_singlebook=0, imp_preflang=None, imp_monthlang=None,
+                     imp_autoadd=None, match_ratio=80, nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0,
+                     nzb_downloader_blackhole=0, use_nzb=0, use_tor=0, proxy_host=None, proxy_type=None,
+                     sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None,
+                     destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None,
+                     nzb_blackholedir=None, alternate_dir=None, torrent_dir=None, numberofseeders=0,
+                     tor_downloader_blackhole=0, tor_downloader_utorrent=0, nzbget_host=None, nzbget_user=None,
+                     nzbget_pass=None, nzbget_cat=None, nzbget_priority=0, newznab0=0, newznab_host0=None,
+                     newznab_api0=None, newznab1=0, newznab_host1=None, newznab_api1=None, newznab2=0,
+                     newznab_host2=None, newznab_api2=None, newznab3=0, newznab_host3=None, newznab_api3=None,
+                     newznab4=0, newznab_host4=None, newznab_api4=None, newzbin=0, newzbin_uid=None,
+                     newzbin_pass=None, kat=0, kat_host=None, ebook_type=None, book_api=None,
+                     torznab0=0, torznab_host0=None, torznab_api0=None, torznab1=0, torznab_host1=None,
+                     torznab_api1=None, torznab2=0, torznab_host2=None, torznab_api2=None,
+                     torznab3=0, torznab_host3=None, torznab_api3=None, torznab4=0, torznab_host4=None,
+                     torznab_api4=None, gr_api=None, gb_api=None, versioncheck_interval=None, search_interval=None,
+                     scan_interval=None, ebook_dest_folder=None, ebook_dest_file=None, mag_relative=0,
+                     mag_dest_folder=None, mag_dest_file=None, use_twitter=0, twitter_notify_onsnatch=0,
+                     twitter_notify_ondownload=0, utorrent_host=None, utorrent_user=None, utorrent_pass=None,
                      notfound_status='Skipped', newbook_status='Skipped', full_scan=0, add_author=0,
-                     tor_downloader_transmission=0, transmission_host=None, transmission_user=None, transmission_pass=None,
-                     tor_downloader_deluge=0, deluge_host=None, deluge_user=None, deluge_pass=None, deluge_port=None,
-                     utorrent_label=None, use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token=None,
-                     use_pushbullet=0, pushbullet_notify_onsnatch=0, pushbullet_notify_ondownload=0, pushbullet_token=None, pushbullet_deviceid=None,
-                     use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys=None, pushover_apitoken=None, pushover_ondownload=0, pushover_device=None,
-                     use_androidpn=0, androidpn_notify_onsnatch=0, androidpn_notify_ondownload=0, androidpn_url=None, androidpn_username=None, androidpn_broadcast=1,
+                     tor_downloader_transmission=0, transmission_host=None, transmission_user=None,
+                     transmission_pass=None, tor_downloader_deluge=0, deluge_host=None, deluge_user=None,
+                     deluge_pass=None, deluge_port=None, utorrent_label=None, use_boxcar=0, boxcar_notify_onsnatch=0,
+                     boxcar_notify_ondownload=0, boxcar_token=None, use_pushbullet=0, pushbullet_notify_onsnatch=0,
+                     pushbullet_notify_ondownload=0, pushbullet_token=None, pushbullet_deviceid=None,
+                     use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys=None,
+                     pushover_apitoken=None, pushover_ondownload=0, pushover_device=None,
+                     use_androidpn=0, androidpn_notify_onsnatch=0, androidpn_notify_ondownload=0,
+                     androidpn_url=None, androidpn_username=None, androidpn_broadcast=1,
                      use_nma=0, nma_apikey=None, nma_priority=0, nma_onsnatch=0, nma_ondownload=0):
 
         lazylibrarian.HTTP_HOST = http_host
@@ -391,7 +402,7 @@ class WebInterface(object):
         lazylibrarian.PUSHOVER_APITOKEN = pushover_apitoken
         lazylibrarian.PUSHOVER_PRIORITY = pushover_priority
         lazylibrarian.PUSHOVER_DEVICE = pushover_device
-        
+
         lazylibrarian.USE_ANDROIDPN = int(use_androidpn)
         lazylibrarian.ANDROIDPN_NOTIFY_ONSNATCH = int(androidpn_notify_onsnatch)
         lazylibrarian.ANDROIDPN_NOTIFY_ONDOWNLOAD = int(androidpn_notify_ondownload)
@@ -450,7 +461,9 @@ class WebInterface(object):
             booklist.append(item['BookID'])
 
         sortedlist_final = sorted(searchresults, key=itemgetter('highest_fuzz', 'num_reviews'), reverse=True)
-        return serve_template(templatename="searchresults.html", title='Search Results for: "' + name + '"', searchresults=sortedlist_final, authorlist=authorlist, booklist=booklist, booksearch=booksearch, type=type)
+        return serve_template(templatename="searchresults.html", title='Search Results for: "' +
+                              name + '"', searchresults=sortedlist_final, authorlist=authorlist,
+                              booklist=booklist, booksearch=booksearch, type=type)
     search.exposed = True
 
 # AUTHOR
@@ -458,17 +471,25 @@ class WebInterface(object):
         myDB = database.DBConnection()
 
         if Ignored:
-            languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorName LIKE ? AND Status ='Ignored'", [AuthorName.replace("'", "''")])
+            languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorName LIKE ? \
+                                    AND Status ='Ignored'", [AuthorName.replace("'", "''")])
             if BookLang:
-                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' AND BookLang = '%s' AND Status ='Ignored' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'", "''"), BookLang)
+                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' AND BookLang = '%s' \
+                              AND Status ='Ignored' order by BookDate DESC, BookRate DESC" % (
+                              AuthorName.replace("'", "''"), BookLang)
             else:
-                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' and Status ='Ignored' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'", "''"))
+                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' and Status ='Ignored' \
+                              order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'", "''"))
         else:
-            languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorName LIKE ? AND Status !='Ignored'", [AuthorName.replace("'", "''")])
+            languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorName LIKE ? \
+                                    AND Status !='Ignored'", [AuthorName.replace("'", "''")])
             if BookLang:
-                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' AND BookLang = '%s' AND Status !='Ignored' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'", "''"), BookLang)
+                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' AND BookLang = '%s' \
+                              AND Status !='Ignored' order by BookDate DESC, BookRate DESC" % (
+                              AuthorName.replace("'", "''"), BookLang)
             else:
-                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' and Status !='Ignored' order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'", "''"))
+                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' and Status !='Ignored' \
+                              order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'", "''"))
 
         queryauthors = "SELECT * from authors WHERE AuthorName LIKE '%s'" % AuthorName.replace("'", "''")
 
@@ -476,7 +497,8 @@ class WebInterface(object):
         books = myDB.select(querybooks)
         if author is None:
             raise cherrypy.HTTPRedirect("home")
-        return serve_template(templatename="author.html", title=author['AuthorName'], author=author, books=books, languages=languages)
+        return serve_template(templatename="author.html", title=author['AuthorName'],
+                              author=author, books=books, languages=languages)
     authorPage.exposed = True
 
     def pauseAuthor(self, AuthorID):
@@ -575,12 +597,12 @@ class WebInterface(object):
     clearLog.exposed = True
 
     def toggleLog(self):
-        # Toggle the debug log 
+        # Toggle the debug log
         # LOGLEVEL 0, quiet
         # 1 normal
         # 2 debug
         # >2 do not turn off file/console log
-        if lazylibrarian.LOGFULL: # if LOGLIST logging on, turn off
+        if lazylibrarian.LOGFULL:  # if LOGLIST logging on, turn off
             lazylibrarian.LOGFULL = False
             if lazylibrarian.LOGLEVEL < 3:
                 lazylibrarian.LOGLEVEL = 1
@@ -588,7 +610,7 @@ class WebInterface(object):
         else:
             lazylibrarian.LOGFULL = True
             if lazylibrarian.LOGLEVEL < 2:
-                lazylibrarian.LOGLEVEL = 2 # Make sure debug ON
+                lazylibrarian.LOGLEVEL = 2  # Make sure debug ON
             logger.info(u'Debug log display ON, loglevel is %s' % lazylibrarian.LOGLEVEL)
         raise cherrypy.HTTPRedirect("logs")
     toggleLog.exposed = True
@@ -610,20 +632,25 @@ class WebInterface(object):
                 authorsearch = myDB.select('SELECT * from authors WHERE AuthorName="%s"' % AuthorName)
                 if authorsearch:
                     # update authors needs to be updated every time a book is marked differently
-                    lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorName="%s" AND Status != "Ignored" order by BookDate DESC' % AuthorName).fetchone()
-                    unignoredbooks = myDB.select('SELECT COUNT(BookName) as unignored FROM books WHERE AuthorName="%s" AND Status != "Ignored"' % AuthorName)
-                    bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE AuthorName="%s"' % AuthorName)
-                    countbooks = myDB.action('SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' % AuthorName).fetchone()
+                    lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE \
+                                           AuthorName="%s" AND Status != "Ignored" order by BookDate DESC' %
+                                           AuthorName).fetchone()
+                    unignoredbooks = myDB.select('SELECT COUNT(BookName) as unignored FROM books WHERE \
+                                                 AuthorName="%s" AND Status != "Ignored"' % AuthorName)
+                    bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE \
+                                            AuthorName="%s"' % AuthorName)
+                    countbooks = myDB.action('SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND \
+                                             (Status="Have" OR Status="Open")' % AuthorName).fetchone()
                     havebooks = int(countbooks[0])
 
                     controlValueDict = {"AuthorName": AuthorName}
                     newValueDict = {
                         "TotalBooks": bookCount[0]['counter'],
-                            "UnignoredBooks": unignoredbooks[0]['unignored'],
-                            "HaveBooks": havebooks,
-                            "LastBook": lastbook['BookName'],
-                            "LastLink": lastbook['BookLink'],
-                            "LastDate": lastbook['BookDate']
+                        "UnignoredBooks": unignoredbooks[0]['unignored'],
+                        "HaveBooks": havebooks,
+                        "LastBook": lastbook['BookName'],
+                        "LastLink": lastbook['BookLink'],
+                        "LastDate": lastbook['BookDate']
                     }
                     myDB.upsert("authors", newValueDict, controlValueDict)
         else:
@@ -671,10 +698,10 @@ class WebInterface(object):
                 logger.info(u'Missing book %s,%s' % (authorName, bookName))
     openBook.exposed = True
 
-# MAGAZINES    
+# MAGAZINES
     def issuePage(self, title):
         myDB = database.DBConnection()
-        #magazines = myDB.select('SELECT * from magazines')
+        # magazines = myDB.select('SELECT * from magazines')
 
         issues = myDB.select('SELECT * from issues WHERE Title="%s" order by IssueDate DESC' % (title))
 
@@ -692,14 +719,14 @@ class WebInterface(object):
         # or we may just have a title to find magazine in issues table
         myDB = database.DBConnection()
         mag_data = myDB.select('SELECT * from issues WHERE Title="%s"' % bookid)
-        if len(mag_data) == 1: # we only have one issue, get it
+        if len(mag_data) == 1:  # we only have one issue, get it
             IssueDate = mag_data[0]["IssueDate"]
             IssueFile = mag_data[0]["IssueFile"]
             logger.info(u'Opening %s - %s' % (bookid, IssueDate))
             return serve_file(IssueFile, "application/x-download", "attachment")
-        if len(mag_data) > 1: # multiple issues, show a list
+        if len(mag_data) > 1:  # multiple issues, show a list
             logger.debug(u"%s has %s issues" % (bookid, len(mag_data)))
-            raise cherrypy.HTTPRedirect("issuePage?title=%s" % bookid )
+            raise cherrypy.HTTPRedirect("issuePage?title=%s" % bookid)
     openMag.exposed = True
 
     def searchForBook(self, bookid=None, action=None, **args):
@@ -757,20 +784,23 @@ class WebInterface(object):
 
         if redirect == "author" or authorcheck:
             # update authors needs to be updated every time a book is marked differently
-            lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorName="%s" AND Status != "Ignored" order by BookDate DESC' % AuthorName).fetchone()
-            unignoredbooks = myDB.select('SELECT COUNT(BookName) as unignored FROM books WHERE AuthorName="%s" AND Status != "Ignored"' % AuthorName)
+            lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorName="%s" \
+                                   AND Status != "Ignored" order by BookDate DESC' % AuthorName).fetchone()
+            unignoredbooks = myDB.select('SELECT COUNT(BookName) as unignored FROM books WHERE AuthorName="%s" \
+                                         AND Status != "Ignored"' % AuthorName)
             bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE AuthorName="%s"' % AuthorName)
-            countbooks = myDB.action('SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' % AuthorName).fetchone()
+            countbooks = myDB.action('SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND \
+                                     (Status="Have" OR Status="Open")' % AuthorName).fetchone()
             havebooks = int(countbooks[0])
 
             controlValueDict = {"AuthorName": AuthorName}
             newValueDict = {
                 "TotalBooks": bookCount[0]['counter'],
-                    "UnignoredBooks": unignoredbooks[0]['unignored'],
-                    "HaveBooks": havebooks,
-                    "LastBook": lastbook['BookName'],
-                    "LastLink": lastbook['BookLink'],
-                    "LastDate": lastbook['BookDate']
+                "UnignoredBooks": unignoredbooks[0]['unignored'],
+                "HaveBooks": havebooks,
+                "LastBook": lastbook['BookName'],
+                "LastLink": lastbook['BookLink'],
+                "LastDate": lastbook['BookDate']
             }
             myDB.upsert("authors", newValueDict, controlValueDict)
 
@@ -802,11 +832,10 @@ class WebInterface(object):
         authorcheck = None
         maglist = []
         for nzburl in args:
+            if hasattr(nzburl, 'decode'):
+                    nzburl = nzburl.decode('utf-8')
             # ouch dirty workaround...
             if not nzburl == 'book_table_length':
-                #nzburl = common.to_unicode(nzburl)
-                if hasattr(nzburl, 'decode'):
-                    nzburl = nzburl.decode('utf-8')
                 controlValueDict = {'NZBurl': nzburl}
                 newValueDict = {'Status': action, 'NZBdate': formatter.today()}
                 myDB.upsert("wanted", newValueDict, controlValueDict)
@@ -819,10 +848,10 @@ class WebInterface(object):
                     nzbmode = item['NZBmode']
                     maglist.append({
                         'bookid': bookid,
-                            'nzbprov': nzbprov,
-                            'nzbtitle': nzbtitle,
-                            'nzburl': nzburl,
-                            'nzbmode': nzbmode
+                        'nzbprov': nzbprov,
+                        'nzbtitle': nzbtitle,
+                        'nzburl': nzburl,
+                        'nzbmode': nzbmode
                     })
                 logger.info(u'Status set to %s for %s' % (action, nzbtitle))
 
@@ -899,7 +928,8 @@ class WebInterface(object):
             lazylibrarian.SCHED.add_interval_job(search_nzb_book, minutes=int(lazylibrarian.SEARCH_INTERVAL))
         if lazylibrarian.USE_TOR:
             lazylibrarian.SCHED.add_interval_job(search_tor_book, minutes=int(lazylibrarian.SEARCH_INTERVAL))
-        lazylibrarian.SCHED.add_interval_job(versioncheck.checkForUpdates, hours=int(lazylibrarian.VERSIONCHECK_INTERVAL))
+        lazylibrarian.SCHED.add_interval_job(versioncheck.checkForUpdates,
+                                             hours=int(lazylibrarian.VERSIONCHECK_INTERVAL))
         if lazylibrarian.USE_TOR or lazylibrarian.USE_NZB:
             lazylibrarian.SCHED.add_interval_job(search_magazines, minutes=int(lazylibrarian.SEARCH_INTERVAL))
         # and list the new run-times in the log
@@ -921,7 +951,7 @@ class WebInterface(object):
         elif iSortCol_0 == '2':
             sortcolumn = 1
         filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
-        if iDisplayLength < 0: # display = all
+        if iDisplayLength < 0:  # display = all
             rows = filtered
         else:
             rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
@@ -939,7 +969,8 @@ class WebInterface(object):
         # books only holds status of skipped wanted open have ignored
         # wanted holds status of snatched processed
         books = myDB.select('SELECT * FROM books WHERE Status = ?', [whichStatus])
-        return serve_template(templatename="managebooks.html", title="Book Status Management", books=books, whichStatus=whichStatus)
+        return serve_template(templatename="managebooks.html", title="Book Status Management",
+                              books=books, whichStatus=whichStatus)
     manage.exposed = True
 
     def history(self, source=None):
@@ -950,7 +981,8 @@ class WebInterface(object):
             return serve_template(templatename="history.html", title="History", history=history)
         elif source == "magazines":
             books = myDB.select("SELECT * from wanted WHERE Status = 'Skipped'")  # or Status = 'Snatched'")
-        return serve_template(templatename="managemags.html", title="Magazine Status Management", books=books, whichStatus='Skipped')
+        return serve_template(templatename="managemags.html", title="Magazine Status Management",
+                              books=books, whichStatus='Skipped')
     history.exposed = True
 
     def clearhistory(self, type=None):
@@ -1059,7 +1091,7 @@ class WebInterface(object):
                     controlValueDict = {"NZBtitle": nzbtitle}
                     newValueDict = {
                         "Status": action,
-                        "NZBDate": formatter.today() # mark when we wanted it
+                        "NZBDate": formatter.today()  # mark when we wanted it
                     }
                     myDB.upsert("wanted", newValueDict, controlValueDict)
                     logger.info(u'Status of wanted item %s changed to %s' % (nzbtitle, action))

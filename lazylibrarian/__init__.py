@@ -19,7 +19,8 @@ from lib.apscheduler.scheduler import Scheduler
 
 import threading
 
-from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, librarysync, versioncheck, database, searchmag, magazinescan, common
+from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, \
+        librarysync, versioncheck, database, searchmag, magazinescan, common
 
 FULL_PATH = None
 PROG_DIR = None
@@ -55,7 +56,7 @@ LOGDIR = None
 LOGLIST = []
 # Info 1, Debug 2, >2 don't toggle console/file
 LOGLEVEL = 2
-LOGFULL = False # include debug on screen if true
+LOGFULL = False  # include debug on screen if true
 
 MATCH_RATIO = 80
 
@@ -186,8 +187,10 @@ SEARCH_INTERVAL = 720  # Every 12 hours
 SCAN_INTERVAL = 10  # Every 10 minutes
 FULL_SCAN = 0  # full scan would remove books from db
 ADD_AUTHOR = 1  # auto add authors not found in db from goodreads
-NOTFOUND_STATUS = 'Skipped'  # value to mark missing books (deleted/removed) in db, can be 'Open', 'Ignored',' 'Wanted','Skipped'
-NEWBOOK_STATUS = 'Skipped'  # value to mark new books (when importing a new author) in db, can be 'Open', 'Ignored',' 'Wanted','Skipped'
+# value to mark missing books (deleted/removed) in db, can be 'Open', 'Ignored',' 'Wanted','Skipped'
+NOTFOUND_STATUS = 'Skipped'
+# value to mark new books (when importing a new author), can be 'Open', 'Ignored',' 'Wanted','Skipped'
+NEWBOOK_STATUS = 'Skipped'
 EBOOK_DEST_FOLDER = None
 EBOOK_DEST_FILE = None
 MAG_DEST_FOLDER = None
@@ -224,7 +227,7 @@ USE_ANDROIDPN = 0
 ANDROIDPN_NOTIFY_ONSNATCH = 0
 ANDROIDPN_NOTIFY_ONDOWNLOAD = 0
 ANDROIDPN_URL = None
-ANDROIDPN_BROADCAST = 1 
+ANDROIDPN_BROADCAST = 1
 ANDROIDPN_USERNAME = None
 
 USE_NMA = 0
@@ -250,11 +253,13 @@ MONTH9 = []
 MONTH10 = []
 MONTH11 = []
 MONTH12 = []
-MONTHNAMES = [MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, MONTH8, MONTH9, MONTH10, MONTH11, MONTH12]
+MONTHNAMES = [MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6,
+              MONTH7, MONTH8, MONTH9, MONTH10, MONTH11, MONTH12]
 CACHE_HIT = 0
 CACHE_MISS = 0
 LAST_GOODREADS = 0
 LAST_LIBRARYTHING = 0
+
 
 def check_section(sec):
     """ Check if INI section exists, if not create it """
@@ -263,6 +268,7 @@ def check_section(sec):
     else:
         CFG.add_section(sec)
         return False
+
 
 def check_setting_boolean(config, cfg_name, item_name, def_val):
     """ Check if option exists and coerce to boolean, if not create it """
@@ -285,6 +291,7 @@ def check_setting_int(config, cfg_name, item_name, def_val):
         config.set(cfg_name, item_name, my_val)
     logger.debug(item_name + " -> " + str(my_val))
     return my_val
+
 
 def check_setting_str(config, cfg_name, item_name, def_val, log=True):
     try:
@@ -309,34 +316,50 @@ def initialize():
 
     with INIT_LOCK:
 
-        global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, LOGFULL, DAEMON, DATADIR, CONFIGFILE, CFG, LOGDIR, HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, \
-            HTTP_LOOK, LAUNCH_BROWSER, LOGDIR, CACHEDIR, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, \
-            MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, \
-            SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, SAB_CAT, USENET_RETENTION, NZB_BLACKHOLEDIR, \
-            ALTERNATE_DIR, GR_API, GB_API, BOOK_API, NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, NZB_DOWNLOADER_NZBGET, \
-            NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, NEWZNAB0, NEWZNAB_HOST0, NEWZNAB_API0, \
-            NEWZNAB1, NEWZNAB_HOST1, NEWZNAB_API1, NEWZNAB2, NEWZNAB_HOST2, NEWZNAB_API2, NEWZNAB3, NEWZNAB_HOST3, NEWZNAB_API3, NEWZNAB4, NEWZNAB_HOST4, NEWZNAB_API4, \
-            TORZNAB0, TORZNAB_HOST0, TORZNAB_API0, TORZNAB1, TORZNAB_HOST1, TORZNAB_API1, TORZNAB2, TORZNAB_HOST2, TORZNAB_API2, \
-            TORZNAB3, TORZNAB_HOST3, TORZNAB_API3, TORZNAB4, TORZNAB_HOST4, TORZNAB_API4, EBOOK_TYPE, KAT, KAT_HOST, \
-            VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, \
-            USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
-            USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, \
-            USE_TOR, USE_NZB, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, USE_PUSHBULLET, \
-            PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, \
+        global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, LOGFULL, DAEMON, DATADIR, \
+            HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, \
+            LAUNCH_BROWSER, LOGDIR, CACHEDIR, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, \
+            IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, \
+            MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, \
+            MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, CONFIGFILE, CFG, LOGDIR, \
+            SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, SAB_CAT, \
+            DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, USENET_RETENTION, NZB_BLACKHOLEDIR, \
+            ALTERNATE_DIR, GR_API, GB_API, BOOK_API, \
+            NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, \
+            NZB_DOWNLOADER_NZBGET, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
+            NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, EBOOK_TYPE, KAT, KAT_HOST, \
+            NEWZNAB0, NEWZNAB_HOST0, NEWZNAB_API0, NEWZNAB1, NEWZNAB_HOST1, NEWZNAB_API1, \
+            NEWZNAB2, NEWZNAB_HOST2, NEWZNAB_API2, NEWZNAB3, NEWZNAB_HOST3, NEWZNAB_API3, \
+            NEWZNAB4, NEWZNAB_HOST4, NEWZNAB_API4, \
+            TORZNAB0, TORZNAB_HOST0, TORZNAB_API0, TORZNAB1, TORZNAB_HOST1, TORZNAB_API1, \
+            TORZNAB2, TORZNAB_HOST2, TORZNAB_API2, TORZNAB3, TORZNAB_HOST3, TORZNAB_API3, \
+            TORZNAB4, TORZNAB_HOST4, TORZNAB_API4, \
+            VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, \
+            EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, \
+            USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, \
+            TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
+            USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, \
+            TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, \
+            USE_TOR, USE_NZB, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
+            USE_PUSHBULLET, PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, \
+            PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, LAST_GOODREADS, LAST_LIBRARYTHING, \
             UTORRENT_HOST, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
-            USE_PUSHOVER, PUSHOVER_ONSNATCH, PUSHOVER_KEYS, PUSHOVER_APITOKEN, PUSHOVER_PRIORITY, PUSHOVER_ONDOWNLOAD, PUSHOVER_DEVICE, \
-            USE_ANDROIDPN, ANDROIDPN_NOTIFY_ONSNATCH, ANDROIDPN_NOTIFY_ONDOWNLOAD, ANDROIDPN_URL, ANDROIDPN_USERNAME, ANDROIDPN_BROADCAST, \
+            USE_PUSHOVER, PUSHOVER_ONSNATCH, PUSHOVER_KEYS, PUSHOVER_APITOKEN, \
+            PUSHOVER_PRIORITY, PUSHOVER_ONDOWNLOAD, PUSHOVER_DEVICE, \
+            USE_ANDROIDPN, ANDROIDPN_NOTIFY_ONSNATCH, ANDROIDPN_NOTIFY_ONDOWNLOAD, \
+            ANDROIDPN_URL, ANDROIDPN_USERNAME, ANDROIDPN_BROADCAST, \
             TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PASS, TRANSMISSION_USER, \
             TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, \
-            FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
-            GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, SCHED, \
-            CACHE_HIT, CACHE_MISS, LAST_GOODREADS, LAST_LIBRARYTHING
+            FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, \
+            USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
+            GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, \
+            LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, SCHED, CACHE_HIT, CACHE_MISS
 
         if __INITIALIZED__:
             return False
 
         check_section('General')
-        
+
         try:
             HTTP_PORT = check_setting_int(CFG, 'General', 'http_port', 5299)
         except:
@@ -364,18 +387,19 @@ def initialize():
             LOGLEVEL = CFGLOGLEVEL  # Config setting picked up
 
         logger.lazylibrarian_log.initLogger(loglevel=LOGLEVEL)
-        logger.info("Log level set to [%s]- Log Directory is [%s] - Config level is [%s]" % (LOGLEVEL, LOGDIR, CFGLOGLEVEL))
+        logger.info("Log level set to [%s]- Log Directory is [%s] - Config level is [%s]" % (
+            LOGLEVEL, LOGDIR, CFGLOGLEVEL))
         if LOGLEVEL > 2:
             LOGFULL = True
             logger.info("Screen Log is DEBUG")
         else:
             LOGFULL = False
             logger.info("Screen Log is INFO/WARN/ERROR")
-        
+
         # keep track of last api calls so we don't call more than once per second
         # to respect api terms, but don't wait un-necessarily either
         time_now = int(time.time())
-        LAST_LIBRARYTHING = time_now 
+        LAST_LIBRARYTHING = time_now
         LAST_GOODREADS = time_now
 
         MATCH_RATIO = check_setting_int(CFG, 'General', 'match_ratio', 80)
@@ -451,8 +475,8 @@ def initialize():
             check_section('Newznab0')
             CFG.set('Newznab0', 'newznab0', NEWZNAB0)
             CFG.set('Newznab0', 'newznab_host0', NEWZNAB_HOST0)
-            CFG.set('Newznab0', 'newznab_api0', NEWZNAB_API0)            
-        if CFG.has_section('Newznab'):    
+            CFG.set('Newznab0', 'newznab_api0', NEWZNAB_API0)
+        if CFG.has_section('Newznab'):
             NEWZNAB1 = check_setting_int(CFG, 'Newznab', 'newznab', 0)
             NEWZNAB_HOST1 = check_setting_str(CFG, 'Newznab', 'newznab_host', '')
             NEWZNAB_API1 = check_setting_str(CFG, 'Newznab', 'newznab_api', '')
@@ -463,7 +487,7 @@ def initialize():
             check_section('Newznab1')
             CFG.set('Newznab1', 'newznab1', NEWZNAB1)
             CFG.set('Newznab1', 'newznab_host1', NEWZNAB_HOST1)
-            CFG.set('Newznab1', 'newznab_api1', NEWZNAB_API1)            
+            CFG.set('Newznab1', 'newznab_api1', NEWZNAB_API1)
         if not NEWZNAB_HOST0:  # did we pick up anything under the old name
             NEWZNAB0 = check_setting_int(CFG, 'Newznab0', 'newznab0', 0)
             NEWZNAB_HOST0 = check_setting_str(CFG, 'Newznab0', 'newznab_host0', '')
@@ -704,7 +728,7 @@ def launch_browser(host, port, root):
         logger.error('Could not launch browser: %s' % e)
 
 
-def config_write():   
+def config_write():
     check_section('General')
     CFG.set('General', 'http_port', HTTP_PORT)
     CFG.set('General', 'http_host', HTTP_HOST)
@@ -930,12 +954,20 @@ def dbcheck():
 
     conn = sqlite3.connect(DBFILE)
     c = conn.cursor()
-    c.execute('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT, AuthorName TEXT UNIQUE, AuthorImg TEXT, AuthorLink TEXT, DateAdded TEXT, Status TEXT, LastBook TEXT, LastLink Text, LastDate TEXT, HaveBooks INTEGER, TotalBooks INTEGER, AuthorBorn TEXT, AuthorDeath TEXT, UnignoredBooks INTEGER)')
-    c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesOrder INTEGER)')
-    c.execute('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT)')
-    c.execute('CREATE TABLE IF NOT EXISTS magazines (Title TEXT, Frequency TEXT, Regex TEXT, Status TEXT, MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT)')
+    c.execute('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT, AuthorName TEXT UNIQUE, AuthorImg TEXT, \
+         AuthorLink TEXT, DateAdded TEXT, Status TEXT, LastBook TEXT, LastLink Text, LastDate TEXT, \
+         HaveBooks INTEGER, TotalBooks INTEGER, AuthorBorn TEXT, AuthorDeath TEXT, UnignoredBooks INTEGER)')
+    c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
+        BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
+        BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, \
+        BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesOrder INTEGER)')
+    c.execute('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, \
+        NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT)')
+    c.execute('CREATE TABLE IF NOT EXISTS magazines (Title TEXT, Frequency TEXT, Regex TEXT, Status TEXT, \
+        MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS languages ( isbn TEXT, lang TEXT )')
-    c.execute('CREATE TABLE IF NOT EXISTS stats ( authorname text, GR_book_hits int, GR_lang_hits int, LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int )')
+    c.execute('CREATE TABLE IF NOT EXISTS stats ( authorname text, GR_book_hits int, GR_lang_hits int, \
+        LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int )')
 
     try:
         logger.info('Checking database')
@@ -1011,9 +1043,9 @@ def dbcheck():
         c.execute('SELECT Title from issues')
     except sqlite3.OperationalError:
         logger.info('Updating database to hold Issues')
-        c.execute('CREATE TABLE issues ( Title TEXT, IssueAcquired TEXT, IssueDate TEXT, IssueFile TEXT )')
+        c.execute('CREATE TABLE issues (Title TEXT, IssueAcquired TEXT, IssueDate TEXT, IssueFile TEXT)')
         addedIssues = True
-            
+
     conn.commit()
     c.close()
 
@@ -1022,7 +1054,7 @@ def dbcheck():
             magazinescan.magazineScan(thread='MAIN')
         except:
             logger.debug("Failed to scan magazines")
-        
+
     if addedSeries:
         try:
             myDB = database.DBConnection()
@@ -1076,7 +1108,7 @@ def start():
         SCHED.add_interval_job(versioncheck.checkForUpdates, hours=int(VERSIONCHECK_INTERVAL))
         if USE_TOR or USE_NZB:
             SCHED.add_interval_job(searchmag.search_magazines, minutes=int(SEARCH_INTERVAL))
-            
+
         SCHED.start()
         started = True
 

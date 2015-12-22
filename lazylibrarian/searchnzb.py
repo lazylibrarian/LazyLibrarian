@@ -1,28 +1,20 @@
-#import time
 import threading
-#import urllib
 import urllib2
 import os
 import shutil
 import re
-
-#from xml.etree import ElementTree
-#from xml.etree.ElementTree import Element, SubElement
 
 import lazylibrarian
 import request
 
 from lazylibrarian import logger, database, formatter, providers, nzbget, sabnzbd, notifiers, classes
 
-#import lib.fuzzywuzzy as fuzzywuzzy
-from lib.fuzzywuzzy import fuzz #, process
+from lib.fuzzywuzzy import fuzz
 
 from lazylibrarian.common import USER_AGENT
 
 # new to support torrents
 from lazylibrarian.searchtorrents import TORDownloadMethod
-#from StringIO import StringIO
-#import gzip
 
 
 def search_nzb_book(books=None, mags=None):
@@ -33,7 +25,6 @@ def search_nzb_book(books=None, mags=None):
     threading.currentThread().name = "SEARCHNZBBOOKS"
     myDB = database.DBConnection()
     searchlist = []
-    #searchlist1 = []
 
     if books is None:
         # We are performing a backlog search
@@ -41,23 +32,25 @@ def search_nzb_book(books=None, mags=None):
     else:
         # The user has added a new book
         searchbooks = []
-        if books != False:
+        if books is True:
             for book in books:
-                searchbook = myDB.select('SELECT BookID, AuthorName, BookName from books WHERE BookID="%s" AND Status="Wanted"' % book['bookid'])
+                searchbook = myDB.select('SELECT BookID, AuthorName, BookName from books WHERE BookID="%s" \
+                                         AND Status="Wanted"' % book['bookid'])
                 for terms in searchbook:
                     searchbooks.append(terms)
 
     if len(searchbooks) == 1:
         logger.info('NZB Searching for one book')
     else:
-        logger.info('NZB Searching for %i books'  % len(searchbooks))
+        logger.info('NZB Searching for %i books' % len(searchbooks))
 
     for searchbook in searchbooks:
         bookid = searchbook[0]
         author = searchbook[1]
         book = searchbook[2]
 
-        dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': ''}
+        dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
+               ',': '', '*': '', ':': '', ';': ''}
         dicSearchFormatting = {'.': ' +', ' + ': ' '}
 
         author = formatter.latinToAscii(formatter.replace_all(author, dic))
@@ -69,7 +62,8 @@ def search_nzb_book(books=None, mags=None):
         searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
         searchterm = re.sub(r'\(.*?\)', '', searchterm).encode('utf-8')
         searchterm = re.sub(r"\s\s+", " ", searchterm)  # strip any double white space
-        searchlist.append({"bookid": bookid, "bookName": searchbook[2], "authorName": searchbook[1], "searchterm": searchterm.strip()})
+        searchlist.append({"bookid": bookid, "bookName": searchbook[2], "authorName": searchbook[1],
+                           "searchterm": searchterm.strip()})
 
     if not lazylibrarian.SAB_HOST and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE and not lazylibrarian.NZBGET_HOST:
         logger.warn('No download method is set, use SABnzbd/NZBGet or blackhole')
@@ -91,7 +85,11 @@ def search_nzb_book(books=None, mags=None):
             logger.debug("Adding book %s to queue." % book['searchterm'])
 
         else:
-            dictrepl = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': '', '(': '', ')': '', '[': '', ']': '', '#': '', '0': '', '1': '', '2': '', '3': '', '4': '', '5': '', '6': '', '7': '', '8': '', '9': '', '\'': '', ':': '', '!': '', '-': '', '\s\s': ' ', ' the ': ' ', ' a ': ' ', ' and ': ' ', ' to ': ' ', ' of ': ' ', ' for ': ' ', ' my ': ' ', ' in ': ' ', ' at ': ' ', ' with ': ' '}
+            dictrepl = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
+                        ',': '', '*': '', '(': '', ')': '', '[': '', ']': '', '#': '', '0': '', '1': '',
+                        '2': '', '3': '', '4': '', '5': '', '6': '', '7': '', '8': '', '9': '', '\'': '',
+                        ':': '', '!': '', '-': '', '\s\s': ' ', ' the ': ' ', ' a ': ' ', ' and ': ' ',
+                        ' to ': ' ', ' of ': ' ', ' for ': ' ', ' my ': ' ', ' in ': ' ', ' at ': ' ', ' with ': ' '}
             logger.debug(u'searchterm %s' % book['searchterm'])
             addedCounter = 0
 
@@ -131,7 +129,8 @@ def search_nzb_book(books=None, mags=None):
                     }
                     myDB.upsert("wanted", newValueDict, controlValueDict)
 
-                    snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' % bookid).fetchone()
+                    snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
+                                                bookid).fetchone()
                     if not snatchedbooks:
                         if nzbmode == "torznab":
                             TORDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
@@ -140,7 +139,8 @@ def search_nzb_book(books=None, mags=None):
                         notifiers.notify_snatch(formatter.latinToAscii(nzbTitle) + ' at ' + formatter.now())
                     break
             if addedCounter == 0:
-                logger.debug("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() + ". Adding book to queue.")
+                logger.debug("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() +
+                             ". Adding book to queue.")
         counter = counter + 1
 
     logger.info("NZBSearch for Wanted items complete")
