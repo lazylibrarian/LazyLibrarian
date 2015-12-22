@@ -68,7 +68,7 @@ class DBConnection:
 
         return sqlResults
 
-    def genParams(myDict):
+    def genParams(self, myDict):
         return [x + " = ?" for x in myDict.keys()]
 
     def upsert(self, tableName, valueDict, keyDict):
@@ -76,8 +76,8 @@ class DBConnection:
 
         # genParams = lambda myDict: [x + " = ?" for x in myDict.keys()]
 
-        query = "UPDATE " + tableName + " SET " + ", ".join(genParams(valueDict)) + \
-            " WHERE " + " AND ".join(genParams(keyDict))
+        query = "UPDATE " + tableName + " SET " + ", ".join(self.genParams(valueDict)) + \
+            " WHERE " + " AND ".join(self.genParams(keyDict))
 
         self.action(query, valueDict.values() + keyDict.values())
 
