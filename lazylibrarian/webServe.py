@@ -9,6 +9,8 @@ from operator import itemgetter
 
 import threading
 import Queue
+import hashlib
+import shutil
 
 import lazylibrarian
 
@@ -235,8 +237,9 @@ class WebInterface(object):
                      torznab3=0, torznab_host3=None, torznab_api3=None, torznab4=0, torznab_host4=None,
                      torznab_api4=None, gr_api=None, gb_api=None, versioncheck_interval=None, search_interval=None,
                      scan_interval=None, ebook_dest_folder=None, ebook_dest_file=None, mag_relative=0,
-                     mag_dest_folder=None, mag_dest_file=None, use_twitter=0, twitter_notify_onsnatch=0,
-                     twitter_notify_ondownload=0, utorrent_host=None, utorrent_user=None, utorrent_pass=None,
+                     mag_dest_folder=None, mag_dest_file=None, 
+                     use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0, 
+                     utorrent_host=None, utorrent_user=None, utorrent_pass=None,
                      notfound_status='Skipped', newbook_status='Skipped', full_scan=0, add_author=0,
                      tor_downloader_transmission=0, transmission_host=None, transmission_user=None,
                      transmission_pass=None, tor_downloader_deluge=0, deluge_host=None, deluge_user=None,
@@ -707,7 +710,31 @@ class WebInterface(object):
 
         if issues is None:
             raise cherrypy.HTTPRedirect("magazines")
-        return serve_template(templatename="issues.html", title=title, issues=issues)
+        else:
+            mod_issues = []
+            for issue in issues:
+                magfile = issue['IssueFile']
+                magimg = magfile.replace('.pdf', '.jpg')
+                if not os.path.isfile(magimg):
+                    magimg = 'images/nocover.png'
+                else:
+                    myhash = hashlib.md5(magimg).hexdigest()
+                    cachedir = os.path.join(str(lazylibrarian.PROG_DIR), 
+                                            'data' + os.sep + 'images' + os.sep + 'cache')
+                    if not os.path.isdir(cachedir):
+                        os.makedirs(cachedir)
+                    hashname = os.path.join(cachedir, myhash + ".jpg")  
+                    shutil.copyfile(magimg, hashname)
+                    magimg = 'images/cache/' + myhash + '.jpg'
+
+                mod_issues.append ({
+                    'Cover': magimg,
+                    'Title': issue['Title'],
+                    'IssueAcquired': issue['IssueAcquired'],
+                    'IssueDate': issue['IssueDate'],
+                    'IssueFile': issue['IssueFile']
+                })
+        return serve_template(templatename="issues.html", title=title, issues=mod_issues)
     issuePage.exposed = True
 
     def openMag(self, bookid=None, **args):

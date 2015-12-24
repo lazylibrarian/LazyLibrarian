@@ -2,9 +2,14 @@ import os
 import datetime
 import lazylibrarian
 import threading
-
+import subprocess
 from lazylibrarian import database, logger, formatter, notifiers, common
 
+try:
+    import PythonMagick
+    have_magick = True
+except ImportError:
+    have_magick = False
 
 def magazineScan(thread=None):
     # rename this thread
@@ -103,6 +108,22 @@ def magazineScan(thread=None):
                     }
                     logger.debug("Adding issue %s %s" % (title, issuedate))
                     myDB.upsert("Issues", newValueDict, controlValueDict)
+                
+                if have_magick:
+                    # create a thumbnail cover if there isn't one
+                    coverfile = issuefile.replace('.pdf', '.jpg')
+                    if not os.path.isfile(coverfile):
+                        logger.debug("Creating cover for %s" % issuefile)
+                        try:
+                            img = PythonMagick.Image()
+                            img.read(issuefile + '[0]')
+                            img.write(coverfile)
+                        # No PythonMagick in python3, use external convert?
+                        # params = ['convert', issuefile + '[0]', coverfile]
+                        # try:
+                        #    subprocess.check_call(params)
+                        except:
+                            logger.debug("Unable to create cover for %s" % issuefile)
 
                 # see if this issues date values are useful
                 # if its a new magazine, magazineadded,magissuedate,lastacquired are all None
