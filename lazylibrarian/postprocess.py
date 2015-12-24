@@ -12,7 +12,7 @@ from lazylibrarian import database, logger, formatter, notifiers, common, librar
 from lazylibrarian import importer, gr
 
 try:
-    import PythonMagick
+    from wand.image import Image
     have_magick = True
 except ImportError:
     have_magick = False
@@ -182,11 +182,14 @@ def processDir():
                         if not os.path.isfile(coverfile):
                             logger.debug("Creating cover for %s" % dest_file)
                             try:
-                                img = PythonMagick.Image()
-                                img.read(issuefile + '[0]')
-                                img.write(coverfile)
+                                with Image(filename=dest_file + '[0]') as img:
+                                    img.save(filename=coverfile)
+
+                                #img = PythonMagick.Image()
+                                #img.read(dest_file + '[0]')
+                                #img.write(coverfile)
                                 # No PythonMagick in python3, use external convert?
-                                # params = ['convert', issuefile + '[0]', coverfile]
+                                # params = ['convert', dest_file + '[0]', coverfile]
                                 # try:
                                 #    subprocess.check_call(params)
                             except:

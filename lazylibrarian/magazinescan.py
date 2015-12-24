@@ -6,7 +6,7 @@ import subprocess
 from lazylibrarian import database, logger, formatter, notifiers, common
 
 try:
-    import PythonMagick
+    from wand.image import Image
     have_magick = True
 except ImportError:
     have_magick = False
@@ -115,10 +115,16 @@ def magazineScan(thread=None):
                     if not os.path.isfile(coverfile):
                         logger.debug("Creating cover for %s" % issuefile)
                         try:
-                            img = PythonMagick.Image()
-                            img.read(issuefile + '[0]')
-                            img.write(coverfile)
-                        # No PythonMagick in python3, use external convert?
+                            with Image(filename=issuefile + '[0]') as img:
+                                img.save(filename=coverfile)
+                            #img = PythonMagick.Image()
+                            #img.read(issuefile + '[0]')
+                            #img.write(coverfile)
+                        # No PythonMagick in python3, maybe use external imagemagick convert?
+                        # should work on win/mac/linux as long as imagemagick is installed
+                        # how best to check if installed?
+                        # maybe set a global to True, and set to False if subprocess fails
+                        # Maybe replace program name 'convert' by a global that user can edit
                         # params = ['convert', issuefile + '[0]', coverfile]
                         # try:
                         #    subprocess.check_call(params)
