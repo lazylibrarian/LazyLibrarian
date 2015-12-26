@@ -220,8 +220,8 @@ class WebInterface(object):
                      torznab3=0, torznab_host3=None, torznab_api3=None, torznab4=0, torznab_host4=None,
                      torznab_api4=None, gr_api=None, gb_api=None, versioncheck_interval=None, search_interval=None,
                      scan_interval=None, ebook_dest_folder=None, ebook_dest_file=None, mag_relative=0,
-                     mag_dest_folder=None, mag_dest_file=None, 
-                     use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0, 
+                     mag_dest_folder=None, mag_dest_file=None,
+                     use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
                      utorrent_host=None, utorrent_user=None, utorrent_pass=None,
                      notfound_status='Skipped', newbook_status='Skipped', full_scan=0, add_author=0,
                      tor_downloader_transmission=0, transmission_host=None, transmission_user=None,
@@ -524,11 +524,11 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     refreshAuthor.exposed = True
 
-    def addResults(self, AuthorName):
+    def addAuthor(self, AuthorName):
         args = None
         threading.Thread(target=importer.addAuthorToDB, args=[AuthorName]).start()
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
-    addResults.exposed = True
+    addAuthor.exposed = True
 
 # BOOKS #############################################################
 
@@ -612,7 +612,6 @@ class WebInterface(object):
     def openBook(self, bookid=None, **args):
         myDB = database.DBConnection()
 
-        # find book
         bookdata = myDB.select('SELECT * from books WHERE BookID="%s"' % bookid)
         if bookdata:
             bookfile = bookdata[0]["BookFile"]
@@ -737,7 +736,7 @@ class WebInterface(object):
                 if count:
                     issues = count[0]['counter']
                 else:
-                    issues = 0 
+                    issues = 0
                 this_mag = dict(mag)
                 this_mag['Count'] = issues
                 mags.append(this_mag)
@@ -761,11 +760,11 @@ class WebInterface(object):
                     magimg = 'images/nocover.png'
                 else:
                     myhash = hashlib.md5(magimg).hexdigest()
-                    cachedir = os.path.join(str(lazylibrarian.PROG_DIR), 
+                    cachedir = os.path.join(str(lazylibrarian.PROG_DIR),
                                             'data' + os.sep + 'images' + os.sep + 'cache')
                     if not os.path.isdir(cachedir):
                         os.makedirs(cachedir)
-                    hashname = os.path.join(cachedir, myhash + ".jpg")  
+                    hashname = os.path.join(cachedir, myhash + ".jpg")
                     shutil.copyfile(magimg, hashname)
                     magimg = 'images/cache/' + myhash + '.jpg'
 
@@ -776,6 +775,15 @@ class WebInterface(object):
         return serve_template(templatename="issues.html", title=title, issues=mod_issues)
     issuePage.exposed = True
 
+    def pastIssues(self, whichStatus=None):
+        myDB = database.DBConnection()
+        if whichStatus is None:
+            whichStatus = "Skipped"
+        issues = myDB.select('SELECT * from wanted WHERE Status="%s"' % (whichStatus))
+        return serve_template(templatename="manageissues.html", title="Magazine Status Management",
+                              issues=issues, whichStatus=whichStatus)
+    pastIssues.exposed = True
+    
     def openMag(self, bookid=None, **args):
         # we may want to open an issue with the full filename
         if bookid and os.path.isfile(bookid):
@@ -795,7 +803,7 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("issuePage?title=%s" % bookid)
     openMag.exposed = True
 
-    def markMags(self, AuthorName=None, action=None, redirect=None, **args):
+    def markIssues(self, AuthorName=None, action=None, redirect=None, **args):
         myDB = database.DBConnection()
         if not redirect:
             redirect = "magazines"
@@ -836,8 +844,8 @@ class WebInterface(object):
                 else:
                     snatch = NZBDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
                 notifiers.notify_snatch(items['nzbtitle'] + ' at ' + formatter.now())
-        raise cherrypy.HTTPRedirect("history?source=magazines")
-    markMags.exposed = True
+        raise cherrypy.HTTPRedirect("pastIssues")
+    markIssues.exposed = True
 
     def markMagazines(self, action=None, **args):
         myDB = database.DBConnection()
@@ -1109,10 +1117,6 @@ class WebInterface(object):
             # wanted status holds snatched processed for all, plus skipped and ignored for magazine back issues
             history = myDB.select("SELECT * from wanted WHERE Status != 'Skipped' and Status != 'Ignored'")
             return serve_template(templatename="history.html", title="History", history=history)
-        elif source == "magazines":
-            books = myDB.select("SELECT * from wanted WHERE Status = 'Skipped'")  # or Status = 'Snatched'")
-        return serve_template(templatename="managemags.html", title="Magazine Status Management",
-                              books=books, whichStatus='Skipped')
     history.exposed = True
 
     def clearhistory(self, type=None):
