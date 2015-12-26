@@ -10,7 +10,6 @@ from operator import itemgetter
 import threading
 import Queue
 import hashlib
-import shutil
 
 import lazylibrarian
 
@@ -702,9 +701,32 @@ class WebInterface(object):
     openBook.exposed = True
 
 # MAGAZINES
+
+    def magazines(self):
+        myDB = database.DBConnection()
+
+        magazines = myDB.select('SELECT * from magazines ORDER by Title')
+
+        if magazines is None:
+            raise cherrypy.HTTPRedirect("magazines")
+        else:
+            mags = []
+            for mag in magazines:
+                title = mag['Title']
+                count = myDB.select('SELECT COUNT(Title) as counter FROM issues WHERE Title="%s"' % title)
+                if count:
+                    issues = count[0]['counter']
+                else:
+                    issues = 0 
+                this_mag = dict(mag)
+                this_mag['Count'] = issues
+                mags.append(this_mag)
+
+        return serve_template(templatename="magazines.html", title="Magazines", magazines=mags)
+    magazines.exposed = True
+
     def issuePage(self, title):
         myDB = database.DBConnection()
-        # magazines = myDB.select('SELECT * from magazines')
 
         issues = myDB.select('SELECT * from issues WHERE Title="%s" order by IssueDate DESC' % (title))
 
@@ -727,13 +749,10 @@ class WebInterface(object):
                     shutil.copyfile(magimg, hashname)
                     magimg = 'images/cache/' + myhash + '.jpg'
 
-                mod_issues.append ({
-                    'Cover': magimg,
-                    'Title': issue['Title'],
-                    'IssueAcquired': issue['IssueAcquired'],
-                    'IssueDate': issue['IssueDate'],
-                    'IssueFile': issue['IssueFile']
-                })
+                this_issue = dict(issue)
+                this_issue['Cover'] = magimg
+                mod_issues.append(this_issue)
+
         return serve_template(templatename="issues.html", title=title, issues=mod_issues)
     issuePage.exposed = True
 
@@ -1022,16 +1041,6 @@ class WebInterface(object):
             myDB.action('DELETE from wanted WHERE Status="%s"' % type)
         raise cherrypy.HTTPRedirect("history")
     clearhistory.exposed = True
-
-    def magazines(self):
-        myDB = database.DBConnection()
-
-        magazines = myDB.select('SELECT * from magazines ORDER by Title')
-
-        if magazines is None:
-            raise cherrypy.HTTPRedirect("magazines")
-        return serve_template(templatename="magazines.html", title="Magazines", magazines=magazines)
-    magazines.exposed = True
 
     def addKeyword(self, type=None, title=None, frequency=None, **args):
         myDB = database.DBConnection()

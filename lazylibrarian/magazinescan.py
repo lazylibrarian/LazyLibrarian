@@ -7,9 +7,41 @@ from lazylibrarian import database, logger, formatter, notifiers, common
 
 try:
     from wand.image import Image
-    have_magick = True
+    have_magick = "wand"
 except ImportError:
-    have_magick = False
+    try:
+        import PythonMagick
+        have_magick = "pythonmagick"
+    except ImportError:
+        have_magick = False
+
+
+def create_cover(issuefile=None):
+    if have_magick:
+        # create a thumbnail cover if there isn't one
+        coverfile = issuefile.replace('.pdf', '.jpg')
+        if not os.path.isfile(coverfile):
+            logger.debug("Creating cover for %s" % issuefile)
+            try:
+                if have_magick == 'wand':
+                    with Image(filename=issuefile + '[0]') as img:
+                        img.save(filename=coverfile)
+                elif have_magick == 'pythonmagick':
+                    img = PythonMagick.Image()
+                    img.read(issuefile + '[0]')
+                    img.write(coverfile)
+                else:
+                    # No PythonMagick in python3, hence allow wand, but more complicated
+                    # to install - maybe use external imagemagick convert?
+                    # should work on win/mac/linux as long as imagemagick is installed
+                    # but how best to check if external imagemagick is installed?
+                    # maybe set a global to True, and set to False if subprocess fails
+                    # Maybe replace program name 'convert' by a global that user can edit
+                    params = ['convert', issuefile + '[0]', coverfile]
+                    subprocess.check_call(params)
+            except:
+                logger.debug("Unable to create cover for %s" % issuefile)
+
 
 def magazineScan(thread=None):
     # rename this thread
@@ -109,28 +141,8 @@ def magazineScan(thread=None):
                     logger.debug("Adding issue %s %s" % (title, issuedate))
                     myDB.upsert("Issues", newValueDict, controlValueDict)
                 
-                if have_magick:
-                    # create a thumbnail cover if there isn't one
-                    coverfile = issuefile.replace('.pdf', '.jpg')
-                    if not os.path.isfile(coverfile):
-                        logger.debug("Creating cover for %s" % issuefile)
-                        try:
-                            with Image(filename=issuefile + '[0]') as img:
-                                img.save(filename=coverfile)
-                            #img = PythonMagick.Image()
-                            #img.read(issuefile + '[0]')
-                            #img.write(coverfile)
-                        # No PythonMagick in python3, maybe use external imagemagick convert?
-                        # should work on win/mac/linux as long as imagemagick is installed
-                        # how best to check if installed?
-                        # maybe set a global to True, and set to False if subprocess fails
-                        # Maybe replace program name 'convert' by a global that user can edit
-                        # params = ['convert', issuefile + '[0]', coverfile]
-                        # try:
-                        #    subprocess.check_call(params)
-                        except:
-                            logger.debug("Unable to create cover for %s" % issuefile)
-
+                create_cover(issuefile)
+                
                 # see if this issues date values are useful
                 # if its a new magazine, magazineadded,magissuedate,lastacquired are all None
                 # if magazineadded is NOT None, but the others are, we've deleted one or more issues

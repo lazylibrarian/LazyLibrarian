@@ -48,7 +48,7 @@
                 <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
                 <th id="magtitle">Title</th>
                 <th id="frequency">Frequency</th>
-                <!-- <th id="regex">Regex</th> -->
+                <th id="seriesOrder">Num</th>
                 <th id="lastacquired">Acquired</th>
                 <th id="issuedate">Issue Date</th>
                 <th id="status">Status</th>
@@ -73,6 +73,7 @@
                             <!-- <input type="submit" value="Go">-->
                         <!-- </form>-->
                     <!-- </td>-->
+                    <td id="seriesOrder">${result['Count']}</td>
                     <td id="lastacquired">${result['LastAcquired']}</td>
                     <td id="issuedate">${result['IssueDate']}</td>
                     <td id="status">${result['Status']}</td>
@@ -109,6 +110,7 @@
         $('#book_table').dataTable(
             {
                 "aoColumns": [
+                    null,
                     null,
                     null,
                     null,

@@ -1,7 +1,6 @@
 import shutil
 import os
 import threading
-import subprocess
 import lib.csv as csv
 
 from urllib import FancyURLopener
@@ -9,13 +8,8 @@ from urllib import FancyURLopener
 import lazylibrarian
 
 from lazylibrarian import database, logger, formatter, notifiers, common, librarysync
-from lazylibrarian import importer, gr
+from lazylibrarian import importer, gr, magazinescan
 
-try:
-    from wand.image import Image
-    have_magick = True
-except ImportError:
-    have_magick = False
 
 def processAlternate(source_dir=None):
     # import a book from an alternate directory
@@ -176,24 +170,8 @@ def processDir():
                     newValueDict = {"IssueAcquired": formatter.today(), "IssueFile": dest_file}
                     myDB.upsert("issues", newValueDict, controlValueDict)
                     
-                    if have_magick:
-                        # create a thumbnail cover for the new issue
-                        coverfile = dest_file.replace('.pdf', '.jpg')
-                        if not os.path.isfile(coverfile):
-                            logger.debug("Creating cover for %s" % dest_file)
-                            try:
-                                with Image(filename=dest_file + '[0]') as img:
-                                    img.save(filename=coverfile)
-
-                                #img = PythonMagick.Image()
-                                #img.read(dest_file + '[0]')
-                                #img.write(coverfile)
-                                # No PythonMagick in python3, use external convert?
-                                # params = ['convert', dest_file + '[0]', coverfile]
-                                # try:
-                                #    subprocess.check_call(params)
-                            except:
-                                logger.debug("Unable to create cover for %s" % dest_file)
+                    # create a thumbnail cover for the new issue
+                    magazinescan.create_cover(dest_file)
 
                 logger.info('Successfully processed: %s' % global_name)
                 notifiers.notify_download(formatter.latinToAscii(global_name) + ' at ' + formatter.now())
