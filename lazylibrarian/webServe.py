@@ -1,7 +1,6 @@
 import os
 import shutil
 import cherrypy
-
 from cherrypy.lib.static import serve_file
 from mako.lookup import TemplateLookup
 from mako import exceptions
@@ -51,22 +50,7 @@ class WebInterface(object):
         return serve_template(templatename="index.html", title="Home", authors=authors)
     home.exposed = True
 
-    def books(self, BookLang=None):
-        myDB = database.DBConnection()
-
-        languages = myDB.select('SELECT DISTINCT BookLang from books WHERE NOT \
-                                STATUS="Skipped" AND NOT STATUS="Ignored"')
-
-        if BookLang:
-            books = myDB.select('SELECT * from books WHERE BookLang="%s" AND NOT \
-                                Status="Skipped" AND NOT STATUS="Ignored"' % BookLang)
-        else:
-            books = myDB.select('SELECT * from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"')
-
-        if books is None:
-            raise cherrypy.HTTPRedirect("books")
-        return serve_template(templatename="books.html", title='Books', books=books, languages=languages)
-    books.exposed = True
+# CONFIG ############################################################
 
     def config(self):
         http_look_dir = os.path.join(lazylibrarian.PROG_DIR, 'data/interfaces/')
@@ -425,15 +409,8 @@ class WebInterface(object):
 
     configUpdate.exposed = True
 
-    def update(self):
-        logger.debug('(webServe-Update) - Performing update')
-        lazylibrarian.SIGNAL = 'update'
-        message = 'Updating...'
-        return serve_template(templatename="shutdown.html", title="Updating", message=message, timer=120)
-#        return page
-    update.exposed = True
+# SEARCH ############################################################
 
-# SEARCH
     def search(self, name):
         myDB = database.DBConnection()
         if lazylibrarian.BOOK_API == "GoogleBooks":
@@ -468,7 +445,8 @@ class WebInterface(object):
                               booklist=booklist, booksearch=booksearch, type=type)
     search.exposed = True
 
-# AUTHOR
+# AUTHOR ############################################################
+
     def authorPage(self, AuthorName, BookLang=None, Ignored=False):
         myDB = database.DBConnection()
 
@@ -546,82 +524,30 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     refreshAuthor.exposed = True
 
-    def importAlternate(self):
-        try:
-            threading.Thread(target=postprocess.processAlternate(lazylibrarian.ALTERNATE_DIR)).start()
-        except Exception, e:
-            logger.error(u'Unable to complete the import: %s' % e)
-        raise cherrypy.HTTPRedirect("manage")
-    importAlternate.exposed = True
-
-    def importCSV(self):
-        try:
-            threading.Thread(target=postprocess.processCSV(lazylibrarian.ALTERNATE_DIR)).start()
-        except Exception, e:
-            logger.error(u'Unable to complete the import: %s' % e)
-        raise cherrypy.HTTPRedirect("manage")
-    importCSV.exposed = True
-
-    def exportCSV(self):
-        try:
-            threading.Thread(target=postprocess.exportCSV(lazylibrarian.ALTERNATE_DIR)).start()
-        except Exception, e:
-            logger.error(u'Unable to complete the export: %s' % e)
-        raise cherrypy.HTTPRedirect("manage")
-    exportCSV.exposed = True
-
-    def libraryScan(self):
-        try:
-            threading.Thread(target=librarysync.LibraryScan(lazylibrarian.DESTINATION_DIR)).start()
-        except Exception, e:
-            logger.error(u'Unable to complete the scan: %s' % e)
-        raise cherrypy.HTTPRedirect("home")
-    libraryScan.exposed = True
-
-    def magazineScan(self):
-        try:
-            threading.Thread(target=magazinescan.magazineScan()).start()
-        except Exception, e:
-            logger.error(u'Unable to complete the scan: %s' % e)
-        raise cherrypy.HTTPRedirect("magazines")
-    magazineScan.exposed = True
-
-    def clearLog(self):
-        # Clear the log
-        if os.path.exists(lazylibrarian.LOGDIR):
-            try:
-                shutil.rmtree(lazylibrarian.LOGDIR)
-                os.mkdir(lazylibrarian.LOGDIR)
-                lazylibrarian.LOGLIST = []
-            except OSError, e:
-                logger.info(u'Failed to clear log: ' + str(e))
-        raise cherrypy.HTTPRedirect("logs")
-    clearLog.exposed = True
-
-    def toggleLog(self):
-        # Toggle the debug log
-        # LOGLEVEL 0, quiet
-        # 1 normal
-        # 2 debug
-        # >2 do not turn off file/console log
-        if lazylibrarian.LOGFULL:  # if LOGLIST logging on, turn off
-            lazylibrarian.LOGFULL = False
-            if lazylibrarian.LOGLEVEL < 3:
-                lazylibrarian.LOGLEVEL = 1
-            logger.info(u'Debug log display OFF, loglevel is %s' % lazylibrarian.LOGLEVEL)
-        else:
-            lazylibrarian.LOGFULL = True
-            if lazylibrarian.LOGLEVEL < 2:
-                lazylibrarian.LOGLEVEL = 2  # Make sure debug ON
-            logger.info(u'Debug log display ON, loglevel is %s' % lazylibrarian.LOGLEVEL)
-        raise cherrypy.HTTPRedirect("logs")
-    toggleLog.exposed = True
-
-    def addResults(self, authorname):
+    def addResults(self, AuthorName):
         args = None
-        threading.Thread(target=importer.addAuthorToDB, args=[authorname]).start()
-        raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % authorname)
+        threading.Thread(target=importer.addAuthorToDB, args=[AuthorName]).start()
+        raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     addResults.exposed = True
+
+# BOOKS #############################################################
+
+    def books(self, BookLang=None):
+        myDB = database.DBConnection()
+
+        languages = myDB.select('SELECT DISTINCT BookLang from books WHERE NOT \
+                                STATUS="Skipped" AND NOT STATUS="Ignored"')
+
+        if BookLang:
+            books = myDB.select('SELECT * from books WHERE BookLang="%s" AND NOT \
+                                Status="Skipped" AND NOT STATUS="Ignored"' % BookLang)
+        else:
+            books = myDB.select('SELECT * from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"')
+
+        if books is None:
+            raise cherrypy.HTTPRedirect("books")
+        return serve_template(templatename="books.html", title='Books', books=books, languages=languages)
+    books.exposed = True
 
     def addBook(self, bookid=None):
         myDB = database.DBConnection()
@@ -683,7 +609,6 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("books")
     addBook.exposed = True
 
-# BOOKS
     def openBook(self, bookid=None, **args):
         myDB = database.DBConnection()
 
@@ -700,85 +625,9 @@ class WebInterface(object):
                 logger.info(u'Missing book %s,%s' % (authorName, bookName))
     openBook.exposed = True
 
-# MAGAZINES
-
-    def magazines(self):
-        myDB = database.DBConnection()
-
-        magazines = myDB.select('SELECT * from magazines ORDER by Title')
-
-        if magazines is None:
-            raise cherrypy.HTTPRedirect("magazines")
-        else:
-            mags = []
-            for mag in magazines:
-                title = mag['Title']
-                count = myDB.select('SELECT COUNT(Title) as counter FROM issues WHERE Title="%s"' % title)
-                if count:
-                    issues = count[0]['counter']
-                else:
-                    issues = 0 
-                this_mag = dict(mag)
-                this_mag['Count'] = issues
-                mags.append(this_mag)
-
-        return serve_template(templatename="magazines.html", title="Magazines", magazines=mags)
-    magazines.exposed = True
-
-    def issuePage(self, title):
-        myDB = database.DBConnection()
-
-        issues = myDB.select('SELECT * from issues WHERE Title="%s" order by IssueDate DESC' % (title))
-
-        if issues is None:
-            raise cherrypy.HTTPRedirect("magazines")
-        else:
-            mod_issues = []
-            for issue in issues:
-                magfile = issue['IssueFile']
-                magimg = magfile.replace('.pdf', '.jpg')
-                if not os.path.isfile(magimg):
-                    magimg = 'images/nocover.png'
-                else:
-                    myhash = hashlib.md5(magimg).hexdigest()
-                    cachedir = os.path.join(str(lazylibrarian.PROG_DIR), 
-                                            'data' + os.sep + 'images' + os.sep + 'cache')
-                    if not os.path.isdir(cachedir):
-                        os.makedirs(cachedir)
-                    hashname = os.path.join(cachedir, myhash + ".jpg")  
-                    shutil.copyfile(magimg, hashname)
-                    magimg = 'images/cache/' + myhash + '.jpg'
-
-                this_issue = dict(issue)
-                this_issue['Cover'] = magimg
-                mod_issues.append(this_issue)
-
-        return serve_template(templatename="issues.html", title=title, issues=mod_issues)
-    issuePage.exposed = True
-
-    def openMag(self, bookid=None, **args):
-        # we may want to open an issue with the full filename
-        if bookid and os.path.isfile(bookid):
-            logger.info(u'Opening file ' + bookid)
-            return serve_file(bookid, "application/x-download", "attachment")
-
-        # or we may just have a title to find magazine in issues table
-        myDB = database.DBConnection()
-        mag_data = myDB.select('SELECT * from issues WHERE Title="%s"' % bookid)
-        if len(mag_data) == 1:  # we only have one issue, get it
-            IssueDate = mag_data[0]["IssueDate"]
-            IssueFile = mag_data[0]["IssueFile"]
-            logger.info(u'Opening %s - %s' % (bookid, IssueDate))
-            return serve_file(IssueFile, "application/x-download", "attachment")
-        if len(mag_data) > 1:  # multiple issues, show a list
-            logger.debug(u"%s has %s issues" % (bookid, len(mag_data)))
-            raise cherrypy.HTTPRedirect("issuePage?title=%s" % bookid)
-    openMag.exposed = True
-
     def searchForBook(self, bookid=None, action=None, **args):
         myDB = database.DBConnection()
 
-        # find book
         bookdata = myDB.select('SELECT * from books WHERE BookID="%s"' % bookid)
         if bookdata:
             AuthorName = bookdata[0]["AuthorName"]
@@ -871,6 +720,81 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("manage")
     markBooks.exposed = True
 
+# MAGAZINES #########################################################
+
+    def magazines(self):
+        myDB = database.DBConnection()
+
+        magazines = myDB.select('SELECT * from magazines ORDER by Title')
+
+        if magazines is None:
+            raise cherrypy.HTTPRedirect("magazines")
+        else:
+            mags = []
+            for mag in magazines:
+                title = mag['Title']
+                count = myDB.select('SELECT COUNT(Title) as counter FROM issues WHERE Title="%s"' % title)
+                if count:
+                    issues = count[0]['counter']
+                else:
+                    issues = 0 
+                this_mag = dict(mag)
+                this_mag['Count'] = issues
+                mags.append(this_mag)
+
+        return serve_template(templatename="magazines.html", title="Magazines", magazines=mags)
+    magazines.exposed = True
+
+    def issuePage(self, title):
+        myDB = database.DBConnection()
+
+        issues = myDB.select('SELECT * from issues WHERE Title="%s" order by IssueDate DESC' % (title))
+
+        if issues is None:
+            raise cherrypy.HTTPRedirect("magazines")
+        else:
+            mod_issues = []
+            for issue in issues:
+                magfile = issue['IssueFile']
+                magimg = magfile.replace('.pdf', '.jpg')
+                if not os.path.isfile(magimg):
+                    magimg = 'images/nocover.png'
+                else:
+                    myhash = hashlib.md5(magimg).hexdigest()
+                    cachedir = os.path.join(str(lazylibrarian.PROG_DIR), 
+                                            'data' + os.sep + 'images' + os.sep + 'cache')
+                    if not os.path.isdir(cachedir):
+                        os.makedirs(cachedir)
+                    hashname = os.path.join(cachedir, myhash + ".jpg")  
+                    shutil.copyfile(magimg, hashname)
+                    magimg = 'images/cache/' + myhash + '.jpg'
+
+                this_issue = dict(issue)
+                this_issue['Cover'] = magimg
+                mod_issues.append(this_issue)
+
+        return serve_template(templatename="issues.html", title=title, issues=mod_issues)
+    issuePage.exposed = True
+
+    def openMag(self, bookid=None, **args):
+        # we may want to open an issue with the full filename
+        if bookid and os.path.isfile(bookid):
+            logger.info(u'Opening file ' + bookid)
+            return serve_file(bookid, "application/x-download", "attachment")
+
+        # or we may just have a title to find magazine in issues table
+        myDB = database.DBConnection()
+        mag_data = myDB.select('SELECT * from issues WHERE Title="%s"' % bookid)
+        if len(mag_data) == 1:  # we only have one issue, get it
+            IssueDate = mag_data[0]["IssueDate"]
+            IssueFile = mag_data[0]["IssueFile"]
+            logger.info(u'Opening %s - %s' % (bookid, IssueDate))
+            return serve_file(IssueFile, "application/x-download", "attachment")
+        if len(mag_data) > 1:  # multiple issues, show a list
+            logger.debug(u"%s has %s issues" % (bookid, len(mag_data)))
+            raise cherrypy.HTTPRedirect("issuePage?title=%s" % bookid)
+    openMag.exposed = True
+
     def markMags(self, AuthorName=None, action=None, redirect=None, **args):
         myDB = database.DBConnection()
         if not redirect:
@@ -915,22 +839,82 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("history?source=magazines")
     markMags.exposed = True
 
-    # ALL ELSE
-    def forceProcess(self, source=None):
-        threading.Thread(target=postprocess.processDir).start()
-        raise cherrypy.HTTPRedirect(source)
-    forceProcess.exposed = True
+    def markMagazines(self, action=None, **args):
+        myDB = database.DBConnection()
+        for item in args:
+            # ouch dirty workaround...
+            if not item == 'book_table_length':
+                if (action == "Paused" or action == "Active"):
+                    controlValueDict = {"Title": item}
+                    newValueDict = {
+                        "Status":       action,
+                    }
+                    myDB.upsert("magazines", newValueDict, controlValueDict)
+                    logger.info(u'Status of magazine %s changed to %s' % (item, action))
+                elif (action == "Delete"):
+                    myDB.action('DELETE from magazines WHERE Title="%s"' % item)
+                    myDB.action('DELETE from wanted WHERE BookID="%s"' % item)
+                    myDB.action('DELETE from issues WHERE Title="%s"' % item)
+                    logger.info(u'Magazine %s removed from database' % item)
+                elif (action == "Reset"):
+                    controlValueDict = {"Title": item}
+                    newValueDict = {
+                        "LastAcquired": None,
+                        "IssueDate":    None,
+                        "IssueStatus":  "Wanted"
+                    }
+                    myDB.upsert("magazines", newValueDict, controlValueDict)
+                    logger.info(u'Magazine %s details reset' % item)
 
-    def forceSearch(self, source=None):
-        if source == "magazines":
-            threading.Thread(target=search_magazines).start()
-        else:
-            if (lazylibrarian.USE_NZB):
-                threading.Thread(target=search_nzb_book).start()
-            if (lazylibrarian.USE_TOR):
-                threading.Thread(target=search_tor_book).start()
-        raise cherrypy.HTTPRedirect(source)
-    forceSearch.exposed = True
+        raise cherrypy.HTTPRedirect("magazines")
+    markMagazines.exposed = True
+
+    def searchForMag(self, bookid=None, action=None, **args):
+        myDB = database.DBConnection()
+
+        bookdata = myDB.select('SELECT * from magazines WHERE Title="%s"' % bookid)
+        if bookdata:
+            # start searchthreads
+            mags = []
+            mags.append({"bookid": bookid})
+
+            books = False
+            if lazylibrarian.USE_NZB or lazylibrarian.USE_TOR:
+                threading.Thread(target=search_magazines, args=[mags]).start()
+                logger.debug(u"Searching for magazine with title: " + bookid)
+            else:
+                logger.debug("Not searching for magazine, no download methods set")
+            raise cherrypy.HTTPRedirect("magazines")
+    searchForMag.exposed = True
+
+    def addMagazine(self, type=None, title=None, frequency=None, **args):
+        myDB = database.DBConnection()
+        if type == 'magazine':
+            if len(title) == 0:
+                raise cherrypy.HTTPRedirect("config")
+            else:
+                controlValueDict = {"Title": title}
+                newValueDict = {
+                    "Frequency":   frequency,
+                    "Regex":   None,
+                    "Status":       "Active",
+                    "MagazineAdded":    formatter.today(),
+                    "IssueStatus": "Wanted"
+                }
+                myDB.upsert("magazines", newValueDict, controlValueDict)
+
+                mags = []
+                mags.append({"bookid": title})
+                books = False
+                if lazylibrarian.USE_NZB or lazylibrarian.USE_TOR:
+                    threading.Thread(target=search_magazines, args=[mags]).start()
+                    logger.debug(u"Searching for magazine with title: " + title)
+                else:
+                    logger.debug(u"Not searching for magazine, no download methods set")
+                raise cherrypy.HTTPRedirect("magazines")
+    addMagazine.exposed = True
+
+# UPDATES ###########################################################
 
     def checkForUpdates(self):
         # check the version when the application starts
@@ -942,6 +926,76 @@ class WebInterface(object):
         lazylibrarian.COMMITS_BEHIND = versioncheck.getCommitDifferenceFromGit()
         raise cherrypy.HTTPRedirect("config")
     checkForUpdates.exposed = True
+
+    def forceUpdate(self):
+        from lazylibrarian import updater
+        threading.Thread(target=updater.dbUpdate, args=[False]).start()
+        raise cherrypy.HTTPRedirect("home")
+    forceUpdate.exposed = True
+
+    def update(self):
+        logger.debug('(webServe-Update) - Performing update')
+        lazylibrarian.SIGNAL = 'update'
+        message = 'Updating...'
+        return serve_template(templatename="shutdown.html", title="Updating", message=message, timer=120)
+    update.exposed = True
+
+# IMPORT/EXPORT #####################################################
+
+    def libraryScan(self):
+        try:
+            threading.Thread(target=librarysync.LibraryScan(lazylibrarian.DESTINATION_DIR)).start()
+        except Exception, e:
+            logger.error(u'Unable to complete the scan: %s' % e)
+        raise cherrypy.HTTPRedirect("home")
+    libraryScan.exposed = True
+
+    def magazineScan(self):
+        try:
+            threading.Thread(target=magazinescan.magazineScan()).start()
+        except Exception, e:
+            logger.error(u'Unable to complete the scan: %s' % e)
+        raise cherrypy.HTTPRedirect("magazines")
+    magazineScan.exposed = True
+
+    def importAlternate(self):
+        try:
+            threading.Thread(target=postprocess.processAlternate(lazylibrarian.ALTERNATE_DIR)).start()
+        except Exception, e:
+            logger.error(u'Unable to complete the import: %s' % e)
+        raise cherrypy.HTTPRedirect("manage")
+    importAlternate.exposed = True
+
+    def importCSV(self):
+        try:
+            threading.Thread(target=postprocess.processCSV(lazylibrarian.ALTERNATE_DIR)).start()
+        except Exception, e:
+            logger.error(u'Unable to complete the import: %s' % e)
+        raise cherrypy.HTTPRedirect("manage")
+    importCSV.exposed = True
+
+    def exportCSV(self):
+        try:
+            threading.Thread(target=postprocess.exportCSV(lazylibrarian.ALTERNATE_DIR)).start()
+        except Exception, e:
+            logger.error(u'Unable to complete the export: %s' % e)
+        raise cherrypy.HTTPRedirect("manage")
+    exportCSV.exposed = True
+
+# JOB CONTROL #######################################################
+
+    def shutdown(self):
+        lazylibrarian.config_write()
+        lazylibrarian.SIGNAL = 'shutdown'
+        message = 'closing ...'
+        return serve_template(templatename="shutdown.html", title="Close library", message=message, timer=15)
+    shutdown.exposed = True
+
+    def restart(self):
+        lazylibrarian.SIGNAL = 'restart'
+        message = 'reopening ...'
+        return serve_template(templatename="shutdown.html", title="Reopen library", message=message, timer=30)
+    restart.exposed = True
 
     def showJobs(self):
         # show the current status of LL cron jobs in the log
@@ -982,6 +1036,43 @@ class WebInterface(object):
         self.showJobs()
     restartJobs.exposed = True
 
+# LOGGING ###########################################################
+
+    def clearLog(self):
+        # Clear the log
+        if os.path.exists(lazylibrarian.LOGDIR):
+            try:
+                shutil.rmtree(lazylibrarian.LOGDIR)
+                os.mkdir(lazylibrarian.LOGDIR)
+                lazylibrarian.LOGLIST = []
+            except OSError, e:
+                logger.info(u'Failed to clear log: ' + str(e))
+        raise cherrypy.HTTPRedirect("logs")
+    clearLog.exposed = True
+
+    def toggleLog(self):
+        # Toggle the debug log
+        # LOGLEVEL 0, quiet
+        # 1 normal
+        # 2 debug
+        # >2 do not turn off file/console log
+        if lazylibrarian.LOGFULL:  # if LOGLIST logging on, turn off
+            lazylibrarian.LOGFULL = False
+            if lazylibrarian.LOGLEVEL < 3:
+                lazylibrarian.LOGLEVEL = 1
+            logger.info(u'Debug log display OFF, loglevel is %s' % lazylibrarian.LOGLEVEL)
+        else:
+            lazylibrarian.LOGFULL = True
+            if lazylibrarian.LOGLEVEL < 2:
+                lazylibrarian.LOGLEVEL = 2  # Make sure debug ON
+            logger.info(u'Debug log display ON, loglevel is %s' % lazylibrarian.LOGLEVEL)
+        raise cherrypy.HTTPRedirect("logs")
+    toggleLog.exposed = True
+
+    def logs(self):
+        return serve_template(templatename="logs.html", title="Log", lineList=lazylibrarian.LOGLIST)
+    logs.exposed = True
+
     def getLog(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
@@ -1010,14 +1101,7 @@ class WebInterface(object):
         return s
     getLog.exposed = True
 
-    def manage(self, AuthorName=None, action=None, whichStatus=None, source=None, **args):
-        myDB = database.DBConnection()
-        # books only holds status of skipped wanted open have ignored
-        # wanted holds status of snatched processed
-        books = myDB.select('SELECT * FROM books WHERE Status = ?', [whichStatus])
-        return serve_template(templatename="managebooks.html", title="Book Status Management",
-                              books=books, whichStatus=whichStatus)
-    manage.exposed = True
+# HISTORY ###########################################################
 
     def history(self, source=None):
         myDB = database.DBConnection()
@@ -1042,120 +1126,7 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("history")
     clearhistory.exposed = True
 
-    def addKeyword(self, type=None, title=None, frequency=None, **args):
-        myDB = database.DBConnection()
-        if type == 'magazine':
-            if len(title) == 0:
-                raise cherrypy.HTTPRedirect("config")
-            else:
-                controlValueDict = {"Title": title}
-                newValueDict = {
-                    "Frequency":   frequency,
-                    "Regex":   None,
-                    "Status":       "Active",
-                    "MagazineAdded":    formatter.today(),
-                    "IssueStatus": "Wanted"
-                }
-                myDB.upsert("magazines", newValueDict, controlValueDict)
-
-                mags = []
-                mags.append({"bookid": title})
-                books = False
-                if lazylibrarian.USE_NZB or lazylibrarian.USE_TOR:
-                    threading.Thread(target=search_magazines, args=[mags]).start()
-                    logger.debug(u"Searching for magazine with title: " + title)
-                else:
-                    logger.debug("Not searching for magazine, no download methods set")
-                raise cherrypy.HTTPRedirect("magazines")
-    addKeyword.exposed = True
-
-    def markMagazines(self, action=None, **args):
-        myDB = database.DBConnection()
-        for item in args:
-            # ouch dirty workaround...
-            if not item == 'book_table_length':
-                if (action == "Paused" or action == "Active"):
-                    controlValueDict = {"Title": item}
-                    newValueDict = {
-                        "Status":       action,
-                    }
-                    myDB.upsert("magazines", newValueDict, controlValueDict)
-                    logger.info(u'Status of magazine %s changed to %s' % (item, action))
-                elif (action == "Delete"):
-                    myDB.action('DELETE from magazines WHERE Title="%s"' % item)
-                    myDB.action('DELETE from wanted WHERE BookID="%s"' % item)
-                    myDB.action('DELETE from issues WHERE Title="%s"' % item)
-                    logger.info(u'Magazine %s removed from database' % item)
-                elif (action == "Reset"):
-                    controlValueDict = {"Title": item}
-                    newValueDict = {
-                        "LastAcquired": None,
-                        "IssueDate":    None,
-                        "IssueStatus":  "Wanted"
-                    }
-                    myDB.upsert("magazines", newValueDict, controlValueDict)
-                    logger.info(u'Magazine %s details reset' % item)
-
-        raise cherrypy.HTTPRedirect("magazines")
-    markMagazines.exposed = True
-
-    def searchForMag(self, bookid=None, action=None, **args):
-        myDB = database.DBConnection()
-
-        # find book
-        bookdata = myDB.select('SELECT * from magazines WHERE Title="%s"' % bookid)
-        if bookdata:
-            # start searchthreads
-            mags = []
-            mags.append({"bookid": bookid})
-
-            books = False
-            if lazylibrarian.USE_NZB or lazylibrarian.USE_TOR:
-                threading.Thread(target=search_magazines, args=[mags]).start()
-                logger.debug(u"Searching for magazine with title: " + bookid)
-            else:
-                logger.debug("Not searching for magazine, no download methods set")
-            raise cherrypy.HTTPRedirect("magazines")
-    searchForMag.exposed = True
-
-    def markWanted(self, action=None, **args):
-        myDB = database.DBConnection()
-        # I think I need to consolidate bookid in args to unique values...
-        for nzbtitle in args:
-            if not nzbtitle == 'book_table_length':
-                if action != "Delete":
-                    controlValueDict = {"NZBtitle": nzbtitle}
-                    newValueDict = {
-                        "Status": action,
-                        "NZBDate": formatter.today()  # mark when we wanted it
-                    }
-                    myDB.upsert("wanted", newValueDict, controlValueDict)
-                    logger.info(u'Status of wanted item %s changed to %s' % (nzbtitle, action))
-                else:
-                    myDB.action('DELETE from wanted WHERE NZBtitle="%s"' % nzbtitle)
-                    logger.info(u'Item %s removed from wanted' % nzbtitle)
-                raise cherrypy.HTTPRedirect("wanted")
-    markWanted.exposed = True
-
-    def updateRegex(self, action=None, title=None):
-        myDB = database.DBConnection()
-        controlValueDict = {"Title": title}
-        newValueDict = {
-            "Regex":       action,
-        }
-        myDB.upsert("magazines", newValueDict, controlValueDict)
-        raise cherrypy.HTTPRedirect("magazines")
-    updateRegex.exposed = True
-
-    def forceUpdate(self):
-        from lazylibrarian import updater
-        threading.Thread(target=updater.dbUpdate, args=[False]).start()
-        raise cherrypy.HTTPRedirect("home")
-    forceUpdate.exposed = True
-
-    def logs(self):
-        return serve_template(templatename="logs.html", title="Log", lineList=lazylibrarian.LOGLIST)
-    logs.exposed = True
+# NOTIFIERS #########################################################
 
     @cherrypy.expose
     def twitterStep1(self):
@@ -1224,16 +1195,58 @@ class WebInterface(object):
         else:
             return "Test NMA notice failed"
 
-    def shutdown(self):
-        lazylibrarian.config_write()
-        lazylibrarian.SIGNAL = 'shutdown'
-        message = 'closing ...'
-        return serve_template(templatename="shutdown.html", title="Close library", message=message, timer=15)
-#        return page
-    shutdown.exposed = True
+# ALL ELSE ##########################################################
 
-    def restart(self):
-        lazylibrarian.SIGNAL = 'restart'
-        message = 'reopening ...'
-        return serve_template(templatename="shutdown.html", title="Reopen library", message=message, timer=30)
-    restart.exposed = True
+    def forceProcess(self, source=None):
+        threading.Thread(target=postprocess.processDir).start()
+        raise cherrypy.HTTPRedirect(source)
+    forceProcess.exposed = True
+
+    def forceSearch(self, source=None):
+        if source == "magazines":
+            threading.Thread(target=search_magazines).start()
+        else:
+            if (lazylibrarian.USE_NZB):
+                threading.Thread(target=search_nzb_book).start()
+            if (lazylibrarian.USE_TOR):
+                threading.Thread(target=search_tor_book).start()
+        raise cherrypy.HTTPRedirect(source)
+    forceSearch.exposed = True
+
+    def manage(self, AuthorName=None, action=None, whichStatus=None, source=None, **args):
+        myDB = database.DBConnection()
+        # books only holds status [skipped wanted open have ignored]
+        # wanted holds status [snatched processed]
+        books = myDB.select('SELECT * FROM books WHERE Status = ?', [whichStatus])
+        return serve_template(templatename="managebooks.html", title="Book Status Management",
+                              books=books, whichStatus=whichStatus)
+    manage.exposed = True
+
+#    def markWanted(self, action=None, **args):
+#        myDB = database.DBConnection()
+#
+#        for nzbtitle in args:
+#            if not nzbtitle == 'book_table_length':
+#                if action != "Delete":
+#                    controlValueDict = {"NZBtitle": nzbtitle}
+#                    newValueDict = {
+#                        "Status": action,
+#                        "NZBDate": formatter.today()  # mark when we wanted it
+#                    }
+#                    myDB.upsert("wanted", newValueDict, controlValueDict)
+#                    logger.info(u'Status of wanted item %s changed to %s' % (nzbtitle, action))
+#                else:
+#                    myDB.action('DELETE from wanted WHERE NZBtitle="%s"' % nzbtitle)
+#                    logger.info(u'Item %s removed from wanted' % nzbtitle)
+#                raise cherrypy.HTTPRedirect("wanted")
+#    markWanted.exposed = True
+
+#    def updateRegex(self, action=None, title=None):
+#        myDB = database.DBConnection()
+#        controlValueDict = {"Title": title}
+#        newValueDict = {
+#            "Regex":       action,
+#        }
+#        myDB.upsert("magazines", newValueDict, controlValueDict)
+#        raise cherrypy.HTTPRedirect("magazines")
+#    updateRegex.exposed = True
