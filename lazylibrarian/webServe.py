@@ -17,7 +17,6 @@ from lazylibrarian import logger, importer, database, postprocess, formatter, \
 from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
 from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
 from lazylibrarian.searchmag import search_magazines
-from lazylibrarian.formatter import checked
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
 
@@ -58,8 +57,6 @@ class WebInterface(object):
                           if os.path.isdir(os.path.join(http_look_dir, name))]
         status_list = ['Skipped', 'Wanted', 'Open', 'Ignored']
         # Don't pass the whole config, no need to pass the lazylibrarian.globals
-        # We still pass the tickboxes with either "Checked" or ""
-        # If we can do this in the config.html file we don't need to pass them either 
         config = {
             "http_look_list":   http_look_list,
             "status_list":	    status_list
