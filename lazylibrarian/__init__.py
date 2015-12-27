@@ -83,7 +83,7 @@ NZBGET_HOST = None
 NZBGET_USER = None
 NZBGET_PASS = None
 NZBGET_CATEGORY = None
-NZBGET_PRIORITY = None
+NZBGET_PRIORITY = 0
 
 DESTINATION_COPY = 0
 DESTINATION_DIR = None
@@ -221,7 +221,7 @@ PUSHOVER_KEYS = None
 PUSHOVER_DEVICE = None
 PUSHOVER_ONSNATCH = 0
 PUSHOVER_ONDOWNLOAD = 0
-PUSHOVER_PRIORITY = None
+PUSHOVER_PRIORITY = 0
 
 USE_ANDROIDPN = 0
 ANDROIDPN_NOTIFY_ONSNATCH = 0
@@ -232,7 +232,7 @@ ANDROIDPN_USERNAME = None
 
 USE_NMA = 0
 NMA_APIKEY = None
-NMA_PRIORITY = None
+NMA_PRIORITY = 0
 NMA_ONSNATCH = None
 NMA_ONDOWNLOAD = None
 
@@ -270,7 +270,7 @@ def check_section(sec):
         return False
 
 
-def check_setting_boolean(config, cfg_name, item_name, def_val):
+def check_setting_bool(config, cfg_name, item_name, def_val):
     """ Check if option exists and coerce to boolean, if not create it """
     try:
         my_val = config.getboolean(cfg_name, item_name)
@@ -409,7 +409,7 @@ def initialize():
         HTTP_ROOT = check_setting_str(CFG, 'General', 'http_root', '')
         HTTP_LOOK = check_setting_str(CFG, 'General', 'http_look', 'default')
 
-        LAUNCH_BROWSER = check_setting_int(CFG, 'General', 'launch_browser', 1)
+        LAUNCH_BROWSER = check_setting_bool(CFG, 'General', 'launch_browser', 1)
 
         PROXY_HOST = check_setting_str(CFG, 'General', 'proxy_host', '')
         PROXY_TYPE = check_setting_str(CFG, 'General', 'proxy_type', '')
@@ -419,8 +419,8 @@ def initialize():
         IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', 'en, eng, en-US')
         IMP_MONTHLANG = check_setting_str(CFG, 'General', 'imp_monthlang', 'en_US.utf8')
         IMP_AUTOADD = check_setting_str(CFG, 'General', 'imp_autoadd', '')
-        IMP_ONLYISBN = check_setting_int(CFG, 'General', 'imp_onlyisbn', 0)
-        IMP_SINGLEBOOK = check_setting_int(CFG, 'General', 'imp_singlebook', 0)
+        IMP_ONLYISBN = check_setting_bool(CFG, 'General', 'imp_onlyisbn', 0)
+        IMP_SINGLEBOOK = check_setting_bool(CFG, 'General', 'imp_singlebook', 0)
 
         GIT_USER = check_setting_str(CFG, 'Git', 'git_user', 'dobytang')
         GIT_REPO = check_setting_str(CFG, 'Git', 'git_repo', 'lazylibrarian')
@@ -444,28 +444,28 @@ def initialize():
         NZBGET_CATEGORY = check_setting_str(CFG, 'NZBGet', 'nzbget_cat', '')
         NZBGET_PRIORITY = check_setting_int(CFG, 'NZBGet', 'nzbget_priority', '0')
 
-        DESTINATION_COPY = check_setting_int(CFG, 'General', 'destination_copy', 0)
+        DESTINATION_COPY = check_setting_bool(CFG, 'General', 'destination_copy', 0)
         DESTINATION_DIR = check_setting_str(CFG, 'General', 'destination_dir', '')
         ALTERNATE_DIR = check_setting_str(CFG, 'General', 'alternate_dir', '')
         DOWNLOAD_DIR = check_setting_str(CFG, 'General', 'download_dir', '')
 
-        USE_NZB = check_setting_int(CFG, 'DLMethod', 'use_nzb', 0)
-        USE_TOR = check_setting_int(CFG, 'DLMethod', 'use_tor', 0)
+        USE_NZB = check_setting_bool(CFG, 'DLMethod', 'use_nzb', 0)
+        USE_TOR = check_setting_bool(CFG, 'DLMethod', 'use_tor', 0)
 
-        NZB_DOWNLOADER_SABNZBD = check_setting_int(CFG, 'USENET', 'nzb_downloader_sabnzbd', 0)
-        NZB_DOWNLOADER_NZBGET = check_setting_int(CFG, 'USENET', 'nzb_downloader_nzbget', 0)
-        NZB_DOWNLOADER_BLACKHOLE = check_setting_int(CFG, 'USENET', 'nzb_downloader_blackhole', 0)
+        NZB_DOWNLOADER_SABNZBD = check_setting_bool(CFG, 'USENET', 'nzb_downloader_sabnzbd', 0)
+        NZB_DOWNLOADER_NZBGET = check_setting_bool(CFG, 'USENET', 'nzb_downloader_nzbget', 0)
+        NZB_DOWNLOADER_BLACKHOLE = check_setting_bool(CFG, 'USENET', 'nzb_downloader_blackhole', 0)
         NZB_BLACKHOLEDIR = check_setting_str(CFG, 'USENET', 'nzb_blackholedir', '')
         USENET_RETENTION = check_setting_str(CFG, 'USENET', 'usenet_retention', '')
 
-        NZBMATRIX = check_setting_int(CFG, 'NZBMatrix', 'nzbmatrix', 0)
+        NZBMATRIX = check_setting_bool(CFG, 'NZBMatrix', 'nzbmatrix', 0)
         NZBMATRIX_USER = check_setting_str(CFG, 'NZBMatrix', 'nzbmatrix_user', '')
         NZBMATRIX_API = check_setting_str(CFG, 'NZBMatrix', 'nzbmatrix_api', '')
 
 # legacy names here - have changed some config names for consistency
 # these entries convert the old name to the new one so we don't break existing configs
         if CFG.has_section('UsenetCrawler'):
-            NEWZNAB0 = check_setting_int(CFG, 'UsenetCrawler', 'usenetcrawler', 0)
+            NEWZNAB0 = check_setting_bool(CFG, 'UsenetCrawler', 'usenetcrawler', 0)
             NEWZNAB_HOST0 = check_setting_str(CFG, 'UsenetCrawler', 'usenetcrawler_host', '')
             NEWZNAB_API0 = check_setting_str(CFG, 'UsenetCrawler', 'usenetcrawler_api', '')
             CFG.remove_option('UsenetCrawler', 'usenetcrawler')
@@ -477,7 +477,7 @@ def initialize():
             CFG.set('Newznab0', 'newznab_host0', NEWZNAB_HOST0)
             CFG.set('Newznab0', 'newznab_api0', NEWZNAB_API0)
         if CFG.has_section('Newznab'):
-            NEWZNAB1 = check_setting_int(CFG, 'Newznab', 'newznab', 0)
+            NEWZNAB1 = check_setting_bool(CFG, 'Newznab', 'newznab', 0)
             NEWZNAB_HOST1 = check_setting_str(CFG, 'Newznab', 'newznab_host', '')
             NEWZNAB_API1 = check_setting_str(CFG, 'Newznab', 'newznab_api', '')
             CFG.remove_option('Newznab', 'newznab')
@@ -489,44 +489,44 @@ def initialize():
             CFG.set('Newznab1', 'newznab_host1', NEWZNAB_HOST1)
             CFG.set('Newznab1', 'newznab_api1', NEWZNAB_API1)
         if not NEWZNAB_HOST0:  # did we pick up anything under the old name
-            NEWZNAB0 = check_setting_int(CFG, 'Newznab0', 'newznab0', 0)
+            NEWZNAB0 = check_setting_bool(CFG, 'Newznab0', 'newznab0', 0)
             NEWZNAB_HOST0 = check_setting_str(CFG, 'Newznab0', 'newznab_host0', '')
             NEWZNAB_API0 = check_setting_str(CFG, 'Newznab0', 'newznab_api0', '')
         if not NEWZNAB_HOST1:
-            NEWZNAB1 = check_setting_int(CFG, 'Newznab1', 'newznab1', 0)
+            NEWZNAB1 = check_setting_bool(CFG, 'Newznab1', 'newznab1', 0)
             NEWZNAB_HOST1 = check_setting_str(CFG, 'Newznab1', 'newznab_host1', '')
             NEWZNAB_API1 = check_setting_str(CFG, 'Newznab1', 'newznab_api1', '')
 # end of legacy conversions
-        NEWZNAB2 = check_setting_int(CFG, 'Newznab2', 'newznab2', 0)
+        NEWZNAB2 = check_setting_bool(CFG, 'Newznab2', 'newznab2', 0)
         NEWZNAB_HOST2 = check_setting_str(CFG, 'Newznab2', 'newznab_host2', '')
         NEWZNAB_API2 = check_setting_str(CFG, 'Newznab2', 'newznab_api2', '')
-        NEWZNAB3 = check_setting_int(CFG, 'Newznab3', 'newznab3', 0)
+        NEWZNAB3 = check_setting_bool(CFG, 'Newznab3', 'newznab3', 0)
         NEWZNAB_HOST3 = check_setting_str(CFG, 'Newznab3', 'newznab_host3', '')
         NEWZNAB_API3 = check_setting_str(CFG, 'Newznab3', 'newznab_api3', '')
-        NEWZNAB4 = check_setting_int(CFG, 'Newznab4', 'newznab4', 0)
+        NEWZNAB4 = check_setting_bool(CFG, 'Newznab4', 'newznab4', 0)
         NEWZNAB_HOST4 = check_setting_str(CFG, 'Newznab4', 'newznab_host4', '')
         NEWZNAB_API4 = check_setting_str(CFG, 'Newznab4', 'newznab_api4', '')
 
-        TORZNAB0 = check_setting_int(CFG, 'Torznab0', 'torznab0', 0)
+        TORZNAB0 = check_setting_bool(CFG, 'Torznab0', 'torznab0', 0)
         TORZNAB_HOST0 = check_setting_str(CFG, 'Torznab0', 'torznab_host0', '')
         TORZNAB_API0 = check_setting_str(CFG, 'Torznab0', 'torznab_api0', '')
-        TORZNAB1 = check_setting_int(CFG, 'Torznab1', 'torznab1', 0)
+        TORZNAB1 = check_setting_bool(CFG, 'Torznab1', 'torznab1', 0)
         TORZNAB_HOST1 = check_setting_str(CFG, 'Torznab1', 'torznab_host1', '')
         TORZNAB_API1 = check_setting_str(CFG, 'Torznab1', 'torznab_api1', '')
-        TORZNAB2 = check_setting_int(CFG, 'Torznab2', 'torznab2', 0)
+        TORZNAB2 = check_setting_bool(CFG, 'Torznab2', 'torznab2', 0)
         TORZNAB_HOST2 = check_setting_str(CFG, 'Torznab2', 'torznab_host2', '')
         TORZNAB_API2 = check_setting_str(CFG, 'Torznab2', 'torznab_api2', '')
-        TORZNAB3 = check_setting_int(CFG, 'Torznab3', 'torznab3', 0)
+        TORZNAB3 = check_setting_bool(CFG, 'Torznab3', 'torznab3', 0)
         TORZNAB_HOST3 = check_setting_str(CFG, 'Torznab3', 'torznab_host3', '')
         TORZNAB_API3 = check_setting_str(CFG, 'Torznab3', 'torznab_api3', '')
-        TORZNAB4 = check_setting_int(CFG, 'Torznab4', 'torznab4', 0)
+        TORZNAB4 = check_setting_bool(CFG, 'Torznab4', 'torznab4', 0)
         TORZNAB_HOST4 = check_setting_str(CFG, 'Torznab4', 'torznab_host4', '')
         TORZNAB_API4 = check_setting_str(CFG, 'Torznab4', 'torznab_api4', '')
 
-        TOR_DOWNLOADER_BLACKHOLE = check_setting_int(CFG, 'TORRENT', 'tor_downloader_blackhole', 0)
-        TOR_DOWNLOADER_UTORRENT = check_setting_int(CFG, 'TORRENT', 'tor_downloader_utorrent', 0)
-        TOR_DOWNLOADER_TRANSMISSION = check_setting_int(CFG, 'TORRENT', 'tor_downloader_transmission', 0)
-        TOR_DOWNLOADER_DELUGE = check_setting_int(CFG, 'TORRENT', 'tor_downloader_deluge', 0)
+        TOR_DOWNLOADER_BLACKHOLE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_blackhole', 0)
+        TOR_DOWNLOADER_UTORRENT = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_utorrent', 0)
+        TOR_DOWNLOADER_TRANSMISSION = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_transmission', 0)
+        TOR_DOWNLOADER_DELUGE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_deluge', 0)
         NUMBEROFSEEDERS = check_setting_int(CFG, 'TORRENT', 'numberofseeders', 10)
         TORRENT_DIR = check_setting_str(CFG, 'TORRENT', 'torrent_dir', '')
 
@@ -544,10 +544,10 @@ def initialize():
         DELUGE_USER = check_setting_str(CFG, 'DELUGE', 'deluge_user', '')
         DELUGE_PASS = check_setting_str(CFG, 'DELUGE', 'deluge_pass', '')
 
-        KAT = check_setting_int(CFG, 'KAT', 'kat', 0)
+        KAT = check_setting_bool(CFG, 'KAT', 'kat', 0)
         KAT_HOST = check_setting_str(CFG, 'KAT', 'kat_host', 'kat.cr')
 
-        NEWZBIN = check_setting_int(CFG, 'Newzbin', 'newzbin', 0)
+        NEWZBIN = check_setting_bool(CFG, 'Newzbin', 'newzbin', 0)
         NEWZBIN_UID = check_setting_str(CFG, 'Newzbin', 'newzbin_uid', '')
         NEWZBIN_PASS = check_setting_str(CFG, 'Newzbin', 'newzbin_pass', '')
         EBOOK_TYPE = check_setting_str(CFG, 'General', 'ebook_type', 'epub, mobi, pdf')
@@ -556,8 +556,8 @@ def initialize():
         SCAN_INTERVAL = check_setting_int(CFG, 'SearchScan', 'scan_interval', '10')
         VERSIONCHECK_INTERVAL = check_setting_int(CFG, 'SearchScan', 'versioncheck_interval', '24')
 
-        FULL_SCAN = check_setting_int(CFG, 'LibraryScan', 'full_scan', 0)
-        ADD_AUTHOR = check_setting_int(CFG, 'LibraryScan', 'add_author', 1)
+        FULL_SCAN = check_setting_bool(CFG, 'LibraryScan', 'full_scan', 0)
+        ADD_AUTHOR = check_setting_bool(CFG, 'LibraryScan', 'add_author', 1)
         NOTFOUND_STATUS = check_setting_str(CFG, 'LibraryScan', 'notfound_status', 'Skipped')
         NEWBOOK_STATUS = check_setting_str(CFG, 'LibraryScan', 'newbook_status', 'Skipped')
 
@@ -565,46 +565,46 @@ def initialize():
         EBOOK_DEST_FILE = check_setting_str(CFG, 'PostProcess', 'ebook_dest_file', '$Title - $Author')
         MAG_DEST_FOLDER = check_setting_str(CFG, 'PostProcess', 'mag_dest_folder', '_Magazines/$Title/$IssueDate')
         MAG_DEST_FILE = check_setting_str(CFG, 'PostProcess', 'mag_dest_file', '$IssueDate - $Title')
-        MAG_RELATIVE = check_setting_int(CFG, 'PostProcess', 'mag_relative', 1)
+        MAG_RELATIVE = check_setting_bool(CFG, 'PostProcess', 'mag_relative', 1)
 
-        USE_TWITTER = check_setting_int(CFG, 'Twitter', 'use_twitter', 0)
-        TWITTER_NOTIFY_ONSNATCH = check_setting_int(CFG, 'Twitter', 'twitter_notify_onsnatch', 0)
-        TWITTER_NOTIFY_ONDOWNLOAD = check_setting_int(CFG, 'Twitter', 'twitter_notify_ondownload', 0)
+        USE_TWITTER = check_setting_bool(CFG, 'Twitter', 'use_twitter', 0)
+        TWITTER_NOTIFY_ONSNATCH = check_setting_bool(CFG, 'Twitter', 'twitter_notify_onsnatch', 0)
+        TWITTER_NOTIFY_ONDOWNLOAD = check_setting_bool(CFG, 'Twitter', 'twitter_notify_ondownload', 0)
         TWITTER_USERNAME = check_setting_str(CFG, 'Twitter', 'twitter_username', '')
         TWITTER_PASSWORD = check_setting_str(CFG, 'Twitter', 'twitter_password', '')
         TWITTER_PREFIX = check_setting_str(CFG, 'Twitter', 'twitter_prefix', 'LazyLibrarian')
 
-        USE_BOXCAR = check_setting_int(CFG, 'Boxcar', 'use_boxcar', 0)
-        BOXCAR_NOTIFY_ONSNATCH = check_setting_int(CFG, 'Boxcar', 'boxcar_notify_onsnatch', 0)
-        BOXCAR_NOTIFY_ONDOWNLOAD = check_setting_int(CFG, 'Boxcar', 'boxcar_notify_ondownload', 0)
+        USE_BOXCAR = check_setting_bool(CFG, 'Boxcar', 'use_boxcar', 0)
+        BOXCAR_NOTIFY_ONSNATCH = check_setting_bool(CFG, 'Boxcar', 'boxcar_notify_onsnatch', 0)
+        BOXCAR_NOTIFY_ONDOWNLOAD = check_setting_bool(CFG, 'Boxcar', 'boxcar_notify_ondownload', 0)
         BOXCAR_TOKEN = check_setting_str(CFG, 'Boxcar', 'boxcar_token', '')
 
-        USE_PUSHBULLET = check_setting_int(CFG, 'Pushbullet', 'use_pushbullet', 0)
-        PUSHBULLET_NOTIFY_ONSNATCH = check_setting_int(CFG, 'Pushbullet', 'pushbullet_notify_onsnatch', 0)
-        PUSHBULLET_NOTIFY_ONDOWNLOAD = check_setting_int(CFG, 'Pushbullet', 'pushbullet_notify_ondownload', 0)
+        USE_PUSHBULLET = check_setting_bool(CFG, 'Pushbullet', 'use_pushbullet', 0)
+        PUSHBULLET_NOTIFY_ONSNATCH = check_setting_bool(CFG, 'Pushbullet', 'pushbullet_notify_onsnatch', 0)
+        PUSHBULLET_NOTIFY_ONDOWNLOAD = check_setting_bool(CFG, 'Pushbullet', 'pushbullet_notify_ondownload', 0)
         PUSHBULLET_TOKEN = check_setting_str(CFG, 'Pushbullet', 'pushbullet_token', '')
         PUSHBULLET_DEVICEID = check_setting_str(CFG, 'Pushbullet', 'pushbullet_deviceid', '')
 
-        USE_PUSHOVER = check_setting_int(CFG, 'Pushover', 'use_pushover', 0)
-        PUSHOVER_ONSNATCH = check_setting_int(CFG, 'Pushover', 'pushover_onsnatch', 0)
-        PUSHOVER_ONDOWNLOAD = check_setting_int(CFG, 'Pushover', 'pushover_ondownload', 0)
+        USE_PUSHOVER = check_setting_bool(CFG, 'Pushover', 'use_pushover', 0)
+        PUSHOVER_ONSNATCH = check_setting_bool(CFG, 'Pushover', 'pushover_onsnatch', 0)
+        PUSHOVER_ONDOWNLOAD = check_setting_bool(CFG, 'Pushover', 'pushover_ondownload', 0)
         PUSHOVER_KEYS = check_setting_str(CFG, 'Pushover', 'pushover_keys', '')
         PUSHOVER_APITOKEN = check_setting_str(CFG, 'Pushover', 'pushover_apitoken', '')
         PUSHOVER_PRIORITY = check_setting_int(CFG, 'Pushover', 'pushover_priority', 0)
         PUSHOVER_DEVICE = check_setting_str(CFG, 'Pushover', 'pushover_device', '')
 
-        USE_ANDROIDPN = check_setting_int(CFG, 'AndroidPN', 'use_androidpn', 0)
-        ANDROIDPN_NOTIFY_ONSNATCH = check_setting_int(CFG, 'AndroidPN', 'androidpn_notify_onsnatch', 0)
-        ANDROIDPN_NOTIFY_ONDOWNLOAD = check_setting_int(CFG, 'AndroidPN', 'androidpn_notify_ondownload', 0)
+        USE_ANDROIDPN = check_setting_bool(CFG, 'AndroidPN', 'use_androidpn', 0)
+        ANDROIDPN_NOTIFY_ONSNATCH = check_setting_bool(CFG, 'AndroidPN', 'androidpn_notify_onsnatch', 0)
+        ANDROIDPN_NOTIFY_ONDOWNLOAD = check_setting_bool(CFG, 'AndroidPN', 'androidpn_notify_ondownload', 0)
         ANDROIDPN_URL = check_setting_str(CFG, 'AndroidPN', 'androidpn_url', '')
         ANDROIDPN_USERNAME = check_setting_str(CFG, 'AndroidPN', 'androidpn_username', '')
         ANDROIDPN_BROADCAST = check_setting_int(CFG, 'AndroidPN', 'androidpn_broadcast', 1)
 
-        USE_NMA = check_setting_int(CFG, 'NMA', 'use_nma', 0)
+        USE_NMA = check_setting_bool(CFG, 'NMA', 'use_nma', 0)
         NMA_APIKEY = check_setting_str(CFG, 'NMA', 'nma_apikey', '')
         NMA_PRIORITY = check_setting_int(CFG, 'NMA', 'nma_priority', 0)
-        NMA_ONSNATCH = check_setting_int(CFG, 'NMA', 'nma_onsnatch', 0)
-        NMA_ONDOWNLOAD = check_setting_int(CFG, 'NMA', 'nma_ondownload', 0)
+        NMA_ONSNATCH = check_setting_bool(CFG, 'NMA', 'nma_onsnatch', 0)
+        NMA_ONDOWNLOAD = check_setting_bool(CFG, 'NMA', 'nma_ondownload', 0)
 
         BOOK_API = check_setting_str(CFG, 'API', 'book_api', 'GoodReads')
         GR_API = check_setting_str(CFG, 'API', 'gr_api', 'ckvsiSDsuqh7omh74ZZ6Q')

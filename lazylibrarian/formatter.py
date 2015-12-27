@@ -73,11 +73,11 @@ def datecompare(nzbdate, control_date):
     return dtage.days
 
 
-def checked(variable):
-    if variable:
-        return 'Checked'
-    else:
-        return ''
+#def checked(variable):
+#    if  variable:
+#        return 'Checked'
+#    else:
+#        return ''
 
 
 def is_valid_isbn(isbn):
