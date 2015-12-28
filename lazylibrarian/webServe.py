@@ -683,19 +683,23 @@ class WebInterface(object):
                 myDB.upsert("wanted", newValueDict, controlValueDict)
                 title = myDB.select("SELECT * from wanted WHERE NZBurl = ?", [nzburl])
                 for item in title:
-                    bookid = item['BookID']
-                    nzbprov = item['NZBprov']
-                    nzbtitle = item['NZBtitle']
                     nzburl = item['NZBurl']
-                    nzbmode = item['NZBmode']
-                    maglist.append({
-                        'bookid': bookid,
-                        'nzbprov': nzbprov,
-                        'nzbtitle': nzbtitle,
-                        'nzburl': nzburl,
-                        'nzbmode': nzbmode
-                    })
-                logger.info(u'Status set to %s for %s' % (action, nzbtitle))
+                    if action == 'Delete':
+                        myDB.action('DELETE from wanted WHERE NZBurl="%s"' % nzburl)
+                        logger.debug(u'Item %s removed from past issues' % nzburl)
+                    else:
+                        bookid = item['BookID']
+                        nzbprov = item['NZBprov']
+                        nzbtitle = item['NZBtitle']
+                        nzbmode = item['NZBmode']
+                        maglist.append({
+                            'bookid': bookid,
+                            'nzbprov': nzbprov,
+                            'nzbtitle': nzbtitle,
+                            'nzburl': nzburl,
+                            'nzbmode': nzbmode
+                        })
+                        logger.info(u'Status set to %s for %s' % (action, nzbtitle))
 
         # start searchthreads
         if action == 'Wanted':
@@ -987,7 +991,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         if type == 'all':
             logger.info(u"Clearing all history")
-            myDB.action('DELETE from wanted')
+            myDB.action("DELETE from wanted WHERE Status != 'Skipped' and Status != 'Ignored'")
         else:
             logger.info(u"Clearing history where status is %s" % type)
             myDB.action('DELETE from wanted WHERE Status="%s"' % type)
