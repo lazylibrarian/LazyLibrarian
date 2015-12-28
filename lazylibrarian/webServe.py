@@ -69,8 +69,8 @@ class WebInterface(object):
                      imp_onlyisbn=0, imp_singlebook=0, imp_preflang=None, imp_monthlang=None,
                      imp_autoadd=None, match_ratio=80, nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0,
                      nzb_downloader_blackhole=0, use_nzb=0, use_tor=0, proxy_host=None, proxy_type=None,
-                     sab_host=None, sab_port=None, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None,
-                     destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=None,
+                     sab_host=None, sab_port=0, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None,
+                     destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=0,
                      nzb_blackholedir=None, alternate_dir=None, torrent_dir=None, numberofseeders=0,
                      tor_downloader_blackhole=0, tor_downloader_utorrent=0, nzbget_host=None, nzbget_user=None,
                      nzbget_pass=None, nzbget_cat=None, nzbget_priority=0, newznab0=0, newznab_host0=None,
@@ -89,7 +89,7 @@ class WebInterface(object):
                      notfound_status='Skipped', newbook_status='Skipped', full_scan=0, add_author=0,
                      tor_downloader_transmission=0, transmission_host=None, transmission_user=None,
                      transmission_pass=None, tor_downloader_deluge=0, deluge_host=None, deluge_user=None,
-                     deluge_pass=None, deluge_port=None, utorrent_label=None, use_boxcar=0, boxcar_notify_onsnatch=0,
+                     deluge_pass=None, deluge_port=0, utorrent_label=None, use_boxcar=0, boxcar_notify_onsnatch=0,
                      boxcar_notify_ondownload=0, boxcar_token=None, use_pushbullet=0, pushbullet_notify_onsnatch=0,
                      pushbullet_notify_ondownload=0, pushbullet_token=None, pushbullet_deviceid=None,
                      use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys=None,
@@ -100,7 +100,7 @@ class WebInterface(object):
 
         lazylibrarian.HTTP_HOST = http_host
         lazylibrarian.HTTP_ROOT = http_root
-        lazylibrarian.HTTP_PORT = http_port
+        lazylibrarian.HTTP_PORT = formatter.check_int(http_port, 5299)
         lazylibrarian.HTTP_USER = http_user
         lazylibrarian.HTTP_PASS = http_pass
         lazylibrarian.HTTP_LOOK = http_look
@@ -108,7 +108,7 @@ class WebInterface(object):
         lazylibrarian.PROXY_HOST = proxy_host
         lazylibrarian.PROXY_TYPE = proxy_type
         lazylibrarian.LOGDIR = logdir
-        lazylibrarian.MATCH_RATIO = match_ratio
+        lazylibrarian.MATCH_RATIO = formatter.check_int(match_ratio, 80)
 
         lazylibrarian.IMP_ONLYISBN = bool(imp_onlyisbn)
         lazylibrarian.IMP_SINGLEBOOK = bool(imp_singlebook)
@@ -117,7 +117,7 @@ class WebInterface(object):
         lazylibrarian.IMP_AUTOADD = imp_autoadd
 
         lazylibrarian.SAB_HOST = sab_host
-        lazylibrarian.SAB_PORT = sab_port
+        lazylibrarian.SAB_PORT = formatter.check_int(sab_port, 0)
         lazylibrarian.SAB_SUBDIR = sab_subdir
         lazylibrarian.SAB_API = sab_api
         lazylibrarian.SAB_USER = sab_user
@@ -128,19 +128,19 @@ class WebInterface(object):
         lazylibrarian.NZBGET_USER = nzbget_user
         lazylibrarian.NZBGET_PASS = nzbget_pass
         lazylibrarian.NZBGET_CATEGORY = nzbget_cat
-        lazylibrarian.NZBGET_PRIORITY = int(nzbget_priority)
+        lazylibrarian.NZBGET_PRIORITY = formatter.check_int(nzbget_priority, 0)
 
         lazylibrarian.DESTINATION_COPY = bool(destination_copy)
         lazylibrarian.DESTINATION_DIR = destination_dir
         lazylibrarian.ALTERNATE_DIR = alternate_dir
         lazylibrarian.DOWNLOAD_DIR = download_dir
-        lazylibrarian.USENET_RETENTION = usenet_retention
+        lazylibrarian.USENET_RETENTION = formatter.check_int(usenet_retention, 0)
         lazylibrarian.NZB_BLACKHOLEDIR = nzb_blackholedir
         lazylibrarian.NZB_DOWNLOADER_SABNZBD = bool(nzb_downloader_sabnzbd)
         lazylibrarian.NZB_DOWNLOADER_NZBGET = bool(nzb_downloader_nzbget)
         lazylibrarian.NZB_DOWNLOADER_BLACKHOLE = bool(nzb_downloader_blackhole)
         lazylibrarian.TORRENT_DIR = torrent_dir
-        lazylibrarian.NUMBEROFSEEDERS = numberofseeders
+        lazylibrarian.NUMBEROFSEEDERS = formatter.check_int(numberofseeders, 0)
         lazylibrarian.TOR_DOWNLOADER_BLACKHOLE = bool(tor_downloader_blackhole)
         lazylibrarian.TOR_DOWNLOADER_UTORRENT = bool(tor_downloader_utorrent)
         lazylibrarian.TOR_DOWNLOADER_TRANSMISSION = bool(tor_downloader_transmission)
@@ -200,7 +200,7 @@ class WebInterface(object):
         lazylibrarian.TRANSMISSION_PASS = transmission_pass
 
         lazylibrarian.DELUGE_HOST = deluge_host
-        lazylibrarian.DELUGE_PORT = deluge_port
+        lazylibrarian.DELUGE_PORT = formatter.check_int(deluge_port, 0)
         lazylibrarian.DELUGE_USER = deluge_user
         lazylibrarian.DELUGE_PASS = deluge_pass
 
@@ -215,9 +215,9 @@ class WebInterface(object):
         lazylibrarian.GR_API = gr_api
         lazylibrarian.GB_API = gb_api
 
-        lazylibrarian.SEARCH_INTERVAL = search_interval
-        lazylibrarian.SCAN_INTERVAL = scan_interval
-        lazylibrarian.VERSIONCHECK_INTERVAL = versioncheck_interval
+        lazylibrarian.SEARCH_INTERVAL = formatter.check_int(search_interval, 360)
+        lazylibrarian.SCAN_INTERVAL = formatter.check_int(scan_interval, 10)
+        lazylibrarian.VERSIONCHECK_INTERVAL = formatter.check_int(versioncheck_interval, 24)
 
         lazylibrarian.FULL_SCAN = bool(full_scan)
         lazylibrarian.NOTFOUND_STATUS = notfound_status
@@ -250,7 +250,7 @@ class WebInterface(object):
         lazylibrarian.PUSHOVER_ONDOWNLOAD = bool(pushover_ondownload)
         lazylibrarian.PUSHOVER_KEYS = pushover_keys
         lazylibrarian.PUSHOVER_APITOKEN = pushover_apitoken
-        lazylibrarian.PUSHOVER_PRIORITY = int(pushover_priority)
+        lazylibrarian.PUSHOVER_PRIORITY = formatter.check_int(pushover_priority, 0)
         lazylibrarian.PUSHOVER_DEVICE = pushover_device
 
         lazylibrarian.USE_ANDROIDPN = bool(use_androidpn)
@@ -258,11 +258,11 @@ class WebInterface(object):
         lazylibrarian.ANDROIDPN_NOTIFY_ONDOWNLOAD = bool(androidpn_notify_ondownload)
         lazylibrarian.ANDROIDPN_URL = androidpn_url
         lazylibrarian.ANDROIDPN_USERNAME = androidpn_username
-        lazylibrarian.ANDROIDPN_BROADCAST = int(androidpn_broadcast)
+        lazylibrarian.ANDROIDPN_BROADCAST = bool(androidpn_broadcast)
 
         lazylibrarian.USE_NMA = bool(use_nma)
         lazylibrarian.NMA_APIKEY = nma_apikey
-        lazylibrarian.NMA_PRIORITY = int(nma_priority)
+        lazylibrarian.NMA_PRIORITY = formatter.check_int(nma_priority, 0)
         lazylibrarian.NMA_ONSNATCH = bool(nma_onsnatch)
         lazylibrarian.NMA_ONDOWNLOAD = bool(nma_ondownload)
 

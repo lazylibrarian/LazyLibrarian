@@ -61,7 +61,7 @@ LOGFULL = False  # include debug on screen if true
 MATCH_RATIO = 80
 
 HTTP_HOST = None
-HTTP_PORT = None
+HTTP_PORT = 5299
 HTTP_USER = None
 HTTP_PASS = None
 HTTP_ROOT = None
@@ -72,7 +72,7 @@ PROXY_HOST = None
 PROXY_TYPE = None
 
 SAB_HOST = None
-SAB_PORT = None
+SAB_PORT = 0
 SAB_SUBDIR = None
 SAB_USER = None
 SAB_PASS = None
@@ -165,7 +165,7 @@ TRANSMISSION_HOST = None
 TRANSMISSION_USER = None
 TRANSMISSION_PASS = None
 
-DELUGE_PORT = None
+DELUGE_PORT = 0
 DELUGE_HOST = None
 DELUGE_USER = None
 DELUGE_PASS = None
@@ -180,7 +180,7 @@ NZB_DOWNLOADER_SABNZBD = 0
 NZB_DOWNLOADER_NZBGET = 0
 NZB_DOWNLOADER_BLACKHOLE = 0
 NZB_BLACKHOLEDIR = None
-USENET_RETENTION = None
+USENET_RETENTION = 0
 
 VERSIONCHECK_INTERVAL = 24  # Every 2 hours
 SEARCH_INTERVAL = 720  # Every 12 hours
@@ -431,7 +431,7 @@ def initialize():
         COMMITS_BEHIND = check_setting_str(CFG, 'Git', 'commits_behind', '')
 
         SAB_HOST = check_setting_str(CFG, 'SABnzbd', 'sab_host', '')
-        SAB_PORT = check_setting_str(CFG, 'SABnzbd', 'sab_port', '')
+        SAB_PORT = check_setting_int(CFG, 'SABnzbd', 'sab_port', 0)
         SAB_SUBDIR = check_setting_str(CFG, 'SABnzbd', 'sab_subdir', '')
         SAB_USER = check_setting_str(CFG, 'SABnzbd', 'sab_user', '')
         SAB_PASS = check_setting_str(CFG, 'SABnzbd', 'sab_pass', '')
@@ -456,7 +456,7 @@ def initialize():
         NZB_DOWNLOADER_NZBGET = check_setting_bool(CFG, 'USENET', 'nzb_downloader_nzbget', 0)
         NZB_DOWNLOADER_BLACKHOLE = check_setting_bool(CFG, 'USENET', 'nzb_downloader_blackhole', 0)
         NZB_BLACKHOLEDIR = check_setting_str(CFG, 'USENET', 'nzb_blackholedir', '')
-        USENET_RETENTION = check_setting_str(CFG, 'USENET', 'usenet_retention', '')
+        USENET_RETENTION = check_setting_int(CFG, 'USENET', 'usenet_retention', 0)
 
         NZBMATRIX = check_setting_bool(CFG, 'NZBMatrix', 'nzbmatrix', 0)
         NZBMATRIX_USER = check_setting_str(CFG, 'NZBMatrix', 'nzbmatrix_user', '')
@@ -540,7 +540,7 @@ def initialize():
         TRANSMISSION_PASS = check_setting_str(CFG, 'TRANSMISSION', 'transmission_pass', '')
 
         DELUGE_HOST = check_setting_str(CFG, 'DELUGE', 'deluge_host', '')
-        DELUGE_PORT = check_setting_int(CFG, 'DELUGE', 'deluge_port', '')
+        DELUGE_PORT = check_setting_int(CFG, 'DELUGE', 'deluge_port', 0)
         DELUGE_USER = check_setting_str(CFG, 'DELUGE', 'deluge_user', '')
         DELUGE_PASS = check_setting_str(CFG, 'DELUGE', 'deluge_pass', '')
 
@@ -598,7 +598,7 @@ def initialize():
         ANDROIDPN_NOTIFY_ONDOWNLOAD = check_setting_bool(CFG, 'AndroidPN', 'androidpn_notify_ondownload', 0)
         ANDROIDPN_URL = check_setting_str(CFG, 'AndroidPN', 'androidpn_url', '')
         ANDROIDPN_USERNAME = check_setting_str(CFG, 'AndroidPN', 'androidpn_username', '')
-        ANDROIDPN_BROADCAST = check_setting_int(CFG, 'AndroidPN', 'androidpn_broadcast', 1)
+        ANDROIDPN_BROADCAST = check_setting_bool(CFG, 'AndroidPN', 'androidpn_broadcast', 1)
 
         USE_NMA = check_setting_bool(CFG, 'NMA', 'use_nma', 0)
         NMA_APIKEY = check_setting_str(CFG, 'NMA', 'nma_apikey', '')

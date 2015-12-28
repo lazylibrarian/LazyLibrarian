@@ -79,6 +79,14 @@ def datecompare(nzbdate, control_date):
 #    else:
 #        return ''
 
+def check_int(var, default):
+    try:
+        if var == int(var):
+            return var
+        return default    
+    except Exception:
+        return default
+
 
 def is_valid_isbn(isbn):
     isbn = re.sub('[- ]', '', isbn)
