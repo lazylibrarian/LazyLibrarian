@@ -686,7 +686,8 @@ class WebInterface(object):
                     nzburl = item['NZBurl']
                     if action == 'Delete':
                         myDB.action('DELETE from wanted WHERE NZBurl="%s"' % nzburl)
-                        logger.debug(u'Item %s removed from past issues' % nzburl)
+                        logger.debug(u'Item %s deleted from past issues' % nzburl)
+                        maglist.append({'nzburl': nzburl})
                     else:
                         bookid = item['BookID']
                         nzbprov = item['NZBprov']
@@ -699,8 +700,11 @@ class WebInterface(object):
                             'nzburl': nzburl,
                             'nzbmode': nzbmode
                         })
-                        logger.info(u'Status set to %s for %s' % (action, nzbtitle))
 
+        if action == 'Delete':
+            logger.info(u'Deleted %s items from past issues' % (len(maglist)))
+        else:            
+            logger.info(u'Status set to %s for %s past issues' % (action, len(maglist)))
         # start searchthreads
         if action == 'Wanted':
             for items in maglist:
