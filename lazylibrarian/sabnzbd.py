@@ -47,14 +47,14 @@ def SABnzbd(title=None, nzburl=None):
     logger.debug(u'Request url for <a href="%s">SABnzbd</a>' % URL)
 
     try:
-        request = urllib.urlopen(URL, timeout=30)
+        request = urllib2.urlopen(URL, timeout=30)
         logger.debug(u'Sending Nzbfile to SAB <a href="%s">URL</a>' % URL)
         logger.debug(u'Sending Nzbfile to SAB')
     except (EOFError, IOError), e:
         logger.error(u"Unable to connect to SAB with URL: %s" % URL)
         return False
 
-    except httplib.InvalidURL, e:
+    except urllib2.HTTPError as e:
         logger.error(u"Invalid SAB host, check your config. Current host: %s" % HOST)
         return False
 

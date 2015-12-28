@@ -30,7 +30,8 @@ def runGit(args):
 
         try:
             logger.debug('(RunGit)Trying to execute: "' + cmd + '" with shell in ' + lazylibrarian.PROG_DIR)
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, cwd=lazylibrarian.PROG_DIR)
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                 shell=True, cwd=lazylibrarian.PROG_DIR)
             output, err = p.communicate()
             logger.debug('(RunGit)Git output: [%s]' % output)
 
@@ -62,16 +63,19 @@ def getInstallType():
         if version.LAZYLIBRARIAN_VERSION.startswith('win32build'):
             lazylibrarian.INSTALL_TYPE = 'win'
             lazylibrarian.CURRENT_BRANCH = 'Windows'
-            logger.debug('(getInstallType) [Windows] install detected. Setting Branch to [%s]' % lazylibrarian.CURRENT_BRANCH)
+            logger.debug('(getInstallType) [Windows] install detected. Setting Branch to [%s]' %
+                         lazylibrarian.CURRENT_BRANCH)
     except:
         if os.path.isdir(os.path.join(lazylibrarian.PROG_DIR, '.git')):
             lazylibrarian.INSTALL_TYPE = 'git'
             lazylibrarian.CURRENT_BRANCH = getCurrentGitBranch()
-            logger.debug('(getInstallType) [GIT] install detected. Setting Branch to [%s] ' % lazylibrarian.CURRENT_BRANCH)
+            logger.debug('(getInstallType) [GIT] install detected. Setting Branch to [%s] ' %
+                         lazylibrarian.CURRENT_BRANCH)
         else:
             lazylibrarian.INSTALL_TYPE = 'source'
             lazylibrarian.CURRENT_BRANCH = 'master'
-            logger.debug('(getInstallType) [Source]install detected. Setting Branch to [%s]' % lazylibrarian.CURRENT_BRANCH)
+            logger.debug('(getInstallType) [Source]install detected. Setting Branch to [%s]' %
+                         lazylibrarian.CURRENT_BRANCH)
 
 #
 # Establish the version of the installed app for Source or GIT only
@@ -124,7 +128,8 @@ def getCurrentVersion():
         version = 'Install type not set'
 
     updateVersionFile(version)
-    logger.debug('(getCurrentVersion) - Install type [%s] Local Version is set to [%s] ' % (lazylibrarian.INSTALL_TYPE, version))
+    logger.debug('(getCurrentVersion) - Install type [%s] Local Version is set to [%s] ' % (
+                 lazylibrarian.INSTALL_TYPE, version))
     return version
 
 #
@@ -135,7 +140,7 @@ def getCurrentVersion():
 def getCurrentGitBranch():
     # Can only work for GIT driven installs, so check install type
     if lazylibrarian.INSTALL_TYPE != 'git':
-        logger.debug('Non GIT Install doing check update. Return NON GIT INSTALL')
+        logger.debug('Non GIT Install doing getCurrentGitBranch')
         return 'NON GIT INSTALL'
 
     # use git rev-parse --abbrev-ref HEAD which returns the name of the current branch
@@ -151,11 +156,8 @@ def getCurrentGitBranch():
 
     return current_branch
 
-# not sure how this is called as we have same function in webServe.py also
-# ensuring both are identical for now - PAB this is the cron job
 
-
-def checkForUpdates():
+def checkForUpdates():  # This is the cron job
     # rename this thread
     threading.currentThread().name = "VERSIONCHECK"
     logger.debug('(checkForUpdates) Set Install Type, Current & Latest Version and Commit status')
@@ -167,8 +169,8 @@ def checkForUpdates():
     # l = checkGithub()
 
 # Return latest version from GITHUB
-#- if GIT install return latest on current branch
-#- if nonGIT install return latest from master
+# if GIT install return latest on current branch
+# if nonGIT install return latest from master
 
 
 def getLatestVersion():
@@ -177,9 +179,9 @@ def getLatestVersion():
     lazylibrarian.COMMITS_BEHIND = 'Unknown'
 
     if lazylibrarian.INSTALL_TYPE == 'git':
-        latest_version = getLatestVersionaFromGit()
+        latest_version = getLatestVersion_FromGit()
     elif lazylibrarian.INSTALL_TYPE == 'source':
-        latest_version = getLatestVersionaFromGit()
+        latest_version = getLatestVersion_FromGit()
     elif lazylibrarian.INSTALL_TYPE == 'win':
         latest_version = 'WIN INSTALL'
     else:
@@ -191,31 +193,35 @@ def getLatestVersion():
 
 # Don't call directly, use getLatestVersion as wrapper.
 # Also removed reference to global variable setting.
-def getLatestVersionaFromGit():
+def getLatestVersion_FromGit():
     latest_version = 'Unknown'
 
     # Can only work for non Windows driven installs, so check install type
     if lazylibrarian.INSTALL_TYPE == 'win':
-        logger.debug('(getLatestVersionaFromGit) Code Error - Windows install - should not be called under a windows install')
+        logger.debug('(getLatestVersion_FromGit) Code Error - Windows install - \
+                     should not be called under a windows install')
         latest_version = 'WINDOWS INSTALL'
     else:
         # check current branch value of the local git repo as folks may pull from a branch not master
         branch = lazylibrarian.CURRENT_BRANCH
 
         if (branch == 'InvalidBranch'):
-            logger.debug('(getLatestVersionaFromGit) - Failed to get a valid branch name from local repo')
+            logger.debug('(getLatestVersion_FromGit) - Failed to get a valid branch name from local repo')
         else:
 
             # Get the latest commit available from github
-            url = 'https://api.github.com/repos/%s/%s/commits/%s' % (lazylibrarian.GIT_USER, lazylibrarian.GIT_REPO, lazylibrarian.GIT_BRANCH)
-            logger.debug('(getLatestVersionaFromGit) Retrieving latest version information from github command=[%s]' % url)
+            url = 'https://api.github.com/repos/%s/%s/commits/%s' % (
+                        lazylibrarian.GIT_USER, lazylibrarian.GIT_REPO, lazylibrarian.GIT_BRANCH)
+            logger.debug('(getLatestVersion_FromGit) Retrieving latest version \
+                         information from github command=[%s]' % url)
             try:
                 result = urllib2.urlopen(url, timeout=30).read()
                 git = simplejson.JSONDecoder().decode(result)
                 latest_version = git['sha']
-                logger.debug('(getLatestVersionaFromGit) Branch [%s] has Latest Version has been set to [%s]' % (branch, latest_version))
+                logger.debug('(getLatestVersion_FromGit) Branch [%s] has Latest Version has been set to [%s]' % (
+                             branch, latest_version))
             except:
-                logger.warn('(getLatestVersionaFromGit) Could not get the latest commit from github')
+                logger.warn('(getLatestVersion_FromGit) Could not get the latest commit from github')
                 latest_version = 'Not_Available_From_GitHUB'
 
     return latest_version
@@ -229,7 +235,8 @@ def getCommitDifferenceFromGit():
     # version in the current branch.
     if lazylibrarian.CURRENT_VERSION:
         logger.info('[VersionCheck] -  Comparing currently installed version with latest github version')
-        url = 'https://api.github.com/repos/%s/LazyLibrarian/compare/%s...%s' % (lazylibrarian.GIT_USER, lazylibrarian.CURRENT_VERSION, lazylibrarian.LATEST_VERSION)
+        url = 'https://api.github.com/repos/%s/LazyLibrarian/compare/%s...%s' % (
+               lazylibrarian.GIT_USER, lazylibrarian.CURRENT_VERSION, lazylibrarian.LATEST_VERSION)
         logger.debug('(getCommitDifferenceFromGit) -  Check for differences between local & repo by [%s]' % url)
 
         try:
@@ -241,19 +248,23 @@ def getCommitDifferenceFromGit():
                 logger.debug('pull total_commits from json object')
                 commits = git['total_commits']
 
-                logger.debug('(getCommitDifferenceFromGit) -  GitHub reports as follows Status [%s] - Ahead [%s] - Behind [%s] - Total Commits [%s] ' % (git['status'], git['ahead_by'], git['behind_by'], git['total_commits']))
+                logger.debug('(getCommitDifferenceFromGit) -  GitHub reports as follows Status [%s] - \
+                             Ahead [%s] - Behind [%s] - Total Commits [%s] ' % (
+                             git['status'], git['ahead_by'], git['behind_by'], git['total_commits']))
             except:
                 logger.warn('(getCommitDifferenceFromGit) -  could not get difference status from GitHub')
 
         except:
-            logger.warn('(getCommitDifferenceFromGit) -  Could not get commits behind from github. Can happen if you have a local commit not pushed to repo')
+            logger.warn('(getCommitDifferenceFromGit) -  Could not get commits behind from github. \
+                        Can happen if you have a local commit not pushed to repo')
 
         if commits >= 1:
             logger.info('[VersionCheck] -  New version is available. You are %s commits behind' % commits)
         elif commits == 0:
             logger.info('[VersionCheck] -  lazylibrarian is up to date ')
         elif commits == -1:
-            logger.info('[VersionCheck] -  You are running an unknown version of lazylibrarian. Run the updater to identify your version')
+            logger.info('[VersionCheck] -  You are running an unknown version of lazylibrarian. \
+                        Run the updater to identify your version')
 
     else:
         logger.info('You are running an unknown version of lazylibrarian. Run the updater to identify your version')
@@ -270,12 +281,14 @@ def updateVersionFile(new_version_id):
         version_path = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
 
         try:
-            logger.debug("(updateVersionFile) Updating [%s] with value [%s]" % (version_path, new_version_id))
+            logger.debug("(updateVersionFile) Updating [%s] with value [%s]" % (
+                            version_path, new_version_id))
             ver_file = open(version_path, 'w')
             ver_file.write(new_version_id)
             ver_file.close()
         except IOError, e:
-            logger.error(u"(updateVersionFile) Unable to write current version to version.txt, update not complete: " + e)
+            logger.error(u"(updateVersionFile) Unable to write current version to version.txt, \
+                         update not complete: " + e)
 
 
 def update():
@@ -309,9 +322,10 @@ def update():
         # always to master.
         branch = lazylibrarian.CURRENT_BRANCH
 
-        tar_download_url = 'https://github.com/%s/%s/tarball/%s' % (lazylibrarian.GIT_USER, lazylibrarian.GIT_REPO, lazylibrarian.GIT_BRANCH)
+        tar_download_url = 'https://github.com/%s/%s/tarball/%s' % (
+                            lazylibrarian.GIT_USER, lazylibrarian.GIT_REPO, lazylibrarian.GIT_BRANCH)
         update_dir = os.path.join(lazylibrarian.PROG_DIR, 'update')
-        #version_path = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
+        # version_path = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
 
         try:
             logger.info('(update) Downloading update from: ' + tar_download_url)

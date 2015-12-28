@@ -1,4 +1,5 @@
-# This file is modified to work with lazylibrarian by CurlyMo <curlymoo1@gmail.com> as a part of XBian - XBMC on the Raspberry Pi
+# This file is modified to work with lazylibrarian by CurlyMo <curlymoo1@gmail.com>
+# as a part of XBian - XBMC on the Raspberry Pi
 
 # Author: Nic Wolfe <nic@wolfeden.ca>
 # URL: http://code.google.com/p/sickbeard/
@@ -45,7 +46,8 @@ def sendNZB(nzb):
         nzbgetXMLrpc = 'http://' + nzbgetXMLrpc
         lazylibrarian.NZBGET_HOST.replace('http://', '', 1)
 
-    url = nzbgetXMLrpc % {"host": lazylibrarian.NZBGET_HOST, "username": lazylibrarian.NZBGET_USER, "password": lazylibrarian.NZBGET_PASS}
+    url = nzbgetXMLrpc % {"host": lazylibrarian.NZBGET_HOST, "username": lazylibrarian.NZBGET_USER,
+                          "password": lazylibrarian.NZBGET_PASS}
 
     nzbGetRPC = xmlrpclib.ServerProxy(url)
     try:
@@ -55,7 +57,8 @@ def sendNZB(nzb):
             logger.info(u"Successfully connected to NZBget, but unable to send a message" % (nzb.name + ".nzb"))
 
     except httplib.socket.error, e:
-        logger.error(u"Please check your NZBget host and port (if it is running). NZBget is not responding to this combination")
+        logger.error(u"Please check your NZBget host and port (if it is running). \
+            NZBget is not responding to this combination")
         return False
 
     except xmlrpclib.ProtocolError, e:
@@ -77,15 +80,17 @@ def sendNZB(nzb):
     dupescore = 0
 
     try:
-        # Find out if nzbget supports priority (Version 9.0+), old versions beginning with a 0.x will use the old command
+        # Find out if nzbget supports priority (Version 9.0+), old versions
+        # beginning with a 0.x will use the old command
         nzbget_version_str = nzbGetRPC.version()
         nzbget_version = int(nzbget_version_str[:nzbget_version_str.find(".")])
         logger.debug("NZB Version %s" % nzbget_version)
         # for some reason 14 seems to not work with >= 13 method? I get invalid param autoAdd
         # PAB think its fixed now, code had autoAdd param as "False", it's not a string, it's bool so False
-        if nzbget_version == 0: # or nzbget_version == 14:
+        if nzbget_version == 0:  # or nzbget_version == 14:
             if nzbcontent64 is not None:
-                nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", lazylibrarian.NZBGET_CATEGORY, addToTop, nzbcontent64)
+                    nzbget_result = nzbGetRPC.append(nzb.name + ".nzb",
+                                                     lazylibrarian.NZBGET_CATEGORY, addToTop, nzbcontent64)
             else:
                 # from lazylibrarian.common.providers.generic import GenericProvider
                 # if nzb.resultType == "nzb":
@@ -94,29 +99,33 @@ def sendNZB(nzb):
                 #     if (data is None):
                 #         return False
                 #     nzbcontent64 = standard_b64encode(data)
-                # nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", lazylibrarian.NZBGET_CATEGORY, addToTop, nzbcontent64)
+                # nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", lazylibrarian.NZBGET_CATEGORY,
+                #       addToTop, nzbcontent64)
                 return False
         elif nzbget_version == 12:
             if nzbcontent64 is not None:
-                nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", lazylibrarian.NZBGET_CATEGORY, lazylibrarian.NZBGET_PRIORITY, False,
+                nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", lazylibrarian.NZBGET_CATEGORY,
+                                                 lazylibrarian.NZBGET_PRIORITY, False,
                                                  nzbcontent64, False, dupekey, dupescore, "score")
             else:
-                nzbget_result = nzbGetRPC.appendurl(nzb.name + ".nzb", lazylibrarian.NZBGET_CATEGORY, lazylibrarian.NZBGET_PRIORITY, False,
-                                                    nzb.url, False, dupekey, dupescore, "score")
+                nzbget_result = nzbGetRPC.appendurl(nzb.name + ".nzb", lazylibrarian.NZBGET_CATEGORY,
+                                                    lazylibrarian.NZBGET_PRIORITY, False, nzb.url, False,
+                                                    dupekey, dupescore, "score")
         # v13+ has a new combined append method that accepts both (url and content)
         # also the return value has changed from boolean to integer
         # (Positive number representing NZBID of the queue item. 0 and negative numbers represent error codes.)
         elif nzbget_version >= 13:
-            nzbget_result = True if nzbGetRPC.append(nzb.name + ".nzb", nzbcontent64 if nzbcontent64 is not None else nzb.url,
-                                                     lazylibrarian.NZBGET_CATEGORY, lazylibrarian.NZBGET_PRIORITY, False, False, dupekey, dupescore,
-                                                     "score") > 0 else False
+            nzbget_result = True if nzbGetRPC.append(nzb.name + ".nzb", nzbcontent64 if nzbcontent64 is not None
+                                                     else nzb.url, lazylibrarian.NZBGET_CATEGORY,
+                                                     lazylibrarian.NZBGET_PRIORITY, False, False, dupekey,
+                                                     dupescore, "score") > 0 else False
         else:
             if nzbcontent64 is not None:
-                nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", lazylibrarian.NZBGET_CATEGORY, lazylibrarian.NZBGET_PRIORITY, False,
-                                                 nzbcontent64)
+                nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", lazylibrarian.NZBGET_CATEGORY,
+                                                 lazylibrarian.NZBGET_PRIORITY, False, nzbcontent64)
             else:
-                nzbget_result = nzbGetRPC.appendurl(nzb.name + ".nzb", lazylibrarian.NZBGET_CATEGORY, lazylibrarian.NZBGET_PRIORITY, False,
-                                                    nzb.url)
+                nzbget_result = nzbGetRPC.appendurl(nzb.name + ".nzb", lazylibrarian.NZBGET_CATEGORY,
+                                                    lazylibrarian.NZBGET_PRIORITY, False, nzb.url)
 
         if nzbget_result:
             logger.debug(u"NZB sent to NZBget successfully")

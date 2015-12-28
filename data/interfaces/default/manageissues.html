@@ -1,7 +1,6 @@
 <%inherit file="base.html" />
 <%!
     import lazylibrarian
-    from lazylibrarian.formatter import checked
 %>
 
 <%def name="headerIncludes()">
@@ -12,9 +11,22 @@
 <%def name="body()">
     <br><br>
 
+    <form action="pastIssues" method="get">
+    Manage Issues with status <select name="whichStatus">
+        %for item in ['Skipped', 'Wanted', 'Snatched', 'Ignored']:
+            <option value="${item}"
+                %if whichStatus == item:
+                    selected = "selected"
+                %endif
+            >${item}</option>
+        %endfor
+    </select>
+    <input  class="btn" type="submit" value="Manage" />
+    </form>
+    %if len(issues) > 0:
     <h3>Magazines with status ${whichStatus}</h3>
         <br>
-    <form action="markMags" method="get"><input type="hidden" name="redirect" value="manage">
+    <form action="markIssues" method="get"><input type="hidden" name="redirect" value="manageissues">
     <table class="display" id="book_table">
         <thead>
             <tr>
@@ -28,7 +40,7 @@
         </thead>
 
         <tbody>
-        %for result in books:
+        %for result in issues:
                 <tr class="gradeZ">
                     <td id="select"><input type="checkbox" name="${result['NZBurl']}" class="checkbox" /></td>
                     <td id="magtitle"><BR>${result['NZBtitle']}<BR><BR></td>
@@ -42,16 +54,17 @@
     </table>
     <p>
 
-    Change selected magazines to <select class="markMags" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
+    Change selected magazines to <select class="markIssues" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
         %for item in ['Skipped', 'Wanted', 'Have', 'Ignored']:
             %if whichStatus != item:
                 <option value="${item}">${item}</option>
             %endif
         %endfor
             </select>
-        <input type="submit" class="markMags" value="Go">
+        <input type="submit" class="markIssues" value="Go">
     </p>
     </form>
+    %endif
 
 </%def>
 
@@ -76,7 +89,7 @@
                     ],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ magazines per page",
-                    "sEmptyTable": "No skipped issues found",
+                    "sEmptyTable": "No matching issues found",
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
                     "sInfoEmpty":"Showing 0 to 0 of 0 magazines",
                     "sInfoFiltered":"(filtered from _MAX_ total magazines)"},

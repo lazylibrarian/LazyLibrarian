@@ -3,6 +3,7 @@ import re
 import lazylibrarian
 import shlex
 
+
 def now():
     dtnow = datetime.datetime.now()
     return dtnow.strftime("%Y-%m-%d %H:%M:%S")
@@ -37,8 +38,8 @@ def nzbdate2format(nzbdate):
 
 
 def month2num(month):
-# return month number given month name (long or short) in requested locales
-# or season name (only in English currently)
+    # return month number given month name (long or short) in requested locales
+    # or season name (only in English currently)
 
     month = month.lower()
     for f in range(1, 13):
@@ -72,11 +73,19 @@ def datecompare(nzbdate, control_date):
     return dtage.days
 
 
-def checked(variable):
-    if variable:
-        return 'Checked'
-    else:
-        return ''
+#def checked(variable):
+#    if  variable:
+#        return 'Checked'
+#    else:
+#        return ''
+
+def check_int(var, default):
+    try:
+        if var == int(var):
+            return var
+        return default    
+    except Exception:
+        return default
 
 
 def is_valid_isbn(isbn):
@@ -92,6 +101,7 @@ def is_valid_isbn(isbn):
                     return True
     return False
 
+
 def is_valid_booktype(filename):
     booktype_list = getList(lazylibrarian.EBOOK_TYPE)
     if '.' in filename:
@@ -99,7 +109,8 @@ def is_valid_booktype(filename):
         extn = words[len(words) - 1]
         if extn in booktype_list:
             return True
-    return False 
+    return False
+
 
 def getList(st):
     # split a string into a list

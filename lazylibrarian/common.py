@@ -16,10 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with Sick Beard.  If not, see <http://www.gnu.org/licenses/>.
 
-#import os.path
-#import operator
 import platform
 import re
+import lazylibrarian
+import unicodedata
+import string
 
 USER_AGENT = 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
 
@@ -31,9 +32,6 @@ notifyStrings = {}
 notifyStrings[NOTIFY_SNATCH] = "Started Download"
 notifyStrings[NOTIFY_DOWNLOAD] = "Download Finished"
 
-import lazylibrarian
-import unicodedata
-import string
 
 def remove_accents(str_or_unicode):
     try:
@@ -50,8 +48,9 @@ def removeDisallowedFilenameChars(filename):
         cleanedFilename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore')
     except TypeError:
         cleanedFilename = unicodedata.normalize('NFKD', filename.decode('utf-8')).encode('ASCII', 'ignore')
-    #return u''.join(c for c in cleanedFilename if c in validFilenameChars) <<-- does not work on python3, complains c is int
-    # if you coerce c to str it fails to match, returns empty string.   re.sub works on python2 and 3 
-    return u''+re.sub(validFilenameChars,"", str(cleanedFilename))
+    # return u''.join(c for c in cleanedFilename if c in validFilenameChars)
+    #  does not work on python3, complains c is int
+    # if you coerce c to str it fails to match, returns empty string.
+    # re.sub works on python2 and 3
+    return u''+re.sub(validFilenameChars, "", str(cleanedFilename))
     # returns unicode
-

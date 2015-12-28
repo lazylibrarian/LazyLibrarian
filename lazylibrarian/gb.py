@@ -56,7 +56,7 @@ class GoogleBooks:
             try:
                 startindex = 0
                 resultcount = 0
-                #removedResults = 0
+                # removedResults = 0
                 ignored = 0
                 number_results = 1
                 total_count = 0
@@ -99,7 +99,7 @@ class GoogleBooks:
 
                         if "All" not in valid_langs:  # don't care about languages, accept all
                             try:
-                            # skip if language is not in valid list -
+                                # skip if language is not in valid list -
                                 booklang = item['volumeInfo']['language']
                                 if booklang not in valid_langs:
                                     logger.debug('Skipped a book with language %s' % booklang)
@@ -323,7 +323,8 @@ class GoogleBooks:
                                 # seems google lies to us, sometimes tells us books are in english when they are not
                             if booklang == "Unknown" or booklang == "en":
                                 googlelang = booklang
-                                match = myDB.action('SELECT lang FROM languages where isbn = "%s"' % (isbnhead)).fetchone()
+                                match = myDB.action('SELECT lang FROM languages where isbn = "%s"' %
+                                                    (isbnhead)).fetchone()
                                 if (match):
                                     booklang = match['lang']
                                     cache_hits = cache_hits + 1
@@ -342,18 +343,22 @@ class GoogleBooks:
 
                                         if (resp != 'invalid' and resp != 'unknown'):
                                             booklang = resp  # found a language code
-                                            myDB.action('insert into languages values ("%s", "%s")' % (isbnhead, booklang))
+                                            myDB.action('insert into languages values ("%s", "%s")' %
+                                                        (isbnhead, booklang))
                                             logger.debug(u"LT language: " + booklang)
                                     except Exception, e:
                                         booklang = ""
                                         logger.error("Error finding results: ", e)
 
-                                if googlelang == "en" and not booklang in "en-US, en-GB, eng":  # these are all english
+                                if googlelang == "en" and booklang not in "en-US, en-GB, eng":
+                                    # these are all english, may need to expand this list
                                     booknamealt = item['volumeInfo']['title']
-                                    logger.debug("%s Google thinks [%s], we think [%s]" % (booknamealt, googlelang, booklang))
+                                    logger.debug("%s Google thinks [%s], we think [%s]" %
+                                                 (booknamealt, googlelang, booklang))
                                     gb_lang_change = gb_lang_change + 1
                             else:
-                                match = myDB.action('SELECT lang FROM languages where isbn = "%s"' % (isbnhead)).fetchone()
+                                match = myDB.action('SELECT lang FROM languages where isbn = "%s"' %
+                                                    (isbnhead)).fetchone()
                                 if (not match):
                                     myDB.action('insert into languages values ("%s", "%s")' % (isbnhead, booklang))
                                     logger.debug(u"GB language: " + booklang)
@@ -475,9 +480,11 @@ class GoogleBooks:
         except KeyError:
             pass
 
-        logger.debug('[%s] The Google Books API was hit %s times to populate book list' % (authorname, str(api_hits)))
+        logger.debug('[%s] The Google Books API was hit %s times to populate book list' %
+                     (authorname, str(api_hits)))
 
-        lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorID="%s" AND Status != "Ignored" order by BookDate DESC' % authorid).fetchone()
+        lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorID="%s" \
+                               AND Status != "Ignored" order by BookDate DESC' % authorid).fetchone()
 
         if lastbook:  # maybe there are no books [remaining] for this author
             lastbookname = lastbook['BookName']
@@ -490,11 +497,12 @@ class GoogleBooks:
 
         unignored_count = 0
         totalbook_count = 0
-        
-        unignoredbooks = myDB.select('SELECT COUNT(BookName) as unignored FROM books WHERE AuthorID="%s" AND Status != "Ignored"' % authorid)
+
+        unignoredbooks = myDB.select('SELECT COUNT(BookName) as unignored FROM books WHERE AuthorID="%s" \
+                                     AND Status != "Ignored"' % authorid)
         if unignoredbooks:
             unignored_count = unignoredbooks[0]['unignored']
-            
+
         bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE AuthorID="%s"' % authorid)
         if bookCount:
             totalbook_count = bookCount[0]['counter']
@@ -502,11 +510,11 @@ class GoogleBooks:
         controlValueDict = {"AuthorID": authorid}
         newValueDict = {
             "Status": "Active",
-                "TotalBooks": totalbook_count,
-                "UnignoredBooks": unignored_count,
-                "LastBook": lastbookname,
-                "LastLink": lastbooklink,
-                "LastDate": lastbookdate
+            "TotalBooks": totalbook_count,
+            "UnignoredBooks": unignored_count,
+            "LastBook": lastbookname,
+            "LastLink": lastbooklink,
+            "LastDate": lastbookdate
         }
 
         myDB.upsert("authors", newValueDict, controlValueDict)
@@ -517,12 +525,16 @@ class GoogleBooks:
         logger.debug("Ignored %s books by author marked as Ignored" % book_ignore_count)
         logger.debug("Imported/Updated %s books for author" % resultcount)
 
-        myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' % (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits, ignored, removedResults, not_cached))
+        myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' %
+                    (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits,
+                     ignored, removedResults, not_cached))
 
         if refresh:
-            logger.info("[%s] Book processing complete: Added %s books / Updated %s books" % (authorname, str(added_count), str(updated_count)))
+            logger.info("[%s] Book processing complete: Added %s books / Updated %s books" %
+                        (authorname, str(added_count), str(updated_count)))
         else:
-            logger.info("[%s] Book processing complete: Added %s books to the database" % (authorname, str(added_count)))
+            logger.info("[%s] Book processing complete: Added %s books to the database" %
+                        (authorname, str(added_count)))
 
         return books_dict
 

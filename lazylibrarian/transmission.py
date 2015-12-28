@@ -17,7 +17,6 @@ from lazylibrarian import logger, request
 
 import time
 import json
-#import base64
 import urlparse
 import lazylibrarian
 
@@ -115,7 +114,8 @@ def removeTorrent(torrentid, remove_data=False):
             response = torrentAction(method, arguments)
             return True
         else:
-            logger.info('%s has not finished seeding yet, torrent will not be removed, will try again on next run' % name)
+            logger.info('%s has not finished seeding yet, torrent will not be removed, \
+                        will try again on next run' % name)
     except:
         return False
 
