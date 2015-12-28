@@ -201,7 +201,7 @@ def processDir():
         if ppcount:
             logger.info('%s books/mags have been processed.' % ppcount)
         else:
-            logger.info('No snatched books/mags have been found')
+            logger.debug('No snatched books/mags have been found')
 
 
 def import_book(pp_path=None, bookID=None):
