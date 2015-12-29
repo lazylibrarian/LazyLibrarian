@@ -13,7 +13,7 @@ except ImportError:
         import PythonMagick
         have_magick = "pythonmagick"
     except ImportError:
-        have_magick = False
+        have_magick = "convert"  # may have external, don't know yet
 
 
 def create_cover(issuefile=None):
@@ -30,15 +30,18 @@ def create_cover(issuefile=None):
                     img = PythonMagick.Image()
                     img.read(issuefile + '[0]')
                     img.write(coverfile)
-                else:
+                elif have_magick == 'convert': 
                     # No PythonMagick in python3, hence allow wand, but more complicated
-                    # to install - maybe use external imagemagick convert?
+                    # to install - try to use external imagemagick convert?
                     # should work on win/mac/linux as long as imagemagick is installed
                     # but how best to check if external imagemagick is installed?
-                    # maybe set a global to True, and set to False if subprocess fails
                     # Maybe replace program name 'convert' by a global that user can edit
-                    params = ['convert', issuefile + '[0]', coverfile]
-                    subprocess.check_call(params)
+                    try:
+                        params = ['convert', issuefile + '[0]', coverfile]
+                        subprocess.check_call(params)
+                    except:
+                        logger.warn('No ImageMagick "convert" found')
+                        have_magick = ''  # don't keep trying
             except:
                 logger.debug("Unable to create cover for %s" % issuefile)
 
