@@ -60,7 +60,7 @@ def processAlternate(source_dir=None):
         logger.warn("No book file found in %s" % source_dir)
 
 
-def processDir():
+def processDir(force=False):
     # rename this thread
     threading.currentThread().name = "POSTPROCESS"
 
@@ -79,10 +79,10 @@ def processDir():
     myDB = database.DBConnection()
     snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
 
-    if snatched is None:
-        logger.info('No books are snatched. Nothing to process.')
-    elif downloads is None:
-        logger.info('No downloads are found. Nothing to process.')
+    if force == False and len(snatched) == 0:
+        logger.debug('Nothing marked as snatched. Nothing to process.')
+    elif len(downloads) == 0:
+        logger.debug('No downloads are found. Nothing to process.')
     else:
         ppcount = 0
         for book in snatched:
