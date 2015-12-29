@@ -134,6 +134,7 @@ def search_tor_book(books=None, mags=None):
                     if not snatchedbooks:
                         TORDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
                         notifiers.notify_snatch(formatter.latinToAscii(tor_Title) + ' at ' + formatter.now())
+                        postprocess.schedule_processor(action='Start')
                     break
             if addedCounter == 0:
                 logger.debug("No torrent's found for " + (book["authorName"] + ' ' +

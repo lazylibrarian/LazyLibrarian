@@ -60,6 +60,18 @@ def processAlternate(source_dir=None):
         logger.warn("No book file found in %s" % source_dir)
 
 
+def schedule_processor(action='Start'):
+    """ Start or stop the postprocessor cron job """
+    if action == 'Start':        
+        for job in lazylibrarian.SCHED.get_jobs():
+            if "processDir" in str(job):
+                return  # return if already running, if not, start a new one
+        lazylibrarian.SCHED.add_interval_job(postprocess.processDir, minutes=int(lazylibrarian.SCAN_INTERVAL))
+    else:
+        for job in lazylibrarian.SCHED.get_jobs():
+            if "processDir" in str(job):
+                lazylibrarian.SCHED.unschedule_job(job)
+
 def processDir(force=False):
     # rename this thread
     threading.currentThread().name = "POSTPROCESS"
@@ -80,7 +92,8 @@ def processDir(force=False):
     snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
 
     if force == False and len(snatched) == 0:
-        logger.debug('Nothing marked as snatched. Nothing to process.')
+        logger.debug('Nothing marked as snatched. Stopping cron job.')
+        schedule_processor(action='Stop')
     elif len(downloads) == 0:
         logger.debug('No downloads are found. Nothing to process.')
     else:
@@ -178,12 +191,7 @@ def processDir(force=False):
             else:
                 logger.error('Postprocessing for %s has failed.' % global_name)
                 logger.error('Warning - Residual files remain in %s' % pp_path)
-        #
-        # TODO Seems to be duplication here. Can we just scan once for snatched books
-        # instead of scan for snatched and then scan for directories with "LL.(bookID)" in?
-        # Should there be any directories with "LL.(bookID)" that aren't in snatched?
-        # Maybe this was put in for manually downloaded books?
-        #
+
         downloads = os.listdir(processpath)  # check in case we processed/deleted some above
         for directory in downloads:
             if "LL.(" in directory:

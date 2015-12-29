@@ -717,6 +717,7 @@ class WebInterface(object):
                 else:
                     snatch = NZBDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
                 notifiers.notify_snatch(items['nzbtitle'] + ' at ' + formatter.now())
+                postprocess.schedule_processor(action='Start')
         raise cherrypy.HTTPRedirect("pastIssues")
     markIssues.exposed = True
 
@@ -881,17 +882,19 @@ class WebInterface(object):
     def showJobs(self):
         # show the current status of LL cron jobs in the log
         for job in lazylibrarian.SCHED.get_jobs():
-            jobname = str(job).split(' ')[0].split('.')[2]
-            if jobname == "search_magazines":
+            if "search_magazines" in str(job):
                 jobname = "[CRON] - Check for new magazine issues"
-            elif jobname == "checkForUpdates":
+            elif "checkForUpdates" in str(job):
                 jobname = "[CRON] - Check for LazyLibrarian update"
-            elif jobname == "search_tor_book":
+            elif "search_tor_book" in str(job):
                 jobname = "[CRON] - TOR book search"
-            elif jobname == "search_nzb_book":
+            elif "search_nzb_book" in str(job):
                 jobname = "[CRON] - NZB book search"
-            elif jobname == "processDir":
+            elif "processDir" in str(job):
                 jobname = "[CRON] - Process download directory"
+            else:       
+                jobname = str(job).split(' ')[0].split('.')[2]
+
             jobtime = str(job).split('[')[1].split('.')[0]
             logger.info(u"%s [%s" % (jobname, jobtime))
         logger.info(u"XMLCache %s hits, %s miss" % (int(lazylibrarian.CACHE_HIT), int(lazylibrarian.CACHE_MISS)))
