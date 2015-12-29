@@ -13,7 +13,7 @@ import datetime
 import locale
 import calendar
 import time
-
+import subprocess
 import ConfigParser
 from lib.apscheduler.scheduler import Scheduler
 
@@ -672,6 +672,23 @@ def build_monthtable():
         except:
             locale.setlocale(locale.LC_ALL, current_locale)  # restore entry state
             logger.warn("Unable to load requested locale [%s]" % lang)
+            try:
+                if '_' in lang:
+                    wanted_lang = lang.split('_')[0]
+                else:
+                    wanted_lang = lang
+                params = ['locale', '-a']
+                all_locales = subprocess.check_output(params).split()
+                locale_list = []
+                for a_locale in all_locales:
+                    if a_locale.startswith(wanted_lang):
+                        locale_list.append(a_locale)
+                if locale_list:
+                    logger.warn("Found these alternatives: " + str(locale_list))
+                else:
+                    logger.warn("Unable to find an alternative")
+            except:
+                logger.warn("Unable to get a list of alternatives")
             logger.info("Set locale back to entry state %s" % current_locale)
     # quick sanity check, warn if no english names in table
     eng = 0
