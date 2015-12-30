@@ -81,10 +81,8 @@ def datecompare(nzbdate, control_date):
 
 def check_int(var, default):
     try:
-        if var == int(var):
-            return var
-        return default    
-    except Exception:
+        return int(var)    
+    except ValueError:
         return default
 
 
