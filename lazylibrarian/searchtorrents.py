@@ -23,7 +23,7 @@ from StringIO import StringIO
 import gzip
 
 
-def search_tor_book(books=None, mags=None):
+def search_tor_book(books=None):
     if not(lazylibrarian.USE_TOR):
         logger.warn('Torrent search is disabled')
         return
@@ -38,14 +38,16 @@ def search_tor_book(books=None, mags=None):
     else:
         # The user has added a new book
         searchbooks = []
-        if books is not False:
-            for book in books:
-                searchbook = myDB.select('SELECT BookID, AuthorName, BookName from books WHERE BookID="%s" \
-                                         AND Status="Wanted"' % book['bookid'])
-                for terms in searchbook:
-                    searchbooks.append(terms)
+        for book in books:
+            searchbook = myDB.select('SELECT BookID, AuthorName, BookName from books WHERE BookID="%s" \
+                                     AND Status="Wanted"' % book['bookid'])
+            for terms in searchbook:
+                searchbooks.append(terms)
 
-    if len(searchbooks) == 1:
+    if len(searchbooks) == 0:
+        logger.debug("TOR search requested for no books")
+        return
+    elif len(searchbooks) == 1:
         logger.info('TOR Searching for one book')
     else:
         logger.info('TOR Searching for %i books' % len(searchbooks))
@@ -175,6 +177,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             request.add_header('Accept-encoding', 'gzip')
             request.add_header('User-Agent', common.USER_AGENT)
 
+            # PAB removed this, KAT serves us html instead of torrent if this header is sent
             #if tor_prov == 'KAT':
             #    host = lazylibrarian.KAT_HOST
             #    if not str(host)[:4] == "http":
@@ -253,16 +256,3 @@ def CalcTorrentHash(torrent):
         hash = sha1(bencode(info)).hexdigest()
     logger.debug('Torrent Hash: ' + hash)
     return hash
-
-
-def MakeSearchTermWebSafe(insearchterm=None):
-
-    dic = {'...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': ''}
-
-    searchterm = formatter.latinToAscii(formatter.replace_all(insearchterm, dic))
-
-    searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
-
-    logger.debug("Converting Search Term [%s] to Web Safe Search Term [%s]" % (insearchterm, searchterm))
-
-    return searchterm

@@ -17,7 +17,7 @@ from lazylibrarian.common import USER_AGENT
 from lazylibrarian.searchtorrents import TORDownloadMethod
 
 
-def search_nzb_book(books=None, mags=None):
+def search_nzb_book(books=None):
     if not(lazylibrarian.USE_NZB):
         logger.warn('NZB Search is disabled')
         return
@@ -32,14 +32,16 @@ def search_nzb_book(books=None, mags=None):
     else:
         # The user has added a new book
         searchbooks = []
-        if books is True:
-            for book in books:
-                searchbook = myDB.select('SELECT BookID, AuthorName, BookName from books WHERE BookID="%s" \
-                                         AND Status="Wanted"' % book['bookid'])
-                for terms in searchbook:
-                    searchbooks.append(terms)
+        for book in books:
+            searchbook = myDB.select('SELECT BookID, AuthorName, BookName from books WHERE BookID="%s" \
+                                     AND Status="Wanted"' % book['bookid'])
+            for terms in searchbook:
+                searchbooks.append(terms)
 
-    if len(searchbooks) == 1:
+    if len(searchbooks) == 0:
+        logger.debug("NZB search requested for no books")
+        return
+    elif len(searchbooks) == 1:
         logger.info('NZB Searching for one book')
     else:
         logger.info('NZB Searching for %i books' % len(searchbooks))
@@ -205,16 +207,3 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
     else:
         logger.error(u'Failed to download nzb @ <a href="%s">%s</a>' % (nzburl, nzbprov))
         myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl="%s"' % nzburl)
-
-
-def MakeSearchTermWebSafe(insearchterm=None):
-
-    dic = {'...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': ''}
-
-    searchterm = formatter.latinToAscii(formatter.replace_all(insearchterm, dic))
-
-    searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
-
-    logger.debug("Converting Search Term [%s] to Web Safe Search Term [%s]" % (insearchterm, searchterm))
-
-    return searchterm
