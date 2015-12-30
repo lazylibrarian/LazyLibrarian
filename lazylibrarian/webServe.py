@@ -65,7 +65,7 @@ class WebInterface(object):
     config.exposed = True
 
     def configUpdate(self, http_host='0.0.0.0', http_root=None, http_user=None, http_port=5299,
-                     http_pass=None, http_look=None, launch_browser=0, logdir=None,
+                     http_pass=None, http_look=None, launch_browser=0, logdir=None, loglevel=2,
                      imp_onlyisbn=0, imp_singlebook=0, imp_preflang=None, imp_monthlang=None,
                      imp_autoadd=None, match_ratio=80, nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0,
                      nzb_downloader_blackhole=0, use_nzb=0, use_tor=0, proxy_host=None, proxy_type=None,
@@ -108,6 +108,7 @@ class WebInterface(object):
         lazylibrarian.PROXY_HOST = proxy_host
         lazylibrarian.PROXY_TYPE = proxy_type
         lazylibrarian.LOGDIR = logdir
+        lazylibrarian.LOGLEVEL = formatter.check_int(loglevel, 2)
         lazylibrarian.MATCH_RATIO = formatter.check_int(match_ratio, 80)
 
         lazylibrarian.IMP_ONLYISBN = bool(imp_onlyisbn)
@@ -683,20 +684,28 @@ class WebInterface(object):
                 myDB.upsert("wanted", newValueDict, controlValueDict)
                 title = myDB.select("SELECT * from wanted WHERE NZBurl = ?", [nzburl])
                 for item in title:
-                    bookid = item['BookID']
-                    nzbprov = item['NZBprov']
-                    nzbtitle = item['NZBtitle']
                     nzburl = item['NZBurl']
-                    nzbmode = item['NZBmode']
-                    maglist.append({
-                        'bookid': bookid,
-                        'nzbprov': nzbprov,
-                        'nzbtitle': nzbtitle,
-                        'nzburl': nzburl,
-                        'nzbmode': nzbmode
-                    })
-                logger.info(u'Status set to %s for %s' % (action, nzbtitle))
+                    if action == 'Delete':
+                        myDB.action('DELETE from wanted WHERE NZBurl="%s"' % nzburl)
+                        logger.debug(u'Item %s deleted from past issues' % nzburl)
+                        maglist.append({'nzburl': nzburl})
+                    else:
+                        bookid = item['BookID']
+                        nzbprov = item['NZBprov']
+                        nzbtitle = item['NZBtitle']
+                        nzbmode = item['NZBmode']
+                        maglist.append({
+                            'bookid': bookid,
+                            'nzbprov': nzbprov,
+                            'nzbtitle': nzbtitle,
+                            'nzburl': nzburl,
+                            'nzbmode': nzbmode
+                        })
 
+        if action == 'Delete':
+            logger.info(u'Deleted %s items from past issues' % (len(maglist)))
+        else:            
+            logger.info(u'Status set to %s for %s past issues' % (action, len(maglist)))
         # start searchthreads
         if action == 'Wanted':
             for items in maglist:
@@ -708,6 +717,7 @@ class WebInterface(object):
                 else:
                     snatch = NZBDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
                 notifiers.notify_snatch(items['nzbtitle'] + ' at ' + formatter.now())
+                postprocess.schedule_processor(action='Start')
         raise cherrypy.HTTPRedirect("pastIssues")
     markIssues.exposed = True
 
@@ -872,17 +882,19 @@ class WebInterface(object):
     def showJobs(self):
         # show the current status of LL cron jobs in the log
         for job in lazylibrarian.SCHED.get_jobs():
-            jobname = str(job).split(' ')[0].split('.')[2]
-            if jobname == "search_magazines":
+            if "search_magazines" in str(job):
                 jobname = "[CRON] - Check for new magazine issues"
-            elif jobname == "checkForUpdates":
+            elif "checkForUpdates" in str(job):
                 jobname = "[CRON] - Check for LazyLibrarian update"
-            elif jobname == "search_tor_book":
+            elif "search_tor_book" in str(job):
                 jobname = "[CRON] - TOR book search"
-            elif jobname == "search_nzb_book":
+            elif "search_nzb_book" in str(job):
                 jobname = "[CRON] - NZB book search"
-            elif jobname == "processDir":
+            elif "processDir" in str(job):
                 jobname = "[CRON] - Process download directory"
+            else:       
+                jobname = str(job).split(' ')[0].split('.')[2]
+
             jobtime = str(job).split('[')[1].split('.')[0]
             logger.info(u"%s [%s" % (jobname, jobtime))
         logger.info(u"XMLCache %s hits, %s miss" % (int(lazylibrarian.CACHE_HIT), int(lazylibrarian.CACHE_MISS)))
@@ -987,7 +999,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         if type == 'all':
             logger.info(u"Clearing all history")
-            myDB.action('DELETE from wanted')
+            myDB.action("DELETE from wanted WHERE Status != 'Skipped' and Status != 'Ignored'")
         else:
             logger.info(u"Clearing history where status is %s" % type)
             myDB.action('DELETE from wanted WHERE Status="%s"' % type)
@@ -1066,7 +1078,7 @@ class WebInterface(object):
 # ALL ELSE ##########################################################
 
     def forceProcess(self, source=None):
-        threading.Thread(target=postprocess.processDir).start()
+        threading.Thread(target=postprocess.processDir(force=True)).start()
         raise cherrypy.HTTPRedirect(source)
     forceProcess.exposed = True
 

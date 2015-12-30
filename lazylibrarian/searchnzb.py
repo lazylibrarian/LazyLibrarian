@@ -7,7 +7,7 @@ import re
 import lazylibrarian
 import request
 
-from lazylibrarian import logger, database, formatter, providers, nzbget, sabnzbd, notifiers, classes
+from lazylibrarian import logger, database, formatter, providers, nzbget, sabnzbd, notifiers, classes, postprocess
 
 from lib.fuzzywuzzy import fuzz
 
@@ -137,6 +137,7 @@ def search_nzb_book(books=None, mags=None):
                         else:
                             NZBDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
                         notifiers.notify_snatch(formatter.latinToAscii(nzbTitle) + ' at ' + formatter.now())
+                        postprocess.schedule_processor(action='Start')
                     break
             if addedCounter == 0:
                 logger.debug("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() +

@@ -13,7 +13,7 @@ import datetime
 import locale
 import calendar
 import time
-
+import subprocess
 import ConfigParser
 from lib.apscheduler.scheduler import Scheduler
 
@@ -187,9 +187,9 @@ SEARCH_INTERVAL = 720  # Every 12 hours
 SCAN_INTERVAL = 10  # Every 10 minutes
 FULL_SCAN = 0  # full scan would remove books from db
 ADD_AUTHOR = 1  # auto add authors not found in db from goodreads
-# value to mark missing books (deleted/removed) in db, can be 'Open', 'Ignored',' 'Wanted','Skipped'
+# value to mark missing books (deleted/removed) in db, can be 'Open', 'Ignored', 'Wanted','Skipped'
 NOTFOUND_STATUS = 'Skipped'
-# value to mark new books (when importing a new author), can be 'Open', 'Ignored',' 'Wanted','Skipped'
+# value to mark new books (when importing a new author), can be 'Open', 'Ignored', 'Wanted','Skipped'
 NEWBOOK_STATUS = 'Skipped'
 EBOOK_DEST_FOLDER = None
 EBOOK_DEST_FILE = None
@@ -270,7 +270,7 @@ def check_section(sec):
         return False
 
 
-def check_setting_bool(config, cfg_name, item_name, def_val):
+def check_setting_bool(config, cfg_name, item_name, def_val, log=True):
     """ Check if option exists and coerce to boolean, if not create it """
     try:
         my_val = config.getboolean(cfg_name, item_name)
@@ -278,24 +278,29 @@ def check_setting_bool(config, cfg_name, item_name, def_val):
         my_val = def_val
         check_section(cfg_name)
         config.set(cfg_name, item_name, my_val)
-    logger.debug(item_name + " -> " + str(my_val))
+    if log:
+        logger.debug(item_name + " -> " + str(my_val))
     return my_val
 
 
-def check_setting_int(config, cfg_name, item_name, def_val):
+def check_setting_int(config, cfg_name, item_name, def_val, log=True):
+    """ Check if option exists and coerce to int, if not create it """
     try:
         my_val = config.getint(cfg_name, item_name)
     except:
         my_val = def_val
         check_section(cfg_name)
         config.set(cfg_name, item_name, my_val)
-    logger.debug(item_name + " -> " + str(my_val))
+    if log:
+        logger.debug(item_name + " -> " + str(my_val))
     return my_val
 
 
 def check_setting_str(config, cfg_name, item_name, def_val, log=True):
+    """ Check if option exists and coerce to string, if not create it """
     try:
         my_val = config.get(cfg_name, item_name)
+        # Old config file format had strings in quotes. ConfigParser doesn't.
         if my_val.startswith('"'):
             my_val = my_val[1:]
         if my_val.endswith('"'):
@@ -306,9 +311,6 @@ def check_setting_str(config, cfg_name, item_name, def_val, log=True):
         config.set(cfg_name, item_name, my_val)
     if log:
         logger.debug(item_name + " -> " + my_val)
-    else:
-        logger.debug(item_name + " -> ******")
-
     return my_val
 
 
@@ -391,10 +393,10 @@ def initialize():
             LOGLEVEL, LOGDIR, CFGLOGLEVEL))
         if LOGLEVEL > 2:
             LOGFULL = True
-            logger.info("Screen Log is DEBUG")
+            logger.info("Screen Log set to DEBUG")
         else:
             LOGFULL = False
-            logger.info("Screen Log is INFO/WARN/ERROR")
+            logger.info("Screen Log set to INFO/WARN/ERROR")
 
         # keep track of last api calls so we don't call more than once per second
         # to respect api terms, but don't wait un-necessarily either
@@ -670,6 +672,23 @@ def build_monthtable():
         except:
             locale.setlocale(locale.LC_ALL, current_locale)  # restore entry state
             logger.warn("Unable to load requested locale [%s]" % lang)
+            try:
+                if '_' in lang:
+                    wanted_lang = lang.split('_')[0]
+                else:
+                    wanted_lang = lang
+                params = ['locale', '-a']
+                all_locales = subprocess.check_output(params).split()
+                locale_list = []
+                for a_locale in all_locales:
+                    if a_locale.startswith(wanted_lang):
+                        locale_list.append(a_locale)
+                if locale_list:
+                    logger.warn("Found these alternatives: " + str(locale_list))
+                else:
+                    logger.warn("Unable to find an alternative")
+            except:
+                logger.warn("Unable to get a list of alternatives")
             logger.info("Set locale back to entry state %s" % current_locale)
     # quick sanity check, warn if no english names in table
     eng = 0

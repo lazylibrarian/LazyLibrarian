@@ -134,6 +134,7 @@ def search_tor_book(books=None, mags=None):
                     if not snatchedbooks:
                         TORDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
                         notifiers.notify_snatch(formatter.latinToAscii(tor_Title) + ' at ' + formatter.now())
+                        postprocess.schedule_processor(action='Start')
                     break
             if addedCounter == 0:
                 logger.debug("No torrent's found for " + (book["authorName"] + ' ' +
@@ -164,17 +165,21 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                 value = value.replace(' ', '%20')  # and encode any spaces
                 tor_url = url + '&file=' + value
 
+            # strip url back to the .torrent as some sites add parameters
+            if '?' in tor_url:
+                tor_url = tor_url.split('?')[0]
+
             request = urllib2.Request(ur'%s' % tor_url)
             if lazylibrarian.PROXY_HOST:
                 request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
             request.add_header('Accept-encoding', 'gzip')
             request.add_header('User-Agent', common.USER_AGENT)
 
-            if tor_prov == 'KAT':
-                host = lazylibrarian.KAT_HOST
-                if not str(host)[:4] == "http":
-                    host = 'http://' + host
-                request.add_header('Referer', host)
+            #if tor_prov == 'KAT':
+            #    host = lazylibrarian.KAT_HOST
+            #    if not str(host)[:4] == "http":
+            #        host = 'http://' + host
+            #    request.add_header('Referer', host)
 
             try:
                 response = urllib2.urlopen(request, timeout=90)
@@ -188,12 +193,6 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             except urllib2.URLError as e:
                 logger.warn('Error fetching torrent from url: ' + tor_url + ' %s' % e.reason)
                 return
-
-        # strip url back to the .torrent for passing to downloaders
-        # deluge needs it stripping, transmission doesn't mind
-        # not sure about utorrent
-        if '?' in tor_url:
-            tor_url = tor_url.split('?')[0]
 
         if (lazylibrarian.TOR_DOWNLOADER_BLACKHOLE):
             logger.debug('Torrent blackhole')

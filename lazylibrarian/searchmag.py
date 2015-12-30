@@ -5,7 +5,7 @@ import re
 
 import lazylibrarian
 
-from lazylibrarian import logger, database, formatter, providers, notifiers, common
+from lazylibrarian import logger, database, formatter, providers, notifiers, common, postprocess
 
 from lib.fuzzywuzzy import fuzz
 from lazylibrarian.searchtorrents import TORDownloadMethod
@@ -17,7 +17,6 @@ def search_magazines(mags=None):
 
     myDB = database.DBConnection()
     searchlist = []
-    resultlist = []
     threading.currentThread().name = "SEARCHMAGS"
 
     if mags is None:  # backlog search
@@ -54,6 +53,8 @@ def search_magazines(mags=None):
 
     for book in searchlist:
 
+        resultlist = []
+        tor_resultlist = []
         if lazylibrarian.USE_NZB:
             resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'mag')
             if not nproviders:
@@ -288,5 +289,6 @@ def search_magazines(mags=None):
                 else:
                     NZBDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
                 notifiers.notify_snatch(formatter.latinToAscii(items['nzbtitle']) + ' at ' + formatter.now())
+                postprocess.schedule_processor(action='Start')
             maglist = []
     logger.info("Search for magazines complete")
