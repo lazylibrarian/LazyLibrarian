@@ -375,11 +375,12 @@ class WebInterface(object):
     def deleteAuthor(self, AuthorID):
         myDB = database.DBConnection()
         authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
-        AuthorName = authorsearch[0]['AuthorName']
-        logger.info(u"Removing all references to author: %s" % AuthorName)
+        if len(authorsearch):  # to stop error if try to delete an author while they are still loading
+            AuthorName = authorsearch[0]['AuthorName']
+            logger.info(u"Removing all references to author: %s" % AuthorName)
 
-        myDB.action('DELETE from authors WHERE AuthorID="%s"' % AuthorID)
-        myDB.action('DELETE from books WHERE AuthorID="%s"' % AuthorID)
+            myDB.action('DELETE from authors WHERE AuthorID="%s"' % AuthorID)
+            myDB.action('DELETE from books WHERE AuthorID="%s"' % AuthorID)
         raise cherrypy.HTTPRedirect("home")
     deleteAuthor.exposed = True
 
@@ -995,14 +996,14 @@ class WebInterface(object):
             return serve_template(templatename="history.html", title="History", history=history)
     history.exposed = True
 
-    def clearhistory(self, type=None):
+    def clearhistory(self, histtype=None):
         myDB = database.DBConnection()
-        if type == 'all':
+        if histtype == 'all':
             logger.info(u"Clearing all history")
             myDB.action("DELETE from wanted WHERE Status != 'Skipped' and Status != 'Ignored'")
         else:
-            logger.info(u"Clearing history where status is %s" % type)
-            myDB.action('DELETE from wanted WHERE Status="%s"' % type)
+            logger.info(u"Clearing history where status is %s" % histtype)
+            myDB.action('DELETE from wanted WHERE Status="%s"' % histtype)
         raise cherrypy.HTTPRedirect("history")
     clearhistory.exposed = True
 
