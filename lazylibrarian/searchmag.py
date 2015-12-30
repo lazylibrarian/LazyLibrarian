@@ -17,7 +17,6 @@ def search_magazines(mags=None):
 
     myDB = database.DBConnection()
     searchlist = []
-    resultlist = []
     threading.currentThread().name = "SEARCHMAGS"
 
     if mags is None:  # backlog search
@@ -54,6 +53,8 @@ def search_magazines(mags=None):
 
     for book in searchlist:
 
+        resultlist = []
+        tor_resultlist = []
         if lazylibrarian.USE_NZB:
             resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'mag')
             if not nproviders:
