@@ -205,16 +205,3 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
     else:
         logger.error(u'Failed to download nzb @ <a href="%s">%s</a>' % (nzburl, nzbprov))
         myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl="%s"' % nzburl)
-
-
-def MakeSearchTermWebSafe(insearchterm=None):
-
-    dic = {'...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': ''}
-
-    searchterm = formatter.latinToAscii(formatter.replace_all(insearchterm, dic))
-
-    searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
-
-    logger.debug("Converting Search Term [%s] to Web Safe Search Term [%s]" % (insearchterm, searchterm))
-
-    return searchterm

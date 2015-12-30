@@ -175,6 +175,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             request.add_header('Accept-encoding', 'gzip')
             request.add_header('User-Agent', common.USER_AGENT)
 
+            # PAB removed this, KAT serves us html instead of torrent if this header is sent
             #if tor_prov == 'KAT':
             #    host = lazylibrarian.KAT_HOST
             #    if not str(host)[:4] == "http":
@@ -253,16 +254,3 @@ def CalcTorrentHash(torrent):
         hash = sha1(bencode(info)).hexdigest()
     logger.debug('Torrent Hash: ' + hash)
     return hash
-
-
-def MakeSearchTermWebSafe(insearchterm=None):
-
-    dic = {'...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': ''}
-
-    searchterm = formatter.latinToAscii(formatter.replace_all(insearchterm, dic))
-
-    searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
-
-    logger.debug("Converting Search Term [%s] to Web Safe Search Term [%s]" % (insearchterm, searchterm))
-
-    return searchterm
