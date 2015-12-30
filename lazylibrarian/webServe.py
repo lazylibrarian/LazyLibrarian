@@ -464,13 +464,15 @@ class WebInterface(object):
             find_book.join()
 
         books = []
-        mags = False
         books.append({"bookid": bookid})
 
+        
         if (lazylibrarian.USE_NZB):
-            threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+            threading.Thread(target=search_nzb_book, args=[books]).start()
         if (lazylibrarian.USE_TOR):
-            threading.Thread(target=search_tor_book, args=[books, mags]).start()
+            threading.Thread(target=search_tor_book, args=[books]).start()
+        if not lazylibrarian.USE_NZB and not lazylibrarian.USE_TOR:
+            logger.warn("No search methods set, check config.")
 
         raise cherrypy.HTTPRedirect("books")
     addBook.exposed = True
@@ -501,13 +503,14 @@ class WebInterface(object):
             books = []
             books.append({"bookid": bookid})
 
-            mags = False
             if (lazylibrarian.USE_NZB):
-                threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+                threading.Thread(target=search_nzb_book, args=[books]).start()
             if (lazylibrarian.USE_TOR):
-                threading.Thread(target=search_tor_book, args=[books, mags]).start()
-
-            logger.debug(u"Searching for book with id: " + bookid)
+                threading.Thread(target=search_tor_book, args=[books]).start()
+            if not lazylibrarian.USE_NZB and not lazylibrarian.USE_TOR:
+                logger.warn(u"No search methods set, check config.")
+            else:
+                logger.debug(u"Searching for book with id: " + bookid)
         if AuthorName:
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     searchForBook.exposed = True
@@ -571,11 +574,13 @@ class WebInterface(object):
                 # ouch dirty workaround...
                 if not bookid == 'book_table_length':
                     books.append({"bookid": bookid})
-            mags = False
+
             if (lazylibrarian.USE_NZB):
-                threading.Thread(target=search_nzb_book, args=[books, mags]).start()
+                threading.Thread(target=search_nzb_book, args=[books]).start()
             if (lazylibrarian.USE_TOR):
-                threading.Thread(target=search_tor_book, args=[books, mags]).start()
+                threading.Thread(target=search_tor_book, args=[books]).start()
+            if not lazylibrarian.USE_NZB and not lazylibrarian.USE_TOR:
+                logger.warn(u"No search methods set, check config.")
 
         if redirect == "author":
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
@@ -883,22 +888,23 @@ class WebInterface(object):
     def showJobs(self):
         # show the current status of LL cron jobs in the log
         for job in lazylibrarian.SCHED.get_jobs():
-            if "search_magazines" in str(job):
+            job = str(job)
+            if "search_magazines" in job:
                 jobname = "[CRON] - Check for new magazine issues"
-            elif "checkForUpdates" in str(job):
+            elif "checkForUpdates" in job:
                 jobname = "[CRON] - Check for LazyLibrarian update"
-            elif "search_tor_book" in str(job):
+            elif "search_tor_book" in job:
                 jobname = "[CRON] - TOR book search"
-            elif "search_nzb_book" in str(job):
+            elif "search_nzb_book" in job:
                 jobname = "[CRON] - NZB book search"
-            elif "processDir" in str(job):
+            elif "processDir" in job:
                 jobname = "[CRON] - Process download directory"
             else:       
-                jobname = str(job).split(' ')[0].split('.')[2]
+                jobname = job.split(' ')[0].split('.')[2]
 
-            jobtime = str(job).split('[')[1].split('.')[0]
+            jobtime = job.split('[')[1].split('.')[0]
             logger.info(u"%s [%s" % (jobname, jobtime))
-        logger.info(u"XMLCache %s hits, %s miss" % (int(lazylibrarian.CACHE_HIT), int(lazylibrarian.CACHE_MISS)))
+        logger.info(u"XMLCache %i hits, %i miss" % (int(lazylibrarian.CACHE_HIT), int(lazylibrarian.CACHE_MISS)))
         raise cherrypy.HTTPRedirect("logs")
     showJobs.exposed = True
 
@@ -1091,6 +1097,8 @@ class WebInterface(object):
                 threading.Thread(target=search_nzb_book).start()
             if (lazylibrarian.USE_TOR):
                 threading.Thread(target=search_tor_book).start()
+            if not lazylibrarian.USE_NZB and not lazylibrarian.USE_TOR:
+                logger.warn(u"No search methods set, check config.")
         raise cherrypy.HTTPRedirect(source)
     forceSearch.exposed = True
 
