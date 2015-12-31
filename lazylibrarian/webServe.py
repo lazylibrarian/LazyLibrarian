@@ -52,7 +52,7 @@ class WebInterface(object):
 # CONFIG ############################################################
 
     def config(self):
-        http_look_dir = os.path.join(lazylibrarian.PROG_DIR, 'data/interfaces/')
+        http_look_dir = os.path.join(str(lazylibrarian.PROG_DIR), 'data/interfaces/')
         http_look_list = [name for name in os.listdir(http_look_dir)
                           if os.path.isdir(os.path.join(http_look_dir, name))]
         status_list = ['Skipped', 'Wanted', 'Open', 'Ignored']
@@ -307,7 +307,7 @@ class WebInterface(object):
         sortedlist_final = sorted(searchresults, key=itemgetter('highest_fuzz', 'num_reviews'), reverse=True)
         return serve_template(templatename="searchresults.html", title='Search Results for: "' +
                               name + '"', searchresults=sortedlist_final, authorlist=authorlist,
-                              booklist=booklist, booksearch=booksearch, type=type)
+                              booklist=booklist, booksearch=booksearch)
     search.exposed = True
 
 # AUTHOR ############################################################
@@ -463,19 +463,40 @@ class WebInterface(object):
 
             find_book.join()
 
-        books = []
-        books.append({"bookid": bookid})
-
+        books = [{"bookid": bookid}]
+        self.startBookSearch(books)
         
-        if (lazylibrarian.USE_NZB):
-            threading.Thread(target=search_nzb_book, args=[books]).start()
-        if (lazylibrarian.USE_TOR):
-            threading.Thread(target=search_tor_book, args=[books]).start()
-        if not lazylibrarian.USE_NZB and not lazylibrarian.USE_TOR:
-            logger.warn("No search methods set, check config.")
-
         raise cherrypy.HTTPRedirect("books")
     addBook.exposed = True
+
+    def startBookSearch(self, books=None):
+        if books:
+            if lazylibrarian.USE_NZB or lazylibrarian.USE_TOR:
+                if lazylibrarian.USE_NZB:
+                    threading.Thread(target=search_nzb_book, args=[books]).start()
+                if lazylibrarian.USE_TOR:
+                    threading.Thread(target=search_tor_book, args=[books]).start()
+                logger.debug(u"Searching for book with id: " + books[0]["bookid"])
+            else:
+                logger.warn(u"Not searching for book, no search methods set, check config.")
+        else:
+            logger.debug(u"BookSearch called with no books")
+    startBookSearch.exposed = True
+    
+    def searchForBook(self, bookid=None, action=None, **args):
+        myDB = database.DBConnection()
+
+        bookdata = myDB.select('SELECT * from books WHERE BookID="%s"' % bookid)
+        if bookdata:
+            AuthorName = bookdata[0]["AuthorName"]
+
+            # start searchthreads
+            books = [{"bookid": bookid}]
+            self.startBookSearch(books)
+            
+        if AuthorName:
+            raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
+    searchForBook.exposed = True
 
     def openBook(self, bookid=None, **args):
         myDB = database.DBConnection()
@@ -491,29 +512,6 @@ class WebInterface(object):
                 bookName = bookdata[0]["BookName"]
                 logger.info(u'Missing book %s,%s' % (authorName, bookName))
     openBook.exposed = True
-
-    def searchForBook(self, bookid=None, action=None, **args):
-        myDB = database.DBConnection()
-
-        bookdata = myDB.select('SELECT * from books WHERE BookID="%s"' % bookid)
-        if bookdata:
-            AuthorName = bookdata[0]["AuthorName"]
-
-            # start searchthreads
-            books = []
-            books.append({"bookid": bookid})
-
-            if (lazylibrarian.USE_NZB):
-                threading.Thread(target=search_nzb_book, args=[books]).start()
-            if (lazylibrarian.USE_TOR):
-                threading.Thread(target=search_tor_book, args=[books]).start()
-            if not lazylibrarian.USE_NZB and not lazylibrarian.USE_TOR:
-                logger.warn(u"No search methods set, check config.")
-            else:
-                logger.debug(u"Searching for book with id: " + bookid)
-        if AuthorName:
-            raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
-    searchForBook.exposed = True
 
     def markBooks(self, AuthorName=None, action=None, redirect=None, **args):
         myDB = database.DBConnection()
@@ -575,9 +573,9 @@ class WebInterface(object):
                 if not bookid == 'book_table_length':
                     books.append({"bookid": bookid})
 
-            if (lazylibrarian.USE_NZB):
+            if lazylibrarian.USE_NZB:
                 threading.Thread(target=search_nzb_book, args=[books]).start()
-            if (lazylibrarian.USE_TOR):
+            if lazylibrarian.USE_TOR:
                 threading.Thread(target=search_tor_book, args=[books]).start()
             if not lazylibrarian.USE_NZB and not lazylibrarian.USE_TOR:
                 logger.warn(u"No search methods set, check config.")
@@ -763,43 +761,42 @@ class WebInterface(object):
         bookdata = myDB.select('SELECT * from magazines WHERE Title="%s"' % bookid)
         if bookdata:
             # start searchthreads
-            mags = []
-            mags.append({"bookid": bookid})
+            mags = [{"bookid": bookid}]
+            self.startMagazineSearch(mags)
 
-            books = False
-            if lazylibrarian.USE_NZB or lazylibrarian.USE_TOR:
-                threading.Thread(target=search_magazines, args=[mags]).start()
-                logger.debug(u"Searching for magazine with title: " + bookid)
-            else:
-                logger.debug("Not searching for magazine, no download methods set")
             raise cherrypy.HTTPRedirect("magazines")
     searchForMag.exposed = True
 
-    def addMagazine(self, type=None, title=None, frequency=None, **args):
-        myDB = database.DBConnection()
-        if type == 'magazine':
-            if len(title) == 0:
-                raise cherrypy.HTTPRedirect("config")
+    def startMagazineSearch(self, mags=None):
+        if mags:
+            if lazylibrarian.USE_NZB or lazylibrarian.USE_TOR:
+                threading.Thread(target=search_magazines, args=[mags]).start()
+                logger.debug(u"Searching for magazine with title: " + mags[0]["bookid"])
             else:
-                controlValueDict = {"Title": title}
-                newValueDict = {
-                    "Frequency":   frequency,
-                    "Regex":   None,
-                    "Status":       "Active",
-                    "MagazineAdded":    formatter.today(),
-                    "IssueStatus": "Wanted"
-                }
-                myDB.upsert("magazines", newValueDict, controlValueDict)
-
-                mags = []
-                mags.append({"bookid": title})
-                books = False
-                if lazylibrarian.USE_NZB or lazylibrarian.USE_TOR:
-                    threading.Thread(target=search_magazines, args=[mags]).start()
-                    logger.debug(u"Searching for magazine with title: " + title)
-                else:
-                    logger.debug(u"Not searching for magazine, no download methods set")
-                raise cherrypy.HTTPRedirect("magazines")
+                logger.warn(u"Not searching for magazine, no download methods set, check config")
+        else:
+            logger.debug(u"MagazineSearch called with no magazines")
+    startMagazineSearch.exposed = True
+    
+    def addMagazine(self, search=None, title=None, frequency=None, **args):
+        myDB = database.DBConnection()
+        #if search == 'magazine':  # we never call this unless search == 'magazine'
+        if len(title) == 0:
+            raise cherrypy.HTTPRedirect("magazines")
+        else:
+            controlValueDict = {"Title": title}
+            newValueDict = {
+                "Frequency":   frequency,
+                "Regex":   None,
+                "Status":       "Active",
+                "MagazineAdded":    formatter.today(),
+                "IssueStatus": "Wanted"
+            }
+            myDB.upsert("magazines", newValueDict, controlValueDict)
+            mags = [{"bookid": title}]
+            self.startMagazineSearch(mags)
+            
+            raise cherrypy.HTTPRedirect("magazines")
     addMagazine.exposed = True
 
 # UPDATES ###########################################################
@@ -1002,14 +999,14 @@ class WebInterface(object):
             return serve_template(templatename="history.html", title="History", history=history)
     history.exposed = True
 
-    def clearhistory(self, histtype=None):
+    def clearhistory(self, status=None):
         myDB = database.DBConnection()
-        if histtype == 'all':
+        if status == 'all':
             logger.info(u"Clearing all history")
             myDB.action("DELETE from wanted WHERE Status != 'Skipped' and Status != 'Ignored'")
         else:
-            logger.info(u"Clearing history where status is %s" % histtype)
-            myDB.action('DELETE from wanted WHERE Status="%s"' % histtype)
+            logger.info(u"Clearing history where status is %s" % status)
+            myDB.action('DELETE from wanted WHERE Status="%s"' % status)
         raise cherrypy.HTTPRedirect("history")
     clearhistory.exposed = True
 
@@ -1092,13 +1089,15 @@ class WebInterface(object):
     def forceSearch(self, source=None):
         if source == "magazines":
             threading.Thread(target=search_magazines).start()
-        else:
-            if (lazylibrarian.USE_NZB):
+        elif source == "books":
+            if lazylibrarian.USE_NZB:
                 threading.Thread(target=search_nzb_book).start()
-            if (lazylibrarian.USE_TOR):
+            if lazylibrarian.USE_TOR:
                 threading.Thread(target=search_tor_book).start()
             if not lazylibrarian.USE_NZB and not lazylibrarian.USE_TOR:
                 logger.warn(u"No search methods set, check config.")
+        else:
+            logger.debug(u"forceSearch called with bad source")
         raise cherrypy.HTTPRedirect(source)
     forceSearch.exposed = True
 
