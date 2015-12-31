@@ -307,7 +307,7 @@ class WebInterface(object):
         sortedlist_final = sorted(searchresults, key=itemgetter('highest_fuzz', 'num_reviews'), reverse=True)
         return serve_template(templatename="searchresults.html", title='Search Results for: "' +
                               name + '"', searchresults=sortedlist_final, authorlist=authorlist,
-                              booklist=booklist, booksearch=booksearch, type=type)
+                              booklist=booklist, booksearch=booksearch)
     search.exposed = True
 
 # AUTHOR ############################################################
@@ -775,31 +775,30 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("magazines")
     searchForMag.exposed = True
 
-    def addMagazine(self, type=None, title=None, frequency=None, **args):
+    def addMagazine(self, search=None, title=None, frequency=None, **args):
         myDB = database.DBConnection()
-        if type == 'magazine':
-            if len(title) == 0:
-                raise cherrypy.HTTPRedirect("config")
+        #if search == 'magazine':  # we never call this unless search == magazine
+        if len(title) == 0:
+            raise cherrypy.HTTPRedirect("config")
+        else:
+            controlValueDict = {"Title": title}
+            newValueDict = {
+                "Frequency":   frequency,
+                "Regex":   None,
+                "Status":       "Active",
+                "MagazineAdded":    formatter.today(),
+                "IssueStatus": "Wanted"
+            }
+            myDB.upsert("magazines", newValueDict, controlValueDict)
+            mags = []
+            mags.append({"bookid": title})
+            books = False
+            if lazylibrarian.USE_NZB or lazylibrarian.USE_TOR:
+                threading.Thread(target=search_magazines, args=[mags]).start()
+                logger.debug(u"Searching for magazine with title: " + title)
             else:
-                controlValueDict = {"Title": title}
-                newValueDict = {
-                    "Frequency":   frequency,
-                    "Regex":   None,
-                    "Status":       "Active",
-                    "MagazineAdded":    formatter.today(),
-                    "IssueStatus": "Wanted"
-                }
-                myDB.upsert("magazines", newValueDict, controlValueDict)
-
-                mags = []
-                mags.append({"bookid": title})
-                books = False
-                if lazylibrarian.USE_NZB or lazylibrarian.USE_TOR:
-                    threading.Thread(target=search_magazines, args=[mags]).start()
-                    logger.debug(u"Searching for magazine with title: " + title)
-                else:
-                    logger.debug(u"Not searching for magazine, no download methods set")
-                raise cherrypy.HTTPRedirect("magazines")
+                logger.debug(u"Not searching for magazine, no download methods set")
+            raise cherrypy.HTTPRedirect("magazines")
     addMagazine.exposed = True
 
 # UPDATES ###########################################################
@@ -1002,14 +1001,14 @@ class WebInterface(object):
             return serve_template(templatename="history.html", title="History", history=history)
     history.exposed = True
 
-    def clearhistory(self, histtype=None):
+    def clearhistory(self, status=None):
         myDB = database.DBConnection()
-        if histtype == 'all':
+        if status == 'all':
             logger.info(u"Clearing all history")
             myDB.action("DELETE from wanted WHERE Status != 'Skipped' and Status != 'Ignored'")
         else:
-            logger.info(u"Clearing history where status is %s" % histtype)
-            myDB.action('DELETE from wanted WHERE Status="%s"' % histtype)
+            logger.info(u"Clearing history where status is %s" % status)
+            myDB.action('DELETE from wanted WHERE Status="%s"' % status)
         raise cherrypy.HTTPRedirect("history")
     clearhistory.exposed = True
 
