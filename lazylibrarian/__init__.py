@@ -259,6 +259,7 @@ CACHE_HIT = 0
 CACHE_MISS = 0
 LAST_GOODREADS = 0
 LAST_LIBRARYTHING = 0
+CACHE_AGE = 30
 
 
 def check_section(sec):
@@ -320,7 +321,7 @@ def initialize():
 
         global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, LOGFULL, DAEMON, DATADIR, \
             HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, \
-            LAUNCH_BROWSER, LOGDIR, CACHEDIR, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, \
+            LAUNCH_BROWSER, LOGDIR, CACHEDIR, CACHE_AGE, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, \
             IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, \
             MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, \
             MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, CONFIGFILE, CFG, LOGDIR, \
@@ -423,6 +424,7 @@ def initialize():
         IMP_AUTOADD = check_setting_str(CFG, 'General', 'imp_autoadd', '')
         IMP_ONLYISBN = check_setting_bool(CFG, 'General', 'imp_onlyisbn', 0)
         IMP_SINGLEBOOK = check_setting_bool(CFG, 'General', 'imp_singlebook', 0)
+        CACHE_AGE = check_setting_int(CFG, 'General', 'cache_age', 30)
 
         GIT_USER = check_setting_str(CFG, 'Git', 'git_user', 'dobytang')
         GIT_REPO = check_setting_str(CFG, 'Git', 'git_repo', 'lazylibrarian')
@@ -771,6 +773,7 @@ def config_write():
     CFG.set('General', 'alternate_dir', ALTERNATE_DIR)
     CFG.set('General', 'destination_copy', DESTINATION_COPY)
     CFG.set('General', 'download_dir', DOWNLOAD_DIR)
+    CFG.set('General', 'cache_age', CACHE_AGE)
 #
     check_section('Git')
     CFG.set('Git', 'git_user', GIT_USER)

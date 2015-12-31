@@ -83,7 +83,7 @@ class WebInterface(object):
                      torznab3=0, torznab_host3=None, torznab_api3=None, torznab4=0, torznab_host4=None,
                      torznab_api4=None, gr_api=None, gb_api=None, versioncheck_interval=None, search_interval=None,
                      scan_interval=None, ebook_dest_folder=None, ebook_dest_file=None, mag_relative=0,
-                     mag_dest_folder=None, mag_dest_file=None,
+                     mag_dest_folder=None, mag_dest_file=None, cache_age=30,
                      use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
                      utorrent_host=None, utorrent_user=None, utorrent_pass=None,
                      notfound_status='Skipped', newbook_status='Skipped', full_scan=0, add_author=0,
@@ -110,6 +110,7 @@ class WebInterface(object):
         lazylibrarian.LOGDIR = logdir
         lazylibrarian.LOGLEVEL = formatter.check_int(loglevel, 2)
         lazylibrarian.MATCH_RATIO = formatter.check_int(match_ratio, 80)
+        lazylibrarian.CACHE_AGE = formatter.check_int(cache_age, 30)
 
         lazylibrarian.IMP_ONLYISBN = bool(imp_onlyisbn)
         lazylibrarian.IMP_SINGLEBOOK = bool(imp_singlebook)

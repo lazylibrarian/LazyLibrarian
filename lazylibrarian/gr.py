@@ -22,7 +22,7 @@ class GoodReads:
         # self.type = type
         self.params = {"key":  lazylibrarian.GR_API}
 
-    def get_request(self, my_url, expireafter=30):
+    def get_request(self, my_url):
         request = urllib2.Request(my_url)
         if lazylibrarian.PROXY_HOST:
             request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
@@ -39,9 +39,10 @@ class GoodReads:
         # store the xml
         # return the xml, and whether it was found in the cache
         # Need to expire the cache entries, or we won't search for anything new
-        # Hard coded default to 30 days for now. Authors dont write that quickly.
-        # TODO make this configurable
+        # default to 30 days for now. Authors dont write that quickly.
+        #
         cacheLocation = "XMLCache"
+        expireafter = lazylibrarian.CACHE_AGE
         cacheLocation = os.path.join(lazylibrarian.CACHEDIR, cacheLocation)
         if not os.path.exists(cacheLocation):
             os.mkdir(cacheLocation)
