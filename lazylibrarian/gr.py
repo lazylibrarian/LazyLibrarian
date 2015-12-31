@@ -581,6 +581,12 @@ class GoodReads:
                      cache_hits, ignored, removedResults, not_cached))
 
         if refresh:
+            bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE AuthorID="%s" AND (Status="Have" OR Status="Open")' % authorid)
+            if bookCount:
+                havebooks = bookCount[0]['counter']
+                controlValueDict = {"AuthorID": authorid}
+                newValueDict = {"HaveBooks": havebooks}
+                myDB.upsert("authors", newValueDict, controlValueDict)
             logger.info("[%s] Book processing complete: Added %s books / Updated %s books" %
                         (authorname, str(added_count), str(updated_count)))
         else:

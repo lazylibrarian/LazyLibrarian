@@ -320,7 +320,7 @@ class GoogleBooks:
                     # do we care about language?
                     if "All" not in valid_langs:
                         if bookisbn != "":
-                                # seems google lies to us, sometimes tells us books are in english when they are not
+                            # seems google lies to us, sometimes tells us books are in english when they are not
                             if booklang == "Unknown" or booklang == "en":
                                 googlelang = booklang
                                 match = myDB.action('SELECT lang FROM languages where isbn = "%s"' %
@@ -506,7 +506,7 @@ class GoogleBooks:
         bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE AuthorID="%s"' % authorid)
         if bookCount:
             totalbook_count = bookCount[0]['counter']
-
+    
         controlValueDict = {"AuthorID": authorid}
         newValueDict = {
             "Status": "Active",
@@ -530,6 +530,12 @@ class GoogleBooks:
                      ignored, removedResults, not_cached))
 
         if refresh:
+            bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE AuthorID="%s" AND (Status="Have" OR Status="Open")' % authorid)
+            if bookCount:
+                havebooks = bookCount[0]['counter']
+                controlValueDict = {"AuthorID": authorid}
+                newValueDict = {"HaveBooks": havebooks}
+                myDB.upsert("authors", newValueDict, controlValueDict)
             logger.info("[%s] Book processing complete: Added %s books / Updated %s books" %
                         (authorname, str(added_count), str(updated_count)))
         else:

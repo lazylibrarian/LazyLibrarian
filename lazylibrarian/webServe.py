@@ -386,7 +386,7 @@ class WebInterface(object):
 
     def refreshAuthor(self, AuthorName):
         refresh = True
-        threading.Thread(target=importer.addAuthorToDB, args=(AuthorName, refresh)).start()
+        threading.Thread(target=importer.addAuthorToDB, args=[AuthorName, refresh]).start()
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     refreshAuthor.exposed = True
 
@@ -1082,7 +1082,7 @@ class WebInterface(object):
 # ALL ELSE ##########################################################
 
     def forceProcess(self, source=None):
-        threading.Thread(target=postprocess.processDir(force=True)).start()
+        threading.Thread(target=postprocess.processDir, args=[True]).start()
         raise cherrypy.HTTPRedirect(source)
     forceProcess.exposed = True
 
