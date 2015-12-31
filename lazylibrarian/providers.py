@@ -242,7 +242,7 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=
                 logger.debug('No results from %s for %s' % (host, book['searchterm']))
         logger.debug(u'Found %s nzb at %s for: %s' % (nzbcount, host, book['searchterm']))
     else:
-        logger.debug('No data returned from %s' % host)
+        logger.debug('No data returned from %s for %s' % (host, book['searchterm']))
     return results
 
 
