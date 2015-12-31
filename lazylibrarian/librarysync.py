@@ -128,8 +128,7 @@ def find_book_in_db(myDB, author, book):
         # on books that should be matched
         # Maybe make ratios configurable in config.ini later
 
-        books = myDB.select(
-            'SELECT BookID,BookName FROM books where AuthorName="%s"' % author)
+        books = myDB.select('SELECT BookID,BookName FROM books where AuthorName="%s"' % author)
         best_ratio = 0
         best_partial = 0
         ratio_name = ""
@@ -534,20 +533,15 @@ def LibraryScan(dir=None):
             stats['sum(uncached)'])
     logger.debug("XMLCache %s hits, %s miss" % (lazylibrarian.CACHE_HIT, lazylibrarian.CACHE_MISS))
     logger.debug("ISBN Language cache holds %s entries" % cachesize['count(*)'])
-    stats = len(
-        myDB.select('select BookID from Books where status="Open" and BookLang="Unknown"'))
+    stats = len(myDB.select('select BookID from Books where status="Open" and BookLang="Unknown"'))
     if stats:
         logger.warn("There are %s books in your library with unknown language" % stats)
 
     logger.debug('Updating %i authors' % len(new_authors))
     for auth in new_authors:
-        query = 'SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' % auth
-        countbooks = myDB.action(query).fetchone()
-        havebooks = int(countbooks[0])
+        havebooks = len(myDB.select('SELECT BookID from books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' % auth))
         myDB.action('UPDATE authors set HaveBooks="%s" where AuthorName="%s"' %(havebooks, auth))
-        query = 'SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND Status!="Ignored"' % auth
-        countbooks = myDB.action(query).fetchone()
-        totalbooks = int(countbooks[0])
+        totalbooks = len(myDB.select('SELECT BookID FROM books WHERE AuthorName="%s" AND Status!="Ignored"' % auth))
         myDB.action('UPDATE authors set UnignoredBooks="%s" where AuthorName="%s"' % (totalbooks, auth))
 
     logger.info('Library scan complete')

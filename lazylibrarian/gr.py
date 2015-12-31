@@ -191,7 +191,7 @@ class GoodReads:
 
         queue.put(resultlist)
 
-    def find_author_id(self):
+    def find_author_id(self, refresh=False):
         author = self.name
         # Goodreads doesn't like initials followed by spaces,
         # eg "M L Hamilton", needs "M. L. Hamilton" or "M.L.Hamilton"
@@ -203,8 +203,11 @@ class GoodReads:
         logger.debug("Searching for author with name: %s" % author)
 
         authorlist = []
+        max_age = 30
+        if refresh:
+            max_age = 0  # ignore cached results if refreshing
         try:
-            rootxml, in_cache = self.get_request(URL)
+            rootxml, in_cache = self.get_request(URL, max_age)
         except Exception, e:
             logger.error("Error finding authorid: " + str(e) + str(URL))
             return authorlist
@@ -222,7 +225,7 @@ class GoodReads:
             for author in resultxml:
                 authorid = author.attrib.get("id")
                 authorname = author[0].text
-                authorlist = self.get_author_info(authorid, authorname)
+                authorlist = self.get_author_info(authorid, authorname, refresh)
         return authorlist
 
     def get_author_info(self, authorid=None, authorname=None, refresh=False):
@@ -230,8 +233,11 @@ class GoodReads:
         URL = 'http://www.goodreads.com/author/show/' + authorid + '.xml?' + urllib.urlencode(self.params)
         author_dict = {}
 
+        max_age = 30
+        if refresh:
+            max_age = 0  # ignore cached results if refreshing
         try:
-            rootxml, in_cache = self.get_request(URL)
+            rootxml, in_cache = self.get_request(URL, max_age)
         except Exception, e:
             logger.error("Error getting author info: " + str(e))
             return author_dict
@@ -271,8 +277,11 @@ class GoodReads:
         newValueDict = {"Status": "Loading"}
         myDB.upsert("authors", newValueDict, controlValueDict)
         books_dict = []
+        max_age = 30  # ignore old cache results over 30 days
+        if refresh:
+            max_age = 0  # ignore any cached result if refreshing
         try:
-            rootxml, in_cache = self.get_request(URL)
+            rootxml, in_cache = self.get_request(URL, max_age)
         except Exception, e:
             logger.error("Error fetching author books: " + str(e))
             return books_dict
@@ -409,7 +418,7 @@ class GoodReads:
                                         if time_now <= lazylibrarian.LAST_GOODREADS:
                                             time.sleep(1)
 
-                                        BOOK_rootxml, in_cache = self.get_request(BOOK_URL)
+                                        BOOK_rootxml, in_cache = self.get_request(BOOK_URL, max_age)
                                         if not in_cache:
                                             # only update last_goodreads if the result wasn't found in the cache
                                             lazylibrarian.LAST_GOODREADS = time_now
@@ -521,7 +530,7 @@ class GoodReads:
                       urllib.urlencode(self.params) + '&page=' + str(loopCount)
                 resultxml = None
                 try:
-                    rootxml, in_cache = self.get_request(URL)
+                    rootxml, in_cache = self.get_request(URL, max_age)
                     resultxml = rootxml.getiterator('book')
                     if not in_cache:
                         api_hits = api_hits + 1
@@ -581,12 +590,10 @@ class GoodReads:
                      cache_hits, ignored, removedResults, not_cached))
 
         if refresh:
-            bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE AuthorID="%s" AND (Status="Have" OR Status="Open")' % authorid)
-            if bookCount:
-                havebooks = bookCount[0]['counter']
-                controlValueDict = {"AuthorID": authorid}
-                newValueDict = {"HaveBooks": havebooks}
-                myDB.upsert("authors", newValueDict, controlValueDict)
+            havebooks = len(myDB.select('SELECT BookID FROM books WHERE AuthorID="%s" AND (Status="Have" OR Status="Open")' % authorid))
+            controlValueDict = {"AuthorID": authorid}
+            newValueDict = {"HaveBooks": havebooks}
+            myDB.upsert("authors", newValueDict, controlValueDict)
             logger.info("[%s] Book processing complete: Added %s books / Updated %s books" %
                         (authorname, str(added_count), str(updated_count)))
         else:

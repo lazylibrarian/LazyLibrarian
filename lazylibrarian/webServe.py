@@ -385,14 +385,12 @@ class WebInterface(object):
     deleteAuthor.exposed = True
 
     def refreshAuthor(self, AuthorName):
-        refresh = True
-        threading.Thread(target=importer.addAuthorToDB, args=[AuthorName, refresh]).start()
+        threading.Thread(target=importer.addAuthorToDB, args=[AuthorName, True]).start()
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     refreshAuthor.exposed = True
 
     def addAuthor(self, AuthorName):
-        args = None
-        threading.Thread(target=importer.addAuthorToDB, args=[AuthorName]).start()
+        threading.Thread(target=importer.addAuthorToDB, args=[AuthorName, False]).start()
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     addAuthor.exposed = True
 
@@ -429,18 +427,16 @@ class WebInterface(object):
                     lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE \
                                            AuthorName="%s" AND Status != "Ignored" order by BookDate DESC' %
                                            AuthorName).fetchone()
-                    unignoredbooks = myDB.select('SELECT COUNT(BookName) as unignored FROM books WHERE \
-                                                 AuthorName="%s" AND Status != "Ignored"' % AuthorName)
-                    bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE \
-                                            AuthorName="%s"' % AuthorName)
-                    countbooks = myDB.action('SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND \
-                                             (Status="Have" OR Status="Open")' % AuthorName).fetchone()
-                    havebooks = int(countbooks[0])
+                    unignoredbooks = len(myDB.select('SELECT BookID FROM books WHERE \
+                                                 AuthorName="%s" AND Status != "Ignored"' % AuthorName))
+                    totalbooks = len(myDB.select('SELECT BookID FROM books WHERE AuthorName="%s"' % AuthorName))
+                    havebooks = len(myDB.select('SELECT BookID FROM books WHERE AuthorName="%s" AND \
+                                             (Status="Have" OR Status="Open")' % AuthorName))
 
                     controlValueDict = {"AuthorName": AuthorName}
                     newValueDict = {
-                        "TotalBooks": bookCount[0]['counter'],
-                        "UnignoredBooks": unignoredbooks[0]['unignored'],
+                        "TotalBooks": totalbooks,
+                        "UnignoredBooks": unignoredbooks,
                         "HaveBooks": havebooks,
                         "LastBook": lastbook['BookName'],
                         "LastLink": lastbook['BookLink'],
@@ -547,17 +543,16 @@ class WebInterface(object):
             # update authors needs to be updated every time a book is marked differently
             lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorName="%s" \
                                    AND Status != "Ignored" order by BookDate DESC' % AuthorName).fetchone()
-            unignoredbooks = myDB.select('SELECT COUNT(BookName) as unignored FROM books WHERE AuthorName="%s" \
-                                         AND Status != "Ignored"' % AuthorName)
-            bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE AuthorName="%s"' % AuthorName)
-            countbooks = myDB.action('SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND \
-                                     (Status="Have" OR Status="Open")' % AuthorName).fetchone()
-            havebooks = int(countbooks[0])
+            unignoredbooks = len(myDB.select('SELECT BookID FROM books WHERE AuthorName="%s" \
+                                         AND Status != "Ignored"' % AuthorName))
+            totalbooks = len(myDB.select('SELECT BookID FROM books WHERE AuthorName="%s"' % AuthorName))
+            havebooks = len(myDB.select('SELECT BookID FROM books WHERE AuthorName="%s" AND \
+                                     (Status="Have" OR Status="Open")' % AuthorName))
 
             controlValueDict = {"AuthorName": AuthorName}
             newValueDict = {
-                "TotalBooks": bookCount[0]['counter'],
-                "UnignoredBooks": unignoredbooks[0]['unignored'],
+                "TotalBooks": totalbooks,
+                "UnignoredBooks": unignoredbooks,
                 "HaveBooks": havebooks,
                 "LastBook": lastbook['BookName'],
                 "LastLink": lastbook['BookLink'],
