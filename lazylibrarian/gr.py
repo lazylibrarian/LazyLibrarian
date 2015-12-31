@@ -203,11 +203,8 @@ class GoodReads:
         logger.debug("Searching for author with name: %s" % author)
 
         authorlist = []
-        max_age = 30
-        if refresh:
-            max_age = 0  # ignore cached results if refreshing
         try:
-            rootxml, in_cache = self.get_request(URL, max_age)
+            rootxml, in_cache = self.get_request(URL)
         except Exception, e:
             logger.error("Error finding authorid: " + str(e) + str(URL))
             return authorlist
@@ -233,11 +230,8 @@ class GoodReads:
         URL = 'http://www.goodreads.com/author/show/' + authorid + '.xml?' + urllib.urlencode(self.params)
         author_dict = {}
 
-        max_age = 30
-        if refresh:
-            max_age = 0  # ignore cached results if refreshing
         try:
-            rootxml, in_cache = self.get_request(URL, max_age)
+            rootxml, in_cache = self.get_request(URL)
         except Exception, e:
             logger.error("Error getting author info: " + str(e))
             return author_dict
@@ -277,11 +271,8 @@ class GoodReads:
         newValueDict = {"Status": "Loading"}
         myDB.upsert("authors", newValueDict, controlValueDict)
         books_dict = []
-        max_age = 30  # ignore old cache results over 30 days
-        if refresh:
-            max_age = 0  # ignore any cached result if refreshing
         try:
-            rootxml, in_cache = self.get_request(URL, max_age)
+            rootxml, in_cache = self.get_request(URL)
         except Exception, e:
             logger.error("Error fetching author books: " + str(e))
             return books_dict
@@ -418,7 +409,7 @@ class GoodReads:
                                         if time_now <= lazylibrarian.LAST_GOODREADS:
                                             time.sleep(1)
 
-                                        BOOK_rootxml, in_cache = self.get_request(BOOK_URL, max_age)
+                                        BOOK_rootxml, in_cache = self.get_request(BOOK_URL)
                                         if not in_cache:
                                             # only update last_goodreads if the result wasn't found in the cache
                                             lazylibrarian.LAST_GOODREADS = time_now
@@ -530,7 +521,7 @@ class GoodReads:
                       urllib.urlencode(self.params) + '&page=' + str(loopCount)
                 resultxml = None
                 try:
-                    rootxml, in_cache = self.get_request(URL, max_age)
+                    rootxml, in_cache = self.get_request(URL)
                     resultxml = rootxml.getiterator('book')
                     if not in_cache:
                         api_hits = api_hits + 1
