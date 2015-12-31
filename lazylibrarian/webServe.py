@@ -83,7 +83,7 @@ class WebInterface(object):
                      torznab3=0, torznab_host3=None, torznab_api3=None, torznab4=0, torznab_host4=None,
                      torznab_api4=None, gr_api=None, gb_api=None, versioncheck_interval=None, search_interval=None,
                      scan_interval=None, ebook_dest_folder=None, ebook_dest_file=None, mag_relative=0,
-                     mag_dest_folder=None, mag_dest_file=None,
+                     mag_dest_folder=None, mag_dest_file=None, cache_age=30,
                      use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
                      utorrent_host=None, utorrent_user=None, utorrent_pass=None,
                      notfound_status='Skipped', newbook_status='Skipped', full_scan=0, add_author=0,
@@ -110,6 +110,7 @@ class WebInterface(object):
         lazylibrarian.LOGDIR = logdir
         lazylibrarian.LOGLEVEL = formatter.check_int(loglevel, 2)
         lazylibrarian.MATCH_RATIO = formatter.check_int(match_ratio, 80)
+        lazylibrarian.CACHE_AGE = formatter.check_int(cache_age, 30)
 
         lazylibrarian.IMP_ONLYISBN = bool(imp_onlyisbn)
         lazylibrarian.IMP_SINGLEBOOK = bool(imp_singlebook)
@@ -385,14 +386,12 @@ class WebInterface(object):
     deleteAuthor.exposed = True
 
     def refreshAuthor(self, AuthorName):
-        refresh = True
-        threading.Thread(target=importer.addAuthorToDB, args=(AuthorName, refresh)).start()
+        threading.Thread(target=importer.addAuthorToDB, args=[AuthorName, True]).start()
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     refreshAuthor.exposed = True
 
     def addAuthor(self, AuthorName):
-        args = None
-        threading.Thread(target=importer.addAuthorToDB, args=[AuthorName]).start()
+        threading.Thread(target=importer.addAuthorToDB, args=[AuthorName, False]).start()
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     addAuthor.exposed = True
 
@@ -429,19 +428,17 @@ class WebInterface(object):
                     lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE \
                                            AuthorName="%s" AND Status != "Ignored" order by BookDate DESC' %
                                            AuthorName).fetchone()
-                    unignoredbooks = myDB.select('SELECT COUNT(BookName) as unignored FROM books WHERE \
-                                                 AuthorName="%s" AND Status != "Ignored"' % AuthorName)
-                    bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE \
-                                            AuthorName="%s"' % AuthorName)
-                    countbooks = myDB.action('SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND \
+                    unignoredbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE \
+                                                 AuthorName="%s" AND Status != "Ignored"' % AuthorName).fetchone()
+                    totalbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorName="%s"' % AuthorName).fetchone()
+                    havebooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND \
                                              (Status="Have" OR Status="Open")' % AuthorName).fetchone()
-                    havebooks = int(countbooks[0])
 
                     controlValueDict = {"AuthorName": AuthorName}
                     newValueDict = {
-                        "TotalBooks": bookCount[0]['counter'],
-                        "UnignoredBooks": unignoredbooks[0]['unignored'],
-                        "HaveBooks": havebooks,
+                        "TotalBooks": totalbooks['counter'],
+                        "UnignoredBooks": unignoredbooks['counter'],
+                        "HaveBooks": havebooks['counter'],
                         "LastBook": lastbook['BookName'],
                         "LastLink": lastbook['BookLink'],
                         "LastDate": lastbook['BookDate']
@@ -547,18 +544,17 @@ class WebInterface(object):
             # update authors needs to be updated every time a book is marked differently
             lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorName="%s" \
                                    AND Status != "Ignored" order by BookDate DESC' % AuthorName).fetchone()
-            unignoredbooks = myDB.select('SELECT COUNT(BookName) as unignored FROM books WHERE AuthorName="%s" \
-                                         AND Status != "Ignored"' % AuthorName)
-            bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE AuthorName="%s"' % AuthorName)
-            countbooks = myDB.action('SELECT COUNT(*) FROM books WHERE AuthorName="%s" AND \
+            unignoredbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" \
+                                         AND Status != "Ignored"' % AuthorName).fetchone()
+            totalbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorName="%s"' % AuthorName).fetchone()
+            havebooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND \
                                      (Status="Have" OR Status="Open")' % AuthorName).fetchone()
-            havebooks = int(countbooks[0])
 
             controlValueDict = {"AuthorName": AuthorName}
             newValueDict = {
-                "TotalBooks": bookCount[0]['counter'],
-                "UnignoredBooks": unignoredbooks[0]['unignored'],
-                "HaveBooks": havebooks,
+                "TotalBooks": totalbooks['counter'],
+                "UnignoredBooks": unignoredbooks['counter'],
+                "HaveBooks": havebooks['counter'],
                 "LastBook": lastbook['BookName'],
                 "LastLink": lastbook['BookLink'],
                 "LastDate": lastbook['BookDate']
@@ -1082,7 +1078,7 @@ class WebInterface(object):
 # ALL ELSE ##########################################################
 
     def forceProcess(self, source=None):
-        threading.Thread(target=postprocess.processDir(force=True)).start()
+        threading.Thread(target=postprocess.processDir, args=[True]).start()
         raise cherrypy.HTTPRedirect(source)
     forceProcess.exposed = True
 

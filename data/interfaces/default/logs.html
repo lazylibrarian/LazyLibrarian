@@ -1,12 +1,17 @@
 <%inherit file="base.html"/>
 <%!
+    import lazylibrarian
     from lazylibrarian import formatter
 %>
 <%def name="headerIncludes()">
 	<div id="subhead_container">
 		<ul id="subhead_menu">
 		  <li><a href="clearLog" id="button"> Clear Log </a></li>
-		  <li><a href="toggleLog" id="button"> Toggle Debug Log </a></li>
+		  %if lazylibrarian.LOGFULL == True:
+		    <li><a href="toggleLog" id="button"> Stop Debug Log</a></li>
+		  %else:
+		    <li><a href="toggleLog" id="button"> Start Debug Log</a></li>
+		  %endif
 		</ul>
 	</div>	
 </%def>

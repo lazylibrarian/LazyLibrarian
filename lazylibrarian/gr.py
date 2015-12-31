@@ -22,7 +22,7 @@ class GoodReads:
         # self.type = type
         self.params = {"key":  lazylibrarian.GR_API}
 
-    def get_request(self, my_url, expireafter=30):
+    def get_request(self, my_url):
         request = urllib2.Request(my_url)
         if lazylibrarian.PROXY_HOST:
             request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
@@ -39,9 +39,10 @@ class GoodReads:
         # store the xml
         # return the xml, and whether it was found in the cache
         # Need to expire the cache entries, or we won't search for anything new
-        # Hard coded default to 30 days for now. Authors dont write that quickly.
-        # TODO make this configurable
+        # default to 30 days for now. Authors dont write that quickly.
+        #
         cacheLocation = "XMLCache"
+        expireafter = lazylibrarian.CACHE_AGE
         cacheLocation = os.path.join(lazylibrarian.CACHEDIR, cacheLocation)
         if not os.path.exists(cacheLocation):
             os.mkdir(cacheLocation)
@@ -191,7 +192,7 @@ class GoodReads:
 
         queue.put(resultlist)
 
-    def find_author_id(self):
+    def find_author_id(self, refresh=False):
         author = self.name
         # Goodreads doesn't like initials followed by spaces,
         # eg "M L Hamilton", needs "M. L. Hamilton" or "M.L.Hamilton"
@@ -222,7 +223,7 @@ class GoodReads:
             for author in resultxml:
                 authorid = author.attrib.get("id")
                 authorname = author[0].text
-                authorlist = self.get_author_info(authorid, authorname)
+                authorlist = self.get_author_info(authorid, authorname, refresh)
         return authorlist
 
     def get_author_info(self, authorid=None, authorname=None, refresh=False):
@@ -547,20 +548,14 @@ class GoodReads:
         unignored_count = 0
         totalbook_count = 0
 
-        unignoredbooks = myDB.select('SELECT COUNT(BookName) as unignored FROM books \
-                                      WHERE AuthorID="%s" AND Status != "Ignored"' % authorid)
-        if unignoredbooks:
-            unignored_count = unignoredbooks[0]['unignored']
-
-        bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE AuthorID="%s"' % authorid)
-        if bookCount:
-            totalbook_count = bookCount[0]['counter']
-
+        unignoredbooks = myDB.action('SELECT count("BookID") as counter FROM books \
+                                      WHERE AuthorID="%s" AND Status != "Ignored"' % authorid).fetchone()
+        totalbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % authorid).fetchone()
         controlValueDict = {"AuthorID": authorid}
         newValueDict = {
             "Status": "Active",
-            "TotalBooks": totalbook_count,
-            "UnignoredBooks": unignored_count,
+            "TotalBooks": totalbooks['counter'],
+            "UnignoredBooks": unignoredbooks['counter'],
             "LastBook": lastbookname,
             "LastLink": lastbooklink,
             "LastDate": lastbookdate
@@ -581,6 +576,10 @@ class GoodReads:
                      cache_hits, ignored, removedResults, not_cached))
 
         if refresh:
+            havebooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND (Status="Have" OR Status="Open")' % authorid).fetchone()
+            controlValueDict = {"AuthorID": authorid}
+            newValueDict = {"HaveBooks": havebooks['counter']}
+            myDB.upsert("authors", newValueDict, controlValueDict)
             logger.info("[%s] Book processing complete: Added %s books / Updated %s books" %
                         (authorname, str(added_count), str(updated_count)))
         else:

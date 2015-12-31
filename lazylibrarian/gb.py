@@ -320,7 +320,7 @@ class GoogleBooks:
                     # do we care about language?
                     if "All" not in valid_langs:
                         if bookisbn != "":
-                                # seems google lies to us, sometimes tells us books are in english when they are not
+                            # seems google lies to us, sometimes tells us books are in english when they are not
                             if booklang == "Unknown" or booklang == "en":
                                 googlelang = booklang
                                 match = myDB.action('SELECT lang FROM languages where isbn = "%s"' %
@@ -498,20 +498,15 @@ class GoogleBooks:
         unignored_count = 0
         totalbook_count = 0
 
-        unignoredbooks = myDB.select('SELECT COUNT(BookName) as unignored FROM books WHERE AuthorID="%s" \
-                                     AND Status != "Ignored"' % authorid)
-        if unignoredbooks:
-            unignored_count = unignoredbooks[0]['unignored']
+        unignoredbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" \
+                                     AND Status != "Ignored"' % authorid).fetchone()
 
-        bookCount = myDB.select('SELECT COUNT(BookName) as counter FROM books WHERE AuthorID="%s"' % authorid)
-        if bookCount:
-            totalbook_count = bookCount[0]['counter']
-
+        totalbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % authorid).fetchone()
         controlValueDict = {"AuthorID": authorid}
         newValueDict = {
             "Status": "Active",
-            "TotalBooks": totalbook_count,
-            "UnignoredBooks": unignored_count,
+            "TotalBooks": totalbooks['counter'],
+            "UnignoredBooks": unignoredbooks['counter'],
             "LastBook": lastbookname,
             "LastLink": lastbooklink,
             "LastDate": lastbookdate
@@ -530,6 +525,10 @@ class GoogleBooks:
                      ignored, removedResults, not_cached))
 
         if refresh:
+            havebooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND (Status="Have" OR Status="Open")' % authorid).fetchone()
+            controlValueDict = {"AuthorID": authorid}
+            newValueDict = {"HaveBooks": havebooks['counter']}
+            myDB.upsert("authors", newValueDict, controlValueDict)
             logger.info("[%s] Book processing complete: Added %s books / Updated %s books" %
                         (authorname, str(added_count), str(updated_count)))
         else:

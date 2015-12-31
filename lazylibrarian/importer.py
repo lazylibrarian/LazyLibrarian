@@ -29,7 +29,7 @@ def addAuthorToDB(authorname=None, refresh=False):
         logger.debug("Now updating author: %s" % authorname)
     myDB.upsert("authors", newValueDict, controlValueDict)
 
-    author = GR.find_author_id()
+    author = GR.find_author_id(refresh=refresh)
     if author:
         authorid = author['authorid']
         authorlink = author['authorlink']
