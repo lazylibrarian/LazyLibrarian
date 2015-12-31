@@ -5,32 +5,22 @@ import threading
 import subprocess
 from lazylibrarian import database, logger, formatter, notifiers, common
 
-try:
-    from wand.image import Image
-    have_magick = "wand"
-except ImportError:
-    try:
-        import PythonMagick
-        have_magick = "pythonmagick"
-    except ImportError:
-        have_magick = "convert"  # may have external, don't know yet
-
 
 def create_cover(issuefile=None):
-    if have_magick:
+    if lazylibrarian.HAVE_MAGICK:
         # create a thumbnail cover if there isn't one
         coverfile = issuefile.replace('.pdf', '.jpg')
         if not os.path.isfile(coverfile):
             logger.debug("Creating cover for %s" % issuefile)
             try:
-                if have_magick == 'wand':
+                if lazylibrarian_HAVE_MAGICK == 'wand':
                     with Image(filename=issuefile + '[0]') as img:
                         img.save(filename=coverfile)
-                elif have_magick == 'pythonmagick':
+                elif lazylibrarian.HAVE_MAGICK == 'pythonmagick':
                     img = PythonMagick.Image()
                     img.read(issuefile + '[0]')
                     img.write(coverfile)
-                elif have_magick == 'convert': 
+                elif lazylibrarian.HAVE_MAGICK == 'convert': 
                     # No PythonMagick in python3, hence allow wand, but more complicated
                     # to install - try to use external imagemagick convert?
                     # should work on win/mac/linux as long as imagemagick is installed
@@ -41,7 +31,7 @@ def create_cover(issuefile=None):
                         subprocess.check_call(params)
                     except:
                         logger.warn('No ImageMagick "convert" found')
-                        have_magick = ''  # don't keep trying
+                        lazylibrarian.HAVE_MAGICK = ""  # don't keep trying
             except:
                 logger.debug("Unable to create cover for %s" % issuefile)
 
