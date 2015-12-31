@@ -239,7 +239,7 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=
                 nzbcount = nzbcount + 1
                 results.append(ReturnResultsFieldsBySearchType(book, nzb, searchType, host, searchMode))
             except IndexError:
-                logger.debug('No results from %s' % host)
+                logger.debug('No results from %s for %s' % (host, book['searchterm']))
         logger.debug(u'Found %s nzb at %s for: %s' % (nzbcount, host, book['searchterm']))
     else:
         logger.debug('No data returned from %s' % host)
