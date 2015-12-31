@@ -427,17 +427,17 @@ class WebInterface(object):
                     lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE \
                                            AuthorName="%s" AND Status != "Ignored" order by BookDate DESC' %
                                            AuthorName).fetchone()
-                    unignoredbooks = len(myDB.select('SELECT BookID FROM books WHERE \
-                                                 AuthorName="%s" AND Status != "Ignored"' % AuthorName))
-                    totalbooks = len(myDB.select('SELECT BookID FROM books WHERE AuthorName="%s"' % AuthorName))
-                    havebooks = len(myDB.select('SELECT BookID FROM books WHERE AuthorName="%s" AND \
-                                             (Status="Have" OR Status="Open")' % AuthorName))
+                    unignoredbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE \
+                                                 AuthorName="%s" AND Status != "Ignored"' % AuthorName).fetchone()
+                    totalbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorName="%s"' % AuthorName).fetchone()
+                    havebooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND \
+                                             (Status="Have" OR Status="Open")' % AuthorName).fetchone()
 
                     controlValueDict = {"AuthorName": AuthorName}
                     newValueDict = {
-                        "TotalBooks": totalbooks,
-                        "UnignoredBooks": unignoredbooks,
-                        "HaveBooks": havebooks,
+                        "TotalBooks": totalbooks['counter'],
+                        "UnignoredBooks": unignoredbooks['counter'],
+                        "HaveBooks": havebooks['counter'],
                         "LastBook": lastbook['BookName'],
                         "LastLink": lastbook['BookLink'],
                         "LastDate": lastbook['BookDate']
@@ -543,17 +543,17 @@ class WebInterface(object):
             # update authors needs to be updated every time a book is marked differently
             lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorName="%s" \
                                    AND Status != "Ignored" order by BookDate DESC' % AuthorName).fetchone()
-            unignoredbooks = len(myDB.select('SELECT BookID FROM books WHERE AuthorName="%s" \
-                                         AND Status != "Ignored"' % AuthorName))
-            totalbooks = len(myDB.select('SELECT BookID FROM books WHERE AuthorName="%s"' % AuthorName))
-            havebooks = len(myDB.select('SELECT BookID FROM books WHERE AuthorName="%s" AND \
-                                     (Status="Have" OR Status="Open")' % AuthorName))
+            unignoredbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" \
+                                         AND Status != "Ignored"' % AuthorName).fetchone()
+            totalbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorName="%s"' % AuthorName).fetchone()
+            havebooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND \
+                                     (Status="Have" OR Status="Open")' % AuthorName).fetchone()
 
             controlValueDict = {"AuthorName": AuthorName}
             newValueDict = {
-                "TotalBooks": totalbooks,
-                "UnignoredBooks": unignoredbooks,
-                "HaveBooks": havebooks,
+                "TotalBooks": totalbooks['counter'],
+                "UnignoredBooks": unignoredbooks['counter'],
+                "HaveBooks": havebooks['counter'],
                 "LastBook": lastbook['BookName'],
                 "LastLink": lastbook['BookLink'],
                 "LastDate": lastbook['BookDate']

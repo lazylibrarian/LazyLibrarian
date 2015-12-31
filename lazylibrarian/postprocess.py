@@ -296,9 +296,9 @@ def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
     myDB.upsert("books", newValueDict, controlValueDict)
 
     # update authors
-    havebooks = len(myDB.select('SELECT BookID FROM books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' % authorname))
+    havebooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' % authorname).fetchone()
     controlValueDict = {"AuthorName": authorname}
-    newValueDict = {"HaveBooks": havebooks}
+    newValueDict = {"HaveBooks": havebooks['counter']}
     countauthor = len(myDB.select('SELECT AuthorID FROM authors WHERE AuthorName="%s"' % authorname))
     if countauthor:
         myDB.upsert("authors", newValueDict, controlValueDict)
