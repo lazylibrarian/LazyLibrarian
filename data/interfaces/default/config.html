@@ -586,6 +586,36 @@
                     <label>Match Ratio</label><input type="text" name="match_ratio"  value="${lazylibrarian.MATCH_RATIO}" size="8" maxlength="40"> percent
                     </div>
                 </td>
+                <td>
+                  <label>Missing Book Status:</label>
+                  <select name="notfound_status">
+                  %for nf_status in config['status_list']:
+                  <%
+                        selected = ''
+                        if nf_status == lazylibrarian.NOTFOUND_STATUS:
+                                selected = 'selected="selected"'
+                  %>
+                  <option value="${nf_status}" ${selected}>${nf_status}</option>
+                  %endfor
+                  </select>
+                  <br>
+                  <i class="smalltext">Value to update ebooks to if missing (removed)</i>
+                  <br><br>
+                  <label>New Found Book Status:</label>
+                  <select name="newbook_status">
+                  %for nb_status in config['status_list']:
+                  <%
+                        selected = ''
+                        if nb_status == lazylibrarian.NEWBOOK_STATUS:
+                                selected = 'selected="selected"'
+                  %>
+                  <option value="${nb_status}" ${selected}>${nb_status}</option>
+                  %endfor
+                  </select>
+                  <br>
+                  <i class="smalltext">Value to update ebooks to if new book available</i>
+                  </div>
+                  </td>
             </tr>
             <tr>
                 <td>
@@ -601,6 +631,11 @@
                 </td>
                 <td>
                 <label>Alternate Import/Export Folder:</label><input type="text" name="alternate_dir" value="${lazylibrarian.ALTERNATE_DIR}" size="50">
+                </td>
+                <td>
+                    <label>Calibre Auto Add:</label><input type="text" name="imp_autoadd" value="${lazylibrarian.IMP_AUTOADD}" size="50" maxlength="90">
+                    <BR><BR>
+                    <small>Directory for a copy to be placed for auto add process</small>
                 </td>
             </tr>
             <tr>
@@ -644,13 +679,6 @@
             </tr>
             <tr>
                 <td>
-                    <div>
-                    <label>Calibre Auto Add:</label><input type="text" name="imp_autoadd" value="${lazylibrarian.IMP_AUTOADD}" size="50" maxlength="90">
-                    </div>
-                    <BR>
-                    <small>Directory for a copy to be placed for auto add process</small>
-                </td>
-                <td>
                 <div>
                     <%
                     if lazylibrarian.IMP_SINGLEBOOK == True:
@@ -663,41 +691,7 @@
                   <i class="smalltext">This imports one book per directory, tick this if you keep multiple formats of the same book in the same directory</i>
                   </div>
                 </td>
-            </tr>
-	        <tr>
-                <td>
-                   <div id="fullscanoptions">
-                  <label>Missing Book Status:</label>
-                  <select name="notfound_status">
-                  %for nf_status in config['status_list']:
-                  <%
-                        selected = ''
-                        if nf_status == lazylibrarian.NOTFOUND_STATUS:
-                                selected = 'selected="selected"'
-                  %>
-                  <option value="${nf_status}" ${selected}>${nf_status}</option>
-                  %endfor
-                  </select>
-                  <br>
-                  <i class="smalltext">Value to update ebooks to if missing (removed)</i>
-                  <br>
-             
-                  <label>New Found Book Status:</label>
-                  <select name="newbook_status">
-                  %for nb_status in config['status_list']:
-                  <%
-                        selected = ''
-                        if nb_status == lazylibrarian.NEWBOOK_STATUS:
-                                selected = 'selected="selected"'
-                  %>
-                  <option value="${nb_status}" ${selected}>${nb_status}</option>
-                  %endfor
-                  </select>
-                  <br>
-                  <i class="smalltext">Value to update ebooks to if new book available</i>
-                  </div>
-                  </td>
-                  <td> 
+                <td> 
                   <div>
                     <%
                     if lazylibrarian.ADD_AUTHOR == True:
@@ -709,6 +703,8 @@
                   <br>
                   <i class="smalltext">This will auto add new authors from GoodReads</i>
                   </div>
+                </td>
+                <td>
                   <div>
                     <%
                     if lazylibrarian.FULL_SCAN == True:
@@ -721,8 +717,6 @@
                   <i class="smalltext">This will remove entries if ebooks are not found in the download location</i> 
                 </div>
    	            </td>
-                <td>
-                </td>
             </tr>
         </table>
         </div>
