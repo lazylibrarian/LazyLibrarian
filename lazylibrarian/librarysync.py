@@ -202,8 +202,6 @@ def LibraryScan(dir=None):
         'create table stats (authorname text, GR_book_hits int, GR_lang_hits int, LT_lang_hits int, \
                             GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int )')
 
-    new_authors = []
-
     logger.info(
         'Scanning ebook directory: %s' %
         dir.decode(lazylibrarian.SYS_ENCODING, 'replace'))
@@ -232,9 +230,6 @@ def LibraryScan(dir=None):
                 logger.warn(
                     'Book %s - %s updated as not found on disk' %
                     (bookAuthor, bookName))
-
-                if bookAuthor not in new_authors:
-                    new_authors.append(bookAuthor)
 
     # guess this was meant to save repeat-scans of the same directory
     # if it contains multiple formats of the same book, but there was no code
@@ -450,8 +445,6 @@ def LibraryScan(dir=None):
                                         logger.debug(
                                             "Adding new author [%s]" %
                                             author)
-                                        if author not in new_authors:
-                                            new_authors.append(author)
                                         try:
                                             importer.addAuthorToDB(author)
                                             check_exist_author = myDB.action(
@@ -536,12 +529,16 @@ def LibraryScan(dir=None):
     stats = len(myDB.select('select BookID from Books where status="Open" and BookLang="Unknown"'))
     if stats:
         logger.warn("There are %s books in your library with unknown language" % stats)
-
-    logger.debug('Updating %i authors' % len(new_authors))
-    for auth in new_authors:
-        havebooks = myDB.action('SELECT count("BookID") as counter from books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' % auth).fetchone()
-        myDB.action('UPDATE authors set HaveBooks="%s" where AuthorName="%s"' %(havebooks['counter'], auth))
-        totalbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND Status!="Ignored"' % auth).fetchone()
-        myDB.action('UPDATE authors set UnignoredBooks="%s" where AuthorName="%s"' % (totalbooks['counter'], auth))
+    
+    authors = myDB.select('select AuthorName from authors')
+    # Update bookcounts for all authors, not just new ones - refresh may have located
+    # new books for existing authors especially if switched provider gb/gr
+    logger.debug('Updating bookcounts for %i authors' % len(authors))
+    for author in authors:
+        name = author['AuthorName']
+        havebooks = myDB.action('SELECT count("BookID") as counter from books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' % name).fetchone()
+        myDB.action('UPDATE authors set HaveBooks="%s" where AuthorName="%s"' %(havebooks['counter'], name))
+        totalbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND Status!="Ignored"' % name).fetchone()
+        myDB.action('UPDATE authors set UnignoredBooks="%s" where AuthorName="%s"' % (totalbooks['counter'], name))
 
     logger.info('Library scan complete')
