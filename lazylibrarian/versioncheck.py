@@ -198,8 +198,8 @@ def getLatestVersion_FromGit():
 
     # Can only work for non Windows driven installs, so check install type
     if lazylibrarian.INSTALL_TYPE == 'win':
-        logger.debug('(getLatestVersion_FromGit) Code Error - Windows install - \
-                     should not be called under a windows install')
+        logger.debug('(getLatestVersion_FromGit) Code Error - Windows install - ' +
+                     'should not be called under a windows install')
         latest_version = 'WINDOWS INSTALL'
     else:
         # check current branch value of the local git repo as folks may pull from a branch not master
@@ -212,8 +212,8 @@ def getLatestVersion_FromGit():
             # Get the latest commit available from github
             url = 'https://api.github.com/repos/%s/%s/commits/%s' % (
                         lazylibrarian.GIT_USER, lazylibrarian.GIT_REPO, lazylibrarian.GIT_BRANCH)
-            logger.debug('(getLatestVersion_FromGit) Retrieving latest version \
-                         information from github command=[%s]' % url)
+            logger.debug('(getLatestVersion_FromGit) Retrieving latest version ' +
+                         'information from github command=[%s]' % url)
             try:
                 result = urllib2.urlopen(url, timeout=30).read()
                 git = simplejson.JSONDecoder().decode(result)
@@ -248,23 +248,23 @@ def getCommitDifferenceFromGit():
                 logger.debug('pull total_commits from json object')
                 commits = git['total_commits']
 
-                logger.debug('(getCommitDifferenceFromGit) -  GitHub reports as follows Status [%s] - \
-                             Ahead [%s] - Behind [%s] - Total Commits [%s] ' % (
+                logger.debug('(getCommitDifferenceFromGit) -  GitHub reports as follows Status [%s] - ' +
+                             'Ahead [%s] - Behind [%s] - Total Commits [%s]' % (
                              git['status'], git['ahead_by'], git['behind_by'], git['total_commits']))
             except:
                 logger.warn('(getCommitDifferenceFromGit) -  could not get difference status from GitHub')
 
         except:
-            logger.warn('(getCommitDifferenceFromGit) -  Could not get commits behind from github. \
-                        Can happen if you have a local commit not pushed to repo')
+            logger.warn('(getCommitDifferenceFromGit) -  Could not get commits behind from github. ' +
+                        'Can happen if you have a local commit not pushed to repo')
 
         if commits >= 1:
             logger.info('[VersionCheck] -  New version is available. You are %s commits behind' % commits)
         elif commits == 0:
             logger.info('[VersionCheck] -  lazylibrarian is up to date ')
         elif commits == -1:
-            logger.info('[VersionCheck] -  You are running an unknown version of lazylibrarian. \
-                        Run the updater to identify your version')
+            logger.info('[VersionCheck] -  You are running an unknown version of lazylibrarian. ' +
+                        'Run the updater to identify your version')
 
     else:
         logger.info('You are running an unknown version of lazylibrarian. Run the updater to identify your version')
@@ -287,8 +287,8 @@ def updateVersionFile(new_version_id):
             ver_file.write(new_version_id)
             ver_file.close()
         except IOError, e:
-            logger.error(u"(updateVersionFile) Unable to write current version to version.txt, \
-                         update not complete: " + e)
+            logger.error(u"(updateVersionFile) Unable to write current version to version.txt, " +
+                         "update not complete: " + e)
 
 
 def update():
