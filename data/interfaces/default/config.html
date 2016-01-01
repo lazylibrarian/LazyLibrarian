@@ -599,9 +599,9 @@
                   %endfor
                   </select>
                   <br>
-                  <i class="smalltext">Value to update ebooks to if missing (removed)</i>
+                  <i class="smalltext">Status for missing/deleted ebooks</i>
                   <br><br>
-                  <label>New Found Book Status:</label>
+                  <label>New Book Status:</label>
                   <select name="newbook_status">
                   %for nb_status in config['status_list']:
                   <%
@@ -613,7 +613,7 @@
                   %endfor
                   </select>
                   <br>
-                  <i class="smalltext">Value to update ebooks to if new book available</i>
+                  <i class="smalltext">Status for new ebooks</i>
                   </div>
                   </td>
             </tr>
@@ -631,6 +631,8 @@
                 </td>
                 <td>
                 <label>Alternate Import/Export Folder:</label><input type="text" name="alternate_dir" value="${lazylibrarian.ALTERNATE_DIR}" size="50">
+                <BR><BR>
+                <small>Directory for wishlists and manually importing books</small>
                 </td>
                 <td>
                     <label>Calibre Auto Add:</label><input type="text" name="imp_autoadd" value="${lazylibrarian.IMP_AUTOADD}" size="50" maxlength="90">
