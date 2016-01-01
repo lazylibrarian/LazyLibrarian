@@ -531,7 +531,7 @@ def LibraryScan(dir=None):
         logger.debug(
             "Unable to cache %s books with missing ISBN" %
             stats['sum(uncached)'])
-    logger.debug("XMLCache %s hits, %s miss" % (lazylibrarian.CACHE_HIT, lazylibrarian.CACHE_MISS))
+    logger.debug("Cache %s hits, %s miss" % (lazylibrarian.CACHE_HIT, lazylibrarian.CACHE_MISS))
     logger.debug("ISBN Language cache holds %s entries" % cachesize['counter'])
     stats = len(myDB.select('select BookID from Books where status="Open" and BookLang="Unknown"'))
     if stats:
