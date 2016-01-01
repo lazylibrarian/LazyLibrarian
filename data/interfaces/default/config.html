@@ -560,7 +560,10 @@
             <tr>
                 <td>
                     <h3>Intervals</h3>
-                    <BR>
+                </td>
+            </tr>
+            <tr>
+                <td>
                     <div>
                     <label>NZB Scan Interval:</label><input type="text" name="search_interval" value="${lazylibrarian.SEARCH_INTERVAL}" size="8" maxlength="40"> mins
                     </div>
@@ -570,18 +573,23 @@
                     <div>
                     <label>Version Check Interval</label><input type="text" name="versioncheck_interval" value="${lazylibrarian.VERSIONCHECK_INTERVAL}" size="8" maxlength="40"> hours
                     </div>
+                    <small>
+                    <BR>
+                    Changes to the scan intervals only take effect when the jobs are restarted
+                    </small>
+                </td>
+                <td>
                     <div>
                     <label>Cache expire after</label><input type="text" name="cache_age"  value="${lazylibrarian.CACHE_AGE}" size="8" maxlength="40"> days
                     </div>
                     <div>
                     <label>Match Ratio</label><input type="text" name="match_ratio"  value="${lazylibrarian.MATCH_RATIO}" size="8" maxlength="40"> percent
-                    <small>
-                    <BR>
-                    Changes to the scan intervals only take effect when the jobs are restarted
-                    </small>
                     </div>
                 </td>
+            </tr>
+            <tr>
                 <td>
+                    <h3>Folders</h3>
                 </td>
             </tr>
             <tr>
@@ -590,15 +598,6 @@
                     <label>Base Destination Folder:</label><input type="text" name="destination_dir" value="${lazylibrarian.DESTINATION_DIR}" size="50">
                     </div>
                     <BR>
-                    <div>
-                    <%
-                    if lazylibrarian.DESTINATION_COPY == True:
-                        checked = 'checked="checked"'
-                    else:
-                        checked = ''
-                    %>
-                    <input type="checkbox" name="destination_copy" value=1 ${checked} /><label>Keep original files</label>
-                    </div>
                 </td>
                 <td>
                 <label>Alternate Import/Export Folder:</label><input type="text" name="alternate_dir" value="${lazylibrarian.ALTERNATE_DIR}" size="50">
@@ -613,10 +612,21 @@
                     <BR>
                     Current limitation: each file has to be in unique subfolder
                     </small>
+                    <div>
+                    <%
+                    if lazylibrarian.DESTINATION_COPY == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                    <input type="checkbox" name="destination_copy" value=1 ${checked} /><label>Keep original files</label>
+                    </div>
                 </td>
                 <td>
-		    <label>Magazine Destination Folder:</label><input type="text" name="mag_dest_folder" value="${lazylibrarian.MAG_DEST_FOLDER}" size="30" maxlength="100">
+		            <label>Magazine Destination Folder:</label><input type="text" name="mag_dest_folder" value="${lazylibrarian.MAG_DEST_FOLDER}" size="30" maxlength="100">
                     <label>Magazine Destination File:</label><input type="text" name="mag_dest_file" value="${lazylibrarian.MAG_DEST_FILE}" size="30" maxlength="40">
+                    <BR>
+                    <small>Options include $Title, $IssueDate, any string
                     <BR>
                     <%
                     if lazylibrarian.MAG_RELATIVE == True:
@@ -626,11 +636,9 @@
                     %>
                     <input type="checkbox" name="mag_relative" value=1 ${checked} /><label>Magazines inside book folder</label>
 		            <BR>
-                    <small>Options include $Title, $IssueDate, any string
-                    <BR>
                     Current limitation: each magazine has to be in unique subfolder
 		            <BR>
-		    If inside book folder, magazine folder must start with _
+		            If inside book folder, magazine folder must start with _
                     </small>
                 </td>
             </tr>
@@ -639,26 +647,26 @@
                     <div>
                     <label>Calibre Auto Add:</label><input type="text" name="imp_autoadd" value="${lazylibrarian.IMP_AUTOADD}" size="50" maxlength="90">
                     </div>
+                    <BR>
                     <small>Directory for a copy to be placed for auto add process</small>
                 </td>
                 <td>
-                </td>
-            </tr>
-	    <tr>
-                <td>
-                    <div>
+                <div>
                     <%
-                    if lazylibrarian.FULL_SCAN == True:
+                    if lazylibrarian.IMP_SINGLEBOOK == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
-                  <label>Full Scan:</label><input type="checkbox" name="full_scan" id="fullscan" value=1 ${checked} />
+                  <label>One book per directory:</label><input type="checkbox" name="imp_singlebook" value=1 ${checked} />
                   <br>
-                  <i class="smalltext">This will remove entries if ebooks are not found in the download location</i>
- 
+                  <i class="smalltext">This imports one book per directory, tick this if you keep multiple formats of the same book in the same directory</i>
                   </div>
-                  <div id="fullscanoptions">
+                </td>
+            </tr>
+	        <tr>
+                <td>
+                   <div id="fullscanoptions">
                   <label>Missing Book Status:</label>
                   <select name="notfound_status">
                   %for nf_status in config['status_list']:
@@ -673,6 +681,7 @@
                   <br>
                   <i class="smalltext">Value to update ebooks to if missing (removed)</i>
                   <br>
+             
                   <label>New Found Book Status:</label>
                   <select name="newbook_status">
                   %for nb_status in config['status_list']:
@@ -687,6 +696,8 @@
                   <br>
                   <i class="smalltext">Value to update ebooks to if new book available</i>
                   </div>
+                  </td>
+                  <td> 
                   <div>
                     <%
                     if lazylibrarian.ADD_AUTHOR == True:
@@ -698,19 +709,18 @@
                   <br>
                   <i class="smalltext">This will auto add new authors from GoodReads</i>
                   </div>
-		          <div>
+                  <div>
                     <%
-                    if lazylibrarian.IMP_SINGLEBOOK == True:
+                    if lazylibrarian.FULL_SCAN == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
-                  <label>One book per directory:</label><input type="checkbox" name="imp_singlebook" value=1 ${checked} />
+                  <label>Full Scan:</label><input type="checkbox" name="full_scan" id="fullscan" value=1 ${checked} />
                   <br>
-                  <i class="smalltext">This imports one book per directory, tick this if you keep multiple formats of the same book in the same directory</i>
-                  </div>
-
-		</td>
+                  <i class="smalltext">This will remove entries if ebooks are not found in the download location</i> 
+                </div>
+   	            </td>
                 <td>
                 </td>
             </tr>
