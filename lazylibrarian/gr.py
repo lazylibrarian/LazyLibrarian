@@ -61,18 +61,16 @@ class GoodReads:
         if valid_cache:
             lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
             logger.debug(u"CacheHandler: Returning CACHED response for %s" % request.get_full_url())
-            f = open(hashname, "r")
-            source_xml = f.read()
-            f.close()
+            with open(hashname, "r") as cachefile:
+                source_xml = cachefile.read()
         else:
             lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
             resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
             if str(resp.getcode()).startswith("2"):  # (200 OK etc)
                 logger.debug(u"CacheHandler: Caching response for %s" % request.get_full_url())
                 source_xml = resp.read()  # .decode('utf-8')
-                o = open(hashname, "w")
-                o.write(source_xml)
-                o.close()
+                with open(hashname, "w") as cachefile:
+                    cachefile.write(source_xml)
             else:
                 logger.warn(u"Unable to cache response for %s, got %s" % (request.get_full_url(), resp.getcode()))
                 return "", False

@@ -82,8 +82,6 @@ def processDir(force=False):
 
     logger.debug(' Checking [%s] for files to post process' % processpath)
 
-    # TODO - try exception on os.listdir - it throws debug level
-    # exception if dir doesn't exist - bloody hard to catch
     try:
         downloads = os.listdir(processpath)
     except OSError:
