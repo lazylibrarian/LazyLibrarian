@@ -96,7 +96,7 @@ def search_nzb_book(books=None):
             addedCounter = 0
 
             for nzb in resultlist:
-                nzbTitle = formatter.latinToAscii(formatter.replace_all(str(nzb['nzbtitle']), dictrepl)).strip()
+                nzbTitle = formatter.latinToAscii(formatter.replace_all(nzb['nzbtitle'], dictrepl)).strip()
                 nzbTitle = re.sub(r"\s\s+", " ", nzbTitle)  # remove extra whitespace
                 logger.debug(u'nzbName %s' % nzbTitle)
 
