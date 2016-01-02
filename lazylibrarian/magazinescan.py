@@ -35,7 +35,6 @@ def create_cover(issuefile=None):
             except:
                 logger.debug("Unable to create cover for %s" % issuefile)
 
-
 def magazineScan(thread=None):
     # rename this thread
     if thread is None:

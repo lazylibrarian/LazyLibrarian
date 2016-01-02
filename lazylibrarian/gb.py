@@ -7,7 +7,6 @@ import json
 import time
 import re
 import threading
-import time
 from urllib2 import HTTPError
 
 import lazylibrarian
