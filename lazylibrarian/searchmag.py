@@ -141,12 +141,18 @@ def search_magazines(mags=None):
                                              ratio, bookid, nzbtitle_formatted))
                                 name_match = 0  # name match failed
                     if name_match:
-                            # some magazine torrent titles are "magazine name some form of date .pdf"
-                        if nzbtitle_exploded[len(nzbtitle_exploded) - 1].lower() == 'pdf':
+                        # some magazine torrent uploaders add their sig in [] or {}
+                        if nzbtitle_exploded[len(nzbtitle_exploded) - 1][0] in '[{':
                             nzbtitle_exploded.pop()  # gotta love the function names
+                        # some magazine torrent titles are "magazine name some form of date .pdf"
+                        if nzbtitle_exploded[len(nzbtitle_exploded) - 1].lower() == 'pdf':
+                            nzbtitle_exploded.pop()
                         if len(nzbtitle_exploded) > 1:
                             # regexA = DD MonthName YYYY OR MonthName YYYY or nn MonthName YYYY
                             regexA_year = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
+                            if regexA_year.isdigit():
+                                if int(regexA_year) < 1900 or int(regexA_year) > 2100:
+                                    regexA_year = 'Invalid'
                             regexA_month_temp = nzbtitle_exploded[len(nzbtitle_exploded) - 2]
                             regexA_month = formatter.month2num(common.remove_accents(regexA_month_temp))
 
@@ -159,7 +165,7 @@ def search_magazines(mags=None):
                                     regexA_day = '01'  # just MonthName YYYY
                             else:
                                 regexA_day = '01'  # monthly, or less frequent
-
+                            
                             newdatish_regexA = regexA_year + regexA_month + regexA_day
 
                             try:
@@ -182,7 +188,7 @@ def search_magazines(mags=None):
                                     newdatish_regexC = 'Invalid'  # invalid unless works out otherwise
                                     regexC_temp = nzbtitle_exploded[len(nzbtitle_exploded) - 2]
                                     if regexC_temp.isdigit():
-                                        if int(regexC_temp) > 1900:  # YYYY MM  or YYYY nn
+                                        if int(regexC_temp) > 1900 and int(regexC_temp) < 2100:  # YYYY MM  or YYYY nn
                                             regexC_year = regexC_temp
                                             regexC_month = nzbtitle_exploded[len(nzbtitle_exploded) - 1].zfill(2)
                                             regexC_day = '01'
@@ -193,7 +199,7 @@ def search_magazines(mags=None):
                                         else:
                                             regexC_year = nzbtitle_exploded[len(nzbtitle_exploded) - 3]
                                             if regexC_year.isdigit():
-                                                if int(regexC_year) > 1900:  # YYYY MM DD or YYYY nn-nn
+                                                if int(regexC_year) > 1900 and int(regexC_year) < 2100:  # YYYY MM DD or YYYY nn-nn
                                                     regexC_month = regexC_temp.zfill(2)
                                                     if int(regexC_month) < 13:
                                                         # if issue number > 12 date matching will fail
@@ -242,7 +248,7 @@ def search_magazines(mags=None):
                             start_time = time.time()
                             start_time -= 31 * 24 * 60 * 60  # number of seconds in 31 days
                             control_date = time.strftime("%Y-%m-%d", time.localtime(start_time))
-
+                        print nzbtitle,newdatish
                         # only grab a copy if it's newer than the most recent we have,
                         # or newer than a month ago if we have none
                         comp_date = formatter.datecompare(newdatish, control_date)
