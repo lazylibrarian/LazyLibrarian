@@ -183,9 +183,8 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
             nzbpath = os.path.join(lazylibrarian.NZB_BLACKHOLEDIR, nzbname)
 
             try:
-                f = open(nzbpath, 'w')
-                f.write(nzbfile)
-                f.close()
+                with open(nzbpath, 'w') as f:
+                    f.write(nzbfile)
                 logger.debug('NZB file saved to: ' + nzbpath)
                 download = True
                 try:

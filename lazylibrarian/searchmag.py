@@ -245,10 +245,6 @@ def search_magazines(mags=None):
 
                         # only grab a copy if it's newer than the most recent we have,
                         # or newer than a month ago if we have none
-                        # TODO we should maybe store frequency somewhere too ?
-                        # This would allow us to recreate the table on a scan
-                        # similar to importing a book library, but not in the database in case starting from scratch.
-                        # Could also store number of seeders for torrents, but this changes all the time??
                         comp_date = formatter.datecompare(newdatish, control_date)
                         if comp_date > 0:
                             # Should probably only upsert when downloaded and processed in case snatch fails

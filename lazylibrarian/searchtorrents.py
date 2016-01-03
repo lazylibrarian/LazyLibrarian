@@ -206,9 +206,8 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             else:
                 tor_name = tor_name + '.torrent'
             tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
-            torrent_file = open(tor_path, 'wb')
-            torrent_file.write(torrent)
-            torrent_file.close()
+            with open(tor_path, 'wb') as torrent_file:
+                torrent_file.write(torrent)
             logger.debug('Torrent file saved: %s' % tor_title)
             download = True
 

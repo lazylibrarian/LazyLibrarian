@@ -66,7 +66,7 @@ class WebInterface(object):
 
     def configUpdate(self, http_host='0.0.0.0', http_root=None, http_user=None, http_port=5299,
                      http_pass=None, http_look=None, launch_browser=0, logdir=None, loglevel=2,
-                     imp_onlyisbn=0, imp_singlebook=0, imp_preflang=None, imp_monthlang=None,
+                     imp_onlyisbn=0, imp_singlebook=0, imp_preflang=None, imp_monthlang=None, imp_convert='',
                      imp_autoadd=None, match_ratio=80, nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0,
                      nzb_downloader_blackhole=0, use_nzb=0, use_tor=0, proxy_host=None, proxy_type=None,
                      sab_host=None, sab_port=0, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None,
@@ -117,6 +117,7 @@ class WebInterface(object):
         lazylibrarian.IMP_PREFLANG = imp_preflang
         lazylibrarian.IMP_MONTHLANG = imp_monthlang
         lazylibrarian.IMP_AUTOADD = imp_autoadd
+        lazylibrarian.IMP_CONVERT = imp_convert
 
         lazylibrarian.SAB_HOST = sab_host
         lazylibrarian.SAB_PORT = formatter.check_int(sab_port, 0)
@@ -895,8 +896,10 @@ class WebInterface(object):
             else:       
                 jobname = job.split(' ')[0].split('.')[2]
 
-            jobtime = job.split('[')[1].split('.')[0]
-            logger.info(u"%s [%s" % (jobname, jobtime))
+            jobinterval = job.split('[')[1].split(']')[0]
+            jobtime = job.split('at: ')[1].split('.')[0]
+            jobtime = formatter.next_run(jobtime)
+            logger.info(u"%s: Next run in %s" % (jobname, jobtime))
         logger.info(u"Cache %i hits, %i miss" % (int(lazylibrarian.CACHE_HIT), int(lazylibrarian.CACHE_MISS)))
         raise cherrypy.HTTPRedirect("logs")
     showJobs.exposed = True

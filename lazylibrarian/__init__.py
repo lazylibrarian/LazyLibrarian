@@ -29,7 +29,7 @@ except ImportError:
         import PythonMagick
         have_magick = "pythonmagick"
     except:
-        have_magick = "convert"  # may have external, don't know yet
+        have_magick = 'convert'  # may have external, don't know yet
 
 FULL_PATH = None
 PROG_DIR = None
@@ -104,6 +104,7 @@ IMP_MONTHLANG = None
 IMP_ONLYISBN = 0
 IMP_SINGLEBOOK = 1
 IMP_AUTOADD = None
+IMP_CONVERT = None
 
 BOOK_API = None
 GR_API = None
@@ -331,7 +332,7 @@ def initialize():
         global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, LOGFULL, DAEMON, DATADIR, \
             HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, \
             LAUNCH_BROWSER, LOGDIR, CACHEDIR, CACHE_AGE, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, \
-            IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, \
+            IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, IMP_CONVERT, \
             MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, \
             MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, CONFIGFILE, CFG, LOGDIR, \
             SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, SAB_CAT, \
@@ -434,6 +435,7 @@ def initialize():
         IMP_AUTOADD = check_setting_str(CFG, 'General', 'imp_autoadd', '')
         IMP_ONLYISBN = check_setting_bool(CFG, 'General', 'imp_onlyisbn', 0)
         IMP_SINGLEBOOK = check_setting_bool(CFG, 'General', 'imp_singlebook', 0)
+        IMP_CONVERT = check_setting_str(CFG, 'General', 'imp_convert', '')
         CACHE_AGE = check_setting_int(CFG, 'General', 'cache_age', 30)
 
         GIT_USER = check_setting_str(CFG, 'Git', 'git_user', 'dobytang')
@@ -778,6 +780,7 @@ def config_write():
     CFG.set('General', 'imp_preflang', IMP_PREFLANG)
     CFG.set('General', 'imp_monthlang', IMP_MONTHLANG)
     CFG.set('General', 'imp_autoadd', IMP_AUTOADD)
+    CFG.set('General', 'imp_convert', IMP_CONVERT)
     CFG.set('General', 'ebook_type', EBOOK_TYPE)
     CFG.set('General', 'destination_dir', DESTINATION_DIR)
     CFG.set('General', 'alternate_dir', ALTERNATE_DIR)

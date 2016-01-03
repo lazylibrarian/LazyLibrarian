@@ -66,11 +66,13 @@ def schedule_processor(action='Start'):
         for job in lazylibrarian.SCHED.get_jobs():
             if "processDir" in str(job):
                 return  # return if already running, if not, start a new one
-        lazylibrarian.SCHED.add_interval_job(postprocess.processDir, minutes=int(lazylibrarian.SCAN_INTERVAL))
+        lazylibrarian.SCHED.add_interval_job(processDir, minutes=int(lazylibrarian.SCAN_INTERVAL))
+        logger.debug("Started postprocessing job")
     else:
         for job in lazylibrarian.SCHED.get_jobs():
             if "processDir" in str(job):
                 lazylibrarian.SCHED.unschedule_job(job)
+                logger.debug("Stopped postprocessing job")
 
 def processDir(force=False):
     # rename this thread
@@ -80,8 +82,6 @@ def processDir(force=False):
 
     logger.debug(' Checking [%s] for files to post process' % processpath)
 
-    # TODO - try exception on os.listdir - it throws debug level
-    # exception if dir doesn't exist - bloody hard to catch
     try:
         downloads = os.listdir(processpath)
     except OSError:
