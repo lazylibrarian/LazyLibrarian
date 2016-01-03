@@ -895,8 +895,10 @@ class WebInterface(object):
             else:       
                 jobname = job.split(' ')[0].split('.')[2]
 
-            jobtime = job.split('[')[1].split('.')[0]
-            logger.info(u"%s [%s" % (jobname, jobtime))
+            jobinterval = job.split('[')[1].split(']')[0]
+            jobtime = job.split('at: ')[1].split('.')[0]
+            jobtime = formatter.next_run(jobtime)
+            logger.info(u"%s: Next run in %s" % (jobname, jobtime))
         logger.info(u"Cache %i hits, %i miss" % (int(lazylibrarian.CACHE_HIT), int(lazylibrarian.CACHE_MISS)))
         raise cherrypy.HTTPRedirect("logs")
     showJobs.exposed = True
