@@ -13,27 +13,34 @@ def create_cover(issuefile=None):
         if not os.path.isfile(coverfile):
             logger.debug("Creating cover for %s" % issuefile)
             try:
-                if lazylibrarian_HAVE_MAGICK == 'wand':
+                # No PythonMagick in python3, hence allow wand, but more complicated
+                # to install - try to use external imagemagick convert?
+                # should work on win/mac/linux as long as imagemagick is installed
+                # and config points to external "convert" program
+                program = 'none detected'
+                if len(lazylibrarian.IMP_CONVERT):  # allow external convert to override libraries
+                    program = lazylibrarian.IMP_CONVERT
+                    try:
+                        params = [program, issuefile + '[0]', coverfile]
+                        subprocess.check_call(params)
+                    except subprocess.CalledProcessError:
+                        logger.warn('No ImageMagick "convert" found')
+                        lazylibrarian.HAVE_MAGICK = ""  # don't keep trying
+                        
+                elif lazylibrarian.HAVE_MAGICK == 'wand':
+                    program = 'Wand library'
+                    from wand.image import Image
                     with Image(filename=issuefile + '[0]') as img:
                         img.save(filename=coverfile)
+                        
                 elif lazylibrarian.HAVE_MAGICK == 'pythonmagick':
+                    program = 'PythonMagick library'
+                    import PythonMagick
                     img = PythonMagick.Image()
                     img.read(issuefile + '[0]')
                     img.write(coverfile)
-                elif lazylibrarian.HAVE_MAGICK == 'convert': 
-                    # No PythonMagick in python3, hence allow wand, but more complicated
-                    # to install - try to use external imagemagick convert?
-                    # should work on win/mac/linux as long as imagemagick is installed
-                    # but how best to check if external imagemagick is installed?
-                    # Maybe replace program name 'convert' by a global that user can edit
-                    try:
-                        params = ['convert', issuefile + '[0]', coverfile]
-                        subprocess.check_call(params)
-                    except:
-                        logger.warn('No ImageMagick "convert" found')
-                        lazylibrarian.HAVE_MAGICK = ""  # don't keep trying
             except:
-                logger.debug("Unable to create cover for %s" % issuefile)
+                logger.debug("Unable to create cover for %s using %s" % (issuefile, program))
 
 def magazineScan(thread=None):
     # rename this thread
