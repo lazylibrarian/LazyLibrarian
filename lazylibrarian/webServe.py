@@ -77,7 +77,7 @@ class WebInterface(object):
                      newznab_api0=None, newznab1=0, newznab_host1=None, newznab_api1=None, newznab2=0,
                      newznab_host2=None, newznab_api2=None, newznab3=0, newznab_host3=None, newznab_api3=None,
                      newznab4=0, newznab_host4=None, newznab_api4=None, newzbin=0, newzbin_uid=None,
-                     newzbin_pass=None, kat=0, kat_host=None, ebook_type=None, book_api=None,
+                     newzbin_pass=None, kat=0, kat_host=None, ebook_type=None, mag_type=None, book_api=None,
                      torznab0=0, torznab_host0=None, torznab_api0=None, torznab1=0, torznab_host1=None,
                      torznab_api1=None, torznab2=0, torznab_host2=None, torznab_api2=None,
                      torznab3=0, torznab_host3=None, torznab_api3=None, torznab4=0, torznab_host4=None,
@@ -214,6 +214,7 @@ class WebInterface(object):
         lazylibrarian.USE_TOR = bool(use_tor)
 
         lazylibrarian.EBOOK_TYPE = ebook_type
+        lazylibrarian.MAG_TYPE = mag_type
         lazylibrarian.BOOK_API = book_api
         lazylibrarian.GR_API = gr_api
         lazylibrarian.GB_API = gb_api

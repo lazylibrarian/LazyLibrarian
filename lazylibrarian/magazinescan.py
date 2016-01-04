@@ -85,8 +85,8 @@ def magazineScan(thread=None):
 
     for dirname, dirnames, filenames in os.walk(mag_path):
         for fname in filenames[:]:
-            # if fname.endswith('.pdf'): maybe not all magazines will be pdf?
-            if formatter.is_valid_booktype(fname):
+            # maybe not all magazines will be pdf?
+            if formatter.is_valid_magtype(fname):
                 try:
                     title = fname.split('-')[3]
                     title = title.split('.')[-2]
