@@ -142,11 +142,13 @@ def search_magazines(mags=None):
                                 name_match = 0  # name match failed
                     if name_match:
                         # some magazine torrent uploaders add their sig in [] or {}
-                        if nzbtitle_exploded[len(nzbtitle_exploded) - 1][0] in '[{':
-                            nzbtitle_exploded.pop()  # gotta love the function names
-                        # some magazine torrent titles are "magazine name some form of date .pdf"
-                        if nzbtitle_exploded[len(nzbtitle_exploded) - 1].lower() == 'pdf':
-                            nzbtitle_exploded.pop()
+                        # Fortunately for us, they always seem to add it at the end
+                        # some magazine torrent titles are "magazine_name some_form_of_date pdf"
+                        # so strip all the trailing junk...
+                        while nzbtitle_exploded[len(nzbtitle_exploded) - 1][0] in '[{' or \
+                            nzbtitle_exploded[len(nzbtitle_exploded) - 1].lower() == 'pdf':
+                                nzbtitle_exploded.pop()  # gotta love the function names
+                        
                         if len(nzbtitle_exploded) > 1:
                             # regexA = DD MonthName YYYY OR MonthName YYYY or nn MonthName YYYY
                             regexA_year = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
