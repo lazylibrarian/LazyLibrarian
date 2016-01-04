@@ -149,10 +149,10 @@ def processDir(force=False):
             dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
                    ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
             dest_path = formatter.latinToAscii(formatter.replace_all(dest_path, dic))
-            try:
-                os.chmod(dest_path, 0777)
-            except Exception, e:
-                logger.debug("Could not chmod post-process directory: " + str(dest_path))
+            #try:
+            #    os.chmod(dest_path, 0777)
+            #except Exception, e:
+            #    logger.debug("Could not chmod post-process directory: " + str(dest_path))
 
             processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name, book['BookID'])
 
@@ -225,11 +225,11 @@ def import_book(pp_path=None, bookID=None):
         authorname = data[0]['AuthorName']
         bookname = data[0]['BookName']
 
-        try:
-            auth_dir = os.path.join(lazylibrarian.DESTINATION_DIR, authorname).encode(lazylibrarian.SYS_ENCODING)
-            os.chmod(auth_dir, 0777)
-        except Exception, e:
-            logger.debug("Could not chmod author directory: " + str(auth_dir))
+        #try:
+        #    auth_dir = os.path.join(lazylibrarian.DESTINATION_DIR, authorname).encode(lazylibrarian.SYS_ENCODING)
+        #    os.chmod(auth_dir, 0777)
+        #except Exception, e:
+        #    logger.debug("Could not chmod author directory: " + str(auth_dir))
 
         dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace('$Title', bookname)
         global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace('$Title', bookname)
@@ -364,10 +364,10 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     logger.debug('Moving %s to directory %s' % (file2, dest_path))
                     os.rename(os.path.join(dest_path, file2), os.path.join(dest_path, global_name + '.' +
                               str(file2).split('.')[-1]))
-        try:
-            os.chmod(dest_path, 0777)
-        except Exception, e:
-            logger.debug("Could not chmod path: " + str(dest_path))
+        #try:
+        #    os.chmod(dest_path, 0777)
+        #except Exception, e:
+        #    logger.debug("Could not chmod path: " + str(dest_path))
     except OSError, e:
         logger.error('Could not create destination folder or rename the downloaded ebook. Check permissions of: ' +
                      lazylibrarian.DESTINATION_DIR)
@@ -418,14 +418,13 @@ def processIMG(dest_path=None, bookimg=None, global_name=None):
         if not bookimg == ('images/nocover.png'):
             logger.debug('Downloading cover from ' + bookimg)
             coverpath = os.path.join(dest_path, global_name + '.jpg')
-            img = open(coverpath, 'wb')
-            imggoogle = imgGoogle()
-            img.write(imggoogle.open(bookimg).read())
-            img.close()
-            try:
-                os.chmod(coverpath, 0777)
-            except Exception, e:
-                logger.error("Could not chmod path: " + str(coverpath))
+            with open(coverpath, 'wb') as img:
+                imggoogle = imgGoogle()
+                img.write(imggoogle.open(bookimg).read())
+            #try:
+            #    os.chmod(coverpath, 0777)
+            #except Exception, e:
+            #    logger.error("Could not chmod path: " + str(coverpath))
 
     except (IOError, EOFError), e:
         logger.error('Error fetching cover from url: %s, %s' % (bookimg, e))
@@ -466,15 +465,12 @@ def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bo
     # handle metadata
     opfpath = os.path.join(dest_path, global_name + '.opf')
     if not os.path.exists(opfpath):
-        opf = open(opfpath, 'wb')
-        opf.write(opfinfo)
-        opf.close()
-
-        try:
-            os.chmod(opfpath, 0777)
-        except Exception, e:
-            logger.error("Could not chmod path: " + str(opfpath))
-
+        with open(opfpath, 'wb') as opf:
+            opf.write(opfinfo)
+        #try:
+        #    os.chmod(opfpath, 0777)
+        #except Exception, e:
+        #    logger.error("Could not chmod path: " + str(opfpath))
         logger.debug('Saved metadata to: ' + opfpath)
     else:
         logger.debug('%s allready exists. Did not create one.' % opfpath)
