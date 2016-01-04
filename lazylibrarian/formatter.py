@@ -121,8 +121,8 @@ def is_valid_isbn(isbn):
     return False
 
 
-def is_valid_booktype(filename, filetype=None):
-    if filetype == 'mag':  # default is book
+def is_valid_booktype(filename, booktype=None):
+    if booktype == 'mag':  # default is book
         booktype_list = getList(lazylibrarian.MAG_TYPE)
     else:
         booktype_list = getList(lazylibrarian.EBOOK_TYPE)

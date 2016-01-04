@@ -622,19 +622,25 @@ class WebInterface(object):
             mod_issues = []
             for issue in issues:
                 magfile = issue['IssueFile']
-                magimg = magfile.replace('.pdf', '.jpg')
-                if not os.path.isfile(magimg):
-                    magimg = 'images/nocover.png'
+                if '.' in magfile:
+                    words = magfile.split('.')
+                    extn = '.' + words[len(words) - 1]
+                    magimg = magfile.replace(extn, '.jpg')
+                    if not os.path.isfile(magimg):
+                        magimg = 'images/nocover.png'
+                    else:
+                        myhash = hashlib.md5(magimg).hexdigest()
+                        cachedir = os.path.join(str(lazylibrarian.PROG_DIR),
+                                                'data' + os.sep + 'images' + os.sep + 'cache')
+                        if not os.path.isdir(cachedir):
+                            os.makedirs(cachedir)
+                        hashname = os.path.join(cachedir, myhash + ".jpg")
+                        shutil.copyfile(magimg, hashname)
+                        magimg = 'images/cache/' + myhash + '.jpg'
                 else:
-                    myhash = hashlib.md5(magimg).hexdigest()
-                    cachedir = os.path.join(str(lazylibrarian.PROG_DIR),
-                                            'data' + os.sep + 'images' + os.sep + 'cache')
-                    if not os.path.isdir(cachedir):
-                        os.makedirs(cachedir)
-                    hashname = os.path.join(cachedir, myhash + ".jpg")
-                    shutil.copyfile(magimg, hashname)
-                    magimg = 'images/cache/' + myhash + '.jpg'
-
+                    logger.debug('No extension found on %s' % magfile)
+                    magimg = 'images/nocover.png'
+                
                 this_issue = dict(issue)
                 this_issue['Cover'] = magimg
                 mod_issues.append(this_issue)

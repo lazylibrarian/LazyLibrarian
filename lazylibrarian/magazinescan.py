@@ -16,7 +16,13 @@ except ImportError:
 def create_cover(issuefile=None):
     if not lazylibrarian.IMP_CONVERT == 'None':  # special flag to say "no covers required"
         # create a thumbnail cover if there isn't one
-        coverfile = issuefile.replace('.pdf', '.jpg')
+        if '.' in issuefile:
+            words = issuefile.split('.')
+            extn = '.' + words[len(words) - 1]
+            coverfile = issuefile.replace(extn, '.jpg')
+        else:
+            logger.debug('Unable to create cover for %s, no extension?' % issuefile)
+            return
         if not os.path.isfile(coverfile):
             logger.debug("Creating cover for %s using %s" % (issuefile, lazylibrarian.MAGICK))
             try:
@@ -86,7 +92,7 @@ def magazineScan(thread=None):
     for dirname, dirnames, filenames in os.walk(mag_path):
         for fname in filenames[:]:
             # maybe not all magazines will be pdf?
-            if formatter.is_valid_magtype(fname):
+            if formatter.is_valid_booktype(fname, booktype='mag'):
                 try:
                     title = fname.split('-')[3]
                     title = title.split('.')[-2]
