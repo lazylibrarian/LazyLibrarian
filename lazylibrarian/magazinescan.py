@@ -4,43 +4,44 @@ import lazylibrarian
 import threading
 import subprocess
 from lazylibrarian import database, logger, formatter, notifiers, common
+try:
+    from wand.image import Image
+except ImportError:
+    try:
+        import PythonMagick
+    except:
+        lazylibrarian.MAGICK = 'convert'  # may have external, don't know yet
 
 
 def create_cover(issuefile=None):
-    if lazylibrarian.HAVE_MAGICK:
+    if not lazylibrarian.IMP_CONVERT == 'None':  # special flag to say "no covers required"
         # create a thumbnail cover if there isn't one
         coverfile = issuefile.replace('.pdf', '.jpg')
         if not os.path.isfile(coverfile):
-            logger.debug("Creating cover for %s" % issuefile)
+            logger.debug("Creating cover for %s using %s" % (issuefile, lazylibrarian.MAGICK))
             try:
                 # No PythonMagick in python3, hence allow wand, but more complicated
                 # to install - try to use external imagemagick convert?
                 # should work on win/mac/linux as long as imagemagick is installed
                 # and config points to external "convert" program
-                program = 'none detected'
+
                 if len(lazylibrarian.IMP_CONVERT):  # allow external convert to override libraries
-                    program = lazylibrarian.IMP_CONVERT
                     try:
-                        params = [program, issuefile + '[0]', coverfile]
-                        subprocess.check_call(params)
-                    except subprocess.CalledProcessError:
-                        logger.warn('No ImageMagick "convert" found')
-                        lazylibrarian.HAVE_MAGICK = ""  # don't keep trying
+                        params = [lazylibrarian.IMP_CONVERT, issuefile + '[0]', coverfile]
+                        subprocess.check_output(params, stderr=subprocess.STDOUT)
+                    except subprocess.CalledProcessError, e:
+                        logger.warn('ImageMagick "convert" failed %s' % e.output)
                         
-                elif lazylibrarian.HAVE_MAGICK == 'wand':
-                    program = 'Wand library'
-                    from wand.image import Image
+                elif lazylibrarian.MAGICK == 'wand':
                     with Image(filename=issuefile + '[0]') as img:
                         img.save(filename=coverfile)
                         
-                elif lazylibrarian.HAVE_MAGICK == 'pythonmagick':
-                    program = 'PythonMagick library'
-                    import PythonMagick
+                elif lazylibrarian.MAGICK == 'pythonmagick':
                     img = PythonMagick.Image()
                     img.read(issuefile + '[0]')
                     img.write(coverfile)
             except:
-                logger.debug("Unable to create cover for %s using %s" % (issuefile, program))
+                logger.debug("Unable to create cover for %s using %s" % (issuefile, lazylibrarian.MAGICK))
 
 def magazineScan(thread=None):
     # rename this thread

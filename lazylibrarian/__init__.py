@@ -23,13 +23,13 @@ from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, \
         librarysync, versioncheck, database, searchmag, magazinescan, common
 try:
     from wand.image import Image
-    have_magick = "wand"
+    MAGICK  = "wand"
 except ImportError:
     try:
         import PythonMagick
-        have_magick = "pythonmagick"
+        MAGICK = "pythonmagick"
     except:
-        have_magick = 'convert'  # may have external, don't know yet
+        MAGICK = 'convert'  # may have external, don't know yet
 
 FULL_PATH = None
 PROG_DIR = None
@@ -270,7 +270,6 @@ CACHE_MISS = 0
 LAST_GOODREADS = 0
 LAST_LIBRARYTHING = 0
 CACHE_AGE = 30
-HAVE_MAGICK = have_magick
 
 def check_section(sec):
     """ Check if INI section exists, if not create it """
@@ -337,7 +336,7 @@ def initialize():
             MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, CONFIGFILE, CFG, LOGDIR, \
             SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, SAB_CAT, \
             DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, USENET_RETENTION, NZB_BLACKHOLEDIR, \
-            ALTERNATE_DIR, GR_API, GB_API, BOOK_API, HAVE_MAGICK, \
+            ALTERNATE_DIR, GR_API, GB_API, BOOK_API, MAGICK, \
             NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, \
             NZB_DOWNLOADER_NZBGET, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
             NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, EBOOK_TYPE, KAT, KAT_HOST, \
@@ -408,7 +407,6 @@ def initialize():
         else:
             LOGFULL = False
             logger.info("Screen Log set to INFO/WARN/ERROR")
-        logger.debug("HAVE_MAGICK set to %s" % HAVE_MAGICK)
 
         # keep track of last api calls so we don't call more than once per second
         # to respect api terms, but don't wait un-necessarily either
