@@ -646,7 +646,9 @@
                     <BR>
                     <label>Convert program:</label><input type="text" placeholder="convert program" name="imp_convert" value="${lazylibrarian.IMP_CONVERT}" size="50" maxlength="90">
                     <BR><BR>
-                    <small>Program for creating magazine covers (example: ImageMagick "convert")</small>
+                    <small>Program for creating magazine covers (example: ImageMagick "convert")
+                    <BR>Leave blank to use PythonMagick or Wand interfaces to ImageMagick
+                    <BR>Enter  None  to disable cover creation</small>
                 </td>
             </tr>
             <tr>
@@ -699,7 +701,8 @@
                     %>
                   <label>One book per directory:</label><input type="checkbox" name="imp_singlebook" value=1 ${checked} />
                   <br>
-                  <i class="smalltext">This imports one book per directory, tick this if you keep multiple formats of the same book in the same directory</i>
+                  <i class="smalltext">This imports one book per directory
+                  <BR>Tick if you keep multiple formats of the same book in the same directory</i>
                   </div>
                 </td>
                 <td> 
