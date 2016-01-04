@@ -17,9 +17,18 @@
 
 <%def name="body()">
 
+    <p class="indented">
+        <form action="markIssues" method="get">
+            <select name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
+                  <option value="Delete">Delete</option>
+            </select>
+        <input type="submit" value="Go">
+    </p>
+
     <table class="display" id="book_table" style="margin-top:60px;">
         <thead>
             <tr>
+                <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
                 % if issues[0]['Cover'] != "images/nocover.png":
                 <th id="bookart">Cover</th>
                 % else:
@@ -34,6 +43,7 @@
         <tbody>
         %for result in issues:
                 <tr class="gradeZ">
+                    <td id="select"><input type="checkbox" name="${result['IssueFile']}" class="checkbox" /></td>
                     % if issues[0]['Cover'] != "images/nocover.png":
                     <td id="bookart"><a href="${result['Cover']}" target="_new"><img src="${result['Cover']}" height="75" width="50"></a></td>
                     % else:

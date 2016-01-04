@@ -666,17 +666,19 @@ class WebInterface(object):
         # or we may just have a title to find magazine in issues table
         myDB = database.DBConnection()
         mag_data = myDB.select('SELECT * from issues WHERE Title="%s"' % bookid)
-        if len(mag_data) == 1:  # we only have one issue, get it
+        if len(mag_data) == 0:  # no issues!
+            raise cherrypy.HTTPRedirect("magazines")
+        elif len(mag_data) == 1:  # we only have one issue, get it
             IssueDate = mag_data[0]["IssueDate"]
             IssueFile = mag_data[0]["IssueFile"]
             logger.info(u'Opening %s - %s' % (bookid, IssueDate))
             return serve_file(IssueFile, "application/x-download", "attachment")
-        if len(mag_data) > 1:  # multiple issues, show a list
+        elif len(mag_data) > 1:  # multiple issues, show a list
             logger.debug(u"%s has %s issues" % (bookid, len(mag_data)))
             raise cherrypy.HTTPRedirect("issuePage?title=%s" % bookid)
     openMag.exposed = True
 
-    def markIssues(self, AuthorName=None, action=None, redirect=None, **args):
+    def markPastIssues(self, AuthorName=None, action=None, redirect=None, **args):
         myDB = database.DBConnection()
         if not redirect:
             redirect = "magazines"
@@ -727,6 +729,17 @@ class WebInterface(object):
                 notifiers.notify_snatch(items['nzbtitle'] + ' at ' + formatter.now())
                 postprocess.schedule_processor(action='Start')
         raise cherrypy.HTTPRedirect("pastIssues")
+    markPastIssues.exposed = True
+
+    def markIssues(self, action=None, **args):
+        myDB = database.DBConnection()
+        for item in args:
+            # ouch dirty workaround...
+            if not item == 'book_table_length':
+                if (action == "Delete"):
+                    myDB.action('DELETE from issues WHERE IssueFile="%s"' % item)
+                    logger.info(u'Issue %s removed from database' % item)
+        raise cherrypy.HTTPRedirect("magazines")
     markIssues.exposed = True
 
     def markMagazines(self, action=None, **args):

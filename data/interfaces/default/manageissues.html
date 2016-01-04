@@ -26,7 +26,7 @@
     %if len(issues) > 0:
     <h3>Magazines with status ${whichStatus}</h3>
         <br>
-    <form action="markIssues" method="get"><input type="hidden" name="redirect" value="manageissues">
+    <form action="markPastIssues" method="get"><input type="hidden" name="redirect" value="manageissues">
     <table class="display" id="book_table">
         <thead>
             <tr>
@@ -54,14 +54,14 @@
     </table>
     <p>
 
-    Change selected magazines to <select class="markIssues" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
+    Change selected magazines to <select class="markPastIssues" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
         %for item in ['Skipped', 'Wanted', 'Ignored', 'Delete']:
             %if whichStatus != item:
                 <option value="${item}">${item}</option>
             %endif
         %endfor
             </select>
-        <input type="submit" class="markIssues" value="Go">
+        <input type="submit" class="markPastIssues" value="Go">
     </p>
     </form>
     %endif
