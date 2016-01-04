@@ -23,13 +23,13 @@ from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, \
         librarysync, versioncheck, database, searchmag, magazinescan, common
 try:
     from wand.image import Image
-    have_magick = "wand"
+    MAGICK  = "wand"
 except ImportError:
     try:
         import PythonMagick
-        have_magick = "pythonmagick"
+        MAGICK = "pythonmagick"
     except:
-        have_magick = 'convert'  # may have external, don't know yet
+        MAGICK = 'convert'  # may have external, don't know yet
 
 FULL_PATH = None
 PROG_DIR = None
@@ -158,6 +158,7 @@ NEWZBIN = 0
 NEWZBIN_UID = None
 NEWZBIN_PASSWORD = None
 EBOOK_TYPE = None
+MAG_TYPE = None
 
 TOR_DOWNLOADER_BLACKHOLE = 0
 TOR_DOWNLOADER_UTORRENT = 0
@@ -270,7 +271,6 @@ CACHE_MISS = 0
 LAST_GOODREADS = 0
 LAST_LIBRARYTHING = 0
 CACHE_AGE = 30
-HAVE_MAGICK = have_magick
 
 def check_section(sec):
     """ Check if INI section exists, if not create it """
@@ -337,10 +337,10 @@ def initialize():
             MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, CONFIGFILE, CFG, LOGDIR, \
             SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, SAB_CAT, \
             DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, USENET_RETENTION, NZB_BLACKHOLEDIR, \
-            ALTERNATE_DIR, GR_API, GB_API, BOOK_API, HAVE_MAGICK, \
+            ALTERNATE_DIR, GR_API, GB_API, BOOK_API, MAGICK, \
             NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, \
             NZB_DOWNLOADER_NZBGET, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
-            NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, EBOOK_TYPE, KAT, KAT_HOST, \
+            NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, EBOOK_TYPE, MAG_TYPE, KAT, KAT_HOST, \
             NEWZNAB0, NEWZNAB_HOST0, NEWZNAB_API0, NEWZNAB1, NEWZNAB_HOST1, NEWZNAB_API1, \
             NEWZNAB2, NEWZNAB_HOST2, NEWZNAB_API2, NEWZNAB3, NEWZNAB_HOST3, NEWZNAB_API3, \
             NEWZNAB4, NEWZNAB_HOST4, NEWZNAB_API4, \
@@ -408,7 +408,6 @@ def initialize():
         else:
             LOGFULL = False
             logger.info("Screen Log set to INFO/WARN/ERROR")
-        logger.debug("HAVE_MAGICK set to %s" % HAVE_MAGICK)
 
         # keep track of last api calls so we don't call more than once per second
         # to respect api terms, but don't wait un-necessarily either
@@ -567,6 +566,9 @@ def initialize():
         NEWZBIN_UID = check_setting_str(CFG, 'Newzbin', 'newzbin_uid', '')
         NEWZBIN_PASS = check_setting_str(CFG, 'Newzbin', 'newzbin_pass', '')
         EBOOK_TYPE = check_setting_str(CFG, 'General', 'ebook_type', 'epub, mobi, pdf')
+        EBOOK_TYPE = EBOOK_TYPE.lower()  # to make extension matching easier
+        MAG_TYPE = check_setting_str(CFG, 'General', 'mag_type', 'pdf')
+        MAG_TYPE = MAG_TYPE.lower()  # to make extension matching easier
 
         SEARCH_INTERVAL = check_setting_int(CFG, 'SearchScan', 'search_interval', '360')
         SCAN_INTERVAL = check_setting_int(CFG, 'SearchScan', 'scan_interval', '10')
@@ -781,7 +783,8 @@ def config_write():
     CFG.set('General', 'imp_monthlang', IMP_MONTHLANG)
     CFG.set('General', 'imp_autoadd', IMP_AUTOADD)
     CFG.set('General', 'imp_convert', IMP_CONVERT)
-    CFG.set('General', 'ebook_type', EBOOK_TYPE)
+    CFG.set('General', 'ebook_type', EBOOK_TYPE.lower())
+    CFG.set('General', 'mag_type', MAG_TYPE.lower())
     CFG.set('General', 'destination_dir', DESTINATION_DIR)
     CFG.set('General', 'alternate_dir', ALTERNATE_DIR)
     CFG.set('General', 'destination_copy', DESTINATION_COPY)

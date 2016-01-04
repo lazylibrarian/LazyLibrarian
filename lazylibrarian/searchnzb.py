@@ -187,10 +187,10 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
                     f.write(nzbfile)
                 logger.debug('NZB file saved to: ' + nzbpath)
                 download = True
-                try:
-                    os.chmod(nzbpath, 0777)
-                except Exception, e:
-                    logger.error("Could not chmod path: " + str(nzbpath))
+                #try:
+                #    os.chmod(nzbpath, 0777)
+                #except Exception, e:
+                #    logger.error("Could not chmod path: " + str(nzbpath))
             except Exception, e:
                 logger.error('%s not writable, NZB not saved. Error: %s' % (nzbpath, e))
                 download = False

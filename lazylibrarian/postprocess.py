@@ -19,7 +19,7 @@ def processAlternate(source_dir=None):
     if source_dir == lazylibrarian.DESTINATION_DIR:
         logger.warn('Alternate directory must not be the same as destination')
         return
-    new_book = book_file(source_dir)
+    new_book = book_file(source_dir, booktype='book')
     if new_book:
         # see if there is a metadata file in this folder with the info we need
         metafile = librarysync.opf_file(source_dir)
@@ -149,10 +149,10 @@ def processDir(force=False):
             dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
                    ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
             dest_path = formatter.latinToAscii(formatter.replace_all(dest_path, dic))
-            try:
-                os.chmod(dest_path, 0777)
-            except Exception, e:
-                logger.debug("Could not chmod post-process directory: " + str(dest_path))
+            #try:
+            #    os.chmod(dest_path, 0777)
+            #except Exception, e:
+            #    logger.debug("Could not chmod post-process directory: " + str(dest_path))
 
             processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name, book['BookID'])
 
@@ -178,7 +178,7 @@ def processDir(force=False):
                     myDB.upsert("magazines", newValueDict, controlValueDict)
                     # dest_path is where we put the magazine after processing, but we don't have the full filename
                     # so look for any "book" in that directory
-                    dest_file = book_file(dest_path)
+                    dest_file = book_file(dest_path, booktype='mag')
                     controlValueDict = {"Title": book['BookID'], "IssueDate": book['AuxInfo']}
                     newValueDict = {"IssueAcquired": formatter.today(), "IssueFile": dest_file}
                     myDB.upsert("issues", newValueDict, controlValueDict)
@@ -225,11 +225,11 @@ def import_book(pp_path=None, bookID=None):
         authorname = data[0]['AuthorName']
         bookname = data[0]['BookName']
 
-        try:
-            auth_dir = os.path.join(lazylibrarian.DESTINATION_DIR, authorname).encode(lazylibrarian.SYS_ENCODING)
-            os.chmod(auth_dir, 0777)
-        except Exception, e:
-            logger.debug("Could not chmod author directory: " + str(auth_dir))
+        #try:
+        #    auth_dir = os.path.join(lazylibrarian.DESTINATION_DIR, authorname).encode(lazylibrarian.SYS_ENCODING)
+        #    os.chmod(auth_dir, 0777)
+        #except Exception, e:
+        #    logger.debug("Could not chmod author directory: " + str(auth_dir))
 
         dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace('$Title', bookname)
         global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace('$Title', bookname)
@@ -253,12 +253,12 @@ def import_book(pp_path=None, bookID=None):
             return False
 
 
-def book_file(search_dir=None):
-    # find a book file in this directory, any book will do
-    # return full pathname of book, or empty string if no book found
+def book_file(search_dir=None, booktype=None):
+    # find a book/mag file in this directory, any book will do
+    # return full pathname of book/mag, or empty string if none found
     if search_dir and os.path.isdir(search_dir):
         for fname in os.listdir(search_dir):
-            if formatter.is_valid_booktype(fname):
+            if formatter.is_valid_booktype(fname, booktype=booktype):
                 return os.path.join(search_dir, fname).encode(lazylibrarian.SYS_ENCODING)
     return ""
 
@@ -290,7 +290,7 @@ def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
     # update books
     # dest_path is where we put the book after processing, but we don't have the full filename
     # we don't keep the extension, so look for any "book" in that directory
-    dest_file = book_file(dest_path)
+    dest_file = book_file(dest_path, booktype='book')
     controlValueDict = {"BookID": bookid}
     newValueDict = {"Status": "Open", "BookFile": dest_file}
     myDB.upsert("books", newValueDict, controlValueDict)
@@ -308,15 +308,21 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
     pp_path = pp_path.encode(lazylibrarian.SYS_ENCODING)
 
-    # check we got a book in the downloaded files
+    # check we got a book/magazine in the downloaded files
     pp = False
-    booktype_list = formatter.getList(lazylibrarian.EBOOK_TYPE)
+    
+    if bookname:  # None if it's a magazine
+        booktype = 'book'
+    else:
+        booktype = 'mag'
+        
     for bookfile in os.listdir(pp_path):
-        if ((str(bookfile).split('.')[-1]) in booktype_list):
+        if formatter.is_valid_booktype(bookfile, booktype=booktype):
             pp = True
+    
     if pp is False:
-        # no book found in a format we wanted. Leave for the user to delete or convert manually
-        logger.debug('Failed to locate a book in downloaded files, leaving for manual processing')
+        # no book/mag found in a format we wanted. Leave for the user to delete or convert manually
+        logger.debug('Failed to locate a book/magazine in downloaded files, leaving for manual processing')
         return pp
 
     try:
@@ -331,9 +337,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             shutil.copytree(pp_path, dest_path)
             logger.debug('Successfully copied %s to %s.' % (pp_path, dest_path))
         elif lazylibrarian.DOWNLOAD_DIR == pp_path:
-            booktype_list = formatter.getList(lazylibrarian.EBOOK_TYPE)
             for file3 in os.listdir(pp_path):
-                if ((str(file3).split('.')[-1]) in booktype_list):
+                if formatter.is_valid_booktype(file3, booktype=booktype):
                     bookID = str(file3).split("LL.(")[1].split(")")[0]
                     if bookID == book_id:
                         logger.debug('Processing %s' % bookID)
@@ -352,24 +357,21 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
         pp = True
 
-        # try and rename the actual book file & remove non-book files
-        booktype_list = formatter.getList(lazylibrarian.EBOOK_TYPE)
+        # try and rename the actual book file & remove unwanted non-book files
         for file2 in os.listdir(dest_path):
-            # logger.debug('file extension: ' + str(file2).split('.')[-1])
-            if ((file2.lower().find(".jpg") <= 0) & (file2.lower().find(".opf") <= 0)):
-                if ((str(file2).split('.')[-1]) not in booktype_list):
-                    logger.debug('Removing unwanted file: %s' % str(file2))
-                    os.remove(os.path.join(dest_path, file2))
-                else:
+            if file2.lower().endswith(".jpg") or file2.lower().endswith(".opf") or formatter.is_valid_booktype(file2, booktype=booktype):
                     logger.debug('Moving %s to directory %s' % (file2, dest_path))
                     os.rename(os.path.join(dest_path, file2), os.path.join(dest_path, global_name + '.' +
                               str(file2).split('.')[-1]))
-        try:
-            os.chmod(dest_path, 0777)
-        except Exception, e:
-            logger.debug("Could not chmod path: " + str(dest_path))
+            else:
+                logger.debug('Removing unwanted file: %s' % str(file2))
+                os.remove(os.path.join(dest_path, file2))
+        #try:
+        #    os.chmod(dest_path, 0777)
+        #except Exception, e:
+        #    logger.debug("Could not chmod path: " + str(dest_path))
     except OSError, e:
-        logger.error('Could not create destination folder or rename the downloaded ebook. Check permissions of: ' +
+        logger.error('Could not create destination folder or rename the downloaded ebook/magazine. Check permissions of: ' +
                      lazylibrarian.DESTINATION_DIR)
         logger.error(str(e))
         pp = False
@@ -418,14 +420,13 @@ def processIMG(dest_path=None, bookimg=None, global_name=None):
         if not bookimg == ('images/nocover.png'):
             logger.debug('Downloading cover from ' + bookimg)
             coverpath = os.path.join(dest_path, global_name + '.jpg')
-            img = open(coverpath, 'wb')
-            imggoogle = imgGoogle()
-            img.write(imggoogle.open(bookimg).read())
-            img.close()
-            try:
-                os.chmod(coverpath, 0777)
-            except Exception, e:
-                logger.error("Could not chmod path: " + str(coverpath))
+            with open(coverpath, 'wb') as img:
+                imggoogle = imgGoogle()
+                img.write(imggoogle.open(bookimg).read())
+            #try:
+            #    os.chmod(coverpath, 0777)
+            #except Exception, e:
+            #    logger.error("Could not chmod path: " + str(coverpath))
 
     except (IOError, EOFError), e:
         logger.error('Error fetching cover from url: %s, %s' % (bookimg, e))
@@ -466,15 +467,12 @@ def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bo
     # handle metadata
     opfpath = os.path.join(dest_path, global_name + '.opf')
     if not os.path.exists(opfpath):
-        opf = open(opfpath, 'wb')
-        opf.write(opfinfo)
-        opf.close()
-
-        try:
-            os.chmod(opfpath, 0777)
-        except Exception, e:
-            logger.error("Could not chmod path: " + str(opfpath))
-
+        with open(opfpath, 'wb') as opf:
+            opf.write(opfinfo)
+        #try:
+        #    os.chmod(opfpath, 0777)
+        #except Exception, e:
+        #    logger.error("Could not chmod path: " + str(opfpath))
         logger.debug('Saved metadata to: ' + opfpath)
     else:
         logger.debug('%s allready exists. Did not create one.' % opfpath)

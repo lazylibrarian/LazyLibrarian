@@ -77,7 +77,7 @@ class WebInterface(object):
                      newznab_api0=None, newznab1=0, newznab_host1=None, newznab_api1=None, newznab2=0,
                      newznab_host2=None, newznab_api2=None, newznab3=0, newznab_host3=None, newznab_api3=None,
                      newznab4=0, newznab_host4=None, newznab_api4=None, newzbin=0, newzbin_uid=None,
-                     newzbin_pass=None, kat=0, kat_host=None, ebook_type=None, book_api=None,
+                     newzbin_pass=None, kat=0, kat_host=None, ebook_type=None, mag_type=None, book_api=None,
                      torznab0=0, torznab_host0=None, torznab_api0=None, torznab1=0, torznab_host1=None,
                      torznab_api1=None, torznab2=0, torznab_host2=None, torznab_api2=None,
                      torznab3=0, torznab_host3=None, torznab_api3=None, torznab4=0, torznab_host4=None,
@@ -214,6 +214,7 @@ class WebInterface(object):
         lazylibrarian.USE_TOR = bool(use_tor)
 
         lazylibrarian.EBOOK_TYPE = ebook_type
+        lazylibrarian.MAG_TYPE = mag_type
         lazylibrarian.BOOK_API = book_api
         lazylibrarian.GR_API = gr_api
         lazylibrarian.GB_API = gb_api
@@ -621,19 +622,25 @@ class WebInterface(object):
             mod_issues = []
             for issue in issues:
                 magfile = issue['IssueFile']
-                magimg = magfile.replace('.pdf', '.jpg')
-                if not os.path.isfile(magimg):
-                    magimg = 'images/nocover.png'
+                if '.' in magfile:
+                    words = magfile.split('.')
+                    extn = '.' + words[len(words) - 1]
+                    magimg = magfile.replace(extn, '.jpg')
+                    if not os.path.isfile(magimg):
+                        magimg = 'images/nocover.png'
+                    else:
+                        myhash = hashlib.md5(magimg).hexdigest()
+                        cachedir = os.path.join(str(lazylibrarian.PROG_DIR),
+                                                'data' + os.sep + 'images' + os.sep + 'cache')
+                        if not os.path.isdir(cachedir):
+                            os.makedirs(cachedir)
+                        hashname = os.path.join(cachedir, myhash + ".jpg")
+                        shutil.copyfile(magimg, hashname)
+                        magimg = 'images/cache/' + myhash + '.jpg'
                 else:
-                    myhash = hashlib.md5(magimg).hexdigest()
-                    cachedir = os.path.join(str(lazylibrarian.PROG_DIR),
-                                            'data' + os.sep + 'images' + os.sep + 'cache')
-                    if not os.path.isdir(cachedir):
-                        os.makedirs(cachedir)
-                    hashname = os.path.join(cachedir, myhash + ".jpg")
-                    shutil.copyfile(magimg, hashname)
-                    magimg = 'images/cache/' + myhash + '.jpg'
-
+                    logger.debug('No extension found on %s' % magfile)
+                    magimg = 'images/nocover.png'
+                
                 this_issue = dict(issue)
                 this_issue['Cover'] = magimg
                 mod_issues.append(this_issue)
@@ -659,17 +666,19 @@ class WebInterface(object):
         # or we may just have a title to find magazine in issues table
         myDB = database.DBConnection()
         mag_data = myDB.select('SELECT * from issues WHERE Title="%s"' % bookid)
-        if len(mag_data) == 1:  # we only have one issue, get it
+        if len(mag_data) == 0:  # no issues!
+            raise cherrypy.HTTPRedirect("magazines")
+        elif len(mag_data) == 1:  # we only have one issue, get it
             IssueDate = mag_data[0]["IssueDate"]
             IssueFile = mag_data[0]["IssueFile"]
             logger.info(u'Opening %s - %s' % (bookid, IssueDate))
             return serve_file(IssueFile, "application/x-download", "attachment")
-        if len(mag_data) > 1:  # multiple issues, show a list
+        elif len(mag_data) > 1:  # multiple issues, show a list
             logger.debug(u"%s has %s issues" % (bookid, len(mag_data)))
             raise cherrypy.HTTPRedirect("issuePage?title=%s" % bookid)
     openMag.exposed = True
 
-    def markIssues(self, AuthorName=None, action=None, redirect=None, **args):
+    def markPastIssues(self, AuthorName=None, action=None, redirect=None, **args):
         myDB = database.DBConnection()
         if not redirect:
             redirect = "magazines"
@@ -720,6 +729,17 @@ class WebInterface(object):
                 notifiers.notify_snatch(items['nzbtitle'] + ' at ' + formatter.now())
                 postprocess.schedule_processor(action='Start')
         raise cherrypy.HTTPRedirect("pastIssues")
+    markPastIssues.exposed = True
+
+    def markIssues(self, action=None, **args):
+        myDB = database.DBConnection()
+        for item in args:
+            # ouch dirty workaround...
+            if not item == 'book_table_length':
+                if (action == "Delete"):
+                    myDB.action('DELETE from issues WHERE IssueFile="%s"' % item)
+                    logger.info(u'Issue %s removed from database' % item)
+        raise cherrypy.HTTPRedirect("magazines")
     markIssues.exposed = True
 
     def markMagazines(self, action=None, **args):

@@ -121,12 +121,15 @@ def is_valid_isbn(isbn):
     return False
 
 
-def is_valid_booktype(filename):
-    booktype_list = getList(lazylibrarian.EBOOK_TYPE)
+def is_valid_booktype(filename, booktype=None):
+    if booktype == 'mag':  # default is book
+        booktype_list = getList(lazylibrarian.MAG_TYPE)
+    else:
+        booktype_list = getList(lazylibrarian.EBOOK_TYPE)
     if '.' in filename:
         words = filename.split('.')
         extn = words[len(words) - 1]
-        if extn in booktype_list:
+        if extn.lower() in booktype_list:
             return True
     return False
 
