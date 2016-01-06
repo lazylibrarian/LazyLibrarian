@@ -2,6 +2,7 @@ import shutil
 import os
 import threading
 import lib.csv as csv
+import platform
 
 from urllib import FancyURLopener
 
@@ -107,6 +108,9 @@ def processDir(force=False):
                 if data:
                     authorname = data[0]['AuthorName']
                     bookname = data[0]['BookName']
+                    if 'windows' in platform.system().lower() and '/' in lazylibrarian.EBOOK_DEST_FOLDER:
+                        logger.warn('Please check your EBOOK_DEST_FOLDER setting')
+                        lazylibrarian.EBOOK_DEST_FOLDER = lazylibrarian.EBOOK_DEST_FOLDER.replace('/', '\\')
 
                     # Default destination path, should be allowed change per config file.
                     dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace(
@@ -231,6 +235,10 @@ def import_book(pp_path=None, bookID=None):
         #except Exception, e:
         #    logger.debug("Could not chmod author directory: " + str(auth_dir))
 
+        if 'windows' in platform.system().lower() and '/' in lazylibrarian.EBOOK_DEST_FOLDER:
+            logger.warn('Please check your EBOOK_DEST_FOLDER setting')
+            lazylibrarian.EBOOK_DEST_FOLDER = lazylibrarian.EBOOK_DEST_FOLDER.replace('/', '\\')
+            
         dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace('$Title', bookname)
         global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace('$Title', bookname)
         dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
