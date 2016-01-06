@@ -250,7 +250,7 @@ def search_magazines(mags=None):
                             start_time = time.time()
                             start_time -= 31 * 24 * 60 * 60  # number of seconds in 31 days
                             control_date = time.strftime("%Y-%m-%d", time.localtime(start_time))
-                        print nzbtitle,newdatish
+
                         # only grab a copy if it's newer than the most recent we have,
                         # or newer than a month ago if we have none
                         comp_date = formatter.datecompare(newdatish, control_date)
