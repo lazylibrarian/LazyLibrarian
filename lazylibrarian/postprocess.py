@@ -2,6 +2,7 @@ import shutil
 import os
 import threading
 import lib.csv as csv
+import platform
 
 from urllib import FancyURLopener
 
@@ -107,6 +108,9 @@ def processDir(force=False):
                 if data:
                     authorname = data[0]['AuthorName']
                     bookname = data[0]['BookName']
+                    if 'windows' in platform.system().lower() and '/' in lazylibrarian.EBOOK_DEST_FOLDER:
+                        logger.warn('Please check your EBOOK_DEST_FOLDER setting')
+                        lazylibrarian.EBOOK_DEST_FOLDER = lazylibrarian.EBOOK_DEST_FOLDER.replace('/', '\\')
 
                     # Default destination path, should be allowed change per config file.
                     dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace(
@@ -147,7 +151,7 @@ def processDir(force=False):
                 continue
 
             dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
-                   ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
+                   ' + ': ' ', '"': '', ',': '', '*': '', ';': '', '\'': ''}
             dest_path = formatter.latinToAscii(formatter.replace_all(dest_path, dic))
             #try:
             #    os.chmod(dest_path, 0777)
@@ -231,10 +235,14 @@ def import_book(pp_path=None, bookID=None):
         #except Exception, e:
         #    logger.debug("Could not chmod author directory: " + str(auth_dir))
 
+        if 'windows' in platform.system().lower() and '/' in lazylibrarian.EBOOK_DEST_FOLDER:
+            logger.warn('Please check your EBOOK_DEST_FOLDER setting')
+            lazylibrarian.EBOOK_DEST_FOLDER = lazylibrarian.EBOOK_DEST_FOLDER.replace('/', '\\')
+            
         dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace('$Title', bookname)
         global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace('$Title', bookname)
         dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
-               ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
+               ' + ': ' ', '"': '', ',': '', '*': '', ';': '', '\'': ''}
         dest_path = formatter.latinToAscii(formatter.replace_all(dest_path, dic))
         dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(lazylibrarian.SYS_ENCODING)
 
@@ -330,12 +338,18 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             logger.debug('%s does not exist, so it\'s safe to create it' % dest_path)
         else:
             logger.debug('%s already exists. Removing existing tree.' % dest_path)
-            shutil.rmtree(dest_path)
+            try:
+                shutil.rmtree(dest_path)
+            except Exception as why:
+                logger.debug("Failed to rmtree %s, %s" % (dest_path, str(why)))
 
         logger.debug('Attempting to copy/move tree')
-        if lazylibrarian.DESTINATION_COPY == 1 and lazylibrarian.DOWNLOAD_DIR != pp_path:
-            shutil.copytree(pp_path, dest_path)
-            logger.debug('Successfully copied %s to %s.' % (pp_path, dest_path))
+        if lazylibrarian.DESTINATION_COPY == True and lazylibrarian.DOWNLOAD_DIR != pp_path:
+            try:
+                shutil.copytree(pp_path, dest_path)
+                logger.debug('Successfully copied %s to %s' % (pp_path, dest_path))
+            except Exception as why:
+                logger.debug('Failed to copy %s to %s, %s' % (pp_path, dest_path, str(why)))
         elif lazylibrarian.DOWNLOAD_DIR == pp_path:
             for file3 in os.listdir(pp_path):
                 if formatter.is_valid_booktype(file3, booktype=booktype):
@@ -346,23 +360,32 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                             try:
                                 os.makedirs(dest_path)
                             except Exception, e:
-                                logger.debug(str(e))
-                        if lazylibrarian.DESTINATION_COPY == 1:
-                            shutil.copyfile(os.path.join(pp_path, file3), os.path.join(dest_path, file3))
+                                logger.debug("Unable to makedir %s, %s" % (dest_path, str(e)))
+                        if lazylibrarian.DESTINATION_COPY == True:
+                            try:
+                                shutil.copyfile(os.path.join(pp_path, file3), os.path.join(dest_path, file3))
+                            except Exception as why:
+                                logger.debug("Failed to copy file %s to %s, %s" % (file3, dest_path, str(why)))
                         else:
-                            shutil.move(os.path.join(pp_path, file3), os.path.join(dest_path, file3))
+                            try:
+                                shutil.move(os.path.join(pp_path, file3), os.path.join(dest_path, file3))
+                            except Exception as why:
+                                logger.debug("Failed to move file %s to %s, %s" % (file3, dest_path, str(why)))
         else:
-            shutil.move(pp_path, dest_path)
-            logger.debug('Successfully moved %s to %s.' % (pp_path, dest_path))
+            try:
+                shutil.move(pp_path, dest_path)
+                logger.debug('Successfully moved %s to %s.' % (pp_path, dest_path))
+            except Exception as why:
+                logger.debug("Failed to move %s to %s, %s" % (pp_path, dest_path, str(why)))
 
         pp = True
 
         # try and rename the actual book file & remove unwanted non-book files
         for file2 in os.listdir(dest_path):
             if file2.lower().endswith(".jpg") or file2.lower().endswith(".opf") or formatter.is_valid_booktype(file2, booktype=booktype):
-                    logger.debug('Moving %s to directory %s' % (file2, dest_path))
-                    os.rename(os.path.join(dest_path, file2), os.path.join(dest_path, global_name + '.' +
-                              str(file2).split('.')[-1]))
+                logger.debug('Moving %s to directory %s' % (file2, dest_path))
+                os.rename(os.path.join(dest_path, file2), os.path.join(dest_path, global_name + '.' +
+                          str(file2).split('.')[-1]))
             else:
                 logger.debug('Removing unwanted file: %s' % str(file2))
                 os.remove(os.path.join(dest_path, file2))
@@ -395,15 +418,13 @@ def processAutoAdd(src_path=None):
             # Caution - book may be pdf, mobi, epub or all 3.
             # for now simply copy all files, and let the autoadder sort it out
 
-            # os.makedirs(autoadddir)
-            # errors = []
             for name in names:
                 srcname = os.path.join(src_path, name)
                 dstname = os.path.join(autoadddir, name)
                 logger.debug('AutoAdd Copying named file [%s] as copy [%s] to [%s]' % (name, srcname, dstname))
                 try:
                     shutil.copy2(srcname, dstname)
-                except (IOError, os.error) as why:
+                except Exception as why:
                     logger.error('AutoAdd - Failed to copy file because [%s] ' % str(why))
 
         except OSError as why:
