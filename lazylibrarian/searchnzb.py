@@ -57,10 +57,11 @@ def search_nzb_book(books=None):
 
         author = formatter.latinToAscii(formatter.replace_all(author, dic))
         book = formatter.latinToAscii(formatter.replace_all(book, dic))
-
-        # TRY SEARCH TERM just using author name and book type
+        if '(' in book:  # may have title (series/extended info)
+            book = book.split('(')[0]
+        # TRY SEARCH TERM just using author name and book
         author = formatter.latinToAscii(formatter.replace_all(author, dicSearchFormatting))
-        searchterm = author + ' ' + book  # + ' ' + lazylibrarian.EBOOK_TYPE
+        searchterm = author + ' ' + book
         searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
         searchterm = re.sub(r'\(.*?\)', '', searchterm).encode('utf-8')
         searchterm = re.sub(r"\s\s+", " ", searchterm)  # strip any double white space
@@ -70,91 +71,104 @@ def search_nzb_book(books=None):
     if not lazylibrarian.SAB_HOST and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE and not lazylibrarian.NZBGET_HOST:
         logger.warn('No download method is set, use SABnzbd/NZBGet or blackhole')
 
-    counter = 0
+    nzb_count = 0
     for book in searchlist:
+        # first attempt, try author/title in category "book"
         resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'book')
 
         if not nproviders:
             logger.warn('No providers are set. try use NEWZNAB or TORZNAB')
-            return
+            return  # no point in continuing
 
-        # if you can't find teh book specifically, you might find under general search
-        if not resultlist:
-            logger.debug("Searching for type book failed to find any books...moving to general search")
+        found = processResultList(resultlist, book, "book")
+        
+        # if you can't find the book, try author/title without any "(extended details, series etc)"
+        if not found and '(' in book['bookName']:
+            resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'shortbook')
+            found = processResultList(resultlist, book, "shortbook")
+            
+        # if you can't find the book under "books", you might find under general search
+        if not found:
             resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'general')
+            found = processResultList(resultlist, book, "general")
 
-        if not resultlist:
-            logger.debug("Adding book %s to queue." % book['searchterm'])
-
+        # if you still can't find the book, try with author only
+        if not found:
+            resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'author')
+            found = processResultList(resultlist, book, "author")
+            
+        if not found:
+            logger.debug("NZB Searches returned no results. Adding book %s to queue." % book['searchterm'])
         else:
-            dictrepl = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
-                        ',': '', '*': '', '(': '', ')': '', '[': '', ']': '', '#': '', '0': '', '1': '',
-                        '2': '', '3': '', '4': '', '5': '', '6': '', '7': '', '8': '', '9': '', '\'': '',
-                        ':': '', '!': '', '-': '', '\s\s': ' ', ' the ': ' ', ' a ': ' ', ' and ': ' ',
-                        ' to ': ' ', ' of ': ' ', ' for ': ' ', ' my ': ' ', ' in ': ' ', ' at ': ' ', ' with ': ' '}
-            logger.debug(u'searchterm %s' % book['searchterm'])
-            addedCounter = 0
+            nzb_count = nzb_count + 1
 
-            for nzb in resultlist:
-                nzbTitle = formatter.latinToAscii(formatter.replace_all(nzb['nzbtitle'], dictrepl)).strip()
-                nzbTitle = re.sub(r"\s\s+", " ", nzbTitle)  # remove extra whitespace
-                logger.debug(u'nzbName %s' % nzbTitle)
+    if nzb_count == 1:
+        logger.info("NZBSearch for Wanted items complete, found %s book" % nzb_count)
+    else:
+        logger.info("NZBSearch for Wanted items complete, found %s books" % nzb_count)
 
-                match_ratio = int(lazylibrarian.MATCH_RATIO)
-                nzbTitle_match = fuzz.token_sort_ratio(book['searchterm'], nzbTitle)
-                logger.debug("NZB Title Match %: " + str(nzbTitle_match))
+def processResultList(resultlist, book, searchtype):
+    myDB = database.DBConnection()
+    dictrepl = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
+                ',': '', '*': '', '(': '', ')': '', '[': '', ']': '', '#': '', '0': '', '1': '',
+                '2': '', '3': '', '4': '', '5': '', '6': '', '7': '', '8': '', '9': '', '\'': '',
+                ':': '', '!': '', '-': '', '\s\s': ' ', ' the ': ' ', ' a ': ' ', ' and ': ' ',
+                ' to ': ' ', ' of ': ' ', ' for ': ' ', ' my ': ' ', ' in ': ' ', ' at ': ' ', ' with ': ' '}
 
-                if (nzbTitle_match > match_ratio):
-                    logger.debug(u'Found NZB: %s' % nzb['nzbtitle'])
-                    addedCounter = addedCounter + 1
-                    bookid = book['bookid']
-                    nzbTitle = (book["authorName"] + ' - ' + book['bookName'] + ' LL.(' + book['bookid'] + ')').strip()
-                    nzburl = nzb['nzburl']
-                    nzbprov = nzb['nzbprov']
-                    nzbdate_temp = nzb['nzbdate']
-                    nzbsize_temp = nzb['nzbsize']  # Need to cater for when this is NONE (Issue 35)
-                    if nzbsize_temp is None:
-                        nzbsize_temp = 1000
-                    nzbsize = str(round(float(nzbsize_temp) / 1048576, 2)) + ' MB'
-                    nzbdate = formatter.nzbdate2format(nzbdate_temp)
-                    nzbmode = nzb['nzbmode']
+    match_ratio = int(lazylibrarian.MATCH_RATIO)
+        
+    for nzb in resultlist:
+        nzbTitle = formatter.latinToAscii(formatter.replace_all(nzb['nzbtitle'], dictrepl)).strip()
+        nzbTitle = re.sub(r"\s\s+", " ", nzbTitle)  # remove extra whitespace
+        
+        nzbTitle_match = fuzz.token_sort_ratio(book['searchterm'], nzbTitle)
+        logger.debug(u"NZB Title Match %: " + str(nzbTitle_match) + " for " + nzbTitle)
+        
+        if (nzbTitle_match > match_ratio):
+            logger.debug(u'Found NZB: %s using %s search' % (nzb['nzbtitle'], searchtype))
+            bookid = book['bookid']
+            nzbTitle = (book["authorName"] + ' - ' + book['bookName'] + ' LL.(' + book['bookid'] + ')').strip()
+            nzburl = nzb['nzburl']
+            nzbprov = nzb['nzbprov']
+            nzbdate_temp = nzb['nzbdate']
+            nzbsize_temp = nzb['nzbsize']  # Need to cater for when this is NONE (Issue 35)
+            if nzbsize_temp is None:
+                nzbsize_temp = 1000
+            nzbsize = str(round(float(nzbsize_temp) / 1048576, 2)) + ' MB'
+            nzbdate = formatter.nzbdate2format(nzbdate_temp)
+            nzbmode = nzb['nzbmode']
+            controlValueDict = {"NZBurl": nzburl}
+            newValueDict = {
+                "NZBprov": nzbprov,
+                "BookID": bookid,
+                "NZBdate": nzbdate,
+                "NZBsize": nzbsize,
+                "NZBtitle": nzbTitle,
+                "NZBmode": nzbmode,
+                "Status": "Skipped"
+            }
+            myDB.upsert("wanted", newValueDict, controlValueDict)
 
-                    controlValueDict = {"NZBurl": nzburl}
-                    newValueDict = {
-                        "NZBprov": nzbprov,
-                        "BookID": bookid,
-                        "NZBdate": nzbdate,
-                        "NZBsize": nzbsize,
-                        "NZBtitle": nzbTitle,
-                        "NZBmode": nzbmode,
-                        "Status": "Skipped"
-                    }
-                    myDB.upsert("wanted", newValueDict, controlValueDict)
-
-                    snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
-                                                bookid).fetchone()
-                    if not snatchedbooks:
-                        if nzbmode == "torznab":
-                            TORDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
-                        else:
-                            NZBDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
-                        notifiers.notify_snatch(formatter.latinToAscii(nzbTitle) + ' at ' + formatter.now())
-                        postprocess.schedule_processor(action='Start')
-                    break
-            if addedCounter == 0:
-                logger.debug("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() +
-                             ". Adding book to queue.")
-        counter = counter + 1
-
-    logger.info("NZBSearch for Wanted items complete")
-
+            snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
+                                        bookid).fetchone()
+            if not snatchedbooks:
+                if nzbmode == "torznab":
+                    TORDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
+                else:
+                    NZBDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
+                notifiers.notify_snatch(formatter.latinToAscii(nzbTitle) + ' at ' + formatter.now())
+                postprocess.schedule_processor(action='Start')
+            return True
+            
+    logger.debug("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() +
+                     "using searchtype " + searchtype)
+    return False
 
 def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
 
     myDB = database.DBConnection()
     if lazylibrarian.SAB_HOST and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
         download = sabnzbd.SABnzbd(nzbtitle, nzburl)
-
     elif lazylibrarian.NZBGET_HOST and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
         headers = {'User-Agent': USER_AGENT}
         data = request.request_content(url=nzburl, headers=headers)

@@ -258,6 +258,21 @@ def ReturnSearchTypeStructure(api_key, book, searchType, searchMode):
                 "author": common.removeDisallowedFilenameChars(book['authorName']),
                 "cat": 7020,  # 7020=ebook
             }
+        elif searchType == "shortbook":
+            params = {
+                "t": "book",
+                "apikey": api_key,
+                "title": common.removeDisallowedFilenameChars(book['bookName'].split('(')[0]).strip(),
+                "author": common.removeDisallowedFilenameChars(book['authorName']),
+                "cat": 7020,  # 7020=ebook
+            }        
+        elif searchType == "author":
+            params = {
+                "t": "search",
+                "apikey": api_key,
+                "q": common.removeDisallowedFilenameChars(book['authorName']),
+                "extended": 1,
+            }
         elif searchType == "mag":
             params = {
                 "t": "search",
@@ -283,6 +298,14 @@ def ReturnSearchTypeStructure(api_key, book, searchType, searchMode):
                 "q": book['searchterm'],
                 "extended": 1,
             }
+        elif searchType == "shortbook":
+            params = {
+                "t": "search",
+                "apikey": api_key,
+                "cat": "8000,8010",  # 8000=book, 8010=ebook
+                "q": book['searchterm'].split('(')[0],
+                "extended": 1,
+            }
         elif searchType == "mag":
             params = {
                 "t": "search",
@@ -299,7 +322,7 @@ def ReturnSearchTypeStructure(api_key, book, searchType, searchMode):
                 "q": book['searchterm'],
                 "extended": 1,
             }
-    logger.debug('[NewzNabPlus] - Search parameters set to ' + str(params))
+    logger.debug('[NewzNabPlus] - %s Search parameters set to %s' % (searchMode, str(params)))
 
     return params
 

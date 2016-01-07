@@ -73,77 +73,91 @@ def search_tor_book(books=None):
         searchlist.append({"bookid": bookid, "bookName": searchbook[2], "authorName": searchbook[1],
                            "searchterm": searchterm.strip()})
 
-    counter = 0
+    tor_count = 0
     for book in searchlist:
+       
         resultlist, nproviders = providers.IterateOverTorrentSites(book, 'book')
         if not nproviders:
             logger.warn('No torrent providers are set, check config for TORRENT providers')
-            return
+            return  # No point in continuing
 
-        # if you can't find teh book specifically, you might find under general search
-        if not resultlist:
-            logger.debug("Searching for type book failed to find any books...moving to general search")
+        found = processResultList(resultlist, book, "book")
+
+        # if you can't find the book, try author/title without any "(extended details, series etc)"
+        if not found and '(' in book['bookName']:
+            resultlist, nproviders = providers.IterateOverTorrentSites(book, 'shortbook')
+            found = processResultList(resultlist, book, "shortbook")
+
+        # if you can't find the book under "books", you might find under general search
+        if not found:
             resultlist, nproviders = providers.IterateOverTorrentSites(book, 'general')
+            found = processResultList(resultlist, book, "general")
 
-        if not resultlist:
-            logger.debug("Adding book %s to queue." % book['searchterm'])
-
+        # if you still can't find the book, try with author only
+        if not found:
+            resultlist, nproviders = providers.IterateOverTorrentSites(book, 'author')
+            found = processResultList(resultlist, book, "author")
+            
+        if not found:
+            logger.debug("Searches returned no results. Adding book %s to queue." % book['searchterm'])
         else:
-            dictrepl = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
-                        ',': '', '*': '', '(': '', ')': '', '[': '', ']': '', '#': '', '0': '', '1': '', '2': '',
-                        '3': '', '4': '', '5': '', '6': '', '7': '', '8': '', '9': '', '\'': '', ':': '', '!': '',
-                        '-': '', '\s\s': ' ', ' the ': ' ', ' a ': ' ', ' and ': ' ', ' to ': ' ', ' of ': ' ',
-                        ' for ': ' ', ' my ': ' ', ' in ': ' ', ' at ': ' ', ' with ': ' '}
-            logger.debug(u'searchterm %s' % book['searchterm'])
-            addedCounter = 0
+            tor_count = tor_count + 1
 
-            for tor in resultlist:
-                tor_Title = formatter.latinToAscii(formatter.replace_all(str(tor['tor_title']), dictrepl)).strip()
-                tor_Title = re.sub(r"\s\s+", " ", tor_Title)  # remove extra whitespace
-                logger.debug(u'torName %s' % tor_Title)
+    if tor_count == 1:
+        logger.info("TORSearch for Wanted items complete, found %s book" % tor_count)
+    else:
+        logger.info("TORSearch for Wanted items complete, found %s books" % tor_count)
 
-                match_ratio = int(lazylibrarian.MATCH_RATIO)
-                tor_Title_match = fuzz.token_sort_ratio(book['searchterm'], tor_Title)
-                logger.debug("Torrent Title Match %: " + str(tor_Title_match))
+def processResultList(resultlist, book, searchtype):
+    myDB = database.DBConnection()
+    dictrepl = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
+                ',': '', '*': '', '(': '', ')': '', '[': '', ']': '', '#': '', '0': '', '1': '', '2': '',
+                '3': '', '4': '', '5': '', '6': '', '7': '', '8': '', '9': '', '\'': '', ':': '', '!': '',
+                '-': '', '\s\s': ' ', ' the ': ' ', ' a ': ' ', ' and ': ' ', ' to ': ' ', ' of ': ' ',
+                ' for ': ' ', ' my ': ' ', ' in ': ' ', ' at ': ' ', ' with ': ' '}
 
-                if (tor_Title_match > match_ratio):
-                    logger.debug(u'Found Torrent: %s' % tor['tor_title'])
-                    addedCounter = addedCounter + 1
-                    bookid = book['bookid']
-                    tor_Title = (book["authorName"] + ' - ' + book['bookName'] +
-                                 ' LL.(' + book['bookid'] + ')').strip()
-                    tor_url = tor['tor_url']
-                    tor_prov = tor['tor_prov']
+    for tor in resultlist:
+        tor_Title = formatter.latinToAscii(formatter.replace_all(str(tor['tor_title']), dictrepl)).strip()
+        tor_Title = re.sub(r"\s\s+", " ", tor_Title)  # remove extra whitespace
+        
+        match_ratio = int(lazylibrarian.MATCH_RATIO)
+        tor_Title_match = fuzz.token_sort_ratio(book['searchterm'], tor_Title)
+        logger.debug("Torrent Title Match %: " + str(tor_Title_match) + " for " + tor_Title)
+        
+        if (tor_Title_match > match_ratio):
+            logger.debug(u'Found Torrent: %s using %s search' % (tor['tor_title'], searchtype))
+            bookid = book['bookid']
+            tor_Title = (book["authorName"] + ' - ' + book['bookName'] +
+                         ' LL.(' + book['bookid'] + ')').strip()
+            tor_url = tor['tor_url']
+            tor_prov = tor['tor_prov']
 
-                    tor_size_temp = tor['tor_size']  # Need to cater for when this is NONE (Issue 35)
-                    if tor_size_temp is None:
-                        tor_size_temp = 1000
-                    tor_size = str(round(float(tor_size_temp) / 1048576, 2)) + ' MB'
+            tor_size_temp = tor['tor_size']  # Need to cater for when this is NONE (Issue 35)
+            if tor_size_temp is None:
+                tor_size_temp = 1000
+            tor_size = str(round(float(tor_size_temp) / 1048576, 2)) + ' MB'
+            controlValueDict = {"NZBurl": tor_url}
+            newValueDict = {
+                "NZBprov": tor_prov,
+                "BookID": bookid,
+                "NZBsize": tor_size,
+                "NZBtitle": tor_Title,
+                "NZBmode": "torrent",
+                "Status": "Skipped"
+            }
+            myDB.upsert("wanted", newValueDict, controlValueDict)
+            snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
+                                        bookid).fetchone()
+            if not snatchedbooks:
+                TORDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
+                notifiers.notify_snatch(formatter.latinToAscii(tor_Title) + ' at ' + formatter.now())
+                postprocess.schedule_processor(action='Start')
+            return True
 
-                    controlValueDict = {"NZBurl": tor_url}
-                    newValueDict = {
-                        "NZBprov": tor_prov,
-                        "BookID": bookid,
-                        "NZBsize": tor_size,
-                        "NZBtitle": tor_Title,
-                        "NZBmode": "torrent",
-                        "Status": "Skipped"
-                    }
-                    myDB.upsert("wanted", newValueDict, controlValueDict)
-
-                    snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
-                                                bookid).fetchone()
-                    if not snatchedbooks:
-                        TORDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
-                        notifiers.notify_snatch(formatter.latinToAscii(tor_Title) + ' at ' + formatter.now())
-                        postprocess.schedule_processor(action='Start')
-                    break
-            if addedCounter == 0:
-                logger.debug("No torrent's found for " + (book["authorName"] + ' ' +
-                             book['bookName']).strip() + ". Adding book to queue.")
-        counter = counter + 1
-    logger.info("TORSearch for Wanted items complete")
-
+    logger.debug("No torrent's found for " + (book["authorName"] + ' ' +
+                 book['bookName']).strip() + " using searchtype " + searchtype)
+    return False
+    
 
 def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
     myDB = database.DBConnection()
