@@ -119,6 +119,11 @@ def processDir(force=False):
                                     '$Title', bookname)
                     # dest_path = authorname+'/'+bookname
                     # global_name = bookname + ' - ' + authorname
+                    # Remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
+                    # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
+                    dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
+                           ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
+                    dest_path = formatter.latinToAscii(formatter.replace_all(dest_path, dic))
                     dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(
                                     lazylibrarian.SYS_ENCODING)
                 else:
@@ -128,8 +133,14 @@ def processDir(force=False):
                         # files are downloading, there will be an error in post-processing, trying to go to the
                         # same directory.
                         mostrecentissue = data[0]['IssueDate']  # keep for processing issues arriving out of order
+                        # Remove characters we don't want in the filename before (maybe) adding to DESTINATION_DIR
+                        # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
+                        dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
+                               ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
+                        mag_name = formatter.latinToAscii(formatter.replace_all(book['BookID'], dic))
+                        # book auxinfo is a cleaned date, eg 2015-01-01
                         dest_path = lazylibrarian.MAG_DEST_FOLDER.replace('$IssueDate', book['AuxInfo']).replace(
-                                        '$Title', book['BookID'])
+                                        '$Title', mag_name)
                         # dest_path = '_Magazines/'+title+'/'+book['AuxInfo']
                         if lazylibrarian.MAG_RELATIVE:
                             if dest_path[0] not in '._':
@@ -141,7 +152,7 @@ def processDir(force=False):
                         authorname = None
                         bookname = None
                         global_name = lazylibrarian.MAG_DEST_FILE.replace('$IssueDate', book['AuxInfo']).replace(
-                                        '$Title', book['BookID'])
+                                        '$Title', mag_name)
                         # global_name = book['AuxInfo']+' - '+title
                     else:
                         logger.debug("Snatched magazine %s is not in download directory" % (book['BookID']))
@@ -150,9 +161,6 @@ def processDir(force=False):
                 logger.debug("Snatched NZB %s is not in download directory" % (book['NZBtitle']))
                 continue
 
-            dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
-                   ' + ': ' ', '"': '', ',': '', '*': '', ';': '', '\'': ''}
-            dest_path = formatter.latinToAscii(formatter.replace_all(dest_path, dic))
             #try:
             #    os.chmod(dest_path, 0777)
             #except Exception, e:
@@ -241,8 +249,10 @@ def import_book(pp_path=None, bookID=None):
             
         dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace('$Title', bookname)
         global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace('$Title', bookname)
+        # Remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
+        # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
         dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
-               ' + ': ' ', '"': '', ',': '', '*': '', ';': '', '\'': ''}
+               ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
         dest_path = formatter.latinToAscii(formatter.replace_all(dest_path, dic))
         dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(lazylibrarian.SYS_ENCODING)
 
