@@ -251,26 +251,35 @@ def ReturnSearchTypeStructure(api_key, book, searchType, searchMode):
     params = None
     if searchMode == "nzb":
         if searchType == "book":
+            authorname = book['authorName']
+            while authorname[1] in '. ':  # strip any initials
+                authorname = authorname[2:].strip()  # and leading whitespace
             params = {
                 "t": "book",
                 "apikey": api_key,
                 "title": common.removeDisallowedFilenameChars(book['bookName']),
-                "author": common.removeDisallowedFilenameChars(book['authorName']),
+                "author": common.removeDisallowedFilenameChars(authorname),
                 "cat": 7020,  # 7020=ebook
             }
         elif searchType == "shortbook":
+            authorname = book['authorName']
+            while authorname[1] in '. ':  # strip any initials
+                authorname = authorname[2:].strip()  # and leading whitespace
             params = {
                 "t": "book",
                 "apikey": api_key,
                 "title": common.removeDisallowedFilenameChars(book['bookName'].split('(')[0]).strip(),
-                "author": common.removeDisallowedFilenameChars(book['authorName']),
+                "author": common.removeDisallowedFilenameChars(authorname),
                 "cat": 7020,  # 7020=ebook
             }        
         elif searchType == "author":
+            authorname = book['authorName']
+            while authorname[1] in '. ':  # strip any initials
+                authorname = authorname[2:].strip()  # and leading whitespace
             params = {
                 "t": "search",
                 "apikey": api_key,
-                "q": common.removeDisallowedFilenameChars(book['authorName']),
+                "q": common.removeDisallowedFilenameChars(authorname),
                 "extended": 1,
             }
         elif searchType == "mag":
