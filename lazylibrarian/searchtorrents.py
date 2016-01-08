@@ -121,7 +121,7 @@ def processResultList(resultlist, book, searchtype):
         tor_Title = re.sub(r"\s\s+", " ", tor_Title)  # remove extra whitespace
         
         match_ratio = int(lazylibrarian.MATCH_RATIO)
-        tor_Title_match = fuzz.token_sort_ratio(book['searchterm'], tor_Title)
+        tor_Title_match = fuzz.token_set_ratio(book['searchterm'], tor_Title)
         logger.debug("Torrent Title Match %: " + str(tor_Title_match) + " for " + tor_Title)
         
         if (tor_Title_match > match_ratio):

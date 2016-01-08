@@ -420,7 +420,8 @@ def LibraryScan(dir=None):
                                 # The currently non-configurable value of fuzziness might need to go in config
                                 # We stored GoodReads unmodified author name in
                                 # author_gr, so store in LL db under that
-                                match_fuzz = fuzz.ratio(match_auth, match_name)
+                                # fuzz.ratio doesn't lowercase for us
+                                match_fuzz = fuzz.ratio(match_auth.lower(), match_name.lower())
                                 if match_fuzz < 90:
                                     logger.debug(
                                         "Failed to match author [%s] fuzz [%d]" %
