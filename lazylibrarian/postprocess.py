@@ -619,7 +619,7 @@ def processCSV(search_dir=None):
             if 'ISBN13' in headers:
                 isbn13 = content[bookid]['ISBN13']
 
-            # try to find book in our database using isbn, or if that fails, fuzzy name matching
+            # try to find book in our database using isbn, or if that fails, name matching
             if formatter.is_valid_isbn(isbn10):
                 bookmatch = myDB.action('SELECT * FROM books where Bookisbn=%s' % (isbn10)).fetchone()
             if not bookmatch:

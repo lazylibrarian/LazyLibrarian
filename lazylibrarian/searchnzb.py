@@ -121,20 +121,20 @@ def processResultList(resultlist, book, searchtype):
         nzbTitle = formatter.latinToAscii(formatter.replace_all(nzb['nzbtitle'], dictrepl)).strip()
         nzbTitle = re.sub(r"\s\s+", " ", nzbTitle)  # remove extra whitespace
         
-        #nzbTitle_match = fuzz.token_sort_ratio(book['searchterm'], nzbTitle)
+        #nzbTitle_match = fuzz.token_set_ratio(book['searchterm'], nzbTitle)
         #logger.debug(u"NZB Title sort Match %: " + str(nzbTitle_match) + " for " + nzbTitle)
         if searchtype == 'book' or searchtype == 'shortbook':
             nzbTitle_match = fuzz.token_set_ratio(book['searchterm'], nzbTitle)
-            logger.debug(u"NZB Title set Match %: " + str(nzbTitle_match) + " for " + nzbTitle)
+            logger.debug(u"NZB token set Match %: " + str(nzbTitle_match) + " for " + nzbTitle)
         elif searchtype == 'author':
-            nzbTitle_match = fuzz.partial_ratio(book['authorName'].encode('utf-8'), nzbTitle)
+            nzbTitle_match = fuzz.token_set_ratio(book['authorName'].encode('utf-8'), nzbTitle)
             logger.debug(u"NZB author Match %: " + str(nzbTitle_match) + " for " + nzbTitle)
             if nzbTitle_match > match_ratio:
-                nzbTitle_match = fuzz.partial_ratio(book['bookName'].encode('utf-8'), nzbTitle)
+                nzbTitle_match = fuzz.token_set_ratio(book['bookName'].encode('utf-8'), nzbTitle)
                 logger.debug(u"NZB book Match %: " + str(nzbTitle_match) + " for " + nzbTitle)
         else:  # searchtype == 'general':
-            nzbTitle_match = fuzz.partial_ratio(book['searchterm'], nzbTitle)
-            logger.debug(u"NZB Title partial Match %: " + str(nzbTitle_match) + " for " + nzbTitle)
+            nzbTitle_match = fuzz.token_set_ratio(book['searchterm'], nzbTitle)
+            logger.debug(u"NZB Title general Match %: " + str(nzbTitle_match) + " for " + nzbTitle)
         
         if (nzbTitle_match > match_ratio):
             logger.debug(u'Found NZB: %s using %s search' % (nzb['nzbtitle'], searchtype))

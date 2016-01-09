@@ -19,7 +19,7 @@ from lib.apscheduler.scheduler import Scheduler
 
 import threading
 
-from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, \
+from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, formatter, \
         librarysync, versioncheck, database, searchmag, magazinescan, common
 try:
     from wand.image import Image
@@ -251,19 +251,19 @@ NMA_ONDOWNLOAD = None
 # which we can match against magazine issues
 # Defined as global and initialised early, because locale changes are not thread safe
 # This means changes to languages require a restart
-MONTH0 = []  # This holds the language code
-MONTH1 = []  # multiple names for first month
-MONTH2 = []  # etc...
-MONTH3 = []
-MONTH4 = []
-MONTH5 = []
-MONTH6 = []
-MONTH7 = []
-MONTH8 = []
-MONTH9 = []
-MONTH10 = []
-MONTH11 = []
-MONTH12 = []
+MONTH0 = ['en_GB.UTF-8', 'en_GB.UTF-8']  # This holds the language code
+MONTH1 = [u'january', u'jan']  # multiple names for first month
+MONTH2 = [u'february', u'feb']  # etc...
+MONTH3 = [u'march', u'mar']
+MONTH4 = [u'april', u'apr']
+MONTH5 = [u'may', u'may']
+MONTH6 = [u'june', u'jun']
+MONTH7 = [u'july', u'jul']
+MONTH8 = [u'august', u'aug']
+MONTH9 = [u'september', u'sep']
+MONTH10 = [u'october', u'oct']
+MONTH11 = [u'november', u'nov']
+MONTH12 = [u'december', u'dec']
 MONTHNAMES = [MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6,
               MONTH7, MONTH8, MONTH9, MONTH10, MONTH11, MONTH12]
 CACHE_HIT = 0
@@ -430,7 +430,7 @@ def initialize():
         LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
 
         IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', 'en, eng, en-US')
-        IMP_MONTHLANG = check_setting_str(CFG, 'General', 'imp_monthlang', 'en_US.utf8')
+        IMP_MONTHLANG = check_setting_str(CFG, 'General', 'imp_monthlang', '')
         IMP_AUTOADD = check_setting_str(CFG, 'General', 'imp_autoadd', '')
         IMP_ONLYISBN = check_setting_bool(CFG, 'General', 'imp_onlyisbn', 0)
         IMP_SINGLEBOOK = check_setting_bool(CFG, 'General', 'imp_singlebook', 0)
@@ -654,26 +654,20 @@ def initialize():
 def build_monthtable():
     current_locale = locale.setlocale(locale.LC_ALL, '')  # read current state.
 # getdefaultlocale() doesnt seem to work as expected on windows, returns 'None'
-# ensure current locale is in the list...
-# actually I'm not sure if this is a good idea. I Added this as my Raspberry Pi
-# defaults to en_GB and does not have en_US loaded, but it's probably better in
-# this case for the user to put en_GB in the config setting instead of en_US??
-# Or have an empty config setting?
-# Or at least remove en_US from the config list so we don't check the same names twice?
 #
     lang = str(current_locale)
-    MONTHNAMES[0].append(lang)
-    for f in range(1, 13):
-        MONTHNAMES[f].append(common.remove_accents(calendar.month_name[f]).lower())
-    MONTHNAMES[0].append(lang)
-    for f in range(1, 13):
-        MONTHNAMES[f].append(common.remove_accents(calendar.month_abbr[f]).lower().strip('.'))
-    logger.info("Added month names for locale [%s], %s, %s ..." % (
-        lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
+    if not lang.startswith('en_'):  # en_ is preloaded
+        MONTHNAMES[0].append(lang)
+        for f in range(1, 13):
+            MONTHNAMES[f].append(common.remove_accents(calendar.month_name[f]).lower())
+        MONTHNAMES[0].append(lang)
+        for f in range(1, 13):
+            MONTHNAMES[f].append(common.remove_accents(calendar.month_abbr[f]).lower().strip('.'))
+            logger.info("Added month names for locale [%s], %s, %s ..." % (
+            lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
 
-    for lang in IMP_MONTHLANG.split(','):
+    for lang in formatter.getList(IMP_MONTHLANG):
         try:
-            lang = str(lang).strip()
             if len(lang) > 1:
                 locale.setlocale(locale.LC_ALL, lang)
                 MONTHNAMES[0].append(lang)
@@ -707,13 +701,11 @@ def build_monthtable():
                 logger.warn("Unable to get a list of alternatives")
             logger.info("Set locale back to entry state %s" % current_locale)
     # quick sanity check, warn if no english names in table
-    eng = 0
-    for lang in MONTHNAMES[0]:
-        if lang.startswith('en_'):
-            eng = 1
-    if not eng:
-        logger.warn("No English language loaded - Magazine name matching will probably fail")
-
+    #eng = 0
+    #for lang in MONTHNAMES[0]:
+    #    if lang.startswith('en_'):
+    #        return
+    #logger.warn("No English language loaded - Magazine name matching will probably fail")
 
 def daemonize():
     """

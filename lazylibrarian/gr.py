@@ -140,8 +140,8 @@ class GoodReads:
                 else:
                     bookTitle = author.find('./best_book/title').text
 
-                author_fuzz = fuzz.ratio(authorNameResult, authorname)
-                book_fuzz = fuzz.ratio(bookTitle, authorname)
+                author_fuzz = fuzz.token_set_ratio(authorNameResult, authorname)
+                book_fuzz = fuzz.token_set_ratio(bookTitle, authorname)
                 try:
                     isbn_check = int(authorname[:-1])
                     if (len(str(isbn_check)) == 9) or (len(str(isbn_check)) == 12):

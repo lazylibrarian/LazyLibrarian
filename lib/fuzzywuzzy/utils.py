@@ -1,17 +1,31 @@
-import string
+from __future__ import unicode_literals
+import sys
 
-bad_chars=''
-for i in range(128,256):
-    bad_chars+=chr(i)
-table_from=string.punctuation+string.ascii_uppercase
-table_to=' '*len(string.punctuation)+string.ascii_lowercase
-trans_table=string.maketrans(table_from, table_to)
+from string_processing import StringProcessor
+
+
+PY3 = sys.version_info[0] == 3
+
+
+def validate_string(s):
+    try:
+        return len(s) > 0
+    except TypeError:
+        return False
+
+bad_chars = str("").join([chr(i) for i in range(128, 256)])  # ascii dammit!
+if PY3:
+    translation_table = dict((ord(c), None) for c in bad_chars)
+    unicode = str
 
 
 def asciionly(s):
-    return s.translate(None, bad_chars)
+    if PY3:
+        return s.translate(translation_table)
+    else:
+        return s.translate(None, bad_chars)
 
-# remove non-ASCII characters from strings
+
 def asciidammit(s):
     if type(s) is str:
         return asciionly(s)
@@ -20,21 +34,40 @@ def asciidammit(s):
     else:
         return asciidammit(unicode(s))
 
-def validate_string(s):
-    try:
-        if len(s)>0:
-            return True
-        else:
-            return False
-    except:
-        return False
 
-def full_process(s):
-    s = asciidammit(s)
-    return s.translate(trans_table, bad_chars).strip()
+def make_type_consistent(s1, s2):
+    """If both objects aren't either both string or unicode instances force them to unicode"""
+    if isinstance(s1, str) and isinstance(s2, str):
+        return s1, s2
+
+    elif isinstance(s1, unicode) and isinstance(s2, unicode):
+        return s1, s2
+
+    else:
+        return unicode(s1), unicode(s2)
+
+
+def full_process(s, force_ascii=False):
+    """Process string by
+        -- removing all but letters and numbers
+        -- trim whitespace
+        -- force to lower case
+        if force_ascii == True, force convert to ascii"""
+
+    if s is None:
+        return ""
+
+    if force_ascii:
+        s = asciidammit(s)
+    # Keep only Letters and Numbers (see Unicode docs).
+    string_out = StringProcessor.replace_non_letters_non_numbers_with_whitespace(s)
+    # Force into lowercase.
+    string_out = StringProcessor.to_lower_case(string_out)
+    # Remove leading and trailing whitespaces.
+    string_out = StringProcessor.strip(string_out)
+    return string_out
+
 
 def intr(n):
     '''Returns a correctly rounded integer'''
     return int(round(n))
-
-
