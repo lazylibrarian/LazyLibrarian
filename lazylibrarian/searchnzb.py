@@ -165,12 +165,13 @@ def processResultList(resultlist, book, searchtype):
                                         bookid).fetchone()
             if not snatchedbooks:
                 if nzbmode == "torznab":
-                    TORDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
+                    snatch = TORDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
                 else:
-                    NZBDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
-                notifiers.notify_snatch(formatter.latinToAscii(nzbTitle) + ' at ' + formatter.now())
-                postprocess.schedule_processor(action='Start')
-            return True
+                    snatch = NZBDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
+                if snatch:
+                    notifiers.notify_snatch(formatter.latinToAscii(nzbTitle) + ' at ' + formatter.now())
+                    postprocess.schedule_processor(action='Start')
+                    return True
             
     logger.debug("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() +
                      " using searchtype " + searchtype)
@@ -229,6 +230,8 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
         logger.debug('Nzbfile has been downloaded from ' + str(nzburl))
         myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
         myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl="%s"' % nzburl)
+        return True
     else:
         logger.error(u'Failed to download nzb @ <a href="%s">%s</a>' % (nzburl, nzbprov))
         myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl="%s"' % nzburl)
+        return False

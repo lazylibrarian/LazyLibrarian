@@ -729,8 +729,9 @@ class WebInterface(object):
                     snatch = TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
                 else:
                     snatch = NZBDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-                notifiers.notify_snatch(items['nzbtitle'] + ' at ' + formatter.now())
-                postprocess.schedule_processor(action='Start')
+                if snatch:  # if snatch fails, downloadmethods already report it
+                    notifiers.notify_snatch(items['nzbtitle'] + ' at ' + formatter.now())
+                    postprocess.schedule_processor(action='Start')
         raise cherrypy.HTTPRedirect("pastIssues")
     markPastIssues.exposed = True
 
