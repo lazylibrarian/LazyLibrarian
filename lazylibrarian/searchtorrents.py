@@ -149,10 +149,11 @@ def processResultList(resultlist, book, searchtype):
             snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
                                         bookid).fetchone()
             if not snatchedbooks:
-                TORDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
-                notifiers.notify_snatch(formatter.latinToAscii(tor_Title) + ' at ' + formatter.now())
-                postprocess.schedule_processor(action='Start')
-            return True
+                snatch = TORDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
+                if snatch:
+                    notifiers.notify_snatch(formatter.latinToAscii(tor_Title) + ' at ' + formatter.now())
+                    postprocess.schedule_processor(action='Start')
+                    return True
 
     logger.debug("No torrent's found for " + (book["authorName"] + ' ' +
                  book['bookName']).strip() + " using searchtype " + searchtype)
@@ -171,7 +172,10 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         if tor_url.startswith('magnet'):
             torrent = tor_url  # allow magnet link to write to blackhole and hash to utorrent
         else:
-            if '&file=' in tor_url:  # torznab results need to be re-encoded
+            if '&file=' in tor_url:
+                # torznab results need to be re-encoded
+                # had a problem with torznab utf-8 encoded strings not matching
+                # our utf-8 strings because of long/short form differences
                 url = tor_url.split('&file=')[0]
                 value = tor_url.split('&file=')[1]
                 if isinstance(value, str):
@@ -209,7 +213,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
 
             except urllib2.URLError as e:
                 logger.warn('Error fetching torrent from url: ' + tor_url + ' %s' % e.reason)
-                return
+                return False
 
         if (lazylibrarian.TOR_DOWNLOADER_BLACKHOLE):
             logger.debug('Torrent blackhole')
@@ -253,9 +257,11 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         logger.debug(u'Torrent file has been downloaded from %s' % tor_url)
         myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
         myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl="%s"' % full_url)
+        return True
     else:
         logger.error(u'Failed to download torrent @ <a href="%s">%s</a>' % (full_url, tor_url))
         myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl="%s"' % full_url)
+        return False
 
 
 def CalcTorrentHash(torrent):
