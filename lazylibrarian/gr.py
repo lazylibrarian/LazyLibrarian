@@ -20,7 +20,7 @@ class GoodReads:
     def __init__(self, name=None):
         self.name = name.encode('utf-8')
         # self.type = type
-        self.params = {"key":  lazylibrarian.GR_API}
+        self.params = {"key": lazylibrarian.GR_API}
 
     def get_request(self, my_url):
         request = urllib2.Request(my_url)
@@ -96,7 +96,7 @@ class GoodReads:
         try:
             try:
                 rootxml, in_cache = self.get_request(set_url)
-            except Exception, e:
+            except Exception as e:
                 logger.error("Error finding results: " + str(e))
                 return
 
@@ -177,7 +177,7 @@ class GoodReads:
 
                 resultcount = resultcount + 1
 
-        except urllib2.HTTPError, err:
+        except urllib2.HTTPError as err:
             if err.code == 404:
                 logger.error('Received a 404 error when searching for author')
             if err.code == 403:
@@ -204,7 +204,7 @@ class GoodReads:
         authorlist = []
         try:
             rootxml, in_cache = self.get_request(URL)
-        except Exception, e:
+        except Exception as e:
             logger.error("Error finding authorid: " + str(e) + str(URL))
             return authorlist
 
@@ -231,7 +231,7 @@ class GoodReads:
 
         try:
             rootxml, in_cache = self.get_request(URL)
-        except Exception, e:
+        except Exception as e:
             logger.error("Error getting author info: " + str(e))
             return author_dict
 
@@ -244,13 +244,13 @@ class GoodReads:
 
             # PAB added authorname to author_dict - this holds the intact name preferred by GR
             author_dict = {
-                'authorid':   resultxml[0].text,
-                'authorlink':   resultxml.find('link').text,
-                'authorimg':  resultxml.find('image_url').text,
-                'authorborn':   resultxml.find('born_at').text,
-                'authordeath':  resultxml.find('died_at').text,
-                'totalbooks':   resultxml.find('works_count').text,
-                'authorname':   authorname
+                'authorid': resultxml[0].text,
+                'authorlink': resultxml.find('link').text,
+                'authorimg': resultxml.find('image_url').text,
+                'authorborn': resultxml.find('born_at').text,
+                'authordeath': resultxml.find('died_at').text,
+                'totalbooks': resultxml.find('works_count').text,
+                'authorname': authorname
             }
         return author_dict
 
@@ -272,7 +272,7 @@ class GoodReads:
         books_dict = []
         try:
             rootxml, in_cache = self.get_request(URL)
-        except Exception, e:
+        except Exception as e:
             logger.error("Error fetching author books: " + str(e))
             return books_dict
         if not in_cache:
@@ -391,7 +391,7 @@ class GoodReads:
                                         myDB.action('insert into languages values ("%s", "%s")' %
                                                     (isbnhead, bookLanguage))
                                         logger.debug(u"LT language: " + bookLanguage)
-                                except Exception, e:
+                                except Exception as e:
                                     find_field = "id"  # reset the field to search on goodreads
                                     logger.error("Error finding LT language result: ", e)
 
@@ -400,7 +400,7 @@ class GoodReads:
                             try:
                                 if (book.find(find_field).text is not None):
                                     BOOK_URL = 'http://www.goodreads.com/book/show?id=' + \
-                                                book.find(find_field).text + '&' + urllib.urlencode(self.params)
+                                        book.find(find_field).text + '&' + urllib.urlencode(self.params)
                                     logger.debug(u"Book URL: " + BOOK_URL)
 
                                     try:
@@ -413,7 +413,7 @@ class GoodReads:
                                             # only update last_goodreads if the result wasn't found in the cache
                                             lazylibrarian.LAST_GOODREADS = time_now
                                         bookLanguage = BOOK_rootxml.find('./book/language_code').text
-                                    except Exception, e:
+                                    except Exception as e:
                                         logger.error("Error finding book results: ", e)
                                     if not in_cache:
                                         gr_lang_hits = gr_lang_hits + 1
@@ -434,7 +434,7 @@ class GoodReads:
                                     logger.debug("No %s provided for [%s]" % (find_field, book.find('title').text))
                                     # continue
 
-                            except Exception, e:
+                            except Exception as e:
                                 logger.debug(u"An error has occured: " + str(e))
 
                         if bookLanguage not in valid_langs:
@@ -478,25 +478,25 @@ class GoodReads:
                         if book_status != "Ignored":
                             controlValueDict = {"BookID": bookid}
                             newValueDict = {
-                                "AuthorName":   authorNameResult,
-                                "AuthorID":     authorid,
-                                "AuthorLink":   None,
-                                "BookName":     bookname,
-                                "BookSub":      None,
-                                "BookDesc":     bookdesc,
-                                "BookIsbn":     bookisbn,
-                                "BookPub":      bookpub,
-                                "BookGenre":    None,
-                                "BookImg":      bookimg,
-                                "BookLink":     booklink,
-                                "BookRate":     bookrate,
-                                "BookPages":    bookpages,
-                                "BookDate":     pubyear,
-                                "BookLang":     bookLanguage,
-                                "Status":       book_status,
-                                "BookAdded":    formatter.today(),
-                                "Series":       series,
-                                "SeriesOrder":  seriesOrder
+                                "AuthorName": authorNameResult,
+                                "AuthorID": authorid,
+                                "AuthorLink": None,
+                                "BookName": bookname,
+                                "BookSub": None,
+                                "BookDesc": bookdesc,
+                                "BookIsbn": bookisbn,
+                                "BookPub": bookpub,
+                                "BookGenre": None,
+                                "BookImg": bookimg,
+                                "BookLink": booklink,
+                                "BookRate": bookrate,
+                                "BookPages": bookpages,
+                                "BookDate": pubyear,
+                                "BookLang": bookLanguage,
+                                "Status": book_status,
+                                "BookAdded": formatter.today(),
+                                "Series": series,
+                                "SeriesOrder": seriesOrder
                             }
 
                             resultsCount = resultsCount + 1
@@ -524,7 +524,7 @@ class GoodReads:
                     resultxml = rootxml.getiterator('book')
                     if not in_cache:
                         api_hits = api_hits + 1
-                except Exception, e:
+                except Exception as e:
                     resultxml = None
                     logger.error("Error finding next page of results: " + str(e))
 
@@ -548,7 +548,9 @@ class GoodReads:
 
         unignoredbooks = myDB.action('SELECT count("BookID") as counter FROM books \
                                       WHERE AuthorID="%s" AND Status != "Ignored"' % authorid).fetchone()
-        totalbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % authorid).fetchone()
+        totalbooks = myDB.action(
+            'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' %
+            authorid).fetchone()
         controlValueDict = {"AuthorID": authorid}
         newValueDict = {
             "Status": "Active",
@@ -574,7 +576,9 @@ class GoodReads:
                      cache_hits, ignored, removedResults, not_cached))
 
         if refresh:
-            havebooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND (Status="Have" OR Status="Open")' % authorid).fetchone()
+            havebooks = myDB.action(
+                'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND (Status="Have" OR Status="Open")' %
+                authorid).fetchone()
             controlValueDict = {"AuthorID": authorid}
             newValueDict = {"HaveBooks": havebooks['counter']}
             myDB.upsert("authors", newValueDict, controlValueDict)
@@ -594,7 +598,7 @@ class GoodReads:
 
         try:
             rootxml, in_cache = self.get_request(URL)
-        except Exception, e:
+        except Exception as e:
             logger.error("Error finding book: " + str(e))
             return
 
@@ -644,23 +648,23 @@ class GoodReads:
 
         controlValueDict = {"BookID": bookid}
         newValueDict = {
-            "AuthorName":   authorname,
-            "AuthorID":     AuthorID,
-            "AuthorLink":   None,
-            "BookName":     bookname,
-            "BookSub":      None,
-            "BookDesc":     bookdesc,
-            "BookIsbn":     bookisbn,
-            "BookPub":      bookpub,
-            "BookGenre":    None,
-            "BookImg":      bookimg,
-            "BookLink":     booklink,
-            "BookRate":     bookrate,
-            "BookPages":    bookpages,
-            "BookDate":     bookdate,
-            "BookLang":     bookLanguage,
-            "Status":       "Wanted",
-            "BookAdded":    formatter.today()
+            "AuthorName": authorname,
+            "AuthorID": AuthorID,
+            "AuthorLink": None,
+            "BookName": bookname,
+            "BookSub": None,
+            "BookDesc": bookdesc,
+            "BookIsbn": bookisbn,
+            "BookPub": bookpub,
+            "BookGenre": None,
+            "BookImg": bookimg,
+            "BookLink": booklink,
+            "BookRate": bookrate,
+            "BookPages": bookpages,
+            "BookDate": bookdate,
+            "BookLang": bookLanguage,
+            "Status": "Wanted",
+            "BookAdded": formatter.today()
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)

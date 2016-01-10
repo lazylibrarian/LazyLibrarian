@@ -20,7 +20,7 @@
 
 import urllib
 
-from common import USER_AGENT
+from .common import USER_AGENT
 
 
 class LazyLibrarianURLopener(urllib.FancyURLopener):

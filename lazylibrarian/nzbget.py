@@ -56,12 +56,12 @@ def sendNZB(nzb):
         else:
             logger.info(u"Successfully connected to NZBget, but unable to send a message" % (nzb.name + ".nzb"))
 
-    except httplib.socket.error, e:
+    except httplib.socket.error as e:
         logger.error(u"Please check your NZBget host and port (if it is running). \
             NZBget is not responding to this combination")
         return False
 
-    except xmlrpclib.ProtocolError, e:
+    except xmlrpclib.ProtocolError as e:
         if e.errmsg == "Unauthorized":
             logger.error(u"NZBget password is incorrect.")
         else:
@@ -133,6 +133,6 @@ def sendNZB(nzb):
         else:
             logger.error(u"NZBget could not add %s to the queue" % (nzb.name + ".nzb"))
             return False
-    except Exception, e:
+    except Exception as e:
         logger.error(u"Connect Error to NZBget: could not add %s to the queue: %s" % (nzb.name + ".nzb", e))
         return False

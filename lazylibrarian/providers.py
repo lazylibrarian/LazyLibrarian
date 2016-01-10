@@ -33,9 +33,9 @@ def KAT(book=None):
 
     params = {
         "category": "books",
-                "field": "seeders",
-                "sorder": "desc",
-                "rss": "1"
+        "field": "seeders",
+        "sorder": "desc",
+        "rss": "1"
     }
     searchURL = providerurl + "/?%s" % urllib.urlencode(params)
 
@@ -87,7 +87,7 @@ def KAT(book=None):
                     else:
                         logger.debug('Found %s but only %s seeders' % (title, int(seeders)))
 
-                except Exception, e:
+                except Exception as e:
                     logger.error(u"An unknown error occurred in the KAT parser: %s" % e)
 
     logger.debug(u"Found %i results from %s for %s" % (len(results), provider, book['searchterm']))
@@ -220,11 +220,11 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=
         resp = urllib2.urlopen(request, timeout=90)
         try:
             data = ElementTree.parse(resp)
-        except (urllib2.URLError, IOError, EOFError), e:
+        except (urllib2.URLError, IOError, EOFError) as e:
             logger.error('Error fetching data from %s: %s' % (host, e))
             data = None
 
-    except Exception, e:
+    except Exception as e:
         logger.error("Error 403 opening url %s" % e)
         data = None
 
@@ -271,7 +271,7 @@ def ReturnSearchTypeStructure(api_key, book, searchType, searchMode):
                 "title": common.removeDisallowedFilenameChars(book['bookName'].split('(')[0]).strip(),
                 "author": common.removeDisallowedFilenameChars(authorname),
                 "cat": 7020,  # 7020=ebook
-            }        
+            }
         elif searchType == "author":
             authorname = book['authorName']
             while authorname[1] in '. ':  # strip any initials
@@ -364,7 +364,7 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None,
     #       </item>
     #
     # t=search results
-    #<item>
+    # <item>
     #   <title>David Gemmell - [Troy 03] - Fall of Kings</title>
     #   <guid isPermaLink="true">
     #       https://www.usenet-crawler.com/details/5d7394b2386683d079d8bd8f16652b18
@@ -390,9 +390,9 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None,
     #   <newznab:attr name="password" value="0"/>
     #   <newznab:attr name="usenetdate" value="Fri, 11 Mar 2011 13:45:15 +0100"/>
     #   <newznab:attr name="group" value="alt.binaries.e-book.flood"/>
-    #</item>
-    #-------------------------------TORZNAB RETURN DATA-- book ----------------------------------------------------------------------
-    #<item>
+    # </item>
+    # -------------------------------TORZNAB RETURN DATA-- book ----------------------------------------------------------------------
+    # <item>
     #  <title>Tom Holt - Blonde Bombshell (Dystop; SFX; Humour) ePUB+MOBI</title>
     #  <guid>https://getstrike.net/torrents/1FDBE6466738EED3C7FD915E1376BA0A63088D4D</guid>
     #  <comments>https://getstrike.net/torrents/1FDBE6466738EED3C7FD915E1376BA0A63088D4D</comments>
@@ -408,9 +408,9 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None,
     #  <torznab:attr name="infohash" value="1FDBE6466738EED3C7FD915E1376BA0A63088D4D" />
     #  <torznab:attr name="minimumratio" value="1" />
     #  <torznab:attr name="minimumseedtime" value="172800" />
-    #</item>
-    #---------------------------------------- magazine ----------------------------------------
-    #<item>
+    # </item>
+    # ---------------------------------------- magazine ----------------------------------------
+    # <item>
     #  <title>Linux Format Issue 116 - KDE Issue</title>
     #  <guid>https://getstrike.net/torrents/f3fc8df4fdd850132072a435a7d112d6c9d77d16</guid>
     #  <comments>https://getstrike.net/torrents/f3fc8df4fdd850132072a435a7d112d6c9d77d16</comments>

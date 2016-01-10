@@ -2,6 +2,7 @@ import time
 import threading
 import urllib2
 import re
+import datetime
 
 import lazylibrarian
 
@@ -110,7 +111,7 @@ def search_magazines(mags=None):
                         # regex = results['Regex']
 
                     nzbtitle_formatted = nzbtitle.replace('.', ' ').replace('-', ' ').replace('/', ' ').replace(
-                                            '+', ' ').replace('_', ' ').replace('(', '').replace(')', '').strip()
+                        '+', ' ').replace('_', ' ').replace('(', '').replace(')', '').strip()
                     # Need to make sure that substrings of magazine titles don't get found
                     # (e.g. Maxim USA will find Maximum PC USA)
                     # keyword_check = nzbtitle_formatted.replace(bookid, '')
@@ -129,27 +130,21 @@ def search_magazines(mags=None):
                     # then check last n words are a date
 
                     name_match = 1  # assume name matches for now
-                    name_len = len(bookid_exploded)
-                    if len(nzbtitle_exploded) > name_len:  # needs to be longer as it should include a date
-                        while name_len:
-                            name_len = name_len - 1
-                            # fuzzy check on each word in the magazine name with any accents stripped
-                            # fuzz.ratio doesn't lowercase for us
-                            ratio = fuzz.ratio(common.remove_accents(nzbtitle_exploded[name_len].lower()),
-                                               common.remove_accents(bookid_exploded[name_len].lower()))
-                            if ratio < 80:  # hard coded fuzz ratio for now, works for close matches
-                                logger.debug("Magazine fuzz ratio failed [%d] [%s] [%s]" % (
-                                             ratio, bookid, nzbtitle_formatted))
-                                name_match = 0  # name match failed
+                    if len(nzbtitle_exploded) > len(bookid_exploded):  # needs to be longer as it has to include a date
+                        # check (nearly) all the words in the mag title are in the nzbtitle - allow some fuzz
+                        mag_title_match = fuzz.token_set_ratio(common.remove_accents(bookid), common.remove_accents(nzbtitle_formatted))
+                        if mag_title_match < lazylibrarian.MATCH_RATIO:
+                            logger.debug(u"Magazine token set Match failed: " + str(mag_title_match) + "% for " + nzbtitle_formatted)
+                            name_match = 0
                     if name_match:
                         # some magazine torrent uploaders add their sig in [] or {}
                         # Fortunately for us, they always seem to add it at the end
-                        # some magazine torrent titles are "magazine_name some_form_of_date pdf"
+                        # also some magazine torrent titles are "magazine_name some_form_of_date pdf"
                         # so strip all the trailing junk...
                         while nzbtitle_exploded[len(nzbtitle_exploded) - 1][0] in '[{' or \
-                            nzbtitle_exploded[len(nzbtitle_exploded) - 1].lower() == 'pdf':
+                                nzbtitle_exploded[len(nzbtitle_exploded) - 1].lower() == 'pdf':
                                 nzbtitle_exploded.pop()  # gotta love the function names
-                        
+
                         if len(nzbtitle_exploded) > 1:
                             # regexA = DD MonthName YYYY OR MonthName YYYY or nn MonthName YYYY
                             regexA_year = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
@@ -168,12 +163,16 @@ def search_magazines(mags=None):
                                     regexA_day = '01'  # just MonthName YYYY
                             else:
                                 regexA_day = '01'  # monthly, or less frequent
-                            
+
                             newdatish_regexA = regexA_year + regexA_month + regexA_day
 
                             try:
-                                int(newdatish_regexA)
                                 newdatish = regexA_year + '-' + regexA_month + '-' + regexA_day
+                                # try to make sure the year/month/day are valid, exception if not
+                                # ie don't accept day > 31 or 30 in some months
+                                # also handles multiple date format named issues eg Jan 2014, 01 2014
+                                # datetime will give a ValueError if not a good date
+                                date1 = datetime.date(int(regexA_year), int(regexA_month), int(regexA_day))
                             except:
                                 # regexB = MonthName DD YYYY
                                 regexB_year = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
@@ -183,8 +182,9 @@ def search_magazines(mags=None):
                                 newdatish_regexB = regexB_year + regexB_month + regexB_day
 
                                 try:
-                                    int(newdatish_regexB)
                                     newdatish = regexB_year + '-' + regexB_month + '-' + regexB_day
+                                    # datetime will give a ValueError if not a good date
+                                    date1 = datetime.date(int(regexB_year), int(regexB_month), int(regexB_day))
                                 except:
                                     # regexC = YYYY MM or YYYY MM DD or Issue nn YYYY
                                     # (can't get MM/DD if named Issue nn)
@@ -204,15 +204,16 @@ def search_magazines(mags=None):
                                             if regexC_year.isdigit():
                                                 if int(regexC_year) > 1900 and int(regexC_year) < 2100:  # YYYY MM DD or YYYY nn-nn
                                                     regexC_month = regexC_temp.zfill(2)
-                                                    if int(regexC_month) < 13:
+                                                    if regexC_month.isdigit() and int(regexC_month) < 13:
                                                         # if issue number > 12 date matching will fail
                                                         regexC_day = nzbtitle_exploded[len(
-                                                                nzbtitle_exploded) - 1].zfill(2)
+                                                            nzbtitle_exploded) - 1].zfill(2)
                                                         newdatish_regexC = regexC_year + regexC_month + regexC_day
 
                                     try:
-                                        int(newdatish_regexC)
                                         newdatish = regexC_year + '-' + regexC_month + '-' + regexC_day
+                                        # datetime will give a ValueError if not a good date
+                                        date1 = datetime.date(int(regexC_year), int(regexC_month), int(regexC_day))
                                     except:
                                         logger.debug('Magazine %s not in proper date format.' % nzbtitle_formatted)
                                         bad_date = bad_date + 1

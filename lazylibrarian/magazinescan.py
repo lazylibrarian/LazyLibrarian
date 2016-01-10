@@ -35,19 +35,20 @@ def create_cover(issuefile=None):
                     try:
                         params = [lazylibrarian.IMP_CONVERT, issuefile + '[0]', coverfile]
                         subprocess.check_output(params, stderr=subprocess.STDOUT)
-                    except subprocess.CalledProcessError, e:
+                    except subprocess.CalledProcessError as e:
                         logger.warn('ImageMagick "convert" failed %s' % e.output)
-                        
+
                 elif lazylibrarian.MAGICK == 'wand':
                     with Image(filename=issuefile + '[0]') as img:
                         img.save(filename=coverfile)
-                        
+
                 elif lazylibrarian.MAGICK == 'pythonmagick':
                     img = PythonMagick.Image()
                     img.read(issuefile + '[0]')
                     img.write(coverfile)
             except:
                 logger.debug("Unable to create cover for %s using %s" % (issuefile, lazylibrarian.MAGICK))
+
 
 def magazineScan(thread=None):
     # rename this thread
@@ -81,7 +82,7 @@ def magazineScan(thread=None):
                 controlValueDict = {"Title": title}
                 newValueDict = {
                     "LastAcquired": None,       # clear magazine dates
-                    "IssueDate":    None,       # we will fill them in again later
+                    "IssueDate": None,       # we will fill them in again later
                     "IssueStatus": "Skipped"    # assume there are no issues now
                 }
                 myDB.upsert("magazines", newValueDict, controlValueDict)
@@ -146,9 +147,9 @@ def magazineScan(thread=None):
                     }
                     logger.debug("Adding issue %s %s" % (title, issuedate))
                     myDB.upsert("Issues", newValueDict, controlValueDict)
-                
+
                 create_cover(issuefile)
-                
+
                 # see if this issues date values are useful
                 # if its a new magazine, magazineadded,magissuedate,lastacquired are all None
                 # if magazineadded is NOT None, but the others are, we've deleted one or more issues
@@ -162,7 +163,7 @@ def magazineScan(thread=None):
                     newValueDict = {
                         "MagazineAdded": iss_acquired,
                         "LastAcquired": iss_acquired,
-                        "IssueDate":    issuedate,
+                        "IssueDate": issuedate,
                         "IssueStatus": "Open"
                     }
                     myDB.upsert("magazines", newValueDict, controlValueDict)

@@ -10,12 +10,12 @@ def next_run(when_run):
     when_run = time.strptime(when_run, '%Y-%m-%d %H:%M:%S')
     when_run = time.mktime(when_run)
     diff = when_run - now  # time difference in seconds
-    # calculate whole units, plus round up by adding 1(true) if remainder >= half 
+    # calculate whole units, plus round up by adding 1(true) if remainder >= half
     days = int(diff / 86400) + (diff % 86400 >= 43200)
     hours = int(diff / 3600) + (diff % 3600 >= 1800)
     minutes = int(diff / 60) + (diff % 60 >= 30)
     seconds = int(diff)
-    
+
     if days > 1:
         return "%i days" % days
     elif hours > 1:
@@ -24,6 +24,7 @@ def next_run(when_run):
         return "%i minutes" % minutes
     else:
         return "%i seconds" % seconds
+
 
 def now():
     dtnow = datetime.datetime.now()
@@ -94,7 +95,7 @@ def datecompare(nzbdate, control_date):
     return dtage.days
 
 
-#def checked(variable):
+# def checked(variable):
 #    if  variable:
 #        return 'Checked'
 #    else:
@@ -102,7 +103,7 @@ def datecompare(nzbdate, control_date):
 
 def check_int(var, default):
     try:
-        return int(var)    
+        return int(var)
     except ValueError:
         return default
 

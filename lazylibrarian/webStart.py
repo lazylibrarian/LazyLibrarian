@@ -9,10 +9,10 @@ from lazylibrarian.webServe import WebInterface
 def initialize(options={}):
 
     cherrypy.config.update({
-        'log.screen':           False,
-        'server.thread_pool':   10,
-        'server.socket_port':   options['http_port'],
-        'server.socket_host':   options['http_host'],
+        'log.screen': False,
+        'server.thread_pool': 10,
+        'server.socket_port': options['http_port'],
+        'server.socket_host': options['http_host'],
         'engine.autoreload_on': False,
         'tools.encode.on': True,
         'tools.encode.encoding': 'utf-8',
@@ -49,7 +49,7 @@ def initialize(options={}):
         conf['/'].update({
             'tools.auth_basic.on': True,
             'tools.auth_basic.realm': 'LazyLibrarian',
-            'tools.auth_basic.checkpassword':  cherrypy.lib.auth_basic.checkpassword_dict(
+            'tools.auth_basic.checkpassword': cherrypy.lib.auth_basic.checkpassword_dict(
                 {options['http_user']: options['http_pass']})
         })
 

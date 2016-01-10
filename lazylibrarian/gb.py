@@ -66,7 +66,7 @@ class GoogleBooks:
             source_json = json.load(open(hashname))
         else:
             lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
-            #jsonresults = json.JSONDecoder().decode(urllib2.urlopen(URL, timeout=30).read())
+            # jsonresults = json.JSONDecoder().decode(urllib2.urlopen(URL, timeout=30).read())
             resp = urllib2.urlopen(my_url, timeout=30)  # don't get stuck
             if str(resp.getcode()).startswith("2"):  # (200 OK etc)
                 logger.debug(u"CacheHandler: Caching response for %s" % my_url)
@@ -125,7 +125,7 @@ class GoogleBooks:
                             break
                         else:
                             pass
-                    except HTTPError, err:
+                    except HTTPError as err:
                         logger.warn('Google Books API Error [%s]: Check your API key or wait a while' % err.msg)
                         break
 
@@ -326,7 +326,7 @@ class GoogleBooks:
                         api_hits = api_hits + 1
 
                     number_results = jsonresults['totalItems']
-                except HTTPError, err:
+                except HTTPError as err:
                     logger.warn('Google Books API Error [%s]: Check your API key or wait a while' % err.msg)
                     break
 
@@ -395,7 +395,7 @@ class GoogleBooks:
                                             myDB.action('insert into languages values ("%s", "%s")' %
                                                         (isbnhead, booklang))
                                             logger.debug(u"LT language: " + booklang)
-                                    except Exception, e:
+                                    except Exception as e:
                                         booklang = ""
                                         logger.error("Error finding results: ", e)
 
@@ -490,25 +490,25 @@ class GoogleBooks:
                         if book_status != "Ignored":
                             controlValueDict = {"BookID": bookid}
                             newValueDict = {
-                                "AuthorName":   authorname,
-                                "AuthorID":     authorid,
-                                "AuthorLink":   "",
-                                "BookName":     bookname,
-                                "BookSub":      booksub,
-                                "BookDesc":     bookdesc,
-                                "BookIsbn":     bookisbn,
-                                "BookPub":      bookpub,
-                                "BookGenre":    bookgenre,
-                                "BookImg":      bookimg,
-                                "BookLink":     booklink,
-                                "BookRate":     bookrate,
-                                "BookPages":    bookpages,
-                                "BookDate":     bookdate,
-                                "BookLang":     booklang,
-                                "Status":       book_status,
-                                "BookAdded":    formatter.today(),
-                                "Series":       None,
-                                "SeriesOrder":  None
+                                "AuthorName": authorname,
+                                "AuthorID": authorid,
+                                "AuthorLink": "",
+                                "BookName": bookname,
+                                "BookSub": booksub,
+                                "BookDesc": bookdesc,
+                                "BookIsbn": bookisbn,
+                                "BookPub": bookpub,
+                                "BookGenre": bookgenre,
+                                "BookImg": bookimg,
+                                "BookLink": booklink,
+                                "BookRate": bookrate,
+                                "BookPages": bookpages,
+                                "BookDate": bookdate,
+                                "BookLang": booklang,
+                                "Status": book_status,
+                                "BookAdded": formatter.today(),
+                                "Series": None,
+                                "SeriesOrder": None
                             }
                             resultcount = resultcount + 1
 
@@ -550,7 +550,9 @@ class GoogleBooks:
         unignoredbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" \
                                      AND Status != "Ignored"' % authorid).fetchone()
 
-        totalbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % authorid).fetchone()
+        totalbooks = myDB.action(
+            'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' %
+            authorid).fetchone()
         controlValueDict = {"AuthorID": authorid}
         newValueDict = {
             "Status": "Active",
@@ -574,7 +576,9 @@ class GoogleBooks:
                      ignored, removedResults, not_cached))
 
         if refresh:
-            havebooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND (Status="Have" OR Status="Open")' % authorid).fetchone()
+            havebooks = myDB.action(
+                'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND (Status="Have" OR Status="Open")' %
+                authorid).fetchone()
             controlValueDict = {"AuthorID": authorid}
             newValueDict = {"HaveBooks": havebooks['counter']}
             myDB.upsert("authors", newValueDict, controlValueDict)
@@ -684,23 +688,23 @@ class GoogleBooks:
 
         controlValueDict = {"BookID": bookid}
         newValueDict = {
-            "AuthorName":   authorname,
-            "AuthorID":     AuthorID,
-            "AuthorLink":   "",
-            "BookName":     bookname,
-            "BookSub":      booksub,
-            "BookDesc":     bookdesc,
-            "BookIsbn":     bookisbn,
-            "BookPub":      bookpub,
-            "BookGenre":    bookgenre,
-            "BookImg":      bookimg,
-            "BookLink":     booklink,
-            "BookRate":     bookrate,
-            "BookPages":    bookpages,
-            "BookDate":     bookdate,
-            "BookLang":     booklang,
-            "Status":       "Wanted",
-            "BookAdded":    formatter.today()
+            "AuthorName": authorname,
+            "AuthorID": AuthorID,
+            "AuthorLink": "",
+            "BookName": bookname,
+            "BookSub": booksub,
+            "BookDesc": bookdesc,
+            "BookIsbn": bookisbn,
+            "BookPub": bookpub,
+            "BookGenre": bookgenre,
+            "BookImg": bookimg,
+            "BookLink": booklink,
+            "BookRate": bookrate,
+            "BookPages": bookpages,
+            "BookDate": bookdate,
+            "BookLang": booklang,
+            "Status": "Wanted",
+            "BookAdded": formatter.today()
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)

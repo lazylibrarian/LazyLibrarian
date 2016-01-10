@@ -52,5 +52,5 @@ def removeDisallowedFilenameChars(filename):
     #  does not work on python3, complains c is int
     # if you coerce c to str it fails to match, returns empty string.
     # re.sub works on python2 and 3
-    return u''+re.sub(validFilenameChars, "", str(cleanedFilename))
+    return u'' + re.sub(validFilenameChars, "", str(cleanedFilename))
     # returns unicode
