@@ -130,22 +130,16 @@ def search_magazines(mags=None):
                     # then check last n words are a date
 
                     name_match = 1  # assume name matches for now
-                    name_len = len(bookid_exploded)
-                    if len(nzbtitle_exploded) > name_len:  # needs to be longer as it should include a date
-                        while name_len:
-                            name_len = name_len - 1
-                            # fuzzy check on each word in the magazine name with any accents stripped
-                            # fuzz.ratio doesn't lowercase for us
-                            ratio = fuzz.ratio(common.remove_accents(nzbtitle_exploded[name_len].lower()),
-                                               common.remove_accents(bookid_exploded[name_len].lower()))
-                            if ratio < 80:  # hard coded fuzz ratio for now, works for close matches
-                                logger.debug("Magazine fuzz ratio failed [%d] [%s] [%s]" % (
-                                             ratio, bookid, nzbtitle_formatted))
-                                name_match = 0  # name match failed
+                    if len(nzbtitle_exploded) > len(bookid_exploded):  # needs to be longer as it has to include a date
+                        # check (nearly) all the words in the mag title are in the nzbtitle - allow some fuzz
+                        mag_title_match = fuzz.token_set_ratio(common.remove_accents(bookid), common.remove_accents(nzbtitle_formatted))
+                        logger.debug(u"Magazine token set Match %: " + str(mag_title_match) + " for " + nzbtitle_formatted)
+                        if mag_title_match < lazylibrarian.MATCH_RATIO:
+                            name_match = 0
                     if name_match:
                         # some magazine torrent uploaders add their sig in [] or {}
                         # Fortunately for us, they always seem to add it at the end
-                        # some magazine torrent titles are "magazine_name some_form_of_date pdf"
+                        # also some magazine torrent titles are "magazine_name some_form_of_date pdf"
                         # so strip all the trailing junk...
                         while nzbtitle_exploded[len(nzbtitle_exploded) - 1][0] in '[{' or \
                                 nzbtitle_exploded[len(nzbtitle_exploded) - 1].lower() == 'pdf':
