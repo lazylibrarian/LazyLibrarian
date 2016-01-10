@@ -133,8 +133,8 @@ def search_magazines(mags=None):
                     if len(nzbtitle_exploded) > len(bookid_exploded):  # needs to be longer as it has to include a date
                         # check (nearly) all the words in the mag title are in the nzbtitle - allow some fuzz
                         mag_title_match = fuzz.token_set_ratio(common.remove_accents(bookid), common.remove_accents(nzbtitle_formatted))
-                        logger.debug(u"Magazine token set Match %: " + str(mag_title_match) + " for " + nzbtitle_formatted)
                         if mag_title_match < lazylibrarian.MATCH_RATIO:
+                            logger.debug(u"Magazine token set Match failed: " + str(mag_title_match) + "% for " + nzbtitle_formatted)
                             name_match = 0
                     if name_match:
                         # some magazine torrent uploaders add their sig in [] or {}
