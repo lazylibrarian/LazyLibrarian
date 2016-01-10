@@ -357,7 +357,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 logger.debug("Failed to rmtree %s, %s" % (dest_path, str(why)))
 
         logger.debug('Attempting to copy/move tree')
-        if len(lazylibrarian.DESTINATION_COPY) and lazylibrarian.DOWNLOAD_DIR != pp_path:
+        if lazylibrarian.DESTINATION_COPY and lazylibrarian.DOWNLOAD_DIR != pp_path:
             try:
                 shutil.copytree(pp_path, dest_path)
                 logger.debug('Successfully copied %s to %s' % (pp_path, dest_path))
@@ -374,7 +374,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                                 os.makedirs(dest_path)
                             except Exception as e:
                                 logger.debug("Unable to makedir %s, %s" % (dest_path, str(e)))
-                        if len(lazylibrarian.DESTINATION_COPY):
+                        if lazylibrarian.DESTINATION_COPY:
                             try:
                                 shutil.copyfile(os.path.join(pp_path, file3), os.path.join(dest_path, file3))
                             except Exception as why:
