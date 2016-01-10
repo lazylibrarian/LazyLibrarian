@@ -5,7 +5,7 @@ import shutil
 import re
 
 import lazylibrarian
-import request
+from . import request
 
 from lazylibrarian import logger, database, formatter, providers, nzbget, sabnzbd, notifiers, classes, postprocess
 
@@ -81,12 +81,12 @@ def search_nzb_book(books=None):
             return  # no point in continuing
 
         found = processResultList(resultlist, book, "book")
-        
+
         # if you can't find the book, try author/title without any "(extended details, series etc)"
         if not found and '(' in book['bookName']:
             resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'shortbook')
             found = processResultList(resultlist, book, "shortbook")
-            
+
         # if you can't find the book under "books", you might find under general search
         if not found:
             resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'general')
@@ -96,7 +96,7 @@ def search_nzb_book(books=None):
         if not found:
             resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'author')
             found = processResultList(resultlist, book, "author")
-            
+
         if not found:
             logger.debug("NZB Searches returned no results. Adding book %s to queue." % book['searchterm'])
         else:
@@ -107,6 +107,7 @@ def search_nzb_book(books=None):
     else:
         logger.info("NZBSearch for Wanted items complete, found %s books" % nzb_count)
 
+
 def processResultList(resultlist, book, searchtype):
     myDB = database.DBConnection()
     dictrepl = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
@@ -116,13 +117,13 @@ def processResultList(resultlist, book, searchtype):
                 ' to ': ' ', ' of ': ' ', ' for ': ' ', ' my ': ' ', ' in ': ' ', ' at ': ' ', ' with ': ' '}
 
     match_ratio = int(lazylibrarian.MATCH_RATIO)
-        
+
     for nzb in resultlist:
         nzbTitle = formatter.latinToAscii(formatter.replace_all(nzb['nzbtitle'], dictrepl)).strip()
         nzbTitle = re.sub(r"\s\s+", " ", nzbTitle)  # remove extra whitespace
-        
-        #nzbTitle_match = fuzz.token_set_ratio(book['searchterm'], nzbTitle)
-        #logger.debug(u"NZB Title sort Match %: " + str(nzbTitle_match) + " for " + nzbTitle)
+
+        # nzbTitle_match = fuzz.token_set_ratio(book['searchterm'], nzbTitle)
+        # logger.debug(u"NZB Title sort Match %: " + str(nzbTitle_match) + " for " + nzbTitle)
         if searchtype == 'book' or searchtype == 'shortbook':
             nzbTitle_match = fuzz.token_set_ratio(book['searchterm'], nzbTitle)
             logger.debug(u"NZB token set Match %: " + str(nzbTitle_match) + " for " + nzbTitle)
@@ -135,7 +136,7 @@ def processResultList(resultlist, book, searchtype):
         else:  # searchtype == 'general':
             nzbTitle_match = fuzz.token_set_ratio(book['searchterm'], nzbTitle)
             logger.debug(u"NZB Title general Match %: " + str(nzbTitle_match) + " for " + nzbTitle)
-        
+
         if (nzbTitle_match > match_ratio):
             logger.debug(u'Found NZB: %s using %s search' % (nzb['nzbtitle'], searchtype))
             bookid = book['bookid']
@@ -172,10 +173,11 @@ def processResultList(resultlist, book, searchtype):
                     notifiers.notify_snatch(formatter.latinToAscii(nzbTitle) + ' at ' + formatter.now())
                     postprocess.schedule_processor(action='Start')
                     return True
-            
+
     logger.debug("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() +
-                     " using searchtype " + searchtype)
+                 " using searchtype " + searchtype)
     return False
+
 
 def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
 
@@ -214,11 +216,11 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
                     f.write(nzbfile)
                 logger.debug('NZB file saved to: ' + nzbpath)
                 download = True
-                #try:
+                # try:
                 #    os.chmod(nzbpath, 0777)
-                #except Exception, e:
+                # except Exception, e:
                 #    logger.error("Could not chmod path: " + str(nzbpath))
-            except Exception, e:
+            except Exception as e:
                 logger.error('%s not writable, NZB not saved. Error: %s' % (nzbpath, e))
                 download = False
 

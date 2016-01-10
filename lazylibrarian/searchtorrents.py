@@ -75,7 +75,7 @@ def search_tor_book(books=None):
 
     tor_count = 0
     for book in searchlist:
-       
+
         resultlist, nproviders = providers.IterateOverTorrentSites(book, 'book')
         if not nproviders:
             logger.warn('No torrent providers are set, check config for TORRENT providers')
@@ -97,7 +97,7 @@ def search_tor_book(books=None):
         if not found:
             resultlist, nproviders = providers.IterateOverTorrentSites(book, 'author')
             found = processResultList(resultlist, book, "author")
-            
+
         if not found:
             logger.debug("Searches returned no results. Adding book %s to queue." % book['searchterm'])
         else:
@@ -107,6 +107,7 @@ def search_tor_book(books=None):
         logger.info("TORSearch for Wanted items complete, found %s book" % tor_count)
     else:
         logger.info("TORSearch for Wanted items complete, found %s books" % tor_count)
+
 
 def processResultList(resultlist, book, searchtype):
     myDB = database.DBConnection()
@@ -119,11 +120,11 @@ def processResultList(resultlist, book, searchtype):
     for tor in resultlist:
         tor_Title = formatter.latinToAscii(formatter.replace_all(str(tor['tor_title']), dictrepl)).strip()
         tor_Title = re.sub(r"\s\s+", " ", tor_Title)  # remove extra whitespace
-        
+
         match_ratio = int(lazylibrarian.MATCH_RATIO)
         tor_Title_match = fuzz.token_set_ratio(book['searchterm'], tor_Title)
         logger.debug("Torrent Title Match %: " + str(tor_Title_match) + " for " + tor_Title)
-        
+
         if (tor_Title_match > match_ratio):
             logger.debug(u'Found Torrent: %s using %s search' % (tor['tor_title'], searchtype))
             bookid = book['bookid']
@@ -158,7 +159,7 @@ def processResultList(resultlist, book, searchtype):
     logger.debug("No torrent's found for " + (book["authorName"] + ' ' +
                  book['bookName']).strip() + " using searchtype " + searchtype)
     return False
-    
+
 
 def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
     myDB = database.DBConnection()
@@ -196,7 +197,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             request.add_header('User-Agent', common.USER_AGENT)
 
             # PAB removed this, KAT serves us html instead of torrent if this header is sent
-            #if tor_prov == 'KAT':
+            # if tor_prov == 'KAT':
             #    host = lazylibrarian.KAT_HOST
             #    if not str(host)[:4] == "http":
             #        host = 'http://' + host

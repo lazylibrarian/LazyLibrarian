@@ -530,16 +530,20 @@ def LibraryScan(dir=None):
     stats = len(myDB.select('select BookID from Books where status="Open" and BookLang="Unknown"'))
     if stats:
         logger.warn("There are %s books in your library with unknown language" % stats)
-    
+
     authors = myDB.select('select AuthorName from authors')
     # Update bookcounts for all authors, not just new ones - refresh may have located
     # new books for existing authors especially if switched provider gb/gr
     logger.debug('Updating bookcounts for %i authors' % len(authors))
     for author in authors:
         name = author['AuthorName']
-        havebooks = myDB.action('SELECT count("BookID") as counter from books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' % name).fetchone()
-        myDB.action('UPDATE authors set HaveBooks="%s" where AuthorName="%s"' %(havebooks['counter'], name))
-        totalbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND Status!="Ignored"' % name).fetchone()
+        havebooks = myDB.action(
+            'SELECT count("BookID") as counter from books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' %
+            name).fetchone()
+        myDB.action('UPDATE authors set HaveBooks="%s" where AuthorName="%s"' % (havebooks['counter'], name))
+        totalbooks = myDB.action(
+            'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND Status!="Ignored"' %
+            name).fetchone()
         myDB.action('UPDATE authors set UnignoredBooks="%s" where AuthorName="%s"' % (totalbooks['counter'], name))
 
     logger.info('Library scan complete')

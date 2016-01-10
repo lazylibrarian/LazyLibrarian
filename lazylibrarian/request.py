@@ -41,7 +41,7 @@ def request_response(url, method="get", auto_raise=True,
     """
 
     # Convert whitelist_status_code to a list if needed
-    if whitelist_status_code and type(whitelist_status_code) != list:
+    if whitelist_status_code and not isinstance(whitelist_status_code, list):
         whitelist_status_code = [whitelist_status_code]
 
     # Disable verification of SSL certificates if requested. Note: this could

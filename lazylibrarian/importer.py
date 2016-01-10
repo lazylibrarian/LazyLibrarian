@@ -20,8 +20,8 @@ def addAuthorToDB(authorname=None, refresh=False):
 
     if dbauthor is None:
         newValueDict = {
-            "AuthorID":   "0: %s" % (authorname),
-            "Status":       "Loading"
+            "AuthorID": "0: %s" % (authorname),
+            "Status": "Loading"
         }
         logger.debug("Now adding new author: %s to database" % authorname)
     else:
@@ -36,13 +36,13 @@ def addAuthorToDB(authorname=None, refresh=False):
         authorimg = author['authorimg']
         controlValueDict = {"AuthorName": authorname}
         newValueDict = {
-            "AuthorID":     authorid,
-            "AuthorLink":   authorlink,
-            "AuthorImg":    authorimg,
-            "AuthorBorn":   author['authorborn'],
-            "AuthorDeath":  author['authordeath'],
-            "DateAdded":    formatter.today(),
-            "Status":       "Loading"
+            "AuthorID": authorid,
+            "AuthorLink": authorlink,
+            "AuthorImg": authorimg,
+            "AuthorBorn": author['authorborn'],
+            "AuthorDeath": author['authordeath'],
+            "DateAdded": formatter.today(),
+            "Status": "Loading"
         }
         myDB.upsert("authors", newValueDict, controlValueDict)
     else:

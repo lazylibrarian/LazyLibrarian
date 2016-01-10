@@ -45,7 +45,7 @@ class DBConnection:
                     self.connection.commit()
                     break
 
-                except sqlite3.OperationalError, e:
+                except sqlite3.OperationalError as e:
                     if "unable to open database file" in e.message or "database is locked" in e.message:
                         logger.warn('Database Error: %s' % e)
                         attempt += 1
@@ -54,7 +54,7 @@ class DBConnection:
                         logger.error('Database error: %s' % e)
                         raise
 
-                except sqlite3.DatabaseError, e:
+                except sqlite3.DatabaseError as e:
                     logger.error('Fatal error executing %s :: %s' % (query, e))
                     raise
 

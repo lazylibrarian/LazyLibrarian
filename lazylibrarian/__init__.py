@@ -20,10 +20,10 @@ from lib.apscheduler.scheduler import Scheduler
 import threading
 
 from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, formatter, \
-        librarysync, versioncheck, database, searchmag, magazinescan, common
+    librarysync, versioncheck, database, searchmag, magazinescan, common
 try:
     from wand.image import Image
-    MAGICK  = "wand"
+    MAGICK = "wand"
 except ImportError:
     try:
         import PythonMagick
@@ -271,6 +271,7 @@ CACHE_MISS = 0
 LAST_GOODREADS = 0
 LAST_LIBRARYTHING = 0
 CACHE_AGE = 30
+
 
 def check_section(sec):
     """ Check if INI section exists, if not create it """
@@ -642,7 +643,7 @@ def initialize():
         # Initialize the database
         try:
             dbcheck()
-        except Exception, e:
+        except Exception as e:
             logger.error("Can't connect to the database: %s" % e)
 
         build_monthtable()
@@ -664,7 +665,7 @@ def build_monthtable():
         for f in range(1, 13):
             MONTHNAMES[f].append(common.remove_accents(calendar.month_abbr[f]).lower().strip('.'))
             logger.info("Added month names for locale [%s], %s, %s ..." % (
-            lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
+                        lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
 
     for lang in formatter.getList(IMP_MONTHLANG):
         try:
@@ -701,11 +702,12 @@ def build_monthtable():
                 logger.warn("Unable to get a list of alternatives")
             logger.info("Set locale back to entry state %s" % current_locale)
     # quick sanity check, warn if no english names in table
-    #eng = 0
-    #for lang in MONTHNAMES[0]:
+    # eng = 0
+    # for lang in MONTHNAMES[0]:
     #    if lang.startswith('en_'):
     #        return
-    #logger.warn("No English language loaded - Magazine name matching will probably fail")
+    # logger.warn("No English language loaded - Magazine name matching will probably fail")
+
 
 def daemonize():
     """
@@ -717,7 +719,7 @@ def daemonize():
         pid = os.fork()  # @UndefinedVariable - only available in UNIX
         if pid != 0:
             sys.exit(0)
-    except OSError, e:
+    except OSError as e:
         raise RuntimeError("1st fork failed: %s [%d]" %
                            (e.strerror, e.errno))
 
@@ -732,7 +734,7 @@ def daemonize():
         pid = os.fork()  # @UndefinedVariable - only available in UNIX
         if pid != 0:
             sys.exit(0)
-    except OSError, e:
+    except OSError as e:
         raise RuntimeError("2st fork failed: %s [%d]" %
                            (e.strerror, e.errno))
 
@@ -751,7 +753,7 @@ def launch_browser(host, port, root):
 
     try:
         webbrowser.open('http://%s:%i%s' % (host, port, root))
-    except Exception, e:
+    except Exception as e:
         logger.error('Could not launch browser: %s' % e)
 
 
@@ -1103,11 +1105,11 @@ def dbcheck():
 
                         controlValueDict = {"BookID": book["BookID"]}
                         newValueDict = {
-                            "series":   series,
+                            "series": series,
                             "seriesOrder": seriesOrder
                         }
                         myDB.upsert("books", newValueDict, controlValueDict)
-        except Exception, z:
+        except Exception as z:
             logger.info('Error: ' + str(z))
 
     try:
@@ -1118,7 +1120,7 @@ def dbcheck():
             authorid = author[0]["AuthorID"]
             myDB.action('DELETE from authors WHERE AuthorID="%s"' % authorid)
             myDB.action('DELETE from books WHERE AuthorID="%s"' % authorid)
-    except Exception, z:
+    except Exception as z:
         logger.info('Error: ' + str(z))
 
 
@@ -1155,7 +1157,7 @@ def shutdown(restart=False, update=False):
         logger.info('LazyLibrarian is updating...')
         try:
             versioncheck.update()
-        except Exception, e:
+        except Exception as e:
             logger.warn('LazyLibrarian failed to update: %s. Restarting.' % e)
 
     if PIDFILE:

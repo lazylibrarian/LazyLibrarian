@@ -14,7 +14,7 @@ from lazylibrarian import importer, gr, magazinescan
 
 def processAlternate(source_dir=None):
     # import a book from an alternate directory
-    if source_dir is None or source_dir == "":
+    if not search_dir or os.path.isdir(search_dir) is False:
         logger.warn('Alternate directory must not be empty')
         return
     if source_dir == lazylibrarian.DESTINATION_DIR:
@@ -63,7 +63,7 @@ def processAlternate(source_dir=None):
 
 def schedule_processor(action='Start'):
     """ Start or stop the postprocessor cron job """
-    if action == 'Start':        
+    if action == 'Start':
         for job in lazylibrarian.SCHED.get_jobs():
             if "processDir" in str(job):
                 return  # return if already running, if not, start a new one
@@ -74,6 +74,7 @@ def schedule_processor(action='Start'):
             if "processDir" in str(job):
                 lazylibrarian.SCHED.unschedule_job(job)
                 logger.debug("Stopped postprocessing job")
+
 
 def processDir(force=False):
     # rename this thread
@@ -92,7 +93,7 @@ def processDir(force=False):
     myDB = database.DBConnection()
     snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
 
-    if force == False and len(snatched) == 0:
+    if force is False and len(snatched) == 0:
         logger.debug('Nothing marked as snatched. Stopping cron job.')
         schedule_processor(action='Stop')
     elif len(downloads) == 0:
@@ -114,9 +115,9 @@ def processDir(force=False):
 
                     # Default destination path, should be allowed change per config file.
                     dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace(
-                                    '$Title', bookname)
+                        '$Title', bookname)
                     global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace(
-                                    '$Title', bookname)
+                        '$Title', bookname)
                     # dest_path = authorname+'/'+bookname
                     # global_name = bookname + ' - ' + authorname
                     # Remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
@@ -125,7 +126,7 @@ def processDir(force=False):
                            ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
                     dest_path = formatter.latinToAscii(formatter.replace_all(dest_path, dic))
                     dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(
-                                    lazylibrarian.SYS_ENCODING)
+                        lazylibrarian.SYS_ENCODING)
                 else:
                     data = myDB.select('SELECT * from magazines WHERE Title="%s"' % book['BookID'])
                     if data:
@@ -140,19 +141,19 @@ def processDir(force=False):
                         mag_name = formatter.latinToAscii(formatter.replace_all(book['BookID'], dic))
                         # book auxinfo is a cleaned date, eg 2015-01-01
                         dest_path = lazylibrarian.MAG_DEST_FOLDER.replace('$IssueDate', book['AuxInfo']).replace(
-                                        '$Title', mag_name)
+                            '$Title', mag_name)
                         # dest_path = '_Magazines/'+title+'/'+book['AuxInfo']
                         if lazylibrarian.MAG_RELATIVE:
                             if dest_path[0] not in '._':
                                 dest_path = '_' + dest_path
                             dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(
-                                                     lazylibrarian.SYS_ENCODING)
+                                lazylibrarian.SYS_ENCODING)
                         else:
                             dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
                         authorname = None
                         bookname = None
                         global_name = lazylibrarian.MAG_DEST_FILE.replace('$IssueDate', book['AuxInfo']).replace(
-                                        '$Title', mag_name)
+                            '$Title', mag_name)
                         # global_name = book['AuxInfo']+' - '+title
                     else:
                         logger.debug("Snatched magazine %s is not in download directory" % (book['BookID']))
@@ -161,9 +162,9 @@ def processDir(force=False):
                 logger.debug("Snatched NZB %s is not in download directory" % (book['NZBtitle']))
                 continue
 
-            #try:
+            # try:
             #    os.chmod(dest_path, 0777)
-            #except Exception, e:
+            # except Exception, e:
             #    logger.debug("Could not chmod post-process directory: " + str(dest_path))
 
             processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name, book['BookID'])
@@ -194,7 +195,7 @@ def processDir(force=False):
                     controlValueDict = {"Title": book['BookID'], "IssueDate": book['AuxInfo']}
                     newValueDict = {"IssueAcquired": formatter.today(), "IssueFile": dest_file}
                     myDB.upsert("issues", newValueDict, controlValueDict)
-                    
+
                     # create a thumbnail cover for the new issue
                     magazinescan.create_cover(dest_file)
 
@@ -237,16 +238,16 @@ def import_book(pp_path=None, bookID=None):
         authorname = data[0]['AuthorName']
         bookname = data[0]['BookName']
 
-        #try:
+        # try:
         #    auth_dir = os.path.join(lazylibrarian.DESTINATION_DIR, authorname).encode(lazylibrarian.SYS_ENCODING)
         #    os.chmod(auth_dir, 0777)
-        #except Exception, e:
+        # except Exception, e:
         #    logger.debug("Could not chmod author directory: " + str(auth_dir))
 
         if 'windows' in platform.system().lower() and '/' in lazylibrarian.EBOOK_DEST_FOLDER:
             logger.warn('Please check your EBOOK_DEST_FOLDER setting')
             lazylibrarian.EBOOK_DEST_FOLDER = lazylibrarian.EBOOK_DEST_FOLDER.replace('/', '\\')
-            
+
         dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace('$Title', bookname)
         global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace('$Title', bookname)
         # Remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
@@ -274,7 +275,7 @@ def import_book(pp_path=None, bookID=None):
 def book_file(search_dir=None, booktype=None):
     # find a book/mag file in this directory, any book will do
     # return full pathname of book/mag, or empty string if none found
-    if search_dir and os.path.isdir(search_dir):
+    if search_dir is not None and os.path.isdir(search_dir):
         for fname in os.listdir(search_dir):
             if formatter.is_valid_booktype(fname, booktype=booktype):
                 return os.path.join(search_dir, fname).encode(lazylibrarian.SYS_ENCODING)
@@ -314,7 +315,9 @@ def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
     myDB.upsert("books", newValueDict, controlValueDict)
 
     # update authors
-    havebooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' % authorname).fetchone()
+    havebooks = myDB.action(
+        'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' %
+        authorname).fetchone()
     controlValueDict = {"AuthorName": authorname}
     newValueDict = {"HaveBooks": havebooks['counter']}
     countauthor = len(myDB.select('SELECT AuthorID FROM authors WHERE AuthorName="%s"' % authorname))
@@ -328,16 +331,16 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
     # check we got a book/magazine in the downloaded files
     pp = False
-    
+
     if bookname:  # None if it's a magazine
         booktype = 'book'
     else:
         booktype = 'mag'
-        
+
     for bookfile in os.listdir(pp_path):
         if formatter.is_valid_booktype(bookfile, booktype=booktype):
             pp = True
-    
+
     if pp is False:
         # no book/mag found in a format we wanted. Leave for the user to delete or convert manually
         logger.debug('Failed to locate a book/magazine in downloaded files, leaving for manual processing')
@@ -354,7 +357,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 logger.debug("Failed to rmtree %s, %s" % (dest_path, str(why)))
 
         logger.debug('Attempting to copy/move tree')
-        if lazylibrarian.DESTINATION_COPY == True and lazylibrarian.DOWNLOAD_DIR != pp_path:
+        if len(lazylibrarian.DESTINATION_COPY) and lazylibrarian.DOWNLOAD_DIR != pp_path:
             try:
                 shutil.copytree(pp_path, dest_path)
                 logger.debug('Successfully copied %s to %s' % (pp_path, dest_path))
@@ -369,9 +372,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                         if not os.path.exists(dest_path):
                             try:
                                 os.makedirs(dest_path)
-                            except Exception, e:
+                            except Exception as e:
                                 logger.debug("Unable to makedir %s, %s" % (dest_path, str(e)))
-                        if lazylibrarian.DESTINATION_COPY == True:
+                        if len(lazylibrarian.DESTINATION_COPY):
                             try:
                                 shutil.copyfile(os.path.join(pp_path, file3), os.path.join(dest_path, file3))
                             except Exception as why:
@@ -392,20 +395,22 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
         # try and rename the actual book file & remove unwanted non-book files
         for file2 in os.listdir(dest_path):
-            if file2.lower().endswith(".jpg") or file2.lower().endswith(".opf") or formatter.is_valid_booktype(file2, booktype=booktype):
-                logger.debug('Moving %s to directory %s' % (file2, dest_path))
-                os.rename(os.path.join(dest_path, file2), os.path.join(dest_path, global_name + '.' +
-                          str(file2).split('.')[-1]))
+            if file2.lower().endswith(".jpg") or file2.lower().endswith(".opf") or \
+                    formatter.is_valid_booktype(file2, booktype=booktype):
+                    logger.debug('Moving %s to directory %s' % (file2, dest_path))
+                    os.rename(os.path.join(dest_path, file2), os.path.join(dest_path, global_name + '.' +
+                              str(file2).split('.')[-1]))
             else:
                 logger.debug('Removing unwanted file: %s' % str(file2))
                 os.remove(os.path.join(dest_path, file2))
-        #try:
+        # try:
         #    os.chmod(dest_path, 0777)
-        #except Exception, e:
+        # except Exception, e:
         #    logger.debug("Could not chmod path: " + str(dest_path))
-    except OSError, e:
-        logger.error('Could not create destination folder or rename the downloaded ebook/magazine. Check permissions of: ' +
-                     lazylibrarian.DESTINATION_DIR)
+    except OSError as e:
+        logger.error(
+            'Could not create destination folder or rename the downloaded ebook/magazine. Check permissions of: ' +
+            lazylibrarian.DESTINATION_DIR)
         logger.error(str(e))
         pp = False
     return pp
@@ -454,12 +459,12 @@ def processIMG(dest_path=None, bookimg=None, global_name=None):
             with open(coverpath, 'wb') as img:
                 imggoogle = imgGoogle()
                 img.write(imggoogle.open(bookimg).read())
-            #try:
+            # try:
             #    os.chmod(coverpath, 0777)
-            #except Exception, e:
+            # except Exception, e:
             #    logger.error("Could not chmod path: " + str(coverpath))
 
-    except (IOError, EOFError), e:
+    except (IOError, EOFError) as e:
         logger.error('Error fetching cover from url: %s, %s' % (bookimg, e))
 
 
@@ -500,9 +505,9 @@ def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bo
     if not os.path.exists(opfpath):
         with open(opfpath, 'wb') as opf:
             opf.write(opfinfo)
-        #try:
+        # try:
         #    os.chmod(opfpath, 0777)
-        #except Exception, e:
+        # except Exception, e:
         #    logger.error("Could not chmod path: " + str(opfpath))
         logger.debug('Saved metadata to: ' + opfpath)
     else:
@@ -512,7 +517,7 @@ def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bo
 def csv_file(search_dir=None):
     # find a csv file in this directory, any will do
     # return full pathname of file, or empty string if none found
-    if search_dir and os.path.isdir(search_dir):
+    if search_dir and os.path.isdir(search_dir) is True:
         for fname in os.listdir(search_dir):
             if fname.endswith('.csv'):
                 return os.path.join(search_dir, fname).encode(lazylibrarian.SYS_ENCODING)
@@ -522,7 +527,7 @@ def csv_file(search_dir=None):
 def exportCSV(search_dir=None, status="Wanted"):
     """ Write a csv file to the search_dir containing all books marked as "Wanted" """
 
-    if not search_dir:
+    if not search_dir or os.path.isdir(search_dir) is False:
         logger.warn("Alternate Directory must not be empty")
         return False
 
@@ -544,7 +549,7 @@ def exportCSV(search_dir=None, status="Wanted"):
             csvwrite.writerow([
                 'BookID', 'Author', 'Title',
                 'ISBN', 'AuthorID'
-                ])
+            ])
 
             for resulted in find_status:
                 logger.debug(u"Exported CSV for book %s" % resulted['BookName'].encode('utf-8'))
@@ -559,7 +564,7 @@ def processCSV(search_dir=None):
     """ Find a csv file in the search_dir and process all the books in it,
     adding authors to the database if not found, and marking the books as "Wanted" """
 
-    if not search_dir:
+    if not search_dir or os.path.isdir(search_dir) is False:
         logger.warn(u"Alternate Directory must not be empty")
         return False
 

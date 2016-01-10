@@ -146,12 +146,12 @@ def main():
 
     # Try to start the server.
     webStart.initialize({
-                    'http_port': lazylibrarian.HTTP_PORT,
-                    'http_host': lazylibrarian.HTTP_HOST,
-                    'http_root': lazylibrarian.HTTP_ROOT,
-                    'http_user': lazylibrarian.HTTP_USER,
-                    'http_pass': lazylibrarian.HTTP_PASS,
-            })
+        'http_port': lazylibrarian.HTTP_PORT,
+        'http_host': lazylibrarian.HTTP_HOST,
+        'http_root': lazylibrarian.HTTP_ROOT,
+        'http_user': lazylibrarian.HTTP_USER,
+        'http_pass': lazylibrarian.HTTP_PASS,
+    })
 
     if lazylibrarian.LAUNCH_BROWSER and not options.nolaunch:
         lazylibrarian.launch_browser(lazylibrarian.HTTP_HOST, lazylibrarian.HTTP_PORT, lazylibrarian.HTTP_ROOT)
