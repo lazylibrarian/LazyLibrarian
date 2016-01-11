@@ -65,6 +65,7 @@ LOGDIR = None
 LOGLIST = []
 # Info 1, Debug 2, >2 don't toggle console/file
 LOGLEVEL = 2
+LOGLIMIT = 500
 LOGFULL = False  # include debug on screen if true
 
 MATCH_RATIO = 80
@@ -335,7 +336,7 @@ def initialize():
             LAUNCH_BROWSER, LOGDIR, CACHEDIR, CACHE_AGE, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, \
             IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, IMP_CONVERT, \
             MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, \
-            MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, CONFIGFILE, CFG, LOGDIR, \
+            MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, CONFIGFILE, CFG, LOGLIMIT, \
             SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, SAB_CAT, \
             DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, USENET_RETENTION, NZB_BLACKHOLEDIR, \
             ALTERNATE_DIR, GR_API, GB_API, BOOK_API, MAGICK, \
@@ -429,6 +430,7 @@ def initialize():
         PROXY_TYPE = check_setting_str(CFG, 'General', 'proxy_type', '')
 
         LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
+        LOGLIMIT = check_setting_int(CFG, 'General', 'loglimit', 500)
 
         IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', 'en, eng, en-US')
         IMP_MONTHLANG = check_setting_str(CFG, 'General', 'imp_monthlang', '')
@@ -769,6 +771,7 @@ def config_write():
     CFG.set('General', 'proxy_host', PROXY_HOST)
     CFG.set('General', 'proxy_type', PROXY_TYPE)
     CFG.set('General', 'logdir', LOGDIR)
+    CFG.set('General', 'loglimit', LOGLIMIT)
     CFG.set('General', 'loglevel', LOGLEVEL)
     CFG.set('General', 'match_ratio', MATCH_RATIO)
     CFG.set('General', 'imp_onlyisbn', IMP_ONLYISBN)

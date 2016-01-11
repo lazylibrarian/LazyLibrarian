@@ -65,7 +65,7 @@ class WebInterface(object):
     config.exposed = True
 
     def configUpdate(self, http_host='0.0.0.0', http_root=None, http_user=None, http_port=5299,
-                     http_pass=None, http_look=None, launch_browser=0, logdir=None, loglevel=2,
+                     http_pass=None, http_look=None, launch_browser=0, logdir=None, loglevel=2, loglimit=500,
                      imp_onlyisbn=0, imp_singlebook=0, imp_preflang=None, imp_monthlang=None, imp_convert=None,
                      imp_autoadd=None, match_ratio=80, nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0,
                      nzb_downloader_blackhole=0, use_nzb=0, use_tor=0, proxy_host=None, proxy_type=None,
@@ -108,6 +108,7 @@ class WebInterface(object):
         lazylibrarian.PROXY_HOST = proxy_host
         lazylibrarian.PROXY_TYPE = proxy_type
         lazylibrarian.LOGDIR = logdir
+        lazylibrarian.LOGLIMIT = formatter.check_int(loglimit, 500)
         lazylibrarian.LOGLEVEL = formatter.check_int(loglevel, 2)
         lazylibrarian.MATCH_RATIO = formatter.check_int(match_ratio, 80)
         lazylibrarian.CACHE_AGE = formatter.check_int(cache_age, 30)
