@@ -5,7 +5,7 @@ import lib.csv as csv
 import platform
 
 from urllib import FancyURLopener
-
+from lib.fuzzywuzzy import fuzz
 import lazylibrarian
 
 from lazylibrarian import database, logger, formatter, notifiers, common, librarysync
@@ -101,10 +101,20 @@ def processDir(force=False):
     else:
         ppcount = 0
         for book in snatched:
-            if book['NZBtitle'] in downloads:
-                pp_path = os.path.join(processpath, book['NZBtitle'])
-                logger.debug('Found book/mag folder %s.' % pp_path)
-
+            found = False
+            for fname in downloads:
+                # this is to get round unicode differences in torrent filenames.
+                # there might be a better way...
+                if isinstance(fname, str):
+                    fname = fname.decode('utf-8')  # make unicode
+                print fuzz.ratio(fname, book['NZBtitle'])
+                print fuzz.token_set_ratio(fname, book['NZBtitle'])
+                if fuzz.ratio(fname, book['NZBtitle']) > 99:
+                    pp_path = os.path.join(processpath, fname)
+                    logger.debug('Found book/mag folder %s' % pp_path)
+                    found = True
+                    break
+            if found:
                 data = myDB.select('SELECT * from books WHERE BookID="%s"' % book['BookID'])
                 if data:
                     authorname = data[0]['AuthorName']
@@ -140,8 +150,7 @@ def processDir(force=False):
                                ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
                         mag_name = formatter.latinToAscii(formatter.replace_all(book['BookID'], dic))
                         # book auxinfo is a cleaned date, eg 2015-01-01
-                        dest_path = lazylibrarian.MAG_DEST_FOLDER.replace('$IssueDate', book['AuxInfo']).replace(
-                            '$Title', mag_name)
+                        dest_path = lazylibrarian.MAG_DEST_FOLDER.replace('$IssueDate', book['AuxInfo']).replace('$Title', mag_name)
                         # dest_path = '_Magazines/'+title+'/'+book['AuxInfo']
                         if lazylibrarian.MAG_RELATIVE:
                             if dest_path[0] not in '._':
@@ -327,7 +336,7 @@ def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
 
 def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, book_id=None):
 
-    pp_path = pp_path.encode(lazylibrarian.SYS_ENCODING)
+    ##pp_path = pp_path.encode(lazylibrarian.SYS_ENCODING)
 
     # check we got a book/magazine in the downloaded files
     pp = False
