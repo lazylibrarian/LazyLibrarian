@@ -79,7 +79,7 @@ def month2num(month):
     elif month == "autumn":
         return "10"
     else:
-        return "Invalid"
+        return "00"
 
 
 def datecompare(nzbdate, control_date):
