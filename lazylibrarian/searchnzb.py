@@ -1,7 +1,6 @@
 import threading
 import urllib2
 import os
-import shutil
 import re
 
 import lazylibrarian

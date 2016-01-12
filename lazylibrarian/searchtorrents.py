@@ -1,7 +1,6 @@
 import threading
 import urllib2
 import os
-import shutil
 import re
 from base64 import b16encode, b32decode
 from lib.bencode import bencode as bencode, bdecode
