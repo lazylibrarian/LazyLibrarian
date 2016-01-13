@@ -17,6 +17,7 @@ from lazylibrarian import logger, importer, database, postprocess, formatter, \
 from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
 from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
 from lazylibrarian.searchmag import search_magazines
+from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
 
@@ -78,12 +79,15 @@ class WebInterface(object):
                      newznab_host2=None, newznab_api2=None, newznab3=0, newznab_host3=None, newznab_api3=None,
                      newznab4=0, newznab_host4=None, newznab_api4=None, newzbin=0, newzbin_uid=None,
                      newzbin_pass=None, kat=0, kat_host=None, ebook_type=None, mag_type=None, book_api=None,
+                     rss0=0, rss_host0=None, rss_user0=None, rss_pass0=None, rss1=0, rss_host1=None, 
+                     rss_user1=None, rss_pass1=None, rss2=0, rss_host2=None, rss_user2=None, rss_pass2=None, 
+                     rss3=0, rss_host3=None, rss_user3=None, rss_pass3=None,
                      torznab0=0, torznab_host0=None, torznab_api0=None, torznab1=0, torznab_host1=None,
                      torznab_api1=None, torznab2=0, torznab_host2=None, torznab_api2=None,
                      torznab3=0, torznab_host3=None, torznab_api3=None, torznab4=0, torznab_host4=None,
                      torznab_api4=None, gr_api=None, gb_api=None, versioncheck_interval=None, search_interval=None,
-                     scan_interval=None, ebook_dest_folder=None, ebook_dest_file=None, mag_relative=0,
-                     mag_dest_folder=None, mag_dest_file=None, cache_age=30,
+                     scan_interval=None, searchrss_interval=20, ebook_dest_folder=None, ebook_dest_file=None,
+                     mag_relative=0, mag_dest_folder=None, mag_dest_file=None, cache_age=30,
                      use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
                      utorrent_host=None, utorrent_user=None, utorrent_pass=None,
                      notfound_status='Skipped', newbook_status='Skipped', full_scan=0, add_author=0,
@@ -190,6 +194,26 @@ class WebInterface(object):
         lazylibrarian.TORZNAB_HOST4 = torznab_host4
         lazylibrarian.TORZNAB_API4 = torznab_api4
 
+        lazylibrarian.RSS0 = bool(rss0)
+        lazylibrarian.RSS_HOST0 = rss_host0
+        lazylibrarian.RSS_USER0 = rss_user0
+        lazylibrarian.RSS_PASS0 = rss_pass0
+
+        lazylibrarian.RSS1 = bool(rss1)
+        lazylibrarian.RSS_HOST1 = rss_host1
+        lazylibrarian.RSS_USER1 = rss_user1
+        lazylibrarian.RSS_PASS1 = rss_pass1
+
+        lazylibrarian.RSS2 = bool(rss2)
+        lazylibrarian.RSS_HOST2 = rss_host2
+        lazylibrarian.RSS_USER2 = rss_user2
+        lazylibrarian.RSS_PASS2 = rss_pass2
+
+        lazylibrarian.RSS3 = bool(rss3)
+        lazylibrarian.RSS_HOST3 = rss_host3
+        lazylibrarian.RSS_USER3 = rss_user3
+        lazylibrarian.RSS_PASS3 = rss_pass3
+
         lazylibrarian.NEWZBIN = bool(newzbin)
         lazylibrarian.NEWZBIN_UID = newzbin_uid
         lazylibrarian.NEWZBIN_PASS = newzbin_pass
@@ -222,6 +246,7 @@ class WebInterface(object):
 
         lazylibrarian.SEARCH_INTERVAL = formatter.check_int(search_interval, 360)
         lazylibrarian.SCAN_INTERVAL = formatter.check_int(scan_interval, 10)
+        lazylibrarian.SEARCHRSS_INTERVAL = formatter.check_int(searchrss_interval, 20)
         lazylibrarian.VERSIONCHECK_INTERVAL = formatter.check_int(versioncheck_interval, 24)
 
         lazylibrarian.FULL_SCAN = bool(full_scan)
@@ -736,7 +761,7 @@ class WebInterface(object):
                     snatch = NZBDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
                 if snatch:  # if snatch fails, downloadmethods already report it
                     notifiers.notify_snatch(items['nzbtitle'] + ' at ' + formatter.now())
-                    postprocess.schedule_processor(action='Start')
+                    common.schedule_job(action='Start', target='processDir')
         raise cherrypy.HTTPRedirect("pastIssues")
     markPastIssues.exposed = True
 
@@ -796,7 +821,7 @@ class WebInterface(object):
     def startMagazineSearch(self, mags=None):
         if mags:
             if lazylibrarian.USE_NZB or lazylibrarian.USE_TOR:
-                threading.Thread(target=search_magazines, args=[mags]).start()
+                threading.Thread(target=search_magazines, args=[mags, False]).start()
                 logger.debug(u"Searching for magazine with title: " + mags[0]["bookid"])
             else:
                 logger.warn(u"Not searching for magazine, no download methods set, check config")
@@ -920,6 +945,8 @@ class WebInterface(object):
                 jobname = "[CRON] - TOR book search"
             elif "search_nzb_book" in job:
                 jobname = "[CRON] - NZB book search"
+            elif "search_rss_book" in job:
+                jobname = "[CRON] - RSS book search"
             elif "processDir" in job:
                 jobname = "[CRON] - Process download directory"
             else:
@@ -934,20 +961,13 @@ class WebInterface(object):
     showJobs.exposed = True
 
     def restartJobs(self):
-        # stop all of the LL cron jobs
-        for job in lazylibrarian.SCHED.get_jobs():
-            lazylibrarian.SCHED.unschedule_job(job)
-        # and now restart them
-        lazylibrarian.SCHED.add_interval_job(postprocess.processDir, minutes=int(lazylibrarian.SCAN_INTERVAL))
+        common.schedule_job('Restart', 'processDir')
+        common.schedule_job('Restart', 'search_nzb_book')
+        common.schedule_job('Restart', 'search_tor_book')
+        common.schedule_job('Restart', 'search_rss_book')
+        common.schedule_job('Restart', 'search_magazines')
+        common.schedule_job('Restart', 'checkForUpdates')
 
-        if lazylibrarian.USE_NZB:
-            lazylibrarian.SCHED.add_interval_job(search_nzb_book, minutes=int(lazylibrarian.SEARCH_INTERVAL))
-        if lazylibrarian.USE_TOR:
-            lazylibrarian.SCHED.add_interval_job(search_tor_book, minutes=int(lazylibrarian.SEARCH_INTERVAL))
-        lazylibrarian.SCHED.add_interval_job(versioncheck.checkForUpdates,
-                                             hours=int(lazylibrarian.VERSIONCHECK_INTERVAL))
-        if lazylibrarian.USE_TOR or lazylibrarian.USE_NZB:
-            lazylibrarian.SCHED.add_interval_job(search_magazines, minutes=int(lazylibrarian.SEARCH_INTERVAL))
         # and list the new run-times in the log
         self.showJobs()
     restartJobs.exposed = True
@@ -1110,18 +1130,19 @@ class WebInterface(object):
 # ALL ELSE ##########################################################
 
     def forceProcess(self, source=None):
-        threading.Thread(target=postprocess.processDir, args=[True]).start()
+        threading.Thread(target=postprocess.processDir, args=[True, True]).start()
         raise cherrypy.HTTPRedirect(source)
     forceProcess.exposed = True
 
     def forceSearch(self, source=None):
         if source == "magazines":
-            threading.Thread(target=search_magazines).start()
+            threading.Thread(target=search_magazines, args=[None, True]).start()
         elif source == "books":
             if lazylibrarian.USE_NZB:
                 threading.Thread(target=search_nzb_book).start()
             if lazylibrarian.USE_TOR:
                 threading.Thread(target=search_tor_book).start()
+                threading.Thread(target=search_rss_book).start()
             if not lazylibrarian.USE_NZB and not lazylibrarian.USE_TOR:
                 logger.warn(u"No search methods set, check config.")
         else:

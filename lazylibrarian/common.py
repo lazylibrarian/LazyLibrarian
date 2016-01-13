@@ -21,6 +21,7 @@ import re
 import lazylibrarian
 import unicodedata
 import string
+from lazylibrarian import logger
 
 USER_AGENT = 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
 
@@ -32,6 +33,37 @@ notifyStrings = {}
 notifyStrings[NOTIFY_SNATCH] = "Started Download"
 notifyStrings[NOTIFY_DOWNLOAD] = "Download Finished"
 
+
+def schedule_job(action='Start', target=None):
+    """ Start or stop or restart a cron job by name eg
+        target=search_magazines, target=processDir, target=search_tor_book """
+    if target is None:
+        return
+    logger.debug("%s  %s job" % (action, target))
+    if action == 'Stop' or action == 'Restart':
+        for job in lazylibrarian.SCHED.get_jobs():
+            if target in str(job):
+                lazylibrarian.SCHED.unschedule_job(job)
+    if action == 'Start' or action == 'Restart':
+        for job in lazylibrarian.SCHED.get_jobs():
+            if target in str(job):
+                return  # return if already running, if not, start a new one
+        if 'processDir' in target:
+            lazylibrarian.SCHED.add_interval_job(lazylibrarian.postprocess.processDir, minutes=int(lazylibrarian.SCAN_INTERVAL))
+        elif 'search_magazines' in target:
+            if lazylibrarian.USE_TOR or lazylibrarian.USE_NZB:
+                lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchmag.search_magazines, minutes=int(lazylibrarian.SEARCH_INTERVAL))
+        elif 'search_nzb_book' in target:
+            if lazylibrarian.USE_NZB:
+                lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchnzb.search_nzb_book, minutes=int(lazylibrarian.SEARCH_INTERVAL))
+        elif 'search_tor_book' in target:
+            if lazylibrarian.USE_TOR:
+                lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchtorrents.search_tor_book, minutes=int(lazylibrarian.SEARCH_INTERVAL))
+        elif 'search_rss' in target:
+            if lazylibrarian.USE_TOR:
+                lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchrss.search_rss_book, minutes=int(lazylibrarian.SEARCHRSS_INTERVAL))
+        elif 'checkForUpdates' in target:
+            lazylibrarian.SCHED.add_interval_job(lazylibrarian.versioncheck.checkForUpdates, hours=int(lazylibrarian.VERSIONCHECK_INTERVAL))
 
 def remove_accents(str_or_unicode):
     try:

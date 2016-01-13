@@ -19,7 +19,7 @@ from lib.apscheduler.scheduler import Scheduler
 
 import threading
 
-from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, formatter, \
+from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, formatter, \
     librarysync, versioncheck, database, searchmag, magazinescan, common
 try:
     from wand.image import Image
@@ -155,6 +155,26 @@ TORZNAB4 = 0
 TORZNAB_HOST4 = None
 TORZNAB_API4 = None
 
+RSS0 = 0
+RSS_HOST0 = None
+RSS_USER0 = None
+RSS_PASS0 = None
+
+RSS1 = 0
+RSS_HOST1 = None
+RSS_USER1 = None
+RSS_PASS1 = None
+
+RSS2 = 0
+RSS_HOST2 = None
+RSS_USER2 = None
+RSS_PASS2 = None
+
+RSS3 = 0
+RSS_HOST3 = None
+RSS_USER3 = None
+RSS_PASS3 = None
+
 NEWZBIN = 0
 NEWZBIN_UID = None
 NEWZBIN_PASSWORD = None
@@ -197,6 +217,7 @@ USENET_RETENTION = 0
 VERSIONCHECK_INTERVAL = 24  # Every 2 hours
 SEARCH_INTERVAL = 720  # Every 12 hours
 SCAN_INTERVAL = 10  # Every 10 minutes
+SEARCHRSS_INTERVAL = 20  # Every 20 minutes
 FULL_SCAN = 0  # full scan would remove books from db
 ADD_AUTHOR = 1  # auto add authors not found in db from goodreads
 # value to mark missing books (deleted/removed) in db, can be 'Open', 'Ignored', 'Wanted','Skipped'
@@ -349,7 +370,9 @@ def initialize():
             TORZNAB0, TORZNAB_HOST0, TORZNAB_API0, TORZNAB1, TORZNAB_HOST1, TORZNAB_API1, \
             TORZNAB2, TORZNAB_HOST2, TORZNAB_API2, TORZNAB3, TORZNAB_HOST3, TORZNAB_API3, \
             TORZNAB4, TORZNAB_HOST4, TORZNAB_API4, \
-            VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, \
+            RSS0, RSS_HOST0, RSS_USER0, RSS_PASS0, RSS1, RSS_HOST1, RSS_USER1, RSS_PASS1, \
+            RSS2, RSS_HOST2, RSS_USER2, RSS_PASS2, RSS3, RSS_HOST3, RSS_USER3, RSS_PASS3, \
+            VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, SEARCHRSS_INTERVAL, \
             EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, \
             USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, \
             TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
@@ -541,6 +564,26 @@ def initialize():
         TORZNAB_HOST4 = check_setting_str(CFG, 'Torznab4', 'torznab_host4', '')
         TORZNAB_API4 = check_setting_str(CFG, 'Torznab4', 'torznab_api4', '')
 
+        RSS0 = check_setting_bool(CFG, 'RSS_0', 'rss0', 0)
+        RSS_HOST0 = check_setting_str(CFG, 'RSS_0', 'rss_host0', '')
+        RSS_USER0 = check_setting_str(CFG, 'RSS_0', 'rss_user0', '')
+        RSS_PASS0 = check_setting_str(CFG, 'RSS_0', 'rss_pass0', '')
+
+        RSS1 = check_setting_bool(CFG, 'RSS_1', 'rss1', 0)
+        RSS_HOST1 = check_setting_str(CFG, 'RSS_1', 'rss_host1', '')
+        RSS_USER1 = check_setting_str(CFG, 'RSS_1', 'rss_user1', '')
+        RSS_PASS1 = check_setting_str(CFG, 'RSS_1', 'rss_pass1', '')
+
+        RSS2 = check_setting_bool(CFG, 'RSS_2', 'rss2', 0)
+        RSS_HOST2 = check_setting_str(CFG, 'RSS_2', 'rss_host2', '')
+        RSS_USER2 = check_setting_str(CFG, 'RSS_2', 'rss_user2', '')
+        RSS_PASS2 = check_setting_str(CFG, 'RSS_2', 'rss_pass2', '')
+
+        RSS3 = check_setting_bool(CFG, 'RSS_3', 'rss3', 0)
+        RSS_HOST3 = check_setting_str(CFG, 'RSS_3', 'rss_host3', '')
+        RSS_USER3 = check_setting_str(CFG, 'RSS_3', 'rss_user3', '')
+        RSS_PASS3 = check_setting_str(CFG, 'RSS_3', 'rss_pass3', '')
+
         TOR_DOWNLOADER_BLACKHOLE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_blackhole', 0)
         TOR_DOWNLOADER_UTORRENT = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_utorrent', 0)
         TOR_DOWNLOADER_TRANSMISSION = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_transmission', 0)
@@ -575,6 +618,7 @@ def initialize():
 
         SEARCH_INTERVAL = check_setting_int(CFG, 'SearchScan', 'search_interval', '360')
         SCAN_INTERVAL = check_setting_int(CFG, 'SearchScan', 'scan_interval', '10')
+        SEARCHRSS_INTERVAL = check_setting_int(CFG, 'SearchScan', 'searchrss_interval', '20')
         VERSIONCHECK_INTERVAL = check_setting_int(CFG, 'SearchScan', 'versioncheck_interval', '24')
 
         FULL_SCAN = check_setting_bool(CFG, 'LibraryScan', 'full_scan', 0)
@@ -889,6 +933,30 @@ def config_write():
     CFG.set('Newzbin', 'newzbin_uid', NEWZBIN_UID)
     CFG.set('Newzbin', 'newzbin_pass', NEWZBIN_PASS)
 #
+    check_section('RSS_0')
+    CFG.set('RSS_0', 'rss0', RSS0)
+    CFG.set('RSS_0', 'rss_host0', RSS_HOST0)
+    CFG.set('RSS_0', 'rss_user0', RSS_USER0)
+    CFG.set('RSS_0', 'rss_pass0', RSS_PASS0)
+#
+    check_section('RSS_1')
+    CFG.set('RSS_1', 'rss1', RSS1)
+    CFG.set('RSS_1', 'rss_host1', RSS_HOST1)
+    CFG.set('RSS_1', 'rss_user1', RSS_USER1)
+    CFG.set('RSS_1', 'rss_pass1', RSS_PASS1)
+#
+    check_section('RSS_2')
+    CFG.set('RSS_2', 'rss2', RSS2)
+    CFG.set('RSS_2', 'rss_host2', RSS_HOST2)
+    CFG.set('RSS_2', 'rss_user2', RSS_USER2)
+    CFG.set('RSS_2', 'rss_pass2', RSS_PASS2)
+#
+    check_section('RSS_3')
+    CFG.set('RSS_3', 'rss3', RSS3)
+    CFG.set('RSS_3', 'rss_host3', RSS_HOST3)
+    CFG.set('RSS_3', 'rss_user3', RSS_USER3)
+    CFG.set('RSS_3', 'rss_pass3', RSS_PASS3)
+#
     check_section('TORRENT')
     CFG.set('TORRENT', 'tor_downloader_blackhole', TOR_DOWNLOADER_BLACKHOLE)
     CFG.set('TORRENT', 'tor_downloader_utorrent', TOR_DOWNLOADER_UTORRENT)
@@ -921,6 +989,7 @@ def config_write():
     check_section('SearchScan')
     CFG.set('SearchScan', 'search_interval', SEARCH_INTERVAL)
     CFG.set('SearchScan', 'scan_interval', SCAN_INTERVAL)
+    CFG.set('SearchScan', 'searchrss_interval', SEARCHRSS_INTERVAL)
     CFG.set('SearchScan', 'versioncheck_interval', VERSIONCHECK_INTERVAL)
 #
     check_section('LibraryScan')
@@ -1134,17 +1203,14 @@ def start():
 
         # Crons and scheduled jobs go here
         # list is duplicated in webServe so we can reschedule them
-        SCHED.add_interval_job(postprocess.processDir, minutes=int(SCAN_INTERVAL))
-
-        if USE_NZB:
-            SCHED.add_interval_job(searchnzb.search_nzb_book, minutes=int(SEARCH_INTERVAL))
-        if USE_TOR:
-            SCHED.add_interval_job(searchtorrents.search_tor_book, minutes=int(SEARCH_INTERVAL))
-        SCHED.add_interval_job(versioncheck.checkForUpdates, hours=int(VERSIONCHECK_INTERVAL))
-        if USE_TOR or USE_NZB:
-            SCHED.add_interval_job(searchmag.search_magazines, minutes=int(SEARCH_INTERVAL))
-
         SCHED.start()
+        common.schedule_job('Start', 'processDir')
+        common.schedule_job('Start', 'search_nzb_book')
+        common.schedule_job('Start', 'search_tor_book')
+        common.schedule_job('Start', 'search_rss_book')
+        common.schedule_job('Start', 'search_magazines')
+        common.schedule_job('Start', 'checkForUpdates')
+
         started = True
 
 

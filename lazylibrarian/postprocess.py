@@ -14,7 +14,7 @@ from lazylibrarian import importer, gr, magazinescan
 
 def processAlternate(source_dir=None):
     # import a book from an alternate directory
-    if not search_dir or os.path.isdir(search_dir) is False:
+    if not source_dir or os.path.isdir(source_dir) is False:
         logger.warn('Alternate directory must not be empty')
         return
     if source_dir == lazylibrarian.DESTINATION_DIR:
@@ -61,22 +61,7 @@ def processAlternate(source_dir=None):
         logger.warn("No book file found in %s" % source_dir)
 
 
-def schedule_processor(action='Start'):
-    """ Start or stop the postprocessor cron job """
-    if action == 'Start':
-        for job in lazylibrarian.SCHED.get_jobs():
-            if "processDir" in str(job):
-                return  # return if already running, if not, start a new one
-        lazylibrarian.SCHED.add_interval_job(processDir, minutes=int(lazylibrarian.SCAN_INTERVAL))
-        logger.debug("Started postprocessing job")
-    else:
-        for job in lazylibrarian.SCHED.get_jobs():
-            if "processDir" in str(job):
-                lazylibrarian.SCHED.unschedule_job(job)
-                logger.debug("Stopped postprocessing job")
-
-
-def processDir(force=False):
+def processDir(force=False, reset=False):
     # rename this thread
     threading.currentThread().name = "POSTPROCESS"
 
@@ -94,10 +79,10 @@ def processDir(force=False):
     snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
 
     if force is False and len(snatched) == 0:
-        logger.debug('Nothing marked as snatched. Stopping cron job.')
-        schedule_processor(action='Stop')
+        logger.info('Nothing marked as snatched. Stopping cron job.')
+        common.schedule_job(action='Stop', target='processDir')
     elif len(downloads) == 0:
-        logger.debug('No downloads are found. Nothing to process.')
+        logger.info('No downloads are found. Nothing to process.')
     else:
         ppcount = 0
         for book in snatched:
@@ -231,7 +216,10 @@ def processDir(force=False):
         if ppcount:
             logger.info('%s books/mags have been processed.' % ppcount)
         else:
-            logger.debug('No snatched books/mags have been found')
+            logger.info('No snatched books/mags have been found')
+    if reset == True:
+        common.schedule_job(action='Restart', target='processDir')
+                    
 
 
 def import_book(pp_path=None, bookID=None):

@@ -552,6 +552,57 @@
                     </small>
             	</td>
             </tr>
+            <tr>
+                <td>
+                    <h3>RSS Providers</h3>
+                    <br>
+                    <%
+                    if lazylibrarian.RSS0 == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+            		<input type="checkbox" name="rss0" value=1 ${checked} style="margin-bottom:4px;" />
+ 	    		    <input type="text" placeholder="Enter User Here" name="rss_user0" value="${lazylibrarian.RSS_USER0}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter Host Here" name="rss_host0" value="${lazylibrarian.RSS_HOST0}" size="26" maxlength="50"><br>
+ 	    		    <input type="text" placeholder="Enter Pass Here" name="rss_pass0" value="${lazylibrarian.RSS_PASS0}" size="26" maxlength="40">
+                    <br>
+                    <%
+                    if lazylibrarian.RSS1 == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+            		<input type="checkbox" name="rss1" value=1 ${checked} style="margin-bottom:4px;" />
+ 	    		    <input type="text" placeholder="Enter User Here" name="rss_user1" value="${lazylibrarian.RSS_USER1}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter Host Here" name="rss_host1" value="${lazylibrarian.RSS_HOST1}" size="26" maxlength="50"><br>
+ 	    		    <input type="text" placeholder="Enter Pass Here" name="rss_pass1" value="${lazylibrarian.RSS_PASS1}" size="26" maxlength="40">
+ 	    		</td>
+                <td>
+                    <br><br>
+                    <%
+                    if lazylibrarian.RSS2 == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+            		<input type="checkbox" name="rss2" value=1 ${checked} style="margin-bottom:4px;" />
+ 	    		    <input type="text" placeholder="Enter User Here" name="rss_user2" value="${lazylibrarian.RSS_USER2}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter Host Here" name="rss_host2" value="${lazylibrarian.RSS_HOST2}" size="26" maxlength="50"><br>
+ 	    		    <input type="text" placeholder="Enter Pass Here" name="rss_pass2" value="${lazylibrarian.RSS_PASS2}" size="26" maxlength="40">
+                    <br>
+                    <%
+                    if lazylibrarian.RSS3 == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+            		<input type="checkbox" name="rss3" value=1 ${checked} style="margin-bottom:4px;" />
+ 	    		    <input type="text" placeholder="Enter User Here" name="rss_user3" value="${lazylibrarian.RSS_USER3}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter Host Here" name="rss_host3" value="${lazylibrarian.RSS_HOST3}" size="26" maxlength="50"><br>
+ 	    		    <input type="text" placeholder="Enter Pass Here" name="rss_pass3" value="${lazylibrarian.RSS_PASS3}" size="26" maxlength="40">
+                </td>
+            </tr>
         </table>
         </div>
     </div>
@@ -567,8 +618,12 @@
             <tr>
                 <td>
                     <div>
-                    <label>NZB Scan Interval:</label>
+                    <label>NZB/Tor Search Interval:</label>
                     <input type="text" name="search_interval" value="${lazylibrarian.SEARCH_INTERVAL}" size="8" maxlength="8"> (mins)
+                    </div>
+                    <div>
+                    <label>RSS Search Interval:</label>
+                    <input type="text" name="searchrss_interval" value="${lazylibrarian.SEARCHRSS_INTERVAL}" size="8" maxlength="8"> (mins)
                     </div>
                     <div>
                     <label>Post-Processing Interval:</label>

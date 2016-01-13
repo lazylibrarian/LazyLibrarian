@@ -13,7 +13,7 @@ from lazylibrarian.searchtorrents import TORDownloadMethod
 from lazylibrarian.searchnzb import NZBDownloadMethod
 
 
-def search_magazines(mags=None):
+def search_magazines(mags=None, reset=False):
     # produce a list of magazines to search for, tor, nzb, torznab
 
     myDB = database.DBConnection()
@@ -284,6 +284,10 @@ def search_magazines(mags=None):
                     snatch = NZBDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
                 if snatch:
                     notifiers.notify_snatch(formatter.latinToAscii(items['nzbtitle']) + ' at ' + formatter.now())
-                    postprocess.schedule_processor(action='Start')
+                    common.schedule_job(action='Start', target='processDir')
             maglist = []
-    logger.info("Search for magazines complete")
+
+    if reset == True:
+        common.schedule_job(action='Restart', target='search_magazines')
+        
+    logger.info("Search for magazines complete")    

@@ -96,7 +96,7 @@ def KAT(book=None):
 #
 # Purpose of this function is to read the config file, and loop through all active NewsNab+
 # sites and return the compiled results list from all sites back to the caller
-# We get called with searchType of "book", "mag", "general"
+# We get called with searchType of "book", "mag", "general" etc
 #
 
 
@@ -185,6 +185,97 @@ def IterateOverTorrentSites(book=None, searchType=None):
 
     return resultslist, providers
 
+def IterateOverRSSSites(book=None, searchType=None):
+
+    resultslist = []
+    providers = 0
+    if (lazylibrarian.RSS0):
+        providers += 1
+        logger.debug('[IterateOverRSSSites] - RSS0')
+        resultslist += RSS(lazylibrarian.RSS_HOST0)
+    if (lazylibrarian.RSS1):
+        providers += 1
+        logger.debug('[IterateOverRSSSites] - RSS1')
+        resultslist += RSS(lazylibrarian.RSS_HOST1)
+    if (lazylibrarian.RSS2):
+        providers += 1
+        logger.debug('[IterateOverRSSSites] - RSS2')
+        resultslist += RSS(lazylibrarian.RSS_HOST2)
+    if (lazylibrarian.RSS3):
+        providers += 1
+        logger.debug('[IterateOverRSSSites] - RSS3')
+        resultslist += RSS(lazylibrarian.RSS_HOST3)
+
+    return resultslist, providers
+
+#
+# Generic RSS query function, just return all the results from all the RSS feeds in a list
+#
+def RSS(host=None):
+
+    results = []
+
+    if not str(host)[:4] == "http":
+        host = 'http://' + host
+
+    URL = host
+
+    try:
+        request = urllib2.Request(URL)
+        if lazylibrarian.PROXY_HOST:
+            request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
+        request.add_header('User-Agent', common.USER_AGENT)
+        resp = urllib2.urlopen(request, timeout=90)
+        try:
+            data = feedparser.parse(resp)
+        except (urllib2.URLError, IOError, EOFError) as e:
+            logger.error('Error fetching data from %s: %s' % (host, e))
+            data = None
+
+    except Exception as e:
+        logger.error("Error 403 opening url %s" % e)
+        data = None
+        
+    if data:
+        # to debug because of api
+        logger.debug(u'Parsing results from %s' % (URL))
+        provider = data['feed']['link']
+        
+        for post in data.entries:
+            title = None
+            magnet = None
+            size = None
+            torrent = None
+            try:
+                title = post.title
+                for f in post.links:
+                    if 'x-bittorrent' in f['type']: 
+                        size = f['length']
+                        torrent = f['href']
+                        break
+                magnet = post.torrent_magneturi
+            except AttributeError as why:
+                pass
+    
+            if torrent:
+                url = torrent
+            if magnet:  # prefer magnet
+                url = magnet
+            
+            if not size:
+                size = 1000
+            if title and url:
+                results.append({
+                    'tor_prov': provider,
+                    'tor_title': title,
+                    'tor_url': url,
+                    'tor_size': str(size)
+                })
+
+    else:
+        logger.debug('No data returned from %s' % host)
+    return results
+        
 #
 # Generic NewzNabplus query function
 # takes in host+key+type and returns the result set regardless of who
