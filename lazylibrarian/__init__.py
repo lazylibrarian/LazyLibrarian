@@ -207,6 +207,7 @@ KAT_HOST = None
 
 USE_NZB = 0
 USE_TOR = 0
+USE_RSS = 0
 
 NZB_DOWNLOADER_SABNZBD = 0
 NZB_DOWNLOADER_NZBGET = 0
@@ -378,7 +379,7 @@ def initialize():
             TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
             USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, \
             TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, \
-            USE_TOR, USE_NZB, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
+            USE_TOR, USE_NZB, USE_RSS, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
             USE_PUSHBULLET, PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, \
             PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, LAST_GOODREADS, LAST_LIBRARYTHING, \
             UTORRENT_HOST, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
@@ -492,6 +493,7 @@ def initialize():
 
         USE_NZB = check_setting_bool(CFG, 'DLMethod', 'use_nzb', 0)
         USE_TOR = check_setting_bool(CFG, 'DLMethod', 'use_tor', 0)
+#        USE_RSS = check_setting_bool(CFG, 'DLMethod', 'use_rss', 0)
 
         NZB_DOWNLOADER_SABNZBD = check_setting_bool(CFG, 'USENET', 'nzb_downloader_sabnzbd', 0)
         NZB_DOWNLOADER_NZBGET = check_setting_bool(CFG, 'USENET', 'nzb_downloader_nzbget', 0)
@@ -867,6 +869,7 @@ def config_write():
     check_section('DLMethod')
     CFG.set('DLMethod', 'use_tor', USE_TOR)
     CFG.set('DLMethod', 'use_nzb', USE_NZB)
+#    CFG.set('DLMethod', 'use_rss', USE_RSS)
 #
     check_section('API')
     CFG.set('API', 'book_api', BOOK_API)

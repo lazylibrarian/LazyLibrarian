@@ -60,7 +60,7 @@ def schedule_job(action='Start', target=None):
             if lazylibrarian.USE_TOR:
                 lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchtorrents.search_tor_book, minutes=int(lazylibrarian.SEARCH_INTERVAL))
         elif 'search_rss' in target:
-            if lazylibrarian.USE_TOR:
+            if lazylibrarian.USE_TOR and lazylibrarian.USE_RSS:
                 lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchrss.search_rss_book, minutes=int(lazylibrarian.SEARCHRSS_INTERVAL))
         elif 'checkForUpdates' in target:
             lazylibrarian.SCHED.add_interval_job(lazylibrarian.versioncheck.checkForUpdates, hours=int(lazylibrarian.VERSIONCHECK_INTERVAL))

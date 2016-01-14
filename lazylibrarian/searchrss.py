@@ -14,8 +14,8 @@ import lazylibrarian.common as common
 
 
 def search_rss_book(books=None, reset=False):
-    if not(lazylibrarian.USE_TOR):
-        logger.warn('Torrent search is disabled')
+    if not(lazylibrarian.USE_TOR and lazylibrarian.USE_RSS):
+        logger.warn('Torrent/RSS search is disabled')
         return
     # rename this thread
     threading.currentThread().name = "SEARCHRSSBOOKS"
