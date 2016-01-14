@@ -79,7 +79,7 @@ def processDir(force=False, reset=False):
     snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
 
     if force is False and len(snatched) == 0:
-        logger.info('Nothing marked as snatched. Stopping cron job.')
+        logger.info('Nothing marked as snatched. Stopping postprocessor job.')
         common.schedule_job(action='Stop', target='processDir')
     elif len(downloads) == 0:
         logger.info('No downloads are found. Nothing to process.')

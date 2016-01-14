@@ -25,6 +25,8 @@ class GoogleBooks:
     def __init__(self, name=None, type=None):
         self.name = name
         self.type = type
+        if not lazylibrarian.GB_API:
+            logger.warn('No GoogleBooks API key, check config')
         self.url = 'https://www.googleapis.com/books/v1/volumes?q='
         self.params = {
             'maxResults': 40,
@@ -593,7 +595,8 @@ class GoogleBooks:
     def find_book(self, bookid=None, queue=None):
         threading.currentThread().name = "GB-ADD-BOOK"
         myDB = database.DBConnection()
-
+        if not lazylibrarian.GB_API:
+            logger.warn('No GoogleBooks API key, check config')
         URL = 'https://www.googleapis.com/books/v1/volumes/' + str(bookid) + "?key=" + lazylibrarian.GB_API
         jsonresults, in_cache = self.get_request(URL)
 
