@@ -19,7 +19,7 @@ from lib.apscheduler.scheduler import Scheduler
 
 import threading
 
-from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, formatter, \
+from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, formatter, \
     librarysync, versioncheck, database, searchmag, magazinescan, common
 try:
     from wand.image import Image
@@ -65,6 +65,7 @@ LOGDIR = None
 LOGLIST = []
 # Info 1, Debug 2, >2 don't toggle console/file
 LOGLEVEL = 2
+LOGLIMIT = 500
 LOGFULL = False  # include debug on screen if true
 
 MATCH_RATIO = 80
@@ -154,6 +155,26 @@ TORZNAB4 = 0
 TORZNAB_HOST4 = None
 TORZNAB_API4 = None
 
+RSS0 = 0
+RSS_HOST0 = None
+RSS_USER0 = None
+RSS_PASS0 = None
+
+RSS1 = 0
+RSS_HOST1 = None
+RSS_USER1 = None
+RSS_PASS1 = None
+
+RSS2 = 0
+RSS_HOST2 = None
+RSS_USER2 = None
+RSS_PASS2 = None
+
+RSS3 = 0
+RSS_HOST3 = None
+RSS_USER3 = None
+RSS_PASS3 = None
+
 NEWZBIN = 0
 NEWZBIN_UID = None
 NEWZBIN_PASSWORD = None
@@ -186,6 +207,7 @@ KAT_HOST = None
 
 USE_NZB = 0
 USE_TOR = 0
+USE_RSS = 0
 
 NZB_DOWNLOADER_SABNZBD = 0
 NZB_DOWNLOADER_NZBGET = 0
@@ -196,6 +218,7 @@ USENET_RETENTION = 0
 VERSIONCHECK_INTERVAL = 24  # Every 2 hours
 SEARCH_INTERVAL = 720  # Every 12 hours
 SCAN_INTERVAL = 10  # Every 10 minutes
+SEARCHRSS_INTERVAL = 20  # Every 20 minutes
 FULL_SCAN = 0  # full scan would remove books from db
 ADD_AUTHOR = 1  # auto add authors not found in db from goodreads
 # value to mark missing books (deleted/removed) in db, can be 'Open', 'Ignored', 'Wanted','Skipped'
@@ -335,7 +358,7 @@ def initialize():
             LAUNCH_BROWSER, LOGDIR, CACHEDIR, CACHE_AGE, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, \
             IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, IMP_CONVERT, \
             MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, \
-            MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, CONFIGFILE, CFG, LOGDIR, \
+            MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, CONFIGFILE, CFG, LOGLIMIT, \
             SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, SAB_CAT, \
             DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, USENET_RETENTION, NZB_BLACKHOLEDIR, \
             ALTERNATE_DIR, GR_API, GB_API, BOOK_API, MAGICK, \
@@ -348,13 +371,15 @@ def initialize():
             TORZNAB0, TORZNAB_HOST0, TORZNAB_API0, TORZNAB1, TORZNAB_HOST1, TORZNAB_API1, \
             TORZNAB2, TORZNAB_HOST2, TORZNAB_API2, TORZNAB3, TORZNAB_HOST3, TORZNAB_API3, \
             TORZNAB4, TORZNAB_HOST4, TORZNAB_API4, \
-            VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, \
+            RSS0, RSS_HOST0, RSS_USER0, RSS_PASS0, RSS1, RSS_HOST1, RSS_USER1, RSS_PASS1, \
+            RSS2, RSS_HOST2, RSS_USER2, RSS_PASS2, RSS3, RSS_HOST3, RSS_USER3, RSS_PASS3, \
+            VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, SEARCHRSS_INTERVAL, \
             EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, \
             USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, \
             TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
             USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, \
             TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, \
-            USE_TOR, USE_NZB, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
+            USE_TOR, USE_NZB, USE_RSS, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
             USE_PUSHBULLET, PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, \
             PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, LAST_GOODREADS, LAST_LIBRARYTHING, \
             UTORRENT_HOST, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
@@ -429,6 +454,7 @@ def initialize():
         PROXY_TYPE = check_setting_str(CFG, 'General', 'proxy_type', '')
 
         LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
+        LOGLIMIT = check_setting_int(CFG, 'General', 'loglimit', 500)
 
         IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', 'en, eng, en-US')
         IMP_MONTHLANG = check_setting_str(CFG, 'General', 'imp_monthlang', '')
@@ -467,6 +493,7 @@ def initialize():
 
         USE_NZB = check_setting_bool(CFG, 'DLMethod', 'use_nzb', 0)
         USE_TOR = check_setting_bool(CFG, 'DLMethod', 'use_tor', 0)
+        USE_RSS = check_setting_bool(CFG, 'DLMethod', 'use_rss', 0)
 
         NZB_DOWNLOADER_SABNZBD = check_setting_bool(CFG, 'USENET', 'nzb_downloader_sabnzbd', 0)
         NZB_DOWNLOADER_NZBGET = check_setting_bool(CFG, 'USENET', 'nzb_downloader_nzbget', 0)
@@ -539,6 +566,26 @@ def initialize():
         TORZNAB_HOST4 = check_setting_str(CFG, 'Torznab4', 'torznab_host4', '')
         TORZNAB_API4 = check_setting_str(CFG, 'Torznab4', 'torznab_api4', '')
 
+        RSS0 = check_setting_bool(CFG, 'RSS_0', 'rss0', 0)
+        RSS_HOST0 = check_setting_str(CFG, 'RSS_0', 'rss_host0', '')
+        RSS_USER0 = check_setting_str(CFG, 'RSS_0', 'rss_user0', '')
+        RSS_PASS0 = check_setting_str(CFG, 'RSS_0', 'rss_pass0', '')
+
+        RSS1 = check_setting_bool(CFG, 'RSS_1', 'rss1', 0)
+        RSS_HOST1 = check_setting_str(CFG, 'RSS_1', 'rss_host1', '')
+        RSS_USER1 = check_setting_str(CFG, 'RSS_1', 'rss_user1', '')
+        RSS_PASS1 = check_setting_str(CFG, 'RSS_1', 'rss_pass1', '')
+
+        RSS2 = check_setting_bool(CFG, 'RSS_2', 'rss2', 0)
+        RSS_HOST2 = check_setting_str(CFG, 'RSS_2', 'rss_host2', '')
+        RSS_USER2 = check_setting_str(CFG, 'RSS_2', 'rss_user2', '')
+        RSS_PASS2 = check_setting_str(CFG, 'RSS_2', 'rss_pass2', '')
+
+        RSS3 = check_setting_bool(CFG, 'RSS_3', 'rss3', 0)
+        RSS_HOST3 = check_setting_str(CFG, 'RSS_3', 'rss_host3', '')
+        RSS_USER3 = check_setting_str(CFG, 'RSS_3', 'rss_user3', '')
+        RSS_PASS3 = check_setting_str(CFG, 'RSS_3', 'rss_pass3', '')
+
         TOR_DOWNLOADER_BLACKHOLE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_blackhole', 0)
         TOR_DOWNLOADER_UTORRENT = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_utorrent', 0)
         TOR_DOWNLOADER_TRANSMISSION = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_transmission', 0)
@@ -573,6 +620,7 @@ def initialize():
 
         SEARCH_INTERVAL = check_setting_int(CFG, 'SearchScan', 'search_interval', '360')
         SCAN_INTERVAL = check_setting_int(CFG, 'SearchScan', 'scan_interval', '10')
+        SEARCHRSS_INTERVAL = check_setting_int(CFG, 'SearchScan', 'searchrss_interval', '20')
         VERSIONCHECK_INTERVAL = check_setting_int(CFG, 'SearchScan', 'versioncheck_interval', '24')
 
         FULL_SCAN = check_setting_bool(CFG, 'LibraryScan', 'full_scan', 0)
@@ -769,6 +817,7 @@ def config_write():
     CFG.set('General', 'proxy_host', PROXY_HOST)
     CFG.set('General', 'proxy_type', PROXY_TYPE)
     CFG.set('General', 'logdir', LOGDIR)
+    CFG.set('General', 'loglimit', LOGLIMIT)
     CFG.set('General', 'loglevel', LOGLEVEL)
     CFG.set('General', 'match_ratio', MATCH_RATIO)
     CFG.set('General', 'imp_onlyisbn', IMP_ONLYISBN)
@@ -820,6 +869,7 @@ def config_write():
     check_section('DLMethod')
     CFG.set('DLMethod', 'use_tor', USE_TOR)
     CFG.set('DLMethod', 'use_nzb', USE_NZB)
+    CFG.set('DLMethod', 'use_rss', USE_RSS)
 #
     check_section('API')
     CFG.set('API', 'book_api', BOOK_API)
@@ -886,6 +936,30 @@ def config_write():
     CFG.set('Newzbin', 'newzbin_uid', NEWZBIN_UID)
     CFG.set('Newzbin', 'newzbin_pass', NEWZBIN_PASS)
 #
+    check_section('RSS_0')
+    CFG.set('RSS_0', 'rss0', RSS0)
+    CFG.set('RSS_0', 'rss_host0', RSS_HOST0)
+    CFG.set('RSS_0', 'rss_user0', RSS_USER0)
+    CFG.set('RSS_0', 'rss_pass0', RSS_PASS0)
+#
+    check_section('RSS_1')
+    CFG.set('RSS_1', 'rss1', RSS1)
+    CFG.set('RSS_1', 'rss_host1', RSS_HOST1)
+    CFG.set('RSS_1', 'rss_user1', RSS_USER1)
+    CFG.set('RSS_1', 'rss_pass1', RSS_PASS1)
+#
+    check_section('RSS_2')
+    CFG.set('RSS_2', 'rss2', RSS2)
+    CFG.set('RSS_2', 'rss_host2', RSS_HOST2)
+    CFG.set('RSS_2', 'rss_user2', RSS_USER2)
+    CFG.set('RSS_2', 'rss_pass2', RSS_PASS2)
+#
+    check_section('RSS_3')
+    CFG.set('RSS_3', 'rss3', RSS3)
+    CFG.set('RSS_3', 'rss_host3', RSS_HOST3)
+    CFG.set('RSS_3', 'rss_user3', RSS_USER3)
+    CFG.set('RSS_3', 'rss_pass3', RSS_PASS3)
+#
     check_section('TORRENT')
     CFG.set('TORRENT', 'tor_downloader_blackhole', TOR_DOWNLOADER_BLACKHOLE)
     CFG.set('TORRENT', 'tor_downloader_utorrent', TOR_DOWNLOADER_UTORRENT)
@@ -918,6 +992,7 @@ def config_write():
     check_section('SearchScan')
     CFG.set('SearchScan', 'search_interval', SEARCH_INTERVAL)
     CFG.set('SearchScan', 'scan_interval', SCAN_INTERVAL)
+    CFG.set('SearchScan', 'searchrss_interval', SEARCHRSS_INTERVAL)
     CFG.set('SearchScan', 'versioncheck_interval', VERSIONCHECK_INTERVAL)
 #
     check_section('LibraryScan')
@@ -1131,17 +1206,14 @@ def start():
 
         # Crons and scheduled jobs go here
         # list is duplicated in webServe so we can reschedule them
-        SCHED.add_interval_job(postprocess.processDir, minutes=int(SCAN_INTERVAL))
-
-        if USE_NZB:
-            SCHED.add_interval_job(searchnzb.search_nzb_book, minutes=int(SEARCH_INTERVAL))
-        if USE_TOR:
-            SCHED.add_interval_job(searchtorrents.search_tor_book, minutes=int(SEARCH_INTERVAL))
-        SCHED.add_interval_job(versioncheck.checkForUpdates, hours=int(VERSIONCHECK_INTERVAL))
-        if USE_TOR or USE_NZB:
-            SCHED.add_interval_job(searchmag.search_magazines, minutes=int(SEARCH_INTERVAL))
-
         SCHED.start()
+        common.schedule_job('Start', 'processDir')
+        common.schedule_job('Start', 'search_nzb_book')
+        common.schedule_job('Start', 'search_tor_book')
+        common.schedule_job('Start', 'search_rss_book')
+        common.schedule_job('Start', 'search_magazines')
+        common.schedule_job('Start', 'checkForUpdates')
+
         started = True
 
 

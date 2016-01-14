@@ -70,13 +70,13 @@ def magazineScan(thread=None):
 
     if lazylibrarian.FULL_SCAN:
         mags = myDB.select('select * from Issues')
-
+        # check all the issues are still there, delete entry if not
         for mag in mags:
             title = mag['Title']
             issuedate = mag['IssueDate']
             issuefile = mag['IssueFile']
 
-            if not issuefile and os.path.isfile(issuefile):
+            if issuefile and not os.path.isfile(issuefile):
                 myDB.action('DELETE from Issues where issuefile="%s"' % issuefile)
                 logger.info('Issue %s - %s deleted as not found on disk' % (title, issuedate))
                 controlValueDict = {"Title": title}
@@ -88,6 +88,16 @@ def magazineScan(thread=None):
                 myDB.upsert("magazines", newValueDict, controlValueDict)
                 logger.debug('Magazine %s details reset' % title)
 
+        mags = myDB.select('SELECT * from magazines')
+        # now check the magazine titles and delete any with no issues
+        for mag in mags:
+            title = mag['Title']
+            count = myDB.select('SELECT COUNT(Title) as counter FROM issues WHERE Title="%s"' % title)
+            issues = count[0]['counter']
+            if not issues:   
+                logger.debug('Magazine %s deleted as no issues found' % title) 
+                myDB.action('DELETE from magazines WHERE Title="%s"' % title)
+    
     logger.info(' Checking [%s] for magazines' % mag_path)
 
     for dirname, dirnames, filenames in os.walk(mag_path):

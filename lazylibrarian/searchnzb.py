@@ -1,7 +1,6 @@
 import threading
 import urllib2
 import os
-import shutil
 import re
 
 import lazylibrarian
@@ -17,7 +16,7 @@ from lazylibrarian.common import USER_AGENT
 from lazylibrarian.searchtorrents import TORDownloadMethod
 
 
-def search_nzb_book(books=None):
+def search_nzb_book(books=None, reset=False):
     if not(lazylibrarian.USE_NZB):
         logger.warn('NZB Search is disabled')
         return
@@ -69,7 +68,7 @@ def search_nzb_book(books=None):
                            "searchterm": searchterm.strip()})
 
     if not lazylibrarian.SAB_HOST and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE and not lazylibrarian.NZBGET_HOST:
-        logger.warn('No download method is set, use SABnzbd/NZBGet or blackhole')
+        logger.warn('No download method is set, use SABnzbd/NZBGet or blackhole, check config')
 
     nzb_count = 0
     for book in searchlist:
@@ -77,7 +76,7 @@ def search_nzb_book(books=None):
         resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'book')
 
         if not nproviders:
-            logger.warn('No providers are set. try use NEWZNAB or TORZNAB')
+            logger.warn('No NewzNab or TorzNab providers are set, check config')
             return  # no point in continuing
 
         found = processResultList(resultlist, book, "book")
@@ -106,6 +105,10 @@ def search_nzb_book(books=None):
         logger.info("NZBSearch for Wanted items complete, found %s book" % nzb_count)
     else:
         logger.info("NZBSearch for Wanted items complete, found %s books" % nzb_count)
+    
+    if reset == True:
+        common.schedule_job(action='Restart', target='search_nzb_book')
+
 
 
 def processResultList(resultlist, book, searchtype):
@@ -130,14 +133,14 @@ def processResultList(resultlist, book, searchtype):
         elif searchtype == 'author':
             nzbTitle_match = fuzz.token_set_ratio(book['authorName'].encode('utf-8'), nzbTitle)
             logger.debug(u"NZB author Match %: " + str(nzbTitle_match) + " for " + nzbTitle)
-            if nzbTitle_match > match_ratio:
+            if nzbTitle_match >= match_ratio:
                 nzbTitle_match = fuzz.token_set_ratio(book['bookName'].encode('utf-8'), nzbTitle)
                 logger.debug(u"NZB book Match %: " + str(nzbTitle_match) + " for " + nzbTitle)
         else:  # searchtype == 'general':
             nzbTitle_match = fuzz.token_set_ratio(book['searchterm'], nzbTitle)
             logger.debug(u"NZB Title general Match %: " + str(nzbTitle_match) + " for " + nzbTitle)
 
-        if (nzbTitle_match > match_ratio):
+        if (nzbTitle_match >= match_ratio):
             logger.debug(u'Found NZB: %s using %s search' % (nzb['nzbtitle'], searchtype))
             bookid = book['bookid']
             nzbTitle = (book["authorName"] + ' - ' + book['bookName'] + ' LL.(' + book['bookid'] + ')').strip()
@@ -171,7 +174,7 @@ def processResultList(resultlist, book, searchtype):
                     snatch = NZBDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
                 if snatch:
                     notifiers.notify_snatch(formatter.latinToAscii(nzbTitle) + ' at ' + formatter.now())
-                    postprocess.schedule_processor(action='Start')
+                    common.schedule_job(action='Start', target='processDir')
                     return True
 
     logger.debug("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() +

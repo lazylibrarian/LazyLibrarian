@@ -20,6 +20,8 @@ class GoodReads:
     def __init__(self, name=None):
         self.name = name.encode('utf-8')
         # self.type = type
+        if not lazylibrarian.GR_API:
+            logger.warn('No Goodreads API key, check config')
         self.params = {"key": lazylibrarian.GR_API}
 
     def get_request(self, my_url):

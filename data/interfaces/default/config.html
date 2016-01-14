@@ -44,6 +44,8 @@
                   <br>
                   <br>
                   <label>Logdir:</label><input type="text" name="logdir" value="${lazylibrarian.LOGDIR}" size="26"><br>
+                  <label>Log Limit:</label><input type="text" name="loglimit" value="${lazylibrarian.LOGLIMIT}" size="4"><br>
+                  <i class="smalltext">Size of on-screen log, smaller is faster and uses less memory</i><br>
                   <label>Log Level:</label><input type="text" name="loglevel" value="${lazylibrarian.LOGLEVEL}" size="4"><br>
                   <i class="smalltext">0=Quiet, 1=Normal, 2=Debug, >2=file/console log always set to debug (ignores toggle)</i>
 		  <br>
@@ -534,6 +536,73 @@
             </tr>
             <tr>
                 <td>
+                    <div class="row checkbox">
+                        <%
+                        if lazylibrarian.USE_RSS == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                        %>
+                        <input type="checkbox" name="use_rss" id="rss" value="1" ${checked} />
+                        <label>Enable RSS feed search</label>
+                    </div>
+            	</td>
+                <td>
+                    <small>Current limitation: TORZNAB results are returned as magnet links
+                    where possible, which may not work automatically with blackhole
+                    </small>
+            	</td>
+            </tr>
+            <tr>
+                <td>
+                <fieldset id="rss_options">   
+                   <h3>RSS Providers</h3>
+                    <br>
+                    <%
+                    if lazylibrarian.RSS0 == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+            		<input type="checkbox" name="rss0" value=1 ${checked} style="margin-bottom:4px;" />
+ 	    		    <input type="text" placeholder="Enter User Here" name="rss_user0" value="${lazylibrarian.RSS_USER0}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter Host Here" name="rss_host0" value="${lazylibrarian.RSS_HOST0}" size="26" maxlength="50"><br>
+ 	    		    <input type="text" placeholder="Enter Pass Here" name="rss_pass0" value="${lazylibrarian.RSS_PASS0}" size="26" maxlength="40">
+                    <br>
+                    <%
+                    if lazylibrarian.RSS1 == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+            		<input type="checkbox" name="rss1" value=1 ${checked} style="margin-bottom:4px;" />
+ 	    		    <input type="text" placeholder="Enter User Here" name="rss_user1" value="${lazylibrarian.RSS_USER1}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter Host Here" name="rss_host1" value="${lazylibrarian.RSS_HOST1}" size="26" maxlength="50"><br>
+ 	    		    <input type="text" placeholder="Enter Pass Here" name="rss_pass1" value="${lazylibrarian.RSS_PASS1}" size="26" maxlength="40">
+ 	    		    <br>
+                    <%
+                    if lazylibrarian.RSS2 == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+            		<input type="checkbox" name="rss2" value=1 ${checked} style="margin-bottom:4px;" />
+ 	    		    <input type="text" placeholder="Enter User Here" name="rss_user2" value="${lazylibrarian.RSS_USER2}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter Host Here" name="rss_host2" value="${lazylibrarian.RSS_HOST2}" size="26" maxlength="50"><br>
+ 	    		    <input type="text" placeholder="Enter Pass Here" name="rss_pass2" value="${lazylibrarian.RSS_PASS2}" size="26" maxlength="40">
+                    <br>
+                    <%
+                    if lazylibrarian.RSS3 == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+            		<input type="checkbox" name="rss3" value=1 ${checked} style="margin-bottom:4px;" />
+ 	    		    <input type="text" placeholder="Enter User Here" name="rss_user3" value="${lazylibrarian.RSS_USER3}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter Host Here" name="rss_host3" value="${lazylibrarian.RSS_HOST3}" size="26" maxlength="50"><br>
+ 	    		    <input type="text" placeholder="Enter Pass Here" name="rss_pass3" value="${lazylibrarian.RSS_PASS3}" size="26" maxlength="40">
+                  </td>
+                <td>
                     <h3>Torrent Providers</h3><br>
                     <%
                     if lazylibrarian.KAT == True:
@@ -544,12 +613,8 @@
             		<input type="checkbox" name="kat" value=1 ${checked} style="margin-bottom:4px;" /> KAT
  	    		    <input type="text" placeholder="Enter Host Here" name="kat_host" value="${lazylibrarian.KAT_HOST}" size="18" maxlength="50">
  	    		</td>
-                <td>
-                    <small>Current limitation: TORZNAB results are returned as magnet links
-                    where possible, which may not work automatically with blackhole
-                    </small>
-            	</td>
-            </tr>
+               </tr>
+            </fieldset>
         </table>
         </div>
     </div>
@@ -565,8 +630,12 @@
             <tr>
                 <td>
                     <div>
-                    <label>NZB Scan Interval:</label>
+                    <label>NZB/Tor Search Interval:</label>
                     <input type="text" name="search_interval" value="${lazylibrarian.SEARCH_INTERVAL}" size="8" maxlength="8"> (mins)
+                    </div>
+                    <div>
+                    <label>RSS Search Interval:</label>
+                    <input type="text" name="searchrss_interval" value="${lazylibrarian.SEARCHRSS_INTERVAL}" size="8" maxlength="8"> (mins)
                     </div>
                     <div>
                     <label>Post-Processing Interval:</label>
@@ -1102,6 +1171,25 @@
                     }
             });
 
+            if ($("#rss").is(":checked"))
+                    {
+                            $("#rss_options").show();
+                    }
+            else
+                    {
+                            $("#rss_options").hide();
+                    }
+
+            $("#rss").click(function(){
+                    if ($("#rss").is(":checked"))
+                    {
+                            $("#rss_options").slideDown();
+                    }
+                    else
+                    {
+                            $("#rss_options").slideUp();
+                    }
+            });
             if ($("#tor_downloader_blackhole").is(":checked"))
                 {
                         $("#tor_blackhole_options").show();

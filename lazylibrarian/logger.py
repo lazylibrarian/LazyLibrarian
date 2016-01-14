@@ -53,11 +53,9 @@ class RotatingLogger(object):
 
         if level != 'DEBUG' or lazylibrarian.LOGFULL is True:
             # Limit the size of the "in-memory" log, as gets slow if too long
-            # Set a fairly arbitrary 500 message limit for now
-            # TODO make this configurable?
             # Ensure messages are ascii as some author names contain accents and the web page doesnt like them
             lazylibrarian.LOGLIST.insert(0, (formatter.now(), formatter.latinToAscii(message), level, threadname))
-            if len(lazylibrarian.LOGLIST) > 500:
+            if len(lazylibrarian.LOGLIST) > lazylibrarian.LOGLIMIT:
                 del lazylibrarian.LOGLIST[-1]
 
         message = threadname + ' : ' + message

@@ -1,7 +1,6 @@
 import threading
 import urllib2
 import os
-import shutil
 import re
 from base64 import b16encode, b32decode
 from lib.bencode import bencode as bencode, bdecode
@@ -23,7 +22,7 @@ from StringIO import StringIO
 import gzip
 
 
-def search_tor_book(books=None):
+def search_tor_book(books=None, reset=False):
     if not(lazylibrarian.USE_TOR):
         logger.warn('Torrent search is disabled')
         return
@@ -53,9 +52,9 @@ def search_tor_book(books=None):
         logger.info('TOR Searching for %i books' % len(searchbooks))
 
     for searchbook in searchbooks:
-        bookid = searchbook[0]
-        author = searchbook[1]
-        book = searchbook[2]
+        bookid = searchbook['BookID']
+        author = searchbook['AuthorName']
+        book = searchbook['BookName']
 
         dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
                ',': '', '*': '', ':': '', ';': ''}
@@ -78,7 +77,7 @@ def search_tor_book(books=None):
 
         resultlist, nproviders = providers.IterateOverTorrentSites(book, 'book')
         if not nproviders:
-            logger.warn('No torrent providers are set, check config for TORRENT providers')
+            logger.warn('No torrent providers are set, check config')
             return  # No point in continuing
 
         found = processResultList(resultlist, book, "book")
@@ -108,6 +107,9 @@ def search_tor_book(books=None):
     else:
         logger.info("TORSearch for Wanted items complete, found %s books" % tor_count)
 
+    if reset == True:
+        common.schedule_job(action='Restart', target='search_tor_book')
+
 
 def processResultList(resultlist, book, searchtype):
     myDB = database.DBConnection()
@@ -125,7 +127,7 @@ def processResultList(resultlist, book, searchtype):
         tor_Title_match = fuzz.token_set_ratio(book['searchterm'], tor_Title)
         logger.debug("Torrent Title Match %: " + str(tor_Title_match) + " for " + tor_Title)
 
-        if (tor_Title_match > match_ratio):
+        if (tor_Title_match >= match_ratio):
             logger.debug(u'Found Torrent: %s using %s search' % (tor['tor_title'], searchtype))
             bookid = book['bookid']
             tor_Title = (book["authorName"] + ' - ' + book['bookName'] +
@@ -153,7 +155,7 @@ def processResultList(resultlist, book, searchtype):
                 snatch = TORDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
                 if snatch:
                     notifiers.notify_snatch(formatter.latinToAscii(tor_Title) + ' at ' + formatter.now())
-                    postprocess.schedule_processor(action='Start')
+                    common.schedule_job(action='Start', target='processDir')
                     return True
 
     logger.debug("No torrent's found for " + (book["authorName"] + ' ' +
