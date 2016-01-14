@@ -10,6 +10,8 @@ from lazylibrarian import logger, database, formatter, notifiers, providers
 from lib.fuzzywuzzy import fuzz
 
 import lazylibrarian.common as common
+from lazylibrarian.searchtorrents import TORDownloadMethod
+from lazylibrarian.searchnzb import NZBDownloadMethod
 
 
 
@@ -102,11 +104,11 @@ def processResultList(resultlist, author, title, book):
         match_ratio = int(lazylibrarian.MATCH_RATIO)
         tor_Author_match = fuzz.token_set_ratio(author, tor_Title)
         logger.debug("RSS Author Match %: " + str(tor_Author_match) + " for " + tor_Title)
-        if (tor_Author_match > match_ratio):
+        if (tor_Author_match >= match_ratio):
             tor_Title_match = fuzz.token_set_ratio(title, tor_Title)
             logger.debug("RSS Title Match %: " + str(tor_Title_match) + " for " + tor_Title)
 
-            if (tor_Title_match > match_ratio):
+            if (tor_Title_match >= match_ratio):
                 logger.debug(u'Found RSS: %s' % tor['tor_title'])
                 bookid = book['bookid']
                 tor_Title = (book["authorName"] + ' - ' + book['bookName'] +

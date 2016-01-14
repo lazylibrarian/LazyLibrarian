@@ -133,14 +133,14 @@ def processResultList(resultlist, book, searchtype):
         elif searchtype == 'author':
             nzbTitle_match = fuzz.token_set_ratio(book['authorName'].encode('utf-8'), nzbTitle)
             logger.debug(u"NZB author Match %: " + str(nzbTitle_match) + " for " + nzbTitle)
-            if nzbTitle_match > match_ratio:
+            if nzbTitle_match >= match_ratio:
                 nzbTitle_match = fuzz.token_set_ratio(book['bookName'].encode('utf-8'), nzbTitle)
                 logger.debug(u"NZB book Match %: " + str(nzbTitle_match) + " for " + nzbTitle)
         else:  # searchtype == 'general':
             nzbTitle_match = fuzz.token_set_ratio(book['searchterm'], nzbTitle)
             logger.debug(u"NZB Title general Match %: " + str(nzbTitle_match) + " for " + nzbTitle)
 
-        if (nzbTitle_match > match_ratio):
+        if (nzbTitle_match >= match_ratio):
             logger.debug(u'Found NZB: %s using %s search' % (nzb['nzbtitle'], searchtype))
             bookid = book['bookid']
             nzbTitle = (book["authorName"] + ' - ' + book['bookName'] + ' LL.(' + book['bookid'] + ')').strip()

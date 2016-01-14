@@ -869,7 +869,6 @@ def config_write():
     check_section('DLMethod')
     CFG.set('DLMethod', 'use_tor', USE_TOR)
     CFG.set('DLMethod', 'use_nzb', USE_NZB)
-    USE_RSS = False  # PAB leave disabled until completed
     CFG.set('DLMethod', 'use_rss', USE_RSS)
 #
     check_section('API')

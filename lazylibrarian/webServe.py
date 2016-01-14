@@ -69,7 +69,7 @@ class WebInterface(object):
                      http_pass=None, http_look=None, launch_browser=0, logdir=None, loglevel=2, loglimit=500,
                      imp_onlyisbn=0, imp_singlebook=0, imp_preflang=None, imp_monthlang=None, imp_convert=None,
                      imp_autoadd=None, match_ratio=80, nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0,
-                     nzb_downloader_blackhole=0, use_nzb=0, use_tor=0, proxy_host=None, proxy_type=None,
+                     nzb_downloader_blackhole=0, use_nzb=0, use_tor=0, use_rss=0, proxy_host=None, proxy_type=None,
                      sab_host=None, sab_port=0, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None,
                      destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=0,
                      nzb_blackholedir=None, alternate_dir=None, torrent_dir=None, numberofseeders=0,
@@ -237,6 +237,7 @@ class WebInterface(object):
 
         lazylibrarian.USE_NZB = bool(use_nzb)
         lazylibrarian.USE_TOR = bool(use_tor)
+        lazylibrarian.USE_RSS = bool(use_rss)
 
         lazylibrarian.EBOOK_TYPE = ebook_type
         lazylibrarian.MAG_TYPE = mag_type
@@ -506,6 +507,8 @@ class WebInterface(object):
                     threading.Thread(target=search_nzb_book, args=[books]).start()
                 if lazylibrarian.USE_TOR:
                     threading.Thread(target=search_tor_book, args=[books]).start()
+                    if lazylibrarian.USE_TOR:
+                        threading.Thread(target=search_rss_book, args=[books]).start()
                 logger.debug(u"Searching for book with id: " + books[0]["bookid"])
             else:
                 logger.warn(u"Not searching for book, no search methods set, check config.")
@@ -1142,7 +1145,8 @@ class WebInterface(object):
                 threading.Thread(target=search_nzb_book).start()
             if lazylibrarian.USE_TOR:
                 threading.Thread(target=search_tor_book).start()
-                threading.Thread(target=search_rss_book).start()
+                if lazylibrarian.USE_RSS:
+                    threading.Thread(target=search_rss_book).start()
             if not lazylibrarian.USE_NZB and not lazylibrarian.USE_TOR:
                 logger.warn(u"No search methods set, check config.")
         else:

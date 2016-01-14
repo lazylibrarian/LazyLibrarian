@@ -127,7 +127,7 @@ def processResultList(resultlist, book, searchtype):
         tor_Title_match = fuzz.token_set_ratio(book['searchterm'], tor_Title)
         logger.debug("Torrent Title Match %: " + str(tor_Title_match) + " for " + tor_Title)
 
-        if (tor_Title_match > match_ratio):
+        if (tor_Title_match >= match_ratio):
             logger.debug(u'Found Torrent: %s using %s search' % (tor['tor_title'], searchtype))
             bookid = book['bookid']
             tor_Title = (book["authorName"] + ' - ' + book['bookName'] +
