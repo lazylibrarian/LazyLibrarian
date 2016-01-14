@@ -493,7 +493,7 @@ def initialize():
 
         USE_NZB = check_setting_bool(CFG, 'DLMethod', 'use_nzb', 0)
         USE_TOR = check_setting_bool(CFG, 'DLMethod', 'use_tor', 0)
-#        USE_RSS = check_setting_bool(CFG, 'DLMethod', 'use_rss', 0)
+        USE_RSS = check_setting_bool(CFG, 'DLMethod', 'use_rss', 0)
 
         NZB_DOWNLOADER_SABNZBD = check_setting_bool(CFG, 'USENET', 'nzb_downloader_sabnzbd', 0)
         NZB_DOWNLOADER_NZBGET = check_setting_bool(CFG, 'USENET', 'nzb_downloader_nzbget', 0)
@@ -869,7 +869,8 @@ def config_write():
     check_section('DLMethod')
     CFG.set('DLMethod', 'use_tor', USE_TOR)
     CFG.set('DLMethod', 'use_nzb', USE_NZB)
-#    CFG.set('DLMethod', 'use_rss', USE_RSS)
+    USE_RSS = False  # PAB leave disabled until completed
+    CFG.set('DLMethod', 'use_rss', USE_RSS)
 #
     check_section('API')
     CFG.set('API', 'book_api', BOOK_API)
