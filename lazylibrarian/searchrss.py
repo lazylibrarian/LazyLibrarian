@@ -8,7 +8,7 @@ import lazylibrarian
 from lazylibrarian import logger, database, formatter, notifiers, providers
 
 from lib.fuzzywuzzy import fuzz
-
+from hashlib import sha1
 import lazylibrarian.common as common
 from lazylibrarian.searchtorrents import TORDownloadMethod
 from lazylibrarian.searchnzb import NZBDownloadMethod
@@ -115,6 +115,7 @@ def processResultList(resultlist, author, title, book):
                              ' LL.(' + book['bookid'] + ')').strip()
                 tor_url = tor['tor_url']
                 tor_prov = tor['tor_prov']
+                tor_feed = tor['tor_feed']
 
                 tor_size_temp = tor['tor_size']  # Need to cater for when this is NONE (Issue 35)
                 if tor_size_temp is None:
@@ -132,7 +133,24 @@ def processResultList(resultlist, author, title, book):
                 myDB.upsert("wanted", newValueDict, controlValueDict)
                 snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
                                             bookid).fetchone()
-                if not snatchedbooks:
+                if not snatchedbooks:  # check if one of the other downloaders got there first
+                    #  http://baconbits.org/torrents.php?action=download&authkey=<authkey>&torrent_pass=<password.hashed>&id=185398
+                    if not tor_url.startswith('magnet'):  # magnets don't seem to use auth
+                        if tor_feed == 0:
+                            pwd  = lazylibrarian.RSS_PASS0
+                            auth = lazylibrarian.RSS_AUTH0
+                        elif tor_feed == 1:
+                            pwd  = lazylibrarian.RSS_PASS1
+                            auth = lazylibrarian.RSS_AUTH1
+                        elif tor_feed == 2:
+                            pwd  = lazylibrarian.RSS_PASS2
+                            auth = lazylibrarian.RSS_AUTH2
+                        elif tor_feed == 3:
+                            pwd  = lazylibrarian.RSS_PASS3
+                            auth = lazylibrarian.RSS_AUTH3
+                        # don't know what form of password hash is required, try sha1    
+                        tor_url = tor_url.replace('<authkey>', auth).replace('<password.hashed>', sha1(pwd))
+                            
                     snatch = TORDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
                     if snatch:
                         notifiers.notify_snatch(formatter.latinToAscii(tor_Title) + ' at ' + formatter.now())
