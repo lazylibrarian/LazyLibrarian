@@ -92,14 +92,12 @@ def processDir(force=False, reset=False):
                 # there might be a better way...
                 if isinstance(fname, str):
                     fname = fname.decode('utf-8')  # make unicode
-                print fuzz.ratio(fname, book['NZBtitle'])
-                print fuzz.token_set_ratio(fname, book['NZBtitle'])
-                if fuzz.ratio(fname, book['NZBtitle']) > 99:
+                if fuzz.token_set_ratio(fname, book['NZBtitle']) >= 98:
                     pp_path = os.path.join(processpath, fname)
                     logger.debug('Found book/mag folder %s' % pp_path)
                     found = True
                     break
-            if found:
+            if found and not pp_path.endswith('.fail'):  # has this failed before?
                 data = myDB.select('SELECT * from books WHERE BookID="%s"' % book['BookID'])
                 if data:
                     authorname = data[0]['AuthorName']
@@ -197,11 +195,17 @@ def processDir(force=False, reset=False):
                 notifiers.notify_download(formatter.latinToAscii(global_name) + ' at ' + formatter.now())
             else:
                 logger.error('Postprocessing for %s has failed.' % global_name)
-                logger.error('Warning - Residual files remain in %s' % pp_path)
+                logger.error('Warning - Residual files remain in %s.fail' % pp_path)
+                # at this point, as it failed we should move it or it will get postprocessed 
+                # again (and fail again)
+                try:
+                    os.rename(pp_path, pp_path + '.fail')
+                except:
+                    logger.debug("Unable to rename %s" % pp_path)
 
         downloads = os.listdir(processpath)  # check in case we processed/deleted some above
         for directory in downloads:
-            if "LL.(" in directory:
+            if "LL.(" in directory and not directory.endswith('.fail'):
                 bookID = str(directory).split("LL.(")[1].split(")")[0]
                 logger.debug("Book with id: " + str(bookID) + " is in downloads")
                 pp_path = os.path.join(processpath, directory)
@@ -213,6 +217,7 @@ def processDir(force=False, reset=False):
                     logger.debug('Found LL folder %s.' % pp_path)
                 if import_book(pp_path, bookID):
                     ppcount = ppcount + 1
+
         if ppcount:
             logger.info('%s books/mags have been processed.' % ppcount)
         else:
@@ -265,7 +270,11 @@ def import_book(pp_path=None, bookID=None):
             return True
         else:
             logger.error('Postprocessing for %s has failed.' % global_name)
-            logger.error('Warning - Residual files remain in %s' % pp_path)
+            logger.error('Warning - Residual files remain in %s.fail' % pp_path)
+            try:
+                os.rename(pp_path, pp_path + '.fail')
+            except:
+                logger.debug("Unable to rename %s" % pp_path)
             return False
 
 
@@ -374,13 +383,13 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         else:
             logger.debug('Ignoring unwanted file: %s' % fname)
     
-        # copied the files we want, now delete source files if not in download root dir
-        if not lazylibrarian.DESTINATION_COPY and pp_path != lazylibrarian.DOWNLOAD_DIR:
-            try:
-                shutil.rmtree(pp_path)
-            except Exception as why:
-                    logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
-                    return False
+    # copied the files we want, now delete source files if not in download root dir
+    if not lazylibrarian.DESTINATION_COPY and pp_path != lazylibrarian.DOWNLOAD_DIR:
+        try:
+            shutil.rmtree(pp_path)
+        except Exception as why:
+                logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
+                return False
     return True
 
 def processAutoAdd(src_path=None):
