@@ -44,38 +44,35 @@ def schedule_job(action='Start', target=None):
         for job in lazylibrarian.SCHED.get_jobs():
             if target in str(job):
                 lazylibrarian.SCHED.unschedule_job(job)
-                if action == 'Restart':
-                    logger.debug("Restart %s, stopping job" % (target))
-                else:
-                    logger.debug("%s, stopping job" % (target))
+                logger.debug("Stop %s job" % (target))
                     
     if action == 'Start' or action == 'Restart':
         for job in lazylibrarian.SCHED.get_jobs():
             if target in str(job):
-                logger.debug("%s  %s job, already scheduled" % (action, target))
+                logger.debug("%s %s job, already scheduled" % (action, target))
                 return  # return if already running, if not, start a new one
         if 'processDir' in target:
             lazylibrarian.SCHED.add_interval_job(lazylibrarian.postprocess.processDir, minutes=int(lazylibrarian.SCAN_INTERVAL))
-            logger.debug("%s  %s job" % (action, target))
+            logger.debug("%s %s job" % (action, target))
         elif 'search_magazines' in target:
             if lazylibrarian.USE_TOR or lazylibrarian.USE_NZB:
                 lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchmag.search_magazines, minutes=int(lazylibrarian.SEARCH_INTERVAL))
-                logger.debug("%s  %s job" % (action, target))
+                logger.debug("%s %s job" % (action, target))
         elif 'search_nzb_book' in target:
             if lazylibrarian.USE_NZB:
                 lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchnzb.search_nzb_book, minutes=int(lazylibrarian.SEARCH_INTERVAL))
-                logger.debug("%s  %s job" % (action, target))
+                logger.debug("%s %s job" % (action, target))
         elif 'search_tor_book' in target:
             if lazylibrarian.USE_TOR:
                 lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchtorrents.search_tor_book, minutes=int(lazylibrarian.SEARCH_INTERVAL))
-                logger.debug("%s  %s job" % (action, target))
-        elif 'search_rss' in target:
+                logger.debug("%s %s job" % (action, target))
+        elif 'search_rss_book' in target:
             if lazylibrarian.USE_TOR and lazylibrarian.USE_RSS:
                 lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchrss.search_rss_book, minutes=int(lazylibrarian.SEARCHRSS_INTERVAL))
-                logger.debug("%s  %s job" % (action, target))
+                logger.debug("%s %s job" % (action, target))
         elif 'checkForUpdates' in target:
             lazylibrarian.SCHED.add_interval_job(lazylibrarian.versioncheck.checkForUpdates, hours=int(lazylibrarian.VERSIONCHECK_INTERVAL))
-            logger.debug("%s  %s job" % (action, target))
+            logger.debug("%s %s job" % (action, target))
 
 def remove_accents(str_or_unicode):
     try:
