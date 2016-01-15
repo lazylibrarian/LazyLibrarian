@@ -52,6 +52,7 @@ def schedule_job(action='Start', target=None):
     if action == 'Start' or action == 'Restart':
         for job in lazylibrarian.SCHED.get_jobs():
             if target in str(job):
+                logger.debug("%s  %s job, already scheduled" % (action, target))
                 return  # return if already running, if not, start a new one
         if 'processDir' in target:
             lazylibrarian.SCHED.add_interval_job(lazylibrarian.postprocess.processDir, minutes=int(lazylibrarian.SCAN_INTERVAL))

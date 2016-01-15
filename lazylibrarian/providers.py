@@ -192,26 +192,26 @@ def IterateOverRSSSites(book=None, searchType=None):
     if (lazylibrarian.RSS0):
         providers += 1
         logger.debug('[IterateOverRSSSites] - RSS0')
-        resultslist += RSS(lazylibrarian.RSS_HOST0)
+        resultslist += RSS(lazylibrarian.RSS_HOST0, 0)
     if (lazylibrarian.RSS1):
         providers += 1
         logger.debug('[IterateOverRSSSites] - RSS1')
-        resultslist += RSS(lazylibrarian.RSS_HOST1)
+        resultslist += RSS(lazylibrarian.RSS_HOST1, 1)
     if (lazylibrarian.RSS2):
         providers += 1
         logger.debug('[IterateOverRSSSites] - RSS2')
-        resultslist += RSS(lazylibrarian.RSS_HOST2)
+        resultslist += RSS(lazylibrarian.RSS_HOST2, 2)
     if (lazylibrarian.RSS3):
         providers += 1
         logger.debug('[IterateOverRSSSites] - RSS3')
-        resultslist += RSS(lazylibrarian.RSS_HOST3)
+        resultslist += RSS(lazylibrarian.RSS_HOST3, 3)
 
     return resultslist, providers
 
 #
 # Generic RSS query function, just return all the results from all the RSS feeds in a list
 #
-def RSS(host=None):
+def RSS(host=None, feednr=None):
 
     results = []
 
@@ -269,7 +269,8 @@ def RSS(host=None):
                     'tor_prov': provider,
                     'tor_title': title,
                     'tor_url': url,
-                    'tor_size': str(size)
+                    'tor_size': str(size),
+                    'tor_feed': feednr
                 })
 
     else:
