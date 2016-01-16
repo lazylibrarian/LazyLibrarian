@@ -45,6 +45,11 @@ def search_rss_book(books=None, reset=False):
     else:
         logger.info('RSS Searching for %i books' % len(searchbooks))
 
+    resultlist, nproviders = providers.IterateOverRSSSites()
+    if not nproviders:
+        logger.warn('No rss providers are set, check config')
+        return  # No point in continuing
+
     rss_count = 0
     for book in searchbooks:
         bookid = book['BookID']
@@ -58,10 +63,6 @@ def search_rss_book(books=None, reset=False):
         author = formatter.latinToAscii(formatter.replace_all(author, dic))
         title = formatter.latinToAscii(formatter.replace_all(title, dic))
 
-        resultlist, nproviders = providers.IterateOverRSSSites()
-        if not nproviders:
-            logger.warn('No rss providers are set, check config')
-            return  # No point in continuing
 
         found = processResultList(resultlist, author, title, book)
 
