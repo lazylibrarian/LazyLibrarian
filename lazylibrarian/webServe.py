@@ -79,8 +79,9 @@ class WebInterface(object):
                      newznab_host2=None, newznab_api2=None, newznab3=0, newznab_host3=None, newznab_api3=None,
                      newznab4=0, newznab_host4=None, newznab_api4=None, newzbin=0, newzbin_uid=None,
                      newzbin_pass=None, kat=0, kat_host=None, ebook_type=None, mag_type=None, book_api=None,
-                     rss0=0, rss_host0=None, rss_user0=None, rss_pass0=None, rss1=0, rss_host1=None, 
-                     rss_user1=None, rss_pass1=None, rss2=0, rss_host2=None, rss_user2=None, rss_pass2=None, 
+                     rss0=0, rss_host0=None, rss_user0=None, rss_pass0=None,
+                     rss1=0, rss_host1=None, rss_user1=None, rss_pass1=None,
+                     rss2=0, rss_host2=None, rss_user2=None, rss_pass2=None, 
                      rss3=0, rss_host3=None, rss_user3=None, rss_pass3=None,
                      torznab0=0, torznab_host0=None, torznab_api0=None, torznab1=0, torznab_host1=None,
                      torznab_api1=None, torznab2=0, torznab_host2=None, torznab_api2=None,
@@ -154,65 +155,66 @@ class WebInterface(object):
         lazylibrarian.TOR_DOWNLOADER_TRANSMISSION = bool(tor_downloader_transmission)
         lazylibrarian.TOR_DOWNLOADER_DELUGE = bool(tor_downloader_deluge)
 
-        lazylibrarian.NEWZNAB0 = bool(newznab0)
-        lazylibrarian.NEWZNAB_HOST0 = newznab_host0
-        lazylibrarian.NEWZNAB_API0 = newznab_api0
 
-        lazylibrarian.NEWZNAB1 = bool(newznab1)
-        lazylibrarian.NEWZNAB_HOST1 = newznab_host1
-        lazylibrarian.NEWZNAB_API1 = newznab_api1
+        lazylibrarian.NEWZNAB_PROV[0]['ENABLED'] = bool(newznab0)
+        lazylibrarian.NEWZNAB_PROV[0]['HOST'] = newznab_host0
+        lazylibrarian.NEWZNAB_PROV[0]['API'] = newznab_api0
+        
+        lazylibrarian.NEWZNAB_PROV[1]['ENABLED'] = bool(newznab1)
+        lazylibrarian.NEWZNAB_PROV[1]['HOST'] = newznab_host1
+        lazylibrarian.NEWZNAB_PROV[1]['API'] = newznab_api1
+        
+        lazylibrarian.NEWZNAB_PROV[2]['ENABLED'] = bool(newznab2)
+        lazylibrarian.NEWZNAB_PROV[2]['HOST'] = newznab_host2
+        lazylibrarian.NEWZNAB_PROV[2]['API'] = newznab_api2
+        
+        lazylibrarian.NEWZNAB_PROV[3]['ENABLED'] = bool(newznab3)
+        lazylibrarian.NEWZNAB_PROV[3]['HOST'] = newznab_host3
+        lazylibrarian.NEWZNAB_PROV[3]['API'] = newznab_api3
+        
+        lazylibrarian.NEWZNAB_PROV[4]['ENABLED'] = bool(newznab4)
+        lazylibrarian.NEWZNAB_PROV[4]['HOST'] = newznab_host4
+        lazylibrarian.NEWZNAB_PROV[4]['API'] = newznab_api4
+        
+        lazylibrarian.TORZNAB_PROV[0]['ENABLED'] = bool(torznab0)
+        lazylibrarian.TORZNAB_PROV[0]['HOST'] = torznab_host0
+        lazylibrarian.TORZNAB_PROV[0]['API'] = torznab_api0
+        
+        lazylibrarian.TORZNAB_PROV[1]['ENABLED'] = bool(torznab1)
+        lazylibrarian.TORZNAB_PROV[1]['HOST'] = torznab_host1
+        lazylibrarian.TORZNAB_PROV[1]['API'] = torznab_api1
+        
+        lazylibrarian.TORZNAB_PROV[2]['ENABLED'] = bool(torznab2)
+        lazylibrarian.TORZNAB_PROV[2]['HOST'] = torznab_host2
+        lazylibrarian.TORZNAB_PROV[2]['API'] = torznab_api2
+        
+        lazylibrarian.TORZNAB_PROV[3]['ENABLED'] = bool(torznab3)
+        lazylibrarian.TORZNAB_PROV[3]['HOST'] = torznab_host3
+        lazylibrarian.TORZNAB_PROV[3]['API'] = torznab_api3
+        
+        lazylibrarian.TORZNAB_PROV[4]['ENABLED'] = bool(torznab4)
+        lazylibrarian.TORZNAB_PROV[4]['HOST'] = torznab_host4
+        lazylibrarian.TORZNAB_PROV[4]['API'] = torznab_api4
 
-        lazylibrarian.NEWZNAB2 = bool(newznab2)
-        lazylibrarian.NEWZNAB_HOST2 = newznab_host2
-        lazylibrarian.NEWZNAB_API2 = newznab_api2
+        lazylibrarian.RSS_PROV[0]['ENABLED'] = bool(rss0)
+        lazylibrarian.RSS_PROV[0]['HOST'] = rss_host0
+        lazylibrarian.RSS_PROV[0]['USER'] = rss_user0
+        lazylibrarian.RSS_PROV[0]['PASS'] = rss_pass0
 
-        lazylibrarian.NEWZNAB3 = bool(newznab3)
-        lazylibrarian.NEWZNAB_HOST3 = newznab_host3
-        lazylibrarian.NEWZNAB_API3 = newznab_api3
+        lazylibrarian.RSS_PROV[1]['ENABLED'] = bool(rss1)
+        lazylibrarian.RSS_PROV[1]['HOST'] = rss_host1
+        lazylibrarian.RSS_PROV[1]['USER'] = rss_user1
+        lazylibrarian.RSS_PROV[1]['PASS'] = rss_pass1
 
-        lazylibrarian.NEWZNAB4 = bool(newznab4)
-        lazylibrarian.NEWZNAB_HOST4 = newznab_host4
-        lazylibrarian.NEWZNAB_API4 = newznab_api4
+        lazylibrarian.RSS_PROV[2]['ENABLED'] = bool(rss2)
+        lazylibrarian.RSS_PROV[2]['HOST'] = rss_host2
+        lazylibrarian.RSS_PROV[2]['USER'] = rss_user2
+        lazylibrarian.RSS_PROV[2]['PASS'] = rss_pass2
 
-        lazylibrarian.TORZNAB0 = bool(torznab0)
-        lazylibrarian.TORZNAB_HOST0 = torznab_host0
-        lazylibrarian.TORZNAB_API0 = torznab_api0
-
-        lazylibrarian.TORZNAB1 = bool(torznab1)
-        lazylibrarian.TORZNAB_HOST1 = torznab_host1
-        lazylibrarian.TORZNAB_API1 = torznab_api1
-
-        lazylibrarian.TORZNAB2 = bool(torznab2)
-        lazylibrarian.TORZNAB_HOST2 = torznab_host2
-        lazylibrarian.TORZNAB_API2 = torznab_api2
-
-        lazylibrarian.TORZNAB3 = bool(torznab3)
-        lazylibrarian.TORZNAB_HOST3 = torznab_host3
-        lazylibrarian.TORZNAB_API3 = torznab_api3
-
-        lazylibrarian.TORZNAB4 = bool(torznab4)
-        lazylibrarian.TORZNAB_HOST4 = torznab_host4
-        lazylibrarian.TORZNAB_API4 = torznab_api4
-
-        lazylibrarian.RSS0 = bool(rss0)
-        lazylibrarian.RSS_HOST0 = rss_host0
-        lazylibrarian.RSS_USER0 = rss_user0
-        lazylibrarian.RSS_PASS0 = rss_pass0
-
-        lazylibrarian.RSS1 = bool(rss1)
-        lazylibrarian.RSS_HOST1 = rss_host1
-        lazylibrarian.RSS_USER1 = rss_user1
-        lazylibrarian.RSS_PASS1 = rss_pass1
-
-        lazylibrarian.RSS2 = bool(rss2)
-        lazylibrarian.RSS_HOST2 = rss_host2
-        lazylibrarian.RSS_USER2 = rss_user2
-        lazylibrarian.RSS_PASS2 = rss_pass2
-
-        lazylibrarian.RSS3 = bool(rss3)
-        lazylibrarian.RSS_HOST3 = rss_host3
-        lazylibrarian.RSS_USER3 = rss_user3
-        lazylibrarian.RSS_PASS3 = rss_pass3
+        lazylibrarian.RSS_PROV[3]['ENABLED'] = bool(rss3)
+        lazylibrarian.RSS_PROV[3]['HOST'] = rss_host3
+        lazylibrarian.RSS_PROV[3]['USER'] = rss_user3
+        lazylibrarian.RSS_PROV[3]['PASS'] = rss_pass3
 
         lazylibrarian.NEWZBIN = bool(newzbin)
         lazylibrarian.NEWZBIN_UID = newzbin_uid

@@ -105,71 +105,19 @@ def IterateOverNewzNabSites(book=None, searchType=None):
     resultslist = []
     providers = 0
 
-    if (lazylibrarian.NEWZNAB0):
-        providers += 1
-        logger.debug('[IterateOverNewzNabSites] - NewzNab0')
-        resultslist += NewzNabPlus(book, lazylibrarian.NEWZNAB_HOST0,
-                                   lazylibrarian.NEWZNAB_API0,
-                                   searchType, "nzb")
+    for provider in lazylibrarian.NEWZNAB_PROV:
+        if (provider['ENABLED']):
+            providers += 1
+            logger.debug('[IterateOverNewzNabSites] - %s' % provider['NAME'])
+            resultslist += NewzNabPlus(book, provider['HOST'], provider['API'],
+                                       searchType, "nzb")
 
-    if (lazylibrarian.NEWZNAB1):
-        providers += 1
-        logger.debug('[IterateOverNewzNabSites] - NewzNab1')
-        resultslist += NewzNabPlus(book, lazylibrarian.NEWZNAB_HOST1,
-                                   lazylibrarian.NEWZNAB_API1,
-                                   searchType, "nzb")
-
-    if (lazylibrarian.NEWZNAB2):
-        providers += 1
-        logger.debug('[IterateOverNewzNabSites] - NewzNab2')
-        resultslist += NewzNabPlus(book, lazylibrarian.NEWZNAB_HOST2,
-                                   lazylibrarian.NEWZNAB_API2,
-                                   searchType, "nzb")
-
-    if (lazylibrarian.NEWZNAB3):
-        providers += 1
-        logger.debug('[IterateOverNewzNabSites] - NewzNab3')
-        resultslist += NewzNabPlus(book, lazylibrarian.NEWZNAB_HOST3,
-                                   lazylibrarian.NEWZNAB_API3,
-                                   searchType, "nzb")
-
-    if (lazylibrarian.NEWZNAB4):
-        providers += 1
-        logger.debug('[IterateOverNewzNabSites] - NewzNab4')
-        resultslist += NewzNabPlus(book, lazylibrarian.NEWZNAB_HOST4,
-                                   lazylibrarian.NEWZNAB_API4,
-                                   searchType, "nzb")
-
-    if (lazylibrarian.TORZNAB0):
-        providers += 1
-        logger.debug('[IterateOverNewzNabSites] - TorzNab0')
-        resultslist += NewzNabPlus(book, lazylibrarian.TORZNAB_HOST0,
-                                   lazylibrarian.TORZNAB_API0,
-                                   searchType, "torznab")
-    if (lazylibrarian.TORZNAB1):
-        providers += 1
-        logger.debug('[IterateOverNewzNabSites] - TorzNab1')
-        resultslist += NewzNabPlus(book, lazylibrarian.TORZNAB_HOST1,
-                                   lazylibrarian.TORZNAB_API1,
-                                   searchType, "torznab")
-    if (lazylibrarian.TORZNAB2):
-        providers += 1
-        logger.debug('[IterateOverNewzNabSites] - TorzNab2')
-        resultslist += NewzNabPlus(book, lazylibrarian.TORZNAB_HOST2,
-                                   lazylibrarian.TORZNAB_API2,
-                                   searchType, "torznab")
-    if (lazylibrarian.TORZNAB3):
-        providers += 1
-        logger.debug('[IterateOverNewzNabSites] - TorzNab3')
-        resultslist += NewzNabPlus(book, lazylibrarian.TORZNAB_HOST3,
-                                   lazylibrarian.TORZNAB_API3,
-                                   searchType, "torznab")
-    if (lazylibrarian.TORZNAB4):
-        providers += 1
-        logger.debug('[IterateOverNewzNabSites] - TorzNab4')
-        resultslist += NewzNabPlus(book, lazylibrarian.TORZNAB_HOST4,
-                                   lazylibrarian.TORZNAB_API4,
-                                   searchType, "torznab")
+    for provider in lazylibrarian.TORZNAB_PROV:
+        if (provider['ENABLED']):
+            providers += 1
+            logger.debug('[IterateOverTorzNabSites] - %s' % provider['NAME'])
+            resultslist += NewzNabPlus(book, provider['HOST'], provider['API'],
+                                       searchType, "torznab")
 
     return resultslist, providers
 
@@ -189,23 +137,11 @@ def IterateOverRSSSites(book=None, searchType=None):
 
     resultslist = []
     providers = 0
-    if (lazylibrarian.RSS0):
-        providers += 1
-        logger.debug('[IterateOverRSSSites] - RSS0')
-        resultslist += RSS(lazylibrarian.RSS_HOST0, 0)
-    if (lazylibrarian.RSS1):
-        providers += 1
-        logger.debug('[IterateOverRSSSites] - RSS1')
-        resultslist += RSS(lazylibrarian.RSS_HOST1, 1)
-    if (lazylibrarian.RSS2):
-        providers += 1
-        logger.debug('[IterateOverRSSSites] - RSS2')
-        resultslist += RSS(lazylibrarian.RSS_HOST2, 2)
-    if (lazylibrarian.RSS3):
-        providers += 1
-        logger.debug('[IterateOverRSSSites] - RSS3')
-        resultslist += RSS(lazylibrarian.RSS_HOST3, 3)
-
+    for provider in lazylibrarian.RSS_PROV:
+        if (provider['ENABLED']):
+            providers += 1
+            logger.debug('[IterateOverRSSSites] - %s' % provider['NAME'])
+            resultslist += RSS(provider['HOST'], provider['NAME'])
     return resultslist, providers
 
 #

@@ -417,121 +417,121 @@
             <tr>
                 <td>
                     <%
-                    if lazylibrarian.NEWZNAB0 == True:
+                    if lazylibrarian.NEWZNAB_PROV[0]['ENABLED'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
                     <input type="checkbox" name="newznab0" value=1 ${checked} style="margin-bottom:4px;" />
-                    <input type="text" placeholder="Enter Host Here" name="newznab_host0" value="${lazylibrarian.NEWZNAB_HOST0}" size="26" maxlength="100">
-		            <input type="text" placeholder="Enter API Here" name="newznab_api0" value="${lazylibrarian.NEWZNAB_API0}" size="26" maxlength="40">
+                    <input type="text" placeholder="Enter Host Here" name="newznab_host0" value="${lazylibrarian.NEWZNAB_PROV[0]['HOST']}" size="26" maxlength="100">
+		            <input type="text" placeholder="Enter API Here" name="newznab_api0" value="${lazylibrarian.NEWZNAB_PROV[0]['API']}" size="26" maxlength="40">
 		        </td>
         	    <td>
                     <%
-                    if lazylibrarian.TORZNAB0 == True:
+                    if lazylibrarian.TORZNAB_PROV[0]['ENABLED'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
                     <input type="checkbox" name="torznab0" value=1 ${checked} style="margin-bottom:4px;" />
-                    <input type="text" placeholder="Enter Host Here" name="torznab_host0" value="${lazylibrarian.TORZNAB_HOST0}" size="26" maxlength="100">
-		            <input type="text" placeholder="Enter API Here" name="torznab_api0" value="${lazylibrarian.TORZNAB_API0}" size="26" maxlength="40">
+                    <input type="text" placeholder="Enter Host Here" name="torznab_host0" value="${lazylibrarian.TORZNAB_PROV[0]['HOST']}" size="26" maxlength="100">
+		            <input type="text" placeholder="Enter API Here" name="torznab_api0" value="${lazylibrarian.TORZNAB_PROV[0]['API']}" size="26" maxlength="40">
             	</td>
             </tr>
 	        <tr>
 		        <td>
                     <%
-                    if lazylibrarian.NEWZNAB1 == True:
+                    if lazylibrarian.NEWZNAB_PROV[1]['ENABLED'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
                     <input type="checkbox" name="newznab1" value=1 ${checked} style="margin-bottom:4px;" />
-                    <input type="text" placeholder="Enter Host Here" name="newznab_host1" value="${lazylibrarian.NEWZNAB_HOST1}" size="26" maxlength="100">
-		            <input type="text" placeholder="Enter API Here" name="newznab_api1" value="${lazylibrarian.NEWZNAB_API1}" size="26" maxlength="40">
+                    <input type="text" placeholder="Enter Host Here" name="newznab_host1" value="${lazylibrarian.NEWZNAB_PROV[1]['HOST']}" size="26" maxlength="100">
+		            <input type="text" placeholder="Enter API Here" name="newznab_api1" value="${lazylibrarian.NEWZNAB_PROV[1]['API']}" size="26" maxlength="40">
                 </td>
         	    <td>
                     <%
-                    if lazylibrarian.TORZNAB1 == True:
+                    if lazylibrarian.TORZNAB_PROV[1]['ENABLED'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
                     <input type="checkbox" name="torznab1" value=1 ${checked} style="margin-bottom:4px;" />
-                    <input type="text" placeholder="Enter Host Here" name="torznab_host1" value="${lazylibrarian.TORZNAB_HOST1}" size="26" maxlength="100">
-		            <input type="text" placeholder="Enter API Here" name="torznab_api1" value="${lazylibrarian.TORZNAB_API1}" size="26" maxlength="40">
+                    <input type="text" placeholder="Enter Host Here" name="torznab_host1" value="${lazylibrarian.TORZNAB_PROV[1]['HOST']}" size="26" maxlength="100">
+		            <input type="text" placeholder="Enter API Here" name="torznab_api1" value="${lazylibrarian.TORZNAB_PROV[1]['API']}" size="26" maxlength="40">
             	</td>
             </tr>
 	        <tr>
                <td>
                     <%
-                    if lazylibrarian.NEWZNAB2 == True:
+                    if lazylibrarian.NEWZNAB_PROV[2]['ENABLED'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
                     <input type="checkbox" name="newznab2" value=1 ${checked} style="margin-bottom:4px;" />
-                    <input type="text" placeholder="Enter Host Here" name="newznab_host2" value="${lazylibrarian.NEWZNAB_HOST2}" size="26" maxlength="100">
-		            <input type="text" placeholder="Enter API Here" name="newznab_api2" value="${lazylibrarian.NEWZNAB_API2}" size="26" maxlength="40">
+                    <input type="text" placeholder="Enter Host Here" name="newznab_host2" value="${lazylibrarian.NEWZNAB_PROV[2]['HOST']}" size="26" maxlength="100">
+		            <input type="text" placeholder="Enter API Here" name="newznab_api2" value="${lazylibrarian.NEWZNAB_PROV[2]['API']}" size="26" maxlength="40">
                 </td>
         	    <td>
                     <%
-                    if lazylibrarian.TORZNAB2 == True:
+                    if lazylibrarian.TORZNAB_PROV[2]['ENABLED'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
                     <input type="checkbox" name="torznab2" value=1 ${checked} style="margin-bottom:4px;" />
-                    <input type="text" placeholder="Enter Host Here" name="torznab_host2" value="${lazylibrarian.TORZNAB_HOST2}" size="26" maxlength="100">
-		            <input type="text" placeholder="Enter API Here" name="torznab_api2" value="${lazylibrarian.TORZNAB_API2}" size="26" maxlength="40">
+                    <input type="text" placeholder="Enter Host Here" name="torznab_host2" value="${lazylibrarian.TORZNAB_PROV[2]['HOST']}" size="26" maxlength="100">
+		            <input type="text" placeholder="Enter API Here" name="torznab_api2" value="${lazylibrarian.TORZNAB_PROV[2]['API']}" size="26" maxlength="40">
             	</td>
             </tr>
 	        <tr>
                 <td>
                     <%
-                    if lazylibrarian.NEWZNAB3 == True:
+                    if lazylibrarian.NEWZNAB_PROV[3]['ENABLED'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
                     <input type="checkbox" name="newznab3" value=1 ${checked} style="margin-bottom:4px;" />
-                    <input type="text" placeholder="Enter Host Here" name="newznab_host3" value="${lazylibrarian.NEWZNAB_HOST3}" size="26" maxlength="100">
-		            <input type="text" placeholder="Enter API Here" name="newznab_api3" value="${lazylibrarian.NEWZNAB_API3}" size="26" maxlength="40">
+                    <input type="text" placeholder="Enter Host Here" name="newznab_host3" value="${lazylibrarian.NEWZNAB_PROV[3]['HOST']}" size="26" maxlength="100">
+		            <input type="text" placeholder="Enter API Here" name="newznab_api3" value="${lazylibrarian.NEWZNAB_PROV[3]['API']}" size="26" maxlength="40">
                 </td>
         	    <td>
                     <%
-                    if lazylibrarian.TORZNAB3 == True:
+                    if lazylibrarian.TORZNAB_PROV[3]['ENABLED'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
                     <input type="checkbox" name="torznab3" value=1 ${checked} style="margin-bottom:4px;" />
-                    <input type="text" placeholder="Enter Host Here" name="torznab_host3" value="${lazylibrarian.TORZNAB_HOST3}" size="26" maxlength="100">
-		            <input type="text" placeholder="Enter API Here" name="torznab_api3" value="${lazylibrarian.TORZNAB_API3}" size="26" maxlength="40">
+                    <input type="text" placeholder="Enter Host Here" name="torznab_host3" value="${lazylibrarian.TORZNAB_PROV[3]['HOST']}" size="26" maxlength="100">
+		            <input type="text" placeholder="Enter API Here" name="torznab_api3" value="${lazylibrarian.TORZNAB_PROV[3]['API']}" size="26" maxlength="40">
             	</td>
             </tr>
 	        <tr>
                 <td>
                     <%
-                    if lazylibrarian.NEWZNAB4 == True:
+                    if lazylibrarian.NEWZNAB_PROV[4]['ENABLED'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
                     <input type="checkbox" name="newznab4" value=1 ${checked} style="margin-bottom:4px;" />
-                    <input type="text" placeholder="Enter Host Here" name="newznab_host4" value="${lazylibrarian.NEWZNAB_HOST4}" size="26" maxlength="100">
-		            <input type="text" placeholder="Enter API Here" name="newznab_api4" value="${lazylibrarian.NEWZNAB_API4}" size="26" maxlength="40">
+                    <input type="text" placeholder="Enter Host Here" name="newznab_host4" value="${lazylibrarian.NEWZNAB_PROV[4]['HOST']}" size="26" maxlength="100">
+		            <input type="text" placeholder="Enter API Here" name="newznab_api4" value="${lazylibrarian.NEWZNAB_PROV[4]['API']}" size="26" maxlength="40">
                 </td>
         	    <td>
                     <%
-                    if lazylibrarian.TORZNAB4 == True:
+                    if lazylibrarian.TORZNAB_PROV[4]['ENABLED'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
                     <input type="checkbox" name="torznab4" value=1 ${checked} style="margin-bottom:4px;" />
-                    <input type="text" placeholder="Enter Host Here" name="torznab_host4" value="${lazylibrarian.TORZNAB_HOST4}" size="26" maxlength="100">
-		            <input type="text" placeholder="Enter API Here" name="torznab_api4" value="${lazylibrarian.TORZNAB_API4}" size="26" maxlength="40">
+                    <input type="text" placeholder="Enter Host Here" name="torznab_host4" value="${lazylibrarian.TORZNAB_PROV[4]['HOST']}" size="26" maxlength="100">
+		            <input type="text" placeholder="Enter API Here" name="torznab_api4" value="${lazylibrarian.TORZNAB_PROV[4]['API']}" size="26" maxlength="40">
                 </td>
             </tr>
             <tr>
@@ -559,48 +559,48 @@
                    <h3>RSS Providers</h3>
                     <br>
                     <%
-                    if lazylibrarian.RSS0 == True:
+                    if lazylibrarian.RSS_PROV[0]['ENABLED'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
             		<input type="checkbox" name="rss0" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter User Here" name="rss_user0" value="${lazylibrarian.RSS_USER0}" size="26" maxlength="40">
- 	    		    <input type="text" placeholder="Enter Host Here" name="rss_host0" value="${lazylibrarian.RSS_HOST0}" size="26" maxlength="50"><br>
- 	    		    <input type="text" placeholder="Enter Pass Here" name="rss_pass0" value="${lazylibrarian.RSS_PASS0}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter User Here" name="rss_user0" value="${lazylibrarian.RSS_PROV[0]['USER']}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter Host Here" name="rss_host0" value="${lazylibrarian.RSS_PROV[0]['HOST']}" size="26" maxlength="50"><br>
+ 	    		    <input type="text" placeholder="Enter Pass Here" name="rss_pass0" value="${lazylibrarian.RSS_PROV[0]['PASS']}" size="26" maxlength="40">
                     <br>
                     <%
-                    if lazylibrarian.RSS1 == True:
+                    if lazylibrarian.RSS_PROV[1]['ENABLED'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
             		<input type="checkbox" name="rss1" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter User Here" name="rss_user1" value="${lazylibrarian.RSS_USER1}" size="26" maxlength="40">
- 	    		    <input type="text" placeholder="Enter Host Here" name="rss_host1" value="${lazylibrarian.RSS_HOST1}" size="26" maxlength="50"><br>
- 	    		    <input type="text" placeholder="Enter Pass Here" name="rss_pass1" value="${lazylibrarian.RSS_PASS1}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter User Here" name="rss_user1" value="${lazylibrarian.RSS_PROV[1]['USER']}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter Host Here" name="rss_host1" value="${lazylibrarian.RSS_PROV[1]['HOST']}" size="26" maxlength="50"><br>
+ 	    		    <input type="text" placeholder="Enter Pass Here" name="rss_pass1" value="${lazylibrarian.RSS_PROV[1]['PASS']}" size="26" maxlength="40">
  	    		    <br>
                     <%
-                    if lazylibrarian.RSS2 == True:
+                    if lazylibrarian.RSS_PROV[2]['ENABLED'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
             		<input type="checkbox" name="rss2" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter User Here" name="rss_user2" value="${lazylibrarian.RSS_USER2}" size="26" maxlength="40">
- 	    		    <input type="text" placeholder="Enter Host Here" name="rss_host2" value="${lazylibrarian.RSS_HOST2}" size="26" maxlength="50"><br>
- 	    		    <input type="text" placeholder="Enter Pass Here" name="rss_pass2" value="${lazylibrarian.RSS_PASS2}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter User Here" name="rss_user2" value="${lazylibrarian.RSS_PROV[2]['USER']}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter Host Here" name="rss_host2" value="${lazylibrarian.RSS_PROV[2]['HOST']}" size="26" maxlength="50"><br>
+ 	    		    <input type="text" placeholder="Enter Pass Here" name="rss_pass2" value="${lazylibrarian.RSS_PROV[2]['PASS']}" size="26" maxlength="40">
                     <br>
                     <%
-                    if lazylibrarian.RSS3 == True:
+                    if lazylibrarian.RSS_PROV[3]['ENABLED'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
             		<input type="checkbox" name="rss3" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter User Here" name="rss_user3" value="${lazylibrarian.RSS_USER3}" size="26" maxlength="40">
- 	    		    <input type="text" placeholder="Enter Host Here" name="rss_host3" value="${lazylibrarian.RSS_HOST3}" size="26" maxlength="50"><br>
- 	    		    <input type="text" placeholder="Enter Pass Here" name="rss_pass3" value="${lazylibrarian.RSS_PASS3}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter User Here" name="rss_user3" value="${lazylibrarian.RSS_PROV[3]['USER']}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter Host Here" name="rss_host3" value="${lazylibrarian.RSS_PROV[3]['HOST']}" size="26" maxlength="50"><br>
+ 	    		    <input type="text" placeholder="Enter Pass Here" name="rss_pass3" value="${lazylibrarian.RSS_PROV[3]['PASS']}" size="26" maxlength="40">
                   </td>
                 <td>
                     <h3>Torrent Providers</h3><br>
