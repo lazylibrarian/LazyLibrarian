@@ -222,8 +222,6 @@ def RSS(host=None, feednr=None):
 
 def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=None):
 
-    # logger.info('[NewzNabPlus] Searching term [%s] for author [%s] and title [%s] on host [%s] for a
-    # [%s] item' % (book['searchterm'], book['authorName'], book['bookName'], host, searchType))
     logger.debug('[NewzNabPlus] searchType [%s] with Host [%s] mode [%s] using api [%s] for item [%s]' % (
                  searchType, host, searchMode, api_key, str(book)))
 

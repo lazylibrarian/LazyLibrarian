@@ -674,13 +674,6 @@ def build_monthtable():
             except:
                 logger.warn("Unable to get a list of alternatives")
             logger.info("Set locale back to entry state %s" % current_locale)
-    # quick sanity check, warn if no english names in table
-    # eng = 0
-    # for lang in MONTHNAMES[0]:
-    #    if lang.startswith('en_'):
-    #        return
-    # logger.warn("No English language loaded - Magazine name matching will probably fail")
-
 
 def daemonize():
     """
