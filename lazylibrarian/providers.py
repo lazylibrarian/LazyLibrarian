@@ -176,7 +176,7 @@ def RSS(host=None, feednr=None):
         # to debug because of api
         logger.debug(u'Parsing results from %s' % (URL))
         provider = data['feed']['link']
-        
+        logger.debug("RSS %s returned %i results" % (provider, len(data.entries)))
         for post in data.entries:
             title = None
             magnet = None
