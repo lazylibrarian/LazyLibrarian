@@ -107,7 +107,7 @@ class WebInterface(object):
                      use_androidpn=0, androidpn_notify_onsnatch=0, androidpn_notify_ondownload=0,
                      androidpn_url=None, androidpn_username=None, androidpn_broadcast=1,
                      use_nma=0, nma_apikey=None, nma_priority=0, nma_onsnatch=0, nma_ondownload=0):
-
+    
         lazylibrarian.HTTP_HOST = http_host
         lazylibrarian.HTTP_ROOT = http_root
         lazylibrarian.HTTP_PORT = formatter.check_int(http_port, 5299)
@@ -452,7 +452,7 @@ class WebInterface(object):
 
     def addBook(self, bookid=None):
         myDB = database.DBConnection()
-
+        AuthorName = ""
         booksearch = myDB.select('SELECT * from books WHERE BookID="%s"' % bookid)
         if booksearch:
             myDB.upsert("books", {'Status': 'Wanted'}, {'BookID': bookid})
