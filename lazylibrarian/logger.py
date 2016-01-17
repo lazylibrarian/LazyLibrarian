@@ -73,16 +73,16 @@ lazylibrarian_log = RotatingLogger('lazylibrarian.log', MAX_SIZE, MAX_FILES)
 
 
 def debug(message):
-    lazylibrarian_log.log(message, level='DEBUG')
+    lazylibrarian_log.log(formatter.latinToAscii(message), level='DEBUG')
 
 
 def info(message):
-    lazylibrarian_log.log(message, level='INFO')
+    lazylibrarian_log.log(formatter.latinToAscii(message), level='INFO')
 
 
 def warn(message):
-    lazylibrarian_log.log(message, level='WARNING')
+    lazylibrarian_log.log(formatter.latinToAscii(message), level='WARNING')
 
 
 def error(message):
-    lazylibrarian_log.log(message, level='ERROR')
+    lazylibrarian_log.log(formatter.latinToAscii(message), level='ERROR')
