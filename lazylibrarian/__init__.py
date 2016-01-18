@@ -464,17 +464,8 @@ def initialize():
                                }) 
             count = count + 1
         # if the last slot is full, add an empty one on the end 
-        if len(CFG.get('Newznab%i' % int(count-1), 'HOST')):
-            newz_name = 'Newznab%i' % count
-            check_section(newz_name)
-            CFG.set(newz_name, 'ENABLED', False)
-            CFG.set(newz_name, 'HOST', '')
-            CFG.set(newz_name, 'API', '')
-            NEWZNAB_PROV.append({"NAME": newz_name,
-                                 "ENABLED": 0,
-                                 "HOST": '',
-                                 "API": ''
-                               })      
+        add_newz_slot()      
+
         count = 0
         while CFG.has_section('Torznab%i' % count):
             torz_name = 'Torznab%i' % count
@@ -496,18 +487,8 @@ def initialize():
                                }) 
             count = count + 1
         # if the last slot is full, add an empty one on the end 
-        if len(CFG.get('Torznab%i' % int(count-1), 'HOST')):
-            torz_name = 'Torznab%i' % count
-            check_section(torz_name)
-            CFG.set(torz_name, 'ENABLED', False)
-            CFG.set(torz_name, 'HOST', '')
-            CFG.set(torz_name, 'API', '')
-            TORZNAB_PROV.append({"NAME": torz_name,
-                                 "ENABLED": 0,
-                                 "HOST": '',
-                                 "API": ''
-                               })      
-
+        add_torz_slot()
+        
         count = 0
         while CFG.has_section('RSS_%i' % count):
             rss_name = 'RSS_%i' % count
@@ -533,20 +514,8 @@ def initialize():
                              }) 
             count = count + 1
         # if the last slot is full, add an empty one on the end 
-        if len(CFG.get('RSS_%i' % int(count-1), 'HOST')):
-            rss_name = 'RSS_%i' % count
-            check_section(rss_name)
-            CFG.set(rss_name, 'ENABLED', False)
-            CFG.set(rss_name, 'HOST', '')
-            CFG.set(rss_name, 'USER', '')
-            CFG.set(rss_name, 'PASS', '')
-            RSS_PROV.append({"NAME": rss_name,
-                                 "ENABLED": 0,
-                                 "HOST": '',
-                                 "USER": '',
-                                 "PASS": ''
-                               })      
-               
+        add_rss_slot()
+                       
         TOR_DOWNLOADER_BLACKHOLE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_blackhole', 0)
         TOR_DOWNLOADER_UTORRENT = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_utorrent', 0)
         TOR_DOWNLOADER_TRANSMISSION = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_transmission', 0)
@@ -660,105 +629,6 @@ def initialize():
         __INITIALIZED__ = True
         return True
 
-
-def build_monthtable():
-    current_locale = locale.setlocale(locale.LC_ALL, '')  # read current state.
-# getdefaultlocale() doesnt seem to work as expected on windows, returns 'None'
-#
-    lang = str(current_locale)
-    if not lang.startswith('en_'):  # en_ is preloaded
-        MONTHNAMES[0].append(lang)
-        for f in range(1, 13):
-            MONTHNAMES[f].append(common.remove_accents(calendar.month_name[f]).lower())
-        MONTHNAMES[0].append(lang)
-        for f in range(1, 13):
-            MONTHNAMES[f].append(common.remove_accents(calendar.month_abbr[f]).lower().strip('.'))
-            logger.info("Added month names for locale [%s], %s, %s ..." % (
-                        lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
-
-    for lang in formatter.getList(IMP_MONTHLANG):
-        try:
-            if len(lang) > 1:
-                locale.setlocale(locale.LC_ALL, lang)
-                MONTHNAMES[0].append(lang)
-                for f in range(1, 13):
-                    MONTHNAMES[f].append(common.remove_accents(calendar.month_name[f]).lower())
-                MONTHNAMES[0].append(lang)
-                for f in range(1, 13):
-                    MONTHNAMES[f].append(common.remove_accents(calendar.month_abbr[f]).lower().strip('.'))
-                locale.setlocale(locale.LC_ALL, current_locale)  # restore entry state
-                logger.info("Added month names for locale [%s], %s, %s ..." % (
-                    lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
-        except:
-            locale.setlocale(locale.LC_ALL, current_locale)  # restore entry state
-            logger.warn("Unable to load requested locale [%s]" % lang)
-            try:
-                if '_' in lang:
-                    wanted_lang = lang.split('_')[0]
-                else:
-                    wanted_lang = lang
-                params = ['locale', '-a']
-                all_locales = subprocess.check_output(params).split()
-                locale_list = []
-                for a_locale in all_locales:
-                    if a_locale.startswith(wanted_lang):
-                        locale_list.append(a_locale)
-                if locale_list:
-                    logger.warn("Found these alternatives: " + str(locale_list))
-                else:
-                    logger.warn("Unable to find an alternative")
-            except:
-                logger.warn("Unable to get a list of alternatives")
-            logger.info("Set locale back to entry state %s" % current_locale)
-
-def daemonize():
-    """
-    Fork off as a daemon
-    """
-
-    # Make a non-session-leader child process
-    try:
-        pid = os.fork()  # @UndefinedVariable - only available in UNIX
-        if pid != 0:
-            sys.exit(0)
-    except OSError as e:
-        raise RuntimeError("1st fork failed: %s [%d]" %
-                           (e.strerror, e.errno))
-
-    os.setsid()  # @UndefinedVariable - only available in UNIX
-
-    # Make sure I can read my own files and shut out others
-    prev = os.umask(0)
-    os.umask(prev and int('077', 8))
-
-    # Make the child a session-leader by detaching from the terminal
-    try:
-        pid = os.fork()  # @UndefinedVariable - only available in UNIX
-        if pid != 0:
-            sys.exit(0)
-    except OSError as e:
-        raise RuntimeError("2st fork failed: %s [%d]" %
-                           (e.strerror, e.errno))
-
-    dev_null = file('/dev/null', 'r')
-    os.dup2(dev_null.fileno(), sys.stdin.fileno())
-
-    if PIDFILE:
-        pid = str(os.getpid())
-        logger.debug(u"Writing PID " + pid + " to " + str(PIDFILE))
-        file(PIDFILE, 'w').write("%s\n" % pid)
-
-
-def launch_browser(host, port, root):
-    if host == '0.0.0.0':
-        host = 'localhost'
-
-    try:
-        webbrowser.open('http://%s:%i%s' % (host, port, root))
-    except Exception as e:
-        logger.error('Could not launch browser: %s' % e)
-
-
 def config_write():
     check_section('General')
     CFG.set('General', 'http_port', HTTP_PORT)
@@ -840,12 +710,14 @@ def config_write():
         CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
         CFG.set(provider['NAME'], 'HOST', provider['HOST'])
         CFG.set(provider['NAME'], 'API', provider['API'])
+    add_newz_slot()
 #
     for provider in TORZNAB_PROV:
         check_section(provider['NAME'])
         CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
         CFG.set(provider['NAME'], 'HOST', provider['HOST'])
         CFG.set(provider['NAME'], 'API', provider['API'])
+    add_torz_slot()
 #
     for provider in RSS_PROV:
         check_section(provider['NAME'])
@@ -853,6 +725,7 @@ def config_write():
         CFG.set(provider['NAME'], 'HOST', provider['HOST'])
         CFG.set(provider['NAME'], 'USER', provider['USER'])
         CFG.set(provider['NAME'], 'PASS', provider['PASS'])
+    add_rss_slot()
 #
     check_section('Newzbin')
     CFG.set('Newzbin', 'newzbin', NEWZBIN)
@@ -954,6 +827,147 @@ def config_write():
 
     with open(CONFIGFILE, 'w') as configfile:
         CFG.write(configfile)
+
+def add_newz_slot():
+    count = len(NEWZNAB_PROV)
+    if len(CFG.get('Newznab%i' % int(count-1), 'HOST')):
+        newz_name = 'Newznab%i' % count
+        check_section(newz_name)
+        CFG.set(newz_name, 'ENABLED', False)
+        CFG.set(newz_name, 'HOST', '')
+        CFG.set(newz_name, 'API', '')
+        NEWZNAB_PROV.append({"NAME": newz_name,
+                             "ENABLED": 0,
+                             "HOST": '',
+                             "API": ''
+                           })
+                                     
+def add_torz_slot():
+    count = len(TORZNAB_PROV)
+    if len(CFG.get('Torznab%i' % int(count-1), 'HOST')):
+        torz_name = 'Torznab%i' % count
+        check_section(torz_name)
+        CFG.set(torz_name, 'ENABLED', False)
+        CFG.set(torz_name, 'HOST', '')
+        CFG.set(torz_name, 'API', '')
+        TORZNAB_PROV.append({"NAME": torz_name,
+                             "ENABLED": 0,
+                             "HOST": '',
+                             "API": ''
+                           })      
+
+def add_rss_slot():
+    count = len(RSS_PROV) 
+    if len(CFG.get('RSS_%i' % int(count-1), 'HOST')):
+        rss_name = 'RSS_%i' % count
+        check_section(rss_name)
+        CFG.set(rss_name, 'ENABLED', False)
+        CFG.set(rss_name, 'HOST', '')
+        CFG.set(rss_name, 'USER', '')
+        CFG.set(rss_name, 'PASS', '')
+        RSS_PROV.append({"NAME": rss_name,
+                             "ENABLED": 0,
+                             "HOST": '',
+                             "USER": '',
+                             "PASS": ''
+                           })      
+
+def build_monthtable():
+    current_locale = locale.setlocale(locale.LC_ALL, '')  # read current state.
+# getdefaultlocale() doesnt seem to work as expected on windows, returns 'None'
+#
+    lang = str(current_locale)
+    if not lang.startswith('en_'):  # en_ is preloaded
+        MONTHNAMES[0].append(lang)
+        for f in range(1, 13):
+            MONTHNAMES[f].append(common.remove_accents(calendar.month_name[f]).lower())
+        MONTHNAMES[0].append(lang)
+        for f in range(1, 13):
+            MONTHNAMES[f].append(common.remove_accents(calendar.month_abbr[f]).lower().strip('.'))
+            logger.info("Added month names for locale [%s], %s, %s ..." % (
+                        lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
+
+    for lang in formatter.getList(IMP_MONTHLANG):
+        try:
+            if len(lang) > 1:
+                locale.setlocale(locale.LC_ALL, lang)
+                MONTHNAMES[0].append(lang)
+                for f in range(1, 13):
+                    MONTHNAMES[f].append(common.remove_accents(calendar.month_name[f]).lower())
+                MONTHNAMES[0].append(lang)
+                for f in range(1, 13):
+                    MONTHNAMES[f].append(common.remove_accents(calendar.month_abbr[f]).lower().strip('.'))
+                locale.setlocale(locale.LC_ALL, current_locale)  # restore entry state
+                logger.info("Added month names for locale [%s], %s, %s ..." % (
+                    lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
+        except:
+            locale.setlocale(locale.LC_ALL, current_locale)  # restore entry state
+            logger.warn("Unable to load requested locale [%s]" % lang)
+            try:
+                if '_' in lang:
+                    wanted_lang = lang.split('_')[0]
+                else:
+                    wanted_lang = lang
+                params = ['locale', '-a']
+                all_locales = subprocess.check_output(params).split()
+                locale_list = []
+                for a_locale in all_locales:
+                    if a_locale.startswith(wanted_lang):
+                        locale_list.append(a_locale)
+                if locale_list:
+                    logger.warn("Found these alternatives: " + str(locale_list))
+                else:
+                    logger.warn("Unable to find an alternative")
+            except:
+                logger.warn("Unable to get a list of alternatives")
+            logger.info("Set locale back to entry state %s" % current_locale)
+
+def daemonize():
+    """
+    Fork off as a daemon
+    """
+
+    # Make a non-session-leader child process
+    try:
+        pid = os.fork()  # @UndefinedVariable - only available in UNIX
+        if pid != 0:
+            sys.exit(0)
+    except OSError as e:
+        raise RuntimeError("1st fork failed: %s [%d]" %
+                           (e.strerror, e.errno))
+
+    os.setsid()  # @UndefinedVariable - only available in UNIX
+
+    # Make sure I can read my own files and shut out others
+    prev = os.umask(0)
+    os.umask(prev and int('077', 8))
+
+    # Make the child a session-leader by detaching from the terminal
+    try:
+        pid = os.fork()  # @UndefinedVariable - only available in UNIX
+        if pid != 0:
+            sys.exit(0)
+    except OSError as e:
+        raise RuntimeError("2st fork failed: %s [%d]" %
+                           (e.strerror, e.errno))
+
+    dev_null = file('/dev/null', 'r')
+    os.dup2(dev_null.fileno(), sys.stdin.fileno())
+
+    if PIDFILE:
+        pid = str(os.getpid())
+        logger.debug(u"Writing PID " + pid + " to " + str(PIDFILE))
+        file(PIDFILE, 'w').write("%s\n" % pid)
+
+
+def launch_browser(host, port, root):
+    if host == '0.0.0.0':
+        host = 'localhost'
+
+    try:
+        webbrowser.open('http://%s:%i%s' % (host, port, root))
+    except Exception as e:
+        logger.error('Could not launch browser: %s' % e)
 
 
 def dbcheck():
