@@ -245,8 +245,7 @@ def check_section(sec):
     if CFG.has_section(sec):
         return True
     else:
-        if create:
-            CFG.add_section(sec)
+        CFG.add_section(sec)
         return False
 
 
@@ -464,7 +463,18 @@ def initialize():
                                  "API": check_setting_str(CFG, newz_name, 'API', '')
                                }) 
             count = count + 1
-
+        # if the last slot is full, add an empty one on the end 
+        if len(CFG.get('Newznab%i' % int(count-1), 'HOST')):
+            newz_name = 'Newznab%i' % count
+            check_section(newz_name)
+            CFG.set(newz_name, 'ENABLED', False)
+            CFG.set(newz_name, 'HOST', '')
+            CFG.set(newz_name, 'API', '')
+            NEWZNAB_PROV.append({"NAME": newz_name,
+                                 "ENABLED": 0,
+                                 "HOST": '',
+                                 "API": ''
+                               })      
         count = 0
         while CFG.has_section('Torznab%i' % count):
             torz_name = 'Torznab%i' % count
@@ -485,6 +495,18 @@ def initialize():
                                  "API": check_setting_str(CFG, torz_name, 'API', '')
                                }) 
             count = count + 1
+        # if the last slot is full, add an empty one on the end 
+        if len(CFG.get('Torznab%i' % int(count-1), 'HOST')):
+            torz_name = 'Torznab%i' % count
+            check_section(torz_name)
+            CFG.set(torz_name, 'ENABLED', False)
+            CFG.set(torz_name, 'HOST', '')
+            CFG.set(torz_name, 'API', '')
+            TORZNAB_PROV.append({"NAME": torz_name,
+                                 "ENABLED": 0,
+                                 "HOST": '',
+                                 "API": ''
+                               })      
 
         count = 0
         while CFG.has_section('RSS_%i' % count):
@@ -510,6 +532,20 @@ def initialize():
                              "PASS": check_setting_str(CFG, rss_name, 'PASS', '')
                              }) 
             count = count + 1
+        # if the last slot is full, add an empty one on the end 
+        if len(CFG.get('RSS_%i' % int(count-1), 'HOST')):
+            rss_name = 'RSS_%i' % count
+            check_section(rss_name)
+            CFG.set(rss_name, 'ENABLED', False)
+            CFG.set(rss_name, 'HOST', '')
+            CFG.set(rss_name, 'USER', '')
+            CFG.set(rss_name, 'PASS', '')
+            RSS_PROV.append({"NAME": rss_name,
+                                 "ENABLED": 0,
+                                 "HOST": '',
+                                 "USER": '',
+                                 "PASS": ''
+                               })      
                
         TOR_DOWNLOADER_BLACKHOLE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_blackhole', 0)
         TOR_DOWNLOADER_UTORRENT = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_utorrent', 0)
