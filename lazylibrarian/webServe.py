@@ -387,12 +387,12 @@ class WebInterface(object):
         myDB = database.DBConnection()
         authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         AuthorName = authorsearch[0]['AuthorName']
-        logger.info(u"Pausing author: %s" % AuthorName)
+        logger.info(u"Pausing author: %s" % formatter.latinToAscii(AuthorName))
 
         controlValueDict = {'AuthorID': AuthorID}
         newValueDict = {'Status': 'Paused'}
         myDB.upsert("authors", newValueDict, controlValueDict)
-        logger.debug(u'AuthorID [%s]-[%s] Paused - redirecting to Author home page' % (AuthorID, AuthorName))
+        logger.debug(u'AuthorID [%s]-[%s] Paused - redirecting to Author home page' % (AuthorID, formatter.latinToAscii(AuthorName)))
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     pauseAuthor.exposed = True
 
@@ -400,12 +400,12 @@ class WebInterface(object):
         myDB = database.DBConnection()
         authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         AuthorName = authorsearch[0]['AuthorName']
-        logger.info(u"Resuming author: %s" % AuthorName)
+        logger.info(u"Resuming author: %s" % formatter.latinToAscii(AuthorName))
 
         controlValueDict = {'AuthorID': AuthorID}
         newValueDict = {'Status': 'Active'}
         myDB.upsert("authors", newValueDict, controlValueDict)
-        logger.debug(u'AuthorID [%s]-[%s] Restarted - redirecting to Author home page' % (AuthorID, AuthorName))
+        logger.debug(u'AuthorID [%s]-[%s] Restarted - redirecting to Author home page' % (AuthorID, formatter.latinToAscii(AuthorName)))
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     resumeAuthor.exposed = True
 
@@ -414,7 +414,7 @@ class WebInterface(object):
         authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         if len(authorsearch):  # to stop error if try to delete an author while they are still loading
             AuthorName = authorsearch[0]['AuthorName']
-            logger.info(u"Removing all references to author: %s" % AuthorName)
+            logger.info(u"Removing all references to author: %s" % formatter.latinToAscii(AuthorName))
 
             myDB.action('DELETE from authors WHERE AuthorID="%s"' % AuthorID)
             myDB.action('DELETE from books WHERE AuthorID="%s"' % AuthorID)
@@ -545,12 +545,13 @@ class WebInterface(object):
         if bookdata:
             bookfile = bookdata[0]["BookFile"]
             if bookfile and os.path.isfile(bookfile):
-                logger.info(u'Opening file ' + bookfile)
+                logger.info(u'Opening file %s' % formatter.latinToAscii(bookfile))
                 return serve_file(bookfile, "application/x-download", "attachment")
             else:
                 authorName = bookdata[0]["AuthorName"]
                 bookName = bookdata[0]["BookName"]
-                logger.info(u'Missing book %s,%s' % (authorName, bookName))
+                logger.info(u'Missing book %s,%s' % (formatter.latinToAscii(authorName),
+                                                     formatter.latinToAscii(bookName)))
     openBook.exposed = True
 
     def markBooks(self, AuthorName=None, action=None, redirect=None, **args):
@@ -568,20 +569,20 @@ class WebInterface(object):
                     title = myDB.select('SELECT * from books WHERE BookID = "%s"' % bookid)
                     for item in title:
                         bookname = item['BookName']
-                        logger.info(u'Status set to "%s" for "%s"' % (action, bookname))
+                        logger.info(u'Status set to "%s" for "%s"' % (action, formatter.latinToAscii(bookname)))
 
                 else:
                     authorsearch = myDB.select('SELECT * from books WHERE BookID = "%s"' % bookid)
                     for item in authorsearch:
                         AuthorName = item['AuthorName']
                         bookname = item['BookName']
-                    authorcheck = myDB.select('SELECT * from authors WHERE AuthorName = "%s"' % AuthorName)
+                    authorcheck = myDB.select('SELECT * from authors WHERE AuthorName = "%s"' % formatter.latinToAscii(AuthorName))
                     if authorcheck:
                         myDB.upsert("books", {"Status": "Skipped"}, {"BookID": bookid})
-                        logger.info(u'Status set to Skipped for "%s"' % bookname)
+                        logger.info(u'Status set to Skipped for "%s"' % formatter.latinToAscii(bookname))
                     else:
                         myDB.action('DELETE from books WHERE BookID = "%s"' % bookid)
-                        logger.info(u'Removed "%s" from database' % bookname)
+                        logger.info(u'Removed "%s" from database' % formatter.latinToAscii(bookname))
 
         if redirect == "author" or authorcheck:
             # update authors needs to be updated every time a book is marked differently
@@ -681,7 +682,7 @@ class WebInterface(object):
                         shutil.copyfile(magimg, hashname)
                         magimg = 'images/cache/' + myhash + '.jpg'
                 else:
-                    logger.debug('No extension found on %s' % magfile)
+                    logger.debug('No extension found on %s' % formatter.latinToAscii(magfile))
                     magimg = 'images/nocover.png'
 
                 this_issue = dict(issue)
@@ -703,7 +704,7 @@ class WebInterface(object):
     def openMag(self, bookid=None, **args):
         # we may want to open an issue with the full filename
         if bookid and os.path.isfile(bookid):
-            logger.info(u'Opening file ' + bookid)
+            logger.info(u'Opening file %s' % formatter.latinToAscii(bookid)))
             return serve_file(bookid, "application/x-download", "attachment")
 
         # or we may just have a title to find magazine in issues table
@@ -714,10 +715,10 @@ class WebInterface(object):
         elif len(mag_data) == 1:  # we only have one issue, get it
             IssueDate = mag_data[0]["IssueDate"]
             IssueFile = mag_data[0]["IssueFile"]
-            logger.info(u'Opening %s - %s' % (bookid, IssueDate))
+            logger.info(u'Opening %s - %s' % (formatter.latinToAscii(bookid), IssueDate))
             return serve_file(IssueFile, "application/x-download", "attachment")
         elif len(mag_data) > 1:  # multiple issues, show a list
-            logger.debug(u"%s has %s issues" % (bookid, len(mag_data)))
+            logger.debug(u"%s has %s issues" % (formatter.latinToAscii(bookid), len(mag_data)))
             raise cherrypy.HTTPRedirect("issuePage?title=%s" % bookid)
     openMag.exposed = True
 
@@ -740,7 +741,7 @@ class WebInterface(object):
                     nzburl = item['NZBurl']
                     if action == 'Delete':
                         myDB.action('DELETE from wanted WHERE NZBurl="%s"' % nzburl)
-                        logger.debug(u'Item %s deleted from past issues' % nzburl)
+                        logger.debug(u'Item %s deleted from past issues' % formatter.latinToAscii(nzburl))
                         maglist.append({'nzburl': nzburl})
                     else:
                         bookid = item['BookID']
@@ -782,7 +783,7 @@ class WebInterface(object):
             if not item == 'book_table_length':
                 if (action == "Delete"):
                     myDB.action('DELETE from issues WHERE IssueFile="%s"' % item)
-                    logger.info(u'Issue %s removed from database' % item)
+                    logger.info(u'Issue %s removed from database' % formatter.latinToAscii(item))
         raise cherrypy.HTTPRedirect("magazines")
     markIssues.exposed = True
 
@@ -797,12 +798,12 @@ class WebInterface(object):
                         "Status": action,
                     }
                     myDB.upsert("magazines", newValueDict, controlValueDict)
-                    logger.info(u'Status of magazine %s changed to %s' % (item, action))
+                    logger.info(u'Status of magazine %s changed to %s' % (formatter.latinToAscii(item), action))
                 elif (action == "Delete"):
                     myDB.action('DELETE from magazines WHERE Title="%s"' % item)
                     myDB.action('DELETE from wanted WHERE BookID="%s"' % item)
                     myDB.action('DELETE from issues WHERE Title="%s"' % item)
-                    logger.info(u'Magazine %s removed from database' % item)
+                    logger.info(u'Magazine %s removed from database' % formatter.latinToAscii(item))
                 elif (action == "Reset"):
                     controlValueDict = {"Title": item}
                     newValueDict = {
@@ -811,7 +812,7 @@ class WebInterface(object):
                         "IssueStatus": "Wanted"
                     }
                     myDB.upsert("magazines", newValueDict, controlValueDict)
-                    logger.info(u'Magazine %s details reset' % item)
+                    logger.info(u'Magazine %s details reset' % formatter.latinToAscii(item))
 
         raise cherrypy.HTTPRedirect("magazines")
     markMagazines.exposed = True
@@ -832,7 +833,7 @@ class WebInterface(object):
         if mags:
             if lazylibrarian.USE_NZB or lazylibrarian.USE_TOR:
                 threading.Thread(target=search_magazines, args=[mags, False]).start()
-                logger.debug(u"Searching for magazine with title: " + mags[0]["bookid"])
+                logger.debug(u"Searching for magazine with title: %s" % formatter.latinToAscii(mags[0]["bookid"]))
             else:
                 logger.warn(u"Not searching for magazine, no download methods set, check config")
         else:
