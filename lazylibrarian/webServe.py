@@ -75,21 +75,6 @@ class WebInterface(object):
                      nzb_blackholedir=None, alternate_dir=None, torrent_dir=None, numberofseeders=0,
                      tor_downloader_blackhole=0, tor_downloader_utorrent=0,
                      nzbget_host=None, nzbget_user=None, nzbget_pass=None, nzbget_cat=None, nzbget_priority=0, 
-                     torznab=[],
-                     newznab0=0, newznab_host0=None, newznab_api0=None,
-                     newznab1=0, newznab_host1=None, newznab_api1=None,
-                     newznab2=0, newznab_host2=None, newznab_api2=None,
-                     newznab3=0, newznab_host3=None, newznab_api3=None,
-                     newznab4=0, newznab_host4=None, newznab_api4=None,
-                     torznab0=0, torznab_host0=None, torznab_api0=None,
-                     torznab1=0, torznab_host1=None, torznab_api1=None,
-                     torznab2=0, torznab_host2=None, torznab_api2=None,
-                     torznab3=0, torznab_host3=None, torznab_api3=None,
-                     torznab4=0, torznab_host4=None, torznab_api4=None,
-                     rss0=0, rss_host0=None, rss_user0=None, rss_pass0=None,
-                     rss1=0, rss_host1=None, rss_user1=None, rss_pass1=None,
-                     rss2=0, rss_host2=None, rss_user2=None, rss_pass2=None, 
-                     rss3=0, rss_host3=None, rss_user3=None, rss_pass3=None,
                      newzbin=0, newzbin_uid=None, newzbin_pass=None, kat=0, kat_host=None,
                      ebook_type=None, mag_type=None, book_api=None, gr_api=None, gb_api=None,
                      versioncheck_interval=None, search_interval=None, scan_interval=None, searchrss_interval=20, 
@@ -107,8 +92,10 @@ class WebInterface(object):
                      pushover_apitoken=None, pushover_ondownload=0, pushover_device=None,
                      use_androidpn=0, androidpn_notify_onsnatch=0, androidpn_notify_ondownload=0,
                      androidpn_url=None, androidpn_username=None, androidpn_broadcast=1,
-                     use_nma=0, nma_apikey=None, nma_priority=0, nma_onsnatch=0, nma_ondownload=0):
-    
+                     use_nma=0, nma_apikey=None, nma_priority=0, nma_onsnatch=0, nma_ondownload=0, **kwargs):
+        #  print len(kwargs)
+        #  for arg in kwargs:
+        #      print arg
         lazylibrarian.HTTP_HOST = http_host
         lazylibrarian.HTTP_ROOT = http_root
         lazylibrarian.HTTP_PORT = formatter.check_int(http_port, 5299)
@@ -160,68 +147,7 @@ class WebInterface(object):
         lazylibrarian.TOR_DOWNLOADER_UTORRENT = bool(tor_downloader_utorrent)
         lazylibrarian.TOR_DOWNLOADER_TRANSMISSION = bool(tor_downloader_transmission)
         lazylibrarian.TOR_DOWNLOADER_DELUGE = bool(tor_downloader_deluge)
-
-
-        lazylibrarian.NEWZNAB_PROV[0]['ENABLED'] = bool(newznab0)
-        lazylibrarian.NEWZNAB_PROV[0]['HOST'] = newznab_host0
-        lazylibrarian.NEWZNAB_PROV[0]['API'] = newznab_api0
         
-        lazylibrarian.NEWZNAB_PROV[1]['ENABLED'] = bool(newznab1)
-        lazylibrarian.NEWZNAB_PROV[1]['HOST'] = newznab_host1
-        lazylibrarian.NEWZNAB_PROV[1]['API'] = newznab_api1
-        
-        lazylibrarian.NEWZNAB_PROV[2]['ENABLED'] = bool(newznab2)
-        lazylibrarian.NEWZNAB_PROV[2]['HOST'] = newznab_host2
-        lazylibrarian.NEWZNAB_PROV[2]['API'] = newznab_api2
-        
-        lazylibrarian.NEWZNAB_PROV[3]['ENABLED'] = bool(newznab3)
-        lazylibrarian.NEWZNAB_PROV[3]['HOST'] = newznab_host3
-        lazylibrarian.NEWZNAB_PROV[3]['API'] = newznab_api3
-        
-        lazylibrarian.NEWZNAB_PROV[4]['ENABLED'] = bool(newznab4)
-        lazylibrarian.NEWZNAB_PROV[4]['HOST'] = newznab_host4
-        lazylibrarian.NEWZNAB_PROV[4]['API'] = newznab_api4
-        
-        lazylibrarian.TORZNAB_PROV[0]['ENABLED'] = bool(torznab0)
-        lazylibrarian.TORZNAB_PROV[0]['HOST'] = torznab_host0
-        lazylibrarian.TORZNAB_PROV[0]['API'] = torznab_api0
-        
-        lazylibrarian.TORZNAB_PROV[1]['ENABLED'] = bool(torznab1)
-        lazylibrarian.TORZNAB_PROV[1]['HOST'] = torznab_host1
-        lazylibrarian.TORZNAB_PROV[1]['API'] = torznab_api1
-        
-        lazylibrarian.TORZNAB_PROV[2]['ENABLED'] = bool(torznab2)
-        lazylibrarian.TORZNAB_PROV[2]['HOST'] = torznab_host2
-        lazylibrarian.TORZNAB_PROV[2]['API'] = torznab_api2
-        
-        lazylibrarian.TORZNAB_PROV[3]['ENABLED'] = bool(torznab3)
-        lazylibrarian.TORZNAB_PROV[3]['HOST'] = torznab_host3
-        lazylibrarian.TORZNAB_PROV[3]['API'] = torznab_api3
-        
-        lazylibrarian.TORZNAB_PROV[4]['ENABLED'] = bool(torznab4)
-        lazylibrarian.TORZNAB_PROV[4]['HOST'] = torznab_host4
-        lazylibrarian.TORZNAB_PROV[4]['API'] = torznab_api4
-
-        lazylibrarian.RSS_PROV[0]['ENABLED'] = bool(rss0)
-        lazylibrarian.RSS_PROV[0]['HOST'] = rss_host0
-        lazylibrarian.RSS_PROV[0]['USER'] = rss_user0
-        lazylibrarian.RSS_PROV[0]['PASS'] = rss_pass0
-
-        lazylibrarian.RSS_PROV[1]['ENABLED'] = bool(rss1)
-        lazylibrarian.RSS_PROV[1]['HOST'] = rss_host1
-        lazylibrarian.RSS_PROV[1]['USER'] = rss_user1
-        lazylibrarian.RSS_PROV[1]['PASS'] = rss_pass1
-
-        lazylibrarian.RSS_PROV[2]['ENABLED'] = bool(rss2)
-        lazylibrarian.RSS_PROV[2]['HOST'] = rss_host2
-        lazylibrarian.RSS_PROV[2]['USER'] = rss_user2
-        lazylibrarian.RSS_PROV[2]['PASS'] = rss_pass2
-
-        lazylibrarian.RSS_PROV[3]['ENABLED'] = bool(rss3)
-        lazylibrarian.RSS_PROV[3]['HOST'] = rss_host3
-        lazylibrarian.RSS_PROV[3]['USER'] = rss_user3
-        lazylibrarian.RSS_PROV[3]['PASS'] = rss_pass3
-
         lazylibrarian.NEWZBIN = bool(newzbin)
         lazylibrarian.NEWZBIN_UID = newzbin_uid
         lazylibrarian.NEWZBIN_PASS = newzbin_pass
@@ -304,6 +230,28 @@ class WebInterface(object):
         lazylibrarian.NMA_PRIORITY = formatter.check_int(nma_priority, 0)
         lazylibrarian.NMA_ONSNATCH = bool(nma_onsnatch)
         lazylibrarian.NMA_ONDOWNLOAD = bool(nma_ondownload)
+
+        count = 0
+        while count < len(lazylibrarian.NEWZNAB_PROV):        
+            lazylibrarian.NEWZNAB_PROV[count]['ENABLED'] = bool(kwargs.get('newznab%i' % count))
+            lazylibrarian.NEWZNAB_PROV[count]['HOST'] = kwargs.get('newznab_host%i' % count)
+            lazylibrarian.NEWZNAB_PROV[count]['API'] = kwargs.get('newznab_api%i' % count)
+            count += 1
+        
+        count = 0
+        while count < len(lazylibrarian.TORZNAB_PROV):        
+            lazylibrarian.TORZNAB_PROV[count]['ENABLED'] = bool(kwargs.get('torznab%i' % count))
+            lazylibrarian.TORZNAB_PROV[count]['HOST'] = kwargs.get('torznab_host%i' % count)
+            lazylibrarian.TORZNAB_PROV[count]['API'] = kwargs.get('torznab_api%i' % count)
+            count += 1
+        
+        count = 0
+        while count < len(lazylibrarian.RSS_PROV):
+            lazylibrarian.RSS_PROV[count]['ENABLED'] = bool(kwargs.get('rss%i' % count))
+            lazylibrarian.RSS_PROV[count]['HOST'] = kwargs.get('rss_host%i' % count)
+            lazylibrarian.RSS_PROV[count]['USER'] = kwargs.get('rss_user%i' % count)
+            lazylibrarian.RSS_PROV[count]['PASS'] = kwargs.get('rss_pass%i' % count)
+            count += 1
 
         lazylibrarian.config_write()
 

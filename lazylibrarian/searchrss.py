@@ -63,7 +63,6 @@ def search_rss_book(books=None, reset=False):
         author = formatter.latinToAscii(formatter.replace_all(author, dic))
         title = formatter.latinToAscii(formatter.replace_all(title, dic))
 
-
         found = processResultList(resultlist, author, title, book)
 
         # if you can't find the book, try author without initials, 

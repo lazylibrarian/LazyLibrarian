@@ -169,7 +169,7 @@ def RSS(host=None, feednr=None):
             data = None
 
     except Exception as e:
-        logger.error("Error 403 opening url %s" % e)
+        logger.error("Error opening url: %s" % e)
         data = None
         
     if data:
