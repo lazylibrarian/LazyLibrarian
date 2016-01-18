@@ -75,6 +75,7 @@ class WebInterface(object):
                      nzb_blackholedir=None, alternate_dir=None, torrent_dir=None, numberofseeders=0,
                      tor_downloader_blackhole=0, tor_downloader_utorrent=0,
                      nzbget_host=None, nzbget_user=None, nzbget_pass=None, nzbget_cat=None, nzbget_priority=0, 
+                     torznab=[],
                      newznab0=0, newznab_host0=None, newznab_api0=None,
                      newznab1=0, newznab_host1=None, newznab_api1=None,
                      newznab2=0, newznab_host2=None, newznab_api2=None,
@@ -704,7 +705,7 @@ class WebInterface(object):
     def openMag(self, bookid=None, **args):
         # we may want to open an issue with the full filename
         if bookid and os.path.isfile(bookid):
-            logger.info(u'Opening file %s' % formatter.latinToAscii(bookid)))
+            logger.info(u'Opening file %s' % formatter.latinToAscii(bookid))
             return serve_file(bookid, "application/x-download", "attachment")
 
         # or we may just have a title to find magazine in issues table
