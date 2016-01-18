@@ -45,6 +45,11 @@ def search_rss_book(books=None, reset=False):
     else:
         logger.info('RSS Searching for %i books' % len(searchbooks))
 
+    resultlist, nproviders = providers.IterateOverRSSSites()
+    if not nproviders:
+        logger.warn('No rss providers are set, check config')
+        return  # No point in continuing
+
     rss_count = 0
     for book in searchbooks:
         bookid = book['BookID']
@@ -57,11 +62,6 @@ def search_rss_book(books=None, reset=False):
 
         author = formatter.latinToAscii(formatter.replace_all(author, dic))
         title = formatter.latinToAscii(formatter.replace_all(title, dic))
-
-        resultlist, nproviders = providers.IterateOverRSSSites()
-        if not nproviders:
-            logger.warn('No rss providers are set, check config')
-            return  # No point in continuing
 
         found = processResultList(resultlist, author, title, book)
 
@@ -136,18 +136,8 @@ def processResultList(resultlist, author, title, book):
                 if not snatchedbooks:  # check if one of the other downloaders got there first
                     #  http://baconbits.org/torrents.php?action=download&authkey=<authkey>&torrent_pass=<password.hashed>&id=185398
                     if not tor_url.startswith('magnet'):  # magnets don't seem to use auth
-                        if tor_feed == 0:
-                            pwd  = lazylibrarian.RSS_PASS0
-                            auth = lazylibrarian.RSS_AUTH0
-                        elif tor_feed == 1:
-                            pwd  = lazylibrarian.RSS_PASS1
-                            auth = lazylibrarian.RSS_AUTH1
-                        elif tor_feed == 2:
-                            pwd  = lazylibrarian.RSS_PASS2
-                            auth = lazylibrarian.RSS_AUTH2
-                        elif tor_feed == 3:
-                            pwd  = lazylibrarian.RSS_PASS3
-                            auth = lazylibrarian.RSS_AUTH3
+                        pwd  = lazylibrarian.RSS_PROV[tor_feed]['PASS']
+                        auth = lazylibrarian.RSS_PROV[tor_feed]['AUTH']
                         # don't know what form of password hash is required, try sha1    
                         tor_url = tor_url.replace('<authkey>', auth).replace('<password.hashed>', sha1(pwd))
                             

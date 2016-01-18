@@ -73,20 +73,12 @@ class WebInterface(object):
                      sab_host=None, sab_port=0, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None,
                      destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=0,
                      nzb_blackholedir=None, alternate_dir=None, torrent_dir=None, numberofseeders=0,
-                     tor_downloader_blackhole=0, tor_downloader_utorrent=0, nzbget_host=None, nzbget_user=None,
-                     nzbget_pass=None, nzbget_cat=None, nzbget_priority=0, newznab0=0, newznab_host0=None,
-                     newznab_api0=None, newznab1=0, newznab_host1=None, newznab_api1=None, newznab2=0,
-                     newznab_host2=None, newznab_api2=None, newznab3=0, newznab_host3=None, newznab_api3=None,
-                     newznab4=0, newznab_host4=None, newznab_api4=None, newzbin=0, newzbin_uid=None,
-                     newzbin_pass=None, kat=0, kat_host=None, ebook_type=None, mag_type=None, book_api=None,
-                     rss0=0, rss_host0=None, rss_user0=None, rss_pass0=None, rss1=0, rss_host1=None, 
-                     rss_user1=None, rss_pass1=None, rss2=0, rss_host2=None, rss_user2=None, rss_pass2=None, 
-                     rss3=0, rss_host3=None, rss_user3=None, rss_pass3=None,
-                     torznab0=0, torznab_host0=None, torznab_api0=None, torznab1=0, torznab_host1=None,
-                     torznab_api1=None, torznab2=0, torznab_host2=None, torznab_api2=None,
-                     torznab3=0, torznab_host3=None, torznab_api3=None, torznab4=0, torznab_host4=None,
-                     torznab_api4=None, gr_api=None, gb_api=None, versioncheck_interval=None, search_interval=None,
-                     scan_interval=None, searchrss_interval=20, ebook_dest_folder=None, ebook_dest_file=None,
+                     tor_downloader_blackhole=0, tor_downloader_utorrent=0,
+                     nzbget_host=None, nzbget_user=None, nzbget_pass=None, nzbget_cat=None, nzbget_priority=0, 
+                     newzbin=0, newzbin_uid=None, newzbin_pass=None, kat=0, kat_host=None,
+                     ebook_type=None, mag_type=None, book_api=None, gr_api=None, gb_api=None,
+                     versioncheck_interval=None, search_interval=None, scan_interval=None, searchrss_interval=20, 
+                     ebook_dest_folder=None, ebook_dest_file=None,
                      mag_relative=0, mag_dest_folder=None, mag_dest_file=None, cache_age=30,
                      use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
                      utorrent_host=None, utorrent_user=None, utorrent_pass=None,
@@ -100,8 +92,10 @@ class WebInterface(object):
                      pushover_apitoken=None, pushover_ondownload=0, pushover_device=None,
                      use_androidpn=0, androidpn_notify_onsnatch=0, androidpn_notify_ondownload=0,
                      androidpn_url=None, androidpn_username=None, androidpn_broadcast=1,
-                     use_nma=0, nma_apikey=None, nma_priority=0, nma_onsnatch=0, nma_ondownload=0):
-
+                     use_nma=0, nma_apikey=None, nma_priority=0, nma_onsnatch=0, nma_ondownload=0, **kwargs):
+        #  print len(kwargs)
+        #  for arg in kwargs:
+        #      print arg
         lazylibrarian.HTTP_HOST = http_host
         lazylibrarian.HTTP_ROOT = http_root
         lazylibrarian.HTTP_PORT = formatter.check_int(http_port, 5299)
@@ -153,67 +147,7 @@ class WebInterface(object):
         lazylibrarian.TOR_DOWNLOADER_UTORRENT = bool(tor_downloader_utorrent)
         lazylibrarian.TOR_DOWNLOADER_TRANSMISSION = bool(tor_downloader_transmission)
         lazylibrarian.TOR_DOWNLOADER_DELUGE = bool(tor_downloader_deluge)
-
-        lazylibrarian.NEWZNAB0 = bool(newznab0)
-        lazylibrarian.NEWZNAB_HOST0 = newznab_host0
-        lazylibrarian.NEWZNAB_API0 = newznab_api0
-
-        lazylibrarian.NEWZNAB1 = bool(newznab1)
-        lazylibrarian.NEWZNAB_HOST1 = newznab_host1
-        lazylibrarian.NEWZNAB_API1 = newznab_api1
-
-        lazylibrarian.NEWZNAB2 = bool(newznab2)
-        lazylibrarian.NEWZNAB_HOST2 = newznab_host2
-        lazylibrarian.NEWZNAB_API2 = newznab_api2
-
-        lazylibrarian.NEWZNAB3 = bool(newznab3)
-        lazylibrarian.NEWZNAB_HOST3 = newznab_host3
-        lazylibrarian.NEWZNAB_API3 = newznab_api3
-
-        lazylibrarian.NEWZNAB4 = bool(newznab4)
-        lazylibrarian.NEWZNAB_HOST4 = newznab_host4
-        lazylibrarian.NEWZNAB_API4 = newznab_api4
-
-        lazylibrarian.TORZNAB0 = bool(torznab0)
-        lazylibrarian.TORZNAB_HOST0 = torznab_host0
-        lazylibrarian.TORZNAB_API0 = torznab_api0
-
-        lazylibrarian.TORZNAB1 = bool(torznab1)
-        lazylibrarian.TORZNAB_HOST1 = torznab_host1
-        lazylibrarian.TORZNAB_API1 = torznab_api1
-
-        lazylibrarian.TORZNAB2 = bool(torznab2)
-        lazylibrarian.TORZNAB_HOST2 = torznab_host2
-        lazylibrarian.TORZNAB_API2 = torznab_api2
-
-        lazylibrarian.TORZNAB3 = bool(torznab3)
-        lazylibrarian.TORZNAB_HOST3 = torznab_host3
-        lazylibrarian.TORZNAB_API3 = torznab_api3
-
-        lazylibrarian.TORZNAB4 = bool(torznab4)
-        lazylibrarian.TORZNAB_HOST4 = torznab_host4
-        lazylibrarian.TORZNAB_API4 = torznab_api4
-
-        lazylibrarian.RSS0 = bool(rss0)
-        lazylibrarian.RSS_HOST0 = rss_host0
-        lazylibrarian.RSS_USER0 = rss_user0
-        lazylibrarian.RSS_PASS0 = rss_pass0
-
-        lazylibrarian.RSS1 = bool(rss1)
-        lazylibrarian.RSS_HOST1 = rss_host1
-        lazylibrarian.RSS_USER1 = rss_user1
-        lazylibrarian.RSS_PASS1 = rss_pass1
-
-        lazylibrarian.RSS2 = bool(rss2)
-        lazylibrarian.RSS_HOST2 = rss_host2
-        lazylibrarian.RSS_USER2 = rss_user2
-        lazylibrarian.RSS_PASS2 = rss_pass2
-
-        lazylibrarian.RSS3 = bool(rss3)
-        lazylibrarian.RSS_HOST3 = rss_host3
-        lazylibrarian.RSS_USER3 = rss_user3
-        lazylibrarian.RSS_PASS3 = rss_pass3
-
+        
         lazylibrarian.NEWZBIN = bool(newzbin)
         lazylibrarian.NEWZBIN_UID = newzbin_uid
         lazylibrarian.NEWZBIN_PASS = newzbin_pass
@@ -296,6 +230,28 @@ class WebInterface(object):
         lazylibrarian.NMA_PRIORITY = formatter.check_int(nma_priority, 0)
         lazylibrarian.NMA_ONSNATCH = bool(nma_onsnatch)
         lazylibrarian.NMA_ONDOWNLOAD = bool(nma_ondownload)
+
+        count = 0
+        while count < len(lazylibrarian.NEWZNAB_PROV):        
+            lazylibrarian.NEWZNAB_PROV[count]['ENABLED'] = bool(kwargs.get('newznab%i' % count))
+            lazylibrarian.NEWZNAB_PROV[count]['HOST'] = kwargs.get('newznab_host%i' % count)
+            lazylibrarian.NEWZNAB_PROV[count]['API'] = kwargs.get('newznab_api%i' % count)
+            count += 1
+        
+        count = 0
+        while count < len(lazylibrarian.TORZNAB_PROV):        
+            lazylibrarian.TORZNAB_PROV[count]['ENABLED'] = bool(kwargs.get('torznab%i' % count))
+            lazylibrarian.TORZNAB_PROV[count]['HOST'] = kwargs.get('torznab_host%i' % count)
+            lazylibrarian.TORZNAB_PROV[count]['API'] = kwargs.get('torznab_api%i' % count)
+            count += 1
+        
+        count = 0
+        while count < len(lazylibrarian.RSS_PROV):
+            lazylibrarian.RSS_PROV[count]['ENABLED'] = bool(kwargs.get('rss%i' % count))
+            lazylibrarian.RSS_PROV[count]['HOST'] = kwargs.get('rss_host%i' % count)
+            lazylibrarian.RSS_PROV[count]['USER'] = kwargs.get('rss_user%i' % count)
+            lazylibrarian.RSS_PROV[count]['PASS'] = kwargs.get('rss_pass%i' % count)
+            count += 1
 
         lazylibrarian.config_write()
 
@@ -380,12 +336,12 @@ class WebInterface(object):
         myDB = database.DBConnection()
         authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         AuthorName = authorsearch[0]['AuthorName']
-        logger.info(u"Pausing author: %s" % AuthorName)
+        logger.info(u"Pausing author: %s" % formatter.latinToAscii(AuthorName))
 
         controlValueDict = {'AuthorID': AuthorID}
         newValueDict = {'Status': 'Paused'}
         myDB.upsert("authors", newValueDict, controlValueDict)
-        logger.debug(u'AuthorID [%s]-[%s] Paused - redirecting to Author home page' % (AuthorID, AuthorName))
+        logger.debug(u'AuthorID [%s]-[%s] Paused - redirecting to Author home page' % (AuthorID, formatter.latinToAscii(AuthorName)))
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     pauseAuthor.exposed = True
 
@@ -393,12 +349,12 @@ class WebInterface(object):
         myDB = database.DBConnection()
         authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         AuthorName = authorsearch[0]['AuthorName']
-        logger.info(u"Resuming author: %s" % AuthorName)
+        logger.info(u"Resuming author: %s" % formatter.latinToAscii(AuthorName))
 
         controlValueDict = {'AuthorID': AuthorID}
         newValueDict = {'Status': 'Active'}
         myDB.upsert("authors", newValueDict, controlValueDict)
-        logger.debug(u'AuthorID [%s]-[%s] Restarted - redirecting to Author home page' % (AuthorID, AuthorName))
+        logger.debug(u'AuthorID [%s]-[%s] Restarted - redirecting to Author home page' % (AuthorID, formatter.latinToAscii(AuthorName)))
         raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
     resumeAuthor.exposed = True
 
@@ -407,7 +363,7 @@ class WebInterface(object):
         authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         if len(authorsearch):  # to stop error if try to delete an author while they are still loading
             AuthorName = authorsearch[0]['AuthorName']
-            logger.info(u"Removing all references to author: %s" % AuthorName)
+            logger.info(u"Removing all references to author: %s" % formatter.latinToAscii(AuthorName))
 
             myDB.action('DELETE from authors WHERE AuthorID="%s"' % AuthorID)
             myDB.action('DELETE from books WHERE AuthorID="%s"' % AuthorID)
@@ -445,7 +401,7 @@ class WebInterface(object):
 
     def addBook(self, bookid=None):
         myDB = database.DBConnection()
-
+        AuthorName = ""
         booksearch = myDB.select('SELECT * from books WHERE BookID="%s"' % bookid)
         if booksearch:
             myDB.upsert("books", {'Status': 'Wanted'}, {'BookID': bookid})
@@ -538,12 +494,13 @@ class WebInterface(object):
         if bookdata:
             bookfile = bookdata[0]["BookFile"]
             if bookfile and os.path.isfile(bookfile):
-                logger.info(u'Opening file ' + bookfile)
+                logger.info(u'Opening file %s' % formatter.latinToAscii(bookfile))
                 return serve_file(bookfile, "application/x-download", "attachment")
             else:
                 authorName = bookdata[0]["AuthorName"]
                 bookName = bookdata[0]["BookName"]
-                logger.info(u'Missing book %s,%s' % (authorName, bookName))
+                logger.info(u'Missing book %s,%s' % (formatter.latinToAscii(authorName),
+                                                     formatter.latinToAscii(bookName)))
     openBook.exposed = True
 
     def markBooks(self, AuthorName=None, action=None, redirect=None, **args):
@@ -561,20 +518,20 @@ class WebInterface(object):
                     title = myDB.select('SELECT * from books WHERE BookID = "%s"' % bookid)
                     for item in title:
                         bookname = item['BookName']
-                        logger.info(u'Status set to "%s" for "%s"' % (action, bookname))
+                        logger.info(u'Status set to "%s" for "%s"' % (action, formatter.latinToAscii(bookname)))
 
                 else:
                     authorsearch = myDB.select('SELECT * from books WHERE BookID = "%s"' % bookid)
                     for item in authorsearch:
                         AuthorName = item['AuthorName']
                         bookname = item['BookName']
-                    authorcheck = myDB.select('SELECT * from authors WHERE AuthorName = "%s"' % AuthorName)
+                    authorcheck = myDB.select('SELECT * from authors WHERE AuthorName = "%s"' % formatter.latinToAscii(AuthorName))
                     if authorcheck:
                         myDB.upsert("books", {"Status": "Skipped"}, {"BookID": bookid})
-                        logger.info(u'Status set to Skipped for "%s"' % bookname)
+                        logger.info(u'Status set to Skipped for "%s"' % formatter.latinToAscii(bookname))
                     else:
                         myDB.action('DELETE from books WHERE BookID = "%s"' % bookid)
-                        logger.info(u'Removed "%s" from database' % bookname)
+                        logger.info(u'Removed "%s" from database' % formatter.latinToAscii(bookname))
 
         if redirect == "author" or authorcheck:
             # update authors needs to be updated every time a book is marked differently
@@ -674,7 +631,7 @@ class WebInterface(object):
                         shutil.copyfile(magimg, hashname)
                         magimg = 'images/cache/' + myhash + '.jpg'
                 else:
-                    logger.debug('No extension found on %s' % magfile)
+                    logger.debug('No extension found on %s' % formatter.latinToAscii(magfile))
                     magimg = 'images/nocover.png'
 
                 this_issue = dict(issue)
@@ -696,7 +653,7 @@ class WebInterface(object):
     def openMag(self, bookid=None, **args):
         # we may want to open an issue with the full filename
         if bookid and os.path.isfile(bookid):
-            logger.info(u'Opening file ' + bookid)
+            logger.info(u'Opening file %s' % formatter.latinToAscii(bookid))
             return serve_file(bookid, "application/x-download", "attachment")
 
         # or we may just have a title to find magazine in issues table
@@ -707,10 +664,10 @@ class WebInterface(object):
         elif len(mag_data) == 1:  # we only have one issue, get it
             IssueDate = mag_data[0]["IssueDate"]
             IssueFile = mag_data[0]["IssueFile"]
-            logger.info(u'Opening %s - %s' % (bookid, IssueDate))
+            logger.info(u'Opening %s - %s' % (formatter.latinToAscii(bookid), IssueDate))
             return serve_file(IssueFile, "application/x-download", "attachment")
         elif len(mag_data) > 1:  # multiple issues, show a list
-            logger.debug(u"%s has %s issues" % (bookid, len(mag_data)))
+            logger.debug(u"%s has %s issues" % (formatter.latinToAscii(bookid), len(mag_data)))
             raise cherrypy.HTTPRedirect("issuePage?title=%s" % bookid)
     openMag.exposed = True
 
@@ -733,7 +690,7 @@ class WebInterface(object):
                     nzburl = item['NZBurl']
                     if action == 'Delete':
                         myDB.action('DELETE from wanted WHERE NZBurl="%s"' % nzburl)
-                        logger.debug(u'Item %s deleted from past issues' % nzburl)
+                        logger.debug(u'Item %s deleted from past issues' % formatter.latinToAscii(nzburl))
                         maglist.append({'nzburl': nzburl})
                     else:
                         bookid = item['BookID']
@@ -775,7 +732,7 @@ class WebInterface(object):
             if not item == 'book_table_length':
                 if (action == "Delete"):
                     myDB.action('DELETE from issues WHERE IssueFile="%s"' % item)
-                    logger.info(u'Issue %s removed from database' % item)
+                    logger.info(u'Issue %s removed from database' % formatter.latinToAscii(item))
         raise cherrypy.HTTPRedirect("magazines")
     markIssues.exposed = True
 
@@ -790,12 +747,12 @@ class WebInterface(object):
                         "Status": action,
                     }
                     myDB.upsert("magazines", newValueDict, controlValueDict)
-                    logger.info(u'Status of magazine %s changed to %s' % (item, action))
+                    logger.info(u'Status of magazine %s changed to %s' % (formatter.latinToAscii(item), action))
                 elif (action == "Delete"):
                     myDB.action('DELETE from magazines WHERE Title="%s"' % item)
                     myDB.action('DELETE from wanted WHERE BookID="%s"' % item)
                     myDB.action('DELETE from issues WHERE Title="%s"' % item)
-                    logger.info(u'Magazine %s removed from database' % item)
+                    logger.info(u'Magazine %s removed from database' % formatter.latinToAscii(item))
                 elif (action == "Reset"):
                     controlValueDict = {"Title": item}
                     newValueDict = {
@@ -804,7 +761,7 @@ class WebInterface(object):
                         "IssueStatus": "Wanted"
                     }
                     myDB.upsert("magazines", newValueDict, controlValueDict)
-                    logger.info(u'Magazine %s details reset' % item)
+                    logger.info(u'Magazine %s details reset' % formatter.latinToAscii(item))
 
         raise cherrypy.HTTPRedirect("magazines")
     markMagazines.exposed = True
@@ -825,7 +782,7 @@ class WebInterface(object):
         if mags:
             if lazylibrarian.USE_NZB or lazylibrarian.USE_TOR:
                 threading.Thread(target=search_magazines, args=[mags, False]).start()
-                logger.debug(u"Searching for magazine with title: " + mags[0]["bookid"])
+                logger.debug(u"Searching for magazine with title: %s" % formatter.latinToAscii(mags[0]["bookid"]))
             else:
                 logger.warn(u"Not searching for magazine, no download methods set, check config")
         else:

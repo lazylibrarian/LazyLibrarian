@@ -115,65 +115,9 @@ NZBMATRIX = 0
 NZBMATRIX_USER = None
 NZBMATRIX_API = None
 
-NEWZNAB0 = 0
-NEWZNAB_HOST0 = None
-NEWZNAB_API0 = None
-
-NEWZNAB1 = 0
-NEWZNAB_HOST1 = None
-NEWZNAB_API1 = None
-
-NEWZNAB2 = 0
-NEWZNAB_HOST2 = None
-NEWZNAB_API2 = None
-
-NEWZNAB3 = 0
-NEWZNAB_HOST3 = None
-NEWZNAB_API3 = None
-
-NEWZNAB4 = 0
-NEWZNAB_HOST4 = None
-NEWZNAB_API4 = None
-
-TORZNAB0 = 0
-TORZNAB_HOST0 = None
-TORZNAB_API0 = None
-
-TORZNAB1 = 0
-TORZNAB_HOST1 = None
-TORZNAB_API1 = None
-
-TORZNAB2 = 0
-TORZNAB_HOST2 = None
-TORZNAB_API2 = None
-
-TORZNAB3 = 0
-TORZNAB_HOST3 = None
-TORZNAB_API3 = None
-
-TORZNAB4 = 0
-TORZNAB_HOST4 = None
-TORZNAB_API4 = None
-
-RSS0 = 0
-RSS_HOST0 = None
-RSS_USER0 = None
-RSS_PASS0 = None
-
-RSS1 = 0
-RSS_HOST1 = None
-RSS_USER1 = None
-RSS_PASS1 = None
-
-RSS2 = 0
-RSS_HOST2 = None
-RSS_USER2 = None
-RSS_PASS2 = None
-
-RSS3 = 0
-RSS_HOST3 = None
-RSS_USER3 = None
-RSS_PASS3 = None
+NEWZNAB_PROV = []
+TORZNAB_PROV = []
+RSS_PROV = []
 
 NEWZBIN = 0
 NEWZBIN_UID = None
@@ -365,14 +309,7 @@ def initialize():
             NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, \
             NZB_DOWNLOADER_NZBGET, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
             NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, EBOOK_TYPE, MAG_TYPE, KAT, KAT_HOST, \
-            NEWZNAB0, NEWZNAB_HOST0, NEWZNAB_API0, NEWZNAB1, NEWZNAB_HOST1, NEWZNAB_API1, \
-            NEWZNAB2, NEWZNAB_HOST2, NEWZNAB_API2, NEWZNAB3, NEWZNAB_HOST3, NEWZNAB_API3, \
-            NEWZNAB4, NEWZNAB_HOST4, NEWZNAB_API4, \
-            TORZNAB0, TORZNAB_HOST0, TORZNAB_API0, TORZNAB1, TORZNAB_HOST1, TORZNAB_API1, \
-            TORZNAB2, TORZNAB_HOST2, TORZNAB_API2, TORZNAB3, TORZNAB_HOST3, TORZNAB_API3, \
-            TORZNAB4, TORZNAB_HOST4, TORZNAB_API4, \
-            RSS0, RSS_HOST0, RSS_USER0, RSS_PASS0, RSS1, RSS_HOST1, RSS_USER1, RSS_PASS1, \
-            RSS2, RSS_HOST2, RSS_USER2, RSS_PASS2, RSS3, RSS_HOST3, RSS_USER3, RSS_PASS3, \
+            NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, \
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, SEARCHRSS_INTERVAL, \
             EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, \
             USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, \
@@ -505,87 +442,111 @@ def initialize():
         NZBMATRIX_USER = check_setting_str(CFG, 'NZBMatrix', 'nzbmatrix_user', '')
         NZBMATRIX_API = check_setting_str(CFG, 'NZBMatrix', 'nzbmatrix_api', '')
 
-# legacy names here - have changed some config names for consistency
-# these entries convert the old name to the new one so we don't break existing configs
-        if CFG.has_section('UsenetCrawler'):
-            NEWZNAB0 = check_setting_bool(CFG, 'UsenetCrawler', 'usenetcrawler', 0)
-            NEWZNAB_HOST0 = check_setting_str(CFG, 'UsenetCrawler', 'usenetcrawler_host', '')
-            NEWZNAB_API0 = check_setting_str(CFG, 'UsenetCrawler', 'usenetcrawler_api', '')
-            CFG.remove_option('UsenetCrawler', 'usenetcrawler')
-            CFG.remove_option('UsenetCrawler', 'usenetcrawler_host')
-            CFG.remove_option('UsenetCrawler', 'usenetcrawler_api')
-            CFG.remove_section('UsenetCrawler')
-            check_section('Newznab0')
-            CFG.set('Newznab0', 'newznab0', NEWZNAB0)
-            CFG.set('Newznab0', 'newznab_host0', NEWZNAB_HOST0)
-            CFG.set('Newznab0', 'newznab_api0', NEWZNAB_API0)
-        if CFG.has_section('Newznab'):
-            NEWZNAB1 = check_setting_bool(CFG, 'Newznab', 'newznab', 0)
-            NEWZNAB_HOST1 = check_setting_str(CFG, 'Newznab', 'newznab_host', '')
-            NEWZNAB_API1 = check_setting_str(CFG, 'Newznab', 'newznab_api', '')
-            CFG.remove_option('Newznab', 'newznab')
-            CFG.remove_option('Newznab', 'newznab_host')
-            CFG.remove_option('Newznab', 'newznab_api')
-            CFG.remove_section('Newznab')
-            check_section('Newznab1')
-            CFG.set('Newznab1', 'newznab1', NEWZNAB1)
-            CFG.set('Newznab1', 'newznab_host1', NEWZNAB_HOST1)
-            CFG.set('Newznab1', 'newznab_api1', NEWZNAB_API1)
-        if not NEWZNAB_HOST0:  # did we pick up anything under the old name
-            NEWZNAB0 = check_setting_bool(CFG, 'Newznab0', 'newznab0', 0)
-            NEWZNAB_HOST0 = check_setting_str(CFG, 'Newznab0', 'newznab_host0', '')
-            NEWZNAB_API0 = check_setting_str(CFG, 'Newznab0', 'newznab_api0', '')
-        if not NEWZNAB_HOST1:
-            NEWZNAB1 = check_setting_bool(CFG, 'Newznab1', 'newznab1', 0)
-            NEWZNAB_HOST1 = check_setting_str(CFG, 'Newznab1', 'newznab_host1', '')
-            NEWZNAB_API1 = check_setting_str(CFG, 'Newznab1', 'newznab_api1', '')
-# end of legacy conversions
-        NEWZNAB2 = check_setting_bool(CFG, 'Newznab2', 'newznab2', 0)
-        NEWZNAB_HOST2 = check_setting_str(CFG, 'Newznab2', 'newznab_host2', '')
-        NEWZNAB_API2 = check_setting_str(CFG, 'Newznab2', 'newznab_api2', '')
-        NEWZNAB3 = check_setting_bool(CFG, 'Newznab3', 'newznab3', 0)
-        NEWZNAB_HOST3 = check_setting_str(CFG, 'Newznab3', 'newznab_host3', '')
-        NEWZNAB_API3 = check_setting_str(CFG, 'Newznab3', 'newznab_api3', '')
-        NEWZNAB4 = check_setting_bool(CFG, 'Newznab4', 'newznab4', 0)
-        NEWZNAB_HOST4 = check_setting_str(CFG, 'Newznab4', 'newznab_host4', '')
-        NEWZNAB_API4 = check_setting_str(CFG, 'Newznab4', 'newznab_api4', '')
 
-        TORZNAB0 = check_setting_bool(CFG, 'Torznab0', 'torznab0', 0)
-        TORZNAB_HOST0 = check_setting_str(CFG, 'Torznab0', 'torznab_host0', '')
-        TORZNAB_API0 = check_setting_str(CFG, 'Torznab0', 'torznab_api0', '')
-        TORZNAB1 = check_setting_bool(CFG, 'Torznab1', 'torznab1', 0)
-        TORZNAB_HOST1 = check_setting_str(CFG, 'Torznab1', 'torznab_host1', '')
-        TORZNAB_API1 = check_setting_str(CFG, 'Torznab1', 'torznab_api1', '')
-        TORZNAB2 = check_setting_bool(CFG, 'Torznab2', 'torznab2', 0)
-        TORZNAB_HOST2 = check_setting_str(CFG, 'Torznab2', 'torznab_host2', '')
-        TORZNAB_API2 = check_setting_str(CFG, 'Torznab2', 'torznab_api2', '')
-        TORZNAB3 = check_setting_bool(CFG, 'Torznab3', 'torznab3', 0)
-        TORZNAB_HOST3 = check_setting_str(CFG, 'Torznab3', 'torznab_host3', '')
-        TORZNAB_API3 = check_setting_str(CFG, 'Torznab3', 'torznab_api3', '')
-        TORZNAB4 = check_setting_bool(CFG, 'Torznab4', 'torznab4', 0)
-        TORZNAB_HOST4 = check_setting_str(CFG, 'Torznab4', 'torznab_host4', '')
-        TORZNAB_API4 = check_setting_str(CFG, 'Torznab4', 'torznab_api4', '')
+        count = 0
+        while CFG.has_section('Newznab%i' % count):
+            newz_name = 'Newznab%i' % count
+            # legacy name conversions
+            if CFG.has_option(newz_name, 'newznab%i' % count):
+                CFG.set(newz_name, 'ENABLED', CFG.getboolean(newz_name, 'newznab%i' % count))
+                CFG.remove_option(newz_name, 'newznab%i' % count)
+            if CFG.has_option(newz_name, 'newznab_host%i' % count):
+                CFG.set(newz_name, 'HOST', CFG.get(newz_name, 'newznab_host%i' % count))
+                CFG.remove_option(newz_name, 'newznab_host%i' % count)
+            if CFG.has_option(newz_name, 'newznab_api%i' % count):
+                CFG.set(newz_name, 'API', CFG.get(newz_name, 'newznab_api%i' % count))
+                CFG.remove_option(newz_name, 'newznab_api%i' % count)
+            
+            NEWZNAB_PROV.append({"NAME": newz_name,
+                                 "ENABLED": check_setting_bool(CFG, newz_name, 'ENABLED', 0),
+                                 "HOST": check_setting_str(CFG, newz_name, 'HOST', ''),
+                                 "API": check_setting_str(CFG, newz_name, 'API', '')
+                               }) 
+            count = count + 1
+        # if the last slot is full, add an empty one on the end 
+        if len(CFG.get('Newznab%i' % int(count-1), 'HOST')):
+            newz_name = 'Newznab%i' % count
+            check_section(newz_name)
+            CFG.set(newz_name, 'ENABLED', False)
+            CFG.set(newz_name, 'HOST', '')
+            CFG.set(newz_name, 'API', '')
+            NEWZNAB_PROV.append({"NAME": newz_name,
+                                 "ENABLED": 0,
+                                 "HOST": '',
+                                 "API": ''
+                               })      
+        count = 0
+        while CFG.has_section('Torznab%i' % count):
+            torz_name = 'Torznab%i' % count
+            # legacy name conversions
+            if CFG.has_option(torz_name, 'torznab%i' % count):
+                CFG.set(torz_name, 'ENABLED', CFG.getboolean(torz_name, 'torznab%i' % count))
+                CFG.remove_option(torz_name, 'torznab%i' % count)
+            if CFG.has_option(torz_name, 'torznab_host%i' % count):
+                CFG.set(torz_name, 'HOST', CFG.get(torz_name, 'torznab_host%i' % count))
+                CFG.remove_option(torz_name, 'torznab_host%i' % count)
+            if CFG.has_option(torz_name, 'torznab_api%i' % count):
+                CFG.set(torz_name, 'API', CFG.get(torz_name, 'torznab_api%i' % count))
+                CFG.remove_option(torz_name, 'torznab_api%i' % count)
+            
+            TORZNAB_PROV.append({"NAME": torz_name,
+                                 "ENABLED": check_setting_bool(CFG, torz_name, 'ENABLED', 0),
+                                 "HOST": check_setting_str(CFG, torz_name, 'HOST', ''),
+                                 "API": check_setting_str(CFG, torz_name, 'API', '')
+                               }) 
+            count = count + 1
+        # if the last slot is full, add an empty one on the end 
+        if len(CFG.get('Torznab%i' % int(count-1), 'HOST')):
+            torz_name = 'Torznab%i' % count
+            check_section(torz_name)
+            CFG.set(torz_name, 'ENABLED', False)
+            CFG.set(torz_name, 'HOST', '')
+            CFG.set(torz_name, 'API', '')
+            TORZNAB_PROV.append({"NAME": torz_name,
+                                 "ENABLED": 0,
+                                 "HOST": '',
+                                 "API": ''
+                               })      
 
-        RSS0 = check_setting_bool(CFG, 'RSS_0', 'rss0', 0)
-        RSS_HOST0 = check_setting_str(CFG, 'RSS_0', 'rss_host0', '')
-        RSS_USER0 = check_setting_str(CFG, 'RSS_0', 'rss_user0', '')
-        RSS_PASS0 = check_setting_str(CFG, 'RSS_0', 'rss_pass0', '')
+        count = 0
+        while CFG.has_section('RSS_%i' % count):
+            rss_name = 'RSS_%i' % count
+            # legacy name conversions
+            if CFG.has_option(rss_name, 'rss%i' % count):
+                CFG.set(rss_name, 'ENABLED', CFG.getboolean(rss_name, 'rss%i' % count))
+                CFG.remove_option(rss_name, 'rss%i' % count)
+            if CFG.has_option(rss_name, 'rss_host%i' % count):
+                CFG.set(rss_name, 'HOST', CFG.get(rss_name, 'rss_host%i' % count))
+                CFG.remove_option(rss_name, 'rss_host%i' % count)
+            if CFG.has_option(rss_name, 'rss_user%i' % count):
+                CFG.set(rss_name, 'USER', CFG.get(rss_name, 'rss_user%i' % count))
+                CFG.remove_option(rss_name, 'rss_user%i' % count)
+            if CFG.has_option(rss_name, 'rss_pass%i' % count):
+                CFG.set(rss_name, 'PASS', CFG.get(rss_name, 'rss_pass%i' % count))
+                CFG.remove_option(rss_name, 'rss_pass%i' % count)
 
-        RSS1 = check_setting_bool(CFG, 'RSS_1', 'rss1', 0)
-        RSS_HOST1 = check_setting_str(CFG, 'RSS_1', 'rss_host1', '')
-        RSS_USER1 = check_setting_str(CFG, 'RSS_1', 'rss_user1', '')
-        RSS_PASS1 = check_setting_str(CFG, 'RSS_1', 'rss_pass1', '')
-
-        RSS2 = check_setting_bool(CFG, 'RSS_2', 'rss2', 0)
-        RSS_HOST2 = check_setting_str(CFG, 'RSS_2', 'rss_host2', '')
-        RSS_USER2 = check_setting_str(CFG, 'RSS_2', 'rss_user2', '')
-        RSS_PASS2 = check_setting_str(CFG, 'RSS_2', 'rss_pass2', '')
-
-        RSS3 = check_setting_bool(CFG, 'RSS_3', 'rss3', 0)
-        RSS_HOST3 = check_setting_str(CFG, 'RSS_3', 'rss_host3', '')
-        RSS_USER3 = check_setting_str(CFG, 'RSS_3', 'rss_user3', '')
-        RSS_PASS3 = check_setting_str(CFG, 'RSS_3', 'rss_pass3', '')
-
+            RSS_PROV.append({"NAME": rss_name,
+                             "ENABLED": check_setting_bool(CFG, rss_name, 'ENABLED', 0),
+                             "HOST": check_setting_str(CFG, rss_name, 'HOST', ''),
+                             "USER": check_setting_str(CFG, rss_name, 'USER', ''),
+                             "PASS": check_setting_str(CFG, rss_name, 'PASS', '')
+                             }) 
+            count = count + 1
+        # if the last slot is full, add an empty one on the end 
+        if len(CFG.get('RSS_%i' % int(count-1), 'HOST')):
+            rss_name = 'RSS_%i' % count
+            check_section(rss_name)
+            CFG.set(rss_name, 'ENABLED', False)
+            CFG.set(rss_name, 'HOST', '')
+            CFG.set(rss_name, 'USER', '')
+            CFG.set(rss_name, 'PASS', '')
+            RSS_PROV.append({"NAME": rss_name,
+                                 "ENABLED": 0,
+                                 "HOST": '',
+                                 "USER": '',
+                                 "PASS": ''
+                               })      
+               
         TOR_DOWNLOADER_BLACKHOLE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_blackhole', 0)
         TOR_DOWNLOADER_UTORRENT = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_utorrent', 0)
         TOR_DOWNLOADER_TRANSMISSION = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_transmission', 0)
@@ -749,13 +710,6 @@ def build_monthtable():
             except:
                 logger.warn("Unable to get a list of alternatives")
             logger.info("Set locale back to entry state %s" % current_locale)
-    # quick sanity check, warn if no english names in table
-    # eng = 0
-    # for lang in MONTHNAMES[0]:
-    #    if lang.startswith('en_'):
-    #        return
-    # logger.warn("No English language loaded - Magazine name matching will probably fail")
-
 
 def daemonize():
     """
@@ -881,84 +835,29 @@ def config_write():
     CFG.set('NZBMatrix', 'nzbmatrix_user', NZBMATRIX_USER)
     CFG.set('NZBMatrix', 'nzbmatrix_api', NZBMATRIX_API)
 #
-    check_section('Newznab0')
-    CFG.set('Newznab0', 'newznab0', NEWZNAB0)
-    CFG.set('Newznab0', 'newznab_host0', NEWZNAB_HOST0)
-    CFG.set('Newznab0', 'newznab_api0', NEWZNAB_API0)
+    for provider in NEWZNAB_PROV:
+        check_section(provider['NAME'])
+        CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
+        CFG.set(provider['NAME'], 'HOST', provider['HOST'])
+        CFG.set(provider['NAME'], 'API', provider['API'])
 #
-    check_section('Newznab1')
-    CFG.set('Newznab1', 'newznab1', NEWZNAB1)
-    CFG.set('Newznab1', 'newznab_host1', NEWZNAB_HOST1)
-    CFG.set('Newznab1', 'newznab_api1', NEWZNAB_API1)
+    for provider in TORZNAB_PROV:
+        check_section(provider['NAME'])
+        CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
+        CFG.set(provider['NAME'], 'HOST', provider['HOST'])
+        CFG.set(provider['NAME'], 'API', provider['API'])
 #
-    check_section('Newznab2')
-    CFG.set('Newznab2', 'newznab2', NEWZNAB2)
-    CFG.set('Newznab2', 'newznab_host2', NEWZNAB_HOST2)
-    CFG.set('Newznab2', 'newznab_api2', NEWZNAB_API2)
-#
-    check_section('Newznab3')
-    CFG.set('Newznab3', 'newznab3', NEWZNAB3)
-    CFG.set('Newznab3', 'newznab_host3', NEWZNAB_HOST3)
-    CFG.set('Newznab3', 'newznab_api3', NEWZNAB_API3)
-#
-    check_section('Newznab4')
-    CFG.set('Newznab4', 'newznab4', NEWZNAB4)
-    CFG.set('Newznab4', 'newznab_host4', NEWZNAB_HOST4)
-    CFG.set('Newznab4', 'newznab_api4', NEWZNAB_API4)
-#
-    check_section('Torznab0')
-    CFG.set('Torznab0', 'torznab0', TORZNAB0)
-    CFG.set('Torznab0', 'torznab_host0', TORZNAB_HOST0)
-    CFG.set('Torznab0', 'torznab_api0', TORZNAB_API0)
-#
-    check_section('Torznab1')
-    CFG.set('Torznab1', 'torznab1', TORZNAB1)
-    CFG.set('Torznab1', 'torznab_host1', TORZNAB_HOST1)
-    CFG.set('Torznab1', 'torznab_api1', TORZNAB_API1)
-#
-    check_section('Torznab2')
-    CFG.set('Torznab2', 'torznab2', TORZNAB2)
-    CFG.set('Torznab2', 'torznab_host2', TORZNAB_HOST2)
-    CFG.set('Torznab2', 'torznab_api2', TORZNAB_API2)
-#
-    check_section('Torznab3')
-    CFG.set('Torznab3', 'torznab3', TORZNAB3)
-    CFG.set('Torznab3', 'torznab_host3', TORZNAB_HOST3)
-    CFG.set('Torznab3', 'torznab_api3', TORZNAB_API3)
-#
-    check_section('Torznab4')
-    CFG.set('Torznab4', 'torznab4', TORZNAB4)
-    CFG.set('Torznab4', 'torznab_host4', TORZNAB_HOST4)
-    CFG.set('Torznab4', 'torznab_api4', TORZNAB_API4)
+    for provider in RSS_PROV:
+        check_section(provider['NAME'])
+        CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
+        CFG.set(provider['NAME'], 'HOST', provider['HOST'])
+        CFG.set(provider['NAME'], 'USER', provider['USER'])
+        CFG.set(provider['NAME'], 'PASS', provider['PASS'])
 #
     check_section('Newzbin')
     CFG.set('Newzbin', 'newzbin', NEWZBIN)
     CFG.set('Newzbin', 'newzbin_uid', NEWZBIN_UID)
     CFG.set('Newzbin', 'newzbin_pass', NEWZBIN_PASS)
-#
-    check_section('RSS_0')
-    CFG.set('RSS_0', 'rss0', RSS0)
-    CFG.set('RSS_0', 'rss_host0', RSS_HOST0)
-    CFG.set('RSS_0', 'rss_user0', RSS_USER0)
-    CFG.set('RSS_0', 'rss_pass0', RSS_PASS0)
-#
-    check_section('RSS_1')
-    CFG.set('RSS_1', 'rss1', RSS1)
-    CFG.set('RSS_1', 'rss_host1', RSS_HOST1)
-    CFG.set('RSS_1', 'rss_user1', RSS_USER1)
-    CFG.set('RSS_1', 'rss_pass1', RSS_PASS1)
-#
-    check_section('RSS_2')
-    CFG.set('RSS_2', 'rss2', RSS2)
-    CFG.set('RSS_2', 'rss_host2', RSS_HOST2)
-    CFG.set('RSS_2', 'rss_user2', RSS_USER2)
-    CFG.set('RSS_2', 'rss_pass2', RSS_PASS2)
-#
-    check_section('RSS_3')
-    CFG.set('RSS_3', 'rss3', RSS3)
-    CFG.set('RSS_3', 'rss_host3', RSS_HOST3)
-    CFG.set('RSS_3', 'rss_user3', RSS_USER3)
-    CFG.set('RSS_3', 'rss_pass3', RSS_PASS3)
 #
     check_section('TORRENT')
     CFG.set('TORRENT', 'tor_downloader_blackhole', TOR_DOWNLOADER_BLACKHOLE)

@@ -12,6 +12,7 @@ from lib.fuzzywuzzy import fuzz
 
 from lazylibrarian.common import USER_AGENT
 
+import lazylibrarian.common as common
 # new to support torrents
 from lazylibrarian.searchtorrents import TORDownloadMethod
 
