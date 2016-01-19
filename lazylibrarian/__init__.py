@@ -830,7 +830,7 @@ def config_write():
 
 def add_newz_slot():
     count = len(NEWZNAB_PROV)
-    if len(CFG.get('Newznab%i' % int(count-1), 'HOST')):
+    if count == 0 or len(CFG.get('Newznab%i' % int(count-1), 'HOST')):
         newz_name = 'Newznab%i' % count
         check_section(newz_name)
         CFG.set(newz_name, 'ENABLED', False)
@@ -844,7 +844,7 @@ def add_newz_slot():
                                      
 def add_torz_slot():
     count = len(TORZNAB_PROV)
-    if len(CFG.get('Torznab%i' % int(count-1), 'HOST')):
+    if count == 0 or len(CFG.get('Torznab%i' % int(count-1), 'HOST')):
         torz_name = 'Torznab%i' % count
         check_section(torz_name)
         CFG.set(torz_name, 'ENABLED', False)
@@ -858,7 +858,7 @@ def add_torz_slot():
 
 def add_rss_slot():
     count = len(RSS_PROV) 
-    if len(CFG.get('RSS_%i' % int(count-1), 'HOST')):
+    if count == 0 or len(CFG.get('RSS_%i' % int(count-1), 'HOST')):
         rss_name = 'RSS_%i' % count
         check_section(rss_name)
         CFG.set(rss_name, 'ENABLED', False)
