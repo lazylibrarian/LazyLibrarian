@@ -293,8 +293,7 @@ class WebInterface(object):
         # need a url safe version of authorname for passing to searchresults.html
         resultlist = []
         for result in searchresults:
-            safeauthorname=urllib.quote_plus(result['authorname'])
-            result['safeauthorname'] = safeauthorname
+            result['safeauthorname'] = urllib.quote_plus(result['authorname'])
             resultlist.append(result)
          
         sortedlist_final = sorted(searchresults, key=itemgetter('highest_fuzz', 'num_reviews'), reverse=True)
@@ -606,6 +605,7 @@ class WebInterface(object):
                     issues = 0
                 this_mag = dict(mag)
                 this_mag['Count'] = issues
+                this_mag['safetitle'] = urllib.quote_plus(mag['Title'])
                 mags.append(this_mag)
 
         return serve_template(templatename="magazines.html", title="Magazines", magazines=mags)

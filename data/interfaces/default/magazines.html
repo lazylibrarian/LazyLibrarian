@@ -78,10 +78,10 @@
                     <td id="issuedate">${result['IssueDate']}</td>
                     <td id="status">${result['Status']}</td>
                     %if result['IssueStatus'] == 'Open':
-                        <td id="issue"><a class="button green" href="openMag?bookid=${result['Title']}" target="_self">${result['IssueStatus']}</a></td>
+                        <td id="issue"><a class="button green" href="openMag?bookid=${result['safetitle']}" target="_self">${result['IssueStatus']}</a></td>
                     %else:
                         %if result['IssueStatus'] == 'Wanted':
-                            <td id="issue"><a class="button red" href="searchForMag?bookid=${result['Title']}" target="_self"><span class="a">${result['IssueStatus']}</span><span class="b">Search</span></a></td>
+                            <td id="issue"><a class="button red" href="searchForMag?bookid=${result['safetitle']}" target="_self"><span class="a">${result['IssueStatus']}</span><span class="b">Search</span></a></td>
                         %else:
                             %if result['IssueStatus'] == 'Snatched':
                                 <td id="issue"><a class="button">${result['IssueStatus']}</a></td>
