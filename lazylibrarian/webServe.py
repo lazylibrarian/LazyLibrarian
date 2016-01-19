@@ -9,7 +9,7 @@ from operator import itemgetter
 import threading
 import Queue
 import hashlib
-
+import urllib
 import lazylibrarian
 
 from lazylibrarian import logger, importer, database, postprocess, formatter, \
@@ -289,7 +289,14 @@ class WebInterface(object):
         booklist = []
         for item in booksearch:
             booklist.append(item['BookID'])
-
+        
+        # need a url safe version of authorname for passing to searchresults.html
+        resultlist = []
+        for result in searchresults:
+            safeauthorname=urllib.quote_plus(result['authorname'])
+            result['safeauthorname'] = safeauthorname
+            resultlist.append(result)
+         
         sortedlist_final = sorted(searchresults, key=itemgetter('highest_fuzz', 'num_reviews'), reverse=True)
         return serve_template(templatename="searchresults.html", title='Search Results for: "' +
                               name + '"', searchresults=sortedlist_final, authorlist=authorlist,
