@@ -33,7 +33,7 @@ def runGit(args):
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                  shell=True, cwd=lazylibrarian.PROG_DIR)
             output, err = p.communicate()
-            logger.debug('(RunGit)Git output: [%s]' % output)
+            logger.debug('(RunGit)Git output: [%s]' % output.strip('\n'))
 
         except OSError:
             logger.debug('(RunGit)Command ' + cmd + ' didn\'t work, couldn\'t find git')
@@ -146,7 +146,7 @@ def getCurrentGitBranch():
     # use git rev-parse --abbrev-ref HEAD which returns the name of the current branch
     current_branch, err = runGit('rev-parse --abbrev-ref HEAD')
     current_branch = str(current_branch)
-    current_branch = current_branch.strip('\n')
+    current_branch = current_branch.strip(' \n\r')
 
     if not current_branch:
         logger.error('failed to return current branch value')
@@ -345,7 +345,7 @@ def update():
         f.close()
 
         # Extract the tar to update folder
-        logger.info('(update) Extracing file' + tar_download_path)
+        logger.info('(update) Extracting file' + tar_download_path)
         tar = tarfile.open(tar_download_path)
         tar.extractall(update_dir)
         tar.close()
