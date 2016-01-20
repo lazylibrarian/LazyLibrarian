@@ -79,7 +79,10 @@ def remove_accents(str_or_unicode):
         nfkd_form = unicodedata.normalize('NFKD', str_or_unicode)
     except TypeError:
         nfkd_form = unicodedata.normalize('NFKD', str_or_unicode.decode(lazylibrarian.SYS_ENCODING, 'replace'))
-    return u''.join([c for c in nfkd_form if not unicodedata.combining(c)])
+    # turn accented chars into non-accented
+    stripped =  u''.join([c for c in nfkd_form if not unicodedata.combining(c)])
+    # now get rid of any other non-ascii
+    return stripped.encode('ASCII', 'ignore').decode(lazylibrarian.SYS_ENCODING)
     # returns unicode
 
 
