@@ -225,7 +225,7 @@ def search_magazines(mags=None, reset=False):
                         newValueDict = {
                             "NZBprov": nzbprov,
                             "BookID": bookid,
-                            "NZBdate": nzbdate,
+                            "NZBdate": formatter.today(),  # when we asked for it
                             "NZBtitle": nzbtitle,
                             "AuxInfo": newdatish,
                             "Status": status,
