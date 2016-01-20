@@ -643,6 +643,7 @@ class WebInterface(object):
 
                 this_issue = dict(issue)
                 this_issue['Cover'] = magimg
+                this_issue['safeissuefile'] = urllib.quote_plus(magfile)
                 mod_issues.append(this_issue)
 
         return serve_template(templatename="issues.html", title=title, issues=mod_issues)
@@ -658,6 +659,7 @@ class WebInterface(object):
     pastIssues.exposed = True
 
     def openMag(self, bookid=None, **args):
+        bookid = urllib.unquote_plus(bookid)
         # we may want to open an issue with the full filename
         if bookid and os.path.isfile(bookid):
             logger.info(u'Opening file %s' % common.remove_accents(bookid))
@@ -675,7 +677,7 @@ class WebInterface(object):
             return serve_file(IssueFile, "application/x-download", "attachment")
         elif len(mag_data) > 1:  # multiple issues, show a list
             logger.debug(u"%s has %s issues" % (common.remove_accents(bookid), len(mag_data)))
-            raise cherrypy.HTTPRedirect("issuePage?title=%s" % bookid)
+            raise cherrypy.HTTPRedirect("issuePage?title=%s" % urllib.quote_plus(bookid))
     openMag.exposed = True
 
     def markPastIssues(self, AuthorName=None, action=None, redirect=None, **args):
@@ -738,6 +740,7 @@ class WebInterface(object):
             # ouch dirty workaround...
             if not item == 'book_table_length':
                 if (action == "Delete"):
+                    item = urllib.unquote_plus(item)
                     myDB.action('DELETE from issues WHERE IssueFile="%s"' % item)
                     logger.info(u'Issue %s removed from database' % common.remove_accents(item))
         raise cherrypy.HTTPRedirect("magazines")
@@ -775,7 +778,7 @@ class WebInterface(object):
 
     def searchForMag(self, bookid=None, action=None, **args):
         myDB = database.DBConnection()
-
+        bookid = urllib.unquote_plus(bookid)
         bookdata = myDB.select('SELECT * from magazines WHERE Title="%s"' % bookid)
         if bookdata:
             # start searchthreads
