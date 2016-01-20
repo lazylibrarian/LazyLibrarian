@@ -128,7 +128,7 @@ def magazineScan(thread=None):
                 if not mag_entry:
                     # need to add a new magazine to the database
                     newValueDict = {
-                        "Frequency": "Monthly",  # no idea really, set a default value
+                        "Frequency": None,  # unused currently
                         "Regex": None,
                         "Status": "Active",
                         "MagazineAdded": None,
