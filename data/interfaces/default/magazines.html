@@ -1,7 +1,4 @@
 <%inherit file="base.html" />
-<%!
-    from lazylibrarian import database
-%>
 
 <%def name="headerIncludes()">
     <div id="subhead_container">
@@ -13,14 +10,6 @@
             <li><a href="pastIssues?whichStatus='Skipped'" id="button"> Past Issues </a></li>
                 <div style="float:right; margin-right:15px; margin-top:2px;">
                 <li><input type="text" placeholder="Magazine Title" name="title"></li>
-                <li><select name="frequency">
-                    <option value="Weekly">Weekly</option>
-                    <option value="BiWeekly">BiWeekly</option>
-                    <option value="Monthly">Monthly</option>
-                    <option value="BiMonthly">BiMonthly</option>
-                    <option value="Quarterly">Quarterly</option>
-                    <option value="Keyword">Keyword</option>
-                </select></li>
                 <li><input type="submit" value="+Magazine"></li> 
                 </div>
         </ul>
@@ -47,7 +36,6 @@
             <tr>
                 <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
                 <th id="magtitle">Title</th>
-                <th id="frequency">Frequency</th>
                 <th id="seriesOrder">Num</th>
                 <th id="lastacquired">Acquired</th>
                 <th id="issuedate">Issue Date</th>
@@ -61,7 +49,6 @@
                 <tr class="gradeZ">
                     <td id="select"><input type="checkbox" name="${result['Title']}" class="checkbox" /></td>
                     <td id="magtitle"><BR>${result['Title']}<BR><BR></td>
-                    <td id="frequency">${result['Frequency']}</td>
                     <!-- <td id="regex"> -->      
                         <!-- <form action="updateRegex" method="get"><input type="hidden" name="title" value="${result['Title']}">-->
                             <!-- <select name="regex">-->
@@ -110,7 +97,6 @@
         $('#book_table').dataTable(
             {
                 "aoColumns": [
-                    null,
                     null,
                     null,
                     null,

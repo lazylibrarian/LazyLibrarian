@@ -154,15 +154,15 @@ def search_magazines(mags=None, reset=False):
                             if not regexA_year.isdigit() or int(regexA_year) < 1900 or int(regexA_year) > 2100:
                                 regexA_year = 'fail'  # force date failure
                             
-                            if frequency == "Weekly" or frequency == "BiWeekly":
-                                regexA_day = nzbtitle_exploded[len(nzbtitle_exploded) - 3].zfill(2)
-                                if regexA_day.isdigit():
-                                    if int(regexA_day) > 31:  # probably issue number nn
-                                        regexA_day = '01'
-                                else:
-                                    regexA_day = '01'  # just MonthName YYYY
+                            #if frequency == "Weekly" or frequency == "BiWeekly":
+                            regexA_day = nzbtitle_exploded[len(nzbtitle_exploded) - 3].zfill(2)
+                            if regexA_day.isdigit():
+                                if int(regexA_day) > 31:  # probably issue number nn
+                                    regexA_day = '01'
                             else:
-                                regexA_day = '01'  # monthly, or less frequent
+                                regexA_day = '01'  # just MonthName YYYY
+                            #else:
+                            #    regexA_day = '01'  # monthly, or less frequent
 
                             try:
                                 newdatish = regexA_year + '-' + regexA_month + '-' + regexA_day
@@ -225,7 +225,7 @@ def search_magazines(mags=None, reset=False):
                         newValueDict = {
                             "NZBprov": nzbprov,
                             "BookID": bookid,
-                            "NZBdate": nzbdate,
+                            "NZBdate": formatter.today(),  # when we asked for it
                             "NZBtitle": nzbtitle,
                             "AuxInfo": newdatish,
                             "Status": status,
