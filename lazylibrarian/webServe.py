@@ -660,13 +660,16 @@ class WebInterface(object):
 
     def openMag(self, bookid=None, **args):
         bookid = urllib.unquote_plus(bookid)
-        # we may want to open an issue with the full filename
-        if bookid and os.path.isfile(bookid):
-            logger.info(u'Opening file %s' % common.remove_accents(bookid))
-            return serve_file(bookid, "application/x-download", "attachment")
+        myDB = database.DBConnection()
+        # we may want to open an issue with a hashed bookid
+        mag_data = myDB.select('SELECT * from issues WHERE IssueID="%s"' % bookid)
+        if len(mag_data):
+            IssueFile = mag_data[0]["IssueFile"]
+            if IssueFile and os.path.isfile(IssueFile):
+                logger.info(u'Opening file %s' % common.remove_accents(IssueFile))
+                return serve_file(IssueFile, "application/x-download", "attachment")
 
         # or we may just have a title to find magazine in issues table
-        myDB = database.DBConnection()
         mag_data = myDB.select('SELECT * from issues WHERE Title="%s"' % bookid)
         if len(mag_data) == 0:  # no issues!
             raise cherrypy.HTTPRedirect("magazines")
@@ -740,9 +743,8 @@ class WebInterface(object):
             # ouch dirty workaround...
             if not item == 'book_table_length':
                 if (action == "Delete"):
-                    item = urllib.unquote_plus(item)
-                    myDB.action('DELETE from issues WHERE IssueFile="%s"' % item)
-                    logger.info(u'Issue %s removed from database' % common.remove_accents(item))
+                    myDB.action('DELETE from issues WHERE IssueID="%s"' % item)
+                    logger.info(u'Issue with id %s removed from database' % item)
         raise cherrypy.HTTPRedirect("magazines")
     markIssues.exposed = True
 
