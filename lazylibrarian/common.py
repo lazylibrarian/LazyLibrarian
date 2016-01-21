@@ -51,26 +51,26 @@ def schedule_job(action='Start', target=None):
             if target in str(job):
                 logger.debug("%s %s job, already scheduled" % (action, target))
                 return  # return if already running, if not, start a new one
-        if 'processDir' in target:
+        if 'processDir' in target and int(lazylibrarian.SCAN_INTERVAL):
             lazylibrarian.SCHED.add_interval_job(lazylibrarian.postprocess.processDir, minutes=int(lazylibrarian.SCAN_INTERVAL))
             logger.debug("%s %s job" % (action, target))
-        elif 'search_magazines' in target:
+        elif 'search_magazines' in target and int(lazylibrarian.SEARCH_INTERVAL):
             if lazylibrarian.USE_TOR or lazylibrarian.USE_NZB:
                 lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchmag.search_magazines, minutes=int(lazylibrarian.SEARCH_INTERVAL))
                 logger.debug("%s %s job" % (action, target))
-        elif 'search_nzb_book' in target:
+        elif 'search_nzb_book' in target and int(lazylibrarian.SEARCH_INTERVAL):
             if lazylibrarian.USE_NZB:
                 lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchnzb.search_nzb_book, minutes=int(lazylibrarian.SEARCH_INTERVAL))
                 logger.debug("%s %s job" % (action, target))
-        elif 'search_tor_book' in target:
+        elif 'search_tor_book' in target and int(lazylibrarian.SEARCH_INTERVAL):
             if lazylibrarian.USE_TOR:
                 lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchtorrents.search_tor_book, minutes=int(lazylibrarian.SEARCH_INTERVAL))
                 logger.debug("%s %s job" % (action, target))
-        elif 'search_rss_book' in target:
+        elif 'search_rss_book' in target and int(lazylibrarian.SEARCHRSS_INTERVAL):
             if lazylibrarian.USE_TOR and lazylibrarian.USE_RSS:
                 lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchrss.search_rss_book, minutes=int(lazylibrarian.SEARCHRSS_INTERVAL))
                 logger.debug("%s %s job" % (action, target))
-        elif 'checkForUpdates' in target:
+        elif 'checkForUpdates' in target and int(lazylibrarian.VERSIONCHECK_INTERVAL):
             lazylibrarian.SCHED.add_interval_job(lazylibrarian.versioncheck.checkForUpdates, hours=int(lazylibrarian.VERSIONCHECK_INTERVAL))
             logger.debug("%s %s job" % (action, target))
 
