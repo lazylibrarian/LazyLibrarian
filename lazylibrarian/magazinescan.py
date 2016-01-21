@@ -4,6 +4,8 @@ import lazylibrarian
 import threading
 import subprocess
 from lazylibrarian import database, logger, formatter, notifiers, common
+from hashlib import sha1
+
 try:
     from wand.image import Image
 except ImportError:
@@ -49,6 +51,10 @@ def create_cover(issuefile=None):
             except:
                 logger.debug("Unable to create cover for %s using %s" % (issuefile, lazylibrarian.MAGICK))
 
+def create_id(issuename=None):
+    hashID = sha1(issuename).hexdigest()
+    logger.debug('Issue %s Hash: %s' % (issuename, hashID))
+    return hashID    
 
 def magazineScan(thread=None):
     # rename this thread
@@ -148,16 +154,21 @@ def magazineScan(thread=None):
 
                 # is this issue already in the database?
                 controlValueDict = {"Title": title, "IssueDate": issuedate}
+                issue_id = create_id("%s %s" % (title, issuedate))
                 iss_entry = myDB.select('SELECT * from issues WHERE Title="%s" and IssueDate="%s"' % (
                     title, issuedate))
                 if not iss_entry:
                     newValueDict = {
                         "IssueAcquired": iss_acquired,
+                        "IssueID": issue_id,
                         "IssueFile": issuefile
                     }
                     logger.debug("Adding issue %s %s" % (title, issuedate))
-                    myDB.upsert("Issues", newValueDict, controlValueDict)
-
+                else:
+                    # don't really need to do this each time
+                    newValueDict = {"IssueID": issue_id}
+                myDB.upsert("Issues", newValueDict, controlValueDict)
+                
                 create_cover(issuefile)
 
                 # see if this issues date values are useful

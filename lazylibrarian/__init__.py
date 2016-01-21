@@ -1063,7 +1063,13 @@ def dbcheck():
         c.execute('SELECT Title from issues')
     except sqlite3.OperationalError:
         logger.info('Updating database to hold Issues')
-        c.execute('CREATE TABLE issues (Title TEXT, IssueAcquired TEXT, IssueDate TEXT, IssueFile TEXT)')
+        c.execute('CREATE TABLE issues (Title TEXT, IssueID TEXT, IssueAcquired TEXT, IssueDate TEXT, IssueFile TEXT)')
+        addedIssues = True
+    try:
+        c.execute('SELECT IssueID from issues')
+    except sqlite3.OperationalError:
+        logger.info('Updating Issues table to hold IssueID')
+        c.execute('ALTER TABLE issues ADD COLUMN IssueID TEXT')
         addedIssues = True
 
     conn.commit()

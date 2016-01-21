@@ -185,7 +185,10 @@ def processDir(force=False, reset=False):
                     # so look for any "book" in that directory
                     dest_file = book_file(dest_path, booktype='mag')
                     controlValueDict = {"Title": book['BookID'], "IssueDate": book['AuxInfo']}
-                    newValueDict = {"IssueAcquired": formatter.today(), "IssueFile": dest_file}
+                    newValueDict = {"IssueAcquired": formatter.today(), 
+                                    "IssueFile": dest_file,
+                                    "IssueID" : magazinescan.create_id("%s %s" % (book['BookID'], book['AuxInfo']))
+                                   }
                     myDB.upsert("issues", newValueDict, controlValueDict)
 
                     # create a thumbnail cover for the new issue
