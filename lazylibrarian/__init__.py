@@ -882,9 +882,12 @@ def add_rss_slot():
                            })      
 
 def build_bookstrap_themes():
+    themelist = []
+    if not os.path.isdir(os.path.join(str(lazylibrarian.PROG_DIR), 'data/interfaces/bookstrap/'))
+        return themelist #  return empty if bookstrap interface not installed
+
     URL = 'https://bootswatch.com/api/3.json' 
     hdr = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'}
-    themelist = []
     req = urllib2.Request(URL, headers=hdr)
     try:
         resp = urllib2.urlopen(req)
@@ -897,11 +900,9 @@ def build_bookstrap_themes():
         results = json.JSONDecoder().decode(resp.read())
 
         for theme in results['themes']:
-            # print theme['name']
             themelist.append(theme['name'].lower())
     logger.debug("Bookstrap found %i themes" % len(themelist))
     return themelist
-
 
 
 def build_monthtable():
