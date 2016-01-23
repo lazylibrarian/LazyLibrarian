@@ -91,7 +91,7 @@ class WebInterface(object):
                      use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys=None,
                      pushover_apitoken=None, pushover_ondownload=0, pushover_device=None,
                      use_androidpn=0, androidpn_notify_onsnatch=0, androidpn_notify_ondownload=0,
-                     androidpn_url=None, androidpn_username=None, androidpn_broadcast=1,
+                     androidpn_url=None, androidpn_username=None, androidpn_broadcast=1, bookstrap_theme=None,
                      use_nma=0, nma_apikey=None, nma_priority=0, nma_onsnatch=0, nma_ondownload=0, **kwargs):
         #  print len(kwargs)
         #  for arg in kwargs:
@@ -102,6 +102,7 @@ class WebInterface(object):
         lazylibrarian.HTTP_USER = http_user
         lazylibrarian.HTTP_PASS = http_pass
         lazylibrarian.HTTP_LOOK = http_look
+        lazylibrarian.BOOKSTRAP_THEME = bookstrap_theme
         lazylibrarian.LAUNCH_BROWSER = bool(launch_browser)
         lazylibrarian.PROXY_HOST = proxy_host
         lazylibrarian.PROXY_TYPE = proxy_type
@@ -393,7 +394,6 @@ class WebInterface(object):
 
         languages = myDB.select('SELECT DISTINCT BookLang from books WHERE NOT \
                                 STATUS="Skipped" AND NOT STATUS="Ignored"')
-
         if BookLang:
             books = myDB.select('SELECT * from books WHERE BookLang="%s" AND NOT \
                                 Status="Skipped" AND NOT STATUS="Ignored"' % BookLang)

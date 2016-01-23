@@ -18,6 +18,8 @@ import ConfigParser
 from lib.apscheduler.scheduler import Scheduler
 
 import threading
+import urllib2
+import json
 
 from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, formatter, \
     librarysync, versioncheck, database, searchmag, magazinescan, common
@@ -239,6 +241,9 @@ LAST_GOODREADS = 0
 LAST_LIBRARYTHING = 0
 CACHE_AGE = 30
 
+BOOKSTRAP_THEME = ''
+BOOKSTRAP_THEMELIST = []
+
 
 def check_section(sec):
     """ Check if INI section exists, if not create it """
@@ -329,7 +334,8 @@ def initialize():
             FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, \
             USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
             GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, \
-            LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, SCHED, CACHE_HIT, CACHE_MISS
+            LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, SCHED, CACHE_HIT, CACHE_MISS, \
+            BOOKSTRAP_THEME, BOOKSTRAP_THEMELIST
 
         if __INITIALIZED__:
             return False
@@ -384,6 +390,7 @@ def initialize():
         HTTP_PASS = check_setting_str(CFG, 'General', 'http_pass', '')
         HTTP_ROOT = check_setting_str(CFG, 'General', 'http_root', '')
         HTTP_LOOK = check_setting_str(CFG, 'General', 'http_look', 'default')
+        BOOKSTRAP_THEME = check_setting_str(CFG, 'General', 'bookstrap_theme', 'slate')
 
         LAUNCH_BROWSER = check_setting_bool(CFG, 'General', 'launch_browser', 1)
 
@@ -625,6 +632,7 @@ def initialize():
             logger.error("Can't connect to the database: %s" % e)
 
         build_monthtable()
+        BOOKSTRAP_THEMELIST = build_bookstrap_themes()
 
         __INITIALIZED__ = True
         return True
@@ -637,6 +645,7 @@ def config_write():
     CFG.set('General', 'http_pass', HTTP_PASS)
     CFG.set('General', 'http_root', HTTP_ROOT)
     CFG.set('General', 'http_look', HTTP_LOOK)
+    CFG.set('General', 'bookstrap_theme', BOOKSTRAP_THEME)
     CFG.set('General', 'launch_browser', LAUNCH_BROWSER)
     CFG.set('General', 'proxy_host', PROXY_HOST)
     CFG.set('General', 'proxy_type', PROXY_TYPE)
@@ -871,6 +880,29 @@ def add_rss_slot():
                              "USER": '',
                              "PASS": ''
                            })      
+
+def build_bookstrap_themes():
+    URL = 'https://bootswatch.com/api/3.json' 
+    hdr = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'}
+    themelist = []
+    req = urllib2.Request(URL, headers=hdr)
+    try:
+        resp = urllib2.urlopen(req)
+    except urllib2.HTTPError, e:
+        logger.debug("Error getting bookstrap themes : %s" % str(e))
+        return themelist
+
+    if str(resp.getcode()).startswith("2"):
+        # (200 OK etc)
+        results = json.JSONDecoder().decode(resp.read())
+
+        for theme in results['themes']:
+            # print theme['name']
+            themelist.append(theme['name'].lower())
+    logger.debug("Bookstrap found %i themes" % len(themelist))
+    return themelist
+
+
 
 def build_monthtable():
     current_locale = locale.setlocale(locale.LC_ALL, '')  # read current state.

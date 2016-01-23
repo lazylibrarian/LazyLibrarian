@@ -165,8 +165,8 @@ def processDir(force=False, reset=False):
 
                 ppcount = ppcount + 1
 
-                # update nzbs
-                controlValueDict = {"NZBurl": book['NZBurl']}
+                # update nzbs, only update the snatched ones in case multiple matches for same book / magazine issue
+                controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
                 newValueDict = {"Status": "Processed", "NZBDate": formatter.today()}  # say when we processed it
                 myDB.upsert("wanted", newValueDict, controlValueDict)
 
@@ -387,12 +387,13 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             logger.debug('Ignoring unwanted file: %s' % fname)
     
     # copied the files we want, now delete source files if not in download root dir
-    if not lazylibrarian.DESTINATION_COPY and pp_path != lazylibrarian.DOWNLOAD_DIR:
-        try:
-            shutil.rmtree(pp_path)
-        except Exception as why:
+    if not lazylibrarian.DESTINATION_COPY:
+        if pp_path != lazylibrarian.DOWNLOAD_DIR:
+            try:
+                shutil.rmtree(pp_path)
+            except Exception as why:
                 logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
-                return False
+            return False
     return True
 
 def processAutoAdd(src_path=None):
