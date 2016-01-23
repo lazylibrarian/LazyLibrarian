@@ -5,7 +5,7 @@
         <ul id="subhead_menu">
             <li ><a id="button" href="forceSearch?source=books">Force Search</a></li>
             <li ><a id="button" href="forceProcess?source=books">Force Post-Processing</a></li>
-            %if len(languages) >= 1:
+            %if len(languages) > 1:
                 <li>Language:&nbsp</li>
                 
                 <li><select onchange="window.location = 'books?BookLang=' + this.options[this.selectedIndex].value">
