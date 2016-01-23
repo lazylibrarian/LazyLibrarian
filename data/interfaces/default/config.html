@@ -86,28 +86,6 @@
                         <option value="${http_look}" ${selected}>${http_look}</option>
                     %endfor
                     </select>
-                    <%
-                        if lazylibrarian.HTTP_LOOK == 'bookstrap':
-                            checked = 'checked="checked"'
-                        else:
-                            checked = ''
-                    %>
-                    <BR>
-                    <input type="checkbox" name="use_bookstrap" id="bookstrap" hidden="true" value=1 ${checked} /> 
-                    <fieldset id="bookstrap_options">                                               
-                    <br>
-                    <h5>Bookstrap Theme: <select name="bookstrap_theme" style="float:right;"></h5>
-                    %for bookstrap_theme in lazylibrarian.BOOKSTRAP_THEMELIST:
-                        <%
-                            if bookstrap_theme == lazylibrarian.BOOKSTRAP_THEME:
-                                selected = 'selected="selected"'
-                            else:
-                                selected = ''
-                        %>
-                        <option value="${bookstrap_theme}" ${selected}>${bookstrap_theme}</option>
-                    %endfor
-                    </select>
-                    </fieldset>
                 </td>
             </tr>
         </table>
@@ -1033,25 +1011,6 @@
         function initThisPage()
 
         {
-            if ($("#bookstrap").is(":checked"))
-                    {
-                            $("#bookstrap_options").show();
-                    }
-            else
-                    {
-                            $("#bookstrap_options").hide();
-                    }
-
-            $("#bookstrap").click(function(){
-                    if ($("#nzb").is(":checked"))
-                    {
-                            $("#bookstrap_options").slideDown();
-                    }
-                    else
-                    {
-                            $("#bookstrap_options").slideUp();
-                    }
-            });
             if ($("#nzb").is(":checked"))
                     {
                             $("#usenet_options").show();

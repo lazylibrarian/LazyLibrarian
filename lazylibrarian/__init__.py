@@ -883,7 +883,7 @@ def add_rss_slot():
 
 def build_bookstrap_themes():
     themelist = []
-    if not os.path.isdir(os.path.join(str(lazylibrarian.PROG_DIR), 'data/interfaces/bookstrap/'))
+    if not os.path.isdir(os.path.join(PROG_DIR, 'data/interfaces/bookstrap/')):
         return themelist #  return empty if bookstrap interface not installed
 
     URL = 'https://bootswatch.com/api/3.json' 
