@@ -658,7 +658,7 @@ def config_write():
     CFG.set('General', 'imp_preflang', IMP_PREFLANG)
     CFG.set('General', 'imp_monthlang', IMP_MONTHLANG)
     CFG.set('General', 'imp_autoadd', IMP_AUTOADD)
-    CFG.set('General', 'imp_convert', IMP_CONVERT)
+    CFG.set('General', 'imp_convert', IMP_CONVERT.strip())
     CFG.set('General', 'ebook_type', EBOOK_TYPE.lower())
     CFG.set('General', 'mag_type', MAG_TYPE.lower())
     CFG.set('General', 'destination_dir', DESTINATION_DIR)
