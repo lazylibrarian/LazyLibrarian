@@ -27,7 +27,10 @@ def create_cover(issuefile=None):
             logger.debug('Unable to create cover for %s, no extension?' % issuefile)
             return
         if not os.path.isfile(coverfile):
-            logger.debug("Creating cover for %s using %s" % (issuefile, lazylibrarian.MAGICK))
+            converter = lazylibrarian.MAGICK
+            if len(lazylibrarian.IMP_CONVERT):
+               converter = lazylibrarian.IMP_CONVERT
+            logger.debug("Creating cover for %s using %s" % (issuefile, converter))
             try:
                 # No PythonMagick in python3, hence allow wand, but more complicated
                 # to install - try to use external imagemagick convert?
