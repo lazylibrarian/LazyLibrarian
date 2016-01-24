@@ -393,7 +393,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 shutil.rmtree(pp_path)
             except Exception as why:
                 logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
-            return False
+                return False
     return True
 
 def processAutoAdd(src_path=None):
