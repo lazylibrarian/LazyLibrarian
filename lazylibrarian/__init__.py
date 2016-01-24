@@ -23,6 +23,7 @@ import json
 
 from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, formatter, \
     librarysync, versioncheck, database, searchmag, magazinescan, common
+
 try:
     from wand.image import Image
     MAGICK = "wand"
@@ -886,12 +887,19 @@ def build_bookstrap_themes():
     if not os.path.isdir(os.path.join(PROG_DIR, 'data/interfaces/bookstrap/')):
         return themelist #  return empty if bookstrap interface not installed
 
-    URL = 'https://bootswatch.com/api/3.json' 
-    hdr = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'}
-    req = urllib2.Request(URL, headers=hdr)
+    URL = 'http://bootswatch.com/api/3.json' 
+    USER_AGENT = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'
+    request = urllib2.Request(URL)
+
+    if PROXY_HOST:
+        request.set_proxy(PROXY_HOST, PROXY_TYPE)
+
+    # bootswatch insists on having a user-agent
+    request.add_header('User-Agent', USER_AGENT)
+    
     try:
-        resp = urllib2.urlopen(req)
-    except urllib2.HTTPError, e:
+        resp = urllib2.urlopen(request, timeout=30)
+    except (urllib2.HTTPError, urllib2.URLError) as e:
         logger.debug("Error getting bookstrap themes : %s" % str(e))
         return themelist
 

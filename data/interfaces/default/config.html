@@ -419,8 +419,8 @@
                         checked = ''
                     %>
                     <input type="checkbox" name="newznab${loop.index}" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter User Here" name="newznab_api${loop.index}" value="${prov['API']}" size="26" maxlength="40">
- 	    		    <input type="text" placeholder="Enter Host Here" name="newznab_host${loop.index}" value="${prov['HOST']}" size="26" maxlength="100">
+ 	    		    <input type="text" placeholder="Enter API Here" name="newznab_api${loop.index}" value="${prov['API']}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="newznab_host${loop.index}" value="${prov['HOST']}" size="26" maxlength="100">
  	    		    <br>
  	    		    %endfor
                 </fieldset>
@@ -437,8 +437,8 @@
                         checked = ''
                     %>
                     <input type="checkbox" name="torznab${loop.index}" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter User Here" name="torznab_api${loop.index}" value="${prov['API']}" size="26" maxlength="40">
- 	    		    <input type="text" placeholder="Enter Host Here" name="torznab_host${loop.index}" value="${prov['HOST']}" size="26" maxlength="100">
+ 	    		    <input type="text" placeholder="Enter API Here" name="torznab_api${loop.index}" value="${prov['API']}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="torznab_host${loop.index}" value="${prov['HOST']}" size="26" maxlength="100">
  	    		    <br>
  	    		    %endfor
  	    		</fieldset>
@@ -475,7 +475,7 @@
                         checked = ''
                     %>
             		<input type="checkbox" name="rss${loop.index}" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter Host Here" name="rss_host${loop.index}" value="${prov['HOST']}" size="58" maxlength="100"><br>
+ 	    		    <input type="text" placeholder="Enter URL Here" name="rss_host${loop.index}" value="${prov['HOST']}" size="58" maxlength="100"><br>
  	    		    <input type="text" placeholder="Enter Pass Here" name="rss_pass${loop.index}" value="${prov['PASS']}" size="26" maxlength="40">
  	    		    <input type="text" placeholder="Enter User Here" name="rss_user${loop.index}" value="${prov['USER']}" size="26" maxlength="40">
  	    		    <br>
@@ -491,7 +491,7 @@
                         checked = ''
                     %>
             		<input type="checkbox" name="kat" value=1 ${checked} style="margin-bottom:4px;" /> KAT
- 	    		    <input type="text" placeholder="Enter Host Here" name="kat_host" value="${lazylibrarian.KAT_HOST}" size="26" maxlength="100">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="kat_host" value="${lazylibrarian.KAT_HOST}" size="26" maxlength="100">
  	    		</td>
             </tr>
         </table>
