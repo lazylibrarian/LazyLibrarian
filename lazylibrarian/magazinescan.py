@@ -5,6 +5,7 @@ import threading
 import subprocess
 from lazylibrarian import database, logger, formatter, notifiers, common
 from hashlib import sha1
+import re
 
 try:
     from wand.image import Image
@@ -38,6 +39,7 @@ def create_cover(issuefile=None):
                         params = [lazylibrarian.IMP_CONVERT, issuefile + '[0]', coverfile]
                         subprocess.check_output(params, stderr=subprocess.STDOUT)
                     except subprocess.CalledProcessError as e:
+                        logger.debug(params)
                         logger.warn('ImageMagick "convert" failed %s' % e.output)
 
                 elif lazylibrarian.MAGICK == 'wand':
@@ -106,21 +108,49 @@ def magazineScan(thread=None):
     
     logger.info(' Checking [%s] for magazines' % mag_path)
 
+    matchString = ''
+    for char in lazylibrarian.MAG_DEST_FILE:
+        matchString = matchString + '\\' + char
+    # massage the MAG_DEST_FILE config parameter into something we can use
+    # with regular expression matching
+    booktypes = ''
+    count = -1
+    booktype_list = formatter.getList(lazylibrarian.MAG_TYPE)
+    for book_type in booktype_list:
+        count += 1
+        if count == 0:
+            booktypes = book_type
+        else:
+            booktypes = booktypes + '|' + book_type
+    matchString = matchString.replace("\\$\\I\\s\\s\\u\\e\\D\\a\\t\\e", "(?P<issuedate>.*?)").replace(
+        "\\$\\T\\i\\t\\l\\e", "(?P<title>.*?)") + '\.[' + booktypes + ']'
+    pattern = re.compile(matchString, re.VERBOSE)
+
     for dirname, dirnames, filenames in os.walk(mag_path):
         for fname in filenames[:]:
             # maybe not all magazines will be pdf?
             if formatter.is_valid_booktype(fname, booktype='mag'):
                 try:
-                    title = fname.split('-')[3]
-                    title = title.split('.')[-2]
-                    title = title.strip()
-                    issuedate = fname.split(' ')[0]
-                    issuefile = os.path.join(dirname, fname)  # full path to issue.pdf
-                    logger.debug("Found Issue %s" % fname)
+                    match = pattern.match(fname)
+                    if match:
+                        issuedate = match.group("issuedate")
+                        title = match.group("title")
+                        #print issuedate
+                        #print title
+                    else:
+                        logger.debug("Pattern match failed for [%s]" % fname)
+                        continue
+                        #title = fname.split('-')[3]
+                        #title = title.split('.')[-2]
+                        #title = title.strip()
+                        #issuedate = fname.split(' ')[0]
                 except:
-                    logger.debug("Invalid name format for %s" % fname)
+                    logger.debug("Invalid name format for [%s]" % fname)
                     continue
 
+                logger.debug("Found Issue %s" % fname)
+
+                issuefile = os.path.join(dirname, fname)  # full path to issue.pdf
                 mtime = os.path.getmtime(issuefile)
                 iss_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
 

@@ -86,28 +86,6 @@
                         <option value="${http_look}" ${selected}>${http_look}</option>
                     %endfor
                     </select>
-                    <%
-                        if lazylibrarian.HTTP_LOOK == 'bookstrap':
-                            checked = 'checked="checked"'
-                        else:
-                            checked = ''
-                    %>
-                    <BR>
-                    <input type="checkbox" name="use_bookstrap" id="bookstrap" hidden="true" value=1 ${checked} /> 
-                    <fieldset id="bookstrap_options">                                               
-                    <br>
-                    <h5>Bookstrap Theme: <select name="bookstrap_theme" style="float:right;"></h5>
-                    %for bookstrap_theme in lazylibrarian.BOOKSTRAP_THEMELIST:
-                        <%
-                            if bookstrap_theme == lazylibrarian.BOOKSTRAP_THEME:
-                                selected = 'selected="selected"'
-                            else:
-                                selected = ''
-                        %>
-                        <option value="${bookstrap_theme}" ${selected}>${bookstrap_theme}</option>
-                    %endfor
-                    </select>
-                    </fieldset>
                 </td>
             </tr>
         </table>
@@ -441,8 +419,8 @@
                         checked = ''
                     %>
                     <input type="checkbox" name="newznab${loop.index}" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter User Here" name="newznab_api${loop.index}" value="${prov['API']}" size="26" maxlength="40">
- 	    		    <input type="text" placeholder="Enter Host Here" name="newznab_host${loop.index}" value="${prov['HOST']}" size="26" maxlength="100">
+ 	    		    <input type="text" placeholder="Enter API Here" name="newznab_api${loop.index}" value="${prov['API']}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="newznab_host${loop.index}" value="${prov['HOST']}" size="26" maxlength="100">
  	    		    <br>
  	    		    %endfor
                 </fieldset>
@@ -459,8 +437,8 @@
                         checked = ''
                     %>
                     <input type="checkbox" name="torznab${loop.index}" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter User Here" name="torznab_api${loop.index}" value="${prov['API']}" size="26" maxlength="40">
- 	    		    <input type="text" placeholder="Enter Host Here" name="torznab_host${loop.index}" value="${prov['HOST']}" size="26" maxlength="100">
+ 	    		    <input type="text" placeholder="Enter API Here" name="torznab_api${loop.index}" value="${prov['API']}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="torznab_host${loop.index}" value="${prov['HOST']}" size="26" maxlength="100">
  	    		    <br>
  	    		    %endfor
  	    		</fieldset>
@@ -497,7 +475,7 @@
                         checked = ''
                     %>
             		<input type="checkbox" name="rss${loop.index}" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter Host Here" name="rss_host${loop.index}" value="${prov['HOST']}" size="58" maxlength="100"><br>
+ 	    		    <input type="text" placeholder="Enter URL Here" name="rss_host${loop.index}" value="${prov['HOST']}" size="58" maxlength="100"><br>
  	    		    <input type="text" placeholder="Enter Pass Here" name="rss_pass${loop.index}" value="${prov['PASS']}" size="26" maxlength="40">
  	    		    <input type="text" placeholder="Enter User Here" name="rss_user${loop.index}" value="${prov['USER']}" size="26" maxlength="40">
  	    		    <br>
@@ -513,7 +491,7 @@
                         checked = ''
                     %>
             		<input type="checkbox" name="kat" value=1 ${checked} style="margin-bottom:4px;" /> KAT
- 	    		    <input type="text" placeholder="Enter Host Here" name="kat_host" value="${lazylibrarian.KAT_HOST}" size="26" maxlength="100">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="kat_host" value="${lazylibrarian.KAT_HOST}" size="26" maxlength="100">
  	    		</td>
             </tr>
         </table>
@@ -1033,25 +1011,6 @@
         function initThisPage()
 
         {
-            if ($("#bookstrap").is(":checked"))
-                    {
-                            $("#bookstrap_options").show();
-                    }
-            else
-                    {
-                            $("#bookstrap_options").hide();
-                    }
-
-            $("#bookstrap").click(function(){
-                    if ($("#nzb").is(":checked"))
-                    {
-                            $("#bookstrap_options").slideDown();
-                    }
-                    else
-                    {
-                            $("#bookstrap_options").slideUp();
-                    }
-            });
             if ($("#nzb").is(":checked"))
                     {
                             $("#usenet_options").show();

@@ -23,6 +23,7 @@ import json
 
 from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, formatter, \
     librarysync, versioncheck, database, searchmag, magazinescan, common
+
 try:
     from wand.image import Image
     MAGICK = "wand"
@@ -658,7 +659,7 @@ def config_write():
     CFG.set('General', 'imp_preflang', IMP_PREFLANG)
     CFG.set('General', 'imp_monthlang', IMP_MONTHLANG)
     CFG.set('General', 'imp_autoadd', IMP_AUTOADD)
-    CFG.set('General', 'imp_convert', IMP_CONVERT)
+    CFG.set('General', 'imp_convert', IMP_CONVERT.strip())
     CFG.set('General', 'ebook_type', EBOOK_TYPE.lower())
     CFG.set('General', 'mag_type', MAG_TYPE.lower())
     CFG.set('General', 'destination_dir', DESTINATION_DIR)
@@ -882,13 +883,23 @@ def add_rss_slot():
                            })      
 
 def build_bookstrap_themes():
-    URL = 'https://bootswatch.com/api/3.json' 
-    hdr = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'}
     themelist = []
-    req = urllib2.Request(URL, headers=hdr)
+    if not os.path.isdir(os.path.join(PROG_DIR, 'data/interfaces/bookstrap/')):
+        return themelist #  return empty if bookstrap interface not installed
+
+    URL = 'http://bootswatch.com/api/3.json' 
+    USER_AGENT = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'
+    request = urllib2.Request(URL)
+
+    if PROXY_HOST:
+        request.set_proxy(PROXY_HOST, PROXY_TYPE)
+
+    # bootswatch insists on having a user-agent
+    request.add_header('User-Agent', USER_AGENT)
+    
     try:
-        resp = urllib2.urlopen(req)
-    except urllib2.HTTPError, e:
+        resp = urllib2.urlopen(request, timeout=30)
+    except (urllib2.HTTPError, urllib2.URLError) as e:
         logger.debug("Error getting bookstrap themes : %s" % str(e))
         return themelist
 
@@ -897,11 +908,9 @@ def build_bookstrap_themes():
         results = json.JSONDecoder().decode(resp.read())
 
         for theme in results['themes']:
-            # print theme['name']
             themelist.append(theme['name'].lower())
     logger.debug("Bookstrap found %i themes" % len(themelist))
     return themelist
-
 
 
 def build_monthtable():
