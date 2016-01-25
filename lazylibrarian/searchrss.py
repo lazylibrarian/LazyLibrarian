@@ -14,10 +14,9 @@ from lazylibrarian.searchtorrents import TORDownloadMethod
 from lazylibrarian.searchnzb import NZBDownloadMethod
 
 
-
 def search_rss_book(books=None, reset=False):
-    if not(lazylibrarian.USE_TOR and lazylibrarian.USE_RSS):
-        logger.warn('Torrent/RSS search is disabled')
+    if not((lazylibrarian.USE_TOR or lazylibrarian.USE_NZB) and lazylibrarian.USE_RSS):
+        logger.warn('RSS search or both TOR/NZB are disabled')
         common.schedule_job(action='Stop', target='search_rss_book')
         return
     # rename this thread
@@ -97,6 +96,7 @@ def processResultList(resultlist, author, title, book):
                 '-': '', '\s\s': ' ', ' the ': ' ', ' a ': ' ', ' and ': ' ', ' to ': ' ', ' of ': ' ',
                 ' for ': ' ', ' my ': ' ', ' in ': ' ', ' at ': ' ', ' with ': ' '}
 
+    # bit of a misnomer now, rss can search both tor and nzb rss feeds
     for tor in resultlist:
         tor_Title = formatter.latinToAscii(formatter.replace_all(tor['tor_title'], dictrepl)).strip()
         tor_Title = re.sub(r"\s\s+", " ", tor_Title)  # remove extra whitespace
@@ -135,14 +135,17 @@ def processResultList(resultlist, author, title, book):
                 snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
                                             bookid).fetchone()
                 if not snatchedbooks:  # check if one of the other downloaders got there first
-                    #  http://baconbits.org/torrents.php?action=download&authkey=<authkey>&torrent_pass=<password.hashed>&id=185398
-                    if not tor_url.startswith('magnet'):  # magnets don't seem to use auth
-                        pwd  = lazylibrarian.RSS_PROV[tor_feed]['PASS']
-                        auth = lazylibrarian.RSS_PROV[tor_feed]['AUTH']
-                        # don't know what form of password hash is required, try sha1    
-                        tor_url = tor_url.replace('<authkey>', auth).replace('<password.hashed>', sha1(pwd))
-                            
-                    snatch = TORDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
+                    if '.nzb' in tor_url:
+                        snatch = NZBDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
+                    else:    
+                        #  http://baconbits.org/torrents.php?action=download&authkey=<authkey>&torrent_pass=<password.hashed>&id=185398
+                        if not tor_url.startswith('magnet'):  # magnets don't use auth
+                            pwd  = lazylibrarian.RSS_PROV[tor_feed]['PASS']
+                            auth = lazylibrarian.RSS_PROV[tor_feed]['AUTH']
+                            # don't know what form of password hash is required, try sha1    
+                            tor_url = tor_url.replace('<authkey>', auth).replace('<password.hashed>', sha1(pwd))
+                        snatch = TORDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
+
                     if snatch:
                         notifiers.notify_snatch(formatter.latinToAscii(tor_Title) + ' at ' + formatter.now())
                         common.schedule_job(action='Start', target='processDir')

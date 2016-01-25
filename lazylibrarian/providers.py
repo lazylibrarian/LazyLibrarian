@@ -182,22 +182,30 @@ def RSS(host=None, feednr=None):
             magnet = None
             size = None
             torrent = None
-            try:
+            nzb = None
+
+            if 'title' in post:
                 title = post.title
+            if 'links' in post:
                 for f in post.links:
                     if 'x-bittorrent' in f['type']: 
                         size = f['length']
                         torrent = f['href']
                         break
+                    if 'x-nzb' in f['type']: 
+                        size = f['length']
+                        torrent = f['href']
+                        break
+            if 'torrent_magneturi' in post:
                 magnet = post.torrent_magneturi
-            except AttributeError as why:
-                pass
     
             if torrent:
                 url = torrent
-            if magnet:  # prefer magnet
+            if magnet:  # prefer magnet over torrent
                 url = magnet
-            
+            if nzb:
+                url = nzb
+                
             if not size:
                 size = 1000
             if title and url:
