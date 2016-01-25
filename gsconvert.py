@@ -18,9 +18,9 @@ else:
                     pdf = pdf.split('[')[0]
                 params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1", "-dLastPage=1",
                           "-sOutputFile=" + jpeg, pdf ]
-                subprocess.check_output(params, stderr=subprocess.STDOUT)
-                #print params
-        
+                res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                if not os.path.isfile(jpeg):
+                    print("Failed: %s" % res)
             except subprocess.CalledProcessError as e:
                 print("Failed: %s" % e)
         else:
