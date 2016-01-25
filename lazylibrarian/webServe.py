@@ -65,34 +65,34 @@ class WebInterface(object):
         return serve_template(templatename="config.html", title="Settings", config=config)
     config.exposed = True
 
-    def configUpdate(self, http_host='0.0.0.0', http_root=None, http_user=None, http_port=5299,
-                     http_pass=None, http_look=None, launch_browser=0, logdir=None, loglevel=2, loglimit=500,
-                     imp_onlyisbn=0, imp_singlebook=0, imp_preflang=None, imp_monthlang=None, imp_convert=None,
-                     imp_autoadd=None, match_ratio=80, nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0,
-                     nzb_downloader_blackhole=0, use_nzb=0, use_tor=0, use_rss=0, proxy_host=None, proxy_type=None,
-                     sab_host=None, sab_port=0, sab_subdir=None, sab_api=None, sab_user=None, sab_pass=None,
-                     destination_copy=0, destination_dir=None, download_dir=None, sab_cat=None, usenet_retention=0,
-                     nzb_blackholedir=None, alternate_dir=None, torrent_dir=None, numberofseeders=0,
+    def configUpdate(self, http_host='0.0.0.0', http_root='', http_user='', http_port=5299,
+                     http_pass='', http_look='', launch_browser=0, logdir='', loglevel=2, loglimit=500,
+                     imp_onlyisbn=0, imp_singlebook=0, imp_preflang='', imp_monthlang='', imp_convert='',
+                     imp_autoadd='', match_ratio=80, nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0,
+                     nzb_downloader_blackhole=0, use_nzb=0, use_tor=0, use_rss=0, proxy_host='', proxy_type='',
+                     sab_host='', sab_port=0, sab_subdir='', sab_api='', sab_user='', sab_pass='',
+                     destination_copy=0, destination_dir='', download_dir='', sab_cat='', usenet_retention=0,
+                     nzb_blackholedir='', alternate_dir='', torrent_dir='', numberofseeders=0,
                      tor_downloader_blackhole=0, tor_downloader_utorrent=0,
-                     nzbget_host=None, nzbget_user=None, nzbget_pass=None, nzbget_cat=None, nzbget_priority=0, 
-                     newzbin=0, newzbin_uid=None, newzbin_pass=None, kat=0, kat_host=None,
-                     ebook_type=None, mag_type=None, book_api=None, gr_api=None, gb_api=None,
-                     versioncheck_interval=None, search_interval=None, scan_interval=None, searchrss_interval=20, 
-                     ebook_dest_folder=None, ebook_dest_file=None,
-                     mag_relative=0, mag_dest_folder=None, mag_dest_file=None, cache_age=30,
+                     nzbget_host='', nzbget_user='', nzbget_pass='', nzbget_cat='', nzbget_priority=0, 
+                     newzbin=0, newzbin_uid='', newzbin_pass='', kat=0, kat_host='',
+                     ebook_type='', mag_type='', book_api='', gr_api='', gb_api='',
+                     versioncheck_interval='', search_interval='', scan_interval='', searchrss_interval=20, 
+                     ebook_dest_folder='', ebook_dest_file='',
+                     mag_relative=0, mag_dest_folder='', mag_dest_file='', cache_age=30,
                      use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
-                     utorrent_host=None, utorrent_user=None, utorrent_pass=None,
+                     utorrent_host='', utorrent_user='', utorrent_pass='',
                      notfound_status='Skipped', newbook_status='Skipped', full_scan=0, add_author=0,
-                     tor_downloader_transmission=0, transmission_host=None, transmission_user=None,
-                     transmission_pass=None, tor_downloader_deluge=0, deluge_host=None, deluge_user=None,
-                     deluge_pass=None, deluge_port=0, utorrent_label=None, use_boxcar=0, boxcar_notify_onsnatch=0,
-                     boxcar_notify_ondownload=0, boxcar_token=None, use_pushbullet=0, pushbullet_notify_onsnatch=0,
-                     pushbullet_notify_ondownload=0, pushbullet_token=None, pushbullet_deviceid=None,
-                     use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys=None,
-                     pushover_apitoken=None, pushover_ondownload=0, pushover_device=None,
+                     tor_downloader_transmission=0, transmission_host='', transmission_user='',
+                     transmission_pass='', tor_downloader_deluge=0, deluge_host='', deluge_user='',
+                     deluge_pass='', deluge_port=0, utorrent_label='', use_boxcar=0, boxcar_notify_onsnatch=0,
+                     boxcar_notify_ondownload=0, boxcar_token='', use_pushbullet=0, pushbullet_notify_onsnatch=0,
+                     pushbullet_notify_ondownload=0, pushbullet_token='', pushbullet_deviceid='',
+                     use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys='',
+                     pushover_apitoken='', pushover_ondownload=0, pushover_device='',
                      use_androidpn=0, androidpn_notify_onsnatch=0, androidpn_notify_ondownload=0,
-                     androidpn_url=None, androidpn_username=None, androidpn_broadcast=1, bookstrap_theme=None,
-                     use_nma=0, nma_apikey=None, nma_priority=0, nma_onsnatch=0, nma_ondownload=0, **kwargs):
+                     androidpn_url='', androidpn_username='', androidpn_broadcast=1, bookstrap_theme='',
+                     use_nma=0, nma_apikey='', nma_priority=0, nma_onsnatch=0, nma_ondownload=0, **kwargs):
         #  print len(kwargs)
         #  for arg in kwargs:
         #      print arg
@@ -620,6 +620,7 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("magazines")
         else:
             mod_issues = []
+            covercount = 0
             for issue in issues:
                 magfile = issue['IssueFile']
                 if '.' in magfile:
@@ -637,6 +638,7 @@ class WebInterface(object):
                         hashname = os.path.join(cachedir, myhash + ".jpg")
                         shutil.copyfile(magimg, hashname)
                         magimg = 'images/cache/' + myhash + '.jpg'
+                        covercount = covercount + 1
                 else:
                     logger.debug('No extension found on %s' % common.remove_accents(magfile))
                     magimg = 'images/nocover.png'
@@ -645,8 +647,8 @@ class WebInterface(object):
                 this_issue['Cover'] = magimg
                 this_issue['safeissuefile'] = urllib.quote_plus(magfile)
                 mod_issues.append(this_issue)
-
-        return serve_template(templatename="issues.html", title=title, issues=mod_issues)
+            logger.debug("Found %s covers" % covercount)
+        return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
     issuePage.exposed = True
 
     def pastIssues(self, whichStatus=None):
