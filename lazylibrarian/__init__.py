@@ -401,7 +401,7 @@ def initialize():
         LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
         LOGLIMIT = check_setting_int(CFG, 'General', 'loglimit', 500)
 
-        IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', 'en, eng, en-US')
+        IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', 'en, eng, en-US, en-GB')
         IMP_MONTHLANG = check_setting_str(CFG, 'General', 'imp_monthlang', '')
         IMP_AUTOADD = check_setting_str(CFG, 'General', 'imp_autoadd', '')
         IMP_ONLYISBN = check_setting_bool(CFG, 'General', 'imp_onlyisbn', 0)
