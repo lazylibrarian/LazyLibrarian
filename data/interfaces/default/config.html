@@ -162,16 +162,6 @@
                 <td>
                     <fieldset>
                         <h3>Usenet</h3>
-                        <div class="row checkbox">
-                        <%
-                        if lazylibrarian.USE_NZB == True:
-                            checked = 'checked="checked"'
-                        else:
-                            checked = ''
-                        %>
-                        <input type="checkbox" name="use_nzb" id="nzb" value="1" ${checked} />
-                        <label>Enable NZB and Torznab</label>
-                        </div>
                         <fieldset id="usenet_options">
                             <div class="row checkbox">
                             <%
@@ -272,16 +262,6 @@
                     <td>
                     <fieldset>
                         <h3>Torrents</h3>
-                        <div class="row checkbox">
-                                <%
-                                if lazylibrarian.USE_TOR == True:
-                                    checked = 'checked="checked"'
-                                else:
-                                    checked = ''
-                                %>
-                            <input type="checkbox" name="use_tor" id="tor" value="1" ${checked} />
-                            <label>Enable Torrents</label>
-                        </div>
                         <fieldset id="torrent_options">
 
                             <div>
@@ -444,18 +424,6 @@
  	    		</fieldset>
             </tr>
             <tr>
-                <td>
-                    <div class="row checkbox">
-                        <%
-                        if lazylibrarian.USE_RSS == True:
-                            checked = 'checked="checked"'
-                        else:
-                            checked = ''
-                        %>
-                        <input type="checkbox" name="use_rss" id="rss" value="1" ${checked} />
-                        <label>Enable RSS feed search</label>
-                    </div>
-            	</td>
                 <td>
                     <small>Current limitation: TORZNAB results are returned as magnet links
                     where possible, which may not work automatically with blackhole
@@ -1009,66 +977,7 @@
 <%def name="javascriptIncludes()">
     <script>
         function initThisPage()
-
         {
-            if ($("#nzb").is(":checked"))
-                    {
-                            $("#usenet_options").show();
-                    }
-            else
-                    {
-                            $("#usenet_options").hide();
-                    }
-
-            $("#nzb").click(function(){
-                    if ($("#nzb").is(":checked"))
-                    {
-                            $("#usenet_options").slideDown();
-                    }
-                    else
-                    {
-                            $("#usenet_options").slideUp();
-                    }
-            });
-            if ($("#tor").is(":checked"))
-                    {
-                            $("#torrent_options").show();
-                    }
-            else
-                    {
-                            $("#torrent_options").hide();
-                    }
-
-            $("#tor").click(function(){
-                    if ($("#tor").is(":checked"))
-                    {
-                            $("#torrent_options").slideDown();
-                    }
-                    else
-                    {
-                            $("#torrent_options").slideUp();
-                    }
-            });
-
-            if ($("#rss").is(":checked"))
-                    {
-                            $("#rss_options").show();
-                    }
-            else
-                    {
-                            $("#rss_options").hide();
-                    }
-
-            $("#rss").click(function(){
-                    if ($("#rss").is(":checked"))
-                    {
-                            $("#rss_options").slideDown();
-                    }
-                    else
-                    {
-                            $("#rss_options").slideUp();
-                    }
-            });
             if ($("#tor_downloader_blackhole").is(":checked"))
                 {
                         $("#tor_blackhole_options").show();

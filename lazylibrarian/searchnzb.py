@@ -18,8 +18,8 @@ from lazylibrarian.searchtorrents import TORDownloadMethod
 
 
 def search_nzb_book(books=None, reset=False):
-    if not(lazylibrarian.USE_NZB):
-        logger.warn('NZB Search is disabled')
+    if not lazylibrarian.USE_NZB():
+        logger.warn('No NEWZNAB/TORZNAB providers set, check config')
         return
     # rename this thread
     threading.currentThread().name = "SEARCHNZBBOOKS"

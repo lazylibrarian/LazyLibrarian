@@ -69,7 +69,7 @@ class WebInterface(object):
                      http_pass='', http_look='', launch_browser=0, logdir='', loglevel=2, loglimit=500,
                      imp_onlyisbn=0, imp_singlebook=0, imp_preflang='', imp_monthlang='', imp_convert='',
                      imp_autoadd='', match_ratio=80, nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0,
-                     nzb_downloader_blackhole=0, use_nzb=0, use_tor=0, use_rss=0, proxy_host='', proxy_type='',
+                     nzb_downloader_blackhole=0, proxy_host='', proxy_type='',
                      sab_host='', sab_port=0, sab_subdir='', sab_api='', sab_user='', sab_pass='',
                      destination_copy=0, destination_dir='', download_dir='', sab_cat='', usenet_retention=0,
                      nzb_blackholedir='', alternate_dir='', torrent_dir='', numberofseeders=0,
@@ -169,10 +169,6 @@ class WebInterface(object):
 
         lazylibrarian.KAT = bool(kat)
         lazylibrarian.KAT_HOST = kat_host
-
-        lazylibrarian.USE_NZB = bool(use_nzb)
-        lazylibrarian.USE_TOR = bool(use_tor)
-        lazylibrarian.USE_RSS = bool(use_rss)
 
         lazylibrarian.EBOOK_TYPE = ebook_type
         lazylibrarian.MAG_TYPE = mag_type
@@ -464,13 +460,13 @@ class WebInterface(object):
 
     def startBookSearch(self, books=None):
         if books:
-            if lazylibrarian.USE_NZB or lazylibrarian.USE_TOR:
-                if lazylibrarian.USE_NZB:
-                    threading.Thread(target=search_nzb_book, args=[books]).start()
-                if lazylibrarian.USE_TOR:
-                    threading.Thread(target=search_tor_book, args=[books]).start()
-                    if lazylibrarian.USE_TOR:
-                        threading.Thread(target=search_rss_book, args=[books]).start()
+            if lazylibrarian.USE_RSS():
+                threading.Thread(target=search_rss_book, args=[books]).start()
+            if lazylibrarian.USE_NZB():
+                threading.Thread(target=search_nzb_book, args=[books]).start()
+            if lazylibrarian.USE_TOR():
+                threading.Thread(target=search_tor_book, args=[books]).start()
+            if lazylibrarian.USE_RSS() or lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
                 logger.debug(u"Searching for book with id: " + books[0]["bookid"])
             else:
                 logger.warn(u"Not searching for book, no search methods set, check config.")
@@ -570,13 +566,13 @@ class WebInterface(object):
                 if not bookid == 'book_table_length':
                     books.append({"bookid": bookid})
 
-            if lazylibrarian.USE_NZB:
+            if lazylibrarian.USE_RSS():
+                threading.Thread(target=search_rss_book, args=[books]).start()
+            if lazylibrarian.USE_NZB():
                 threading.Thread(target=search_nzb_book, args=[books]).start()
-            if lazylibrarian.USE_TOR:
+            if lazylibrarian.USE_TOR():
                 threading.Thread(target=search_tor_book, args=[books]).start()
-            if not lazylibrarian.USE_NZB and not lazylibrarian.USE_TOR:
-                logger.warn(u"No search methods set, check config.")
-
+            
         if redirect == "author":
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
         elif redirect == "books":
@@ -794,7 +790,7 @@ class WebInterface(object):
 
     def startMagazineSearch(self, mags=None):
         if mags:
-            if lazylibrarian.USE_NZB or lazylibrarian.USE_TOR:
+            if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
                 threading.Thread(target=search_magazines, args=[mags, False]).start()
                 logger.debug(u"Searching for magazine with title: %s" % common.remove_accents(mags[0]["bookid"]))
             else:
@@ -1110,16 +1106,15 @@ class WebInterface(object):
 
     def forceSearch(self, source=None):
         if source == "magazines":
-            threading.Thread(target=search_magazines, args=[None, True]).start()
+            if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
+                threading.Thread(target=search_magazines, args=[None, True]).start()
         elif source == "books":
-            if lazylibrarian.USE_NZB:
+            if lazylibrarian.USE_NZB():
                 threading.Thread(target=search_nzb_book).start()
-            if lazylibrarian.USE_TOR:
+            if lazylibrarian.USE_TOR():
                 threading.Thread(target=search_tor_book).start()
-                if lazylibrarian.USE_RSS:
-                    threading.Thread(target=search_rss_book).start()
-            if not lazylibrarian.USE_NZB and not lazylibrarian.USE_TOR:
-                logger.warn(u"No search methods set, check config.")
+            if lazylibrarian.USE_RSS():
+                threading.Thread(target=search_rss_book).start()
         else:
             logger.debug(u"forceSearch called with bad source")
         raise cherrypy.HTTPRedirect(source)

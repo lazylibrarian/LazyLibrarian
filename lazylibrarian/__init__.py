@@ -152,10 +152,6 @@ DELUGE_PASS = None
 KAT = 0
 KAT_HOST = None
 
-USE_NZB = 0
-USE_TOR = 0
-USE_RSS = 0
-
 NZB_DOWNLOADER_SABNZBD = 0
 NZB_DOWNLOADER_NZBGET = 0
 NZB_DOWNLOADER_BLACKHOLE = 0
@@ -322,7 +318,7 @@ def initialize():
             TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
             USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, \
             TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, \
-            USE_TOR, USE_NZB, USE_RSS, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
+            NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
             USE_PUSHBULLET, PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, \
             PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, LAST_GOODREADS, LAST_LIBRARYTHING, \
             UTORRENT_HOST, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
@@ -435,10 +431,6 @@ def initialize():
         DESTINATION_DIR = check_setting_str(CFG, 'General', 'destination_dir', '')
         ALTERNATE_DIR = check_setting_str(CFG, 'General', 'alternate_dir', '')
         DOWNLOAD_DIR = check_setting_str(CFG, 'General', 'download_dir', '')
-
-        USE_NZB = check_setting_bool(CFG, 'DLMethod', 'use_nzb', 0)
-        USE_TOR = check_setting_bool(CFG, 'DLMethod', 'use_tor', 0)
-        USE_RSS = check_setting_bool(CFG, 'DLMethod', 'use_rss', 0)
 
         NZB_DOWNLOADER_SABNZBD = check_setting_bool(CFG, 'USENET', 'nzb_downloader_sabnzbd', 0)
         NZB_DOWNLOADER_NZBGET = check_setting_bool(CFG, 'USENET', 'nzb_downloader_nzbget', 0)
@@ -700,11 +692,6 @@ def config_write():
     CFG.set('NZBGet', 'nzbget_cat', NZBGET_CATEGORY)
     CFG.set('NZBGet', 'nzbget_priority', NZBGET_PRIORITY)
 #
-    check_section('DLMethod')
-    CFG.set('DLMethod', 'use_tor', USE_TOR)
-    CFG.set('DLMethod', 'use_nzb', USE_NZB)
-    CFG.set('DLMethod', 'use_rss', USE_RSS)
-#
     check_section('API')
     CFG.set('API', 'book_api', BOOK_API)
     CFG.set('API', 'gr_api', GR_API)
@@ -865,6 +852,15 @@ def add_torz_slot():
                              "HOST": '',
                              "API": ''
                            })      
+def USE_NZB():
+    for provider in NEWZNAB_PROV:
+        if bool(provider['ENABLED']):
+            return True
+    for provider in TORZNAB_PROV:
+        if bool(provider['ENABLED']):
+            return True
+    return False
+
 
 def add_rss_slot():
     count = len(RSS_PROV) 
@@ -882,6 +878,17 @@ def add_rss_slot():
                              "PASS": ''
                            })      
 
+def USE_RSS():
+    for provider in RSS_PROV:
+        if bool(provider['ENABLED']):
+            return True
+    return False
+
+def USE_TOR():
+    if bool(KAT):
+        return True
+    return False
+    
 def build_bookstrap_themes():
     themelist = []
     if not os.path.isdir(os.path.join(PROG_DIR, 'data/interfaces/bookstrap/')):

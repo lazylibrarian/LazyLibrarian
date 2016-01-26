@@ -55,19 +55,19 @@ def schedule_job(action='Start', target=None):
             lazylibrarian.SCHED.add_interval_job(lazylibrarian.postprocess.processDir, minutes=int(lazylibrarian.SCAN_INTERVAL))
             logger.debug("%s %s job" % (action, target))
         elif 'search_magazines' in target and int(lazylibrarian.SEARCH_INTERVAL):
-            if lazylibrarian.USE_TOR or lazylibrarian.USE_NZB:
+            if lazylibrarian.USE_TOR() or lazylibrarian.USE_NZB():
                 lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchmag.search_magazines, minutes=int(lazylibrarian.SEARCH_INTERVAL))
                 logger.debug("%s %s job" % (action, target))
         elif 'search_nzb_book' in target and int(lazylibrarian.SEARCH_INTERVAL):
-            if lazylibrarian.USE_NZB:
+            if lazylibrarian.USE_NZB():
                 lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchnzb.search_nzb_book, minutes=int(lazylibrarian.SEARCH_INTERVAL))
                 logger.debug("%s %s job" % (action, target))
         elif 'search_tor_book' in target and int(lazylibrarian.SEARCH_INTERVAL):
-            if lazylibrarian.USE_TOR:
+            if lazylibrarian.USE_TOR():
                 lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchtorrents.search_tor_book, minutes=int(lazylibrarian.SEARCH_INTERVAL))
                 logger.debug("%s %s job" % (action, target))
         elif 'search_rss_book' in target and int(lazylibrarian.SEARCHRSS_INTERVAL):
-            if lazylibrarian.USE_RSS:
+            if lazylibrarian.USE_RSS():
                 lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchrss.search_rss_book, minutes=int(lazylibrarian.SEARCHRSS_INTERVAL))
                 logger.debug("%s %s job" % (action, target))
         elif 'checkForUpdates' in target and int(lazylibrarian.VERSIONCHECK_INTERVAL):

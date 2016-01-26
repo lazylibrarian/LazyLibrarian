@@ -56,12 +56,12 @@ def search_magazines(mags=None, reset=False):
 
         resultlist = []
         tor_resultlist = []
-        if lazylibrarian.USE_NZB:
+        if lazylibrarian.USE_NZB():
             resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'mag')
             if not nproviders:
                 logger.warn('No nzb providers are set. Check config for NEWZNAB or TORZNAB providers')
 
-        if lazylibrarian.USE_TOR:
+        if lazylibrarian.USE_TOR():
             tor_resultlist, nproviders = providers.IterateOverTorrentSites(book, 'mag')
             if not nproviders:
                 logger.warn('No torrent providers are set. Check config for TORRENT providers')
