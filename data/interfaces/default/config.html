@@ -143,7 +143,14 @@
                     <BR> GoogleBooks e.g: en, es, it
                     <BR> Default: en, eng, en-US, en-GB
                     <BR> Try adding "Unknown" to list if GoodReads is missing results, or "All" if you don't want to check for language</i>
-		    <BR><BR>
+		            <BR><BR>
+                    <label>Reject list:</label>
+                    <input type="text" name="reject_words" value="${lazylibrarian.REJECT_WORDS}" size="20" maxlength="40">
+                    <br>
+                    <small>Comma separated list of words to reject:<br>
+                    Search results with any of these words in the title will be ignored 
+                    <BR>Default: audiobook, mp3 </small>                    
+                    <BR><BR>
                     <label>Languages for month names:</label><input type="text" name="imp_monthlang" value="${lazylibrarian.IMP_MONTHLANG}" size="20" maxlength="40">
                     <br><i class="smalltext">Comma separated language codes for magazine issues:
                     <br> e.g: fr_FR.utf8, es_ES.utf8        
@@ -162,16 +169,6 @@
                 <td>
                     <fieldset>
                         <h3>Usenet</h3>
-                        <div class="row checkbox">
-                        <%
-                        if lazylibrarian.USE_NZB == True:
-                            checked = 'checked="checked"'
-                        else:
-                            checked = ''
-                        %>
-                        <input type="checkbox" name="use_nzb" id="nzb" value="1" ${checked} />
-                        <label>Enable NZB and Torznab</label>
-                        </div>
                         <fieldset id="usenet_options">
                             <div class="row checkbox">
                             <%
@@ -272,16 +269,6 @@
                     <td>
                     <fieldset>
                         <h3>Torrents</h3>
-                        <div class="row checkbox">
-                                <%
-                                if lazylibrarian.USE_TOR == True:
-                                    checked = 'checked="checked"'
-                                else:
-                                    checked = ''
-                                %>
-                            <input type="checkbox" name="use_tor" id="tor" value="1" ${checked} />
-                            <label>Enable Torrents</label>
-                        </div>
                         <fieldset id="torrent_options">
 
                             <div>
@@ -418,9 +405,9 @@
                     else:
                         checked = ''
                     %>
-                    <input type="checkbox" name="newznab${loop.index}" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter API Here" name="newznab_api${loop.index}" value="${prov['API']}" size="26" maxlength="40">
- 	    		    <input type="text" placeholder="Enter URL Here" name="newznab_host${loop.index}" value="${prov['HOST']}" size="26" maxlength="100">
+                    <input type="checkbox" name="newznab[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
+ 	    		    <input type="text" placeholder="Enter API Here" name="newznab[${loop.index}][api]" value="${prov['API']}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="newznab[${loop.index}][host]" value="${prov['HOST']}" size="26" maxlength="100">
  	    		    <br>
  	    		    %endfor
                 </fieldset>
@@ -436,26 +423,14 @@
                     else:
                         checked = ''
                     %>
-                    <input type="checkbox" name="torznab${loop.index}" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter API Here" name="torznab_api${loop.index}" value="${prov['API']}" size="26" maxlength="40">
- 	    		    <input type="text" placeholder="Enter URL Here" name="torznab_host${loop.index}" value="${prov['HOST']}" size="26" maxlength="100">
+                    <input type="checkbox" name="torznab[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
+ 	    		    <input type="text" placeholder="Enter API Here" name="torznab[${loop.index}][api]" value="${prov['API']}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="torznab[${loop.index}][host]" value="${prov['HOST']}" size="26" maxlength="100">
  	    		    <br>
  	    		    %endfor
  	    		</fieldset>
             </tr>
             <tr>
-                <td>
-                    <div class="row checkbox">
-                        <%
-                        if lazylibrarian.USE_RSS == True:
-                            checked = 'checked="checked"'
-                        else:
-                            checked = ''
-                        %>
-                        <input type="checkbox" name="use_rss" id="rss" value="1" ${checked} />
-                        <label>Enable RSS feed search</label>
-                    </div>
-            	</td>
                 <td>
                     <small>Current limitation: TORZNAB results are returned as magnet links
                     where possible, which may not work automatically with blackhole
@@ -474,10 +449,10 @@
                     else:
                         checked = ''
                     %>
-            		<input type="checkbox" name="rss${loop.index}" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter URL Here" name="rss_host${loop.index}" value="${prov['HOST']}" size="58" maxlength="100"><br>
- 	    		    <input type="text" placeholder="Enter Pass Here" name="rss_pass${loop.index}" value="${prov['PASS']}" size="26" maxlength="40">
- 	    		    <input type="text" placeholder="Enter User Here" name="rss_user${loop.index}" value="${prov['USER']}" size="26" maxlength="40">
+            		<input type="checkbox" name="rss[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
+ 	    		    <input type="text" placeholder="Enter URL Here" name="rss[${loop.index}][host]" value="${prov['HOST']}" size="58" maxlength="100"><br>
+ 	    		    <input type="text" placeholder="Enter Pass Here" name="rss[${loop.index}][pass]" value="${prov['PASS']}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter User Here" name="rss[${loop.index}][user]" value="${prov['USER']}" size="26" maxlength="40">
  	    		    <br>
  	    		    %endfor
                 </fieldset>
@@ -1009,66 +984,7 @@
 <%def name="javascriptIncludes()">
     <script>
         function initThisPage()
-
         {
-            if ($("#nzb").is(":checked"))
-                    {
-                            $("#usenet_options").show();
-                    }
-            else
-                    {
-                            $("#usenet_options").hide();
-                    }
-
-            $("#nzb").click(function(){
-                    if ($("#nzb").is(":checked"))
-                    {
-                            $("#usenet_options").slideDown();
-                    }
-                    else
-                    {
-                            $("#usenet_options").slideUp();
-                    }
-            });
-            if ($("#tor").is(":checked"))
-                    {
-                            $("#torrent_options").show();
-                    }
-            else
-                    {
-                            $("#torrent_options").hide();
-                    }
-
-            $("#tor").click(function(){
-                    if ($("#tor").is(":checked"))
-                    {
-                            $("#torrent_options").slideDown();
-                    }
-                    else
-                    {
-                            $("#torrent_options").slideUp();
-                    }
-            });
-
-            if ($("#rss").is(":checked"))
-                    {
-                            $("#rss_options").show();
-                    }
-            else
-                    {
-                            $("#rss_options").hide();
-                    }
-
-            $("#rss").click(function(){
-                    if ($("#rss").is(":checked"))
-                    {
-                            $("#rss_options").slideDown();
-                    }
-                    else
-                    {
-                            $("#rss_options").slideUp();
-                    }
-            });
             if ($("#tor_downloader_blackhole").is(":checked"))
                 {
                         $("#tor_blackhole_options").show();

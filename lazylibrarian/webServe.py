@@ -69,14 +69,14 @@ class WebInterface(object):
                      http_pass='', http_look='', launch_browser=0, logdir='', loglevel=2, loglimit=500,
                      imp_onlyisbn=0, imp_singlebook=0, imp_preflang='', imp_monthlang='', imp_convert='',
                      imp_autoadd='', match_ratio=80, nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0,
-                     nzb_downloader_blackhole=0, use_nzb=0, use_tor=0, use_rss=0, proxy_host='', proxy_type='',
+                     nzb_downloader_blackhole=0, proxy_host='', proxy_type='',
                      sab_host='', sab_port=0, sab_subdir='', sab_api='', sab_user='', sab_pass='',
                      destination_copy=0, destination_dir='', download_dir='', sab_cat='', usenet_retention=0,
                      nzb_blackholedir='', alternate_dir='', torrent_dir='', numberofseeders=0,
                      tor_downloader_blackhole=0, tor_downloader_utorrent=0,
                      nzbget_host='', nzbget_user='', nzbget_pass='', nzbget_cat='', nzbget_priority=0, 
                      newzbin=0, newzbin_uid='', newzbin_pass='', kat=0, kat_host='',
-                     ebook_type='', mag_type='', book_api='', gr_api='', gb_api='',
+                     ebook_type='', mag_type='', reject_words='', book_api='', gr_api='', gb_api='',
                      versioncheck_interval='', search_interval='', scan_interval='', searchrss_interval=20, 
                      ebook_dest_folder='', ebook_dest_file='',
                      mag_relative=0, mag_dest_folder='', mag_dest_file='', cache_age=30,
@@ -170,12 +170,9 @@ class WebInterface(object):
         lazylibrarian.KAT = bool(kat)
         lazylibrarian.KAT_HOST = kat_host
 
-        lazylibrarian.USE_NZB = bool(use_nzb)
-        lazylibrarian.USE_TOR = bool(use_tor)
-        lazylibrarian.USE_RSS = bool(use_rss)
-
         lazylibrarian.EBOOK_TYPE = ebook_type
         lazylibrarian.MAG_TYPE = mag_type
+        lazylibrarian.REJECT_WORDS = reject_words
         lazylibrarian.BOOK_API = book_api
         lazylibrarian.GR_API = gr_api
         lazylibrarian.GB_API = gb_api
@@ -234,24 +231,24 @@ class WebInterface(object):
 
         count = 0
         while count < len(lazylibrarian.NEWZNAB_PROV):        
-            lazylibrarian.NEWZNAB_PROV[count]['ENABLED'] = bool(kwargs.get('newznab%i' % count))
-            lazylibrarian.NEWZNAB_PROV[count]['HOST'] = kwargs.get('newznab_host%i' % count)
-            lazylibrarian.NEWZNAB_PROV[count]['API'] = kwargs.get('newznab_api%i' % count)
+            lazylibrarian.NEWZNAB_PROV[count]['ENABLED'] = bool(kwargs.get('newznab[%i][enabled]' % count, False))
+            lazylibrarian.NEWZNAB_PROV[count]['HOST'] = kwargs.get('newznab[%i][host]' % count, '')
+            lazylibrarian.NEWZNAB_PROV[count]['API'] = kwargs.get('newznab[%i][api]' % count, '')
             count += 1
         
         count = 0
         while count < len(lazylibrarian.TORZNAB_PROV):        
-            lazylibrarian.TORZNAB_PROV[count]['ENABLED'] = bool(kwargs.get('torznab%i' % count))
-            lazylibrarian.TORZNAB_PROV[count]['HOST'] = kwargs.get('torznab_host%i' % count)
-            lazylibrarian.TORZNAB_PROV[count]['API'] = kwargs.get('torznab_api%i' % count)
+            lazylibrarian.TORZNAB_PROV[count]['ENABLED'] = bool(kwargs.get('torznab[%i][enabled]' % count, False))
+            lazylibrarian.TORZNAB_PROV[count]['HOST'] = kwargs.get('torznab[%i][host]' % count, '')
+            lazylibrarian.TORZNAB_PROV[count]['API'] = kwargs.get('torznab[%i][api]' % count, '')
             count += 1
         
         count = 0
         while count < len(lazylibrarian.RSS_PROV):
-            lazylibrarian.RSS_PROV[count]['ENABLED'] = bool(kwargs.get('rss%i' % count))
-            lazylibrarian.RSS_PROV[count]['HOST'] = kwargs.get('rss_host%i' % count)
-            lazylibrarian.RSS_PROV[count]['USER'] = kwargs.get('rss_user%i' % count)
-            lazylibrarian.RSS_PROV[count]['PASS'] = kwargs.get('rss_pass%i' % count)
+            lazylibrarian.RSS_PROV[count]['ENABLED'] = bool(kwargs.get('rss[%i][enabled]' % count, False))
+            lazylibrarian.RSS_PROV[count]['HOST'] = kwargs.get('rss[%i][host]' % count, '')
+            lazylibrarian.RSS_PROV[count]['USER'] = kwargs.get('rss[%i][user]' % count, '')
+            lazylibrarian.RSS_PROV[count]['PASS'] = kwargs.get('rss[%i][pass]' % count, '')
             count += 1
 
         lazylibrarian.config_write()
@@ -464,13 +461,13 @@ class WebInterface(object):
 
     def startBookSearch(self, books=None):
         if books:
-            if lazylibrarian.USE_NZB or lazylibrarian.USE_TOR:
-                if lazylibrarian.USE_NZB:
-                    threading.Thread(target=search_nzb_book, args=[books]).start()
-                if lazylibrarian.USE_TOR:
-                    threading.Thread(target=search_tor_book, args=[books]).start()
-                    if lazylibrarian.USE_TOR:
-                        threading.Thread(target=search_rss_book, args=[books]).start()
+            if lazylibrarian.USE_RSS():
+                threading.Thread(target=search_rss_book, args=[books]).start()
+            if lazylibrarian.USE_NZB():
+                threading.Thread(target=search_nzb_book, args=[books]).start()
+            if lazylibrarian.USE_TOR():
+                threading.Thread(target=search_tor_book, args=[books]).start()
+            if lazylibrarian.USE_RSS() or lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
                 logger.debug(u"Searching for book with id: " + books[0]["bookid"])
             else:
                 logger.warn(u"Not searching for book, no search methods set, check config.")
@@ -570,13 +567,13 @@ class WebInterface(object):
                 if not bookid == 'book_table_length':
                     books.append({"bookid": bookid})
 
-            if lazylibrarian.USE_NZB:
+            if lazylibrarian.USE_RSS():
+                threading.Thread(target=search_rss_book, args=[books]).start()
+            if lazylibrarian.USE_NZB():
                 threading.Thread(target=search_nzb_book, args=[books]).start()
-            if lazylibrarian.USE_TOR:
+            if lazylibrarian.USE_TOR():
                 threading.Thread(target=search_tor_book, args=[books]).start()
-            if not lazylibrarian.USE_NZB and not lazylibrarian.USE_TOR:
-                logger.warn(u"No search methods set, check config.")
-
+            
         if redirect == "author":
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
         elif redirect == "books":
@@ -794,7 +791,7 @@ class WebInterface(object):
 
     def startMagazineSearch(self, mags=None):
         if mags:
-            if lazylibrarian.USE_NZB or lazylibrarian.USE_TOR:
+            if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
                 threading.Thread(target=search_magazines, args=[mags, False]).start()
                 logger.debug(u"Searching for magazine with title: %s" % common.remove_accents(mags[0]["bookid"]))
             else:
@@ -1110,16 +1107,15 @@ class WebInterface(object):
 
     def forceSearch(self, source=None):
         if source == "magazines":
-            threading.Thread(target=search_magazines, args=[None, True]).start()
+            if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
+                threading.Thread(target=search_magazines, args=[None, True]).start()
         elif source == "books":
-            if lazylibrarian.USE_NZB:
+            if lazylibrarian.USE_NZB():
                 threading.Thread(target=search_nzb_book).start()
-            if lazylibrarian.USE_TOR:
+            if lazylibrarian.USE_TOR():
                 threading.Thread(target=search_tor_book).start()
-                if lazylibrarian.USE_RSS:
-                    threading.Thread(target=search_rss_book).start()
-            if not lazylibrarian.USE_NZB and not lazylibrarian.USE_TOR:
-                logger.warn(u"No search methods set, check config.")
+            if lazylibrarian.USE_RSS():
+                threading.Thread(target=search_rss_book).start()
         else:
             logger.debug(u"forceSearch called with bad source")
         raise cherrypy.HTTPRedirect(source)

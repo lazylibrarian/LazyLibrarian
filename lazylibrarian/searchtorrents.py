@@ -23,8 +23,8 @@ import gzip
 
 
 def search_tor_book(books=None, reset=False):
-    if not(lazylibrarian.USE_TOR):
-        logger.warn('Torrent search is disabled')
+    if not lazylibrarian.USE_TOR():
+        logger.warn('No Torrent providers set, check config')
         return
     # rename this thread
     threading.currentThread().name = "SEARCHTORBOOKS"
@@ -116,18 +116,40 @@ def processResultList(resultlist, book, searchtype):
     dictrepl = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
                 ',': '', '*': '', '(': '', ')': '', '[': '', ']': '', '#': '', '0': '', '1': '', '2': '',
                 '3': '', '4': '', '5': '', '6': '', '7': '', '8': '', '9': '', '\'': '', ':': '', '!': '',
-                '-': '', '\s\s': ' ', ' the ': ' ', ' a ': ' ', ' and ': ' ', ' to ': ' ', ' of ': ' ',
-                ' for ': ' ', ' my ': ' ', ' in ': ' ', ' at ': ' ', ' with ': ' '}
+                '-': '', '\s\s': ' '}
+                # ' the ': ' ', ' a ': ' ', ' and ': ' ', ' to ': ' ', ' of ': ' ',
+                # ' for ': ' ', ' my ': ' ', ' in ': ' ', ' at ': ' ', ' with ': ' '}
+
+    dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
+           ',': '', '*': '', ':': '', ';': ''}
+
+    match_ratio = int(lazylibrarian.MATCH_RATIO)
+    reject_list = formatter.getList(lazylibrarian.REJECT_WORDS)
 
     for tor in resultlist:
         tor_Title = formatter.latinToAscii(formatter.replace_all(str(tor['tor_title']), dictrepl)).strip()
         tor_Title = re.sub(r"\s\s+", " ", tor_Title)  # remove extra whitespace
 
-        match_ratio = int(lazylibrarian.MATCH_RATIO)
-        tor_Title_match = fuzz.token_set_ratio(book['searchterm'], tor_Title)
-        logger.debug("Torrent Title Match %: " + str(tor_Title_match) + " for " + tor_Title)
+        author = formatter.latinToAscii(formatter.replace_all(book['authorName'], dic))
+        title = formatter.latinToAscii(formatter.replace_all(book['bookName'], dic))
 
-        if (tor_Title_match >= match_ratio):
+        torAuthor_match = fuzz.token_set_ratio(author, tor_Title)
+        torBook_match = fuzz.token_set_ratio(title, tor_Title)
+        logger.debug(u"TOR author/book Match: %s/%s for %s" % (torAuthor_match, torBook_match, tor_Title))
+        
+        # tor_Title_match = fuzz.token_set_ratio(book['searchterm'], tor_Title)
+        # logger.debug("Torrent Title Match %: " + str(tor_Title_match) + " for " + tor_Title)
+        # if (tor_Title_match >= match_ratio):
+
+        rejected = False
+       
+        for word in reject_list:
+            if word in tor_Title.lower() and not word in author.lower() and not word in title_lower():
+                rejected = True
+                logger.debug("Rejecting %s, contains %s" % (tor_Title, word))
+                break
+
+        if (torAuthor_match >= match_ratio and torBook_match >= match_ratio and not rejected):
             logger.debug(u'Found Torrent: %s using %s search' % (tor['tor_title'], searchtype))
             bookid = book['bookid']
             tor_Title = (book["authorName"] + ' - ' + book['bookName'] +
@@ -168,10 +190,10 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
     myDB = database.DBConnection()
     download = False
     full_url = tor_url  # keep the url as stored in "wanted" table
-    if (lazylibrarian.USE_TOR) and (lazylibrarian.TOR_DOWNLOADER_DELUGE or
-                                    lazylibrarian.TOR_DOWNLOADER_UTORRENT or
-                                    lazylibrarian.TOR_DOWNLOADER_BLACKHOLE or
-                                    lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
+    if (lazylibrarian.TOR_DOWNLOADER_DELUGE or
+        lazylibrarian.TOR_DOWNLOADER_UTORRENT or
+        lazylibrarian.TOR_DOWNLOADER_BLACKHOLE or
+        lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
 
         if tor_url.startswith('magnet'):
             torrent = tor_url  # allow magnet link to write to blackhole and hash to utorrent

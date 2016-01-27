@@ -18,8 +18,8 @@ from lazylibrarian.searchtorrents import TORDownloadMethod
 
 
 def search_nzb_book(books=None, reset=False):
-    if not(lazylibrarian.USE_NZB):
-        logger.warn('NZB Search is disabled')
+    if not lazylibrarian.USE_NZB():
+        logger.warn('No NEWZNAB/TORZNAB providers set, check config')
         return
     # rename this thread
     threading.currentThread().name = "SEARCHNZBBOOKS"
@@ -121,19 +121,32 @@ def processResultList(resultlist, book, searchtype):
                 # ' the ': ' ', ' a ': ' ', ' and ': ' ',
                 # ' to ': ' ', ' of ': ' ', ' for ': ' ', ' my ': ' ', ' in ': ' ', ' at ': ' ', ' with ': ' '}
 
+    dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
+           ',': '', '*': '', ':': '', ';': ''}
+
     match_ratio = int(lazylibrarian.MATCH_RATIO)
+    reject_list = formatter.getList(lazylibrarian.REJECT_WORDS)
 
     for nzb in resultlist:
         nzbTitle = formatter.latinToAscii(formatter.replace_all(nzb['nzbtitle'], dictrepl)).strip()
         nzbTitle = re.sub(r"\s\s+", " ", nzbTitle)  # remove extra whitespace
 
+        author = formatter.latinToAscii(formatter.replace_all(book['authorName'], dic))
+        title = formatter.latinToAscii(formatter.replace_all(book['bookName'], dic))
         # nzbTitle_match = fuzz.token_set_ratio(book['searchterm'], nzbTitle)
         # logger.debug(u"NZB Title sort Match %: " + str(nzbTitle_match) + " for " + nzbTitle)
-        nzbAuthor_match = fuzz.token_set_ratio(book['authorName'].encode('utf-8'), nzbTitle)
-        nzbBook_match = fuzz.token_set_ratio(book['bookName'].encode('utf-8'), nzbTitle)
+        nzbAuthor_match = fuzz.token_set_ratio(author, nzbTitle)
+        nzbBook_match = fuzz.token_set_ratio(title, nzbTitle)
         logger.debug(u"NZB author/book Match: %s/%s for %s" % (nzbAuthor_match, nzbBook_match, nzbTitle))
         
-        if (nzbAuthor_match >= match_ratio and nzbBook_match >= match_ratio):
+        rejected = False
+        for word in reject_list:
+            if word in nzbTitle.lower() and not word in author.lower() and not word in title.lower():
+                rejected = True
+                logger.debug("Rejecting %s, contains %s" % (nzbTitle, word))
+                break
+                
+        if (nzbAuthor_match >= match_ratio and nzbBook_match >= match_ratio and not rejected):
             logger.debug(u'Found NZB: %s using %s search' % (nzb['nzbtitle'], searchtype))
             bookid = book['bookid']
             nzbTitle = (book["authorName"] + ' - ' + book['bookName'] + ' LL.(' + book['bookid'] + ')').strip()
