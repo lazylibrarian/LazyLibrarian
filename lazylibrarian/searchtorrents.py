@@ -152,8 +152,7 @@ def processResultList(resultlist, book, searchtype):
         if (torAuthor_match >= match_ratio and torBook_match >= match_ratio and not rejected):
             logger.debug(u'Found Torrent: %s using %s search' % (tor['tor_title'], searchtype))
             bookid = book['bookid']
-            tor_Title = (book["authorName"] + ' - ' + book['bookName'] +
-                         ' LL.(' + book['bookid'] + ')').strip()
+            tor_Title = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
             tor_url = tor['tor_url']
             tor_prov = tor['tor_prov']
 
