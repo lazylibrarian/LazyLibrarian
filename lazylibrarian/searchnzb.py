@@ -149,7 +149,7 @@ def processResultList(resultlist, book, searchtype):
         if (nzbAuthor_match >= match_ratio and nzbBook_match >= match_ratio and not rejected):
             logger.debug(u'Found NZB: %s using %s search' % (nzb['nzbtitle'], searchtype))
             bookid = book['bookid']
-            nzbTitle = (book["authorName"] + ' - ' + book['bookName'] + ' LL.(' + book['bookid'] + ')').strip()
+            nzbTitle = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
             nzburl = nzb['nzburl']
             nzbprov = nzb['nzbprov']
             nzbdate_temp = nzb['nzbdate']
@@ -179,7 +179,7 @@ def processResultList(resultlist, book, searchtype):
                 else:
                     snatch = NZBDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
                 if snatch:
-                    notifiers.notify_snatch(formatter.latinToAscii(nzbTitle) + ' at ' + formatter.now())
+                    notifiers.notify_snatch(nzbTitle + ' at ' + formatter.now())
                     common.schedule_job(action='Start', target='processDir')
                     return True
 
