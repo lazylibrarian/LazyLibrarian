@@ -138,8 +138,10 @@ def search_magazines(mags=None, reset=False):
                             logger.debug(u"Magazine token set Match failed: " + str(mag_title_match) + "% for " + nzbtitle_formatted)
                             name_match = 0
                     
+                    lower_title = common.remove_accents(nzbtitle_formatted).lower()
+                    lower_bookid = common.remove_accents(bookid).lower()
                     for word in reject_list:
-                        if word in common.remove_accents(nzbtitle_formatted):
+                        if word in lower_title and not word in lower_bookid:
                             name_match = 0
                             logger.debug("Rejecting %s, contains %s" % (nzbtitle_formatted, word))
                             break

@@ -49,15 +49,14 @@ def search_rss_book(books=None, reset=False):
         logger.warn('No rss providers are set, check config')
         return  # No point in continuing
 
+    dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
+           ',': '', '*': '', ':': '', ';': ''}
+
     rss_count = 0
     for book in searchbooks:
         bookid = book['BookID']
         author = book['AuthorName']
         title = book['BookName']
-
-        dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
-               ',': '', '*': '', ':': '', ';': ''}
-        dicSearchFormatting = {'.': ' +', ' + ': ' '}
 
         author = formatter.latinToAscii(formatter.replace_all(author, dic))
         title = formatter.latinToAscii(formatter.replace_all(title, dic))
@@ -111,7 +110,7 @@ def processResultList(resultlist, author, title, book):
 
         rejected = False
         for word in reject_list:
-            if word in tor_Title:
+            if word in tor_Title.lower() and not word in author.lower() and not word in book.lower():
                 rejected = True
                 logger.debug("Rejecting %s, contains %s" % (tor_Title, word))
                 break

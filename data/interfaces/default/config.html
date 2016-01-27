@@ -405,7 +405,7 @@
                     else:
                         checked = ''
                     %>
-                    <input type="checkbox" name="newznab$[{loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
+                    <input type="checkbox" name="newznab[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
  	    		    <input type="text" placeholder="Enter API Here" name="newznab[${loop.index}][api]" value="${prov['API']}" size="26" maxlength="40">
  	    		    <input type="text" placeholder="Enter URL Here" name="newznab[${loop.index}][host]" value="${prov['HOST']}" size="26" maxlength="100">
  	    		    <br>
@@ -423,7 +423,7 @@
                     else:
                         checked = ''
                     %>
-                    <input type="checkbox" name="torznab$[{loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
+                    <input type="checkbox" name="torznab[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
  	    		    <input type="text" placeholder="Enter API Here" name="torznab[${loop.index}][api]" value="${prov['API']}" size="26" maxlength="40">
  	    		    <input type="text" placeholder="Enter URL Here" name="torznab[${loop.index}][host]" value="${prov['HOST']}" size="26" maxlength="100">
  	    		    <br>

@@ -120,6 +120,9 @@ def processResultList(resultlist, book, searchtype):
                 # ' the ': ' ', ' a ': ' ', ' and ': ' ', ' to ': ' ', ' of ': ' ',
                 # ' for ': ' ', ' my ': ' ', ' in ': ' ', ' at ': ' ', ' with ': ' '}
 
+    dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
+           ',': '', '*': '', ':': '', ';': ''}
+
     match_ratio = int(lazylibrarian.MATCH_RATIO)
     reject_list = formatter.getList(lazylibrarian.REJECT_WORDS)
 
@@ -127,8 +130,11 @@ def processResultList(resultlist, book, searchtype):
         tor_Title = formatter.latinToAscii(formatter.replace_all(str(tor['tor_title']), dictrepl)).strip()
         tor_Title = re.sub(r"\s\s+", " ", tor_Title)  # remove extra whitespace
 
-        torAuthor_match = fuzz.token_set_ratio(book['authorName'].encode('utf-8'), tor_Title)
-        torBook_match = fuzz.token_set_ratio(book['bookName'].encode('utf-8'), tor_Title)
+        author = formatter.latinToAscii(formatter.replace_all(book['authorName'], dic))
+        title = formatter.latinToAscii(formatter.replace_all(book['bookName'], dic))
+
+        torAuthor_match = fuzz.token_set_ratio(author, tor_Title)
+        torBook_match = fuzz.token_set_ratio(title, tor_Title)
         logger.debug(u"TOR author/book Match: %s/%s for %s" % (torAuthor_match, torBook_match, tor_Title))
         
         # tor_Title_match = fuzz.token_set_ratio(book['searchterm'], tor_Title)
@@ -136,8 +142,9 @@ def processResultList(resultlist, book, searchtype):
         # if (tor_Title_match >= match_ratio):
 
         rejected = False
+       
         for word in reject_list:
-            if word in tor_Title:
+            if word in tor_Title.lower() and not word in author.lower() and not word in title_lower():
                 rejected = True
                 logger.debug("Rejecting %s, contains %s" % (tor_Title, word))
                 break
