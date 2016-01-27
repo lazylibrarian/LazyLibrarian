@@ -121,6 +121,7 @@ def processResultList(resultlist, book, searchtype):
                 # ' for ': ' ', ' my ': ' ', ' in ': ' ', ' at ': ' ', ' with ': ' '}
 
     match_ratio = int(lazylibrarian.MATCH_RATIO)
+    reject_list = formatter.getList(lazylibrarian.REJECT_WORDS)
 
     for tor in resultlist:
         tor_Title = formatter.latinToAscii(formatter.replace_all(str(tor['tor_title']), dictrepl)).strip()
@@ -133,7 +134,15 @@ def processResultList(resultlist, book, searchtype):
         # tor_Title_match = fuzz.token_set_ratio(book['searchterm'], tor_Title)
         # logger.debug("Torrent Title Match %: " + str(tor_Title_match) + " for " + tor_Title)
         # if (tor_Title_match >= match_ratio):
-        if (torAuthor_match >= match_ratio and torBook_match >= match_ratio):
+
+        rejected = False
+        for word in reject_list:
+            if word in tor_Title:
+                rejected = True
+                logger.debug("Rejecting %s, contains %s" % (tor_Title, word))
+                break
+
+        if (torAuthor_match >= match_ratio and torBook_match >= match_ratio and not rejected):
             logger.debug(u'Found Torrent: %s using %s search' % (tor['tor_title'], searchtype))
             bookid = book['bookid']
             tor_Title = (book["authorName"] + ' - ' + book['bookName'] +

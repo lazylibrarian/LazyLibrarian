@@ -76,7 +76,7 @@ class WebInterface(object):
                      tor_downloader_blackhole=0, tor_downloader_utorrent=0,
                      nzbget_host='', nzbget_user='', nzbget_pass='', nzbget_cat='', nzbget_priority=0, 
                      newzbin=0, newzbin_uid='', newzbin_pass='', kat=0, kat_host='',
-                     ebook_type='', mag_type='', book_api='', gr_api='', gb_api='',
+                     ebook_type='', mag_type='', reject_words='', book_api='', gr_api='', gb_api='',
                      versioncheck_interval='', search_interval='', scan_interval='', searchrss_interval=20, 
                      ebook_dest_folder='', ebook_dest_file='',
                      mag_relative=0, mag_dest_folder='', mag_dest_file='', cache_age=30,
@@ -172,6 +172,7 @@ class WebInterface(object):
 
         lazylibrarian.EBOOK_TYPE = ebook_type
         lazylibrarian.MAG_TYPE = mag_type
+        lazylibrarian.REJECT_WORDS = reject_words
         lazylibrarian.BOOK_API = book_api
         lazylibrarian.GR_API = gr_api
         lazylibrarian.GB_API = gb_api
@@ -230,24 +231,24 @@ class WebInterface(object):
 
         count = 0
         while count < len(lazylibrarian.NEWZNAB_PROV):        
-            lazylibrarian.NEWZNAB_PROV[count]['ENABLED'] = bool(kwargs.get('newznab%i' % count))
-            lazylibrarian.NEWZNAB_PROV[count]['HOST'] = kwargs.get('newznab_host%i' % count)
-            lazylibrarian.NEWZNAB_PROV[count]['API'] = kwargs.get('newznab_api%i' % count)
+            lazylibrarian.NEWZNAB_PROV[count]['ENABLED'] = bool(kwargs.get('newznab[%i][enabled]' % count, False))
+            lazylibrarian.NEWZNAB_PROV[count]['HOST'] = kwargs.get('newznab[%i][host]' % count, '')
+            lazylibrarian.NEWZNAB_PROV[count]['API'] = kwargs.get('newznab[%i][api]' % count, '')
             count += 1
         
         count = 0
         while count < len(lazylibrarian.TORZNAB_PROV):        
-            lazylibrarian.TORZNAB_PROV[count]['ENABLED'] = bool(kwargs.get('torznab%i' % count))
-            lazylibrarian.TORZNAB_PROV[count]['HOST'] = kwargs.get('torznab_host%i' % count)
-            lazylibrarian.TORZNAB_PROV[count]['API'] = kwargs.get('torznab_api%i' % count)
+            lazylibrarian.TORZNAB_PROV[count]['ENABLED'] = bool(kwargs.get('torznab[%i][enabled]' % count, False))
+            lazylibrarian.TORZNAB_PROV[count]['HOST'] = kwargs.get('torznab[%i][host]' % count, '')
+            lazylibrarian.TORZNAB_PROV[count]['API'] = kwargs.get('torznab[%i][api]' % count, '')
             count += 1
         
         count = 0
         while count < len(lazylibrarian.RSS_PROV):
-            lazylibrarian.RSS_PROV[count]['ENABLED'] = bool(kwargs.get('rss%i' % count))
-            lazylibrarian.RSS_PROV[count]['HOST'] = kwargs.get('rss_host%i' % count)
-            lazylibrarian.RSS_PROV[count]['USER'] = kwargs.get('rss_user%i' % count)
-            lazylibrarian.RSS_PROV[count]['PASS'] = kwargs.get('rss_pass%i' % count)
+            lazylibrarian.RSS_PROV[count]['ENABLED'] = bool(kwargs.get('rss[%i][enabled]' % count, False))
+            lazylibrarian.RSS_PROV[count]['HOST'] = kwargs.get('rss[%i][host]' % count, '')
+            lazylibrarian.RSS_PROV[count]['USER'] = kwargs.get('rss[%i][user]' % count, '')
+            lazylibrarian.RSS_PROV[count]['PASS'] = kwargs.get('rss[%i][pass]' % count, '')
             count += 1
 
         lazylibrarian.config_write()

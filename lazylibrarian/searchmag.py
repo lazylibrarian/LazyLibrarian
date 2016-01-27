@@ -89,6 +89,7 @@ def search_magazines(mags=None, reset=False):
             to_snatch = 0
             maglist = []
             issues = []
+            reject_list = formatter.getList(lazylibrarian.REJECT_WORDS)
             for nzb in resultlist:
                 total_nzbs = total_nzbs + 1
                 bookid = nzb['bookid']
@@ -136,6 +137,13 @@ def search_magazines(mags=None, reset=False):
                         if mag_title_match < lazylibrarian.MATCH_RATIO:
                             logger.debug(u"Magazine token set Match failed: " + str(mag_title_match) + "% for " + nzbtitle_formatted)
                             name_match = 0
+                    
+                    for word in reject_list:
+                        if word in common.remove_accents(nzbtitle_formatted):
+                            name_match = 0
+                            logger.debug("Rejecting %s, contains %s" % (nzbtitle_formatted, word))
+                            break
+
                     if name_match:
                         # some magazine torrent uploaders add their sig in [] or {}
                         # Fortunately for us, they always seem to add it at the end

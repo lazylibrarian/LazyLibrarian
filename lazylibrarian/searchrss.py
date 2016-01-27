@@ -98,6 +98,7 @@ def processResultList(resultlist, author, title, book):
                 # ' for ': ' ', ' my ': ' ', ' in ': ' ', ' at ': ' ', ' with ': ' '}
 
     match_ratio = int(lazylibrarian.MATCH_RATIO)
+    reject_list = formatter.getList(lazylibrarian.REJECT_WORDS)
 
     # bit of a misnomer now, rss can search both tor and nzb rss feeds
     for tor in resultlist:
@@ -108,7 +109,14 @@ def processResultList(resultlist, author, title, book):
         tor_Title_match = fuzz.token_set_ratio(title, tor_Title)
         logger.debug("RSS Author/Title Match: %s/%s for %s" %(tor_Author_match, tor_Title_match, tor_Title))
 
-        if (tor_Title_match >= match_ratio and tor_Author_match >= match_ratio):
+        rejected = False
+        for word in reject_list:
+            if word in tor_Title:
+                rejected = True
+                logger.debug("Rejecting %s, contains %s" % (tor_Title, word))
+                break
+
+        if (tor_Title_match >= match_ratio and tor_Author_match >= match_ratio and not rejected):
             logger.debug(u'Found RSS: %s' % tor['tor_title'])
             bookid = book['bookid']
             tor_Title = (book["authorName"] + ' - ' + book['bookName'] +

@@ -143,7 +143,14 @@
                     <BR> GoogleBooks e.g: en, es, it
                     <BR> Default: en, eng, en-US, en-GB
                     <BR> Try adding "Unknown" to list if GoodReads is missing results, or "All" if you don't want to check for language</i>
-		    <BR><BR>
+		            <BR><BR>
+                    <label>Reject list:</label>
+                    <input type="text" name="reject_words" value="${lazylibrarian.REJECT_WORDS}" size="20" maxlength="40">
+                    <br>
+                    <small>Comma separated list of words to reject:<br>
+                    Search results with any of these words in the title will be ignored 
+                    <BR>Default: audiobook, mp3 </small>                    
+                    <BR><BR>
                     <label>Languages for month names:</label><input type="text" name="imp_monthlang" value="${lazylibrarian.IMP_MONTHLANG}" size="20" maxlength="40">
                     <br><i class="smalltext">Comma separated language codes for magazine issues:
                     <br> e.g: fr_FR.utf8, es_ES.utf8        
@@ -398,9 +405,9 @@
                     else:
                         checked = ''
                     %>
-                    <input type="checkbox" name="newznab${loop.index}" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter API Here" name="newznab_api${loop.index}" value="${prov['API']}" size="26" maxlength="40">
- 	    		    <input type="text" placeholder="Enter URL Here" name="newznab_host${loop.index}" value="${prov['HOST']}" size="26" maxlength="100">
+                    <input type="checkbox" name="newznab$[{loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
+ 	    		    <input type="text" placeholder="Enter API Here" name="newznab[${loop.index}][api]" value="${prov['API']}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="newznab[${loop.index}][host]" value="${prov['HOST']}" size="26" maxlength="100">
  	    		    <br>
  	    		    %endfor
                 </fieldset>
@@ -416,9 +423,9 @@
                     else:
                         checked = ''
                     %>
-                    <input type="checkbox" name="torznab${loop.index}" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter API Here" name="torznab_api${loop.index}" value="${prov['API']}" size="26" maxlength="40">
- 	    		    <input type="text" placeholder="Enter URL Here" name="torznab_host${loop.index}" value="${prov['HOST']}" size="26" maxlength="100">
+                    <input type="checkbox" name="torznab$[{loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
+ 	    		    <input type="text" placeholder="Enter API Here" name="torznab[${loop.index}][api]" value="${prov['API']}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="torznab[${loop.index}][host]" value="${prov['HOST']}" size="26" maxlength="100">
  	    		    <br>
  	    		    %endfor
  	    		</fieldset>
@@ -442,10 +449,10 @@
                     else:
                         checked = ''
                     %>
-            		<input type="checkbox" name="rss${loop.index}" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter URL Here" name="rss_host${loop.index}" value="${prov['HOST']}" size="58" maxlength="100"><br>
- 	    		    <input type="text" placeholder="Enter Pass Here" name="rss_pass${loop.index}" value="${prov['PASS']}" size="26" maxlength="40">
- 	    		    <input type="text" placeholder="Enter User Here" name="rss_user${loop.index}" value="${prov['USER']}" size="26" maxlength="40">
+            		<input type="checkbox" name="rss[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
+ 	    		    <input type="text" placeholder="Enter URL Here" name="rss[${loop.index}][host]" value="${prov['HOST']}" size="58" maxlength="100"><br>
+ 	    		    <input type="text" placeholder="Enter Pass Here" name="rss[${loop.index}][pass]" value="${prov['PASS']}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter User Here" name="rss[${loop.index}][user]" value="${prov['USER']}" size="26" maxlength="40">
  	    		    <br>
  	    		    %endfor
                 </fieldset>

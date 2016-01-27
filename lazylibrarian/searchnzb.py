@@ -122,6 +122,7 @@ def processResultList(resultlist, book, searchtype):
                 # ' to ': ' ', ' of ': ' ', ' for ': ' ', ' my ': ' ', ' in ': ' ', ' at ': ' ', ' with ': ' '}
 
     match_ratio = int(lazylibrarian.MATCH_RATIO)
+    reject_list = formatter.getList(lazylibrarian.REJECT_WORDS)
 
     for nzb in resultlist:
         nzbTitle = formatter.latinToAscii(formatter.replace_all(nzb['nzbtitle'], dictrepl)).strip()
@@ -133,7 +134,14 @@ def processResultList(resultlist, book, searchtype):
         nzbBook_match = fuzz.token_set_ratio(book['bookName'].encode('utf-8'), nzbTitle)
         logger.debug(u"NZB author/book Match: %s/%s for %s" % (nzbAuthor_match, nzbBook_match, nzbTitle))
         
-        if (nzbAuthor_match >= match_ratio and nzbBook_match >= match_ratio):
+        rejected = False
+        for word in reject_list:
+            if word in nzbTitle:
+                rejected = True
+                logger.debug("Rejecting %s, contains %s" % (nzbTitle, word))
+                break
+                
+        if (nzbAuthor_match >= match_ratio and nzbBook_match >= match_ratio and not rejected):
             logger.debug(u'Found NZB: %s using %s search' % (nzb['nzbtitle'], searchtype))
             bookid = book['bookid']
             nzbTitle = (book["authorName"] + ' - ' + book['bookName'] + ' LL.(' + book['bookid'] + ')').strip()
