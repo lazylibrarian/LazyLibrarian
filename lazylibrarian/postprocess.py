@@ -162,9 +162,6 @@ def processDir(force=False, reset=False):
             processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name)
 
             if processBook:
-
-                ppcount = ppcount + 1
-
                 # update nzbs, only update the snatched ones in case multiple matches for same book / magazine issue
                 controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
                 newValueDict = {"Status": "Processed", "NZBDate": formatter.today()}  # say when we processed it
@@ -195,6 +192,7 @@ def processDir(force=False, reset=False):
                     magazinescan.create_cover(dest_file)
 
                 logger.info('Successfully processed: %s' % global_name)
+                ppcount = ppcount + 1
                 notifiers.notify_download(formatter.latinToAscii(global_name) + ' at ' + formatter.now())
             else:
                 logger.error('Postprocessing for %s has failed.' % global_name)
@@ -270,6 +268,7 @@ def import_book(pp_path=None, bookID=None):
             newValueDict = {"Status": "Processed", "NZBDate": formatter.today()}  # say when we processed it
             myDB.upsert("wanted", newValueDict, controlValueDict)
             processExtras(myDB, dest_path, global_name, data)
+            logger.info('Successfully processed: %s' % global_name)
             return True
         else:
             logger.error('Postprocessing for %s has failed.' % global_name)
