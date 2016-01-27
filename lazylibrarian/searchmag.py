@@ -21,12 +21,12 @@ def search_magazines(mags=None, reset=False):
     threading.currentThread().name = "SEARCHMAGS"
 
     if mags is None:  # backlog search
-        searchmags = myDB.select('SELECT Title, Frequency, LastAcquired, \
+        searchmags = myDB.select('SELECT Title, LastAcquired, \
                                  IssueDate from magazines WHERE Status="Active"')
     else:
         searchmags = []
         for magazine in mags:
-            searchmags_temp = myDB.select('SELECT Title, Frequency, LastAcquired, IssueDate from magazines \
+            searchmags_temp = myDB.select('SELECT Title, LastAcquired, IssueDate from magazines \
                                           WHERE Title="%s" AND Status="Active"' % (magazine['bookid']))
             for terms in searchmags_temp:
                 searchmags.append(terms)
@@ -39,7 +39,7 @@ def search_magazines(mags=None, reset=False):
     for searchmag in searchmags:
         bookid = searchmag[0]
         searchterm = searchmag[0]
-        frequency = searchmag[1]
+        # frequency = searchmag[1]
         # last_acquired = searchmag[2]
         # issue_date = searchmag[3]
 
@@ -108,7 +108,7 @@ def search_magazines(mags=None, reset=False):
                 if checkifmag:
                     for results in checkifmag:
                         control_date = results['IssueDate']
-                        frequency = results['Frequency']
+                        # frequency = results['Frequency']
                         # regex = results['Regex']
 
                     nzbtitle_formatted = nzbtitle.replace('.', ' ').replace('-', ' ').replace('/', ' ').replace(
