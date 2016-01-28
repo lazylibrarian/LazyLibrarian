@@ -266,15 +266,19 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=
         # to debug because of api
         logger.debug(u'Parsing results from <a href="%s">%s</a>' % (URL, host))
         rootxml = data.getroot()
-        resultxml = rootxml.getiterator('item')
-        nzbcount = 0
-        for nzb in resultxml:
-            try:
-                nzbcount = nzbcount + 1
-                results.append(ReturnResultsFieldsBySearchType(book, nzb, searchType, host, searchMode))
-            except IndexError:
-                logger.debug('No results from %s for %s' % (host, book['searchterm']))
-        logger.debug(u'Found %s nzb at %s for: %s' % (nzbcount, host, book['searchterm']))
+        if "Element 'error'" in str(rootxml):
+            error = rootxml.attrib['description']
+            logger.error(u"%s - %s" % (host, error))
+        else:
+            resultxml = rootxml.getiterator('item')
+            nzbcount = 0
+            for nzb in resultxml:
+                try:
+                    nzbcount = nzbcount + 1
+                    results.append(ReturnResultsFieldsBySearchType(book, nzb, searchType, host, searchMode))
+                except IndexError:
+                    logger.debug('No results from %s for %s' % (host, book['searchterm']))
+            logger.debug(u'Found %s nzb at %s for: %s' % (nzbcount, host, book['searchterm']))
     else:
         logger.debug('No data returned from %s for %s' % (host, book['searchterm']))
     return results
