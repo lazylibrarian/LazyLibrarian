@@ -271,12 +271,6 @@
                         <h3>Torrents</h3>
                         <fieldset id="torrent_options">
 
-                            <div>
-                                <label>Minimum seeders:</label>
-                                <input type="text" name="numberofseeders" value="${lazylibrarian.NUMBEROFSEEDERS}" size="5">
-                                <BR>
-                                <small>Number of minimum seeders a torrent must have to be accepted</small>
-                            </div>
                              <div class="row checkbox">
                                 <%
                                 if lazylibrarian.TOR_DOWNLOADER_DELUGE == True:
@@ -375,6 +369,13 @@
                                     <input type="text" name="torrent_dir" value="${lazylibrarian.TORRENT_DIR}" size="26">
                                 </div>
                             </fieldset>
+                            <div>
+                                <label>Minimum seeders:</label>
+                                <input type="text" name="numberofseeders" value="${lazylibrarian.NUMBEROFSEEDERS}" size="5">
+                                <BR>
+                                <small>Number of minimum seeders a torrent must have to be accepted</small>
+                            </div>
+
                         </fieldset>
                         <br>
                         <h3>Download Settings</h3>
