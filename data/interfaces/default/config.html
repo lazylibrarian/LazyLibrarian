@@ -9,8 +9,6 @@
             <li><a onclick="self.shutdownQA(this)" id="button">Shutdown</a></li>
             <li><a id="button" onclick="self.restartQA(this, '', '')">Restart</a></li>
             <li ><a id="button" href="checkForUpdates">Check Version</a></li>
-            <li ><a id="button" href="showJobs">Job Status</a></li>
-            <li ><a id="button" href="restartJobs">Restart Jobs</a></li>
         </ul>
     </div>
 </%def>
@@ -86,6 +84,10 @@
                         <option value="${http_look}" ${selected}>${http_look}</option>
                     %endfor
                     </select>
+                    <div class="row">
+                        <input type="button" value="Show Jobs" id="showJobs" />
+                        <input type="button" value="Restart Jobs" id="restartJobs" />
+                    </div>
                 </td>
             </tr>
         </table>
@@ -271,12 +273,6 @@
                         <h3>Torrents</h3>
                         <fieldset id="torrent_options">
 
-                            <div>
-                                <label>Minimum seeders:</label>
-                                <input type="text" name="numberofseeders" value="${lazylibrarian.NUMBEROFSEEDERS}" size="5">
-                                <BR>
-                                <small>Number of minimum seeders a torrent must have to be accepted</small>
-                            </div>
                              <div class="row checkbox">
                                 <%
                                 if lazylibrarian.TOR_DOWNLOADER_DELUGE == True:
@@ -375,6 +371,13 @@
                                     <input type="text" name="torrent_dir" value="${lazylibrarian.TORRENT_DIR}" size="26">
                                 </div>
                             </fieldset>
+                            <div>
+                                <label>Minimum seeders:</label>
+                                <input type="text" name="numberofseeders" value="${lazylibrarian.NUMBEROFSEEDERS}" size="5">
+                                <BR>
+                                <small>Number of minimum seeders a torrent must have to be accepted</small>
+                            </div>
+
                         </fieldset>
                         <br>
                         <h3>Download Settings</h3>
@@ -428,14 +431,11 @@
  	    		    <input type="text" placeholder="Enter URL Here" name="torznab[${loop.index}][host]" value="${prov['HOST']}" size="26" maxlength="100">
  	    		    <br>
  	    		    %endfor
- 	    		</fieldset>
-            </tr>
-            <tr>
-                <td>
-                    <small>Current limitation: TORZNAB results are returned as magnet links
+                    <small>
+                    Current limitation: TORZNAB results are returned as magnet links
                     where possible, which may not work automatically with blackhole
                     </small>
-            	</td>
+ 	    		</fieldset>
             </tr>
             <tr>
                 <td>
@@ -1278,6 +1278,18 @@
                         }
                 });
             
+            $('#showJobs').click(function () {
+                $.get("showJobs",
+                    function (data) { alert(data); });
+                    
+            });
+            
+            $('#restartJobs').click(function () {
+                $.get("restartJobs",
+                    function (data) { alert(data); });
+                    
+            });
+            
             $('#twitterStep1').click(function () {
                 $('#testTwitter-result').html('');
                 $.get("twitterStep1", function (data) {window.open(data); })
@@ -1298,19 +1310,19 @@
 
             $('#testPushbullet').click(function () {
                 $.get("testPushbullet",
-                    function (data) { window.alert(data) });
+                    function (data) { alert(data); });
                     
             });
 
             $('#testPushover').click(function () {
                 $.get("testPushover",
-                    function (data) { window.alert(data) });
+                    function (data) { alert(data); });
                     
             });
 
             $('#testNMA').click(function () {
                 $.get("testNMA",
-                    function (data) { window.alert(data) });
+                    function (data) { alert(data); });
             });
 
             $("#testAndroidPN").click(function () {

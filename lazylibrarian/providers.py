@@ -266,15 +266,20 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=
         # to debug because of api
         logger.debug(u'Parsing results from <a href="%s">%s</a>' % (URL, host))
         rootxml = data.getroot()
-        resultxml = rootxml.getiterator('item')
-        nzbcount = 0
-        for nzb in resultxml:
-            try:
-                nzbcount = nzbcount + 1
-                results.append(ReturnResultsFieldsBySearchType(book, nzb, searchType, host, searchMode))
-            except IndexError:
-                logger.debug('No results from %s for %s' % (host, book['searchterm']))
-        logger.debug(u'Found %s nzb at %s for: %s' % (nzbcount, host, book['searchterm']))
+
+        if rootxml.tag == 'error':
+            errormsg = rootxml.get('description', default='unknown error')
+            logger.error(u"%s - %s" % (host, errormsg))
+        else:
+            resultxml = rootxml.getiterator('item')
+            nzbcount = 0
+            for nzb in resultxml:
+                try:
+                    nzbcount = nzbcount + 1
+                    results.append(ReturnResultsFieldsBySearchType(book, nzb, searchType, host, searchMode))
+                except IndexError:
+                    logger.debug('No results from %s for %s' % (host, book['searchterm']))
+            logger.debug(u'Found %s nzb at %s for: %s' % (nzbcount, host, book['searchterm']))
     else:
         logger.debug('No data returned from %s for %s' % (host, book['searchterm']))
     return results
@@ -286,8 +291,10 @@ def ReturnSearchTypeStructure(api_key, book, searchType, searchMode):
     if searchMode == "nzb":
         if searchType == "book":
             authorname = book['authorName']
-            while authorname[1] in '. ':  # strip any initials
+            while authorname[1] in '. ':  # strip any leading initials
                 authorname = authorname[2:].strip()  # and leading whitespace
+            # middle initials can't have a dot
+            authorname = authorname.replace('. ', ' ')
             params = {
                 "t": "book",
                 "apikey": api_key,
@@ -297,8 +304,10 @@ def ReturnSearchTypeStructure(api_key, book, searchType, searchMode):
             }
         elif searchType == "shortbook":
             authorname = book['authorName']
-            while authorname[1] in '. ':  # strip any initials
+            while authorname[1] in '. ':  # strip any leading initials
                 authorname = authorname[2:].strip()  # and leading whitespace
+            # middle initials can't have a dot
+            authorname = authorname.replace('. ', ' ')
             params = {
                 "t": "book",
                 "apikey": api_key,
@@ -308,8 +317,10 @@ def ReturnSearchTypeStructure(api_key, book, searchType, searchMode):
             }
         elif searchType == "author":
             authorname = book['authorName']
-            while authorname[1] in '. ':  # strip any initials
+            while authorname[1] in '. ':  # strip any leading initials
                 authorname = authorname[2:].strip()  # and leading whitespace
+            # middle initials can't have a dot
+            authorname = authorname.replace('. ', ' ')
             params = {
                 "t": "search",
                 "apikey": api_key,
