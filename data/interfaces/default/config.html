@@ -9,8 +9,6 @@
             <li><a onclick="self.shutdownQA(this)" id="button">Shutdown</a></li>
             <li><a id="button" onclick="self.restartQA(this, '', '')">Restart</a></li>
             <li ><a id="button" href="checkForUpdates">Check Version</a></li>
-            <li ><a id="button" href="showJobs">Job Status</a></li>
-            <li ><a id="button" href="restartJobs">Restart Jobs</a></li>
         </ul>
     </div>
 </%def>
@@ -86,6 +84,10 @@
                         <option value="${http_look}" ${selected}>${http_look}</option>
                     %endfor
                     </select>
+                    <div class="row">
+                        <input type="button" value="Show Jobs" id="showJobs" />
+                        <input type="button" value="Restart Jobs" id="restartJobs" />
+                    </div>
                 </td>
             </tr>
         </table>
@@ -1276,6 +1278,18 @@
                         }
                 });
             
+            $('#showJobs').click(function () {
+                $.get("showJobs",
+                    function (data) { alert(data); });
+                    
+            });
+            
+            $('#restartJobs').click(function () {
+                $.get("restartJobs",
+                    function (data) { alert(data); });
+                    
+            });
+            
             $('#twitterStep1').click(function () {
                 $('#testTwitter-result').html('');
                 $.get("twitterStep1", function (data) {window.open(data); })
@@ -1296,19 +1310,19 @@
 
             $('#testPushbullet').click(function () {
                 $.get("testPushbullet",
-                    function (data) { window.alert(data) });
+                    function (data) { alert(data); });
                     
             });
 
             $('#testPushover').click(function () {
                 $.get("testPushover",
-                    function (data) { window.alert(data) });
+                    function (data) { alert(data); });
                     
             });
 
             $('#testNMA').click(function () {
                 $.get("testNMA",
-                    function (data) { window.alert(data) });
+                    function (data) { alert(data); });
             });
 
             $("#testAndroidPN").click(function () {

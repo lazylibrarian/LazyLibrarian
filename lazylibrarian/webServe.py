@@ -904,33 +904,39 @@ class WebInterface(object):
         return serve_template(templatename="shutdown.html", title="Reopen library", message=message, timer=30)
     restart.exposed = True
 
+    @cherrypy.expose
     def showJobs(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         # show the current status of LL cron jobs in the log
+        result = "Cache %i hits, %i miss" % (int(lazylibrarian.CACHE_HIT), int(lazylibrarian.CACHE_MISS))
+        #logger.info(result)
+
         for job in lazylibrarian.SCHED.get_jobs():
             job = str(job)
             if "search_magazines" in job:
-                jobname = "[CRON] - Check for new magazine issues"
+                jobname = "Check for new magazines"
             elif "checkForUpdates" in job:
-                jobname = "[CRON] - Check for LazyLibrarian update"
+                jobname = "Check LazyLibrarian version"
             elif "search_tor_book" in job:
-                jobname = "[CRON] - TOR book search"
+                jobname = "TOR book search"
             elif "search_nzb_book" in job:
-                jobname = "[CRON] - NZB book search"
+                jobname = "NZB book search"
             elif "search_rss_book" in job:
-                jobname = "[CRON] - RSS book search"
+                jobname = "RSS book search"
             elif "processDir" in job:
-                jobname = "[CRON] - Process download directory"
+                jobname = "Process downloads"
             else:
                 jobname = job.split(' ')[0].split('.')[2]
 
             jobinterval = job.split('[')[1].split(']')[0]
             jobtime = job.split('at: ')[1].split('.')[0]
             jobtime = formatter.next_run(jobtime)
-            logger.info(u"%s: Next run in %s" % (jobname, jobtime))
-        logger.info(u"Cache %i hits, %i miss" % (int(lazylibrarian.CACHE_HIT), int(lazylibrarian.CACHE_MISS)))
-        raise cherrypy.HTTPRedirect("logs")
-    showJobs.exposed = True
+            jobinfo = "%s: Next run in %s" % (jobname, jobtime)
+            #logger.info(jobinfo)
+            result = result + '\n' + jobinfo
+        return result
 
+    @cherrypy.expose
     def restartJobs(self):
         common.schedule_job('Restart', 'processDir')
         common.schedule_job('Restart', 'search_nzb_book')
@@ -940,8 +946,8 @@ class WebInterface(object):
         common.schedule_job('Restart', 'checkForUpdates')
 
         # and list the new run-times in the log
-        self.showJobs()
-    restartJobs.exposed = True
+        return self.showJobs()
+#    restartJobs.exposed = True
 
 # LOGGING ###########################################################
 
