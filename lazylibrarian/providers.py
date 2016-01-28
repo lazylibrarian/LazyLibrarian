@@ -266,9 +266,10 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=
         # to debug because of api
         logger.debug(u'Parsing results from <a href="%s">%s</a>' % (URL, host))
         rootxml = data.getroot()
-        if "Element 'error'" in str(rootxml):
-            error = rootxml.attrib['description']
-            logger.error(u"%s - %s" % (host, error))
+
+        if rootxml.tag == 'error':
+            errormsg = rootxml.get('description', default='unknown error')
+            logger.error(u"%s - %s" % (host, errormsg))
         else:
             resultxml = rootxml.getiterator('item')
             nzbcount = 0
