@@ -286,8 +286,10 @@ def ReturnSearchTypeStructure(api_key, book, searchType, searchMode):
     if searchMode == "nzb":
         if searchType == "book":
             authorname = book['authorName']
-            while authorname[1] in '. ':  # strip any initials
+            while authorname[1] in '. ':  # strip any leading initials
                 authorname = authorname[2:].strip()  # and leading whitespace
+            # middle initials can't have a dot
+            authorname = authorname.replace('. ', ' ')
             params = {
                 "t": "book",
                 "apikey": api_key,
@@ -297,8 +299,10 @@ def ReturnSearchTypeStructure(api_key, book, searchType, searchMode):
             }
         elif searchType == "shortbook":
             authorname = book['authorName']
-            while authorname[1] in '. ':  # strip any initials
+            while authorname[1] in '. ':  # strip any leading initials
                 authorname = authorname[2:].strip()  # and leading whitespace
+            # middle initials can't have a dot
+            authorname = authorname.replace('. ', ' ')
             params = {
                 "t": "book",
                 "apikey": api_key,
@@ -308,8 +312,10 @@ def ReturnSearchTypeStructure(api_key, book, searchType, searchMode):
             }
         elif searchType == "author":
             authorname = book['authorName']
-            while authorname[1] in '. ':  # strip any initials
+            while authorname[1] in '. ':  # strip any leading initials
                 authorname = authorname[2:].strip()  # and leading whitespace
+            # middle initials can't have a dot
+            authorname = authorname.replace('. ', ' ')
             params = {
                 "t": "search",
                 "apikey": api_key,
