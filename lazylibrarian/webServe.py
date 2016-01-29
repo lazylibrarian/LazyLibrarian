@@ -695,7 +695,7 @@ class WebInterface(object):
             # ouch dirty workaround...
             if not nzburl == 'book_table_length':
                 controlValueDict = {'NZBurl': nzburl}
-                newValueDict = {'Status': action, 'NZBdate': formatter.today()}
+                newValueDict = {'Status': action, 'NZBdate': formatter.now()}
                 myDB.upsert("wanted", newValueDict, controlValueDict)
                 title = myDB.select("SELECT * from wanted WHERE NZBurl = ?", [nzburl])
                 for item in title:

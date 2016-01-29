@@ -165,7 +165,7 @@ def processDir(force=False, reset=False):
                 logger.debug("Processing %s, %s" % (global_name, book['NZBurl']))
                 # update nzbs, only update the snatched ones in case multiple matches for same book / magazine issue
                 controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
-                newValueDict = {"Status": "Processed", "NZBDate": formatter.today()}  # say when we processed it
+                newValueDict = {"Status": "Processed", "NZBDate": formatter.now()}  # say when we processed it
                 myDB.upsert("wanted", newValueDict, controlValueDict)
 
                 if bookname is not None:  # it's a book, if None it's a magazine
@@ -266,7 +266,7 @@ def import_book(pp_path=None, bookID=None):
         if processBook:
             # update nzbs
             controlValueDict = {"BookID": bookID}
-            newValueDict = {"Status": "Processed", "NZBDate": formatter.today()}  # say when we processed it
+            newValueDict = {"Status": "Processed", "NZBDate": formatter.now()}  # say when we processed it
             myDB.upsert("wanted", newValueDict, controlValueDict)
             processExtras(myDB, dest_path, global_name, data)
             logger.info('Successfully processed: %s' % global_name)
