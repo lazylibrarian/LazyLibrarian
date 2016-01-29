@@ -652,7 +652,8 @@ class WebInterface(object):
         myDB = database.DBConnection()
         if whichStatus is None:
             whichStatus = "Skipped"
-        issues = myDB.select('SELECT * from wanted WHERE Status="%s"' % (whichStatus))
+        # books don't have auxinfo, only magazines
+        issues = myDB.select('SELECT * from wanted WHERE Status="%s" and length(AuxInfo) > 0' % (whichStatus))
         return serve_template(templatename="manageissues.html", title="Magazine Status Management",
                               issues=issues, whichStatus=whichStatus)
     pastIssues.exposed = True

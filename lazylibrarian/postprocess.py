@@ -162,6 +162,7 @@ def processDir(force=False, reset=False):
             processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name)
 
             if processBook:
+                logger.debug("Processing %s, %s" % (global_name, book['NZBurl']))
                 # update nzbs, only update the snatched ones in case multiple matches for same book / magazine issue
                 controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
                 newValueDict = {"Status": "Processed", "NZBDate": formatter.today()}  # say when we processed it

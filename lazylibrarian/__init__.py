@@ -925,9 +925,15 @@ def build_bookstrap_themes():
 
 
 def build_monthtable():
-    current_locale = locale.setlocale(locale.LC_ALL, '')  # read current state.
-# getdefaultlocale() doesnt seem to work as expected on windows, returns 'None'
-#
+    if len(formatter.getList(IMP_MONTHLANG)) == 0:  # any extra languages wanted?
+        return
+    try:        
+        current_locale = locale.setlocale(locale.LC_ALL, '')  # read current state.
+        # getdefaultlocale() doesnt seem to work as expected on windows, returns 'None'
+    except locale.Error as e:
+        logger.debug("Error getting current locale : %s" % str(e))
+        return
+        
     lang = str(current_locale)
     if not lang.startswith('en_'):  # en_ is preloaded
         MONTHNAMES[0].append(lang)
