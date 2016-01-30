@@ -241,8 +241,8 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                 return False
 
         if (lazylibrarian.TOR_DOWNLOADER_BLACKHOLE):
-            logger.debug('Torrent blackhole')
             tor_title = common.removeDisallowedFilenameChars(tor_title)
+            logger.debug("Sending %s to blackhole" % tor_title)
             tor_name = str.replace(str(tor_title), ' ', '_')
             if tor_url.startswith('magnet'):
                 tor_name = tor_name + '.magnet'
@@ -255,15 +255,16 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             download = True
 
         if (lazylibrarian.TOR_DOWNLOADER_UTORRENT):
-            logger.debug('Utorrent')
+            logger.debug("Sending %s to Utorrent" % tor_title)
             hash = CalcTorrentHash(torrent)
             download = utorrent.addTorrent(tor_url, hash)
 
         if (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
-            logger.debug('Transmission')
+            logger.debug("Sending %s to Transmission" % tor_title)
             download = transmission.addTorrent(tor_url)
 
         if (lazylibrarian.TOR_DOWNLOADER_DELUGE):
+            logger.debug("Sending %s to Deluge" % tor_title)
             client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
                                      int(lazylibrarian.DELUGE_PORT),
                                      lazylibrarian.DELUGE_USER,

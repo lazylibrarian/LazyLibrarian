@@ -91,8 +91,11 @@ def processDir(force=False, reset=False):
                 # this is to get round unicode differences in torrent filenames.
                 # there might be a better way...
                 if isinstance(fname, str):
-                    fname = fname.decode('utf-8')  # make unicode
-                if fuzz.token_set_ratio(fname, book['NZBtitle']) >= 98:
+                    matchname = fname.decode('utf-8')
+                else:
+                    matchname = fname
+                match = fuzz.token_set_ratio(matchname, book['NZBtitle'])
+                if match >= 98:
                     pp_path = os.path.join(processpath, fname)
                     logger.debug('Found book/mag folder %s' % pp_path)
                     found = True
@@ -151,7 +154,7 @@ def processDir(force=False, reset=False):
                         logger.debug("Snatched magazine %s is not in download directory" % (book['BookID']))
                         continue
             else:
-                logger.debug("Snatched NZB %s is not in download directory" % (book['NZBtitle']))
+                logger.debug("Snatched %s %s is not in download directory" % (book['NZBmode'], book['NZBtitle']))
                 continue
 
             # try:
