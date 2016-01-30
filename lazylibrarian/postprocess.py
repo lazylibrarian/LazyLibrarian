@@ -421,10 +421,16 @@ def processAutoAdd(src_path=None):
                 dstname = os.path.join(autoadddir, name)
                 logger.debug('AutoAdd Copying named file [%s] as copy [%s] to [%s]' % (name, srcname, dstname))
                 try:
-                    shutil.copy2(srcname, dstname)
+                    shutil.copyfile(srcname, dstname)
                 except Exception as why:
-                    logger.error('AutoAdd - Failed to copy file because [%s] ' % str(why))
-
+                    logger.error('AutoAdd - Failed to copy file [%s] because [%s] ' % (name, str(why)))
+                    return False
+                try:
+                    os.chmod(dstname, 0666)  # make rw for calibre
+                except OSError as e:
+                    logger.warn("Could not set permission of %s because [%s]" % (dstname, str(e)))
+                    # permissions might not be fatal, continue
+                    
         except OSError as why:
             logger.error('AutoAdd - Failed because [%s]' % str(why))
             return False
