@@ -910,7 +910,11 @@ class WebInterface(object):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         # show the current status of LL cron jobs in the log
         result = "Cache %i hits, %i miss" % (int(lazylibrarian.CACHE_HIT), int(lazylibrarian.CACHE_MISS))
-        #logger.info(result)
+        myDB = database.DBConnection()
+        snatched = myDB.action("SELECT count('Status') as counter from wanted WHERE Status = 'Snatched'").fetchone()
+        wanted = myDB.action("SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'").fetchone()
+        result = result + '\n' + "%i items marked as Snatched" % snatched['counter']
+        result = result + '\n' + "%i items marked as Wanted" % wanted['counter']
 
         for job in lazylibrarian.SCHED.get_jobs():
             job = str(job)
