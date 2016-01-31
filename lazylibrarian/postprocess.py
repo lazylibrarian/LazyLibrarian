@@ -419,7 +419,7 @@ def processAutoAdd(src_path=None):
             for name in names:
                 srcname = os.path.join(src_path, name)
                 dstname = os.path.join(autoadddir, name)
-                logger.debug('AutoAdd Copying named file [%s] as copy [%s] to [%s]' % (name, srcname, dstname))
+                logger.debug('AutoAdd Copying file [%s] as copy [%s] to [%s]' % (name, srcname, dstname))
                 try:
                     shutil.copyfile(srcname, dstname)
                 except Exception as why:
