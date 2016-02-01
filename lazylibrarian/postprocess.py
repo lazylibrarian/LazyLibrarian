@@ -415,7 +415,11 @@ def processAutoAdd(src_path=None):
             # TODO : n files jpg, opf & book(s) should have same name
             # Caution - book may be pdf, mobi, epub or all 3.
             # for now simply copy all files, and let the autoadder sort it out
-
+            #
+            # Update - seems Calibre only uses the ebook, not the jpeg or opf files
+            # and only imports one format of each ebook, treats the others as duplicates
+            # Maybe need to rewrite this so we only copy the first ebook we find and ignore everything else
+            #
             for name in names:
                 srcname = os.path.join(src_path, name)
                 dstname = os.path.join(autoadddir, name)
