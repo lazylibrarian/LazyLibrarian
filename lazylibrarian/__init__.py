@@ -375,7 +375,7 @@ def initialize():
         else:
             LOGFULL = False
             logger.info("Screen Log set to INFO/WARN/ERROR")
-
+        
         # keep track of last api calls so we don't call more than once per second
         # to respect api terms, but don't wait un-necessarily either
         time_now = int(time.time())
@@ -432,6 +432,8 @@ def initialize():
         DESTINATION_DIR = check_setting_str(CFG, 'General', 'destination_dir', '')
         ALTERNATE_DIR = check_setting_str(CFG, 'General', 'alternate_dir', '')
         DOWNLOAD_DIR = check_setting_str(CFG, 'General', 'download_dir', '')
+        if not DOWNLOAD_DIR:
+            logger.warn("Download dir not set, books will be downloaded to %s" % os.getcwd())
 
         NZB_DOWNLOADER_SABNZBD = check_setting_bool(CFG, 'USENET', 'nzb_downloader_sabnzbd', 0)
         NZB_DOWNLOADER_NZBGET = check_setting_bool(CFG, 'USENET', 'nzb_downloader_nzbget', 0)
