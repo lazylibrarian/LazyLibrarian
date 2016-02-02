@@ -132,7 +132,7 @@ def processResultList(resultlist, author, title, book):
             newValueDict = {
                 "NZBprov": tor_prov,
                 "BookID": bookid,
-                "NZBdate": formatter.today(),  # when we asked for it
+                "NZBdate": formatter.now(),  # when we asked for it
                 "NZBsize": tor_size,
                 "NZBtitle": tor_Title,
                 "NZBmode": "torrent",

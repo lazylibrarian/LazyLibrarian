@@ -163,7 +163,7 @@ def processResultList(resultlist, book, searchtype):
             newValueDict = {
                 "NZBprov": nzbprov,
                 "BookID": bookid,
-                "NZBdate": formatter.today(),  # when we asked for it
+                "NZBdate": formatter.now(),  # when we asked for it
                 "NZBsize": nzbsize,
                 "NZBtitle": nzbTitle,
                 "NZBmode": nzbmode,

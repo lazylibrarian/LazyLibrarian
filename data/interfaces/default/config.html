@@ -356,6 +356,34 @@
                                     <input type="text" name="utorrent_label" value="${lazylibrarian.UTORRENT_LABEL}" size="26">
                                 </div>
                             </fieldset>
+                             <div class="row checkbox">
+                                <%
+                                if lazylibrarian.TOR_DOWNLOADER_QBITTORRENT == True:
+                                    checked = 'checked="checked"'
+                                else:
+                                    checked = ''
+                                %>
+                                <input type="checkbox" name="tor_downloader_qbittorrent" id="tor_downloader_qbittorrent" value="1" ${checked} />
+                                <label>Use qBittorrent</label>
+                            </div>
+                            <fieldset id="qbittorrent_options">
+                                <div class="row">
+                                    <label>qBittorrent Host:</label>
+                                    <input type="text" name="qbittorrent_host" value="${lazylibrarian.QBITTORRENT_HOST}" size="26">
+                                </div>
+                                <div class="row">
+                                    <label>Username:</label>
+                                    <input type="text" name="qbittorrent_user" value="${lazylibrarian.QBITTORRENT_USER}" size="26">
+                                </div>
+                                <div class="row">
+                                    <label>Password:</label>
+                                    <input type="password" name="qbittorrent_pass" value="${lazylibrarian.QBITTORRENT_PASS}" size="26">
+                                </div>
+                                <div class="row">
+                                    <label>qBittorrent Label:</label>
+                                    <input type="text" name="qbittorrent_label" value="${lazylibrarian.QBITTORRENT_LABEL}" size="26">
+                                </div>
+                            </fieldset>
                             <div class="row checkbox">
                                 <%
                                 if lazylibrarian.TOR_DOWNLOADER_BLACKHOLE == True:
@@ -1061,6 +1089,26 @@
                     else
                     {
                             $("#utorrent_options").slideUp();
+                    }
+            });
+
+            if ($("#tor_downloader_qbittorrent").is(":checked"))
+                {
+                        $("#qbittorrent_options").show();
+                }
+            else
+                {
+                        $("#qbittorrent_options").hide();
+                }
+
+            $("#tor_downloader_qbittorrent").click(function(){
+                    if ($("#tor_downloader_qbittorrent").is(":checked"))
+                    {
+                            $("#qbittorrent_options").slideDown();
+                    }
+                    else
+                    {
+                            $("#qbittorrent_options").slideUp();
                     }
             });
 

@@ -223,27 +223,6 @@ def search_magazines(mags=None, reset=False):
                         else:
                             continue
 
-                        # Don't want to overwrite status = Skipped for NZBs that have been previously found
-                        wanted_status = myDB.select('SELECT * from wanted WHERE NZBtitle="%s"' % nzbtitle)
-                        if wanted_status:
-                            for results in wanted_status:
-                                status = results['Status']
-                        else:
-                            status = "Skipped"
-
-                        controlValueDict = {"NZBurl": nzburl}
-                        newValueDict = {
-                            "NZBprov": nzbprov,
-                            "BookID": bookid,
-                            "NZBdate": formatter.today(),  # when we asked for it
-                            "NZBtitle": nzbtitle,
-                            "AuxInfo": newdatish,
-                            "Status": status,
-                            "NZBsize": nzbsize,
-                            "NZBmode": nzbmode
-                        }
-                        myDB.upsert("wanted", newValueDict, controlValueDict)
-
                         if control_date is None:  # we haven't got any copies of this magazine yet
                             # get a rough time just over a month ago to compare to, in format yyyy-mm-dd
                             # could perhaps calc differently for weekly, biweekly etc
@@ -270,6 +249,20 @@ def search_magazines(mags=None, reset=False):
                                 logger.debug('This issue of %s is new, downloading' % nzbtitle_formatted)
                                 to_snatch = to_snatch + 1
                                 issues.append(issue)
+                                
+                                controlValueDict = {"NZBurl": nzburl}
+                                newValueDict = {
+                                    "NZBprov": nzbprov,
+                                    "BookID": bookid,
+                                    "NZBdate": formatter.now(),  # when we asked for it
+                                    "NZBtitle": nzbtitle,
+                                    "AuxInfo": newdatish,
+                                    "Status": "Wanted",
+                                    "NZBsize": nzbsize,
+                                    "NZBmode": nzbmode
+                                }
+                                myDB.upsert("wanted", newValueDict, controlValueDict)
+                                
                             else:
                                 logger.debug('This issue of %s is already flagged for download' % issue)
                         else:

@@ -7,7 +7,7 @@ from logging import handlers
 import lazylibrarian
 from lazylibrarian import formatter
 
-MAX_SIZE = 51200  # 5 Bytes
+MAX_SIZE = 204800  # 200KBytes
 MAX_FILES = 10
 
 

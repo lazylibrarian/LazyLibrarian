@@ -73,7 +73,7 @@ class WebInterface(object):
                      sab_host='', sab_port=0, sab_subdir='', sab_api='', sab_user='', sab_pass='',
                      destination_copy=0, destination_dir='', download_dir='', sab_cat='', usenet_retention=0,
                      nzb_blackholedir='', alternate_dir='', torrent_dir='', numberofseeders=0,
-                     tor_downloader_blackhole=0, tor_downloader_utorrent=0,
+                     tor_downloader_blackhole=0, tor_downloader_utorrent=0, tor_downloader_qbittorrent=0,
                      nzbget_host='', nzbget_user='', nzbget_pass='', nzbget_cat='', nzbget_priority=0, 
                      newzbin=0, newzbin_uid='', newzbin_pass='', kat=0, kat_host='',
                      ebook_type='', mag_type='', reject_words='', book_api='', gr_api='', gb_api='',
@@ -81,11 +81,12 @@ class WebInterface(object):
                      ebook_dest_folder='', ebook_dest_file='',
                      mag_relative=0, mag_dest_folder='', mag_dest_file='', cache_age=30,
                      use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
-                     utorrent_host='', utorrent_user='', utorrent_pass='',
+                     utorrent_host='', utorrent_user='', utorrent_pass='', utorrent_label='',
+                     qbittorrent_host='', qbittorrent_user='', qbittorrent_pass='', qbittorrent_label='',
                      notfound_status='Skipped', newbook_status='Skipped', full_scan=0, add_author=0,
                      tor_downloader_transmission=0, transmission_host='', transmission_user='',
                      transmission_pass='', tor_downloader_deluge=0, deluge_host='', deluge_user='',
-                     deluge_pass='', deluge_port=0, utorrent_label='', use_boxcar=0, boxcar_notify_onsnatch=0,
+                     deluge_pass='', deluge_port=0, use_boxcar=0, boxcar_notify_onsnatch=0,
                      boxcar_notify_ondownload=0, boxcar_token='', use_pushbullet=0, pushbullet_notify_onsnatch=0,
                      pushbullet_notify_ondownload=0, pushbullet_token='', pushbullet_deviceid='',
                      use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys='',
@@ -146,6 +147,7 @@ class WebInterface(object):
         lazylibrarian.NUMBEROFSEEDERS = formatter.check_int(numberofseeders, 0)
         lazylibrarian.TOR_DOWNLOADER_BLACKHOLE = bool(tor_downloader_blackhole)
         lazylibrarian.TOR_DOWNLOADER_UTORRENT = bool(tor_downloader_utorrent)
+        lazylibrarian.TOR_DOWNLOADER_QBITTORRENT = bool(tor_downloader_qbittorrent)
         lazylibrarian.TOR_DOWNLOADER_TRANSMISSION = bool(tor_downloader_transmission)
         lazylibrarian.TOR_DOWNLOADER_DELUGE = bool(tor_downloader_deluge)
         
@@ -157,6 +159,11 @@ class WebInterface(object):
         lazylibrarian.UTORRENT_USER = utorrent_user
         lazylibrarian.UTORRENT_PASS = utorrent_pass
         lazylibrarian.UTORRENT_LABEL = utorrent_label
+
+        lazylibrarian.QBITTORRENT_HOST = qbittorrent_host
+        lazylibrarian.QBITTORRENT_USER = qbittorrent_user
+        lazylibrarian.QBITTORRENT_PASS = qbittorrent_pass
+        lazylibrarian.QBITTORRENT_LABEL = qbittorrent_label
 
         lazylibrarian.TRANSMISSION_HOST = transmission_host
         lazylibrarian.TRANSMISSION_USER = transmission_user
@@ -695,7 +702,7 @@ class WebInterface(object):
             # ouch dirty workaround...
             if not nzburl == 'book_table_length':
                 controlValueDict = {'NZBurl': nzburl}
-                newValueDict = {'Status': action, 'NZBdate': formatter.today()}
+                newValueDict = {'Status': action, 'NZBdate': formatter.now()}
                 myDB.upsert("wanted", newValueDict, controlValueDict)
                 title = myDB.select("SELECT * from wanted WHERE NZBurl = ?", [nzburl])
                 for item in title:
@@ -910,7 +917,11 @@ class WebInterface(object):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         # show the current status of LL cron jobs in the log
         result = "Cache %i hits, %i miss" % (int(lazylibrarian.CACHE_HIT), int(lazylibrarian.CACHE_MISS))
-        #logger.info(result)
+        myDB = database.DBConnection()
+        snatched = myDB.action("SELECT count('Status') as counter from wanted WHERE Status = 'Snatched'").fetchone()
+        wanted = myDB.action("SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'").fetchone()
+        result = result + '\n' + "%i items marked as Snatched" % snatched['counter']
+        result = result + '\n' + "%i items marked as Wanted" % wanted['counter']
 
         for job in lazylibrarian.SCHED.get_jobs():
             job = str(job)

@@ -8,7 +8,7 @@ from hashlib import sha1
 
 import lazylibrarian
 
-from lazylibrarian import logger, database, formatter, providers, notifiers, utorrent, transmission
+from lazylibrarian import logger, database, formatter, providers, notifiers, utorrent, transmission, qbittorrent
 
 from lib.deluge_client import DelugeRPCClient
 
@@ -164,7 +164,7 @@ def processResultList(resultlist, book, searchtype):
             newValueDict = {
                 "NZBprov": tor_prov,
                 "BookID": bookid,
-                "NZBdate": formatter.today(),  # when we asked for it
+                "NZBdate": formatter.now(),  # when we asked for it
                 "NZBsize": tor_size,
                 "NZBtitle": tor_Title,
                 "NZBmode": "torrent",
@@ -191,6 +191,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
     full_url = tor_url  # keep the url as stored in "wanted" table
     if (lazylibrarian.TOR_DOWNLOADER_DELUGE or
         lazylibrarian.TOR_DOWNLOADER_UTORRENT or
+        lazylibrarian.TOR_DOWNLOADER_QBITTORRENT or
         lazylibrarian.TOR_DOWNLOADER_BLACKHOLE or
         lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
 
@@ -241,8 +242,8 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                 return False
 
         if (lazylibrarian.TOR_DOWNLOADER_BLACKHOLE):
-            logger.debug('Torrent blackhole')
             tor_title = common.removeDisallowedFilenameChars(tor_title)
+            logger.debug("Sending %s to blackhole" % tor_title)
             tor_name = str.replace(str(tor_title), ' ', '_')
             if tor_url.startswith('magnet'):
                 tor_name = tor_name + '.magnet'
@@ -255,15 +256,20 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             download = True
 
         if (lazylibrarian.TOR_DOWNLOADER_UTORRENT):
-            logger.debug('Utorrent')
+            logger.debug("Sending %s to Utorrent" % tor_title)
             hash = CalcTorrentHash(torrent)
             download = utorrent.addTorrent(tor_url, hash)
 
+        if (lazylibrarian.TOR_DOWNLOADER_QBITTORRENT):
+            logger.debug("Sending %s to qbittorrent" % tor_title)
+            download = qbittorrent.addTorrent(tor_url)
+
         if (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
-            logger.debug('Transmission')
+            logger.debug("Sending %s to Transmission" % tor_title)
             download = transmission.addTorrent(tor_url)
 
         if (lazylibrarian.TOR_DOWNLOADER_DELUGE):
+            logger.debug("Sending %s to Deluge" % tor_title)
             client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
                                      int(lazylibrarian.DELUGE_PORT),
                                      lazylibrarian.DELUGE_USER,

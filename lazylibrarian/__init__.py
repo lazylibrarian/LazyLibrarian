@@ -131,6 +131,7 @@ REJECT_WORDS = None
 
 TOR_DOWNLOADER_BLACKHOLE = 0
 TOR_DOWNLOADER_UTORRENT = 0
+TOR_DOWNLOADER_QBITTORRENT = 0
 TOR_DOWNLOADER_TRANSMISSION = 0
 TOR_DOWNLOADER_DELUGE = 0
 NUMBEROFSEEDERS = 10
@@ -140,6 +141,11 @@ UTORRENT_HOST = None
 UTORRENT_USER = None
 UTORRENT_PASS = None
 UTORRENT_LABEL = None
+
+QBITTORRENT_HOST = None
+QBITTORRENT_USER = None
+QBITTORRENT_PASS = None
+QBITTORRENT_LABEL = None
 
 TRANSMISSION_HOST = None
 TRANSMISSION_USER = None
@@ -319,10 +325,11 @@ def initialize():
             TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
             USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, \
             TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, \
-            NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
+            TOR_DOWNLOADER_QBITTORRENT, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
             USE_PUSHBULLET, PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, \
             PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, LAST_GOODREADS, LAST_LIBRARYTHING, \
             UTORRENT_HOST, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
+            QBITTORRENT_HOST, QBITTORRENT_USER, QBITTORRENT_PASS, QBITTORRENT_LABEL, \
             USE_PUSHOVER, PUSHOVER_ONSNATCH, PUSHOVER_KEYS, PUSHOVER_APITOKEN, \
             PUSHOVER_PRIORITY, PUSHOVER_ONDOWNLOAD, PUSHOVER_DEVICE, \
             USE_ANDROIDPN, ANDROIDPN_NOTIFY_ONSNATCH, ANDROIDPN_NOTIFY_ONDOWNLOAD, \
@@ -375,7 +382,7 @@ def initialize():
         else:
             LOGFULL = False
             logger.info("Screen Log set to INFO/WARN/ERROR")
-
+        
         # keep track of last api calls so we don't call more than once per second
         # to respect api terms, but don't wait un-necessarily either
         time_now = int(time.time())
@@ -432,6 +439,8 @@ def initialize():
         DESTINATION_DIR = check_setting_str(CFG, 'General', 'destination_dir', '')
         ALTERNATE_DIR = check_setting_str(CFG, 'General', 'alternate_dir', '')
         DOWNLOAD_DIR = check_setting_str(CFG, 'General', 'download_dir', '')
+        if not DOWNLOAD_DIR or not os.path.isdir(DOWNLOAD_DIR):
+            logger.warn("Download dir not set, books will be downloaded to %s" % os.getcwd())
 
         NZB_DOWNLOADER_SABNZBD = check_setting_bool(CFG, 'USENET', 'nzb_downloader_sabnzbd', 0)
         NZB_DOWNLOADER_NZBGET = check_setting_bool(CFG, 'USENET', 'nzb_downloader_nzbget', 0)
@@ -519,6 +528,7 @@ def initialize():
                        
         TOR_DOWNLOADER_BLACKHOLE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_blackhole', 0)
         TOR_DOWNLOADER_UTORRENT = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_utorrent', 0)
+        TOR_DOWNLOADER_QBITTORRENT = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_qbittorrent', 0)
         TOR_DOWNLOADER_TRANSMISSION = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_transmission', 0)
         TOR_DOWNLOADER_DELUGE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_deluge', 0)
         NUMBEROFSEEDERS = check_setting_int(CFG, 'TORRENT', 'numberofseeders', 10)
@@ -528,6 +538,11 @@ def initialize():
         UTORRENT_USER = check_setting_str(CFG, 'UTORRENT', 'utorrent_user', '')
         UTORRENT_PASS = check_setting_str(CFG, 'UTORRENT', 'utorrent_pass', '')
         UTORRENT_LABEL = check_setting_str(CFG, 'UTORRENT', 'utorrent_label', '')
+
+        QBITTORRENT_HOST = check_setting_str(CFG, 'QBITTORRENT', 'qbittorrent_host', '')
+        QBITTORRENT_USER = check_setting_str(CFG, 'QBITTORRENT', 'qbittorrent_user', '')
+        QBITTORRENT_PASS = check_setting_str(CFG, 'QBITTORRENT', 'qbittorrent_pass', '')
+        QBITTORRENT_LABEL = check_setting_str(CFG, 'QBITTORRENT', 'qbittorrent_label', '')
 
         TRANSMISSION_HOST = check_setting_str(CFG, 'TRANSMISSION', 'transmission_host', '')
         TRANSMISSION_USER = check_setting_str(CFG, 'TRANSMISSION', 'transmission_user', '')
@@ -736,6 +751,7 @@ def config_write():
     check_section('TORRENT')
     CFG.set('TORRENT', 'tor_downloader_blackhole', TOR_DOWNLOADER_BLACKHOLE)
     CFG.set('TORRENT', 'tor_downloader_utorrent', TOR_DOWNLOADER_UTORRENT)
+    CFG.set('TORRENT', 'tor_downloader_qbittorrent', TOR_DOWNLOADER_QBITTORRENT)
     CFG.set('TORRENT', 'tor_downloader_transmission', TOR_DOWNLOADER_TRANSMISSION)
     CFG.set('TORRENT', 'tor_downloader_deluge', TOR_DOWNLOADER_DELUGE)
     CFG.set('TORRENT', 'numberofseeders', NUMBEROFSEEDERS)
@@ -746,6 +762,12 @@ def config_write():
     CFG.set('UTORRENT', 'utorrent_user', UTORRENT_USER)
     CFG.set('UTORRENT', 'utorrent_pass', UTORRENT_PASS)
     CFG.set('UTORRENT', 'utorrent_label', UTORRENT_LABEL)
+#
+    check_section('QBITTORRENT')
+    CFG.set('QBITTORRENT', 'qbittorrent_host', QBITTORRENT_HOST)
+    CFG.set('QBITTORRENT', 'qbittorrent_user', QBITTORRENT_USER)
+    CFG.set('QBITTORRENT', 'qbittorrent_pass', QBITTORRENT_PASS)
+    CFG.set('QBITTORRENT', 'qbittorrent_label', QBITTORRENT_LABEL)
 #
     check_section('TRANSMISSION')
     CFG.set('TRANSMISSION', 'transmission_host', TRANSMISSION_HOST)

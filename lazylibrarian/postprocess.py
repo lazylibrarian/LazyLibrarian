@@ -65,7 +65,10 @@ def processDir(force=False, reset=False):
     # rename this thread
     threading.currentThread().name = "POSTPROCESS"
 
-    processpath = lazylibrarian.DOWNLOAD_DIR
+    if not lazylibrarian.DOWNLOAD_DIR or not os.path.isdir(lazylibrarian.DOWNLOAD_DIR):
+        processpath = os.getcwd()
+    else:
+        processpath = lazylibrarian.DOWNLOAD_DIR
 
     logger.debug(' Checking [%s] for files to post process' % processpath)
 
@@ -91,8 +94,11 @@ def processDir(force=False, reset=False):
                 # this is to get round unicode differences in torrent filenames.
                 # there might be a better way...
                 if isinstance(fname, str):
-                    fname = fname.decode('utf-8')  # make unicode
-                if fuzz.token_set_ratio(fname, book['NZBtitle']) >= 98:
+                    matchname = fname.decode('utf-8')
+                else:
+                    matchname = fname
+                match = fuzz.token_set_ratio(matchname, book['NZBtitle'])
+                if match >= 98:
                     pp_path = os.path.join(processpath, fname)
                     logger.debug('Found book/mag folder %s' % pp_path)
                     found = True
@@ -151,7 +157,7 @@ def processDir(force=False, reset=False):
                         logger.debug("Snatched magazine %s is not in download directory" % (book['BookID']))
                         continue
             else:
-                logger.debug("Snatched NZB %s is not in download directory" % (book['NZBtitle']))
+                logger.debug("Snatched %s %s is not in download directory" % (book['NZBmode'], book['NZBtitle']))
                 continue
 
             # try:
@@ -165,7 +171,7 @@ def processDir(force=False, reset=False):
                 logger.debug("Processing %s, %s" % (global_name, book['NZBurl']))
                 # update nzbs, only update the snatched ones in case multiple matches for same book / magazine issue
                 controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
-                newValueDict = {"Status": "Processed", "NZBDate": formatter.today()}  # say when we processed it
+                newValueDict = {"Status": "Processed", "NZBDate": formatter.now()}  # say when we processed it
                 myDB.upsert("wanted", newValueDict, controlValueDict)
 
                 if bookname is not None:  # it's a book, if None it's a magazine
@@ -266,7 +272,7 @@ def import_book(pp_path=None, bookID=None):
         if processBook:
             # update nzbs
             controlValueDict = {"BookID": bookID}
-            newValueDict = {"Status": "Processed", "NZBDate": formatter.today()}  # say when we processed it
+            newValueDict = {"Status": "Processed", "NZBDate": formatter.now()}  # say when we processed it
             myDB.upsert("wanted", newValueDict, controlValueDict)
             processExtras(myDB, dest_path, global_name, data)
             logger.info('Successfully processed: %s' % global_name)
@@ -412,16 +418,26 @@ def processAutoAdd(src_path=None):
             # TODO : n files jpg, opf & book(s) should have same name
             # Caution - book may be pdf, mobi, epub or all 3.
             # for now simply copy all files, and let the autoadder sort it out
-
+            #
+            # Update - seems Calibre only uses the ebook, not the jpeg or opf files
+            # and only imports one format of each ebook, treats the others as duplicates
+            # Maybe need to rewrite this so we only copy the first ebook we find and ignore everything else
+            #
             for name in names:
                 srcname = os.path.join(src_path, name)
                 dstname = os.path.join(autoadddir, name)
-                logger.debug('AutoAdd Copying named file [%s] as copy [%s] to [%s]' % (name, srcname, dstname))
+                logger.debug('AutoAdd Copying file [%s] as copy [%s] to [%s]' % (name, srcname, dstname))
                 try:
-                    shutil.copy2(srcname, dstname)
+                    shutil.copyfile(srcname, dstname)
                 except Exception as why:
-                    logger.error('AutoAdd - Failed to copy file because [%s] ' % str(why))
-
+                    logger.error('AutoAdd - Failed to copy file [%s] because [%s] ' % (name, str(why)))
+                    return False
+                try:
+                    os.chmod(dstname, 0666)  # make rw for calibre
+                except OSError as e:
+                    logger.warn("Could not set permission of %s because [%s]" % (dstname, str(e)))
+                    # permissions might not be fatal, continue
+                    
         except OSError as why:
             logger.error('AutoAdd - Failed because [%s]' % str(why))
             return False
