@@ -8,7 +8,7 @@ from hashlib import sha1
 
 import lazylibrarian
 
-from lazylibrarian import logger, database, formatter, providers, notifiers, utorrent, transmission
+from lazylibrarian import logger, database, formatter, providers, notifiers, utorrent, transmission, qbittorrent
 
 from lib.deluge_client import DelugeRPCClient
 
@@ -191,6 +191,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
     full_url = tor_url  # keep the url as stored in "wanted" table
     if (lazylibrarian.TOR_DOWNLOADER_DELUGE or
         lazylibrarian.TOR_DOWNLOADER_UTORRENT or
+        lazylibrarian.TOR_DOWNLOADER_QBITTORRENT or
         lazylibrarian.TOR_DOWNLOADER_BLACKHOLE or
         lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
 
@@ -258,6 +259,10 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             logger.debug("Sending %s to Utorrent" % tor_title)
             hash = CalcTorrentHash(torrent)
             download = utorrent.addTorrent(tor_url, hash)
+
+        if (lazylibrarian.TOR_DOWNLOADER_QBITTORRENT):
+            logger.debug("Sending %s to qbittorrent" % tor_title)
+            download = qbittorrent.addTorrent(tor_url)
 
         if (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
             logger.debug("Sending %s to Transmission" % tor_title)

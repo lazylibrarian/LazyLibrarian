@@ -6,6 +6,7 @@ import cherrypy
 import threading
 import locale
 import ConfigParser
+import platform
 
 import lazylibrarian
 from lazylibrarian import webStart, logger, versioncheck
@@ -81,7 +82,7 @@ def main():
         lazylibrarian.LOGLEVEL = 0
 
     if options.daemon:
-        if not sys.platform == 'win32':
+        if not 'windows' in platform.system().lower():
             lazylibrarian.DAEMON = True
             lazylibrarian.LOGLEVEL = 0
             lazylibrarian.daemonize()
