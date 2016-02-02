@@ -65,7 +65,7 @@ def processDir(force=False, reset=False):
     # rename this thread
     threading.currentThread().name = "POSTPROCESS"
 
-    if not DOWNLOAD_DIR or not os.path.isdir(DOWNLOAD_DIR):
+    if not lazylibrarian.DOWNLOAD_DIR or not os.path.isdir(lazylibrarian.DOWNLOAD_DIR):
         processpath = os.getcwd()
     else:
         processpath = lazylibrarian.DOWNLOAD_DIR
