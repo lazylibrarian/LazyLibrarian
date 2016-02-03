@@ -51,10 +51,12 @@ class RotatingLogger(object):
 
         threadname = threading.currentThread().getName()
 
+        # Ensure messages are ascii as some author names contain accents and the web page doesnt like them
+        message = formatter.latinToAscii(message)
+        
         if level != 'DEBUG' or lazylibrarian.LOGFULL is True:
             # Limit the size of the "in-memory" log, as gets slow if too long
-            # Ensure messages are ascii as some author names contain accents and the web page doesnt like them
-            lazylibrarian.LOGLIST.insert(0, (formatter.now(), formatter.latinToAscii(message), level, threadname))
+            lazylibrarian.LOGLIST.insert(0, (formatter.now(), message, level, threadname))
             if len(lazylibrarian.LOGLIST) > lazylibrarian.LOGLIMIT:
                 del lazylibrarian.LOGLIST[-1]
 
