@@ -97,8 +97,10 @@ def processDir(force=False, reset=False):
                     matchname = fname.decode('utf-8')
                 else:
                     matchname = fname
+                if 'LL.(' in matchname:
+                    matchname = matchname.split('LL.(')[0]
                 match = fuzz.token_set_ratio(matchname, book['NZBtitle'])
-                if match >= 98:
+                if match >= 95:
                     pp_path = os.path.join(processpath, fname)
                     logger.debug('Found book/mag folder %s' % pp_path)
                     found = True
