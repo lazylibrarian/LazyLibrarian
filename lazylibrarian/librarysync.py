@@ -15,7 +15,7 @@ def opf_file(search_dir=None):
     if search_dir and os.path.isdir(search_dir):
         for fname in os.listdir(search_dir):
             if fname.endswith('.opf'):
-                return os.path.join(search_dir, fname).encode(lazylibrarian.SYS_ENCODING)
+                return os.path.join(search_dir, fname)#.encode(lazylibrarian.SYS_ENCODING)
     return ""
 
 
@@ -293,7 +293,7 @@ def LibraryScan(dir=None):
 
                     # if it's an epub or a mobi we can try to read metadata from it
                     if (extn == "epub") or (extn == "mobi"):
-                        book_filename = os.path.join(r, files).encode(lazylibrarian.SYS_ENCODING)
+                        book_filename = os.path.join(r, files)#.encode(lazylibrarian.SYS_ENCODING)
                         try:
                             res = get_book_info(book_filename)
                         except:
@@ -308,6 +308,7 @@ def LibraryScan(dir=None):
                                 isbn = res['identifier']
                             if 'type' in res:
                                 extn = res['type']
+
                             logger.debug("book meta [%s] [%s] [%s] [%s] [%s]" %
                                          (isbn, language, author, book, extn))
                         else:
@@ -475,12 +476,11 @@ def LibraryScan(dir=None):
                                     myDB.action(
                                         'UPDATE books set Status="Open" where BookID="%s"' %
                                         bookid)
-                                    book_filename = os.path.join(
-                                        r,
-                                        files).encode(
-                                            lazylibrarian.SYS_ENCODING)
+
+                                    book_filename = os.path.join(r,files)#.encode(lazylibrarian.SYS_ENCODING)
                                     # update book location so we can check if it
                                     # gets removed, or allow click-to-open
+
                                     myDB.action(
                                         'UPDATE books set BookFile="%s" where BookID="%s"' %
                                         (book_filename, bookid))
