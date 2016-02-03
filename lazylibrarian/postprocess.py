@@ -91,19 +91,22 @@ def processDir(force=False, reset=False):
         for book in snatched:
             found = False
             for fname in downloads:
-                # this is to get round unicode differences in torrent filenames.
-                # there might be a better way...
-                if isinstance(fname, str):
-                    matchname = fname.decode('utf-8')
-                else:
-                    matchname = fname
-                match = fuzz.token_set_ratio(matchname, book['NZBtitle'])
-                if match >= 98:
-                    pp_path = os.path.join(processpath, fname)
-                    logger.debug('Found book/mag folder %s' % pp_path)
-                    found = True
-                    break
-            if found and not pp_path.endswith('.fail'):  # has this failed before?
+                if not fname.endswith('.fail'):  # has this failed before?
+                    # this is to get round unicode differences in torrent filenames.
+                    # there might be a better way...
+                    if isinstance(fname, str):
+                        matchname = fname.decode('utf-8')
+                    else:
+                        matchname = fname
+                    if 'LL.(' in matchname:
+                        matchname = matchname.split('LL.(')[0]
+                    match = fuzz.token_set_ratio(matchname, book['NZBtitle'])
+                    if match >= 95:
+                        pp_path = os.path.join(processpath, fname)
+                        logger.debug('Found folder %s for %s' % (pp_path, book['NZBtitle']))
+                        found = True
+                        break
+            if found:
                 data = myDB.select('SELECT * from books WHERE BookID="%s"' % book['BookID'])
                 if data:
                     authorname = data[0]['AuthorName']
