@@ -3,7 +3,7 @@ import os
 import threading
 import lib.csv as csv
 import platform
-
+import hashlib
 from urllib import FancyURLopener
 from lib.fuzzywuzzy import fuzz
 import lazylibrarian
@@ -98,9 +98,12 @@ def processDir(force=False, reset=False):
                         matchname = fname.decode(lazylibrarian.SYS_ENCODING)
                     else:
                         matchname = fname
-                    if 'LL.(' in matchname:
-                        matchname = matchname.split('LL.(')[0]
-                    match = fuzz.token_set_ratio(matchname, book['NZBtitle'])
+                    if ' LL.(' in matchname:
+                        matchname = matchname.split(' LL.(')[0]
+                    matchtitle = book['NZBtitle']
+                    if ' LL.(' in matchtitle:
+                        matchtitle = matchtitle.split(' LL.(')[0]
+                    match = fuzz.token_set_ratio(matchtitle, matchname)
                     if match >= 95:
                         pp_path = os.path.join(processpath, fname)
                         logger.debug('Found folder %s for %s' % (pp_path, book['NZBtitle']))
@@ -120,6 +123,7 @@ def processDir(force=False, reset=False):
                         '$Title', bookname)
                     global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace(
                         '$Title', bookname)
+                    global_name = common.remove_accents(global_name)
                     # dest_path = authorname+'/'+bookname
                     # global_name = bookname + ' - ' + authorname
                     # Remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
@@ -155,6 +159,7 @@ def processDir(force=False, reset=False):
                         bookname = None
                         global_name = lazylibrarian.MAG_DEST_FILE.replace('$IssueDate', book['AuxInfo']).replace(
                             '$Title', mag_name)
+                        global_name = common.remove_accents(global_name)
                         # global_name = book['AuxInfo']+' - '+title
                     else:
                         logger.debug("Snatched magazine %s is not in download directory" % (book['BookID']))
@@ -263,6 +268,7 @@ def import_book(pp_path=None, bookID=None):
 
         dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace('$Title', bookname)
         global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace('$Title', bookname)
+        global_name = common.remove_accents(global_name)
         # Remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
         # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
         dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
