@@ -999,6 +999,7 @@ class WebInterface(object):
     logs.exposed = True
 
     def getLog(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
+        print "getLog %s to %s" % (iDisplayStart, iDisplayLength)
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
         filtered = []
