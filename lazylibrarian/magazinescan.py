@@ -40,7 +40,9 @@ def create_cover(issuefile=None):
                 if len(lazylibrarian.IMP_CONVERT):  # allow external convert to override libraries
                     try:
                         params = [lazylibrarian.IMP_CONVERT, issuefile + '[0]', coverfile]
-                        subprocess.check_output(params, stderr=subprocess.STDOUT)
+                        res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                        if res:
+                            logger.warn('%s reports: %s' % (lazylibrarian.IMP_CONVERT, res))
                     except subprocess.CalledProcessError as e:
                         logger.debug(params)
                         logger.warn('ImageMagick "convert" failed %s' % e.output)
