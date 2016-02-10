@@ -469,6 +469,7 @@ def initialize():
             
             NEWZNAB_PROV.append({"NAME": newz_name,
                                  "ENABLED": check_setting_bool(CFG, newz_name, 'ENABLED', 0),
+                                 "NZEDB": check_setting_bool(CFG, newz_name, 'NZEDB', 0),
                                  "HOST": check_setting_str(CFG, newz_name, 'HOST', ''),
                                  "API": check_setting_str(CFG, newz_name, 'API', '')
                                }) 
@@ -724,6 +725,7 @@ def config_write():
     for provider in NEWZNAB_PROV:
         check_section(provider['NAME'])
         CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
+        CFG.set(provider['NAME'], 'NZEDB', provider['NZEDB'])
         CFG.set(provider['NAME'], 'HOST', provider['HOST'])
         CFG.set(provider['NAME'], 'API', provider['API'])
     add_newz_slot()
@@ -857,6 +859,7 @@ def add_newz_slot():
         newz_name = 'Newznab%i' % count
         check_section(newz_name)
         CFG.set(newz_name, 'ENABLED', False)
+        CFG.set(newz_name, 'NZEDB', False)
         CFG.set(newz_name, 'HOST', '')
         CFG.set(newz_name, 'API', '')
         NEWZNAB_PROV.append({"NAME": newz_name,
