@@ -613,6 +613,7 @@ class WebInterface(object):
     openBook.exposed = True
 
     def markBooks(self, AuthorName=None, action=None, redirect=None, **args):
+        print "action =" + action
         myDB = database.DBConnection()
         if not redirect:
             redirect = "books"
@@ -1240,13 +1241,69 @@ class WebInterface(object):
     forceSearch.exposed = True
 
     def manage(self, AuthorName=None, action=None, whichStatus=None, source=None, **args):
-        myDB = database.DBConnection()
+        #myDB = database.DBConnection()
         # books only holds status [skipped wanted open have ignored]
         # wanted holds status [snatched processed]
-        books = myDB.select('SELECT * FROM books WHERE Status = ?', [whichStatus])
+        #books = myDB.select('SELECT * FROM books WHERE Status = ?', [whichStatus])
+        lazylibrarian.MANAGEFILTER = whichStatus
         return serve_template(templatename="managebooks.html", title="Book Status Management",
-                              books=books, whichStatus=whichStatus)
+                              books=[], whichStatus=whichStatus)
     manage.exposed = True
+
+    def getManage(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
+        
+        myDB = database.DBConnection()
+        iDisplayStart = int(iDisplayStart)
+        iDisplayLength = int(iDisplayLength)
+        #print "getManage %s" % iDisplayStart
+        #   need to filter on whichStatus
+        rowlist = myDB.action('SELECT authorname, bookname, series, seriesorder, bookdate, bookid, booklink, booksub from books WHERE STATUS="%s"' % lazylibrarian.MANAGEFILTER).fetchall()
+        # turn the sqlite rowlist into a list of lists
+        d = [] # the masterlist to be filled with the row data and to be returned
+        for i, row in enumerate(rowlist): # iterate through the sqlite3.Row objects            
+            l = [] # for each Row use a separate list
+
+            l.append('<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[5])
+            l.append('<td id="authorname"><a href="authorPage?AuthorName=%s">%s</a></td>' % (row[0], row[0]))
+
+            if row[7]:  # is there a sub-title
+                l.append('<td id="bookname"><a href="%s" target="_new">%s</a><br><i class="smalltext">%s</i></td>' % (row[6], row[1], row[7]))
+            else:
+                l.append('<td id="bookname"><a href="%s" target="_new">%s</a></td>' % (row[6], row[1]))
+
+            if row[2]:  # is the book part of a series
+                l.append('<td id="series">%s</td>' % row[2])
+            else:
+                l.append('<td id="series">None</td>')
+
+            if row[3]:
+                l.append('<td id="seriesOrder">%s</td>' % row[3])
+            else:
+                l.append('<td id="seriesOrder">None</td>')
+
+            l.append('<td id="date">%s</td>' % row[4])
+
+            d.append(l) # add the rowlist to the masterlist
+        filtered = d
+
+        if sSearch != "":
+            filtered = [row for row in d for column in row if sSearch in column]
+        sortcolumn = int(iSortCol_0)
+
+        filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+        if iDisplayLength < 0:  # display = all
+            rows = filtered
+        else:
+            rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+
+        mydict = {'iTotalDisplayRecords': len(filtered),
+                'iTotalRecords': len(rowlist),
+                'aaData': rows,
+                }
+        s = simplejson.dumps(mydict)
+        #print ("getManage returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+        return s
+    getManage.exposed = True
 
 #    def markWanted(self, action=None, **args):
 #        myDB = database.DBConnection()
