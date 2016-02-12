@@ -864,6 +864,7 @@ def add_newz_slot():
         CFG.set(newz_name, 'API', '')
         NEWZNAB_PROV.append({"NAME": newz_name,
                              "ENABLED": 0,
+                             "NZEDB": 0,
                              "HOST": '',
                              "API": ''
                            })
