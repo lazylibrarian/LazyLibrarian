@@ -394,21 +394,119 @@ class WebInterface(object):
 
 # BOOKS #############################################################
 
+# not very clean here, using a global variable BOOKLANGFILTER to pass booklang from books to getbooks
+#    
     def books(self, BookLang=None):
         myDB = database.DBConnection()
-
         languages = myDB.select('SELECT DISTINCT BookLang from books WHERE NOT \
                                 STATUS="Skipped" AND NOT STATUS="Ignored"')
-        if BookLang:
-            books = myDB.select('SELECT * from books WHERE BookLang="%s" AND NOT \
-                                Status="Skipped" AND NOT STATUS="Ignored"' % BookLang)
-        else:
-            books = myDB.select('SELECT * from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"')
+        lazylibrarian.BOOKLANGFILTER = BookLang
 
-        if books is None:
-            raise cherrypy.HTTPRedirect("books")
-        return serve_template(templatename="books.html", title='Books', books=books, languages=languages)
+        #if BookLang:
+        #    books = myDB.select('SELECT * from books WHERE BookLang="%s" AND NOT \
+        #                        Status="Skipped" AND NOT STATUS="Ignored"' % BookLang)
+        #else:
+        #    books = myDB.select('SELECT * from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"')
+
+        #if books is None:
+        #    raise cherrypy.HTTPRedirect("books")
+        return serve_template(templatename="books.html", title='Books', books=[], languages=languages)
     books.exposed = True
+
+    def getBooks(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=1, sSortDir_0="desc", sSearch="", **kwargs):
+        myDB = database.DBConnection()
+        iDisplayStart = int(iDisplayStart)
+        iDisplayLength = int(iDisplayLength)
+
+        #   need to check and filter on BookLang if set
+        if lazylibrarian.BOOKLANGFILTER is None or not len(lazylibrarian.BOOKLANGFILTER):
+            rowlist = myDB.action('SELECT bookimg, authorname, bookname, series, seriesorder, bookrate, bookdate, status, bookid, booksub, booklink from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"').fetchall()
+        else:
+            rowlist = myDB.action('SELECT bookimg, authorname, bookname, series, seriesorder, bookrate, bookdate, status, bookid, booksub, booklink from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored" and BOOKLANG="%s"' % lazylibrarian.BOOKLANGFILTER).fetchall()
+        # turn the sqlite rowlist into a list of lists
+        d = [] # the masterlist to be filled with the row data and to be returned
+        for i, row in enumerate(rowlist): # iterate through the sqlite3.Row objects            
+            l = [] # for each Row use a separate list
+
+            l.append('<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[8])
+            l.append('<td id="bookart"><a href="%s" target="_new"><img src="%s" height="75" width="50"></a></td>' % (row[0], row[0]))
+            l.append('<td id="authorname"><a href="authorPage?AuthorName=%s">%s</a></td>' % (row[1], row[1]))
+
+            if row[9]:  # is there a sub-title
+                l.append('<td id="bookname"><a href="%s" target="_new">%s</a><br><i class="smalltext">%s</i></td>' % (row[10], row[2], row[9]))
+            else:
+                l.append('<td id="bookname"><a href="%s" target="_new">%s</a></td>' % (row[10], row[2]))
+
+            if row[3]:  # is the book part of a series
+                l.append('<td id="series">%s</td>' % row[3])
+            else:
+                l.append('<td id="series">None</td>')
+
+            if row[4]:
+                l.append('<td id="seriesOrder">%s</td>' % row[4])
+            else:
+                l.append('<td id="seriesOrder">None</td>')
+
+            bookrate = float(row[5])
+            if bookrate < 0.5:
+                starimg = '0-stars.png'
+            elif bookrate >= 0.5 and bookrate < 1.5:
+                starimg = '1-stars.png'
+            elif bookrate >= 1.5 and bookrate < 2.5:
+                starimg = '2-stars.png'
+            elif bookrate >= 2.5 and bookrate < 3.5:
+                starimg = '3-stars.png'
+            elif bookrate >= 3.5 and bookrate < 4.5:
+                starimg = '4-stars.png'
+            elif bookrate >= 4.5:
+                starimg = '5-stars.png'
+            else:
+                starimg = '0-stars.png'
+            l.append('<td id="stars"><img src="images/' + starimg + '" width="50" height="10"></td>')
+            
+            l.append('<td id="date">%s</td>' % row[6])
+
+            if lazylibrarian.HTTP_LOOK == 'default':
+                if row[7] == 'Open':
+                    l.append('<td id="status"><a class="button green" href="openBook?bookid=%s" target="_self">Open</a></td>' % row[8])
+                elif row[7] == 'Wanted':
+                    l.append('<td id="status"><a class="button red" href="searchForBook?bookid=%s" target="_self"><span class="a">Wanted</span><span class="b">Search</span></a></td>' % row[8])
+                elif row[7] == 'Snatched' or row[7] == 'Have':
+                    l.append('<td id="status"><a class="button">%s</a></td>' % row[7])
+                else:
+                    l.append('<td id="status"><a class="button grey">%s</a></td>' % row[7])
+            elif lazylibrarian.HTTP_LOOK == 'bookstrap':
+                if row[7] == 'Open':
+                    l.append('<td class="status text-center"><a class="button green btn btn-xs btn-warning" href="openBook?bookid=%s" target="_self"><i class="fa fa-book"></i>%s</a></td>' % (row[8], row[7]))
+                elif row[7] == 'Wanted':
+                    l.append('<td class="status text-center"><p><a class="a btn btn-xs btn-danger">%s</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=%s" target="_self"><i class="fa fa-search"></i> Search</a></p></td>' % (row[8], row[7]))
+                elif row[7] == 'Snatched' or row[7] == 'Have':
+                    l.append('<td class="status text-center"><a class="button btn btn-xs btn-info">%s</a></td>' % row[7])
+                else:
+                    l.append('<td class="status text-center"><a class="button btn btn-xs btn-default grey">%s</a></td>' % row[7])
+
+            d.append(l) # add the rowlist to the masterlist
+        filtered = d
+
+        if sSearch != "":
+            filtered = [row for row in d for column in row if sSearch in column]
+        sortcolumn = int(iSortCol_0)
+
+        filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+        if iDisplayLength < 0:  # display = all
+            rows = filtered
+        else:
+            rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+
+        mydict = {'iTotalDisplayRecords': len(filtered),
+                'iTotalRecords': len(rowlist),
+                'aaData': rows,
+                }
+        s = simplejson.dumps(mydict)
+        #print ("Getbooks returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+        return s
+    getBooks.exposed = True
+
 
     def addBook(self, bookid=None):
         myDB = database.DBConnection()
@@ -519,30 +617,31 @@ class WebInterface(object):
         if not redirect:
             redirect = "books"
         authorcheck = None
-        for bookid in args:
-            # ouch dirty workaround...
-            if not bookid == 'book_table_length':
-                if action != "Remove":
-                    controlValueDict = {'BookID': bookid}
-                    newValueDict = {'Status': action}
-                    myDB.upsert("books", newValueDict, controlValueDict)
-                    title = myDB.select('SELECT * from books WHERE BookID = "%s"' % bookid)
-                    for item in title:
-                        bookname = item['BookName']
-                        logger.info(u'Status set to "%s" for "%s"' % (action, common.remove_accents(bookname)))
-
-                else:
-                    authorsearch = myDB.select('SELECT * from books WHERE BookID = "%s"' % bookid)
-                    for item in authorsearch:
-                        AuthorName = item['AuthorName']
-                        bookname = item['BookName']
-                    authorcheck = myDB.select('SELECT * from authors WHERE AuthorName = "%s"' % common.remove_accents(AuthorName))
-                    if authorcheck:
-                        myDB.upsert("books", {"Status": "Skipped"}, {"BookID": bookid})
-                        logger.info(u'Status set to Skipped for "%s"' % common.remove_accents(bookname))
+        if action != None:
+            for bookid in args:
+                # ouch dirty workaround...
+                if not bookid == 'book_table_length':
+                    if action != "Remove":
+                        controlValueDict = {'BookID': bookid}
+                        newValueDict = {'Status': action}
+                        myDB.upsert("books", newValueDict, controlValueDict)
+                        title = myDB.select('SELECT * from books WHERE BookID = "%s"' % bookid)
+                        for item in title:
+                            bookname = item['BookName']
+                            logger.info(u'Status set to "%s" for "%s"' % (action, common.remove_accents(bookname)))
+    
                     else:
-                        myDB.action('DELETE from books WHERE BookID = "%s"' % bookid)
-                        logger.info(u'Removed "%s" from database' % common.remove_accents(bookname))
+                        authorsearch = myDB.select('SELECT * from books WHERE BookID = "%s"' % bookid)
+                        for item in authorsearch:
+                            AuthorName = item['AuthorName']
+                            bookname = item['BookName']
+                        authorcheck = myDB.select('SELECT * from authors WHERE AuthorName = "%s"' % common.remove_accents(AuthorName))
+                        if authorcheck:
+                            myDB.upsert("books", {"Status": "Skipped"}, {"BookID": bookid})
+                            logger.info(u'Status set to Skipped for "%s"' % common.remove_accents(bookname))
+                        else:
+                            myDB.action('DELETE from books WHERE BookID = "%s"' % bookid)
+                            logger.info(u'Removed "%s" from database' % common.remove_accents(bookname))
 
         if redirect == "author" or authorcheck:
             # update authors needs to be updated every time a book is marked differently
@@ -996,7 +1095,7 @@ class WebInterface(object):
     toggleLog.exposed = True
 
     def logs(self):
-        return serve_template(templatename="logs.html", title="Log", lineList=lazylibrarian.LOGLIST)
+        return serve_template(templatename="logs.html", title="Log", lineList=[])  # lazylibrarian.LOGLIST)
     logs.exposed = True
 
     def getLog(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
