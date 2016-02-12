@@ -1,6 +1,8 @@
 import os
 import re
 import lazylibrarian
+import urllib2
+import hashlib
 from lazylibrarian import logger, database, importer, formatter, common
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
@@ -546,4 +548,47 @@ def LibraryScan(dir=None):
             name).fetchone()
         myDB.action('UPDATE authors set UnignoredBooks="%s" where AuthorName="%s"' % (totalbooks['counter'], name))
 
+    covers = myDB.action("select  count('bookimg') as counter from books where bookimg like 'http%'").fetchone()
+    logger.info("Caching covers for %s books" % covers['counter'])
+    
+    images = myDB.action('select bookid, bookimg, bookname from books where bookimg like "http%"')
+    for item in images:
+        bookid = item['bookid']
+        bookimg = item['bookimg']
+        bookname = item['bookname']
+        bookimg = cache_cover(bookimg)
+        logger.debug("Caching cover for %s" % bookname)
+        myDB.action('update books set BookImg="%s" where BookID="%s"' % (bookimg, bookid))
+
     logger.info('Library scan complete')
+    
+def cache_cover(img_url):
+    USER_AGENT = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'
+    request = urllib2.Request(img_url)
+
+    if lazylibrarian.PROXY_HOST:
+        request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
+
+    # google insists on having a user-agent
+    request.add_header('User-Agent', USER_AGENT)
+    
+    try:
+        resp = urllib2.urlopen(request, timeout=30)
+    except (urllib2.HTTPError, urllib2.URLError) as e:
+        logger.debug("Error getting image : %s" % str(e))
+        return img_url
+        
+    if str(resp.getcode()).startswith("2"):
+        # (200 OK etc)
+        hashID = hashlib.md5(img_url).hexdigest()
+        cachedir = os.path.join(str(lazylibrarian.PROG_DIR),
+                                'data' + os.sep + 'images' + os.sep + 'cache')
+        if not os.path.isdir(cachedir):
+            os.makedirs(cachedir)
+        coverfile = os.path.join(cachedir, hashID + '.jpg')
+        link = 'images' + os.sep + 'cache' + os.sep + hashID + '.jpg'
+        with open(coverfile, 'wb') as img:
+            img.write(resp.read())
+        return link
+    return img_url
+

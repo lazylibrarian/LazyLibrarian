@@ -3,7 +3,7 @@ import os
 import threading
 import lib.csv as csv
 import platform
-
+import hashlib
 from urllib import FancyURLopener
 from lib.fuzzywuzzy import fuzz
 import lazylibrarian
@@ -95,12 +95,15 @@ def processDir(force=False, reset=False):
                     # this is to get round unicode differences in torrent filenames.
                     # there might be a better way...
                     if isinstance(fname, str):
-                        matchname = fname.decode('utf-8')
+                        matchname = fname.decode(lazylibrarian.SYS_ENCODING)
                     else:
                         matchname = fname
-                    if 'LL.(' in matchname:
-                        matchname = matchname.split('LL.(')[0]
-                    match = fuzz.token_set_ratio(matchname, book['NZBtitle'])
+                    if ' LL.(' in matchname:
+                        matchname = matchname.split(' LL.(')[0]
+                    matchtitle = book['NZBtitle']
+                    if ' LL.(' in matchtitle:
+                        matchtitle = matchtitle.split(' LL.(')[0]
+                    match = fuzz.token_set_ratio(matchtitle, matchname)
                     if match >= 95:
                         pp_path = os.path.join(processpath, fname)
                         logger.debug('Found folder %s for %s' % (pp_path, book['NZBtitle']))
@@ -120,6 +123,7 @@ def processDir(force=False, reset=False):
                         '$Title', bookname)
                     global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace(
                         '$Title', bookname)
+                    global_name = common.remove_accents(global_name)
                     # dest_path = authorname+'/'+bookname
                     # global_name = bookname + ' - ' + authorname
                     # Remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
@@ -155,6 +159,7 @@ def processDir(force=False, reset=False):
                         bookname = None
                         global_name = lazylibrarian.MAG_DEST_FILE.replace('$IssueDate', book['AuxInfo']).replace(
                             '$Title', mag_name)
+                        global_name = common.remove_accents(global_name)
                         # global_name = book['AuxInfo']+' - '+title
                     else:
                         logger.debug("Snatched magazine %s is not in download directory" % (book['BookID']))
@@ -263,6 +268,7 @@ def import_book(pp_path=None, bookID=None):
 
         dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace('$Title', bookname)
         global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace('$Title', bookname)
+        global_name = common.remove_accents(global_name)
         # Remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
         # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
         dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
@@ -296,7 +302,7 @@ def book_file(search_dir=None, booktype=None):
     if search_dir is not None and os.path.isdir(search_dir):
         for fname in os.listdir(search_dir):
             if formatter.is_valid_booktype(fname, booktype=booktype):
-                return os.path.join(search_dir, fname).encode(lazylibrarian.SYS_ENCODING)
+                return os.path.join(search_dir, fname)# .encode(lazylibrarian.SYS_ENCODING)
     return ""
 
 
@@ -328,6 +334,8 @@ def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
     # dest_path is where we put the book after processing, but we don't have the full filename
     # we don't keep the extension, so look for any "book" in that directory
     dest_file = book_file(dest_path, booktype='book')
+    if isinstance(dest_file, str):
+        dest_file = dest_file.decode(lazylibrarian.SYS_ENCODING)
     controlValueDict = {"BookID": bookid}
     newValueDict = {"Status": "Open", "BookFile": dest_file}
     myDB.upsert("books", newValueDict, controlValueDict)
@@ -510,7 +518,7 @@ def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bo
         #    logger.error("Could not chmod path: " + str(opfpath))
         logger.debug('Saved metadata to: ' + opfpath)
     else:
-        logger.debug('%s allready exists. Did not create one.' % opfpath)
+        logger.debug('%s already exists. Did not create one.' % opfpath)
 
 
 def csv_file(search_dir=None):
@@ -551,10 +559,10 @@ def exportCSV(search_dir=None, status="Wanted"):
             ])
 
             for resulted in find_status:
-                logger.debug(u"Exported CSV for book %s" % resulted['BookName'].encode('utf-8'))
+                logger.debug(u"Exported CSV for book %s" % resulted['BookName'].encode(lazylibrarian.SYS_ENCODING))
                 row = ([resulted['BookID'], resulted['AuthorName'], resulted['BookName'],
                         resulted['BookIsbn'], resulted['AuthorID']])
-                csvwrite.writerow([("%s" % s).encode('utf-8') for s in row])
+                csvwrite.writerow([("%s" % s).encode(lazylibrarian.SYS_ENCODING) for s in row])
                 count = count + 1
         logger.info(u"CSV exported %s books to %s" % (count, csvFile))
 

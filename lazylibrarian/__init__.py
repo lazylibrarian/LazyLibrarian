@@ -340,7 +340,7 @@ def initialize():
             USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
             GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, \
             LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, SCHED, CACHE_HIT, CACHE_MISS, \
-            BOOKSTRAP_THEME, BOOKSTRAP_THEMELIST
+            BOOKSTRAP_THEME, BOOKSTRAP_THEMELIST, BOOKLANGFILTER, MANAGEFILTER
 
         if __INITIALIZED__:
             return False
@@ -388,6 +388,9 @@ def initialize():
         time_now = int(time.time())
         LAST_LIBRARYTHING = time_now
         LAST_GOODREADS = time_now
+        
+        MANAGEFILTER = "Skipped"
+        BOOKLANGFILTER = "eng"
 
         MATCH_RATIO = check_setting_int(CFG, 'General', 'match_ratio', 80)
         HTTP_HOST = check_setting_str(CFG, 'General', 'http_host', '0.0.0.0')
@@ -469,6 +472,7 @@ def initialize():
             
             NEWZNAB_PROV.append({"NAME": newz_name,
                                  "ENABLED": check_setting_bool(CFG, newz_name, 'ENABLED', 0),
+                                 "NZEDB": check_setting_bool(CFG, newz_name, 'NZEDB', 0),
                                  "HOST": check_setting_str(CFG, newz_name, 'HOST', ''),
                                  "API": check_setting_str(CFG, newz_name, 'API', '')
                                }) 
@@ -724,6 +728,7 @@ def config_write():
     for provider in NEWZNAB_PROV:
         check_section(provider['NAME'])
         CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
+        CFG.set(provider['NAME'], 'NZEDB', provider['NZEDB'])
         CFG.set(provider['NAME'], 'HOST', provider['HOST'])
         CFG.set(provider['NAME'], 'API', provider['API'])
     add_newz_slot()
@@ -857,10 +862,12 @@ def add_newz_slot():
         newz_name = 'Newznab%i' % count
         check_section(newz_name)
         CFG.set(newz_name, 'ENABLED', False)
+        CFG.set(newz_name, 'NZEDB', False)
         CFG.set(newz_name, 'HOST', '')
         CFG.set(newz_name, 'API', '')
         NEWZNAB_PROV.append({"NAME": newz_name,
                              "ENABLED": 0,
+                             "NZEDB": 0,
                              "HOST": '',
                              "API": ''
                            })

@@ -28,7 +28,6 @@
     <input  class="btn" type="submit" value="Manage" />
     </form>
     <br>
-    %if len(books) > 0:
     <h3>Books with status ${whichStatus}</h3>
         <br>
     <form action="markBooks" method="get"><input type="hidden" name="redirect" value="manage">
@@ -43,7 +42,7 @@
                 <th id="date">Released</th>
             </tr>
         </thead>
-
+<!--
         <tbody>
         %for result in books:
                 <tr class="gradeZ">
@@ -61,6 +60,7 @@
                 </tr>
         %endfor
         </tbody>
+-->
     </table>
     <p>
 
@@ -74,7 +74,6 @@
         <input type="submit" class="markBooks" value="Go">
     </p>
     </form>
-    %endif
 
 </%def>
 
@@ -89,6 +88,7 @@
     {
         $('#book_table').dataTable(
             {
+                "order": [[ 1, 'asc' ]],
                 "aoColumns": [
                     null,
                     null,
@@ -107,6 +107,11 @@
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": 10,
                 "sPaginationType": "full_numbers",
+                "aaSorting": [[0, 'asc']],
+                 "bServerSide": true,
+                // need to pass requested status to getManage 
+                "sAjaxSource": 'getManage?whichStatus="Skipped"',
+                "bFilter": true,
             });
 			$('.dataTables_filter input').attr("placeholder", "Search table here");
     });

@@ -40,11 +40,11 @@
 		<th id="seriesOrder">Num</th>
                 <th id="stars">Rating</th>
                 <th id="date">Released</th>
-                <th id="language" hidden="true">Language</th>
+                <!-- <th id="language" hidden="true">Language</th> -->
                 <th id="status">Status</th>
             </tr>
         </thead>
-
+<!-- This section is unused now, we use server-side processing instead
         <tbody>
         %for result in books:
                 <%
@@ -94,6 +94,7 @@
                 </tr>
         %endfor
         </tbody>
+-->
     </table>
 </%def>
 
@@ -108,8 +109,8 @@
     {
         $('#book_table').dataTable(
             {
+                "order": [[ 2, 'asc' ]],
                 "aoColumns": [
-                    null,
                     null,
                     null,
                     null,
@@ -130,8 +131,13 @@
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": 10,
                 "sPaginationType": "full_numbers",
+                "aaSorting": [[0, 'asc']],
+                 "bServerSide": true,
+                // need to pass requested language filter to getBooks 
+                "sAjaxSource": 'getBooks?BookLang="eng"',
+                "bFilter": true,
             });
-			$('.dataTables_filter input').attr("placeholder", "Seach table here");
+			$('.dataTables_filter input').attr("placeholder", "Search table here");
     });
     </script>
 </%def>

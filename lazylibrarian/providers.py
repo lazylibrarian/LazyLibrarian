@@ -107,10 +107,14 @@ def IterateOverNewzNabSites(book=None, searchType=None):
 
     for provider in lazylibrarian.NEWZNAB_PROV:
         if (provider['ENABLED']):
+            if provider['NZEDB'] is True:
+                searchMode = "nzedb"
+            else:
+                searchMode = "nzb"
             providers += 1
             logger.debug('[IterateOverNewzNabSites] - %s' % provider['NAME'])
             resultslist += NewzNabPlus(book, provider['HOST'], provider['API'],
-                                       searchType, "nzb")
+                                       searchType, searchMode)
 
     for provider in lazylibrarian.TORZNAB_PROV:
         if (provider['ENABLED']):
@@ -300,7 +304,7 @@ def ReturnSearchTypeStructure(api_key, book, searchType, searchMode):
                 "apikey": api_key,
                 "title": common.removeDisallowedFilenameChars(book['bookName']),
                 "author": common.removeDisallowedFilenameChars(authorname),
-                "cat": 7020,  # 7020=ebook
+                "cat": "7020",  # 7020=ebook
             }
         elif searchType == "shortbook":
             authorname = book['authorName']
@@ -313,7 +317,7 @@ def ReturnSearchTypeStructure(api_key, book, searchType, searchMode):
                 "apikey": api_key,
                 "title": common.removeDisallowedFilenameChars(book['bookName'].split('(')[0]).strip(),
                 "author": common.removeDisallowedFilenameChars(authorname),
-                "cat": 7020,  # 7020=ebook
+                "cat": "7020",  # 7020=ebook
             }
         elif searchType == "author":
             authorname = book['authorName']
@@ -332,6 +336,61 @@ def ReturnSearchTypeStructure(api_key, book, searchType, searchMode):
                 "t": "search",
                 "apikey": api_key,
                 "cat": "7000,7010,7020",  # 7000=Other,7010=Misc,7020 Ebook
+                "q": book['searchterm'],
+                "extended": 1,
+            }
+        else:
+            params = {
+                "t": "search",
+                "apikey": api_key,
+                # this is a general search
+                "q": book['searchterm'],
+                "extended": 1,
+            }
+    if searchMode == "nzedb":
+        if searchType == "book":
+            authorname = book['authorName']
+            while authorname[1] in '. ':  # strip any leading initials
+                authorname = authorname[2:].strip()  # and leading whitespace
+            # middle initials can't have a dot
+            authorname = authorname.replace('. ', ' ')
+            params = {
+                "t": "search",
+                "apikey": api_key,
+                "q": common.removeDisallowedFilenameChars(authorname) + ' ' + 
+                     common.removeDisallowedFilenameChars(book['bookName']),
+                "cat": "8000,8010",  # 8000=book, 8010=ebook
+            }
+        elif searchType == "shortbook":
+            authorname = book['authorName']
+            while authorname[1] in '. ':  # strip any leading initials
+                authorname = authorname[2:].strip()  # and leading whitespace
+            # middle initials can't have a dot
+            authorname = authorname.replace('. ', ' ')
+            params = {
+                "t": "search",
+                "apikey": api_key,
+                "q": common.removeDisallowedFilenameChars(authorname) + ' ' + 
+                     common.removeDisallowedFilenameChars(book['bookName'].split('(')[0]).strip(),
+                "cat": "8000,8010",  # 8000=book, 8010=ebook
+            }
+        elif searchType == "author":
+            authorname = book['authorName']
+            while authorname[1] in '. ':  # strip any leading initials
+                authorname = authorname[2:].strip()  # and leading whitespace
+            # middle initials can't have a dot
+            authorname = authorname.replace('. ', ' ')
+            params = {
+                "t": "search",
+                "apikey": api_key,
+                "q": common.removeDisallowedFilenameChars(authorname),
+                "extended": 1,
+            }
+        elif searchType == "mag":
+            params = {
+                "t": "search",
+                "apikey": api_key,
+                "cat": "8030",  # 8030=mag
                 "q": book['searchterm'],
                 "extended": 1,
             }
