@@ -355,10 +355,10 @@ def ReturnSearchTypeStructure(api_key, book, searchType, searchMode):
             # middle initials can't have a dot
             authorname = authorname.replace('. ', ' ')
             params = {
-                "t": "books",
+                "t": "search",
                 "apikey": api_key,
-                "title": common.removeDisallowedFilenameChars(book['bookName']),
-                "author": common.removeDisallowedFilenameChars(authorname),
+                "q": common.removeDisallowedFilenameChars(authorname) + ' ' + 
+                     common.removeDisallowedFilenameChars(book['bookName']),
                 "cat": "8000,8010",  # 8000=book, 8010=ebook
             }
         elif searchType == "shortbook":
@@ -368,10 +368,10 @@ def ReturnSearchTypeStructure(api_key, book, searchType, searchMode):
             # middle initials can't have a dot
             authorname = authorname.replace('. ', ' ')
             params = {
-                "t": "books",
+                "t": "search",
                 "apikey": api_key,
-                "title": common.removeDisallowedFilenameChars(book['bookName'].split('(')[0]).strip(),
-                "author": common.removeDisallowedFilenameChars(authorname),
+                "q": common.removeDisallowedFilenameChars(authorname) + ' ' + 
+                     common.removeDisallowedFilenameChars(book['bookName'].split('(')[0]).strip(),
                 "cat": "8000,8010",  # 8000=book, 8010=ebook
             }
         elif searchType == "author":
