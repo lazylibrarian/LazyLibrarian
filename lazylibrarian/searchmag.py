@@ -104,6 +104,7 @@ def search_magazines(mags=None, reset=False):
                 nzbsize = str(round(float(nzbsize_temp) / 1048576, 2)) + ' MB'
                 nzbdate = formatter.nzbdate2format(nzbdate_temp)
                 nzbmode = nzb['nzbmode']
+
                 checkifmag = myDB.select('SELECT * from magazines WHERE Title="%s"' % bookid)
                 if checkifmag:
                     for results in checkifmag:
@@ -223,6 +224,24 @@ def search_magazines(mags=None, reset=False):
                         else:
                             continue
 
+                        #  store all the _new_ matching results, mark as "skipped" for now
+                        #  we change the status to "wanted" on the ones we want to snatch later
+                        #  don't add a new entry if this issue has been found on an earlier search
+                        mag_entry = myDB.select('SELECT * from wanted WHERE NZBurl="%s"' % nzburl)
+                        if not mag_entry:
+                            controlValueDict = {"NZBurl": nzburl}
+                            newValueDict = {
+                                "NZBprov": nzbprov,
+                                "BookID": bookid,
+                                "NZBdate": nzbdate,
+                                "NZBtitle": nzbtitle,
+                                "AuxInfo": newdatish,
+                                "Status": "Skipped",
+                                "NZBsize": nzbsize,
+                                "NZBmode": nzbmode
+                            }
+                            myDB.upsert("wanted", newValueDict, controlValueDict)
+
                         if control_date is None:  # we haven't got any copies of this magazine yet
                             # get a rough time just over a month ago to compare to, in format yyyy-mm-dd
                             # could perhaps calc differently for weekly, biweekly etc
@@ -252,14 +271,8 @@ def search_magazines(mags=None, reset=False):
                                 
                                 controlValueDict = {"NZBurl": nzburl}
                                 newValueDict = {
-                                    "NZBprov": nzbprov,
-                                    "BookID": bookid,
                                     "NZBdate": formatter.now(),  # when we asked for it
-                                    "NZBtitle": nzbtitle,
-                                    "AuxInfo": newdatish,
-                                    "Status": "Wanted",
-                                    "NZBsize": nzbsize,
-                                    "NZBmode": nzbmode
+                                    "Status": "Wanted"
                                 }
                                 myDB.upsert("wanted", newValueDict, controlValueDict)
                                 
