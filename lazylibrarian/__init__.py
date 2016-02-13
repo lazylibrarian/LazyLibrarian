@@ -340,7 +340,7 @@ def initialize():
             USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
             GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, \
             LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, SCHED, CACHE_HIT, CACHE_MISS, \
-            BOOKSTRAP_THEME, BOOKSTRAP_THEMELIST, BOOKLANGFILTER, MANAGEFILTER
+            BOOKSTRAP_THEME, BOOKSTRAP_THEMELIST, BOOKLANGFILTER, MANAGEFILTER, ISSUEFILTER
 
         if __INITIALIZED__:
             return False
@@ -390,6 +390,7 @@ def initialize():
         LAST_GOODREADS = time_now
         
         MANAGEFILTER = "Skipped"
+        ISSUEFILTER = "Skipped"
         BOOKLANGFILTER = "eng"
 
         MATCH_RATIO = check_setting_int(CFG, 'General', 'match_ratio', 80)

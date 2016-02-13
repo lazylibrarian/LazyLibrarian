@@ -107,10 +107,10 @@
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": 10,
                 "sPaginationType": "full_numbers",
-                "aaSorting": [[0, 'asc']],
+                "aaSorting": [[1, 'asc']],
                  "bServerSide": true,
                 // need to pass requested status to getManage 
-                "sAjaxSource": 'getManage?whichStatus="Skipped"',
+                "sAjaxSource": 'getManage?whichStatus=Skipped',
                 "bFilter": true,
             });
 			$('.dataTables_filter input').attr("placeholder", "Search table here");

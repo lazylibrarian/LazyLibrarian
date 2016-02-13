@@ -613,7 +613,6 @@ class WebInterface(object):
     openBook.exposed = True
 
     def markBooks(self, AuthorName=None, action=None, redirect=None, **args):
-        print "action =" + action
         myDB = database.DBConnection()
         if not redirect:
             redirect = "books"
@@ -757,14 +756,56 @@ class WebInterface(object):
     issuePage.exposed = True
 
     def pastIssues(self, whichStatus=None):
-        myDB = database.DBConnection()
+        #myDB = database.DBConnection()
         if whichStatus is None:
             whichStatus = "Skipped"
+        lazylibrarian.ISSUEFILTER=whichStatus
         # books don't have auxinfo, only magazines
-        issues = myDB.select('SELECT * from wanted WHERE Status="%s" and length(AuxInfo) > 0' % (whichStatus))
+        #issues = myDB.select('SELECT * from wanted WHERE Status="%s" and length(AuxInfo) > 0' % (whichStatus))
         return serve_template(templatename="manageissues.html", title="Magazine Status Management",
-                              issues=issues, whichStatus=whichStatus)
+                              issues=[], whichStatus=whichStatus)
     pastIssues.exposed = True
+    
+    def getPastIssues(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
+        
+        myDB = database.DBConnection()
+        iDisplayStart = int(iDisplayStart)
+        iDisplayLength = int(iDisplayLength)
+        #   need to filter on whichStatus, and only show magazines - magazines have auxinfo, books don't 
+        rowlist = myDB.action('SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov, Status from wanted WHERE Status="%s" and length(AuxInfo) > 0' % lazylibrarian.ISSUEFILTER).fetchall()
+
+        # turn the sqlite rowlist into a list of lists
+        d = [] # the masterlist to be filled with the row data and to be returned
+        for i, row in enumerate(rowlist): # iterate through the sqlite3.Row objects            
+            l = [] # for each Row use a separate list
+
+            l.append('<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[0])
+            l.append('<td id="magtitle">%s</td>' % row[1])
+            l.append('<td id="lastacquired">%s</td>' % row[2])
+            l.append('<td id="issuedate">%s</td>' % row[3])
+            l.append('<td id="provider">%s</td>' % row[4])
+            l.append('<td id="status">%s</td>' % row[5])
+            d.append(l) # add the rowlist to the masterlist
+        filtered = d
+
+        if sSearch != "":
+            filtered = [row for row in d for column in row if sSearch in column]
+        sortcolumn = int(iSortCol_0)
+
+        filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+        if iDisplayLength < 0:  # display = all
+            rows = filtered
+        else:
+            rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+
+        mydict = {'iTotalDisplayRecords': len(filtered),
+                'iTotalRecords': len(rowlist),
+                'aaData': rows,
+                }
+        s = simplejson.dumps(mydict)
+        return s
+    getPastIssues.exposed = True
+
 
     def openMag(self, bookid=None, **args):
         bookid = urllib.unquote_plus(bookid)
@@ -1245,6 +1286,8 @@ class WebInterface(object):
         # books only holds status [skipped wanted open have ignored]
         # wanted holds status [snatched processed]
         #books = myDB.select('SELECT * FROM books WHERE Status = ?', [whichStatus])
+        if whichStatus == None:
+            whichStatus = "Skipped"
         lazylibrarian.MANAGEFILTER = whichStatus
         return serve_template(templatename="managebooks.html", title="Book Status Management",
                               books=[], whichStatus=whichStatus)
