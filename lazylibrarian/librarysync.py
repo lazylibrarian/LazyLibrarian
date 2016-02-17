@@ -556,13 +556,27 @@ def LibraryScan(dir=None):
         bookid = item['bookid']
         bookimg = item['bookimg']
         bookname = item['bookname']
-        bookimg = cache_cover(bookimg)
-        logger.debug("Caching cover for %s" % bookname)
-        myDB.action('update books set BookImg="%s" where BookID="%s"' % (bookimg, bookid))
-
+        newimg, incache = cache_cover(bookimg)
+        if newimg != bookimg:
+            myDB.action('update books set BookImg="%s" where BookID="%s"' % (newimg, bookid))
+            if incache == True:
+                logger.debug("Using existing cover for %s" % bookname)
+            else:
+                logger.debug("Cached new cover for %s" % bookname)
+        
     logger.info('Library scan complete')
     
 def cache_cover(img_url):
+    hashID = hashlib.md5(img_url).hexdigest()
+    cachedir = os.path.join(str(lazylibrarian.PROG_DIR),
+                            'data' + os.sep + 'images' + os.sep + 'cache')
+    if not os.path.isdir(cachedir):
+        os.makedirs(cachedir)
+    coverfile = os.path.join(cachedir, hashID + '.jpg')
+    link = 'images' + os.sep + 'cache' + os.sep + hashID + '.jpg'
+    if os.path.isfile(coverfile):  # already cached
+        return link, True
+
     USER_AGENT = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'
     request = urllib2.Request(img_url)
 
@@ -576,19 +590,12 @@ def cache_cover(img_url):
         resp = urllib2.urlopen(request, timeout=30)
     except (urllib2.HTTPError, urllib2.URLError) as e:
         logger.debug("Error getting image : %s" % str(e))
-        return img_url
+        return img_url, False
         
     if str(resp.getcode()).startswith("2"):
         # (200 OK etc)
-        hashID = hashlib.md5(img_url).hexdigest()
-        cachedir = os.path.join(str(lazylibrarian.PROG_DIR),
-                                'data' + os.sep + 'images' + os.sep + 'cache')
-        if not os.path.isdir(cachedir):
-            os.makedirs(cachedir)
-        coverfile = os.path.join(cachedir, hashID + '.jpg')
-        link = 'images' + os.sep + 'cache' + os.sep + hashID + '.jpg'
         with open(coverfile, 'wb') as img:
             img.write(resp.read())
-        return link
-    return img_url
+        return link, False
+    return img_url, False
 

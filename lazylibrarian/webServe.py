@@ -53,10 +53,10 @@ class WebInterface(object):
 # CONFIG ############################################################
 
     def config(self):
-        http_look_dir = os.path.join(str(lazylibrarian.PROG_DIR), 'data/interfaces/')
+        http_look_dir = os.path.join(str(lazylibrarian.PROG_DIR), 'data' + os.sep + 'interfaces')
         http_look_list = [name for name in os.listdir(http_look_dir)
                           if os.path.isdir(os.path.join(http_look_dir, name))]
-        status_list = ['Skipped', 'Wanted', 'Open', 'Ignored']
+        status_list = ['Skipped', 'Wanted', 'Have', 'Ignored']
         # Don't pass the whole config, no need to pass the lazylibrarian.globals
         config = {
             "http_look_list": http_look_list,
@@ -340,7 +340,7 @@ class WebInterface(object):
         books = myDB.select(querybooks)
         if author is None:
             raise cherrypy.HTTPRedirect("home")
-        return serve_template(templatename="author.html", title=author['AuthorName'],
+        return serve_template(templatename="author.html", title=urllib.quote(author['AuthorName']),
                               author=author, books=books, languages=languages)
     authorPage.exposed = True
 
@@ -354,7 +354,7 @@ class WebInterface(object):
         newValueDict = {'Status': 'Paused'}
         myDB.upsert("authors", newValueDict, controlValueDict)
         logger.debug(u'AuthorID [%s]-[%s] Paused - redirecting to Author home page' % (AuthorID, common.remove_accents(AuthorName)))
-        raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
+        raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % urllib.quote(AuthorName))
     pauseAuthor.exposed = True
 
     def resumeAuthor(self, AuthorID):
@@ -367,7 +367,7 @@ class WebInterface(object):
         newValueDict = {'Status': 'Active'}
         myDB.upsert("authors", newValueDict, controlValueDict)
         logger.debug(u'AuthorID [%s]-[%s] Restarted - redirecting to Author home page' % (AuthorID, common.remove_accents(AuthorName)))
-        raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
+        raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % urllib.quote(AuthorName))
     resumeAuthor.exposed = True
 
     def deleteAuthor(self, AuthorID):
@@ -384,12 +384,12 @@ class WebInterface(object):
 
     def refreshAuthor(self, AuthorName):
         threading.Thread(target=importer.addAuthorToDB, args=[AuthorName, True]).start()
-        raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
+        raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % urllib.quote(AuthorName))
     refreshAuthor.exposed = True
 
     def addAuthor(self, AuthorName):
         threading.Thread(target=importer.addAuthorToDB, args=[AuthorName, False]).start()
-        raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
+        raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % urllib.quote(AuthorName))
     addAuthor.exposed = True
 
 # BOOKS #############################################################
@@ -479,7 +479,7 @@ class WebInterface(object):
                 if row[7] == 'Open':
                     l.append('<td class="status text-center"><a class="button green btn btn-xs btn-warning" href="openBook?bookid=%s" target="_self"><i class="fa fa-book"></i>%s</a></td>' % (row[8], row[7]))
                 elif row[7] == 'Wanted':
-                    l.append('<td class="status text-center"><p><a class="a btn btn-xs btn-danger">%s</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=%s" target="_self"><i class="fa fa-search"></i> Search</a></p></td>' % (row[8], row[7]))
+                    l.append('<td class="status text-center"><p><a class="a btn btn-xs btn-danger">%s</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=%s" target="_self"><i class="fa fa-search"></i> Search</a></p></td>' % (row[7], row[8]))
                 elif row[7] == 'Snatched' or row[7] == 'Have':
                     l.append('<td class="status text-center"><a class="button btn btn-xs btn-info">%s</a></td>' % row[7])
                 else:
@@ -756,6 +756,7 @@ class WebInterface(object):
     issuePage.exposed = True
 
     def pastIssues(self, whichStatus=None):
+        #print "pastIssues %s" % whichStatus
         #myDB = database.DBConnection()
         if whichStatus is None:
             whichStatus = "Skipped"
@@ -767,7 +768,7 @@ class WebInterface(object):
     pastIssues.exposed = True
     
     def getPastIssues(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
-        
+        #print "getPastIssues %s" % iDisplayStart
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
