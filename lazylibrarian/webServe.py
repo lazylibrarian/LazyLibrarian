@@ -53,10 +53,10 @@ class WebInterface(object):
 # CONFIG ############################################################
 
     def config(self):
-        http_look_dir = os.path.join(str(lazylibrarian.PROG_DIR), 'data/interfaces/')
+        http_look_dir = os.path.join(str(lazylibrarian.PROG_DIR), 'data' + os.sep + 'interfaces')
         http_look_list = [name for name in os.listdir(http_look_dir)
                           if os.path.isdir(os.path.join(http_look_dir, name))]
-        status_list = ['Skipped', 'Wanted', 'Open', 'Ignored']
+        status_list = ['Skipped', 'Wanted', 'Have', 'Ignored']
         # Don't pass the whole config, no need to pass the lazylibrarian.globals
         config = {
             "http_look_list": http_look_list,
