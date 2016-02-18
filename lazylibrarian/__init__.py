@@ -211,7 +211,7 @@ USE_ANDROIDPN = 0
 ANDROIDPN_NOTIFY_ONSNATCH = 0
 ANDROIDPN_NOTIFY_ONDOWNLOAD = 0
 ANDROIDPN_URL = None
-ANDROIDPN_BROADCAST = 1
+ANDROIDPN_BROADCAST = 0
 ANDROIDPN_USERNAME = None
 
 USE_NMA = 0
@@ -618,7 +618,7 @@ def initialize():
         ANDROIDPN_NOTIFY_ONDOWNLOAD = check_setting_bool(CFG, 'AndroidPN', 'androidpn_notify_ondownload', 0)
         ANDROIDPN_URL = check_setting_str(CFG, 'AndroidPN', 'androidpn_url', '')
         ANDROIDPN_USERNAME = check_setting_str(CFG, 'AndroidPN', 'androidpn_username', '')
-        ANDROIDPN_BROADCAST = check_setting_bool(CFG, 'AndroidPN', 'androidpn_broadcast', 1)
+        ANDROIDPN_BROADCAST = check_setting_bool(CFG, 'AndroidPN', 'androidpn_broadcast', 0)
 
         USE_NMA = check_setting_bool(CFG, 'NMA', 'use_nma', 0)
         NMA_APIKEY = check_setting_str(CFG, 'NMA', 'nma_apikey', '')
