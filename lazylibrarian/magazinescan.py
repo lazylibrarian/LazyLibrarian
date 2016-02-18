@@ -42,10 +42,10 @@ def create_cover(issuefile=None):
                         params = [lazylibrarian.IMP_CONVERT, issuefile + '[0]', coverfile]
                         res = subprocess.check_output(params, stderr=subprocess.STDOUT)
                         if res:
-                            logger.warn('%s reports: %s' % (lazylibrarian.IMP_CONVERT, res))
+                            logger.debug('%s reports: %s' % (lazylibrarian.IMP_CONVERT, res))
                     except subprocess.CalledProcessError as e:
                         logger.debug(params)
-                        logger.warn('ImageMagick "convert" failed %s' % e.output)
+                        logger.debug('ImageMagick "convert" failed %s' % e.output)
 
                 elif lazylibrarian.MAGICK == 'wand':
                     with Image(filename=issuefile + '[0]') as img:
