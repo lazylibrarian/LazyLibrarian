@@ -56,7 +56,7 @@ class RotatingLogger(object):
         
         if level != 'DEBUG' or lazylibrarian.LOGFULL is True:
             # Limit the size of the "in-memory" log, as gets slow if too long
-            lazylibrarian.LOGLIST.insert(0, (formatter.now(), message, level, threadname))
+            lazylibrarian.LOGLIST.insert(0, (formatter.now(), level, message))
             if len(lazylibrarian.LOGLIST) > lazylibrarian.LOGLIMIT:
                 del lazylibrarian.LOGLIST[-1]
 

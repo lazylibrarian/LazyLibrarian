@@ -92,7 +92,7 @@ class WebInterface(object):
                      use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys='',
                      pushover_apitoken='', pushover_ondownload=0, pushover_device='',
                      use_androidpn=0, androidpn_notify_onsnatch=0, androidpn_notify_ondownload=0,
-                     androidpn_url='', androidpn_username='', androidpn_broadcast=1, bookstrap_theme='',
+                     androidpn_url='', androidpn_username='', androidpn_broadcast=0, bookstrap_theme='',
                      use_nma=0, nma_apikey='', nma_priority=0, nma_onsnatch=0, nma_ondownload=0, **kwargs):
         #  print len(kwargs)
         #  for arg in kwargs:
@@ -1149,7 +1149,6 @@ class WebInterface(object):
             filtered = lazylibrarian.LOGLIST[::]
         else:
             filtered = [row for row in lazylibrarian.LOGLIST for column in row if sSearch in column]
-
         sortcolumn = 0
         if iSortCol_0 == '1':
             sortcolumn = 2
@@ -1160,7 +1159,7 @@ class WebInterface(object):
             rows = filtered
         else:
             rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
-        rows = [[row[0], row[2], row[1]] for row in rows]
+        #rows = [[row[0], row[2], row[1]] for row in rows]
         dict = {'iTotalDisplayRecords': len(filtered),
                 'iTotalRecords': len(lazylibrarian.LOGLIST),
                 'aaData': rows,
