@@ -1149,7 +1149,6 @@ class WebInterface(object):
             filtered = lazylibrarian.LOGLIST[::]
         else:
             filtered = [row for row in lazylibrarian.LOGLIST for column in row if sSearch in column]
-
         sortcolumn = 0
         if iSortCol_0 == '1':
             sortcolumn = 2
@@ -1160,7 +1159,7 @@ class WebInterface(object):
             rows = filtered
         else:
             rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
-        rows = [[row[0], row[2], row[1]] for row in rows]
+        #rows = [[row[0], row[2], row[1]] for row in rows]
         dict = {'iTotalDisplayRecords': len(filtered),
                 'iTotalRecords': len(lazylibrarian.LOGLIST),
                 'aaData': rows,
