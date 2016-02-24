@@ -7,19 +7,14 @@ from logging import handlers
 import lazylibrarian
 from lazylibrarian import formatter
 
-MAX_SIZE = 204800  # 200KBytes
-MAX_FILES = 10
-
 
 # Simple rotating log handler that uses RotatingFileHandler
 class RotatingLogger(object):
 
-    def __init__(self, filename, max_size, max_files):
+    def __init__(self, filename):
 
         self.filename = filename
-        self.max_size = max_size
-        self.max_files = max_files
-
+        
     def initLogger(self, loglevel=1):
 
         l = logging.getLogger('lazylibrarian')
@@ -27,7 +22,8 @@ class RotatingLogger(object):
 
         self.filename = os.path.join(lazylibrarian.LOGDIR, self.filename)
 
-        filehandler = handlers.RotatingFileHandler(self.filename, maxBytes=self.max_size, backupCount=self.max_files)
+        filehandler = handlers.RotatingFileHandler(self.filename, maxBytes=lazylibrarian.LOGSIZE, backupCount=lazylibrarian.LOGFILES) 
+
         filehandler.setLevel(logging.DEBUG)
 
         fileformatter = logging.Formatter('%(asctime)s - %(levelname)-7s :: %(message)s', '%d-%b-%Y %H:%M:%S')
@@ -71,7 +67,7 @@ class RotatingLogger(object):
         else:
             logger.error(message)
 
-lazylibrarian_log = RotatingLogger('lazylibrarian.log', MAX_SIZE, MAX_FILES)
+lazylibrarian_log = RotatingLogger('lazylibrarian.log')
 
 
 def debug(message):

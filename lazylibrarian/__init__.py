@@ -70,6 +70,8 @@ LOGLIST = []
 LOGLEVEL = 2
 LOGLIMIT = 500
 LOGFULL = False  # include debug on screen if true
+LOGFILES = 10 # 10 log files
+LOGSIZE = 204800 # each up to 200K
 
 MATCH_RATIO = 80
 
@@ -340,7 +342,8 @@ def initialize():
             USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
             GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, \
             LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, SCHED, CACHE_HIT, CACHE_MISS, \
-            BOOKSTRAP_THEME, BOOKSTRAP_THEMELIST, BOOKLANGFILTER, MANAGEFILTER, ISSUEFILTER
+            BOOKSTRAP_THEME, BOOKSTRAP_THEMELIST, BOOKLANGFILTER, MANAGEFILTER, ISSUEFILTER, \
+            LOGFILES, LOGSIZE
 
         if __INITIALIZED__:
             return False
@@ -356,6 +359,10 @@ def initialize():
             HTTP_PORT = 5299
 
         LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
+        LOGLIMIT = check_setting_int(CFG, 'General', 'loglimit', 500)
+        LOGFILES = check_setting_int(CFG, 'General', 'logfiles', 10)
+        LOGSIZE = check_setting_int(CFG, 'General', 'logsize', 204800)
+
         if not LOGDIR:
             LOGDIR = os.path.join(DATADIR, 'Logs')
         # Create logdir
@@ -400,14 +407,17 @@ def initialize():
         HTTP_ROOT = check_setting_str(CFG, 'General', 'http_root', '')
         HTTP_LOOK = check_setting_str(CFG, 'General', 'http_look', 'default')
         BOOKSTRAP_THEME = check_setting_str(CFG, 'General', 'bookstrap_theme', 'slate')
+        # we read the log details earlier for starting the logger process,
+        # but read them again here so they get listed in the debug log
+        LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
+        LOGLIMIT = check_setting_int(CFG, 'General', 'loglimit', 500)
+        LOGFILES = check_setting_int(CFG, 'General', 'logfiles', 10)
+        LOGSIZE = check_setting_int(CFG, 'General', 'logsize', 204800)
 
         LAUNCH_BROWSER = check_setting_bool(CFG, 'General', 'launch_browser', 1)
 
         PROXY_HOST = check_setting_str(CFG, 'General', 'proxy_host', '')
         PROXY_TYPE = check_setting_str(CFG, 'General', 'proxy_type', '')
-
-        LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
-        LOGLIMIT = check_setting_int(CFG, 'General', 'loglimit', 500)
 
         IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', 'en, eng, en-US, en-GB')
         IMP_MONTHLANG = check_setting_str(CFG, 'General', 'imp_monthlang', '')
@@ -444,7 +454,7 @@ def initialize():
         ALTERNATE_DIR = check_setting_str(CFG, 'General', 'alternate_dir', '')
         DOWNLOAD_DIR = check_setting_str(CFG, 'General', 'download_dir', '')
         if not DOWNLOAD_DIR or not os.path.isdir(DOWNLOAD_DIR):
-            logger.warn("Download dir not set, books will be downloaded to %s" % os.getcwd())
+            logger.warn("Download dir not found, books will be downloaded to %s" % os.getcwd())
 
         NZB_DOWNLOADER_SABNZBD = check_setting_bool(CFG, 'USENET', 'nzb_downloader_sabnzbd', 0)
         NZB_DOWNLOADER_NZBGET = check_setting_bool(CFG, 'USENET', 'nzb_downloader_nzbget', 0)
@@ -668,6 +678,8 @@ def config_write():
     CFG.set('General', 'logdir', LOGDIR)
     CFG.set('General', 'loglimit', LOGLIMIT)
     CFG.set('General', 'loglevel', LOGLEVEL)
+    CFG.set('General', 'logsize', LOGSIZE)
+    CFG.set('General', 'logfiles', LOGFILES)
     CFG.set('General', 'match_ratio', MATCH_RATIO)
     CFG.set('General', 'imp_onlyisbn', IMP_ONLYISBN)
     CFG.set('General', 'imp_singlebook', IMP_SINGLEBOOK)
