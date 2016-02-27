@@ -67,6 +67,7 @@ class WebInterface(object):
 
     def configUpdate(self, http_host='0.0.0.0', http_root='', http_user='', http_port=5299,
                      http_pass='', http_look='', launch_browser=0, logdir='', loglevel=2, loglimit=500,
+                     logfiles=10, logsize=204800,
                      imp_onlyisbn=0, imp_singlebook=0, imp_preflang='', imp_monthlang='', imp_convert='',
                      imp_autoadd='', match_ratio=80, nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0,
                      nzb_downloader_blackhole=0, proxy_host='', proxy_type='',
@@ -110,6 +111,8 @@ class WebInterface(object):
         lazylibrarian.LOGDIR = formatter.latinToAscii(logdir)
         lazylibrarian.LOGLIMIT = formatter.check_int(loglimit, 500)
         lazylibrarian.LOGLEVEL = formatter.check_int(loglevel, 2)
+        lazylibrarian.LOGFILES = formatter.check_int(logfiles, 10)
+        lazylibrarian.LOGSIZE = formatter.check_int(logsize, 204800)
         lazylibrarian.MATCH_RATIO = formatter.check_int(match_ratio, 80)
         lazylibrarian.CACHE_AGE = formatter.check_int(cache_age, 30)
 
@@ -261,7 +264,7 @@ class WebInterface(object):
 
         lazylibrarian.config_write()
 
-        logger.info('Config file has been updated')
+        logger.info('Config file [%s] has been updated' % lazylibrarian.CONFIGFILE)
         raise cherrypy.HTTPRedirect("config")
 
     configUpdate.exposed = True
