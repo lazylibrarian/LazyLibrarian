@@ -1,0 +1,110 @@
+<%inherit file="base.html" />
+<%!
+    import lazylibrarian
+%>
+
+<%def name="headerIncludes()">
+    <div id="subhead_container">
+    </div>
+</%def>
+
+<%def name="body()">
+    <h1>Past Issues</h1>
+    
+    <form action="pastIssues" method="get" class="form-inline">
+        <div class="form-group">
+            <label for="whicStatus" class="control-label">Manage Issues with status: </label>
+            <select name="whichStatus" id="whichStatus" class="form-control input-sm">
+                %for item in ['Skipped', 'Wanted', 'Have', 'Snatched', 'Processed', 'Ignored']:
+                    <option value="${item}"
+                        %if whichStatus == item:
+                            selected = "selected"
+                        %endif
+                    >${item}</option>
+                %endfor
+            </select>
+    </div>
+    <input  class="btn btn-sm btn-primary" type="submit" value="Manage" />
+    </form>
+
+    <h3>Magazines with status ${whichStatus}</h3>
+        <br>
+    <form action="markPastIssues" method="get" class="form-inline">
+        <input type="hidden" name="redirect" value="manageissues">
+    <table class="display table table-striped table hover table-bordered" id="book_table">
+        <thead>
+            <tr>
+                <th class="select no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
+                <th class="magtitle">Title</th>
+                <th class="lastacquired text-center">NZB&nbsp;Date</th>
+                <th class="issuedate text-center">Issue&nbsp;Date</th>
+                <th class="Provider">Provider</th>
+                <th class="status text-center">Status</th>
+           </tr>
+        </thead>
+<!--
+        <tbody>
+        %for result in issues:
+                <tr>
+                    <td class="select"><input type="checkbox" name="${result['NZBurl']}" class="checkbox" /></td>
+                    <td class="magtitle">${result['NZBtitle']}</td>
+                    <td class="lastacquired text-center">${result['NZBdate']}</td>
+                    <td class="issuedate text-center">${result['Auxinfo']}</td>
+                    <td class="provider">${result['NZBprov']}</td>
+                    <td class="status text-center">${result['Status']}</td>
+                </tr>
+        %endfor
+        </tbody>
+-->
+    </table>
+    <p>
+
+        <div class="form-group">
+            <label class="control-label">Change selected magazines to:</label>
+            <select class="form-control input-sm" name="action">
+        %for item in ['Skipped', 'Wanted', 'Have', 'Ignored', 'Delete']:
+            %if whichStatus != item:
+                <option value="${item}">${item}</option>
+            %endif
+        %endfor
+            </select>
+        </div>
+        <button type="submit" class="btn btn-sm btn-default" id="markPastIssues" value="Go">Go</button>
+    </p>
+    </form>
+
+</%def>
+
+<%def name="headIncludes()">
+    
+</%def>
+
+<%def name="javascriptIncludes()">    
+    <script type="text/javascript">
+    $(document).ready(function() {
+        $('#book_table').dataTable(
+            {
+                "order": [[ 1, 'asc']],
+                "columnDefs": 
+                    [{ targets: 'no-sort', orderable: false }]
+                ,
+                "oLanguage": {
+                    "sLengthMenu":"_MENU_ rows per page",
+                    "sEmptyTable": "No matching issues found",
+                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 rows",
+                    "sInfoFiltered":"(filtered from _MAX_ total rows)"},
+                "sPaginationType": "full_numbers",
+                "bStateSave": true,
+                "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
+                "iDisplayLength": 10,
+                "aaSorting": [[1, 'asc']],
+                "bServerSide": true,
+                // need to pass requested status filter 
+                "sAjaxSource": 'getPastIssues?whichStatus=Skipped',
+                "bFilter": true,
+            });
+            $('.dataTables_filter input').attr("placeholder", "Search filter");
+    });
+    </script>
+</%def>
