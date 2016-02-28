@@ -47,8 +47,9 @@ class RotatingLogger(object):
 
         threadname = threading.currentThread().getName()
 
-        # Ensure messages are ascii as some author names contain accents and the web page doesnt like them
-        message = formatter.latinToAscii(message)
+        # Ensure messages are utf-8 as some author names contain accents and the web page doesnt like them
+        #message = formatter.latinToAscii(message)
+        message = message.encode('UTF-8')
         
         if level != 'DEBUG' or lazylibrarian.LOGFULL is True:
             # Limit the size of the "in-memory" log, as gets slow if too long

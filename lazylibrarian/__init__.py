@@ -958,10 +958,14 @@ def build_bookstrap_themes():
 
     if str(resp.getcode()).startswith("2"):
         # (200 OK etc)
-        results = json.JSONDecoder().decode(resp.read())
+        try:
+            results = json.JSONDecoder().decode(resp.read())
+            for theme in results['themes']:
+                themelist.append(theme['name'].lower())
+        except:
+            # error reading results
+            logger.debug('JSON Error reading bookstrap themes')
 
-        for theme in results['themes']:
-            themelist.append(theme['name'].lower())
     logger.debug("Bookstrap found %i themes" % len(themelist))
     return themelist
 
