@@ -1,0 +1,84 @@
+<%inherit file="base.html"/>
+<%!
+	from lazylibrarian import database
+%>
+
+<%def name="headerIncludes()">
+	<div id="subhead_container">
+		<div id="subhead_menu">
+			<a href="clearhistory?status=all" class="button btn btn-sm btn-primary">Clear All History</a>
+			<a href="clearhistory?status=Processed" class="button btn btn-sm btn-primary">Clear Processed</a>
+			<a href="clearhistory?status=Snatched" class="button btn btn-sm btn-primary">Clear Snatched</a>
+			<a href="clearhistory?status=Failed" class="button btn btn-sm btn-primary">Clear Failed</a>
+        </div>
+	</div>	
+</%def>
+
+<%def name="body()">
+    <h1>History</h1>
+    <div class="table-responsive">
+        <table class="display table table-striped table-hover table-bordered" id="book_table">
+            <thead>
+                <tr>
+                    <th class="filename">Title</th>
+                    <th class="bookid">ID</th>
+                    <th class="provider hidden-xs">Provider</th>
+                    <th class="dateadded">Date</th>
+                    <th class="size text-right">Size</th>
+                    <th class="status text-center">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            %for item in history:
+                <%
+                    if item['Status'] == 'Processed':
+                        grade = 'A'
+                    elif item['Status'] == 'Snatched':
+                        grade = 'C'
+                    elif item['Status'] == 'Unprocessed':
+                        grade = 'X'
+                    else:
+                        grade = 'U'
+                %>
+                <tr class="grade${grade}">
+                    <td class="filename">${item['NZBtitle']}</td>
+                    <td class="bookid">${item['BookID']}</td>
+                    <td class="provider hidden-xs"><a href="${item['NZBurl']}">${item['NZBprov']}</a></td>
+                    <td class="dateadded">${item['NZBdate']}</td>
+                    <td class="size text-right">${item['NZBsize']}</td>
+                    <td class="status text-center">${item['Status']}</td>
+                </tr>
+            %endfor
+            </tbody>
+        </table>
+    </div>
+</%def>
+
+<%def name="headIncludes()">
+	
+</%def>
+
+<%def name="javascriptIncludes()">
+    <script>
+        
+    $(document).ready(function()
+    {
+
+        $('#book_table').dataTable(
+            {
+                "order": [[ 3, 'desc' ]],
+                "oLanguage": {
+                    "sLengthMenu":"Show _MENU_ rows per page",
+                    "sEmptyTable": "No history found",
+                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 rows",
+                    "sInfoFiltered":"(filtered from _MAX_ total rows)"},
+                "sPaginationType": "full_numbers",
+                "bStateSave": true,
+                "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
+                "iDisplayLength": 10,
+            });
+            $('.dataTables_filter input').attr("placeholder", "Search filter");
+    });
+    </script>
+</%def>

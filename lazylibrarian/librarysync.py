@@ -17,7 +17,7 @@ def opf_file(search_dir=None):
     if search_dir and os.path.isdir(search_dir):
         for fname in os.listdir(search_dir):
             if fname.endswith('.opf'):
-                return os.path.join(search_dir, fname)#.encode(lazylibrarian.SYS_ENCODING)
+                return os.path.join(search_dir.encode(lazylibrarian.SYS_ENCODING), fname.encode(lazylibrarian.SYS_ENCODING))
     return ""
 
 
@@ -264,8 +264,13 @@ def LibraryScan(dir=None):
             # prevent magazine being scanned
             if directory.startswith("_"):
                 d.remove(directory)
+
         for files in f:
             file_count += 1
+         
+            if isinstance(r, str): 
+                r = r.decode('utf-8')
+           
             subdirectory = r.replace(dir, '')
             # Added new code to skip if we've done this directory before.
             # Made this conditional with a switch in config.ini
@@ -281,11 +286,11 @@ def LibraryScan(dir=None):
                 # If all else fails, try pattern match for author/title
                 # and look up isbn/lang from LT or GR later
                 match = 0
-
                 if formatter.is_valid_booktype(files):
+                 
                     logger.debug("[%s] Now scanning subdirectory %s" %
-                                 (dir.decode(lazylibrarian.SYS_ENCODING, 'replace'),
-                                  subdirectory.decode(lazylibrarian.SYS_ENCODING, 'replace')))
+                                 (dir, subdirectory))
+                 
                     language = "Unknown"
                     isbn = ""
                     book = ""
@@ -295,7 +300,8 @@ def LibraryScan(dir=None):
 
                     # if it's an epub or a mobi we can try to read metadata from it
                     if (extn == "epub") or (extn == "mobi"):
-                        book_filename = os.path.join(r, files)#.encode(lazylibrarian.SYS_ENCODING)
+                        book_filename = os.path.join(r.encode(lazylibrarian.SYS_ENCODING), files.encode(lazylibrarian.SYS_ENCODING))
+                        
                         try:
                             res = get_book_info(book_filename)
                         except:
@@ -310,16 +316,18 @@ def LibraryScan(dir=None):
                                 isbn = res['identifier']
                             if 'type' in res:
                                 extn = res['type']
-
+                           
                             logger.debug("book meta [%s] [%s] [%s] [%s] [%s]" %
                                          (isbn, language, author, book, extn))
                         else:
+                          
                             logger.debug("Book meta incomplete in %s" % book_filename)
 
                     # calibre uses "metadata.opf", LL uses "bookname - authorname.opf"
                     # just look for any .opf file in the current directory since we don't know
                     # LL preferred authorname/bookname at this point.
                     # Allow metadata in file to override book contents as may be users pref
+                 
                     metafile = opf_file(r)
                     try:
                         res = get_book_info(metafile)
@@ -467,27 +475,32 @@ def LibraryScan(dir=None):
                             # metadata might have quotes in book name
                             book = book.replace('"', '').replace("'", "")
                             bookid = find_book_in_db(myDB, author, book)
+                           
                             if bookid:
                                 # check if book is already marked as "Open" (if so,
                                 # we already had it)
+                               
                                 check_status = myDB.action(
                                     'SELECT Status from books where BookID="%s"' %
                                     bookid).fetchone()
                                 if check_status['Status'] != 'Open':
                                     # update status as we've got this book
+                                 
                                     myDB.action(
                                         'UPDATE books set Status="Open" where BookID="%s"' %
                                         bookid)
-
-                                    book_filename = os.path.join(r,files)#.encode(lazylibrarian.SYS_ENCODING)
+                              
+                                    book_filename = os.path.join(r,files)
+                               
                                     # update book location so we can check if it
                                     # gets removed, or allow click-to-open
-
+                              
                                     myDB.action(
                                         'UPDATE books set BookFile="%s" where BookID="%s"' %
                                         (book_filename, bookid))
+                                
                                     new_book_count += 1
-
+                         
     cachesize = myDB.action("select count('ISBN') as counter from languages").fetchone()
     logger.info(
         "%s new/modified books found and added to the database" %
