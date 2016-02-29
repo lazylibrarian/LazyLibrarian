@@ -3,6 +3,7 @@ import subprocess
 import re
 import os
 import urllib2
+import socket
 import tarfile
 import threading
 

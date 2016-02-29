@@ -2,6 +2,7 @@ import os
 import re
 import lazylibrarian
 import urllib2
+import socket
 import hashlib
 from lazylibrarian import logger, database, importer, formatter, common
 from lazylibrarian.gr import GoodReads

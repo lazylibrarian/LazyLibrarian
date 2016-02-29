@@ -19,6 +19,7 @@ from lib.apscheduler.scheduler import Scheduler
 
 import threading
 import urllib2
+import socket
 import json
 
 from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, formatter, \

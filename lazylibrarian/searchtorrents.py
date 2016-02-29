@@ -1,5 +1,6 @@
 import threading
 import urllib2
+import socket
 import os
 import re
 from base64 import b16encode, b32decode

@@ -1,5 +1,6 @@
 import urllib
 import urllib2
+import socket
 
 from xml.etree import ElementTree
 
