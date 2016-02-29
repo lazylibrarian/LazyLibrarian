@@ -67,15 +67,20 @@ class GoodReads:
                 source_xml = cachefile.read()
         else:
             lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
-            resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
-            if str(resp.getcode()).startswith("2"):  # (200 OK etc)
-                logger.debug(u"CacheHandler: Caching response for %s" % request.get_full_url())
-                source_xml = resp.read()  # .decode('utf-8')
-                with open(hashname, "w") as cachefile:
-                    cachefile.write(source_xml)
-            else:
-                logger.warn(u"Unable to cache response for %s, got %s" % (request.get_full_url(), resp.getcode()))
+            try:
+                resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
+                if str(resp.getcode()).startswith("2"):  # (200 OK etc)
+                    logger.debug(u"CacheHandler: Caching response for %s" % request.get_full_url())
+                    source_xml = resp.read()  # .decode('utf-8')
+                    with open(hashname, "w") as cachefile:
+                        cachefile.write(source_xml)
+                else:
+                    logger.warn(u"Unable to cache response for %s, got %s" % (request.get_full_url(), resp.getcode()))
+                    return "", False
+            except (urllib2.URLError, socket.timeout) as e:
+                logger.error(u"Unable to cache response for %s, got %s" % (my_url, e))
                 return "", False
+
         root = ElementTree.fromstring(source_xml)
         return root, valid_cache
 
