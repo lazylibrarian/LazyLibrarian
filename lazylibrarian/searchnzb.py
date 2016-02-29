@@ -1,5 +1,6 @@
 import threading
 import urllib2
+import socket
 import os
 import re
 
@@ -211,7 +212,7 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
             req.add_header('User-Agent', USER_AGENT)
             nzbfile = urllib2.urlopen(req, timeout=90).read()
 
-        except (urllib2.URLError) as e:
+        except (urllib2.URLError, socket.timeout) as e:
             logger.warn('Error fetching nzb from url: ' + nzburl + ' %s' % e.reason)
             nzbfile = False
 

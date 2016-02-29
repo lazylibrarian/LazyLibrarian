@@ -19,6 +19,7 @@ from lib.apscheduler.scheduler import Scheduler
 
 import threading
 import urllib2
+import socket
 import json
 
 from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, formatter, \
@@ -952,7 +953,7 @@ def build_bookstrap_themes():
     
     try:
         resp = urllib2.urlopen(request, timeout=30)
-    except (urllib2.HTTPError, urllib2.URLError) as e:
+    except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
         logger.debug("Error getting bookstrap themes : %s" % str(e))
         return themelist
 

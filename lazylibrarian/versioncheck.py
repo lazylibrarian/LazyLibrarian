@@ -3,6 +3,7 @@ import subprocess
 import re
 import os
 import urllib2
+import socket
 import tarfile
 import threading
 
@@ -331,7 +332,7 @@ def update():
         try:
             logger.info('(update) Downloading update from: ' + tar_download_url)
             data = urllib2.urlopen(tar_download_url, timeout=30)
-        except (IOError, urllib2.URLError) as e:
+        except (IOError, urllib2.URLError, socket.timeout) as e:
             logger.error("(update) Unable to retrieve new version from " + tar_download_url + ", can't update: %s" % e)
             return
 

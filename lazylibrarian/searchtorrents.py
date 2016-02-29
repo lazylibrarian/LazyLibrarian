@@ -1,5 +1,6 @@
 import threading
 import urllib2
+import socket
 import os
 import re
 from base64 import b16encode, b32decode
@@ -237,7 +238,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                 else:
                     torrent = response.read()
 
-            except (urllib2.URLError) as e:
+            except (urllib2.URLError, socket.timeout) as e:
                 logger.warn('Error fetching torrent from url: ' + tor_url + ' %s' % e.reason)
                 return False
 

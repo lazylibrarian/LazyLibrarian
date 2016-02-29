@@ -1,5 +1,6 @@
 import urllib
 import urllib2
+import socket
 
 from xml.etree import ElementTree
 
@@ -41,7 +42,7 @@ def KAT(book=None):
 
     try:
         data = urllib2.urlopen(searchURL, timeout=90)
-    except (urllib2.HTTPError, urllib2.URLError) as e:
+    except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
         # seems KAT returns 404 if no results, not really an error
         if not e.code == 404:
             logger.debug(searchURL)
@@ -168,7 +169,7 @@ def RSS(host=None, feednr=None):
         resp = urllib2.urlopen(request, timeout=90)
         try:
             data = feedparser.parse(resp)
-        except (urllib2.URLError, IOError, EOFError) as e:
+        except (urllib2.URLError, socket.timeout, IOError, EOFError) as e:
             logger.error('Error fetching data from %s: %s' % (host, e))
             data = None
 
@@ -258,7 +259,7 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=
         resp = urllib2.urlopen(request, timeout=90)
         try:
             data = ElementTree.parse(resp)
-        except (urllib2.URLError, IOError, EOFError) as e:
+        except (urllib2.URLError, socket.timeout, IOError, EOFError) as e:
             logger.error('Error fetching data from %s: %s' % (host, e))
             data = None
 

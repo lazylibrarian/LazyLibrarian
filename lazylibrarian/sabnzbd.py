@@ -1,6 +1,7 @@
 import os
 import urllib
 import urllib2
+import socket
 import datetime
 
 import lazylibrarian
@@ -50,7 +51,7 @@ def SABnzbd(title=None, nzburl=None):
         request = urllib2.urlopen(URL, timeout=30)
         logger.debug(u'Sending Nzbfile to SAB <a href="%s">URL</a>' % URL)
         logger.debug(u'Sending Nzbfile to SAB')
-    except (EOFError, IOError, urllib2.URLError) as e:
+    except (EOFError, IOError, urllib2.URLError, socket.timeout) as e:
         logger.error(u"Unable to connect to SAB with URL: %s" % URL)
         return False
 

@@ -1,5 +1,6 @@
 import urllib
 import urllib2
+import socket
 import re
 import threading
 import time
@@ -77,7 +78,7 @@ class GoodReads:
                 else:
                     logger.warn(u"Unable to cache response for %s, got %s" % (request.get_full_url(), resp.getcode()))
                     return "", False
-            except (urllib2.URLError) as e:
+            except (urllib2.URLError, socket.timeout) as e:
                 logger.error(u"Unable to cache response for %s, got %s" % (my_url, e))
                 return "", False
 
