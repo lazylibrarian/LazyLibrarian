@@ -69,13 +69,17 @@ class GoogleBooks:
         else:
             lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
             # jsonresults = json.JSONDecoder().decode(urllib2.urlopen(URL, timeout=30).read())
-            resp = urllib2.urlopen(my_url, timeout=30)  # don't get stuck
-            if str(resp.getcode()).startswith("2"):  # (200 OK etc)
-                logger.debug(u"CacheHandler: Caching response for %s" % my_url)
-                source_json = json.JSONDecoder().decode(resp.read())
-                json.dump(source_json, open(hashname, "w"))
-            else:
-                logger.warn(u"Unable to cache response for %s, got %s" % (my_url, resp.getcode()))
+            try:
+                resp = urllib2.urlopen(my_url, timeout=30)  # don't get stuck
+                if str(resp.getcode()).startswith("2"):  # (200 OK etc)
+                    logger.debug(u"CacheHandler: Caching response for %s" % my_url)
+                    source_json = json.JSONDecoder().decode(resp.read())
+                    json.dump(source_json, open(hashname, "w"))
+                else:
+                    logger.warn(u"Unable to cache response for %s, got %s" % (my_url, resp.getcode()))
+                    return "", False
+            except (urllib2.URLError, socket.timeout) as e:
+                logger.error(u"Unable to cache response for %s, got %s" % (my_url, e))
                 return "", False
         return source_json, valid_cache
 

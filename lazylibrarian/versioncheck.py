@@ -331,8 +331,8 @@ def update():
         try:
             logger.info('(update) Downloading update from: ' + tar_download_url)
             data = urllib2.urlopen(tar_download_url, timeout=30)
-        except (IOError, urllib2.URLError):
-            logger.error("(update) Unable to retrieve new version from " + tar_download_url + ", can't update")
+        except (IOError, urllib2.URLError, socket.timeout) as e:
+            logger.error("(update) Unable to retrieve new version from " + tar_download_url + ", can't update: %s" % e)
             return
 
         download_name = data.geturl().split('/')[-1]

@@ -67,8 +67,8 @@
             $('td input:checkbox', table).prop('checked', e.checked);
         }
     </script>
-    <script type="text/javascript" src="https://cdn.datatables.net/s/bs-3.3.5/jqc-1.11.3,dt-1.10.10,b-1.1.0/datatables.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/s/bs-3.3.5/jqc-1.11.3,dt-1.10.10,b-1.1.0/datatables.min.js"></script>    
     <script src="js/bootbox.min.js"></script>
     <script src="js/bootstrap-notify.min.js"></script>
 
@@ -140,14 +140,14 @@
                 % if lazylibrarian.COMMITS_BEHIND < 0:
                     msg = 'Running a local updated version. Push changes to GITHub or rollback to Master release'
                 % else:
-                    msg = 'New version available. You are ${lazylibrarian.COMMITS_BEHIND} commits behind.<br/><a href="update" class="btn btn-xs btn-primary pull-right">Update</a>'
+                    msg = 'New version available. You are ${lazylibrarian.COMMITS_BEHIND} commits behind.<br/><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the update message for 24 hours" id="ignoreUpdate">Ignore</a>&nbsp;<a href="update" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Update to the latest release">Update</a></div>'
                     //<a class="btn btn-xs btn-primary pull-right" href="http://github.com/DobyTang/LazyLibrarian/compare/${lazylibrarian.CURRENT_VERSION}...${lazylibrarian.LATEST_VERSION}" target="_blank">Click Here</a>'
                 % endif
             % endif
         % endif
 
 $(document).ready(function() {
-    if (msg != '') {
+    if (msg != '' && readCookie('ignoreUpdate') === null) {
         $.notify({
             icon: 'fa fa-check-square-o',
             message: msg
@@ -155,12 +155,45 @@ $(document).ready(function() {
             type: 'warning'    
         });
     }
+    
+    $('#ignoreUpdate').click(function() {
+        createCookie("ignoreUpdate", true, 1);
+    });
 });
 
 // Initialise tooltips
 $(function () {
   $('[data-toggle="tooltip"]').tooltip()
 })
+
+
+function createCookie(name, value, days) {
+    var expires;
+
+    if (days) {
+        var date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toGMTString();
+    } else {
+        expires = "";
+    }
+    document.cookie = encodeURIComponent(name) + "=" + encodeURIComponent(value) + expires + "; path=/";
+}
+
+function readCookie(name) {
+    var nameEQ = encodeURIComponent(name) + "=";
+    var ca = document.cookie.split(';');
+    for (var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return decodeURIComponent(c.substring(nameEQ.length, c.length));
+    }
+    return null;
+}
+
+function eraseCookie(name) {
+    createCookie(name, "", -1);
+}
 </script>
     
 </body>
