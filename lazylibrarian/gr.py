@@ -107,7 +107,10 @@ class GoodReads:
             except Exception as e:
                 logger.error("Error finding results: " + str(e))
                 return
-
+            if not rootxml:
+                logger.debug("Error requesting results")
+                return
+                
             resultxml = rootxml.getiterator('work')
             resultcount = 0
             for author in resultxml:
@@ -215,7 +218,10 @@ class GoodReads:
         except Exception as e:
             logger.error("Error finding authorid: " + str(e) + str(URL))
             return authorlist
-
+        if not rootxml:
+            logger.debug("Error requesting authorid")
+            return authorlist
+            
         resultxml = rootxml.getiterator('author')
 
         if not len(resultxml):
@@ -242,7 +248,10 @@ class GoodReads:
         except Exception as e:
             logger.error("Error getting author info: " + str(e))
             return author_dict
-
+        if not rootxml:
+            logger.debug("Error requesting author info")
+            return author_dict
+            
         resultxml = rootxml.find('author')
 
         if not len(resultxml):
@@ -282,6 +291,9 @@ class GoodReads:
             rootxml, in_cache = self.get_request(URL)
         except Exception as e:
             logger.error("Error fetching author books: " + str(e))
+            return books_dict
+        if not rootxml:
+            logger.debug("Error requesting author books")
             return books_dict
         if not in_cache:
             api_hits = api_hits + 1
@@ -417,10 +429,14 @@ class GoodReads:
                                             time.sleep(1)
 
                                         BOOK_rootxml, in_cache = self.get_request(BOOK_URL)
-                                        if not in_cache:
-                                            # only update last_goodreads if the result wasn't found in the cache
-                                            lazylibrarian.LAST_GOODREADS = time_now
-                                        bookLanguage = BOOK_rootxml.find('./book/language_code').text
+                                        if not BOOK_rootxml:
+                                            logger.debug('Error requesting book language code')
+                                            bookLanguage = ""
+                                        else:
+                                            if not in_cache:
+                                                # only update last_goodreads if the result wasn't found in the cache
+                                                lazylibrarian.LAST_GOODREADS = time_now
+                                            bookLanguage = BOOK_rootxml.find('./book/language_code').text
                                     except Exception as e:
                                         logger.error("Error finding book results: ", e)
                                     if not in_cache:
@@ -529,9 +545,12 @@ class GoodReads:
                 resultxml = None
                 try:
                     rootxml, in_cache = self.get_request(URL)
-                    resultxml = rootxml.getiterator('book')
-                    if not in_cache:
-                        api_hits = api_hits + 1
+                    if not rootxml:
+                        logger.debug('Error requesting next page of results')
+                    else:
+                        resultxml = rootxml.getiterator('book')
+                        if not in_cache:
+                            api_hits = api_hits + 1
                 except Exception as e:
                     resultxml = None
                     logger.error("Error finding next page of results: " + str(e))
@@ -606,6 +625,9 @@ class GoodReads:
 
         try:
             rootxml, in_cache = self.get_request(URL)
+            if not rootxml:
+                logger.debug("Error requesting book")
+                return
         except Exception as e:
             logger.error("Error finding book: " + str(e))
             return
