@@ -138,6 +138,7 @@ def IterateOverTorrentSites(book=None, searchType=None):
 
     return resultslist, providers
 
+
 def IterateOverRSSSites(book=None, searchType=None):
 
     resultslist = []
@@ -152,6 +153,8 @@ def IterateOverRSSSites(book=None, searchType=None):
 #
 # Generic RSS query function, just return all the results from all the RSS feeds in a list
 #
+
+
 def RSS(host=None, feednr=None):
 
     results = []
@@ -176,7 +179,7 @@ def RSS(host=None, feednr=None):
     except Exception as e:
         logger.error("Error opening url: %s" % e)
         data = None
-        
+
     if data:
         # to debug because of api
         logger.debug(u'Parsing results from %s' % (URL))
@@ -193,24 +196,24 @@ def RSS(host=None, feednr=None):
                 title = post.title
             if 'links' in post:
                 for f in post.links:
-                    if 'x-bittorrent' in f['type']: 
+                    if 'x-bittorrent' in f['type']:
                         size = f['length']
                         torrent = f['href']
                         break
-                    if 'x-nzb' in f['type']: 
+                    if 'x-nzb' in f['type']:
                         size = f['length']
                         torrent = f['href']
                         break
             if 'torrent_magneturi' in post:
                 magnet = post.torrent_magneturi
-    
+
             if torrent:
                 url = torrent
             if magnet:  # prefer magnet over torrent
                 url = magnet
             if nzb:
                 url = nzb
-                
+
             if not size:
                 size = 1000
             if title and url:
@@ -225,7 +228,7 @@ def RSS(host=None, feednr=None):
     else:
         logger.debug('No data returned from %s' % host)
     return results
-        
+
 #
 # Generic NewzNabplus query function
 # takes in host+key+type and returns the result set regardless of who
@@ -358,7 +361,7 @@ def ReturnSearchTypeStructure(api_key, book, searchType, searchMode):
             params = {
                 "t": "search",
                 "apikey": api_key,
-                "q": common.removeDisallowedFilenameChars(authorname) + ' ' + 
+                "q": common.removeDisallowedFilenameChars(authorname) + ' ' +
                      common.removeDisallowedFilenameChars(book['bookName']),
                 "cat": "8000,8010",  # 8000=book, 8010=ebook
             }
@@ -371,7 +374,7 @@ def ReturnSearchTypeStructure(api_key, book, searchType, searchMode):
             params = {
                 "t": "search",
                 "apikey": api_key,
-                "q": common.removeDisallowedFilenameChars(authorname) + ' ' + 
+                "q": common.removeDisallowedFilenameChars(authorname) + ' ' +
                      common.removeDisallowedFilenameChars(book['bookName'].split('(')[0]).strip(),
                 "cat": "8000,8010",  # 8000=book, 8010=ebook
             }

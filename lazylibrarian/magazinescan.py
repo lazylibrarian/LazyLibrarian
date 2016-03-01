@@ -29,7 +29,7 @@ def create_cover(issuefile=None):
         if not os.path.isfile(coverfile):
             converter = lazylibrarian.MAGICK
             if len(lazylibrarian.IMP_CONVERT):
-               converter = lazylibrarian.IMP_CONVERT
+                converter = lazylibrarian.IMP_CONVERT
             logger.debug("Creating cover for %s using %s" % (issuefile, converter))
             try:
                 # No PythonMagick in python3, hence allow wand, but more complicated
@@ -58,10 +58,12 @@ def create_cover(issuefile=None):
             except:
                 logger.debug("Unable to create cover for %s using %s" % (issuefile, lazylibrarian.MAGICK))
 
+
 def create_id(issuename=None):
     hashID = sha1(issuename).hexdigest()
     logger.debug('Issue %s Hash: %s' % (issuename, hashID))
-    return hashID    
+    return hashID
+
 
 def magazineScan(thread=None):
     # rename this thread
@@ -107,10 +109,10 @@ def magazineScan(thread=None):
             title = mag['Title']
             count = myDB.select('SELECT COUNT(Title) as counter FROM issues WHERE Title="%s"' % title)
             issues = count[0]['counter']
-            if not issues:   
-                logger.debug('Magazine %s deleted as no issues found' % title) 
+            if not issues:
+                logger.debug('Magazine %s deleted as no issues found' % title)
                 myDB.action('DELETE from magazines WHERE Title="%s"' % title)
-    
+
     logger.info(' Checking [%s] for magazines' % mag_path)
 
     matchString = ''
@@ -140,15 +142,15 @@ def magazineScan(thread=None):
                     if match:
                         issuedate = match.group("issuedate")
                         title = match.group("title")
-                        #print issuedate
-                        #print title
+                        # print issuedate
+                        # print title
                     else:
                         logger.debug("Pattern match failed for [%s]" % fname)
                         continue
-                        #title = fname.split('-')[3]
-                        #title = title.split('.')[-2]
-                        #title = title.strip()
-                        #issuedate = fname.split(' ')[0]
+                        # title = fname.split('-')[3]
+                        # title = title.split('.')[-2]
+                        # title = title.strip()
+                        # issuedate = fname.split(' ')[0]
                 except:
                     logger.debug("Invalid name format for [%s]" % fname)
                     continue
@@ -203,7 +205,7 @@ def magazineScan(thread=None):
                     # don't really need to do this each time
                     newValueDict = {"IssueID": issue_id}
                 myDB.upsert("Issues", newValueDict, controlValueDict)
-                
+
                 create_cover(issuefile)
 
                 # see if this issues date values are useful

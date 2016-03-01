@@ -134,11 +134,15 @@ def search_magazines(mags=None, reset=False):
                     name_match = 1  # assume name matches for now
                     if len(nzbtitle_exploded) > len(bookid_exploded):  # needs to be longer as it has to include a date
                         # check (nearly) all the words in the mag title are in the nzbtitle - allow some fuzz
-                        mag_title_match = fuzz.token_set_ratio(common.remove_accents(bookid), common.remove_accents(nzbtitle_formatted))
+                        mag_title_match = fuzz.token_set_ratio(
+                            common.remove_accents(bookid),
+                            common.remove_accents(nzbtitle_formatted))
                         if mag_title_match < lazylibrarian.MATCH_RATIO:
-                            logger.debug(u"Magazine token set Match failed: " + str(mag_title_match) + "% for " + nzbtitle_formatted)
+                            logger.debug(
+                                u"Magazine token set Match failed: " + str(
+                                    mag_title_match) + "% for " + nzbtitle_formatted)
                             name_match = 0
-                    
+
                     lower_title = common.remove_accents(nzbtitle_formatted).lower()
                     lower_bookid = common.remove_accents(bookid).lower()
                     for word in reject_list:
@@ -155,7 +159,7 @@ def search_magazines(mags=None, reset=False):
                         while nzbtitle_exploded[len(nzbtitle_exploded) - 1][0] in '[{' or \
                                 nzbtitle_exploded[len(nzbtitle_exploded) - 1].lower() == 'pdf':
                                 nzbtitle_exploded.pop()  # gotta love the function names
-                        
+
                         # need at least one word magazine title and two date components
                         if len(nzbtitle_exploded) > 2:
                             # regexA = DD MonthName YYYY OR MonthName YYYY or Issue nn MonthName YYYY
@@ -164,16 +168,16 @@ def search_magazines(mags=None, reset=False):
                             regexA_month = formatter.month2num(common.remove_accents(regexA_month_temp))
                             if not regexA_year.isdigit() or int(regexA_year) < 1900 or int(regexA_year) > 2100:
                                 regexA_year = 'fail'  # force date failure
-                            
-                            #if frequency == "Weekly" or frequency == "BiWeekly":
+
+                            # if frequency == "Weekly" or frequency == "BiWeekly":
                             regexA_day = nzbtitle_exploded[len(nzbtitle_exploded) - 3].zfill(2)
                             if regexA_day.isdigit():
                                 if int(regexA_day) > 31:  # probably issue number nn
                                     regexA_day = '01'
                             else:
                                 regexA_day = '01'  # just MonthName YYYY
-                            #else:
-                            #    regexA_day = '01'  # monthly, or less frequent
+                            # else:
+                            # regexA_day = '01'  # monthly, or less frequent
 
                             try:
                                 newdatish = regexA_year + '-' + regexA_month + '-' + regexA_day
@@ -268,14 +272,14 @@ def search_magazines(mags=None, reset=False):
                                 logger.debug('This issue of %s is new, downloading' % nzbtitle_formatted)
                                 to_snatch = to_snatch + 1
                                 issues.append(issue)
-                                
+
                                 controlValueDict = {"NZBurl": nzburl}
                                 newValueDict = {
                                     "NZBdate": formatter.now(),  # when we asked for it
                                     "Status": "Wanted"
                                 }
                                 myDB.upsert("wanted", newValueDict, controlValueDict)
-                                
+
                             else:
                                 logger.debug('This issue of %s is already flagged for download' % issue)
                         else:
@@ -303,7 +307,7 @@ def search_magazines(mags=None, reset=False):
                     common.schedule_job(action='Start', target='processDir')
             maglist = []
 
-    if reset == True:
+    if reset:
         common.schedule_job(action='Restart', target='search_magazines')
-        
-    logger.info("Search for magazines complete")    
+
+    logger.info("Search for magazines complete")

@@ -107,10 +107,9 @@ def search_nzb_book(books=None, reset=False):
         logger.info("NZBSearch for Wanted items complete, found %s book" % nzb_count)
     else:
         logger.info("NZBSearch for Wanted items complete, found %s books" % nzb_count)
-    
-    if reset == True:
-        common.schedule_job(action='Restart', target='search_nzb_book')
 
+    if reset:
+        common.schedule_job(action='Restart', target='search_nzb_book')
 
 
 def processResultList(resultlist, book, searchtype):
@@ -139,14 +138,14 @@ def processResultList(resultlist, book, searchtype):
         nzbAuthor_match = fuzz.token_set_ratio(author, nzbTitle)
         nzbBook_match = fuzz.token_set_ratio(title, nzbTitle)
         logger.debug(u"NZB author/book Match: %s/%s for %s" % (nzbAuthor_match, nzbBook_match, nzbTitle))
-        
+
         rejected = False
         for word in reject_list:
             if word in nzbTitle.lower() and not word in author.lower() and not word in title.lower():
                 rejected = True
                 logger.debug("Rejecting %s, contains %s" % (nzbTitle, word))
                 break
-                
+
         if (nzbAuthor_match >= match_ratio and nzbBook_match >= match_ratio and not rejected):
             logger.debug(u'Found NZB: %s using %s search' % (nzb['nzbtitle'], searchtype))
             bookid = book['bookid']
@@ -216,7 +215,7 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
             logger.warn('Error fetching nzb from url: ' + nzburl + ' %s' % e.reason)
             nzbfile = False
 
-        if (nzbfile):
+        if nzbfile:
 
             nzbname = str(nzbtitle) + '.nzb'
             nzbpath = os.path.join(lazylibrarian.NZB_BLACKHOLEDIR, nzbname)

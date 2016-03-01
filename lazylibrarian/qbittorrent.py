@@ -26,14 +26,14 @@ import time
 import lazylibrarian
 
 from lazylibrarian import logger
-#from collections import namedtuple
+# from collections import namedtuple
 from lazylibrarian.common import USER_AGENT
 
 
 class qbittorrentclient(object):
 
-    #TOKEN_REGEX = "<div id='token' style='display:none;'>([^<>]+)</div>"
-    #UTSetting = namedtuple("UTSetting", ["name", "int", "str", "access"])
+    # TOKEN_REGEX = "<div id='token' style='display:none;'>([^<>]+)</div>"
+    # UTSetting = namedtuple("UTSetting", ["name", "int", "str", "access"])
 
     def __init__(self, base_url=None, username=None, password=None,):
 
@@ -62,9 +62,9 @@ class qbittorrentclient(object):
 
     def _get_sid(self, base_url, username, password):
         # login so we can capture SID cookie
-        login_data = urllib.urlencode({ 'username':username, 'password':password })
+        login_data = urllib.urlencode({'username': username, 'password': password})
         try:
-            response = self.opener.open(base_url+'/login',login_data)
+            response = self.opener.open(base_url + '/login', login_data)
         except urllib2.URLError as err:
             logger.debug('Error getting SID. qBittorrent responded with error: ' + str(err.reason))
             return
@@ -77,15 +77,15 @@ class qbittorrentclient(object):
         url = self.base_url + '/' + command
         data = None
         headers = dict()
-        if files: #Use Multipart form
-            data, headers = encode_multipart( args, files, '-------------------------acebdf13572468')
+        if files:  # Use Multipart form
+            data, headers = encode_multipart(args, files, '-------------------------acebdf13572468')
         else:
             if args:
                 data = urllib.urlencode(args)
             if content_type:
                 headers['Content-Type'] = content_type
 
-        request = urllib2.Request(url,data,headers)
+        request = urllib2.Request(url, data, headers)
 
         if lazylibrarian.PROXY_HOST:
             request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
@@ -101,7 +101,7 @@ class qbittorrentclient(object):
                         resp = ''
                         for line in response:
                             resp = resp + line
-                        #return response.code, json.loads(resp)
+                        # return response.code, json.loads(resp)
                         # response code is always 200, whether success or fail
                         return response.code
                     else:
@@ -135,38 +135,39 @@ class qbittorrentclient(object):
 
     def start(self, hash):
         logger.debug('qb.start(%s)' % hash)
-        args = { 'hash':hash }
-        return self._command('command/resume',args,'application/x-www-form-urlencoded')
+        args = {'hash': hash}
+        return self._command('command/resume', args, 'application/x-www-form-urlencoded')
 
     def pause(self, hash):
         logger.debug('qb.pause(%s)' % hash)
-        args = { 'hash':hash }
-        return self._command('command/pause',args,'application/x-www-form-urlencoded')
+        args = {'hash': hash}
+        return self._command('command/pause', args, 'application/x-www-form-urlencoded')
 
     def getfiles(self, hash):
         logger.debug('qb.getfiles(%s)' % hash)
-        return self._command('query/propertiesFiles/'+hash)
+        return self._command('query/propertiesFiles/' + hash)
 
     def getprops(self, hash):
         logger.debug('qb.getprops(%s)' % hash)
-        return self._command('query/propertiesGeneral/'+hash)
+        return self._command('query/propertiesGeneral/' + hash)
 
     def setprio(self, hash, priority):
         logger.debug('qb.setprio(%s,%d)' % (hash, priority))
-        args = { 'hash':hash, 'priority':priority }
-        return self._command('command/setFilePrio', args,'application/x-www-form-urlencoded')
+        args = {'hash': hash, 'priority': priority}
+        return self._command('command/setFilePrio', args, 'application/x-www-form-urlencoded')
 
     def remove(self, hash, remove_data=False):
-        logger.debug('qb.remove(%s,%s)' % (hash,remove_data))
-        args = { 'hashes':hash }
+        logger.debug('qb.remove(%s,%s)' % (hash, remove_data))
+        args = {'hashes': hash}
         if remove_data:
             command = 'command/deletePerm'
         else:
             command = 'command/delete'
         return self._command(command, args, 'application/x-www-form-urlencoded')
 
+
 def removeTorrent(hash, remove_data=False):
-    logger.debug('removeTorrent(%s,%s)' % (hash,remove_data))
+    logger.debug('removeTorrent(%s,%s)' % (hash, remove_data))
 
     qbclient = qbittorrentclient()
     status, torrentList = qbclient._get_list()
@@ -177,25 +178,30 @@ def removeTorrent(hash, remove_data=False):
                 qbclient.remove(hash, remove_data)
                 return True
             else:
-                logger.info('%s has not finished seeding yet, torrent will not be removed, will try again on next run' % torrent['name'])
+                logger.info(
+                    '%s has not finished seeding yet, torrent will not be removed, will try again on next run' %
+                    torrent['name'])
                 return False
     return False
+
 
 def addTorrent(link):
     logger.debug('addTorrent(%s)' % link)
 
     qbclient = qbittorrentclient()
-    args = { 'urls':link, 'savepath':lazylibrarian.DOWNLOAD_DIR }
+    args = {'urls': link, 'savepath': lazylibrarian.DOWNLOAD_DIR}
     if lazylibrarian.QBITTORRENT_LABEL:
         args['label'] = lazylibrarian.QBITTORRENT_LABEL
-    return qbclient._command('command/download', args, 'application/x-www-form-urlencoded' )
+    return qbclient._command('command/download', args, 'application/x-www-form-urlencoded')
+
 
 def addFile(data):
     logger.debug('addFile(data)')
 
     qbclient = qbittorrentclient()
-    files = {'torrents': { 'filename':'', 'content':data}}
-    return qbclient._command('command/upload',filelist=files)
+    files = {'torrents': {'filename': '', 'content': data}}
+    return qbclient._command('command/upload', filelist=files)
+
 
 def getFolder(hash):
     logger.debug('getFolder(%s)' % hash)
@@ -208,7 +214,8 @@ def getFolder(hash):
     completed_dir = settings['save_path']
 
     if not active_dir:
-        logger.error('Could not get "Keep incomplete torrents in:" directory from QBitTorrent settings, please ensure it is set')
+        logger.error(
+            'Could not get "Keep incomplete torrents in:" directory from QBitTorrent settings, please ensure it is set')
         return None
 
     # Get Torrent Folder Name
@@ -235,6 +242,7 @@ import random
 import string
 
 _BOUNDARY_CHARS = string.digits + string.ascii_letters
+
 
 def encode_multipart(fields, files, boundary=None):
     r"""Encode dict of form fields and dict of files as multipart/form-data.
@@ -286,7 +294,7 @@ def encode_multipart(fields, files, boundary=None):
         lines.extend((
             '--{0}'.format(boundary),
             'Content-Disposition: form-data; name="{0}"; filename="{1}"'.format(
-                    escape_quote(name), escape_quote(filename)),
+            escape_quote(name), escape_quote(filename)),
             'Content-Type: {0}'.format(mimetype),
             '',
             value['content'],
@@ -304,4 +312,3 @@ def encode_multipart(fields, files, boundary=None):
     }
 
     return (body, headers)
-

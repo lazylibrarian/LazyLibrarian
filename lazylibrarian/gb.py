@@ -123,10 +123,13 @@ class GoogleBooks:
 
                     try:
                         jsonresults, in_cache = self.get_request(URL)
-                        if not in_cache:
-                            api_hits = api_hits + 1
-                        number_results = jsonresults['totalItems']
-                        logger.debug('Searching url: ' + URL)
+                        if not jsonresults:
+                            number_results = 0
+                        else:
+                            if not in_cache:
+                                api_hits = api_hits + 1
+                            number_results = jsonresults['totalItems']
+                            logger.debug('Searching url: ' + URL)
                         if number_results == 0:
                             logger.warn('Found no results for %s with value: %s' % (api_value, self.name))
                             break
@@ -329,10 +332,12 @@ class GoogleBooks:
 
                 try:
                     jsonresults, in_cache = self.get_request(URL)
-                    if not in_cache:
-                        api_hits = api_hits + 1
-
-                    number_results = jsonresults['totalItems']
+                    if not jsonresults:
+                        number_results = 0
+                    else:
+                        if not in_cache:
+                            api_hits = api_hits + 1
+                        number_results = jsonresults['totalItems']
                 except HTTPError as err:
                     logger.warn('Google Books API Error [%s]: Check your API key or wait a while' % err.msg)
                     break
@@ -404,7 +409,7 @@ class GoogleBooks:
                                             logger.debug(u"LT language: " + booklang)
                                     except Exception as e:
                                         booklang = ""
-                                        logger.error("Error finding results: ", e)
+                                        logger.error("Error finding language " + str(e.reason))
 
                                 if googlelang == "en" and booklang not in "en-US, en-GB, eng":
                                     # these are all english, may need to expand this list
@@ -605,23 +610,15 @@ class GoogleBooks:
         URL = 'https://www.googleapis.com/books/v1/volumes/' + str(bookid) + "?key=" + lazylibrarian.GB_API
         jsonresults, in_cache = self.get_request(URL)
 
-#  Darkie67:
-#        replacing German Umlauts and filtering out ":"
-#
-#        booknamealt = jsonresults['volumeInfo']['title']
-#        booknametmp1=booknamealt.replace(u'\xf6',u'oe')
-#        booknametmp2=booknametmp1.replace(u'\xe4',u'ae')
-#        booknametmp3=booknametmp2.replace(u'\xdf',u'ss')
-#        booknametmp4=booknametmp3.replace(u'\xc4',u'Ae')
-#        booknametmp5=booknametmp4.replace(u'\xdc',u'Ue')
-#        booknametmp6=booknametmp5.replace(u'\xd6',u'Oe')
-#        booknametmp7=booknametmp6.replace(':','')
-#        bookname=booknametmp7.replace(u'\xfc',u'ue')
+        if not jsonresults:
+            logger.debug('No results found for %s' % bookname)
+            return
+
         bookname = jsonresults['volumeInfo']['title']
         bookname = bookname.replace(':', '').replace('"', '').replace("'", "")
         bookname = unidecode(u'%s' % bookname)
         bookname = bookname.strip()  # strip whitespace
-# Darkie67 end
+
         try:
             authorname = jsonresults['volumeInfo']['authors'][0]
         except KeyError:
