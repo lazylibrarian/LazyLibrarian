@@ -75,10 +75,10 @@ class WebInterface(object):
                      destination_copy=0, destination_dir='', download_dir='', sab_cat='', usenet_retention=0,
                      nzb_blackholedir='', alternate_dir='', torrent_dir='', numberofseeders=0,
                      tor_downloader_blackhole=0, tor_downloader_utorrent=0, tor_downloader_qbittorrent=0,
-                     nzbget_host='', nzbget_user='', nzbget_pass='', nzbget_cat='', nzbget_priority=0, 
+                     nzbget_host='', nzbget_user='', nzbget_pass='', nzbget_cat='', nzbget_priority=0,
                      newzbin=0, newzbin_uid='', newzbin_pass='', kat=0, kat_host='',
                      ebook_type='', mag_type='', reject_words='', book_api='', gr_api='', gb_api='',
-                     versioncheck_interval='', search_interval='', scan_interval='', searchrss_interval=20, 
+                     versioncheck_interval='', search_interval='', scan_interval='', searchrss_interval=20,
                      ebook_dest_folder='', ebook_dest_file='',
                      mag_relative=0, mag_dest_folder='', mag_dest_file='', cache_age=30,
                      use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
@@ -153,7 +153,7 @@ class WebInterface(object):
         lazylibrarian.TOR_DOWNLOADER_QBITTORRENT = bool(tor_downloader_qbittorrent)
         lazylibrarian.TOR_DOWNLOADER_TRANSMISSION = bool(tor_downloader_transmission)
         lazylibrarian.TOR_DOWNLOADER_DELUGE = bool(tor_downloader_deluge)
-        
+
         lazylibrarian.NEWZBIN = bool(newzbin)
         lazylibrarian.NEWZBIN_UID = newzbin_uid
         lazylibrarian.NEWZBIN_PASS = newzbin_pass
@@ -240,20 +240,20 @@ class WebInterface(object):
         lazylibrarian.NMA_ONDOWNLOAD = bool(nma_ondownload)
 
         count = 0
-        while count < len(lazylibrarian.NEWZNAB_PROV):        
+        while count < len(lazylibrarian.NEWZNAB_PROV):
             lazylibrarian.NEWZNAB_PROV[count]['ENABLED'] = bool(kwargs.get('newznab[%i][enabled]' % count, False))
             lazylibrarian.NEWZNAB_PROV[count]['NZEDB'] = bool(kwargs.get('newznab[%i][nzedb]' % count, False))
             lazylibrarian.NEWZNAB_PROV[count]['HOST'] = kwargs.get('newznab[%i][host]' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['API'] = kwargs.get('newznab[%i][api]' % count, '')
             count += 1
-        
+
         count = 0
-        while count < len(lazylibrarian.TORZNAB_PROV):        
+        while count < len(lazylibrarian.TORZNAB_PROV):
             lazylibrarian.TORZNAB_PROV[count]['ENABLED'] = bool(kwargs.get('torznab[%i][enabled]' % count, False))
             lazylibrarian.TORZNAB_PROV[count]['HOST'] = kwargs.get('torznab[%i][host]' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['API'] = kwargs.get('torznab[%i][api]' % count, '')
             count += 1
-        
+
         count = 0
         while count < len(lazylibrarian.RSS_PROV):
             lazylibrarian.RSS_PROV[count]['ENABLED'] = bool(kwargs.get('rss[%i][enabled]' % count, False))
@@ -298,13 +298,13 @@ class WebInterface(object):
         booklist = []
         for item in booksearch:
             booklist.append(item['BookID'])
-        
+
         # need a url safe version of authorname for passing to searchresults.html
         resultlist = []
         for result in searchresults:
             result['safeauthorname'] = urllib.quote_plus(result['authorname'].encode('utf-8'))
             resultlist.append(result)
-         
+
         sortedlist_final = sorted(searchresults, key=itemgetter('highest_fuzz', 'num_reviews'), reverse=True)
         return serve_template(templatename="searchresults.html", title='Search Results for: "' +
                               name + '"', searchresults=sortedlist_final, authorlist=authorlist,
@@ -398,20 +398,20 @@ class WebInterface(object):
 # BOOKS #############################################################
 
 # not very clean here, using a global variable BOOKLANGFILTER to pass booklang from books to getbooks
-#    
+#
     def books(self, BookLang=None):
         myDB = database.DBConnection()
         languages = myDB.select('SELECT DISTINCT BookLang from books WHERE NOT \
                                 STATUS="Skipped" AND NOT STATUS="Ignored"')
         lazylibrarian.BOOKLANGFILTER = BookLang
 
-        #if BookLang:
+        # if BookLang:
         #    books = myDB.select('SELECT * from books WHERE BookLang="%s" AND NOT \
         #                        Status="Skipped" AND NOT STATUS="Ignored"' % BookLang)
-        #else:
+        # else:
         #    books = myDB.select('SELECT * from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"')
 
-        #if books is None:
+        # if books is None:
         #    raise cherrypy.HTTPRedirect("books")
         return serve_template(templatename="books.html", title='Books', books=[], languages=languages)
     books.exposed = True
@@ -423,20 +423,27 @@ class WebInterface(object):
 
         #   need to check and filter on BookLang if set
         if lazylibrarian.BOOKLANGFILTER is None or not len(lazylibrarian.BOOKLANGFILTER):
-            rowlist = myDB.action('SELECT bookimg, authorname, bookname, series, seriesorder, bookrate, bookdate, status, bookid, booksub, booklink from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"').fetchall()
+            rowlist = myDB.action(
+                'SELECT bookimg, authorname, bookname, series, seriesorder, bookrate, bookdate, status, bookid, booksub, booklink from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"').fetchall()
         else:
-            rowlist = myDB.action('SELECT bookimg, authorname, bookname, series, seriesorder, bookrate, bookdate, status, bookid, booksub, booklink from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored" and BOOKLANG="%s"' % lazylibrarian.BOOKLANGFILTER).fetchall()
+            rowlist = myDB.action(
+                'SELECT bookimg, authorname, bookname, series, seriesorder, bookrate, bookdate, status, bookid, booksub, booklink from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored" and BOOKLANG="%s"' %
+                lazylibrarian.BOOKLANGFILTER).fetchall()
         # turn the sqlite rowlist into a list of lists
-        d = [] # the masterlist to be filled with the row data and to be returned
-        for i, row in enumerate(rowlist): # iterate through the sqlite3.Row objects            
-            l = [] # for each Row use a separate list
+        d = []  # the masterlist to be filled with the row data and to be returned
+        for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
+            l = []  # for each Row use a separate list
 
             l.append('<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[8])
-            l.append('<td id="bookart"><a href="%s" target="_new"><img src="%s" height="75" width="50"></a></td>' % (row[0], row[0]))
+            l.append(
+                '<td id="bookart"><a href="%s" target="_new"><img src="%s" height="75" width="50"></a></td>' %
+                (row[0], row[0]))
             l.append('<td id="authorname"><a href="authorPage?AuthorName=%s">%s</a></td>' % (row[1], row[1]))
 
             if row[9]:  # is there a sub-title
-                l.append('<td id="bookname"><a href="%s" target="_new">%s</a><br><i class="smalltext">%s</i></td>' % (row[10], row[2], row[9]))
+                l.append(
+                    '<td id="bookname"><a href="%s" target="_new">%s</a><br><i class="smalltext">%s</i></td>' %
+                    (row[10], row[2], row[9]))
             else:
                 l.append('<td id="bookname"><a href="%s" target="_new">%s</a></td>' % (row[10], row[2]))
 
@@ -466,29 +473,41 @@ class WebInterface(object):
             else:
                 starimg = '0-stars.png'
             l.append('<td id="stars"><img src="images/' + starimg + '" width="50" height="10"></td>')
-            
+
             l.append('<td id="date">%s</td>' % row[6])
 
             if lazylibrarian.HTTP_LOOK == 'default':
                 if row[7] == 'Open':
-                    l.append('<td id="status"><a class="button green" href="openBook?bookid=%s" target="_self">Open</a></td>' % row[8])
+                    l.append(
+                        '<td id="status"><a class="button green" href="openBook?bookid=%s" target="_self">Open</a></td>' %
+                        row[8])
                 elif row[7] == 'Wanted':
-                    l.append('<td id="status"><a class="button red" href="searchForBook?bookid=%s" target="_self"><span class="a">Wanted</span><span class="b">Search</span></a></td>' % row[8])
+                    l.append(
+                        '<td id="status"><a class="button red" href="searchForBook?bookid=%s" target="_self"><span class="a">Wanted</span><span class="b">Search</span></a></td>' %
+                        row[8])
                 elif row[7] == 'Snatched' or row[7] == 'Have':
                     l.append('<td id="status"><a class="button">%s</a></td>' % row[7])
                 else:
                     l.append('<td id="status"><a class="button grey">%s</a></td>' % row[7])
             elif lazylibrarian.HTTP_LOOK == 'bookstrap':
                 if row[7] == 'Open':
-                    l.append('<td class="status text-center"><a class="button green btn btn-xs btn-warning" href="openBook?bookid=%s" target="_self"><i class="fa fa-book"></i>%s</a></td>' % (row[8], row[7]))
+                    l.append(
+                        '<td class="status text-center"><a class="button green btn btn-xs btn-warning" href="openBook?bookid=%s" target="_self"><i class="fa fa-book"></i>%s</a></td>' %
+                        (row[8], row[7]))
                 elif row[7] == 'Wanted':
-                    l.append('<td class="status text-center"><p><a class="a btn btn-xs btn-danger">%s</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=%s" target="_self"><i class="fa fa-search"></i> Search</a></p></td>' % (row[7], row[8]))
+                    l.append(
+                        '<td class="status text-center"><p><a class="a btn btn-xs btn-danger">%s</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=%s" target="_self"><i class="fa fa-search"></i> Search</a></p></td>' %
+                        (row[7], row[8]))
                 elif row[7] == 'Snatched' or row[7] == 'Have':
-                    l.append('<td class="status text-center"><a class="button btn btn-xs btn-info">%s</a></td>' % row[7])
+                    l.append(
+                        '<td class="status text-center"><a class="button btn btn-xs btn-info">%s</a></td>' %
+                        row[7])
                 else:
-                    l.append('<td class="status text-center"><a class="button btn btn-xs btn-default grey">%s</a></td>' % row[7])
+                    l.append(
+                        '<td class="status text-center"><a class="button btn btn-xs btn-default grey">%s</a></td>' %
+                        row[7])
 
-            d.append(l) # add the rowlist to the masterlist
+            d.append(l)  # add the rowlist to the masterlist
         filtered = d
 
         if sSearch != "":
@@ -502,14 +521,13 @@ class WebInterface(object):
             rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
         mydict = {'iTotalDisplayRecords': len(filtered),
-                'iTotalRecords': len(rowlist),
-                'aaData': rows,
-                }
+                  'iTotalRecords': len(rowlist),
+                  'aaData': rows,
+                  }
         s = simplejson.dumps(mydict)
-        #print ("Getbooks returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+        # print ("Getbooks returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
         return s
     getBooks.exposed = True
-
 
     def addBook(self, bookid=None):
         myDB = database.DBConnection()
@@ -619,7 +637,7 @@ class WebInterface(object):
         if not redirect:
             redirect = "books"
         authorcheck = None
-        if action != None:
+        if action is not None:
             for bookid in args:
                 # ouch dirty workaround...
                 if not bookid == 'book_table_length':
@@ -631,7 +649,7 @@ class WebInterface(object):
                         for item in title:
                             bookname = item['BookName']
                             logger.info(u'Status set to "%s" for "%s"' % (action, bookname))
-    
+
                     else:
                         authorsearch = myDB.select('SELECT * from books WHERE BookID = "%s"' % bookid)
                         for item in authorsearch:
@@ -682,7 +700,7 @@ class WebInterface(object):
                 threading.Thread(target=search_nzb_book, args=[books]).start()
             if lazylibrarian.USE_TOR():
                 threading.Thread(target=search_tor_book, args=[books]).start()
-            
+
         if redirect == "author":
             raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
         elif redirect == "books":
@@ -751,36 +769,38 @@ class WebInterface(object):
 
                 this_issue = dict(issue)
                 this_issue['Cover'] = magimg
-                #this_issue['safeissuefile'] = urllib.quote_plus(magfile.encode('utf-8'))
+                # this_issue['safeissuefile'] = urllib.quote_plus(magfile.encode('utf-8'))
                 mod_issues.append(this_issue)
             logger.debug("Found %s covers" % covercount)
         return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
     issuePage.exposed = True
 
     def pastIssues(self, whichStatus=None):
-        #print "pastIssues %s" % whichStatus
-        #myDB = database.DBConnection()
+        # print "pastIssues %s" % whichStatus
+        # myDB = database.DBConnection()
         if whichStatus is None:
             whichStatus = "Skipped"
-        lazylibrarian.ISSUEFILTER=whichStatus
+        lazylibrarian.ISSUEFILTER = whichStatus
         # books don't have auxinfo, only magazines
-        #issues = myDB.select('SELECT * from wanted WHERE Status="%s" and length(AuxInfo) > 0' % (whichStatus))
+        # issues = myDB.select('SELECT * from wanted WHERE Status="%s" and length(AuxInfo) > 0' % (whichStatus))
         return serve_template(templatename="manageissues.html", title="Magazine Status Management",
                               issues=[], whichStatus=whichStatus)
     pastIssues.exposed = True
-    
+
     def getPastIssues(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
-        #print "getPastIssues %s" % iDisplayStart
+        # print "getPastIssues %s" % iDisplayStart
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
-        #   need to filter on whichStatus, and only show magazines - magazines have auxinfo, books don't 
-        rowlist = myDB.action('SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov, Status from wanted WHERE Status="%s" and length(AuxInfo) > 0' % lazylibrarian.ISSUEFILTER).fetchall()
+        #   need to filter on whichStatus, and only show magazines - magazines have auxinfo, books don't
+        rowlist = myDB.action(
+            'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov, Status from wanted WHERE Status="%s" and length(AuxInfo) > 0' %
+            lazylibrarian.ISSUEFILTER).fetchall()
 
         # turn the sqlite rowlist into a list of lists
-        d = [] # the masterlist to be filled with the row data and to be returned
-        for i, row in enumerate(rowlist): # iterate through the sqlite3.Row objects            
-            l = [] # for each Row use a separate list
+        d = []  # the masterlist to be filled with the row data and to be returned
+        for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
+            l = []  # for each Row use a separate list
 
             l.append('<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[0])
             l.append('<td id="magtitle">%s</td>' % row[1])
@@ -788,7 +808,7 @@ class WebInterface(object):
             l.append('<td id="issuedate">%s</td>' % row[3])
             l.append('<td id="provider">%s</td>' % row[4])
             l.append('<td id="status">%s</td>' % row[5])
-            d.append(l) # add the rowlist to the masterlist
+            d.append(l)  # add the rowlist to the masterlist
         filtered = d
 
         if sSearch != "":
@@ -802,13 +822,12 @@ class WebInterface(object):
             rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
         mydict = {'iTotalDisplayRecords': len(filtered),
-                'iTotalRecords': len(rowlist),
-                'aaData': rows,
-                }
+                  'iTotalRecords': len(rowlist),
+                  'aaData': rows,
+                  }
         s = simplejson.dumps(mydict)
         return s
     getPastIssues.exposed = True
-
 
     def openMag(self, bookid=None, **args):
         bookid = urllib.unquote_plus(bookid)
@@ -1089,7 +1108,7 @@ class WebInterface(object):
             jobtime = job.split('at: ')[1].split('.')[0]
             jobtime = formatter.next_run(jobtime)
             jobinfo = "%s: Next run in %s" % (jobname, jobtime)
-            #logger.info(jobinfo)
+            # logger.info(jobinfo)
             result = result + '\n' + jobinfo
         return result
 
@@ -1161,7 +1180,7 @@ class WebInterface(object):
             rows = filtered
         else:
             rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
-        #rows = [[row[0], row[2], row[1]] for row in rows]
+        # rows = [[row[0], row[2], row[1]] for row in rows]
         dict = {'iTotalDisplayRecords': len(filtered),
                 'iTotalRecords': len(lazylibrarian.LOGLIST),
                 'aaData': rows,
@@ -1284,11 +1303,11 @@ class WebInterface(object):
     forceSearch.exposed = True
 
     def manage(self, AuthorName=None, action=None, whichStatus=None, source=None, **args):
-        #myDB = database.DBConnection()
+        # myDB = database.DBConnection()
         # books only holds status [skipped wanted open have ignored]
         # wanted holds status [snatched processed]
-        #books = myDB.select('SELECT * FROM books WHERE Status = ?', [whichStatus])
-        if whichStatus == None:
+        # books = myDB.select('SELECT * FROM books WHERE Status = ?', [whichStatus])
+        if whichStatus is None:
             whichStatus = "Skipped"
         lazylibrarian.MANAGEFILTER = whichStatus
         return serve_template(templatename="managebooks.html", title="Book Status Management",
@@ -1296,23 +1315,27 @@ class WebInterface(object):
     manage.exposed = True
 
     def getManage(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
-        
+
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
-        #print "getManage %s" % iDisplayStart
+        # print "getManage %s" % iDisplayStart
         #   need to filter on whichStatus
-        rowlist = myDB.action('SELECT authorname, bookname, series, seriesorder, bookdate, bookid, booklink, booksub from books WHERE STATUS="%s"' % lazylibrarian.MANAGEFILTER).fetchall()
+        rowlist = myDB.action(
+            'SELECT authorname, bookname, series, seriesorder, bookdate, bookid, booklink, booksub from books WHERE STATUS="%s"' %
+            lazylibrarian.MANAGEFILTER).fetchall()
         # turn the sqlite rowlist into a list of lists
-        d = [] # the masterlist to be filled with the row data and to be returned
-        for i, row in enumerate(rowlist): # iterate through the sqlite3.Row objects            
-            l = [] # for each Row use a separate list
+        d = []  # the masterlist to be filled with the row data and to be returned
+        for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
+            l = []  # for each Row use a separate list
 
             l.append('<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[5])
             l.append('<td id="authorname"><a href="authorPage?AuthorName=%s">%s</a></td>' % (row[0], row[0]))
 
             if row[7]:  # is there a sub-title
-                l.append('<td id="bookname"><a href="%s" target="_new">%s</a><br><i class="smalltext">%s</i></td>' % (row[6], row[1], row[7]))
+                l.append(
+                    '<td id="bookname"><a href="%s" target="_new">%s</a><br><i class="smalltext">%s</i></td>' %
+                    (row[6], row[1], row[7]))
             else:
                 l.append('<td id="bookname"><a href="%s" target="_new">%s</a></td>' % (row[6], row[1]))
 
@@ -1328,7 +1351,7 @@ class WebInterface(object):
 
             l.append('<td id="date">%s</td>' % row[4])
 
-            d.append(l) # add the rowlist to the masterlist
+            d.append(l)  # add the rowlist to the masterlist
         filtered = d
 
         if sSearch != "":
@@ -1342,11 +1365,11 @@ class WebInterface(object):
             rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
         mydict = {'iTotalDisplayRecords': len(filtered),
-                'iTotalRecords': len(rowlist),
-                'aaData': rows,
-                }
+                  'iTotalRecords': len(rowlist),
+                  'aaData': rows,
+                  }
         s = simplejson.dumps(mydict)
-        #print ("getManage returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+        # print ("getManage returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
         return s
     getManage.exposed = True
 

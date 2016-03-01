@@ -14,7 +14,7 @@ class RotatingLogger(object):
     def __init__(self, filename):
 
         self.filename = filename
-        
+
     def initLogger(self, loglevel=1):
 
         l = logging.getLogger('lazylibrarian')
@@ -22,7 +22,10 @@ class RotatingLogger(object):
 
         self.filename = os.path.join(lazylibrarian.LOGDIR, self.filename)
 
-        filehandler = handlers.RotatingFileHandler(self.filename, maxBytes=lazylibrarian.LOGSIZE, backupCount=lazylibrarian.LOGFILES) 
+        filehandler = handlers.RotatingFileHandler(
+            self.filename,
+            maxBytes=lazylibrarian.LOGSIZE,
+            backupCount=lazylibrarian.LOGFILES)
 
         filehandler.setLevel(logging.DEBUG)
 
@@ -48,9 +51,9 @@ class RotatingLogger(object):
         threadname = threading.currentThread().getName()
 
         # Ensure messages are utf-8 as some author names contain accents and the web page doesnt like them
-        if isinstance(message, str): 
+        if isinstance(message, str):
                 message = message.decode('utf-8')
-                   
+
         if level != 'DEBUG' or lazylibrarian.LOGFULL is True:
             # Limit the size of the "in-memory" log, as gets slow if too long
             lazylibrarian.LOGLIST.insert(0, (formatter.now(), level, message))

@@ -613,7 +613,7 @@ class GoogleBooks:
         if not jsonresults:
             logger.debug('No results found for %s' % bookname)
             return
-            
+
         bookname = jsonresults['volumeInfo']['title']
         bookname = bookname.replace(':', '').replace('"', '').replace("'", "")
         bookname = unidecode(u'%s' % bookname)

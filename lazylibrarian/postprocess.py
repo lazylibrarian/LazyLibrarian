@@ -146,7 +146,10 @@ def processDir(force=False, reset=False):
                                ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
                         mag_name = formatter.latinToAscii(formatter.replace_all(book['BookID'], dic))
                         # book auxinfo is a cleaned date, eg 2015-01-01
-                        dest_path = lazylibrarian.MAG_DEST_FOLDER.replace('$IssueDate', book['AuxInfo']).replace('$Title', mag_name)
+                        dest_path = lazylibrarian.MAG_DEST_FOLDER.replace(
+                            '$IssueDate',
+                            book['AuxInfo']).replace('$Title',
+                                                     mag_name)
                         # dest_path = '_Magazines/'+title+'/'+book['AuxInfo']
                         if lazylibrarian.MAG_RELATIVE:
                             if dest_path[0] not in '._':
@@ -197,10 +200,10 @@ def processDir(force=False, reset=False):
                     # so look for any "book" in that directory
                     dest_file = book_file(dest_path, booktype='mag')
                     controlValueDict = {"Title": book['BookID'], "IssueDate": book['AuxInfo']}
-                    newValueDict = {"IssueAcquired": formatter.today(), 
+                    newValueDict = {"IssueAcquired": formatter.today(),
                                     "IssueFile": dest_file,
-                                    "IssueID" : magazinescan.create_id("%s %s" % (book['BookID'], book['AuxInfo']))
-                                   }
+                                    "IssueID": magazinescan.create_id("%s %s" % (book['BookID'], book['AuxInfo']))
+                                    }
                     myDB.upsert("issues", newValueDict, controlValueDict)
 
                     # create a thumbnail cover for the new issue
@@ -212,7 +215,7 @@ def processDir(force=False, reset=False):
             else:
                 logger.error('Postprocessing for %s has failed.' % global_name)
                 logger.error('Warning - Residual files remain in %s.fail' % pp_path)
-                # at this point, as it failed we should move it or it will get postprocessed 
+                # at this point, as it failed we should move it or it will get postprocessed
                 # again (and fail again)
                 try:
                     os.rename(pp_path, pp_path + '.fail')
@@ -238,9 +241,8 @@ def processDir(force=False, reset=False):
             logger.info('%s books/mags have been processed.' % ppcount)
         else:
             logger.info('No snatched books/mags have been found')
-    if reset == True:
+    if reset:
         common.schedule_job(action='Restart', target='processDir')
-                    
 
 
 def import_book(pp_path=None, bookID=None):
@@ -302,7 +304,7 @@ def book_file(search_dir=None, booktype=None):
     if search_dir is not None and os.path.isdir(search_dir):
         for fname in os.listdir(search_dir):
             if formatter.is_valid_booktype(fname, booktype=booktype):
-                return os.path.join(search_dir, fname)# .encode(lazylibrarian.SYS_ENCODING)
+                return os.path.join(search_dir, fname)  # .encode(lazylibrarian.SYS_ENCODING)
     return ""
 
 
@@ -364,7 +366,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         if formatter.is_valid_booktype(bookfile, booktype=booktype):
             got_book = True
             break
-            
+
     if got_book is False:
         # no book/mag found in a format we wanted. Leave for the user to delete or convert manually
         logger.warn('Failed to locate a book/magazine in %s, leaving for manual processing' % pp_path)
@@ -380,7 +382,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             logger.debug('Failed to delete %s, %s' % (dest_path, str(why)))
             return False
 
-    if not os.path.exists(dest_path):    
+    if not os.path.exists(dest_path):
         try:
             os.makedirs(dest_path)
         except OSError as why:
@@ -396,13 +398,13 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             logger.debug('Copying %s to directory %s' % (fname, dest_path))
             try:
                 shutil.copyfile(os.path.join(pp_path, fname), os.path.join(dest_path, global_name + '.' +
-                          str(fname).split('.')[-1]))
+                                                                           str(fname).split('.')[-1]))
             except Exception as why:
                 logger.debug("Failed to copy file %s to %s, %s" % (fname, dest_path, str(why)))
                 return False
         else:
             logger.debug('Ignoring unwanted file: %s' % fname)
-    
+
     # copied the files we want, now delete source files if not in download root dir
     if not lazylibrarian.DESTINATION_COPY:
         if pp_path != lazylibrarian.DOWNLOAD_DIR:
@@ -412,6 +414,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
                 return False
     return True
+
 
 def processAutoAdd(src_path=None):
     # Called to copy the book files to an auto add directory for the likes of Calibre which can't do nested dirs
@@ -444,11 +447,11 @@ def processAutoAdd(src_path=None):
                     logger.error('AutoAdd - Failed to copy file [%s] because [%s] ' % (name, str(why)))
                     return False
                 try:
-                    os.chmod(dstname, 0666)  # make rw for calibre
+                    os.chmod(dstname, 0o666)  # make rw for calibre
                 except OSError as e:
                     logger.warn("Could not set permission of %s because [%s]" % (dstname, str(e)))
                     # permissions might not be fatal, continue
-                    
+
         except OSError as why:
             logger.error('AutoAdd - Failed because [%s]' % str(why))
             return False

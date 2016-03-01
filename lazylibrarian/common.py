@@ -39,40 +39,53 @@ def schedule_job(action='Start', target=None):
         target=search_magazines, target=processDir, target=search_tor_book """
     if target is None:
         return
-    
+
     if action == 'Stop' or action == 'Restart':
         for job in lazylibrarian.SCHED.get_jobs():
             if target in str(job):
                 lazylibrarian.SCHED.unschedule_job(job)
                 logger.debug("Stop %s job" % (target))
-                    
+
     if action == 'Start' or action == 'Restart':
         for job in lazylibrarian.SCHED.get_jobs():
             if target in str(job):
                 logger.debug("%s %s job, already scheduled" % (action, target))
                 return  # return if already running, if not, start a new one
         if 'processDir' in target and int(lazylibrarian.SCAN_INTERVAL):
-            lazylibrarian.SCHED.add_interval_job(lazylibrarian.postprocess.processDir, minutes=int(lazylibrarian.SCAN_INTERVAL))
+            lazylibrarian.SCHED.add_interval_job(
+                lazylibrarian.postprocess.processDir,
+                minutes=int(lazylibrarian.SCAN_INTERVAL))
             logger.debug("%s %s job" % (action, target))
         elif 'search_magazines' in target and int(lazylibrarian.SEARCH_INTERVAL):
             if lazylibrarian.USE_TOR() or lazylibrarian.USE_NZB():
-                lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchmag.search_magazines, minutes=int(lazylibrarian.SEARCH_INTERVAL))
+                lazylibrarian.SCHED.add_interval_job(
+                    lazylibrarian.searchmag.search_magazines,
+                    minutes=int(lazylibrarian.SEARCH_INTERVAL))
                 logger.debug("%s %s job" % (action, target))
         elif 'search_nzb_book' in target and int(lazylibrarian.SEARCH_INTERVAL):
             if lazylibrarian.USE_NZB():
-                lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchnzb.search_nzb_book, minutes=int(lazylibrarian.SEARCH_INTERVAL))
+                lazylibrarian.SCHED.add_interval_job(
+                    lazylibrarian.searchnzb.search_nzb_book,
+                    minutes=int(lazylibrarian.SEARCH_INTERVAL))
                 logger.debug("%s %s job" % (action, target))
         elif 'search_tor_book' in target and int(lazylibrarian.SEARCH_INTERVAL):
             if lazylibrarian.USE_TOR():
-                lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchtorrents.search_tor_book, minutes=int(lazylibrarian.SEARCH_INTERVAL))
+                lazylibrarian.SCHED.add_interval_job(
+                    lazylibrarian.searchtorrents.search_tor_book,
+                    minutes=int(lazylibrarian.SEARCH_INTERVAL))
                 logger.debug("%s %s job" % (action, target))
         elif 'search_rss_book' in target and int(lazylibrarian.SEARCHRSS_INTERVAL):
             if lazylibrarian.USE_RSS():
-                lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchrss.search_rss_book, minutes=int(lazylibrarian.SEARCHRSS_INTERVAL))
+                lazylibrarian.SCHED.add_interval_job(
+                    lazylibrarian.searchrss.search_rss_book,
+                    minutes=int(lazylibrarian.SEARCHRSS_INTERVAL))
                 logger.debug("%s %s job" % (action, target))
         elif 'checkForUpdates' in target and int(lazylibrarian.VERSIONCHECK_INTERVAL):
-            lazylibrarian.SCHED.add_interval_job(lazylibrarian.versioncheck.checkForUpdates, hours=int(lazylibrarian.VERSIONCHECK_INTERVAL))
+            lazylibrarian.SCHED.add_interval_job(
+                lazylibrarian.versioncheck.checkForUpdates,
+                hours=int(lazylibrarian.VERSIONCHECK_INTERVAL))
             logger.debug("%s %s job" % (action, target))
+
 
 def remove_accents(str_or_unicode):
     try:
@@ -80,7 +93,7 @@ def remove_accents(str_or_unicode):
     except TypeError:
         nfkd_form = unicodedata.normalize('NFKD', str_or_unicode.decode(lazylibrarian.SYS_ENCODING, 'replace'))
     # turn accented chars into non-accented
-    stripped =  u''.join([c for c in nfkd_form if not unicodedata.combining(c)])
+    stripped = u''.join([c for c in nfkd_form if not unicodedata.combining(c)])
     # now get rid of any other non-ascii
     return stripped.encode('ASCII', 'ignore').decode(lazylibrarian.SYS_ENCODING)
     # returns unicode

@@ -63,7 +63,7 @@ def search_rss_book(books=None, reset=False):
 
         found = processResultList(resultlist, author, title, book)
 
-        # if you can't find the book, try author without initials, 
+        # if you can't find the book, try author without initials,
         # and title without any "(extended details, series etc)"
         if not found:
             if author[1] in '. ' or '(' in title:  # anything to shorten?
@@ -83,7 +83,7 @@ def search_rss_book(books=None, reset=False):
     else:
         logger.info("RSS Search for Wanted items complete, found %s books" % rss_count)
 
-    if reset == True:
+    if reset:
         common.schedule_job(action='Restart', target='search_rss_book')
 
 
@@ -106,7 +106,7 @@ def processResultList(resultlist, author, title, book):
 
         tor_Author_match = fuzz.token_set_ratio(author, tor_Title)
         tor_Title_match = fuzz.token_set_ratio(title, tor_Title)
-        logger.debug("RSS Author/Title Match: %s/%s for %s" %(tor_Author_match, tor_Title_match, tor_Title))
+        logger.debug("RSS Author/Title Match: %s/%s for %s" % (tor_Author_match, tor_Title_match, tor_Title))
 
         rejected = False
         for word in reject_list:
@@ -144,12 +144,12 @@ def processResultList(resultlist, author, title, book):
             if not snatchedbooks:  # check if one of the other downloaders got there first
                 if '.nzb' in tor_url:
                     snatch = NZBDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
-                else:    
+                else:
                     #  http://baconbits.org/torrents.php?action=download&authkey=<authkey>&torrent_pass=<password.hashed>&id=185398
                     if not tor_url.startswith('magnet'):  # magnets don't use auth
-                        pwd  = lazylibrarian.RSS_PROV[tor_feed]['PASS']
+                        pwd = lazylibrarian.RSS_PROV[tor_feed]['PASS']
                         auth = lazylibrarian.RSS_PROV[tor_feed]['AUTH']
-                        # don't know what form of password hash is required, try sha1    
+                        # don't know what form of password hash is required, try sha1
                         tor_url = tor_url.replace('<authkey>', auth).replace('<password.hashed>', sha1(pwd))
                     snatch = TORDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
 

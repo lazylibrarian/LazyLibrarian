@@ -71,8 +71,8 @@ LOGLIST = []
 LOGLEVEL = 2
 LOGLIMIT = 500
 LOGFULL = False  # include debug on screen if true
-LOGFILES = 10 # 10 log files
-LOGSIZE = 204800 # each up to 200K
+LOGFILES = 10  # 10 log files
+LOGSIZE = 204800  # each up to 200K
 
 MATCH_RATIO = 80
 
@@ -390,13 +390,13 @@ def initialize():
         else:
             LOGFULL = False
             logger.info("Screen Log set to INFO/WARN/ERROR")
-        
+
         # keep track of last api calls so we don't call more than once per second
         # to respect api terms, but don't wait un-necessarily either
         time_now = int(time.time())
         LAST_LIBRARYTHING = time_now
         LAST_GOODREADS = time_now
-        
+
         MANAGEFILTER = "Skipped"
         ISSUEFILTER = "Skipped"
         BOOKLANGFILTER = "eng"
@@ -467,7 +467,6 @@ def initialize():
         NZBMATRIX_USER = check_setting_str(CFG, 'NZBMatrix', 'nzbmatrix_user', '')
         NZBMATRIX_API = check_setting_str(CFG, 'NZBMatrix', 'nzbmatrix_api', '')
 
-
         count = 0
         while CFG.has_section('Newznab%i' % count):
             newz_name = 'Newznab%i' % count
@@ -481,16 +480,16 @@ def initialize():
             if CFG.has_option(newz_name, 'newznab_api%i' % count):
                 CFG.set(newz_name, 'API', CFG.get(newz_name, 'newznab_api%i' % count))
                 CFG.remove_option(newz_name, 'newznab_api%i' % count)
-            
+
             NEWZNAB_PROV.append({"NAME": newz_name,
                                  "ENABLED": check_setting_bool(CFG, newz_name, 'ENABLED', 0),
                                  "NZEDB": check_setting_bool(CFG, newz_name, 'NZEDB', 0),
                                  "HOST": check_setting_str(CFG, newz_name, 'HOST', ''),
                                  "API": check_setting_str(CFG, newz_name, 'API', '')
-                               }) 
+                                 })
             count = count + 1
-        # if the last slot is full, add an empty one on the end 
-        add_newz_slot()      
+        # if the last slot is full, add an empty one on the end
+        add_newz_slot()
 
         count = 0
         while CFG.has_section('Torznab%i' % count):
@@ -505,16 +504,16 @@ def initialize():
             if CFG.has_option(torz_name, 'torznab_api%i' % count):
                 CFG.set(torz_name, 'API', CFG.get(torz_name, 'torznab_api%i' % count))
                 CFG.remove_option(torz_name, 'torznab_api%i' % count)
-            
+
             TORZNAB_PROV.append({"NAME": torz_name,
                                  "ENABLED": check_setting_bool(CFG, torz_name, 'ENABLED', 0),
                                  "HOST": check_setting_str(CFG, torz_name, 'HOST', ''),
                                  "API": check_setting_str(CFG, torz_name, 'API', '')
-                               }) 
+                                 })
             count = count + 1
-        # if the last slot is full, add an empty one on the end 
+        # if the last slot is full, add an empty one on the end
         add_torz_slot()
-        
+
         count = 0
         while CFG.has_section('RSS_%i' % count):
             rss_name = 'RSS_%i' % count
@@ -537,11 +536,11 @@ def initialize():
                              "HOST": check_setting_str(CFG, rss_name, 'HOST', ''),
                              "USER": check_setting_str(CFG, rss_name, 'USER', ''),
                              "PASS": check_setting_str(CFG, rss_name, 'PASS', '')
-                             }) 
+                             })
             count = count + 1
-        # if the last slot is full, add an empty one on the end 
+        # if the last slot is full, add an empty one on the end
         add_rss_slot()
-                       
+
         TOR_DOWNLOADER_BLACKHOLE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_blackhole', 0)
         TOR_DOWNLOADER_UTORRENT = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_utorrent', 0)
         TOR_DOWNLOADER_QBITTORRENT = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_qbittorrent', 0)
@@ -581,7 +580,7 @@ def initialize():
         MAG_TYPE = MAG_TYPE.lower()  # to make extension matching easier
         REJECT_WORDS = check_setting_str(CFG, 'General', 'reject_words', 'audiobook, mp3')
         REJECT_WORDS = REJECT_WORDS.lower()
-        
+
         SEARCH_INTERVAL = check_setting_int(CFG, 'SearchScan', 'search_interval', '360')
         SCAN_INTERVAL = check_setting_int(CFG, 'SearchScan', 'scan_interval', '10')
         SEARCHRSS_INTERVAL = check_setting_int(CFG, 'SearchScan', 'searchrss_interval', '20')
@@ -663,6 +662,7 @@ def initialize():
 
         __INITIALIZED__ = True
         return True
+
 
 def config_write():
     check_section('General')
@@ -870,9 +870,10 @@ def config_write():
     with open(CONFIGFILE, 'w') as configfile:
         CFG.write(configfile)
 
+
 def add_newz_slot():
     count = len(NEWZNAB_PROV)
-    if count == 0 or len(CFG.get('Newznab%i' % int(count-1), 'HOST')):
+    if count == 0 or len(CFG.get('Newznab%i' % int(count - 1), 'HOST')):
         newz_name = 'Newznab%i' % count
         check_section(newz_name)
         CFG.set(newz_name, 'ENABLED', False)
@@ -884,11 +885,12 @@ def add_newz_slot():
                              "NZEDB": 0,
                              "HOST": '',
                              "API": ''
-                           })
-                                     
+                             })
+
+
 def add_torz_slot():
     count = len(TORZNAB_PROV)
-    if count == 0 or len(CFG.get('Torznab%i' % int(count-1), 'HOST')):
+    if count == 0 or len(CFG.get('Torznab%i' % int(count - 1), 'HOST')):
         torz_name = 'Torznab%i' % count
         check_section(torz_name)
         CFG.set(torz_name, 'ENABLED', False)
@@ -898,7 +900,9 @@ def add_torz_slot():
                              "ENABLED": 0,
                              "HOST": '',
                              "API": ''
-                           })      
+                             })
+
+
 def USE_NZB():
     for provider in NEWZNAB_PROV:
         if bool(provider['ENABLED']):
@@ -910,8 +914,8 @@ def USE_NZB():
 
 
 def add_rss_slot():
-    count = len(RSS_PROV) 
-    if count == 0 or len(CFG.get('RSS_%i' % int(count-1), 'HOST')):
+    count = len(RSS_PROV)
+    if count == 0 or len(CFG.get('RSS_%i' % int(count - 1), 'HOST')):
         rss_name = 'RSS_%i' % count
         check_section(rss_name)
         CFG.set(rss_name, 'ENABLED', False)
@@ -919,11 +923,12 @@ def add_rss_slot():
         CFG.set(rss_name, 'USER', '')
         CFG.set(rss_name, 'PASS', '')
         RSS_PROV.append({"NAME": rss_name,
-                             "ENABLED": 0,
-                             "HOST": '',
-                             "USER": '',
-                             "PASS": ''
-                           })      
+                         "ENABLED": 0,
+                         "HOST": '',
+                         "USER": '',
+                         "PASS": ''
+                         })
+
 
 def USE_RSS():
     for provider in RSS_PROV:
@@ -931,17 +936,19 @@ def USE_RSS():
             return True
     return False
 
+
 def USE_TOR():
     if bool(KAT):
         return True
     return False
-    
+
+
 def build_bookstrap_themes():
     themelist = []
     if not os.path.isdir(os.path.join(PROG_DIR, 'data/interfaces/bookstrap/')):
-        return themelist #  return empty if bookstrap interface not installed
+        return themelist  # return empty if bookstrap interface not installed
 
-    URL = 'http://bootswatch.com/api/3.json' 
+    URL = 'http://bootswatch.com/api/3.json'
     USER_AGENT = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'
     request = urllib2.Request(URL)
 
@@ -950,11 +957,11 @@ def build_bookstrap_themes():
 
     # bootswatch insists on having a user-agent
     request.add_header('User-Agent', USER_AGENT)
-    
+
     try:
         resp = urllib2.urlopen(request, timeout=30)
     except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
-        logger.debug("Error getting bookstrap themes : %s" % str(e))
+        logger.debug("Error getting bookstrap themes : " + e.reason)
         return themelist
 
     if str(resp.getcode()).startswith("2"):
@@ -974,13 +981,13 @@ def build_bookstrap_themes():
 def build_monthtable():
     if len(formatter.getList(IMP_MONTHLANG)) == 0:  # any extra languages wanted?
         return
-    try:        
+    try:
         current_locale = locale.setlocale(locale.LC_ALL, '')  # read current state.
         # getdefaultlocale() doesnt seem to work as expected on windows, returns 'None'
     except locale.Error as e:
         logger.debug("Error getting current locale : %s" % str(e))
         return
-        
+
     lang = str(current_locale)
     if not lang.startswith('en_'):  # en_ is preloaded
         MONTHNAMES[0].append(lang)
@@ -1026,6 +1033,7 @@ def build_monthtable():
             except:
                 logger.warn("Unable to get a list of alternatives")
             logger.info("Set locale back to entry state %s" % current_locale)
+
 
 def daemonize():
     """

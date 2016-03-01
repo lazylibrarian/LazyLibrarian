@@ -108,7 +108,7 @@ def search_tor_book(books=None, reset=False):
     else:
         logger.info("TORSearch for Wanted items complete, found %s books" % tor_count)
 
-    if reset == True:
+    if reset:
         common.schedule_job(action='Restart', target='search_tor_book')
 
 
@@ -137,13 +137,13 @@ def processResultList(resultlist, book, searchtype):
         torAuthor_match = fuzz.token_set_ratio(author, tor_Title)
         torBook_match = fuzz.token_set_ratio(title, tor_Title)
         logger.debug(u"TOR author/book Match: %s/%s for %s" % (torAuthor_match, torBook_match, tor_Title))
-        
+
         # tor_Title_match = fuzz.token_set_ratio(book['searchterm'], tor_Title)
         # logger.debug("Torrent Title Match %: " + str(tor_Title_match) + " for " + tor_Title)
         # if (tor_Title_match >= match_ratio):
 
         rejected = False
-       
+
         for word in reject_list:
             if word in tor_Title.lower() and not word in author.lower() and not word in title_lower():
                 rejected = True
@@ -194,7 +194,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         lazylibrarian.TOR_DOWNLOADER_UTORRENT or
         lazylibrarian.TOR_DOWNLOADER_QBITTORRENT or
         lazylibrarian.TOR_DOWNLOADER_BLACKHOLE or
-        lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
+            lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
 
         if tor_url.startswith('magnet'):
             torrent = tor_url  # allow magnet link to write to blackhole and hash to utorrent
@@ -242,7 +242,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                 logger.warn('Error fetching torrent from url: ' + tor_url + ' %s' % e.reason)
                 return False
 
-        if (lazylibrarian.TOR_DOWNLOADER_BLACKHOLE):
+        if lazylibrarian.TOR_DOWNLOADER_BLACKHOLE:
             tor_title = common.removeDisallowedFilenameChars(tor_title)
             logger.debug("Sending %s to blackhole" % tor_title)
             tor_name = str.replace(str(tor_title), ' ', '_')

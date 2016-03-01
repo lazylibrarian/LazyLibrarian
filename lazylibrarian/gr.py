@@ -110,7 +110,7 @@ class GoodReads:
             if not rootxml:
                 logger.debug("Error requesting results")
                 return
-                
+
             resultxml = rootxml.getiterator('work')
             resultcount = 0
             for author in resultxml:
@@ -221,7 +221,7 @@ class GoodReads:
         if not rootxml:
             logger.debug("Error requesting authorid")
             return authorlist
-            
+
         resultxml = rootxml.getiterator('author')
 
         if not len(resultxml):
@@ -251,7 +251,7 @@ class GoodReads:
         if not rootxml:
             logger.debug("Error requesting author info")
             return author_dict
-            
+
         resultxml = rootxml.find('author')
 
         if not len(resultxml):
