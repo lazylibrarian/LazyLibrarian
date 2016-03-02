@@ -105,7 +105,7 @@ class GoodReads:
             try:
                 rootxml, in_cache = self.get_request(set_url)
             except Exception as e:
-                logger.error("Error finding results: " + str(e))
+                logger.error("Error finding results: %s" % e)
                 return
             if not rootxml:
                 logger.debug("Error requesting results")
@@ -216,7 +216,7 @@ class GoodReads:
         try:
             rootxml, in_cache = self.get_request(URL)
         except Exception as e:
-            logger.error("Error finding authorid: " + str(e) + str(URL))
+            logger.error("Error finding authorid: %s, %s" % (e, URL))
             return authorlist
         if not rootxml:
             logger.debug("Error requesting authorid")
@@ -246,7 +246,7 @@ class GoodReads:
         try:
             rootxml, in_cache = self.get_request(URL)
         except Exception as e:
-            logger.error("Error getting author info: " + str(e))
+            logger.error("Error getting author info: %s" % e)
             return author_dict
         if not rootxml:
             logger.debug("Error requesting author info")
@@ -290,7 +290,7 @@ class GoodReads:
         try:
             rootxml, in_cache = self.get_request(URL)
         except Exception as e:
-            logger.error("Error fetching author books: " + str(e))
+            logger.error("Error fetching author books: %s" % e)
             return books_dict
         if not rootxml:
             logger.debug("Error requesting author books")
@@ -413,7 +413,7 @@ class GoodReads:
                                         logger.debug(u"LT language: " + bookLanguage)
                                 except Exception as e:
                                     find_field = "id"  # reset the field to search on goodreads
-                                    logger.error("Error finding LT language result: ", e)
+                                    logger.error("Error finding LT language result: %s" % e)
 
                         if (find_field == 'id'):
                             # [or bookLanguage == "Unknown"] no earlier match, we'll have to search the goodreads api
@@ -438,7 +438,7 @@ class GoodReads:
                                                 lazylibrarian.LAST_GOODREADS = time_now
                                             bookLanguage = BOOK_rootxml.find('./book/language_code').text
                                     except Exception as e:
-                                        logger.error("Error finding book results: ", e)
+                                        logger.error("Error finding book results: %s" % e)
                                     if not in_cache:
                                         gr_lang_hits = gr_lang_hits + 1
                                     if not bookLanguage:
@@ -459,7 +459,7 @@ class GoodReads:
                                     # continue
 
                             except Exception as e:
-                                logger.debug(u"An error has occured: " + str(e))
+                                logger.debug(u"An error has occured: %s" % e)
 
                         if bookLanguage not in valid_langs:
                             logger.debug('Skipped a book with language %s' % bookLanguage)
@@ -553,7 +553,7 @@ class GoodReads:
                             api_hits = api_hits + 1
                 except Exception as e:
                     resultxml = None
-                    logger.error("Error finding next page of results: " + str(e))
+                    logger.error("Error finding next page of results: %s" % e)
 
                 if resultxml is not None:
                     if all(False for book in resultxml):  # returns True if iterator is empty
@@ -629,7 +629,7 @@ class GoodReads:
                 logger.debug("Error requesting book")
                 return
         except Exception as e:
-            logger.error("Error finding book: " + str(e))
+            logger.error("Error finding book: %s" % e)
             return
 
         bookLanguage = rootxml.find('./book/language_code').text

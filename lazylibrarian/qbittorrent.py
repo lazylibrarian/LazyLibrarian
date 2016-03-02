@@ -66,7 +66,7 @@ class qbittorrentclient(object):
         try:
             response = self.opener.open(base_url + '/login', login_data)
         except urllib2.URLError as err:
-            logger.debug('Error getting SID. qBittorrent responded with error: ' + str(err.reason))
+            logger.debug('Error getting SID. qBittorrent responded with error: %s' % err.reason)
             return
         for cookie in self.cookiejar:
             logger.debug('login cookie: ' + cookie.name + ', value: ' + cookie.value)
@@ -113,7 +113,7 @@ class qbittorrentclient(object):
             return True
         except urllib2.URLError as err:
             logger.debug('Failed URL: %s' % url)
-            logger.debug('QBitTorrent webUI raised the following error: %s' % str(err))
+            logger.debug('QBitTorrent webUI raised the following error: %s' % err.reason)
             return False
 
     def _get_list(self, **args):

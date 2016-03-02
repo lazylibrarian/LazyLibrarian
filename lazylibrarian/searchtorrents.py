@@ -239,7 +239,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                     torrent = response.read()
 
             except (urllib2.URLError, socket.timeout) as e:
-                logger.warn('Error fetching torrent from url: ' + tor_url + ' %s' % e.reason)
+                logger.warn('Error fetching torrent from url: %s, %s' % (tor_url, e.reason))
                 return False
 
         if lazylibrarian.TOR_DOWNLOADER_BLACKHOLE:

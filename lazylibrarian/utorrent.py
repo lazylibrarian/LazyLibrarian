@@ -69,7 +69,7 @@ class utorrentclient(object):
         try:
             response = self.opener.open(url)
         except urllib2.HTTPError as err:
-            logger.debug('URL: ' + str(url))
+            logger.debug('URL: %s' % url)
             logger.debug('Error getting Token. uTorrent responded with error: ' + str(err))
         match = re.search(utorrentclient.TOKEN_REGEX, response.read())
         return match.group(1)
@@ -144,7 +144,7 @@ class utorrentclient(object):
             response = self.opener.open(request)
             return response.code, json.loads(response.read())
         except urllib2.HTTPError as err:
-            logger.debug('URL: ' + str(url))
+            logger.debug('URL: %s' % url)
             logger.debug('uTorrent webUI raised the following error: ' + str(err))
 
 

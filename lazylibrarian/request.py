@@ -85,7 +85,7 @@ def request_response(url, method="get", auto_raise=True,
         else:
             logger.error(
                 "SSL error raised during connection, with certificate "
-                "verification turned off: %s", e)
+                "verification turned off: %s" % e)
     except requests.ConnectionError:
         logger.error(
             "Unable to connect to remote host. Check if the remote "
@@ -104,8 +104,7 @@ def request_response(url, method="get", auto_raise=True,
                 cause = "unknown"
 
             logger.error(
-                "Request raise HTTP error with status code %d (%s).",
-                e.response.status_code, cause)
+                "Request raise HTTP error with status code %d (%s)." % (e.response.status_code, cause))
 
             # Debug response
             if lazylibrarian.VERBOSE:
@@ -113,7 +112,7 @@ def request_response(url, method="get", auto_raise=True,
         else:
             logger.error("Request raised HTTP error.")
     except requests.RequestException as e:
-        logger.error("Request raised exception: %s", e)
+        logger.error("Request raised exception: %s" % e)
 
 
 def request_soup(url, **kwargs):
