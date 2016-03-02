@@ -212,7 +212,7 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
             nzbfile = urllib2.urlopen(req, timeout=90).read()
 
         except (urllib2.URLError, socket.timeout) as e:
-            logger.warn('Error fetching nzb from url: ' + nzburl + ' %s' % e.reason)
+            logger.warn('Error fetching nzb from url: %s, %s' % (nzburl, e.reason))
             nzbfile = False
 
         if nzbfile:

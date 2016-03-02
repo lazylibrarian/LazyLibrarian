@@ -56,7 +56,9 @@ def SABnzbd(title=None, nzburl=None):
         return False
 
     except urllib2.HTTPError as e:
-        logger.error(u"Invalid SAB host, check your config. Current host: %s" % HOST)
+        logger.error(
+            u"Invalid SAB host, check your config. Current host: %s" %
+            HOST)
         return False
 
     result = request.read().strip()

@@ -605,7 +605,7 @@ def cache_cover(img_url):
     try:
         resp = urllib2.urlopen(request, timeout=30)
     except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
-        logger.debug("Error getting image : %s" % str(e))
+        logger.debug("Error getting image : %s" % e.reason)
         return img_url, False
 
     if str(resp.getcode()).startswith("2"):

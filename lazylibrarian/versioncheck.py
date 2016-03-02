@@ -289,8 +289,7 @@ def updateVersionFile(new_version_id):
             ver_file.close()
         except IOError as e:
             logger.error(
-                u"(updateVersionFile) Unable to write current version to version.txt, update not complete: " +
-                e)
+                u"(updateVersionFile) Unable to write current version to version.txt, update not complete: %s" % e)
 
 
 def update():
@@ -333,7 +332,11 @@ def update():
             logger.info('(update) Downloading update from: ' + tar_download_url)
             data = urllib2.urlopen(tar_download_url, timeout=30)
         except (IOError, urllib2.URLError, socket.timeout) as e:
-            logger.error("(update) Unable to retrieve new version from " + tar_download_url + ", can't update: %s" % e)
+            logger.error(
+                "(update) Unable to retrieve new version from " +
+                tar_download_url +
+                ", can't update: %s" %
+                e.reason)
             return
 
         download_name = data.geturl().split('/')[-1]

@@ -58,14 +58,14 @@ def sendNZB(nzb):
 
     except httplib.socket.error as e:
         logger.error(u"Please check your NZBget host and port (if it is running). \
-            NZBget is not responding to this combination")
+            NZBget is not responding to this combination: %s" % e)
         return False
 
     except xmlrpclib.ProtocolError as e:
         if e.errmsg == "Unauthorized":
             logger.error(u"NZBget password is incorrect.")
         else:
-            logger.error(u"Protocol Error: " + e.errmsg)
+            logger.error(u"Protocol Error: %s" % e.errmsg)
         return False
 
     nzbcontent64 = None

@@ -449,7 +449,7 @@ def processAutoAdd(src_path=None):
                 try:
                     os.chmod(dstname, 0o666)  # make rw for calibre
                 except OSError as e:
-                    logger.warn("Could not set permission of %s because [%s]" % (dstname, str(e)))
+                    logger.warn("Could not set permission of %s because [%s]" % (dstname, e))
                     # permissions might not be fatal, continue
 
         except OSError as why:
