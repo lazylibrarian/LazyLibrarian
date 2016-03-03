@@ -115,7 +115,7 @@ class WebInterface(object):
         lazylibrarian.LAUNCH_BROWSER = bool(launch_browser)
         lazylibrarian.PROXY_HOST = proxy_host
         lazylibrarian.PROXY_TYPE = proxy_type
-        lazylibrarian.LOGDIR = formatter.latinToAscii(logdir)
+        lazylibrarian.LOGDIR = logdir
         lazylibrarian.LOGLIMIT = formatter.check_int(loglimit, 500)
         lazylibrarian.LOGLEVEL = formatter.check_int(loglevel, 2)
         lazylibrarian.LOGFILES = formatter.check_int(logfiles, 10)
@@ -127,7 +127,7 @@ class WebInterface(object):
         lazylibrarian.IMP_SINGLEBOOK = bool(imp_singlebook)
         lazylibrarian.IMP_PREFLANG = imp_preflang
         lazylibrarian.IMP_MONTHLANG = imp_monthlang
-        lazylibrarian.IMP_AUTOADD = formatter.latinToAscii(imp_autoadd)
+        lazylibrarian.IMP_AUTOADD = imp_autoadd
         lazylibrarian.IMP_CONVERT = imp_convert
 
         lazylibrarian.SAB_HOST = sab_host
@@ -145,17 +145,15 @@ class WebInterface(object):
         lazylibrarian.NZBGET_PRIORITY = formatter.check_int(nzbget_priority, 0)
 
         lazylibrarian.DESTINATION_COPY = bool(destination_copy)
-        lazylibrarian.DESTINATION_DIR = formatter.latinToAscii(destination_dir)
-        lazylibrarian.ALTERNATE_DIR = formatter.latinToAscii(alternate_dir)
-        lazylibrarian.DOWNLOAD_DIR = formatter.latinToAscii(download_dir)
-        lazylibrarian.USENET_RETENTION = formatter.check_int(
-            usenet_retention, 0)
-        lazylibrarian.NZB_BLACKHOLEDIR = formatter.latinToAscii(
-            nzb_blackholedir)
+        lazylibrarian.DESTINATION_DIR = destination_dir
+        lazylibrarian.ALTERNATE_DIR = alternate_dir
+        lazylibrarian.DOWNLOAD_DIR = download_dir
+        lazylibrarian.USENET_RETENTION = formatter.check_int(usenet_retention, 0)
+        lazylibrarian.NZB_BLACKHOLEDIR = nzb_blackholedir
         lazylibrarian.NZB_DOWNLOADER_SABNZBD = bool(nzb_downloader_sabnzbd)
         lazylibrarian.NZB_DOWNLOADER_NZBGET = bool(nzb_downloader_nzbget)
         lazylibrarian.NZB_DOWNLOADER_BLACKHOLE = bool(nzb_downloader_blackhole)
-        lazylibrarian.TORRENT_DIR = formatter.latinToAscii(torrent_dir)
+        lazylibrarian.TORRENT_DIR = torrent_dir
         lazylibrarian.NUMBEROFSEEDERS = formatter.check_int(numberofseeders, 0)
         lazylibrarian.TOR_DOWNLOADER_BLACKHOLE = bool(tor_downloader_blackhole)
         lazylibrarian.TOR_DOWNLOADER_UTORRENT = bool(tor_downloader_utorrent)
@@ -211,10 +209,9 @@ class WebInterface(object):
         lazylibrarian.NEWBOOK_STATUS = newbook_status
         lazylibrarian.ADD_AUTHOR = bool(add_author)
 
-        lazylibrarian.EBOOK_DEST_FOLDER = formatter.latinToAscii(
-            ebook_dest_folder)
+        lazylibrarian.EBOOK_DEST_FOLDER = ebook_dest_folder
         lazylibrarian.EBOOK_DEST_FILE = ebook_dest_file
-        lazylibrarian.MAG_DEST_FOLDER = formatter.latinToAscii(mag_dest_folder)
+        lazylibrarian.MAG_DEST_FOLDER = mag_dest_folder
         lazylibrarian.MAG_DEST_FILE = mag_dest_file
         lazylibrarian.MAG_RELATIVE = bool(mag_relative)
 

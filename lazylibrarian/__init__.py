@@ -302,7 +302,8 @@ def check_setting_str(config, cfg_name, item_name, def_val, log=True):
         config.set(cfg_name, item_name, my_val)
     if log:
         logger.debug(item_name + " -> " + my_val)
-    return my_val
+
+    return my_val.decode('utf-8')
 
 
 def initialize():
@@ -676,7 +677,7 @@ def config_write():
     CFG.set('General', 'launch_browser', LAUNCH_BROWSER)
     CFG.set('General', 'proxy_host', PROXY_HOST)
     CFG.set('General', 'proxy_type', PROXY_TYPE)
-    CFG.set('General', 'logdir', LOGDIR)
+    CFG.set('General', 'logdir', LOGDIR.encode('utf-8'))
     CFG.set('General', 'loglimit', LOGLIMIT)
     CFG.set('General', 'loglevel', LOGLEVEL)
     CFG.set('General', 'logsize', LOGSIZE)
@@ -690,11 +691,11 @@ def config_write():
     CFG.set('General', 'imp_convert', IMP_CONVERT.strip())
     CFG.set('General', 'ebook_type', EBOOK_TYPE.lower())
     CFG.set('General', 'mag_type', MAG_TYPE.lower())
-    CFG.set('General', 'reject_words', REJECT_WORDS.lower())
-    CFG.set('General', 'destination_dir', DESTINATION_DIR)
-    CFG.set('General', 'alternate_dir', ALTERNATE_DIR)
+    CFG.set('General', 'reject_words', REJECT_WORDS.encode('utf-8').lower())
+    CFG.set('General', 'destination_dir', DESTINATION_DIR.encode('utf-8'))
+    CFG.set('General', 'alternate_dir', ALTERNATE_DIR.encode('utf-8'))
     CFG.set('General', 'destination_copy', DESTINATION_COPY)
-    CFG.set('General', 'download_dir', DOWNLOAD_DIR)
+    CFG.set('General', 'download_dir', DOWNLOAD_DIR.encode('utf-8'))
     CFG.set('General', 'cache_age', CACHE_AGE)
 #
     check_section('Git')
@@ -816,10 +817,10 @@ def config_write():
     CFG.set('LibraryScan', 'newbook_status', NEWBOOK_STATUS)
 #
     check_section('PostProcess')
-    CFG.set('PostProcess', 'ebook_dest_folder', EBOOK_DEST_FOLDER)
-    CFG.set('PostProcess', 'ebook_dest_file', EBOOK_DEST_FILE)
-    CFG.set('PostProcess', 'mag_dest_folder', MAG_DEST_FOLDER)
-    CFG.set('PostProcess', 'mag_dest_file', MAG_DEST_FILE)
+    CFG.set('PostProcess', 'ebook_dest_folder', EBOOK_DEST_FOLDER.encode('utf-8'))
+    CFG.set('PostProcess', 'ebook_dest_file', EBOOK_DEST_FILE.encode('utf-8'))
+    CFG.set('PostProcess', 'mag_dest_folder', MAG_DEST_FOLDER.encode('utf-8'))
+    CFG.set('PostProcess', 'mag_dest_file', MAG_DEST_FILE.encode('utf-8'))
     CFG.set('PostProcess', 'mag_relative', MAG_RELATIVE)
 #
     check_section('Twitter')
@@ -867,7 +868,7 @@ def config_write():
     CFG.set('NMA', 'nma_onsnatch', NMA_ONSNATCH)
     CFG.set('NMA', 'nma_ondownload', NMA_ONDOWNLOAD)
 
-    with open(CONFIGFILE, 'w') as configfile:
+    with open(CONFIGFILE, 'wb') as configfile:
         CFG.write(configfile)
 
 
