@@ -291,9 +291,8 @@ def search_magazines(mags=None, reset=False):
                                      nzbtitle_formatted, bookid))
                         bad_regex = bad_regex + 1
 
-            logger.info('Found %s results for %s.  %s are new, %s are old, %s fail date, %s fail name matching' % (
-                        total_nzbs, bookid, new_date, old_date, bad_date, bad_regex))
-            logger.info("%s, %s issues to download" % (bookid, to_snatch))
+            logger.info('Found %i results for %s. %i new, %i old, %i fail date, %i fail name: %i to download' % (
+                        total_nzbs, bookid, new_date, old_date, bad_date, bad_regex, to_snatch))
 
             for items in maglist:
                 if items['nzbmode'] == "torznab":

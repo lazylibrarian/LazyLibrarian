@@ -1390,7 +1390,7 @@ class WebInterface(object):
                 os.mkdir(lazylibrarian.LOGDIR)
                 lazylibrarian.LOGLIST = []
             except OSError as e:
-                logger.info(u'Failed to clear log: %s' % e)
+                logger.info(u'Failed to clear log: %s' % e.strerror)
         raise cherrypy.HTTPRedirect("logs")
     clearLog.exposed = True
 
