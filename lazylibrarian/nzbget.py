@@ -54,7 +54,7 @@ def sendNZB(nzb):
         if nzbGetRPC.writelog("INFO", "lazylibrarian connected to drop of %s any moment now." % (nzb.name + ".nzb")):
             logger.debug(u"Successfully connected to NZBget")
         else:
-            logger.info(u"Successfully connected to NZBget, but unable to send a message" % (nzb.name + ".nzb"))
+            logger.info(u"Successfully connected to NZBget, but unable to send %s" % (nzb.name + ".nzb"))
 
     except httplib.socket.error as e:
         logger.error(u"Please check your NZBget host and port (if it is running). \
