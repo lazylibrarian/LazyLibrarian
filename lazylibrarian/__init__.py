@@ -17,7 +17,6 @@ import subprocess
 import ConfigParser
 from lib.apscheduler.scheduler import Scheduler
 
-import threading
 import urllib2
 import socket
 import json

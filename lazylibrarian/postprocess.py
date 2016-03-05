@@ -74,8 +74,8 @@ def processDir(force=False, reset=False):
 
     try:
         downloads = os.listdir(processpath)
-    except OSError:
-        logger.error('Could not access [%s] directory ' % processpath)
+    except OSError as why:
+        logger.error('Could not access [%s] directory [%s]' % (processpath, why.strerror))
         return False
 
     myDB = database.DBConnection()
@@ -379,14 +379,14 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         try:
             os.remove(dest_path)
         except OSError as why:
-            logger.debug('Failed to delete %s, %s' % (dest_path, str(why)))
+            logger.debug('Failed to delete %s, %s' % (dest_path, why.strerror))
             return False
 
     if not os.path.exists(dest_path):
         try:
             os.makedirs(dest_path)
         except OSError as why:
-            logger.debug('Failed to create directory %s, %s' % (dest_path, str(why)))
+            logger.debug('Failed to create directory %s, %s' % (dest_path, why.strerror))
             return False
 
     # ok, we've got a target directory, try to copy only the files we want, renaming them on the fly.
@@ -448,12 +448,12 @@ def processAutoAdd(src_path=None):
                     return False
                 try:
                     os.chmod(dstname, 0o666)  # make rw for calibre
-                except OSError as e:
-                    logger.warn("Could not set permission of %s because [%s]" % (dstname, e))
+                except OSError as why:
+                    logger.warn("Could not set permission of %s because [%s]" % (dstname, why.strerror))
                     # permissions might not be fatal, continue
 
         except OSError as why:
-            logger.error('AutoAdd - Failed because [%s]' % str(why))
+            logger.error('AutoAdd - Failed because [%s]' % why.strerror)
             return False
 
     logger.info('Auto Add completed for [%s]' % dstname)
