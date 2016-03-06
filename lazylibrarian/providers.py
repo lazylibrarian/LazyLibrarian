@@ -99,120 +99,120 @@ def KAT(book=None):
 # sites and return the compiled results list from all sites back to the caller
 # We get called with searchType of "book", "mag", "general" etc
 #
+def get_capabilities(provider):
+    myDB = database.DBConnection()
+    match = myDB.action('SELECT * FROM capabilities where ProviderName = "%s"' % provider['HOST']).fetchone()
+    if match:
+        if formatter.age(match['UpdateDate']) > 30:
+            logger.debug('Cached capabilities for %s are too old' % provider['HOST'])
+            match = False
+    if match:
+        logger.debug('Loading cached capabilities for %s' % provider['HOST'])
+        provider['GeneralSearch'] = match['GeneralSearch']
+        provider['BookSearch'] = match['BookSearch']
+        provider['MagSearch'] = match['MagSearch']
+        provider['BookCat'] = match['BookCat']
+        provider['MagCat'] = match['MagCat']
+        provider['Extended'] = match['Extended']
+    else:
+        logger.debug('Requesting capabilities for %s' % provider['HOST'])
+        host = provider['HOST']
+        # set defaults in case we don't get any capabilities
+        provider['GeneralSearch'] = "search"
+        provider['BookSearch'] = "book"
+        provider['MagSearch'] = "" # no specific search for now
+        provider['BookCat'] = "7000,7020" # book, ebook
+        provider['MagCat'] = "7010",  # magazine
+        provider['Extended'] = "1"
+        
+        if not str(host)[:4] == "http":
+            host = 'http://' + host
+        URL = host + '/api?t=caps&apikey=' + provider['API']
+        USER_AGENT = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'
+        request = urllib2.Request(URL)
+        if lazylibrarian.PROXY_HOST:
+            request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
+        request.add_header('User-Agent', USER_AGENT)
+        resp = ""
+        try:
+            resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
+        except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
+            logger.debug("Error getting capabilities: %s" % e.reason)
+            resp = ""
+        if resp:
+            if str(resp.getcode()).startswith("2"):  # (200 OK etc)
+                logger.debug(u"Got capabilities for %s" % request.get_full_url())
+                source_xml = resp.read()  # .decode('utf-8')
+                data = ElementTree.fromstring(source_xml)
+                if len(data):
+                    logger.debug(u"Parsing xml for capabilities of %s" % URL)
+                    
+                    #attrib = data.find('searching/search').attrib
+                    #if 'available' in attrib and 'supportedParams' in attrib:
+                    #    if attrib['available'] == 'yes' and 'q' in attrib['supportedParams']:
+                    #        provider['GeneralSearch'] = "search"
+                    #attrib = data.find('searching/book-search').attrib
+                    #if 'available' in attrib:
+                    #    if attrib['available'] == 'yes':
+                    #        provider['BookSearch'] = "book"
+                    ########################################################################### 
+                    # book search isn't mentioned in the caps xml returned by
+                    # nzbplanet,jackett,oznzb,usenet-crawler, so we can't use it as a test
+                    # but the newznab+ ones usually support t=book and categories in 7000 range
+                    # whereas nZEDb ones don't support t=book and use categories in 8000 range
+                    categories = data.getiterator('category')
+                    for cat in categories:
+                        if 'name' in cat.attrib:
+                            if cat.attrib['name'] == 'Books':
+                                provider['BookCat'] = cat.attrib['id']
+                                if provider['BookCat'] == '7000':
+                                    provider['BookSearch'] = 'book'
+                                else:
+                                    provider['BookSearch'] = ''
+                                subcats = cat.getiterator('subcat')
+                                for subcat in subcats:
+                                    if subcat.attrib['name'] == 'Ebook':
+                                        provider['BookCat'] = "%s,%s" % (provider['BookCat'],subcat.attrib['id'])
+                                    if subcat.attrib['name'] == 'Magazines' or subcat.attrib['name'] == 'Mags':
+                                        provider['MagCat'] = subcat.attrib['id']
+                    logger.debug("Categories: Books %s : Mags %s" % (provider['BookCat'], provider['MagCat']))
+                else:
+                    logger.warn(u"Unable to get capabilities for %s: No data returned" % URL)
+            else:
+                logger.warn(u"Unable to get capabilities for %s: Got %s" % (URL, resp.getcode()))
+        
+        # insert new or default capabilities into database
+        controlValueDict = {"ProviderName": provider['HOST']}
+        newValueDict = {
+            "GeneralSearch":    provider['GeneralSearch'],
+            "BookSearch":       provider['BookSearch'],
+            "MagSearch":        provider['MagSearch'],
+            "BookCat":          str(provider['BookCat']),
+            "MagCat":           str(provider['MagCat']),
+            "Extended":         provider['Extended'],
+            "UpdateDate":       formatter.today()
+            }
 
+        myDB.upsert("capabilities", newValueDict, controlValueDict)
+    return provider
 
 def IterateOverNewzNabSites(book=None, searchType=None):
 
     resultslist = []
     providers = 0
-    myDB = database.DBConnection()
     
     for provider in lazylibrarian.NEWZNAB_PROV:
         if (provider['ENABLED']):
             # look up provider capabilities from db
             # append to provider[] GeneralSearch , BookSearch , MagSearch, BookCat, MagCat, Extended
-            
-            match = myDB.action('SELECT * FROM capabilities where ProviderName = "%s"' % provider['HOST']).fetchone()
-            if match:
-                if formatter.age(match['UpdateDate']) > 30:
-                    logger.debug('Cached capabilities for %s are too old' % provider['HOST'])
-                    match = False
-            if match:
-                logger.debug('Loading cached capabilities for %s' % provider['HOST'])
-                provider['GeneralSearch'] = match['GeneralSearch']
-                provider['BookSearch'] = match['BookSearch']
-                provider['MagSearch'] = match['MagSearch']
-                provider['BookCat'] = match['BookCat']
-                provider['MagCat'] = match['MagCat']
-                provider['Extended'] = match['Extended']
-            else:
-                logger.debug('Requesting capabilities for %s' % provider['HOST'])
-                host = provider['HOST']
-                # set defaults in case we don't get any capabilities
-                provider['GeneralSearch'] = "search"
-                provider['BookSearch'] = "book"
-                provider['MagSearch'] = "" # no specific search for now
-                provider['BookCat'] = "7000,7020" # book, ebook
-                provider['MagCat'] = "7010",  # magazine
-                provider['Extended'] = "1"
-                
-                if not str(host)[:4] == "http":
-                    host = 'http://' + host
-                URL = host + '/api?t=caps&apikey=' + provider['API']
-                USER_AGENT = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'
-                request = urllib2.Request(URL)
-                if lazylibrarian.PROXY_HOST:
-                    request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-                request.add_header('User-Agent', USER_AGENT)
-                resp = ""
-                try:
-                    resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
-                except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
-                    logger.debug("Error getting capabilities: %s" % e.reason)
-                    resp = ""
-                if resp:
-                    if str(resp.getcode()).startswith("2"):  # (200 OK etc)
-                        logger.debug(u"Got capabilities for %s" % request.get_full_url())
-                        source_xml = resp.read()  # .decode('utf-8')
-                        data = ElementTree.fromstring(source_xml)
-                        if len(data):
-                            logger.debug(u"Parsing xml for capabilities of %s" % URL)
-                            
-                            #attrib = data.find('searching/search').attrib
-                            #if 'available' in attrib and 'supportedParams' in attrib:
-                            #    if attrib['available'] == 'yes' and 'q' in attrib['supportedParams']:
-                            #        provider['GeneralSearch'] = "search"
-                            #attrib = data.find('searching/book-search').attrib
-                            #if 'available' in attrib:
-                            #    if attrib['available'] == 'yes':
-                            #        provider['BookSearch'] = "book"
-                            ########################################################################### 
-                            # book search isn't mentioned in the caps xml returned by
-                            # nzbplanet,jackett,oznzb,usenet-crawler, so we can't use it as a test
-                            # but the newznab+ ones usually support t=book and categories in 7000 range
-                            # whereas nZEDb ones don't support t=book and use categories in 8000 range
-                            categories = data.getiterator('category')
-                            for cat in categories:
-                                if 'name' in cat.attrib:
-                                    if cat.attrib['name'] == 'Books':
-                                        provider['BookCat'] = cat.attrib['id']
-
-                                        if provider['BookCat'] == '7000':
-                                            provider['BookSearch'] = 'book'
-                                        else:
-                                            provider['BookSearch'] = ''
-                                        subcats = cat.getiterator('subcat')
-                                        for subcat in subcats:
-                                            if subcat.attrib['name'] == 'Ebook':
-                                                provider['BookCat'] = "%s,%s" % (provider['BookCat'],subcat.attrib['id'])
-                                            if subcat.attrib['name'] == 'Magazines' or subcat.attrib['name'] == 'Mags':
-                                                provider['MagCat'] = subcat.attrib['id']
-                            logger.debug("Categories: Books %s : Mags %s" % (provider['BookCat'], provider['MagCat']))
-                        else:
-                            logger.warn(u"Unable to get capabilities for %s: No data returned" % URL)
-                    else:
-                        logger.warn(u"Unable to get capabilities for %s: Got %s" % (URL, resp.getcode()))
-                
-                # insert new or default capabilities into database
-                controlValueDict = {"ProviderName": provider['HOST']}
-                newValueDict = {
-                    "GeneralSearch":    provider['GeneralSearch'],
-                    "BookSearch":       provider['BookSearch'],
-                    "MagSearch":        provider['MagSearch'],
-                    "BookCat":          str(provider['BookCat']),
-                    "MagCat":           str(provider['MagCat']),
-                    "Extended":         provider['Extended'],
-                    "UpdateDate":       formatter.today()
-                    }
-
-                myDB.upsert("capabilities", newValueDict, controlValueDict)
-        
+            provider = get_capabilities(provider)
             providers += 1
             logger.debug('[IterateOverNewzNabSites] - %s' % provider['HOST'])
             resultslist += NewzNabPlus(book, provider, searchType, "nzb")
 
     for provider in lazylibrarian.TORZNAB_PROV:
         if (provider['ENABLED']):
+            provider = get_capabilities(provider)
             providers += 1
             logger.debug('[IterateOverTorzNabSites] - %s' % provider['HOST'])
             resultslist += NewzNabPlus(book, provider,
@@ -412,7 +412,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
             params = {
                 "t": provider['GeneralSearch'],
                 "apikey": api_key,
-                "q": authorname + ' ' + bookName,
+                "q": authorname + ' ' + bookname,
                 "cat": provider['BookCat']
             }    
     elif searchType == "shortbook":
@@ -435,7 +435,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
             params = {
                 "t": provider['GeneralSearch'],
                 "apikey": api_key,
-                "q": authorname + ' ' + bookName,
+                "q": authorname + ' ' + bookname,
                 "cat": provider['BookCat']
             }            
     elif searchType == "author":
