@@ -128,11 +128,11 @@ def get_capabilities(provider):
         if not str(host)[:4] == "http":
             host = 'http://' + host
         URL = host + '/api?t=caps&apikey=' + provider['API']
-        USER_AGENT = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'
+
         request = urllib2.Request(URL)
         if lazylibrarian.PROXY_HOST:
             request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-        request.add_header('User-Agent', USER_AGENT)
+        request.add_header('User-Agent', common.USER_AGENT)
         resp = ""
         try:
             resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
@@ -351,10 +351,6 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
         if lazylibrarian.PROXY_HOST:
             request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
         request.add_header('User-Agent', common.USER_AGENT)
-        # do we really want to cache this, new feeds/torrents are added all the time
-        # if we do, call goodreads.get_request(request, expireafter)
-        # where expireafter is max cache age in days (0 for non-cached, 7 for up to a week old, etc.
-        # Default is 30 days)
         resp = urllib2.urlopen(request, timeout=90)
         try:
             data = ElementTree.parse(resp)
