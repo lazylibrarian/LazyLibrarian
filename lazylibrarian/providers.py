@@ -112,7 +112,7 @@ def IterateOverNewzNabSites(book=None, searchType=None):
             # look up provider capabilities from db
             # append to provider[] GeneralSearch , BookSearch , MagSearch, BookCat, MagCat, Extended
             
-            match = myDB.action('SELECT * FROM providers where ProviderName = "%s"' % provider['HOST']).fetchone()
+            match = myDB.action('SELECT * FROM capabilities where ProviderName = "%s"' % provider['HOST']).fetchone()
             if match:
                 if formatter.age(match['UpdateDate']) > 30:
                     logger.debug('Cached capabilities for %s are too old' % provider['HOST'])
@@ -205,7 +205,7 @@ def IterateOverNewzNabSites(book=None, searchType=None):
                     "UpdateDate":       formatter.today()
                     }
 
-                myDB.upsert("providers", newValueDict, controlValueDict)
+                myDB.upsert("capabilities", newValueDict, controlValueDict)
         
             providers += 1
             logger.debug('[IterateOverNewzNabSites] - %s' % provider['HOST'])
