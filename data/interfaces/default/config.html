@@ -437,17 +437,9 @@
                     else:
                         checked = ''
                     %>
-                    <%
-                    if prov['NZEDB'] == True:
-                        checked2 = 'checked="checked"'
-                    else:
-                        checked2 = ''
-                    %>
                     <input type="checkbox" name="newznab[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
  	    		    <input type="text" placeholder="Enter API Here" name="newznab[${loop.index}][api]" value="${prov['API']}" size="26" maxlength="40">
  	    		    <input type="text" placeholder="Enter URL Here" name="newznab[${loop.index}][host]" value="${prov['HOST']}" size="26" maxlength="100">
- 	    		    <br><input type="checkbox" name="newznab[${loop.index}][nzedb]" value=1 ${checked2} style="margin-bottom:4px;" />
- 	    		    <label>Tick for nZEDb, blank for NewzNab+</label><br> 
  	    		    <br>
  	    		    %endfor
                 </fieldset>

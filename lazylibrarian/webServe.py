@@ -261,8 +261,6 @@ class WebInterface(object):
         while count < len(lazylibrarian.NEWZNAB_PROV):
             lazylibrarian.NEWZNAB_PROV[count]['ENABLED'] = bool(
                 kwargs.get('newznab[%i][enabled]' % count, False))
-            lazylibrarian.NEWZNAB_PROV[count]['NZEDB'] = bool(
-                kwargs.get('newznab[%i][nzedb]' % count, False))
             lazylibrarian.NEWZNAB_PROV[
                 count][
                     'HOST'] = kwargs.get(
