@@ -445,6 +445,21 @@ def initialize():
         SAB_API = check_setting_str(CFG, 'SABnzbd', 'sab_api', '')
         SAB_CAT = check_setting_str(CFG, 'SABnzbd', 'sab_cat', '')
 
+        # legacy name conversion, separate out nzbget host/port
+        if not CFG.has_option('NZBGet', 'nzbget_port'):
+            port = 0
+            host = check_setting_str(CFG, 'NZBGet', 'nzbget_host', '')
+            if host.startswith('http'):
+                hostpart = 2
+            else:
+                hostpart = 1
+            words = host.split(':')
+            if len(words) > hostpart:
+                host = ':'.join(words[:hostpart])
+                port = ':'.join(words[hostpart:])
+            CFG.set('NZBGet', 'nzbget_port', port)
+            CFG.set('NZBGet', 'nzbget_host', host)
+
         NZBGET_HOST = check_setting_str(CFG, 'NZBGet', 'nzbget_host', '')
         NZBGET_PORT = check_setting_int(CFG, 'NZBGet', 'nzbget_port', '0')
         NZBGET_USER = check_setting_str(CFG, 'NZBGet', 'nzbget_user', '')
