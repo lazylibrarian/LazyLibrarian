@@ -141,16 +141,19 @@ NUMBEROFSEEDERS = 10
 TORRENT_DIR = None
 
 UTORRENT_HOST = None
+UTORRENT_PORT = 0
 UTORRENT_USER = None
 UTORRENT_PASS = None
 UTORRENT_LABEL = None
 
 QBITTORRENT_HOST = None
+QBITTORRENT_PORT = 0
 QBITTORRENT_USER = None
 QBITTORRENT_PASS = None
 QBITTORRENT_LABEL = None
 
 TRANSMISSION_HOST = None
+TRANSMISSION_PORT = 0
 TRANSMISSION_USER = None
 TRANSMISSION_PASS = None
 
@@ -270,7 +273,7 @@ def check_setting_bool(config, cfg_name, item_name, def_val, log=True):
         check_section(cfg_name)
         config.set(cfg_name, item_name, my_val)
     if log:
-        logger.debug(item_name + " -> " + str(my_val))
+        logger.debug(cfg_name + ":" + item_name + " -> " + str(my_val))
     return my_val
 
 
@@ -283,7 +286,7 @@ def check_setting_int(config, cfg_name, item_name, def_val, log=True):
         check_section(cfg_name)
         config.set(cfg_name, item_name, my_val)
     if log:
-        logger.debug(item_name + " -> " + str(my_val))
+        logger.debug(cfg_name + ":" + item_name + " -> " + str(my_val))
     return my_val
 
 
@@ -301,7 +304,7 @@ def check_setting_str(config, cfg_name, item_name, def_val, log=True):
         check_section(cfg_name)
         config.set(cfg_name, item_name, my_val)
     if log:
-        logger.debug(item_name + " -> " + my_val)
+        logger.debug(cfg_name + ":" + item_name + " -> " + my_val)
 
     return my_val.decode('utf-8')
 
@@ -332,13 +335,13 @@ def initialize():
             TOR_DOWNLOADER_QBITTORRENT, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
             USE_PUSHBULLET, PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, \
             PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, LAST_GOODREADS, LAST_LIBRARYTHING, \
-            UTORRENT_HOST, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
-            QBITTORRENT_HOST, QBITTORRENT_USER, QBITTORRENT_PASS, QBITTORRENT_LABEL, \
+            UTORRENT_HOST, UTORRENT_PORT, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
+            QBITTORRENT_HOST, QBITTORRENT_PORT, QBITTORRENT_USER, QBITTORRENT_PASS, QBITTORRENT_LABEL, \
             USE_PUSHOVER, PUSHOVER_ONSNATCH, PUSHOVER_KEYS, PUSHOVER_APITOKEN, \
             PUSHOVER_PRIORITY, PUSHOVER_ONDOWNLOAD, PUSHOVER_DEVICE, \
             USE_ANDROIDPN, ANDROIDPN_NOTIFY_ONSNATCH, ANDROIDPN_NOTIFY_ONDOWNLOAD, \
             ANDROIDPN_URL, ANDROIDPN_USERNAME, ANDROIDPN_BROADCAST, \
-            TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PASS, TRANSMISSION_USER, \
+            TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PORT, TRANSMISSION_PASS, TRANSMISSION_USER, \
             TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, \
             FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, \
             USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
@@ -565,17 +568,65 @@ def initialize():
         NUMBEROFSEEDERS = check_setting_int(CFG, 'TORRENT', 'numberofseeders', 10)
         TORRENT_DIR = check_setting_str(CFG, 'TORRENT', 'torrent_dir', '')
 
+        # legacy name conversion, separate out utorrent host/port
+        if not CFG.has_option('UTORRENT', 'utorrent_port'):
+            port = 0
+            host = check_setting_str(CFG, 'UTORRENT', 'utorrent_host', '')
+            if host.startswith('http'):
+                hostpart = 2
+            else:
+                hostpart = 1
+            words = host.split(':')
+            if len(words) > hostpart:
+                host = ':'.join(words[:hostpart])
+                port = ':'.join(words[hostpart:])
+            CFG.set('UTORRENT', 'utorrent_port', port)
+            CFG.set('UTORRENT', 'utorrent_host', host)
+
         UTORRENT_HOST = check_setting_str(CFG, 'UTORRENT', 'utorrent_host', '')
+        UTORRENT_PORT = check_setting_int(CFG, 'UTORRENT', 'utorrent_port', 0)
         UTORRENT_USER = check_setting_str(CFG, 'UTORRENT', 'utorrent_user', '')
         UTORRENT_PASS = check_setting_str(CFG, 'UTORRENT', 'utorrent_pass', '')
         UTORRENT_LABEL = check_setting_str(CFG, 'UTORRENT', 'utorrent_label', '')
 
+        # legacy name conversion, separate out qbittorrent host/port
+        if not CFG.has_option('QBITTORRENT', 'qbittorrent_port'):
+            port = 0
+            host = check_setting_str(CFG, 'QBITTORRENT', 'qbittorrent_host', '')
+            if host.startswith('http'):
+                hostpart = 2
+            else:
+                hostpart = 1
+            words = host.split(':')
+            if len(words) > hostpart:
+                host = ':'.join(words[:hostpart])
+                port = ':'.join(words[hostpart:])
+            CFG.set('QBITTORRENT', 'qbittorrent_port', port)
+            CFG.set('QBITTORRENT', 'qbittorrent_host', host)
+
         QBITTORRENT_HOST = check_setting_str(CFG, 'QBITTORRENT', 'qbittorrent_host', '')
+        QBITTORRENT_PORT = check_setting_int(CFG, 'QBITTORRENT', 'qbittorrent_port', 0)
         QBITTORRENT_USER = check_setting_str(CFG, 'QBITTORRENT', 'qbittorrent_user', '')
         QBITTORRENT_PASS = check_setting_str(CFG, 'QBITTORRENT', 'qbittorrent_pass', '')
         QBITTORRENT_LABEL = check_setting_str(CFG, 'QBITTORRENT', 'qbittorrent_label', '')
 
+        # legacy name conversion, separate out transmission host/port
+        if not CFG.has_option('TRANSMISSION', 'transmission_port'):
+            port = 0
+            host = check_setting_str(CFG, 'TRANSMISSION', 'transmission_host', '')
+            if host.startswith('http'):
+                hostpart = 2
+            else:
+                hostpart = 1
+            words = host.split(':')
+            if len(words) > hostpart:
+                host = ':'.join(words[:hostpart])
+                port = ':'.join(words[hostpart:])
+            CFG.set('TRANSMISSION', 'transmission_port', port)
+            CFG.set('TRANSMISSION', 'transmission_host', host)
+
         TRANSMISSION_HOST = check_setting_str(CFG, 'TRANSMISSION', 'transmission_host', '')
+        TRANSMISSION_PORT = check_setting_int(CFG, 'TRANSMISSION', 'transmission_port', 0)
         TRANSMISSION_USER = check_setting_str(CFG, 'TRANSMISSION', 'transmission_user', '')
         TRANSMISSION_PASS = check_setting_str(CFG, 'TRANSMISSION', 'transmission_pass', '')
 
@@ -794,18 +845,21 @@ def config_write():
 #
     check_section('UTORRENT')
     CFG.set('UTORRENT', 'utorrent_host', UTORRENT_HOST)
+    CFG.set('UTORRENT', 'utorrent_port', UTORRENT_PORT)
     CFG.set('UTORRENT', 'utorrent_user', UTORRENT_USER)
     CFG.set('UTORRENT', 'utorrent_pass', UTORRENT_PASS)
     CFG.set('UTORRENT', 'utorrent_label', UTORRENT_LABEL)
 #
     check_section('QBITTORRENT')
     CFG.set('QBITTORRENT', 'qbittorrent_host', QBITTORRENT_HOST)
+    CFG.set('QBITTORRENT', 'qbittorrent_port', QBITTORRENT_PORT)
     CFG.set('QBITTORRENT', 'qbittorrent_user', QBITTORRENT_USER)
     CFG.set('QBITTORRENT', 'qbittorrent_pass', QBITTORRENT_PASS)
     CFG.set('QBITTORRENT', 'qbittorrent_label', QBITTORRENT_LABEL)
 #
     check_section('TRANSMISSION')
     CFG.set('TRANSMISSION', 'transmission_host', TRANSMISSION_HOST)
+    CFG.set('TRANSMISSION', 'transmission_port', TRANSMISSION_PORT)
     CFG.set('TRANSMISSION', 'transmission_user', TRANSMISSION_USER)
     CFG.set('TRANSMISSION', 'transmission_pass', TRANSMISSION_PASS)
 #

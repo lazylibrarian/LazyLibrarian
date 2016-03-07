@@ -89,10 +89,10 @@ class WebInterface(object):
                      ebook_dest_folder='', ebook_dest_file='',
                      mag_relative=0, mag_dest_folder='', mag_dest_file='', cache_age=30,
                      use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
-                     utorrent_host='', utorrent_user='', utorrent_pass='', utorrent_label='',
-                     qbittorrent_host='', qbittorrent_user='', qbittorrent_pass='', qbittorrent_label='',
+                     utorrent_host='', utorrent_port=0, utorrent_user='', utorrent_pass='', utorrent_label='',
+                     qbittorrent_host='', qbittorrent_port=0, qbittorrent_user='', qbittorrent_pass='', qbittorrent_label='',
                      notfound_status='Skipped', newbook_status='Skipped', full_scan=0, add_author=0,
-                     tor_downloader_transmission=0, transmission_host='', transmission_user='',
+                     tor_downloader_transmission=0, transmission_host='', transmission_port=0, transmission_user='',
                      transmission_pass='', tor_downloader_deluge=0, deluge_host='', deluge_user='',
                      deluge_pass='', deluge_port=0, use_boxcar=0, boxcar_notify_onsnatch=0,
                      boxcar_notify_ondownload=0, boxcar_token='', use_pushbullet=0, pushbullet_notify_onsnatch=0,
@@ -169,16 +169,19 @@ class WebInterface(object):
         lazylibrarian.NEWZBIN_PASS = newzbin_pass
 
         lazylibrarian.UTORRENT_HOST = utorrent_host
+        lazylibrarian.UTORRENT_PORT = utorrent_port
         lazylibrarian.UTORRENT_USER = utorrent_user
         lazylibrarian.UTORRENT_PASS = utorrent_pass
         lazylibrarian.UTORRENT_LABEL = utorrent_label
 
         lazylibrarian.QBITTORRENT_HOST = qbittorrent_host
+        lazylibrarian.QBITTORRENT_PORT = formatter.check_int(qbittorrent_port, 0)
         lazylibrarian.QBITTORRENT_USER = qbittorrent_user
         lazylibrarian.QBITTORRENT_PASS = qbittorrent_pass
         lazylibrarian.QBITTORRENT_LABEL = qbittorrent_label
 
         lazylibrarian.TRANSMISSION_HOST = transmission_host
+        lazylibrarian.TRANSMISSION_PORT = transmission_port
         lazylibrarian.TRANSMISSION_USER = transmission_user
         lazylibrarian.TRANSMISSION_PASS = transmission_pass
 
