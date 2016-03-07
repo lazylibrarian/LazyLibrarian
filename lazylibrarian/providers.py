@@ -94,16 +94,15 @@ def KAT(book=None):
     logger.debug(u"Found %i results from %s for %s" % (len(results), provider, book['searchterm']))
     return results
 
-#
-# Purpose of this function is to read the config file, and loop through all active NewsNab+
-# sites and return the compiled results list from all sites back to the caller
-# We get called with searchType of "book", "mag", "general" etc
-#
-def get_capabilities(provider):
-    myDB = database.DBConnection()
+def get_capabilities(myDB, provider):
+    """
+    look up provider capabilities from db, or query provider for caps if not in db, 
+    or if db entry is too old. Return capabilities appended to provider[]
+    GeneralSearch , BookSearch , MagSearch, BookCat, MagCat, Extended
+    """                
     match = myDB.action('SELECT * FROM capabilities where ProviderName = "%s"' % provider['HOST']).fetchone()
     if match:
-        if formatter.age(match['UpdateDate']) > 30:
+        if formatter.age(match['UpdateDate']) > lazylibrarian.CACHE_AGE:
             logger.debug('Cached capabilities for %s are too old' % provider['HOST'])
             match = False
     if match:
@@ -147,34 +146,52 @@ def get_capabilities(provider):
                 if len(data):
                     logger.debug(u"Parsing xml for capabilities of %s" % URL)
                     
-                    #attrib = data.find('searching/search').attrib
-                    #if 'available' in attrib and 'supportedParams' in attrib:
-                    #    if attrib['available'] == 'yes' and 'q' in attrib['supportedParams']:
-                    #        provider['GeneralSearch'] = "search"
-                    #attrib = data.find('searching/book-search').attrib
-                    #if 'available' in attrib:
-                    #    if attrib['available'] == 'yes':
-                    #        provider['BookSearch'] = "book"
-                    ########################################################################### 
+                    ############################################################################# 
                     # book search isn't mentioned in the caps xml returned by
                     # nzbplanet,jackett,oznzb,usenet-crawler, so we can't use it as a test
                     # but the newznab+ ones usually support t=book and categories in 7000 range
                     # whereas nZEDb ones don't support t=book and use categories in 8000 range
+                    # also some providers give searchtype but no supportedparams, so we still
+                    # can't tell what queries will be accepted
+                    # also category names can be lowercase or Mixed, magazine subcat name isn't
+                    # consistent, and subcat can be just subcat or category/subcat subcat > lang
+                    # eg "Magazines" "Mags" or "Books/Magazines" "Mags > French" 
+                    # Load all languages for now as we don't know which the user might want
+                    #############################################################################
+                    # attrib = data.find('searching/search').attrib
+                    # if 'available' in attrib and 'supportedParams' in attrib:
+                    #    if attrib['available'] == 'yes' and 'q' in attrib['supportedParams']:
+                    #        provider['GeneralSearch'] = "search"
+                    # attrib = data.find('searching/book-search').attrib
+                    # if 'available' in attrib:
+                    #    if attrib['available'] == 'yes':
+                    #        provider['BookSearch'] = "book"
                     categories = data.getiterator('category')
                     for cat in categories:
                         if 'name' in cat.attrib:
-                            if cat.attrib['name'] == 'Books':
-                                provider['BookCat'] = cat.attrib['id']
+                            if cat.attrib['name'].lower() == 'books':
+                                bookcat = cat.attrib['id'] # keep main bookcat for later
+                                provider['BookCat'] = bookcat
+                                provider['MagCat'] = ''
                                 if provider['BookCat'] == '7000':
-                                    provider['BookSearch'] = 'book'
+                                    # looks like newznab+, should support book-search
+                                    provider['BookSearch'] = 'book' 
                                 else:
+                                    # looks like nZEDb, probably no book-search
                                     provider['BookSearch'] = ''
+                               
                                 subcats = cat.getiterator('subcat')
                                 for subcat in subcats:
-                                    if subcat.attrib['name'] == 'Ebook':
+                                    if 'ebook' in subcat.attrib['name'].lower():
                                         provider['BookCat'] = "%s,%s" % (provider['BookCat'],subcat.attrib['id'])
-                                    if subcat.attrib['name'] == 'Magazines' or subcat.attrib['name'] == 'Mags':
-                                        provider['MagCat'] = subcat.attrib['id']
+                                    if  'magazines' in subcat.attrib['name'].lower() or 'mags' in subcat.attrib['name'].lower():
+                                        if provider['MagCat']:
+                                            provider['MagCat'] = "%s,%s" % (provider['MagCat'],subcat.attrib['id'])
+                                        else:
+                                            provider['MagCat'] = subcat.attrib['id']
+                                # if no specific magazine subcategory, use books
+                                if not provider['MagCat']:
+                                    provider['MagCat'] = bookcat
                     logger.debug("Categories: Books %s : Mags %s" % (provider['BookCat'], provider['MagCat']))
                 else:
                     logger.warn(u"Unable to get capabilities for %s: No data returned" % URL)
@@ -197,22 +214,26 @@ def get_capabilities(provider):
     return provider
 
 def IterateOverNewzNabSites(book=None, searchType=None):
+    """
+    Purpose of this function is to read the config file, and loop through all active NewsNab+
+    sites and return the compiled results list from all sites back to the caller
+    We get called with book[] and searchType of "book", "mag", "general" etc
+    """
 
     resultslist = []
     providers = 0
+    myDB = database.DBConnection()
     
     for provider in lazylibrarian.NEWZNAB_PROV:
         if (provider['ENABLED']):
-            # look up provider capabilities from db
-            # append to provider[] GeneralSearch , BookSearch , MagSearch, BookCat, MagCat, Extended
-            provider = get_capabilities(provider)
+            provider = get_capabilities(myDB, provider)
             providers += 1
             logger.debug('[IterateOverNewzNabSites] - %s' % provider['HOST'])
             resultslist += NewzNabPlus(book, provider, searchType, "nzb")
 
     for provider in lazylibrarian.TORZNAB_PROV:
         if (provider['ENABLED']):
-            provider = get_capabilities(provider)
+            provider = get_capabilities(myDB, provider)
             providers += 1
             logger.debug('[IterateOverTorzNabSites] - %s' % provider['HOST'])
             resultslist += NewzNabPlus(book, provider,
