@@ -51,7 +51,7 @@ class RotatingLogger(object):
         threadname = threading.currentThread().getName()
 
         # Ensure messages are utf-8 as some author names contain accents and the web page doesnt like them
-        if isinstance(message, str):
+        if hasattr(message, 'decode'):
                 message = message.decode('utf-8')
 
         if level != 'DEBUG' or lazylibrarian.LOGFULL is True:

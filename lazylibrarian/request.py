@@ -75,17 +75,8 @@ def request_response(url, method="get", auto_raise=True,
 
         return response
     except requests.exceptions.SSLError as e:
-        if kwargs["verify"]:
             logger.error(
-                "Unable to connect to remote host because of a SSL error. "
-                "It is likely that your system cannot verify the validity"
-                "of the certificate. The remote certificate is either "
-                "self-signed, or the remote server uses SNI. See the wiki for "
-                "more information on this topic.")
-        else:
-            logger.error(
-                "SSL error raised during connection, with certificate "
-                "verification turned off: %s" % e)
+                "SSL error raised during connection: %s" % e)
     except requests.ConnectionError:
         logger.error(
             "Unable to connect to remote host. Check if the remote "
@@ -107,8 +98,7 @@ def request_response(url, method="get", auto_raise=True,
                 "Request raise HTTP error with status code %d (%s)." % (e.response.status_code, cause))
 
             # Debug response
-            if lazylibrarian.VERBOSE:
-                server_message(e.response)
+            server_message(e.response)
         else:
             logger.error("Request raised HTTP error.")
     except requests.RequestException as e:
@@ -164,8 +154,7 @@ def request_json(url, **kwargs):
             logger.error("Response returned invalid JSON data")
 
             # Debug response
-            if lazylibrarian.VERBOSE:
-                server_message(response)
+            server_message(response)
 
 
 def request_content(url, **kwargs):
