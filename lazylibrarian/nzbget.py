@@ -33,10 +33,14 @@ from lazylibrarian import logger
 def sendNZB(nzb):
 
     addToTop = False
-    nzbgetXMLrpc = "%(username)s:%(password)s@%(host)s/xmlrpc"
+    nzbgetXMLrpc = "%(username)s:%(password)s@%(host)s:%(port)s/xmlrpc"
 
     if lazylibrarian.NZBGET_HOST is None:
         logger.error(u"No NZBget host found in configuration. Please configure it.")
+        return False
+
+    if lazylibrarian.NZBGET_PORT is 0:
+        logger.error(u"No NZBget port found in configuration. Please configure it.")
         return False
 
     if lazylibrarian.NZBGET_HOST.startswith('https://'):
@@ -47,11 +51,11 @@ def sendNZB(nzb):
         lazylibrarian.NZBGET_HOST.replace('http://', '', 1)
 
     url = nzbgetXMLrpc % {"host": lazylibrarian.NZBGET_HOST, "username": lazylibrarian.NZBGET_USER,
-                          "password": lazylibrarian.NZBGET_PASS}
-
+                          "port": lazylibrarian.NZBGET_PORT, "password": lazylibrarian.NZBGET_PASS}
+    
     nzbGetRPC = xmlrpclib.ServerProxy(url)
     try:
-        if nzbGetRPC.writelog("INFO", "lazylibrarian connected to drop of %s any moment now." % (nzb.name + ".nzb")):
+        if nzbGetRPC.writelog("INFO", "lazylibrarian connected to drop off %s any moment now." % (nzb.name + ".nzb")):
             logger.debug(u"Successfully connected to NZBget")
         else:
             logger.info(u"Successfully connected to NZBget, but unable to send %s" % (nzb.name + ".nzb"))

@@ -191,9 +191,9 @@ def processResultList(resultlist, book, searchtype):
 def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
 
     myDB = database.DBConnection()
-    if lazylibrarian.SAB_HOST and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
+    if (lazylibrarian.NZB_DOWNLOADER_SABNZBD and lazylibrarian.SAB_HOST) and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
         download = sabnzbd.SABnzbd(nzbtitle, nzburl)
-    elif lazylibrarian.NZBGET_HOST and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
+    elif (lazylibrarian.NZB_DOWNLOADER_NZBGET and lazylibrarian.NZBGET_HOST) and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
         headers = {'User-Agent': USER_AGENT}
         data = request.request_content(url=nzburl, headers=headers)
         nzb = classes.NZBDataSearchResult()

@@ -95,6 +95,7 @@ SAB_API = None
 SAB_CAT = None
 
 NZBGET_HOST = None
+NZBGET_PORT = 0
 NZBGET_USER = None
 NZBGET_PASS = None
 NZBGET_CATEGORY = None
@@ -319,7 +320,7 @@ def initialize():
             DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, USENET_RETENTION, NZB_BLACKHOLEDIR, \
             ALTERNATE_DIR, GR_API, GB_API, BOOK_API, MAGICK, \
             NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, \
-            NZB_DOWNLOADER_NZBGET, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
+            NZBGET_PORT, NZB_DOWNLOADER_NZBGET, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
             NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, EBOOK_TYPE, MAG_TYPE, KAT, KAT_HOST, \
             NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, REJECT_WORDS, \
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, SEARCHRSS_INTERVAL, \
@@ -445,6 +446,7 @@ def initialize():
         SAB_CAT = check_setting_str(CFG, 'SABnzbd', 'sab_cat', '')
 
         NZBGET_HOST = check_setting_str(CFG, 'NZBGet', 'nzbget_host', '')
+        NZBGET_PORT = check_setting_int(CFG, 'NZBGet', 'nzbget_port', '0')
         NZBGET_USER = check_setting_str(CFG, 'NZBGet', 'nzbget_user', '')
         NZBGET_PASS = check_setting_str(CFG, 'NZBGet', 'nzbget_pass', '')
         NZBGET_CATEGORY = check_setting_str(CFG, 'NZBGet', 'nzbget_cat', '')
@@ -723,6 +725,7 @@ def config_write():
 #
     check_section('NZBGet')
     CFG.set('NZBGet', 'nzbget_host', NZBGET_HOST)
+    CFG.set('NZBGet', 'nzbget_port', NZBGET_PORT)
     CFG.set('NZBGet', 'nzbget_user', NZBGET_USER)
     CFG.set('NZBGet', 'nzbget_pass', NZBGET_PASS)
     CFG.set('NZBGet', 'nzbget_cat', NZBGET_CATEGORY)
