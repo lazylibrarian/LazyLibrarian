@@ -5,7 +5,7 @@ import socket
 from xml.etree import ElementTree
 
 import lazylibrarian
-from lazylibrarian import logger
+from lazylibrarian import logger, formatter, database
 import lazylibrarian.common as common
 
 # new libraries to support torrents
@@ -94,34 +94,149 @@ def KAT(book=None):
     logger.debug(u"Found %i results from %s for %s" % (len(results), provider, book['searchterm']))
     return results
 
-#
-# Purpose of this function is to read the config file, and loop through all active NewsNab+
-# sites and return the compiled results list from all sites back to the caller
-# We get called with searchType of "book", "mag", "general" etc
-#
+def get_capabilities(myDB, provider):
+    """
+    look up provider capabilities from db, or query provider for caps if not in db, 
+    or if db entry is too old. Return capabilities appended to provider[]
+    GeneralSearch , BookSearch , MagSearch, BookCat, MagCat, Extended
+    """                
+    match = myDB.action('SELECT * FROM capabilities where ProviderName = "%s"' % provider['HOST']).fetchone()
+    if match:
+        if formatter.age(match['UpdateDate']) > lazylibrarian.CACHE_AGE:
+            logger.debug('Cached capabilities for %s are too old' % provider['HOST'])
+            match = False
+    if match:
+        logger.debug('Loading cached capabilities for %s' % provider['HOST'])
+        provider['GeneralSearch'] = match['GeneralSearch']
+        provider['BookSearch'] = match['BookSearch']
+        provider['MagSearch'] = match['MagSearch']
+        provider['BookCat'] = match['BookCat']
+        provider['MagCat'] = match['MagCat']
+        provider['Extended'] = match['Extended']
+    else:
+        logger.debug('Requesting capabilities for %s' % provider['HOST'])
+        host = provider['HOST']
+        # set defaults in case we don't get any capabilities
+        provider['GeneralSearch'] = "search"
+        provider['BookSearch'] = "book"
+        provider['MagSearch'] = "" # no specific search for now
+        provider['BookCat'] = "7000,7020" # book, ebook
+        provider['MagCat'] = "7010",  # magazine
+        provider['Extended'] = "1"
+        
+        if not str(host)[:4] == "http":
+            host = 'http://' + host
+        URL = host + '/api?t=caps&apikey=' + provider['API']
 
+        request = urllib2.Request(URL)
+        if lazylibrarian.PROXY_HOST:
+            request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
+        request.add_header('User-Agent', common.USER_AGENT)
+        resp = ""
+        try:
+            resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
+        except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
+            logger.debug("Error getting capabilities: %s" % e.reason)
+            resp = ""
+        if resp:
+            if str(resp.getcode()).startswith("2"):  # (200 OK etc)
+                logger.debug(u"Got capabilities for %s" % request.get_full_url())
+                source_xml = resp.read()  # .decode('utf-8')
+                data = ElementTree.fromstring(source_xml)
+                if len(data):
+                    logger.debug(u"Parsing xml for capabilities of %s" % URL)
+                    
+                    ############################################################################# 
+                    # book search isn't mentioned in the caps xml returned by
+                    # nzbplanet,jackett,oznzb,usenet-crawler, so we can't use it as a test
+                    # but the newznab+ ones usually support t=book and categories in 7000 range
+                    # whereas nZEDb ones don't support t=book and use categories in 8000 range
+                    # also some providers give searchtype but no supportedparams, so we still
+                    # can't tell what queries will be accepted
+                    # also category names can be lowercase or Mixed, magazine subcat name isn't
+                    # consistent, and subcat can be just subcat or category/subcat subcat > lang
+                    # eg "Magazines" "Mags" or "Books/Magazines" "Mags > French" 
+                    # Load all languages for now as we don't know which the user might want
+                    #############################################################################
+                    # attrib = data.find('searching/search').attrib
+                    # if 'available' in attrib and 'supportedParams' in attrib:
+                    #    if attrib['available'] == 'yes' and 'q' in attrib['supportedParams']:
+                    #        provider['GeneralSearch'] = "search"
+                    # attrib = data.find('searching/book-search').attrib
+                    # if 'available' in attrib:
+                    #    if attrib['available'] == 'yes':
+                    #        provider['BookSearch'] = "book"
+                    categories = data.getiterator('category')
+                    for cat in categories:
+                        if 'name' in cat.attrib:
+                            if cat.attrib['name'].lower() == 'books':
+                                bookcat = cat.attrib['id'] # keep main bookcat for later
+                                provider['BookCat'] = bookcat
+                                provider['MagCat'] = ''
+                                if provider['BookCat'] == '7000':
+                                    # looks like newznab+, should support book-search
+                                    provider['BookSearch'] = 'book' 
+                                else:
+                                    # looks like nZEDb, probably no book-search
+                                    provider['BookSearch'] = ''
+                               
+                                subcats = cat.getiterator('subcat')
+                                for subcat in subcats:
+                                    if 'ebook' in subcat.attrib['name'].lower():
+                                        provider['BookCat'] = "%s,%s" % (provider['BookCat'],subcat.attrib['id'])
+                                    if  'magazines' in subcat.attrib['name'].lower() or 'mags' in subcat.attrib['name'].lower():
+                                        if provider['MagCat']:
+                                            provider['MagCat'] = "%s,%s" % (provider['MagCat'],subcat.attrib['id'])
+                                        else:
+                                            provider['MagCat'] = subcat.attrib['id']
+                                # if no specific magazine subcategory, use books
+                                if not provider['MagCat']:
+                                    provider['MagCat'] = bookcat
+                    logger.debug("Categories: Books %s : Mags %s" % (provider['BookCat'], provider['MagCat']))
+                else:
+                    logger.warn(u"Unable to get capabilities for %s: No data returned" % URL)
+            else:
+                logger.warn(u"Unable to get capabilities for %s: Got %s" % (URL, resp.getcode()))
+        
+        # insert new or default capabilities into database
+        controlValueDict = {"ProviderName": provider['HOST']}
+        newValueDict = {
+            "GeneralSearch":    provider['GeneralSearch'],
+            "BookSearch":       provider['BookSearch'],
+            "MagSearch":        provider['MagSearch'],
+            "BookCat":          str(provider['BookCat']),
+            "MagCat":           str(provider['MagCat']),
+            "Extended":         provider['Extended'],
+            "UpdateDate":       formatter.today()
+            }
+
+        myDB.upsert("capabilities", newValueDict, controlValueDict)
+    return provider
 
 def IterateOverNewzNabSites(book=None, searchType=None):
+    """
+    Purpose of this function is to read the config file, and loop through all active NewsNab+
+    sites and return the compiled results list from all sites back to the caller
+    We get called with book[] and searchType of "book", "mag", "general" etc
+    """
 
     resultslist = []
     providers = 0
-
+    myDB = database.DBConnection()
+    
     for provider in lazylibrarian.NEWZNAB_PROV:
         if (provider['ENABLED']):
-            if provider['NZEDB'] is True:
-                searchMode = "nzedb"
-            else:
-                searchMode = "nzb"
+            provider = get_capabilities(myDB, provider)
             providers += 1
-            logger.debug('[IterateOverNewzNabSites] - %s' % provider['NAME'])
-            resultslist += NewzNabPlus(book, provider['HOST'], provider['API'],
-                                       searchType, searchMode)
+            logger.debug('[IterateOverNewzNabSites] - %s' % provider['HOST'])
+            resultslist += NewzNabPlus(book, provider, searchType, "nzb")
 
     for provider in lazylibrarian.TORZNAB_PROV:
         if (provider['ENABLED']):
+            provider = get_capabilities(myDB, provider)
             providers += 1
-            logger.debug('[IterateOverTorzNabSites] - %s' % provider['NAME'])
-            resultslist += NewzNabPlus(book, provider['HOST'], provider['API'],
+            logger.debug('[IterateOverTorzNabSites] - %s' % provider['HOST'])
+            resultslist += NewzNabPlus(book, provider,
                                        searchType, "torznab")
 
     return resultslist, providers
@@ -146,7 +261,7 @@ def IterateOverRSSSites(book=None, searchType=None):
     for provider in lazylibrarian.RSS_PROV:
         if (provider['ENABLED']):
             providers += 1
-            logger.debug('[IterateOverRSSSites] - %s' % provider['NAME'])
+            logger.debug('[IterateOverRSSSites] - %s' % provider['HOST'])
             resultslist += RSS(provider['HOST'], provider['NAME'])
     return resultslist, providers
 
@@ -236,14 +351,16 @@ def RSS(host=None, feednr=None):
 # ref http://usenetreviewz.com/nzb-sites/
 
 
-def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=None):
+def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
 
+    host = provider['HOST']
+    api_key = provider['API']
     logger.debug('[NewzNabPlus] searchType [%s] with Host [%s] mode [%s] using api [%s] for item [%s]' % (
                  searchType, host, searchMode, api_key, str(book)))
 
     results = []
 
-    params = ReturnSearchTypeStructure(api_key, book, searchType, searchMode)
+    params = ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode)
 
     if not str(host)[:4] == "http":
         host = 'http://' + host
@@ -255,10 +372,6 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=
         if lazylibrarian.PROXY_HOST:
             request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
         request.add_header('User-Agent', common.USER_AGENT)
-        # do we really want to cache this, new feeds/torrents are added all the time
-        # if we do, call goodreads.get_request(request, expireafter)
-        # where expireafter is max cache age in days (0 for non-cached, 7 for up to a week old, etc.
-        # Default is 30 days)
         resp = urllib2.urlopen(request, timeout=90)
         try:
             data = ElementTree.parse(resp)
@@ -267,7 +380,7 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=
             data = None
 
     except Exception as e:
-        logger.error("Error 403 opening url %s" % e)
+        logger.error("Error 403 opening url %s, %s" % (URL, e))
         data = None
 
     if data:
@@ -293,152 +406,93 @@ def NewzNabPlus(book=None, host=None, api_key=None, searchType=None, searchMode=
     return results
 
 
-def ReturnSearchTypeStructure(api_key, book, searchType, searchMode):
+def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
 
     params = None
-    if searchMode == "nzb":
-        if searchType == "book":
-            authorname = book['authorName']
-            while authorname[1] in '. ':  # strip any leading initials
-                authorname = authorname[2:].strip()  # and leading whitespace
-            # middle initials can't have a dot
-            authorname = authorname.replace('. ', ' ')
+    if searchType == "book":
+        authorname = book['authorName']
+        while authorname[1] in '. ':  # strip any leading initials
+            authorname = authorname[2:].strip()  # and leading whitespace
+        # middle initials can't have a dot
+        authorname = authorname.replace('. ', ' ')
+        authorname = common.removeDisallowedFilenameChars(authorname)
+        bookname = common.removeDisallowedFilenameChars(book['bookName'])
+        if provider['BookSearch']:  # if specific booksearch, use it
             params = {
-                "t": "book",
+                "t": provider['BookSearch'],
                 "apikey": api_key,
-                "title": common.removeDisallowedFilenameChars(book['bookName']),
-                "author": common.removeDisallowedFilenameChars(authorname),
-                "cat": "7020",  # 7020=ebook
-            }
-        elif searchType == "shortbook":
-            authorname = book['authorName']
-            while authorname[1] in '. ':  # strip any leading initials
-                authorname = authorname[2:].strip()  # and leading whitespace
-            # middle initials can't have a dot
-            authorname = authorname.replace('. ', ' ')
-            params = {
-                "t": "book",
-                "apikey": api_key,
-                "title": common.removeDisallowedFilenameChars(book['bookName'].split('(')[0]).strip(),
-                "author": common.removeDisallowedFilenameChars(authorname),
-                "cat": "7020",  # 7020=ebook
-            }
-        elif searchType == "author":
-            authorname = book['authorName']
-            while authorname[1] in '. ':  # strip any leading initials
-                authorname = authorname[2:].strip()  # and leading whitespace
-            # middle initials can't have a dot
-            authorname = authorname.replace('. ', ' ')
-            params = {
-                "t": "search",
-                "apikey": api_key,
-                "q": common.removeDisallowedFilenameChars(authorname),
-                "extended": 1,
-            }
-        elif searchType == "mag":
-            params = {
-                "t": "search",
-                "apikey": api_key,
-                "cat": "7000,7010,7020",  # 7000=Other,7010=Misc,7020 Ebook
-                "q": book['searchterm'],
-                "extended": 1,
+                "title": bookname,
+                "author": authorname,
+                "cat": provider['BookCat']
             }
         else:
             params = {
-                "t": "search",
+                "t": provider['GeneralSearch'],
                 "apikey": api_key,
-                # this is a general search
-                "q": book['searchterm'],
-                "extended": 1,
-            }
-    if searchMode == "nzedb":
-        if searchType == "book":
-            authorname = book['authorName']
-            while authorname[1] in '. ':  # strip any leading initials
-                authorname = authorname[2:].strip()  # and leading whitespace
-            # middle initials can't have a dot
-            authorname = authorname.replace('. ', ' ')
+                "q": authorname + ' ' + bookname,
+                "cat": provider['BookCat']
+            }    
+    elif searchType == "shortbook":
+        authorname = book['authorName']
+        while authorname[1] in '. ':  # strip any leading initials
+            authorname = authorname[2:].strip()  # and leading whitespace
+        # middle initials can't have a dot
+        authorname = authorname.replace('. ', ' ')
+        authorname = common.removeDisallowedFilenameChars(authorname)
+        bookname = common.removeDisallowedFilenameChars(book['bookName'].split('(')[0]).strip()
+        if provider['BookSearch']:  # if specific booksearch, use it
             params = {
-                "t": "search",
+                "t": provider['BookSearch'],
                 "apikey": api_key,
-                "q": common.removeDisallowedFilenameChars(authorname) + ' ' +
-                     common.removeDisallowedFilenameChars(book['bookName']),
-                "cat": "8000,8010",  # 8000=book, 8010=ebook
-            }
-        elif searchType == "shortbook":
-            authorname = book['authorName']
-            while authorname[1] in '. ':  # strip any leading initials
-                authorname = authorname[2:].strip()  # and leading whitespace
-            # middle initials can't have a dot
-            authorname = authorname.replace('. ', ' ')
-            params = {
-                "t": "search",
-                "apikey": api_key,
-                "q": common.removeDisallowedFilenameChars(authorname) + ' ' +
-                     common.removeDisallowedFilenameChars(book['bookName'].split('(')[0]).strip(),
-                "cat": "8000,8010",  # 8000=book, 8010=ebook
-            }
-        elif searchType == "author":
-            authorname = book['authorName']
-            while authorname[1] in '. ':  # strip any leading initials
-                authorname = authorname[2:].strip()  # and leading whitespace
-            # middle initials can't have a dot
-            authorname = authorname.replace('. ', ' ')
-            params = {
-                "t": "search",
-                "apikey": api_key,
-                "q": common.removeDisallowedFilenameChars(authorname),
-                "extended": 1,
-            }
-        elif searchType == "mag":
-            params = {
-                "t": "search",
-                "apikey": api_key,
-                "cat": "8030",  # 8030=mag
-                "q": book['searchterm'],
-                "extended": 1,
+                "title": bookname,
+                "author": authorname,
+                "cat": provider['BookCat']
             }
         else:
             params = {
-                "t": "search",
+                "t": provider['GeneralSearch'],
                 "apikey": api_key,
-                # this is a general search
-                "q": book['searchterm'],
-                "extended": 1,
-            }
-    if searchMode == "torznab":
-        if searchType == "book":
+                "q": authorname + ' ' + bookname,
+                "cat": provider['BookCat']
+            }            
+    elif searchType == "author":
+        authorname = book['authorName']
+        while authorname[1] in '. ':  # strip any leading initials
+            authorname = authorname[2:].strip()  # and leading whitespace
+        # middle initials can't have a dot
+        authorname = authorname.replace('. ', ' ')
+        authorname = common.removeDisallowedFilenameChars(authorname)
+        params = {
+            "t": provider['GeneralSearch'],
+            "apikey": api_key,
+            "q": authorname,
+            "extended": provider['Extended'],
+        }
+    elif searchType == "mag":
+        if provider['MagSearch']:  # if specific magsearch, use it
             params = {
-                "t": "search",
+                "t": provider['MagSearch'],
                 "apikey": api_key,
-                "cat": "8000,8010",  # 8000=book, 8010=ebook
+                "cat": provider['MagCat'],
                 "q": book['searchterm'],
-                "extended": 1,
-            }
-        elif searchType == "shortbook":
-            params = {
-                "t": "search",
-                "apikey": api_key,
-                "cat": "8000,8010",  # 8000=book, 8010=ebook
-                "q": book['searchterm'].split('(')[0],
-                "extended": 1,
-            }
-        elif searchType == "mag":
-            params = {
-                "t": "search",
-                "apikey": api_key,
-                "cat": "8030",  # 8030=magazines
-                "q": book['searchterm'],
-                "extended": 1,
+                "extended": provider['Extended'],
             }
         else:
             params = {
-                "t": "search",
-                "apikey": api_key,
-                # this is a general search
-                "q": book['searchterm'],
-                "extended": 1,
-            }
+               "t": provider['GeneralSearch'],
+               "apikey": api_key,
+               "cat": provider['MagCat'],
+               "q": book['searchterm'],
+               "extended": provider['Extended'],
+           }
+    else:
+        params = {
+            "t": provider['GeneralSearch'],
+            "apikey": api_key,
+            # this is a general search
+            "q": book['searchterm'],
+            "extended": provider['Extended'],
+        }
     logger.debug('[NewzNabPlus] - %s Search parameters set to %s' % (searchMode, str(params)))
 
     return params

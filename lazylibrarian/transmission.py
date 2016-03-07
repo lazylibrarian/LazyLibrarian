@@ -125,6 +125,7 @@ def removeTorrent(torrentid, remove_data=False):
 def torrentAction(method, arguments):
 
     host = lazylibrarian.TRANSMISSION_HOST
+    port = lazylibrarian.TRANSMISSION_PORT
     username = lazylibrarian.TRANSMISSION_USER
     password = lazylibrarian.TRANSMISSION_PASS
 
@@ -140,7 +141,10 @@ def torrentAction(method, arguments):
 
     if not parts[0] in ("http", "https"):
         parts[0] = "http"
-
+        
+    if not ':' in parts[1]:
+        parts[1] += ":%s" % port
+        
     if not parts[2].endswith("/rpc"):
         parts[2] += "/transmission/rpc"
 

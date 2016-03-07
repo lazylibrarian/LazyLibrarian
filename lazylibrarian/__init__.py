@@ -95,6 +95,7 @@ SAB_API = None
 SAB_CAT = None
 
 NZBGET_HOST = None
+NZBGET_PORT = 0
 NZBGET_USER = None
 NZBGET_PASS = None
 NZBGET_CATEGORY = None
@@ -140,16 +141,19 @@ NUMBEROFSEEDERS = 10
 TORRENT_DIR = None
 
 UTORRENT_HOST = None
+UTORRENT_PORT = 0
 UTORRENT_USER = None
 UTORRENT_PASS = None
 UTORRENT_LABEL = None
 
 QBITTORRENT_HOST = None
+QBITTORRENT_PORT = 0
 QBITTORRENT_USER = None
 QBITTORRENT_PASS = None
 QBITTORRENT_LABEL = None
 
 TRANSMISSION_HOST = None
+TRANSMISSION_PORT = 0
 TRANSMISSION_USER = None
 TRANSMISSION_PASS = None
 
@@ -269,7 +273,7 @@ def check_setting_bool(config, cfg_name, item_name, def_val, log=True):
         check_section(cfg_name)
         config.set(cfg_name, item_name, my_val)
     if log:
-        logger.debug(item_name + " -> " + str(my_val))
+        logger.debug(cfg_name + ":" + item_name + " -> " + str(my_val))
     return my_val
 
 
@@ -282,7 +286,7 @@ def check_setting_int(config, cfg_name, item_name, def_val, log=True):
         check_section(cfg_name)
         config.set(cfg_name, item_name, my_val)
     if log:
-        logger.debug(item_name + " -> " + str(my_val))
+        logger.debug(cfg_name + ":" + item_name + " -> " + str(my_val))
     return my_val
 
 
@@ -300,7 +304,7 @@ def check_setting_str(config, cfg_name, item_name, def_val, log=True):
         check_section(cfg_name)
         config.set(cfg_name, item_name, my_val)
     if log:
-        logger.debug(item_name + " -> " + my_val)
+        logger.debug(cfg_name + ":" + item_name + " -> " + my_val)
 
     return my_val.decode('utf-8')
 
@@ -319,7 +323,7 @@ def initialize():
             DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, USENET_RETENTION, NZB_BLACKHOLEDIR, \
             ALTERNATE_DIR, GR_API, GB_API, BOOK_API, MAGICK, \
             NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, \
-            NZB_DOWNLOADER_NZBGET, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
+            NZBGET_PORT, NZB_DOWNLOADER_NZBGET, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
             NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, EBOOK_TYPE, MAG_TYPE, KAT, KAT_HOST, \
             NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, REJECT_WORDS, \
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, SEARCHRSS_INTERVAL, \
@@ -331,13 +335,13 @@ def initialize():
             TOR_DOWNLOADER_QBITTORRENT, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
             USE_PUSHBULLET, PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, \
             PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, LAST_GOODREADS, LAST_LIBRARYTHING, \
-            UTORRENT_HOST, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
-            QBITTORRENT_HOST, QBITTORRENT_USER, QBITTORRENT_PASS, QBITTORRENT_LABEL, \
+            UTORRENT_HOST, UTORRENT_PORT, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
+            QBITTORRENT_HOST, QBITTORRENT_PORT, QBITTORRENT_USER, QBITTORRENT_PASS, QBITTORRENT_LABEL, \
             USE_PUSHOVER, PUSHOVER_ONSNATCH, PUSHOVER_KEYS, PUSHOVER_APITOKEN, \
             PUSHOVER_PRIORITY, PUSHOVER_ONDOWNLOAD, PUSHOVER_DEVICE, \
             USE_ANDROIDPN, ANDROIDPN_NOTIFY_ONSNATCH, ANDROIDPN_NOTIFY_ONDOWNLOAD, \
             ANDROIDPN_URL, ANDROIDPN_USERNAME, ANDROIDPN_BROADCAST, \
-            TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PASS, TRANSMISSION_USER, \
+            TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PORT, TRANSMISSION_PASS, TRANSMISSION_USER, \
             TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, \
             FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, \
             USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
@@ -444,7 +448,23 @@ def initialize():
         SAB_API = check_setting_str(CFG, 'SABnzbd', 'sab_api', '')
         SAB_CAT = check_setting_str(CFG, 'SABnzbd', 'sab_cat', '')
 
+        # legacy name conversion, separate out nzbget host/port
+        if not CFG.has_option('NZBGet', 'nzbget_port'):
+            port = 0
+            host = check_setting_str(CFG, 'NZBGet', 'nzbget_host', '')
+            if host.startswith('http'):
+                hostpart = 2
+            else:
+                hostpart = 1
+            words = host.split(':')
+            if len(words) > hostpart:
+                host = ':'.join(words[:hostpart])
+                port = ':'.join(words[hostpart:])
+            CFG.set('NZBGet', 'nzbget_port', port)
+            CFG.set('NZBGet', 'nzbget_host', host)
+
         NZBGET_HOST = check_setting_str(CFG, 'NZBGet', 'nzbget_host', '')
+        NZBGET_PORT = check_setting_int(CFG, 'NZBGet', 'nzbget_port', '0')
         NZBGET_USER = check_setting_str(CFG, 'NZBGet', 'nzbget_user', '')
         NZBGET_PASS = check_setting_str(CFG, 'NZBGet', 'nzbget_pass', '')
         NZBGET_CATEGORY = check_setting_str(CFG, 'NZBGet', 'nzbget_cat', '')
@@ -483,7 +503,6 @@ def initialize():
 
             NEWZNAB_PROV.append({"NAME": newz_name,
                                  "ENABLED": check_setting_bool(CFG, newz_name, 'ENABLED', 0),
-                                 "NZEDB": check_setting_bool(CFG, newz_name, 'NZEDB', 0),
                                  "HOST": check_setting_str(CFG, newz_name, 'HOST', ''),
                                  "API": check_setting_str(CFG, newz_name, 'API', '')
                                  })
@@ -549,17 +568,65 @@ def initialize():
         NUMBEROFSEEDERS = check_setting_int(CFG, 'TORRENT', 'numberofseeders', 10)
         TORRENT_DIR = check_setting_str(CFG, 'TORRENT', 'torrent_dir', '')
 
+        # legacy name conversion, separate out utorrent host/port
+        if not CFG.has_option('UTORRENT', 'utorrent_port'):
+            port = 0
+            host = check_setting_str(CFG, 'UTORRENT', 'utorrent_host', '')
+            if host.startswith('http'):
+                hostpart = 2
+            else:
+                hostpart = 1
+            words = host.split(':')
+            if len(words) > hostpart:
+                host = ':'.join(words[:hostpart])
+                port = ':'.join(words[hostpart:])
+            CFG.set('UTORRENT', 'utorrent_port', port)
+            CFG.set('UTORRENT', 'utorrent_host', host)
+
         UTORRENT_HOST = check_setting_str(CFG, 'UTORRENT', 'utorrent_host', '')
+        UTORRENT_PORT = check_setting_int(CFG, 'UTORRENT', 'utorrent_port', 0)
         UTORRENT_USER = check_setting_str(CFG, 'UTORRENT', 'utorrent_user', '')
         UTORRENT_PASS = check_setting_str(CFG, 'UTORRENT', 'utorrent_pass', '')
         UTORRENT_LABEL = check_setting_str(CFG, 'UTORRENT', 'utorrent_label', '')
 
+        # legacy name conversion, separate out qbittorrent host/port
+        if not CFG.has_option('QBITTORRENT', 'qbittorrent_port'):
+            port = 0
+            host = check_setting_str(CFG, 'QBITTORRENT', 'qbittorrent_host', '')
+            if host.startswith('http'):
+                hostpart = 2
+            else:
+                hostpart = 1
+            words = host.split(':')
+            if len(words) > hostpart:
+                host = ':'.join(words[:hostpart])
+                port = ':'.join(words[hostpart:])
+            CFG.set('QBITTORRENT', 'qbittorrent_port', port)
+            CFG.set('QBITTORRENT', 'qbittorrent_host', host)
+
         QBITTORRENT_HOST = check_setting_str(CFG, 'QBITTORRENT', 'qbittorrent_host', '')
+        QBITTORRENT_PORT = check_setting_int(CFG, 'QBITTORRENT', 'qbittorrent_port', 0)
         QBITTORRENT_USER = check_setting_str(CFG, 'QBITTORRENT', 'qbittorrent_user', '')
         QBITTORRENT_PASS = check_setting_str(CFG, 'QBITTORRENT', 'qbittorrent_pass', '')
         QBITTORRENT_LABEL = check_setting_str(CFG, 'QBITTORRENT', 'qbittorrent_label', '')
 
+        # legacy name conversion, separate out transmission host/port
+        if not CFG.has_option('TRANSMISSION', 'transmission_port'):
+            port = 0
+            host = check_setting_str(CFG, 'TRANSMISSION', 'transmission_host', '')
+            if host.startswith('http'):
+                hostpart = 2
+            else:
+                hostpart = 1
+            words = host.split(':')
+            if len(words) > hostpart:
+                host = ':'.join(words[:hostpart])
+                port = ':'.join(words[hostpart:])
+            CFG.set('TRANSMISSION', 'transmission_port', port)
+            CFG.set('TRANSMISSION', 'transmission_host', host)
+
         TRANSMISSION_HOST = check_setting_str(CFG, 'TRANSMISSION', 'transmission_host', '')
+        TRANSMISSION_PORT = check_setting_int(CFG, 'TRANSMISSION', 'transmission_port', 0)
         TRANSMISSION_USER = check_setting_str(CFG, 'TRANSMISSION', 'transmission_user', '')
         TRANSMISSION_PASS = check_setting_str(CFG, 'TRANSMISSION', 'transmission_pass', '')
 
@@ -724,6 +791,7 @@ def config_write():
 #
     check_section('NZBGet')
     CFG.set('NZBGet', 'nzbget_host', NZBGET_HOST)
+    CFG.set('NZBGet', 'nzbget_port', NZBGET_PORT)
     CFG.set('NZBGet', 'nzbget_user', NZBGET_USER)
     CFG.set('NZBGet', 'nzbget_pass', NZBGET_PASS)
     CFG.set('NZBGet', 'nzbget_cat', NZBGET_CATEGORY)
@@ -742,7 +810,6 @@ def config_write():
     for provider in NEWZNAB_PROV:
         check_section(provider['NAME'])
         CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
-        CFG.set(provider['NAME'], 'NZEDB', provider['NZEDB'])
         CFG.set(provider['NAME'], 'HOST', provider['HOST'])
         CFG.set(provider['NAME'], 'API', provider['API'])
     add_newz_slot()
@@ -778,18 +845,21 @@ def config_write():
 #
     check_section('UTORRENT')
     CFG.set('UTORRENT', 'utorrent_host', UTORRENT_HOST)
+    CFG.set('UTORRENT', 'utorrent_port', UTORRENT_PORT)
     CFG.set('UTORRENT', 'utorrent_user', UTORRENT_USER)
     CFG.set('UTORRENT', 'utorrent_pass', UTORRENT_PASS)
     CFG.set('UTORRENT', 'utorrent_label', UTORRENT_LABEL)
 #
     check_section('QBITTORRENT')
     CFG.set('QBITTORRENT', 'qbittorrent_host', QBITTORRENT_HOST)
+    CFG.set('QBITTORRENT', 'qbittorrent_port', QBITTORRENT_PORT)
     CFG.set('QBITTORRENT', 'qbittorrent_user', QBITTORRENT_USER)
     CFG.set('QBITTORRENT', 'qbittorrent_pass', QBITTORRENT_PASS)
     CFG.set('QBITTORRENT', 'qbittorrent_label', QBITTORRENT_LABEL)
 #
     check_section('TRANSMISSION')
     CFG.set('TRANSMISSION', 'transmission_host', TRANSMISSION_HOST)
+    CFG.set('TRANSMISSION', 'transmission_port', TRANSMISSION_PORT)
     CFG.set('TRANSMISSION', 'transmission_user', TRANSMISSION_USER)
     CFG.set('TRANSMISSION', 'transmission_pass', TRANSMISSION_PASS)
 #
@@ -877,12 +947,10 @@ def add_newz_slot():
         newz_name = 'Newznab%i' % count
         check_section(newz_name)
         CFG.set(newz_name, 'ENABLED', False)
-        CFG.set(newz_name, 'NZEDB', False)
         CFG.set(newz_name, 'HOST', '')
         CFG.set(newz_name, 'API', '')
         NEWZNAB_PROV.append({"NAME": newz_name,
                              "ENABLED": 0,
-                             "NZEDB": 0,
                              "HOST": '',
                              "API": ''
                              })
@@ -1101,6 +1169,8 @@ def dbcheck():
     c.execute('CREATE TABLE IF NOT EXISTS languages ( isbn TEXT, lang TEXT )')
     c.execute('CREATE TABLE IF NOT EXISTS stats ( authorname text, GR_book_hits int, GR_lang_hits int, \
         LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int )')
+    c.execute('CREATE TABLE IF NOT EXISTS capabilities (ProviderName TEXT, GeneralSearch TEXT, BookSearch TEXT, MagSearch TEXT, \
+        BookCat TEXT, MagCat TEXT, Extended TEXT, UpdateDate TEXT)')
 
     try:
         logger.info('Checking database')

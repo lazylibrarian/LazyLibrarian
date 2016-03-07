@@ -234,19 +234,23 @@
                                     <input type="text" name="nzbget_host" value="${lazylibrarian.NZBGET_HOST}" size="26" align="right">
                                 </div>
                                 <div class="row">
-                                    <label>Username</label>
+                                    <label>NZBGet Port</label>
+                                    <input type="text" name="nzbget_port" value="${lazylibrarian.NZBGET_PORT}" size="26">
+                                </div>
+                                <div class="row">
+                                    <label>NZBGet Username</label>
                                     <input type="text" name="nzbget_user" value="${lazylibrarian.NZBGET_USER}" size="26">
                                 </div>
                                 <div class="row">
-                                    <label>Password:</label>
+                                    <label>NZBGet Password:</label>
                                     <input type="password" name="nzbget_pass" value="${lazylibrarian.NZBGET_PASS}" size="26">
                                 </div>
                                 <div class="row">
-                                    <label>Category:</label>
+                                    <label>NZBGet Category:</label>
                                     <input type="text" name="nzbget_cat" value="${lazylibrarian.NZBGET_CATEGORY}" size="26">
                                 </div>
                                 <div class="row">
-                                    <label>Priority:</label>
+                                    <label>NZBGet Priority:</label>
                                     <input type="text" name="nzbget_priority" value="${lazylibrarian.NZBGET_PRIORITY}" size="26">
                                 </div>
                             </fieldset>
@@ -315,8 +319,12 @@
                             </div>
                             <fieldset id="transmission_options">
                                 <div class="row">
-                                    <label>Transmission Host:port :</label>
+                                    <label>Transmission Host:</label>
                                     <input type="text" name="transmission_host" value="${lazylibrarian.TRANSMISSION_HOST}" size="26">
+                                </div>
+                                <div class="row">
+                                    <label>Transmission Port :</label>
+                                    <input type="text" name="transmission_port" value="${lazylibrarian.TRANSMISSION_PORT}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>Username :</label>
@@ -342,6 +350,10 @@
                                 <div class="row">
                                     <label>uTorrent Host:</label>
                                     <input type="text" name="utorrent_host" value="${lazylibrarian.UTORRENT_HOST}" size="26">
+                                </div>
+                                <div class="row">
+                                    <label>uTorrent Port:</label>
+                                    <input type="text" name="utorrent_port" value="${lazylibrarian.UTORRENT_PORT}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>Username:</label>
@@ -370,6 +382,10 @@
                                 <div class="row">
                                     <label>qBittorrent Host:</label>
                                     <input type="text" name="qbittorrent_host" value="${lazylibrarian.QBITTORRENT_HOST}" size="26">
+                                </div>
+                                <div class="row">
+                                    <label>qBittorrent Port:</label>
+                                    <input type="text" name="qbittorrent_port" value="${lazylibrarian.QBITTORRENT_PORT}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>Username:</label>
@@ -437,17 +453,9 @@
                     else:
                         checked = ''
                     %>
-                    <%
-                    if prov['NZEDB'] == True:
-                        checked2 = 'checked="checked"'
-                    else:
-                        checked2 = ''
-                    %>
                     <input type="checkbox" name="newznab[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
  	    		    <input type="text" placeholder="Enter API Here" name="newznab[${loop.index}][api]" value="${prov['API']}" size="26" maxlength="40">
  	    		    <input type="text" placeholder="Enter URL Here" name="newznab[${loop.index}][host]" value="${prov['HOST']}" size="26" maxlength="100">
- 	    		    <br><input type="checkbox" name="newznab[${loop.index}][nzedb]" value=1 ${checked2} style="margin-bottom:4px;" />
- 	    		    <label>Tick for nZEDb, blank for NewzNab+</label><br> 
  	    		    <br>
  	    		    %endfor
                 </fieldset>

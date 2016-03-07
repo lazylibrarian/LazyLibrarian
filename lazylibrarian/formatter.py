@@ -38,9 +38,9 @@ def today():
 
 
 def age(histdate):
-    nowdate = datetime.date.today()
-    m1, d1, y1 = (int(x) for x in nowdate.split('-'))
-    m2, d2, y2 = (int(x) for x in histdate.split('-'))
+    nowdate = datetime.date.isoformat(datetime.date.today())
+    y1, m1, d1 = (int(x) for x in nowdate.split('-'))
+    y2, m2, d2 = (int(x) for x in histdate.split('-'))
     date1 = datetime.date(y1, m1, d1)
     date2 = datetime.date(y2, m2, d2)
     dtage = date1 - date2

@@ -194,7 +194,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         lazylibrarian.TOR_DOWNLOADER_UTORRENT or
         lazylibrarian.TOR_DOWNLOADER_QBITTORRENT or
         lazylibrarian.TOR_DOWNLOADER_BLACKHOLE or
-            lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
+        lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
 
         if tor_url.startswith('magnet'):
             torrent = tor_url  # allow magnet link to write to blackhole and hash to utorrent
@@ -256,20 +256,20 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             logger.debug('Torrent file saved: %s' % tor_title)
             download = True
 
-        if (lazylibrarian.TOR_DOWNLOADER_UTORRENT):
+        if  lazylibrarian.TOR_DOWNLOADER_UTORRENT:
             logger.debug("Sending %s to Utorrent" % tor_title)
             hash = CalcTorrentHash(torrent)
             download = utorrent.addTorrent(tor_url, hash)
 
-        if (lazylibrarian.TOR_DOWNLOADER_QBITTORRENT):
+        if  lazylibrarian.TOR_DOWNLOADER_QBITTORRENT:
             logger.debug("Sending %s to qbittorrent" % tor_title)
             download = qbittorrent.addTorrent(tor_url)
 
-        if (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
+        if  lazylibrarian.TOR_DOWNLOADER_TRANSMISSION:
             logger.debug("Sending %s to Transmission" % tor_title)
             download = transmission.addTorrent(tor_url)
 
-        if (lazylibrarian.TOR_DOWNLOADER_DELUGE):
+        if  lazylibrarian.TOR_DOWNLOADER_DELUGE:
             logger.debug("Sending %s to Deluge" % tor_title)
             client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
                                      int(lazylibrarian.DELUGE_PORT),
