@@ -121,8 +121,13 @@ def get_capabilities(myDB, provider):
         provider['BookSearch'] = "book"
         provider['MagSearch'] = "" # no specific search for now
         provider['BookCat'] = "7000,7020" # book, ebook
-        provider['MagCat'] = "7010",  # magazine
+        provider['MagCat'] = "7010"  # magazine
         provider['Extended'] = "1"
+        if 'torznab' in host:
+            provider['BookSearch'] = ""
+            provider['MagSearch'] = "" # no specific search for now
+            provider['BookCat'] = "8000,8010" # book, ebook
+            provider['MagCat'] = "8030"  # magazine        
         
         if not str(host)[:4] == "http":
             host = 'http://' + host
