@@ -97,12 +97,12 @@ def KAT(book=None):
 def get_capabilities(myDB, provider):
     """
     look up provider capabilities from db, or query provider for caps if not in db, 
-    or if db entry is too old. Return capabilities appended to provider[]
+    or if db entry is too old and not set manually. Return capabilities appended to provider[]
     GeneralSearch , BookSearch , MagSearch, BookCat, MagCat, Extended
     """                
     match = myDB.action('SELECT * FROM capabilities where ProviderName = "%s"' % provider['HOST']).fetchone()
     if match:
-        if formatter.age(match['UpdateDate']) > lazylibrarian.CACHE_AGE:
+        if (formatter.age(match['UpdateDate']) > lazylibrarian.CACHE_AGE) and not match['Manual']:
             logger.debug('Cached capabilities for %s are too old' % provider['HOST'])
             match = False
     if match:
@@ -207,7 +207,8 @@ def get_capabilities(myDB, provider):
             "BookCat":          str(provider['BookCat']),
             "MagCat":           str(provider['MagCat']),
             "Extended":         provider['Extended'],
-            "UpdateDate":       formatter.today()
+            "UpdateDate":       formatter.today(),
+            "Manual":           ""
             }
 
         myDB.upsert("capabilities", newValueDict, controlValueDict)
