@@ -25,6 +25,7 @@
                     <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="providers" href="#providers">Providers</a></li>
                     <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="searchprocessing" href="#searchprocessing">Search & Processing</a></li>
                     <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="notifications" href="#notifications">Notifications</a></li>
+                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="capabilities" href="#capabilities">Search Types</a></li>
                 </ul>
 
 
@@ -1190,7 +1191,56 @@
                         </div>
                     </div>
                 </div>
-
+                    <div role="tabpanel" class="tab-pane" id="capabilities">
+                        <div class="configtable">
+                        <div class="row">
+                            <div class="col-md-6">
+                            <fieldset>
+                                %for prov in config['capabilities']:
+                                <legend>${prov['NAME']}</legend>
+                                <div class="checkbox">
+                                <%
+                                if prov['MANUAL'] == True:
+                                    checked = 'checked="checked"'
+                                else:
+                                    checked = ''
+                                %>                               
+                                    <div class="input-group">
+                                        <input type="checkbox" id="caps[${loop.index}][manual]" name="caps[${loop.index}][manual]" value="1" ${checked} />
+                                        <label for="caps[${loop.index}][manual]" class="control-label">Tick to prevent reloading values from provider</label>
+                                    </div>
+                                </div>
+                                <input type="text" id="caps[${loop.index}][name]" name="caps[${loop.index}][name]" value="${prov['NAME']}" class="hidden">
+                                <input type="text" id="caps[${loop.index}][updated]" name="caps[${loop.index}][updated]" value="${prov['UPDATED']}" class="hidden">
+                                <div class="form-group col-md-6">
+                                    <label for="caps[${loop.index}][search]" class="control-label">General Search:</label>
+                                    <input type="text" placeholder="General Search" id="caps[${loop.index}][search]" name="caps[${loop.index}][search]" value="${prov['SEARCH']}" class="form-control">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="caps[${loop.index}][extended]" class="control-label">Extended Search:</label>
+                                    <input type="text" placeholder="Extended Search" id="caps[${loop.index}][extended]" name="caps[${loop.index}][extended]" value="${prov['EXTENDED']}" class="form-control">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="caps[${loop.index}][booksearch]" class="control-label">Book Search:</label>
+                                    <input type="text" placeholder="Book Search" id="caps[${loop.index}][booksearch]" name="caps[${loop.index}][booksearch]" value="${prov['BOOKSEARCH']}" class="form-control">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="caps[${loop.index}][bookcat]" class="control-label">Book Categories:</label>
+                                    <input type="text" placeholder="Book Categories" id="caps[${loop.index}][bookcat]" name="caps[${loop.index}][bookcat]" value="${prov['BOOKCAT']}" class="form-control">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="caps[${loop.index}][magsearch]" class="control-label">Magazine Search:</label>
+                                    <input type="text" placeholder="Magazine Search" id="caps[${loop.index}][magsearch]" name="caps[${loop.index}][magsearch]" value="${prov['MAGSEARCH']}" class="form-control">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="caps[${loop.index}][magcat]" class="control-label">Magazine Categories:</label>
+                                    <input type="text" placeholder="Magazine Categories" id="caps[${loop.index}][magcat]" name="caps[${loop.index}][magcat]" value="${prov['MAGCAT']}" class="form-control">
+                                </div>
+                                %endfor
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div> <!-- tabs content -->
 
             </div> <!-- tabs -->

@@ -213,7 +213,7 @@ def get_capabilities(myDB, provider):
             "MagCat":           str(provider['MagCat']),
             "Extended":         provider['Extended'],
             "UpdateDate":       formatter.today(),
-            "Manual":           ""
+            "Manual":           0
             }
 
         myDB.upsert("capabilities", newValueDict, controlValueDict)
