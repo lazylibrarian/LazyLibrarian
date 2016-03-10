@@ -62,11 +62,28 @@ class WebInterface(object):
         http_look_list = [name for name in os.listdir(http_look_dir)
                           if os.path.isdir(os.path.join(http_look_dir, name))]
         status_list = ['Skipped', 'Wanted', 'Have', 'Ignored']
+        capabilities = []
+        myDB = database.DBConnection()
+        providers = myDB.select('SELECT * from capabilities')
+        for provider in providers:
+            capabilities.append({
+                'NAME':         provider['ProviderName'],
+                'SEARCH':       provider['GeneralSearch'],
+                'BOOKSEARCH':   provider['BookSearch'],
+                'MAGSEARCH':    provider['MagSearch'],
+                'BOOKCAT':      provider['BookCat'],
+                'MAGCAT':       provider['MagCat'],
+                'EXTENDED':     provider['Extended'],
+                'UPDATED':      provider['UpdateDate'],
+                'MANUAL':       formatter.check_int(provider['Manual'], 0)
+                })
+
         # Don't pass the whole config, no need to pass the
         # lazylibrarian.globals
         config = {
             "http_look_list": http_look_list,
-            "status_list": status_list
+            "status_list": status_list,
+            "capabilities": capabilities
         }
         return serve_template(templatename="config.html", title="Settings", config=config)
     config.exposed = True
@@ -325,12 +342,58 @@ class WebInterface(object):
                         count,
              '')
             count += 1
-
+ 
         lazylibrarian.config_write()
 
         logger.info(
             'Config file [%s] has been updated' %
             lazylibrarian.CONFIGFILE)
+
+        myDB = database.DBConnection()
+        count = 0
+        while kwargs.get('caps[%i][name]' % count) is not None:
+            prov_name = kwargs.get('caps[%i][name]' % count, "")
+            prov_search = kwargs.get('caps[%i][search]' % count, "")
+            prov_booksearch = kwargs.get('caps[%i][booksearch]' % count, "")
+            prov_magsearch = kwargs.get('caps[%i][magsearch]' % count, "")
+            prov_bookcat = kwargs.get('caps[%i][bookcat]' % count, "")
+            prov_magcat = kwargs.get('caps[%i][magcat]' % count, "")
+            prov_extended = kwargs.get('caps[%i][extended]' % count, "")
+            prov_updated = kwargs.get('caps[%i][updated]' % count, "")
+            prov_manual = formatter.check_int(kwargs.get('caps[%i][manual]' % count, 0), 0)
+
+            changed = False
+            if prov_name:
+                provider = myDB.action('SELECT * from capabilities WHERE ProviderName="%s"' % prov_name).fetchone()
+                if provider:
+                    if prov_search != provider['GeneralSearch']:
+                        changed = True
+                        myDB.action('UPDATE capabilities SET GeneralSearch="%s" WHERE ProviderName="%s"' % (prov_search, prov_name))
+                    if prov_booksearch != provider['BookSearch']:
+                        changed = True
+                        myDB.action('UPDATE capabilities SET BookSearch="%s" WHERE ProviderName="%s"' % (prov_booksearch, prov_name))
+                    if prov_magsearch != provider['MagSearch']:
+                        changed = True
+                        myDB.action('UPDATE capabilities SET MagSearch="%s" WHERE ProviderName="%s"' % (prov_magsearch, prov_name))
+                    if prov_bookcat != provider['BookCat']:
+                        changed = True
+                        myDB.action('UPDATE capabilities SET BookCat="%s" WHERE ProviderName="%s"' % (prov_bookcat, prov_name))
+                    if prov_magcat != provider['MagCat']:
+                        changed = True
+                        myDB.action('UPDATE capabilities SET MagCat="%s" WHERE ProviderName="%s"' % (prov_magcat, prov_name))
+                    if prov_extended != provider['Extended']:
+                        changed = True
+                        myDB.action('UPDATE capabilities SET Extended="%s" WHERE ProviderName="%s"' % (prov_extended, prov_name))
+                    
+                    if prov_manual != provider['Manual']:
+                        changed = True
+                        myDB.action('UPDATE capabilities SET Manual="%s" WHERE ProviderName="%s"' % (prov_manual, prov_name))
+                    if changed:
+                        myDB.action('UPDATE capabilities SET UpdateDate="%s" WHERE ProviderName="%s"' % (formatter.today(), prov_name))
+                        logger.info(
+                            '%s has been updated' % prov_name)
+            count += 1
+
         raise cherrypy.HTTPRedirect("config")
 
     configUpdate.exposed = True

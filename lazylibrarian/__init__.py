@@ -1170,7 +1170,7 @@ def dbcheck():
     c.execute('CREATE TABLE IF NOT EXISTS stats ( authorname text, GR_book_hits int, GR_lang_hits int, \
         LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int )')
     c.execute('CREATE TABLE IF NOT EXISTS capabilities (ProviderName TEXT, GeneralSearch TEXT, BookSearch TEXT, MagSearch TEXT, \
-        BookCat TEXT, MagCat TEXT, Extended TEXT, UpdateDate TEXT)')
+        BookCat TEXT, MagCat TEXT, Extended TEXT, UpdateDate TEXT, Manual INT)')
 
     try:
         logger.info('Checking database')
@@ -1254,6 +1254,12 @@ def dbcheck():
         logger.info('Updating Issues table to hold IssueID')
         c.execute('ALTER TABLE issues ADD COLUMN IssueID TEXT')
         addedIssues = True
+
+    try:
+        c.execute('SELECT Manual from capabilities')
+    except sqlite3.OperationalError:
+        logger.info('Updating Capabilities table to hold Manual indicator')
+        c.execute('ALTER TABLE capabilities ADD COLUMN Manual INT')
 
     conn.commit()
     c.close()
