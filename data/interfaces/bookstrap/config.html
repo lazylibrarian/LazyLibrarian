@@ -1195,7 +1195,6 @@
                         <div class="configtable">
                         <div class="row">
                             <div class="col-md-6">
-                            <fieldset>
                                 %for prov in config['capabilities']:
                                 <legend>${prov['NAME']}</legend>
                                 <div class="checkbox">
@@ -1204,11 +1203,10 @@
                                     checked = 'checked="checked"'
                                 else:
                                     checked = ''
-                                %>                               
-                                    <div class="input-group">
-                                        <input type="checkbox" id="caps[${loop.index}][manual]" name="caps[${loop.index}][manual]" value="1" ${checked} />
-                                        <label for="caps[${loop.index}][manual]" class="control-label">Tick to prevent reloading values from provider</label>
-                                    </div>
+                                %>                                  
+                                     <label for="caps[${loop.index}][manual]" class="control-label">
+                                     <input type="checkbox" id="caps[${loop.index}][manual]" name="caps[${loop.index}][manual]" value="1" ${checked} />
+                                     Tick to prevent reloading values from provider</label>
                                 </div>
                                 <input type="text" id="caps[${loop.index}][name]" name="caps[${loop.index}][name]" value="${prov['NAME']}" class="hidden">
                                 <input type="text" id="caps[${loop.index}][updated]" name="caps[${loop.index}][updated]" value="${prov['UPDATED']}" class="hidden">

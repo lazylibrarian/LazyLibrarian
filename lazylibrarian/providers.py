@@ -423,7 +423,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
         authorname = authorname.replace('. ', ' ')
         authorname = common.removeDisallowedFilenameChars(authorname)
         bookname = common.removeDisallowedFilenameChars(book['bookName'])
-        if provider['BookSearch']:  # if specific booksearch, use it
+        if provider['BookSearch'] and provider['BookCat']:  # if specific booksearch, use it
             params = {
                 "t": provider['BookSearch'],
                 "apikey": api_key,
@@ -431,7 +431,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "author": authorname,
                 "cat": provider['BookCat']
             }
-        else:
+        elif provider['GeneralSearch'] and provider['BookCat']: # if not, try general search
             params = {
                 "t": provider['GeneralSearch'],
                 "apikey": api_key,
@@ -446,7 +446,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
         authorname = authorname.replace('. ', ' ')
         authorname = common.removeDisallowedFilenameChars(authorname)
         bookname = common.removeDisallowedFilenameChars(book['bookName'].split('(')[0]).strip()
-        if provider['BookSearch']:  # if specific booksearch, use it
+        if provider['BookSearch'] and provider['BookCat']:  # if specific booksearch, use it
             params = {
                 "t": provider['BookSearch'],
                 "apikey": api_key,
@@ -454,7 +454,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "author": authorname,
                 "cat": provider['BookCat']
             }
-        else:
+        elif provider['GeneralSearch'] and provider['BookCat']:
             params = {
                 "t": provider['GeneralSearch'],
                 "apikey": api_key,
@@ -468,14 +468,15 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
         # middle initials can't have a dot
         authorname = authorname.replace('. ', ' ')
         authorname = common.removeDisallowedFilenameChars(authorname)
-        params = {
-            "t": provider['GeneralSearch'],
-            "apikey": api_key,
-            "q": authorname,
-            "extended": provider['Extended'],
-        }
+        if provider['GeneralSearch']:
+            params = {
+                "t": provider['GeneralSearch'],
+                "apikey": api_key,
+                "q": authorname,
+                "extended": provider['Extended'],
+            }
     elif searchType == "mag":
-        if provider['MagSearch']:  # if specific magsearch, use it
+        if provider['MagSearch'] and provider['MagCat']:  # if specific magsearch, use it
             params = {
                 "t": provider['MagSearch'],
                 "apikey": api_key,
@@ -483,7 +484,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "q": book['searchterm'],
                 "extended": provider['Extended'],
             }
-        else:
+        elif provider['GeneralSearch'] and provider['MagCat']:
             params = {
                "t": provider['GeneralSearch'],
                "apikey": api_key,
@@ -491,7 +492,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                "q": book['searchterm'],
                "extended": provider['Extended'],
            }
-    else:
+    elif provider['GeneralSearch']:
         params = {
             "t": provider['GeneralSearch'],
             "apikey": api_key,
@@ -499,8 +500,11 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
             "q": book['searchterm'],
             "extended": provider['Extended'],
         }
-    logger.debug('[NewzNabPlus] - %s Search parameters set to %s' % (searchMode, str(params)))
-
+        if params:
+            logger.debug('[NewzNabPlus] - %s Search parameters set to %s' % (searchMode, str(params)))
+        else:
+            logger.debug('[NewzNabPlus] - %s No matching search parameters' % searchMode)
+            
     return params
 
 
