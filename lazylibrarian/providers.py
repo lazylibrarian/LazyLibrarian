@@ -104,7 +104,7 @@ def get_capabilities(provider):
         if (formatter.age(provider['UPDATED']) > lazylibrarian.CACHE_AGE) and not provider['MANUAL']:
             logger.debug('Stored capabilities for %s are too old' % provider['HOST'])
             match = False
-    match = False
+
     if match:
         logger.debug('Using stored capabilities for %s' % provider['HOST'])
     else:
