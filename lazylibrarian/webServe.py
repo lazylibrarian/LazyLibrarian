@@ -62,28 +62,12 @@ class WebInterface(object):
         http_look_list = [name for name in os.listdir(http_look_dir)
                           if os.path.isdir(os.path.join(http_look_dir, name))]
         status_list = ['Skipped', 'Wanted', 'Have', 'Ignored']
-        capabilities = []
-        myDB = database.DBConnection()
-        providers = myDB.select('SELECT * from capabilities')
-        for provider in providers:
-            capabilities.append({
-                'NAME':         provider['ProviderName'],
-                'SEARCH':       provider['GeneralSearch'],
-                'BOOKSEARCH':   provider['BookSearch'],
-                'MAGSEARCH':    provider['MagSearch'],
-                'BOOKCAT':      provider['BookCat'],
-                'MAGCAT':       provider['MagCat'],
-                'EXTENDED':     provider['Extended'],
-                'UPDATED':      provider['UpdateDate'],
-                'MANUAL':       formatter.check_int(provider['Manual'], 0)
-                })
 
         # Don't pass the whole config, no need to pass the
         # lazylibrarian.globals
         config = {
             "http_look_list": http_look_list,
-            "status_list": status_list,
-            "capabilities": capabilities
+            "status_list": status_list
         }
         return serve_template(templatename="config.html", title="Settings", config=config)
     config.exposed = True
@@ -280,119 +264,72 @@ class WebInterface(object):
 
         count = 0
         while count < len(lazylibrarian.NEWZNAB_PROV):
-            lazylibrarian.NEWZNAB_PROV[count]['ENABLED'] = bool(
-                kwargs.get('newznab[%i][enabled]' % count, False))
-            lazylibrarian.NEWZNAB_PROV[
-                count][
-                    'HOST'] = kwargs.get(
-                        'newznab[%i][host]' %
-                        count,
-             '')
-            lazylibrarian.NEWZNAB_PROV[
-                count][
-                    'API'] = kwargs.get(
-                        'newznab[%i][api]' %
-                        count,
-             '')
+            lazylibrarian.NEWZNAB_PROV[count]['ENABLED'] = bool(kwargs.get(
+                'newznab[%i][enabled]' % count, False))
+            lazylibrarian.NEWZNAB_PROV[count]['HOST'] = kwargs.get(
+                'newznab[%i][host]' % count, '')
+            lazylibrarian.NEWZNAB_PROV[count]['API'] = kwargs.get(
+                'newznab[%i][api]' % count, '')
+            lazylibrarian.NEWZNAB_PROV[count]['GENERALSEARCH'] = kwargs.get(
+                'newznab[%i][generalsearch]' % count, '')
+            lazylibrarian.NEWZNAB_PROV[count]['BOOKSEARCH'] = kwargs.get(
+                'newznab[%i][booksearch]' % count, '')
+            lazylibrarian.NEWZNAB_PROV[count]['MAGSEARCH'] = kwargs.get(
+                'newznab[%i][magsearch]' % count, '')
+            lazylibrarian.NEWZNAB_PROV[count]['BOOKCAT'] = kwargs.get(
+                'newznab[%i][bookcat]' % count, '')
+            lazylibrarian.NEWZNAB_PROV[count]['MAGCAT'] = kwargs.get(
+                'newznab[%i][magcat]' % count, '')
+            lazylibrarian.NEWZNAB_PROV[count]['EXTENDED'] = kwargs.get(
+                'newznab[%i][extended]' % count, '')
+            lazylibrarian.NEWZNAB_PROV[count]['UPDATED'] = kwargs.get(
+                'newznab[%i][updated]' % count, '')
+            lazylibrarian.NEWZNAB_PROV[count]['MANUAL'] = bool(kwargs.get(
+                'newznab[%i][manual]' % count, False))
             count += 1
 
         count = 0
         while count < len(lazylibrarian.TORZNAB_PROV):
-            lazylibrarian.TORZNAB_PROV[
-                count][
-                    'ENABLED'] = bool(
-                        kwargs.get(
-                            'torznab[%i][enabled]' %
-                            count,
-                            False))
-            lazylibrarian.TORZNAB_PROV[
-                count][
-                    'HOST'] = kwargs.get(
-                        'torznab[%i][host]' %
-                        count,
-             '')
-            lazylibrarian.TORZNAB_PROV[
-                count][
-                    'API'] = kwargs.get(
-                        'torznab[%i][api]' %
-                        count,
-             '')
+            lazylibrarian.TORZNAB_PROV[count]['ENABLED'] = bool(kwargs.get(
+                'torznab[%i][enabled]' % count, False))
+            lazylibrarian.TORZNAB_PROV[count]['HOST'] = kwargs.get(
+                'torznab[%i][host]' % count, '')
+            lazylibrarian.TORZNAB_PROV[count]['API'] = kwargs.get(
+                'torznab[%i][api]' % count, '')
+            lazylibrarian.TORZNAB_PROV[count]['GENERALSEARCH'] = kwargs.get(
+                'torznab[%i][generalsearch]' % count, '')
+            lazylibrarian.TORZNAB_PROV[count]['BOOKSEARCH'] = kwargs.get(
+                'torznab[%i][booksearch]' % count, '')
+            lazylibrarian.TORZNAB_PROV[count]['MAGSEARCH'] = kwargs.get(
+                'torznab[%i][magsearch]' % count, '')
+            lazylibrarian.TORZNAB_PROV[count]['BOOKCAT'] = kwargs.get(
+                'torznab[%i][bookcat]' % count, '')
+            lazylibrarian.TORZNAB_PROV[count]['MAGCAT'] = kwargs.get(
+                'torznab[%i][magcat]' % count, '')
+            lazylibrarian.TORZNAB_PROV[count]['EXTENDED'] = kwargs.get(
+                'torznab[%i][extended]' % count, '')
+            lazylibrarian.TORZNAB_PROV[count]['UPDATED'] = kwargs.get(
+                'torznab[%i][updated]' % count, '')
+            lazylibrarian.TORZNAB_PROV[count]['MANUAL'] = bool(kwargs.get(
+                'torznab[%i][manual]' % count, False))
             count += 1
 
         count = 0
         while count < len(lazylibrarian.RSS_PROV):
             lazylibrarian.RSS_PROV[count]['ENABLED'] = bool(
                 kwargs.get('rss[%i][enabled]' % count, False))
-            lazylibrarian.RSS_PROV[
-                count][
-                    'HOST'] = kwargs.get(
-                        'rss[%i][host]' %
-                        count,
-             '')
-            lazylibrarian.RSS_PROV[
-                count][
-                    'USER'] = kwargs.get(
-                        'rss[%i][user]' %
-                        count,
-             '')
-            lazylibrarian.RSS_PROV[
-                count][
-                    'PASS'] = kwargs.get(
-                        'rss[%i][pass]' %
-                        count,
-             '')
+            lazylibrarian.RSS_PROV[count]['HOST'] = kwargs.get(
+                        'rss[%i][host]' % count, '')
+            lazylibrarian.RSS_PROV[count]['USER'] = kwargs.get(
+                        'rss[%i][user]' % count, '')
+            lazylibrarian.RSS_PROV[count]['PASS'] = kwargs.get(
+                        'rss[%i][pass]' % count, '')
             count += 1
  
         lazylibrarian.config_write()
 
         logger.info(
-            'Config file [%s] has been updated' %
-            lazylibrarian.CONFIGFILE)
-
-        myDB = database.DBConnection()
-        count = 0
-        while kwargs.get('caps[%i][name]' % count) is not None:
-            prov_name = kwargs.get('caps[%i][name]' % count, "")
-            prov_search = kwargs.get('caps[%i][search]' % count, "")
-            prov_booksearch = kwargs.get('caps[%i][booksearch]' % count, "")
-            prov_magsearch = kwargs.get('caps[%i][magsearch]' % count, "")
-            prov_bookcat = kwargs.get('caps[%i][bookcat]' % count, "")
-            prov_magcat = kwargs.get('caps[%i][magcat]' % count, "")
-            prov_extended = kwargs.get('caps[%i][extended]' % count, "")
-            prov_updated = kwargs.get('caps[%i][updated]' % count, "")
-            prov_manual = formatter.check_int(kwargs.get('caps[%i][manual]' % count, 0), 0)
-
-            changed = False
-            if prov_name:
-                provider = myDB.action('SELECT * from capabilities WHERE ProviderName="%s"' % prov_name).fetchone()
-                if provider:
-                    if prov_search != provider['GeneralSearch']:
-                        changed = True
-                        myDB.action('UPDATE capabilities SET GeneralSearch="%s" WHERE ProviderName="%s"' % (prov_search, prov_name))
-                    if prov_booksearch != provider['BookSearch']:
-                        changed = True
-                        myDB.action('UPDATE capabilities SET BookSearch="%s" WHERE ProviderName="%s"' % (prov_booksearch, prov_name))
-                    if prov_magsearch != provider['MagSearch']:
-                        changed = True
-                        myDB.action('UPDATE capabilities SET MagSearch="%s" WHERE ProviderName="%s"' % (prov_magsearch, prov_name))
-                    if prov_bookcat != provider['BookCat']:
-                        changed = True
-                        myDB.action('UPDATE capabilities SET BookCat="%s" WHERE ProviderName="%s"' % (prov_bookcat, prov_name))
-                    if prov_magcat != provider['MagCat']:
-                        changed = True
-                        myDB.action('UPDATE capabilities SET MagCat="%s" WHERE ProviderName="%s"' % (prov_magcat, prov_name))
-                    if prov_extended != provider['Extended']:
-                        changed = True
-                        myDB.action('UPDATE capabilities SET Extended="%s" WHERE ProviderName="%s"' % (prov_extended, prov_name))
-                    
-                    if prov_manual != provider['Manual']:
-                        changed = True
-                        myDB.action('UPDATE capabilities SET Manual="%s" WHERE ProviderName="%s"' % (prov_manual, prov_name))
-                    if changed:
-                        myDB.action('UPDATE capabilities SET UpdateDate="%s" WHERE ProviderName="%s"' % (formatter.today(), prov_name))
-                        logger.info(
-                            '%s has been updated' % prov_name)
-            count += 1
+            'Config file [%s] has been updated' % lazylibrarian.CONFIGFILE)
 
         raise cherrypy.HTTPRedirect("config")
 

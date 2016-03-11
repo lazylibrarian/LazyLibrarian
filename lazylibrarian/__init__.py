@@ -500,11 +500,21 @@ def initialize():
             if CFG.has_option(newz_name, 'newznab_api%i' % count):
                 CFG.set(newz_name, 'API', CFG.get(newz_name, 'newznab_api%i' % count))
                 CFG.remove_option(newz_name, 'newznab_api%i' % count)
+            if CFG.has_option(newz_name, 'nzedb'):
+                CFG.remove_option(newz_name, 'nzedb')
 
             NEWZNAB_PROV.append({"NAME": newz_name,
                                  "ENABLED": check_setting_bool(CFG, newz_name, 'ENABLED', 0),
                                  "HOST": check_setting_str(CFG, newz_name, 'HOST', ''),
-                                 "API": check_setting_str(CFG, newz_name, 'API', '')
+                                 "API": check_setting_str(CFG, newz_name, 'API', ''),
+                                 "GENERALSEARCH": check_setting_str(CFG, newz_name, 'GENERALSEARCH', 'search'),
+                                 "BOOKSEARCH": check_setting_str(CFG, newz_name, 'BOOKSEARCH', 'book'),
+                                 "MAGSEARCH": check_setting_str(CFG, newz_name, 'MAGSEARCH', ''),
+                                 "BOOKCAT": check_setting_str(CFG, newz_name, 'BOOKCAT', '7000,7020'),
+                                 "MAGCAT": check_setting_str(CFG, newz_name, 'MAGCAT', '7010'),
+                                 "EXTENDED": check_setting_str(CFG, newz_name, 'EXTENDED', '1'),
+                                 "UPDATED": check_setting_str(CFG, newz_name, 'UPDATED', ''),
+                                 "MANUAL": check_setting_bool(CFG, newz_name, 'MANUAL', 0)
                                  })
             count = count + 1
         # if the last slot is full, add an empty one on the end
@@ -523,11 +533,21 @@ def initialize():
             if CFG.has_option(torz_name, 'torznab_api%i' % count):
                 CFG.set(torz_name, 'API', CFG.get(torz_name, 'torznab_api%i' % count))
                 CFG.remove_option(torz_name, 'torznab_api%i' % count)
+            if CFG.has_option(torz_name, 'nzedb'):
+                CFG.remove_option(torz_name, 'nzedb')
 
             TORZNAB_PROV.append({"NAME": torz_name,
                                  "ENABLED": check_setting_bool(CFG, torz_name, 'ENABLED', 0),
                                  "HOST": check_setting_str(CFG, torz_name, 'HOST', ''),
-                                 "API": check_setting_str(CFG, torz_name, 'API', '')
+                                 "API": check_setting_str(CFG, torz_name, 'API', ''),
+                                 "GENERALSEARCH": check_setting_str(CFG, torz_name, 'GENERALSEARCH', 'search'),
+                                 "BOOKSEARCH": check_setting_str(CFG, torz_name, 'BOOKSEARCH', 'book'),
+                                 "MAGSEARCH": check_setting_str(CFG, torz_name, 'MAGSEARCH', ''),
+                                 "BOOKCAT": check_setting_str(CFG, torz_name, 'BOOKCAT', '8000,8010'),
+                                 "MAGCAT": check_setting_str(CFG, torz_name, 'MAGCAT', '8030'),
+                                 "EXTENDED": check_setting_str(CFG, torz_name, 'EXTENDED', '1'),
+                                 "UPDATED": check_setting_str(CFG, torz_name, 'UPDATED', ''),
+                                 "MANUAL": check_setting_bool(CFG, torz_name, 'MANUAL', 0)
                                  })
             count = count + 1
         # if the last slot is full, add an empty one on the end
@@ -812,6 +832,14 @@ def config_write():
         CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
         CFG.set(provider['NAME'], 'HOST', provider['HOST'])
         CFG.set(provider['NAME'], 'API', provider['API'])
+        CFG.set(provider['NAME'], 'GENERALSEARCH', provider['GENERALSEARCH'])
+        CFG.set(provider['NAME'], 'BOOKSEARCH', provider['BOOKSEARCH'])
+        CFG.set(provider['NAME'], 'MAGSEARCH', provider['MAGSEARCH'])
+        CFG.set(provider['NAME'], 'BOOKCAT', provider['BOOKCAT'])
+        CFG.set(provider['NAME'], 'MAGCAT', provider['MAGCAT'])
+        CFG.set(provider['NAME'], 'EXTENDED', provider['EXTENDED'])
+        CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
+        CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
     add_newz_slot()
 #
     for provider in TORZNAB_PROV:
@@ -819,6 +847,14 @@ def config_write():
         CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
         CFG.set(provider['NAME'], 'HOST', provider['HOST'])
         CFG.set(provider['NAME'], 'API', provider['API'])
+        CFG.set(provider['NAME'], 'GENERALSEARCH', provider['GENERALSEARCH'])
+        CFG.set(provider['NAME'], 'BOOKSEARCH', provider['BOOKSEARCH'])
+        CFG.set(provider['NAME'], 'MAGSEARCH', provider['MAGSEARCH'])
+        CFG.set(provider['NAME'], 'BOOKCAT', provider['BOOKCAT'])
+        CFG.set(provider['NAME'], 'MAGCAT', provider['MAGCAT'])
+        CFG.set(provider['NAME'], 'EXTENDED', provider['EXTENDED'])
+        CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
+        CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
     add_torz_slot()
 #
     for provider in RSS_PROV:
@@ -949,12 +985,28 @@ def add_newz_slot():
         CFG.set(newz_name, 'ENABLED', False)
         CFG.set(newz_name, 'HOST', '')
         CFG.set(newz_name, 'API', '')
+        CFG.set(newz_name, 'GENERALSEARCH', 'search')
+        CFG.set(newz_name, 'BOOKSEARCH', 'book')
+        CFG.set(newz_name, 'MAGSEARCH', '')
+        CFG.set(newz_name, 'BOOKCAT', '7000,7020')
+        CFG.set(newz_name, 'MAGCAT', '7010')
+        CFG.set(newz_name, 'EXTENDED', '1')
+        CFG.set(newz_name, 'UPDATED', '')
+        CFG.set(newz_name, 'MANUAL', False)
+        
         NEWZNAB_PROV.append({"NAME": newz_name,
                              "ENABLED": 0,
                              "HOST": '',
-                             "API": ''
+                             "API": '',
+                             "GENERALSEARCH": 'search',
+                             "BOOKSEARCH": 'book',
+                             "MAGSEARCH": '',
+                             "BOOKCAT": '7000,7020',
+                             "MAGCAT": '7010',
+                             "EXTENDED": '1',
+                             "UPDATED": '',
+                             "MANUAL": 0
                              })
-
 
 def add_torz_slot():
     count = len(TORZNAB_PROV)
@@ -964,12 +1016,27 @@ def add_torz_slot():
         CFG.set(torz_name, 'ENABLED', False)
         CFG.set(torz_name, 'HOST', '')
         CFG.set(torz_name, 'API', '')
+        CFG.set(torz_name, 'GENERALSEARCH', 'search')
+        CFG.set(torz_name, 'BOOKSEARCH', 'book')
+        CFG.set(torz_name, 'MAGSEARCH', '')
+        CFG.set(torz_name, 'BOOKCAT', '7000,7020')
+        CFG.set(torz_name, 'MAGCAT', '7010')
+        CFG.set(torz_name, 'EXTENDED', '1')
+        CFG.set(torz_name, 'UPDATED', '')
+        CFG.set(torz_name, 'MANUAL', False)
         TORZNAB_PROV.append({"NAME": torz_name,
                              "ENABLED": 0,
                              "HOST": '',
-                             "API": ''
+                             "API": '',
+                             "GENERALSEARCH": 'search',
+                             "BOOKSEARCH": 'book',
+                             "MAGSEARCH": '',
+                             "BOOKCAT": '8000,8010',
+                             "MAGCAT": '8030',
+                             "EXTENDED": '1',
+                             "UPDATED": '',
+                             "MANUAL": 0
                              })
-
 
 def USE_NZB():
     for provider in NEWZNAB_PROV:
@@ -1169,8 +1236,6 @@ def dbcheck():
     c.execute('CREATE TABLE IF NOT EXISTS languages ( isbn TEXT, lang TEXT )')
     c.execute('CREATE TABLE IF NOT EXISTS stats ( authorname text, GR_book_hits int, GR_lang_hits int, \
         LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int )')
-    c.execute('CREATE TABLE IF NOT EXISTS capabilities (ProviderName TEXT, GeneralSearch TEXT, BookSearch TEXT, MagSearch TEXT, \
-        BookCat TEXT, MagCat TEXT, Extended TEXT, UpdateDate TEXT, Manual INT)')
 
     try:
         logger.info('Checking database')
@@ -1255,11 +1320,7 @@ def dbcheck():
         c.execute('ALTER TABLE issues ADD COLUMN IssueID TEXT')
         addedIssues = True
 
-    try:
-        c.execute('SELECT Manual from capabilities')
-    except sqlite3.OperationalError:
-        logger.info('Updating Capabilities table to hold Manual indicator')
-        c.execute('ALTER TABLE capabilities ADD COLUMN Manual INT')
+    c.execute('DROP TABLE if exists capabilities')
 
     conn.commit()
     c.close()

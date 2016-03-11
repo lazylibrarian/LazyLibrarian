@@ -32,20 +32,30 @@ def now():
 
 
 def today():
+    """
+    Return todays date in format yyyy-mm-dd
+    """
     dttoday = datetime.date.today()
     yyyymmdd = datetime.date.isoformat(dttoday)
     return yyyymmdd
 
 
 def age(histdate):
+    """
+    Return how many days since histdate
+    histdate = yyyy-mm-dd
+    return 0 for today, or if invalid histdate
+    """
     nowdate = datetime.date.isoformat(datetime.date.today())
     y1, m1, d1 = (int(x) for x in nowdate.split('-'))
-    y2, m2, d2 = (int(x) for x in histdate.split('-'))
-    date1 = datetime.date(y1, m1, d1)
-    date2 = datetime.date(y2, m2, d2)
-    dtage = date1 - date2
-    return dtage.days
-
+    try:
+        y2, m2, d2 = (int(x) for x in histdate.split('-'))
+        date1 = datetime.date(y1, m1, d1)
+        date2 = datetime.date(y2, m2, d2)
+        dtage = date1 - date2
+        return dtage.days
+    except ValueError:
+        return 0
 
 def nzbdate2format(nzbdate):
     mmname = nzbdate.split()[2].zfill(2)

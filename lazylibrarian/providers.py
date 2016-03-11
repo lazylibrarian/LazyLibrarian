@@ -94,41 +94,23 @@ def KAT(book=None):
     logger.debug(u"Found %i results from %s for %s" % (len(results), provider, book['searchterm']))
     return results
 
-def get_capabilities(myDB, provider):
+def get_capabilities(provider):
     """
-    look up provider capabilities from db, or query provider for caps if not in db, 
-    or if db entry is too old and not set manually. Return capabilities appended to provider[]
-    GeneralSearch , BookSearch , MagSearch, BookCat, MagCat, Extended
+    query provider for caps if none loaded yet, or if config entry is too old and not set manually. 
     """                
-    match = myDB.action('SELECT * FROM capabilities where ProviderName = "%s"' % provider['HOST']).fetchone()
-    if match:
-        if (formatter.age(match['UpdateDate']) > lazylibrarian.CACHE_AGE) and not match['Manual']:
-            logger.debug('Cached capabilities for %s are too old' % provider['HOST'])
+    match = False
+    if len(provider['UPDATED']) == 10: # any stored values?
+        match = True
+        if (formatter.age(provider['UPDATED']) > lazylibrarian.CACHE_AGE) and not provider['MANUAL']:
+            logger.debug('Stored capabilities for %s are too old' % provider['HOST'])
             match = False
+    else:
+        print "~~~~~~~~~~~~~~~~ %i [%s]" % (len(provider['UPDATED']), provider['UPDATED'])
     if match:
-        logger.debug('Loading cached capabilities for %s' % provider['HOST'])
-        provider['GeneralSearch'] = match['GeneralSearch']
-        provider['BookSearch'] = match['BookSearch']
-        provider['MagSearch'] = match['MagSearch']
-        provider['BookCat'] = match['BookCat']
-        provider['MagCat'] = match['MagCat']
-        provider['Extended'] = match['Extended']
+        logger.debug('Using stored capabilities for %s' % provider['HOST'])
     else:
         logger.debug('Requesting capabilities for %s' % provider['HOST'])
         host = provider['HOST']
-        # set defaults in case we don't get any capabilities
-        provider['GeneralSearch'] = "search"
-        provider['BookSearch'] = "book"
-        provider['MagSearch'] = "" # no specific search for now
-        provider['BookCat'] = "7000,7020" # book, ebook
-        provider['MagCat'] = "7010"  # magazine
-        provider['Extended'] = "1"
-        if 'torznab' in host:
-            provider['BookSearch'] = ""
-            provider['MagSearch'] = "" # no specific search for now
-            provider['BookCat'] = "8000,8010" # book, ebook
-            provider['MagCat'] = "8030"  # magazine        
-        
         if not str(host)[:4] == "http":
             host = 'http://' + host
         URL = host + '/api?t=caps&apikey=' + provider['API']
@@ -163,60 +145,40 @@ def get_capabilities(myDB, provider):
                     # eg "Magazines" "Mags" or "Books/Magazines" "Mags > French" 
                     # Load all languages for now as we don't know which the user might want
                     #############################################################################
-                    # attrib = data.find('searching/search').attrib
-                    # if 'available' in attrib and 'supportedParams' in attrib:
-                    #    if attrib['available'] == 'yes' and 'q' in attrib['supportedParams']:
-                    #        provider['GeneralSearch'] = "search"
-                    # attrib = data.find('searching/book-search').attrib
-                    # if 'available' in attrib:
-                    #    if attrib['available'] == 'yes':
-                    #        provider['BookSearch'] = "book"
+                    provider['GENERALSEARCH'] = 'search'
+                    provider['EXTENDED'] = '1'
                     categories = data.getiterator('category')
                     for cat in categories:
                         if 'name' in cat.attrib:
                             if cat.attrib['name'].lower() == 'books':
                                 bookcat = cat.attrib['id'] # keep main bookcat for later
-                                provider['BookCat'] = bookcat
-                                provider['MagCat'] = ''
-                                if provider['BookCat'] == '7000':
+                                provider['BOOKCAT'] = bookcat
+                                provider['MAGCAT'] = ''
+                                if provider['BOOKCAT'] == '7000':
                                     # looks like newznab+, should support book-search
-                                    provider['BookSearch'] = 'book' 
+                                    provider['BOOKSEARCH'] = 'book' 
                                 else:
                                     # looks like nZEDb, probably no book-search
-                                    provider['BookSearch'] = ''
+                                    provider['BOOKSEARCH'] = ''
                                
                                 subcats = cat.getiterator('subcat')
                                 for subcat in subcats:
                                     if 'ebook' in subcat.attrib['name'].lower():
-                                        provider['BookCat'] = "%s,%s" % (provider['BookCat'],subcat.attrib['id'])
+                                        provider['BOOKCAT'] = "%s,%s" % (provider['BOOKCAT'],subcat.attrib['id'])
                                     if  'magazines' in subcat.attrib['name'].lower() or 'mags' in subcat.attrib['name'].lower():
-                                        if provider['MagCat']:
-                                            provider['MagCat'] = "%s,%s" % (provider['MagCat'],subcat.attrib['id'])
+                                        if provider['MAGCAT']:
+                                            provider['MAGCAT'] = "%s,%s" % (provider['MAGCAT'],subcat.attrib['id'])
                                         else:
-                                            provider['MagCat'] = subcat.attrib['id']
+                                            provider['MAGCAT'] = subcat.attrib['id']
                                 # if no specific magazine subcategory, use books
-                                if not provider['MagCat']:
-                                    provider['MagCat'] = bookcat
-                    logger.debug("Categories: Books %s : Mags %s" % (provider['BookCat'], provider['MagCat']))
+                                if not provider['MAGCAT']:
+                                    provider['MAGCAT'] = bookcat
+                    logger.debug("Categories: Books %s : Mags %s" % (provider['BOOKCAT'], provider['MAGCAT']))
+                    provider['UPDATED'] = formatter.today()
                 else:
                     logger.warn(u"Unable to get capabilities for %s: No data returned" % URL)
             else:
                 logger.warn(u"Unable to get capabilities for %s: Got %s" % (URL, resp.getcode()))
-        
-        # insert new or default capabilities into database
-        controlValueDict = {"ProviderName": provider['HOST']}
-        newValueDict = {
-            "GeneralSearch":    provider['GeneralSearch'],
-            "BookSearch":       provider['BookSearch'],
-            "MagSearch":        provider['MagSearch'],
-            "BookCat":          str(provider['BookCat']),
-            "MagCat":           str(provider['MagCat']),
-            "Extended":         provider['Extended'],
-            "UpdateDate":       formatter.today(),
-            "Manual":           0
-            }
-
-        myDB.upsert("capabilities", newValueDict, controlValueDict)
     return provider
 
 def IterateOverNewzNabSites(book=None, searchType=None):
@@ -232,14 +194,14 @@ def IterateOverNewzNabSites(book=None, searchType=None):
     
     for provider in lazylibrarian.NEWZNAB_PROV:
         if (provider['ENABLED']):
-            provider = get_capabilities(myDB, provider)
+            provider = get_capabilities(provider)
             providers += 1
             logger.debug('[IterateOverNewzNabSites] - %s' % provider['HOST'])
             resultslist += NewzNabPlus(book, provider, searchType, "nzb")
 
     for provider in lazylibrarian.TORZNAB_PROV:
         if (provider['ENABLED']):
-            provider = get_capabilities(myDB, provider)
+            provider = get_capabilities(provider)
             providers += 1
             logger.debug('[IterateOverTorzNabSites] - %s' % provider['HOST'])
             resultslist += NewzNabPlus(book, provider,
@@ -365,50 +327,52 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
                  searchType, host, searchMode, api_key, str(book)))
 
     results = []
+    data = None
 
     params = ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode)
 
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
-    URL = host + '/api?' + urllib.urlencode(params)
+    if params:
+        URL = host + '/api?' + urllib.urlencode(params)
 
-    try:
-        request = urllib2.Request(URL)
-        if lazylibrarian.PROXY_HOST:
-            request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-        request.add_header('User-Agent', common.USER_AGENT)
-        resp = urllib2.urlopen(request, timeout=90)
         try:
-            data = ElementTree.parse(resp)
-        except (urllib2.URLError, socket.timeout, IOError, EOFError) as e:
-            logger.error('Error fetching data from %s: %s' % (host, e))
+            request = urllib2.Request(URL)
+            if lazylibrarian.PROXY_HOST:
+                request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
+            request.add_header('User-Agent', common.USER_AGENT)
+            resp = urllib2.urlopen(request, timeout=90)
+            try:
+                data = ElementTree.parse(resp)
+            except (urllib2.URLError, socket.timeout, IOError, EOFError) as e:
+                logger.error('Error fetching data from %s: %s' % (host, e))
+                data = None
+    
+        except Exception as e:
+            logger.error("Error 403 opening url %s, %s" % (URL, e))
             data = None
-
-    except Exception as e:
-        logger.error("Error 403 opening url %s, %s" % (URL, e))
-        data = None
-
-    if data:
-        # to debug because of api
-        logger.debug(u'Parsing results from <a href="%s">%s</a>' % (URL, host))
-        rootxml = data.getroot()
-
-        if rootxml.tag == 'error':
-            errormsg = rootxml.get('description', default='unknown error')
-            logger.error(u"%s - %s" % (host, errormsg))
+    
+        if data:
+            # to debug because of api
+            logger.debug(u'Parsing results from <a href="%s">%s</a>' % (URL, host))
+            rootxml = data.getroot()
+    
+            if rootxml.tag == 'error':
+                errormsg = rootxml.get('description', default='unknown error')
+                logger.error(u"%s - %s" % (host, errormsg))
+            else:
+                resultxml = rootxml.getiterator('item')
+                nzbcount = 0
+                for nzb in resultxml:
+                    try:
+                        nzbcount = nzbcount + 1
+                        results.append(ReturnResultsFieldsBySearchType(book, nzb, searchType, host, searchMode))
+                    except IndexError:
+                        logger.debug('No results from %s for %s' % (host, book['searchterm']))
+                logger.debug(u'Found %s nzb at %s for: %s' % (nzbcount, host, book['searchterm']))
         else:
-            resultxml = rootxml.getiterator('item')
-            nzbcount = 0
-            for nzb in resultxml:
-                try:
-                    nzbcount = nzbcount + 1
-                    results.append(ReturnResultsFieldsBySearchType(book, nzb, searchType, host, searchMode))
-                except IndexError:
-                    logger.debug('No results from %s for %s' % (host, book['searchterm']))
-            logger.debug(u'Found %s nzb at %s for: %s' % (nzbcount, host, book['searchterm']))
-    else:
-        logger.debug('No data returned from %s for %s' % (host, book['searchterm']))
+            logger.debug('No data returned from %s for %s' % (host, book['searchterm']))
     return results
 
 
@@ -423,20 +387,20 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
         authorname = authorname.replace('. ', ' ')
         authorname = common.removeDisallowedFilenameChars(authorname)
         bookname = common.removeDisallowedFilenameChars(book['bookName'])
-        if provider['BookSearch'] and provider['BookCat']:  # if specific booksearch, use it
+        if provider['BOOKSEARCH'] and provider['BOOKCAT']:  # if specific booksearch, use it
             params = {
-                "t": provider['BookSearch'],
+                "t": provider['BOOKSEARCH'],
                 "apikey": api_key,
                 "title": bookname,
                 "author": authorname,
-                "cat": provider['BookCat']
+                "cat": provider['BOOKCAT']
             }
-        elif provider['GeneralSearch'] and provider['BookCat']: # if not, try general search
+        elif provider['GENERALSEARCH'] and provider['BOOKCAT']: # if not, try general search
             params = {
-                "t": provider['GeneralSearch'],
+                "t": provider['GENERALSEARCH'],
                 "apikey": api_key,
                 "q": authorname + ' ' + bookname,
-                "cat": provider['BookCat']
+                "cat": provider['BOOKCAT']
             }    
     elif searchType == "shortbook":
         authorname = book['authorName']
@@ -446,20 +410,20 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
         authorname = authorname.replace('. ', ' ')
         authorname = common.removeDisallowedFilenameChars(authorname)
         bookname = common.removeDisallowedFilenameChars(book['bookName'].split('(')[0]).strip()
-        if provider['BookSearch'] and provider['BookCat']:  # if specific booksearch, use it
+        if provider['BOOKSEARCH'] and provider['BOOKCAT']:  # if specific booksearch, use it
             params = {
-                "t": provider['BookSearch'],
+                "t": provider['BOOKSEARCH'],
                 "apikey": api_key,
                 "title": bookname,
                 "author": authorname,
-                "cat": provider['BookCat']
+                "cat": provider['BOOKCAT']
             }
-        elif provider['GeneralSearch'] and provider['BookCat']:
+        elif provider['GENERALSEARCH'] and provider['BOOKCAT']:
             params = {
-                "t": provider['GeneralSearch'],
+                "t": provider['GENERALSEARCH'],
                 "apikey": api_key,
                 "q": authorname + ' ' + bookname,
-                "cat": provider['BookCat']
+                "cat": provider['BOOKCAT']
             }            
     elif searchType == "author":
         authorname = book['authorName']
@@ -468,42 +432,43 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
         # middle initials can't have a dot
         authorname = authorname.replace('. ', ' ')
         authorname = common.removeDisallowedFilenameChars(authorname)
-        if provider['GeneralSearch']:
+        if provider['GENERALSEARCH']:
             params = {
-                "t": provider['GeneralSearch'],
+                "t": provider['GENERALSEARCH'],
                 "apikey": api_key,
                 "q": authorname,
-                "extended": provider['Extended'],
+                "extended": provider['EXTENDED'],
             }
     elif searchType == "mag":
-        if provider['MagSearch'] and provider['MagCat']:  # if specific magsearch, use it
+        if provider['MAGSEARCH'] and provider['MAGCAT']:  # if specific magsearch, use it
             params = {
-                "t": provider['MagSearch'],
+                "t": provider['MAGSEARCH'],
                 "apikey": api_key,
-                "cat": provider['MagCat'],
+                "cat": provider['MAGCAT'],
                 "q": book['searchterm'],
-                "extended": provider['Extended'],
+                "extended": provider['EXTENDED'],
             }
-        elif provider['GeneralSearch'] and provider['MagCat']:
+        elif provider['GENERALSEARCH'] and provider['MAGCAT']:
             params = {
-               "t": provider['GeneralSearch'],
+               "t": provider['GENERALSEARCH'],
                "apikey": api_key,
-               "cat": provider['MagCat'],
+               "cat": provider['MAGCAT'],
                "q": book['searchterm'],
-               "extended": provider['Extended'],
+               "extended": provider['EXTENDED'],
            }
-    elif provider['GeneralSearch']:
-        params = {
-            "t": provider['GeneralSearch'],
-            "apikey": api_key,
-            # this is a general search
-            "q": book['searchterm'],
-            "extended": provider['Extended'],
-        }
-        if params:
-            logger.debug('[NewzNabPlus] - %s Search parameters set to %s' % (searchMode, str(params)))
-        else:
-            logger.debug('[NewzNabPlus] - %s No matching search parameters' % searchMode)
+    else:
+        if provider['GENERALSEARCH']:
+            params = {
+                "t": provider['GENERALSEARCH'],
+                "apikey": api_key,
+                # this is a general search
+                "q": book['searchterm'],
+                "extended": provider['EXTENDED'],
+            }
+    if params:
+        logger.debug('[NewzNabPlus] - %s Search parameters set to %s' % (searchMode, str(params)))
+    else:
+        logger.debug('[NewzNabPlus] - %s No matching search parameters' % searchMode)
             
     return params
 
