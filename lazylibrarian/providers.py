@@ -104,8 +104,7 @@ def get_capabilities(provider):
         if (formatter.age(provider['UPDATED']) > lazylibrarian.CACHE_AGE) and not provider['MANUAL']:
             logger.debug('Stored capabilities for %s are too old' % provider['HOST'])
             match = False
-    else:
-        print "~~~~~~~~~~~~~~~~ %i [%s]" % (len(provider['UPDATED']), provider['UPDATED'])
+    match = False
     if match:
         logger.debug('Using stored capabilities for %s' % provider['HOST'])
     else:
@@ -145,8 +144,21 @@ def get_capabilities(provider):
                     # eg "Magazines" "Mags" or "Books/Magazines" "Mags > French" 
                     # Load all languages for now as we don't know which the user might want
                     #############################################################################
-                    provider['GENERALSEARCH'] = 'search'
+                    #
+                    #  set some defaults
+                    #
+                    provider['GENERALSEARCH'] = ''
                     provider['EXTENDED'] = '1'
+                    provider['BOOKCAT'] = ''
+                    provider['MAGCAT'] = ''
+                    provider['BOOKSEARCH'] = ''
+                    provider['MAGSEARCH'] = ''
+                    #
+                    search = data.find('searching/search')
+                    if search is not None:
+                        if 'available' in search.attrib:
+                            if search.attrib['available'] == 'yes': 
+                                provider['GENERALSEARCH'] = 'search'    
                     categories = data.getiterator('category')
                     for cat in categories:
                         if 'name' in cat.attrib:
@@ -156,11 +168,26 @@ def get_capabilities(provider):
                                 provider['MAGCAT'] = ''
                                 if provider['BOOKCAT'] == '7000':
                                     # looks like newznab+, should support book-search
-                                    provider['BOOKSEARCH'] = 'book' 
+                                    provider['BOOKSEARCH'] = 'book'
+                                    # but check in case
+                                    search = data.find('searching/book-search')
+                                    if search is not None:
+                                        if 'available' in search.attrib:
+                                            if search.attrib['available'] == 'yes': 
+                                                provider['BOOKSEARCH'] = 'book'    
+                                            else:
+                                                provider['BOOKSEARCH'] = ''
                                 else:
                                     # looks like nZEDb, probably no book-search
                                     provider['BOOKSEARCH'] = ''
-                               
+                                    # but check in case
+                                    search = data.find('searching/book-search')
+                                    if search is not None:
+                                        if 'available' in search.attrib:
+                                            if search.attrib['available'] == 'yes': 
+                                                provider['BOOKSEARCH'] = 'book'    
+                                            else:
+                                                provider['BOOKSEARCH'] = ''
                                 subcats = cat.getiterator('subcat')
                                 for subcat in subcats:
                                     if 'ebook' in subcat.attrib['name'].lower():
