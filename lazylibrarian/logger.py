@@ -14,7 +14,14 @@ class RotatingLogger(object):
     def __init__(self, filename):
 
         self.filename = filename
+        self.filehandler = None
+        self.consolehandler = None
 
+    def stopLogger(self): 
+        l = logging.getLogger('lazylibrarian')
+        l.removeHandler(self.filehandler)
+        l.removeHandler(self.consolehandler) 
+    
     def initLogger(self, loglevel=1):
 
         l = logging.getLogger('lazylibrarian')
@@ -33,7 +40,8 @@ class RotatingLogger(object):
 
         filehandler.setFormatter(fileformatter)
         l.addHandler(filehandler)
-
+        self.filehandler = filehandler
+        
         if loglevel:
             consolehandler = logging.StreamHandler()
             if loglevel == 1:
@@ -43,6 +51,7 @@ class RotatingLogger(object):
             consoleformatter = logging.Formatter('%(asctime)s - %(levelname)s :: %(message)s', '%d-%b-%Y %H:%M:%S')
             consolehandler.setFormatter(consoleformatter)
             l.addHandler(consolehandler)
+            self.consolehandler = consolehandler
 
     def log(self, message, level):
 
@@ -51,8 +60,7 @@ class RotatingLogger(object):
         threadname = threading.currentThread().getName()
 
         # Ensure messages are utf-8 as some author names contain accents and the web page doesnt like them
-        if hasattr(message, 'encode'):
-                message = message.encode('utf-8')
+        message = safe_unicode(message).encode('utf-8')
 
         if level != 'DEBUG' or lazylibrarian.LOGFULL is True:
             # Limit the size of the "in-memory" log, as gets slow if too long
@@ -73,6 +81,14 @@ class RotatingLogger(object):
 
 lazylibrarian_log = RotatingLogger('lazylibrarian.log')
 
+def safe_unicode(obj, *args):
+    """ return the unicode representation of obj """
+    try:
+        return unicode(obj, *args)
+    except UnicodeDecodeError:
+        # obj is byte string
+        ascii_text = str(obj).encode('string_escape')
+        return unicode(ascii_text)
 
 def debug(message):
     lazylibrarian_log.log(message, level='DEBUG')

@@ -1386,6 +1386,7 @@ class WebInterface(object):
 
     def clearLog(self):
         # Clear the log
+        logger.lazylibrarian_log.stopLogger()
         if os.path.exists(lazylibrarian.LOGDIR):
             try:
                 shutil.rmtree(lazylibrarian.LOGDIR)
@@ -1393,6 +1394,9 @@ class WebInterface(object):
                 lazylibrarian.LOGLIST = []
             except OSError as e:
                 logger.info(u'Failed to clear log: %s' % e.strerror)
+        logger.lazylibrarian_log.initLogger(loglevel=lazylibrarian.LOGLEVEL)
+        logger.info("Log cleared, level set to [%s]- Log Directory is [%s]" % (
+            lazylibrarian.LOGLEVEL, lazylibrarian.LOGDIR))
         raise cherrypy.HTTPRedirect("logs")
     clearLog.exposed = True
 

@@ -34,7 +34,7 @@ def search_tor_book(books=None, reset=False):
 
     if books is None:
         # We are performing a backlog search
-        searchbooks = myDB.select('SELECT BookID, AuthorName, Bookname from books WHERE Status="Wanted"')
+        searchbooks = myDB.select('SELECT BookID, AuthorName, Bookname, BookAdded from books WHERE Status="Wanted" order by BookAdded desc')
     else:
         # The user has added a new book
         searchbooks = []

@@ -474,8 +474,12 @@ def initialize():
         DESTINATION_DIR = check_setting_str(CFG, 'General', 'destination_dir', '')
         ALTERNATE_DIR = check_setting_str(CFG, 'General', 'alternate_dir', '')
         DOWNLOAD_DIR = check_setting_str(CFG, 'General', 'download_dir', '')
-        if not DOWNLOAD_DIR or not os.path.isdir(DOWNLOAD_DIR):
+        if not DOWNLOAD_DIR:
             logger.warn("Download dir not found, books will be downloaded to %s" % os.getcwd())
+        elif not os.path.isdir(DOWNLOAD_DIR):
+            logger.warn("Download dir [%s] not found, books will be downloaded to %s" % (repr(DOWNLOAD_DIR), os.getcwd()))
+        elif not os.access(DOWNLOAD_DIR, os.W_OK | os.X_OK):
+            logger.warn("Download dir [%s] not writeable, books will be downloaded to %s" % (repr(DOWNLOAD_DIR), os.getcwd()))
 
         NZB_DOWNLOADER_SABNZBD = check_setting_bool(CFG, 'USENET', 'nzb_downloader_sabnzbd', 0)
         NZB_DOWNLOADER_NZBGET = check_setting_bool(CFG, 'USENET', 'nzb_downloader_nzbget', 0)
@@ -727,9 +731,6 @@ def initialize():
         GR_API = check_setting_str(CFG, 'API', 'gr_api', 'ckvsiSDsuqh7omh74ZZ6Q')
         GB_API = check_setting_str(CFG, 'API', 'gb_api', '')
 
-        if not LOGDIR:
-            LOGDIR = os.path.join(DATADIR, 'Logs')
-
         # Put the cache dir in the data dir for now
         CACHEDIR = os.path.join(DATADIR, 'cache')
         if not os.path.exists(CACHEDIR):
@@ -749,6 +750,7 @@ def initialize():
 
         __INITIALIZED__ = True
         return True
+
 
 
 def config_write():
@@ -830,6 +832,7 @@ def config_write():
     for provider in NEWZNAB_PROV:
         check_section(provider['NAME'])
         CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
+        oldprovider = check_setting_str(CFG, provider['NAME'], 'HOST', '', log=False)
         CFG.set(provider['NAME'], 'HOST', provider['HOST'])
         CFG.set(provider['NAME'], 'API', provider['API'])
         CFG.set(provider['NAME'], 'GENERALSEARCH', provider['GENERALSEARCH'])
@@ -838,13 +841,19 @@ def config_write():
         CFG.set(provider['NAME'], 'BOOKCAT', provider['BOOKCAT'])
         CFG.set(provider['NAME'], 'MAGCAT', provider['MAGCAT'])
         CFG.set(provider['NAME'], 'EXTENDED', provider['EXTENDED'])
-        CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
-        CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
+        if provider['HOST'] == oldprovider:
+            CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
+            CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
+        else:
+            logger.debug('Reset %s as provider changed' % provider['NAME'])
+            CFG.set(provider['NAME'], 'UPDATED', '')
+            CFG.set(provider['NAME'], 'MANUAL', False)
     add_newz_slot()
 #
     for provider in TORZNAB_PROV:
         check_section(provider['NAME'])
         CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
+        oldprovider = check_setting_str(CFG, provider['NAME'], 'HOST', '', log=False)
         CFG.set(provider['NAME'], 'HOST', provider['HOST'])
         CFG.set(provider['NAME'], 'API', provider['API'])
         CFG.set(provider['NAME'], 'GENERALSEARCH', provider['GENERALSEARCH'])
@@ -853,8 +862,14 @@ def config_write():
         CFG.set(provider['NAME'], 'BOOKCAT', provider['BOOKCAT'])
         CFG.set(provider['NAME'], 'MAGCAT', provider['MAGCAT'])
         CFG.set(provider['NAME'], 'EXTENDED', provider['EXTENDED'])
-        CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
-        CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
+        if provider['HOST'] == oldprovider:
+            CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
+            CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
+        else:
+            logger.debug('Reset %s as provider changed' % provider['NAME'])
+            CFG.set(provider['NAME'], 'UPDATED', '')
+            CFG.set(provider['NAME'], 'MANUAL', False)
+        
     add_torz_slot()
 #
     for provider in RSS_PROV:
