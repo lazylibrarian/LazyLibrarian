@@ -107,7 +107,7 @@ class GoodReads:
             except Exception as e:
                 logger.error("Error finding results: %s" % e)
                 return
-            if not rootxml:
+            if not len(rootxml):
                 logger.debug("Error requesting results")
                 return
 
@@ -218,7 +218,7 @@ class GoodReads:
         except Exception as e:
             logger.error("Error finding authorid: %s, %s" % (e, URL))
             return authorlist
-        if not rootxml:
+        if not len(rootxml):
             logger.debug("Error requesting authorid")
             return authorlist
 
@@ -248,7 +248,7 @@ class GoodReads:
         except Exception as e:
             logger.error("Error getting author info: %s" % e)
             return author_dict
-        if not rootxml:
+        if not len(rootxml):
             logger.debug("Error requesting author info")
             return author_dict
 
@@ -292,7 +292,7 @@ class GoodReads:
         except Exception as e:
             logger.error("Error fetching author books: %s" % e)
             return books_dict
-        if not rootxml:
+        if not len(rootxml):
             logger.debug("Error requesting author books")
             return books_dict
         if not in_cache:
@@ -429,7 +429,7 @@ class GoodReads:
                                             time.sleep(1)
 
                                         BOOK_rootxml, in_cache = self.get_request(BOOK_URL)
-                                        if not BOOK_rootxml:
+                                        if not len(BOOK_rootxml):
                                             logger.debug('Error requesting book language code')
                                             bookLanguage = ""
                                         else:
@@ -545,7 +545,7 @@ class GoodReads:
                 resultxml = None
                 try:
                     rootxml, in_cache = self.get_request(URL)
-                    if not rootxml:
+                    if not len(rootxml):
                         logger.debug('Error requesting next page of results')
                     else:
                         resultxml = rootxml.getiterator('book')
@@ -625,7 +625,7 @@ class GoodReads:
 
         try:
             rootxml, in_cache = self.get_request(URL)
-            if not rootxml:
+            if not len(rootxml):
                 logger.debug("Error requesting book")
                 return
         except Exception as e:
