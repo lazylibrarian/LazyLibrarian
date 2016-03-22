@@ -1195,6 +1195,7 @@
                         <div class="configtable">
                         <div class="row">
                             <div class="col-md-6">
+                            You only need to change these settings if auto-detection fails or returns incorrect values. If you make any alterations, tick the lock button to prevent reloading values from the provider.
                                 %for provider in lazylibrarian.NEWZNAB_PROV:
                                 <%
                                 if provider['HOST'] == "":
@@ -1212,7 +1213,7 @@
                                 %>                                  
                                      <label for="newznab[${loop.index}][manual]" class="control-label" ${hidden}>
                                      <input type="checkbox" id="newznab[${loop.index}][manual]" name="newznab[${loop.index}][manual]" value="1" ${checked}  ${hidden}/>
-                                     Tick to prevent reloading values from provider</label>
+                                     Tick to lock settings</label>
                                 </div>
                                 <input type="text" id="newznab[${loop.index}][name]" name="newznab[${loop.index}][name]" value="${provider['NAME']}" class="hidden">
                                 <input type="text" id="newznab[${loop.index}][updated]" name="newznab[${loop.index}][updated]" value="${provider['UPDATED']}" class="hidden">
