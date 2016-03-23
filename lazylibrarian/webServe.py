@@ -9,6 +9,7 @@ from operator import itemgetter
 import threading
 import Queue
 import hashlib
+import random
 import urllib
 import lazylibrarian
 
@@ -74,8 +75,8 @@ class WebInterface(object):
 
     def configUpdate(
         self, http_host='0.0.0.0', http_root='', http_user='', http_port=5299,
-                     http_pass='', http_look='', launch_browser=0, logdir='', loglevel=2, loglimit=500,
-                     logfiles=10, logsize=204800,
+                     http_pass='', http_look='', launch_browser=0, api_key='', api_enabled=0,
+                     logdir='', loglevel=2, loglimit=500, logfiles=10, logsize=204800,
                      imp_onlyisbn=0, imp_singlebook=0, imp_preflang='', imp_monthlang='', imp_convert='',
                      imp_autoadd='', match_ratio=80, nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0,
                      nzb_downloader_blackhole=0, proxy_host='', proxy_type='',
@@ -114,6 +115,8 @@ class WebInterface(object):
         lazylibrarian.HTTP_LOOK = http_look
         lazylibrarian.BOOKSTRAP_THEME = bookstrap_theme
         lazylibrarian.LAUNCH_BROWSER = bool(launch_browser)
+        lazylibrarian.API_ENABLED = bool(api_enabled)
+        lazylibrarian.API_KEY = api_key
         lazylibrarian.PROXY_HOST = proxy_host
         lazylibrarian.PROXY_TYPE = proxy_type
         lazylibrarian.LOGDIR = logdir
@@ -271,7 +274,7 @@ class WebInterface(object):
             lazylibrarian.NEWZNAB_PROV[count]['API'] = kwargs.get(
                 'newznab[%i][api]' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['GENERALSEARCH'] = kwargs.get(
-                'newznab[%i][generalsearch]' % count, '')
+                'newznab[%i][search]' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['BOOKSEARCH'] = kwargs.get(
                 'newznab[%i][booksearch]' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['MAGSEARCH'] = kwargs.get(
@@ -297,7 +300,7 @@ class WebInterface(object):
             lazylibrarian.TORZNAB_PROV[count]['API'] = kwargs.get(
                 'torznab[%i][api]' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['GENERALSEARCH'] = kwargs.get(
-                'torznab[%i][generalsearch]' % count, '')
+                'torznab[%i][search]' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['BOOKSEARCH'] = kwargs.get(
                 'torznab[%i][booksearch]' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['MAGSEARCH'] = kwargs.get(
@@ -1565,6 +1568,24 @@ class WebInterface(object):
         else:
             return "Test NMA notice failed"
 
+# API ###############################################################
+#    @cherrypy.expose
+#    def api(self, *args, **kwargs):
+#        from lazylibrarian.api import Api
+
+#        a = Api()
+#        a.checkParams(*args, **kwargs)
+
+#        return a.fetchData()
+
+#    @cherrypy.expose
+#    def generateAPI(self):
+#        api_key = hashlib.sha224(str(random.getrandbits(256))).hexdigest()[0:32]
+#        lazylibrarian.API_KEY = api_key
+#        logger.info("New API generated")
+#        raise cherrypy.HTTPRedirect("config")
+#    generateAPI.exposed = True
+    
 # ALL ELSE ##########################################################
 
     def forceProcess(self, source=None):
