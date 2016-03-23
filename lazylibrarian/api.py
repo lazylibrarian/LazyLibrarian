@@ -26,28 +26,22 @@ import json
 import threading
 import Queue
 
-cmd_list = ['help', 'getIndex', 'getAuthor', 'getWanted', 'getSnatched', 'getHistory', 'getLogs',  'clearLogs',
-            'getMagazines', 'getIssues', 'forceMagSearch', 'forceBookSearch', 'forceProcess', 
-            'pauseAuthor', 'resumeAuthor', 'refreshAuthor', 'forceActiveAuthorsUpdate',
-            'forceLibraryScan', 'forceMagazineScan',
-            'getVersion', 'shutdown', 'restart', 'update', 'findAuthor', 'findBook',
-            'addAuthor', 'delAuthor', 'queueBook', 'unqueueBook', 'delMagazine', 'addMagazine']
-cmd_help = {'help':'list available commands',
+cmd_dict = {'help':'list available commands',
             'getIndex':'list all authors',
-            'getAuthor&id=':'get author from AuthorID',
+            'getAuthor':'&id= get author from AuthorID',
             'getWanted':'list wanted books',
             'getSnatched':'list snatched books',
             'getHistory':'list history',
             'getLogs':'show current log',
             'clearLogs':'clear current log',
             'getMagazines':'list magazines',
-            'getIssues&name=':'list issues for named magazine',
+            'getIssues':'&name= list issues for named magazine',
             'forceMagSearch':'search for all wanted magazines',
             'forceBookSearch':'search for all wanted books',
             'forceProcess':'process books/mags in download dir',
-            'pauseAuthor&id=':'pause author by AuthorID',
-            'resumeAuthor&id=':'resume author by AuthorID',
-            'refreshAuthor&name=':'refresh author by name',
+            'pauseAuthor':'&id= pause author by AuthorID',
+            'resumeAuthor':'&id= resume author by AuthorID',
+            'refreshAuthor':'&name= refresh author by name',
             'forceActiveAuthorsUpdate':'refresh all active authors',
             'forceLibraryScan':'refresh whole book library',
             'forceMagazineScan':'reresh whole magazine library',
@@ -55,14 +49,16 @@ cmd_help = {'help':'list available commands',
             'shutdown':'stop lazylibrarian',
             'restart':'restart lazylibrarian',
             'update':'update lazylibrarian',
-            'findAuthor&name=':'search goodreads/googlebooks for named author',
-            'findBook&name=':'search goodreads/googlebooks for named book',
-            'addAuthor&name=':'add author to database by name',
-            'delAuthor&id=':'delete author from database by AuthorID',
-            'addMagazine&name=':'add magazine to database by name',
-            'delMagazine&name=':'delete magazine and issues from database by name',
-            'queueBook&id=':'mark book as Wanted',
-            'unqueueBook&id=':'mark book as Skipped' 
+            'findAuthor':'&name= search goodreads/googlebooks for named author',
+            'findBook':'&name= search goodreads/googlebooks for named book',
+            'addAuthor':'&name= add author to database by name',
+            'delAuthor':'&id= delete author from database by AuthorID',
+            'addMagazine':'&name= add magazine to database by name',
+            'delMagazine':'&name= delete magazine and issues from database by name',
+            'queueBook':'&id= mark book as Wanted',
+            'unqueueBook':'&id= mark book as Skipped',
+            'readCFG':'&section=&name= read value of config variable',
+            'writeCFG':'&section=&name=&value= set config variable name=value' 
             }
 
 class Api(object):
@@ -105,7 +101,7 @@ class Api(object):
             self.data = 'Missing parameter: cmd, try cmd=help'
             return
 
-        if kwargs['cmd'] not in cmd_list:
+        if kwargs['cmd'] not in cmd_dict:
             self.data = 'Unknown command: %s, try cmd=help' % kwargs['cmd']
             return
         else:
@@ -117,7 +113,16 @@ class Api(object):
     def fetchData(self):
 
         if self.data == 'OK':
-            logger.info('Received API command: %s' % self.cmd)
+            args = []
+            if 'name' in self.kwargs:
+               args.append({"name": self.kwargs['name']}) 
+            if 'id' in self.kwargs:
+               args.append({"id": self.kwargs['id']}) 
+            if 'section' in self.kwargs:
+               args.append({"section": self.kwargs['section']}) 
+            if 'value' in self.kwargs:
+               args.append({"value": self.kwargs['value']}) 
+            logger.info('Received API command: %s %s' % (self.cmd, args))
             methodToCall = getattr(self, "_" + self.cmd)
             methodToCall(**self.kwargs)
             if 'callback' not in self.kwargs:
@@ -147,7 +152,7 @@ class Api(object):
         return rows_as_dic
 
     def _help(self, **kwargs):
-        self.data = dict(cmd_help)
+        self.data = dict(cmd_dict)
         return
 
     def _getHistory(self, **kwargs):
@@ -441,4 +446,35 @@ class Api(object):
             myDB.action('DELETE from authors WHERE AuthorID="%s"' % AuthorID)
             myDB.action('DELETE from books WHERE AuthorID="%s"' % AuthorID)
 
+    def _writeCFG(self, **kwargs):
+        if 'name' not in kwargs:
+            self.data = 'Missing parameter: name'
+            return
+        if 'value' not in kwargs:
+            self.data = 'Missing parameter: value'
+            return
+        if 'section' not in kwargs:
+            self.data = 'Missing parameter: section'
+            return
+        
+        try:
+            self.data = '["%s"]' % lazylibrarian.CFG.get(kwargs['section'], kwargs['name'])
+            lazylibrarian.CFG.set(kwargs['section'], kwargs['name'], kwargs['value'])
+            with open(lazylibrarian.CONFIGFILE, 'wb') as configfile:
+                lazylibrarian.CFG.write(configfile)
 
+        except:
+            self.data = 'Unable to update CFG entry for %s: %s' % (kwargs['section'], kwargs['name'])
+            
+    def _readCFG(self, **kwargs):
+        if 'name' not in kwargs:
+            self.data = 'Missing parameter: name'
+            return
+        if 'section' not in kwargs:
+            self.data = 'Missing parameter: section'
+            return
+        
+        try:
+            self.data = '["%s"]' % lazylibrarian.CFG.get(kwargs['section'], kwargs['name'])
+        except:
+            self.data = 'No CFG entry for %s: %s' % (kwargs['section'], kwargs['name'])

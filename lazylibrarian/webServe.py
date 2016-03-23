@@ -274,7 +274,7 @@ class WebInterface(object):
             lazylibrarian.NEWZNAB_PROV[count]['API'] = kwargs.get(
                 'newznab[%i][api]' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['GENERALSEARCH'] = kwargs.get(
-                'newznab[%i][search]' % count, '')
+                'newznab[%i][generalsearch]' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['BOOKSEARCH'] = kwargs.get(
                 'newznab[%i][booksearch]' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['MAGSEARCH'] = kwargs.get(
@@ -300,7 +300,7 @@ class WebInterface(object):
             lazylibrarian.TORZNAB_PROV[count]['API'] = kwargs.get(
                 'torznab[%i][api]' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['GENERALSEARCH'] = kwargs.get(
-                'torznab[%i][search]' % count, '')
+                'torznab[%i][generalsearch]' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['BOOKSEARCH'] = kwargs.get(
                 'torznab[%i][booksearch]' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['MAGSEARCH'] = kwargs.get(
