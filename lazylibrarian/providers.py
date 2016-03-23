@@ -108,12 +108,12 @@ def get_capabilities(provider):
     if match:
         logger.debug('Using stored capabilities for %s' % provider['HOST'])
     else:
-        logger.debug('Requesting capabilities for %s' % provider['HOST'])
         host = provider['HOST']
         if not str(host)[:4] == "http":
             host = 'http://' + host
         URL = host + '/api?t=caps&apikey=' + provider['API']
-
+        logger.debug('Requesting capabilities for %s' % URL)
+        
         request = urllib2.Request(URL)
         if lazylibrarian.PROXY_HOST:
             request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)

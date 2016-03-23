@@ -83,12 +83,12 @@ class GoogleBooks:
                     json.dump(source_json, open(hashname, "w"))
                 else:
                     logger.warn(
-                        u"Unable to cache response for %s, got %s" %
+                        u"Unable to cache response for %s: %s" %
                         (my_url, resp.getcode()))
                     return "", False
             except (urllib2.URLError, socket.timeout) as e:
                 logger.error(
-                    u"Unable to cache response for %s, got %s" %
+                    u"Unable to cache response for %s: %s" %
                     (my_url, e.reason))
                 return "", False
         return source_json, valid_cache
