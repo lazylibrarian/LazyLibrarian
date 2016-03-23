@@ -1569,22 +1569,22 @@ class WebInterface(object):
             return "Test NMA notice failed"
 
 # API ###############################################################
-#    @cherrypy.expose
-#    def api(self, *args, **kwargs):
-#        from lazylibrarian.api import Api
+    @cherrypy.expose
+    def api(self, *args, **kwargs):
+        from lazylibrarian.api import Api
 
-#        a = Api()
-#        a.checkParams(*args, **kwargs)
+        a = Api()
+        a.checkParams(*args, **kwargs)
 
-#        return a.fetchData()
+        return a.fetchData()
 
-#    @cherrypy.expose
-#    def generateAPI(self):
-#        api_key = hashlib.sha224(str(random.getrandbits(256))).hexdigest()[0:32]
-#        lazylibrarian.API_KEY = api_key
-#        logger.info("New API generated")
-#        raise cherrypy.HTTPRedirect("config")
-#    generateAPI.exposed = True
+    @cherrypy.expose
+    def generateAPI(self):
+        api_key = hashlib.sha224(str(random.getrandbits(256))).hexdigest()[0:32]
+        lazylibrarian.API_KEY = api_key
+        logger.info("New API generated")
+        raise cherrypy.HTTPRedirect("config")
+    generateAPI.exposed = True
     
 # ALL ELSE ##########################################################
 

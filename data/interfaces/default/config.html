@@ -74,6 +74,27 @@
                     <BR>
                     <input type="checkbox" name="launch_browser" value=1 ${checked} />
                     <label>  Launch browser</label>
+                     <fieldset>
+                        <legend>API</legend>
+                        <%
+                        if lazylibrarian.API_ENABLED == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                        %>
+                    <div class="row checkbox">
+                            <input type="checkbox" id="api_enabled" name="api_enabled" value=1 ${checked} />
+                            <label title="Allow remote applications to interface with LazyLibrarian">
+                                Enable API
+                            </label>
+                        </div>
+                        <div id="apioptions" class="row">
+                            <label>API key</label>
+                            <input type="text" name="api_key" id="api_key" value="${lazylibrarian.API_KEY}" size="20">
+                            <input type="button" value="Generate" id="generateAPI" onClick="document.location.reload(true)">
+                            <br><small>Current API key: <strong>${lazylibrarian.API_KEY}</strong></small>
+                        </div>
+                    </fieldset>
                     <h5>Interface: <select name="http_look" style="float:right;"></h5>
                     %for http_look in config['http_look_list']:
                         <%
@@ -1425,6 +1446,12 @@
                         }
                 });
             
+            $('#generateAPI').click(function () {
+                $.get("generateAPI",
+                    function (data) { });
+                    
+            });
+
             $('#showJobs').click(function () {
                 $.get("showJobs",
                     function (data) { alert(data); });

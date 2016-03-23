@@ -106,6 +106,26 @@
                                         </div>
                                     </fieldset>
                                     <fieldset>
+                                        <legend>API</legend>
+                                        <div class="checkbox">
+                                            <%
+                                            if lazylibrarian.API_ENABLED == True:
+                                                checked = 'checked="checked"'
+                                            else:
+                                                checked = ''
+                                            %>
+                                            <label for="api_enabled" "title="Allow remote applications to interface with LazyLibrarian">
+                                            <input type="checkbox" id="api_enabled" name="api_enabled" value="1" ${checked} />
+                                            Enable API</label>
+                                        </div>
+                                        <div id="apioptions" class="form-group">
+                                            <label>API key</label>
+                                            <input type="text" name="api_key" id="api_key" value="${lazylibrarian.API_KEY}" size="36">
+                                            <input class="button btn btn-sm btn-primary" type="button" value="Generate" id="generateAPI" onClick="document.location.reload(true)">
+                                            <br><small>Current API key: <strong>${lazylibrarian.API_KEY}</strong></small>
+                                        </div>
+                                    </fieldset>
+                                    <fieldset>
                                         <legend>Appearance</legend>
                                         <div class="form-group">
                                             <label for="http_look">Interface:</label>
@@ -1473,6 +1493,12 @@
                     }
             });
             
+            $('#generateAPI').click(function () {
+                $.get("generateAPI",
+                    function (data) { });
+                    
+            });
+
             $('#showJobs').on('click', function(e) {
                 $.get('showJobs', function(data) {
                     bootbox.dialog({

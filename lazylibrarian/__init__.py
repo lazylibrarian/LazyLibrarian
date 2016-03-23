@@ -82,6 +82,8 @@ HTTP_PASS = None
 HTTP_ROOT = None
 HTTP_LOOK = None
 LAUNCH_BROWSER = 0
+API_ENABLED = 0
+API_KEY = None
 
 PROXY_HOST = None
 PROXY_TYPE = None
@@ -314,7 +316,7 @@ def initialize():
     with INIT_LOCK:
 
         global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, LOGFULL, DAEMON, DATADIR, \
-            HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, \
+            HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, API_KEY, API_ENABLED, \
             LAUNCH_BROWSER, LOGDIR, CACHEDIR, CACHE_AGE, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, \
             IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, IMP_CONVERT, \
             MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, \
@@ -420,6 +422,8 @@ def initialize():
         LOGSIZE = check_setting_int(CFG, 'General', 'logsize', 204800)
 
         LAUNCH_BROWSER = check_setting_bool(CFG, 'General', 'launch_browser', 1)
+        API_ENABLED = check_setting_bool(CFG, 'General', 'api_enabled', 0)
+        API_KEY = check_setting_str(CFG, 'General', 'api_key', '')
 
         PROXY_HOST = check_setting_str(CFG, 'General', 'proxy_host', '')
         PROXY_TYPE = check_setting_str(CFG, 'General', 'proxy_type', '')
@@ -508,17 +512,17 @@ def initialize():
                 CFG.remove_option(newz_name, 'nzedb')
 
             NEWZNAB_PROV.append({"NAME": newz_name,
-                                 "ENABLED": check_setting_bool(CFG, newz_name, 'ENABLED', 0),
-                                 "HOST": check_setting_str(CFG, newz_name, 'HOST', ''),
-                                 "API": check_setting_str(CFG, newz_name, 'API', ''),
-                                 "GENERALSEARCH": check_setting_str(CFG, newz_name, 'GENERALSEARCH', 'search'),
-                                 "BOOKSEARCH": check_setting_str(CFG, newz_name, 'BOOKSEARCH', 'book'),
-                                 "MAGSEARCH": check_setting_str(CFG, newz_name, 'MAGSEARCH', ''),
-                                 "BOOKCAT": check_setting_str(CFG, newz_name, 'BOOKCAT', '7000,7020'),
-                                 "MAGCAT": check_setting_str(CFG, newz_name, 'MAGCAT', '7010'),
-                                 "EXTENDED": check_setting_str(CFG, newz_name, 'EXTENDED', '1'),
-                                 "UPDATED": check_setting_str(CFG, newz_name, 'UPDATED', ''),
-                                 "MANUAL": check_setting_bool(CFG, newz_name, 'MANUAL', 0)
+                                 "ENABLED": check_setting_bool(CFG, newz_name, 'enabled', 0),
+                                 "HOST": check_setting_str(CFG, newz_name, 'host', ''),
+                                 "API": check_setting_str(CFG, newz_name, 'api', ''),
+                                 "GENERALSEARCH": check_setting_str(CFG, newz_name, 'generalsearch', 'search'),
+                                 "BOOKSEARCH": check_setting_str(CFG, newz_name, 'booksearch', 'book'),
+                                 "MAGSEARCH": check_setting_str(CFG, newz_name, 'magsearch', ''),
+                                 "BOOKCAT": check_setting_str(CFG, newz_name, 'bookcat', '7000,7020'),
+                                 "MAGCAT": check_setting_str(CFG, newz_name, 'magcat', '7010'),
+                                 "EXTENDED": check_setting_str(CFG, newz_name, 'extended', '1'),
+                                 "UPDATED": check_setting_str(CFG, newz_name, 'updated', ''),
+                                 "MANUAL": check_setting_bool(CFG, newz_name, 'manual', 0)
                                  })
             count = count + 1
         # if the last slot is full, add an empty one on the end
@@ -541,17 +545,17 @@ def initialize():
                 CFG.remove_option(torz_name, 'nzedb')
 
             TORZNAB_PROV.append({"NAME": torz_name,
-                                 "ENABLED": check_setting_bool(CFG, torz_name, 'ENABLED', 0),
-                                 "HOST": check_setting_str(CFG, torz_name, 'HOST', ''),
-                                 "API": check_setting_str(CFG, torz_name, 'API', ''),
-                                 "GENERALSEARCH": check_setting_str(CFG, torz_name, 'GENERALSEARCH', 'search'),
-                                 "BOOKSEARCH": check_setting_str(CFG, torz_name, 'BOOKSEARCH', 'book'),
-                                 "MAGSEARCH": check_setting_str(CFG, torz_name, 'MAGSEARCH', ''),
-                                 "BOOKCAT": check_setting_str(CFG, torz_name, 'BOOKCAT', '8000,8010'),
-                                 "MAGCAT": check_setting_str(CFG, torz_name, 'MAGCAT', '8030'),
-                                 "EXTENDED": check_setting_str(CFG, torz_name, 'EXTENDED', '1'),
-                                 "UPDATED": check_setting_str(CFG, torz_name, 'UPDATED', ''),
-                                 "MANUAL": check_setting_bool(CFG, torz_name, 'MANUAL', 0)
+                                 "ENABLED": check_setting_bool(CFG, torz_name, 'enabled', 0),
+                                 "HOST": check_setting_str(CFG, torz_name, 'host', ''),
+                                 "API": check_setting_str(CFG, torz_name, 'api', ''),
+                                 "GENERALSEARCH": check_setting_str(CFG, torz_name, 'generalsearch', 'search'),
+                                 "BOOKSEARCH": check_setting_str(CFG, torz_name, 'booksearch', 'book'),
+                                 "MAGSEARCH": check_setting_str(CFG, torz_name, 'magsearch', ''),
+                                 "BOOKCAT": check_setting_str(CFG, torz_name, 'bookcat', '8000,8010'),
+                                 "MAGCAT": check_setting_str(CFG, torz_name, 'magcat', '8030'),
+                                 "EXTENDED": check_setting_str(CFG, torz_name, 'extended', '1'),
+                                 "UPDATED": check_setting_str(CFG, torz_name, 'updated', ''),
+                                 "MANUAL": check_setting_bool(CFG, torz_name, 'manual', 0)
                                  })
             count = count + 1
         # if the last slot is full, add an empty one on the end
@@ -763,6 +767,8 @@ def config_write():
     CFG.set('General', 'http_look', HTTP_LOOK)
     CFG.set('General', 'bookstrap_theme', BOOKSTRAP_THEME)
     CFG.set('General', 'launch_browser', LAUNCH_BROWSER)
+    CFG.set('General', 'api_enabled', API_ENABLED)
+    CFG.set('General', 'api_key', API_KEY)
     CFG.set('General', 'proxy_host', PROXY_HOST)
     CFG.set('General', 'proxy_type', PROXY_TYPE)
     CFG.set('General', 'logdir', LOGDIR.encode('utf-8'))
