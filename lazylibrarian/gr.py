@@ -76,10 +76,10 @@ class GoodReads:
                     with open(hashname, "w") as cachefile:
                         cachefile.write(source_xml)
                 else:
-                    logger.warn(u"Unable to cache response for %s, got %s" % (request.get_full_url(), resp.getcode()))
+                    logger.warn(u"Unable to cache response for %s: %s" % (request.get_full_url(), resp.getcode()))
                     return "", False
             except (urllib2.URLError, socket.timeout) as e:
-                logger.error(u"Unable to cache response for %s, got %s" % (my_url, e))
+                logger.error(u"Unable to cache response for %s: %s" % (my_url, e))
                 return "", False
 
         root = ElementTree.fromstring(source_xml)
