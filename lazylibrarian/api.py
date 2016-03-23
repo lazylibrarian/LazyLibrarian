@@ -102,11 +102,11 @@ class Api(object):
             self.apikey = kwargs.pop('apikey')
 
         if 'cmd' not in kwargs:
-            self.data = 'Missing parameter: cmd'
+            self.data = 'Missing parameter: cmd, try cmd=help'
             return
 
         if kwargs['cmd'] not in cmd_list:
-            self.data = 'Unknown command: %s' % kwargs['cmd']
+            self.data = 'Unknown command: %s, try cmd=help' % kwargs['cmd']
             return
         else:
             self.cmd = kwargs.pop('cmd')
