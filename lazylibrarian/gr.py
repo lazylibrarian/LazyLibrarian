@@ -6,7 +6,7 @@ import threading
 import time
 from xml.etree import ElementTree
 import lazylibrarian
-from lazylibrarian import logger, formatter, database
+from lazylibrarian import logger, formatter, database, bookcovers
 from lazylibrarian.common import USER_AGENT
 from lib.fuzzywuzzy import fuzz
 from lib.unidecode import unidecode
@@ -497,7 +497,7 @@ class GoodReads:
                     bookname = bookname.replace(':', '').replace('"', '').replace("'", "")
                     bookname = unidecode(u'%s' % bookname)
                     bookname = bookname.strip()  # strip whitespace
-
+                    
                     if not (re.match('[^\w-]', bookname)):  # remove books with bad characters in title
                         if book_status != "Ignored":
                             controlValueDict = {"BookID": bookid}
@@ -538,6 +538,12 @@ class GoodReads:
                     else:
                         logger.debug(u"removed result [" + bookname + "] for bad characters")
                         removedResults = removedResults + 1
+                    
+                    if bookimg == 'images/nocover.png' or 'nophoto' in bookimg:
+                        # try to get a cover from google
+                        coverlist=[]
+                        coverlist.append(bookid)
+                        bookcovers.getBookCovers(coverlist)
 
                 loopCount = loopCount + 1
                 URL = 'http://www.goodreads.com/author/list/' + authorid + '.xml?' + \
@@ -699,3 +705,10 @@ class GoodReads:
 
         myDB.upsert("books", newValueDict, controlValueDict)
         logger.debug("%s added to the books database" % bookname)
+        
+        if bookimg == 'images/nocover.png' or 'nophoto' in bookimg:
+            # try to get a cover from google
+            coverlist=[]
+            coverlist.append(bookid)
+            bookcovers.getBookCovers(coverlist)
+

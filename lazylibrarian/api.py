@@ -13,7 +13,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-from lazylibrarian import importer, postprocess, versioncheck, logger, database, updater, librarysync, magazinescan, formatter
+from lazylibrarian import importer, postprocess, versioncheck, logger, database, updater, librarysync, magazinescan, formatter, bookcovers
 from lazylibrarian.searchnzb import search_nzb_book
 from lazylibrarian.searchtorrents import search_tor_book
 from lazylibrarian.searchmag import search_magazines
@@ -42,7 +42,7 @@ cmd_dict = {'help':'list available commands',
             'pauseAuthor':'&id= pause author by AuthorID',
             'resumeAuthor':'&id= resume author by AuthorID',
             'refreshAuthor':'&name= refresh author by name',
-            'forceActiveAuthorsUpdate':'refresh all active authors',
+            'forceActiveAuthorsUpdate':'refresh all active authors and reload their books',
             'forceLibraryScan':'refresh whole book library',
             'forceMagazineScan':'reresh whole magazine library',
             'getVersion':'show git version',
@@ -53,12 +53,16 @@ cmd_dict = {'help':'list available commands',
             'findBook':'&name= search goodreads/googlebooks for named book',
             'addAuthor':'&name= add author to database by name',
             'delAuthor':'&id= delete author from database by AuthorID',
+            'refreshAuthor':'&name= refresh author by name',
             'addMagazine':'&name= add magazine to database by name',
             'delMagazine':'&name= delete magazine and issues from database by name',
             'queueBook':'&id= mark book as Wanted',
             'unqueueBook':'&id= mark book as Skipped',
             'readCFG':'&section=&name= read value of config variable',
-            'writeCFG':'&section=&name=&value= set config variable name=value' 
+            'writeCFG':'&section=&name=&value= set config variable name=value',
+            'loadCFG':'reload config from file',
+            'getBookCover':'%id= fetch a cover from google for one BookID',
+            'getBookCovers':'fetch covers from google for all books with no existing cover'
             }
 
 class Api(object):
@@ -330,6 +334,9 @@ class Api(object):
             self.data = e
         return
 
+    def _forceActiveAuthorsUpdate(self, **kwargs):
+        threading.Thread(target=updater.dbUpdate, args=[False]).start()
+
     def _forceMagSearch(self, **kwargs):
         if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
                 threading.Thread(target=search_magazines, args=[None, True]).start()
@@ -344,9 +351,6 @@ class Api(object):
 
     def _forceProcess(self, **kwargs):
         postprocess.processDir()
-
-    def _forceActiveAuthorsUpdate(self, **kwargs):
-        threading.Thread(target=updater.dbUpdate).start()
 
     def _forceLibraryScan(self, **kwargs):
         threading.Thread(target=librarysync.LibraryScan(lazylibrarian.DESTINATION_DIR)).start()
@@ -462,7 +466,7 @@ class Api(object):
             lazylibrarian.CFG.set(kwargs['section'], kwargs['name'], kwargs['value'])
             with open(lazylibrarian.CONFIGFILE, 'wb') as configfile:
                 lazylibrarian.CFG.write(configfile)
-
+            lazylibrarian.config_read(reloaded=True)
         except:
             self.data = 'Unable to update CFG entry for %s: %s' % (kwargs['section'], kwargs['name'])
             
@@ -478,3 +482,29 @@ class Api(object):
             self.data = '["%s"]' % lazylibrarian.CFG.get(kwargs['section'], kwargs['name'])
         except:
             self.data = 'No CFG entry for %s: %s' % (kwargs['section'], kwargs['name'])
+            
+    def _loadCFG(self, **kwargs):
+        lazylibrarian.config_read(reloaded=True)
+
+    def _getBookCover(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+        booklist=[]
+        booklist.append(self.id)
+        threading.Thread(target=bookcovers.getBookCovers, args=[booklist]).start()
+        return
+
+    def _getBookCovers(self, **kwargs):
+        booklist=[]
+        myDB = database.DBConnection()
+        need_covers = myDB.action('select bookid from books where bookimg like "%nocover%" or bookimg like "%nophoto%"')
+        for item in need_covers:
+            bookid = item['bookid']
+            booklist.append(bookid)
+        self.data = 'Fetching covers for %i books' % len(booklist)
+        threading.Thread(target=bookcovers.getBookCovers, args=[booklist]).start()
+        return
+

@@ -111,3 +111,5 @@ def removeDisallowedFilenameChars(filename):
     # re.sub works on python2 and 3
     return u'' + re.sub(validFilenameChars, "", str(cleanedFilename))
     # returns unicode
+    
+   
