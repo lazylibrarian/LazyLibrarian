@@ -1116,14 +1116,13 @@ def build_bookstrap_themes():
         return themelist  # return empty if bookstrap interface not installed
 
     URL = 'http://bootswatch.com/api/3.json'
-    USER_AGENT = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'
     request = urllib2.Request(URL)
 
     if PROXY_HOST:
         request.set_proxy(PROXY_HOST, PROXY_TYPE)
 
     # bootswatch insists on having a user-agent
-    request.add_header('User-Agent', USER_AGENT)
+    request.add_header('User-Agent', common.USER_AGENT)
 
     try:
         resp = urllib2.urlopen(request, timeout=30)
