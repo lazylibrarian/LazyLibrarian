@@ -42,6 +42,7 @@ def runGit(args):
 
         if 'not found' in output or "not recognized as an internal or external command" in output:
             logger.debug('(RunGit)Unable to find git with command ' + cmd)
+            logger.error('git not found - please ensure git executable is in your PATH')
             output = None
         elif 'fatal:' in output or err:
             logger.error('(RunGit)Git returned bad info. Are you sure this is a git installation?')
