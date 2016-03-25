@@ -56,7 +56,7 @@ def getBookCovers(bookids=None):
                     try:
                         img = source_page.split('url?q=')[1].split('">')[1].split('src="')[1].split('"')[0]
                     except IndexError:
-                        img = "Not found"
+                        img = "Not found in source page"
                     if img.startswith('http'):
                         request = urllib2.Request(img)
                         request.add_header('User-Agent', USER_AGENT)
@@ -72,12 +72,12 @@ def getBookCovers(bookids=None):
                         except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
                             logger.debug("Error getting image : %s" % e.reason)
                     else:
-                        logger.debug("Error getting url [%s]" % img)                      
+                        logger.debug("Error getting url for %s [%s]" % (safeparams, img))                      
             except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
                 logger.debug("Error getting source page : %s" % e.reason)
 
             # image downloaded, now update the link
-            logger.debug("%s %s %s" % (link, author, title))
+            logger.debug("Found GoogleImage cover for %s %s" % (author, title))
             myDB.action('update books set BookImg="%s" where BookID="%s"' % (link, bookid))
     if num > 1:
         logger.debug("Get Book Covers - update complete")
