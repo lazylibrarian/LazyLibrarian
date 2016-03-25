@@ -17,9 +17,7 @@ def getBookCovers(bookids=None):
     myDB = database.DBConnection()
      
     num = len(bookids)
-    if num == 1:
-        logger.info("Fetching google images cover for %s" % bookids)
-    else:
+    if num > 1:
         logger.info("Fetching google images covers for %i books" % len(bookids))
         
     for bookid in bookids:
