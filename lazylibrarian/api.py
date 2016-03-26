@@ -199,7 +199,7 @@ class Api(object):
         author = self._dic_from_query(
             'SELECT * from authors WHERE AuthorID="' + self.id + '"')
         books = self._dic_from_query(
-            'SELECT * from books WHERE AuthorID="' + self.id + '" order by BookDate DESC')
+            'SELECT * from books WHERE AuthorID="' + self.id + '"')
         
         self.data = {
             'author': author, 'books': books}
@@ -212,7 +212,9 @@ class Api(object):
 
     def _getAllBooks(self, **kwargs):
         self.data = self._dic_from_query(
-            'SELECT * from books order by AuthorID DESC')
+            'SELECT AuthorID,AuthorName,AuthorLink, BookName,BookSub,BookGenre,BookIsbn,BookPub, \
+            BookRate,BookImg,BookPages,BookLink,BookID,BookDate, BookLang,BookAdded,Status,Series,SeriesOrder \
+            from books')
         return
 
     def _getIssues(self, **kwargs):
