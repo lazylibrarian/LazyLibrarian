@@ -21,7 +21,9 @@ import re
 import lazylibrarian
 import unicodedata
 import string
-from lazylibrarian import logger
+import os
+import shutil
+from lazylibrarian import logger, database, formatter
 
 USER_AGENT = 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
 
@@ -86,6 +88,67 @@ def schedule_job(action='Start', target=None):
                 hours=int(lazylibrarian.VERSIONCHECK_INTERVAL))
             logger.debug("%s %s job" % (action, target))
 
+def restartJobs(start='Restart'):
+    schedule_job(start, 'processDir')
+    schedule_job(start, 'search_nzb_book')
+    schedule_job(start, 'search_tor_book')
+    schedule_job(start, 'search_rss_book')
+    schedule_job(start, 'search_magazines')
+    schedule_job(start, 'checkForUpdates')
+
+def showJobs():
+        result = []
+        result.append("Cache %i hits, %i miss" % (
+            int(lazylibrarian.CACHE_HIT),
+            int(lazylibrarian.CACHE_MISS)))
+        myDB = database.DBConnection()
+        snatched = myDB.action(
+            "SELECT count('Status') as counter from wanted WHERE Status = 'Snatched'").fetchone()
+        wanted = myDB.action(
+            "SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'").fetchone()
+        result.append("%i items marked as Snatched" % snatched['counter'])
+        result.append("%i items marked as Wanted" % wanted['counter'])       
+        for job in lazylibrarian.SCHED.get_jobs():
+            job = str(job)
+            if "search_magazines" in job:
+                jobname = "Magazine search"
+            elif "checkForUpdates" in job:
+                jobname = "Check LazyLibrarian version"
+            elif "search_tor_book" in job:
+                jobname = "TOR book search"
+            elif "search_nzb_book" in job:
+                jobname = "NZB book search"
+            elif "search_rss_book" in job:
+                jobname = "RSS book search"
+            elif "processDir" in job:
+                jobname = "Process downloads"
+            else:
+                jobname = job.split(' ')[0].split('.')[2]
+
+            jobinterval = job.split('[')[1].split(']')[0]
+            jobtime = job.split('at: ')[1].split('.')[0]
+            jobtime = formatter.next_run(jobtime)
+            jobinfo = "%s: Next run in %s" % (jobname, jobtime)
+            result.append(jobinfo)
+        return result        
+
+def clearLog():
+        logger.lazylibrarian_log.stopLogger()
+        error = False
+        if os.path.exists(lazylibrarian.LOGDIR):
+            try:
+                shutil.rmtree(lazylibrarian.LOGDIR)
+                os.mkdir(lazylibrarian.LOGDIR)
+            except OSError as e:
+                error = e
+        logger.lazylibrarian_log.initLogger(loglevel=lazylibrarian.LOGLEVEL)
+        
+        if error:
+            return 'Failed to clear log: %s' % e.strerror
+        else:
+            lazylibrarian.LOGLIST = []
+            return "Log cleared, level set to [%s]- Log Directory is [%s]" % (
+                lazylibrarian.LOGLEVEL, lazylibrarian.LOGDIR)
 
 def remove_accents(str_or_unicode):
     try:

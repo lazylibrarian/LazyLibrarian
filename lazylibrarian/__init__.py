@@ -1403,16 +1403,9 @@ def start():
 
     if __INITIALIZED__:
 
-        # Crons and scheduled jobs go here
-        # list is duplicated in webServe so we can reschedule them
+        # Crons and scheduled jobs started here
         SCHED.start()
-        common.schedule_job('Start', 'processDir')
-        common.schedule_job('Start', 'search_nzb_book')
-        common.schedule_job('Start', 'search_tor_book')
-        common.schedule_job('Start', 'search_rss_book')
-        common.schedule_job('Start', 'search_magazines')
-        common.schedule_job('Start', 'checkForUpdates')
-
+        common.restartJobs(start='Start')
         started = True
 
 

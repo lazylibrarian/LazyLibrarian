@@ -29,23 +29,24 @@ def getBookCovers(bookids=None):
             URL="https://www.google.com/search?as_st=y&tbm=isch&as_q=" + safeparams + "+ebook&tbs=isz:l,ift:jpg&gws_rd=cr&ei=Ff30Vo_HOaWuygO13bvYBQ"
     
             request = urllib2.Request(URL)
-            #if lazylibrarian.PROXY_HOST:
-            #    request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
+            if lazylibrarian.PROXY_HOST:
+                request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
             # google insists on having a user-agent
             request.add_header('User-Agent', USER_AGENT)
        
             hashID = hashlib.md5(safeparams).hexdigest()
-            #cachedir = os.path.join(str(lazylibrarian.PROG_DIR),
-            cachedir = os.path.join('/opt/LazyLibrarian',
+            cachedir = os.path.join(str(lazylibrarian.PROG_DIR),
                                     'data' + os.sep + 'images' + os.sep + 'cache')
             if not os.path.isdir(cachedir):
                 os.makedirs(cachedir)
             coverfile = os.path.join(cachedir, hashID + '.jpg')
             link = 'images' + os.sep + 'cache' + os.sep + hashID + '.jpg'
-            
-            if not os.path.isfile(coverfile):
+            update = False
+            if os.path.isfile(coverfile):
                 # use cached image if possible to speed up 
                 # refreshactiveauthors and librarysync re-runs
+                update = True
+            else:
                 try:
                     resp = urllib2.urlopen(request, timeout=30)
                     if str(resp.getcode()).startswith("2"):
@@ -60,6 +61,8 @@ def getBookCovers(bookids=None):
                             img = "image not found in source page"
                         if img.startswith('http'):
                             request = urllib2.Request(img)
+                            if lazylibrarian.PROXY_HOST:
+                                request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
                             request.add_header('User-Agent', USER_AGENT)
                             try:
                                 resp = urllib2.urlopen(request, timeout=30)
@@ -76,10 +79,11 @@ def getBookCovers(bookids=None):
                             logger.debug("Error getting url for %s [%s]" % (safeparams, img))                      
                 except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
                     logger.debug("Error getting source page : %s" % e.reason)
-
-            # image downloaded, or was already there, now update the link
-            logger.debug("Found GoogleImage cover for %s %s" % (author, title))
-            myDB.action('update books set BookImg="%s" where BookID="%s"' % (link, bookid))
+            
+            if update:
+                # image downloaded, or was already there, now update the link
+                logger.debug("Found GoogleImage cover for %s %s" % (author, title))
+                myDB.action('update books set BookImg="%s" where BookID="%s"' % (link, bookid))
     if num > 1:
         logger.debug("Get Book Covers - update complete")
 
