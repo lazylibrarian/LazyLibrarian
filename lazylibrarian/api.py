@@ -164,36 +164,28 @@ class Api(object):
 
     def _help(self, **kwargs):
         self.data = dict(cmd_dict)
-        return
 
     def _getHistory(self, **kwargs):
         self.data = self._dic_from_query(
             "SELECT * from wanted WHERE Status != 'Skipped' and Status != 'Ignored'")
-        return
  
     def _getWanted(self, **kwargs):
         self.data = self._dic_from_query(
             "SELECT * from books WHERE Status='Wanted'")
-        return
 
     def _getSnatched(self, **kwargs):
         self.data = self._dic_from_query(
             "SELECT * from books WHERE Status='Snatched'")
-        return
         
     def _getLogs(self, **kwargs):
         self.data = lazylibrarian.LOGLIST
-        return
 
     def _clearLogs(self, **kwargs):
-        lazylibrarian.LOGLIST = []
-        self.data = 'Cleared log'
-        return
+        self.data = common.clearLog()
 
     def _getIndex(self, **kwargs):
         self.data = self._dic_from_query(
             'SELECT * from authors order by AuthorName COLLATE NOCASE')
-        return
 
     def _getAuthor(self, **kwargs):
         if 'id' not in kwargs:
@@ -207,21 +199,17 @@ class Api(object):
         books = self._dic_from_query(
             'SELECT * from books WHERE AuthorID="' + self.id + '"')
         
-        self.data = {
-            'author': author, 'books': books}
-        return
+        self.data = {'author': author, 'books': books}
+
 
     def _getMagazines(self, **kwargs):
-        self.data = self._dic_from_query(
-            'SELECT * from magazines order by Title COLLATE NOCASE')
-        return
+        self.data = self._dic_from_query('SELECT * from magazines order by Title COLLATE NOCASE')
 
     def _getAllBooks(self, **kwargs):
         self.data = self._dic_from_query(
             'SELECT AuthorID,AuthorName,AuthorLink, BookName,BookSub,BookGenre,BookIsbn,BookPub, \
             BookRate,BookImg,BookPages,BookLink,BookID,BookDate, BookLang,BookAdded,Status,Series,SeriesOrder \
             from books')
-        return
 
     def _getIssues(self, **kwargs):
         if 'name' not in kwargs:
@@ -237,7 +225,7 @@ class Api(object):
         
         self.data = {
             'magazine': magazine, 'issues': issues}
-        return
+
 
     def _getBook(self, **kwargs):
         if 'id' not in kwargs:
@@ -249,7 +237,7 @@ class Api(object):
         book = self._dic_from_query(
             'SELECT * from books WHERE BookID="' + self.id + '"')
         self.data = {'book': book}
-        return
+
 
     def _queueBook(self, **kwargs):
         if 'id' not in kwargs:
@@ -262,7 +250,6 @@ class Api(object):
         controlValueDict = {'BookID': self.id}
         newValueDict = {'Status': 'Wanted'}
         myDB.upsert("books", newValueDict, controlValueDict)
-        return
 
     def _unqueueBook(self, **kwargs):
         if 'id' not in kwargs:
@@ -275,7 +262,6 @@ class Api(object):
         controlValueDict = {'BookID': self.id}
         newValueDict = {'Status': 'Skipped'}
         myDB.upsert("books", newValueDict, controlValueDict)
-        return
 
     def _addMagazine(self, **kwargs):
         if 'name' not in kwargs:
@@ -293,11 +279,7 @@ class Api(object):
             "IssueStatus": "Wanted"
         }
         myDB.upsert("magazines", newValueDict, controlValueDict)
-        mags = [{"bookid": self.id}]
-        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
-            threading.Thread(target=search_magazines, args=[mags, False]).start()
-        return
-        
+
     def _delMagazine(self, **kwargs):
         if 'name' not in kwargs:
             self.data = 'Missing parameter: name'
@@ -309,8 +291,7 @@ class Api(object):
         myDB.action('DELETE from magazines WHERE Title="%s"' % self.id)
         myDB.action('DELETE from wanted WHERE BookID="%s"' % self.id)
         myDB.action('DELETE from issues WHERE Title="%s"' % self.id)
-        return
-        
+
     def _pauseAuthor(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
@@ -346,7 +327,6 @@ class Api(object):
             importer.addAuthorToDB(self.id, refresh=True)
         except Exception as e:
             self.data = e
-        return
 
     def _forceActiveAuthorsUpdate(self, **kwargs):
         threading.Thread(target=updater.dbUpdate, args=[False]).start()
@@ -354,6 +334,8 @@ class Api(object):
     def _forceMagSearch(self, **kwargs):
         if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
                 threading.Thread(target=search_magazines, args=[None, True]).start()
+        else:
+            self.data = 'No search methods set, check config'
 
     def _forceBookSearch(self, **kwargs):
         if lazylibrarian.USE_NZB():
@@ -362,6 +344,8 @@ class Api(object):
             threading.Thread(target=search_tor_book).start()
         if lazylibrarian.USE_RSS():
             threading.Thread(target=search_rss_book).start()
+        if not lazylibrarian.USE_RSS() and not lazylibrarian.USE_NZB() and not lazylibrarian.USE_TOR():
+            self.data = "No search methods set, check config"
 
     def _forceProcess(self, **kwargs):
         postprocess.processDir()
@@ -432,7 +416,6 @@ class Api(object):
         search_api.join()
         self.data = queue.get()
         
-
     def _addAuthor(self, **kwargs):
         if 'name' not in kwargs:
             self.data = 'Missing parameter: name'
@@ -444,7 +427,6 @@ class Api(object):
             importer.addAuthorToDB(self.id, refresh=False)
         except Exception as e:
             self.data = e
-        return
 
     def _searchBook(self, **kwargs):
         if 'id' not in kwargs:
@@ -461,8 +443,7 @@ class Api(object):
         if lazylibrarian.USE_TOR():
             threading.Thread(target=search_tor_book, args=[books]).start()
         if not lazylibrarian.USE_RSS() and not lazylibrarian.USE_NZB() and not lazylibrarian.USE_TOR():
-            self.data = "No search methods set, check config."
-        return
+            self.data = "No search methods set, check config"
 
     def _delAuthor(self, **kwargs):
         if 'id' not in kwargs:
@@ -524,7 +505,6 @@ class Api(object):
         booklist=[]
         booklist.append(self.id)
         threading.Thread(target=bookcovers.getBookCovers, args=[booklist]).start()
-        return
 
     def _getBookCovers(self, **kwargs):
         booklist=[]
@@ -535,7 +515,6 @@ class Api(object):
             booklist.append(bookid)
         self.data = 'Fetching covers for %i books' % len(booklist)
         threading.Thread(target=bookcovers.getBookCovers, args=[booklist]).start()
-        return
         
     def _restartJobs(self, **kwargs):
         common.restartJobs(start='Restart')

@@ -21,6 +21,8 @@ import re
 import lazylibrarian
 import unicodedata
 import string
+import os
+import shutil
 from lazylibrarian import logger, database, formatter
 
 USER_AGENT = 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
@@ -129,6 +131,24 @@ def showJobs():
             jobinfo = "%s: Next run in %s" % (jobname, jobtime)
             result.append(jobinfo)
         return result        
+
+def clearLog():
+        logger.lazylibrarian_log.stopLogger()
+        error = False
+        if os.path.exists(lazylibrarian.LOGDIR):
+            try:
+                shutil.rmtree(lazylibrarian.LOGDIR)
+                os.mkdir(lazylibrarian.LOGDIR)
+            except OSError as e:
+                error = e
+        logger.lazylibrarian_log.initLogger(loglevel=lazylibrarian.LOGLEVEL)
+        
+        if error:
+            return 'Failed to clear log: %s' % e.strerror
+        else:
+            lazylibrarian.LOGLIST = []
+            return "Log cleared, level set to [%s]- Log Directory is [%s]" % (
+                lazylibrarian.LOGLEVEL, lazylibrarian.LOGDIR)
 
 def remove_accents(str_or_unicode):
     try:
