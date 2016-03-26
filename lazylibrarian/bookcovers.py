@@ -41,10 +41,12 @@ def getBookCovers(bookids=None):
                 os.makedirs(cachedir)
             coverfile = os.path.join(cachedir, hashID + '.jpg')
             link = 'images' + os.sep + 'cache' + os.sep + hashID + '.jpg'
-            
-            if not os.path.isfile(coverfile):
+            update = False
+            if os.path.isfile(coverfile):
                 # use cached image if possible to speed up 
                 # refreshactiveauthors and librarysync re-runs
+                update = True
+            else:
                 try:
                     resp = urllib2.urlopen(request, timeout=30)
                     if str(resp.getcode()).startswith("2"):
@@ -77,10 +79,11 @@ def getBookCovers(bookids=None):
                             logger.debug("Error getting url for %s [%s]" % (safeparams, img))                      
                 except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
                     logger.debug("Error getting source page : %s" % e.reason)
-
-            # image downloaded, or was already there, now update the link
-            logger.debug("Found GoogleImage cover for %s %s" % (author, title))
-            myDB.action('update books set BookImg="%s" where BookID="%s"' % (link, bookid))
+            
+            if update:
+                # image downloaded, or was already there, now update the link
+                logger.debug("Found GoogleImage cover for %s %s" % (author, title))
+                myDB.action('update books set BookImg="%s" where BookID="%s"' % (link, bookid))
     if num > 1:
         logger.debug("Get Book Covers - update complete")
 

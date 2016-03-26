@@ -230,6 +230,7 @@ def LibraryScan(dir=None):
                 logger.warn('Book %s - %s updated as not found on disk' % (bookAuthor, bookName))
         
         # on a full scan, verify the cover images are correct too
+        logger.debug('Checking book covers')
         covers = myDB.action('select BookImg,BookName,BookID from books')
         cachedir = os.path.join(str(lazylibrarian.PROG_DIR),
                                     'data' + os.sep)
@@ -238,7 +239,7 @@ def LibraryScan(dir=None):
             if not os.path.isfile(imgfile) and not item['BookImg'].startswith('http'):
                 logger.debug('Cover missing for %s %s' % (item['BookName'], imgfile))
                 myDB.action('update books set BookImg="images/nocover.png" where Bookid="%s"' % item['BookID'])
-
+        logger.debug('Cover checking complete')
     # guess this was meant to save repeat-scans of the same directory
     # if it contains multiple formats of the same book, but there was no code
     # that looked at the array. renamed from latest to processed to make
