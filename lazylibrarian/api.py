@@ -63,7 +63,8 @@ cmd_dict = {'help':'list available commands',
             'loadCFG':'reload config from file',
             'getBookCover':'&id= fetch a cover from google for one BookID',
             'getBookCovers':'fetch covers from google for all books with no existing cover',
-            'getAllBooks':'list all books in the database'
+            'getAllBooks':'list all books in the database',
+            'searchBook':'&id= search for one book by BookID'
             }
 
 class Api(object):
@@ -438,7 +439,24 @@ class Api(object):
             importer.addAuthorToDB(self.id, refresh=False)
         except Exception as e:
             self.data = e
+        return
 
+    def _searchBook(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+        
+        books = [{"bookid": id}]
+        if lazylibrarian.USE_RSS():
+                threading.Thread(target=search_rss_book, args=[books]).start()
+        if lazylibrarian.USE_NZB():
+            threading.Thread(target=search_nzb_book, args=[books]).start()
+        if lazylibrarian.USE_TOR():
+            threading.Thread(target=search_tor_book, args=[books]).start()
+        if not lazylibrarian.USE_RSS() and not lazylibrarian.USE_NZB() and not lazylibrarian.USE_TOR():
+            self.data = "No search methods set, check config."
         return
 
     def _delAuthor(self, **kwargs):
