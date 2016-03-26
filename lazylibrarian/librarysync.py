@@ -225,15 +225,19 @@ def LibraryScan(dir=None):
             bookfile = book['BookFile']
 
             if not(bookfile and os.path.isfile(bookfile)):
-                myDB.action(
-                    'update books set Status="%s" where BookID="%s"' %
-                    (status, bookID))
-                myDB.action(
-                    'update books set BookFile="" where BookID="%s"' %
-                    bookID)
-                logger.warn(
-                    'Book %s - %s updated as not found on disk' %
-                    (bookAuthor, bookName))
+                myDB.action('update books set Status="%s" where BookID="%s"' % (status, bookID))
+                myDB.action('update books set BookFile="" where BookID="%s"' % bookID)
+                logger.warn('Book %s - %s updated as not found on disk' % (bookAuthor, bookName))
+        
+        # on a full scan, verify the cover images are correct too
+        covers = myDB.action('select BookImg,BookName,BookID from books')
+        cachedir = os.path.join(str(lazylibrarian.PROG_DIR),
+                                    'data' + os.sep)
+        for item in covers:
+            imgfile = cachedir + item['BookImg']
+            if not os.path.isfile(imgfile) and not item['BookImg'].startswith('http'):
+                logger.debug('Cover missing for %s %s' % (item['BookName'], imgfile))
+                myDB.action('update books set BookImg="images/nocover.png" where Bookid="%s"' % item['BookID'])
 
     # guess this was meant to save repeat-scans of the same directory
     # if it contains multiple formats of the same book, but there was no code
@@ -575,9 +579,7 @@ def LibraryScan(dir=None):
         newimg, incache = cache_cover(bookimg)
         if newimg != bookimg:
             myDB.action('update books set BookImg="%s" where BookID="%s"' % (newimg, bookid))
-            if incache:
-                logger.debug("Using existing cover for %s" % bookname)
-            else:
+            if not incache:
                 logger.debug("Cached new cover for %s" % bookname)
 
     logger.info('Library scan complete')
