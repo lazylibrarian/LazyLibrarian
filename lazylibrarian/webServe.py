@@ -1380,7 +1380,6 @@ class WebInterface(object):
         common.schedule_job('Restart', 'search_rss_book')
         common.schedule_job('Restart', 'search_magazines')
         common.schedule_job('Restart', 'checkForUpdates')
-
         # and list the new run-times in the log
         return self.showJobs()
 #    restartJobs.exposed = True

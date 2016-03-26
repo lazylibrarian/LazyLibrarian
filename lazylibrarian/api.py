@@ -13,7 +13,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-from lazylibrarian import importer, postprocess, versioncheck, logger, database, updater, librarysync, magazinescan, formatter, bookcovers
+from lazylibrarian import importer, postprocess, versioncheck, logger, database, \
+    updater, librarysync, magazinescan, formatter, bookcovers, common
 from lazylibrarian.searchnzb import search_nzb_book
 from lazylibrarian.searchtorrents import search_tor_book
 from lazylibrarian.searchmag import search_magazines
@@ -64,7 +65,9 @@ cmd_dict = {'help':'list available commands',
             'getBookCover':'&id= fetch a cover from google for one BookID',
             'getBookCovers':'fetch covers from google for all books with no existing cover',
             'getAllBooks':'list all books in the database',
-            'searchBook':'&id= search for one book by BookID'
+            'searchBook':'&id= search for one book by BookID',
+            'showJobs':'show status of running jobs',
+            'restartJobs':'reschedule/restart background jobs'
             }
 
 class Api(object):
@@ -533,4 +536,48 @@ class Api(object):
         self.data = 'Fetching covers for %i books' % len(booklist)
         threading.Thread(target=bookcovers.getBookCovers, args=[booklist]).start()
         return
+        
+    def _restartJobs(self, **kwargs):
+        common.schedule_job('Restart', 'processDir')
+        common.schedule_job('Restart', 'search_nzb_book')
+        common.schedule_job('Restart', 'search_tor_book')
+        common.schedule_job('Restart', 'search_rss_book')
+        common.schedule_job('Restart', 'search_magazines')
+        common.schedule_job('Restart', 'checkForUpdates')
+        
+    def _showJobs(self, **kwargs):
+        result = []
+        result.append("Cache %i hits, %i miss" % (
+            int(lazylibrarian.CACHE_HIT),
+            int(lazylibrarian.CACHE_MISS)))
+        myDB = database.DBConnection()
+        snatched = myDB.action(
+            "SELECT count('Status') as counter from wanted WHERE Status = 'Snatched'").fetchone()
+        wanted = myDB.action(
+            "SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'").fetchone()
+        result.append("%i items marked as Snatched" % snatched['counter'])
+        result.append("%i items marked as Wanted" % wanted['counter'])       
+        for job in lazylibrarian.SCHED.get_jobs():
+            job = str(job)
+            if "search_magazines" in job:
+                jobname = "Check for new magazines"
+            elif "checkForUpdates" in job:
+                jobname = "Check LazyLibrarian version"
+            elif "search_tor_book" in job:
+                jobname = "TOR book search"
+            elif "search_nzb_book" in job:
+                jobname = "NZB book search"
+            elif "search_rss_book" in job:
+                jobname = "RSS book search"
+            elif "processDir" in job:
+                jobname = "Process downloads"
+            else:
+                jobname = job.split(' ')[0].split('.')[2]
+
+            jobinterval = job.split('[')[1].split(']')[0]
+            jobtime = job.split('at: ')[1].split('.')[0]
+            jobtime = formatter.next_run(jobtime)
+            jobinfo = "%s: Next run in %s" % (jobname, jobtime)
+            result.append(jobinfo)
+        self.data = result
 
