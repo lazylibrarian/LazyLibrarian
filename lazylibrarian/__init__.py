@@ -524,7 +524,6 @@ def config_read(reloaded=False):
         count = 0
         while CFG.has_section('Newznab%i' % count):
             newz_name = 'Newznab%i' % count
-            print newz_name
             # legacy name conversions
             if CFG.has_option(newz_name, 'newznab%i' % count):
                 CFG.set(newz_name, 'ENABLED', CFG.getboolean(newz_name, 'newznab%i' % count))
