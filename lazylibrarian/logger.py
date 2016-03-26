@@ -60,7 +60,7 @@ class RotatingLogger(object):
         threadname = threading.currentThread().getName()
 
         # Ensure messages are utf-8 as some author names contain accents and the web page doesnt like them
-        message = safe_unicode(message).encode('utf-8')
+        message = formatter.safe_unicode(message).encode('utf-8')
 
         if level != 'DEBUG' or lazylibrarian.LOGFULL is True:
             # Limit the size of the "in-memory" log, as gets slow if too long
@@ -81,14 +81,6 @@ class RotatingLogger(object):
 
 lazylibrarian_log = RotatingLogger('lazylibrarian.log')
 
-def safe_unicode(obj, *args):
-    """ return the unicode representation of obj """
-    try:
-        return unicode(obj, *args)
-    except UnicodeDecodeError:
-        # obj is byte string
-        ascii_text = str(obj).encode('string_escape')
-        return unicode(ascii_text)
 
 def debug(message):
     lazylibrarian_log.log(message, level='DEBUG')

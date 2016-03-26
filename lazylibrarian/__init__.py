@@ -123,10 +123,6 @@ NZBMATRIX = 0
 NZBMATRIX_USER = None
 NZBMATRIX_API = None
 
-NEWZNAB_PROV = []
-TORZNAB_PROV = []
-RSS_PROV = []
-
 NEWZBIN = 0
 NEWZBIN_UID = None
 NEWZBIN_PASSWORD = None
@@ -310,60 +306,17 @@ def check_setting_str(config, cfg_name, item_name, def_val, log=True):
 
     return my_val.decode('utf-8')
 
-
 def initialize():
 
     with INIT_LOCK:
-
-        global __INITIALIZED__, FULL_PATH, PROG_DIR, LOGLEVEL, LOGFULL, DAEMON, DATADIR, \
-            HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, API_KEY, API_ENABLED, \
-            LAUNCH_BROWSER, LOGDIR, CACHEDIR, CACHE_AGE, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, \
-            IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, IMP_CONVERT, \
-            MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, \
-            MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, CONFIGFILE, CFG, LOGLIMIT, \
-            SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, SAB_CAT, \
-            DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, USENET_RETENTION, NZB_BLACKHOLEDIR, \
-            ALTERNATE_DIR, GR_API, GB_API, BOOK_API, MAGICK, \
-            NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, \
-            NZBGET_PORT, NZB_DOWNLOADER_NZBGET, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
-            NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, EBOOK_TYPE, MAG_TYPE, KAT, KAT_HOST, \
-            NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, REJECT_WORDS, \
-            VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, SEARCHRSS_INTERVAL, \
-            EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, \
-            USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, \
-            TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
-            USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, \
-            TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, \
-            TOR_DOWNLOADER_QBITTORRENT, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
-            USE_PUSHBULLET, PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, \
-            PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, LAST_GOODREADS, LAST_LIBRARYTHING, \
-            UTORRENT_HOST, UTORRENT_PORT, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
-            QBITTORRENT_HOST, QBITTORRENT_PORT, QBITTORRENT_USER, QBITTORRENT_PASS, QBITTORRENT_LABEL, \
-            USE_PUSHOVER, PUSHOVER_ONSNATCH, PUSHOVER_KEYS, PUSHOVER_APITOKEN, \
-            PUSHOVER_PRIORITY, PUSHOVER_ONDOWNLOAD, PUSHOVER_DEVICE, \
-            USE_ANDROIDPN, ANDROIDPN_NOTIFY_ONSNATCH, ANDROIDPN_NOTIFY_ONDOWNLOAD, \
-            ANDROIDPN_URL, ANDROIDPN_USERNAME, ANDROIDPN_BROADCAST, \
-            TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PORT, TRANSMISSION_PASS, TRANSMISSION_USER, \
-            TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, \
-            FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, \
-            USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
-            GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, \
-            LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, SCHED, CACHE_HIT, CACHE_MISS, \
-            BOOKSTRAP_THEME, BOOKSTRAP_THEMELIST, BOOKLANGFILTER, MANAGEFILTER, ISSUEFILTER, \
-            LOGFILES, LOGSIZE
-
+        global __INITIALIZED__, LOGDIR, LOGLIMIT, LOGFILES, LOGSIZE, CFG, CFGLOGLEVEL, LOGLEVEL, \
+            LOGFULL, CACHEDIR, DATADIR, LAST_LIBRARYTHING, LAST_GOODREADS, BOOKLANGFILTER, MANAGEFILTER, \
+            ISSUEFILTER, IMP_MONTHLANG, BOOKSTRAP_THEMELIST
+        
         if __INITIALIZED__:
             return False
 
         check_section('General')
-
-        try:
-            HTTP_PORT = check_setting_int(CFG, 'General', 'http_port', 5299)
-        except:
-            HTTP_PORT = 5299
-
-        if HTTP_PORT < 21 or HTTP_PORT > 65535:
-            HTTP_PORT = 5299
 
         LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
         LOGLIMIT = check_setting_int(CFG, 'General', 'loglimit', 500)
@@ -397,6 +350,16 @@ def initialize():
             LOGFULL = False
             logger.info("Screen Log set to INFO/WARN/ERROR")
 
+        config_read()
+        
+        # Put the cache dir in the data dir for now
+        CACHEDIR = os.path.join(DATADIR, 'cache')
+        if not os.path.exists(CACHEDIR):
+            try:
+                os.makedirs(CACHEDIR)
+            except OSError:
+                logger.error('Could not create cachedir. Check permissions of: ' + DATADIR)
+
         # keep track of last api calls so we don't call more than once per second
         # to respect api terms, but don't wait un-necessarily either
         time_now = int(time.time())
@@ -407,6 +370,75 @@ def initialize():
         ISSUEFILTER = "Skipped"
         BOOKLANGFILTER = "eng"
 
+        # Initialize the database
+        try:
+            dbcheck()
+        except Exception as e:
+            logger.error("Can't connect to the database: %s" % e)
+
+        build_monthtable()
+        BOOKSTRAP_THEMELIST = build_bookstrap_themes()
+
+        __INITIALIZED__ = True
+        return True
+
+def config_read(reloaded=False):
+        global FULL_PATH, PROG_DIR, DAEMON, \
+            HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, API_KEY, API_ENABLED, \
+            LAUNCH_BROWSER, LOGDIR, CACHE_AGE, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, \
+            IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, IMP_CONVERT, \
+            MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, \
+            MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, CONFIGFILE, CFG, LOGLIMIT, \
+            SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, SAB_CAT, \
+            DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, USENET_RETENTION, NZB_BLACKHOLEDIR, \
+            ALTERNATE_DIR, GR_API, GB_API, BOOK_API, MAGICK, \
+            NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, \
+            NZBGET_PORT, NZB_DOWNLOADER_NZBGET, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
+            NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, EBOOK_TYPE, MAG_TYPE, KAT, KAT_HOST, \
+            NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, REJECT_WORDS, \
+            VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, SEARCHRSS_INTERVAL, \
+            EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, \
+            USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, \
+            TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
+            USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, \
+            TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, \
+            TOR_DOWNLOADER_QBITTORRENT, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
+            USE_PUSHBULLET, PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, \
+            PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, \
+            UTORRENT_HOST, UTORRENT_PORT, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
+            QBITTORRENT_HOST, QBITTORRENT_PORT, QBITTORRENT_USER, QBITTORRENT_PASS, QBITTORRENT_LABEL, \
+            USE_PUSHOVER, PUSHOVER_ONSNATCH, PUSHOVER_KEYS, PUSHOVER_APITOKEN, \
+            PUSHOVER_PRIORITY, PUSHOVER_ONDOWNLOAD, PUSHOVER_DEVICE, \
+            USE_ANDROIDPN, ANDROIDPN_NOTIFY_ONSNATCH, ANDROIDPN_NOTIFY_ONDOWNLOAD, \
+            ANDROIDPN_URL, ANDROIDPN_USERNAME, ANDROIDPN_BROADCAST, \
+            TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PORT, TRANSMISSION_PASS, TRANSMISSION_USER, \
+            TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, \
+            FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, \
+            USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
+            GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, \
+            LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, SCHED, CACHE_HIT, CACHE_MISS, \
+            BOOKSTRAP_THEME, \
+            LOGFILES, LOGSIZE
+
+        NEWZNAB_PROV = []
+        TORZNAB_PROV = []
+        RSS_PROV = []
+
+        # we read the log details earlier for starting the logger process,
+        # but read them again here so they get listed in the debug log
+        LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
+        LOGLIMIT = check_setting_int(CFG, 'General', 'loglimit', 500)
+        LOGFILES = check_setting_int(CFG, 'General', 'logfiles', 10)
+        LOGSIZE = check_setting_int(CFG, 'General', 'logsize', 204800)
+
+        try:
+            HTTP_PORT = check_setting_int(CFG, 'General', 'http_port', 5299)
+        except:
+            HTTP_PORT = 5299
+
+        if HTTP_PORT < 21 or HTTP_PORT > 65535:
+            HTTP_PORT = 5299
+
         MATCH_RATIO = check_setting_int(CFG, 'General', 'match_ratio', 80)
         HTTP_HOST = check_setting_str(CFG, 'General', 'http_host', '0.0.0.0')
         HTTP_USER = check_setting_str(CFG, 'General', 'http_user', '')
@@ -414,12 +446,6 @@ def initialize():
         HTTP_ROOT = check_setting_str(CFG, 'General', 'http_root', '')
         HTTP_LOOK = check_setting_str(CFG, 'General', 'http_look', 'default')
         BOOKSTRAP_THEME = check_setting_str(CFG, 'General', 'bookstrap_theme', 'slate')
-        # we read the log details earlier for starting the logger process,
-        # but read them again here so they get listed in the debug log
-        LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
-        LOGLIMIT = check_setting_int(CFG, 'General', 'loglimit', 500)
-        LOGFILES = check_setting_int(CFG, 'General', 'logfiles', 10)
-        LOGSIZE = check_setting_int(CFG, 'General', 'logsize', 204800)
 
         LAUNCH_BROWSER = check_setting_bool(CFG, 'General', 'launch_browser', 1)
         API_ENABLED = check_setting_bool(CFG, 'General', 'api_enabled', 0)
@@ -735,26 +761,10 @@ def initialize():
         GR_API = check_setting_str(CFG, 'API', 'gr_api', 'ckvsiSDsuqh7omh74ZZ6Q')
         GB_API = check_setting_str(CFG, 'API', 'gb_api', '')
 
-        # Put the cache dir in the data dir for now
-        CACHEDIR = os.path.join(DATADIR, 'cache')
-        if not os.path.exists(CACHEDIR):
-            try:
-                os.makedirs(CACHEDIR)
-            except OSError:
-                logger.error('Could not create cachedir. Check permissions of: ' + DATADIR)
-
-        # Initialize the database
-        try:
-            dbcheck()
-        except Exception as e:
-            logger.error("Can't connect to the database: %s" % e)
-
-        build_monthtable()
-        BOOKSTRAP_THEMELIST = build_bookstrap_themes()
-
-        __INITIALIZED__ = True
-        return True
-
+        if reloaded:
+            logger.info('Config file reloaded')
+        else:
+            logger.info('Config file loaded')
 
 
 def config_write():
@@ -1105,14 +1115,13 @@ def build_bookstrap_themes():
         return themelist  # return empty if bookstrap interface not installed
 
     URL = 'http://bootswatch.com/api/3.json'
-    USER_AGENT = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'
     request = urllib2.Request(URL)
 
     if PROXY_HOST:
         request.set_proxy(PROXY_HOST, PROXY_TYPE)
 
     # bootswatch insists on having a user-agent
-    request.add_header('User-Agent', USER_AGENT)
+    request.add_header('User-Agent', common.USER_AGENT)
 
     try:
         resp = urllib2.urlopen(request, timeout=30)

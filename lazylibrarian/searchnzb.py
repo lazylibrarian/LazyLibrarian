@@ -40,7 +40,7 @@ def search_nzb_book(books=None, reset=False):
                 searchbooks.append(terms)
 
     if len(searchbooks) == 0:
-        logger.debug("NZB search requested for no books")
+        logger.debug("NZB search requested for no books or invalid BookID")
         return
     elif len(searchbooks) == 1:
         logger.info('NZB Searching for one book')

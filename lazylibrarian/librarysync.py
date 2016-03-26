@@ -10,6 +10,7 @@ from lib.fuzzywuzzy import fuzz
 from xml.etree import ElementTree
 import lib.zipfile as zipfile
 from lib.mobi import Mobi
+from lazylibrarian.common import USER_AGENT
 
 
 def opf_file(search_dir=None):
@@ -593,7 +594,6 @@ def cache_cover(img_url):
     if os.path.isfile(coverfile):  # already cached
         return link, True
 
-    USER_AGENT = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'
     request = urllib2.Request(img_url)
 
     if lazylibrarian.PROXY_HOST:

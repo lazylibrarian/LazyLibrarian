@@ -11,7 +11,7 @@ import threading
 from urllib2 import HTTPError
 
 import lazylibrarian
-from lazylibrarian import logger, formatter, database
+from lazylibrarian import logger, formatter, database, bookcovers
 from lazylibrarian.gr import GoodReads
 
 from lib.fuzzywuzzy import fuzz
@@ -206,10 +206,7 @@ class GoogleBooks:
                         bookdate = bookdate[:4]
 
                         try:
-                            bookimg = item[
-                                'volumeInfo'][
-                                    'imageLinks'][
-                                        'thumbnail']
+                            bookimg = item['volumeInfo']['imageLinks']['thumbnail']
                         except KeyError:
                             bookimg = 'images/nocover.png'
 
@@ -308,6 +305,12 @@ class GoogleBooks:
                             'highest_fuzz': highest_fuzz,
                             'num_reviews': num_reviews
                         })
+
+                        if bookimg == 'images/nocover.png' or 'nophoto' in bookimg:
+                            # try to get a cover from google
+                            coverlist=[]
+                            coverlist.append(item['id'])
+                            bookcovers.getBookCovers(coverlist)
 
                         resultcount = resultcount + 1
 
@@ -592,25 +595,20 @@ class GoogleBooks:
                             }
                             resultcount = resultcount + 1
 
-                            myDB.upsert(
-                                "books",
-                                newValueDict,
-                                controlValueDict)
-                            logger.debug(
-                                u"book found " +
-                                bookname +
-                                " " +
-                                bookdate)
+                            myDB.upsert("books", newValueDict, controlValueDict)
+                            logger.debug(u"book found " + bookname + " " + bookdate)
                             if not find_book_status:
-                                logger.debug(
-                                    "[%s] Added book: %s [%s]" %
-                                    (authorname, bookname, booklang))
+                                logger.debug("[%s] Added book: %s [%s]" % (authorname, bookname, booklang))
                                 added_count = added_count + 1
                             else:
                                 updated_count = updated_count + 1
-                                logger.debug(
-                                    "[%s] Updated book: %s" %
-                                    (authorname, bookname))
+                                logger.debug("[%s] Updated book: %s" % (authorname, bookname))
+
+                            if bookimg == 'images/nocover.png' or 'nophoto' in bookimg:
+                                # try to get a cover from google
+                                coverlist=[]
+                                coverlist.append(bookid)
+                                bookcovers.getBookCovers(coverlist)
                         else:
                             book_ignore_count = book_ignore_count + 1
                     else:
@@ -807,3 +805,10 @@ class GoogleBooks:
 
         myDB.upsert("books", newValueDict, controlValueDict)
         logger.debug("%s added to the books database" % bookname)
+
+        if bookimg == 'images/nocover.png' or 'nophoto' in bookimg:
+            # try to get a cover from google
+            coverlist=[]
+            coverlist.append(bookid)
+            bookcovers.getBookCovers(coverlist)
+

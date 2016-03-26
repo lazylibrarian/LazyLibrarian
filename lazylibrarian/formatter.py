@@ -152,6 +152,14 @@ def getList(st):
     my_splitter.whitespace_split = True
     return list(my_splitter)
 
+def safe_unicode(obj, *args):
+    """ return the unicode representation of obj """
+    try:
+        return unicode(obj, *args)
+    except UnicodeDecodeError:
+        # obj is byte string
+        ascii_text = str(obj).encode('string_escape')
+        return unicode(ascii_text)
 
 def latinToAscii(unicrap):
     """
