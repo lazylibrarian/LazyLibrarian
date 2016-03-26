@@ -1334,52 +1334,15 @@ class WebInterface(object):
         cherrypy.response.headers[
             'Cache-Control'] = "max-age=0,no-cache,no-store"
         # show the current status of LL cron jobs in the log
-        result = "Cache %i hits, %i miss" % (
-            int(lazylibrarian.CACHE_HIT),
-            int(lazylibrarian.CACHE_MISS))
-        myDB = database.DBConnection()
-        snatched = myDB.action(
-            "SELECT count('Status') as counter from wanted WHERE Status = 'Snatched'").fetchone()
-        wanted = myDB.action(
-            "SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'").fetchone()
-        result = result + '\n' + \
-            "%i items marked as Snatched" % snatched['counter']
-        result = result + '\n' + \
-            "%i items marked as Wanted" % wanted['counter']
-
-        for job in lazylibrarian.SCHED.get_jobs():
-            job = str(job)
-            if "search_magazines" in job:
-                jobname = "Check for new magazines"
-            elif "checkForUpdates" in job:
-                jobname = "Check LazyLibrarian version"
-            elif "search_tor_book" in job:
-                jobname = "TOR book search"
-            elif "search_nzb_book" in job:
-                jobname = "NZB book search"
-            elif "search_rss_book" in job:
-                jobname = "RSS book search"
-            elif "processDir" in job:
-                jobname = "Process downloads"
-            else:
-                jobname = job.split(' ')[0].split('.')[2]
-
-            jobinterval = job.split('[')[1].split(']')[0]
-            jobtime = job.split('at: ')[1].split('.')[0]
-            jobtime = formatter.next_run(jobtime)
-            jobinfo = "%s: Next run in %s" % (jobname, jobtime)
-            # logger.info(jobinfo)
-            result = result + '\n' + jobinfo
+        resultlist = common.showJobs()
+        result = ''
+        for line in resultlist:
+            result = result + line + '\n'
         return result
 
     @cherrypy.expose
     def restartJobs(self):
-        common.schedule_job('Restart', 'processDir')
-        common.schedule_job('Restart', 'search_nzb_book')
-        common.schedule_job('Restart', 'search_tor_book')
-        common.schedule_job('Restart', 'search_rss_book')
-        common.schedule_job('Restart', 'search_magazines')
-        common.schedule_job('Restart', 'checkForUpdates')
+        common.restartJobs(start='Restart')
         # and list the new run-times in the log
         return self.showJobs()
 #    restartJobs.exposed = True
