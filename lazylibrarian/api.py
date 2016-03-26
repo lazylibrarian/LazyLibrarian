@@ -28,7 +28,7 @@ import Queue
 
 cmd_dict = {'help':'list available commands',
             'getIndex':'list all authors',
-            'getAuthor':'&id= get author from AuthorID',
+            'getAuthor':'&id= get author and list their books from AuthorID',
             'getWanted':'list wanted books',
             'getSnatched':'list snatched books',
             'getHistory':'list history',
@@ -44,7 +44,7 @@ cmd_dict = {'help':'list available commands',
             'refreshAuthor':'&name= refresh author by name',
             'forceActiveAuthorsUpdate':'refresh all active authors and reload their books',
             'forceLibraryScan':'refresh whole book library',
-            'forceMagazineScan':'reresh whole magazine library',
+            'forceMagazineScan':'refresh whole magazine library',
             'getVersion':'show git version',
             'shutdown':'stop lazylibrarian',
             'restart':'restart lazylibrarian',
@@ -61,8 +61,9 @@ cmd_dict = {'help':'list available commands',
             'readCFG':'&section=&name= read value of config variable',
             'writeCFG':'&section=&name=&value= set config variable name=value',
             'loadCFG':'reload config from file',
-            'getBookCover':'%id= fetch a cover from google for one BookID',
-            'getBookCovers':'fetch covers from google for all books with no existing cover'
+            'getBookCover':'&id= fetch a cover from google for one BookID',
+            'getBookCovers':'fetch covers from google for all books with no existing cover',
+            'getAllBooks':'list all books in the database'
             }
 
 class Api(object):
@@ -207,6 +208,11 @@ class Api(object):
     def _getMagazines(self, **kwargs):
         self.data = self._dic_from_query(
             'SELECT * from magazines order by Title COLLATE NOCASE')
+        return
+
+    def _getAllBooks(self, **kwargs):
+        self.data = self._dic_from_query(
+            'SELECT * from books order by AuthorID DESC')
         return
 
     def _getIssues(self, **kwargs):
@@ -420,7 +426,7 @@ class Api(object):
         
 
     def _addAuthor(self, **kwargs):
-        if 'id' not in kwargs:
+        if 'name' not in kwargs:
             self.data = 'Missing parameter: name'
             return
         else:
