@@ -37,7 +37,7 @@ def getBookCovers(bookids=None):
      
     num = len(bookids)
     if num > 1:
-        logger.info("Fetching book covers for %i books" % len(bookids))   
+        logger.info("Fetching book covers for %i books" % num)   
     for bookid in bookids:
         item = myDB.action('select BookName,AuthorName,BookLink from books where BookID="%s"' % bookid).fetchone()
         if item:

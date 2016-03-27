@@ -240,14 +240,15 @@ def LibraryScan(dir=None):
                 logger.debug('Cover missing for %s %s' % (item['BookName'], imgfile))
                 myDB.action('update books set BookImg="images/nocover.png" where Bookid="%s"' % item['BookID'])
 
-        booklist=[]
+        booklist = []
         need_covers = myDB.action('select bookid from books where bookimg like "%nocover%" or bookimg like "%nophoto%"').fetchall()
         if len(need_covers):
             for item in need_covers:
                 bookid = item['bookid']
                 booklist.append(bookid)
-            logger.debug('Fetching new covers for %i books') % len(booklist)
-            bookcovers.getBookCovers(booklist)
+            if booklist:
+                logger.debug('Fetching new covers for %i books' % len(booklist))
+                bookcovers.getBookCovers(booklist)
         logger.debug('Cover checking complete')
 
     # to save repeat-scans of the same directory if it contains multiple formats of the same book, 

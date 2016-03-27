@@ -535,6 +535,15 @@ class GoogleBooks:
                     except KeyError:
                         bookdesc = None
 
+                    try:
+                        series = booksub.split('(')[1].split(' Series ')[0]
+                    except IndexError:
+                        series = None
+                    try:
+                        seriesOrder = booksub.split('(')[1].split(' Series ')[1].split(')')[0]
+                    except IndexError:
+                        seriesOrder = None
+                        
                     bookid = item['id']
 #  Darkie67:
 # replacing German Umlauts and filtering out ":"  ## PAB no idea why we filter out ':' ??
@@ -590,8 +599,8 @@ class GoogleBooks:
                                 "BookLang": booklang,
                                 "Status": book_status,
                                 "BookAdded": formatter.today(),
-                                "Series": None,
-                                "SeriesOrder": None
+                                "Series": series,
+                                "SeriesOrder": seriesOrder
                             }
                             resultcount = resultcount + 1
 
