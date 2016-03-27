@@ -4,7 +4,7 @@ import lazylibrarian
 import urllib2
 import socket
 import hashlib
-from lazylibrarian import logger, database, importer, formatter, common
+from lazylibrarian import logger, database, importer, formatter, common, bookcovers
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 from xml.etree import ElementTree
@@ -232,18 +232,26 @@ def LibraryScan(dir=None):
         # on a full scan, verify the cover images are correct too
         logger.debug('Checking book covers')
         covers = myDB.action('select BookImg,BookName,BookID from books')
-        cachedir = os.path.join(str(lazylibrarian.PROG_DIR),
-                                    'data' + os.sep)
+        cachedir = os.path.join(str(lazylibrarian.PROG_DIR), 'data' + os.sep)
+        
         for item in covers:
             imgfile = cachedir + item['BookImg']
             if not os.path.isfile(imgfile) and not item['BookImg'].startswith('http'):
                 logger.debug('Cover missing for %s %s' % (item['BookName'], imgfile))
                 myDB.action('update books set BookImg="images/nocover.png" where Bookid="%s"' % item['BookID'])
+
+        booklist=[]
+        need_covers = myDB.action('select bookid from books where bookimg like "%nocover%" or bookimg like "%nophoto%"').fetchall()
+        if len(need_covers):
+            for item in need_covers:
+                bookid = item['bookid']
+                booklist.append(bookid)
+            logger.debug('Fetching new covers for %i books') % len(booklist)
+            bookcovers.getBookCovers(booklist)
         logger.debug('Cover checking complete')
-    # guess this was meant to save repeat-scans of the same directory
-    # if it contains multiple formats of the same book, but there was no code
-    # that looked at the array. renamed from latest to processed to make
-    # purpose clearer
+
+    # to save repeat-scans of the same directory if it contains multiple formats of the same book, 
+    # keep track of which directories we've already looked at 
     processed_subdirectories = []
 
     matchString = ''
@@ -581,7 +589,7 @@ def LibraryScan(dir=None):
         if newimg != bookimg:
             myDB.action('update books set BookImg="%s" where BookID="%s"' % (newimg, bookid))
             if not incache:
-                logger.debug("Cached new cover for %s" % bookname)
+                logger.debug("Cached cover for %s" % bookname)
 
     logger.info('Library scan complete')
 
