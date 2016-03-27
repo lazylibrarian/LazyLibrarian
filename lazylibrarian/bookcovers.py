@@ -64,12 +64,12 @@ def getBookCovers(bookids=None):
                 # and scrape the page for og:image
                 # <meta property="og:image" content="https://i.gr-assets.com/images/S/photo.goodreads.com/books/1388267702i/16304._UY475_SS475_.jpg"/>
                 # to get the cover
-                URL="https://www.goodreads.com/book/show/" + bookid
+                
                 time_now = int(time.time())
                 if time_now <= lazylibrarian.LAST_GOODREADS:
                     time.sleep(1)
                     lazylibrarian.LAST_GOODREADS = time_now
-                result, success = fetchURL(URL)
+                result, success = fetchURL(booklink)
                 if success:
                     try:
                         img = result.split('og:image')[1].split('content="')[1].split('"/>')[0]
@@ -86,17 +86,17 @@ def getBookCovers(bookids=None):
                                 img.write(result)
                             covertype = "goodreads"
                         else:
-                            logger.debug("Error getting goodreads image for %s, [%s]" % (bookid, result))
+                            logger.debug("Error getting goodreads image for %s, [%s]" % (img, result))
                     else:
                         logger.debug("No image found in goodreads page for %s" % bookid)
                 else:
-                    logger.debug("Error getting goodreads page for %s, [%s]" % (URL, result))
-                    
-            
+                    logger.debug("Error getting page %s, [%s]" % (booklink, result))
+          
             # if this failed, try a google image search...
        
             if not covertype:
-                URL="https://www.google.com/search?as_st=y&tbm=isch&as_q=" + safeparams + "+ebook&tbs=isz:l,ift:jpg&gws_rd=cr&ei=Ff30Vo_HOaWuygO13bvYBQ"
+                URL="https://www.google.com/search?as_st=y&tbm=isch&as_q=" + safeparams + \
+                    "+ebook&tbs=isz:l,ift:jpg&gws_rd=cr&ei=Ff30Vo_HOaWuygO13bvYBQ"
                 result, success = fetchURL(URL)
                 if success:
                     try:
@@ -110,16 +110,16 @@ def getBookCovers(bookids=None):
                                 img.write(result)
                             covertype = "google"
                         else:
-                            logger.debug("Error getting google image for %s, [%s]" % (bookid, result))
+                            logger.debug("Error getting google image %s, [%s]" % (img, result))
                     else:
                         logger.debug("No image found in google page for %s" % bookid)
                 else:
-                    logger.debug("Error getting google page for %s, [%s]" % (bookid, result))
+                    logger.debug("Error getting google page for %s, [%s]" % (safeparams, result))
             
             if covertype:
                 # image downloaded, or was already there, now update the link
                 logger.debug("Found %s cover for %s %s" % (covertype, author, title))
                 myDB.action('update books set BookImg="%s" where BookID="%s"' % (link, bookid))
     if num > 1:
-        logger.debug("Get Book Covers - update complete")
+        logger.info("Get Book Covers - update complete")
 
