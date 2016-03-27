@@ -168,7 +168,7 @@ class GoodReads:
                     'bookid': author.find('./best_book/id').text,
                     'authorid': author.find('./best_book/author/id').text,
                     'bookname': bookTitle.encode("ascii", "ignore"),
-                    'booksub': booksub,
+                    'booksub': None,
                     'bookisbn': bookisbn,
                     'bookpub': bookpub,
                     'bookdate': bookdate,
@@ -330,11 +330,9 @@ class GoodReads:
 
                     try:
                         bookimg = book.find('image_url').text
-                        if (bookimg == 'http://www.goodreads.com/assets/nocover/111x148.png'):
+                        if ('nocover' in bookimg):
                             bookimg = 'images/nocover.png'
-                    except KeyError:
-                        bookimg = 'images/nocover.png'
-                    except AttributeError:
+                    except KeyError,AttributeError:
                         bookimg = 'images/nocover.png'
 
     # PAB this next section tries to get the book language using the isbn13 to look it up. If no isbn13 we skip the
@@ -475,18 +473,39 @@ class GoodReads:
                     bookrate = float(book.find('average_rating').text)
                     bookpages = book.find('num_pages').text
 
-                    result = re.search(r"\(([\S\s]+)\, #(\d+)|\(([\S\s]+) #(\d+)", bookname)
-                    if result:
-                        if result.group(1) == None:
-                            series = result.group(3)
-                            seriesOrder = result.group(4)
-                        else:
-                            series = result.group(1)
-                            seriesOrder = result.group(2)
-                    else:
+                    #result = re.search(r"\(([\S\s]+)\, #(\d+)|\(([\S\s]+) #(\d+)", bookname)
+                    #if result:
+                    #    if result.group(1) == None:
+                    #        series = result.group(3)
+                    #        seriesOrder = result.group(4)
+                    #    else:
+                    #        series = result.group(1)
+                    #        seriesOrder = result.group(2)
+                    #else:
+                    #    series = None
+                    #    seriesOrder = None
+                    
+                    try:
+                        series = bookname.split(' (')[1].split(', ')[0]
+                    except IndexError:
                         series = None
+                    try:
+                        seriesOrder = bookname.split(' (')[1].split(', ')[1].split(')')[0]
+                        if seriesOrder[0] == '#':
+                            seriesOrder = seriesOrder[1:]
+                    except IndexError:
                         seriesOrder = None
-
+                    
+                    #if not series and not seriesOrder:
+                    #    try:
+                    #        series = booksub.split('(')[1].split(' Series ')[0]
+                    #    except IndexError:
+                    #        series = None
+                    #    try:
+                    #        seriesOrder = booksub.split('(')[1].split(' Series ')[1].split(')')[0]
+                    #    except IndexError:
+                    #        seriesOrder = None
+                                
                     find_book_status = myDB.select('SELECT * FROM books WHERE BookID = "%s"' % bookid)
                     if find_book_status:
                         for resulted in find_book_status:
