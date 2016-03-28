@@ -1258,7 +1258,7 @@ def dbcheck():
     c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
         BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
         BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, \
-        BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesOrder INTEGER)')
+        BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesOrder TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, \
         NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS magazines (Title TEXT, Frequency TEXT, Regex TEXT, Status TEXT, \
@@ -1329,12 +1329,41 @@ def dbcheck():
         logger.info('Updating database to hold Series')
         c.execute('ALTER TABLE books ADD COLUMN Series TEXT')
         addedSeries = True
-
+        
+    # SeriesOrder shouldn't be an integer, some later written books
+    # and novellas logically go inbetween books of the main series,
+    # and their SeriesOrder is float, eg 1.5
+    # so we need to update SeriesOrder to store as text. 
+    # Because sqlite can't drop columns we create a new table,
+    # inherit the old table values, and then drop the old table
     try:
         c.execute('SELECT SeriesOrder from books')
+        # if we get here, there is already a SeriesOrder column
+        try:
+            # if this passes, we've already converted the table
+            c.execute('SELECT AuxInfo from books')
+        except sqlite3.OperationalError:
+            # need to convert
+            logger.info('Updating database SeriesOrder to hold text')
+            c.execute('ALTER TABLE books RENAME TO books_orig')
+            c.execute('CREATE TABLE books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
+                BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
+                BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, \
+                BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesOrder TEXT)')
+            c.execute('INSERT INTO books (AuthorID, AuthorName, AuthorLink, \
+                BookName, BookSub, BookDesc, BookGenre, BookIsbn, BookPub, \
+                BookRate, BookImg, BookPages, BookLink, BookID, \
+                BookDate, BookLang, BookAdded, Status, Series, SeriesOrder) \
+                SELECT AuthorID, AuthorName, AuthorLink, \
+                BookName, BookSub, BookDesc, BookGenre, BookIsbn, BookPub, \
+                BookRate, BookImg, BookPages, BookLink, BookID, \
+                BookDate, BookLang, BookAdded, Status, Series, SeriesOrder \
+                FROM books_orig')
+            c.execute('DROP TABLE books_orig')
     except sqlite3.OperationalError:
+        # no SeriesOrder column, so create the right type
         logger.info('Updating database to hold SeriesOrder')
-        c.execute('ALTER TABLE books ADD COLUMN SeriesOrder INTEGER')
+        c.execute('ALTER TABLE books ADD COLUMN SeriesOrder TEXT')
 
     addedIssues = False
     try:
