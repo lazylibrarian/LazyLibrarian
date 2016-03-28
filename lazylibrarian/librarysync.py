@@ -591,7 +591,6 @@ def LibraryScan(dir=None):
             myDB.action('update books set BookImg="%s" where BookID="%s"' % (newimg, bookid))
             if not incache:
                 logger.debug("Cached cover for %s" % bookname)
-
     logger.info('Library scan complete')
 
 

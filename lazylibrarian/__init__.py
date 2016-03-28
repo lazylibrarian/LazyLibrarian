@@ -1257,8 +1257,8 @@ def dbcheck():
          HaveBooks INTEGER, TotalBooks INTEGER, AuthorBorn TEXT, AuthorDeath TEXT, UnignoredBooks INTEGER)')
     c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
         BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
-        BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, \
-        BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesOrder TEXT)')
+        BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, \
+        BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesNum TEXT, SeriesOrder INTEGER)')
     c.execute('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, \
         NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS magazines (Title TEXT, Frequency TEXT, Regex TEXT, Status TEXT, \
@@ -1332,38 +1332,18 @@ def dbcheck():
         
     # SeriesOrder shouldn't be an integer, some later written books
     # and novellas logically go inbetween books of the main series,
-    # and their SeriesOrder is float, eg 1.5
+    # and their SeriesOrder is not an integer, eg 1.5
     # so we need to update SeriesOrder to store as text. 
-    # Because sqlite can't drop columns we create a new table,
-    # inherit the old table values, and then drop the old table
+    # Because sqlite can't drop columns we create a new column SeriesNum,
+    # inherit the old column values, and use SeriesNum instead
     try:
-        c.execute('SELECT SeriesOrder from books')
-        # if we get here, there is already a SeriesOrder column
-        try:
-            # if this passes, we've already converted the table
-            c.execute('SELECT AuxInfo from books')
-        except sqlite3.OperationalError:
-            # need to convert
-            logger.info('Updating database SeriesOrder to hold text')
-            c.execute('ALTER TABLE books RENAME TO books_orig')
-            c.execute('CREATE TABLE books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
-                BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
-                BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, \
-                BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesOrder TEXT)')
-            c.execute('INSERT INTO books (AuthorID, AuthorName, AuthorLink, \
-                BookName, BookSub, BookDesc, BookGenre, BookIsbn, BookPub, \
-                BookRate, BookImg, BookPages, BookLink, BookID, \
-                BookDate, BookLang, BookAdded, Status, Series, SeriesOrder) \
-                SELECT AuthorID, AuthorName, AuthorLink, \
-                BookName, BookSub, BookDesc, BookGenre, BookIsbn, BookPub, \
-                BookRate, BookImg, BookPages, BookLink, BookID, \
-                BookDate, BookLang, BookAdded, Status, Series, SeriesOrder \
-                FROM books_orig')
-            c.execute('DROP TABLE books_orig')
+        c.execute('SELECT SeriesNum from books')
     except sqlite3.OperationalError:
-        # no SeriesOrder column, so create the right type
-        logger.info('Updating database to hold SeriesOrder')
-        c.execute('ALTER TABLE books ADD COLUMN SeriesOrder TEXT')
+        # no SeriesNum column, so create one
+        logger.info('Updating database to hold SeriesNum')
+        c.execute('ALTER TABLE books ADD COLUMN SeriesNum TEXT')
+        c.execute('UPDATE books SET SeriesNum = SeriesOrder')
+        c.execute('UPDATE books SET SeriesOrder = Null')
 
     addedIssues = False
     try:
@@ -1401,15 +1381,15 @@ def dbcheck():
                     if result:
                         if result.group(1) == None:
                             series = result.group(3)
-                            seriesOrder = result.group(4)
+                            seriesNum = result.group(4)
                         else:
                             series = result.group(1)
-                            seriesOrder = result.group(2)
+                            seriesNum = result.group(2)
 
                         controlValueDict = {"BookID": book["BookID"]}
                         newValueDict = {
                             "series": series,
-                            "seriesOrder": seriesOrder
+                            "seriesNum": seriesNum
                         }
                         myDB.upsert("books", newValueDict, controlValueDict)
         except Exception as z:

@@ -208,7 +208,7 @@ class Api(object):
     def _getAllBooks(self, **kwargs):
         self.data = self._dic_from_query(
             'SELECT AuthorID,AuthorName,AuthorLink, BookName,BookSub,BookGenre,BookIsbn,BookPub, \
-            BookRate,BookImg,BookPages,BookLink,BookID,BookDate, BookLang,BookAdded,Status,Series,SeriesOrder \
+            BookRate,BookImg,BookPages,BookLink,BookID,BookDate, BookLang,BookAdded,Status,Series,SeriesNum \
             from books')
 
     def _getIssues(self, **kwargs):

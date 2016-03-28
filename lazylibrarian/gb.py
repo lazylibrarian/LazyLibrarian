@@ -75,9 +75,6 @@ class GoogleBooks:
             # timeout=30).read())
             try:
                 resp = urllib2.urlopen(my_url, timeout=30)  # don't get stuck
-            except urllib2.URLError as e:
-                logger.error(u"URLError getting response for %s: %s" % (my_url, e))
-                return "", False
             except socket.timeout as e:
                 logger.warn(u"Retrying - got timeout on %s" % my_url())
                 try:
@@ -85,6 +82,9 @@ class GoogleBooks:
                 except (urllib2.URLError, socket.timeout) as e:
                     logger.error(u"Error getting response for %s: %s" % (my_url, e))
                     return "", False
+            except urllib2.URLError as e:
+                logger.error(u"URLError getting response for %s: %s" % (my_url, e))
+                return "", False
              
             if str(resp.getcode()).startswith("2"):  # (200 OK etc)
                 logger.debug(u"CacheHandler: Caching response for %s" % my_url)
@@ -542,11 +542,11 @@ class GoogleBooks:
                     except IndexError:
                         series = None
                     try:
-                        seriesOrder = booksub.split('(')[1].split(' Series ')[1].split(')')[0]
-                        if seriesOrder[0] == '#':
-                            seriesOrder = seriesOrder[1:]
+                        seriesNum = booksub.split('(')[1].split(' Series ')[1].split(')')[0]
+                        if seriesNum[0] == '#':
+                            seriesNum = seriesNum[1:]
                     except IndexError:
-                        seriesOrder = None
+                        seriesNum = None
                         
                     bookid = item['id']
 #  Darkie67:
@@ -604,7 +604,7 @@ class GoogleBooks:
                                 "Status": book_status,
                                 "BookAdded": formatter.today(),
                                 "Series": series,
-                                "SeriesOrder": seriesOrder
+                                "SeriesNum": seriesNum
                             }
                             resultcount = resultcount + 1
 
@@ -682,14 +682,20 @@ class GoogleBooks:
         myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' %
                     (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits,
                      ignored, removedResults, not_cached))
-
+        
+        havebooks = myDB.action(
+            'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND (Status="Have" OR Status="Open")' %
+            authorid).fetchone()
+        totalbooks = myDB.action(
+            'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND Status!="Ignored"' %
+            authorid).fetchone()
+        controlValueDict = {"AuthorID": authorid}
+        newValueDict = {"HaveBooks": havebooks['counter'],
+                        "UnignoredBooks": totalbooks['counter']
+                       }
+        myDB.upsert("authors", newValueDict, controlValueDict)
+            
         if refresh:
-            havebooks = myDB.action(
-                'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND (Status="Have" OR Status="Open")' %
-                authorid).fetchone()
-            controlValueDict = {"AuthorID": authorid}
-            newValueDict = {"HaveBooks": havebooks['counter']}
-            myDB.upsert("authors", newValueDict, controlValueDict)
             logger.info("[%s] Book processing complete: Added %s books / Updated %s books" %
                         (authorname, str(added_count), str(updated_count)))
         else:

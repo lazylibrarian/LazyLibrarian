@@ -70,9 +70,6 @@ class GoodReads:
             lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
             try:
                 resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
-            except urllib2.URLError as e:
-                logger.error(u"URLError getting response for %s: %s" % (my_url, e))
-                return "", False
             except socket.timeout as e:
                 logger.warn(u"Retrying - got timeout on %s" % my_url())
                 try:
@@ -80,7 +77,10 @@ class GoodReads:
                 except (urllib2.URLError, socket.timeout) as e:
                     logger.error(u"Error getting response for %s: %s" % (my_url, e))
                     return "", False           
-        
+            except urllib2.URLError as e:
+                logger.error(u"URLError getting response for %s: %s" % (my_url, e))
+                return "", False
+            
             if str(resp.getcode()).startswith("2"):  # (200 OK etc)
                 logger.debug(u"CacheHandler: Caching response for %s" % my_url())
                 source_xml = resp.read()  # .decode('utf-8')
@@ -485,34 +485,34 @@ class GoodReads:
                     #if result:
                     #    if result.group(1) == None:
                     #        series = result.group(3)
-                    #        seriesOrder = result.group(4)
+                    #        seriesNum = result.group(4)
                     #    else:
                     #        series = result.group(1)
-                    #        seriesOrder = result.group(2)
+                    #        seriesNum = result.group(2)
                     #else:
                     #    series = None
-                    #    seriesOrder = None
+                    #    seriesNum = None
                     
                     try:
                         series = bookname.split(' (')[1].split(', ')[0]
                     except IndexError:
                         series = None
                     try:
-                        seriesOrder = bookname.split(' (')[1].split(', ')[1].split(')')[0]
-                        if seriesOrder[0] == '#':
-                            seriesOrder = seriesOrder[1:]
+                        seriesNum = bookname.split(' (')[1].split(', ')[1].split(')')[0]
+                        if seriesNum[0] == '#':
+                            seriesNum = seriesNum[1:]
                     except IndexError:
-                        seriesOrder = None
+                        seriesNum = None
                     
-                    #if not series and not seriesOrder:
+                    #if not series and not seriesNum:
                     #    try:
                     #        series = booksub.split('(')[1].split(' Series ')[0]
                     #    except IndexError:
                     #        series = None
                     #    try:
-                    #        seriesOrder = booksub.split('(')[1].split(' Series ')[1].split(')')[0]
+                    #        seriesNum = booksub.split('(')[1].split(' Series ')[1].split(')')[0]
                     #    except IndexError:
-                    #        seriesOrder = None
+                    #        seriesNum = None
                                 
                     find_book_status = myDB.select('SELECT * FROM books WHERE BookID = "%s"' % bookid)
                     if find_book_status:
@@ -547,7 +547,7 @@ class GoodReads:
                                 "Status": book_status,
                                 "BookAdded": formatter.today(),
                                 "Series": series,
-                                "SeriesOrder": seriesOrder
+                                "SeriesNum": seriesNum
                             }
 
                             resultsCount = resultsCount + 1
@@ -635,13 +635,19 @@ class GoodReads:
                     (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change,
                      cache_hits, ignored, removedResults, not_cached))
 
+        havebooks = myDB.action(
+            'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND (Status="Have" OR Status="Open")' %
+            authorid).fetchone()
+        totalbooks = myDB.action(
+            'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND Status!="Ignored"' %
+            authorid).fetchone()
+        controlValueDict = {"AuthorID": authorid}
+        newValueDict = {"HaveBooks": havebooks['counter'],
+                        "UnignoredBooks": totalbooks['counter']
+                       }
+        myDB.upsert("authors", newValueDict, controlValueDict)
+            
         if refresh:
-            havebooks = myDB.action(
-                'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND (Status="Have" OR Status="Open")' %
-                authorid).fetchone()
-            controlValueDict = {"AuthorID": authorid}
-            newValueDict = {"HaveBooks": havebooks['counter']}
-            myDB.upsert("authors", newValueDict, controlValueDict)
             logger.info("[%s] Book processing complete: Added %s books / Updated %s books" %
                         (authorname, str(added_count), str(updated_count)))
         else:
