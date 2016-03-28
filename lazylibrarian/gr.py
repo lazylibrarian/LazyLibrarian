@@ -603,19 +603,9 @@ class GoodReads:
             lastbooklink = None
             lastbookdate = None
 
-        unignored_count = 0
-        totalbook_count = 0
-
-        unignoredbooks = myDB.action('SELECT count("BookID") as counter FROM books \
-                                      WHERE AuthorID="%s" AND Status != "Ignored"' % authorid).fetchone()
-        totalbooks = myDB.action(
-            'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' %
-            authorid).fetchone()
         controlValueDict = {"AuthorID": authorid}
         newValueDict = {
             "Status": "Active",
-            "TotalBooks": totalbooks['counter'],
-            "UnignoredBooks": unignoredbooks['counter'],
             "LastBook": lastbookname,
             "LastLink": lastbooklink,
             "LastDate": lastbookdate
@@ -634,18 +624,6 @@ class GoodReads:
         myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' %
                     (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change,
                      cache_hits, ignored, removedResults, not_cached))
-
-        havebooks = myDB.action(
-            'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND (Status="Have" OR Status="Open")' %
-            authorid).fetchone()
-        totalbooks = myDB.action(
-            'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND Status!="Ignored"' %
-            authorid).fetchone()
-        controlValueDict = {"AuthorID": authorid}
-        newValueDict = {"HaveBooks": havebooks['counter'],
-                        "UnignoredBooks": totalbooks['counter']
-                       }
-        myDB.upsert("authors", newValueDict, controlValueDict)
             
         if refresh:
             logger.info("[%s] Book processing complete: Added %s books / Updated %s books" %
