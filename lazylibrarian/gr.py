@@ -71,24 +71,24 @@ class GoodReads:
             try:
                 resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
             except socket.timeout as e:
-                logger.warn(u"Retrying - got timeout on %s" % my_url())
+                logger.warn(u"Retrying - got timeout on %s" % my_url)
                 try:
                     resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
                 except (urllib2.URLError, socket.timeout) as e:
                     logger.error(u"Error getting response for %s: %s" % (my_url, e))
-                    return "", False           
+                    return None, False           
             except urllib2.URLError as e:
                 logger.error(u"URLError getting response for %s: %s" % (my_url, e))
-                return "", False
+                return None, False
             
             if str(resp.getcode()).startswith("2"):  # (200 OK etc)
-                logger.debug(u"CacheHandler: Caching response for %s" % my_url())
+                logger.debug(u"CacheHandler: Caching response for %s" % my_url)
                 source_xml = resp.read()  # .decode('utf-8')
                 with open(hashname, "w") as cachefile:
                     cachefile.write(source_xml)
             else:
-                logger.warn(u"Got error response for %s: %s" % (my_url(), resp.getcode()))
-                return "", False
+                logger.warn(u"Got error response for %s: %s" % (my_url, resp.getcode()))
+                return None, False
             
         root = ElementTree.fromstring(source_xml)
         return root, valid_cache
@@ -226,7 +226,7 @@ class GoodReads:
         except Exception as e:
             logger.error("Error finding authorid: %s, %s" % (e, URL))
             return authorlist
-        if not len(rootxml):
+        if rootxml is None:
             logger.debug("Error requesting authorid")
             return authorlist
 
@@ -256,7 +256,7 @@ class GoodReads:
         except Exception as e:
             logger.error("Error getting author info: %s" % e)
             return author_dict
-        if not len(rootxml):
+        if rootxml is None:
             logger.debug("Error requesting author info")
             return author_dict
 
@@ -300,7 +300,7 @@ class GoodReads:
         except Exception as e:
             logger.error("Error fetching author books: %s" % e)
             return books_dict
-        if not len(rootxml):
+        if rootxml is None:
             logger.debug("Error requesting author books")
             return books_dict
         if not in_cache:
@@ -435,7 +435,7 @@ class GoodReads:
                                             time.sleep(1)
 
                                         BOOK_rootxml, in_cache = self.get_request(BOOK_URL)
-                                        if not len(BOOK_rootxml):
+                                        if BOOK_rootxml is None:
                                             logger.debug('Error requesting book language code')
                                             bookLanguage = ""
                                         else:
@@ -578,7 +578,7 @@ class GoodReads:
                 resultxml = None
                 try:
                     rootxml, in_cache = self.get_request(URL)
-                    if not len(rootxml):
+                    if rootxml is None:
                         logger.debug('Error requesting next page of results')
                     else:
                         resultxml = rootxml.getiterator('book')
@@ -642,7 +642,7 @@ class GoodReads:
 
         try:
             rootxml, in_cache = self.get_request(URL)
-            if not len(rootxml):
+            if rootxml is None:
                 logger.debug("Error requesting book")
                 return
         except Exception as e:

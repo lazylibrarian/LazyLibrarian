@@ -117,7 +117,7 @@
                 <th class="bookart col-xs-1 text-center no-sort hidden-xs">Cover</th>
                 <th class="bookname col-xs-3">Title</th>
                 <th class="series col-xs-2">Series</th>
-                <th class="seriesOrder col-xs-1 text-center">Num.</th>
+                <th class="seriesNum col-xs-1 text-center">Num.</th>
                 <th class="stars col-xs-1 text-center hidden-xs">Rating</th>
                 <th class="date col-xs-1 text-center">Released</th>
                 <th class="language col-xs-1 text-center hidden-xs">Language</th>
@@ -153,7 +153,7 @@
                         <td class="bookname"><a href="${result['booklink']}" target="_blank" rel="noreferrer">${result['bookname']}</a></td>
                     %endif
                     <td class="series">${result['Series']}</td>
-                    <td class="seriesOrder text-center">${result['SeriesOrder']}</td>
+                    <td class="seriesNum text-center">${result['seriesNum']}</td>
                     <td class="stars text-center hidden-xs"><img src="images/${starimg}" alt="Rating"></td>
                     <td class="date text-center">${result['BookDate']}</td>
                     <td class="language text-center hidden-xs">${result['booklang']}</td>

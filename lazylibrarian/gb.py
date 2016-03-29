@@ -76,15 +76,15 @@ class GoogleBooks:
             try:
                 resp = urllib2.urlopen(my_url, timeout=30)  # don't get stuck
             except socket.timeout as e:
-                logger.warn(u"Retrying - got timeout on %s" % my_url())
+                logger.warn(u"Retrying - got timeout on %s" % my_url)
                 try:
                     resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
                 except (urllib2.URLError, socket.timeout) as e:
                     logger.error(u"Error getting response for %s: %s" % (my_url, e))
-                    return "", False
+                    return None, False
             except urllib2.URLError as e:
                 logger.error(u"URLError getting response for %s: %s" % (my_url, e))
-                return "", False
+                return None, False
              
             if str(resp.getcode()).startswith("2"):  # (200 OK etc)
                 logger.debug(u"CacheHandler: Caching response for %s" % my_url)
@@ -92,7 +92,7 @@ class GoogleBooks:
                 json.dump(source_json, open(hashname, "w"))
             else:
                 logger.warn(u"Got error response for %s: %s" % (my_url, resp.getcode()))
-                return "", False    
+                return None, False    
         return source_json, valid_cache
 
     def find_results(self, authorname=None, queue=None):
@@ -137,7 +137,7 @@ class GoogleBooks:
 
                     try:
                         jsonresults, in_cache = self.get_request(URL)
-                        if not jsonresults:
+                        if jsonresults is None:
                             number_results = 0
                         else:
                             if not in_cache:
@@ -376,7 +376,7 @@ class GoogleBooks:
 
                 try:
                     jsonresults, in_cache = self.get_request(URL)
-                    if not jsonresults:
+                    if jsonresults is None:
                         number_results = 0
                     else:
                         if not in_cache:
@@ -690,7 +690,7 @@ class GoogleBooks:
             str(bookid) + "?key=" + lazylibrarian.GB_API
         jsonresults, in_cache = self.get_request(URL)
 
-        if not jsonresults:
+        if jsonresults is None:
             logger.debug('No results found for %s' % bookname)
             return
 
