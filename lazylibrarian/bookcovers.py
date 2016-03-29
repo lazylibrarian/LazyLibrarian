@@ -75,7 +75,7 @@ def getBookCovers(bookids=None):
                         img = result.split('og:image')[1].split('content="')[1].split('"/>')[0]
                     except IndexError:
                         img = ""
-                    if img.startswith('http'):
+                    if img.startswith('http') and not 'nocover' in img:
                         time_now = int(time.time())
                         if time_now <= lazylibrarian.LAST_GOODREADS:
                             time.sleep(1)
