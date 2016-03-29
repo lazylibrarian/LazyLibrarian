@@ -1377,7 +1377,7 @@ def dbcheck():
             if books:
                 logger.info('Adding series to existing books')
                 for book in books:
-                    result = re.search(r"\(([\S\s]+)\, #(\d+)|\(([\S\s]+) #(\d+)", book["BookName"])
+                    result = re.search(r"\(([\S\s]+)\, #(\d+\.?\-?\d+)|\(([\S\s]+) #(\d+\.?\-?\d+)", book["BookName"])
                     if result:
                         if result.group(1) == None:
                             series = result.group(3)
