@@ -57,7 +57,7 @@ def getBookCovers(bookids=None):
 
             if os.path.isfile(coverfile):
                 # use cached image if possible to speed up refreshactiveauthors and librarysync re-runs
-                covertype = "" #cached"
+                covertype = "cached"
             
             if not covertype and 'goodreads' in booklink:
                 # if the bookid is a goodreads one, we can call https://www.goodreads.com/book/show/{bookid}

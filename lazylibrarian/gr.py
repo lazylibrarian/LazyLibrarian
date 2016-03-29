@@ -494,26 +494,18 @@ class GoodReads:
                     #    seriesNum = None
                     
                     try:
-                        series = bookname.split(' (')[1].split(', ')[0]
+                        series = bookname.split(' (')[1].rsplit(' ', 1)[0]
+                        if series[-1] == ',':
+                            series = series[:-1]
                     except IndexError:
                         series = None
                     try:
-                        seriesNum = bookname.split(' (')[1].split(', ')[1].split(')')[0]
+                        seriesNum = bookname.rsplit(' ', 1)[1].split(')')[0]
                         if seriesNum[0] == '#':
                             seriesNum = seriesNum[1:]
                     except IndexError:
                         seriesNum = None
                     
-                    #if not series and not seriesNum:
-                    #    try:
-                    #        series = booksub.split('(')[1].split(' Series ')[0]
-                    #    except IndexError:
-                    #        series = None
-                    #    try:
-                    #        seriesNum = booksub.split('(')[1].split(' Series ')[1].split(')')[0]
-                    #    except IndexError:
-                    #        seriesNum = None
-                                
                     find_book_status = myDB.select('SELECT * FROM books WHERE BookID = "%s"' % bookid)
                     if find_book_status:
                         for resulted in find_book_status:
