@@ -1377,14 +1377,21 @@ def dbcheck():
             if books:
                 logger.info('Adding series to existing books')
                 for book in books:
-                    result = re.search(r"\(([\S\s]+)\, #(\d+\.?\-?\d+)|\(([\S\s]+) #(\d+\.?\-?\d+)", book["BookName"])
+                    # \(            Must have (
+                    # ([\S\s]+)     followed by a group of one or more non whitespace
+                    # ,? #         followed by optional comma, then space hash
+                    # (             start next group
+                    # \d+           must have one or more digits
+                    # \.?           then optional decimal point, (. must be escaped)
+                    # -?            optional dash for a range
+                    # \d{0,}        zero or more digits
+                    # )             end group
+                    result = re.search(r"\(([\S\s]+),? #(\d+\.?-?\d{0,})", book["BookName"])
                     if result:
-                        if result.group(1) == None:
-                            series = result.group(3)
-                            seriesNum = result.group(4)
-                        else:
-                            series = result.group(1)
-                            seriesNum = result.group(2)
+                        series = result.group(1)
+                        if series[-1] == ',':
+                            series = series[:-1]
+                        seriesNum = result.group(2)
 
                         controlValueDict = {"BookID": book["BookID"]}
                         newValueDict = {

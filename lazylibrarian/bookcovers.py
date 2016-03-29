@@ -95,8 +95,10 @@ def getBookCovers(bookids=None):
             # if this failed, try a google image search...
        
             if not covertype:
-                URL="https://www.google.com/search?as_st=y&tbm=isch&as_q=" + safeparams + \
-                    "+ebook&tbs=isz:l,ift:jpg&gws_rd=cr&ei=Ff30Vo_HOaWuygO13bvYBQ"
+                # tbm=isch      search books
+                # tbs=isz:l     large images
+                # ift:jpg       jpeg file type
+                URL="https://www.google.com/search?tbm=isch&tbs=isz:l,ift:jpg&as_q=" + safeparams + "+ebook"
                 result, success = fetchURL(URL)
                 if success:
                     try:
