@@ -542,7 +542,7 @@ class GoodReads:
                             resultsCount = resultsCount + 1
 
                             myDB.upsert("books", newValueDict, controlValueDict)
-                            logger.debug(u"book found " + book.find('title').text + " " + pubyear)
+                            logger.debug(u"Book found: " + book.find('title').text + " " + pubyear)
 
                             if 'nocover' in bookimg or 'nophoto' in bookimg:
                                 # try to get a cover from librarything

@@ -561,7 +561,7 @@ class GoogleBooks:
                             resultcount = resultcount + 1
 
                             myDB.upsert("books", newValueDict, controlValueDict)
-                            logger.debug(u"book found " + bookname + " " + bookdate)
+                            logger.debug(u"Book found: " + bookname + " " + bookdate)
 
                             if 'nocover' in bookimg or 'nophoto' in bookimg:
                                 # try to get a cover from librarything

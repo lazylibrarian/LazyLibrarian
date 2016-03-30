@@ -25,11 +25,11 @@ def fetchURL(URL):
         else:
             return str(resp), False  
     except (socket.timeout) as e:
-        logger.warn(u"Retrying - got timeout on %s" % URL)
+        logger.warn(u"fetchURL: retrying - got timeout on %s" % URL)
         try:
             resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
         except (urllib2.URLError, socket.timeout) as e:
-            logger.error(u"Error getting response for %s: %s" % (URL, e))
+            logger.error(u"fetchURL: Error getting response for %s: %s" % (URL, e))
             return e, False                    
     except (urllib2.HTTPError, urllib2.URLError) as e:
         return e.reason, False
@@ -55,7 +55,7 @@ def getBookWork(bookid=None):
         if os.path.isfile(workfile):
             # use cached file if possible to speed up refreshactiveauthors and librarysync re-runs
             lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
-            logger.debug(u"CacheHandler: Returning CACHED response for %s" % workfile)
+            logger.debug(u"getBookWork: Returning Cached response for %s" % workfile)
             with open(workfile, "r") as cachefile:
                 source = cachefile.read()
             return source
@@ -83,18 +83,22 @@ def getBookWork(bookid=None):
                     lazylibrarian.LAST_LIBRARYTHING = time_now
                     result, success = fetchURL(workpage)
                 except:
-                    logger.debug(u"CacheHandler: Unable to find workpage link in %s" % URL)
+                    try:
+                        errmsg = result.split('<error>')[1].split('</error>')[0]
+                        logger.debug(u"getBookWork: Unable to find workpage link: [%s] %s" % (errmsg, URL.split('?')[1]))
+                    except:
+                        logger.debug(u"getBookWork: Unable to find workpage link for %s" % URL.split('?')[1])    
                     return None
                 if success:
-                    logger.debug(u"CacheHandler: Caching response for %s" % workfile)
+                    logger.debug(u"getBookWork: Caching response for %s" % workfile)
                     with open(workfile, "w") as cachefile:
                         cachefile.write(result)
                     return result
                 else:
-                    logger.debug(u"CacheHandler: Unable to cache response for %s, got %s" % (workpage, result))
+                    logger.debug(u"getBookWork: Unable to cache response for %s, got %s" % (workpage, result))
                 return None
             else:
-                logger.debug(u"CacheHandler: Unable to cache response for %s, got %s" % (URL, result))
+                logger.debug(u"getBookWork: Unable to cache response for %s, got %s" % (URL, result))
                 return None
     else:
         logger.debug('Get Book Work - Invalid BookID [%s]' % bookid)            
@@ -135,24 +139,24 @@ def getWorkCover(bookid=None):
                 coverlink = os.path.join('images' + os.sep + 'cache', hashID + '.jpg')
                 if os.path.isfile(coverfile):  # use cached image if there is one
                     lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
-                    logger.debug(u"CacheHandler: Returning CACHED response for %s" % coverfile)
+                    logger.debug(u"getWorkCover: Returning Cached response for %s" % coverfile)
                     return coverlink
 
                 result, success = fetchURL(img)
                 if success:
                     lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
-                    logger.debug(u"CacheHandler: CACHING response for %s" % coverfile)
+                    logger.debug(u"getWorkCover: Caching response for %s" % coverfile)
                     if not os.path.isdir(cachedir):
                         os.makedirs(cachedir)
                     with open(coverfile, 'wb') as img:
                         img.write(result)
                     return coverlink
                 else:
-                    logger.debug("Error getting workpage image %s, [%s]" % (img, result))
+                    logger.debug("getWorkCover: Error getting workpage image %s, [%s]" % (img, result))
             else:
-                logger.debug("No image found in work page for %s" % bookid)
+                logger.debug("getWorkCover: No image found in work page for %s" % bookid)
         except IndexError:
-            logger.debug('Image not found in work page for %s' % bookid)
+            logger.debug('getWorkCover: Image not found in work page for %s' % bookid)
     
     # not found in librarything work page, try to get a cover from goodreads or google instead
     return getBookCover(bookid)
@@ -164,7 +168,7 @@ def getBookCover(bookid=None):
 
     myDB = database.DBConnection()
      
-    logger.debug("Fetching book cover for %s" % bookid)   
+    logger.debug("getBookCover: Fetching book cover for %s" % bookid)   
     item = myDB.action('select BookName,AuthorName,BookLink from books where BookID="%s"' % bookid).fetchone()
     if item:
         title = formatter.safe_unicode(item['BookName']).encode('utf-8')
@@ -211,11 +215,11 @@ def getBookCover(bookid=None):
                             imgfile.write(result)
                         covertype = "goodreads"
                     else:
-                        logger.debug("Error getting goodreads image for %s, [%s]" % (img, result))
+                        logger.debug("getBookCover: Error getting goodreads image for %s, [%s]" % (img, result))
                 else:
-                    logger.debug("No image found in goodreads page for %s" % bookid)
+                    logger.debug("getBookCover: No image found in goodreads page for %s" % bookid)
             else:
-                logger.debug("Error getting page %s, [%s]" % (booklink, result))
+                logger.debug("getBookCover: Error getting page %s, [%s]" % (booklink, result))
       
         # if this failed, try a google image search...
    
@@ -237,14 +241,14 @@ def getBookCover(bookid=None):
                             imgfile.write(result)
                         covertype = "google"
                     else:
-                        logger.debug("Error getting google image %s, [%s]" % (img, result))
+                        logger.debug("getBookCover: Error getting google image %s, [%s]" % (img, result))
                 else:
-                    logger.debug("No image found in google page for %s" % bookid)
+                    logger.debug("getBookCover: No image found in google page for %s" % bookid)
             else:
-                logger.debug("Error getting google page for %s, [%s]" % (safeparams, result))
+                logger.debug("getBookCover: Error getting google page for %s, [%s]" % (safeparams, result))
         
         if covertype:
             # image downloaded, or was already there, now return link to file in cache
-            logger.debug("Found %s cover for %s %s" % (covertype, author, title))
+            logger.debug("getBookCover: Found %s cover for %s %s" % (covertype, author, title))
             return coverlink
         return None
