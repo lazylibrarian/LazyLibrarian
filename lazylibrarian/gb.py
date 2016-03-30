@@ -428,28 +428,20 @@ class GoogleBooks:
                                     BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + \
                                         bookisbn
                                     try:
-                                        time.sleep(
-                                            1)  # sleep 1 second to respect librarything api terms
-                                        resp = urllib2.urlopen(
-                                            BOOK_URL,
-                                            timeout=30).read()
+                                        time.sleep(1)  # sleep 1 second to respect librarything api terms
+                                        resp = urllib2.urlopen(BOOK_URL, timeout=30).read()
                                         lt_lang_hits = lt_lang_hits + 1
                                         logger.debug(
-                                            "LibraryThing reports language [%s] for %s" %
-                                            (resp, isbnhead))
+                                            "LibraryThing reports language [%s] for %s" % (resp, isbnhead))
 
                                         if (resp != 'invalid' and resp != 'unknown'):
                                             booklang = resp  # found a language code
                                             myDB.action('insert into languages values ("%s", "%s")' %
                                                         (isbnhead, booklang))
-                                            logger.debug(
-                                                u"LT language: " +
-                                                booklang)
+                                            logger.debug(u"LT language: " + booklang)
                                     except Exception as e:
                                         booklang = ""
-                                        logger.error(
-                                            "Error finding language: %s" %
-                                            e.reason)
+                                        logger.error("Error finding language: %s" % e)
 
                                 if googlelang == "en" and booklang not in "en-US, en-GB, eng":
                                     # these are all english, may need to expand

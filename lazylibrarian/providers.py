@@ -46,7 +46,7 @@ def KAT(book=None):
         # seems KAT returns 404 if no results, not really an error
         if not e.code == 404:
             logger.debug(searchURL)
-            logger.debug('Error fetching data from %s: %s' % (provider, e.reason))
+            logger.debug('Error fetching data from %s: %s' % (provider, e))
         else:
             logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
         data = False
@@ -122,7 +122,7 @@ def get_capabilities(provider):
         try:
             resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
         except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
-            logger.debug("Error getting capabilities: %s" % e.reason)
+            logger.debug("Error getting capabilities: %s" % e)
             resp = ""
         if resp:
             if str(resp.getcode()).startswith("2"):  # (200 OK etc)
