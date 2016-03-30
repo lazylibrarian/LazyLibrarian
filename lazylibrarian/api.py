@@ -54,15 +54,14 @@ cmd_dict = {'help':'list available commands',
             'findBook':'&name= search goodreads/googlebooks for named book',
             'addAuthor':'&name= add author to database by name',
             'delAuthor':'&id= delete author from database by AuthorID',
-            'refreshAuthor':'&name= refresh author by name',
             'addMagazine':'&name= add magazine to database by name',
             'delMagazine':'&name= delete magazine and issues from database by name',
             'queueBook':'&id= mark book as Wanted',
             'unqueueBook':'&id= mark book as Skipped',
-            'readCFG':'&section=&name= read value of config variable',
-            'writeCFG':'&section=&name=&value= set config variable name=value',
+            'readCFG':'&name=&group= read value of config variable',
+            'writeCFG':'&name=&group=&value= set config variable name to value',
             'loadCFG':'reload config from file',
-            'getBookCover':'&id= fetch a cover from google for one BookID',
+            'getBookCover':'&id= fetch a cover from goodreads/google for a BookID',
             'getAllBooks':'list all books in the database',
             'searchBook':'&id= search for one book by BookID',
             'showJobs':'show status of running jobs',
@@ -128,8 +127,8 @@ class Api(object):
                args.append({"name": self.kwargs['name']}) 
             if 'id' in self.kwargs:
                args.append({"id": self.kwargs['id']}) 
-            if 'section' in self.kwargs:
-               args.append({"section": self.kwargs['section']}) 
+            if 'group' in self.kwargs:
+               args.append({"group": self.kwargs['group']}) 
             if 'value' in self.kwargs:
                args.append({"value": self.kwargs['value']}) 
             if args == []:
@@ -469,30 +468,30 @@ class Api(object):
         if 'value' not in kwargs:
             self.data = 'Missing parameter: value'
             return
-        if 'section' not in kwargs:
-            self.data = 'Missing parameter: section'
+        if 'group' not in kwargs:
+            self.data = 'Missing parameter: group'
             return
         
         try:
-            self.data = '["%s"]' % lazylibrarian.CFG.get(kwargs['section'], kwargs['name'])
-            lazylibrarian.CFG.set(kwargs['section'], kwargs['name'], kwargs['value'])
+            self.data = '["%s"]' % lazylibrarian.CFG.get(kwargs['group'], kwargs['name'])
+            lazylibrarian.CFG.set(kwargs['group'], kwargs['name'], kwargs['value'])
             with open(lazylibrarian.CONFIGFILE, 'wb') as configfile:
                 lazylibrarian.CFG.write(configfile)
             lazylibrarian.config_read(reloaded=True)
         except:
-            self.data = 'Unable to update CFG entry for %s: %s' % (kwargs['section'], kwargs['name'])
+            self.data = 'Unable to update CFG entry for %s: %s' % (kwargs['group'], kwargs['name'])
             
     def _readCFG(self, **kwargs):
         if 'name' not in kwargs:
             self.data = 'Missing parameter: name'
             return
-        if 'section' not in kwargs:
-            self.data = 'Missing parameter: section'
+        if 'group' not in kwargs:
+            self.data = 'Missing parameter: group'
             return
         try:
-            self.data = '["%s"]' % lazylibrarian.CFG.get(kwargs['section'], kwargs['name'])
+            self.data = '["%s"]' % lazylibrarian.CFG.get(kwargs['group'], kwargs['name'])
         except:
-            self.data = 'No CFG entry for %s: %s' % (kwargs['section'], kwargs['name'])
+            self.data = 'No CFG entry for %s: %s' % (kwargs['group'], kwargs['name'])
             
     def _loadCFG(self, **kwargs):
         lazylibrarian.config_read(reloaded=True)
