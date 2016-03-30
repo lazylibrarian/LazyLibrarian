@@ -112,7 +112,7 @@ def getWorkSeries(bookid=None):
         return series, seriesnum
     return None, None
     
-def getWorkCover(bookid=None):
+def getWorkCover(bookid=None): 
     if not bookid:
         logger.error("getWorkCover- No BookID")
         return None
@@ -127,10 +127,14 @@ def getWorkCover(bookid=None):
                 coverfile = os.path.join(cachedir, hashID + '.jpg')
                 coverlink = os.path.join('images' + os.sep + 'cache', hashID + '.jpg')
                 if os.path.isfile(coverfile):  # use cached image if there is one
+                    lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
+                    logger.debug(u"CacheHandler: Returning CACHED response for %s" % coverfile)
                     return coverlink
 
                 result, success = fetchURL(img)
                 if success:
+                    lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
+                    logger.debug(u"CacheHandler: CACHING response for %s" % coverfile)
                     if not os.path.isdir(cachedir):
                         os.makedirs(cachedir)
                     with open(coverfile, 'wb') as img:

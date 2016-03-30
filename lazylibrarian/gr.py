@@ -694,6 +694,16 @@ class GoodReads:
         if author:
             AuthorID = author['authorid']
 
+        result = re.search(r"\(([\S\s]+),? #(\d+\.?-?\d{0,})", bookname)
+        if result:
+            series = result.group(1)
+            if series[-1] == ',':
+                series = series[:-1]
+            seriesNum = result.group(2)
+        else:
+            series = None
+            seriesNum = None
+
         bookname = bookname.replace(':', '').replace('"', '').replace("'", "")
         bookname = unidecode(u'%s' % bookname)
         bookname = bookname.strip()  # strip whitespace
@@ -716,9 +726,32 @@ class GoodReads:
             "BookDate": bookdate,
             "BookLang": bookLanguage,
             "Status": "Wanted",
-            "BookAdded": formatter.today()
+            "BookAdded": formatter.today(),
+            "Series": series,
+            "SeriesNum": seriesNum
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
         logger.debug("%s added to the books database" % bookname)
+
+        if bookimg == 'images/nocover.png' or 'nophoto' in bookimg:
+            # try to get a cover from librarything
+            workcover = bookwork.getWorkCover(bookid)
+            if workcover:
+                logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))    
+                controlValueDict = {"BookID": bookid}
+                newValueDict = {"BookImg": workcover}
+                myDB.upsert("books", newValueDict, controlValueDict)
+        
+        if seriesNum == None: 
+            #  try to get series info from librarything
+            series, seriesNum = bookwork.getWorkSeries(bookid)
+            if seriesNum:
+                logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))    
+                controlValueDict = {"BookID": bookid}
+                newValueDict = {
+                    "Series": series,
+                    "SeriesNum": seriesNum
+                }
+                myDB.upsert("books", newValueDict, controlValueDict)
 

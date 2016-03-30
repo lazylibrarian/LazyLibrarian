@@ -1345,12 +1345,6 @@ def dbcheck():
         c.execute('UPDATE books SET SeriesNum = SeriesOrder')
         c.execute('UPDATE books SET SeriesOrder = Null')
 
-    try:
-        c.execute('SELECT WorkID from books')
-    except sqlite3.OperationalError:
-        logger.info('Updating books to hold WorkID')
-        c.execute('ALTER TABLE books ADD COLUMN WorkID TEXT')
-
     addedIssues = False
     try:
         c.execute('SELECT Title from issues')

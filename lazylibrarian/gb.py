@@ -482,6 +482,16 @@ class GoogleBooks:
                         bookpub = None
                     try:
                         booksub = item['volumeInfo']['subtitle']
+                        try:
+                            series = booksub.split('(')[1].split(' Series ')[0]
+                        except IndexError:
+                            series = None
+                        try:
+                            seriesNum = booksub.split('(')[1].split(' Series ')[1].split(')')[0]
+                            if seriesNum[0] == '#':
+                                seriesNum = seriesNum[1:]
+                        except IndexError:
+                            seriesNum = None
                     except KeyError:
                         booksub = None
 
@@ -514,26 +524,9 @@ class GoogleBooks:
                         bookdesc = item['volumeInfo']['description']
                     except KeyError:
                         bookdesc = None
-
-                    try:
-                        series = booksub.split('(')[1].split(' Series ')[0]
-                    except IndexError:
-                        series = None
-                    try:
-                        seriesNum = booksub.split('(')[1].split(' Series ')[1].split(')')[0]
-                        if seriesNum[0] == '#':
-                            seriesNum = seriesNum[1:]
-                    except IndexError:
-                        seriesNum = None
-
-                    bookid = item['id']
                         
                     bookname = item['volumeInfo']['title']
-                    bookname = bookname.replace(
-                        ':',
-                        '').replace('"',
-                                    '').replace("'",
-                                                "")
+                    bookname = bookname.replace(':', '').replace('"', '').replace("'", "")
                     bookname = unidecode(u'%s' % bookname)
                     bookname = bookname.strip()  # strip whitespace
 
@@ -577,6 +570,28 @@ class GoogleBooks:
 
                             myDB.upsert("books", newValueDict, controlValueDict)
                             logger.debug(u"book found " + bookname + " " + bookdate)
+
+                            if bookimg == 'images/nocover.png' or 'nophoto' in bookimg:
+                                # try to get a cover from librarything
+                                workcover = bookwork.getWorkCover(bookid)
+                                if workcover:
+                                    logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))    
+                                    controlValueDict = {"BookID": bookid}
+                                    newValueDict = {"BookImg": workcover}
+                                    myDB.upsert("books", newValueDict, controlValueDict)
+         
+                            if seriesNum == None:
+                                # try to get series info from librarything
+                                series, seriesNum = bookwork.getWorkSeries(bookid)
+                                if seriesNum:
+                                    logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))    
+                                    controlValueDict = {"BookID": bookid}
+                                    newValueDict = {
+                                        "Series": series,
+                                        "SeriesNum": seriesNum
+                                    }
+                                    myDB.upsert("books", newValueDict, controlValueDict)
+
                             if not find_book_status:
                                 logger.debug("[%s] Added book: %s [%s]" % (authorname, bookname, booklang))
                                 added_count = added_count + 1
@@ -688,6 +703,16 @@ class GoogleBooks:
 
         try:
             booksub = jsonresults['volumeInfo']['subtitle']
+            try:
+                series = booksub.split('(')[1].split(' Series ')[0]
+            except IndexError:
+                series = None
+            try:
+                seriesNum = booksub.split('(')[1].split(' Series ')[1].split(')')[0]
+                if seriesNum[0] == '#':
+                    seriesNum = seriesNum[1:]
+            except IndexError:
+                seriesNum = None
         except KeyError:
             booksub = None
 
@@ -757,10 +782,32 @@ class GoogleBooks:
             "BookDate": bookdate,
             "BookLang": booklang,
             "Status": "Wanted",
-            "BookAdded": formatter.today()
+            "BookAdded": formatter.today(),
+            "Series": series,
+            "SeriesNum": seriesNum
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
         logger.debug("%s added to the books database" % bookname)
 
+        if bookimg == 'images/nocover.png' or 'nophoto' in bookimg:
+            # try to get a cover from librarything
+            workcover = bookwork.getWorkCover(bookid)
+            if workcover:
+                logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))    
+                controlValueDict = {"BookID": bookid}
+                newValueDict = {"BookImg": workcover}
+                myDB.upsert("books", newValueDict, controlValueDict)
+         
+        if seriesNum == None:
+            # try to get series info from librarything
+            series, seriesNum = bookwork.getWorkSeries(bookid)
+            if seriesNum:
+                logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))    
+                controlValueDict = {"BookID": bookid}
+                newValueDict = {
+                    "Series": series,
+                    "SeriesNum": seriesNum
+                }
+                myDB.upsert("books", newValueDict, controlValueDict)
 
