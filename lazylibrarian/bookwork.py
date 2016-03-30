@@ -127,7 +127,7 @@ def getWorkCover(bookid=None):
     if work:
         try:
             img = work.split('og:image')[1].split('content="')[1].split('"')[0]
-            if img.startswith('http'):
+            if img and img.startswith('http'):
                 hashID = hashlib.md5(img).hexdigest()
                 cachedir = os.path.join(str(lazylibrarian.PROG_DIR),
                                         'data' + os.sep + 'images' + os.sep + 'cache')
@@ -199,17 +199,16 @@ def getBookCover(bookid=None):
                 try:
                     img = result.split('og:image')[1].split('content="')[1].split('"/>')[0]
                 except IndexError:
-                    img = ""
-                if img.startswith('http') and not 'nocover' in img and not 'nophoto' in img:
-                    print img
+                    img = None
+                if img and img.startswith('http') and not 'nocover' in img and not 'nophoto' in img:
                     time_now = int(time.time())
                     if time_now <= lazylibrarian.LAST_GOODREADS:
                         time.sleep(1)
                         lazylibrarian.LAST_GOODREADS = time_now
                     result, success = fetchURL(img)
                     if success:
-                        with open(coverfile, 'wb') as img:
-                            img.write(result)
+                        with open(coverfile, 'wb') as imgfile:
+                            imgfile.write(result)
                         covertype = "goodreads"
                     else:
                         logger.debug("Error getting goodreads image for %s, [%s]" % (img, result))
@@ -230,12 +229,12 @@ def getBookCover(bookid=None):
                 try:
                     img = result.split('url?q=')[1].split('">')[1].split('src="')[1].split('"')[0]
                 except IndexError:
-                    img = ""
-                if img.startswith('http'):
+                    img = None
+                if img and img.startswith('http'):
                     result, success = fetchURL(img)
                     if success:
-                        with open(coverfile, 'wb') as img:
-                            img.write(result)
+                        with open(coverfile, 'wb') as imgfile:
+                            imgfile.write(result)
                         covertype = "google"
                     else:
                         logger.debug("Error getting google image %s, [%s]" % (img, result))

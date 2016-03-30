@@ -563,7 +563,7 @@ class GoogleBooks:
                             myDB.upsert("books", newValueDict, controlValueDict)
                             logger.debug(u"book found " + bookname + " " + bookdate)
 
-                            if bookimg == 'images/nocover.png' or 'nophoto' in bookimg:
+                            if 'nocover' in bookimg or 'nophoto' in bookimg:
                                 # try to get a cover from librarything
                                 workcover = bookwork.getWorkCover(bookid)
                                 if workcover:
@@ -782,7 +782,7 @@ class GoogleBooks:
         myDB.upsert("books", newValueDict, controlValueDict)
         logger.debug("%s added to the books database" % bookname)
 
-        if bookimg == 'images/nocover.png' or 'nophoto' in bookimg:
+        if 'nocover' in bookimg or 'nophoto' in bookimg:
             # try to get a cover from librarything
             workcover = bookwork.getWorkCover(bookid)
             if workcover:
