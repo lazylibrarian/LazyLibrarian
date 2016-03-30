@@ -23,8 +23,15 @@ def fetchURL(URL):
             result = resp.read()
             return result, True
         else:
-            return str(resp), False                     
-    except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
+            return str(resp), False  
+    except (socket.timeout) as e:
+        logger.warn(u"Retrying - got timeout on %s" % URL)
+        try:
+            resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
+        except (urllib2.URLError, socket.timeout) as e:
+            logger.error(u"Error getting response for %s: %s" % (URL, e))
+            return e, False                    
+    except (urllib2.HTTPError, urllib2.URLError) as e:
         return e.reason, False
             
 
