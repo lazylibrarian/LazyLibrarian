@@ -4,7 +4,7 @@ import lazylibrarian
 import urllib2
 import socket
 import hashlib
-from lazylibrarian import logger, database, importer, formatter, common, bookcovers
+from lazylibrarian import logger, database, importer, formatter, common
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 from xml.etree import ElementTree
@@ -139,7 +139,7 @@ def find_book_in_db(myDB, author, book):
         partial_name = ""
         ratio_id = 0
         partial_id = 0
-        logger.debug("Found %s books for %s" % (len(books), author))
+        #logger.debug("Found %s books for %s" % (len(books), author))
         for a_book in books:
             # tidy up everything to raise fuzziness scores
             # still need to lowercase for matching against partial_name later on
@@ -239,17 +239,6 @@ def LibraryScan(dir=None):
             if not os.path.isfile(imgfile) and not item['BookImg'].startswith('http'):
                 logger.debug('Cover missing for %s %s' % (item['BookName'], imgfile))
                 myDB.action('update books set BookImg="images/nocover.png" where Bookid="%s"' % item['BookID'])
-
-        booklist = []
-        need_covers = myDB.action('select bookid from books where bookimg like "%nocover%" or bookimg like "%nophoto%"').fetchall()
-        if len(need_covers):
-            for item in need_covers:
-                bookid = item['bookid']
-                booklist.append(bookid)
-            if booklist:
-                logger.debug('Fetching new covers for %i books' % len(booklist))
-                bookcovers.getBookCovers(booklist)
-        logger.debug('Cover checking complete')
 
     # to save repeat-scans of the same directory if it contains multiple formats of the same book, 
     # keep track of which directories we've already looked at 
@@ -574,9 +563,12 @@ def LibraryScan(dir=None):
             name).fetchone()
         myDB.action('UPDATE authors set HaveBooks="%s" where AuthorName="%s"' % (havebooks['counter'], name))
         totalbooks = myDB.action(
+            'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s"' % name).fetchone()        
+        myDB.action('UPDATE authors set TotalBooks="%s" where AuthorName="%s"' % (totalbooks['counter'], name))
+        unignoredbooks = myDB.action(
             'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND Status!="Ignored"' %
             name).fetchone()
-        myDB.action('UPDATE authors set UnignoredBooks="%s" where AuthorName="%s"' % (totalbooks['counter'], name))
+        myDB.action('UPDATE authors set UnignoredBooks="%s" where AuthorName="%s"' % (unignoredbooks['counter'], name))
 
     covers = myDB.action("select  count('bookimg') as counter from books where bookimg like 'http%'").fetchone()
     logger.info("Caching covers for %s books" % covers['counter'])

@@ -14,7 +14,7 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 from lazylibrarian import importer, postprocess, versioncheck, logger, database, \
-    updater, librarysync, magazinescan, formatter, bookcovers, common
+    updater, librarysync, magazinescan, formatter, common, bookwork
 from lazylibrarian.searchnzb import search_nzb_book
 from lazylibrarian.searchtorrents import search_tor_book
 from lazylibrarian.searchmag import search_magazines
@@ -63,11 +63,12 @@ cmd_dict = {'help':'list available commands',
             'writeCFG':'&section=&name=&value= set config variable name=value',
             'loadCFG':'reload config from file',
             'getBookCover':'&id= fetch a cover from google for one BookID',
-            'getBookCovers':'fetch covers from google for all books with no existing cover',
             'getAllBooks':'list all books in the database',
             'searchBook':'&id= search for one book by BookID',
             'showJobs':'show status of running jobs',
-            'restartJobs':'reschedule/restart background jobs'
+            'restartJobs':'reschedule/restart background jobs',
+            'getWorkCover':'&id= Get cover image from Librarything BookWork using BookID',
+            'getWorkSeries':'&id= Get series & seriesNum from Librarything BookWork using BookID',
             }
 
 class Api(object):
@@ -496,25 +497,29 @@ class Api(object):
     def _loadCFG(self, **kwargs):
         lazylibrarian.config_read(reloaded=True)
 
+    def _getWorkSeries(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+        self.data = bookwork.getWorkSeries(self.id)
+
+    def _getWorkCover(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+        self.data = bookwork.getWorkCover(self.id)
+
     def _getBookCover(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
             return
         else:
             self.id = kwargs['id']
-        booklist=[]
-        booklist.append(self.id)
-        threading.Thread(target=bookcovers.getBookCovers, args=[booklist]).start()
-
-    def _getBookCovers(self, **kwargs):
-        booklist=[]
-        myDB = database.DBConnection()
-        need_covers = myDB.action('select bookid from books where bookimg like "%nocover%" or bookimg like "%nophoto%"')
-        for item in need_covers:
-            bookid = item['bookid']
-            booklist.append(bookid)
-        self.data = 'Fetching covers for %i books' % len(booklist)
-        threading.Thread(target=bookcovers.getBookCovers, args=[booklist]).start()
+        self.data = bookwork.getBookCover(self.id)
         
     def _restartJobs(self, **kwargs):
         common.restartJobs(start='Restart')

@@ -6,7 +6,7 @@ import threading
 import time
 from xml.etree import ElementTree
 import lazylibrarian
-from lazylibrarian import logger, formatter, database, bookcovers
+from lazylibrarian import logger, formatter, database, bookwork
 from lazylibrarian.common import USER_AGENT
 from lib.fuzzywuzzy import fuzz
 from lib.unidecode import unidecode
@@ -171,9 +171,11 @@ class GoodReads:
                     isbn_fuzz = int(0)
                 highest_fuzz = max(author_fuzz, book_fuzz, isbn_fuzz)
 
+                bookid = author.find('./best_book/id').text
+                    
                 resultlist.append({
                     'authorname': author.find('./best_book/author/name').text,
-                    'bookid': author.find('./best_book/id').text,
+                    'bookid': bookid,
                     'authorid': author.find('./best_book/author/id').text,
                     'bookname': bookTitle.encode("ascii", "ignore"),
                     'booksub': None,
@@ -500,7 +502,7 @@ class GoodReads:
                     else:
                         series = None
                         seriesNum = None
-                        
+    
                     find_book_status = myDB.select('SELECT * FROM books WHERE BookID = "%s"' % bookid)
                     if find_book_status:
                         for resulted in find_book_status:
@@ -541,6 +543,28 @@ class GoodReads:
 
                             myDB.upsert("books", newValueDict, controlValueDict)
                             logger.debug(u"book found " + book.find('title').text + " " + pubyear)
+
+                            if bookimg == 'images/nocover.png' or 'nophoto' in bookimg:
+                                # try to get a cover from librarything
+                                workcover = bookwork.getWorkCover(bookid)
+                                if workcover:
+                                    logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))    
+                                    controlValueDict = {"BookID": bookid}
+                                    newValueDict = {"BookImg": workcover}
+                                    myDB.upsert("books", newValueDict, controlValueDict)
+         
+                            if seriesNum == None:
+                                # try to get series info from librarything
+                                series, seriesNum = bookwork.getWorkSeries(bookid)
+                                if seriesNum:
+                                    logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))    
+                                    controlValueDict = {"BookID": bookid}
+                                    newValueDict = {
+                                        "Series": series,
+                                        "SeriesNum": seriesNum
+                                    }
+                                    myDB.upsert("books", newValueDict, controlValueDict)
+                                    
                             if not find_book_status:
                                 logger.debug(u"[%s] Added book: %s" % (authorname, bookname))
                                 added_count = added_count + 1
@@ -552,12 +576,6 @@ class GoodReads:
                     else:
                         logger.debug(u"removed result [" + bookname + "] for bad characters")
                         removedResults = removedResults + 1
-                    
-                    if bookimg == 'images/nocover.png' or 'nophoto' in bookimg:
-                        # try to get a cover from google
-                        coverlist=[]
-                        coverlist.append(bookid)
-                        bookcovers.getBookCovers(coverlist)
 
                 loopCount = loopCount + 1
                 URL = 'http://www.goodreads.com/author/list/' + authorid + '.xml?' + \
@@ -703,10 +721,4 @@ class GoodReads:
 
         myDB.upsert("books", newValueDict, controlValueDict)
         logger.debug("%s added to the books database" % bookname)
-        
-        if bookimg == 'images/nocover.png' or 'nophoto' in bookimg:
-            # try to get a cover from google
-            coverlist=[]
-            coverlist.append(bookid)
-            bookcovers.getBookCovers(coverlist)
 

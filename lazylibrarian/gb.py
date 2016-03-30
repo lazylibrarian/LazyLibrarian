@@ -11,7 +11,7 @@ import threading
 from urllib2 import HTTPError
 
 import lazylibrarian
-from lazylibrarian import logger, formatter, database, bookcovers
+from lazylibrarian import logger, formatter, database
 from lazylibrarian.gr import GoodReads
 
 from lib.fuzzywuzzy import fuzz
@@ -260,22 +260,6 @@ class GoogleBooks:
                             isbn_fuzz = int(0)
                         highest_fuzz = max(author_fuzz, book_fuzz, isbn_fuzz)
 
-#  Darkie67:
-#        replacing German Umlauts and filtering out ":"
-#
-# PAB I think this is to avoid removing the book for bad characters?
-# Do we need to remove books with bad characters in their name anyway?
-# Use unidecode as a more thorough way to strip and see what still gets marked "bad"
-#
-#                        booknamealt = item['volumeInfo']['title']
-#                        booknametmp1=booknamealt.replace(u'\xf6',u'oe')
-#                        booknametmp2=booknametmp1.replace(u'\xe4',u'ae')
-#                        booknametmp3=booknametmp2.replace(u'\xdf',u'ss')
-#                        booknametmp4=booknametmp3.replace(u'\xc4',u'Ae')
-#                        booknametmp5=booknametmp4.replace(u'\xdc',u'Ue')
-#                        booknametmp6=booknametmp5.replace(u'\xd6',u'Oe')
-#                        booknametmp7=booknametmp6.replace(':','')
-#                        bookname=booknametmp7.replace(u'\xfc',u'ue')
                         bookname = item['volumeInfo']['title']
                         bookname = bookname.replace(
                             ':',
@@ -284,18 +268,18 @@ class GoogleBooks:
                                                     "")
                         bookname = unidecode(u'%s' % bookname)
                         bookname = bookname.strip()  # strip whitespace
-# Darkie67 end
+                        bookid = item['id']
+
                         resultlist.append({
                             'authorname': Author,
-                            'bookid': item['id'],
+                            'bookid': bookid,
                             'bookname': bookname,
                             'booksub': booksub,
                             'bookisbn': bookisbn,
                             'bookpub': bookpub,
                             'bookdate': bookdate,
                             'booklang': booklang,
-                            'booklink':
-                                item['volumeInfo']['canonicalVolumeLink'],
+                            'booklink': item['volumeInfo']['canonicalVolumeLink'],
                             'bookrate': float(bookrate),
                             'bookimg': bookimg,
                             'bookpages': bookpages,
@@ -307,12 +291,6 @@ class GoogleBooks:
                             'highest_fuzz': highest_fuzz,
                             'num_reviews': num_reviews
                         })
-
-                        if bookimg == 'images/nocover.png' or 'nophoto' in bookimg:
-                            # try to get a cover from google
-                            coverlist=[]
-                            coverlist.append(item['id'])
-                            bookcovers.getBookCovers(coverlist)
 
                         resultcount = resultcount + 1
 
@@ -547,20 +525,9 @@ class GoogleBooks:
                             seriesNum = seriesNum[1:]
                     except IndexError:
                         seriesNum = None
-                        
+
                     bookid = item['id']
-#  Darkie67:
-# replacing German Umlauts and filtering out ":"  ## PAB no idea why we filter out ':' ??
-#
-#                    booknamealt = item['volumeInfo']['title']
-#                    booknametmp1=booknamealt.replace(u'\xf6',u'oe')
-#                    booknametmp2=booknametmp1.replace(u'\xe4',u'ae')
-#                    booknametmp3=booknametmp2.replace(u'\xdf',u'ss')
-#                    booknametmp4=booknametmp3.replace(u'\xc4',u'Ae')
-#                    booknametmp5=booknametmp4.replace(u'\xdc',u'Ue')
-#                    booknametmp6=booknametmp5.replace(u'\xd6',u'Oe')
-#                    booknametmp7=booknametmp6.replace(':','')
-#                    bookname=booknametmp7.replace(u'\xfc',u'ue')
+                        
                     bookname = item['volumeInfo']['title']
                     bookname = bookname.replace(
                         ':',
@@ -569,7 +536,7 @@ class GoogleBooks:
                                                 "")
                     bookname = unidecode(u'%s' % bookname)
                     bookname = bookname.strip()  # strip whitespace
-# Darkie67 end
+
                     booklink = item['volumeInfo']['canonicalVolumeLink']
                     bookrate = float(bookrate)
 
@@ -616,12 +583,6 @@ class GoogleBooks:
                             else:
                                 updated_count = updated_count + 1
                                 logger.debug("[%s] Updated book: %s" % (authorname, bookname))
-
-                            if bookimg == 'images/nocover.png' or 'nophoto' in bookimg:
-                                # try to get a cover from google
-                                coverlist=[]
-                                coverlist.append(bookid)
-                                bookcovers.getBookCovers(coverlist)
                         else:
                             book_ignore_count = book_ignore_count + 1
                     else:
@@ -802,9 +763,4 @@ class GoogleBooks:
         myDB.upsert("books", newValueDict, controlValueDict)
         logger.debug("%s added to the books database" % bookname)
 
-        if bookimg == 'images/nocover.png' or 'nophoto' in bookimg:
-            # try to get a cover from google
-            coverlist=[]
-            coverlist.append(bookid)
-            bookcovers.getBookCovers(coverlist)
 
