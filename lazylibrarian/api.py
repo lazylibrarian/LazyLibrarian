@@ -68,6 +68,7 @@ cmd_dict = {'help':'list available commands',
             'restartJobs':'reschedule/restart background jobs',
             'getWorkCover':'&id= Get cover image from Librarything BookWork using BookID',
             'getWorkSeries':'&id= Get series & seriesNum from Librarything BookWork using BookID',
+            'cleanCache':'Clean unused/old files from the LazyLibrarian caches'
             }
 
 class Api(object):
@@ -355,6 +356,9 @@ class Api(object):
     
     def _forceMagazineScan(self, **kwargs):
         threading.Thread(target=magazinescan.magazineScan()).start()
+    
+    def _cleanCache(self, **kwargs):
+        common.cleanCache()
     
     def _getVersion(self, **kwargs):
         self.data = {

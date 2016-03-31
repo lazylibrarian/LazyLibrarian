@@ -23,6 +23,7 @@ import unicodedata
 import string
 import os
 import shutil
+import time
 from lazylibrarian import logger, database, formatter
 
 USER_AGENT = 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
@@ -175,4 +176,77 @@ def removeDisallowedFilenameChars(filename):
     return u'' + re.sub(validFilenameChars, "", str(cleanedFilename))
     # returns unicode
     
-   
+def cleanCache():
+    """ Remove unused files from the cache - delete if expired or unused.
+        Check JSONCache  WorkCache  XMLCache data/images/cache """
+    
+    myDB = database.DBConnection()
+    
+    cache = os.path.join(lazylibrarian.CACHEDIR, "JSONCache")
+    cleaned = 0
+    kept = 0
+    for r, d, f in os.walk(cache):
+        for cached_file in f:
+            target = os.path.join(r, cached_file)
+            cache_modified_time = os.stat(target).st_mtime
+            time_now = time.time()
+            if cache_modified_time < time_now - (lazylibrarian.CACHE_AGE * 24 * 60 * 60):  # expire after this many seconds
+                # Cache is old, delete entry
+                os.remove(target)
+                cleaned += 1
+            else:
+                kept += 1
+        logger.debug("Cleaned %i files from JSONCache, kept %i" % (cleaned, kept))
+        
+    cache = os.path.join(lazylibrarian.CACHEDIR, "XMLCache")
+    cleaned = 0
+    kept = 0
+    for r, d, f in os.walk(cache):
+        for cached_file in f:
+            target = os.path.join(r, cached_file)
+            cache_modified_time = os.stat(target).st_mtime
+            time_now = time.time()
+            if cache_modified_time < time_now - (lazylibrarian.CACHE_AGE * 24 * 60 * 60):  # expire after this many seconds
+                # Cache is old, delete entry
+                os.remove(target)
+                cleaned += 1
+            else:
+                kept += 1
+        logger.debug("Cleaned %i files from XMLCache, kept %i" % (cleaned, kept))
+        
+    cache = os.path.join(lazylibrarian.CACHEDIR, "WorkCache")
+    cleaned = 0
+    kept = 0
+    for r, d, f in os.walk(cache):
+        for cached_file in f:
+            target = os.path.join(r, cached_file)
+            try:
+                bookid = cached_file.split('.')[0]
+            except IndexError:
+                print 'Error splitting %s' % cached_file
+                continue
+            item = myDB.action('select BookID from books where BookID="%s"' % bookid).fetchone()
+            if not item:    
+                # BookID no longer in database, delete cached_file
+                os.remove(target)
+                cleaned += 1
+            else:
+                kept += 1
+        logger.debug("Cleaned %i files from WorkCache, kept %i" % (cleaned, kept))
+        
+    cache = os.path.join(lazylibrarian.PROG_DIR, 'data' + os.sep + 'images' + os.sep + 'cache')
+    cleaned = 0
+    kept = 0
+    for r, d, f in os.walk(cache):
+        for cached_file in f:
+            target = os.path.join(r, cached_file)
+            cached_file = 'images' + os.sep + 'cache' + os.sep + cached_file
+            item = myDB.action('select BookImg from books where BookImg="%s"' % cached_file).fetchone()
+            if not item:    
+                # BookImg no longer in database, delete cached_file
+                os.remove(target)
+                cleaned += 1
+            else:
+                kept += 1
+        logger.debug("Cleaned %i files from ImageCache, kept %i" % (cleaned, kept))
+

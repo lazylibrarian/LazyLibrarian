@@ -239,6 +239,9 @@ def LibraryScan(dir=None):
             if not os.path.isfile(imgfile) and not item['BookImg'].startswith('http'):
                 logger.debug('Cover missing for %s %s' % (item['BookName'], imgfile))
                 myDB.action('update books set BookImg="images/nocover.png" where Bookid="%s"' % item['BookID'])
+        
+        # and clean the caches of any expired or redundant files
+        common.cleanCache()
 
     # to save repeat-scans of the same directory if it contains multiple formats of the same book, 
     # keep track of which directories we've already looked at 
