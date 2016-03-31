@@ -223,27 +223,28 @@ def cleanCache():
             try:
                 bookid = cached_file.split('.')[0]
             except IndexError:
-                print 'Error splitting %s' % cached_file
+                logger.error('Clean Cache: Error splitting %s' % cached_file)
                 continue
             item = myDB.action('select BookID from books where BookID="%s"' % bookid).fetchone()
             if not item:    
-                # BookID no longer in database, delete cached_file
+                # Image no longer referenced in database, delete cached_file
                 os.remove(target)
                 cleaned += 1
             else:
                 kept += 1
         logger.debug("Cleaned %i files from WorkCache, kept %i" % (cleaned, kept))
         
+    prefix = 'images' + os.sep + 'cache' + os.sep 
     cache = os.path.join(lazylibrarian.PROG_DIR, 'data' + os.sep + 'images' + os.sep + 'cache')
     cleaned = 0
     kept = 0
     for r, d, f in os.walk(cache):
         for cached_file in f:
             target = os.path.join(r, cached_file)
-            cached_file = 'images' + os.sep + 'cache' + os.sep + cached_file
-            item = myDB.action('select BookImg from books where BookImg="%s"' % cached_file).fetchone()
+            bookimg = prefix + cached_file
+            item = myDB.action('select BookImg from books where BookImg="%s"' % bookimg).fetchone()
             if not item:    
-                # BookImg no longer in database, delete cached_file
+                # Image no longer referenced in database, delete cached_file
                 os.remove(target)
                 cleaned += 1
             else:
