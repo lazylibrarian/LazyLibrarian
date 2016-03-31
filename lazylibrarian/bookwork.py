@@ -28,6 +28,12 @@ def fetchURL(URL):
         logger.warn(u"fetchURL: retrying - got timeout on %s" % URL)
         try:
             resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
+            if str(resp.getcode()).startswith("2"):
+                # (200 OK etc)
+                result = resp.read()
+                return result, True
+            else:
+                return str(resp), False  
         except (urllib2.URLError, socket.timeout) as e:
             logger.error(u"fetchURL: Error getting response for %s: %s" % (URL, e))
             return e, False                    
