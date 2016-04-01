@@ -19,7 +19,10 @@ def fetchURL(URL):
         resp = urllib2.urlopen(request, timeout=30)
         if str(resp.getcode()).startswith("2"):
             # (200 OK etc)
-            result = resp.read()
+            try:
+                result = resp.read()
+            except socket.error as e:
+                return e, False
             return result, True
         else:
             return str(resp), False  
@@ -29,7 +32,10 @@ def fetchURL(URL):
             resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
             if str(resp.getcode()).startswith("2"):
                 # (200 OK etc)
-                result = resp.read()
+                try:
+                    result = resp.read()
+                except socket.error as e:
+                    return e, False
                 return result, True
             else:
                 return str(resp), False  
