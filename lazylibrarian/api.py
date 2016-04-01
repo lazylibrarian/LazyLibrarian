@@ -27,7 +27,9 @@ import json
 import threading
 import Queue
 
-cmd_dict = {'help':'list available commands',
+cmd_dict = {'help':'list available commands. ' + \
+            'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' + \
+            'otherwise they return OK straight away and run in the background',
             'getIndex':'list all authors',
             'getAuthor':'&id= get author and list their books from AuthorID',
             'getWanted':'list wanted books',
@@ -37,15 +39,15 @@ cmd_dict = {'help':'list available commands',
             'clearLogs':'clear current log',
             'getMagazines':'list magazines',
             'getIssues':'&name= list issues for named magazine',
-            'forceMagSearch':'search for all wanted magazines',
-            'forceBookSearch':'search for all wanted books',
+            'forceMagSearch':'[&wait] search for all wanted magazines',
+            'forceBookSearch':'[&wait] search for all wanted books',
             'forceProcess':'process books/mags in download dir',
             'pauseAuthor':'&id= pause author by AuthorID',
             'resumeAuthor':'&id= resume author by AuthorID',
             'refreshAuthor':'&name= refresh author by name',
-            'forceActiveAuthorsUpdate':'refresh all active authors and reload their books',
-            'forceLibraryScan':'refresh whole book library',
-            'forceMagazineScan':'refresh whole magazine library',
+            'forceActiveAuthorsUpdate':'[&wait] refresh all active authors and reload their books',
+            'forceLibraryScan':'[&wait] refresh whole book library',
+            'forceMagazineScan':'[&wait] refresh whole magazine library',
             'getVersion':'show git version',
             'shutdown':'stop lazylibrarian',
             'restart':'restart lazylibrarian',
@@ -68,7 +70,7 @@ cmd_dict = {'help':'list available commands',
             'restartJobs':'reschedule/restart background jobs',
             'getWorkCover':'&id= Get cover image from Librarything BookWork using BookID',
             'getWorkSeries':'&id= Get series & seriesNum from Librarything BookWork using BookID',
-            'cleanCache':'Clean unused/old files from the LazyLibrarian caches'
+            'cleanCache':'[&wait] Clean unused/old files from the LazyLibrarian caches'
             }
 
 class Api(object):
@@ -132,6 +134,8 @@ class Api(object):
                args.append({"group": self.kwargs['group']}) 
             if 'value' in self.kwargs:
                args.append({"value": self.kwargs['value']}) 
+            if 'wait' in self.kwargs:
+               args.append({"wait": "True"}) 
             if args == []:
                 args = ''
             logger.info('Received API command: %s %s' % (self.cmd, args))
@@ -330,21 +334,36 @@ class Api(object):
             self.data = e
 
     def _forceActiveAuthorsUpdate(self, **kwargs):
-        threading.Thread(target=updater.dbUpdate, args=[False]).start()
+        if 'wait' in kwargs:
+            updater.dbUpdate(False)
+        else:
+            threading.Thread(target=updater.dbUpdate, args=[False]).start()
 
     def _forceMagSearch(self, **kwargs):
         if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
+            if 'wait' in kwargs:
+                search_magazines(None, True)
+            else:
                 threading.Thread(target=search_magazines, args=[None, True]).start()
         else:
             self.data = 'No search methods set, check config'
 
     def _forceBookSearch(self, **kwargs):
         if lazylibrarian.USE_NZB():
-                threading.Thread(target=search_nzb_book).start()
+            if 'wait' in kwargs:
+                search_nzb_book()
+            else:
+                threading.Thread(target=search_nzb_book, args=[]).start()
         if lazylibrarian.USE_TOR():
-            threading.Thread(target=search_tor_book).start()
+            if 'wait' in kwargs:
+                search_tor_book()
+            else:
+                threading.Thread(target=search_tor_book, args=[]).start()
         if lazylibrarian.USE_RSS():
-            threading.Thread(target=search_rss_book).start()
+            if 'wait' in kwargs:
+                search_rss_book()
+            else:
+                threading.Thread(target=search_rss_book, args=[]).start()
         if not lazylibrarian.USE_RSS() and not lazylibrarian.USE_NZB() and not lazylibrarian.USE_TOR():
             self.data = "No search methods set, check config"
 
@@ -352,14 +371,23 @@ class Api(object):
         postprocess.processDir()
 
     def _forceLibraryScan(self, **kwargs):
-        threading.Thread(target=librarysync.LibraryScan(lazylibrarian.DESTINATION_DIR)).start()
+        if 'wait' in kwargs:
+            librarysync.LibraryScan(lazylibrarian.DESTINATION_DIR)
+        else:
+            threading.Thread(target=librarysync.LibraryScan, args=[lazylibrarian.DESTINATION_DIR]).start()
     
     def _forceMagazineScan(self, **kwargs):
-        threading.Thread(target=magazinescan.magazineScan()).start()
+        if 'wait' in kwargs:
+            magazinescan.magazineScan()
+        else:
+            threading.Thread(target=magazinescan.magazineScan, args=[]).start()
     
     def _cleanCache(self, **kwargs):
-        common.cleanCache()
-    
+        if 'wait' in kwargs:
+            common.cleanCache()
+        else:
+            threading.Thread(target=common.cleanCache, args=[]).start()
+            
     def _getVersion(self, **kwargs):
         self.data = {
             'install_type': lazylibrarian.INSTALL_TYPE,
@@ -386,14 +414,12 @@ class Api(object):
         if lazylibrarian.BOOK_API == "GoogleBooks":
             GB = GoogleBooks(kwargs['name'])
             queue = Queue.Queue()
-            search_api = threading.Thread(
-                target=GB.find_results, args=[kwargs['name'], queue])
+            search_api = threading.Thread(target=GB.find_results, args=[kwargs['name'], queue])
             search_api.start()
         elif lazylibrarian.BOOK_API == "GoodReads":
             queue = Queue.Queue()
             GR = GoodReads(kwargs['name'])
-            search_api = threading.Thread(
-                target=GR.find_results, args=[kwargs['name'], queue])
+            search_api = threading.Thread(target=GR.find_results, args=[kwargs['name'], queue])
             search_api.start()
 
         search_api.join()
@@ -407,14 +433,12 @@ class Api(object):
         if lazylibrarian.BOOK_API == "GoogleBooks":
             GB = GoogleBooks(kwargs['name'])
             queue = Queue.Queue()
-            search_api = threading.Thread(
-                target=GB.find_results, args=[kwargs['name'], queue])
+            search_api = threading.Thread(target=GB.find_results, args=[kwargs['name'], queue])
             search_api.start()
         elif lazylibrarian.BOOK_API == "GoodReads":
             queue = Queue.Queue()
             GR = GoodReads(kwargs['name'])
-            search_api = threading.Thread(
-                target=GR.find_results, args=[kwargs['name'], queue])
+            search_api = threading.Thread(target=GR.find_results, args=[kwargs['name'], queue])
             search_api.start()
 
         search_api.join()
@@ -426,7 +450,6 @@ class Api(object):
             return
         else:
             self.id = kwargs['name']
-
         try:
             importer.addAuthorToDB(self.id, refresh=False)
         except Exception as e:

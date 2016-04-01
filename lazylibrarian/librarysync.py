@@ -3,7 +3,6 @@ import re
 import lazylibrarian
 import urllib2
 import socket
-import hashlib
 from lazylibrarian import logger, database, importer, formatter, common
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
@@ -229,17 +228,6 @@ def LibraryScan(dir=None):
                 myDB.action('update books set BookFile="" where BookID="%s"' % bookID)
                 logger.warn('Book %s - %s updated as not found on disk' % (bookAuthor, bookName))
         
-        # on a full scan, verify the cover images are correct too
-        logger.debug('Checking book covers')
-        covers = myDB.action('select BookImg,BookName,BookID from books')
-        cachedir = os.path.join(str(lazylibrarian.PROG_DIR), 'data' + os.sep)
-        
-        for item in covers:
-            imgfile = cachedir + item['BookImg']
-            if not os.path.isfile(imgfile) and not item['BookImg'].startswith('http'):
-                logger.debug('Cover missing for %s %s' % (item['BookName'], imgfile))
-                myDB.action('update books set BookImg="images/nocover.png" where Bookid="%s"' % item['BookID'])
-
     # to save repeat-scans of the same directory if it contains multiple formats of the same book, 
     # keep track of which directories we've already looked at 
     processed_subdirectories = []
@@ -578,7 +566,7 @@ def LibraryScan(dir=None):
         bookid = item['bookid']
         bookimg = item['bookimg']
         bookname = item['bookname']
-        newimg, incache = cache_cover(bookimg)
+        newimg, incache = cache_cover(bookid, bookimg)
         if newimg != bookimg:
             myDB.action('update books set BookImg="%s" where BookID="%s"' % (newimg, bookid))
             if not incache:
@@ -586,14 +574,13 @@ def LibraryScan(dir=None):
     logger.info('Library scan complete')
 
 
-def cache_cover(img_url):
-    hashID = hashlib.md5(img_url).hexdigest()
+def cache_cover(bookID, img_url):
     cachedir = os.path.join(str(lazylibrarian.PROG_DIR),
                             'data' + os.sep + 'images' + os.sep + 'cache')
     if not os.path.isdir(cachedir):
         os.makedirs(cachedir)
-    coverfile = os.path.join(cachedir, hashID + '.jpg')
-    link = 'images' + os.sep + 'cache' + os.sep + hashID + '.jpg'
+    coverfile = os.path.join(cachedir, bookID + '.jpg')
+    link = 'images' + os.sep + 'cache' + os.sep + bookID + '.jpg'
     if os.path.isfile(coverfile):  # already cached
         return link, True
 

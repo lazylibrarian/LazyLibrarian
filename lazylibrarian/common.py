@@ -178,7 +178,8 @@ def removeDisallowedFilenameChars(filename):
     
 def cleanCache():
     """ Remove unused files from the cache - delete if expired or unused.
-        Check JSONCache  WorkCache  XMLCache data/images/cache """
+        Check JSONCache  WorkCache  XMLCache data/images/cache 
+        Check covers referenced in the database exist and change if missing """
     
     myDB = database.DBConnection()
     
@@ -196,7 +197,7 @@ def cleanCache():
                 cleaned += 1
             else:
                 kept += 1
-        logger.debug("Cleaned %i files from JSONCache, kept %i" % (cleaned, kept))
+        logger.info("Cleaned %i files from JSONCache, kept %i" % (cleaned, kept))
         
     cache = os.path.join(lazylibrarian.CACHEDIR, "XMLCache")
     cleaned = 0
@@ -212,7 +213,7 @@ def cleanCache():
                 cleaned += 1
             else:
                 kept += 1
-        logger.debug("Cleaned %i files from XMLCache, kept %i" % (cleaned, kept))
+        logger.info("Cleaned %i files from XMLCache, kept %i" % (cleaned, kept))
         
     cache = os.path.join(lazylibrarian.CACHEDIR, "WorkCache")
     cleaned = 0
@@ -232,22 +233,42 @@ def cleanCache():
                 cleaned += 1
             else:
                 kept += 1
-        logger.debug("Cleaned %i files from WorkCache, kept %i" % (cleaned, kept))
-        
-    prefix = 'images' + os.sep + 'cache' + os.sep 
+        logger.info("Cleaned %i files from WorkCache, kept %i" % (cleaned, kept))
+ 
     cache = os.path.join(lazylibrarian.PROG_DIR, 'data' + os.sep + 'images' + os.sep + 'cache')
     cleaned = 0
     kept = 0
     for r, d, f in os.walk(cache):
         for cached_file in f:
             target = os.path.join(r, cached_file)
-            bookimg = prefix + cached_file
-            item = myDB.action('select BookImg from books where BookImg="%s"' % bookimg).fetchone()
+            try:
+                bookid = cached_file.split('.')[0].rsplit(os.sep)[-1]
+            except IndexError:
+                logger.error('Clean Cache: Error splitting %s' % cached_file)
+                continue
+            item = myDB.action('select BookID from books where BookID="%s"' % bookid).fetchone()
             if not item:    
                 # Image no longer referenced in database, delete cached_file
                 os.remove(target)
                 cleaned += 1
             else:
                 kept += 1
-        logger.debug("Cleaned %i files from ImageCache, kept %i" % (cleaned, kept))
+        logger.info("Cleaned %i files from ImageCache, kept %i" % (cleaned, kept))
+
+        # verify the cached cover images are present
+        covers = myDB.action('select BookImg,BookName,BookID from books')
+        cachedir = os.path.join(str(lazylibrarian.PROG_DIR), 'data' + os.sep)
+        
+        cleaned = 0
+        kept = 0
+        for item in covers:
+            imgfile = cachedir + item['BookImg']
+            if not os.path.isfile(imgfile) and not item['BookImg'].startswith('http'):
+                cleaned += 1
+                logger.debug('Cover missing for %s %s' % (item['BookName'], imgfile))
+                myDB.action('update books set BookImg="images/nocover.png" where Bookid="%s"' % item['BookID'])
+            else:
+                kept += 1
+        logger.info("Cleaned %i missing cover files, kept %i" % (cleaned, kept))
+        
 
