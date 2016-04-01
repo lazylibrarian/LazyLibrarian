@@ -52,7 +52,7 @@ def SABnzbd(title=None, nzburl=None):
         logger.debug(u'Sending Nzbfile to SAB <a href="%s">URL</a>' % URL)
         logger.debug(u'Sending Nzbfile to SAB')
     except (EOFError, IOError, urllib2.URLError, socket.timeout) as e:
-        logger.error(u"Unable to connect to SAB with URL: %s" % URL)
+        logger.error(u"Unable to connect to SAB with URL: %s, %s" % (URL, e))
         return False
 
     except urllib2.HTTPError as e:

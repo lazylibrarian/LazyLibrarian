@@ -38,7 +38,7 @@
                 <th id="authorname">Author</th>
                 <th id="bookname">Title</th>
         		<th id="series">Series</th>
-		        <th id="seriesOrder">Num</th>
+		        <th id="seriesNum">Num</th>
                 <th id="date">Released</th>
             </tr>
         </thead>
@@ -55,7 +55,7 @@
                         <td id="bookname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a></td>
                     %endif
                     <td id="series">${result['Series']}</td>
-                    <td id="seriesOrder">${result['SeriesOrder']}</td>
+                    <td id="seriesNum">${result['seriesNum']}</td>
                     <td id="date">${result['BookDate']}</td>
                 </tr>
         %endfor

@@ -52,7 +52,7 @@
                     <th class="authorname">Author</th>
                     <th class="bookname">Title</th>
                     <th class="series">Series</th>
-                    <th class="seriesOrder text-center">Num</th>
+                    <th class="seriesNum text-center">Num</th>
                     <th class="stars text-center hidden-xs">Rating</th>
                     <th class="date text-center">Released</th>
                     <th class="status text-center no-sort">Status</th>
@@ -89,7 +89,7 @@
                         <td class="bookname"><a href="${result['booklink']}" target="_blank" rel="noreferrer">${result['bookname']}</a></td>
                         %endif
                         <td class="series">${result['Series']}</td>
-                        <td class="seriesOrder text-center">${result['SeriesOrder']}</td>
+                        <td class="seriesNum text-center">${result['seriesNum']}</td>
                         <td class="stars text-center hidden-xs"><img src="images/${starimg}" alt="Rating"></td>
                         <td class="date text-center">${result['BookDate']}</td>
                         %if result['Status'] == 'Open':

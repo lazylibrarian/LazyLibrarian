@@ -11,7 +11,7 @@ import threading
 from urllib2 import HTTPError
 
 import lazylibrarian
-from lazylibrarian import logger, formatter, database, bookcovers
+from lazylibrarian import logger, formatter, database
 from lazylibrarian.gr import GoodReads
 
 from lib.fuzzywuzzy import fuzz
@@ -75,22 +75,28 @@ class GoogleBooks:
             # timeout=30).read())
             try:
                 resp = urllib2.urlopen(my_url, timeout=30)  # don't get stuck
-                if str(resp.getcode()).startswith("2"):  # (200 OK etc)
-                    logger.debug(
-                        u"CacheHandler: Caching response for %s" %
-                        my_url)
+            except socket.timeout as e:
+                logger.warn(u"Retrying - got timeout on %s" % my_url)
+                try:
+                    resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
+                except (urllib2.URLError, socket.timeout) as e:
+                    logger.error(u"Error getting response for %s: %s" % (my_url, e))
+                    return None, False
+            except urllib2.URLError as e:
+                logger.error(u"URLError getting response for %s: %s" % (my_url, e))
+                return None, False
+             
+            if str(resp.getcode()).startswith("2"):  # (200 OK etc)
+                logger.debug(u"CacheHandler: Caching response for %s" % my_url)
+                try:
                     source_json = json.JSONDecoder().decode(resp.read())
-                    json.dump(source_json, open(hashname, "w"))
-                else:
-                    logger.warn(
-                        u"Unable to cache response for %s: %s" %
-                        (my_url, resp.getcode()))
-                    return "", False
-            except (urllib2.URLError, socket.timeout) as e:
-                logger.error(
-                    u"Unable to cache response for %s: %s" %
-                    (my_url, e.reason))
-                return "", False
+                except socket.error as e:
+                    logger.error(u"Error reading json: %s" % e)
+                    return None, False
+                json.dump(source_json, open(hashname, "w"))
+            else:
+                logger.warn(u"Got error response for %s: %s" % (my_url, resp.getcode()))
+                return None, False    
         return source_json, valid_cache
 
     def find_results(self, authorname=None, queue=None):
@@ -135,7 +141,7 @@ class GoogleBooks:
 
                     try:
                         jsonresults, in_cache = self.get_request(URL)
-                        if not jsonresults:
+                        if jsonresults is None:
                             number_results = 0
                         else:
                             if not in_cache:
@@ -258,22 +264,6 @@ class GoogleBooks:
                             isbn_fuzz = int(0)
                         highest_fuzz = max(author_fuzz, book_fuzz, isbn_fuzz)
 
-#  Darkie67:
-#        replacing German Umlauts and filtering out ":"
-#
-# PAB I think this is to avoid removing the book for bad characters?
-# Do we need to remove books with bad characters in their name anyway?
-# Use unidecode as a more thorough way to strip and see what still gets marked "bad"
-#
-#                        booknamealt = item['volumeInfo']['title']
-#                        booknametmp1=booknamealt.replace(u'\xf6',u'oe')
-#                        booknametmp2=booknametmp1.replace(u'\xe4',u'ae')
-#                        booknametmp3=booknametmp2.replace(u'\xdf',u'ss')
-#                        booknametmp4=booknametmp3.replace(u'\xc4',u'Ae')
-#                        booknametmp5=booknametmp4.replace(u'\xdc',u'Ue')
-#                        booknametmp6=booknametmp5.replace(u'\xd6',u'Oe')
-#                        booknametmp7=booknametmp6.replace(':','')
-#                        bookname=booknametmp7.replace(u'\xfc',u'ue')
                         bookname = item['volumeInfo']['title']
                         bookname = bookname.replace(
                             ':',
@@ -282,18 +272,18 @@ class GoogleBooks:
                                                     "")
                         bookname = unidecode(u'%s' % bookname)
                         bookname = bookname.strip()  # strip whitespace
-# Darkie67 end
+                        bookid = item['id']
+
                         resultlist.append({
                             'authorname': Author,
-                            'bookid': item['id'],
+                            'bookid': bookid,
                             'bookname': bookname,
                             'booksub': booksub,
                             'bookisbn': bookisbn,
                             'bookpub': bookpub,
                             'bookdate': bookdate,
                             'booklang': booklang,
-                            'booklink':
-                                item['volumeInfo']['canonicalVolumeLink'],
+                            'booklink': item['volumeInfo']['canonicalVolumeLink'],
                             'bookrate': float(bookrate),
                             'bookimg': bookimg,
                             'bookpages': bookpages,
@@ -305,12 +295,6 @@ class GoogleBooks:
                             'highest_fuzz': highest_fuzz,
                             'num_reviews': num_reviews
                         })
-
-                        if bookimg == 'images/nocover.png' or 'nophoto' in bookimg:
-                            # try to get a cover from google
-                            coverlist=[]
-                            coverlist.append(item['id'])
-                            bookcovers.getBookCovers(coverlist)
 
                         resultcount = resultcount + 1
 
@@ -374,7 +358,7 @@ class GoogleBooks:
 
                 try:
                     jsonresults, in_cache = self.get_request(URL)
-                    if not jsonresults:
+                    if jsonresults is None:
                         number_results = 0
                     else:
                         if not in_cache:
@@ -448,28 +432,20 @@ class GoogleBooks:
                                     BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + \
                                         bookisbn
                                     try:
-                                        time.sleep(
-                                            1)  # sleep 1 second to respect librarything api terms
-                                        resp = urllib2.urlopen(
-                                            BOOK_URL,
-                                            timeout=30).read()
+                                        time.sleep(1)  # sleep 1 second to respect librarything api terms
+                                        resp = urllib2.urlopen(BOOK_URL, timeout=30).read()
                                         lt_lang_hits = lt_lang_hits + 1
                                         logger.debug(
-                                            "LibraryThing reports language [%s] for %s" %
-                                            (resp, isbnhead))
+                                            "LibraryThing reports language [%s] for %s" % (resp, isbnhead))
 
                                         if (resp != 'invalid' and resp != 'unknown'):
                                             booklang = resp  # found a language code
                                             myDB.action('insert into languages values ("%s", "%s")' %
                                                         (isbnhead, booklang))
-                                            logger.debug(
-                                                u"LT language: " +
-                                                booklang)
+                                            logger.debug(u"LT language: " + booklang)
                                     except Exception as e:
                                         booklang = ""
-                                        logger.error(
-                                            "Error finding language: %s" %
-                                            e.reason)
+                                        logger.error("Error finding language: %s" % e)
 
                                 if googlelang == "en" and booklang not in "en-US, en-GB, eng":
                                     # these are all english, may need to expand
@@ -502,6 +478,16 @@ class GoogleBooks:
                         bookpub = None
                     try:
                         booksub = item['volumeInfo']['subtitle']
+                        try:
+                            series = booksub.split('(')[1].split(' Series ')[0]
+                        except IndexError:
+                            series = None
+                        try:
+                            seriesNum = booksub.split('(')[1].split(' Series ')[1].split(')')[0]
+                            if seriesNum[0] == '#':
+                                seriesNum = seriesNum[1:]
+                        except IndexError:
+                            seriesNum = None
                     except KeyError:
                         booksub = None
 
@@ -534,29 +520,12 @@ class GoogleBooks:
                         bookdesc = item['volumeInfo']['description']
                     except KeyError:
                         bookdesc = None
-
-                    bookid = item['id']
-#  Darkie67:
-# replacing German Umlauts and filtering out ":"  ## PAB no idea why we filter out ':' ??
-#
-#                    booknamealt = item['volumeInfo']['title']
-#                    booknametmp1=booknamealt.replace(u'\xf6',u'oe')
-#                    booknametmp2=booknametmp1.replace(u'\xe4',u'ae')
-#                    booknametmp3=booknametmp2.replace(u'\xdf',u'ss')
-#                    booknametmp4=booknametmp3.replace(u'\xc4',u'Ae')
-#                    booknametmp5=booknametmp4.replace(u'\xdc',u'Ue')
-#                    booknametmp6=booknametmp5.replace(u'\xd6',u'Oe')
-#                    booknametmp7=booknametmp6.replace(':','')
-#                    bookname=booknametmp7.replace(u'\xfc',u'ue')
+                        
                     bookname = item['volumeInfo']['title']
-                    bookname = bookname.replace(
-                        ':',
-                        '').replace('"',
-                                    '').replace("'",
-                                                "")
+                    bookname = bookname.replace(':', '').replace('"', '').replace("'", "")
                     bookname = unidecode(u'%s' % bookname)
                     bookname = bookname.strip()  # strip whitespace
-# Darkie67 end
+
                     booklink = item['volumeInfo']['canonicalVolumeLink']
                     bookrate = float(bookrate)
 
@@ -590,25 +559,41 @@ class GoogleBooks:
                                 "BookLang": booklang,
                                 "Status": book_status,
                                 "BookAdded": formatter.today(),
-                                "Series": None,
-                                "SeriesOrder": None
+                                "Series": series,
+                                "SeriesNum": seriesNum
                             }
                             resultcount = resultcount + 1
 
                             myDB.upsert("books", newValueDict, controlValueDict)
-                            logger.debug(u"book found " + bookname + " " + bookdate)
+                            logger.debug(u"Book found: " + bookname + " " + bookdate)
+
+                            if 'nocover' in bookimg or 'nophoto' in bookimg:
+                                # try to get a cover from librarything
+                                workcover = bookwork.getWorkCover(bookid)
+                                if workcover:
+                                    logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))    
+                                    controlValueDict = {"BookID": bookid}
+                                    newValueDict = {"BookImg": workcover}
+                                    myDB.upsert("books", newValueDict, controlValueDict)
+         
+                            if seriesNum == None:
+                                # try to get series info from librarything
+                                series, seriesNum = bookwork.getWorkSeries(bookid)
+                                if seriesNum:
+                                    logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))    
+                                    controlValueDict = {"BookID": bookid}
+                                    newValueDict = {
+                                        "Series": series,
+                                        "SeriesNum": seriesNum
+                                    }
+                                    myDB.upsert("books", newValueDict, controlValueDict)
+
                             if not find_book_status:
                                 logger.debug("[%s] Added book: %s [%s]" % (authorname, bookname, booklang))
                                 added_count = added_count + 1
                             else:
                                 updated_count = updated_count + 1
                                 logger.debug("[%s] Updated book: %s" % (authorname, bookname))
-
-                            if bookimg == 'images/nocover.png' or 'nophoto' in bookimg:
-                                # try to get a cover from google
-                                coverlist=[]
-                                coverlist.append(bookid)
-                                bookcovers.getBookCovers(coverlist)
                         else:
                             book_ignore_count = book_ignore_count + 1
                     else:
@@ -635,20 +620,9 @@ class GoogleBooks:
             lastbooklink = None
             lastbookdate = None
 
-        unignored_count = 0
-        totalbook_count = 0
-
-        unignoredbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" \
-                                     AND Status != "Ignored"' % authorid).fetchone()
-
-        totalbooks = myDB.action(
-            'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' %
-            authorid).fetchone()
         controlValueDict = {"AuthorID": authorid}
         newValueDict = {
             "Status": "Active",
-            "TotalBooks": totalbooks['counter'],
-            "UnignoredBooks": unignoredbooks['counter'],
             "LastBook": lastbookname,
             "LastLink": lastbooklink,
             "LastDate": lastbookdate
@@ -669,14 +643,8 @@ class GoogleBooks:
         myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' %
                     (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits,
                      ignored, removedResults, not_cached))
-
+            
         if refresh:
-            havebooks = myDB.action(
-                'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND (Status="Have" OR Status="Open")' %
-                authorid).fetchone()
-            controlValueDict = {"AuthorID": authorid}
-            newValueDict = {"HaveBooks": havebooks['counter']}
-            myDB.upsert("authors", newValueDict, controlValueDict)
             logger.info("[%s] Book processing complete: Added %s books / Updated %s books" %
                         (authorname, str(added_count), str(updated_count)))
         else:
@@ -694,7 +662,7 @@ class GoogleBooks:
             str(bookid) + "?key=" + lazylibrarian.GB_API
         jsonresults, in_cache = self.get_request(URL)
 
-        if not jsonresults:
+        if jsonresults is None:
             logger.debug('No results found for %s' % bookname)
             return
 
@@ -731,6 +699,16 @@ class GoogleBooks:
 
         try:
             booksub = jsonresults['volumeInfo']['subtitle']
+            try:
+                series = booksub.split('(')[1].split(' Series ')[0]
+            except IndexError:
+                series = None
+            try:
+                seriesNum = booksub.split('(')[1].split(' Series ')[1].split(')')[0]
+                if seriesNum[0] == '#':
+                    seriesNum = seriesNum[1:]
+            except IndexError:
+                seriesNum = None
         except KeyError:
             booksub = None
 
@@ -800,15 +778,32 @@ class GoogleBooks:
             "BookDate": bookdate,
             "BookLang": booklang,
             "Status": "Wanted",
-            "BookAdded": formatter.today()
+            "BookAdded": formatter.today(),
+            "Series": series,
+            "SeriesNum": seriesNum
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
         logger.debug("%s added to the books database" % bookname)
 
-        if bookimg == 'images/nocover.png' or 'nophoto' in bookimg:
-            # try to get a cover from google
-            coverlist=[]
-            coverlist.append(bookid)
-            bookcovers.getBookCovers(coverlist)
+        if 'nocover' in bookimg or 'nophoto' in bookimg:
+            # try to get a cover from librarything
+            workcover = bookwork.getWorkCover(bookid)
+            if workcover:
+                logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))    
+                controlValueDict = {"BookID": bookid}
+                newValueDict = {"BookImg": workcover}
+                myDB.upsert("books", newValueDict, controlValueDict)
+         
+        if seriesNum == None:
+            # try to get series info from librarything
+            series, seriesNum = bookwork.getWorkSeries(bookid)
+            if seriesNum:
+                logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))    
+                controlValueDict = {"BookID": bookid}
+                newValueDict = {
+                    "Series": series,
+                    "SeriesNum": seriesNum
+                }
+                myDB.upsert("books", newValueDict, controlValueDict)
 

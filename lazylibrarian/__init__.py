@@ -1126,7 +1126,7 @@ def build_bookstrap_themes():
     try:
         resp = urllib2.urlopen(request, timeout=30)
     except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
-        logger.debug("Error getting bookstrap themes : %s" % e.reason)
+        logger.debug("Error getting bookstrap themes : %s" % e)
         return themelist
 
     if str(resp.getcode()).startswith("2"):
@@ -1257,8 +1257,8 @@ def dbcheck():
          HaveBooks INTEGER, TotalBooks INTEGER, AuthorBorn TEXT, AuthorDeath TEXT, UnignoredBooks INTEGER)')
     c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
         BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
-        BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, \
-        BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesOrder INTEGER)')
+        BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, \
+        BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesNum TEXT, SeriesOrder INTEGER)')
     c.execute('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, \
         NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS magazines (Title TEXT, Frequency TEXT, Regex TEXT, Status TEXT, \
@@ -1329,12 +1329,21 @@ def dbcheck():
         logger.info('Updating database to hold Series')
         c.execute('ALTER TABLE books ADD COLUMN Series TEXT')
         addedSeries = True
-
+        
+    # SeriesOrder shouldn't be an integer, some later written books
+    # and novellas logically go inbetween books of the main series,
+    # and their SeriesOrder is not an integer, eg 1.5
+    # so we need to update SeriesOrder to store as text. 
+    # Because sqlite can't drop columns we create a new column SeriesNum,
+    # inherit the old column values, and use SeriesNum instead
     try:
-        c.execute('SELECT SeriesOrder from books')
+        c.execute('SELECT SeriesNum from books')
     except sqlite3.OperationalError:
-        logger.info('Updating database to hold SeriesOrder')
-        c.execute('ALTER TABLE books ADD COLUMN SeriesOrder INTEGER')
+        # no SeriesNum column, so create one
+        logger.info('Updating books to hold SeriesNum')
+        c.execute('ALTER TABLE books ADD COLUMN SeriesNum TEXT')
+        c.execute('UPDATE books SET SeriesNum = SeriesOrder')
+        c.execute('UPDATE books SET SeriesOrder = Null')
 
     addedIssues = False
     try:
@@ -1368,19 +1377,26 @@ def dbcheck():
             if books:
                 logger.info('Adding series to existing books')
                 for book in books:
-                    result = re.search(r"\(([\S\s]+)\, #(\d+)|\(([\S\s]+) #(\d+)", book["BookName"])
+                    # \(            Must have (
+                    # ([\S\s]+)     followed by a group of one or more non whitespace
+                    # ,? #         followed by optional comma, then space hash
+                    # (             start next group
+                    # \d+           must have one or more digits
+                    # \.?           then optional decimal point, (. must be escaped)
+                    # -?            optional dash for a range
+                    # \d{0,}        zero or more digits
+                    # )             end group
+                    result = re.search(r"\(([\S\s]+),? #(\d+\.?-?\d{0,})", book["BookName"])
                     if result:
-                        if result.group(1) == None:
-                            series = result.group(3)
-                            seriesOrder = result.group(4)
-                        else:
-                            series = result.group(1)
-                            seriesOrder = result.group(2)
+                        series = result.group(1)
+                        if series[-1] == ',':
+                            series = series[:-1]
+                        seriesNum = result.group(2)
 
                         controlValueDict = {"BookID": book["BookID"]}
                         newValueDict = {
                             "series": series,
-                            "seriesOrder": seriesOrder
+                            "seriesNum": seriesNum
                         }
                         myDB.upsert("books", newValueDict, controlValueDict)
         except Exception as z:

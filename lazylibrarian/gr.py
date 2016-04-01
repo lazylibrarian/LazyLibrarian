@@ -6,7 +6,7 @@ import threading
 import time
 from xml.etree import ElementTree
 import lazylibrarian
-from lazylibrarian import logger, formatter, database, bookcovers
+from lazylibrarian import logger, formatter, database, bookwork
 from lazylibrarian.common import USER_AGENT
 from lib.fuzzywuzzy import fuzz
 from lib.unidecode import unidecode
@@ -70,18 +70,30 @@ class GoodReads:
             lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
             try:
                 resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
-                if str(resp.getcode()).startswith("2"):  # (200 OK etc)
-                    logger.debug(u"CacheHandler: Caching response for %s" % request.get_full_url())
+            except socket.timeout as e:
+                logger.warn(u"Retrying - got timeout on %s" % my_url)
+                try:
+                    resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
+                except (urllib2.URLError, socket.timeout) as e:
+                    logger.error(u"Error getting response for %s: %s" % (my_url, e))
+                    return None, False           
+            except urllib2.URLError as e:
+                logger.error(u"URLError getting response for %s: %s" % (my_url, e))
+                return None, False
+            
+            if str(resp.getcode()).startswith("2"):  # (200 OK etc)
+                logger.debug(u"CacheHandler: Caching response for %s" % my_url)
+                try:
                     source_xml = resp.read()  # .decode('utf-8')
-                    with open(hashname, "w") as cachefile:
-                        cachefile.write(source_xml)
-                else:
-                    logger.warn(u"Unable to cache response for %s: %s" % (request.get_full_url(), resp.getcode()))
-                    return "", False
-            except (urllib2.URLError, socket.timeout) as e:
-                logger.error(u"Unable to cache response for %s: %s" % (my_url, e))
-                return "", False
-
+                except socket.error as e:
+                    logger.error(u"Error reading xml: %s" % e)
+                    return None, False
+                with open(hashname, "w") as cachefile:
+                    cachefile.write(source_xml)
+            else:
+                logger.warn(u"Got error response for %s: %s" % (my_url, resp.getcode()))
+                return None, False
+            
         root = ElementTree.fromstring(source_xml)
         return root, valid_cache
 
@@ -163,12 +175,14 @@ class GoodReads:
                     isbn_fuzz = int(0)
                 highest_fuzz = max(author_fuzz, book_fuzz, isbn_fuzz)
 
+                bookid = author.find('./best_book/id').text
+                    
                 resultlist.append({
                     'authorname': author.find('./best_book/author/name').text,
-                    'bookid': author.find('./best_book/id').text,
+                    'bookid': bookid,
                     'authorid': author.find('./best_book/author/id').text,
                     'bookname': bookTitle.encode("ascii", "ignore"),
-                    'booksub': booksub,
+                    'booksub': None,
                     'bookisbn': bookisbn,
                     'bookpub': bookpub,
                     'bookdate': bookdate,
@@ -218,7 +232,7 @@ class GoodReads:
         except Exception as e:
             logger.error("Error finding authorid: %s, %s" % (e, URL))
             return authorlist
-        if not len(rootxml):
+        if rootxml is None:
             logger.debug("Error requesting authorid")
             return authorlist
 
@@ -248,7 +262,7 @@ class GoodReads:
         except Exception as e:
             logger.error("Error getting author info: %s" % e)
             return author_dict
-        if not len(rootxml):
+        if rootxml is None:
             logger.debug("Error requesting author info")
             return author_dict
 
@@ -292,7 +306,7 @@ class GoodReads:
         except Exception as e:
             logger.error("Error fetching author books: %s" % e)
             return books_dict
-        if not len(rootxml):
+        if rootxml is None:
             logger.debug("Error requesting author books")
             return books_dict
         if not in_cache:
@@ -330,11 +344,9 @@ class GoodReads:
 
                     try:
                         bookimg = book.find('image_url').text
-                        if (bookimg == 'http://www.goodreads.com/assets/nocover/111x148.png'):
+                        if ('nocover' in bookimg):
                             bookimg = 'images/nocover.png'
-                    except KeyError:
-                        bookimg = 'images/nocover.png'
-                    except AttributeError:
+                    except KeyError,AttributeError:
                         bookimg = 'images/nocover.png'
 
     # PAB this next section tries to get the book language using the isbn13 to look it up. If no isbn13 we skip the
@@ -429,7 +441,7 @@ class GoodReads:
                                             time.sleep(1)
 
                                         BOOK_rootxml, in_cache = self.get_request(BOOK_URL)
-                                        if not len(BOOK_rootxml):
+                                        if BOOK_rootxml is None:
                                             logger.debug('Error requesting book language code')
                                             bookLanguage = ""
                                         else:
@@ -475,18 +487,26 @@ class GoodReads:
                     bookrate = float(book.find('average_rating').text)
                     bookpages = book.find('num_pages').text
 
-                    result = re.search(r"\(([\S\s]+)\, #(\d+)|\(([\S\s]+) #(\d+)", bookname)
+                    # \(            Must have (
+                    # ([\S\s]+)     followed by a group of one or more non whitespace
+                    # ,? #         followed by optional comma, then space hash
+                    # (             start next group
+                    # \d+           must have one or more digits
+                    # \.?           then optional decimal point, (. must be escaped)
+                    # -?            optional dash for a range
+                    # \d{0,}        zero or more digits
+                    # )             end group
+
+                    result = re.search(r"\(([\S\s]+),? #(\d+\.?-?\d{0,})", bookname)
                     if result:
-                        if result.group(1) == None:
-                            series = result.group(3)
-                            seriesOrder = result.group(4)
-                        else:
-                            series = result.group(1)
-                            seriesOrder = result.group(2)
+                        series = result.group(1)
+                        if series[-1] == ',':
+                            series = series[:-1]
+                        seriesNum = result.group(2)
                     else:
                         series = None
-                        seriesOrder = None
-
+                        seriesNum = None
+    
                     find_book_status = myDB.select('SELECT * FROM books WHERE BookID = "%s"' % bookid)
                     if find_book_status:
                         for resulted in find_book_status:
@@ -520,13 +540,35 @@ class GoodReads:
                                 "Status": book_status,
                                 "BookAdded": formatter.today(),
                                 "Series": series,
-                                "SeriesOrder": seriesOrder
+                                "SeriesNum": seriesNum
                             }
 
                             resultsCount = resultsCount + 1
 
                             myDB.upsert("books", newValueDict, controlValueDict)
-                            logger.debug(u"book found " + book.find('title').text + " " + pubyear)
+                            logger.debug(u"Book found: " + book.find('title').text + " " + pubyear)
+
+                            if 'nocover' in bookimg or 'nophoto' in bookimg:
+                                # try to get a cover from librarything
+                                workcover = bookwork.getWorkCover(bookid)
+                                if workcover:
+                                    logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))    
+                                    controlValueDict = {"BookID": bookid}
+                                    newValueDict = {"BookImg": workcover}
+                                    myDB.upsert("books", newValueDict, controlValueDict)
+         
+                            if seriesNum == None:
+                                # try to get series info from librarything
+                                series, seriesNum = bookwork.getWorkSeries(bookid)
+                                if seriesNum:
+                                    logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))    
+                                    controlValueDict = {"BookID": bookid}
+                                    newValueDict = {
+                                        "Series": series,
+                                        "SeriesNum": seriesNum
+                                    }
+                                    myDB.upsert("books", newValueDict, controlValueDict)
+                                    
                             if not find_book_status:
                                 logger.debug(u"[%s] Added book: %s" % (authorname, bookname))
                                 added_count = added_count + 1
@@ -538,12 +580,6 @@ class GoodReads:
                     else:
                         logger.debug(u"removed result [" + bookname + "] for bad characters")
                         removedResults = removedResults + 1
-                    
-                    if bookimg == 'images/nocover.png' or 'nophoto' in bookimg:
-                        # try to get a cover from google
-                        coverlist=[]
-                        coverlist.append(bookid)
-                        bookcovers.getBookCovers(coverlist)
 
                 loopCount = loopCount + 1
                 URL = 'http://www.goodreads.com/author/list/' + authorid + '.xml?' + \
@@ -551,7 +587,7 @@ class GoodReads:
                 resultxml = None
                 try:
                     rootxml, in_cache = self.get_request(URL)
-                    if not len(rootxml):
+                    if rootxml is None:
                         logger.debug('Error requesting next page of results')
                     else:
                         resultxml = rootxml.getiterator('book')
@@ -576,19 +612,9 @@ class GoodReads:
             lastbooklink = None
             lastbookdate = None
 
-        unignored_count = 0
-        totalbook_count = 0
-
-        unignoredbooks = myDB.action('SELECT count("BookID") as counter FROM books \
-                                      WHERE AuthorID="%s" AND Status != "Ignored"' % authorid).fetchone()
-        totalbooks = myDB.action(
-            'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' %
-            authorid).fetchone()
         controlValueDict = {"AuthorID": authorid}
         newValueDict = {
             "Status": "Active",
-            "TotalBooks": totalbooks['counter'],
-            "UnignoredBooks": unignoredbooks['counter'],
             "LastBook": lastbookname,
             "LastLink": lastbooklink,
             "LastDate": lastbookdate
@@ -607,14 +633,8 @@ class GoodReads:
         myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' %
                     (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change,
                      cache_hits, ignored, removedResults, not_cached))
-
+            
         if refresh:
-            havebooks = myDB.action(
-                'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND (Status="Have" OR Status="Open")' %
-                authorid).fetchone()
-            controlValueDict = {"AuthorID": authorid}
-            newValueDict = {"HaveBooks": havebooks['counter']}
-            myDB.upsert("authors", newValueDict, controlValueDict)
             logger.info("[%s] Book processing complete: Added %s books / Updated %s books" %
                         (authorname, str(added_count), str(updated_count)))
         else:
@@ -631,7 +651,7 @@ class GoodReads:
 
         try:
             rootxml, in_cache = self.get_request(URL)
-            if not len(rootxml):
+            if rootxml is None:
                 logger.debug("Error requesting book")
                 return
         except Exception as e:
@@ -678,6 +698,16 @@ class GoodReads:
         if author:
             AuthorID = author['authorid']
 
+        result = re.search(r"\(([\S\s]+),? #(\d+\.?-?\d{0,})", bookname)
+        if result:
+            series = result.group(1)
+            if series[-1] == ',':
+                series = series[:-1]
+            seriesNum = result.group(2)
+        else:
+            series = None
+            seriesNum = None
+
         bookname = bookname.replace(':', '').replace('"', '').replace("'", "")
         bookname = unidecode(u'%s' % bookname)
         bookname = bookname.strip()  # strip whitespace
@@ -700,15 +730,32 @@ class GoodReads:
             "BookDate": bookdate,
             "BookLang": bookLanguage,
             "Status": "Wanted",
-            "BookAdded": formatter.today()
+            "BookAdded": formatter.today(),
+            "Series": series,
+            "SeriesNum": seriesNum
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
         logger.debug("%s added to the books database" % bookname)
+
+        if 'nocover' in bookimg or 'nophoto' in bookimg:
+            # try to get a cover from librarything
+            workcover = bookwork.getWorkCover(bookid)
+            if workcover:
+                logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))    
+                controlValueDict = {"BookID": bookid}
+                newValueDict = {"BookImg": workcover}
+                myDB.upsert("books", newValueDict, controlValueDict)
         
-        if bookimg == 'images/nocover.png' or 'nophoto' in bookimg:
-            # try to get a cover from google
-            coverlist=[]
-            coverlist.append(bookid)
-            bookcovers.getBookCovers(coverlist)
+        if seriesNum == None: 
+            #  try to get series info from librarything
+            series, seriesNum = bookwork.getWorkSeries(bookid)
+            if seriesNum:
+                logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))    
+                controlValueDict = {"BookID": bookid}
+                newValueDict = {
+                    "Series": series,
+                    "SeriesNum": seriesNum
+                }
+                myDB.upsert("books", newValueDict, controlValueDict)
 

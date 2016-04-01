@@ -499,10 +499,10 @@ class WebInterface(object):
         #   need to check and filter on BookLang if set
         if lazylibrarian.BOOKLANGFILTER is None or not len(lazylibrarian.BOOKLANGFILTER):
             rowlist = myDB.action(
-                'SELECT bookimg, authorname, bookname, series, seriesorder, bookrate, bookdate, status, bookid, booksub, booklink from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"').fetchall()
+                'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid, booksub, booklink from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"').fetchall()
         else:
             rowlist = myDB.action(
-                'SELECT bookimg, authorname, bookname, series, seriesorder, bookrate, bookdate, status, bookid, booksub, booklink from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored" and BOOKLANG="%s"' %
+                'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid, booksub, booklink from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored" and BOOKLANG="%s"' %
                 lazylibrarian.BOOKLANGFILTER).fetchall()
         # turn the sqlite rowlist into a list of lists
         d = []
@@ -530,9 +530,9 @@ class WebInterface(object):
                 l.append('<td id="series">None</td>')
 
             if row[4]:
-                l.append('<td id="seriesOrder">%s</td>' % row[4])
+                l.append('<td id="seriesNum">%s</td>' % row[4])
             else:
-                l.append('<td id="seriesOrder">None</td>')
+                l.append('<td id="seriesNum">None</td>')
 
             bookrate = float(row[5])
             if bookrate < 0.5:
@@ -1396,7 +1396,7 @@ class WebInterface(object):
         # print "getManage %s" % iDisplayStart
         #   need to filter on whichStatus
         rowlist = myDB.action(
-            'SELECT authorname, bookname, series, seriesorder, bookdate, bookid, booklink, booksub from books WHERE STATUS="%s"' %
+            'SELECT authorname, bookname, series, seriesnum, bookdate, bookid, booklink, booksub from books WHERE STATUS="%s"' %
             lazylibrarian.MANAGEFILTER).fetchall()
         # turn the sqlite rowlist into a list of lists
         d = []
@@ -1418,9 +1418,9 @@ class WebInterface(object):
                 l.append('<td id="series">None</td>')
 
             if row[3]:
-                l.append('<td id="seriesOrder">%s</td>' % row[3])
+                l.append('<td id="seriesNum">%s</td>' % row[3])
             else:
-                l.append('<td id="seriesOrder">None</td>')
+                l.append('<td id="seriesNum">None</td>')
 
             l.append('<td id="date">%s</td>' % row[4])
 

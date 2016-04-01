@@ -55,4 +55,16 @@ def addAuthorToDB(authorname=None, refresh=False):
     elif lazylibrarian.BOOK_API == "GoodReads":
         GR.get_author_books(authorid, authorname, refresh=refresh)
 
+    havebooks = myDB.action(
+        'SELECT count("BookID") as counter from books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' %
+        authorname).fetchone()
+    myDB.action('UPDATE authors set HaveBooks="%s" where AuthorName="%s"' % (havebooks['counter'], authorname))
+    totalbooks = myDB.action(
+        'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s"' % authorname).fetchone()        
+    myDB.action('UPDATE authors set TotalBooks="%s" where AuthorName="%s"' % (totalbooks['counter'], authorname))
+    unignoredbooks = myDB.action(
+        'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND Status!="Ignored"' %
+        authorname).fetchone()
+    myDB.action('UPDATE authors set UnignoredBooks="%s" where AuthorName="%s"' % (unignoredbooks['counter'], authorname))
+
     logger.debug("[%s] Author update complete" % authorname)

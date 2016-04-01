@@ -3,7 +3,6 @@ import re
 import lazylibrarian
 import urllib2
 import socket
-import hashlib
 from lazylibrarian import logger, database, importer, formatter, common
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
@@ -139,7 +138,7 @@ def find_book_in_db(myDB, author, book):
         partial_name = ""
         ratio_id = 0
         partial_id = 0
-        logger.debug("Found %s books for %s" % (len(books), author))
+        #logger.debug("Found %s books for %s" % (len(books), author))
         for a_book in books:
             # tidy up everything to raise fuzziness scores
             # still need to lowercase for matching against partial_name later on
@@ -229,21 +228,8 @@ def LibraryScan(dir=None):
                 myDB.action('update books set BookFile="" where BookID="%s"' % bookID)
                 logger.warn('Book %s - %s updated as not found on disk' % (bookAuthor, bookName))
         
-        # on a full scan, verify the cover images are correct too
-        logger.debug('Checking book covers')
-        covers = myDB.action('select BookImg,BookName,BookID from books')
-        cachedir = os.path.join(str(lazylibrarian.PROG_DIR),
-                                    'data' + os.sep)
-        for item in covers:
-            imgfile = cachedir + item['BookImg']
-            if not os.path.isfile(imgfile) and not item['BookImg'].startswith('http'):
-                logger.debug('Cover missing for %s %s' % (item['BookName'], imgfile))
-                myDB.action('update books set BookImg="images/nocover.png" where Bookid="%s"' % item['BookID'])
-        logger.debug('Cover checking complete')
-    # guess this was meant to save repeat-scans of the same directory
-    # if it contains multiple formats of the same book, but there was no code
-    # that looked at the array. renamed from latest to processed to make
-    # purpose clearer
+    # to save repeat-scans of the same directory if it contains multiple formats of the same book, 
+    # keep track of which directories we've already looked at 
     processed_subdirectories = []
 
     matchString = ''
@@ -565,9 +551,12 @@ def LibraryScan(dir=None):
             name).fetchone()
         myDB.action('UPDATE authors set HaveBooks="%s" where AuthorName="%s"' % (havebooks['counter'], name))
         totalbooks = myDB.action(
+            'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s"' % name).fetchone()        
+        myDB.action('UPDATE authors set TotalBooks="%s" where AuthorName="%s"' % (totalbooks['counter'], name))
+        unignoredbooks = myDB.action(
             'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND Status!="Ignored"' %
             name).fetchone()
-        myDB.action('UPDATE authors set UnignoredBooks="%s" where AuthorName="%s"' % (totalbooks['counter'], name))
+        myDB.action('UPDATE authors set UnignoredBooks="%s" where AuthorName="%s"' % (unignoredbooks['counter'], name))
 
     covers = myDB.action("select  count('bookimg') as counter from books where bookimg like 'http%'").fetchone()
     logger.info("Caching covers for %s books" % covers['counter'])
@@ -577,23 +566,21 @@ def LibraryScan(dir=None):
         bookid = item['bookid']
         bookimg = item['bookimg']
         bookname = item['bookname']
-        newimg, incache = cache_cover(bookimg)
+        newimg, incache = cache_cover(bookid, bookimg)
         if newimg != bookimg:
             myDB.action('update books set BookImg="%s" where BookID="%s"' % (newimg, bookid))
             if not incache:
-                logger.debug("Cached new cover for %s" % bookname)
-
+                logger.debug("Cached cover for %s" % bookname)
     logger.info('Library scan complete')
 
 
-def cache_cover(img_url):
-    hashID = hashlib.md5(img_url).hexdigest()
+def cache_cover(bookID, img_url):
     cachedir = os.path.join(str(lazylibrarian.PROG_DIR),
                             'data' + os.sep + 'images' + os.sep + 'cache')
     if not os.path.isdir(cachedir):
         os.makedirs(cachedir)
-    coverfile = os.path.join(cachedir, hashID + '.jpg')
-    link = 'images' + os.sep + 'cache' + os.sep + hashID + '.jpg'
+    coverfile = os.path.join(cachedir, bookID + '.jpg')
+    link = 'images' + os.sep + 'cache' + os.sep + bookID + '.jpg'
     if os.path.isfile(coverfile):  # already cached
         return link, True
 
@@ -608,12 +595,15 @@ def cache_cover(img_url):
     try:
         resp = urllib2.urlopen(request, timeout=30)
     except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
-        logger.debug("Error getting image : %s" % e.reason)
+        logger.debug("Error getting image : %s" % e)
         return img_url, False
 
     if str(resp.getcode()).startswith("2"):
         # (200 OK etc)
-        with open(coverfile, 'wb') as img:
-            img.write(resp.read())
-        return link, False
+        try:
+            with open(coverfile, 'wb') as img:
+                img.write(resp.read())
+            return link, False
+        except:
+            logger.debug("Error writing image to %s" % coverfile)
     return img_url, False
