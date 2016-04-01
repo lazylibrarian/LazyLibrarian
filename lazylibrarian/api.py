@@ -65,7 +65,7 @@ cmd_dict = {'help':'list available commands. ' + \
             'loadCFG':'reload config from file',
             'getBookCover':'&id= fetch a cover from goodreads/google for a BookID',
             'getAllBooks':'list all books in the database',
-            'searchBook':'&id= search for one book by BookID',
+            'searchBook':'&id= [&wait] search for one book by BookID',
             'showJobs':'show status of running jobs',
             'restartJobs':'reschedule/restart background jobs',
             'getWorkCover':'&id= Get cover image from Librarything BookWork using BookID',
@@ -464,11 +464,20 @@ class Api(object):
         
         books = [{"bookid": id}]
         if lazylibrarian.USE_RSS():
+            if 'wait' in kwargs:
+                search_rss_book()
+            else:
                 threading.Thread(target=search_rss_book, args=[books]).start()
         if lazylibrarian.USE_NZB():
-            threading.Thread(target=search_nzb_book, args=[books]).start()
+            if 'wait' in kwargs:
+                search_nzb_book()
+            else:
+                threading.Thread(target=search_nzb_book, args=[books]).start()
         if lazylibrarian.USE_TOR():
-            threading.Thread(target=search_tor_book, args=[books]).start()
+            if 'wait' in kwargs:
+                search_tor_book()
+            else:
+                threading.Thread(target=search_tor_book, args=[books]).start()
         if not lazylibrarian.USE_RSS() and not lazylibrarian.USE_NZB() and not lazylibrarian.USE_TOR():
             self.data = "No search methods set, check config"
 
