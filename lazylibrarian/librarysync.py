@@ -600,7 +600,10 @@ def cache_cover(bookID, img_url):
 
     if str(resp.getcode()).startswith("2"):
         # (200 OK etc)
-        with open(coverfile, 'wb') as img:
-            img.write(resp.read())
-        return link, False
+        try:
+            with open(coverfile, 'wb') as img:
+                img.write(resp.read())
+            return link, False
+        except:
+            logger.debug("Error writing image to %s" % coverfile)
     return img_url, False

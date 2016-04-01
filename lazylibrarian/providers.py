@@ -127,8 +127,12 @@ def get_capabilities(provider):
         if resp:
             if str(resp.getcode()).startswith("2"):  # (200 OK etc)
                 logger.debug(u"Got capabilities for %s" % request.get_full_url())
-                source_xml = resp.read()  # .decode('utf-8')
-                data = ElementTree.fromstring(source_xml)
+                try:
+                    source_xml = resp.read()  # .decode('utf-8')
+                    data = ElementTree.fromstring(source_xml)
+                except:
+                    logger.debug(u"Error getting xml from %s" % URL)
+                    data = None
                 if len(data):
                     logger.debug(u"Parsing xml for capabilities of %s" % URL)
                     

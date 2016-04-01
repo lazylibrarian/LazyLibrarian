@@ -83,7 +83,11 @@ class GoodReads:
             
             if str(resp.getcode()).startswith("2"):  # (200 OK etc)
                 logger.debug(u"CacheHandler: Caching response for %s" % my_url)
-                source_xml = resp.read()  # .decode('utf-8')
+                try:
+                    source_xml = resp.read()  # .decode('utf-8')
+                except socket.error as e:
+                    logger.error(u"Error reading xml: %s" % e)
+                    return None, False
                 with open(hashname, "w") as cachefile:
                     cachefile.write(source_xml)
             else:

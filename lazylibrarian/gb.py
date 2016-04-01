@@ -88,7 +88,11 @@ class GoogleBooks:
              
             if str(resp.getcode()).startswith("2"):  # (200 OK etc)
                 logger.debug(u"CacheHandler: Caching response for %s" % my_url)
-                source_json = json.JSONDecoder().decode(resp.read())
+                try:
+                    source_json = json.JSONDecoder().decode(resp.read())
+                except socket.error as e:
+                    logger.error(u"Error reading json: %s" % e)
+                    return None, False
                 json.dump(source_json, open(hashname, "w"))
             else:
                 logger.warn(u"Got error response for %s: %s" % (my_url, resp.getcode()))
