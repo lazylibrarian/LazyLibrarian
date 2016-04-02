@@ -3,7 +3,7 @@ import re
 import lazylibrarian
 import urllib2
 import socket
-from lazylibrarian import logger, database, importer, formatter, common
+from lazylibrarian import logger, database, importer, formatter, common, bookwork
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 from xml.etree import ElementTree
@@ -566,44 +566,8 @@ def LibraryScan(dir=None):
         bookid = item['bookid']
         bookimg = item['bookimg']
         bookname = item['bookname']
-        newimg, incache = cache_cover(bookid, bookimg)
+        newimg = bookwork.cache_cover(bookid, bookimg)
         if newimg != bookimg:
             myDB.action('update books set BookImg="%s" where BookID="%s"' % (newimg, bookid))
-            if not incache:
-                logger.debug("Cached cover for %s" % bookname)
     logger.info('Library scan complete')
 
-
-def cache_cover(bookID, img_url):
-    cachedir = os.path.join(str(lazylibrarian.PROG_DIR),
-                            'data' + os.sep + 'images' + os.sep + 'cache')
-    if not os.path.isdir(cachedir):
-        os.makedirs(cachedir)
-    coverfile = os.path.join(cachedir, bookID + '.jpg')
-    link = 'images' + os.sep + 'cache' + os.sep + bookID + '.jpg'
-    if os.path.isfile(coverfile):  # already cached
-        return link, True
-
-    request = urllib2.Request(img_url)
-
-    if lazylibrarian.PROXY_HOST:
-        request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-
-    # google insists on having a user-agent
-    request.add_header('User-Agent', USER_AGENT)
-
-    try:
-        resp = urllib2.urlopen(request, timeout=30)
-    except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
-        logger.debug("Error getting image : %s" % e)
-        return img_url, False
-
-    if str(resp.getcode()).startswith("2"):
-        # (200 OK etc)
-        try:
-            with open(coverfile, 'wb') as img:
-                img.write(resp.read())
-            return link, False
-        except:
-            logger.debug("Error writing image to %s" % coverfile)
-    return img_url, False

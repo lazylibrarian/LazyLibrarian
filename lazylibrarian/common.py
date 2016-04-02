@@ -271,4 +271,3 @@ def cleanCache():
                 kept += 1
         logger.info("Cleaned %i missing cover files, kept %i" % (cleaned, kept))
         
-

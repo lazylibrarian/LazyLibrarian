@@ -11,7 +11,7 @@ import threading
 from urllib2 import HTTPError
 
 import lazylibrarian
-from lazylibrarian import logger, formatter, database
+from lazylibrarian import logger, formatter, database, bookwork
 from lazylibrarian.gr import GoodReads
 
 from lib.fuzzywuzzy import fuzz
@@ -576,6 +576,13 @@ class GoogleBooks:
                                     newValueDict = {"BookImg": workcover}
                                     myDB.upsert("books", newValueDict, controlValueDict)
          
+                            elif bookimg.startswith('http'):
+                                link = bookwork.cache_cover(bookid, bookimg)
+                                if link != bookimg:
+                                    controlValueDict = {"BookID": bookid}
+                                    newValueDict = {"BookImg": link}
+                                    myDB.upsert("books", newValueDict, controlValueDict)
+
                             if seriesNum == None:
                                 # try to get series info from librarything
                                 series, seriesNum = bookwork.getWorkSeries(bookid)
@@ -795,6 +802,13 @@ class GoogleBooks:
                 newValueDict = {"BookImg": workcover}
                 myDB.upsert("books", newValueDict, controlValueDict)
          
+            elif bookimg.startswith('http'):
+                link = bookwork.cache_cover(bookid, bookimg)
+                if link != bookimg:
+                    controlValueDict = {"BookID": bookid}
+                    newValueDict = {"BookImg": link}
+                    myDB.upsert("books", newValueDict, controlValueDict)
+
         if seriesNum == None:
             # try to get series info from librarything
             series, seriesNum = bookwork.getWorkSeries(bookid)
