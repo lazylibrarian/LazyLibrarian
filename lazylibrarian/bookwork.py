@@ -262,3 +262,25 @@ def getBookCover(bookID=None):
             logger.debug("getBookCover: Found %s cover for %s %s" % (covertype, author, title))
             return coverlink
         return None
+        
+def cache_cover(bookID, img_url):
+    cachedir = os.path.join(str(lazylibrarian.PROG_DIR),
+                            'data' + os.sep + 'images' + os.sep + 'cache')
+    if not os.path.isdir(cachedir):
+        os.makedirs(cachedir)
+    coverfile = os.path.join(cachedir, bookID + '.jpg')
+    link = 'images' + os.sep + 'cache' + os.sep + bookID + '.jpg'
+    if os.path.isfile(coverfile):  # already cached
+        return link
+
+    result, success = fetchURL(img_url)
+    
+    if success:
+        try:
+            with open(coverfile, 'wb') as img:
+                img.write(result)
+            return link
+        except:
+            logger.debug("Error writing image to %s" % coverfile)
+    return img_url
+

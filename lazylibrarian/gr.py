@@ -556,6 +556,13 @@ class GoodReads:
                                     controlValueDict = {"BookID": bookid}
                                     newValueDict = {"BookImg": workcover}
                                     myDB.upsert("books", newValueDict, controlValueDict)
+                            
+                            elif bookimg.startswith('http'):
+                                link = bookwork.cache_cover(bookid, bookimg)
+                                if link != bookimg:
+                                    controlValueDict = {"BookID": bookid}
+                                    newValueDict = {"BookImg": link}
+                                    myDB.upsert("books", newValueDict, controlValueDict)
          
                             if seriesNum == None:
                                 # try to get series info from librarything
@@ -747,6 +754,13 @@ class GoodReads:
                 newValueDict = {"BookImg": workcover}
                 myDB.upsert("books", newValueDict, controlValueDict)
         
+        elif bookimg.startswith('http'):
+            link = bookwork.cache_cover(bookid, bookimg)
+            if link != bookimg:
+                controlValueDict = {"BookID": bookid}
+                newValueDict = {"BookImg": link}
+                myDB.upsert("books", newValueDict, controlValueDict)
+
         if seriesNum == None: 
             #  try to get series info from librarything
             series, seriesNum = bookwork.getWorkSeries(bookid)
