@@ -341,6 +341,9 @@ class WebInterface(object):
 # SEARCH ############################################################
 
     def search(self, name):
+        if name is None or not len(name):
+            raise cherrypy.HTTPRedirect("home")
+
         myDB = database.DBConnection()
         if lazylibrarian.BOOK_API == "GoogleBooks":
             GB = GoogleBooks(name)
