@@ -407,12 +407,8 @@ class GoodReads:
                                 # returns plain text, not xml
                                 BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + isbn
                                 try:
-                                    time_now = int(time.time())
-                                    if time_now <= lazylibrarian.LAST_LIBRARYTHING:  # called within the last second?
-                                        time.sleep(1)  # sleep 1 second to respect librarything api terms
-
+                                    bookwork.librarything_wait()
                                     resp = urllib2.urlopen(BOOK_URL, timeout=30).read()
-                                    lazylibrarian.LAST_LIBRARYTHING = time_now
                                     lt_lang_hits = lt_lang_hits + 1
                                     logger.debug("LibraryThing reports language [%s] for %s" % (resp, isbnhead))
 
@@ -550,7 +546,7 @@ class GoodReads:
 
                             if 'nocover' in bookimg or 'nophoto' in bookimg:
                                 # try to get a cover from librarything
-                                workcover = bookwork.getWorkCover(bookid)
+                                workcover = bookwork.getBookCover(bookid)
                                 if workcover:
                                     logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))    
                                     controlValueDict = {"BookID": bookid}
@@ -559,7 +555,7 @@ class GoodReads:
                             
                             elif bookimg.startswith('http'):
                                 link = bookwork.cache_cover(bookid, bookimg)
-                                if link != bookimg:
+                                if link is not None:
                                     controlValueDict = {"BookID": bookid}
                                     newValueDict = {"BookImg": link}
                                     myDB.upsert("books", newValueDict, controlValueDict)
@@ -747,7 +743,7 @@ class GoodReads:
 
         if 'nocover' in bookimg or 'nophoto' in bookimg:
             # try to get a cover from librarything
-            workcover = bookwork.getWorkCover(bookid)
+            workcover = bookwork.getBookCover(bookid)
             if workcover:
                 logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))    
                 controlValueDict = {"BookID": bookid}
@@ -756,7 +752,7 @@ class GoodReads:
         
         elif bookimg.startswith('http'):
             link = bookwork.cache_cover(bookid, bookimg)
-            if link != bookimg:
+            if link is not None:
                 controlValueDict = {"BookID": bookid}
                 newValueDict = {"BookImg": link}
                 myDB.upsert("books", newValueDict, controlValueDict)
