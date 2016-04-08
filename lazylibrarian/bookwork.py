@@ -115,6 +115,19 @@ def getBookWork(bookID=None):
     else:
         logger.debug('Get Book Work - Invalid bookID [%s]' % bookID)            
         return None
+
+def getWorkPage(bookID=None):
+    if not bookID:
+        logger.error("getWorkPage - No bookID")
+        return None
+    work = getBookWork(bookID)
+    if work:
+        try:
+            page = work.split('og:url')[1].split('="')[1].split('"')[0]
+        except IndexError:
+            return None
+        return page
+    return None
         
 def getWorkSeries(bookID=None):
     if not bookID:

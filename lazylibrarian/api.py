@@ -70,6 +70,7 @@ cmd_dict = {'help':'list available commands. ' + \
             'restartJobs':'reschedule/restart background jobs',
             'getWorkCover':'&id= Get cover image from Librarything BookWork using BookID',
             'getWorkSeries':'&id= Get series & seriesNum from Librarything BookWork using BookID',
+            'getWorkPage':'&id= Get url of Librarything BookWork using BookID',
             'cleanCache':'[&wait] Clean unused/old files from the LazyLibrarian caches'
             }
 
@@ -539,6 +540,14 @@ class Api(object):
         else:
             self.id = kwargs['id']
         self.data = bookwork.getWorkSeries(self.id)
+
+    def _getWorkPage(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+        self.data = bookwork.getWorkPage(self.id)
 
     def _getWorkCover(self, **kwargs):
         if 'id' not in kwargs:
