@@ -476,8 +476,8 @@
                         checked = ''
                     %>
                     <input type="checkbox" name="newznab[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter API Here" name="newznab[${loop.index}][api]" value="${prov['API']}" size="26" maxlength="40">
- 	    		    <input type="text" placeholder="Enter URL Here" name="newznab[${loop.index}][host]" value="${prov['HOST']}" size="26" maxlength="100">
+ 	    		    <input type="text" placeholder="Enter API Here" name="newznab[${loop.index}][api]" value="${prov['API']}" size="26" class="providers-input" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="newznab[${loop.index}][host]" value="${prov['HOST']}" size="26" class="providers-input" maxlength="100">
  	    		    <br>
  	    		    %endfor
                 </fieldset>
@@ -494,8 +494,8 @@
                         checked = ''
                     %>
                     <input type="checkbox" name="torznab[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter API Here" name="torznab[${loop.index}][api]" value="${prov['API']}" size="26" maxlength="40">
- 	    		    <input type="text" placeholder="Enter URL Here" name="torznab[${loop.index}][host]" value="${prov['HOST']}" size="26" maxlength="100">
+ 	    		    <input type="text" placeholder="Enter API Here" name="torznab[${loop.index}][api]" value="${prov['API']}" size="26" class="providers-input" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="torznab[${loop.index}][host]" value="${prov['HOST']}" size="26" class="providers-input" maxlength="100">
  	    		    <br>
  	    		    %endfor
                     <small>
@@ -517,9 +517,9 @@
                         checked = ''
                     %>
             		<input type="checkbox" name="rss[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter URL Here" name="rss[${loop.index}][host]" value="${prov['HOST']}" size="58" maxlength="100"><br>
- 	    		    <input type="text" placeholder="Enter Pass Here" name="rss[${loop.index}][pass]" value="${prov['PASS']}" size="26" maxlength="40">
- 	    		    <input type="text" placeholder="Enter User Here" name="rss[${loop.index}][user]" value="${prov['USER']}" size="26" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="rss[${loop.index}][host]" value="${prov['HOST']}" size="58" class="providers-rss-input" maxlength="100"><br>
+ 	    		    <input type="text" placeholder="Enter Pass Here" name="rss[${loop.index}][pass]" value="${prov['PASS']}" size="26" class="providers-input" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter User Here" name="rss[${loop.index}][user]" value="${prov['USER']}" size="26" class="providers-input" maxlength="40">
  	    		    <br>
  	    		    %endfor
                 </fieldset>
