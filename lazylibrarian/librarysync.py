@@ -558,16 +558,15 @@ def LibraryScan(dir=None):
             name).fetchone()
         myDB.action('UPDATE authors set UnignoredBooks="%s" where AuthorName="%s"' % (unignoredbooks['counter'], name))
 
-    covers = myDB.action("select  count('bookimg') as counter from books where bookimg like 'http%'").fetchone()
-    logger.info("Caching covers for %s books" % covers['counter'])
-
-    images = myDB.action('select bookid, bookimg, bookname from books where bookimg like "http%"')
-    for item in images:
-        bookid = item['bookid']
-        bookimg = item['bookimg']
-        bookname = item['bookname']
-        newimg = bookwork.cache_cover(bookid, bookimg)
-        if newimg != bookimg:
-            myDB.action('update books set BookImg="%s" where BookID="%s"' % (newimg, bookid))
+    images = myDB.select('select bookid, bookimg, bookname from books where bookimg like "http%"')
+    if len(images):
+        logger.info("Caching covers for %i books" % len(images))
+        for item in images:
+            bookid = item['bookid']
+            bookimg = item['bookimg']
+            bookname = item['bookname']
+            newimg = bookwork.cache_cover(bookid, bookimg)
+            if newimg is not None:
+                myDB.action('update books set BookImg="%s" where BookID="%s"' % (newimg, bookid))
     logger.info('Library scan complete')
 

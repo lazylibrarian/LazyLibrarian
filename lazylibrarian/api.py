@@ -63,13 +63,13 @@ cmd_dict = {'help':'list available commands. ' + \
             'readCFG':'&name=&group= read value of config variable "name" in section "group"',
             'writeCFG':'&name=&group=&value= set config variable "name" in section "group" to value',
             'loadCFG':'reload config from file',
-            'getBookCover':'&id= fetch a cover from goodreads/google for a BookID',
+            'getBookCover':'&id= fetch a cover from cache/librarything/goodreads/google for a BookID',
             'getAllBooks':'list all books in the database',
             'searchBook':'&id= [&wait] search for one book by BookID',
             'showJobs':'show status of running jobs',
             'restartJobs':'reschedule/restart background jobs',
-            'getWorkCover':'&id= Get cover image from Librarything BookWork using BookID',
             'getWorkSeries':'&id= Get series & seriesNum from Librarything BookWork using BookID',
+            'getWorkPage':'&id= Get url of Librarything BookWork using BookID',
             'cleanCache':'[&wait] Clean unused/old files from the LazyLibrarian caches'
             }
 
@@ -540,13 +540,13 @@ class Api(object):
             self.id = kwargs['id']
         self.data = bookwork.getWorkSeries(self.id)
 
-    def _getWorkCover(self, **kwargs):
+    def _getWorkPage(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
             return
         else:
             self.id = kwargs['id']
-        self.data = bookwork.getWorkCover(self.id)
+        self.data = bookwork.getWorkPage(self.id)
 
     def _getBookCover(self, **kwargs):
         if 'id' not in kwargs:

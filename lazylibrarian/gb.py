@@ -569,7 +569,7 @@ class GoogleBooks:
 
                             if 'nocover' in bookimg or 'nophoto' in bookimg:
                                 # try to get a cover from librarything
-                                workcover = bookwork.getWorkCover(bookid)
+                                workcover = bookwork.getBookCover(bookid)
                                 if workcover:
                                     logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))    
                                     controlValueDict = {"BookID": bookid}
@@ -578,7 +578,7 @@ class GoogleBooks:
          
                             elif bookimg.startswith('http'):
                                 link = bookwork.cache_cover(bookid, bookimg)
-                                if link != bookimg:
+                                if link is not None:
                                     controlValueDict = {"BookID": bookid}
                                     newValueDict = {"BookImg": link}
                                     myDB.upsert("books", newValueDict, controlValueDict)
@@ -795,7 +795,7 @@ class GoogleBooks:
 
         if 'nocover' in bookimg or 'nophoto' in bookimg:
             # try to get a cover from librarything
-            workcover = bookwork.getWorkCover(bookid)
+            workcover = bookwork.getBookCover(bookid)
             if workcover:
                 logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))    
                 controlValueDict = {"BookID": bookid}
@@ -804,7 +804,7 @@ class GoogleBooks:
          
             elif bookimg.startswith('http'):
                 link = bookwork.cache_cover(bookid, bookimg)
-                if link != bookimg:
+                if link is not None:
                     controlValueDict = {"BookID": bookid}
                     newValueDict = {"BookImg": link}
                     myDB.upsert("books", newValueDict, controlValueDict)

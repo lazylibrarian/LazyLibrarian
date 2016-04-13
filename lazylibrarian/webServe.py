@@ -14,7 +14,7 @@ import urllib
 import lazylibrarian
 
 from lazylibrarian import logger, importer, database, postprocess, formatter, \
-    notifiers, librarysync, versioncheck, magazinescan, common
+    notifiers, librarysync, versioncheck, magazinescan, common, bookwork
 from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
 from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
 from lazylibrarian.searchmag import search_magazines
@@ -519,7 +519,11 @@ class WebInterface(object):
                 '<td id="bookart"><a href="%s" target="_new"><img src="%s" height="75" width="50"></a></td>' % (row[0], row[0]))
             l.append(
                 '<td id="authorname"><a href="authorPage?AuthorName=%s">%s</a></td>' % (row[1], row[1]))
-
+#            page = bookwork.getWorkPage(row[8])
+#            if page:
+#                page = '<br><td><a href="' + page + '" target="_new">...view at LibraryThing</a></td>'
+#            else:
+#                page = ''
             if row[9]:  # is there a sub-title
                 l.append(
                     '<td id="bookname"><a href="%s" target="_new">%s</a><br><i class="smalltext">%s</i></td>' % (row[10], row[2], row[9]))

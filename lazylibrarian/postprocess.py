@@ -91,8 +91,9 @@ def processDir(force=False, reset=False):
         for book in snatched:
             found = False
             for fname in downloads:
-                if not fname.endswith('.fail'):  # has this failed before?
-                    # this is to get round unicode differences in torrent filenames.
+                if os.path.isdir(os.path.join(processpath, fname)) and not fname.endswith('.fail'):  # has this failed before?
+                    # this is to get round differences in torrent filenames.
+                    # Torrents aren't always returned with the name we searched for
                     # there might be a better way...
                     if isinstance(fname, str):
                         matchname = fname.decode(lazylibrarian.SYS_ENCODING)
