@@ -70,7 +70,8 @@ cmd_dict = {'help':'list available commands. ' + \
             'restartJobs':'reschedule/restart background jobs',
             'getWorkSeries':'&id= Get series & seriesNum from Librarything BookWork using BookID',
             'getWorkPage':'&id= Get url of Librarything BookWork using BookID',
-            'cleanCache':'[&wait] Clean unused/old files from the LazyLibrarian caches'
+            'cleanCache':'[&wait] Clean unused/old files from the LazyLibrarian caches',
+            'setWorkPages':'[&wait] Set the WorkPages links in the database'
             }
 
 class Api(object):
@@ -387,6 +388,12 @@ class Api(object):
             common.cleanCache()
         else:
             threading.Thread(target=common.cleanCache, args=[]).start()
+            
+    def _setWorkPages(self, **kwargs):
+        if 'wait' in kwargs:
+            bookwork.setWorkPages()
+        else:
+            threading.Thread(target=bookwork.setWorkPages, args=[]).start()
             
     def _getVersion(self, **kwargs):
         self.data = {

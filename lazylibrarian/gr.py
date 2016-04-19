@@ -571,6 +571,12 @@ class GoodReads:
                                         "SeriesNum": seriesNum
                                     }
                                     myDB.upsert("books", newValueDict, controlValueDict)
+
+                            worklink = bookwork.getWorkPage(bookid)
+                            if worklink:
+                                controlValueDict = {"BookID": bookid}
+                                newValueDict = {"WorkPage": worklink}
+                                myDB.upsert("books", newValueDict, controlValueDict)
                                     
                             if not find_book_status:
                                 logger.debug(u"[%s] Added book: %s" % (authorname, bookname))
@@ -768,4 +774,10 @@ class GoodReads:
                     "SeriesNum": seriesNum
                 }
                 myDB.upsert("books", newValueDict, controlValueDict)
+
+        worklink = bookwork.getWorkPage(bookid)
+        if worklink:
+            controlValueDict = {"BookID": bookid}
+            newValueDict = {"WorkPage": worklink}
+            myDB.upsert("books", newValueDict, controlValueDict)
 

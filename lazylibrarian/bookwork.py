@@ -1,13 +1,33 @@
 import os
-import threading
 import urllib
 import urllib2
 import socket
 import time
-
+import threading
 import lazylibrarian
 from lazylibrarian import logger, formatter, database
 from lazylibrarian.common import USER_AGENT
+       
+def setWorkPages(thread=None):
+    """ Set the workpage link for any books that don't already have one """
+    if thread is None:
+        threading.currentThread().name = "SETWORKPAGES"
+
+    myDB = database.DBConnection()
+     
+    books = myDB.select('select BookID,AuthorName,BookName from books where length(WorkPage) < 4')
+    if books:    
+        logger.debug('Setting WorkPage for %s books' % len(books))
+        for book in books:
+            bookid = book['BookID']
+            worklink = getWorkPage(bookid)
+            if worklink:
+                controlValueDict = {"BookID": bookid}
+                newValueDict = {"WorkPage": worklink}
+                myDB.upsert("books", newValueDict, controlValueDict)
+            else:
+               logger.warn('No WorkPage found for %s: %s' % (book['AuthorName'], book['BookName'])) 
+        logger.debug('setWorkPages completed')
 
 def fetchURL(URL):
     """ Return the result of fetching a URL and True if success

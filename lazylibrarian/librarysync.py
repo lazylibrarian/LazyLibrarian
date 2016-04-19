@@ -568,5 +568,6 @@ def LibraryScan(dir=None):
             newimg = bookwork.cache_cover(bookid, bookimg)
             if newimg is not None:
                 myDB.action('update books set BookImg="%s" where BookID="%s"' % (newimg, bookid))
+    bookwork.setWorkPages()
     logger.info('Library scan complete')
 
