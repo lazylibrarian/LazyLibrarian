@@ -38,8 +38,21 @@
                   <div>
                   <label>Port:</label><input type="text" name="http_port" value="${lazylibrarian.HTTP_PORT}" size="10" maxlength="40">
                   </div>
-		  <label>Web Root:</label><input type="text" name="http_root" value="${lazylibrarian.HTTP_ROOT}" size="20" maxlength="40">
-		  </div>
+                  <label>Web Root:</label><input type="text" name="http_root" value="${lazylibrarian.HTTP_ROOT}" size="20" maxlength="40">
+                    <%
+                        if lazylibrarian.HTTPS_ENABLED == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <BR>
+                    <input type="checkbox" name="https_enabled" value=1 ${checked} />
+                    <label>  Enable Https</label>
+                  <br>
+                  <label>Https Certificate:</label><input type="text" name="https_cert" value="${lazylibrarian.HTTPS_CERT}" size="20">
+		          <br>
+                  <label>Https Key:</label><input type="text" name="https_key" value="${lazylibrarian.HTTPS_KEY}" size="20">
+		          </div>
                   <br>
                   <br>
                   <label>Logdir:</label><input type="text" name="logdir" value="${lazylibrarian.LOGDIR}" size="26"><br>

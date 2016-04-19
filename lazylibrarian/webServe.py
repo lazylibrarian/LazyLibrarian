@@ -103,7 +103,8 @@ class WebInterface(object):
                      pushover_apitoken='', pushover_ondownload=0, pushover_device='',
                      use_androidpn=0, androidpn_notify_onsnatch=0, androidpn_notify_ondownload=0,
                      androidpn_url='', androidpn_username='', androidpn_broadcast=0, bookstrap_theme='',
-                     use_nma=0, nma_apikey='', nma_priority=0, nma_onsnatch=0, nma_ondownload=0, **kwargs):
+                     use_nma=0, nma_apikey='', nma_priority=0, nma_onsnatch=0, nma_ondownload=0, 
+                     https_enabled=0, https_cert='', https_key='', **kwargs):
         #  print len(kwargs)
         #  for arg in kwargs:
         #      print arg
@@ -113,6 +114,9 @@ class WebInterface(object):
         lazylibrarian.HTTP_USER = http_user
         lazylibrarian.HTTP_PASS = http_pass
         lazylibrarian.HTTP_LOOK = http_look
+        lazylibrarian.HTTPS_ENABLED = bool(https_enabled)
+        lazylibrarian.HTTPS_CERT = https_cert
+        lazylibrarian.HTTPS_KEY = https_key
         lazylibrarian.BOOKSTRAP_THEME = bookstrap_theme
         lazylibrarian.LAUNCH_BROWSER = bool(launch_browser)
         lazylibrarian.API_ENABLED = bool(api_enabled)

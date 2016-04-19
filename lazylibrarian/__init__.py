@@ -81,6 +81,9 @@ HTTP_USER = None
 HTTP_PASS = None
 HTTP_ROOT = None
 HTTP_LOOK = None
+HTTPS_ENABLED = 0
+HTTPS_CERT = None
+HTTPS_KEY = None
 LAUNCH_BROWSER = 0
 API_ENABLED = 0
 API_KEY = None
@@ -418,7 +421,8 @@ def config_read(reloaded=False):
             GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, \
             LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, SCHED, CACHE_HIT, CACHE_MISS, \
             BOOKSTRAP_THEME, \
-            LOGFILES, LOGSIZE
+            LOGFILES, LOGSIZE, \
+            HTTPS_ENABLED, HTTPS_CERT, HTTPS_KEY
 
         NEWZNAB_PROV = []
         TORZNAB_PROV = []
@@ -445,6 +449,9 @@ def config_read(reloaded=False):
         HTTP_PASS = check_setting_str(CFG, 'General', 'http_pass', '')
         HTTP_ROOT = check_setting_str(CFG, 'General', 'http_root', '')
         HTTP_LOOK = check_setting_str(CFG, 'General', 'http_look', 'default')
+        HTTPS_ENABLED = check_setting_bool(CFG, 'General', 'https_enabled', 0)
+        HTTPS_CERT = check_setting_str(CFG, 'General', 'https_cert', '')
+        HTTPS_KEY = check_setting_str(CFG, 'General', 'https_key', '')
         BOOKSTRAP_THEME = check_setting_str(CFG, 'General', 'bookstrap_theme', 'slate')
 
         LAUNCH_BROWSER = check_setting_bool(CFG, 'General', 'launch_browser', 1)
@@ -775,6 +782,9 @@ def config_write():
     CFG.set('General', 'http_pass', HTTP_PASS)
     CFG.set('General', 'http_root', HTTP_ROOT)
     CFG.set('General', 'http_look', HTTP_LOOK)
+    CFG.set('General', 'https_enabled', HTTPS_ENABLED)
+    CFG.set('General', 'https_cert', HTTPS_CERT)
+    CFG.set('General', 'https_key', HTTPS_KEY)
     CFG.set('General', 'bookstrap_theme', BOOKSTRAP_THEME)
     CFG.set('General', 'launch_browser', LAUNCH_BROWSER)
     CFG.set('General', 'api_enabled', API_ENABLED)
