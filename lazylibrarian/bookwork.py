@@ -26,7 +26,7 @@ def setWorkPages(thread=None):
                 newValueDict = {"WorkPage": worklink}
                 myDB.upsert("books", newValueDict, controlValueDict)
             else:
-               logger.warn('No WorkPage found for %s: %s' % (book['AuthorName'], book['BookName'])) 
+               logger.debug('No WorkPage found for %s: %s' % (book['AuthorName'], book['BookName'])) 
         logger.debug('setWorkPages completed')
 
 def fetchURL(URL):
