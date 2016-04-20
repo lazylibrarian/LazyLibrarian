@@ -530,8 +530,9 @@ class WebInterface(object):
                 starimg = '0-stars.png'
             
             worklink = ''
-            if len(row[11]) > 4:
-                worklink = '<br><td><a href="' + row[11] + '" target="_new">WorkPage</a></td>'
+            if row[11]: # is there a workpage link
+                if len(row[11]) > 4:
+                    worklink = '<br><td><a href="' + row[11] + '" target="_new">WorkPage</a></td>'
 
             if lazylibrarian.HTTP_LOOK == 'default':
                 l.append(

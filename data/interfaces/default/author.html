@@ -124,6 +124,10 @@
                         starimg = '5-stars.png'
                     else:
                         starimg = '0-stars.png'
+                    workpage = ''
+                    if result['workpage']:
+                        if len(result['workpage']) > 4:
+                            workpage = '<br><a href="' + result['workpage'] + '" target="_new">WorkPage</a>' 
                 %>
                 <tr class="gradeZ">
                     <td id="select"><input type="checkbox" name="${result['BookID']}" class="checkbox" /></td>
@@ -141,15 +145,15 @@
                     <td id="language">${result['booklang']}</td>
 
                     %if result['Status'] == 'Open':
-                        <td id="status"><a class="button green" href="openBook?bookid=${result['bookID']}" target="_self">${result['Status']}</a></td>
+                        <td id="status"><a class="button green" href="openBook?bookid=${result['bookID']}" target="_self">${result['Status']}</a>${workpage}</td>
                     %else:
                         %if result['Status'] == 'Wanted':
-                            <td id="status"><a class="button red" href="searchForBook?bookid=${result['bookID']}" target="_self"><span class="a">${result['Status']}</span><span class="b">Search</span></a></td>
+                            <td id="status"><a class="button red" href="searchForBook?bookid=${result['bookID']}" target="_self"><span class="a">${result['Status']}</span><span class="b">Search</span></a>${workpage}</td>
                         %else:
                             %if result['Status'] == 'Snatched':
-                                <td id="status"><a class="button">${result['Status']}</a></td>
+                                <td id="status"><a class="button">${result['Status']}</a>${workpage}</td>
                             %else:
-                                <td id="status"><a class="button grey">${result['Status']}</a></td>
+                                <td id="status"><a class="button grey">${result['Status']}</a>${workpage}</td>
                             %endif
                         %endif
                     %endif
