@@ -502,44 +502,16 @@ class WebInterface(object):
         #   need to check and filter on BookLang if set
         if lazylibrarian.BOOKLANGFILTER is None or not len(lazylibrarian.BOOKLANGFILTER):
             rowlist = myDB.action(
-                'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid, booksub, booklink from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"').fetchall()
+                'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid, booksub, booklink, workpage from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"').fetchall()
         else:
             rowlist = myDB.action(
-                'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid, booksub, booklink from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored" and BOOKLANG="%s"' %
+                'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid, booksub, booklink, workpage from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored" and BOOKLANG="%s"' %
                 lazylibrarian.BOOKLANGFILTER).fetchall()
         # turn the sqlite rowlist into a list of lists
         d = []
         # the masterlist to be filled with the row data and to be returned
         for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
             l = []  # for each Row use a separate list
-
-            l.append(
-                '<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[8])
-            l.append(
-                '<td id="bookart"><a href="%s" target="_new"><img src="%s" height="75" width="50"></a></td>' % (row[0], row[0]))
-            l.append(
-                '<td id="authorname"><a href="authorPage?AuthorName=%s">%s</a></td>' % (row[1], row[1]))
-#            page = bookwork.getWorkPage(row[8])
-#            if page:
-#                page = '<br><td><a href="' + page + '" target="_new">...view at LibraryThing</a></td>'
-#            else:
-#                page = ''
-            if row[9]:  # is there a sub-title
-                l.append(
-                    '<td id="bookname"><a href="%s" target="_new">%s</a><br><i class="smalltext">%s</i></td>' % (row[10], row[2], row[9]))
-            else:
-                l.append(
-                    '<td id="bookname"><a href="%s" target="_new">%s</a></td>' % (row[10], row[2]))
-
-            if row[3]:  # is the book part of a series
-                l.append('<td id="series">%s</td>' % row[3])
-            else:
-                l.append('<td id="series">None</td>')
-
-            if row[4]:
-                l.append('<td id="seriesNum">%s</td>' % row[4])
-            else:
-                l.append('<td id="seriesNum">None</td>')
 
             bookrate = float(row[5])
             if bookrate < 0.5:
@@ -556,33 +528,87 @@ class WebInterface(object):
                 starimg = '5-stars.png'
             else:
                 starimg = '0-stars.png'
-            l.append(
-                '<td id="stars"><img src="images/' + starimg + '" width="50" height="10"></td>')
-
-            l.append('<td id="date">%s</td>' % row[6])
+            
+            worklink = ''
+            if len(row[11]) > 4:
+                worklink = '<br><td><a href="' + row[11] + '" target="_new">WorkPage</a></td>'
 
             if lazylibrarian.HTTP_LOOK == 'default':
-                if row[7] == 'Open':
+                l.append(
+                    '<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[8])
+                l.append(
+                    '<td id="bookart"><a href="%s" target="_new"><img src="%s" height="75" width="50"></a></td>' % (row[0], row[0]))
+                l.append(
+                    '<td id="authorname"><a href="authorPage?AuthorName=%s">%s</a></td>' % (row[1], row[1]))
+                if row[9]:  # is there a sub-title
                     l.append(
-                        '<td id="status"><a class="button green" href="openBook?bookid=%s" target="_self">Open</a></td>' % row[8])
-                elif row[7] == 'Wanted':
-                    l.append(
-                        '<td id="status"><a class="button red" href="searchForBook?bookid=%s" target="_self"><span class="a">Wanted</span><span class="b">Search</span></a></td>' % row[8])
-                elif row[7] == 'Snatched' or row[7] == 'Have':
-                    l.append('<td id="status"><a class="button">%s</a></td>' % row[7])
+                        '<td id="bookname"><a href="%s" target="_new">%s</a><br><i class="smalltext">%s</i></td>' % (row[10], row[2], row[9]))
                 else:
-                    l.append('<td id="status"><a class="button grey">%s</a></td>' % row[7])
+                    l.append(
+                        '<td id="bookname"><a href="%s" target="_new">%s</a></td>' % (row[10], row[2]))
+
+                if row[3]:  # is the book part of a series
+                    l.append('<td id="series">%s</td>' % row[3])
+                else:
+                    l.append('<td id="series">None</td>')
+
+                if row[4]:
+                    l.append('<td id="seriesNum">%s</td>' % row[4])
+                else:
+                    l.append('<td id="seriesNum">None</td>')
+
+                l.append(
+                    '<td id="stars"><img src="images/' + starimg + '" width="50" height="10"></td>')
+    
+                l.append('<td id="date">%s</td>' % row[6])
+    
+                if row[7] == 'Open':
+                    btn = '<td id="status"><a class="button green" href="openBook?bookid=%s" target="_self">Open</a></td>' % row[8]
+                elif row[7] == 'Wanted':
+                    btn = '<td id="status"><a class="button red" href="searchForBook?bookid=%s" target="_self"><span class="a">Wanted</span><span class="b">Search</span></a></td>' % row[8]
+                elif row[7] == 'Snatched' or row[7] == 'Have':
+                    btn = '<td id="status"><a class="button">%s</a></td>' % row[7]
+                else:
+                    btn = '<td id="status"><a class="button grey">%s</a></td>' % row[7]
+                l.append(btn + worklink)
+
             elif lazylibrarian.HTTP_LOOK == 'bookstrap':
-                if row[7] == 'Open':
+                l.append(
+                    '<td class="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[8])
+                l.append(
+                    '<td class="bookart text-center hidden-xs"><a href="%s" target="_blank" rel="noreferrer"><img src="%s" alt="Cover" class="bookcover-sm img-responsive"></a></td>' % (row[0], row[0]))
+                l.append(
+                    '<td class="authorname"><a href="authorPage?AuthorName=%s">%s</a></td>' % (row[1], row[1]))
+                if row[9]:  # is there a sub-title
                     l.append(
-                        '<td class="status text-center"><a class="button green btn btn-xs btn-warning" href="openBook?bookid=%s" target="_self"><i class="fa fa-book"></i>%s</a></td>' % (row[8], row[7]))
-                elif row[7] == 'Wanted':
-                    l.append(
-                        '<td class="status text-center"><p><a class="a btn btn-xs btn-danger">%s</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=%s" target="_self"><i class="fa fa-search"></i> Search</a></p></td>' % (row[7], row[8]))
-                elif row[7] == 'Snatched' or row[7] == 'Have':
-                    l.append('<td class="status text-center"><a class="button btn btn-xs btn-info">%s</a></td>' % row[7])
+                        '<td class="bookname"><a href="%s" target="_blank" rel="noreferrer">%s</a><br><i class="smalltext">%s</i></td>' % (row[10], row[2], row[9]))
                 else:
-                    l.append('<td class="status text-center"><a class="button btn btn-xs btn-default grey">%s</a></td>' % row[7])
+                    l.append(
+                        '<td class="bookname"><a href="%s" target="_blank" rel="noreferrer">%s</a></td>' % (row[10], row[2]))
+
+                if row[3]:  # is the book part of a series
+                    l.append('<td class="series">%s</td>' % row[3])
+                else:
+                    l.append('<td class="series">None</td>')
+
+                if row[4]:
+                    l.append('<td class="seriesNum text-center">%s</td>' % row[4])
+                else:
+                    l.append('<td class="seriesNum text-center">None</td>')
+
+                l.append(
+                    '<td class="stars text-center hidden-xs"><img src="images/' + starimg + '" alt="Rating"></td>')
+    
+                l.append('<td class="date text-center">%s</td>' % row[6])
+                if row[7] == 'Open':
+                    btn = '<td class="status text-center"><a class="button green btn btn-xs btn-warning" href="openBook?bookid=%s" target="_self"><i class="fa fa-book"></i>%s</a></td>' % (row[8], row[7])
+                elif row[7] == 'Wanted':
+                    btn = '<td class="status text-center"><p><a class="a btn btn-xs btn-danger">%s</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=%s" target="_self"><i class="fa fa-search"></i> Search</a></p></td>' % (row[7], row[8])
+                elif row[7] == 'Snatched' or row[7] == 'Have':
+                    btn = '<td class="status text-center"><a class="button btn btn-xs btn-info">%s</a></td>' % row[7]
+                else:
+                    btn = '<td class="status text-center"><a class="button btn btn-xs btn-default grey">%s</a></td>' % row[7]
+                l.append(btn + worklink)
 
             d.append(l)  # add the rowlist to the masterlist
         filtered = d

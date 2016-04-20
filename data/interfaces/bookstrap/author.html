@@ -142,6 +142,9 @@
                         starimg = '5-stars.png'
                     else:
                         starimg = '0-stars.png'
+                    workpage = ''
+                    if len(result['workpage']) > 4:
+                        workpage = '<br><a href="' + result['workpage'] + '" target="_new">WorkPage</a>' 
                 %>
                 <tr>
                     <td class="select"><input type="checkbox" name="${result['BookID']}" /></td>
@@ -159,22 +162,21 @@
                     <td class="language text-center hidden-xs">${result['booklang']}</td>
 
                     %if result['Status'] == 'Open':
-                        <td class="status text-center"><a class="btn btn-xs btn-warning button green" href="openBook?bookid=${result['bookID']}" target="_self"><i class="fa fa-book"></i> ${result['Status']}</a></td>
+                        <td class="status text-center"><a class="btn btn-xs btn-warning button green" href="openBook?bookid=${result['bookID']}" target="_self"><i class="fa fa-book"></i> ${result['Status']}</a>${workpage}</td>
                     %else:
                         %if result['Status'] == 'Wanted':
                             <td class="status text-center">
                                 <!--<p><a class="btn btn-xs btn-danger" href="searchForBook?bookid=${result['bookID']}" target="_self"></p>-->
                                 <p><a class="a btn btn-xs btn-danger">${result['Status']}</a></p>
-                                <p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=${result['bookID']}" title="Search Now"><i class="fa fa-search"></i> Search</a></p>
-                            </td>
+                                <p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=${result['bookID']}" title="Search Now"><i class="fa fa-search"></i> Search</a></p>${workpage}</td>
                         %else:
                             %if result['Status'] == 'Snatched':
-                                <td class="status text-center"><a class="btn btn-xs btn-info button">${result['Status']}</a></td>                            
+                                <td class="status text-center"><a class="btn btn-xs btn-info button">${result['Status']}</a>${workpage}</td>
                             %else:
                                 %if result['Status'] == 'Have':
-                                    <td class="status text-center"><a class="btn btn-xs btn-info button">${result['Status']}</a></td>
+                                    <td class="status text-center"><a class="btn btn-xs btn-info button">${result['Status']}</a>${workpage}</td>
                                 %else:
-                                    <td class="status text-center"><a class="btn btn-xs btn-default button">${result['Status']}</a></td>
+                                    <td class="status text-center"><a class="btn btn-xs btn-default button">${result['Status']}</a>${workpage}</td>
                                 %endif:
                             %endif
                         %endif
