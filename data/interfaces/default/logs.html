@@ -97,9 +97,7 @@
                 }
             });
         $('.dataTables_filter input').attr("placeholder", "Search table here");
-        $(window).resize(function() {
-            oTable.fnDraw(false)        
-        })
+        $(window).resize(function() {oTable.fnDraw(false)});
         
         // dont keep refreshing the log table on mobile devices
         var isiPad = navigator.userAgent.match(/iPad/i) != null;

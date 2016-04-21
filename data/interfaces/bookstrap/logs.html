@@ -56,7 +56,7 @@
 <%def name="javascriptIncludes()">
     <script>
     $(document).ready(function() {
-        $('#log_table').dataTable({
+        var oTable = $('#log_table').dataTable({
                 "bAutoWidth": false,
                 "order": [[ 0, 'desc' ]],
                 "oLanguage": {
@@ -96,6 +96,7 @@
                 }
             });
             $('.dataTables_filter input').attr("placeholder", "Search filter");
+            $(window).resize(function() {oTable.fnDraw(false)});
         });
         
         

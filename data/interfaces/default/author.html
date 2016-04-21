@@ -229,6 +229,7 @@
                 },          
             });
 			$('.dataTables_filter input').attr("placeholder", "Search table here");
+            $(window).resize(function() {oTable.fnDraw(false)});
     });
     </script>
 </%def>
