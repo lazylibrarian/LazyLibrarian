@@ -21,7 +21,7 @@
         <table class="display table table-striped table-hover table-bordered" id="log_table">
             <thead>
                 <tr>
-                    <th class="timestamp">Timestamp</th>
+                    <th class="timestamp hidden-xs">Timestamp</th>
                     <th class="level">Level</th>
                     <th class="message">Message</th>
                 </tr>
@@ -57,7 +57,7 @@
     <script>
     $(document).ready(function() {
         $('#log_table').dataTable({
-                "deferRender": true,
+                "bAutoWidth": false,
                 "order": [[ 0, 'desc' ]],
                 "oLanguage": {
                     "sSearch":"",
@@ -81,6 +81,11 @@
                     } else {
                         $('td', nRow).closest('tr').addClass("text-info");
                     }                                                        
+                    var w = window.innerWidth;
+                    if ( w < 640 ) // hide timestamp on smallest devices
+                    {
+                        $('td', nRow).eq(0).addClass('hidden');
+                    }                                    
                     return nRow;
                 },
                 "fnServerData": function (sSource, aoData, fnCallback) {

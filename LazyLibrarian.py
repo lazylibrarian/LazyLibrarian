@@ -152,6 +152,9 @@ def main():
         'http_root': lazylibrarian.HTTP_ROOT,
         'http_user': lazylibrarian.HTTP_USER,
         'http_pass': lazylibrarian.HTTP_PASS,
+        'https_enabled': lazylibrarian.HTTPS_ENABLED,
+        'https_cert': lazylibrarian.HTTPS_CERT,
+        'https_key': lazylibrarian.HTTPS_KEY,
     })
 
     if lazylibrarian.LAUNCH_BROWSER and not options.nolaunch:

@@ -29,7 +29,7 @@
             </select>
         <input type="submit" class="markBooks" value="Go">
     </p>
-    <table class="display" id="book_table">
+    <table class="display" id="book_table" style="width:100%;">
         <thead>
             <tr>
                 <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
@@ -106,21 +106,11 @@
     <script src="js/libs/jquery.dataTables.min.js"></script>
     <script>
     $(document).ready(function()
-    {
-        $('#book_table').dataTable(
+    {   
+        var oTable = $('#book_table').dataTable(
             {
+                "bAutoWidth": false,
                 "order": [[ 2, 'asc' ]],
-                "aoColumns": [
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
-                    ],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ books per page",
                     "sEmptyTable": "No books found",
@@ -136,8 +126,44 @@
                 // need to pass requested language filter to getBooks 
                 "sAjaxSource": 'getBooks?BookLang=eng',
                 "bFilter": true,
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    var w = window.innerWidth;
+                    if ( w < 320 ) 
+                    {   // hide cover,author,series,seriesnum,stars,date on smallest devices
+                        $('td', nRow).eq(1).addClass('hidden');
+                        $('td', nRow).eq(2).addClass('hidden');
+                        $('td', nRow).eq(4).addClass('hidden');
+                        $('td', nRow).eq(5).addClass('hidden');
+                        $('td', nRow).eq(6).addClass('hidden');
+                        $('td', nRow).eq(7).addClass('hidden');
+                    }                                    
+                    if ( w < 640 ) 
+                    {   // hide cover,series,seriesnum,stars,date on smaller devices
+                        $('td', nRow).eq(1).addClass('hidden');
+                        $('td', nRow).eq(4).addClass('hidden');
+                        $('td', nRow).eq(5).addClass('hidden');
+                        $('td', nRow).eq(6).addClass('hidden');
+                        $('td', nRow).eq(7).addClass('hidden');
+                    }                                    
+                    if ( w < 768 ) 
+                    {   // hide cover,seriesnum,stars,date on small devices
+                        $('td', nRow).eq(1).addClass('hidden');
+                        $('td', nRow).eq(5).addClass('hidden');
+                        $('td', nRow).eq(6).addClass('hidden');
+                        $('td', nRow).eq(7).addClass('hidden');
+                    }                                    
+                    if ( w < 1024 ) 
+                    {   // hide stars,date on medium devices
+                        $('td', nRow).eq(6).addClass('hidden');
+                        $('td', nRow).eq(7).addClass('hidden');
+                    }                                    
+                    return nRow;
+                },          
             });
 			$('.dataTables_filter input').attr("placeholder", "Search table here");
+			$(window).resize(function() {
+                oTable.fnDraw(false)        
+            })
     });
     </script>
 </%def>

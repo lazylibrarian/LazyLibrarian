@@ -39,7 +39,6 @@ table#book_table th#bookname { width:160px !important; min-width:130px; }
 table#book_table th#authorname { display:none; }
 table#book_table th#status {  }
 table#book_table th#date { display:none;  }
-table#book_table th#number {  }
 table#book_table th#language { display:none;  }
 table#book_table th#stars { display:none; }
 table#book_table td#select {  }
@@ -49,9 +48,10 @@ table#book_table td#authorname { display:none; }
 table#book_table td#bookname { }
 table#book_table td#status {  }
 table#book_table td#date { display:none;  }
-table#book_table td#number {  }
 table#book_table td#language { display:none;  }
 table#book_table td#stars { display:none; }
+table#book_table th#series, td#series { display:none; }
+table#book_table th#seriesNum, td#seriesNum { display:none; }
 
 /* Log */
 table#log_table { background-color: white; margin-left:5px;margin-top:40px; margin-bottom:20px;}

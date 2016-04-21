@@ -183,20 +183,8 @@
         
     $(document).ready(function()
     {
-
-        $('#book_table').dataTable(
+        var oTable = $('#book_table').dataTable(
             {
-                "aoColumns": [
-                    null,
-                    null,
-                    null,
-                    null,
-		    null,
-		    null,
-                    null,
-                    null,
-                    null
-                    ],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ books per page",
                     "sEmptyTable": "No books found",
@@ -207,8 +195,40 @@
                 "bStateSave": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": 10,
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    var w = window.innerWidth;
+                    if ( w < 320 ) 
+                    {   // hide cover,series,seriesnum,stars,date on smallest devices
+                        $('td', nRow).eq(1).addClass('hidden');
+                        $('td', nRow).eq(3).addClass('hidden');
+                        $('td', nRow).eq(4).addClass('hidden');
+                        $('td', nRow).eq(5).addClass('hidden');
+                        $('td', nRow).eq(6).addClass('hidden');
+                    }                                    
+                    if ( w < 640 ) 
+                    {   // hide cover,series,seriesnum,stars,date on smaller devices
+                        $('td', nRow).eq(1).addClass('hidden');
+                        $('td', nRow).eq(3).addClass('hidden');
+                        $('td', nRow).eq(4).addClass('hidden');
+                        $('td', nRow).eq(5).addClass('hidden');
+                        $('td', nRow).eq(6).addClass('hidden');
+                    }                                    
+                    if ( w < 768 ) 
+                    {   // hide cover,seriesnum,stars,date on small devices
+                        $('td', nRow).eq(1).addClass('hidden');
+                        $('td', nRow).eq(4).addClass('hidden');
+                        $('td', nRow).eq(5).addClass('hidden');
+                        $('td', nRow).eq(6).addClass('hidden');
+                    }                                    
+                    if ( w < 1024 ) 
+                    {   // hide stars,date on medium devices
+                        $('td', nRow).eq(5).addClass('hidden');
+                        $('td', nRow).eq(6).addClass('hidden');
+                    }                                    
+                    return nRow;
+                },          
             });
-			$('.dataTables_filter input').attr("placeholder", "Seach table here");
+			$('.dataTables_filter input').attr("placeholder", "Search table here");
     });
     </script>
 </%def>

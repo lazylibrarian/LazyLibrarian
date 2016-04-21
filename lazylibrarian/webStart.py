@@ -3,12 +3,22 @@ import sys
 import cherrypy
 import lazylibrarian
 
+from lazylibrarian import logger
 from lazylibrarian.webServe import WebInterface
 
 
 def initialize(options={}):
 
-    cherrypy.config.update({
+    https_enabled = options['https_enabled']
+    https_cert = options['https_cert']
+    https_key = options['https_key']
+
+    if https_enabled:
+        if not (os.path.exists(https_cert) and os.path.exists(https_key)):
+            logger.warn("Disabled HTTPS because of missing certificate and key.")
+            https_enabled = False
+    
+    options_dict = {
         'log.screen': False,
         'server.thread_pool': 10,
         'server.socket_port': options['http_port'],
@@ -17,8 +27,19 @@ def initialize(options={}):
         'tools.encode.on': True,
         'tools.encode.encoding': 'utf-8',
         'tools.decode.on': True,
-    })
-
+    }
+    
+    if https_enabled:
+        options_dict['server.ssl_certificate'] = https_cert
+        options_dict['server.ssl_private_key'] = https_key
+        protocol = "https"
+    else:
+        protocol = "http"
+        
+    logger.info("Starting LazyLibrarian web server on %s://%s:%d/" %
+            (protocol, options['http_host'], options['http_port']))
+    cherrypy.config.update(options_dict)
+ 
     conf = {
         '/': {
             'tools.staticdir.root': os.path.join(lazylibrarian.PROG_DIR, 'data')

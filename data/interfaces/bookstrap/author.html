@@ -117,10 +117,10 @@
                 <th class="bookart col-xs-1 text-center no-sort hidden-xs">Cover</th>
                 <th class="bookname col-xs-3">Title</th>
                 <th class="series col-xs-2">Series</th>
-                <th class="seriesNum col-xs-1 text-center">Num.</th>
+                <th class="seriesNum col-xs-1 text-center hidden-xs">Num.</th>
                 <th class="stars col-xs-1 text-center hidden-xs">Rating</th>
-                <th class="date col-xs-1 text-center">Released</th>
-                <th class="language col-xs-1 text-center hidden-xs">Language</th>
+                <th class="date col-xs-1 text-center hidden-xs">Released</th>
+                <th class="language col-xs-1 text-center">Language</th>
                 <th class="status col-xs-1 text-center">Status</th>
             </tr>
         </thead>
@@ -149,7 +149,7 @@
                 %>
                 <tr>
                     <td class="select"><input type="checkbox" name="${result['BookID']}" /></td>
-                    <td class="bookart text-center hidden-xs"><a href="${result['bookimg']}" target="_blank" rel="noreferrer"><img src="${result['bookimg']}" class="bookcover-xs img-responsive" alt="Cover"></a></td>
+                    <td class="bookart text-center"><a href="${result['bookimg']}" target="_blank" rel="noreferrer"><img src="${result['bookimg']}" class="bookcover-xs img-responsive" alt="Cover"></a></td>
                     %if result['booksub']:
                         <td class id="bookname"><a href="${result['booklink']}" target="_blank" rel="noreferrer">${result['bookname']}</a><br>
                         <i class="smalltext">${result['booksub']}</i></td>
@@ -158,9 +158,9 @@
                     %endif
                     <td class="series">${result['Series']}</td>
                     <td class="seriesNum text-center">${result['seriesNum']}</td>
-                    <td class="stars text-center hidden-xs"><img src="images/${starimg}" alt="Rating"></td>
+                    <td class="stars text-center"><img src="images/${starimg}" alt="Rating"></td>
                     <td class="date text-center">${result['BookDate']}</td>
-                    <td class="language text-center hidden-xs">${result['booklang']}</td>
+                    <td class="language text-center">${result['booklang']}</td>
 
                     %if result['Status'] == 'Open':
                         <td class="status text-center"><a class="btn btn-xs btn-warning button green" href="openBook?bookid=${result['bookID']}" target="_self"><i class="fa fa-book"></i> ${result['Status']}</a>${workpage}</td>
@@ -207,9 +207,8 @@
 <script type="text/javascript">
     $(document).ready(function()
     {
-        $('#book_table').dataTable(
+        var oTable = $('#book_table').dataTable(
             {
-                "deferRender": true,
                 "order": [],
                 "columnDefs": 
                     [{ targets: 'no-sort', orderable: false }] // Don't allow colums of class no-sort to be sorted
@@ -224,8 +223,22 @@
                 "bStateSave": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": 10,
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    var w = window.innerWidth;
+                    if ( w < 768 ) 
+                    {   // hide cover,seriesnum,stars,date on small devices
+                        $('td', nRow).eq(1).addClass('hidden');
+                        $('td', nRow).eq(4).addClass('hidden');
+                        $('td', nRow).eq(5).addClass('hidden');
+                        $('td', nRow).eq(6).addClass('hidden');
+                    }                                    
+                    return nRow;
+                },          
             });
 			$('.dataTables_filter input').attr("placeholder", "Search filter");
+			$(window).resize(function() {
+                oTable.fnDraw(false)        
+            })
     });
 </script>
 </%def>

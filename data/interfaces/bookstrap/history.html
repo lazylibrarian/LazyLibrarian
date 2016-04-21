@@ -22,7 +22,7 @@
                 <tr>
                     <th class="filename">Title</th>
                     <th class="bookid">ID</th>
-                    <th class="provider hidden-xs">Provider</th>
+                    <th class="provider">Provider</th>
                     <th class="dateadded">Date</th>
                     <th class="size text-right">Size</th>
                     <th class="status text-center">Status</th>
@@ -43,7 +43,7 @@
                 <tr class="grade${grade}">
                     <td class="filename">${item['NZBtitle']}</td>
                     <td class="bookid">${item['BookID']}</td>
-                    <td class="provider hidden-xs"><a href="${item['NZBurl']}">${item['NZBprov']}</a></td>
+                    <td class="provider"><a href="${item['NZBurl']}">${item['NZBprov']}</a></td>
                     <td class="dateadded">${item['NZBdate']}</td>
                     <td class="size text-right">${item['NZBsize']}</td>
                     <td class="status text-center">${item['Status']}</td>
@@ -66,6 +66,7 @@
 
         $('#book_table').dataTable(
             {
+                "responsive": true,
                 "order": [[ 3, 'desc' ]],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ rows per page",
