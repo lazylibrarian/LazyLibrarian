@@ -39,7 +39,7 @@ def initialize(options={}):
     logger.info("Starting LazyLibrarian web server on %s://%s:%d/" %
             (protocol, options['http_host'], options['http_port']))
     cherrypy.config.update(options_dict)
- 
+
     conf = {
         '/': {
             'tools.staticdir.root': os.path.join(lazylibrarian.PROG_DIR, 'data')
