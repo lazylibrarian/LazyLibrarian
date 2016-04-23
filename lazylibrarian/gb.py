@@ -595,6 +595,12 @@ class GoogleBooks:
                                     }
                                     myDB.upsert("books", newValueDict, controlValueDict)
 
+                            worklink = bookwork.getWorkPage(bookid)
+                            if worklink:
+                                controlValueDict = {"BookID": bookid}
+                                newValueDict = {"WorkPage": worklink}
+                                myDB.upsert("books", newValueDict, controlValueDict)
+
                             if not find_book_status:
                                 logger.debug("[%s] Added book: %s [%s]" % (authorname, bookname, booklang))
                                 added_count = added_count + 1
@@ -820,4 +826,10 @@ class GoogleBooks:
                     "SeriesNum": seriesNum
                 }
                 myDB.upsert("books", newValueDict, controlValueDict)
+
+        worklink = bookwork.getWorkPage(bookid)
+        if worklink:
+            controlValueDict = {"BookID": bookid}
+            newValueDict = {"WorkPage": worklink}
+            myDB.upsert("books", newValueDict, controlValueDict)
 

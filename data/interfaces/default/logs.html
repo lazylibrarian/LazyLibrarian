@@ -55,13 +55,9 @@
     <script>
     $(document).ready(function()
     {
-        $('#log_table').dataTable(
+        var oTable = $('#log_table').dataTable(
             {
-                "aoColumns": [
-                    null,
-                    null,
-                    null
-                    ],
+                "bAutoWidth": false,
                 "oLanguage": {
                     "sSearch":"",
                     "sLengthMenu":"Show _MENU_ rows per page",
@@ -85,8 +81,12 @@
                     else
                     {
                         $('td', nRow).closest('tr').addClass("gradeZ");
-                    }
-                                                        
+                    }    
+                    var w = window.innerWidth;
+                    if ( w < 640 ) // hide timestamp on smallest devices
+                    {
+                        $('td', nRow).eq(0).addClass('hidden');
+                    }                                    
                     return nRow;
                 },
                 "fnServerData": function (sSource, aoData, fnCallback) {
@@ -97,6 +97,7 @@
                 }
             });
         $('.dataTables_filter input').attr("placeholder", "Search table here");
+        $(window).resize(function() {oTable.fnDraw(false)});
         
         // dont keep refreshing the log table on mobile devices
         var isiPad = navigator.userAgent.match(/iPad/i) != null;

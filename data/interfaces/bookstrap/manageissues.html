@@ -84,6 +84,7 @@
     $(document).ready(function() {
         $('#book_table').dataTable(
             {
+                "responsive": true,
                 "order": [[ 1, 'asc']],
                 "columnDefs": 
                     [{ targets: 'no-sort', orderable: false }]

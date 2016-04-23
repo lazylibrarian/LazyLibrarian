@@ -91,7 +91,7 @@ def processDir(force=False, reset=False):
         for book in snatched:
             found = False
             for fname in downloads:
-                if os.path.isdir(os.path.join(processpath, fname)) and not fname.endswith('.fail'):  # has this failed before?
+                if not fname.endswith('.fail'):  # has this failed before?
                     # this is to get round differences in torrent filenames.
                     # Torrents aren't always returned with the name we searched for
                     # there might be a better way...
@@ -106,10 +106,28 @@ def processDir(force=False, reset=False):
                         matchtitle = matchtitle.split(' LL.(')[0]
                     match = fuzz.token_set_ratio(matchtitle, matchname)
                     if match >= 95:
-                        pp_path = os.path.join(processpath, fname)
-                        logger.debug('Found folder %s for %s' % (pp_path, book['NZBtitle']))
-                        found = True
-                        break
+                        if os.path.isfile(os.path.join(processpath, fname)):
+                            # handle single file downloads here...
+                            if formatter.is_valid_booktype(fname, booktype="book") \
+                                or formatter.is_valid_booktype(fname, booktype="mag"):
+                                dirname = os.path.join(processpath, fname.rsplit('.', 1)[0])
+                                if not os.path.exists(dirname):
+                                    try:
+                                        os.makedirs(dirname)
+                                    except OSError as why:
+                                        logger.debug('Failed to create directory %s, %s' % (dirname, why.strerror))
+                                if os.path.exists(dirname):
+                                    try:
+                                        shutil.move(os.path.join(processpath, fname), os.path.join(dirname, fname))
+                                        fname = fname.rsplit('.', 1)[0]
+                                    except Exception as why:
+                                        logger.debug("Failed to move file %s to %s, %s" % 
+                                            (fname, dirname, str(why)))                                         
+                        if os.path.isdir(os.path.join(processpath, fname)): 
+                            pp_path = os.path.join(processpath, fname)
+                            logger.debug('Found folder %s for %s' % (pp_path, book['NZBtitle']))
+                            found = True
+                            break
             if found:
                 data = myDB.select('SELECT * from books WHERE BookID="%s"' % book['BookID'])
                 if data:

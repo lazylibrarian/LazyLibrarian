@@ -57,7 +57,7 @@
                     <th class="select no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
                     <th class="magtitle">Title</th>
                     <!--<th class="frequency">Frequency</th>-->
-                    <th class="seriesOrder hidden-xs">Num</th>
+                    <th class="seriesOrder">Num</th>
                     <th class="lastacquired">Acquired</th>
                     <th class="issuedate">Issue Date</th>
                     <th class="status">Status</th>
@@ -82,7 +82,7 @@
                                 <!-- <input type="submit" value="Go">-->
                             <!-- </form>-->
                         <!-- </td>-->
-                        <td class="seriesOrder hidden-xs">${result['Count']}</td>
+                        <td class="seriesOrder">${result['Count']}</td>
                         <td class="lastacquired">${result['LastAcquired']}</td>
                         <td class="issuedate">${result['IssueDate']}</td>
                         <td class="status">${result['Status']}</td>
@@ -123,6 +123,7 @@
 
         $('#book_table').dataTable(
             {
+                "responsive": true,
                 "order": [[ 1, 'asc']],
                 "columnDefs": 
                     [{ targets: 'no-sort', orderable: false }]

@@ -49,6 +49,25 @@
                                             <label for="http_root" class="control-label">Web Root:</label>
                                             <input type="text" id="http_root" name="http_root" value="${lazylibrarian.HTTP_ROOT}" class="form-control" placeholder="Web Root">
                                         </div>
+                                        <div class="checkbox">
+                                            <%
+                                                if lazylibrarian.HTTPS_ENABLED == True:
+                                                    checked = 'checked="checked"'
+                                                else:
+                                                    checked = ''
+                                            %>   
+                                            <label for="https_enabled" class="control-label">
+                                            <input type="checkbox" id="https_enabled" name="https_enabled" value="1" ${checked} />
+                                            Enable https</label>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="https_cert" class="control-label">Https Certificate:</label>
+                                            <input type="text" id="https_cert" name="https_cert" value="${lazylibrarian.HTTPS_CERT}" class="form-control" placeholder="https certificate">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="https_key" class="control-label">Https Key:</label>
+                                            <input type="text" id="https_key" name="https_key" value="${lazylibrarian.HTTPS_KEY}" class="form-control" placeholder="https key">
+                                        </div>
                                         <div class="form-group">
                                             <label for="logdir" class="control-label">Logdir:</label>
                                             <input type="text" id="logdir" name="logdir" value="${lazylibrarian.LOGDIR}" class="form-control" placeholder="Log Dir">
@@ -167,6 +186,7 @@
                                             <div class="col-xs-12">
                                                 <button class="button btn btn-sm btn-primary" type="button" value="Show Jobs" id="showJobs"><i class="fa fa-list-ul"></i> Show Jobs</button>
                                                 <button class="button btn btn-sm btn-warning" type="button" value="Restart Jobs" id="restartJobs"><i class="fa fa-refresh"></i> Restart Jobs</button>
+                                                <br><br>
                                             </div>
                                         </div>
                                     </fieldset>

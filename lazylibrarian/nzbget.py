@@ -43,14 +43,11 @@ def sendNZB(nzb):
         logger.error(u"No NZBget port found in configuration. Please configure it.")
         return False
 
-    if lazylibrarian.NZBGET_HOST.startswith('https://'):
-        nzbgetXMLrpc = 'https://' + nzbgetXMLrpc
-        lazylibrarian.NZBGET_HOST.replace('https://', '', 1)
-    else:
-        nzbgetXMLrpc = 'http://' + nzbgetXMLrpc
-        lazylibrarian.NZBGET_HOST.replace('http://', '', 1)
+    host = lazylibrarian.NZBGET_HOST
+    if not host.startswith('http'):
+        host = 'http://' + host
 
-    url = nzbgetXMLrpc % {"host": lazylibrarian.NZBGET_HOST, "username": lazylibrarian.NZBGET_USER,
+    url = nzbgetXMLrpc % {"host": host, "username": lazylibrarian.NZBGET_USER,
                           "port": lazylibrarian.NZBGET_PORT, "password": lazylibrarian.NZBGET_PASS}
     
     nzbGetRPC = xmlrpclib.ServerProxy(url)

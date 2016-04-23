@@ -22,7 +22,7 @@ import socket
 import json
 
 from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, formatter, \
-    librarysync, versioncheck, database, searchmag, magazinescan, common
+    librarysync, versioncheck, database, searchmag, magazinescan, common, bookwork
 
 try:
     from wand.image import Image
@@ -420,9 +420,7 @@ def config_read(reloaded=False):
             USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
             GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, \
             LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, SCHED, CACHE_HIT, CACHE_MISS, \
-            BOOKSTRAP_THEME, \
-            LOGFILES, LOGSIZE, \
-            HTTPS_ENABLED, HTTPS_CERT, HTTPS_KEY
+            BOOKSTRAP_THEME, LOGFILES, LOGSIZE, HTTPS_ENABLED, HTTPS_CERT, HTTPS_KEY
 
         NEWZNAB_PROV = []
         TORZNAB_PROV = []
@@ -1268,12 +1266,15 @@ def dbcheck():
     c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
         BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
         BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, \
-        BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesNum TEXT, SeriesOrder INTEGER)')
+        BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesNum TEXT, SeriesOrder INTEGER, \
+        WorkPage TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, \
-        NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT)')
+        NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS magazines (Title TEXT, Frequency TEXT, Regex TEXT, Status TEXT, \
         MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS languages ( isbn TEXT, lang TEXT )')
+    c.execute('CREATE TABLE IF NOT EXISTS issues (Title TEXT, IssueID TEXT, IssueAcquired TEXT, IssueDate TEXT, \
+        IssueFile TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS stats ( authorname text, GR_book_hits int, GR_lang_hits int, \
         LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int )')
 
@@ -1332,6 +1333,14 @@ def dbcheck():
         logger.info('Updating database to hold IssueStatus')
         c.execute('ALTER TABLE magazines ADD COLUMN IssueStatus TEXT')
 
+    addedWorkPage = False
+    try:
+        c.execute('SELECT WorkPage from books')
+    except sqlite3.OperationalError:
+        logger.info('Updating database to hold WorkPage')
+        c.execute('ALTER TABLE books ADD COLUMN WorkPage TEXT')
+        addedWorkPage = True
+        
     addedSeries = False
     try:
         c.execute('SELECT Series from books')
@@ -1379,6 +1388,13 @@ def dbcheck():
             magazinescan.magazineScan(thread='MAIN')
         except:
             logger.debug("Failed to scan magazines")
+
+    if addedWorkPage:
+        try:
+            logger.info('Adding WorkPage to existing books')
+            threading.Thread(target=bookwork.setWorkPages, args=[]).start()
+        except:
+            logger.debug("Failed to update WorkPages")
 
     if addedSeries:
         try:
