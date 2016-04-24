@@ -162,7 +162,7 @@ def search_magazines(mags=None, reset=False):
 
                         # need at least one word magazine title and two date components
                         if len(nzbtitle_exploded) > 2:
-                            # regexA = DD MonthName YYYY OR MonthName YYYY or Issue nn MonthName YYYY
+                            # regexA = DD MonthName YYYY OR MonthName YYYY or Issue nn, MonthName YYYY
                             regexA_year = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
                             regexA_month_temp = nzbtitle_exploded[len(nzbtitle_exploded) - 2]
                             regexA_month = formatter.month2num(common.remove_accents(regexA_month_temp))
@@ -170,7 +170,7 @@ def search_magazines(mags=None, reset=False):
                                 regexA_year = 'fail'  # force date failure
 
                             # if frequency == "Weekly" or frequency == "BiWeekly":
-                            regexA_day = nzbtitle_exploded[len(nzbtitle_exploded) - 3].zfill(2)
+                            regexA_day = nzbtitle_exploded[len(nzbtitle_exploded) - 3].rstrip(',').zfill(2)
                             if regexA_day.isdigit():
                                 if int(regexA_day) > 31:  # probably issue number nn
                                     regexA_day = '01'
@@ -187,11 +187,11 @@ def search_magazines(mags=None, reset=False):
                                 # datetime will give a ValueError if not a good date or a param is not int
                                 date1 = datetime.date(int(regexA_year), int(regexA_month), int(regexA_day))
                             except ValueError:
-                                # regexB = MonthName DD YYYY
+                                # regexB = MonthName DD YYYY or MonthName DD, YYYY
                                 regexB_year = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
                                 regexB_month_temp = nzbtitle_exploded[len(nzbtitle_exploded) - 3]
                                 regexB_month = formatter.month2num(common.remove_accents(regexB_month_temp))
-                                regexB_day = nzbtitle_exploded[len(nzbtitle_exploded) - 2].zfill(2)
+                                regexB_day = nzbtitle_exploded[len(nzbtitle_exploded) - 2].rstrip(',').zfill(2)
                                 if not regexB_year.isdigit() or int(regexB_year) < 1900 or int(regexB_year) > 2100:
                                     regexB_year = 'fail'
 
