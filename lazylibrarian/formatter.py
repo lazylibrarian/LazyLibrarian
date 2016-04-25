@@ -137,7 +137,7 @@ def is_valid_booktype(filename, booktype=None):
         booktype_list = getList(lazylibrarian.MAG_TYPE)
     else:
         booktype_list = getList(lazylibrarian.EBOOK_TYPE)
-    extn = os.path.splitext(filename)[1]
+    extn = os.path.splitext(filename)[1].lstrip('.')
     if extn and extn.lower() in booktype_list:
         return True
     return False
