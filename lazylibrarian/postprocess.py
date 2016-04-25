@@ -106,6 +106,7 @@ def processDir(force=False, reset=False):
                         matchtitle = matchtitle.split(' LL.(')[0]
                     match = fuzz.token_set_ratio(matchtitle, matchname)
                     if match >= 95:
+                        fname = matchname
                         if os.path.isfile(os.path.join(processpath, fname)):
                             # handle single file downloads here...
                             if formatter.is_valid_booktype(fname, booktype="book") \
@@ -417,7 +418,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             logger.debug('Copying %s to directory %s' % (fname, dest_path))
             try:
                 shutil.copyfile(os.path.join(pp_path, fname), os.path.join(dest_path, global_name + '.' +
-                                                                           str(fname).split('.')[-1]))
+                                                                           fname.split('.')[-1]))
             except Exception as why:
                 logger.debug("Failed to copy file %s to %s, %s" % (fname, dest_path, str(why)))
                 return False
