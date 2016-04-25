@@ -228,17 +228,20 @@ def search_magazines(mags=None, reset=False):
                         else:
                             continue
 
-                        #  store all the _new_ matching results, mark as "skipped" for now
+                        #  store all the _new_ matching results, marking as "skipped" for now
                         #  we change the status to "wanted" on the ones we want to snatch later
                         #  don't add a new entry if this issue has been found on an earlier search
-                        mag_entry = myDB.select('SELECT * from wanted WHERE NZBurl="%s"' % nzburl)
+                        #  because status might have been user-set
+                        mag_entry = myDB.select('SELECT * from wanted WHERE NZBtitle="%s" and NZBprov="%s"' % (nzbtitle, nzbprov))
                         if not mag_entry:
-                            controlValueDict = {"NZBurl": nzburl}
+                            controlValueDict = {
+                                "NZBtitle": nzbtitle,
+                                "NZBprov": nzbprov
+                            }
                             newValueDict = {
-                                "NZBprov": nzbprov,
+                                "NZBurl": nzburl,
                                 "BookID": bookid,
                                 "NZBdate": nzbdate,
-                                "NZBtitle": nzbtitle,
                                 "AuxInfo": newdatish,
                                 "Status": "Skipped",
                                 "NZBsize": nzbsize,
