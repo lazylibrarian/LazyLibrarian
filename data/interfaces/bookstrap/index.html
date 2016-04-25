@@ -1,7 +1,4 @@
 <%inherit file="base.html"/>
-<%!
-    from lazylibrarian import formatter
-%>
 
 <%def name="headerIncludes()">
     <div id="subhead_container">
@@ -84,13 +81,6 @@
         $('#author_table').dataTable(
             {
                 "responsive": true,
-                "aoColumns": [
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
-                ],
                 "oLanguage": {
                     "sLengthMenu":"_MENU_ rows per page",
                     "sEmptyTable": "No authors found",

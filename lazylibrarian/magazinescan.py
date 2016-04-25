@@ -19,9 +19,8 @@ except ImportError:
 def create_cover(issuefile=None):
     if not lazylibrarian.IMP_CONVERT == 'None':  # special flag to say "no covers required"
         # create a thumbnail cover if there isn't one
-        if '.' in issuefile:
-            words = issuefile.split('.')
-            extn = '.' + words[len(words) - 1]
+        extn = os.path.splitext(issuefile)[1]
+        if extn:
             coverfile = issuefile.replace(extn, '.jpg')
         else:
             logger.debug('Unable to create cover for %s, no extension?' % issuefile)
