@@ -863,9 +863,8 @@ class WebInterface(object):
             covercount = 0
             for issue in issues:
                 magfile = issue['IssueFile']
-                if '.' in magfile:
-                    words = magfile.split('.')
-                    extn = '.' + words[len(words) - 1]
+                extn = os.path.splitext(magfile)[1]
+                if extn:
                     magimg = magfile.replace(extn, '.jpg')
                     if not os.path.isfile(magimg):
                         magimg = 'images/nocover.png'

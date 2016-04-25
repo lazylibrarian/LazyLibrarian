@@ -111,7 +111,7 @@ def processDir(force=False, reset=False):
                             # handle single file downloads here...
                             if formatter.is_valid_booktype(fname, booktype="book") \
                                 or formatter.is_valid_booktype(fname, booktype="mag"):
-                                dirname = os.path.join(processpath, fname.rsplit('.', 1)[0])
+                                dirname = os.path.join(processpath, os.path.splitext(fname)[0])
                                 if not os.path.exists(dirname):
                                     try:
                                         os.makedirs(dirname)
@@ -120,7 +120,7 @@ def processDir(force=False, reset=False):
                                 if os.path.exists(dirname):
                                     try:
                                         shutil.move(os.path.join(processpath, fname), os.path.join(dirname, fname))
-                                        fname = fname.rsplit('.', 1)[0]
+                                        fname = os.path.splitext(fname)[0]
                                     except Exception as why:
                                         logger.debug("Failed to move file %s to %s, %s" % 
                                             (fname, dirname, str(why)))                                         
@@ -417,10 +417,11 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 formatter.is_valid_booktype(fname, booktype=booktype):
             logger.debug('Copying %s to directory %s' % (fname, dest_path))
             try:
-                shutil.copyfile(os.path.join(pp_path, fname), os.path.join(dest_path, global_name + '.' +
-                                                                           fname.split('.')[-1]))
+                shutil.copyfile(os.path.join(pp_path, fname), os.path.join(
+                    dest_path, global_name + os.path.splitext(fname)[1]))
             except Exception as why:
-                logger.debug("Failed to copy file %s to %s, %s" % (fname, dest_path, str(why)))
+                logger.debug("Failed to copy file %s to %s, %s" % (
+                    fname, dest_path, str(why)))
                 return False
         else:
             logger.debug('Ignoring unwanted file: %s' % fname)

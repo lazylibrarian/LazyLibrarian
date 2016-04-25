@@ -26,12 +26,10 @@ def get_book_info(fname):
     # only handles epub, mobi and opf for now,
     # for pdf see below
     res = {}
-    if '.' not in fname:
+    extn = os.path.splitext(fname)[1]
+    if not extn:
         return res
-    words = fname.split('.')
-    extn = words[len(words) - 1]
-
-    if extn == "mobi":
+    if extn == ".mobi":
         try:
             book = Mobi(fname)
             book.parse()
@@ -50,7 +48,7 @@ def get_book_info(fname):
     # (author set to publisher, or software used)
     # so probably not much point in looking at pdfs
     #
-    # if (extn == "pdf"):
+    # if (extn == ".pdf"):
     #	  pdf = PdfFileReader(open(fname, "rb"))
     #	  txt = pdf.getDocumentInfo()
           # repackage the data here to get components we need
@@ -62,7 +60,7 @@ def get_book_info(fname):
     #	  return res
     """
 
-    if extn == "epub":
+    if extn == ".epub":
         # prepare to read from the .epub file
         zipdata = zipfile.ZipFile(fname)
         # find the contents metafile
@@ -84,7 +82,7 @@ def get_book_info(fname):
         tree = ElementTree.fromstring(txt)
         res['type'] = "epub"
     else:
-        if extn == "opf":
+        if extn == ".opf":
             txt = open(fname).read()
             tree = ElementTree.fromstring(txt)
             res['type'] = "opf"
@@ -288,11 +286,10 @@ def LibraryScan(dir=None):
                     isbn = ""
                     book = ""
                     author = ""
-                    words = files.split('.')
-                    extn = words[len(words) - 1]
-
+                    extn = os.path.splitext(files)[1]
+                    
                     # if it's an epub or a mobi we can try to read metadata from it
-                    if (extn == "epub") or (extn == "mobi"):
+                    if (extn == ".epub") or (extn == ".mobi"):
                         book_filename = os.path.join(
                             r.encode(lazylibrarian.SYS_ENCODING), files.encode(lazylibrarian.SYS_ENCODING))
 

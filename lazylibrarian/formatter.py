@@ -3,7 +3,7 @@ import re
 import lazylibrarian
 import shlex
 import time
-
+import os
 
 def next_run(when_run):
     now = time.time()
@@ -137,11 +137,9 @@ def is_valid_booktype(filename, booktype=None):
         booktype_list = getList(lazylibrarian.MAG_TYPE)
     else:
         booktype_list = getList(lazylibrarian.EBOOK_TYPE)
-    if '.' in filename:
-        words = filename.split('.')
-        extn = words[len(words) - 1]
-        if extn.lower() in booktype_list:
-            return True
+    extn = os.path.splitext(filename)[1]
+    if extn and extn.lower() in booktype_list:
+        return True
     return False
 
 

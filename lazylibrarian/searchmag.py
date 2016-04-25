@@ -3,7 +3,7 @@ import threading
 import urllib2
 import re
 import datetime
-
+import os
 import lazylibrarian
 
 from lazylibrarian import logger, database, formatter, providers, notifiers, common, postprocess
