@@ -651,9 +651,12 @@ DIV#log_table_wrapper
 {
 	padding-top: 17px;
 }
-DIV#main
+DIV#main 
 {
-	margin: 0;
+    position: relative;
+    float: bottom;
+    width: 100%; 
+    margin: 0;
 	padding: 86px 0 0 0px;
 }
 .table_wrapper_button

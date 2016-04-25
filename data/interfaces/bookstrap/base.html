@@ -77,7 +77,7 @@
     <div id="container">
                     
         <header>
-            <nav class="navbar navbar-default navbar-fixed-top">
+            <div id="headercontainer" class="navbar navbar-default navbar-fixed-top">
                 <div class="container">
                     <div class="navbar-header">
                         <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#MainNav" aria-expanded="false">
@@ -114,13 +114,13 @@
                         </form>                        
                     </div>
                 </div>
-            </nav>
             
-            <div id="subnav" class="navbar-inverse">
-                <div id="subhead" class="container">
-                    ${next.headerIncludes()}
+                <div id="subnav" class="navbar-inverse">
+                    <div id="subhead" class="container">
+                        ${next.headerIncludes()}
+                    </div>
                 </div>
-            </div>
+            </div>    
         </header>
 
         <div id="main" class="main container">

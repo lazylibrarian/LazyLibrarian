@@ -16,10 +16,20 @@ Bookstrap Styles
 /*    position: fixed; 
     top: 60px; 
     z-index: 1030; */
+    position: relative;
+    float: bottom;
     width: 100%; 
-    padding-top: 65px; 
+    padding-top: 10px; 
     padding-bottom: 5px; 
-    min-height: 46px;
+}
+#headercontainer {
+/*    position: fixed; 
+    top: 60px; 
+    z-index: 1030; */
+    position: relative;
+    float: top;
+    width: 100%; 
+    padding-top: 10px;  
 }
 .bookcover-sm {
     width: 100px;
