@@ -197,7 +197,7 @@ def getBookCover(bookID=None):
     if os.path.isfile(coverfile):  # use cached image if there is one
         lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
         logger.debug(u"getBookCover: Returning Cached response for %s" % coverfile)
-        coverlink = os.path.join('images' + os.sep + 'cache', bookID + '.jpg')
+        coverlink = 'images/cache/' + bookID + '.jpg'
         return coverlink
                 
     lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1    
@@ -292,7 +292,7 @@ def cache_cover(bookID, img_url):
     if not os.path.isdir(cachedir):
         os.makedirs(cachedir)
     coverfile = os.path.join(cachedir, bookID + '.jpg')
-    link = 'images' + os.sep + 'cache' + os.sep + bookID + '.jpg'
+    link = 'images/cache/' + bookID + '.jpg'
     #if os.path.isfile(coverfile):  # overwrite any cached image
     #    return link
 
