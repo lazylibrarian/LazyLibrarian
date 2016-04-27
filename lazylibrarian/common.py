@@ -197,7 +197,7 @@ def cleanCache():
                 cleaned += 1
             else:
                 kept += 1
-        logger.info("Cleaned %i files from JSONCache, kept %i" % (cleaned, kept))
+        logger.debug("Cleaned %i files from JSONCache, kept %i" % (cleaned, kept))
         
     cache = os.path.join(lazylibrarian.CACHEDIR, "XMLCache")
     cleaned = 0
@@ -213,7 +213,7 @@ def cleanCache():
                 cleaned += 1
             else:
                 kept += 1
-        logger.info("Cleaned %i files from XMLCache, kept %i" % (cleaned, kept))
+        logger.debug("Cleaned %i files from XMLCache, kept %i" % (cleaned, kept))
         
     cache = os.path.join(lazylibrarian.CACHEDIR, "WorkCache")
     cleaned = 0
@@ -233,7 +233,7 @@ def cleanCache():
                 cleaned += 1
             else:
                 kept += 1
-        logger.info("Cleaned %i files from WorkCache, kept %i" % (cleaned, kept))
+        logger.debug("Cleaned %i files from WorkCache, kept %i" % (cleaned, kept))
  
     cache = os.path.join(lazylibrarian.PROG_DIR, 'data' + os.sep + 'images' + os.sep + 'cache')
     cleaned = 0
@@ -253,7 +253,7 @@ def cleanCache():
                 cleaned += 1
             else:
                 kept += 1
-        logger.info("Cleaned %i files from ImageCache, kept %i" % (cleaned, kept))
+        logger.debug("Cleaned %i files from ImageCache, kept %i" % (cleaned, kept))
         
         # correct any '\' separators in the BookImg links
         cleaned = 0
@@ -263,8 +263,7 @@ def cleanCache():
             newname = oldname.replace('\\', '/')
             myDB.action('update books set BookImg="%s" where BookImg="%s"' % (newname, oldname))
             cleaned += 1
-        if cleaned:
-            logger.info("Corrected %i filenames in ImageCache" % cleaned)
+        logger.debug("Corrected %i filenames in ImageCache" % cleaned)
         
         # verify the cover images referenced in the database are present
         covers = myDB.action('select BookImg,BookName,BookID from books')
@@ -282,5 +281,5 @@ def cleanCache():
                 myDB.action('update books set BookImg="images/nocover.png" where Bookid="%s"' % item['BookID'])
             else:
                 kept += 1
-        logger.info("Cleaned %i missing cover files, kept %i" % (cleaned, kept))
+        logger.debug("Cleaned %i missing cover files, kept %i" % (cleaned, kept))
         
