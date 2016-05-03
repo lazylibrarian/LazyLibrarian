@@ -162,6 +162,7 @@ DELUGE_PORT = 0
 DELUGE_HOST = None
 DELUGE_USER = None
 DELUGE_PASS = None
+DELUGE_LABEL = None
 
 KAT = 0
 KAT_HOST = None
@@ -415,7 +416,7 @@ def config_read(reloaded=False):
             USE_ANDROIDPN, ANDROIDPN_NOTIFY_ONSNATCH, ANDROIDPN_NOTIFY_ONDOWNLOAD, \
             ANDROIDPN_URL, ANDROIDPN_USERNAME, ANDROIDPN_BROADCAST, \
             TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PORT, TRANSMISSION_PASS, TRANSMISSION_USER, \
-            TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, \
+            TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, DELUGE_LABEL, \
             FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, \
             USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
             GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, \
@@ -693,6 +694,7 @@ def config_read(reloaded=False):
         DELUGE_PORT = check_setting_int(CFG, 'DELUGE', 'deluge_port', 0)
         DELUGE_USER = check_setting_str(CFG, 'DELUGE', 'deluge_user', '')
         DELUGE_PASS = check_setting_str(CFG, 'DELUGE', 'deluge_pass', '')
+        DELUGE_LABEL = check_setting_str(CFG, 'DELUGE', 'deluge_label', '')
 
         KAT = check_setting_bool(CFG, 'KAT', 'kat', 0)
         KAT_HOST = check_setting_str(CFG, 'KAT', 'kat_host', 'kat.cr')
@@ -943,6 +945,7 @@ def config_write():
     CFG.set('DELUGE', 'deluge_port', DELUGE_PORT)
     CFG.set('DELUGE', 'deluge_user', DELUGE_USER)
     CFG.set('DELUGE', 'deluge_pass', DELUGE_PASS)
+    CFG.set('DELUGE', 'deluge_label', DELUGE_LABEL)
 #
     check_section('KAT')
     CFG.set('KAT', 'kat', KAT)
