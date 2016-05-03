@@ -21,6 +21,7 @@ from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
+from lib.deluge_client import DelugeRPCClient
 
 import lib.simplejson as simplejson
 
@@ -1486,3 +1487,35 @@ class WebInterface(object):
         # + iDisplayLength))
         return s
     getManage.exposed = True
+    
+    @cherrypy.expose
+    def testDeluge(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        try:
+            client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
+                int(lazylibrarian.DELUGE_PORT),
+                lazylibrarian.DELUGE_USER,
+                lazylibrarian.DELUGE_PASS)
+            client.connect()  
+            if lazylibrarian.DELUGE_LABEL:
+                labels = client.call('label.get_labels')
+                if not lazylibrarian.DELUGE_LABEL in labels:
+                    msg = "Deluge: Unknown label [%s]\n" % lazylibrarian.DELUGE_LABEL
+                    if labels:
+                        msg += "Valid labels:\n"
+                        for label in labels:
+                            msg += '%s\n' % label
+                    else:
+                        msg += "Deluge seems to have no labels set"
+                    return msg
+            return "Deluge: Connection Successful"
+        except Exception as e:
+            msg = "Deluge: Connect FAILED\n"
+            if 'Connection refused' in str(e):
+                msg += str(e)
+                msg += "Check Deluge HOST and PORT settings"
+            elif 'need more than 1 value' in str(e):
+                msg += "Invalid USERNAME or PASSWORD"
+            else:
+                msg += str(e)
+            return msg 

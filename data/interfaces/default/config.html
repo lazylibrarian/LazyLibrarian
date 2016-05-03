@@ -346,6 +346,9 @@
                                     <label>Deluge Label:</label>
                                     <input type="text" name="deluge_label" value="${lazylibrarian.DELUGE_LABEL}" size="26">
                                 </div>
+                                <div class="row">
+                                    <input type="button" value="Test Deluge" id="testDeluge" style="float:right;">
+                                </div>
                             </fieldset>
 
                              <div class="row checkbox">
@@ -1483,6 +1486,12 @@
                     
             });
             
+            $('#testDeluge').click(function () {
+                $.get("testDeluge",
+                    function (data) { alert(data); });
+                    
+            });
+
             $('#twitterStep1').click(function () {
                 $('#testTwitter-result').html('');
                 $.get("twitterStep1", function (data) {window.open(data); })

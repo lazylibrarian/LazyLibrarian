@@ -438,6 +438,11 @@
                                                         <label for="deluge_label" class="control-label">Deluge Label:</label>
                                                         <input type="text" id="deluge_label" name="deluge_label" value="${lazylibrarian.DELUGE_LABEL}" class="form-control" placeholder="Deluge Label">
                                                     </div>
+                                                    <div class="form-group col-md-6">
+                                                        <label for="testDeluge" class="control-label">Deluge Connection:</label><br>
+                                                        <button class="button btn btn-sm btn-primary" type="button" value="Test Deluge" id="testDeluge"><i class="fa fa-list-ul"></i> Test Deluge</button>
+                                                        <br><br>
+                                                    </div>
                                                 </div>
                                             </fieldset>
 
@@ -1542,6 +1547,21 @@
                 $.get('restartJobs', function(data) {
                     bootbox.dialog({
                         title: 'Restarted Jobs',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
+            });
+            
+            $('#testDeluge').on('click', function(e) {
+                $.get('testDeluge', function(data) {
+                    bootbox.dialog({
+                        title: 'Deluge Connection',
                         message: '<pre>'+data+'</pre>',
                         buttons: {
                             primary: {
