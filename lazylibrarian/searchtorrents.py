@@ -278,10 +278,10 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             if lazylibrarian.DELUGE_PASS and lazylibrarian.DELUGE_USER:
                 client.connect()
                 args = {"name": tor_title}
-                torrent_id = client.call('core.add_torrent_url', tor_url, args)
-                logger.debug('Deluge return value: %s' % torrent_id)
-                if torrent_id and lazylibrarian.DELUGE_LABEL:
-                    labelled = client.call('label.set_torrent', torrent_id, lazylibrarian.DELUGE_LABEL)
+                download = client.call('core.add_torrent_url', tor_url, args)
+                logger.debug('Deluge torrent_id: %s' % download)
+                if download and lazylibrarian.DELUGE_LABEL:
+                    labelled = client.call('label.set_torrent', download, lazylibrarian.DELUGE_LABEL)
                     logger.debug('Deluge label returned: %s' % labelled)
             else:
                 logger.warn('Need user and password for deluge, check config.')
@@ -289,8 +289,8 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         logger.warn('No torrent download method is enabled, check config.')
         return False
 
-    if torrent_id:
-        logger.debug(u'Torrent id %s has been downloaded from %s' % (torrent_id, tor_url))
+    if download:
+        logger.debug(u'Torrent id %s has been downloaded from %s' % (download, tor_url))
         myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
         myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl="%s"' % full_url)
         return True
