@@ -1,9 +1,9 @@
-import logging
+
 import socket
 import ssl
 import struct
 import zlib
-
+from lazylibrarian import logger
 from .rencode import dumps, loads
 
 RPC_RESPONSE = 1
@@ -13,7 +13,7 @@ RPC_EVENT = 3
 #MESSAGE_HEADER_SIZE = 5
 READ_SIZE = 10
 
-logger = logging.getLogger(__name__)
+#logger = logging.getLogger(__name__)
 
 class ConnectionLostException(Exception):
     pass

@@ -96,8 +96,10 @@ class WebInterface(object):
                      notfound_status='Skipped', newbook_status='Skipped', full_scan=0, add_author=0,
                      tor_downloader_transmission=0, transmission_host='', transmission_port=0, transmission_user='',
                      transmission_pass='', tor_downloader_deluge=0, deluge_host='', deluge_user='',
-                     deluge_pass='', deluge_port=0, use_boxcar=0, boxcar_notify_onsnatch=0,
-                     boxcar_notify_ondownload=0, boxcar_token='', use_pushbullet=0, pushbullet_notify_onsnatch=0,
+                     deluge_pass='', deluge_port=0, deluge_label='',
+                     use_boxcar=0, boxcar_notify_onsnatch=0,
+                     boxcar_notify_ondownload=0, boxcar_token='',
+                     use_pushbullet=0, pushbullet_notify_onsnatch=0,
                      pushbullet_notify_ondownload=0, pushbullet_token='', pushbullet_deviceid='',
                      use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys='',
                      pushover_apitoken='', pushover_ondownload=0, pushover_device='',
@@ -197,6 +199,7 @@ class WebInterface(object):
         lazylibrarian.DELUGE_PORT = formatter.check_int(deluge_port, 0)
         lazylibrarian.DELUGE_USER = deluge_user
         lazylibrarian.DELUGE_PASS = deluge_pass
+        lazylibrarian.DELUGE_LABEL = deluge_label
 
         lazylibrarian.KAT = bool(kat)
         lazylibrarian.KAT_HOST = kat_host

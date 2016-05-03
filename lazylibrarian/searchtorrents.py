@@ -256,37 +256,41 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             logger.debug('Torrent file saved: %s' % tor_title)
             download = True
 
-        if  lazylibrarian.TOR_DOWNLOADER_UTORRENT:
+        if  (lazylibrarian.TOR_DOWNLOADER_UTORRENT and lazylibrarian.UTORRENT_HOST):
             logger.debug("Sending %s to Utorrent" % tor_title)
             hash = CalcTorrentHash(torrent)
             download = utorrent.addTorrent(tor_url, hash)
 
-        if  lazylibrarian.TOR_DOWNLOADER_QBITTORRENT:
+        if  (lazylibrarian.TOR_DOWNLOADER_QBITTORRENT and lazylibrarian.QBITTORRENT_HOST):
             logger.debug("Sending %s to qbittorrent" % tor_title)
             download = qbittorrent.addTorrent(tor_url)
 
-        if  lazylibrarian.TOR_DOWNLOADER_TRANSMISSION:
+        if  (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION and lazylibrarian.TRANSMISSION_HOST):
             logger.debug("Sending %s to Transmission" % tor_title)
             download = transmission.addTorrent(tor_url)
 
-        if  lazylibrarian.TOR_DOWNLOADER_DELUGE:
+        if  (lazylibrarian.TOR_DOWNLOADER_DELUGE and lazylibrarian.DELUGE_HOST):
             logger.debug("Sending %s to Deluge" % tor_title)
             client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
                                      int(lazylibrarian.DELUGE_PORT),
                                      lazylibrarian.DELUGE_USER,
                                      lazylibrarian.DELUGE_PASS)
-            if lazylibrarian.DELUGE_USER and lazylibrarian.DELUGE_PASS:
+            if lazylibrarian.DELUGE_PASS and lazylibrarian.DELUGE_USER:
                 client.connect()
-                download = client.call('core.add_torrent_url', tor_url, {"name": tor_title})
-                logger.debug('Deluge return value: %s' % download)
+                args = {"name": tor_title}
+                torrent_id = client.call('core.add_torrent_url', tor_url, args)
+                logger.debug('Deluge return value: %s' % torrent_id)
+                if torrent_id and lazylibrarian.DELUGE_LABEL:
+                    labelled = client.call('label.set_torrent', torrent_id, lazylibrarian.DELUGE_LABEL)
+                    logger.debug('Deluge label returned: %s' % labelled)
             else:
-                logger.warn('Need user & pass for deluge, check config.')
+                logger.warn('Need user and password for deluge, check config.')
     else:
         logger.warn('No torrent download method is enabled, check config.')
         return False
 
-    if download:
-        logger.debug(u'Torrent file has been downloaded from %s' % tor_url)
+    if torrent_id:
+        logger.debug(u'Torrent id %s has been downloaded from %s' % (torrent_id, tor_url))
         myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
         myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl="%s"' % full_url)
         return True

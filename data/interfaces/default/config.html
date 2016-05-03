@@ -342,6 +342,10 @@
                                     <label>Password:</label>
                                     <input type="password" name="deluge_pass" value="${lazylibrarian.DELUGE_PASS}" size="26">
                                 </div>
+                                <div class="row">
+                                    <label>Deluge Label:</label>
+                                    <input type="text" name="deluge_label" value="${lazylibrarian.DELUGE_LABEL}" size="26">
+                                </div>
                             </fieldset>
 
                              <div class="row checkbox">
@@ -1500,13 +1504,11 @@
             $('#testPushbullet').click(function () {
                 $.get("testPushbullet",
                     function (data) { alert(data); });
-                    
             });
 
             $('#testPushover').click(function () {
                 $.get("testPushover",
                     function (data) { alert(data); });
-                    
             });
 
             $('#testNMA').click(function () {
