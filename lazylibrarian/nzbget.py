@@ -43,9 +43,18 @@ def sendNZB(nzb):
         nzb = None    
     addToTop = False
     nzbgetXMLrpc = "%(username)s:%(password)s@%(host)s:%(port)s/xmlrpc"
+
+    if lazylibrarian.NZBGET_HOST is None:
+        logger.error(u"No NZBget host found in configuration. Please configure it.")
+        return False
+
     host = lazylibrarian.NZBGET_HOST
-    if not host.startswith('http'):
-        host = 'http://' + host
+    if host.startswith('https://'):
+        nzbgetXMLrpc = 'https://' + nzbgetXMLrpc
+        host.replace('https://', '', 1)
+    else:
+        nzbgetXMLrpc = 'http://' + nzbgetXMLrpc
+        host.replace('http://', '', 1)
     
     url = nzbgetXMLrpc % {"host": host, "username": lazylibrarian.NZBGET_USER,
                           "port": lazylibrarian.NZBGET_PORT, "password": lazylibrarian.NZBGET_PASS}
