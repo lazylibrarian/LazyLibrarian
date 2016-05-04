@@ -6,8 +6,30 @@ import datetime
 
 import lazylibrarian
 
-from lazylibrarian import logger, database
+from lazylibrarian import logger, database, formatter
 
+def checkLink():
+    # connection test, check host/port
+    auth = SABnzbd(nzburl='auth')
+    if not auth:
+        return "Unable to talk to SABnzbd, check HOST/PORT"
+    # check apikey is valid
+    cats = SABnzbd(nzburl='get_cats')
+    if not cats:
+        return "Unable to talk to SABnzbd, check APIKEY"
+    # check category exists
+    if lazylibrarian.SAB_CAT:
+        catlist = formatter.getList(cats)
+        if not lazylibrarian.SAB_CAT in catlist:
+            msg = "SABnzbd: Unknown category [%s]\n" % lazylibrarian.SAB_CAT
+            if catlist:
+                msg += "Valid categories:\n"
+                for cat in catlist:
+                    msg += '%s\n' % cat
+            else:
+                msg += "SABnzbd seems to have no categories set"
+            return msg
+    return "SABnzbd connection successful"
 
 def SABnzbd(title=None, nzburl=None):
 
@@ -19,22 +41,29 @@ def SABnzbd(title=None, nzburl=None):
         HOST = HOST + "/" + lazylibrarian.SAB_SUBDIR
 
     params = {}
-
-    params['mode'] = 'addurl'
-    params['name'] = nzburl
-    params['nzbname'] = title
-
-    if lazylibrarian.SAB_USER:
-        params['ma_username'] = lazylibrarian.SAB_USER
-    if lazylibrarian.SAB_PASS:
-        params['ma_password'] = lazylibrarian.SAB_PASS
-    if lazylibrarian.SAB_API:
-        params['apikey'] = lazylibrarian.SAB_API
-    if lazylibrarian.SAB_CAT:
-        params['cat'] = lazylibrarian.SAB_CAT
-
-    if lazylibrarian.USENET_RETENTION:
-        params["maxage"] = lazylibrarian.USENET_RETENTION
+    
+    if nzburl == 'auth' or nzburl == 'get_cats':
+        params['mode'] = nzburl 
+        if lazylibrarian.SAB_API:
+            params['apikey'] = lazylibrarian.SAB_API
+        title = 'Test ' + nzburl 
+        # connection test, check auth mode or get_cats
+    else:
+        params['mode'] = 'addurl'
+        if nzburl:
+            params['name'] = nzburl
+        if title:
+            params['nzbname'] = title
+        if lazylibrarian.SAB_USER:
+            params['ma_username'] = lazylibrarian.SAB_USER
+        if lazylibrarian.SAB_PASS:
+            params['ma_password'] = lazylibrarian.SAB_PASS
+        if lazylibrarian.SAB_API:
+            params['apikey'] = lazylibrarian.SAB_API
+        if lazylibrarian.SAB_CAT:
+            params['cat'] = lazylibrarian.SAB_CAT
+        if lazylibrarian.USENET_RETENTION:
+            params["maxage"] = lazylibrarian.USENET_RETENTION
 
 # FUTURE-CODE
 #    if lazylibrarian.SAB_PRIO:
@@ -70,6 +99,8 @@ def SABnzbd(title=None, nzburl=None):
     if result == "ok":
         logger.info(title + " sent to SAB successfully.")
         return True
+    elif title.startswith('Test'):
+        return result
     elif result == "Missing authentication":
         logger.error("Incorrect username/password.")
         return False

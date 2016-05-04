@@ -14,7 +14,8 @@ import urllib
 import lazylibrarian
 
 from lazylibrarian import logger, importer, database, postprocess, formatter, \
-    notifiers, librarysync, versioncheck, magazinescan, common, bookwork
+    notifiers, librarysync, versioncheck, magazinescan, common, bookwork, \
+    qbittorrent, utorrent, transmission, sabnzbd, nzbget
 from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
 from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
 from lazylibrarian.searchmag import search_magazines
@@ -1519,3 +1520,29 @@ class WebInterface(object):
             else:
                 msg += str(e)
             return msg 
+
+    @cherrypy.expose
+    def testSABnzbd(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        return sabnzbd.checkLink()
+
+    @cherrypy.expose
+    def testNZBget(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        return nzbget.checkLink()
+
+    @cherrypy.expose
+    def testTransmission(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        return transmission.checkLink()
+
+    @cherrypy.expose
+    def testqBittorrent(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        return qbittorrent.checkLink()
+
+    @cherrypy.expose
+    def testuTorrent(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        return utorrent.checkLink()
+        

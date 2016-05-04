@@ -333,6 +333,11 @@
                                                     <label for="usenet_retention" class="control-label">Retention Max Age:</label>
                                                     <input type="text" id="usenet_retention" name="usenet_retention" value="${lazylibrarian.USENET_RETENTION}" class="form-control" placeholder="Retention MAximum Age">
                                                 </div>
+                                                    <div class="form-group col-md-6">
+                                                        <label for="testSABnzbd" class="control-label">SABnzbd Connection:</label><br>
+                                                        <button class="button btn btn-sm btn-primary" type="button" value="Test SABnzbd" id="testSABnzbd"><i class="fa fa-list-ul"></i> Test SABnzbd</button>
+                                                        <br><br>
+                                                    </div>
                                             </fieldset>
 
                                             <div class="checkbox">
@@ -375,6 +380,11 @@
                                                     <label for="nzbget_priority">Priority:</label>
                                                     <input type="text" id="nzbget_priority" name="nzbget_priority" value="${lazylibrarian.NZBGET_PRIORITY}" class="form-control" placeholder="NZBGet Priority">
                                                 </div>
+                                                    <div class="form-group col-md-6">
+                                                        <label for="testNZBget" class="control-label">NZBget Connection:</label><br>
+                                                        <button class="button btn btn-sm btn-primary" type="button" value="Test NZBget" id="testNZBget"><i class="fa fa-list-ul"></i> Test NZBget</button>
+                                                        <br><br>
+                                                    </div>
                                             </fieldset>
 
                                             <div class="checkbox">
@@ -477,6 +487,11 @@
                                                         <input type="password" id="transmission_pass" name="transmission_pass" value="${lazylibrarian.TRANSMISSION_PASS}" class="form-control" placeholder="Transmission Password">
                                                     </div>
                                                 </div>
+                                                    <div class="form-group col-md-6">
+                                                        <label for="testTransmission" class="control-label">Transmission Connection:</label><br>
+                                                        <button class="button btn btn-sm btn-primary" type="button" value="Test Transmission" id="testTransmission"><i class="fa fa-list-ul"></i> Test Transmission</button>
+                                                        <br><br>
+                                                    </div>
                                             </fieldset>
 
                                              <div class="checkbox">
@@ -514,6 +529,11 @@
                                                     <label for="utorrent_label" class="control-label">uTorrent Label:</label>
                                                     <input type="text" id="utorrent_label" name="utorrent_label" value="${lazylibrarian.UTORRENT_LABEL}" class="form-control" placeholder="uTorrent Label">
                                                 </div>
+                                                    <div class="form-group col-md-6">
+                                                        <label for="testuTorrent" class="control-label">uTorrent Connection:</label><br>
+                                                        <button class="button btn btn-sm btn-primary" type="button" value="Test uTorrent" id="testuTorrent"><i class="fa fa-list-ul"></i> Test uTorrent</button>
+                                                        <br><br>
+                                                    </div>
                                             </fieldset>
                                              <div class="checkbox">
                                                 <%
@@ -550,6 +570,11 @@
                                                     <label for="qbittorrent_label" class="control-label">qBitTorrent Label:</label>
                                                     <input type="text" id="qbittorrent_label" name="qbittorrent_label" value="${lazylibrarian.QBITTORRENT_LABEL}" class="form-control" placeholder="qBitTorrent Label">
                                                 </div>
+                                                    <div class="form-group col-md-6">
+                                                        <label for="testqBittorrent" class="control-label">qBittorrent Connection:</label><br>
+                                                        <button class="button btn btn-sm btn-primary" type="button" value="Test qBittorrent" id="testqBittorrent"><i class="fa fa-list-ul"></i> Test qBittorrent</button>
+                                                        <br><br>
+                                                    </div>
                                             </fieldset>
                                             <div class="checkbox">
                                                 <%
@@ -1558,10 +1583,85 @@
                 });
             });
             
+            $('#testSABnzbd').on('click', function(e) {
+                $.get('testSABnzbd', function(data) {
+                    bootbox.dialog({
+                        title: 'SABnzbd Connection',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
+            });
+
+            $('#testNZBget').on('click', function(e) {
+                $.get('testNZBget', function(data) {
+                    bootbox.dialog({
+                        title: 'NZBget Connection',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
+            });
+            
             $('#testDeluge').on('click', function(e) {
                 $.get('testDeluge', function(data) {
                     bootbox.dialog({
                         title: 'Deluge Connection',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
+            });
+            
+            $('#testTransmission').on('click', function(e) {
+                $.get('testTransmission', function(data) {
+                    bootbox.dialog({
+                        title: 'Transmission Connection',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
+            });
+            
+            $('#testqBittorrent').on('click', function(e) {
+                $.get('testqBittorrent', function(data) {
+                    bootbox.dialog({
+                        title: 'qBittorrent Connection',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
+            });
+            
+            $('#testuTorrent').on('click', function(e) {
+                $.get('testuTorrent', function(data) {
+                    bootbox.dialog({
+                        title: 'uTorrent Connection',
                         message: '<pre>'+data+'</pre>',
                         buttons: {
                             primary: {
