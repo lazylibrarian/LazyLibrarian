@@ -46,8 +46,8 @@ class qbittorrentclient(object):
 
         if host.endswith('/gui'):
             host = host[:-4]
-        
-        host = host + ':' + lazylibrarian.QBITTORRENT_PORT
+    
+        host = "%s:%s" % (host, lazylibrarian.QBITTORRENT_PORT)
         self.base_url = host
         self.username = lazylibrarian.QBITTORRENT_USER
         self.password = lazylibrarian.QBITTORRENT_PASS
@@ -66,8 +66,9 @@ class qbittorrentclient(object):
         login_data = urllib.urlencode({'username': username, 'password': password})
         try:
             response = self.opener.open(base_url + '/login', login_data)
-        except urllib2.URLError as err:
-            logger.debug('Error getting SID. qBittorrent responded with error: %s' % err.reason)
+        except Exception as err:
+            logger.debug('Error getting SID. qBittorrent responded with error: %s' % str(err))
+            logger.debug('Unable to log in to %s/login' % base_url)
             return
         for cookie in self.cookiejar:
             logger.debug('login cookie: ' + cookie.name + ', value: ' + cookie.value)
@@ -185,7 +186,20 @@ def removeTorrent(hash, remove_data=False):
                 return False
     return False
 
-
+def checkLink():
+    """ Check we can talk to qbittorrent"""
+    try:
+        qbclient = qbittorrentclient()
+        if len(qbclient.cookiejar):
+            # qbittorrent creates a new label if needed
+            # can't see how to get a list of known labels
+            if lazylibrarian.QBITTORRENT_LABEL:
+                return "qBittorrent login successful, label not checked"
+            return "qBittorrent login successful"
+        return "qBittorrent login FAILED\nCheck debug log"
+    except Exception as e:
+        return "qBittorrent login FAILED: %s" % e
+        
 def addTorrent(link):
     logger.debug('addTorrent(%s)' % link)
 

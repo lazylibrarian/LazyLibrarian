@@ -26,36 +26,52 @@ import lazylibrarian
 
 from base64 import standard_b64encode
 import xmlrpclib
+import socket
 
 from lazylibrarian import logger
-
+       
+def checkLink():
+    #socket.setdefaulttimeout(2)
+    test = sendNZB("test")
+    #socket.setdefaulttimeout(None)
+    if test:
+        return "NZBget connection successful"
+    return "NZBget connection FAILED\nCheck debug log"
 
 def sendNZB(nzb):
-
+    if nzb == "test":
+        nzb = None    
     addToTop = False
     nzbgetXMLrpc = "%(username)s:%(password)s@%(host)s:%(port)s/xmlrpc"
-
-    if lazylibrarian.NZBGET_HOST is None:
-        logger.error(u"No NZBget host found in configuration. Please configure it.")
-        return False
-
-    if lazylibrarian.NZBGET_PORT is 0:
-        logger.error(u"No NZBget port found in configuration. Please configure it.")
-        return False
-
     host = lazylibrarian.NZBGET_HOST
     if not host.startswith('http'):
         host = 'http://' + host
-
+    
     url = nzbgetXMLrpc % {"host": host, "username": lazylibrarian.NZBGET_USER,
                           "port": lazylibrarian.NZBGET_PORT, "password": lazylibrarian.NZBGET_PASS}
-    
-    nzbGetRPC = xmlrpclib.ServerProxy(url)
     try:
-        if nzbGetRPC.writelog("INFO", "lazylibrarian connected to drop off %s any moment now." % (nzb.name + ".nzb")):
+        nzbGetRPC = xmlrpclib.ServerProxy(url)
+    except Exception as err:
+        logger.debug("NZBget connection to %s failed: %s" % (url, err))
+        return False
+        
+    if nzb is None:
+        msg = "lazylibrarian connection test"
+    else:
+        msg = "lazylibrarian connected to drop off %s any moment now." % (nzb.name + ".nzb")
+
+    try:
+        if nzbGetRPC.writelog("INFO", msg):
             logger.debug(u"Successfully connected to NZBget")
+            if nzb is None:
+                # should check nzbget category is valid
+                return True
         else:
-            logger.info(u"Successfully connected to NZBget, but unable to send %s" % (nzb.name + ".nzb"))
+            if nzb is None:
+                logger.debug(u"Successfully connected to NZBget, unable to send message")
+                return False
+            else:
+                logger.info(u"Successfully connected to NZBget, but unable to send %s" % (nzb.name + ".nzb"))
 
     except httplib.socket.error as e:
         logger.error(u"Please check your NZBget host and port (if it is running). \
@@ -137,3 +153,4 @@ def sendNZB(nzb):
     except Exception as e:
         logger.error(u"Connect Error to NZBget: could not add %s to the queue: %s" % (nzb.name + ".nzb", e))
         return False
+ 

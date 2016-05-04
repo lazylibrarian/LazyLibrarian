@@ -36,14 +36,14 @@ class utorrentclient(object):
         host = lazylibrarian.UTORRENT_HOST
         if not host.startswith('http'):
             host = 'http://' + host
-
+            
         if host.endswith('/'):
             host = host[:-1]
-
+            
         if host.endswith('/gui'):
             host = host[:-4]
             
-        host = host + ':' + lazylibrarian.UTORRENT_PORT
+        host = "%s:%s" % (host, lazylibrarian.UTORRENT_PORT)
         self.base_url = host
         self.username = lazylibrarian.UTORRENT_USER
         self.password = lazylibrarian.UTORRENT_PASS
@@ -69,9 +69,10 @@ class utorrentclient(object):
         url = urlparse.urljoin(self.base_url, 'gui/token.html')
         try:
             response = self.opener.open(url)
-        except urllib2.HTTPError as err:
+        except Exception as err:
             logger.debug('URL: %s' % url)
             logger.debug('Error getting Token. uTorrent responded with error: ' + str(err))
+            return None
         match = re.search(utorrentclient.TOKEN_REGEX, response.read())
         return match.group(1)
 
@@ -148,7 +149,21 @@ class utorrentclient(object):
             logger.debug('URL: %s' % url)
             logger.debug('uTorrent webUI raised the following error: ' + str(err))
 
-
+def checkLink():
+    """ Check we can talk to utorrent"""
+    try:
+        client = utorrentclient()
+        if client.token:
+            # we would also like to check lazylibrarian.utorrent_label
+            # but uTorrent only sends us a list of labels that have active torrents
+            # so we can't tell if our label is known, or does it get created anyway?
+            if lazylibrarian.UTORRENT_LABEL:
+                return "uTorrent login successful, label not checked"
+            return "uTorrent login successful"
+        return "uTorrent login FAILED\nCheck debug log"
+    except Exception as e:
+        return "uTorrent login FAILED: %s" % str(e)
+        
 def labelTorrent(hash):
     label = lazylibrarian.UTORRENT_LABEL
     uTorrentClient = utorrentclient()
