@@ -240,7 +240,8 @@ def _get_auth():
     try:
         response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
         #                                  , verify=TORRENT_VERIFY_CERT)
-    except Exception:
+    except Exception as err:
+        logger.debug('Deluge: auth.login returned %s' % err)
         return None
 
     auth = json.loads(response.text)["result"]
@@ -252,7 +253,8 @@ def _get_auth():
     try:
         response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
         #                                  , verify=TORRENT_VERIFY_CERT)
-    except Exception:
+    except Exception as err:
+        logger.debug('Deluge: web.connected returned %s' % err)
         return None
 
     connected = json.loads(response.text)['result']
@@ -264,7 +266,8 @@ def _get_auth():
         try:
             response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
             #                                  , verify=TORRENT_VERIFY_CERT)
-        except Exception:
+        except Exception as err:
+            logger.debug('Deluge: web.get_hosts returned %s' % err)
             return None
 
         delugeweb_hosts = json.loads(response.text)['result']
@@ -279,7 +282,8 @@ def _get_auth():
         try:
             response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
             #                                  , verify=TORRENT_VERIFY_CERT)
-        except Exception:
+        except Exception as err:
+            logger.debug('Deluge: web.connect returned %s' % err)
             return None
 
         post_data = json.dumps({"method": "web.connected",
@@ -289,7 +293,8 @@ def _get_auth():
         try:
             response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
             #                                  , verify=TORRENT_VERIFY_CERT)
-        except Exception:
+        except Exception as err:
+            logger.debug('Deluge: web.connected returned %s' % err)
             return None
 
         connected = json.loads(response.text)['result']
