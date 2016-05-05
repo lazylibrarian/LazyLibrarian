@@ -9,7 +9,7 @@ from hashlib import sha1
 
 import lazylibrarian
 
-from lazylibrarian import logger, database, formatter, providers, notifiers, utorrent, transmission, qbittorrent
+from lazylibrarian import logger, database, formatter, providers, notifiers, utorrent, transmission, qbittorrent, deluge
 
 from lib.deluge_client import DelugeRPCClient
 
@@ -271,11 +271,15 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
 
         if  (lazylibrarian.TOR_DOWNLOADER_DELUGE and lazylibrarian.DELUGE_HOST):
             logger.debug("Sending %s to Deluge" % tor_title)
-            client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
+            if not lazylibrarian.DELUGE_USER:
+                # no username, talk to the webui
+                download = deluge.addTorrent(tor_url)
+            else:
+                # have username, talk to the daemon
+                client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
                                      int(lazylibrarian.DELUGE_PORT),
                                      lazylibrarian.DELUGE_USER,
                                      lazylibrarian.DELUGE_PASS)
-            if lazylibrarian.DELUGE_PASS and lazylibrarian.DELUGE_USER:
                 client.connect()
                 args = {"name": tor_title}
                 download = client.call('core.add_torrent_url', tor_url, args)
@@ -283,8 +287,6 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                 if download and lazylibrarian.DELUGE_LABEL:
                     labelled = client.call('label.set_torrent', download, lazylibrarian.DELUGE_LABEL)
                     logger.debug('Deluge label returned: %s' % labelled)
-            else:
-                logger.warn('Need user and password for deluge, check config.')
     else:
         logger.warn('No torrent download method is enabled, check config.')
         return False
