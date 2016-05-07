@@ -307,6 +307,7 @@ def import_book(pp_path=None, bookID=None):
             myDB.upsert("wanted", newValueDict, controlValueDict)
             processExtras(myDB, dest_path, global_name, data)
             logger.info('Successfully processed: %s' % global_name)
+            notifiers.notify_download(formatter.latinToAscii(global_name) + ' at ' + formatter.now())
             return True
         else:
             logger.error('Postprocessing for %s has failed.' % global_name)
