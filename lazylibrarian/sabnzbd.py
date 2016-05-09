@@ -34,7 +34,7 @@ def checkLink():
 def SABnzbd(title=None, nzburl=None):
 
     HOST = "%s:%i" % (lazylibrarian.SAB_HOST, lazylibrarian.SAB_PORT)
-    if not str(HOST)[:4] == "http":
+    if not HOST.startswith("http"):
         HOST = 'http://' + HOST
 
     if lazylibrarian.SAB_SUBDIR:
