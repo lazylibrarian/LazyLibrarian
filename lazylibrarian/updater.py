@@ -12,8 +12,7 @@ def dbUpdate(forcefull=False):
     logger.info('Starting update for %i active authors' % len(activeauthors))
 
     for author in activeauthors:
-
-        authorid = author[0]
+        # authorid = author[0]
         authorname = author[1]
         importer.addAuthorToDB(authorname, refresh=True)
 
