@@ -145,7 +145,7 @@ def processResultList(resultlist, book, searchtype):
         rejected = False
 
         for word in reject_list:
-            if word in tor_Title.lower() and not word in author.lower() and not word in title_lower():
+            if word in tor_Title.lower() and not word in author.lower() and not word in title.lower():
                 rejected = True
                 logger.debug("Rejecting %s, contains %s" % (tor_Title, word))
                 break
