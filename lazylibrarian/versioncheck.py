@@ -8,7 +8,7 @@ import tarfile
 import threading
 
 import lazylibrarian
-from lazylibrarian import logger, version
+from lazylibrarian import logger
 
 import lib.simplejson as simplejson
 

@@ -307,6 +307,7 @@ def import_book(pp_path=None, bookID=None):
             myDB.upsert("wanted", newValueDict, controlValueDict)
             processExtras(myDB, dest_path, global_name, data)
             logger.info('Successfully processed: %s' % global_name)
+            notifiers.notify_download(formatter.latinToAscii(global_name) + ' at ' + formatter.now())
             return True
         else:
             logger.error('Postprocessing for %s has failed.' % global_name)
@@ -484,7 +485,7 @@ def processAutoAdd(src_path=None):
 def processIMG(dest_path=None, bookimg=None, global_name=None):
     # handle pictures
     try:
-        if not bookimg.startswith('images'):
+        if bookimg.startswith('http'):
             logger.debug('Downloading cover from ' + bookimg)
             coverpath = os.path.join(dest_path, global_name + '.jpg')
             with open(coverpath, 'wb') as img:
@@ -551,7 +552,7 @@ def csv_file(search_dir=None):
     if search_dir and os.path.isdir(search_dir) is True:
         for fname in os.listdir(search_dir):
             if fname.endswith('.csv'):
-                return os.path.join(search_dir, fname).encode(lazylibrarian.SYS_ENCODING)
+                return os.path.join(search_dir, fname)  # .encode(lazylibrarian.SYS_ENCODING)
     return ""
 
 
@@ -577,10 +578,7 @@ def exportCSV(search_dir=None, status="Wanted"):
                                   quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
             # write headers, change AuthorName BookName BookIsbn to match import csv names (Author, Title, ISBN10)
-            csvwrite.writerow([
-                'BookID', 'Author', 'Title',
-                'ISBN', 'AuthorID'
-            ])
+            csvwrite.writerow(['BookID', 'Author', 'Title', 'ISBN', 'AuthorID'])
 
             for resulted in find_status:
                 logger.debug(u"Exported CSV for book %s" % resulted['BookName'].encode(lazylibrarian.SYS_ENCODING))

@@ -141,15 +141,9 @@ def magazineScan(thread=None):
                     if match:
                         issuedate = match.group("issuedate")
                         title = match.group("title")
-                        # print issuedate
-                        # print title
                     else:
                         logger.debug("Pattern match failed for [%s]" % fname)
                         continue
-                        # title = fname.split('-')[3]
-                        # title = title.split('.')[-2]
-                        # title = title.strip()
-                        # issuedate = fname.split(' ')[0]
                 except:
                     logger.debug("Invalid name format for [%s]" % fname)
                     continue

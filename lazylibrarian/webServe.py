@@ -15,7 +15,7 @@ import lazylibrarian
 
 from lazylibrarian import logger, importer, database, postprocess, formatter, \
     notifiers, librarysync, versioncheck, magazinescan, common, bookwork, \
-    qbittorrent, utorrent, transmission, sabnzbd, nzbget
+    qbittorrent, utorrent, transmission, sabnzbd, nzbget, deluge
 from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
 from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
 from lazylibrarian.searchmag import search_magazines
@@ -1493,6 +1493,11 @@ class WebInterface(object):
     def testDeluge(self):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         try:
+            if not lazylibrarian.DELUGE_USER:
+                # no username, talk to the webui
+                return deluge.checkLink()
+
+            # if there's a username, talk to the daemon directly
             client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
                 int(lazylibrarian.DELUGE_PORT),
                 lazylibrarian.DELUGE_USER,
@@ -1507,14 +1512,14 @@ class WebInterface(object):
                         for label in labels:
                             msg += '%s\n' % label
                     else:
-                        msg += "Deluge seems to have no labels set"
+                        msg += "Deluge daemon seems to have no labels set"
                     return msg
-            return "Deluge: Connection Successful"
+            return "Deluge: Daemon connection Successful"
         except Exception as e:
-            msg = "Deluge: Connect FAILED\n"
+            msg = "Deluge: Daemon connection FAILED\n"
             if 'Connection refused' in str(e):
                 msg += str(e)
-                msg += "Check Deluge HOST and PORT settings"
+                msg += "Check Deluge daemon HOST and PORT settings"
             elif 'need more than 1 value' in str(e):
                 msg += "Invalid USERNAME or PASSWORD"
             else:
