@@ -71,7 +71,10 @@ cmd_dict = {'help':'list available commands. ' + \
             'getWorkSeries':'&id= Get series & seriesNum from Librarything BookWork using BookID',
             'getWorkPage':'&id= Get url of Librarything BookWork using BookID',
             'cleanCache':'[&wait] Clean unused/old files from the LazyLibrarian caches',
-            'setWorkPages':'[&wait] Set the WorkPages links in the database'
+            'setWorkPages':'[&wait] Set the WorkPages links in the database',
+            'importAlternate':'[&wait] Import books from alternate folder and any subfolders',
+            'importCSVwishlist':'[&wait] Import a CSV wishlist',
+            'exportCSVwishlist':'[&wait] Export a CSV wishlist'
             }
 
 class Api(object):
@@ -472,17 +475,17 @@ class Api(object):
         books = [{"bookid": id}]
         if lazylibrarian.USE_RSS():
             if 'wait' in kwargs:
-                search_rss_book()
+                search_rss_book(books)
             else:
                 threading.Thread(target=search_rss_book, args=[books]).start()
         if lazylibrarian.USE_NZB():
             if 'wait' in kwargs:
-                search_nzb_book()
+                search_nzb_book(books)
             else:
                 threading.Thread(target=search_nzb_book, args=[books]).start()
         if lazylibrarian.USE_TOR():
             if 'wait' in kwargs:
-                search_tor_book()
+                search_tor_book(books)
             else:
                 threading.Thread(target=search_tor_book, args=[books]).start()
         if not lazylibrarian.USE_RSS() and not lazylibrarian.USE_NZB() and not lazylibrarian.USE_TOR():
@@ -568,4 +571,24 @@ class Api(object):
         
     def _showJobs(self, **kwargs):
         self.data = common.showJobs()
+    
+    def _importAlternate(self, **kwargs):
+        if 'wait' in kwargs:
+            postprocess.processAlternate(lazylibrarian.ALTERNATE_DIR)
+        else:
+            threading.Thread(target=postprocess.processAlternate, args=[lazylibrarian.ALTERNATE_DIR]).start()
+            
+    def _importCSVwishlist(self, **kwargs):
+        if 'wait' in kwargs:
+            postprocess.processCSV(lazylibrarian.ALTERNATE_DIR)
+        else:
+            threading.Thread(target=postprocess.processCSV, args=[lazylibrarian.ALTERNATE_DIR]).start()
+            
+    def _exportCSVwishlist(self, **kwargs):
+        if 'wait' in kwargs:
+            postprocess.exportCSV(lazylibrarian.ALTERNATE_DIR)
+        else:
+            threading.Thread(target=postprocess.exportCSV, args=[lazylibrarian.ALTERNATE_DIR]).start()
+            
+
 
