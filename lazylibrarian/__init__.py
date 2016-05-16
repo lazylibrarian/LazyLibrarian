@@ -79,6 +79,7 @@ HTTP_HOST = None
 HTTP_PORT = 5299
 HTTP_USER = None
 HTTP_PASS = None
+HTTP_PROXY = None
 HTTP_ROOT = None
 HTTP_LOOK = None
 HTTPS_ENABLED = 0
@@ -388,7 +389,7 @@ def initialize():
 
 def config_read(reloaded=False):
         global FULL_PATH, PROG_DIR, DAEMON, \
-            HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_ROOT, HTTP_LOOK, API_KEY, API_ENABLED, \
+            HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_PROXY, HTTP_ROOT, HTTP_LOOK, API_KEY, API_ENABLED, \
             LAUNCH_BROWSER, LOGDIR, CACHE_AGE, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, \
             IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, IMP_CONVERT, \
             MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, \
@@ -446,6 +447,7 @@ def config_read(reloaded=False):
         HTTP_HOST = check_setting_str(CFG, 'General', 'http_host', '0.0.0.0')
         HTTP_USER = check_setting_str(CFG, 'General', 'http_user', '')
         HTTP_PASS = check_setting_str(CFG, 'General', 'http_pass', '')
+        HTTP_PROXY = check_setting_bool(CFG, 'General', 'http_proxy', 0)
         HTTP_ROOT = check_setting_str(CFG, 'General', 'http_root', '')
         HTTP_LOOK = check_setting_str(CFG, 'General', 'http_look', 'default')
         HTTPS_ENABLED = check_setting_bool(CFG, 'General', 'https_enabled', 0)
@@ -780,6 +782,7 @@ def config_write():
     CFG.set('General', 'http_host', HTTP_HOST)
     CFG.set('General', 'http_user', HTTP_USER)
     CFG.set('General', 'http_pass', HTTP_PASS)
+    CFG.set('General', 'http_proxy', HTTP_PROXY)
     CFG.set('General', 'http_root', HTTP_ROOT)
     CFG.set('General', 'http_look', HTTP_LOOK)
     CFG.set('General', 'https_enabled', HTTPS_ENABLED)
