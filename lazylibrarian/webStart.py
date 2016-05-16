@@ -42,7 +42,8 @@ def initialize(options={}):
 
     conf = {
         '/': {
-            'tools.staticdir.root': os.path.join(lazylibrarian.PROG_DIR, 'data')
+            'tools.staticdir.root': os.path.join(lazylibrarian.PROG_DIR, 'data'),
+            'tools.proxy.on': options['http_proxy']
         },
         '/interfaces': {
             'tools.staticdir.on': True,
