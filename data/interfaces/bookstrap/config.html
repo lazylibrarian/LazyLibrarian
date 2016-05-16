@@ -51,6 +51,17 @@
                                         </div>
                                         <div class="checkbox">
                                             <%
+                                                if lazylibrarian.HTTP_PROXY == True:
+                                                    checked = 'checked="checked"'
+                                                else:
+                                                    checked = ''
+                                            %>   
+                                            <label for="http_proxy" class="control-label">
+                                            <input type="checkbox" id="http_proxy" name="http_proxy" value="1" ${checked} />
+                                            Enable http proxy</label>
+                                        </div>
+                                        <div class="checkbox">
+                                            <%
                                                 if lazylibrarian.HTTPS_ENABLED == True:
                                                     checked = 'checked="checked"'
                                                 else:
@@ -125,9 +136,6 @@
                                             <input type="checkbox" id="launch_browser" name="launch_browser" value="1" ${checked} />
                                             Launch browser</label>
                                         </div>
-                                    </fieldset>
-                                    <fieldset>
-                                        <legend>API</legend>
                                         <div class="checkbox">
                                             <%
                                             if lazylibrarian.API_ENABLED == True:

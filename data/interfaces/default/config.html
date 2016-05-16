@@ -42,6 +42,15 @@
                   </div>
                   <label>Web Root:</label><input type="text" name="http_root" value="${lazylibrarian.HTTP_ROOT}" size="20" maxlength="40">
                     <%
+                        if lazylibrarian.HTTP_PROXY == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <BR>
+                    <input type="checkbox" id="http_proxy" name="http_proxy" value=1 ${checked} />
+                    <label>  Enable http proxy</label>
+                    <%
                         if lazylibrarian.HTTPS_ENABLED == True:
                             checked = 'checked="checked"'
                         else:
@@ -86,10 +95,8 @@
                         else:
                             checked = ''
                     %>
-                    <BR>
                     <input type="checkbox" name="launch_browser" value=1 ${checked} />
                     <label>  Launch browser</label>
-                        <legend>API</legend>
                         <%
                         if lazylibrarian.API_ENABLED == True:
                             checked = 'checked="checked"'
