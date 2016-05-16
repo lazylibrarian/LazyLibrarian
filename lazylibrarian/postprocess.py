@@ -15,28 +15,44 @@ from lazylibrarian import importer, gr, magazinescan
 def processAlternate(source_dir=None):
     # import a book from an alternate directory
     if not source_dir or os.path.isdir(source_dir) is False:
-        logger.warn('Alternate directory must not be empty')
+        logger.warn('Alternate directory not found')
         return
     if source_dir == lazylibrarian.DESTINATION_DIR:
         logger.warn('Alternate directory must not be the same as destination')
         return
+
+    logger.debug('Processing alternate directory %s' % source_dir)
+    # first, recursively process any books in subdirectories
+    for fname in os.listdir(source_dir):
+        subdir = os.path.join(source_dir, fname)
+        if os.path.isdir(subdir):
+            processAlternate(subdir)
+    # only import one book from each alternate (sub)directory, this is because
+    # the importer may delete the directory after importing a book,
+    # depending on lazylibrarian.DESTINATION_COPY setting
+    # also if multiple books in a folder and only a "metadata.opf"
+    # which book is it for?
     new_book = book_file(source_dir, booktype='book')
     if new_book:
+        metadata = {}
         # see if there is a metadata file in this folder with the info we need
-        metafile = librarysync.opf_file(source_dir)
-        try:
-            metadata = librarysync.get_book_info(metafile)
-        except:
-            metadata = {}
-        if 'title' in metadata and 'creator' in metadata:
-            authorname = metadata['creator']
-            bookname = metadata['title']
-        # if not, try to get metadata from the book file
+        # try book_name.opf first, or fall back to any filename.opf
+        metafile = os.path.splitext(new_book)[0] + '.opf'
+        if not os.path.isfile(metafile):
+            metafile = librarysync.opf_file(source_dir)
+        if os.path.isfile(metafile):
+            try:
+                metadata = librarysync.get_book_info(metafile)
+            except:
+                logger.debug('Failed to read metadata from %s' % metafile)
         else:
+            logger.debug('No metadata file found for %s' % new_book)
+        if not 'title' in metadata and 'creator' in metadata:
+            # try to get metadata from the book file
             try:
                 metadata = librarysync.get_book_info(new_book)
             except:
-                metadata = {}
+                logger.debug('No metadata found in %s' % new_book)
         if 'title' in metadata and 'creator' in metadata:
             authorname = metadata['creator']
             bookname = metadata['title']
@@ -87,6 +103,7 @@ def processDir(force=False, reset=False):
     elif len(downloads) == 0:
         logger.info('No downloads are found. Nothing to process.')
     else:
+        logger.debug("Checking %s downloads for %s snatched files" % (len(downloads), len(snatched)))
         ppcount = 0
         for book in snatched:
             found = False
@@ -129,6 +146,10 @@ def processDir(force=False, reset=False):
                             logger.debug('Found folder %s for %s' % (pp_path, book['NZBtitle']))
                             found = True
                             break
+                    else:
+                        logger.debug('No match (%s%%) %s for %s' % (match, matchname, matchtitle))
+                else:
+                    logger.debug('Skipping %s' % fname)
             if found:
                 data = myDB.select('SELECT * from books WHERE BookID="%s"' % book['BookID'])
                 if data:

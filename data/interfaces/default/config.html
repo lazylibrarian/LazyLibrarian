@@ -48,13 +48,13 @@
                             checked = ''
                     %>
                     <BR>
-                    <input type="checkbox" name="https_enabled" value=1 ${checked} />
-                    <label>  Enable Https</label>
-                  <br>
+                    <input type="checkbox" id="https_enabled" name="https_enabled" value=1 ${checked} />
+                    <label>  Enable https</label>
+                  <fieldset id="https_options">
                   <label>Https Certificate:</label><input type="text" name="https_cert" value="${lazylibrarian.HTTPS_CERT}" size="20">
 		          <br>
                   <label>Https Key:</label><input type="text" name="https_key" value="${lazylibrarian.HTTPS_KEY}" size="20">
-		          </div>                  
+		          </fieldset>                  
 		          <br>
                   <br>
                   <label>Logdir:</label><input type="text" name="logdir" value="${lazylibrarian.LOGDIR}" size="26"><br>
@@ -89,7 +89,6 @@
                     <BR>
                     <input type="checkbox" name="launch_browser" value=1 ${checked} />
                     <label>  Launch browser</label>
-                     <fieldset>
                         <legend>API</legend>
                         <%
                         if lazylibrarian.API_ENABLED == True:
@@ -103,7 +102,8 @@
                                 Enable API
                             </label>
                         </div>
-                        <div id="apioptions" class="row">
+                     <fieldset id="api_options">
+                        <div id="api_options" class="row">
                             <label>API key</label>
                             <input type="text" name="api_key" id="api_key" value="${lazylibrarian.API_KEY}" size="36">
                             <input type="button" value="Generate" id="generateAPI" onClick="document.location.reload(true)">
@@ -1172,6 +1172,46 @@
     <script>
         function initThisPage()
         {
+            if ($("#https_enabled").is(":checked"))
+                {
+                        $("#https_options").show();
+                }
+                else
+                {
+                        $("#https_options").hide();
+                }
+
+            $("#https_enabled").click(function(){
+                    if ($("#https_enabled").is(":checked"))
+                    {
+                            $("#https_options").slideDown();
+                    }
+                    else
+                    {
+                            $("#https_options").slideUp();
+                    }
+            });
+
+            if ($("#api_enabled").is(":checked"))
+                {
+                        $("#api_options").show();
+                }
+                else
+                {
+                        $("#api_options").hide();
+                }
+
+            $("#api_enabled").click(function(){
+                    if ($("#api_enabled").is(":checked"))
+                    {
+                            $("#api_options").slideDown();
+                    }
+                    else
+                    {
+                            $("#api_options").slideUp();
+                    }
+            });
+
             if ($("#tor_downloader_blackhole").is(":checked"))
                 {
                         $("#tor_blackhole_options").show();
