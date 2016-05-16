@@ -60,6 +60,7 @@
                                             <input type="checkbox" id="https_enabled" name="https_enabled" value="1" ${checked} />
                                             Enable https</label>
                                         </div>
+                                        <fieldset id="https_options">
                                         <div class="form-group">
                                             <label for="https_cert" class="control-label">Https Certificate:</label>
                                             <input type="text" id="https_cert" name="https_cert" value="${lazylibrarian.HTTPS_CERT}" class="form-control" placeholder="https certificate">
@@ -68,6 +69,7 @@
                                             <label for="https_key" class="control-label">Https Key:</label>
                                             <input type="text" id="https_key" name="https_key" value="${lazylibrarian.HTTPS_KEY}" class="form-control" placeholder="https key">
                                         </div>
+                                        </fieldset>
                                         <div class="form-group">
                                             <label for="logdir" class="control-label">Logdir:</label>
                                             <input type="text" id="logdir" name="logdir" value="${lazylibrarian.LOGDIR}" class="form-control" placeholder="Log Dir">
@@ -137,12 +139,14 @@
                                             <input type="checkbox" id="api_enabled" name="api_enabled" value="1" ${checked} />
                                             Enable API</label>
                                         </div>
-                                        <div id="apioptions" class="form-group">
+                                        <fieldset id="api_options">
+                                        <div id="api_options" class="form-group">
                                             <label>API key</label>
                                             <input type="text" name="api_key" id="api_key" value="${lazylibrarian.API_KEY}" size="36">
                                             <input class="button btn btn-sm btn-primary" type="button" value="Generate" id="generateAPI" onClick="document.location.reload(true)">
                                             <br><small>Current API key: <strong>${lazylibrarian.API_KEY}</strong></small>
                                         </div>
+                                        </fieldset>
                                     </fieldset>
                                     <fieldset>
                                         <legend>Appearance</legend>
@@ -1390,6 +1394,46 @@
 
         {
             "use strict";
+
+            if ($("#https_enabled").is(":checked"))
+                {
+                        $("#https_options").show();
+                }
+                else
+                {
+                        $("#https_options").hide();
+                }
+
+            $("#https_enabled").click(function(){
+                    if ($("#https_enabled").is(":checked"))
+                    {
+                            $("#https_options").slideDown();
+                    }
+                    else
+                    {
+                            $("#https_options").slideUp();
+                    }
+            });
+
+            if ($("#api_enabled").is(":checked"))
+                {
+                        $("#api_options").show();
+                }
+                else
+                {
+                        $("#api_options").hide();
+                }
+
+            $("#api_enabled").click(function(){
+                    if ($("#api_enabled").is(":checked"))
+                    {
+                            $("#api_options").slideDown();
+                    }
+                    else
+                    {
+                            $("#api_options").slideUp();
+                    }
+            });
 
             if ($("#tor_downloader_blackhole").is(":checked"))
                 {
