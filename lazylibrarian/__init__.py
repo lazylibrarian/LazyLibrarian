@@ -118,6 +118,7 @@ IMP_ONLYISBN = 0
 IMP_SINGLEBOOK = 1
 IMP_AUTOADD = None
 IMP_CONVERT = None
+GIT_PROGRAM = None
 
 BOOK_API = None
 GR_API = None
@@ -390,7 +391,7 @@ def initialize():
 def config_read(reloaded=False):
         global FULL_PATH, PROG_DIR, DAEMON, \
             HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_PROXY, HTTP_ROOT, HTTP_LOOK, API_KEY, API_ENABLED, \
-            LAUNCH_BROWSER, LOGDIR, CACHE_AGE, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, \
+            LAUNCH_BROWSER, LOGDIR, CACHE_AGE, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, GIT_PROGRAM, \
             IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, IMP_CONVERT, \
             MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, \
             MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, CONFIGFILE, CFG, LOGLIMIT, \
@@ -468,6 +469,7 @@ def config_read(reloaded=False):
         IMP_ONLYISBN = check_setting_bool(CFG, 'General', 'imp_onlyisbn', 0)
         IMP_SINGLEBOOK = check_setting_bool(CFG, 'General', 'imp_singlebook', 0)
         IMP_CONVERT = check_setting_str(CFG, 'General', 'imp_convert', '')
+        GIT_PROGRAM = check_setting_str(CFG, 'General', 'git_program','')
         CACHE_AGE = check_setting_int(CFG, 'General', 'cache_age', 30)
 
         GIT_USER = check_setting_str(CFG, 'Git', 'git_user', 'dobytang')
@@ -806,6 +808,7 @@ def config_write():
     CFG.set('General', 'imp_monthlang', IMP_MONTHLANG)
     CFG.set('General', 'imp_autoadd', IMP_AUTOADD)
     CFG.set('General', 'imp_convert', IMP_CONVERT.strip())
+    CFG.set('General', 'git_program', GIT_PROGRAM.strip())
     CFG.set('General', 'ebook_type', EBOOK_TYPE.lower())
     CFG.set('General', 'mag_type', MAG_TYPE.lower())
     CFG.set('General', 'reject_words', REJECT_WORDS.encode('utf-8').lower())

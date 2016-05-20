@@ -18,7 +18,10 @@ import lib.simplejson as simplejson
 
 def runGit(args):
 
-    git_locations = ['git']
+    if lazylibrarian.GIT_PROGRAM:
+        git_locations = ['"' + lazylibrarian.GIT_PROGRAM + '"']
+    else:
+        git_locations = ['git']
 
     if platform.system().lower() == 'darwin':
         git_locations.append('/usr/local/git/bin/git')

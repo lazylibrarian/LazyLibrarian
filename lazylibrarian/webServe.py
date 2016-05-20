@@ -78,7 +78,7 @@ class WebInterface(object):
     def configUpdate(
         self, http_host='0.0.0.0', http_root='', http_user='', http_port=5299,
                      http_pass='', http_look='', launch_browser=0, api_key='', api_enabled=0,
-                     logdir='', loglevel=2, loglimit=500, logfiles=10, logsize=204800,
+                     logdir='', loglevel=2, loglimit=500, logfiles=10, logsize=204800, git_program='',
                      imp_onlyisbn=0, imp_singlebook=0, imp_preflang='', imp_monthlang='', imp_convert='',
                      imp_autoadd='', match_ratio=80, nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0,
                      nzb_downloader_blackhole=0, proxy_host='', proxy_type='',
@@ -141,6 +141,7 @@ class WebInterface(object):
         lazylibrarian.IMP_MONTHLANG = imp_monthlang
         lazylibrarian.IMP_AUTOADD = imp_autoadd
         lazylibrarian.IMP_CONVERT = imp_convert
+        lazylibrarian.GIT_PROGRAM = git_program
 
         lazylibrarian.SAB_HOST = sab_host
         lazylibrarian.SAB_PORT = formatter.check_int(sab_port, 0)

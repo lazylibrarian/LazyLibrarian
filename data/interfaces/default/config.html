@@ -629,6 +629,11 @@
                     <label>Match Ratio:</label>
                     <input type="text" name="match_ratio"  value="${lazylibrarian.MATCH_RATIO}" size="8" maxlength="4"> (percent)
                     </div>
+                    <label>git program:</label>
+                    <input type="text" placeholder="git program" name="git_program" value="${lazylibrarian.GIT_PROGRAM}" size="26" maxlength="90">
+                    <BR>
+                    <small>Path to git program unless already in your path. 
+                    <BR>You can usually leave this blank</small>
                 </td>
             </tr>
             <tr>
@@ -712,7 +717,7 @@
                     <small>This will remove entries if ebooks are not found in the download location</small> 
                 </div>
                </td>
-               <td>
+                <td>
                     <label>Convert program:</label>
                     <input type="text" placeholder="convert program" name="imp_convert" value="${lazylibrarian.IMP_CONVERT}" size="26" maxlength="90">
                     <BR>
