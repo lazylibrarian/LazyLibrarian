@@ -127,6 +127,7 @@ def processResultList(resultlist, book, searchtype):
     match_ratio = int(lazylibrarian.MATCH_RATIO)
     reject_list = formatter.getList(lazylibrarian.REJECT_WORDS)
 
+    matches = []
     for tor in resultlist:
         tor_Title = formatter.latinToAscii(formatter.replace_all(str(tor['tor_title']), dictrepl)).strip()
         tor_Title = re.sub(r"\s\s+", " ", tor_Title)  # remove extra whitespace
@@ -151,7 +152,7 @@ def processResultList(resultlist, book, searchtype):
                 break
 
         if (torAuthor_match >= match_ratio and torBook_match >= match_ratio and not rejected):
-            logger.debug(u'Found Torrent: %s using %s search' % (tor['tor_title'], searchtype))
+            #logger.debug(u'Found Torrent: %s using %s search' % (tor['tor_title'], searchtype))
             bookid = book['bookid']
             tor_Title = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
             tor_url = tor['tor_url']
@@ -171,15 +172,25 @@ def processResultList(resultlist, book, searchtype):
                 "NZBmode": "torrent",
                 "Status": "Skipped"
             }
-            myDB.upsert("wanted", newValueDict, controlValueDict)
-            snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
+
+            matches.append([(torBook_match + torAuthor_match)/2, tor['tor_title'], 
+                           newValueDict, controlValueDict])
+
+    if matches:
+        highest = max(matches, key=lambda x: x[0])
+        logger.debug(u'Best match TOR (%s%%): %s using %s search' % 
+            (highest[0], highest[1], searchtype))
+                  
+        myDB.upsert("wanted", highest[2], highest[3])
+
+        snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
                                         bookid).fetchone()
-            if not snatchedbooks:
-                snatch = TORDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
-                if snatch:
-                    notifiers.notify_snatch(formatter.latinToAscii(tor_Title) + ' at ' + formatter.now())
-                    common.schedule_job(action='Start', target='processDir')
-                    return True
+        if not snatchedbooks:
+            snatch = TORDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
+            if snatch:
+                notifiers.notify_snatch(formatter.latinToAscii(tor_Title) + ' at ' + formatter.now())
+                common.schedule_job(action='Start', target='processDir')
+                return True
 
     logger.debug("No torrent's found for " + (book["authorName"] + ' ' +
                  book['bookName']).strip() + " using searchtype " + searchtype)
