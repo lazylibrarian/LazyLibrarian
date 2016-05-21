@@ -129,26 +129,22 @@ def processResultList(resultlist, book, searchtype):
 
     matches = []
     for tor in resultlist:
-        tor_Title = formatter.latinToAscii(formatter.replace_all(str(tor['tor_title']), dictrepl)).strip()
-        tor_Title = re.sub(r"\s\s+", " ", tor_Title)  # remove extra whitespace
+        torTitle = formatter.latinToAscii(formatter.replace_all(str(tor['tor_title']), dictrepl)).strip()
+        torTitle = re.sub(r"\s\s+", " ", torTitle)  # remove extra whitespace
 
         author = formatter.latinToAscii(formatter.replace_all(book['authorName'], dic))
         title = formatter.latinToAscii(formatter.replace_all(book['bookName'], dic))
 
-        torAuthor_match = fuzz.token_set_ratio(author, tor_Title)
-        torBook_match = fuzz.token_set_ratio(title, tor_Title)
-        logger.debug(u"TOR author/book Match: %s/%s for %s" % (torAuthor_match, torBook_match, tor_Title))
-
-        # tor_Title_match = fuzz.token_set_ratio(book['searchterm'], tor_Title)
-        # logger.debug("Torrent Title Match %: " + str(tor_Title_match) + " for " + tor_Title)
-        # if (tor_Title_match >= match_ratio):
+        torAuthor_match = fuzz.token_set_ratio(author, torTitle)
+        torBook_match = fuzz.token_set_ratio(title, torTitle)
+        logger.debug(u"TOR author/book Match: %s/%s for %s" % (torAuthor_match, torBook_match, torTitle))
 
         rejected = False
 
         for word in reject_list:
-            if word in tor_Title.lower() and not word in author.lower() and not word in title.lower():
+            if word in torTitle.lower() and not word in author.lower() and not word in title.lower():
                 rejected = True
-                logger.debug("Rejecting %s, contains %s" % (tor_Title, word))
+                logger.debug("Rejecting %s, contains %s" % (torTitle, word))
                 break
 
         if (torAuthor_match >= match_ratio and torBook_match >= match_ratio and not rejected):
@@ -173,12 +169,17 @@ def processResultList(resultlist, book, searchtype):
                 "Status": "Skipped"
             }
 
-            matches.append([(torBook_match + torAuthor_match)/2, tor['tor_title'], 
-                           newValueDict, controlValueDict])
+            score = (torBook_match + torAuthor_match)/2  # as a percentage
+            # lose a point for each extra word in the title so we get the closest match
+            words = len(formatter.getList(torTitle))
+            words -= len(formatter.getList(author))
+            words -= len(formatter.getList(title))
+            score -= abs(words)
+            matches.append([score, torTitle, newValueDict, controlValueDict])
 
     if matches:
         highest = max(matches, key=lambda x: x[0])
-        logger.debug(u'Best match TOR (%s%%): %s using %s search' % 
+        logger.info(u'Best match TOR (%s%%): %s using %s search' % 
             (highest[0], highest[1], searchtype))
                   
         myDB.upsert("wanted", highest[2], highest[3])
