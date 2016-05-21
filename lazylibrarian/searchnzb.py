@@ -126,28 +126,27 @@ def processResultList(resultlist, book, searchtype):
 
     match_ratio = int(lazylibrarian.MATCH_RATIO)
     reject_list = formatter.getList(lazylibrarian.REJECT_WORDS)
-
+    
+    matches = []
     for nzb in resultlist:
-        nzbTitle = formatter.latinToAscii(formatter.replace_all(nzb['nzbtitle'], dictrepl)).strip()
-        nzbTitle = re.sub(r"\s\s+", " ", nzbTitle)  # remove extra whitespace
+        nzb_Title = formatter.latinToAscii(formatter.replace_all(nzb['nzbtitle'], dictrepl)).strip()
+        nzb_Title = re.sub(r"\s\s+", " ", nzb_Title)  # remove extra whitespace
 
         author = formatter.latinToAscii(formatter.replace_all(book['authorName'], dic))
         title = formatter.latinToAscii(formatter.replace_all(book['bookName'], dic))
-        # nzbTitle_match = fuzz.token_set_ratio(book['searchterm'], nzbTitle)
-        # logger.debug(u"NZB Title sort Match %: " + str(nzbTitle_match) + " for " + nzbTitle)
-        nzbAuthor_match = fuzz.token_set_ratio(author, nzbTitle)
-        nzbBook_match = fuzz.token_set_ratio(title, nzbTitle)
-        logger.debug(u"NZB author/book Match: %s/%s for %s" % (nzbAuthor_match, nzbBook_match, nzbTitle))
+        nzbAuthor_match = fuzz.token_set_ratio(author, nzb_Title)
+        nzbBook_match = fuzz.token_set_ratio(title, nzb_Title)
+        logger.debug(u"NZB author/book Match: %s/%s for %s" % (nzbAuthor_match, nzbBook_match, nzb_Title))
 
         rejected = False
         for word in reject_list:
-            if word in nzbTitle.lower() and not word in author.lower() and not word in title.lower():
+            if word in nzb_Title.lower() and not word in author.lower() and not word in title.lower():
                 rejected = True
-                logger.debug("Rejecting %s, contains %s" % (nzbTitle, word))
+                logger.debug("Rejecting %s, contains %s" % (nzb_Title, word))
                 break
 
         if (nzbAuthor_match >= match_ratio and nzbBook_match >= match_ratio and not rejected):
-            logger.debug(u'Found NZB: %s using %s search' % (nzb['nzbtitle'], searchtype))
+            #logger.debug(u'Found NZB: %s using %s search' % (nzb['nzbtitle'], searchtype))
             bookid = book['bookid']
             nzbTitle = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
             nzburl = nzb['nzburl']
@@ -169,19 +168,33 @@ def processResultList(resultlist, book, searchtype):
                 "NZBmode": nzbmode,
                 "Status": "Skipped"
             }
-            myDB.upsert("wanted", newValueDict, controlValueDict)
+            
+            score = (nzbBook_match + nzbAuthor_match)/2  # as a percentage
+            # lose a point for each extra word in the title so we get the closest match
+            words = len(formatter.getList(nzb_Title))
+            words -= len(formatter.getList(author))
+            words -= len(formatter.getList(title))
+            score -= abs(words)
+            matches.append([score, nzb_Title, newValueDict, controlValueDict])
 
-            snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
-                                        bookid).fetchone()
-            if not snatchedbooks:
-                if nzbmode == "torznab":
-                    snatch = TORDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
-                else:
-                    snatch = NZBDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
-                if snatch:
-                    notifiers.notify_snatch(nzbTitle + ' at ' + formatter.now())
-                    common.schedule_job(action='Start', target='processDir')
-                    return True
+    if matches:
+        highest = max(matches, key=lambda x: x[0])
+        logger.info(u'Best match NZB (%s%%): %s using %s search' % 
+            (highest[0], highest[1], searchtype))
+                  
+        myDB.upsert("wanted", highest[2], highest[3])
+
+        snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
+                                    bookid).fetchone()
+        if not snatchedbooks:
+            if nzbmode == "torznab":
+                snatch = TORDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
+            else:
+                snatch = NZBDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
+            if snatch:
+                notifiers.notify_snatch(nzbTitle + ' at ' + formatter.now())
+                common.schedule_job(action='Start', target='processDir')
+                return True
 
     logger.debug("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() +
                  " using searchtype " + searchtype)

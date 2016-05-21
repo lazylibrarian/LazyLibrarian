@@ -99,24 +99,26 @@ def processResultList(resultlist, author, title, book):
     match_ratio = int(lazylibrarian.MATCH_RATIO)
     reject_list = formatter.getList(lazylibrarian.REJECT_WORDS)
 
+    matches = []
+    
     # bit of a misnomer now, rss can search both tor and nzb rss feeds
     for tor in resultlist:
-        tor_Title = formatter.latinToAscii(formatter.replace_all(tor['tor_title'], dictrepl)).strip()
-        tor_Title = re.sub(r"\s\s+", " ", tor_Title)  # remove extra whitespace
+        torTitle = formatter.latinToAscii(formatter.replace_all(tor['tor_title'], dictrepl)).strip()
+        torTitle = re.sub(r"\s\s+", " ", torTitle)  # remove extra whitespace
 
-        tor_Author_match = fuzz.token_set_ratio(author, tor_Title)
-        tor_Title_match = fuzz.token_set_ratio(title, tor_Title)
-        logger.debug("RSS Author/Title Match: %s/%s for %s" % (tor_Author_match, tor_Title_match, tor_Title))
+        tor_Author_match = fuzz.token_set_ratio(author, torTitle)
+        tor_Title_match = fuzz.token_set_ratio(title, torTitle)
+        logger.debug("RSS Author/Title Match: %s/%s for %s" % (tor_Author_match, tor_Title_match, torTitle))
 
         rejected = False
         for word in reject_list:
-            if word in tor_Title.lower() and not word in author.lower() and not word in book.lower():
+            if word in torTitle.lower() and not word in author.lower() and not word in book.lower():
                 rejected = True
-                logger.debug("Rejecting %s, contains %s" % (tor_Title, word))
+                logger.debug("Rejecting %s, contains %s" % (torTitle, word))
                 break
 
         if (tor_Title_match >= match_ratio and tor_Author_match >= match_ratio and not rejected):
-            logger.debug(u'Found RSS: %s' % tor['tor_title'])
+            #logger.debug(u'Found RSS: %s' % tor['tor_title'])
             bookid = book['bookid']
             tor_Title = (book["authorName"] + ' - ' + book['bookName'] +
                          ' LL.(' + book['bookid'] + ')').strip()
@@ -138,26 +140,40 @@ def processResultList(resultlist, author, title, book):
                 "NZBmode": "torrent",
                 "Status": "Skipped"
             }
-            myDB.upsert("wanted", newValueDict, controlValueDict)
-            snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
-                                        bookid).fetchone()
-            if not snatchedbooks:  # check if one of the other downloaders got there first
-                if '.nzb' in tor_url:
-                    snatch = NZBDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
-                else:
-                    #  http://baconbits.org/torrents.php?action=download&authkey=<authkey>&torrent_pass=<password.hashed>&id=185398
-                    if not tor_url.startswith('magnet'):  # magnets don't use auth
-                        pwd = lazylibrarian.RSS_PROV[tor_feed]['PASS']
-                        auth = lazylibrarian.RSS_PROV[tor_feed]['AUTH']
-                        # don't know what form of password hash is required, try sha1
-                        tor_url = tor_url.replace('<authkey>', auth).replace('<password.hashed>', sha1(pwd))
-                    snatch = TORDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
+            
+            score = (tor_Title_match + tor_Author_match)/2  # as a percentage
+            # lose a point for each extra word in the title so we get the closest match
+            words = len(formatter.getList(torTitle))
+            words -= len(formatter.getList(author))
+            words -= len(formatter.getList(title))
+            score -= abs(words)
+            matches.append([score, torTitle, newValueDict, controlValueDict])
 
-                if snatch:
-                    notifiers.notify_snatch(formatter.latinToAscii(tor_Title) + ' at ' + formatter.now())
-                    common.schedule_job(action='Start', target='processDir')
-                    return True
+    if matches:
+        highest = max(matches, key=lambda x: x[0])
+        logger.info(u'Best match RSS (%s%%): %s using %s search' % 
+            (highest[0], highest[1], searchtype))
+                  
+        myDB.upsert("wanted", highest[2], highest[3])
+
+        snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
+                                    bookid).fetchone()
+        if not snatchedbooks:  # check if one of the other downloaders got there first
+            if '.nzb' in tor_url:
+                snatch = NZBDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
+            else:
+                #  http://baconbits.org/torrents.php?action=download&authkey=<authkey>&torrent_pass=<password.hashed>&id=185398
+                if not tor_url.startswith('magnet'):  # magnets don't use auth
+                    pwd = lazylibrarian.RSS_PROV[tor_feed]['PASS']
+                    auth = lazylibrarian.RSS_PROV[tor_feed]['AUTH']
+                    # don't know what form of password hash is required, try sha1
+                    tor_url = tor_url.replace('<authkey>', auth).replace('<password.hashed>', sha1(pwd))
+                snatch = TORDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
+            if snatch:
+                notifiers.notify_snatch(formatter.latinToAscii(tor_Title) + ' at ' + formatter.now())
+                common.schedule_job(action='Start', target='processDir')
+                return True
 
     logger.debug("No RSS found for " + (book["authorName"] + ' ' +
-                 book['bookName']).strip())
+                book['bookName']).strip())
     return False

@@ -86,7 +86,12 @@ def KAT(book=None):
 
                         logger.debug('Found %s. Size: %s' % (title, size))
                     else:
-                        logger.debug('Found %s but only %s seeders' % (title, int(seeders)))
+                        if int(seeders) == 0:
+                            logger.debug('Found %s but no seeders' % title)
+                        elif int(seeders) == 1:
+                            logger.debug('Found %s but only one seeder' % title)
+                        else:
+                            logger.debug('Found %s but only %s seeders' % (title, int(seeders)))
 
                 except Exception as e:
                     logger.error(u"An unknown error occurred in the KAT parser: %s" % e)
