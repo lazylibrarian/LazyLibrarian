@@ -20,19 +20,19 @@ def bookSeries(bookname):
     \.?           then optional decimal point, (. must be escaped)
     -?            optional dash for a range
     \d{0,}        zero or more digits
-    ;             and a semicolon if multiple series
+    [;,]          and a semicolon or comma if multiple series
     )             end group
     """
     series = None
     seriesNum = None
     
-    result = re.search(r"\(([\S\s]+),? #(\d+\.?-?\d{0,};)", bookname)
+    result = re.search(r"\(([\S\s]+),? #(\d+\.?-?\d{0,}[;,])", bookname)
     if result:
         series = result.group(1)
         if series[-1] == ',':
              series = series[:-1]
         seriesNum = result.group(2)
-        if seriesNum[-1] == ';':
+        if seriesNum[-1] == ';' or seriesNum[-1] == ',':
             seriesNum = seriesNum[:-1]
     else:
         result = re.search(r"\(([\S\s]+),? #(\d+\.?-?\d{0,})", bookname)
@@ -42,8 +42,12 @@ def bookSeries(bookname):
                 series = series[:-1]
             seriesNum = result.group(2)
             
-    if series and series.endswith(' Novel'):
+    if series and series.lower().endswith(' novel'):
         series = series[:-6]
+    if series and series.lower().endswith(' book'):
+        series = series[:-5]
+    if seriesNum and seriesNum.lower().startswith('book '):
+        seriesNum = seriesNum[5:]
         
     return series, seriesNum
 
