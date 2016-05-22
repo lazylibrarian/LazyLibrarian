@@ -151,26 +151,37 @@ def processResultList(resultlist, author, title, book):
 
     if matches:
         highest = max(matches, key=lambda x: x[0])
+        score = highest[0]
+        nzb_Title = highest[1]
+        newValueDict = highest[2]
+        controlValueDict = highest[3]
         logger.info(u'Best match RSS (%s%%): %s using %s search' % 
-            (highest[0], highest[1], searchtype))
+            (score, nzb_Title, searchtype))
                   
-        myDB.upsert("wanted", highest[2], highest[3])
+        myDB.upsert("wanted", newValueDict, controlValueDict)
 
         snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
-                                    bookid).fetchone()
+                                    newValueDict["BookID"]).fetchone()
+
         if not snatchedbooks:  # check if one of the other downloaders got there first
+            tor_url = controlValueDict["NZBurl"]
             if '.nzb' in tor_url:
-                snatch = NZBDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
+                snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
+                                           newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             else:
+                """
                 #  http://baconbits.org/torrents.php?action=download&authkey=<authkey>&torrent_pass=<password.hashed>&id=185398
                 if not tor_url.startswith('magnet'):  # magnets don't use auth
                     pwd = lazylibrarian.RSS_PROV[tor_feed]['PASS']
                     auth = lazylibrarian.RSS_PROV[tor_feed]['AUTH']
                     # don't know what form of password hash is required, try sha1
                     tor_url = tor_url.replace('<authkey>', auth).replace('<password.hashed>', sha1(pwd))
-                snatch = TORDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
+                """  
+                snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
+                                           newValueDict["NZBtitle"], tor_url)
+
             if snatch:
-                notifiers.notify_snatch(formatter.latinToAscii(tor_Title) + ' at ' + formatter.now())
+                notifiers.notify_snatch(newValueDict["NZBtitle"] + ' at ' + formatter.now())
                 common.schedule_job(action='Start', target='processDir')
                 return True
 
