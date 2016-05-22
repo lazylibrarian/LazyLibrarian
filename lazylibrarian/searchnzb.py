@@ -179,20 +179,26 @@ def processResultList(resultlist, book, searchtype):
 
     if matches:
         highest = max(matches, key=lambda x: x[0])
+        score = highest[0]
+        nzb_Title = highest[1]
+        newValueDict = highest[2]
+        controlValueDict = highest[3]
         logger.info(u'Best match NZB (%s%%): %s using %s search' % 
-            (highest[0], highest[1], searchtype))
+            (score, nzb_Title, searchtype))
                   
-        myDB.upsert("wanted", highest[2], highest[3])
+        myDB.upsert("wanted", newValueDict, controlValueDict)
 
         snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
-                                    bookid).fetchone()
+                                    newValueDict["BookID"]).fetchone()
         if not snatchedbooks:
             if nzbmode == "torznab":
-                snatch = TORDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
+                snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
+                                           newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             else:
-                snatch = NZBDownloadMethod(bookid, nzbprov, nzbTitle, nzburl)
+                snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
+                                           newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             if snatch:
-                notifiers.notify_snatch(nzbTitle + ' at ' + formatter.now())
+                notifiers.notify_snatch(newValueDict["NZBtitle"] + ' at ' + formatter.now())
                 common.schedule_job(action='Start', target='processDir')
                 return True
 

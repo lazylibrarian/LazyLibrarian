@@ -179,17 +179,22 @@ def processResultList(resultlist, book, searchtype):
 
     if matches:
         highest = max(matches, key=lambda x: x[0])
+        score = highest[0]
+        nzb_Title = highest[1]
+        newValueDict = highest[2]
+        controlValueDict = highest[3]
         logger.info(u'Best match TOR (%s%%): %s using %s search' % 
-            (highest[0], highest[1], searchtype))
+            (score, nzb_Title, searchtype))
                   
-        myDB.upsert("wanted", highest[2], highest[3])
+        myDB.upsert("wanted", newValueDict, controlValueDict)
 
         snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
-                                        bookid).fetchone()
+                                    newValueDict["BookID"]).fetchone()
         if not snatchedbooks:
-            snatch = TORDownloadMethod(bookid, tor_prov, tor_Title, tor_url)
+            snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
+                                           newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             if snatch:
-                notifiers.notify_snatch(formatter.latinToAscii(tor_Title) + ' at ' + formatter.now())
+                notifiers.notify_snatch(newValueDict["NZBtitle"] + ' at ' + formatter.now())
                 common.schedule_job(action='Start', target='processDir')
                 return True
 

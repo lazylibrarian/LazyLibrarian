@@ -483,25 +483,7 @@ class GoodReads:
                     bookrate = float(book.find('average_rating').text)
                     bookpages = book.find('num_pages').text
 
-                    # \(            Must have (
-                    # ([\S\s]+)     followed by a group of one or more non whitespace
-                    # ,? #         followed by optional comma, then space hash
-                    # (             start next group
-                    # \d+           must have one or more digits
-                    # \.?           then optional decimal point, (. must be escaped)
-                    # -?            optional dash for a range
-                    # \d{0,}        zero or more digits
-                    # )             end group
-
-                    result = re.search(r"\(([\S\s]+),? #(\d+\.?-?\d{0,})", bookname)
-                    if result:
-                        series = result.group(1)
-                        if series[-1] == ',':
-                            series = series[:-1]
-                        seriesNum = result.group(2)
-                    else:
-                        series = None
-                        seriesNum = None
+                    series,seriesNum = formatter.bookSeries(bookname)                
     
                     find_book_status = myDB.select('SELECT * FROM books WHERE BookID = "%s"' % bookid)
                     if find_book_status:

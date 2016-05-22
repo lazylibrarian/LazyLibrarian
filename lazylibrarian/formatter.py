@@ -5,6 +5,48 @@ import shlex
 import time
 import os
 
+def bookSeries(bookname):
+    """
+    Try to get a book series/seriesNum from a bookname, or return None
+    See if book is in multiple series first, if so return first one
+    eg "The Shepherds Crown (Discworld, #41; Tiffany Aching, #5)"
+    if no match, try single series, eg Mrs Bradshaws Handbook (Discworld, #40.5)
+    
+    \(            Must have (
+    ([\S\s]+)     followed by a group of one or more non whitespace
+    ,? #         followed by optional comma, then space hash
+    (             start next group
+    \d+           must have one or more digits
+    \.?           then optional decimal point, (. must be escaped)
+    -?            optional dash for a range
+    \d{0,}        zero or more digits
+    ;             and a semicolon if multiple series
+    )             end group
+    """
+    series = None
+    seriesNum = None
+    
+    result = re.search(r"\(([\S\s]+),? #(\d+\.?-?\d{0,};)", bookname)
+    if result:
+        series = result.group(1)
+        if series[-1] == ',':
+             series = series[:-1]
+        seriesNum = result.group(2)
+        if seriesNum[-1] == ';':
+            seriesNum = seriesNum[:-1]
+    else:
+        result = re.search(r"\(([\S\s]+),? #(\d+\.?-?\d{0,})", bookname)
+        if result:
+            series = result.group(1)
+            if series[-1] == ',':
+                series = series[:-1]
+            seriesNum = result.group(2)
+            
+    if series.endswith(' Novel'):
+        series = series[:-6]
+        
+    return series, seriesNum
+
 def next_run(when_run):
     now = time.time()
     when_run = time.strptime(when_run, '%Y-%m-%d %H:%M:%S')
