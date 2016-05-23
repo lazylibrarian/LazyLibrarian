@@ -645,13 +645,20 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None,
             }
     else:
         if searchType == "book":
+            # for nzb books, 9 or 10 contain size
+            if nzbdetails[10].attrib.get('name') == 'size':
+                nzbsize = nzbdetails[10].attrib.get('value')
+            elif nzbdetails[9].attrib.get('name') == 'size':
+                nzbsize = nzbdetails[9].attrib.get('value')
+            else:
+                nzbsize = 0
             resultFields = {
                 'bookid': book['bookid'],
                 'nzbprov': host,
                 'nzbtitle': nzbtitle,
                 'nzburl': nzbdetails[2].text,
                 'nzbdate': nzbdetails[4].text,
-                'nzbsize': nzbdetails[10].attrib.get('size'),
+                'nzbsize': nzbsize,
                 'nzbmode': searchMode
             }
         elif searchType == "mag":
