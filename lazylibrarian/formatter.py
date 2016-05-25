@@ -42,7 +42,7 @@ def bookSeries(bookname):
                 series = series[:-1]
             seriesNum = result.group(2)
             
-    if series.endswith(' Novel'):
+    if series and series.endswith(' Novel'):
         series = series[:-6]
         
     return series, seriesNum
