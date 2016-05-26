@@ -46,8 +46,6 @@ def bookSeries(bookname):
         series = series[:-6]
     if series and series.lower().endswith(' book'):
         series = series[:-5]
-#    if seriesNum and seriesNum.lower().startswith('book '):
-#        seriesNum = seriesNum[5:]
         
     return series, seriesNum
 
@@ -150,12 +148,6 @@ def datecompare(nzbdate, control_date):
     dtage = date1 - date2
     return dtage.days
 
-
-# def checked(variable):
-#    if  variable:
-#        return 'Checked'
-#    else:
-#        return ''
 
 def check_int(var, default):
     try:
