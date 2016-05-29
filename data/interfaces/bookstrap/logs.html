@@ -1,0 +1,105 @@
+<%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+    from lazylibrarian import formatter
+%>
+<%def name="headerIncludes()">
+	<div id="subhead_container">
+		<div id="subhead_menu">
+		  <a href="clearLog" class="button btn btn-sm btn-primary">Clear Log </a>
+		  %if lazylibrarian.LOGFULL == True:
+		    <a href="toggleLog" class="button btn btn-sm btn-primary">Stop Debug Log</a>
+		  %else:
+		    <a href="toggleLog" class="button btn btn-sm btn-primary">Start Debug Log</a>
+		  %endif
+		</div>
+	</div>	
+</%def>
+<%def name="body()">
+    <h1>Logs</h1>
+    <div class="table-responsive">
+        <table class="display table table-striped table-hover table-bordered" id="log_table">
+            <thead>
+                <tr>
+                    <th class="timestamp hidden-xs">Timestamp</th>
+                    <th class="level">Level</th>
+                    <th class="message">Message</th>
+                </tr>
+            </thead>
+<!--
+            <tbody>
+            %for line in lineList:
+                <%
+                    timestamp, message, level, threadname = line
+
+                    if level == 'WARNING' or level == 'ERROR':
+                        grade = 'bg-danger'
+                    else:
+                        grade = 'bg-info'
+                %>
+                    <tr>
+                        <td class="timestamp">${timestamp}</td>
+                        <td class="level">${level}</td>
+                        <td class="message">${message}</td>
+                    </tr>
+            %endfor
+            </tbody>
+-->
+        </table>
+    </div>
+</%def>
+
+<%def name="headIncludes()">
+    
+</%def>
+
+<%def name="javascriptIncludes()">
+    <script>
+    $(document).ready(function() {
+        var oTable = $('#log_table').dataTable({
+                "bAutoWidth": false,
+                "order": [[ 0, 'desc' ]],
+                "oLanguage": {
+                    "sSearch":"",
+                    "sLengthMenu":"Show _MENU_ rows per page",
+                    "sEmptyTable": "No log information available",
+                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 rows",
+                    "sInfoFiltered":"(filtered from _MAX_ total rows)"
+                },
+                "bStateSave": true,
+                "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
+                "iDisplayLength": 10,
+                "sPaginationType": "full_numbers",
+                "aaSorting": [],
+                "bServerSide": true,
+                "sAjaxSource": 'getLog',
+                "bFilter": true,
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    if (aData[1] === "WARNING" || aData[1] === "ERROR") {
+                        $('td', nRow).closest('tr').addClass("text-danger");
+                    } else {
+                        $('td', nRow).closest('tr').addClass("text-info");
+                    }                                                        
+                    var w = window.innerWidth;
+                    if ( w < 640 ) // hide timestamp on smallest devices
+                    {
+                        $('td', nRow).eq(0).addClass('hidden');
+                    }                                    
+                    return nRow;
+                },
+                "fnServerData": function (sSource, aoData, fnCallback) {
+//                     Add some extra data to the sender 
+                    $.getJSON(sSource, aoData, function (json) {
+                        fnCallback(json)
+                    });
+                }
+            });
+            $('.dataTables_filter input').attr("placeholder", "Search filter");
+            $(window).resize(function() {oTable.fnDraw(false)});
+        });
+        
+        
+
+    </script>
+</%def>

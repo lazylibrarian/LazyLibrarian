@@ -1,0 +1,67 @@
+# LazyLibrarian - Automatic eBook Downloader
+#
+# Service Unit file for systemd system manager
+#
+# INSTALLATION NOTES
+#
+#	1. Rename this file as you want, ensuring that it ends in .service
+#		e.g. 'lazylibrarian.service'
+#
+#	2. Adjust configuration settings as required.  More details in the
+#	   "CONFIGURATION NOTES" section shown below.
+#
+#	3. Copy this file into your systemd service unit directory, which is
+#	   often '/lib/systemd/system'.
+#
+#	4. Create any files/directories that you specified back in step #2.
+#		e.g. '/etc/lazylibrarian/lazylibrarian.ini'
+#			 '/home/sabnzbd/.lazylibrarian'
+#
+#	5. Enable boot-time autostart with the following commands:
+#		systemctl daemon-reload
+#		systemctl enable lazylibrarian.service
+#
+#	6. Start now with the following command:
+#		systemctl start lazylibrarian.service
+#
+#   7. If troubleshooting startup-errors, start by checking permissions
+#      and ownership on the files/directories that you created in step #4.
+#
+#
+# CONFIGURATION NOTES
+#
+#	 - The example settings in this file assume that:
+#		1. You will run lazylibrarian as user/group: lazylibrarian.lazylibrarian
+#		2. You will either have lazylibrarian installed as a subdirectory
+#		   under '~lazylibrarian', or that you will have a symlink under
+#		   '~/lazylibrarian' pointing to your lazylibrarian install dir.
+#	    3. Your lazylibrarian data directory and configuration file will be
+#		   in separate locations from your lazylibrarian install dir, to
+#		   simplify updates.
+#			
+#    - Option names (e.g. ExecStart=, Type=) appear to be case-sensitive)
+#
+#    - Adjust ExecStart= to point to:
+#		1. Your lazylibrarian executable,
+#		2. Your config file (recommended is to put it somewhere in /etc)
+#       3. Your datadir (recommended is to NOT put it in your lazylibrarian exec dir)
+#
+#    - Adjust User= and Group= to the user/group you want lazylibrarian to run as.
+#
+#    - WantedBy= specifies which target (i.e. runlevel) to start lazylibrarian for.
+#        multi-user.target equates to runlevel 3 (multi-user text mode)
+#        graphical.target  equates to runlevel 5 (multi-user X11 graphical mode)
+
+[Unit]
+Description=LazyLibrarian
+
+[Service]
+ExecStart=/usr/bin/python /home/lazylibrarian/LazyLibrarian.py --daemon --config /home/lazylibrarian/lazylibrarian.ini --datadir /home/lazylibrarian/.lazylibrarian --nolaunch --quiet
+GuessMainPID=no
+Type=forking
+User=lazylibrarian
+Group=lazylibrarian
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

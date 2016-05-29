@@ -1,0 +1,144 @@
+<%inherit file="base.html"/>
+<%!
+    import thread, threading
+%>
+
+<%def name="body()">
+
+<h1>Search Results</h1>
+    
+<div class="table-responsive">
+    <table class="display table table-striped table-hover table-bordered" id="book_table">
+        <thead>
+            <tr>
+				<th class="bookart text-center no-sort">Cover</th>
+				<th class="authorname">Author</th>
+				<th class="bookname">Title</th>
+				<th class="date text-center">Released</th>
+				<th class="stars text-center">Rating</th>
+                <th class="addAuthor text-center no-sort">Add</th>
+                <th class="fuzz text-right">Match</th>
+             </tr>
+        </thead>
+
+        <tbody>
+            %if searchresults:
+                %for result in searchresults:
+                    <%
+                    if result['bookrate'] < 0.5:
+                        starimg = '0-stars.png'
+                    elif result['bookrate'] >= 0.5 and result['bookrate'] < 1.5:
+                        starimg = '1-stars.png'
+                    elif result['bookrate'] >= 1.5 and result['bookrate'] < 2.5:
+                        starimg = '2-stars.png'
+                    elif result['bookrate'] >= 2.5 and result['bookrate'] < 3.5:
+                        starimg = '3-stars.png'
+                    elif result['bookrate'] >= 3.5 and result['bookrate'] < 4.5:
+                        starimg = '4-stars.png'
+                    elif result['bookrate'] >= 4.5:
+                        starimg = '5-stars.png'
+                    else:
+                        starimg = '0-stars.png'
+
+                    if authorlist:
+                        if result['authorname'] in authorlist:
+                            destination = "authorPage?AuthorName="+result['authorname']
+                            value = "Have Author"
+                            but_class = "btn-info"
+                        else:
+                            destination = "addAuthor?AuthorName="+result['authorname']
+                            value = "Add Author"
+                            but_class = "btn-success"
+
+                    else:
+                        destination = "addAuthor?AuthorName="+result['authorname']
+                        value = "Add Author"
+                        but_class = "btn-success"
+
+                    if booklist:
+                        if result['bookid'] in booklist:
+                            for item in booksearch:
+                                if item['BookID'] == result['bookid']:
+                                    value2 = item['Status']
+                                    valid_id = item['BookID']
+
+
+                            if value2 == 'Open':
+                                destination2 = "openBook?bookid="+valid_id
+                                but_class2 = "btn-warning"
+                            elif value2 == 'Wanted':
+                                destination2 = "searchForBook?bookid="+valid_id
+                                but_class2 = "btn-success"
+                            elif value2 == 'Have' or value2 == 'Snatched':
+                                but_class2 = "btn-info"
+                            else:
+                                destination2 = "#"
+                                but_class2 = "btn-default"
+
+                        else:
+                            destination2 = "addBook?bookid="+result['bookid']
+                            value2 = "Add Book"
+                            but_class2 = "btn-success"
+
+                    else:
+                        destination2 = "addBook?bookid="+result['bookid']
+                        value2 = "Add Book"
+                        but_class2 = "btn-success"
+                    %>
+                    <tr>
+                    <td class="bookart text-center"><a href="${result['bookimg']}" target="_blank" rel="noreferrer"><img src="${result['bookimg']}" alt="Cover"></a></td>
+                    <td class="authorname">${result['authorname']}</td>
+                    <td class="bookname"><a href="${result['booklink']}" target="_blank" rel="noreferrer">${result['bookname']}</a></td>
+                    <td class="date text-center">${result['bookdate']}</td>
+                    <td class="stars text-center"><img src="images/${starimg}" alt="Rating"></td>
+                    <td class="addAuthor text-center">
+                        <p><a class="${but_class} btn btn-xs" href="${destination}">${value}</a>
+                        </p><p><a class="${but_class2} btn btn-xs" href="${destination2}">${value2}</a></p>
+                    </td>
+                    <td class="fuzz text-right">${result['highest_fuzz']}%</td>
+					</tr>
+				%endfor
+            %endif
+        </tbody>
+    </table>
+</div>
+<p>&nbsp;</p>
+</%def>
+
+<%def name="headIncludes()">
+    
+</%def>
+
+<%def name="javascriptIncludes()">
+    <script type="text/javascript">
+    $(document).ready(function()
+    {
+        $('#book_table').dataTable(
+            {
+                "responsive": true,
+                "order": [[ 1, 'asc' ]], // Skip ordering of the first column[0] (cover)
+                "aoColumns": [
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                    ],
+                "columnDefs": 
+                    [{ targets: 'no-sort', orderable: false }]
+                ,
+                "oLanguage": {
+                    "sLengthMenu":"Show _MENU_ books per page",
+                    "sEmptyTable": "No books found",
+                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 books",
+                    "sInfoFiltered":"(filtered from _MAX_ total books)"},
+                "iDisplayLength": 10,
+                "sPaginationType": "full_numbers",
+            });
+			$('.dataTables_filter input').attr("placeholder", "Seach table here");
+    });
+    </script>
+</%def>

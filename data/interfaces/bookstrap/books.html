@@ -1,0 +1,177 @@
+<%inherit file="base.html" />
+<%!
+    import lazylibrarian
+%>
+
+<%def name="headerIncludes()">
+    <div id="subhead_container" class="row">
+        <form id="subhead_menu" class="form-inline">
+            <div class="col-xs-10">
+                <a id="forcesearch" class="btn btn-sm btn-primary" href="forceSearch?source=books">Force Search</a>
+                <a id="forcepostprocess" class="btn btn-sm btn-primary" href="forceProcess?source=books">Force Post-Processing</a>
+            </div>
+            <div class="col-xs-2">
+            %if len(languages) >= 1:
+                <div class="form-group">
+                    <label for="chooselanguage"><small>Language</small></label>
+                    <select class="form-control input-sm" id="chooselanguage" onchange="window.location = 'books?BookLang=' + this.options[this.selectedIndex].value">
+                        <option value="">All</option>
+                        %for language in languages:
+                        <option value="${language['BookLang']}">${language['BookLang']}</option>
+                        %endfor
+                    </select>
+                </div>
+            %endif
+            </div>
+        </form>
+    </div>    
+</%def>
+
+<%def name="body()">
+    <h1>Books</h1>
+    <form action="markBooks" method="get" class="form-inline">
+        <div class="indented">
+        <div class="form-group">
+            <label for="markBooks" class="control-label">Mark selected books as</label>
+            <select class="markBooks form-control input-sm" id="markBooks" name="action">
+                <option value="Wanted">Wanted</option>
+                <option value="Have">Have</option>
+                <option value="Remove">Remove</option>
+            </select>                
+        </div>
+        <input type="submit" class="markBooks btn btn-sm btn-primary" value="Go">
+
+        </div>
+        <p>&nbsp;</p>
+        <div class="table-responsive">
+        <table class="display table table-striped table-hover table-bordered" id="book_table">
+            <thead>
+                <tr>
+                    <th class="select no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
+                    <th class="bookart text-center no-sort hidden-xs">Cover</th>
+                    <th class="authorname">Author</th>
+                    <th class="bookname">Title</th>
+                    <th class="series">Series</th>
+                    <th class="seriesNum text-center hidden-xs">Num</th>
+                    <th class="stars text-center hidden-xs">Rating</th>
+                    <th class="date text-center hidden-xs">Released</th>
+                    <th class="status text-center no-sort">Status</th>
+                </tr>
+            </thead>
+<!-- This section is unused now, we use server-side processing instead
+            <tbody>
+            %for result in books:
+                    <%
+                        if result['bookrate'] < 0.5:
+                            starimg = '0-stars.png'
+                        elif result['bookrate'] >= 0.5 and result['bookrate'] < 1.5:
+                            starimg = '1-stars.png'
+                        elif result['bookrate'] >= 1.5 and result['bookrate'] < 2.5:
+                            starimg = '2-stars.png'
+                        elif result['bookrate'] >= 2.5 and result['bookrate'] < 3.5:
+                            starimg = '3-stars.png'
+                        elif result['bookrate'] >= 3.5 and result['bookrate'] < 4.5:
+                            starimg = '4-stars.png'
+                        elif result['bookrate'] >= 4.5:
+                            starimg = '5-stars.png'
+                        else:
+                            starimg = '0-stars.png'
+
+                    %>
+                    <tr>
+                        <td class="select"><input type="checkbox" name="${result['BookID']}" class="checkbox" /></td>
+                        <td class="bookart text-center hidden-xs"><a href="${result['bookimg']}" target="_blank" rel="noreferrer"><img src="${result['bookimg']}" alt="Cover" class="bookcover-sm img-responsive"></a></td>
+                        <td class="authorname"><a href="authorPage?AuthorName=${result['AuthorName']|u}">${result['authorname']}</a></td>
+                        %if result['booksub']:
+                        <td class="bookname"><a href="${result['booklink']}" target="_blank" rel="noreferrer">${result['bookname']}</a><br>
+                        <i class="smalltext">${result['booksub']}</i></td>
+                        %else:
+                        <td class="bookname"><a href="${result['booklink']}" target="_blank" rel="noreferrer">${result['bookname']}</a></td>
+                        %endif
+                        <td class="series">${result['Series']}</td>
+                        <td class="seriesNum text-center">${result['seriesNum']}</td>
+                        <td class="stars text-center hidden-xs"><img src="images/${starimg}" alt="Rating"></td>
+                        <td class="date text-center">${result['BookDate']}</td>
+                        %if result['Status'] == 'Open':
+                        <td class="status text-center"><a class="button green btn btn-xs btn-warning" href="openBook?bookid=${result['bookid']}" target="_self"><i class="fa fa-book"></i> ${result['Status']}</a></td>
+                        %else:
+                            %if result['Status'] == 'Wanted':
+                        <td class="status text-center">
+                            <p><a class="a btn btn-xs btn-danger">${result['Status']}</a></p>
+                            <p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=${result['BookID']}" target="_self"><i class="fa fa-search"></i> Search</a></p>
+                        </td>
+                            %else:
+                                %if result['Status'] == 'Snatched' or result['Status'] == 'Have':
+                        <td class="status text-center"><a class="button btn btn-xs btn-info">${result['Status']}</a></td>
+                                %else:
+                        <td class="status text-center"><a class="button btn btn-xs btn-default grey">${result['Status']}</a></td>
+                                %endif
+                            %endif
+                        %endif
+                    </tr>
+            %endfor
+            </tbody>
+-->
+        </table>
+        </div>
+    </form>
+</%def>
+
+<%def name="headIncludes()">
+    
+</%def>
+
+<%def name="javascriptIncludes()">    
+    <script type="text/javascript">
+    $(document).ready(function() {
+        var oTable = $('#book_table').dataTable({
+            "bAutoWidth": false,
+            "order": [[ 2, 'asc' ]],
+            "columnDefs": 
+                [{ targets: 'no-sort', orderable: false }]
+            ,
+            "oLanguage": {
+                "sLengthMenu":"_MENU_ rows per page",
+                "sEmptyTable": "No books found",
+                "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
+                "sInfoEmpty":"Showing 0 to 0 of 0 rows",
+                "sInfoFiltered":"(filtered from _MAX_ total rows)"},
+            "bStateSave": true,
+            "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
+            "iDisplayLength": 10,
+            "sPaginationType": "full_numbers",
+            "aaSorting": [[0, 'asc']],
+            "bServerSide": true,
+            "sAjaxSource": 'getBooks?BookLang="eng"',
+            "bFilter": true,
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                var w = window.innerWidth;
+                if ( w < 768 ) 
+                {   // hide cover,seriesnum,stars,date on small devices
+                    $('td', nRow).eq(1).addClass('hidden');
+                    $('td', nRow).eq(5).addClass('hidden');
+                    $('td', nRow).eq(6).addClass('hidden');
+                    $('td', nRow).eq(7).addClass('hidden');
+                }                                    
+                return nRow;
+            },          
+        });
+        $('.dataTables_filter input').attr("placeholder", "Search filter");
+    	$(window).resize(function() {oTable.fnDraw(false)});
+        
+        $('#chooselanguage').val(getUrlVars()['BookLang']);
+    });
+    
+    // Read a page's GET URL variables and return them as an associative array.
+	function getUrlVars() {
+        var vars = [], hash;
+        var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+        for(var i = 0; i < hashes.length; i++) {
+            hash = hashes[i].split('=');
+            vars.push(hash[0]);
+            vars[hash[0]] = hash[1];
+        }
+        return vars;
+    }        
+    </script>
+</%def>

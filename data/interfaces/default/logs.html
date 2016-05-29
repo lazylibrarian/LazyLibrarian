@@ -1,15 +1,22 @@
 <%inherit file="base.html"/>
 <%!
-    from lazylibrarian import formatter
+    import lazylibrarian
 %>
 <%def name="headerIncludes()">
 	<div id="subhead_container">
 		<ul id="subhead_menu">
+		  <li><a href="clearLog" id="button"> Clear Log </a></li>
+		  %if lazylibrarian.LOGFULL == True:
+		    <li><a href="toggleLog" id="button"> Stop Debug Log</a></li>
+		  %else:
+		    <li><a href="toggleLog" id="button"> Start Debug Log</a></li>
+		  %endif
 		</ul>
 	</div>	
 </%def>
 <%def name="body()">
 <BR>
+<h1>&nbsp&nbspLogs</h1><br>
     <table class="display" id="log_table">
         <thead>
             <tr>
@@ -18,6 +25,7 @@
                 <th id="message">Message</th>
             </tr>
         </thead>
+<!--  we don't use this section now as we do it server-side
         <tbody>
         %for line in lineList:
             <%
@@ -35,6 +43,7 @@
                 </tr>
         %endfor
         </tbody>
+-->
     </table>
 </%def>
 
@@ -47,20 +56,16 @@
     <script>
     $(document).ready(function()
     {
-        $('#log_table').dataTable(
+        var oTable = $('#log_table').dataTable(
             {
-                "aoColumns": [
-                    null,
-                    null,
-                    null
-                    ],
+                "bAutoWidth": false,
                 "oLanguage": {
                     "sSearch":"",
-                    "sLengthMenu":"Show _MENU_ lines per page",
+                    "sLengthMenu":"Show _MENU_ rows per page",
                     "sEmptyTable": "No log information available",
-                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ lines",
-                    "sInfoEmpty":"Showing 0 to 0 of 0 lines",
-                    "sInfoFiltered":"(filtered from _MAX_ total lines)"},
+                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 rows",
+                    "sInfoFiltered":"(filtered from _MAX_ total rows)"},
                 "bStateSave": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": 10,
@@ -77,8 +82,12 @@
                     else
                     {
                         $('td', nRow).closest('tr').addClass("gradeZ");
-                    }
-                                                        
+                    }    
+                    var w = window.innerWidth;
+                    if ( w < 640 ) // hide timestamp on smallest devices
+                    {
+                        $('td', nRow).eq(0).addClass('hidden');
+                    }                                    
                     return nRow;
                 },
                 "fnServerData": function (sSource, aoData, fnCallback) {
@@ -88,7 +97,8 @@
                     });
                 }
             });
-        $('.dataTables_filter input').attr("placeholder", "Seach table here");
+        $('.dataTables_filter input').attr("placeholder", "Search table here");
+        $(window).resize(function() {oTable.fnDraw(false)});
         
         // dont keep refreshing the log table on mobile devices
         var isiPad = navigator.userAgent.match(/iPad/i) != null;

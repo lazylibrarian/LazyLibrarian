@@ -1,15 +1,11 @@
 <%inherit file="base.html" />
-<%!
-    import lazylibrarian
-    from lazylibrarian.formatter import checked
-%>
 
 <%def name="headerIncludes()">
     <div id="subhead_container">
         <ul id="subhead_menu">
             <li ><a id="button" href="forceSearch?source=books">Force Search</a></li>
             <li ><a id="button" href="forceProcess?source=books">Force Post-Processing</a></li>
-            %if len(languages) >= 1:
+            %if len(languages) > 1:
                 <li>Language:&nbsp</li>
                 
                 <li><select onchange="window.location = 'books?BookLang=' + this.options[this.selectedIndex].value">
@@ -24,6 +20,8 @@
 </%def>
 
 <%def name="body()">
+<BR><BR>
+<h1>&nbsp&nbspBooks</h1>
     <p class="indented">
         <form action="markBooks" method="get">
             <select class="markBooks" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
@@ -33,7 +31,7 @@
             </select>
         <input type="submit" class="markBooks" value="Go">
     </p>
-    <table class="display" id="book_table">
+    <table class="display" id="book_table" style="width:100%;">
         <thead>
             <tr>
                 <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
@@ -41,14 +39,14 @@
                 <th id="authorname">Author</th>
                 <th id="bookname">Title</th>
 		<th id="series">Series</th>
-		<th id="seriesOrder">Num</th>
+		<th id="seriesNum">Num</th>
                 <th id="stars">Rating</th>
                 <th id="date">Released</th>
-                <th id="language" hidden="true">Language</th>
+                <!-- <th id="language" hidden="true">Language</th> -->
                 <th id="status">Status</th>
             </tr>
         </thead>
-
+<!-- This section is unused now, we use server-side processing instead
         <tbody>
         %for result in books:
                 <%
@@ -78,7 +76,7 @@
                         <td id="bookname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a></td>
                     %endif
                     <td id="series">${result['Series']}</td>
-                    <td id="seriesOrder">${result['SeriesOrder']}</td>
+                    <td id="seriesNum">${result['seriesNum']}</td>
                     <td id="stars"><img src="images/${starimg}" width="50" height="10"></td>
                     <td id="date">${result['BookDate']}</td>
                     <td id="language" hidden="true">${result['booklang']}</td>
@@ -98,6 +96,7 @@
                 </tr>
         %endfor
         </tbody>
+-->
     </table>
 </%def>
 
@@ -109,21 +108,11 @@
     <script src="js/libs/jquery.dataTables.min.js"></script>
     <script>
     $(document).ready(function()
-    {
-        $('#book_table').dataTable(
+    {   
+        var oTable = $('#book_table').dataTable(
             {
-                "aoColumns": [
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
-                    ],
+                "bAutoWidth": false,
+                "order": [[ 2, 'asc' ]],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ books per page",
                     "sEmptyTable": "No books found",
@@ -134,8 +123,47 @@
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": 10,
                 "sPaginationType": "full_numbers",
+                "aaSorting": [[2, 'asc']],
+                 "bServerSide": true,
+                // need to pass requested language filter to getBooks 
+                "sAjaxSource": 'getBooks?BookLang=eng',
+                "bFilter": true,
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    var w = window.innerWidth;
+                    if ( w < 320 ) 
+                    {   // hide cover,author,series,seriesnum,stars,date on smallest devices
+                        $('td', nRow).eq(1).addClass('hidden');
+                        $('td', nRow).eq(2).addClass('hidden');
+                        $('td', nRow).eq(4).addClass('hidden');
+                        $('td', nRow).eq(5).addClass('hidden');
+                        $('td', nRow).eq(6).addClass('hidden');
+                        $('td', nRow).eq(7).addClass('hidden');
+                    }                                    
+                    if ( w < 640 ) 
+                    {   // hide cover,series,seriesnum,stars,date on smaller devices
+                        $('td', nRow).eq(1).addClass('hidden');
+                        $('td', nRow).eq(4).addClass('hidden');
+                        $('td', nRow).eq(5).addClass('hidden');
+                        $('td', nRow).eq(6).addClass('hidden');
+                        $('td', nRow).eq(7).addClass('hidden');
+                    }                                    
+                    if ( w < 768 ) 
+                    {   // hide cover,seriesnum,stars,date on small devices
+                        $('td', nRow).eq(1).addClass('hidden');
+                        $('td', nRow).eq(5).addClass('hidden');
+                        $('td', nRow).eq(6).addClass('hidden');
+                        $('td', nRow).eq(7).addClass('hidden');
+                    }                                    
+                    if ( w < 1024 ) 
+                    {   // hide stars,date on medium devices
+                        $('td', nRow).eq(6).addClass('hidden');
+                        $('td', nRow).eq(7).addClass('hidden');
+                    }                                    
+                    return nRow;
+                },          
             });
-			$('.dataTables_filter input').attr("placeholder", "Seach table here");
+			$('.dataTables_filter input').attr("placeholder", "Search table here");
+			$(window).resize(function() {oTable.fnDraw(false)});        
     });
     </script>
 </%def>

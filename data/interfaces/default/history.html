@@ -1,20 +1,19 @@
 <%inherit file="base.html"/>
-<%!
-	from lazylibrarian import database
-%>
 
 <%def name="headerIncludes()">
 	<div id="subhead_container">
 		<ul id="subhead_menu">
-			<li><a href="clearhistory?type=all" id="button">Clear All History</a></li>
-			<li><a href="clearhistory?type=Processed" id="button">Clear Processed</a></li>
-			<li><a href="clearhistory?type=Snatched" id="button">Clear Snatched</a></li>
+			<li><a href="clearhistory?status=all" id="button">Clear All History</a></li>
+			<li><a href="clearhistory?status=Processed" id="button">Clear Processed</a></li>
+			<li><a href="clearhistory?status=Snatched" id="button">Clear Snatched</a></li>
+			<li><a href="clearhistory?status=Failed" id="button">Clear Failed</a></li>
 			</ul>
 	</div>	
 </%def>
 
 <%def name="body()">
-<BR><BR>
+<BR>
+<h1>&nbsp&nbspHistory</h1><br>
 
 	<table class="display" id="book_table">
 		<thead>
@@ -74,17 +73,17 @@
                     null
                     ],
                 "oLanguage": {
-                    "sLengthMenu":"Show _MENU_ books per page",
+                    "sLengthMenu":"Show _MENU_ rows per page",
                     "sEmptyTable": "No history found",
-                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
-                    "sInfoEmpty":"Showing 0 to 0 of 0 books",
-                    "sInfoFiltered":"(filtered from _MAX_ total books)"},
+                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 rows",
+                    "sInfoFiltered":"(filtered from _MAX_ total rows)"},
                 "sPaginationType": "full_numbers",
                 "bStateSave": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": 10,
             });
-            $('.dataTables_filter input').attr("placeholder", "Seach table here");
+            $('.dataTables_filter input').attr("placeholder", "Search table here");
     });
     </script>
 </%def>

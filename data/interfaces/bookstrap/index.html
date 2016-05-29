@@ -1,0 +1,99 @@
+<%inherit file="base.html"/>
+
+<%def name="headerIncludes()">
+    <div id="subhead_container">
+        <a href="forceUpdate" class="btn btn-sm btn-primary" id="refresh"><i class="fa fa-refresh"></i> Refresh Active Authors</a>
+        <a href="libraryScan" class="btn btn-sm btn-primary" id="scan"><i class="fa fa-flash"></i> Library Scan</a>
+    </div>
+</%def>
+
+<%def name="body()">
+<h1>Authors</h1>    
+<div class="table-responsive">
+    <table class="display table table-striped table-hover table-bordered" id="author_table">
+        <thead>
+            <tr>
+                <th class="authorname col-xs-3">Author</th>
+                <th class="bookname col-xs-4">Latest Book</th>
+                <th class="date col-xs-1 text-center">Released</th>
+                <th class="have col-xs-3 text-center">Downloaded</th>
+                <th class="status col-xs-1 text-center">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+        %for author in authors:
+            <%
+        		totalbooks = author['UnignoredBooks']
+        		havebooks = author['HaveBooks']
+        		if not havebooks:
+        			havebooks = 0
+        		try:
+        			percent = (havebooks*100.0)/totalbooks
+        			if percent > 100:
+        				percent = 100
+        			if percent <= 100:
+        				css = 'success'
+        			if percent <= 75:
+        				css = 'info'
+        			if percent <= 50:
+        				css = 'warning'
+        			if percent <= 25:
+        				css = 'danger'
+        		except (ZeroDivisionError, TypeError):
+        			percent = 0
+        			totalbooks = '0'        			
+                                css = 'danger'
+
+        		if author['Status'] == 'Paused':
+        			grade = 'X'
+
+            %>
+            <tr>
+                <td class="name"><span title="${author['AuthorName']}"></span><a href="authorPage?AuthorName=${author['AuthorName']|u}">${author['AuthorName']}</a></td>
+                <td class="bookname"><span title="${author['LastBook']}"></span><a href="${author['LastLink']}" target="_blank" rel="noreferrer">${author['LastBook']}</a></td>
+                <td class="date text-center">${author['LastDate']}</td>
+                <td class="have "><span title="${percent}" class="sr-only">${percent}% Complete</span>
+                    <div class="progress center-block" style="width: 150px;">
+                        <div class="progress-bar-${css} progress-bar progress-bar-striped" role="progressbar" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100" style="width: ${percent}%;">
+                            <span class="sr-only">${percent}% Complete</span><span class="progressbar-front-text">${havebooks}/${totalbooks}</span>
+                        </div>                    
+                    </div>                    				    
+                </td>
+				
+                <td class="status text-center">${author['Status']}</td>
+            </tr>
+        %endfor
+        </tbody>
+    </table>
+</div>
+<p>&nbsp;</p>
+</%def>
+
+<%def name="headIncludes()">
+    
+</%def>
+
+<%def name="javascriptIncludes()">
+
+    <script type="text/javascript">
+    $(document).ready(function()
+    {
+        $('#author_table').dataTable(
+            {
+                "responsive": true,
+                "oLanguage": {
+                    "sLengthMenu":"_MENU_ rows per page",
+                    "sEmptyTable": "No authors found",
+                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 rows",
+                    "sInfoFiltered":"(filtered from _MAX_ total rows)"},
+                "bStateSave": true,
+                "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
+                "iDisplayLength": 10,
+                "sPaginationType": "full_numbers",
+                "aaSorting": [[0, 'asc']],
+            });
+			$('.dataTables_filter input').attr("placeholder", "Search filter");
+    });
+    </script>
+</%def>

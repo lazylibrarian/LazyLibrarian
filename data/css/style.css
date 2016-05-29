@@ -651,9 +651,12 @@ DIV#log_table_wrapper
 {
 	padding-top: 17px;
 }
-DIV#main
+DIV#main 
 {
-	margin: 0;
+    position: relative;
+    float: bottom;
+    width: 100%; 
+    margin: 0;
 	padding: 86px 0 0 0px;
 }
 .table_wrapper_button
@@ -744,6 +747,15 @@ DIV#main
 	position: relative;
 	left: 0px;
 	top: 0px;
+}
+/* Chrome Newznab providers ui bug fix */
+.configtable .providers-input
+{
+	width: 160px;
+}
+.configtable .providers-rss-input
+{
+	width: 322px;
 }
 TABLE#author_table
 {

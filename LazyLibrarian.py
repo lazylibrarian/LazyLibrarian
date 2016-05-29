@@ -1,11 +1,30 @@
-import os, sys, time, cherrypy, threading, locale
-from lib.configobj import ConfigObj
+#!/usr/bin/env python
+import os
+import sys
+import time
+import cherrypy
+import threading
+import locale
+import ConfigParser
+import platform
 
 import lazylibrarian
 from lazylibrarian import webStart, logger, versioncheck
 
+# The following should probably be made configurable at the settings level
+# This fix is put in place for systems with broken SSL (like QNAP)
+opt_out_of_certificate_verification = True
+if opt_out_of_certificate_verification:
+    try:
+        import ssl
+        ssl._create_default_https_context = ssl._create_unverified_context
+    except:
+        pass
+# ==== end block (should be configurable at settings level)
+
+
 def main():
-	#DIFFEREMT
+    # DIFFEREMT
     # rename this thread
     threading.currentThread().name = "MAIN"
     # Set paths
@@ -33,26 +52,26 @@ def main():
     from optparse import OptionParser
 
     p = OptionParser()
-    p.add_option('-d', '--daemon', action = "store_true",
-                 dest = 'daemon', help = "Run the server as a daemon")
-    p.add_option('-q', '--quiet', action = "store_true",
-                 dest = 'quiet', help = "Don't log to console")
+    p.add_option('-d', '--daemon', action="store_true",
+                 dest='daemon', help="Run the server as a daemon")
+    p.add_option('-q', '--quiet', action="store_true",
+                 dest='quiet', help="Don't log to console")
     p.add_option('--debug', action="store_true",
-                 dest = 'debug', help = "Show debuglog messages")
-    p.add_option('--nolaunch', action = "store_true",
-                 dest = 'nolaunch', help="Don't start browser")
+                 dest='debug', help="Show debuglog messages")
+    p.add_option('--nolaunch', action="store_true",
+                 dest='nolaunch', help="Don't start browser")
     p.add_option('--port',
-                 dest = 'port', default = None,
-                 help = "Force webinterface to listen on this port")
+                 dest='port', default=None,
+                 help="Force webinterface to listen on this port")
     p.add_option('--datadir',
-                 dest = 'datadir', default = None,
-                 help = "Path to the data directory")
+                 dest='datadir', default=None,
+                 help="Path to the data directory")
     p.add_option('--config',
-                 dest = 'config', default = None,
-                 help = "Path to config.ini file")
+                 dest='config', default=None,
+                 help="Path to config.ini file")
     p.add_option('-p', '--pidfile',
-                 dest = 'pidfile', default = None,
-                 help = "Store the process id in the given file")
+                 dest='pidfile', default=None,
+                 help="Store the process id in the given file")
 
     options, args = p.parse_args()
 
@@ -63,7 +82,7 @@ def main():
         lazylibrarian.LOGLEVEL = 0
 
     if options.daemon:
-        if not sys.platform == 'win32':
+        if not 'windows' in platform.system().lower():
             lazylibrarian.DAEMON = True
             lazylibrarian.LOGLEVEL = 0
             lazylibrarian.daemonize()
@@ -99,21 +118,22 @@ def main():
 
     # create database and config
     lazylibrarian.DBFILE = os.path.join(lazylibrarian.DATADIR, 'lazylibrarian.db')
-    lazylibrarian.CFG = ConfigObj(lazylibrarian.CONFIGFILE, encoding='utf-8')
+    lazylibrarian.CFG = ConfigParser.RawConfigParser()
+    lazylibrarian.CFG.read(lazylibrarian.CONFIGFILE)
 
-    #REMINDER ############ NO LOGGING BEFORE HERE ###############
-    #There is no point putting in any logging above this line, as its not set till after initialize.
+    # REMINDER ############ NO LOGGING BEFORE HERE ###############
+    # There is no point putting in any logging above this line, as its not set till after initialize.
     lazylibrarian.initialize()
-    
-    #Set the install type (win,git,source) & 
-    #check the version when the application starts
+
+    # Set the install type (win,git,source) &
+    # check the version when the application starts
     logger.debug('(LazyLibrarian) Setup install,versions and commit status')
     versioncheck.getInstallType()
     lazylibrarian.CURRENT_VERSION = versioncheck.getCurrentVersion()
     lazylibrarian.LATEST_VERSION = versioncheck.getLatestVersion()
     lazylibrarian.COMMITS_BEHIND = versioncheck.getCommitDifferenceFromGit()
-    logger.debug('Current Version [%s] - Latest remote version [%s] - Install type [%s]' % (lazylibrarian.CURRENT_VERSION, lazylibrarian.LATEST_VERSION, lazylibrarian.INSTALL_TYPE))
-
+    logger.debug('Current Version [%s] - Latest remote version [%s] - Install type [%s]' % (
+        lazylibrarian.CURRENT_VERSION, lazylibrarian.LATEST_VERSION, lazylibrarian.INSTALL_TYPE))
 
     if options.port:
         lazylibrarian.HTTP_PORT = int(options.port)
@@ -125,14 +145,18 @@ def main():
     if lazylibrarian.DAEMON:
         lazylibrarian.daemonize()
 
-    # Try to start the server. 
+    # Try to start the server.
     webStart.initialize({
-                    'http_port': lazylibrarian.HTTP_PORT,
-                    'http_host': lazylibrarian.HTTP_HOST,
-                    'http_root': lazylibrarian.HTTP_ROOT,
-                    'http_user': lazylibrarian.HTTP_USER,
-                    'http_pass': lazylibrarian.HTTP_PASS,
-            })
+        'http_port': lazylibrarian.HTTP_PORT,
+        'http_host': lazylibrarian.HTTP_HOST,
+        'http_root': lazylibrarian.HTTP_ROOT,
+        'http_user': lazylibrarian.HTTP_USER,
+        'http_pass': lazylibrarian.HTTP_PASS,
+        'http_proxy': lazylibrarian.HTTP_PROXY,
+        'https_enabled': lazylibrarian.HTTPS_ENABLED,
+        'https_cert': lazylibrarian.HTTPS_CERT,
+        'https_key': lazylibrarian.HTTPS_KEY,
+    })
 
     if lazylibrarian.LAUNCH_BROWSER and not options.nolaunch:
         lazylibrarian.launch_browser(lazylibrarian.HTTP_HOST, lazylibrarian.HTTP_PORT, lazylibrarian.HTTP_ROOT)

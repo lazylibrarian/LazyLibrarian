@@ -1,19 +1,17 @@
 <%inherit file="base.html"/>
-<%!
-    from lazylibrarian import formatter
-%>
 
 <%def name="headerIncludes()">
     <div id="subhead_container">
         <ul id="subhead_menu">
             <li><a href="forceUpdate" id="button"> Refresh Active Authors </a></li>
-	     <li><a href="libraryScan?" id="button"> Library Scan </a></li>
-        </ul>
+	     <li><a href="libraryScan" id="button"> Library Scan </a></li>
+	    </ul>
     </div>
 </%def>
 
 <%def name="body()">
 <BR><BR>
+<h1>&nbsp&nbspAuthors</h1>
     <table class="display" id="author_table">
         <thead>
             <tr>
@@ -45,7 +43,7 @@
         				css = "<div class=\"progress-container danger\">"
         		except (ZeroDivisionError, TypeError):
         			percent = 0
-        			totalbooks = '?'
+        			totalbooks = '0'
         			css = "<div class=\"progress-container danger\">"
 
         		if author['Status'] == 'Paused':

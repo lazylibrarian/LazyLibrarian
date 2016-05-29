@@ -1,7 +1,4 @@
 <%inherit file="base.html"/>
-<%!
-    import thread, threading
-%>
 
 <%def name="body()">
 
@@ -43,16 +40,16 @@
 
                     if authorlist:
                         if result['authorname'] in authorlist:
-                            destination = "authorPage?AuthorName="+result['authorname']
+                            destination = "authorPage?AuthorName="+result['safeauthorname']
                             value = "Have Author"
                             but_class = "button green"
                         else:
-                            destination = "addResults?authorname="+result['authorname']
+                            destination = "addAuthor?AuthorName="+result['safeauthorname']
                             value = "Add Author"
                             but_class = "button"
 
                     else:
-                        destination = "addResults?authorname="+result['authorname']
+                        destination = "addAuthor?AuthorName="+result['safeauthorname']
                         value = "Add Author"
                         but_class = "button"
 

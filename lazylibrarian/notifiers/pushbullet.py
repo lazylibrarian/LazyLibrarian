@@ -22,17 +22,17 @@ import urllib
 import urllib2
 import time
 import lazylibrarian
+import lazylibrarian.common as common
 
 from httplib import HTTPSConnection, HTTPException
 from urllib import urlencode
 from lazylibrarian import logger
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
-
+from pushbullet2 import PushBullet
 
 class PushbulletNotifier:
 
-    def _sendPushbullet(self, message=None, event=None, pushbullet_token=None, pushbullet_deviceid=None, 
-                        notificationType=None, method=None, force=False):
+    def _sendPushbullet(self, message=None, event=None, pushbullet_token=None, pushbullet_deviceid=None, force=False):
 
         if not lazylibrarian.USE_PUSHBULLET and not force:
             return False
@@ -40,65 +40,29 @@ class PushbulletNotifier:
         if pushbullet_token == None:
             pushbullet_token = lazylibrarian.PUSHBULLET_TOKEN
         if pushbullet_deviceid == None:
-            pushbullet_deviceid = lazylibrarian.PUSHBULLET_DEVICEID
-        method = 'POST'
-        if method == 'POST':
-            uri = '/api/pushes'
-        else:
-            uri = '/api/devices'
+            if lazylibrarian.PUSHBULLET_DEVICEID:
+                pushbullet_deviceid = lazylibrarian.PUSHBULLET_DEVICEID
 
         logger.debug("Pushbullet event: " + str(event))
         logger.debug("Pushbullet message: " + str(message))
         logger.debug("Pushbullet api: " + str(pushbullet_token))
         logger.debug("Pushbullet devices: " + str(pushbullet_deviceid))
-        logger.debug("Pushbullet notification type: " + str(notificationType))
 
-        http_handler = HTTPSConnection('api.pushbullet.com')
-
-        authString = base64.encodestring('%s:' % (pushbullet_token)).replace('\n', '')
-
-        if notificationType == None:
-            testMessage = True
-            try:
-                logger.debug("Testing Pushbullet authentication and retrieving the device list.")
-                http_handler.request(method, uri, None, headers={'Authorization': 'Basic %s:' % authString})
-            except (SSLError, HTTPException):
-                logger.error("Pushbullet notification failed.")
-                return False
+        pb = PushBullet(str(pushbullet_token))
+        
+        if event == 'LLTest': # special case, return device list
+            devices = pb.getDevices()
+            ret = ""
+            for device in devices:
+                logger.info("Pushbullet: %s [%s]" % (device["nickname"], device["iden"]))
+                ret += "\nPushbullet: %s [%s]" % (device["nickname"], device["iden"])
+            push = pb.pushNote(pushbullet_deviceid, str(event), str(message))
+            return ret
         else:
-            testMessage = False
-            try:
-                data = {
-                        'title': event.encode('utf-8'),
-                        'body': message.encode('utf-8'),
-                        'device_iden': pushbullet_deviceid,
-                        'type': notificationType}
-                http_handler.request(method, uri, body=urlencode(data),
-                             headers={'Authorization': 'Basic %s' % authString})
-                pass
-            except (SSLError, HTTPException):
-                return False
+            push = pb.pushNote(pushbullet_deviceid, str(event), str(message))
+            return push
 
-        response = http_handler.getresponse()
-        request_body = response.read()
-        request_status = response.status
-        logger.debug("Pushbullet Response: %s" % request_status)
-        logger.debug("Pushbullet Reason: %s" % response.reason)
-        if request_status == 200:
-            if testMessage:
-                return request_body
-            else:
-                logger.debug("Pushbullet notifications sent.")
-                return True
-        elif request_status == 410:
-            logger.error("Pushbullet auth failed: %s" % response.reason)
-            return False
-        else:
-            logger.error("Pushbullet notification failed.")
-            return False
-
-    def _notify(self, message=None, event=None, pushbullet_token=None, pushbullet_deviceid=None, 
-                notificationType=None, method=None, force=False):
+    def _notify(self, message=None, event=None, pushbullet_token=None, pushbullet_deviceid=None):
         """
         Sends a pushbullet notification based on the provided info or LL config
 
@@ -107,30 +71,33 @@ class PushbulletNotifier:
         username: The username to send the notification to (optional, defaults to the username in the config)
         force: If True then the notification will be sent even if pushbullet is disabled in the config
         """
+        try:
+            message = common.remove_accents(message)
+        except Exception, e:
+            logger.warn("Pushbullet: could not convert  message: %s" % e)
 
         # suppress notifications if the notifier is disabled but the notify options are checked
         if not lazylibrarian.USE_PUSHBULLET and not force:
             return False
 
-        logger.debug("Pushbullet: Sending notification for " + str(message))
+        logger.debug("Pushbullet: Sending notification " + str(message))
 
-        self._sendPushbullet(message,event,pushbullet_token,pushbullet_deviceid,notificationType,method)
-        return True
+        return self._sendPushbullet(message, event, pushbullet_token, pushbullet_deviceid)
 
-##############################################################################
+#
 # Public functions
-##############################################################################
+#
 
     def notify_snatch(self, title):
         if lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH:
-            self._notify(message=title, event=notifyStrings[NOTIFY_SNATCH], notificationType='note', method='POST')
+            self._notify(message=title, event=notifyStrings[NOTIFY_SNATCH])
 
     def notify_download(self, title):
         if lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD:
-            self._notify( message=title, event=notifyStrings[NOTIFY_DOWNLOAD], notificationType='note', method='POST')
+            self._notify(message=title, event=notifyStrings[NOTIFY_DOWNLOAD])
 
-    def test_notify(self, token, title="Test"):
-        return self._sendPushbullet("This is a test notification from LazyLibrarian", title, token)
+    def test_notify(self, title="LLTest"):
+        return self._notify("This test notification asks for the device list", event=title)
 
     def update_library(self, showName=None):
         pass

@@ -23,41 +23,32 @@ table#author_table th#bookname { display:none;}
 table#author_table th#status { min-width:20px; }
 table#author_table th#have { min-width:20px !important; }
 
-table#author_table th#date {  display:none; }
-table#author_table td#date {  display:none; }
+table#author_table th#date, td#date {  display:none; }
+table#author_table th#stars, td#stars {  display:none; }
 
 table#author_table th#have { text-align: left; width:20px !important;}
 table#author_table td#authorname { min-width:20px !important; vertical-align: middle; text-align: left; }
 table#author_table td#bookname { display:none; }
 table#author_table td#status {  min-width:20px; }
+table#author_table th#series, td#series { display:none; }
+table#author_table th#seriesNum, td#seriesNum { display:none; }
 
 /* Books page */
 table#book_table { }
-table#book_table th#select {  }
-table#book_table th#bookart { display:none; }
-table#book_table th#bookname {  }
-table#book_table th#authorname { }
-table#book_table th#status {  }
-table#book_table th#date { display:none;  }
-table#book_table th#number {  }
-table#book_table th#language {  }
-table#book_table th#stars { display:none; }
-table#book_table td#select {  }
-table#book_table td#bookart { display:none; }
-table#book_table td#bookart img {  }
-table#book_table td#authorname {  }
-table#book_table td#bookname {  }
-table#book_table td#status {  }
-table#book_table td#date { display:none;  }
-table#book_table td#number {  }
-table#book_table td#language {  }
-table#book_table td#stars { display:none; }
+table#book_table th#select, td#select {  }
+table#book_table th#bookart, td#bookart { display:none; }
+table#book_table th#bookname, td#bookname {  }
+table#book_table th#authorname, td#authorname { }
+table#book_table th#status, td#status {  }
+table#book_table th#date, td#date { display:none;  }
+table#book_table th#series, td#series { display:none; }
+table#book_table th#language, td#language { display:none; }
+table#book_table th#stars, td#stars { display:none; }
+table#book_table th#seriesNum, td#seriesNum { display:none; }
 
 /* Log */
 table#log_table { background-color: white; margin-left:5px; margin-right:5px; max-width:100%; width:99%; }
-table#log_table th#timestamp { display:none; }
-table#log_table th#level {  }
-table#log_table th#message { text-align: left; min-width: 90px; }
-table#log_table td#timestamp { display:none; }
-table#log_table td#level {  }
-table#log_table td#message { text-align: left; }
+table#log_table th#timestamp, td#timestamp { display:none; }
+table#log_table th#level, td#level {  }
+table#log_table th#message, td#message { text-align: left; }
+

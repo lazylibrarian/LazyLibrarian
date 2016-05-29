@@ -1,0 +1,145 @@
+<%inherit file="base.html" />
+<%!
+    from lazylibrarian import database
+%>
+
+<%def name="headerIncludes()">
+
+    <div id="subhead_container" class="row">
+        <form action="addMagazine" method="get">    
+        <input type="hidden" name="search" value="magazine">
+        <div id="subhead_menu" class="col-xs-12 col-md-8">
+            <a href="forceSearch?source=magazines" class="button btn btn-sm btn-primary"><i class="fa fa-search"></i> Force Search</a>
+            <a href="forceProcess?source=magazines" class="button btn btn-sm btn-primary">Force Post-Processing</a>
+            <a href="magazineScan" class="button btn btn-sm btn-primary"><i class="fa fa-flash"></i> Library Scan</a>
+            <a href="pastIssues?whichStatus=Skipped" class="button btn btn-sm btn-primary"><i class="fa fa-calendar"></i> Past Issues</a>
+        </div>
+        <div class="clearfix visible-xs"><hr/></div>
+        <div class="col-xs-12 col-md-4">
+            <div class="form-group">
+                <label class="sr-only">Magazine Title</label>
+                <div class="input-group">
+                    <input type="text" placeholder="Magazine Title" name="title" class="form-control input-sm col-xs-12">
+                    <span class="input-group-btn">
+                        <button type="submit" value="Magazine" class="btn btn-sm btn-primary" data-toggle="tooltip" data-placement="bottom" title="Add and Search for Magazine"><i class="fa fa-search-plus"></i><span class="hidden-xs"> Magazine</span></button>
+                    </span>
+                </div>
+            </div>
+            
+        </div>
+
+        </form>
+    </div>
+</%def>
+
+<%def name="body()">
+
+<form action="markMagazines" method="get" class="form-inline">
+    <h1>Magazines</h1>
+    <div class="indented">        
+            <div class="form-group">
+                <label for="action" class="">Mark selected as</label>
+                <select class="markMagazines form-control input-sm" id="action" name="action">
+                    <option value="Active">Active</option>
+                    <option value="Paused">Paused</option>
+                    <option value="Reset">Reset</option>
+                    <option value="Delete">Delete</option>
+                </select>                
+            </div>
+            <input type="submit" class="markMagazines btn btn-sm btn-primary" value="Go">
+    </div>
+    <p>&nbsp;</p>
+
+    <div class="table-responsive">
+        <table class="display table table-striped table-hover table-bordered" id="book_table">
+            <thead>
+                <tr>
+                    <th class="select no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
+                    <th class="magtitle">Title</th>
+                    <!--<th class="frequency">Frequency</th>-->
+                    <th class="seriesOrder">Num</th>
+                    <th class="lastacquired">Acquired</th>
+                    <th class="issuedate">Issue Date</th>
+                    <th class="status">Status</th>
+                    <th class="issue no-sort">Issue</th>
+                </tr>
+            </thead>
+
+            <tbody>
+            %for result in magazines:
+                    <tr>
+                        <td class="select"><input type="checkbox" name="${result['Title']}" id="${result['safetitle']}" class="checkbox" /></td>
+                        <td class="magtitle">${result['Title']}</td>
+                        <!--<td class="frequency">${result['Frequency']}</td>-->
+                        <!-- <td id="regex"> -->      
+                            <!-- <form action="updateRegex" method="get"><input type="hidden" name="title" value="${result['Title']}">-->
+                                <!-- <select name="regex">-->
+                                    <!-- <option selected="selected">${result['Regex']}</option>-->
+                                    <!-- <option value="RegexA">(DD) MonthName YYYY</option>-->
+                                    <!-- <option value="RegexB">YYYY-MM</option>-->
+                                    <!-- <option value="RegexC">MonthName DD YYYY</option>-->
+                                <!-- </select>-->
+                                <!-- <input type="submit" value="Go">-->
+                            <!-- </form>-->
+                        <!-- </td>-->
+                        <td class="seriesOrder">${result['Count']}</td>
+                        <td class="lastacquired">${result['LastAcquired']}</td>
+                        <td class="issuedate">${result['IssueDate']}</td>
+                        <td class="status">${result['Status']}</td>
+                        %if result['IssueStatus'] == 'Open':
+                            <td class="issue text-center"><a class="button green btn btn-xs btn-warning" href="openMag?bookid=${result['safetitle']}" target="_self">${result['IssueStatus']}</a></td>
+                        %else:
+                            %if result['IssueStatus'] == 'Wanted':
+                                <td class="issue text-center">
+                                    <p><a class="a btn btn-xs btn-danger">${result['IssueStatus']}</a></p>
+                                    <p><a class="b  btn btn-xs btn-success" href="searchForMag?bookid=${result['safetitle']}" target="_self"><i class="fa fa-search"></i> Search</a></p>
+                                </td>
+                            %else:
+                                %if result['IssueStatus'] == 'Snatched' or result['IssueStatus'] == 'Have':
+                                    <td class="issue text-center"><a class="button btn btn-xs btn-info">${result['IssueStatus']}</a></td>
+                                %else:
+                                    <td class="issue text-center"><a class="button grey btn btn-xs btn-default">${result['IssueStatus']}</a></td>
+                                %endif
+                            %endif
+                        %endif
+                    </tr>
+            %endfor
+            </tbody>
+        </table>
+    </div>
+</form>
+
+</%def>
+
+<%def name="headIncludes()">
+    
+</%def>
+
+<%def name="javascriptIncludes()">
+    <script>
+        
+    $(document).ready(function()
+    {
+
+        $('#book_table').dataTable(
+            {
+                "responsive": true,
+                "order": [[ 1, 'asc']],
+                "columnDefs": 
+                    [{ targets: 'no-sort', orderable: false }]
+                ,
+                "oLanguage": {
+                    "sLengthMenu":"_MENU_ rows per page",
+                    "sEmptyTable": "No magazines found",
+                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 results",
+                    "sInfoFiltered":"(filtered from _MAX_ total rows)"},
+                "sPaginationType": "full_numbers",
+                "bStateSave": true,
+                "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
+                "iDisplayLength": 10,
+            });
+            $('.dataTables_filter input').attr("placeholder", "Search filter");
+    });
+    </script>
+</%def>

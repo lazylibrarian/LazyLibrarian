@@ -53,6 +53,11 @@
     };
     </script>
     <script src="js/adapt.min.js"></script>
+<!--    <div id="demo"></div>
+    <script>
+    wsize = window.innerWidth;
+    document.getElementById("demo").innerHTML = wsize;
+    </script> -->
     <script>
         // Script to add a clear button to the search author input box
         $(document).ready(function () {
@@ -113,6 +118,7 @@
             % endif
                     
         <header>
+          <div id="headercontainer">
             <div id="navbardiv">
 				<table>
 					<tr>
@@ -125,22 +131,24 @@
 							<a href="history" class="navbarele"><img src="images/nav/hist.png"></img></a>
 							<a href="logs" class="navbarele"><img src="images/nav/logs.png"></img></a>
 							<a href="config" class="navbarcfg"><img src="images/nav/config.png"></img></a>
-						<div id="searchbar">
-								<form action="search" method="get">
-									<input type="text" value="" onfocus="if(this.value==this.defaultValue) this.value='';" name="name" placeholder="Title / Author / ISBN" class="deletable" id="searchbox" />
-									<span class="mini-icon"></span>                   
-								</form>
-						</div></div>
+						</div> 
+						<div id="searchbar" class="searchbar">
+						    <form class="input-group" action="search" method="get">
+							    <input type="text" value="" onfocus="if(this.value==this.defaultValue) this.value='';" name="name" placeholder="Title / Author / ISBN">
+							    <span class="mini-icon"></span>
+						    </form>
+						</div>
 					</tr>
 				</table>
+              </div>
+              <div id="subhead">
+                  ${next.headerIncludes()}
+              </div>
             </div>
-            <div id="subhead">
-                ${next.headerIncludes()}
-            </div>
-            </div>
+          </div>
         </header>
 
-        <div id="main" class="main">
+        <div id="main" class="main container">
             ${next.body()}
         </div>
     </div>

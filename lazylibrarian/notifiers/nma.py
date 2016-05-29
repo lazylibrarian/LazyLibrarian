@@ -5,6 +5,7 @@ from lib.pynma import pynma
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
 
 
+
 class NMA_Notifier:
 
     def _sendNMA(self, nma_api=None, nma_priority=None, event=None, message=None, force=False):
@@ -12,7 +13,7 @@ class NMA_Notifier:
         title = "LazyLibrarian"
 
         # suppress notifications if the notifier is disabled but the notify options are checked
-        if not lazylibrarian.NMA_ENABLED and not force:
+        if not lazylibrarian.USE_NMA and not force:
             return False
 
         if nma_api == None:
@@ -40,22 +41,23 @@ class NMA_Notifier:
             logger.error(u"NMA: Could not send notification to NotifyMyAndroid")
             return False
         else:
+            logger.debug(u"NMA: Success. NotifyMyAndroid returned : %s" % response[nma_api][u'code'])
             return True
 
-##############################################################################
+#
 # Public functions
-##############################################################################
+#
 
     def notify_snatch(self, title):
         if lazylibrarian.NMA_ONSNATCH:
             self._sendNMA(nma_api=None, nma_priority=None, event=notifyStrings[NOTIFY_SNATCH], message=title)
 
     def notify_download(self, title):
-        if lazylibrarian.NMA_ENABLED:
+        if lazylibrarian.NMA_ONDOWNLOAD:
             self._sendNMA(nma_api=None, nma_priority=None, event=notifyStrings[NOTIFY_DOWNLOAD], message=title)
 
-    def test_notify(self, nma_api, nma_priority):
-        return self._sendNMA(nma_api, nma_priority, event="Test", message="Testing NMA settings from LazyLibrarian", force=True)
+    def test_notify(self, title="Test"):
+        return self._sendNMA(nma_api=None, nma_priority=None, event="Test", message="Testing NMA settings from LazyLibrarian", force=True)
 
     def update_library(self, showName=None):
         pass

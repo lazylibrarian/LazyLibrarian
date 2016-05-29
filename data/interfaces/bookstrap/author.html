@@ -1,0 +1,243 @@
+<%inherit file="base.html"/>
+<%!
+    from lazylibrarian import database
+%>
+
+<%def name="headerIncludes()">
+    <div id="subhead_container">
+        <form id="subhead_menu" class="form-inline">            
+            <a href="refreshAuthor?AuthorName=${author['AuthorName']|u}" class="btn btn-sm btn-primary"><i class="fa fa-refresh"></i> Refresh Author</a>
+            <a href="deleteAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-remove"></i> Delete Author</a>
+            %if author['Status'] == 'Paused':
+                <a href="resumeAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-play"></i> Resume Author</a>
+            %else:
+                <a href="pauseAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-pause"></i> Pause Author</a>
+            %endif
+            <a href="authorPage?AuthorName=${author['AuthorName']|u}&amp;Ignored=True" class="btn btn-sm btn-primary"><i class="fa fa-ban"></i> Ignored Books</a>
+            %if len(languages) >= 1:
+                <div class="form-group pull-right">
+                    <label for="chooselanguage"><small>Language</small></label>
+                    <select class="form-control input-sm" id="chooselanguage" onchange="location = 'authorPage?AuthorName=${author['AuthorName']|u}&amp;BookLang=' + this.options[this.selectedIndex].value;">
+                        <option value="">All</option>
+                        %for language in languages:
+                        <option value="${language['BookLang']}">${language['BookLang']}</option>
+                        %endfor
+                    </select>
+                </div>            
+            %endif
+        </form>
+    </div>
+</%def>
+
+<%def name="body()">
+<div class="row">
+    <div id="authorart_container" class="col-md-3">
+        <div id="authorart_menu">
+            <img src="${author['AuthorImg']}" class="box-shadow img-responsive" alt="${author['AuthorName']}" title="${author['AuthorName']}">
+        </div>
+    </div>
+
+    <div id="authorhead_container" class="col-md-9">
+        <div id="authorhead_menu">
+            <h1><a href="${author['AuthorLink']}" target="_blank" rel="noreferrer">${author['AuthorName']}</a></h1>
+            %if author['AuthorDeath']:
+            <p><b>Born:</b> ${author['AuthorBorn']}, <b>Died:</b> ${author['AuthorDeath']}</p>
+            %else:
+            <p><b>Born:</b> ${author['AuthorBorn']}</p>
+            %endif
+            %if author['Status'] == 'Loading':
+            <p class="alert alert-info"><i class="fa fa-circle-o-notch fa-spin"></i> Fetching information for this author ...</p>
+            %endif
+            <p><b>Totalbooks:</b> ${author['TotalBooks']}</p>
+
+            <%
+                totalbooks = author['UnignoredBooks']
+                havebooks = author['HaveBooks']
+                if not havebooks:
+                    havebooks = 0
+                try:
+                    percent = (havebooks*100.0)/totalbooks
+                    if percent > 100:
+                        percent = 100
+                    if percent <= 100:
+                        css = "bg-success"
+                    if percent <= 75:
+                        css = "bg-info"
+                    if percent <= 50:
+                        css = "bg-warning"
+                    if percent <= 25:
+                        css = "bg-danger"
+                except (ZeroDivisionError, TypeError):
+                    percent = 0
+                    totalbooks = '0'
+                    css = "bg-danger"
+            %>
+            <div class="row" title="${percent}">
+                <div class="col-xs-4"><strong>Progress:</strong></div>
+                <div class="col-xs-4">
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100" style="width: ${percent}%;">
+                        <span class="sr-only">${percent}% Complete</span>
+                    </div>                    
+                </div>
+                </div>                
+                <div class="col-xs-4">
+                    <span class="progressbar-front-text">${havebooks} / ${totalbooks}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form action="markBooks" method="get" class="form-inline">            
+    <div class="indented">
+        
+            <input type="hidden" name="AuthorName" value="${author['AuthorName']}">
+            <input type="hidden" name="redirect" value="author">
+            <div class="form-group">
+                <label for="action" class="">Mark selected as</label>
+                <select class="markBooks form-control input-sm" id="action" name="action">
+                    <option value="Wanted">Wanted</option>
+                    <option value="Have">Have</option>
+                    <option value="Skipped">Skipped</option>
+                    <option value="Ignored">Ignored</option>
+                </select>                
+            </div>
+            <input type="submit" class="markBooks btn btn-sm btn-primary" value="Go">
+        
+    </div>
+    <p>&nbsp;</p>
+<div class="table-responsive">
+    <table class="display table table-striped table-hover table-bordered" id="book_table">
+        <thead>
+            <tr>
+                <th class="select no-sort">
+                    <input type="checkbox" onClick="toggleAll(this)" />
+                </th>
+                <th class="bookart col-xs-1 text-center no-sort hidden-xs">Cover</th>
+                <th class="bookname col-xs-3">Title</th>
+                <th class="series col-xs-2">Series</th>
+                <th class="seriesNum col-xs-1 text-center hidden-xs">Num.</th>
+                <th class="stars col-xs-1 text-center hidden-xs">Rating</th>
+                <th class="date col-xs-1 text-center hidden-xs">Released</th>
+                <th class="language col-xs-1 text-center">Language</th>
+                <th class="status col-xs-1 text-center">Status</th>
+            </tr>
+        </thead>
+
+        <tbody>
+        %for result in books:
+                <%
+                    if result['bookrate'] < 0.5:
+                        starimg = '0-stars.png'
+                    elif result['bookrate'] >= 0.5 and result['bookrate'] < 1.5:
+                        starimg = '1-stars.png'
+                    elif result['bookrate'] >= 1.5 and result['bookrate'] < 2.5:
+                        starimg = '2-stars.png'
+                    elif result['bookrate'] >= 2.5 and result['bookrate'] < 3.5:
+                        starimg = '3-stars.png'
+                    elif result['bookrate'] >= 3.5 and result['bookrate'] < 4.5:
+                        starimg = '4-stars.png'
+                    elif result['bookrate'] >= 4.5:
+                        starimg = '5-stars.png'
+                    else:
+                        starimg = '0-stars.png'
+                    workpage = ''
+                    if result['workpage']:
+                        if len(result['workpage']) > 4:
+                            workpage = '<br><a href="' + result['workpage'] + '" target="_new">WorkPage</a>' 
+                %>
+                <tr>
+                    <td class="select"><input type="checkbox" name="${result['BookID']}" /></td>
+                    <td class="bookart text-center"><a href="${result['bookimg']}" target="_blank" rel="noreferrer"><img src="${result['bookimg']}" class="bookcover-xs img-responsive" alt="Cover"></a></td>
+                    %if result['booksub']:
+                        <td class id="bookname"><a href="${result['booklink']}" target="_blank" rel="noreferrer">${result['bookname']}</a><br>
+                        <i class="smalltext">${result['booksub']}</i></td>
+                    %else:
+                        <td class="bookname"><a href="${result['booklink']}" target="_blank" rel="noreferrer">${result['bookname']}</a></td>
+                    %endif
+                    <td class="series">${result['Series']}</td>
+                    <td class="seriesNum text-center">${result['seriesNum']}</td>
+                    <td class="stars text-center"><img src="images/${starimg}" alt="Rating"></td>
+                    <td class="date text-center">${result['BookDate']}</td>
+                    <td class="language text-center">${result['booklang']}</td>
+
+                    %if result['Status'] == 'Open':
+                        <td class="status text-center"><a class="btn btn-xs btn-warning button green" href="openBook?bookid=${result['bookID']}" target="_self"><i class="fa fa-book"></i> ${result['Status']}</a>${workpage}</td>
+                    %else:
+                        %if result['Status'] == 'Wanted':
+                            <td class="status text-center">
+                                <!--<p><a class="btn btn-xs btn-danger" href="searchForBook?bookid=${result['bookID']}" target="_self"></p>-->
+                                <p><a class="a btn btn-xs btn-danger">${result['Status']}</a></p>
+                                <p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=${result['bookID']}" title="Search Now"><i class="fa fa-search"></i> Search</a></p>${workpage}</td>
+                        %else:
+                            %if result['Status'] == 'Snatched':
+                                <td class="status text-center"><a class="btn btn-xs btn-info button">${result['Status']}</a>${workpage}</td>
+                            %else:
+                                %if result['Status'] == 'Have':
+                                    <td class="status text-center"><a class="btn btn-xs btn-info button">${result['Status']}</a>${workpage}</td>
+                                %else:
+                                    <td class="status text-center"><a class="btn btn-xs btn-default button">${result['Status']}</a>${workpage}</td>
+                                %endif:
+                            %endif
+                        %endif
+                    %endif
+                </tr>
+        %endfor
+        </tbody>
+    </table>
+</div>
+</form>
+<p>&nbsp;</p>
+</%def>
+
+<%def name="headIncludes()">
+    
+    %if author['Status'] == 'Loading':
+    <meta http-equiv="refresh" content="12">
+    <script type="text/javascript">
+        $(document).ready(function () {
+            showMsg("Getting Author's Books", true);
+        });
+     </script>
+    %endif
+</%def>
+
+<%def name="javascriptIncludes()">    
+<script type="text/javascript">
+    $(document).ready(function()
+    {
+        var oTable = $('#book_table').dataTable(
+            {
+                "order": [],
+                "columnDefs": 
+                    [{ targets: 'no-sort', orderable: false }] // Don't allow colums of class no-sort to be sorted
+                ,
+                "oLanguage": {
+                    "sLengthMenu":"_MENU_ rows per page",
+                    "sEmptyTable": "No books found",
+                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 rows",
+                    "sInfoFiltered":"(filtered from _MAX_ total rows)"},
+                "sPaginationType": "full_numbers",
+                "bStateSave": true,
+                "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
+                "iDisplayLength": 10,
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    var w = window.innerWidth;
+                    if ( w < 768 ) 
+                    {   // hide cover,seriesnum,stars,date on small devices
+                        $('td', nRow).eq(1).addClass('hidden');
+                        $('td', nRow).eq(4).addClass('hidden');
+                        $('td', nRow).eq(5).addClass('hidden');
+                        $('td', nRow).eq(6).addClass('hidden');
+                    }                                    
+                    return nRow;
+                },          
+            });
+			$('.dataTables_filter input').attr("placeholder", "Search filter");
+			$(window).resize(function() {oTable.fnDraw(false)});
+    });
+</script>
+</%def>
+

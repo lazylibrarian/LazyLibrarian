@@ -10,6 +10,18 @@ version.txt
 *.AuthorCache/*
 *.ProviderCache/*
 
+#  Bookstrap related  #
+#######################
+#data/README.md
+#data/css/bookstrap.css
+#data/images/cache/
+#data/images/ll.ico
+#data/interfaces/bookstrap/
+#data/js/bootbox.min.js
+#data/js/bootstrap-notify.js
+#data/js/bootstrap-notify.min.js
+#data/js/lazylibrarian-bs.js
+
 #  Compiled source   #
 ######################
 *.py[co]

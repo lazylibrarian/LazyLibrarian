@@ -1,25 +1,15 @@
 <%inherit file="base.html" />
-<%!
-    from lazylibrarian import database
-%>
 
 <%def name="headerIncludes()">
     <div id="subhead_container">
-    <form action="addKeyword" method="get"><input type="hidden" name="type" value="magazine">
+    <form action="addMagazine" method="get"><input type="hidden" name="search" value="magazine">
         <ul id="subhead_menu">
             <li><a href="forceSearch?source=magazines" id="button"> Force Search </a></li>
             <li><a href="forceProcess?source=magazines" id="button"> Force Post-Processing </a></li>
-            <li><a href="history?source=magazines" id="button"> Past Issues </a></li>
+            <li><a href="magazineScan" id="button"> Library Scan </a></li>
+            <li><a href="pastIssues?whichStatus=Skipped" id="button"> Past Issues </a></li>
                 <div style="float:right; margin-right:15px; margin-top:2px;">
                 <li><input type="text" placeholder="Magazine Title" name="title"></li>
-                <li><select name="frequency">
-                    <option value="Weekly">Weekly</option>
-                    <option value="BiWeekly">BiWeekly</option>
-                    <option value="Monthly">Monthly</option>
-                    <option value="BiMonthly">BiMonthly</option>
-                    <option value="Quarterly">Quarterly</option>
-                    <option value="Keyword">Keyword</option>
-                </select></li>
                 <li><input type="submit" value="+Magazine"></li> 
                 </div>
         </ul>
@@ -28,6 +18,8 @@
 </%def>
 
 <%def name="body()">
+<BR>
+<h1>&nbsp&nbspMagazines</h1>
 
     <p class="indented">
         <form action="markMagazines" method="get">
@@ -46,8 +38,7 @@
             <tr>
                 <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
                 <th id="magtitle">Title</th>
-                <th id="frequency">Frequency</th>
-                <!-- <th id="regex">Regex</th> -->
+                <th id="seriesOrder">Num</th>
                 <th id="lastacquired">Acquired</th>
                 <th id="issuedate">Issue Date</th>
                 <th id="status">Status</th>
@@ -59,8 +50,7 @@
         %for result in magazines:
                 <tr class="gradeZ">
                     <td id="select"><input type="checkbox" name="${result['Title']}" class="checkbox" /></td>
-                    <td id="magtitle"><BR>${result['Title']}<BR><BR></td>
-                    <td id="frequency">${result['Frequency']}</td>
+                    <td id="magtitle">${result['Title']}</td>
                     <!-- <td id="regex"> -->      
                         <!-- <form action="updateRegex" method="get"><input type="hidden" name="title" value="${result['Title']}">-->
                             <!-- <select name="regex">-->
@@ -72,14 +62,15 @@
                             <!-- <input type="submit" value="Go">-->
                         <!-- </form>-->
                     <!-- </td>-->
+                    <td id="seriesOrder">${result['Count']}</td>
                     <td id="lastacquired">${result['LastAcquired']}</td>
                     <td id="issuedate">${result['IssueDate']}</td>
                     <td id="status">${result['Status']}</td>
                     %if result['IssueStatus'] == 'Open':
-                        <td id="issue"><a class="button green" href="openMag?bookid=${result['Title']}" target="_self">${result['IssueStatus']}</a></td>
+                        <td id="issue"><a class="button green" href="openMag?bookid=${result['safetitle']}" target="_self">${result['IssueStatus']}</a></td>
                     %else:
                         %if result['IssueStatus'] == 'Wanted':
-                            <td id="issue"><a class="button red" href="searchForMag?bookid=${result['Title']}" target="_self"><span class="a">${result['IssueStatus']}</span><span class="b">Search</span></a></td>
+                            <td id="issue"><a class="button red" href="searchForMag?bookid=${result['safetitle']}" target="_self"><span class="a">${result['IssueStatus']}</span><span class="b">Search</span></a></td>
                         %else:
                             %if result['IssueStatus'] == 'Snatched':
                                 <td id="issue"><a class="button">${result['IssueStatus']}</a></td>
@@ -117,11 +108,11 @@
                     null
                     ],
                 "oLanguage": {
-                    "sLengthMenu":"Show _MENU_ books per page",
+                    "sLengthMenu":"Show _MENU_ magazines per page",
                     "sEmptyTable": "No magazines found",
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
                     "sInfoEmpty":"Showing 0 to 0 of 0 books",
-                    "sInfoFiltered":"(filtered from _MAX_ total books)"},
+                    "sInfoFiltered":"(filtered from _MAX_ total magazines)"},
                 "sPaginationType": "full_numbers",
                 "bStateSave": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],

@@ -1,19 +1,24 @@
 <%inherit file="base.html" />
 <%!
     import lazylibrarian
-    from lazylibrarian.formatter import checked
 %>
 
 <%def name="headerIncludes()">
     <div id="subhead_container">
+        <ul id="subhead_menu">
+        <li><a href="importAlternate" id="button"> Import Book </a></li>
+        <li><a href="importCSV" id="button"> Import CSV Wishlist </a></li>
+        <li><a href="exportCSV" id="button"> Export CSV Wishlist </a></li>
+        </ul>
     </div>
 </%def>
 
 <%def name="body()">
-    <br><br>
+<BR>
+<h1>&nbsp&nbspManage Books</h1><br>
     <form action="manage" method="get">
     Manage books with status <select name="whichStatus">
-        %for item in ['Skipped', 'Wanted', 'Snatched', 'Have', 'Ignored']:
+        %for item in ['Skipped', 'Wanted', 'Open', 'Have', 'Ignored']:
             <option value="${item}"
                 %if whichStatus == item:
                     selected = "selected"
@@ -24,7 +29,6 @@
     <input  class="btn" type="submit" value="Manage" />
     </form>
     <br>
-    %if len(books) > 0:
     <h3>Books with status ${whichStatus}</h3>
         <br>
     <form action="markBooks" method="get"><input type="hidden" name="redirect" value="manage">
@@ -35,11 +39,11 @@
                 <th id="authorname">Author</th>
                 <th id="bookname">Title</th>
         		<th id="series">Series</th>
-		        <th id="seriesOrder">Num</th>
+		        <th id="seriesNum">Num</th>
                 <th id="date">Released</th>
             </tr>
         </thead>
-
+<!--
         <tbody>
         %for result in books:
                 <tr class="gradeZ">
@@ -52,11 +56,12 @@
                         <td id="bookname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a></td>
                     %endif
                     <td id="series">${result['Series']}</td>
-                    <td id="seriesOrder">${result['SeriesOrder']}</td>
+                    <td id="seriesNum">${result['seriesNum']}</td>
                     <td id="date">${result['BookDate']}</td>
                 </tr>
         %endfor
         </tbody>
+-->
     </table>
     <p>
 
@@ -70,7 +75,6 @@
         <input type="submit" class="markBooks" value="Go">
     </p>
     </form>
-    %endif
 
 </%def>
 
@@ -85,6 +89,7 @@
     {
         $('#book_table').dataTable(
             {
+                "order": [[ 1, 'asc' ]],
                 "aoColumns": [
                     null,
                     null,
@@ -103,6 +108,11 @@
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": 10,
                 "sPaginationType": "full_numbers",
+                "aaSorting": [[1, 'asc']],
+                 "bServerSide": true,
+                // need to pass requested status to getManage 
+                "sAjaxSource": 'getManage?whichStatus=Skipped',
+                "bFilter": true,
             });
 			$('.dataTables_filter input').attr("placeholder", "Search table here");
     });

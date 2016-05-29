@@ -21,7 +21,9 @@ import lazylibrarian
 import tweet
 import boxcar
 import pushbullet
-import nma 
+import pushover
+import nma
+import androidpn
 
 from lazylibrarian.common import *
 
@@ -29,12 +31,16 @@ from lazylibrarian.common import *
 twitter_notifier = tweet.TwitterNotifier()
 boxcar_notifier = boxcar.BoxcarNotifier()
 pushbullet_notifier = pushbullet.PushbulletNotifier()
+pushover_notifier = pushover.PushoverNotifier()
+androidpn_notifier = androidpn.AndroidPNNotifier()
 nma_notifier = nma.NMA_Notifier()
 
 notifiers = [
     twitter_notifier,
     boxcar_notifier,
     pushbullet_notifier,
+    pushover_notifier,
+    androidpn_notifier,
     nma_notifier
 ]
 

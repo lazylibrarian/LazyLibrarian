@@ -1,0 +1,64 @@
+/*
+
+Bookstrap Styles
+*/
+
+#authorart_menu img {
+    box-shadow: 0 4px 5px 0 rgba(0, 0, 0, .14), 0 1px 10px 0 rgba(0, 0, 0, .12), 0 2px 4px -1px rgba(0, 0, 0, .2);
+    margin-right: 15px;
+    border: 1px solid grey;
+    padding: 5px;
+    background-color: white;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+#subnav {
+/*    position: fixed; 
+    top: 60px; 
+    z-index: 1030; */
+    position: relative;
+    float: bottom;
+    width: 100%; 
+    padding-top: 10px; 
+    padding-bottom: 5px; 
+}
+#headercontainer {
+/*    position: fixed; 
+    top: 60px; 
+    z-index: 1030; */
+    position: relative;
+    float: top;
+    width: 100%; 
+    padding-top: 10px;  
+}
+.bookcover-sm {
+    width: 100px;
+    margin: auto auto;
+}
+.bookcover-xs {
+    width: 50px;
+    margin: auto auto;
+}
+.table-responsive {
+    border: 0;
+}
+
+#subhead_container .form-group {
+    margin-bottom: 0;
+}
+.progress {
+    height: auto;
+}
+.progress .progress-bar {    
+    font-size: inherit;
+    line-height: inherit;
+    min-height: 10px;
+}
+
+body.modal-open-noscroll {
+  margin-right: 0!important;
+  overflow: hidden;
+}
+.modal-open-noscroll .navbar-fixed-top, .modal-open .navbar-fixed-bottom {
+  margin-right: 0!important;
+}
