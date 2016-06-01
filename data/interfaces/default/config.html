@@ -29,18 +29,18 @@
         </ul>
     </div>
     <div class="table_wrapper">
-        
+
         <div class="tabs-1">
         <table class="configtable" summary="Webinterface">
             <tr>
                 <td>
                   <div>
-                  <label>Hostname:</label><input type="text" name="http_host" value="${lazylibrarian.HTTP_HOST}" size="20" maxlength="40">
+                  <label>Hostname:</label><input type="text" name="http_host" value="${lazylibrarian.HTTP_HOST}" size="20">
                   </div>
                   <div>
-                  <label>Port:</label><input type="text" name="http_port" value="${lazylibrarian.HTTP_PORT}" size="10" maxlength="40">
+                  <label>Port:</label><input type="text" name="http_port" value="${lazylibrarian.HTTP_PORT}" size="10">
                   </div>
-                  <label>Web Root:</label><input type="text" name="http_root" value="${lazylibrarian.HTTP_ROOT}" size="20" maxlength="40">
+                  <label>Web Root:</label><input type="text" name="http_root" value="${lazylibrarian.HTTP_ROOT}" size="20">
                     <%
                         if lazylibrarian.HTTP_PROXY == True:
                             checked = 'checked="checked"'
@@ -63,7 +63,7 @@
                   <label>Https Certificate:</label><input type="text" name="https_cert" value="${lazylibrarian.HTTPS_CERT}" size="20">
 		          <br>
                   <label>Https Key:</label><input type="text" name="https_key" value="${lazylibrarian.HTTPS_KEY}" size="20">
-		          </fieldset>                  
+		          </fieldset>
 		          <br>
                   <br>
                   <label>Logdir:</label><input type="text" name="logdir" value="${lazylibrarian.LOGDIR}" size="26"><br>
@@ -84,10 +84,10 @@
                 </td>
                 <td>
                     <div>
-                  <label>Username:</label><input type="text" name="http_user" value="${lazylibrarian.HTTP_USER}" size="20" maxlength="40">
+                  <label>Username:</label><input type="text" name="http_user" value="${lazylibrarian.HTTP_USER}" size="20">
                   </div>
                   <div>
-                  <label>Password:</label><input type="password" name="http_pass" value="${lazylibrarian.HTTP_PASS}" size="20" maxlength="40">
+                  <label>Password:</label><input type="password" name="http_pass" value="${lazylibrarian.HTTP_PASS}" size="20">
                   </div>
                     <%
                         if lazylibrarian.LAUNCH_BROWSER == True:
@@ -163,19 +163,19 @@
                     <option value = "GoogleBooks" ${gb_selected}>GoogleBooks</option>
                     </select>
                     <BR>
-                    <label>Goodreads API:</label><input type="text" name="gr_api" value="${lazylibrarian.GR_API}" size="30" maxlength="40" >
+                    <label>Goodreads API:</label><input type="text" name="gr_api" value="${lazylibrarian.GR_API}" size="30">
                     <BR>
-                    <label>GoogleBooks API:</label><input type="text" name="gb_api" value="${lazylibrarian.GB_API}" size="30" maxlength="40" >
+                    <label>GoogleBooks API:</label><input type="text" name="gb_api" value="${lazylibrarian.GB_API}" size="30">
                     <BR><br><br>
                     <h3>File Formats</h3>
                     <BR>
-                    <label>Ebooks:</label><input type="text" name="ebook_type" value="${lazylibrarian.EBOOK_TYPE}" size="0" maxlength="40">
+                    <label>Ebooks:</label><input type="text" name="ebook_type" value="${lazylibrarian.EBOOK_TYPE}" size="0">
                     <br>
                     <small>Comma separated file extensions:
                     <BR>Default: epub, mobi, pdf </small>
                     <BR>
                     <label>Magazines:</label>
-                    <input type="text" name="mag_type" value="${lazylibrarian.MAG_TYPE}" size="20" maxlength="40">
+                    <input type="text" name="mag_type" value="${lazylibrarian.MAG_TYPE}" size="20">
                     <br>
                     <small>Comma separated file extensions:
                     <BR>Default: pdf </small>
@@ -183,7 +183,7 @@
                 <td>
                     <h3>Language</h3>
                     <BR>
-                    <label>Import languages:</label><input type="text" name="imp_preflang" value="${lazylibrarian.IMP_PREFLANG}" size="20" maxlength="40">
+                    <label>Import languages:</label><input type="text" name="imp_preflang" value="${lazylibrarian.IMP_PREFLANG}" size="20">
                     <br>
                     <i class="smalltext">Comma separated country shortcodes:
                     <br> GoodReads e.g: eng, en-US, spa, ita
@@ -192,15 +192,15 @@
                     <BR> Try adding "Unknown" to list if GoodReads is missing results, or "All" if you don't want to check for language</i>
 		            <BR><BR>
                     <label>Reject list:</label>
-                    <input type="text" name="reject_words" value="${lazylibrarian.REJECT_WORDS}" size="20" maxlength="40">
+                    <input type="text" name="reject_words" value="${lazylibrarian.REJECT_WORDS}" size="20">
                     <br>
                     <small>Comma separated list of words to reject:<br>
-                    Search results with any of these words in the title will be ignored 
-                    <BR>Default: audiobook, mp3 </small>                    
+                    Search results with any of these words in the title will be ignored
+                    <BR>Default: audiobook, mp3 </small>
                     <BR><BR>
-                    <label>Languages for month names:</label><input type="text" name="imp_monthlang" value="${lazylibrarian.IMP_MONTHLANG}" size="20" maxlength="40">
+                    <label>Languages for month names:</label><input type="text" name="imp_monthlang" value="${lazylibrarian.IMP_MONTHLANG}" size="20">
                     <br><i class="smalltext">Comma separated language codes for magazine issues:
-                    <br> e.g: fr_FR.utf8, es_ES.utf8        
+                    <br> e.g: fr_FR.utf8, es_ES.utf8
                     <BR>Default: blank, English month names are preloaded   Changes to this setting require a restart</i>
                 </td>
             </tr>
@@ -511,7 +511,7 @@
         <table class="configtable" summary="Providers">
             <tr>
                 <td>
-                <fieldset id="newznab_options">   
+                <fieldset id="newznab_options">
                     <h3>Newznab Providers</h3>
                     <br>
                     %for prov in lazylibrarian.NEWZNAB_PROV:
@@ -522,8 +522,8 @@
                         checked = ''
                     %>
                     <input type="checkbox" name="newznab[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter API Here" name="newznab[${loop.index}][api]" value="${prov['API']}" size="26" class="providers-input" maxlength="40">
- 	    		    <input type="text" placeholder="Enter URL Here" name="newznab[${loop.index}][host]" value="${prov['HOST']}" size="26" class="providers-input" maxlength="100">
+ 	    		    <input type="text" placeholder="Enter API Here" name="newznab[${loop.index}][api]" value="${prov['API']}" size="26" class="providers-input">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="newznab[${loop.index}][host]" value="${prov['HOST']}" size="26" class="providers-input">
  	    		    <br>
  	    		    %endfor
                 </fieldset>
@@ -540,8 +540,8 @@
                         checked = ''
                     %>
                     <input type="checkbox" name="torznab[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter API Here" name="torznab[${loop.index}][api]" value="${prov['API']}" size="26" class="providers-input" maxlength="40">
- 	    		    <input type="text" placeholder="Enter URL Here" name="torznab[${loop.index}][host]" value="${prov['HOST']}" size="26" class="providers-input" maxlength="100">
+ 	    		    <input type="text" placeholder="Enter API Here" name="torznab[${loop.index}][api]" value="${prov['API']}" size="26" class="providers-input">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="torznab[${loop.index}][host]" value="${prov['HOST']}" size="26" class="providers-input">
  	    		    <br>
  	    		    %endfor
                     <small>
@@ -552,7 +552,7 @@
             </tr>
             <tr>
                 <td>
-                <fieldset id="rss_options">   
+                <fieldset id="rss_options">
                    <h3>RSS Providers</h3>
                     <br>
                     %for prov in lazylibrarian.RSS_PROV:
@@ -563,9 +563,9 @@
                         checked = ''
                     %>
             		<input type="checkbox" name="rss[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter URL Here" name="rss[${loop.index}][host]" value="${prov['HOST']}" size="58" class="providers-rss-input" maxlength="100"><br>
- 	    		    <input type="text" placeholder="Enter Pass Here" name="rss[${loop.index}][pass]" value="${prov['PASS']}" size="26" class="providers-input" maxlength="40">
- 	    		    <input type="text" placeholder="Enter User Here" name="rss[${loop.index}][user]" value="${prov['USER']}" size="26" class="providers-input" maxlength="40">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="rss[${loop.index}][host]" value="${prov['HOST']}" size="58" class="providers-rss-input"><br>
+ 	    		    <input type="text" placeholder="Enter Pass Here" name="rss[${loop.index}][pass]" value="${prov['PASS']}" size="26" class="providers-input">
+ 	    		    <input type="text" placeholder="Enter User Here" name="rss[${loop.index}][user]" value="${prov['USER']}" size="26" class="providers-input">
  	    		    <br>
  	    		    %endfor
                 </fieldset>
@@ -579,7 +579,7 @@
                         checked = ''
                     %>
             		<input type="checkbox" name="kat" value=1 ${checked} style="margin-bottom:4px;" /> KAT
- 	    		    <input type="text" placeholder="Enter URL Here" name="kat_host" value="${lazylibrarian.KAT_HOST}" size="26" maxlength="100">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="kat_host" value="${lazylibrarian.KAT_HOST}" size="26">
  	    		</td>
             </tr>
         </table>
@@ -601,19 +601,19 @@
                 <td>
                     <div>
                     <label>NZB/Tor Search Interval:</label>
-                    <input type="text" name="search_interval" value="${lazylibrarian.SEARCH_INTERVAL}" size="8" maxlength="8"> (mins)
+                    <input type="text" name="search_interval" value="${lazylibrarian.SEARCH_INTERVAL}" size="8"> (mins)
                     </div>
                     <div>
                     <label>RSS Search Interval:</label>
-                    <input type="text" name="searchrss_interval" value="${lazylibrarian.SEARCHRSS_INTERVAL}" size="8" maxlength="8"> (mins)
+                    <input type="text" name="searchrss_interval" value="${lazylibrarian.SEARCHRSS_INTERVAL}" size="8"> (mins)
                     </div>
                     <div>
                     <label>Post-Processing Interval:</label>
-                    <input type="text" name="scan_interval" value="${lazylibrarian.SCAN_INTERVAL}" size="8" maxlength="8"> (mins)
+                    <input type="text" name="scan_interval" value="${lazylibrarian.SCAN_INTERVAL}" size="8"> (mins)
                     </div>
                     <div>
                     <label>Version Check Interval:</label>
-                    <input type="text" name="versioncheck_interval" value="${lazylibrarian.VERSIONCHECK_INTERVAL}" size="8" maxlength="4"> (hours)
+                    <input type="text" name="versioncheck_interval" value="${lazylibrarian.VERSIONCHECK_INTERVAL}" size="8"> (hours)
                     </div>
                     <small>
                     <BR>
@@ -623,16 +623,16 @@
                 <td>
                     <div>
                     <label>Cache expire after:</label>
-                    <input type="text" name="cache_age"  value="${lazylibrarian.CACHE_AGE}" size="8" maxlength="4"> (days)
+                    <input type="text" name="cache_age"  value="${lazylibrarian.CACHE_AGE}" size="8"> (days)
                     </div>
                     <div>
                     <label>Match Ratio:</label>
-                    <input type="text" name="match_ratio"  value="${lazylibrarian.MATCH_RATIO}" size="8" maxlength="4"> (percent)
+                    <input type="text" name="match_ratio"  value="${lazylibrarian.MATCH_RATIO}" size="8"> (percent)
                     </div>
                     <label>git program:</label>
-                    <input type="text" placeholder="git program" name="git_program" value="${lazylibrarian.GIT_PROGRAM}" size="26" maxlength="90">
+                    <input type="text" placeholder="git program" name="git_program" value="${lazylibrarian.GIT_PROGRAM}" size="26">
                     <BR>
-                    <small>Path to git program unless already in your path. 
+                    <small>Path to git program unless already in your path.
                     <BR>You can usually leave this blank</small>
                 </td>
             </tr>
@@ -659,9 +659,9 @@
             <tr>
                 <td>
                     <label>eBook Destination Folder:</label>
-                    <input type="text" name="ebook_dest_folder" value="${lazylibrarian.EBOOK_DEST_FOLDER}" size="26" maxlength="100">
+                    <input type="text" name="ebook_dest_folder" value="${lazylibrarian.EBOOK_DEST_FOLDER}" size="26">
                     <br><label>eBook Destination File:</label>
-                    <input type="text" name="ebook_dest_file" value="${lazylibrarian.EBOOK_DEST_FILE}" size="26" maxlength="40">
+                    <input type="text" name="ebook_dest_file" value="${lazylibrarian.EBOOK_DEST_FILE}" size="26">
                     <BR>
                     <small>Options include $Author, $Title, any string
                     <BR>
@@ -679,9 +679,9 @@
                 </td>
                 <td>
 		            <label>Magazine Destination Folder:</label>
-		            <input type="text" name="mag_dest_folder" value="${lazylibrarian.MAG_DEST_FOLDER}" size="26" maxlength="100">
+		            <input type="text" name="mag_dest_folder" value="${lazylibrarian.MAG_DEST_FOLDER}" size="26">
                     <br><label>Magazine Destination File:</label>
-                    <input type="text" name="mag_dest_file" value="${lazylibrarian.MAG_DEST_FILE}" size="26" maxlength="40">
+                    <input type="text" name="mag_dest_file" value="${lazylibrarian.MAG_DEST_FILE}" size="26">
                     <BR>
                     <small>Options include $Title, $IssueDate, any string</small>
                     <BR>
@@ -702,7 +702,7 @@
             <tr>
                 <td>
                     <label>Calibre Auto Add:</label>
-                    <input type="text" name="imp_autoadd" value="${lazylibrarian.IMP_AUTOADD}" size="26" maxlength="90">
+                    <input type="text" name="imp_autoadd" value="${lazylibrarian.IMP_AUTOADD}" size="26">
                     <BR>
                     <small>Directory for a copy to be placed for auto add process</small>
                   <div>
@@ -714,19 +714,19 @@
                     %>
                   <label>Full Scan:</label><input type="checkbox" name="full_scan" id="fullscan" value=1 ${checked} />
                   <br>
-                    <small>This will remove entries if ebooks are not found in the download location</small> 
+                    <small>This will remove entries if ebooks are not found in the download location</small>
                 </div>
                </td>
                 <td>
                     <label>Convert program:</label>
-                    <input type="text" placeholder="convert program" name="imp_convert" value="${lazylibrarian.IMP_CONVERT}" size="26" maxlength="90">
+                    <input type="text" placeholder="convert program" name="imp_convert" value="${lazylibrarian.IMP_CONVERT}" size="26">
                     <BR>
                     <small>Program for creating magazine covers (example: ImageMagick "convert")
                     <BR>Leave blank to use PythonMagick or Wand interfaces to ImageMagick, put
                     None  to disable cover creation</small>
                 </td>
             </tr>
-            <tr>                
+            <tr>
                 <td>
                 <div>
                     <%
@@ -740,7 +740,7 @@
                   <small>This imports one book per directory, tick if you keep multiple formats of the same book in the same directory</small>
                   </div>
                 </td>
-                <td> 
+                <td>
                   <div>
                     <%
                     if lazylibrarian.ADD_AUTHOR == True:
@@ -833,7 +833,7 @@
                         <div class="row">
                             <input type="text" id="twitter_key" value="" size="26" placeholder="Input Authorization Key"/>
                         </div>
-                        <div class="row">        
+                        <div class="row">
                             <input type="button" value="Verify Key" id="twitterStep2" />
                         </div>
                         <div class="row">
@@ -864,7 +864,7 @@
                     %>
                             <input type="checkbox" name="boxcar_notify_onsnatch" value="1" ${checked} />Notify on snatch
                         </div>
-                        <div class="row">    
+                        <div class="row">
                     <%
                     if lazylibrarian.BOXCAR_NOTIFY_ONDOWNLOAD == True:
                         checked = 'checked="checked"'
@@ -901,7 +901,7 @@
                     %>
                             <input type="checkbox" name="pushbullet_notify_onsnatch" value="1" ${checked} />Notify on snatch
                         </div>
-                        <div class="row">    
+                        <div class="row">
                     <%
                     if lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD == True:
                         checked = 'checked="checked"'
@@ -915,12 +915,12 @@
                         </div>
                         <div class="row">
                             <input type="text" name="pushbullet_deviceid" value="${lazylibrarian.PUSHBULLET_DEVICEID}" size="26" placeholder="Pushbullet DeviceID">
-                        </div>                        
+                        </div>
                         <div class="row">
                             <input type="button" value="Test Pushbullet" id="testPushbullet">
                         </div>
                      </div>
-                </fieldset>            
+                </fieldset>
             </td>
             <td>
                 <fieldset>
@@ -962,7 +962,7 @@
                         </div>
                         <div class="row">
                             <input type="text" name="pushover_device" value="${lazylibrarian.PUSHOVER_DEVICE}" size="26" placeholder="Pushover Device">
-                        </div>                        
+                        </div>
                         <div class="row">
                             <input type="text" name="pushover_priority" value="${lazylibrarian.PUSHOVER_PRIORITY}" size="26" placeholder="Pushover Priority">
                         </div>
@@ -1016,7 +1016,7 @@
                             <input type="text" name="androidpn_url" value="${lazylibrarian.ANDROIDPN_URL}" size="26" placeholder="AndroidPN notification url" />
                         </div>
                         <div class="row" id="androidpn_username">
-                           <input type="text" name="androidpn_username"  value="${lazylibrarian.ANDROIDPN_USERNAME}" size="26" placeholder="AndroidPN username" /> 
+                           <input type="text" name="androidpn_username"  value="${lazylibrarian.ANDROIDPN_USERNAME}" size="26" placeholder="AndroidPN username" />
                         </div>
                         <div class="row">
                             <input type="button" value="Test AndroidPN" id="testAndroidPN">
@@ -1120,19 +1120,19 @@
                     <input type="checkbox" name="newznab[${loop.index}][manual]" value=1 ${checked} ${hidden} style="margin-bottom:4px;" />
                     <label ${hidden}> Tick to lock settings</label>
  	    		    <input type="text" name="newznab[${loop.index}][name]" value="${provider['NAME']}" class="hidden">
- 	    		    <input type="text" name="newznab[${loop.index}][updated]" value="${provider['UPDATED']}" class="hidden">            
+ 	    		    <input type="text" name="newznab[${loop.index}][updated]" value="${provider['UPDATED']}" class="hidden">
                     <label ${hidden}><br>Extended Search</label>
- 	    		    <input type="text" placeholder="Enter Extended Here" name="newznab[${loop.index}][extended]" value="${provider['EXTENDED']}" size="26" maxlength="100" ${hidden}>
+ 	    		    <input type="text" placeholder="Enter Extended Here" name="newznab[${loop.index}][extended]" value="${provider['EXTENDED']}" size="26" ${hidden}>
                     <label ${hidden}><br>General Search</label>
- 	    		    <input type="text" placeholder="Enter General Search Here" name="newznab[${loop.index}][generalsearch]" value="${provider['GENERALSEARCH']}" size="26" maxlength="100" ${hidden}>l
+ 	    		    <input type="text" placeholder="Enter General Search Here" name="newznab[${loop.index}][generalsearch]" value="${provider['GENERALSEARCH']}" size="26" ${hidden}>l
  	    		    <label ${hidden}><br>Book Categories</label>
- 	    		    <input type="text" placeholder="Enter Book Categories Here" name="newznab[${loop.index}][bookcat]" value="${provider['BOOKCAT']}" size="26" maxlength="100" ${hidden}>
+ 	    		    <input type="text" placeholder="Enter Book Categories Here" name="newznab[${loop.index}][bookcat]" value="${provider['BOOKCAT']}" size="26" ${hidden}>
  	    		    <label ${hidden}><br>Book Search</label>
- 	    		    <input type="text" placeholder="Enter Book Search Here" name="newznab[${loop.index}][booksearch]" value="${provider['BOOKSEARCH']}" size="26" maxlength="100" ${hidden}>
+ 	    		    <input type="text" placeholder="Enter Book Search Here" name="newznab[${loop.index}][booksearch]" value="${provider['BOOKSEARCH']}" size="26" ${hidden}>
  	    		    <label ${hidden}><br>Magazine Categories</label>
- 	    		    <input type="text" placeholder="Enter Mag Categories Here" name="newznab[${loop.index}][magcat]" value="${provider['MAGCAT']}" size="26" maxlength="100" ${hidden}>
+ 	    		    <input type="text" placeholder="Enter Mag Categories Here" name="newznab[${loop.index}][magcat]" value="${provider['MAGCAT']}" size="26" ${hidden}>
  	    		    <label ${hidden}><br>Magazine Search</label>
- 	    		    <input type="text" placeholder="Enter Mag Search Here" name="newznab[${loop.index}][magsearch]" value="${provider['MAGSEARCH']}" size="26" maxlength="100" ${hidden}>
+ 	    		    <input type="text" placeholder="Enter Mag Search Here" name="newznab[${loop.index}][magsearch]" value="${provider['MAGSEARCH']}" size="26" ${hidden}>
  	    		    %endfor
                     %for provider in lazylibrarian.TORZNAB_PROV:
                     <%
@@ -1151,19 +1151,19 @@
                     <input type="checkbox" name="torznab[${loop.index}][manual]" value=1 ${checked} ${hidden} style="margin-bottom:4px;" />
                     <label ${hidden}> Tick to lock settings</label>
  	    		    <input type="text" name="torznab[${loop.index}][name]" value="${provider['NAME']}" class="hidden">
- 	    		    <input type="text" name="torznab[${loop.index}][updated]" value="${provider['UPDATED']}" class="hidden">            
-                    <label ${hidden}><br>Extended Search</label>    
- 	    		    <input type="text" placeholder="Enter Extended Here" name="torznab[${loop.index}][extended]" value="${provider['EXTENDED']}" size="26" maxlength="100" ${hidden}>
-                    <label ${hidden}><br>General Search</label>    
- 	    		    <input type="text" placeholder="Enter General Search Here" name="torznab[${loop.index}][generalsearch]" value="${provider['GENERALSEARCH']}" size="26" maxlength="100" ${hidden}>
- 	    		    <label ${hidden}><br>Book Categories</label>    
- 	    		    <input type="text" placeholder="Enter Book Categories Here" name="torznab[${loop.index}][bookcat]" value="${provider['BOOKCAT']}" size="26" maxlength="100" ${hidden}>
- 	    		    <label ${hidden}><br>Book Search</label>    
- 	    		    <input type="text" placeholder="Enter Book Search Here" name="torznab[${loop.index}][booksearch]" value="${provider['BOOKSEARCH']}" size="26" maxlength="100" ${hidden}>
- 	    		    <label ${hidden}><br>Magazine Categories</label>    
- 	    		    <input type="text" placeholder="Enter Mag Categories Here" name="torznab[${loop.index}][magcat]" value="${provider['MAGCAT']}" size="26" maxlength="100" ${hidden}>
- 	    		    <label ${hidden}><br>Magazine Search</label>    
- 	    		    <input type="text" placeholder="Enter Mag Search Here" name="torznab[${loop.index}][magsearch]" value="${provider['MAGSEARCH']}" size="26" maxlength="100" ${hidden}>    
+ 	    		    <input type="text" name="torznab[${loop.index}][updated]" value="${provider['UPDATED']}" class="hidden">
+                    <label ${hidden}><br>Extended Search</label>
+ 	    		    <input type="text" placeholder="Enter Extended Here" name="torznab[${loop.index}][extended]" value="${provider['EXTENDED']}" size="26" ${hidden}>
+                    <label ${hidden}><br>General Search</label>
+ 	    		    <input type="text" placeholder="Enter General Search Here" name="torznab[${loop.index}][generalsearch]" value="${provider['GENERALSEARCH']}" size="26" ${hidden}>
+ 	    		    <label ${hidden}><br>Book Categories</label>
+ 	    		    <input type="text" placeholder="Enter Book Categories Here" name="torznab[${loop.index}][bookcat]" value="${provider['BOOKCAT']}" size="26" ${hidden}>
+ 	    		    <label ${hidden}><br>Book Search</label>
+ 	    		    <input type="text" placeholder="Enter Book Search Here" name="torznab[${loop.index}][booksearch]" value="${provider['BOOKSEARCH']}" size="26" ${hidden}>
+ 	    		    <label ${hidden}><br>Magazine Categories</label>
+ 	    		    <input type="text" placeholder="Enter Mag Categories Here" name="torznab[${loop.index}][magcat]" value="${provider['MAGCAT']}" size="26" ${hidden}>
+ 	    		    <label ${hidden}><br>Magazine Search</label>
+ 	    		    <input type="text" placeholder="Enter Mag Search Here" name="torznab[${loop.index}][magsearch]" value="${provider['MAGSEARCH']}" size="26" ${hidden}>
  	    		    %endfor
 		        </fieldset>
             </td>
@@ -1399,7 +1399,7 @@
                             $("#twitteroptions").slideUp();
                     }
             });
-        
+
             if ($("#boxcar").is(":checked"))
                     {
                             $("#boxcaroptions").show();
@@ -1516,7 +1516,7 @@
                         $("#androidpn_username").slideDown();
                     }
             });
-    
+
                 if ($("#nma").is(":checked"))
                         {
                                 $("#nmaoptions").show();
@@ -1536,59 +1536,59 @@
                                 $("#nmaoptions").slideUp();
                         }
                 });
-            
+
             $('#generateAPI').click(function () {
                 $.get("generateAPI",
                     function (data) { });
-                    
+
             });
 
             $('#showJobs').click(function () {
                 $.get("showJobs",
                     function (data) { alert(data); });
-                    
+
             });
-            
+
             $('#restartJobs').click(function () {
                 $.get("restartJobs",
                     function (data) { alert(data); });
-                    
+
             });
-            
+
             $('#testSABnzbd').click(function () {
                 $.get("testSABnzbd",
                     function (data) { alert(data); });
-                    
+
             });
 
             $('#testNZBget').click(function () {
                 $.get("testNZBget",
                     function (data) { alert(data); });
-                    
+
             });
 
             $('#testDeluge').click(function () {
                 $.get("testDeluge",
                     function (data) { alert(data); });
-                    
+
             });
 
             $('#testTransmission').click(function () {
                 $.get("testTransmission",
                     function (data) { alert(data); });
-                    
+
             });
 
             $('#testqBittorrent').click(function () {
                 $.get("testqBittorrent",
                     function (data) { alert(data); });
-                    
+
             });
 
             $('#testuTorrent').click(function () {
                 $.get("testuTorrent",
                     function (data) { alert(data); });
-                    
+
             });
 
             $('#twitterStep1').click(function () {
