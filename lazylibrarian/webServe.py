@@ -107,7 +107,7 @@ class WebInterface(object):
                      pushover_apitoken='', pushover_ondownload=0, pushover_device='',
                      use_androidpn=0, androidpn_notify_onsnatch=0, androidpn_notify_ondownload=0,
                      androidpn_url='', androidpn_username='', androidpn_broadcast=0, bookstrap_theme='',
-                     use_nma=0, nma_apikey='', nma_priority=0, nma_onsnatch=0, nma_ondownload=0, 
+                     use_nma=0, nma_apikey='', nma_priority=0, nma_onsnatch=0, nma_ondownload=0,
                      https_enabled=0, https_cert='', https_key='', **kwargs):
         #  print len(kwargs)
         #  for arg in kwargs:
@@ -338,7 +338,7 @@ class WebInterface(object):
             lazylibrarian.RSS_PROV[count]['PASS'] = kwargs.get(
                         'rss[%i][pass]' % count, '')
             count += 1
- 
+
         lazylibrarian.config_write()
 
         logger.info(
@@ -538,7 +538,7 @@ class WebInterface(object):
                 starimg = '5-stars.png'
             else:
                 starimg = '0-stars.png'
-            
+
             worklink = ''
             if row[11]: # is there a workpage link
                 if len(row[11]) > 4:
@@ -570,9 +570,9 @@ class WebInterface(object):
 
                 l.append(
                     '<td id="stars"><img src="images/' + starimg + '" width="50" height="10"></td>')
-    
+
                 l.append('<td id="date">%s</td>' % row[6])
-    
+
                 if row[7] == 'Open':
                     btn = '<td id="status"><a class="button green" href="openBook?bookid=%s" target="_self">Open</a></td>' % row[8]
                 elif row[7] == 'Wanted':
@@ -609,7 +609,7 @@ class WebInterface(object):
 
                 l.append(
                     '<td class="stars text-center"><img src="images/' + starimg + '" alt="Rating"></td>')
-    
+
                 l.append('<td class="date text-center">%s</td>' % row[6])
                 if row[7] == 'Open':
                     btn = '<td class="status text-center"><a class="button green btn btn-xs btn-warning" href="openBook?bookid=%s" target="_self"><i class="fa fa-book"></i>%s</a></td>' % (row[8], row[7])
@@ -1103,10 +1103,14 @@ class WebInterface(object):
         if len(title) == 0:
             raise cherrypy.HTTPRedirect("magazines")
         else:
+            regex = None
+            if '~' in title:  # separate out the "reject words" list
+                regex = title.split('~',1)[1].strip()
+                title = title.split('~',1)[0].strip()
             controlValueDict = {"Title": title}
             newValueDict = {
                 "Frequency": None,
-                "Regex": None,
+                "Regex": regex,
                 "Status": "Active",
                 "MagazineAdded": formatter.today(),
                 "IssueStatus": "Wanted"
@@ -1394,7 +1398,7 @@ class WebInterface(object):
         logger.info("New API generated")
         raise cherrypy.HTTPRedirect("config")
     generateAPI.exposed = True
-    
+
 # ALL ELSE ##########################################################
 
     def forceProcess(self, source=None):
@@ -1489,7 +1493,7 @@ class WebInterface(object):
         # + iDisplayLength))
         return s
     getManage.exposed = True
-    
+
     @cherrypy.expose
     def testDeluge(self):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
@@ -1503,7 +1507,7 @@ class WebInterface(object):
                 int(lazylibrarian.DELUGE_PORT),
                 lazylibrarian.DELUGE_USER,
                 lazylibrarian.DELUGE_PASS)
-            client.connect()  
+            client.connect()
             if lazylibrarian.DELUGE_LABEL:
                 labels = client.call('label.get_labels')
                 if not lazylibrarian.DELUGE_LABEL in labels:
@@ -1525,7 +1529,7 @@ class WebInterface(object):
                 msg += "Invalid USERNAME or PASSWORD"
             else:
                 msg += str(e)
-            return msg 
+            return msg
 
     @cherrypy.expose
     def testSABnzbd(self):
@@ -1551,4 +1555,4 @@ class WebInterface(object):
     def testuTorrent(self):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         return utorrent.checkLink()
-        
+
