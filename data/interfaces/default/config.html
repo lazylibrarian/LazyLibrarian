@@ -19,13 +19,14 @@
     <div id="form">
     <div id="tabs">
         <ul>
-            <li id="tabs1" class="active"><a  href="#tabs-1" onclick="$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('#tabs7').removeClass('active');$('.table_wrapper').hide();$('.tabs-1').parent().show();$('#tabs1').addClass('active');">Web Interface</a></li>
-            <li id="tabs2" ><a  href="#tabs-2" onclick="$('#tabs1').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('#tabs7').removeClass('active');$('.table_wrapper').hide();$('.tabs-2').parent().show();$('#tabs2').addClass('active');">Import Options</a></li>
-            <li id="tabs3" ><a  href="#tabs-3" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('#tabs7').removeClass('active');$('.table_wrapper').hide();$('.tabs-3').parent().show();$('#tabs3').addClass('active');">Download Settings</a></li>
-            <li id="tabs4" ><a  href="#tabs-4" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('#tabs7').removeClass('active');$('.table_wrapper').hide();$('.tabs-4').parent().show();$('#tabs4').addClass('active');">Providers</a></li>
-            <li id="tabs5" ><a  href="#tabs-5" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs6').removeClass('active');$('#tabs7').removeClass('active');$('.table_wrapper').hide();$('.tabs-5').parent().show();$('#tabs5').addClass('active');">Search & Processing</a></li>
-            <li id="tabs6" ><a  href="#tabs-6" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs7').removeClass('active');$('.table_wrapper').hide();$('.tabs-6').parent().show();$('#tabs6').addClass('active');">Notifications</a></li>
-            <li id="tabs7" ><a  href="#tabs-7" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('.table_wrapper').hide();$('.tabs-7').parent().show();$('#tabs7').addClass('active');">Search Categories</a></li>
+            <li id="tabs1" class="active"><a  href="#tabs-1" onclick="$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('#tabs7').removeClass('active');$('#tabs8').removeClass('active');$('.table_wrapper').hide();$('.tabs-1').parent().show();$('#tabs1').addClass('active');">Interface</a></li>
+            <li id="tabs2" ><a  href="#tabs-2" onclick="$('#tabs1').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('#tabs7').removeClass('active');$('#tabs8').removeClass('active');$('.table_wrapper').hide();$('.tabs-2').parent().show();$('#tabs2').addClass('active');">Importing</a></li>
+            <li id="tabs3" ><a  href="#tabs-3" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('#tabs7').removeClass('active');$('#tabs8').removeClass('active');$('.table_wrapper').hide();$('.tabs-3').parent().show();$('#tabs3').addClass('active');">Downloaders</a></li>
+            <li id="tabs4" ><a  href="#tabs-4" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('#tabs7').removeClass('active');;$('#tabs8').removeClass('active')$('.table_wrapper').hide();$('.tabs-4').parent().show();$('#tabs4').addClass('active');">Providers</a></li>
+            <li id="tabs5" ><a  href="#tabs-5" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs6').removeClass('active');$('#tabs7').removeClass('active');$('#tabs8').removeClass('active');$('.table_wrapper').hide();$('.tabs-5').parent().show();$('#tabs5').addClass('active');">Processing</a></li>
+            <li id="tabs6" ><a  href="#tabs-6" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs7').removeClass('active');$('#tabs8').removeClass('active');$('.table_wrapper').hide();$('.tabs-6').parent().show();$('#tabs6').addClass('active');">Notifications</a></li>
+            <li id="tabs7" ><a  href="#tabs-7" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('#tabs8').removeClass('active');$('.table_wrapper').hide();$('.tabs-7').parent().show();$('#tabs7').addClass('active');">Categories</a></li>
+            <li id="tabs8" ><a  href="#tabs-8" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('#tabs7').removeClass('active');$('.table_wrapper').hide();$('.tabs-8').parent().show();$('#tabs8').addClass('active');">Filters</a></li>
         </ul>
     </div>
     <div class="table_wrapper">
@@ -191,13 +192,6 @@
                     <BR> Default: en, eng, en-US, en-GB
                     <BR> Try adding "Unknown" to list if GoodReads is missing results, or "All" if you don't want to check for language</i>
 		            <BR><BR>
-                    <label>Reject list:</label>
-                    <input type="text" name="reject_words" value="${lazylibrarian.REJECT_WORDS}" size="20">
-                    <br>
-                    <small>Comma separated list of words to reject:<br>
-                    Search results with any of these words in the title will be ignored
-                    <BR>Default: audiobook, mp3 </small>
-                    <BR><BR>
                     <label>Languages for month names:</label><input type="text" name="imp_monthlang" value="${lazylibrarian.IMP_MONTHLANG}" size="20">
                     <br><i class="smalltext">Comma separated language codes for magazine issues:
                     <br> e.g: fr_FR.utf8, es_ES.utf8
@@ -1165,6 +1159,38 @@
  	    		    <label ${hidden}><br>Magazine Search</label>
  	    		    <input type="text" placeholder="Enter Mag Search Here" name="torznab[${loop.index}][magsearch]" value="${provider['MAGSEARCH']}" size="26" ${hidden}>
  	    		    %endfor
+		        </fieldset>
+            </td>
+        </tr>
+        </table>
+        </div>
+    </div>
+
+    <div class="table_wrapper" style="display:none">
+        <div class="tabs-8">
+        <table class="configtable" summary="Word Filters">
+        <tr>
+            <td>
+                <fieldset>
+                    <h3>Book Reject List</h3>Default: audiobook, mp3
+                    <br>
+                    <input type="text" name="reject_words" placeholder="Reject Word List" value="${lazylibrarian.REJECT_WORDS}" size="20">
+                    <br>
+                    <small>Comma separated list of words to reject:<br>
+                    Search results with any of these words in the title will be ignored
+                    <BR></small>
+                    <BR><BR>
+		        </fieldset>
+                <fieldset>
+                    <h3>Magazine Reject Lists</h3>Default: None
+                    <br>
+                    %for mag in config['magazines_list']:
+                        <label>${mag['Title']}</label>
+ 	    		        <input type="text" placeholder="Reject Word List" name="magazine[${mag['Title']}]" value="${mag['Regex']}" size="20">
+                        <br>
+                    %endfor
+
+                    <BR><BR>
 		        </fieldset>
             </td>
         </tr>

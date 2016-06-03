@@ -66,11 +66,28 @@ class WebInterface(object):
                           if os.path.isdir(os.path.join(http_look_dir, name))]
         status_list = ['Skipped', 'Wanted', 'Have', 'Ignored']
 
+        myDB = database.DBConnection()
+        mags_list = []
+
+        magazines = myDB.select('SELECT Title,Regex from magazines ORDER by Title')
+
+        if magazines is not None:
+            for mag in magazines:
+                title = mag['Title']
+                regex = mag['Regex']
+                if regex is None:
+                    regex = ""
+                mags_list.append({
+                    'Title': title,
+                    'Regex': regex
+                })
+
         # Don't pass the whole config, no need to pass the
         # lazylibrarian.globals
         config = {
             "http_look_list": http_look_list,
-            "status_list": status_list
+            "status_list": status_list,
+            "magazines_list": mags_list
         }
         return serve_template(templatename="config.html", title="Settings", config=config)
     config.exposed = True
@@ -274,6 +291,19 @@ class WebInterface(object):
         lazylibrarian.NMA_PRIORITY = formatter.check_int(nma_priority, 0)
         lazylibrarian.NMA_ONSNATCH = bool(nma_onsnatch)
         lazylibrarian.NMA_ONDOWNLOAD = bool(nma_ondownload)
+
+        myDB = database.DBConnection()
+        magazines = myDB.select('SELECT Title,Regex from magazines ORDER by Title')
+
+        if magazines is not None:
+            for mag in magazines:
+                title = mag['Title']
+                regex = mag['Regex']
+                new_regex = kwargs.get('magazine[%s]' % title, None)
+                if not new_regex == regex:
+                    controlValueDict = {'Title': title}
+                    newValueDict = {'Regex': new_regex}
+                    myDB.upsert("magazines", newValueDict, controlValueDict)
 
         count = 0
         while count < len(lazylibrarian.NEWZNAB_PROV):
