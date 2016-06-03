@@ -1,0 +1,18 @@
+language: python
+python:
+  - "2.6"
+  - "2.7"
+install:
+  # Build/test dependencies
+  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install discover; fi
+  - pip install -r requirements.txt
+script:
+  - "python -m unittest discover lazylibrarian/unittests/"
+notifications:
+  irc:
+    channels: "irc.freenode.org#lazylibrarian"
+    template:
+      - "%{repository}@%{branch}: %{message} (%{build_url})"
+    on_success: change
+    on_failure: change
+  email: false
