@@ -1395,7 +1395,7 @@
                                 <span class="help-block">Default: None</span>
                                 %for mag in config['magazines_list']:
                                     <label>${mag['Title']}</label>
-             	    		        <input type="text" id="magazine[${mag['Title']}]" name="magazine[${mag['Title']}]" value="${mag['Regex']}" class="form-control" placeholder="Reject word list">
+             	    		        <input type="text" id="reject_list[${mag['Title']}]" name="reject_list[${mag['Title']}]" value="${mag['Regex']}" class="form-control" placeholder="Reject word list">
                                 %endfor
 
                                 </div>

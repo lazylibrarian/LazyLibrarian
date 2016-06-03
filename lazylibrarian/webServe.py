@@ -299,7 +299,7 @@ class WebInterface(object):
             for mag in magazines:
                 title = mag['Title']
                 regex = mag['Regex']
-                new_regex = kwargs.get('magazine[%s]' % title, None)
+                new_regex = kwargs.get('reject_list[%s]' % title, None)
                 if not new_regex == regex:
                     controlValueDict = {'Title': title}
                     newValueDict = {'Regex': new_regex}
