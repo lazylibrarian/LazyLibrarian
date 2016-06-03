@@ -548,7 +548,7 @@ class GoogleBooks:
                     if not (re.match('[^\w-]', bookname)):  # remove books with bad characters in title
                         if book_status != "Ignored":
                             controlValueDict = {"BookID": bookid}
-                            print booksub
+
                             newValueDict = {
                                 "AuthorName": authorname,
                                 "AuthorID": authorid,
