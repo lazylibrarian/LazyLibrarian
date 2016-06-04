@@ -89,7 +89,7 @@ def search_magazines(mags=None, reset=False):
             to_snatch = 0
             maglist = []
             issues = []
-            reject_list = formatter.getList(lazylibrarian.REJECT_WORDS)
+
             for nzb in resultlist:
                 total_nzbs = total_nzbs + 1
                 bookid = nzb['bookid']
@@ -109,8 +109,7 @@ def search_magazines(mags=None, reset=False):
                 if checkifmag:
                     for results in checkifmag:
                         control_date = results['IssueDate']
-                        # frequency = results['Frequency']
-                        # regex = results['Regex']
+                        reject_list = formatter.getList(results['Regex'])
 
                     nzbtitle_formatted = nzbtitle.replace('.', ' ').replace('-', ' ').replace('/', ' ').replace(
                         '+', ' ').replace('_', ' ').replace('(', '').replace(')', '').strip()

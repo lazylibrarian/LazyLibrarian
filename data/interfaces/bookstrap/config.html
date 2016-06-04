@@ -19,13 +19,14 @@
 
             <div>
                 <ul class="nav nav-tabs" role="tablist" id="configtabs">
-                    <li role="presentation" class="active"><a role="tab" data-toggle="tab" aria-controls="webinterface" href="#webinterface">Web Interface</a></li>
-                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="importoptions" href="#importoptions">Import Options</a></li>
-                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="downloadsettings" href="#downloadsettings">Download Settings</a></li>
+                    <li role="presentation" class="active"><a role="tab" data-toggle="tab" aria-controls="webinterface" href="#webinterface">Interface</a></li>
+                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="importoptions" href="#importoptions">Importing</a></li>
+                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="downloadsettings" href="#downloadsettings">Downloaders</a></li>
                     <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="providers" href="#providers">Providers</a></li>
-                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="searchprocessing" href="#searchprocessing">Search & Processing</a></li>
+                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="searchprocessing" href="#searchprocessing">Processing</a></li>
                     <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="notifications" href="#notifications">Notifications</a></li>
-                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="capabilities" href="#capabilities">Search Categories</a></li>
+                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="capabilities" href="#capabilities">Categories</a></li>
+                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="filters" href="#filters">Filters</a></li>
                 </ul>
 
 
@@ -55,7 +56,7 @@
                                                     checked = 'checked="checked"'
                                                 else:
                                                     checked = ''
-                                            %>   
+                                            %>
                                             <label for="http_proxy" class="control-label">
                                             <input type="checkbox" id="http_proxy" name="http_proxy" value="1" ${checked} />
                                             Enable http proxy</label>
@@ -66,7 +67,7 @@
                                                     checked = 'checked="checked"'
                                                 else:
                                                     checked = ''
-                                            %>   
+                                            %>
                                             <label for="https_enabled" class="control-label">
                                             <input type="checkbox" id="https_enabled" name="https_enabled" value="1" ${checked} />
                                             Enable https</label>
@@ -268,13 +269,6 @@
                                         GoogleBooks e.g: en, es, it<br/>
                                         Default: en, eng, en-US<br/>
                                         Try adding "Unknown" to list if GoodReads is missing results, or "All" if you don't want to check for language</span>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="reject_words" class="control=label">Reject List:</label>
-                                            <input type="text" id="reject_words" name="reject_words" value="${lazylibrarian.REJECT_WORDS}" class="form-control" placeholder="Reject word list">
-                                            <span class="help-block">Comma separated list of words to reject:<br/>
-                                            Search results with any of these words in the title will be ignored<br/>
-                                            Default: audiobook, mp3</span>
                                         </div>
                                         <div class="form-group">
                                             <label for="imp_monthlang" class="control=label">Languages for month names:</label>
@@ -1198,7 +1192,7 @@
                                         </div>
                                         <div class="form-group">
                                             <label for="androidpn_username" class="control-label">Username</label>
-                                            <input type="text" id="androidpn_username" name="androidpn_username"  value="${lazylibrarian.ANDROIDPN_USERNAME}" class="form-control" placeholder="AndroidPN Username" /> 
+                                            <input type="text" id="androidpn_username" name="androidpn_username"  value="${lazylibrarian.ANDROIDPN_USERNAME}" class="form-control" placeholder="AndroidPN Username" />
                                         </div>
                                         <div class="form-group">
                                             <input type="button" value="Test AndroidPN" id="testAndroidPN" class="btn btn-default" />
@@ -1278,12 +1272,12 @@
                                     </fieldset>
                                 </div>
 
-                            </div>          
+                            </div>
                         </div>
                     </div>
                 </div>
-                    <div role="tabpanel" class="tab-pane" id="capabilities">
-                        <div class="configtable">
+                <div role="tabpanel" class="tab-pane" id="capabilities">
+                    <div class="configtable">
                         <div class="row">
                             <div class="col-md-6">
                             You only need to change these settings if auto-detection fails or returns incorrect values. If you make any alterations, tick the lock button to prevent reloading values from the provider.
@@ -1301,7 +1295,7 @@
                                     checked = 'checked="checked"'
                                 else:
                                     checked = ''
-                                %>                                  
+                                %>
                                      <label for="newznab[${loop.index}][manual]" class="control-label" ${hidden}>
                                      <input type="checkbox" id="newznab[${loop.index}][manual]" name="newznab[${loop.index}][manual]" value="1" ${checked}  ${hidden}/>
                                      Tick to lock settings</label>
@@ -1339,7 +1333,7 @@
                                     hidden = 'hidden="hidden"'
                                 else:
                                     hidden = ''
-                                %>                                  
+                                %>
                                 <legend ${hidden}>${provider['HOST']}</legend>
                                 <div class="checkbox">
                                 <%
@@ -1347,7 +1341,7 @@
                                     checked = 'checked="checked"'
                                 else:
                                     checked = ''
-                                %>                                  
+                                %>
                                      <label for="torznab[${loop.index}][manual]" class="control-label" ${hidden}>
                                      <input type="checkbox" id="torznab[${loop.index}][manual]" name="torznab[${loop.index}][manual]" value="1" ${checked} ${hidden}/>
                                      Tick to prevent reloading values from provider</label>
@@ -1383,13 +1377,38 @@
                             </div>
                         </div>
                     </div>
+                    <div role="tabpanel" class="tab-pane" id="filters">
+                        <div class="configtable">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <legend>Book Reject List</legend>
+                                <span class="help-block">Default: audiobook, mp3</span>
+                                <div class="form-group">
+                                    <input type="text" id="reject_words" name="reject_words" value="${lazylibrarian.REJECT_WORDS}" class="form-control" placeholder="Reject word list">
+                                    <span class="help-block">Comma separated list of words to reject:<br/>
+                                    Search results with any of these words in the title will be ignored<br/>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <legend>Magazine Reject Lists</legend>
+                                <span class="help-block">Default: None</span>
+                                %for mag in config['magazines_list']:
+                                    <label>${mag['Title']}</label>
+             	    		        <input type="text" id="reject_list[${mag['Title']}]" name="reject_list[${mag['Title']}]" value="${mag['Regex']}" class="form-control" placeholder="Reject word list">
+                                %endfor
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div> <!-- tabs content -->
 
             </div> <!-- tabs -->
 
         </div> <!-- form -->
 
-                            
+
         <div class="table_wrapper_button">
             <input type="submit" value="Save changes" id="add" class="btn btn-primary">
         </div>
@@ -1603,11 +1622,11 @@
                             $("#nzbget_options").slideUp();
                     }
             });
-            
+
             $('#generateAPI').click(function () {
                 $.get("generateAPI",
                     function (data) { });
-                    
+
             });
 
             $('#showJobs').on('click', function(e) {
@@ -1624,7 +1643,7 @@
                     });
                 });
             });
-            
+
             $('#restartJobs').on('click', function(e) {
                 $.get('restartJobs', function(data) {
                     bootbox.dialog({
@@ -1639,7 +1658,7 @@
                     });
                 });
             });
-            
+
             $('#testSABnzbd').on('click', function(e) {
                 $.get('testSABnzbd', function(data) {
                     bootbox.dialog({
@@ -1669,7 +1688,7 @@
                     });
                 });
             });
-            
+
             $('#testDeluge').on('click', function(e) {
                 $.get('testDeluge', function(data) {
                     bootbox.dialog({
@@ -1684,7 +1703,7 @@
                     });
                 });
             });
-            
+
             $('#testTransmission').on('click', function(e) {
                 $.get('testTransmission', function(data) {
                     bootbox.dialog({
@@ -1699,7 +1718,7 @@
                     });
                 });
             });
-            
+
             $('#testqBittorrent').on('click', function(e) {
                 $.get('testqBittorrent', function(data) {
                     bootbox.dialog({
@@ -1714,7 +1733,7 @@
                     });
                 });
             });
-            
+
             $('#testuTorrent').on('click', function(e) {
                 $.get('testuTorrent', function(data) {
                     bootbox.dialog({
@@ -1729,7 +1748,7 @@
                     });
                 });
             });
-            
+
             if ($("#use_twitter").is(":checked"))
                     {
                             $("#twitteroptions").show();
@@ -1749,7 +1768,7 @@
                             $("#twitteroptions").slideUp();
                     }
             });
-        
+
             if ($("#use_boxcar").is(":checked"))
                     {
                             $("#boxcaroptions").show();
@@ -1866,7 +1885,7 @@
                         $("#androidpn_username").slideDown();
                     }
             });
-    
+
                 if ($("#use_nma").is(":checked"))
                         {
                                 $("#nmaoptions").show();
@@ -1886,7 +1905,7 @@
                                 $("#nmaoptions").slideUp();
                         }
                 });
-            
+
             $('#twitterStep1').click(function () {
                 $('#testTwitter-result').html('');
                 $.get("twitterStep1", function (data) {window.open(data); })
@@ -1908,13 +1927,13 @@
             $('#testPushbullet').click(function () {
                 $.get("testPushbullet",
                     function (data) { window.alert(data) });
-                    
+
             });
 
             $('#testPushover').click(function () {
                 $.get("testPushover",
                     function (data) { window.alert(data) });
-                    
+
             });
 
             $('#testNMA').click(function () {
@@ -1931,7 +1950,7 @@
                         $("#testAndroidPN-result").html(data);
                     });
                 });
-            
+
             $('#http_look').change(function() {
                 if ($(this).val() == 'bookstrap') {
                     $('#bookstrap_options').removeClass("hidden");
@@ -1939,10 +1958,10 @@
                     $('#bookstrap_options').addClass("hidden");
                 }
             });
-            
-            
+
+
         } // End Init
-        
+
 
 
         $(document).ready(function() {

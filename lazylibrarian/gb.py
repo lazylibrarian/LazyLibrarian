@@ -85,7 +85,7 @@ class GoogleBooks:
             except urllib2.URLError as e:
                 logger.error(u"URLError getting response for %s: %s" % (my_url, e))
                 return None, False
-             
+
             if str(resp.getcode()).startswith("2"):  # (200 OK etc)
                 logger.debug(u"CacheHandler: Caching response for %s" % my_url)
                 try:
@@ -96,7 +96,7 @@ class GoogleBooks:
                 json.dump(source_json, open(hashname, "w"))
             else:
                 logger.warn(u"Got error response for %s: %s" % (my_url, resp.getcode()))
-                return None, False    
+                return None, False
         return source_json, valid_cache
 
     def find_results(self, authorname=None, queue=None):
@@ -476,8 +476,16 @@ class GoogleBooks:
                         bookpub = item['volumeInfo']['publisher']
                     except KeyError:
                         bookpub = None
+
                     try:
                         booksub = item['volumeInfo']['subtitle']
+                    except KeyError:
+                        booksub = None
+
+                    if booksub is None:
+                        series = None
+                        seriesNum = None
+                    else:
                         try:
                             series = booksub.split('(')[1].split(' Series ')[0]
                         except IndexError:
@@ -488,8 +496,6 @@ class GoogleBooks:
                                 seriesNum = seriesNum[1:]
                         except IndexError:
                             seriesNum = None
-                    except KeyError:
-                        booksub = None
 
                     try:
                         bookdate = item['volumeInfo']['publishedDate']
@@ -520,7 +526,7 @@ class GoogleBooks:
                         bookdesc = item['volumeInfo']['description']
                     except KeyError:
                         bookdesc = None
-                        
+
                     bookname = item['volumeInfo']['title']
                     bookname = bookname.replace(':', '').replace('"', '').replace("'", "")
                     bookname = unidecode(u'%s' % bookname)
@@ -528,6 +534,7 @@ class GoogleBooks:
 
                     booklink = item['volumeInfo']['canonicalVolumeLink']
                     bookrate = float(bookrate)
+                    bookid = item['id']
 
                     find_book_status = myDB.select(
                         'SELECT * FROM books WHERE BookID = "%s"' %
@@ -541,6 +548,7 @@ class GoogleBooks:
                     if not (re.match('[^\w-]', bookname)):  # remove books with bad characters in title
                         if book_status != "Ignored":
                             controlValueDict = {"BookID": bookid}
+
                             newValueDict = {
                                 "AuthorName": authorname,
                                 "AuthorID": authorid,
@@ -571,11 +579,11 @@ class GoogleBooks:
                                 # try to get a cover from librarything
                                 workcover = bookwork.getBookCover(bookid)
                                 if workcover:
-                                    logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))    
+                                    logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))
                                     controlValueDict = {"BookID": bookid}
                                     newValueDict = {"BookImg": workcover}
                                     myDB.upsert("books", newValueDict, controlValueDict)
-         
+
                             elif bookimg.startswith('http'):
                                 link = bookwork.cache_cover(bookid, bookimg)
                                 if link is not None:
@@ -587,7 +595,7 @@ class GoogleBooks:
                                 # try to get series info from librarything
                                 series, seriesNum = bookwork.getWorkSeries(bookid)
                                 if seriesNum:
-                                    logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))    
+                                    logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))
                                     controlValueDict = {"BookID": bookid}
                                     newValueDict = {
                                         "Series": series,
@@ -656,7 +664,7 @@ class GoogleBooks:
         myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' %
                     (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits,
                      ignored, removedResults, not_cached))
-            
+
         if refresh:
             logger.info("[%s] Book processing complete: Added %s books / Updated %s books" %
                         (authorname, str(added_count), str(updated_count)))
@@ -803,11 +811,11 @@ class GoogleBooks:
             # try to get a cover from librarything
             workcover = bookwork.getBookCover(bookid)
             if workcover:
-                logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))    
+                logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))
                 controlValueDict = {"BookID": bookid}
                 newValueDict = {"BookImg": workcover}
                 myDB.upsert("books", newValueDict, controlValueDict)
-         
+
             elif bookimg.startswith('http'):
                 link = bookwork.cache_cover(bookid, bookimg)
                 if link is not None:
@@ -819,7 +827,7 @@ class GoogleBooks:
             # try to get series info from librarything
             series, seriesNum = bookwork.getWorkSeries(bookid)
             if seriesNum:
-                logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))    
+                logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))
                 controlValueDict = {"BookID": bookid}
                 newValueDict = {
                     "Series": series,
