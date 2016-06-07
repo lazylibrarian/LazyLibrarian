@@ -183,9 +183,9 @@ def processResultList(resultlist, book, searchtype):
         nzb_Title = highest[1]
         newValueDict = highest[2]
         controlValueDict = highest[3]
-        logger.info(u'Best match TOR (%s%%): %s using %s search' % 
+        logger.info(u'Best match TOR (%s%%): %s using %s search' %
             (score, nzb_Title, searchtype))
-                  
+
         myDB.upsert("wanted", newValueDict, controlValueDict)
 
         snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
@@ -230,8 +230,9 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                 tor_url = url + '&file=' + value
 
             # strip url back to the .torrent as some sites add parameters
-            if '?' in tor_url:
-                tor_url = tor_url.split('?')[0]
+            if not tor_url.endswith('.torrent'):
+                if '.torrent' in tor_url:
+                    tor_url = tor_url.split('.torrent')[0] + '.torrent'
 
             request = urllib2.Request(ur'%s' % tor_url)
             if lazylibrarian.PROXY_HOST:
