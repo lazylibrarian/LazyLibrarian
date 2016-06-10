@@ -218,12 +218,32 @@ def search_magazines(mags=None, reset=False):
                                         # datetime will give a ValueError if not a good date or a param is not int
                                         date1 = datetime.date(int(regexC_year), int(regexC_month), int(regexC_day))
                                     except:
-                                        logger.debug('Magazine %s not in proper date format.' % nzbtitle_formatted)
-                                        bad_date = bad_date + 1
-                                        # allow issues with good name but bad date to be included
-                                        # so user can manually select them, incl those with issue numbers
-                                        newdatish = "1970-01-01"  # provide a fake date for bad-date issues
-                                        # continue
+                                        # regexD Issue/No/Vol nn, YYYY or Issue/No/Vol nn
+                                        # we ignore the year and just use issue number
+                                        try:
+                                            IssueLabel = nzbtitle_exploded[len(nzbtitle_exploded) - 2]
+                                            if IssueLabel.lower() in ["issue", "no", "vol"]:
+                                                 # issue nn
+                                                regexD_issue = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
+                                                if regexD_issue.isdigit():
+                                                    newdatish = str(regexD_issue)
+                                            else:
+                                                IssueLabel = nzbtitle_exploded[len(nzbtitle_exploded) - 3]
+                                                if IssueLabel.lower() in ["issue", "no", "vol"]:
+                                                    # issue nn, YYYY
+                                                    regexD_issue = nzbtitle_exploded[len(nzbtitle_exploded) - 2]
+                                                    regexD_issue = regexD_issue.strip(',')
+                                                    if regexD_issue.isdigit():
+                                                        newdatish = str(regexD_issue)
+                                                    else:
+                                                        raise ValueError
+                                        except:
+                                            logger.debug('Magazine %s not in proper date format.' % nzbtitle_formatted)
+                                            bad_date = bad_date + 1
+                                            # allow issues with good name but bad date to be included
+                                            # so user can manually select them, incl those with issue numbers
+                                            newdatish = "1970-01-01"  # provide a fake date for bad-date issues
+                                            # continue
                         else:
                             continue
 
@@ -247,17 +267,28 @@ def search_magazines(mags=None, reset=False):
                                 "NZBmode": nzbmode
                             }
                             myDB.upsert("wanted", newValueDict, controlValueDict)
-
+                        print "XX",control_date, newdatish
+                        print nzburl
                         if control_date is None:  # we haven't got any copies of this magazine yet
                             # get a rough time just over a month ago to compare to, in format yyyy-mm-dd
                             # could perhaps calc differently for weekly, biweekly etc
-                            start_time = time.time()
-                            start_time -= 31 * 24 * 60 * 60  # number of seconds in 31 days
-                            control_date = time.strftime("%Y-%m-%d", time.localtime(start_time))
+                            # or for magazines with only an issue number, use zero
 
-                        # only grab a copy if it's newer than the most recent we have,
-                        # or newer than a month ago if we have none
-                        comp_date = formatter.datecompare(newdatish, control_date)
+                            if '-' in str(newdatish):
+                                start_time = time.time()
+                                start_time -= 31 * 24 * 60 * 60  # number of seconds in 31 days
+                                control_date = time.strftime("%Y-%m-%d", time.localtime(start_time))
+                            else:
+                                control_date = 0
+
+                        if '-' in str(control_date) and '-' in str(newdatish):
+                            # only grab a copy if it's newer than the most recent we have,
+                            # or newer than a month ago if we have none
+                            comp_date = formatter.datecompare(newdatish, control_date)
+                        else:
+                            # for issue numbers, check if later than last one we have
+                            comp_date = int(newdatish) - int(control_date)
+
                         if comp_date > 0:
                             # Should probably only upsert when downloaded and processed in case snatch fails
                             # keep track of what we're going to download so we don't download dupes
