@@ -219,7 +219,6 @@ def search_magazines(mags=None, reset=False):
                                         date1 = datetime.date(int(regexC_year), int(regexC_month), int(regexC_day))
                                     except:
                                         # regexD Issue/No/Vol nn, YYYY or Issue/No/Vol nn
-                                        # we ignore the year and just use issue number
                                         try:
                                             IssueLabel = nzbtitle_exploded[len(nzbtitle_exploded) - 2]
                                             if IssueLabel.lower() in ["issue", "no", "vol"]:
@@ -237,6 +236,11 @@ def search_magazines(mags=None, reset=False):
                                                         newdatish = str(regexD_issue)
                                                     else:
                                                         raise ValueError
+
+                                                    regexD_year = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
+                                                    if regexD_year.isdigit():
+                                                        if int(regexD_year) < int(datetime.date.today().year):
+                                                            newdatish = 0  # it's old
                                         except:
                                             logger.debug('Magazine %s not in proper date format.' % nzbtitle_formatted)
                                             bad_date = bad_date + 1
@@ -267,8 +271,7 @@ def search_magazines(mags=None, reset=False):
                                 "NZBmode": nzbmode
                             }
                             myDB.upsert("wanted", newValueDict, controlValueDict)
-                        print "XX",control_date, newdatish
-                        print nzburl
+
                         if control_date is None:  # we haven't got any copies of this magazine yet
                             # get a rough time just over a month ago to compare to, in format yyyy-mm-dd
                             # could perhaps calc differently for weekly, biweekly etc
