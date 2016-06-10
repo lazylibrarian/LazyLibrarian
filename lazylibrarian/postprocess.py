@@ -139,9 +139,9 @@ def processDir(force=False, reset=False):
                                         shutil.move(os.path.join(processpath, fname), os.path.join(dirname, fname))
                                         fname = os.path.splitext(fname)[0]
                                     except Exception as why:
-                                        logger.debug("Failed to move file %s to %s, %s" % 
-                                            (fname, dirname, str(why)))                                         
-                        if os.path.isdir(os.path.join(processpath, fname)): 
+                                        logger.debug("Failed to move file %s to %s, %s" %
+                                            (fname, dirname, str(why)))
+                        if os.path.isdir(os.path.join(processpath, fname)):
                             pp_path = os.path.join(processpath, fname)
                             logger.debug('Found folder %s for %s' % (pp_path, book['NZBtitle']))
                             found = True
@@ -231,7 +231,12 @@ def processDir(force=False, reset=False):
                 else:
                     # update mags
                     controlValueDict = {"Title": book['BookID']}
-                    if mostrecentissue > book['AuxInfo']:  # check this in case processing issues arriving out of order
+                    if mostrecentissue.isdigit() and str(book['AuxInfo']).isdigit():
+                        older = int(mostrecentissue) > int(book['AuxInfo']) # issuenumber
+                    else:
+                        older = mostrecentissue > book['AuxInfo']  # YYYY-MM-DD
+
+                    if older:  # check this in case processing issues arriving out of order
                         newValueDict = {"LastAcquired": formatter.today(), "IssueStatus": "Open"}
                     else:
                         newValueDict = {"IssueDate": book['AuxInfo'], "LastAcquired": formatter.today(),
