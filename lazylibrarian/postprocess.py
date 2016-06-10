@@ -119,9 +119,11 @@ def processDir(force=False, reset=False):
                     if ' LL.(' in matchname:
                         matchname = matchname.split(' LL.(')[0]
                     matchtitle = book['NZBtitle']
-                    if ' LL.(' in matchtitle:
-                        matchtitle = matchtitle.split(' LL.(')[0]
-                    match = fuzz.token_set_ratio(matchtitle, matchname)
+                    match = 0
+                    if matchtitle:
+                        if ' LL.(' in matchtitle:
+                            matchtitle = matchtitle.split(' LL.(')[0]
+                        match = fuzz.token_set_ratio(matchtitle, matchname)
                     if match >= 95:
                         fname = matchname
                         if os.path.isfile(os.path.join(processpath, fname)):
@@ -150,6 +152,7 @@ def processDir(force=False, reset=False):
                         logger.debug('No match (%s%%) %s for %s' % (match, matchname, matchtitle))
                 else:
                     logger.debug('Skipping %s' % fname)
+
             if found:
                 data = myDB.select('SELECT * from books WHERE BookID="%s"' % book['BookID'])
                 if data:
@@ -231,11 +234,13 @@ def processDir(force=False, reset=False):
                 else:
                     # update mags
                     controlValueDict = {"Title": book['BookID']}
-                    if mostrecentissue.isdigit() and str(book['AuxInfo']).isdigit():
-                        older = int(mostrecentissue) > int(book['AuxInfo']) # issuenumber
+                    if mostrecentissue:
+                        if mostrecentissue.isdigit() and str(book['AuxInfo']).isdigit():
+                            older = int(mostrecentissue) > int(book['AuxInfo']) # issuenumber
+                        else:
+                            older = mostrecentissue > book['AuxInfo']  # YYYY-MM-DD
                     else:
-                        older = mostrecentissue > book['AuxInfo']  # YYYY-MM-DD
-
+                        older = False
                     if older:  # check this in case processing issues arriving out of order
                         newValueDict = {"LastAcquired": formatter.today(), "IssueStatus": "Open"}
                     else:
