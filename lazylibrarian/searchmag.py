@@ -66,16 +66,17 @@ def search_magazines(mags=None, reset=False):
             if not nproviders:
                 logger.warn('No torrent providers are set. Check config for TORRENT providers')
 
-            for item in tor_resultlist:  # reformat the torrent results so they look like nzbs
-                resultlist.append({
-                    'bookid': item['bookid'],
-                    'nzbprov': item['tor_prov'],
-                    'nzbtitle': item['tor_title'],
-                    'nzburl': item['tor_url'],
-                    'nzbdate': 'Fri, 01 Jan 1970 00:00:00 +0100',  # fake date as none returned from torrents
-                    'nzbsize': item['tor_size'],
-                    'nzbmode': 'torrent'
-                })
+            if tor_resultlist:
+                for item in tor_resultlist:  # reformat the torrent results so they look like nzbs
+                    resultlist.append({
+                        'bookid': item['bookid'],
+                        'nzbprov': item['tor_prov'],
+                        'nzbtitle': item['tor_title'],
+                        'nzburl': item['tor_url'],
+                        'nzbdate': 'Fri, 01 Jan 1970 00:00:00 +0100',  # fake date as none returned from torrents
+                        'nzbsize': item['tor_size'],
+                        'nzbmode': 'torrent'
+                    })
 
         if not resultlist:
             logger.debug("Adding magazine %s to queue." % book['searchterm'])
