@@ -1160,6 +1160,19 @@ class WebInterface(object):
         lazylibrarian.CURRENT_VERSION = versioncheck.getCurrentVersion()
         lazylibrarian.LATEST_VERSION = versioncheck.getLatestVersion()
         lazylibrarian.COMMITS_BEHIND = versioncheck.getCommitDifferenceFromGit()
+        lazylibrarian.COMMIT_LIST = versioncheck.getLatestChanges()
+        if lazylibrarian.COMMITS_BEHIND == 0:
+            message = "up to date"
+            return serve_template(templatename="shutdown.html", title="Version Check", message=message, timer=5)
+        if lazylibrarian.COMMITS_BEHIND > 0:
+            multi = ''
+            if lazylibrarian.COMMITS_BEHIND > 1:
+                multi = 's'
+            message = "behind by %s commit%s" % (lazylibrarian.COMMITS_BEHIND, multi)
+            messages = lazylibrarian.COMMIT_LIST.replace('\n', '<br>')
+            message = message + '<br><small>' + messages
+            return serve_template(templatename="shutdown.html", title="Commits", message=message, timer=15)
+
         raise cherrypy.HTTPRedirect("config")
     checkForUpdates.exposed = True
 
@@ -1173,7 +1186,7 @@ class WebInterface(object):
         logger.debug('(webServe-Update) - Performing update')
         lazylibrarian.SIGNAL = 'update'
         message = 'Updating...'
-        return serve_template(templatename="shutdown.html", title="Updating", message=message, timer=120)
+        return serve_template(templatename="shutdown.html", title="Updating", message=message, timer=30)
     update.exposed = True
 
 # IMPORT/EXPORT #####################################################

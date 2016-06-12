@@ -1,21 +1,21 @@
 <%inherit file="base.html"/>
 
 <%def name="headIncludes()">
-    
+
 </%def>
 
 <%def name="body()">
     <p>&nbsp;</p>
-    <div id="shutdown" class="alert alert-info">            
-        <h1><i class="fa fa-circle-o-notch fa-spin"></i> Library is ${message}</h1>
+    <div id="shutdown" class="alert alert-info">
+        <h1><i class="fa fa-circle-o-notch fa-spin"></i> LazyLibrarian is ${message}</h1>
         <h2 id="countdown">&nbsp;</h2>
     </div>
 </%def>
 
 <%def name="javascriptIncludes()">
-<script type="text/javascript">    
+<script type="text/javascript">
     $(function(){
-        var countdown = 30;
+        var countdown = ${timer};
         setInterval(function() {
             countdown--;
             $('#countdown').html('Refreshing in '+countdown+' seconds');

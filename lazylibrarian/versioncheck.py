@@ -170,8 +170,17 @@ def checkForUpdates():  # This is the cron job
     lazylibrarian.CURRENT_VERSION = getCurrentVersion()
     lazylibrarian.LATEST_VERSION = getLatestVersion()
     lazylibrarian.COMMITS_BEHIND = getCommitDifferenceFromGit()
+    lazylibrarian.COMMIT_LIST = getLatestChanges()
     logger.debug('(checkForUpdates) Done')
     # l = checkGithub()
+
+def getLatestChanges():
+    if lazylibrarian.COMMITS_BEHIND <= 0:
+        return ''
+    msg, err = runGit('log --pretty=format:"%s" -' + str(lazylibrarian.COMMITS_BEHIND))
+    if err:
+        return err
+    return msg
 
 # Return latest version from GITHUB
 # if GIT install return latest on current branch
