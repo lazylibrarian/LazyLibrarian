@@ -169,7 +169,7 @@ def checkForUpdates():  # This is the cron job
     getInstallType()
     lazylibrarian.CURRENT_VERSION = getCurrentVersion()
     lazylibrarian.LATEST_VERSION = getLatestVersion()
-    lazylibrarian.COMMITS_BEHIND = getCommitDifferenceFromGit()
+    lazylibrarian.COMMITS_BEHIND, lazylibrarian.COMMIT_LIST = getCommitDifferenceFromGit()
     logger.debug('(checkForUpdates) Done')
     # l = checkGithub()
 
@@ -239,7 +239,7 @@ def getCommitDifferenceFromGit():
     commits = -1
     # Takes current latest version value and trys to diff it with the latest
     # version in the current branch.
-    lazylibrarian.COMMIT_LIST = ''
+    commit_list = ''
     if lazylibrarian.CURRENT_VERSION:
         logger.info('[VersionCheck] -  Comparing currently installed version with latest github version')
         url = 'https://api.github.com/repos/%s/LazyLibrarian/compare/%s...%s' % (
@@ -263,8 +263,7 @@ def getCommitDifferenceFromGit():
                     for item in git['commits']:
                         messages.insert(0, item['commit']['message'])
                     for line in messages:
-                        lazylibrarian.COMMIT_LIST = "%s\n%s" % (lazylibrarian.COMMIT_LIST, line)
-                    print lazylibrarian.COMMIT_LIST
+                        commit_list = "%s\n%s" % (lazylibrarian.COMMIT_LIST, line)
             except:
                 logger.warn('(getCommitDifferenceFromGit) -  could not get difference status from GitHub')
 
@@ -285,7 +284,7 @@ def getCommitDifferenceFromGit():
 
     logger.debug('(getCommitDifferenceFromGit) - exiting with commit value of [%s]' % commits)
     # lazylibrarian.COMMITS_BEHIND = commits
-    return commits
+    return commits, commit_list
 
 
 #
