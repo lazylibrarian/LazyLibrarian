@@ -122,11 +122,11 @@ def processResultList(resultlist, book, searchtype):
                 # ' to ': ' ', ' of ': ' ', ' for ': ' ', ' my ': ' ', ' in ': ' ', ' at ': ' ', ' with ': ' '}
 
     dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
-           ',': '', '*': '', ':': '', ';': ''}
+           ',': '', '*': '', ':': '', ';': '', '\'': ''}
 
     match_ratio = int(lazylibrarian.MATCH_RATIO)
     reject_list = formatter.getList(lazylibrarian.REJECT_WORDS)
-    
+
     matches = []
     for nzb in resultlist:
         nzb_Title = formatter.latinToAscii(formatter.replace_all(nzb['nzbtitle'], dictrepl)).strip()
@@ -168,7 +168,7 @@ def processResultList(resultlist, book, searchtype):
                 "NZBmode": nzbmode,
                 "Status": "Skipped"
             }
-            
+
             score = (nzbBook_match + nzbAuthor_match)/2  # as a percentage
             # lose a point for each extra word in the title so we get the closest match
             words = len(formatter.getList(nzb_Title))
@@ -183,9 +183,9 @@ def processResultList(resultlist, book, searchtype):
         nzb_Title = highest[1]
         newValueDict = highest[2]
         controlValueDict = highest[3]
-        logger.info(u'Best match NZB (%s%%): %s using %s search' % 
+        logger.info(u'Best match NZB (%s%%): %s using %s search' %
             (score, nzb_Title, searchtype))
-                  
+
         myDB.upsert("wanted", newValueDict, controlValueDict)
 
         snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
