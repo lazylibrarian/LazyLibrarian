@@ -1160,7 +1160,6 @@ class WebInterface(object):
         lazylibrarian.CURRENT_VERSION = versioncheck.getCurrentVersion()
         lazylibrarian.LATEST_VERSION = versioncheck.getLatestVersion()
         lazylibrarian.COMMITS_BEHIND = versioncheck.getCommitDifferenceFromGit()
-        lazylibrarian.COMMIT_LIST = versioncheck.getLatestChanges()
         if lazylibrarian.COMMITS_BEHIND == 0:
             message = "up to date"
             return serve_template(templatename="shutdown.html", title="Version Check", message=message, timer=5)

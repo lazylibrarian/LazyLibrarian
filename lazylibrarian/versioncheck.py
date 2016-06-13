@@ -170,17 +170,8 @@ def checkForUpdates():  # This is the cron job
     lazylibrarian.CURRENT_VERSION = getCurrentVersion()
     lazylibrarian.LATEST_VERSION = getLatestVersion()
     lazylibrarian.COMMITS_BEHIND = getCommitDifferenceFromGit()
-    lazylibrarian.COMMIT_LIST = getLatestChanges()
     logger.debug('(checkForUpdates) Done')
     # l = checkGithub()
-
-def getLatestChanges():
-    if lazylibrarian.COMMITS_BEHIND <= 0:
-        return ''
-    msg, err = runGit('log --pretty=format:"%s" -' + str(lazylibrarian.COMMITS_BEHIND))
-    if err:
-        return err
-    return msg
 
 # Return latest version from GITHUB
 # if GIT install return latest on current branch
@@ -248,6 +239,7 @@ def getCommitDifferenceFromGit():
     commits = -1
     # Takes current latest version value and trys to diff it with the latest
     # version in the current branch.
+    lazylibrarian.COMMIT_LIST = ''
     if lazylibrarian.CURRENT_VERSION:
         logger.info('[VersionCheck] -  Comparing currently installed version with latest github version')
         url = 'https://api.github.com/repos/%s/LazyLibrarian/compare/%s...%s' % (
@@ -265,6 +257,14 @@ def getCommitDifferenceFromGit():
 
                 logger.debug('(getCommitDifferenceFromGit) -  GitHub reports as follows Status [%s] - Ahead [%s] - Behind [%s] - Total Commits [%s]' % (
                              git['status'], git['ahead_by'], git['behind_by'], git['total_commits']))
+
+                if git['total_commits'] > 0:
+                    messages = []
+                    for item in git['commits']:
+                        messages.insert(0, item['commit']['message'])
+                    for line in messages:
+                        lazylibrarian.COMMIT_LIST = "%s\n%s" % (lazylibrarian.COMMIT_LIST, line)
+                    print lazylibrarian.COMMIT_LIST
             except:
                 logger.warn('(getCommitDifferenceFromGit) -  could not get difference status from GitHub')
 
