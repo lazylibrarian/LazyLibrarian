@@ -58,6 +58,7 @@ INSTALL_TYPE = None
 CURRENT_VERSION = None
 LATEST_VERSION = None
 COMMITS_BEHIND = None
+COMMIT_LIST = None
 
 DATADIR = None
 DBFILE = None
@@ -318,7 +319,7 @@ def initialize():
         global __INITIALIZED__, LOGDIR, LOGLIMIT, LOGFILES, LOGSIZE, CFG, CFGLOGLEVEL, LOGLEVEL, \
             LOGFULL, CACHEDIR, DATADIR, LAST_LIBRARYTHING, LAST_GOODREADS, BOOKLANGFILTER, MANAGEFILTER, \
             ISSUEFILTER, IMP_MONTHLANG, BOOKSTRAP_THEMELIST
-        
+
         if __INITIALIZED__:
             return False
 
@@ -357,7 +358,7 @@ def initialize():
             logger.info("Screen Log set to INFO/WARN/ERROR")
 
         config_read()
-        
+
         # Put the cache dir in the data dir for now
         CACHEDIR = os.path.join(DATADIR, 'cache')
         if not os.path.exists(CACHEDIR):
@@ -421,7 +422,7 @@ def config_read(reloaded=False):
             TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, DELUGE_LABEL, \
             FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, \
             USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
-            GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, \
+            GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, COMMIT_LIST, \
             LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, SCHED, CACHE_HIT, CACHE_MISS, \
             BOOKSTRAP_THEME, LOGFILES, LOGSIZE, HTTPS_ENABLED, HTTPS_CERT, HTTPS_KEY
 
@@ -901,7 +902,7 @@ def config_write():
             logger.debug('Reset %s as provider changed' % provider['NAME'])
             CFG.set(provider['NAME'], 'UPDATED', '')
             CFG.set(provider['NAME'], 'MANUAL', False)
-        
+
     add_torz_slot()
 #
     for provider in RSS_PROV:
@@ -1041,7 +1042,7 @@ def add_newz_slot():
         CFG.set(newz_name, 'EXTENDED', '1')
         CFG.set(newz_name, 'UPDATED', '')
         CFG.set(newz_name, 'MANUAL', False)
-        
+
         NEWZNAB_PROV.append({"NAME": newz_name,
                              "ENABLED": 0,
                              "HOST": '',
@@ -1349,7 +1350,7 @@ def dbcheck():
         logger.info('Updating database to hold WorkPage')
         c.execute('ALTER TABLE books ADD COLUMN WorkPage TEXT')
         addedWorkPage = True
-        
+
     addedSeries = False
     try:
         c.execute('SELECT Series from books')
@@ -1357,11 +1358,11 @@ def dbcheck():
         logger.info('Updating database to hold Series')
         c.execute('ALTER TABLE books ADD COLUMN Series TEXT')
         addedSeries = True
-        
+
     # SeriesOrder shouldn't be an integer, some later written books
     # and novellas logically go inbetween books of the main series,
     # and their SeriesOrder is not an integer, eg 1.5
-    # so we need to update SeriesOrder to store as text. 
+    # so we need to update SeriesOrder to store as text.
     # Because sqlite can't drop columns we create a new column SeriesNum,
     # inherit the old column values, and use SeriesNum instead
     try:
@@ -1412,7 +1413,7 @@ def dbcheck():
             if books:
                 logger.info('Adding series to existing books')
                 for book in books:
-                    series,seriesNum = formatter.bookSeries(book["BookName"])  
+                    series,seriesNum = formatter.bookSeries(book["BookName"])
                     if series:
                         controlValueDict = {"BookID": book["BookID"]}
                         newValueDict = {
