@@ -106,11 +106,13 @@ def search_magazines(mags=None, reset=False):
                 nzbdate = formatter.nzbdate2format(nzbdate_temp)
                 nzbmode = nzb['nzbmode']
 
-                checkifmag = myDB.select('SELECT * from magazines WHERE Title="%s"' % bookid)
-                if checkifmag:
-                    for results in checkifmag:
-                        control_date = results['IssueDate']
-                        reject_list = formatter.getList(results['Regex'])
+                results = myDB.action('SELECT * from magazines WHERE Title="%s"' % bookid).fetchone()
+                if not results:
+                    logger.debug('Magazine [%s] does not match search term [%s].' % (nzbtitle, bookid))
+                    bad_regex = bad_regex + 1
+                else:
+                    control_date = results['IssueDate']
+                    reject_list = formatter.getList(results['Regex'])
 
                     nzbtitle_formatted = nzbtitle.replace('.', ' ').replace('-', ' ').replace('/', ' ').replace(
                         '+', ' ').replace('_', ' ').replace('(', '').replace(')', '').strip()
@@ -143,13 +145,14 @@ def search_magazines(mags=None, reset=False):
                                     mag_title_match) + "% for " + nzbtitle_formatted)
                             name_match = 0
 
-                    lower_title = common.remove_accents(nzbtitle_formatted).lower()
-                    lower_bookid = common.remove_accents(bookid).lower()
-                    for word in reject_list:
-                        if word in lower_title and not word in lower_bookid:
-                            name_match = 0
-                            logger.debug("Rejecting %s, contains %s" % (nzbtitle_formatted, word))
-                            break
+                    if name_match:
+                        lower_title = common.remove_accents(nzbtitle_formatted).lower()
+                        lower_bookid = common.remove_accents(bookid).lower()
+                        for word in reject_list:
+                            if word in lower_title and not word in lower_bookid:
+                                name_match = 0
+                                logger.debug("Rejecting %s, contains %s" % (nzbtitle_formatted, word))
+                                break
 
                     if name_match:
                         # some magazine torrent uploaders add their sig in [] or {}
@@ -251,6 +254,9 @@ def search_magazines(mags=None, reset=False):
                                             newdatish = "1970-01-01"  # provide a fake date for bad-date issues
                                             # continue
                         else:
+                            logger.debug('Magazine [%s] does not match search term [%s].' % (
+                                     nzbtitle_formatted, bookid))
+                            bad_regex = bad_regex + 1
                             continue
 
                         #  store all the _new_ matching results, marking as "skipped" for now
