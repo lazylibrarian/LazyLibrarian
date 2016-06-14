@@ -11,7 +11,7 @@ def bookSeries(bookname):
     See if book is in multiple series first, if so return first one
     eg "The Shepherds Crown (Discworld, #41; Tiffany Aching, #5)"
     if no match, try single series, eg Mrs Bradshaws Handbook (Discworld, #40.5)
-    
+
     \(            Must have (
     ([\S\s]+)     followed by a group of one or more non whitespace
     ,? #?         followed by optional comma, then space optional hash
@@ -25,7 +25,7 @@ def bookSeries(bookname):
     """
     series = None
     seriesNum = None
-    
+
     result = re.search(r"\(([\S\s]+),? #?(\d+\.?-?\d{0,}[;,])", bookname)
     if result:
         series = result.group(1)
@@ -41,12 +41,12 @@ def bookSeries(bookname):
             if series[-1] == ',':
                 series = series[:-1]
             seriesNum = result.group(2)
-       
+
     if series and series.lower().endswith(' novel'):
         series = series[:-6]
     if series and series.lower().endswith(' book'):
         series = series[:-5]
-        
+
     return series, seriesNum
 
 def next_run(when_run):
@@ -183,10 +183,12 @@ def is_valid_booktype(filename, booktype=None):
 
 def getList(st):
     # split a string into a list
-    my_splitter = shlex.shlex(st, posix=True)
-    my_splitter.whitespace += ','
-    my_splitter.whitespace_split = True
-    return list(my_splitter)
+    if st:
+        my_splitter = shlex.shlex(st, posix=True)
+        my_splitter.whitespace += ','
+        my_splitter.whitespace_split = True
+        return list(my_splitter)
+    return list("")
 
 def safe_unicode(obj, *args):
     """ return the unicode representation of obj """
