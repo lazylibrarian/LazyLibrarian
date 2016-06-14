@@ -114,8 +114,9 @@ def search_magazines(mags=None, reset=False):
                     control_date = results['IssueDate']
                     reject_list = formatter.getList(results['Regex'])
 
-                    nzbtitle_formatted = nzbtitle.replace('.', ' ').replace('-', ' ').replace('/', ' ').replace(
-                        '+', ' ').replace('_', ' ').replace('(', '').replace(')', '').strip()
+                    dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': ''}
+                    nzbtitle_formatted = formatter.replace_all(nzbtitle, dic).strip()
+
                     # Need to make sure that substrings of magazine titles don't get found
                     # (e.g. Maxim USA will find Maximum PC USA) - token_set_ratio takes care of this
                     # keyword_check = nzbtitle_formatted.replace(bookid, '')
