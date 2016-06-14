@@ -76,11 +76,11 @@ class GoodReads:
                     resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
                 except (urllib2.URLError, socket.timeout) as e:
                     logger.error(u"Error getting response for %s: %s" % (my_url, e))
-                    return None, False           
+                    return None, False
             except urllib2.URLError as e:
                 logger.error(u"URLError getting response for %s: %s" % (my_url, e))
                 return None, False
-            
+
             if str(resp.getcode()).startswith("2"):  # (200 OK etc)
                 logger.debug(u"CacheHandler: Caching response for %s" % my_url)
                 try:
@@ -93,7 +93,7 @@ class GoodReads:
             else:
                 logger.warn(u"Got error response for %s: %s" % (my_url, resp.getcode()))
                 return None, False
-            
+
         root = ElementTree.fromstring(source_xml)
         return root, valid_cache
 
@@ -176,7 +176,7 @@ class GoodReads:
                 highest_fuzz = max(author_fuzz, book_fuzz, isbn_fuzz)
 
                 bookid = author.find('./best_book/id').text
-                    
+
                 resultlist.append({
                     'authorname': author.find('./best_book/author/name').text,
                     'bookid': bookid,
@@ -483,8 +483,8 @@ class GoodReads:
                     bookrate = float(book.find('average_rating').text)
                     bookpages = book.find('num_pages').text
 
-                    series,seriesNum = formatter.bookSeries(bookname)                
-    
+                    series,seriesNum = formatter.bookSeries(bookname)
+
                     find_book_status = myDB.select('SELECT * FROM books WHERE BookID = "%s"' % bookid)
                     if find_book_status:
                         for resulted in find_book_status:
@@ -492,10 +492,12 @@ class GoodReads:
                     else:
                         book_status = lazylibrarian.NEWBOOK_STATUS
 
-                    bookname = bookname.replace(':', '').replace('"', '').replace("'", "")
+                    dic = {':': '', '"': '', '\'': ''}
+                    bookname = formatter.replace_all(bookname, dic)
+
                     bookname = unidecode(u'%s' % bookname)
                     bookname = bookname.strip()  # strip whitespace
-                    
+
                     if not (re.match('[^\w-]', bookname)):  # remove books with bad characters in title
                         if book_status != "Ignored":
                             controlValueDict = {"BookID": bookid}
@@ -530,23 +532,23 @@ class GoodReads:
                                 # try to get a cover from librarything
                                 workcover = bookwork.getBookCover(bookid)
                                 if workcover:
-                                    logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))    
+                                    logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))
                                     controlValueDict = {"BookID": bookid}
                                     newValueDict = {"BookImg": workcover}
                                     myDB.upsert("books", newValueDict, controlValueDict)
-                            
+
                             elif bookimg.startswith('http'):
                                 link = bookwork.cache_cover(bookid, bookimg)
                                 if link is not None:
                                     controlValueDict = {"BookID": bookid}
                                     newValueDict = {"BookImg": link}
                                     myDB.upsert("books", newValueDict, controlValueDict)
-         
+
                             if seriesNum == None:
                                 # try to get series info from librarything
                                 series, seriesNum = bookwork.getWorkSeries(bookid)
                                 if seriesNum:
-                                    logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))    
+                                    logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))
                                     controlValueDict = {"BookID": bookid}
                                     newValueDict = {
                                         "Series": series,
@@ -559,7 +561,7 @@ class GoodReads:
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {"WorkPage": worklink}
                                 myDB.upsert("books", newValueDict, controlValueDict)
-                                    
+
                             if not find_book_status:
                                 logger.debug(u"[%s] Added book: %s" % (authorname, bookname))
                                 added_count = added_count + 1
@@ -624,7 +626,7 @@ class GoodReads:
         myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' %
                     (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change,
                      cache_hits, ignored, removedResults, not_cached))
-            
+
         if refresh:
             logger.info("[%s] Book processing complete: Added %s books / Updated %s books" %
                         (authorname, str(added_count), str(updated_count)))
@@ -699,7 +701,9 @@ class GoodReads:
             series = None
             seriesNum = None
 
-        bookname = bookname.replace(':', '').replace('"', '').replace("'", "")
+        dic = {':': '', '"': '', '\'': ''}
+        bookname = formatter.replace_all(bookname, dic)
+
         bookname = unidecode(u'%s' % bookname)
         bookname = bookname.strip()  # strip whitespace
 
@@ -733,11 +737,11 @@ class GoodReads:
             # try to get a cover from librarything
             workcover = bookwork.getBookCover(bookid)
             if workcover:
-                logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))    
+                logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))
                 controlValueDict = {"BookID": bookid}
                 newValueDict = {"BookImg": workcover}
                 myDB.upsert("books", newValueDict, controlValueDict)
-        
+
         elif bookimg.startswith('http'):
             link = bookwork.cache_cover(bookid, bookimg)
             if link is not None:
@@ -745,11 +749,11 @@ class GoodReads:
                 newValueDict = {"BookImg": link}
                 myDB.upsert("books", newValueDict, controlValueDict)
 
-        if seriesNum == None: 
+        if seriesNum == None:
             #  try to get series info from librarything
             series, seriesNum = bookwork.getWorkSeries(bookid)
             if seriesNum:
-                logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))    
+                logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))
                 controlValueDict = {"BookID": bookid}
                 newValueDict = {
                     "Series": series,
