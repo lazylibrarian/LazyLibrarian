@@ -152,7 +152,7 @@ def datecompare(nzbdate, control_date):
 def check_int(var, default):
     try:
         return int(var)
-    except ValueError:
+    except (ValueError, TypeError):
         return default
 
 
@@ -188,7 +188,7 @@ def getList(st):
         my_splitter.whitespace += ','
         my_splitter.whitespace_split = True
         return list(my_splitter)
-    return list("")
+    return []
 
 def safe_unicode(obj, *args):
     """ return the unicode representation of obj """

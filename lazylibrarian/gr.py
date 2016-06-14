@@ -142,9 +142,7 @@ class GoodReads:
                     bookimg = author.find('./best_book/image_url').text
                     if (bookimg == 'http://www.goodreads.com/assets/nocover/111x148.png'):
                         bookimg = 'images/nocover.png'
-                except KeyError:
-                    bookimg = 'images/nocover.png'
-                except AttributeError:
+                except (KeyError, AttributeError):
                     bookimg = 'images/nocover.png'
 
                 try:
@@ -346,7 +344,7 @@ class GoodReads:
                         bookimg = book.find('image_url').text
                         if ('nocover' in bookimg):
                             bookimg = 'images/nocover.png'
-                    except KeyError,AttributeError:
+                    except (KeyError,AttributeError):
                         bookimg = 'images/nocover.png'
 
     # PAB this next section tries to get the book language using the isbn13 to look it up. If no isbn13 we skip the
@@ -672,9 +670,7 @@ class GoodReads:
             bookimg = rootxml.find('./book/img_url').text
             if (bookimg == 'http://www.goodreads.com/assets/nocover/111x148.png'):
                 bookimg = 'images/nocover.png'
-        except KeyError:
-            bookimg = 'images/nocover.png'
-        except AttributeError:
+        except (KeyError, AttributeError):
             bookimg = 'images/nocover.png'
 
         authorname = rootxml.find('./book/authors/author/name').text
