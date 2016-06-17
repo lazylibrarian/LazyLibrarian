@@ -25,7 +25,7 @@ class Server(ServerAdapter):
     socket_port = 8080
     """The TCP port on which to listen for connections."""
     
-    _socket_host = '127.0.0.1'
+    _socket_host = '0.0.0.0'
     def _get_socket_host(self):
         return self._socket_host
     def _set_socket_host(self, value):
