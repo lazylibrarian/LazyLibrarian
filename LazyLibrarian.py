@@ -131,7 +131,7 @@ def main():
     versioncheck.getInstallType()
     lazylibrarian.CURRENT_VERSION = versioncheck.getCurrentVersion()
     lazylibrarian.LATEST_VERSION = versioncheck.getLatestVersion()
-    lazylibrarian.COMMITS_BEHIND = versioncheck.getCommitDifferenceFromGit()
+    lazylibrarian.COMMITS_BEHIND, lazylibrarian.COMMIT_LIST = versioncheck.getCommitDifferenceFromGit()
     logger.debug('Current Version [%s] - Latest remote version [%s] - Install type [%s]' % (
         lazylibrarian.CURRENT_VERSION, lazylibrarian.LATEST_VERSION, lazylibrarian.INSTALL_TYPE))
 
