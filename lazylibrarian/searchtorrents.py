@@ -147,6 +147,15 @@ def processResultList(resultlist, book, searchtype):
                 logger.debug("Rejecting %s, contains %s" % (torTitle, word))
                 break
 
+        tor_size_temp = tor['tor_size']  # Need to cater for when this is NONE (Issue 35)
+        if tor_size_temp is None:
+            tor_size_temp = 1000
+        tor_size = str(round(float(tor_size_temp) / 1048576, 2)) + ' MB'
+
+        if tor_size > formatter.check_int(lazylibrarian.REJECT_MAXSIZE, 0):
+            rejected = True
+            logger.debug("Rejecting %s, too large" % torTitle)
+
         if (torAuthor_match >= match_ratio and torBook_match >= match_ratio and not rejected):
             #logger.debug(u'Found Torrent: %s using %s search' % (tor['tor_title'], searchtype))
             bookid = book['bookid']
@@ -154,10 +163,6 @@ def processResultList(resultlist, book, searchtype):
             tor_url = tor['tor_url']
             tor_prov = tor['tor_prov']
 
-            tor_size_temp = tor['tor_size']  # Need to cater for when this is NONE (Issue 35)
-            if tor_size_temp is None:
-                tor_size_temp = 1000
-            tor_size = str(round(float(tor_size_temp) / 1048576, 2)) + ' MB'
             controlValueDict = {"NZBurl": tor_url}
             newValueDict = {
                 "NZBprov": tor_prov,

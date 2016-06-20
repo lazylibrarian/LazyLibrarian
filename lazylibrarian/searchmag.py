@@ -154,7 +154,11 @@ def search_magazines(mags=None, reset=False):
                                 name_match = 0
                                 logger.debug("Rejecting %s, contains %s" % (nzbtitle_formatted, word))
                                 break
-
+                                
+                    #if nzbsize > formatter.check_int(lazylibrarian.REJECT_MAXSIZE, 0):
+                    #    name_match = 0
+                    #    logger.debug("Rejecting %s, too large" % nzbtitle_formatted)
+                        
                     if name_match:
                         # some magazine torrent uploaders add their sig in [] or {}
                         # Fortunately for us, they always seem to add it at the end

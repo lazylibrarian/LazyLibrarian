@@ -145,6 +145,15 @@ def processResultList(resultlist, book, searchtype):
                 logger.debug("Rejecting %s, contains %s" % (nzb_Title, word))
                 break
 
+        nzbsize_temp = nzb['nzbsize']  # Need to cater for when this is NONE (Issue 35)
+        if nzbsize_temp is None:
+            nzbsize_temp = 1000
+        nzbsize = str(round(float(nzbsize_temp) / 1048576, 2)) + ' MB'
+        
+        if nzbsize > formatter.check_int(lazylibrarian.REJECT_MAXSIZE, 0):
+            rejected = True
+            logger.debug("Rejecting %s, too large" % nzb_Title)
+            
         if (nzbAuthor_match >= match_ratio and nzbBook_match >= match_ratio and not rejected):
             #logger.debug(u'Found NZB: %s using %s search' % (nzb['nzbtitle'], searchtype))
             bookid = book['bookid']
@@ -152,10 +161,6 @@ def processResultList(resultlist, book, searchtype):
             nzburl = nzb['nzburl']
             nzbprov = nzb['nzbprov']
             nzbdate_temp = nzb['nzbdate']
-            nzbsize_temp = nzb['nzbsize']  # Need to cater for when this is NONE (Issue 35)
-            if nzbsize_temp is None:
-                nzbsize_temp = 1000
-            nzbsize = str(round(float(nzbsize_temp) / 1048576, 2)) + ' MB'
             nzbdate = formatter.nzbdate2format(nzbdate_temp)
             nzbmode = nzb['nzbmode']
             controlValueDict = {"NZBurl": nzburl}

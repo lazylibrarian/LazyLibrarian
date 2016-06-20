@@ -1182,6 +1182,18 @@
                     <BR><BR>
 		        </fieldset>
                 <fieldset>
+                    <h3>Book Size Limit</h3>Default: 0
+                    <br>
+                    <input type="text" name="reject_maxsize" placeholder="Reject Size Limit" value="${lazylibrarian.REJECT_MAXSIZE}" size="20">
+                    <br>
+                    <small>Book size limit (Mb):<br>
+                    Search results larger than this will be rejected, set to 0 to disable
+                    <BR></small>
+                    <BR><BR>
+		        </fieldset>
+		    </td>
+		    <td>
+                <fieldset>
                     <h3>Magazine Reject Lists</h3>Default: None
                     <br>
                     %for mag in config['magazines_list']:
