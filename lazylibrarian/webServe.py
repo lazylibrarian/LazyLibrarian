@@ -105,7 +105,8 @@ class WebInterface(object):
                      tor_downloader_blackhole=0, tor_downloader_utorrent=0, tor_downloader_qbittorrent=0,
                      nzbget_host='', nzbget_port=0, nzbget_user='', nzbget_pass='', nzbget_cat='', nzbget_priority=0,
                      newzbin=0, newzbin_uid='', newzbin_pass='', kat=0, kat_host='',
-                     ebook_type='', mag_type='', reject_words='', book_api='', gr_api='', gb_api='',
+                     ebook_type='', mag_type='', reject_words='', reject_maxsize=0,
+                     book_api='', gr_api='', gb_api='',
                      versioncheck_interval='', search_interval='', scan_interval='', searchrss_interval=20,
                      ebook_dest_folder='', ebook_dest_file='',
                      mag_relative=0, mag_dest_folder='', mag_dest_file='', cache_age=30,
@@ -227,6 +228,7 @@ class WebInterface(object):
         lazylibrarian.EBOOK_TYPE = ebook_type
         lazylibrarian.MAG_TYPE = mag_type
         lazylibrarian.REJECT_WORDS = reject_words
+        lazylibrarian.REJECT_MAXSIZE = reject_maxsize
         lazylibrarian.BOOK_API = book_api
         lazylibrarian.GR_API = gr_api
         lazylibrarian.GB_API = gb_api

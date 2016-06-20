@@ -135,6 +135,7 @@ NEWZBIN_PASSWORD = None
 EBOOK_TYPE = None
 MAG_TYPE = None
 REJECT_WORDS = None
+REJECT_MAXSIZE = 0
 
 TOR_DOWNLOADER_BLACKHOLE = 0
 TOR_DOWNLOADER_UTORRENT = 0
@@ -402,7 +403,7 @@ def config_read(reloaded=False):
             NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, \
             NZBGET_PORT, NZB_DOWNLOADER_NZBGET, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
             NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, EBOOK_TYPE, MAG_TYPE, KAT, KAT_HOST, \
-            NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, REJECT_WORDS, \
+            NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, REJECT_WORDS, REJECT_MAXSIZE, \
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, SEARCHRSS_INTERVAL, \
             EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, \
             USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, \
@@ -713,6 +714,7 @@ def config_read(reloaded=False):
         MAG_TYPE = MAG_TYPE.lower()  # to make extension matching easier
         REJECT_WORDS = check_setting_str(CFG, 'General', 'reject_words', 'audiobook, mp3')
         REJECT_WORDS = REJECT_WORDS.lower()
+        REJECT_MAXSIZE = check_setting_int(CFG, 'General', 'reject_maxsize', 0)
 
         SEARCH_INTERVAL = check_setting_int(CFG, 'SearchScan', 'search_interval', '360')
         SCAN_INTERVAL = check_setting_int(CFG, 'SearchScan', 'scan_interval', '10')
@@ -813,6 +815,7 @@ def config_write():
     CFG.set('General', 'ebook_type', EBOOK_TYPE.lower())
     CFG.set('General', 'mag_type', MAG_TYPE.lower())
     CFG.set('General', 'reject_words', REJECT_WORDS.encode('utf-8').lower())
+    CFG.set('General', 'reject_maxsize', REJECT_MAXSIZE)
     CFG.set('General', 'destination_dir', DESTINATION_DIR.encode('utf-8'))
     CFG.set('General', 'alternate_dir', ALTERNATE_DIR.encode('utf-8'))
     CFG.set('General', 'destination_copy', DESTINATION_COPY)

@@ -114,8 +114,9 @@ def search_magazines(mags=None, reset=False):
                     control_date = results['IssueDate']
                     reject_list = formatter.getList(results['Regex'])
 
-                    nzbtitle_formatted = nzbtitle.replace('.', ' ').replace('-', ' ').replace('/', ' ').replace(
-                        '+', ' ').replace('_', ' ').replace('(', '').replace(')', '').strip()
+                    dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': ''}
+                    nzbtitle_formatted = formatter.replace_all(nzbtitle, dic).strip()
+
                     # Need to make sure that substrings of magazine titles don't get found
                     # (e.g. Maxim USA will find Maximum PC USA) - token_set_ratio takes care of this
                     # keyword_check = nzbtitle_formatted.replace(bookid, '')
@@ -153,7 +154,11 @@ def search_magazines(mags=None, reset=False):
                                 name_match = 0
                                 logger.debug("Rejecting %s, contains %s" % (nzbtitle_formatted, word))
                                 break
-
+                                
+                    #if nzbsize > formatter.check_int(lazylibrarian.REJECT_MAXSIZE, 0):
+                    #    name_match = 0
+                    #    logger.debug("Rejecting %s, too large" % nzbtitle_formatted)
+                        
                     if name_match:
                         # some magazine torrent uploaders add their sig in [] or {}
                         # Fortunately for us, they always seem to add it at the end

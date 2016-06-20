@@ -265,11 +265,9 @@ class GoogleBooks:
                         highest_fuzz = max(author_fuzz, book_fuzz, isbn_fuzz)
 
                         bookname = item['volumeInfo']['title']
-                        bookname = bookname.replace(
-                            ':',
-                            '').replace('"',
-                                        '').replace("'",
-                                                    "")
+                        dic = {':': '', '"': '', '\'': ''}
+                        bookname = formatter.replace_all(bookname, dic)
+
                         bookname = unidecode(u'%s' % bookname)
                         bookname = bookname.strip()  # strip whitespace
                         bookid = item['id']
@@ -528,7 +526,9 @@ class GoogleBooks:
                         bookdesc = None
 
                     bookname = item['volumeInfo']['title']
-                    bookname = bookname.replace(':', '').replace('"', '').replace("'", "")
+                    dic = {':': '', '"': '', '\'': ''}
+                    bookname = formatter.replace_all(bookname, dic)
+
                     bookname = unidecode(u'%s' % bookname)
                     bookname = bookname.strip()  # strip whitespace
 
@@ -688,7 +688,9 @@ class GoogleBooks:
             return
 
         bookname = jsonresults['volumeInfo']['title']
-        bookname = bookname.replace(':', '').replace('"', '').replace("'", "")
+        dic = {':': '', '"': '', '\'': ''}
+        bookname = formatter.replace_all(bookname, dic)
+
         bookname = unidecode(u'%s' % bookname)
         bookname = bookname.strip()  # strip whitespace
 
