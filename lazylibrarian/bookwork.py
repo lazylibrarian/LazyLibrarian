@@ -7,6 +7,21 @@ import threading
 import lazylibrarian
 from lazylibrarian import logger, formatter, database
 from lazylibrarian.common import USER_AGENT
+
+def getBookCovers(thread=None):
+    """ Get a cover image for any books that don't already have one """
+    if thread is None:
+        threading.currentThread().name = "GETBOOKCOVERS"
+
+    myDB = database.DBConnection()
+    books = myDB.select('select BookID from books')
+    if books:    
+        logger.debug('Checking covers for %s books' % len(books))
+        for book in books:
+            bookid = book['BookID']
+            coverlink = getBookCover(bookid)
+        logger.debug('getBookCovers completed')
+
        
 def setWorkPages(thread=None):
     """ Set the workpage link for any books that don't already have one """
