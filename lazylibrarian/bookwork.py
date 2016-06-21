@@ -21,12 +21,12 @@ def getBookCovers(thread=None):
         for book in books:
             bookid = book['BookID']
             coverlink = getBookCover(bookid)
-            if not "nocover" in coverlink:
+            if coverlink and not "nocover" in coverlink:
                 controlValueDict = {"BookID": bookid}
                 newValueDict = {"BookImg": coverlink}
                 myDB.upsert("books", newValueDict, controlValueDict)
                 counter += 1
-        logger.debug('getBookCovers completed, found %s new covers' % counter)
+        logger.info('Cover check completed, updated %s covers' % counter)
     else:
         logger.debug('No missing covers')
 
