@@ -9,18 +9,24 @@ from lazylibrarian import logger, formatter, database
 from lazylibrarian.common import USER_AGENT
 
 def getBookCovers(thread=None):
-    """ Get a cover image for any books that don't already have one """
+    """ Try to get a cover image for all books """
     if thread is None:
         threading.currentThread().name = "GETBOOKCOVERS"
 
     myDB = database.DBConnection()
-    books = myDB.select('select BookID from books')
+    books = myDB.select('select BookID,BookImg from books where BookImg like "%nocover%"')
     if books:    
         logger.debug('Checking covers for %s books' % len(books))
         for book in books:
             bookid = book['BookID']
             coverlink = getBookCover(bookid)
+            if not "nocover" in coverlink:
+                controlValueDict = {"BookID": bookid}
+                newValueDict = {"BookImg": coverlink}
+                myDB.upsert("books", newValueDict, controlValueDict)
         logger.debug('getBookCovers completed')
+    else:
+        logger.debug('No missing covers')
 
        
 def setWorkPages(thread=None):
