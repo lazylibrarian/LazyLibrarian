@@ -155,7 +155,8 @@ def search_magazines(mags=None, reset=False):
                                 logger.debug("Rejecting %s, contains %s" % (nzbtitle_formatted, word))
                                 break
                                 
-                    #if nzbsize > formatter.check_int(lazylibrarian.REJECT_MAXSIZE, 0):
+                    #maxsize = formatter.check_int(lazylibrarian.REJECT_MAXSIZE, 0)
+                    #if maxsize and nzbsize > maxsize:
                     #    name_match = 0
                     #    logger.debug("Rejecting %s, too large" % nzbtitle_formatted)
                         

@@ -152,7 +152,8 @@ def processResultList(resultlist, book, searchtype):
             tor_size_temp = 1000
         tor_size = str(round(float(tor_size_temp) / 1048576, 2)) + ' MB'
 
-        if tor_size > formatter.check_int(lazylibrarian.REJECT_MAXSIZE, 0):
+        maxsize = formatter.check_int(lazylibrarian.REJECT_MAXSIZE, 0)
+        if maxsize and tor_size > maxsize:
             rejected = True
             logger.debug("Rejecting %s, too large" % torTitle)
 

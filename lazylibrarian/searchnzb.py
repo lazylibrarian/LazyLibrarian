@@ -150,7 +150,8 @@ def processResultList(resultlist, book, searchtype):
             nzbsize_temp = 1000
         nzbsize = str(round(float(nzbsize_temp) / 1048576, 2)) + ' MB'
         
-        if nzbsize > formatter.check_int(lazylibrarian.REJECT_MAXSIZE, 0):
+        maxsize = formatter.check_int(lazylibrarian.REJECT_MAXSIZE, 0)
+        if maxsize and nzbsize > maxsize:
             rejected = True
             logger.debug("Rejecting %s, too large" % nzb_Title)
             
