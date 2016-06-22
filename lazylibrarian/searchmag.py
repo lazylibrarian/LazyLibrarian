@@ -297,15 +297,21 @@ def search_magazines(mags=None, reset=False):
                                 control_date = time.strftime("%Y-%m-%d", time.localtime(start_time))
                             else:
                                 control_date = 0
-
+                        
                         if '-' in str(control_date) and '-' in str(newdatish):
                             # only grab a copy if it's newer than the most recent we have,
                             # or newer than a month ago if we have none
                             comp_date = formatter.datecompare(newdatish, control_date)
-                        else:
+                        elif not '-' in str(control_date) and not '-' in str(newdatish):
                             # for issue numbers, check if later than last one we have
                             comp_date = int(newdatish) - int(control_date)
-
+                        else:
+                            # invalid comparison of date and issue
+                            logger.debug('Magazine %s incorrect date or issue format.' % nzbtitle_formatted)
+                            bad_date = bad_date + 1
+                            newdatish = "1970-01-01"  # this is our fake date for ones we can't decipher
+                            comp_date = 0
+                            
                         if comp_date > 0:
                             # Should probably only upsert when downloaded and processed in case snatch fails
                             # keep track of what we're going to download so we don't download dupes
