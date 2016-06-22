@@ -260,10 +260,11 @@ def getCommitDifferenceFromGit():
 
                 if git['total_commits'] > 0:
                     messages = []
+                    commit_list = ""
                     for item in git['commits']:
                         messages.insert(0, item['commit']['message'])
                     for line in messages:
-                        commit_list = "%s\n%s" % (lazylibrarian.COMMIT_LIST, line)
+                        commit_list = "%s\n%s" % (commit_list, line)
             except:
                 logger.warn('(getCommitDifferenceFromGit) -  could not get difference status from GitHub')
 
