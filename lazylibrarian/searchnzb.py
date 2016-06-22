@@ -126,14 +126,14 @@ def processResultList(resultlist, book, searchtype):
 
     match_ratio = int(lazylibrarian.MATCH_RATIO)
     reject_list = formatter.getList(lazylibrarian.REJECT_WORDS)
+    author = formatter.latinToAscii(formatter.replace_all(book['authorName'], dic))
+    title = formatter.latinToAscii(formatter.replace_all(book['bookName'], dic))
 
     matches = []
     for nzb in resultlist:
         nzb_Title = formatter.latinToAscii(formatter.replace_all(nzb['nzbtitle'], dictrepl)).strip()
         nzb_Title = re.sub(r"\s\s+", " ", nzb_Title)  # remove extra whitespace
 
-        author = formatter.latinToAscii(formatter.replace_all(book['authorName'], dic))
-        title = formatter.latinToAscii(formatter.replace_all(book['bookName'], dic))
         nzbAuthor_match = fuzz.token_set_ratio(author, nzb_Title)
         nzbBook_match = fuzz.token_set_ratio(title, nzb_Title)
         logger.debug(u"NZB author/book Match: %s/%s for %s" % (nzbAuthor_match, nzbBook_match, nzb_Title))

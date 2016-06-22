@@ -126,14 +126,13 @@ def processResultList(resultlist, book, searchtype):
 
     match_ratio = int(lazylibrarian.MATCH_RATIO)
     reject_list = formatter.getList(lazylibrarian.REJECT_WORDS)
+    author = formatter.latinToAscii(formatter.replace_all(book['authorName'], dic))
+    title = formatter.latinToAscii(formatter.replace_all(book['bookName'], dic))
 
     matches = []
     for tor in resultlist:
         torTitle = formatter.latinToAscii(formatter.replace_all(str(tor['tor_title']), dictrepl)).strip()
         torTitle = re.sub(r"\s\s+", " ", torTitle)  # remove extra whitespace
-
-        author = formatter.latinToAscii(formatter.replace_all(book['authorName'], dic))
-        title = formatter.latinToAscii(formatter.replace_all(book['bookName'], dic))
 
         torAuthor_match = fuzz.token_set_ratio(author, torTitle)
         torBook_match = fuzz.token_set_ratio(title, torTitle)
