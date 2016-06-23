@@ -445,7 +445,7 @@ def LibraryScan(dir=None):
                                         'SELECT * FROM authors where AuthorName="%s"' %
                                         author).fetchone()
                                     if not check_exist_author:
-                                        logger.debug(
+                                        logger.info(
                                             "Adding new author [%s]" %
                                             author)
                                         try:
