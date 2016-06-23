@@ -491,6 +491,11 @@ def LibraryScan(dir=None):
                                         (book_filename, bookid))
 
                                     new_book_count += 1
+                            else:
+                                logger.debug(
+                                    "Failed to match book [%s] by [%s] in database" %
+                                    (book, author))
+
 
     cachesize = myDB.action("select count('ISBN') as counter from languages").fetchone()
     logger.info(
