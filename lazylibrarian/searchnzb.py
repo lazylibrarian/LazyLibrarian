@@ -169,7 +169,7 @@ def processResultList(resultlist, book, searchtype):
                 "NZBprov": nzbprov,
                 "BookID": bookid,
                 "NZBdate": formatter.now(),  # when we asked for it
-                "NZBsize": "%s MB" % nzbsize,
+                "NZBsize": nzbsize,
                 "NZBtitle": nzbTitle,
                 "NZBmode": nzbmode,
                 "Status": "Skipped"
