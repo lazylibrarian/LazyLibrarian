@@ -1447,10 +1447,8 @@ def dbcheck():
             for units in results:
                 nzbsize = units["NZBsize"]
                 nzbsize = nzbsize.split(' ')[0]
-                controlValueDict = {"BookID": units["BookID"]}
-                newValueDict = {"NZBsize": nzbsize}
-                myDB.upsert("wanted", newValueDict, controlValueDict)
-            
+                myDB.action('UPDATE wanted SET NZBsize = "%s" WHERE BookID = "%s"' % (nzbsize, units["BookID"]))
+                
     except Exception as z:
         logger.info('Error: ' + str(z))
 
