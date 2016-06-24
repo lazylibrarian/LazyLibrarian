@@ -281,7 +281,7 @@ def search_magazines(mags=None, reset=False):
                                 "NZBdate": nzbdate,
                                 "AuxInfo": newdatish,
                                 "Status": "Skipped",
-                                "NZBsize": "%s MB" % nzbsize,
+                                "NZBsize": nzbsize,
                                 "NZBmode": nzbmode
                             }
                             myDB.upsert("wanted", newValueDict, controlValueDict)

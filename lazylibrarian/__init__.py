@@ -1429,12 +1429,28 @@ def dbcheck():
 
     try:
         myDB = database.DBConnection()
-        author = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL')
-        if author:
-            logger.info('Removing un-named author from database')
-            authorid = author[0]["AuthorID"]
-            myDB.action('DELETE from authors WHERE AuthorID="%s"' % authorid)
-            myDB.action('DELETE from books WHERE AuthorID="%s"' % authorid)
+        authors = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL')
+        if authors:
+            logger.info('Removing un-named authors from database')
+            for author in authors:
+                authorid = author["AuthorID"]
+                myDB.action('DELETE from authors WHERE AuthorID="%s"' % authorid)
+                myDB.action('DELETE from books WHERE AuthorID="%s"' % authorid)
+    except Exception as z:
+        logger.info('Error: ' + str(z))
+
+    try:
+        myDB = database.DBConnection()
+        results = myDB.select('SELECT BookID,NZBsize FROM wanted WHERE NZBsize LIKE "% MB"')
+        if results:
+            logger.info('Removing %s units from wanted table' % len(results))
+            for units in results:
+                nzbsize = units["NZBsize"]
+                nzbsize = nzbsize.split(' ')[0]
+                controlValueDict = {"BookID": units["BookID"]}
+                newValueDict = {"NZBsize": nzbsize}
+                myDB.upsert("wanted", newValueDict, controlValueDict)
+            
     except Exception as z:
         logger.info('Error: ' + str(z))
 

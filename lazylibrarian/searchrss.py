@@ -141,7 +141,7 @@ def processResultList(resultlist, author, title, book):
                 "NZBprov": tor_prov,
                 "BookID": bookid,
                 "NZBdate": formatter.now(),  # when we asked for it
-                "NZBsize": "%s MB" % tor_size,
+                "NZBsize": tor_size,
                 "NZBtitle": tor_Title,
                 "NZBmode": "torrent",
                 "Status": "Skipped"
