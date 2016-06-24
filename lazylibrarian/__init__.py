@@ -1325,7 +1325,7 @@ def dbcheck():
     try:
         c.execute('SELECT NZBsize from wanted')
     except sqlite3.OperationalError:
-        logger.info('Updating database to hold NZBside')
+        logger.info('Updating database to hold NZBsize')
         c.execute('ALTER TABLE wanted ADD COLUMN NZBsize TEXT')
 
     try:

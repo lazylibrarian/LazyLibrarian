@@ -148,7 +148,7 @@ def processResultList(resultlist, book, searchtype):
         nzbsize_temp = nzb['nzbsize']  # Need to cater for when this is NONE (Issue 35)
         if nzbsize_temp is None:
             nzbsize_temp = 1000
-        nzbsize = str(round(float(nzbsize_temp) / 1048576, 2)) + ' MB'
+        nzbsize = round(float(nzbsize_temp) / 1048576, 2)
         
         maxsize = formatter.check_int(lazylibrarian.REJECT_MAXSIZE, 0)
         if maxsize and nzbsize > maxsize:
@@ -169,7 +169,7 @@ def processResultList(resultlist, book, searchtype):
                 "NZBprov": nzbprov,
                 "BookID": bookid,
                 "NZBdate": formatter.now(),  # when we asked for it
-                "NZBsize": nzbsize,
+                "NZBsize": "%s MB" % nzbsize,
                 "NZBtitle": nzbTitle,
                 "NZBmode": nzbmode,
                 "Status": "Skipped"
