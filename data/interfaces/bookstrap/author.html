@@ -43,7 +43,9 @@
             %if author['AuthorDeath']:
             <p><b>Born:</b> ${author['AuthorBorn']}, <b>Died:</b> ${author['AuthorDeath']}</p>
             %else:
-            <p><b>Born:</b> ${author['AuthorBorn']}</p>
+                %if author['AuthorBorn']:
+                    <p><b>Born:</b> ${author['AuthorBorn']}</p>
+                %endif
             %endif
             %if author['Status'] == 'Loading':
             <p class="alert alert-info"><i class="fa fa-circle-o-notch fa-spin"></i> Fetching information for this author ...</p>

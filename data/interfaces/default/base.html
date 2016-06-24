@@ -109,9 +109,13 @@
                     <div id="updatebar">
                         Running a local updated version. Push changes to GITHub or rollback to Master release
                     </div>
-            % elif lazylibrarian.COMMITS_BEHIND > 0:
+            % elif lazylibrarian.COMMITS_BEHIND > 1:
                     <div id="updatebar">
                         A <a href="http://github.com/DobyTang/LazyLibrarian/compare/${lazylibrarian.CURRENT_VERSION}...${lazylibrarian.LATEST_VERSION}" target="_blank"> newer version</a> is available. You're ${lazylibrarian.COMMITS_BEHIND} commits behind. <a href="update">Update</a> or <a href="#" onclick="$('#updatebar').slideUp('slow');">Close</a>
+                    </div>
+            % elif lazylibrarian.COMMITS_BEHIND == 1:
+                    <div id="updatebar">
+                        A <a href="http://github.com/DobyTang/LazyLibrarian/compare/${lazylibrarian.CURRENT_VERSION}...${lazylibrarian.LATEST_VERSION}" target="_blank"> newer version</a> is available. You're one commit behind. <a href="update">Update</a> or <a href="#" onclick="$('#updatebar').slideUp('slow');">Close</a>
                     </div>
             % endif
             % endif

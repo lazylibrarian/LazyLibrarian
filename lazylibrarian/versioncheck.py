@@ -272,8 +272,10 @@ def getCommitDifferenceFromGit():
             logger.warn(
                 '(getCommitDifferenceFromGit) -  Could not get commits behind from github. Can happen if you have a local commit not pushed to repo')
 
-        if commits >= 1:
+        if commits > 1:
             logger.info('[VersionCheck] -  New version is available. You are %s commits behind' % commits)
+        elif commits == 1:
+            logger.info('[VersionCheck] -  New version is available. You are one commit behind')
         elif commits == 0:
             logger.info('[VersionCheck] -  lazylibrarian is up to date ')
         elif commits == -1:

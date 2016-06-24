@@ -139,8 +139,11 @@
                 msg = 'Not latest version'
                 % if lazylibrarian.COMMITS_BEHIND < 0:
                     msg = 'Running a local updated version. Push changes to GITHub or rollback to Master release'
-                % else:
+                % elif lazylibrarian.COMMITS_BEHIND > 1:
                     msg = 'New version available. You are ${lazylibrarian.COMMITS_BEHIND} commits behind.<br/><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the update message for 24 hours" id="ignoreUpdate">Ignore</a>&nbsp;<a href="update" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Update to the latest release">Update</a></div>'
+                % elif lazylibrarian.COMMITS_BEHIND == 1:
+                    msg = 'New version available. You are one commit behind.<br/><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the update message for 24 hours" id="ignoreUpdate">Ignore</a>&nbsp;<a href="update" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Update to the latest release">Update</a></div>'
+
                     //<a class="btn btn-xs btn-primary pull-right" href="http://github.com/DobyTang/LazyLibrarian/compare/${lazylibrarian.CURRENT_VERSION}...${lazylibrarian.LATEST_VERSION}" target="_blank">Click Here</a>'
                 % endif
             % endif

@@ -102,7 +102,7 @@ def search_magazines(mags=None, reset=False):
                 nzbsize_temp = nzb['nzbsize']
                 if nzbsize_temp is None:  # not all torrents returned by torznab have a size
                     nzbsize_temp = 1000
-                nzbsize = str(round(float(nzbsize_temp) / 1048576, 2)) + ' MB'
+                nzbsize = round(float(nzbsize_temp) / 1048576, 2)
                 nzbdate = formatter.nzbdate2format(nzbdate_temp)
                 nzbmode = nzb['nzbmode']
 
@@ -281,7 +281,7 @@ def search_magazines(mags=None, reset=False):
                                 "NZBdate": nzbdate,
                                 "AuxInfo": newdatish,
                                 "Status": "Skipped",
-                                "NZBsize": nzbsize,
+                                "NZBsize": "%s MB" % nzbsize,
                                 "NZBmode": nzbmode
                             }
                             myDB.upsert("wanted", newValueDict, controlValueDict)

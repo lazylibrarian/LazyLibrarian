@@ -38,9 +38,11 @@
         <ul id="authorhead_menu">
             <li><a href="${author['AuthorLink']}" target="_new">${author['AuthorName']}</a></li></br>
             %if author['AuthorDeath']:
-                <li>${author['AuthorBorn']} - ${author['AuthorDeath']}</li><br>
+                <li><b>Born:</b> ${author['AuthorBorn']}, <b>Died:</b>  ${author['AuthorDeath']}</li><br>
             %else:
-                <li>${author['AuthorBorn']}</li><br>
+                %if author['AuthorBorn']:
+                    <li><b>Born:</b> ${author['AuthorBorn']}</li><br>
+                %endif
             %endif
             %if author['Status'] == 'Loading':
                 <li>(Fetching information for this author ...)</li><br>

@@ -126,14 +126,13 @@ def processResultList(resultlist, book, searchtype):
 
     match_ratio = int(lazylibrarian.MATCH_RATIO)
     reject_list = formatter.getList(lazylibrarian.REJECT_WORDS)
+    author = formatter.latinToAscii(formatter.replace_all(book['authorName'], dic))
+    title = formatter.latinToAscii(formatter.replace_all(book['bookName'], dic))
 
     matches = []
     for tor in resultlist:
         torTitle = formatter.latinToAscii(formatter.replace_all(str(tor['tor_title']), dictrepl)).strip()
         torTitle = re.sub(r"\s\s+", " ", torTitle)  # remove extra whitespace
-
-        author = formatter.latinToAscii(formatter.replace_all(book['authorName'], dic))
-        title = formatter.latinToAscii(formatter.replace_all(book['bookName'], dic))
 
         torAuthor_match = fuzz.token_set_ratio(author, torTitle)
         torBook_match = fuzz.token_set_ratio(title, torTitle)
@@ -150,7 +149,7 @@ def processResultList(resultlist, book, searchtype):
         tor_size_temp = tor['tor_size']  # Need to cater for when this is NONE (Issue 35)
         if tor_size_temp is None:
             tor_size_temp = 1000
-        tor_size = str(round(float(tor_size_temp) / 1048576, 2)) + ' MB'
+        tor_size = round(float(tor_size_temp) / 1048576, 2)
 
         maxsize = formatter.check_int(lazylibrarian.REJECT_MAXSIZE, 0)
         if maxsize and tor_size > maxsize:
@@ -169,7 +168,7 @@ def processResultList(resultlist, book, searchtype):
                 "NZBprov": tor_prov,
                 "BookID": bookid,
                 "NZBdate": formatter.now(),  # when we asked for it
-                "NZBsize": tor_size,
+                "NZBsize": "%s MB" % tor_size,
                 "NZBtitle": tor_Title,
                 "NZBmode": "torrent",
                 "Status": "Skipped"

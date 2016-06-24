@@ -120,7 +120,7 @@ def processResultList(resultlist, author, title, book):
             tor_size_temp = tor['tor_size']  # Need to cater for when this is NONE (Issue 35)
             if tor_size_temp is None:
                 tor_size_temp = 1000
-            tor_size = str(round(float(tor_size_temp) / 1048576, 2)) + ' MB'
+            tor_size = round(float(tor_size_temp) / 1048576, 2)
 
             maxsize = formatter.check_int(lazylibrarian.REJECT_MAXSIZE, 0)
             if maxsize and tor_size > maxsize:
@@ -141,7 +141,7 @@ def processResultList(resultlist, author, title, book):
                 "NZBprov": tor_prov,
                 "BookID": bookid,
                 "NZBdate": formatter.now(),  # when we asked for it
-                "NZBsize": tor_size,
+                "NZBsize": "%s MB" % tor_size,
                 "NZBtitle": tor_Title,
                 "NZBmode": "torrent",
                 "Status": "Skipped"

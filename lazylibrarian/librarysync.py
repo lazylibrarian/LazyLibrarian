@@ -445,7 +445,7 @@ def LibraryScan(dir=None):
                                         'SELECT * FROM authors where AuthorName="%s"' %
                                         author).fetchone()
                                     if not check_exist_author:
-                                        logger.debug(
+                                        logger.info(
                                             "Adding new author [%s]" %
                                             author)
                                         try:
@@ -491,6 +491,11 @@ def LibraryScan(dir=None):
                                         (book_filename, bookid))
 
                                     new_book_count += 1
+                            else:
+                                logger.debug(
+                                    "Failed to match book [%s] by [%s] in database" %
+                                    (book, author))
+
 
     cachesize = myDB.action("select count('ISBN') as counter from languages").fetchone()
     logger.info(
