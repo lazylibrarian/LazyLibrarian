@@ -1291,8 +1291,8 @@ def dbcheck():
     c.execute('CREATE TABLE IF NOT EXISTS stats ( authorname text, GR_book_hits int, GR_lang_hits int, \
         LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int )')
 
+    logger.info('Checking database')
     try:
-        logger.info('Checking database')
         c.execute('SELECT BookSub from books')
     except sqlite3.OperationalError:
         logger.info('Updating database to hold book subtitles.')
@@ -1409,9 +1409,10 @@ def dbcheck():
         except:
             logger.debug("Failed to update WorkPages")
 
+    myDB = database.DBConnection()
+
     if addedSeries:
         try:
-            myDB = database.DBConnection()
             books = myDB.select('SELECT BookID, BookName FROM books')
             if books:
                 logger.info('Adding series to existing books')
@@ -1428,7 +1429,6 @@ def dbcheck():
             logger.info('Error: ' + str(z))
 
     try:
-        myDB = database.DBConnection()
         authors = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL')
         if authors:
             logger.info('Removing un-named authors from database')
@@ -1440,8 +1440,7 @@ def dbcheck():
         logger.info('Error: ' + str(z))
 
     try:
-        myDB = database.DBConnection()
-        results = myDB.select('SELECT BookID,NZBsize FROM wanted WHERE NZBsize LIKE "% MB"')
+        results = myDB.select('SELECT BookID,NZBsize FROM wanted WHERE NZBsize LIKE "% MB" and AuxInfo is null')
         if results:
             logger.info('Removing %s units from wanted table' % len(results))
             for units in results:
@@ -1452,6 +1451,7 @@ def dbcheck():
     except Exception as z:
         logger.info('Error: ' + str(z))
 
+    logger.info('Database check complete')
 
 def start():
     global __INITIALIZED__, started
