@@ -30,6 +30,13 @@ def search_magazines(mags=None, reset=False):
                                           WHERE Title="%s" AND Status="Active"' % (magazine['bookid']))
             for terms in searchmags_temp:
                 searchmags.append(terms)
+                
+    # should clear old search results as might not be available any more
+    # ie torrent not available, changed providers, out of news server retention etc.
+    # Only delete the "skipped" ones, not wanted/snatched/processed/ignored
+    # and only remove magazine entries (they have AuxInfo, books don't)
+    logger.debug(u"Removing old magazine search results")
+    myDB.action('DELETE from wanted WHERE Status="Skipped" and length(AuxInfo) > 0')  
 
     if len(searchmags) == 1:
         logger.info('Searching for one magazine')
