@@ -288,10 +288,13 @@ def processDir(force=False, reset=False):
                 if import_book(pp_path, bookID):
                     ppcount = ppcount + 1
 
-        if ppcount:
-            logger.info('%s books/mags have been processed.' % ppcount)
-        else:
+        if ppcount == 0:
             logger.info('No snatched books/mags have been found')
+        elif ppcount == 1:
+            logger.info('1 book/mag has been processed.')
+        else:
+            logger.info('%s books/mags have been processed.' % ppcount)
+            
     if reset:
         common.schedule_job(action='Restart', target='processDir')
 

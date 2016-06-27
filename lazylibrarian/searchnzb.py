@@ -103,10 +103,10 @@ def search_nzb_book(books=None, reset=False):
         else:
             nzb_count = nzb_count + 1
 
+    plural = "s"
     if nzb_count == 1:
-        logger.info("NZBSearch for Wanted items complete, found %s book" % nzb_count)
-    else:
-        logger.info("NZBSearch for Wanted items complete, found %s books" % nzb_count)
+        plural = ""
+    logger.info("NZBSearch for Wanted items complete, found %s book%s" % (nzb_count, plural))
 
     if reset:
         common.schedule_job(action='Restart', target='search_nzb_book')

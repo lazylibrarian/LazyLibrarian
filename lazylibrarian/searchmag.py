@@ -267,7 +267,7 @@ def search_magazines(mags=None, reset=False):
                                             newdatish = "1970-01-01"  # provide a fake date for bad-date issues
                                             # continue
                         else:
-                            logger.debug('Magazine [%s] does not match search term [%s].' % (
+                            logger.debug('Magazine [%s] does not match the search term [%s].' % (
                                      nzbtitle_formatted, bookid))
                             bad_regex = bad_regex + 1
                             continue

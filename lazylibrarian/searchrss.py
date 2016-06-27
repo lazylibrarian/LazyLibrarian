@@ -78,10 +78,10 @@ def search_rss_book(books=None, reset=False):
         else:
             rss_count = rss_count + 1
 
+    plural = "s"
     if rss_count == 1:
-        logger.info("RSS Search for Wanted items complete, found %s book" % rss_count)
-    else:
-        logger.info("RSS Search for Wanted items complete, found %s books" % rss_count)
+        plural = ""
+    logger.info("RSS Search for Wanted items complete, found %s book%s" % (rss_count, plural))
 
     if reset:
         common.schedule_job(action='Restart', target='search_rss_book')

@@ -103,10 +103,10 @@ def search_tor_book(books=None, reset=False):
         else:
             tor_count = tor_count + 1
 
+    plural = "s"
     if tor_count == 1:
-        logger.info("TORSearch for Wanted items complete, found %s book" % tor_count)
-    else:
-        logger.info("TORSearch for Wanted items complete, found %s books" % tor_count)
+        plural = ""
+    logger.info("TORSearch for Wanted items complete, found %s book%s" % (tor_count, plural))
 
     if reset:
         common.schedule_job(action='Restart', target='search_tor_book')

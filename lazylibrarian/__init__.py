@@ -1279,7 +1279,7 @@ def dbcheck():
     db_version = result[0]
     
     # database version history:
-    # 0 original version
+    # 0 original version or new empty database
     # 1 changes up to June 2016
     # 2 removed " MB" from nzbsize field in wanted table
     db_current_version = 2
@@ -1441,17 +1441,6 @@ def dbcheck():
                 except Exception as z:
                     logger.info('Error: ' + str(z))
         
-            try:
-                authors = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL')
-                if authors:
-                    logger.info('Removing un-named authors from database')
-                    for author in authors:
-                        authorid = author["AuthorID"]
-                        myDB.action('DELETE from authors WHERE AuthorID="%s"' % authorid)
-                        myDB.action('DELETE from books WHERE AuthorID="%s"' % authorid)
-            except Exception as z:
-                logger.info('Error: ' + str(z))
-        
         if db_version < 2:
             try:
                 results = myDB.select('SELECT BookID,NZBsize FROM wanted WHERE NZBsize LIKE "% MB"')
@@ -1466,9 +1455,25 @@ def dbcheck():
                 logger.info('Error: ' + str(z))
     
         c.execute('PRAGMA user_version = %s' % db_current_version)       
+        conn.commit()
+        conn.close()
         logger.info('Database updated to version %s' % db_current_version)
-        c.close()
 
+# Now do any non-version-specific tidying
+
+        myDB = database.DBConnection()
+        try:
+            authors = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL')
+            if authors:
+                logger.info('Removing un-named authors from database')
+                for author in authors:
+                    authorid = author["AuthorID"]
+                    myDB.action('DELETE from authors WHERE AuthorID="%s"' % authorid)
+                    myDB.action('DELETE from books WHERE AuthorID="%s"' % authorid)
+        except Exception as z:
+            logger.info('Error: ' + str(z))
+        
+        
 def start():
     global __INITIALIZED__, started
 
