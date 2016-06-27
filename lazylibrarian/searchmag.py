@@ -94,7 +94,6 @@ def search_magazines(mags=None, reset=False):
             old_date = 0
             total_nzbs = 0
             new_date = 0
-            to_snatch = 0
             maglist = []
             issues = []
 
@@ -333,10 +332,12 @@ def search_magazines(mags=None, reset=False):
                                     'nzbmode': nzbmode
                                 })
                                 logger.debug('This issue of %s is new, downloading' % nzbtitle_formatted)
-                                to_snatch = to_snatch + 1
                                 issues.append(issue)
 
-                                controlValueDict = {"NZBurl": nzburl}
+                                controlValueDict = {
+                                    "NZBtitle": nzbtitle,
+                                    "NZBprov": nzbprov
+                                }
                                 newValueDict = {
                                     "NZBdate": formatter.now(),  # when we asked for it
                                     "Status": "Wanted"
@@ -355,17 +356,15 @@ def search_magazines(mags=None, reset=False):
                         bad_regex = bad_regex + 1
 
             logger.info('Found %i results for %s. %i new, %i old, %i fail date, %i fail name: %i to download' % (
-                        total_nzbs, bookid, new_date, old_date, bad_date, bad_regex, to_snatch))
+                        total_nzbs, bookid, new_date, old_date, bad_date, bad_regex, len(maglist)))
 
-            for items in maglist:
-                if items['nzbmode'] == "torznab":
-                    snatch = TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
-                elif items['nzbmode'] == "torrent":
-                    snatch = TORDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+            for magazine in maglist:
+                if magazine['nzbmode'] == "torznab" or magazine['nzbmode'] == "torrent":
+                    snatch = TORDownloadMethod(magazine['bookid'], magazine['nzbprov'], magazine['nzbtitle'], magazine['nzburl'])
                 else:
-                    snatch = NZBDownloadMethod(items['bookid'], items['nzbprov'], items['nzbtitle'], items['nzburl'])
+                    snatch = NZBDownloadMethod(magazine['bookid'], magazine['nzbprov'], magazine['nzbtitle'], magazine['nzburl'])
                 if snatch:
-                    notifiers.notify_snatch(formatter.latinToAscii(items['nzbtitle']) + ' at ' + formatter.now())
+                    notifiers.notify_snatch(formatter.latinToAscii(magazine['nzbtitle']) + ' at ' + formatter.now())
                     common.schedule_job(action='Start', target='processDir')
             maglist = []
 
