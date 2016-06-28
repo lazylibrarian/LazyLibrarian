@@ -942,17 +942,9 @@ class WebInterface(object):
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
         # need to filter on whichStatus
-        # "Skipped Have Ignore" entries are in pastissues table
-        # "Wanted, Snatched, Processed, Failed" are in wanted table
-        # Wanted table also holds books, so filter them out.
-        table = "pastissues"
-        magfilter = ""
-        if lazylibrarian.ISSUEFILTER in "Wanted, Snatched, Processed, Failed":
-            table = "wanted"
-            magfilter = "AND length(AuxInfo) > 0"
         rowlist = myDB.action(
-            'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov, Status from %s WHERE Status="%s" %s' %
-            (table, lazylibrarian.ISSUEFILTER, magfilter)).fetchall()
+            'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov, Status from pastissues WHERE Status="%s"' %
+            lazylibrarian.ISSUEFILTER).fetchall()
 
         # turn the sqlite rowlist into a list of lists
         d = []
