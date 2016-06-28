@@ -320,7 +320,7 @@ def search_magazines(mags=None, reset=False):
                                 issues.append(issue)
                                 insert_table = "wanted"
                                 insert_status = "Wanted"
-                                nzbdate = formatter.now(),  # when we asked for it
+                                nzbdate = formatter.now()  # when we asked for it
                             else:
                                 logger.debug('This issue of %s is already flagged for download' % issue)
                         else:
