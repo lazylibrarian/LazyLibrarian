@@ -192,8 +192,7 @@ def processDir(force=False, reset=False):
                         # book auxinfo is a cleaned date, eg 2015-01-01
                         dest_path = lazylibrarian.MAG_DEST_FOLDER.replace(
                             '$IssueDate',
-                            book['AuxInfo']).replace('$Title',
-                                                     mag_name)
+                            book['AuxInfo']).replace('$Title', mag_name)
                         # dest_path = '_Magazines/'+title+'/'+book['AuxInfo']
                         if lazylibrarian.MAG_RELATIVE:
                             if dest_path[0] not in '._':

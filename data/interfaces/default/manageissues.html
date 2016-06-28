@@ -11,7 +11,7 @@
 
     <form action="pastIssues" method="get">
     Manage Issues with status <select name="whichStatus">
-        %for item in ['Skipped', 'Wanted', 'Snatched', 'Processed', 'Ignored']:
+        %for item in ['Skipped', 'Wanted', 'Snatched', 'Processed', 'Ignored', 'Failed']:
             <option value="${item}"
                 %if whichStatus == item:
                     selected = "selected"

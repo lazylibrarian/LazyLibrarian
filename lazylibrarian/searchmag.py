@@ -34,9 +34,8 @@ def search_magazines(mags=None, reset=False):
     # should clear old search results as might not be available any more
     # ie torrent not available, changed providers, out of news server retention etc.
     # Only delete the "skipped" ones, not wanted/snatched/processed/ignored
-    # and only remove magazine entries (they have AuxInfo, books don't)
     logger.debug(u"Removing old magazine search results")
-    myDB.action('DELETE from wanted WHERE Status="Skipped" and length(AuxInfo) > 0')  
+    myDB.action('DELETE from pastissues WHERE Status="Skipped"')  
 
     if len(searchmags) == 1:
         logger.info('Searching for one magazine')
@@ -271,26 +270,12 @@ def search_magazines(mags=None, reset=False):
                             bad_regex = bad_regex + 1
                             continue
 
-                        #  store all the _new_ matching results, marking as "skipped" for now
-                        #  we change the status to "wanted" on the ones we want to snatch later
+                        #  store all the _new_ matching results
                         #  don't add a new entry if this issue has been found on an earlier search
                         #  because status might have been user-set
-                        mag_entry = myDB.select('SELECT * from wanted WHERE NZBtitle="%s" and NZBprov="%s"' % (nzbtitle, nzbprov))
-                        if not mag_entry:
-                            controlValueDict = {
-                                "NZBtitle": nzbtitle,
-                                "NZBprov": nzbprov
-                            }
-                            newValueDict = {
-                                "NZBurl": nzburl,
-                                "BookID": bookid,
-                                "NZBdate": nzbdate,
-                                "AuxInfo": newdatish,
-                                "Status": "Skipped",
-                                "NZBsize": nzbsize,
-                                "NZBmode": nzbmode
-                            }
-                            myDB.upsert("wanted", newValueDict, controlValueDict)
+                        #  wanted issues go into wanted table, the rest into pastissues table
+                        insert_table = "pastissues"
+                        insert_status = "Skipped"
 
                         if control_date is None:  # we haven't got any copies of this magazine yet
                             # get a rough time just over a month ago to compare to, in format yyyy-mm-dd
@@ -333,23 +318,34 @@ def search_magazines(mags=None, reset=False):
                                 })
                                 logger.debug('This issue of %s is new, downloading' % nzbtitle_formatted)
                                 issues.append(issue)
-
-                                controlValueDict = {
-                                    "NZBtitle": nzbtitle,
-                                    "NZBprov": nzbprov
-                                }
-                                newValueDict = {
-                                    "NZBdate": formatter.now(),  # when we asked for it
-                                    "Status": "Wanted"
-                                }
-                                myDB.upsert("wanted", newValueDict, controlValueDict)
-
+                                insert_table = "wanted"
+                                insert_status = "Wanted"
+                                nzbdate = formatter.now(),  # when we asked for it
                             else:
                                 logger.debug('This issue of %s is already flagged for download' % issue)
                         else:
                             if newdatish != "1970-01-01":  # this is our fake date for ones we can't decipher
                                 logger.debug('This issue of %s is old; skipping.' % nzbtitle_formatted)
                                 old_date = old_date + 1
+
+                        mag_entry = myDB.select('SELECT * from %s WHERE NZBtitle="%s" and NZBprov="%s"' % (
+                                                insert_table, nzbtitle, nzbprov))
+                        if not mag_entry:
+                            controlValueDict = {
+                                "NZBtitle": nzbtitle,
+                                "NZBprov": nzbprov
+                            }
+                            newValueDict = {
+                                "NZBurl": nzburl,
+                                "BookID": bookid,
+                                "NZBdate": nzbdate,
+                                "AuxInfo": newdatish,
+                                "Status": insert_status,
+                                "NZBsize": nzbsize,
+                                "NZBmode": nzbmode
+                            }
+                            myDB.upsert(insert_table, newValueDict, controlValueDict)
+
                     else:
                         logger.debug('Magazine [%s] does not completely match search term [%s].' % (
                                      nzbtitle_formatted, bookid))

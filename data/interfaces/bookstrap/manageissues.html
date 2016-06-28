@@ -15,7 +15,7 @@
         <div class="form-group">
             <label for="whicStatus" class="control-label">Manage Issues with status: </label>
             <select name="whichStatus" id="whichStatus" class="form-control input-sm">
-                %for item in ['Skipped', 'Wanted', 'Have', 'Snatched', 'Processed', 'Ignored']:
+                %for item in ['Skipped', 'Wanted', 'Have', 'Snatched', 'Processed', 'Ignored', 'Failed']:
                     <option value="${item}"
                         %if whichStatus == item:
                             selected = "selected"
