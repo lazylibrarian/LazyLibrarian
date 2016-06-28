@@ -933,7 +933,6 @@ class WebInterface(object):
         if whichStatus is None:
             whichStatus = "Skipped"
         lazylibrarian.ISSUEFILTER = whichStatus
-        # books don't have auxinfo, only magazines
         return serve_template(
             templatename="manageissues.html", title="Magazine Status Management", issues=[], whichStatus=whichStatus)
     pastIssues.exposed = True
@@ -942,10 +941,9 @@ class WebInterface(object):
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
-        # need to filter on whichStatus, and only show magazines
-        # magazines have auxinfo, books don't
+        # need to filter on whichStatus
         rowlist = myDB.action(
-            'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov, Status from wanted WHERE Status="%s" and length(AuxInfo) > 0' %
+            'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov, Status from pastissues WHERE Status="%s"' %
             lazylibrarian.ISSUEFILTER).fetchall()
 
         # turn the sqlite rowlist into a list of lists
@@ -1017,14 +1015,11 @@ class WebInterface(object):
                 nzburl = nzburl.decode('utf-8')
             # ouch dirty workaround...
             if not nzburl == 'book_table_length':
-                controlValueDict = {'NZBurl': nzburl}
-                newValueDict = {'Status': action, 'NZBdate': formatter.now()}
-                myDB.upsert("wanted", newValueDict, controlValueDict)
-                title = myDB.select('SELECT * from wanted WHERE NZBurl="%s"' % nzburl)
+                title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s"' % nzburl)
                 for item in title:
                     nzburl = item['NZBurl']
                     if action == 'Delete':
-                        myDB.action('DELETE from wanted WHERE NZBurl="%s"' % nzburl)
+                        myDB.action('DELETE from pastissues WHERE NZBurl="%s"' % nzburl)
                         logger.debug(u'Item %s deleted from past issues' % nzburl)
                         maglist.append({'nzburl': nzburl})
                     else:
@@ -1032,6 +1027,8 @@ class WebInterface(object):
                         nzbprov = item['NZBprov']
                         nzbtitle = item['NZBtitle']
                         nzbmode = item['NZBmode']
+                        nzbsize = item['NZBsize']
+                        auxinfo = item['AuxInfo']
                         maglist.append({
                             'bookid': bookid,
                             'nzbprov': nzbprov,
@@ -1039,6 +1036,20 @@ class WebInterface(object):
                             'nzburl': nzburl,
                             'nzbmode': nzbmode
                         })
+                        if action == 'Wanted':
+                            # copy into wanted table
+                            controlValueDict = {'NZBurl': nzburl}
+                            newValueDict = {
+                                'BookID': bookid,
+                                'NZBtitle': nzbtitle,
+                                'NZBdate': formatter.now(),
+                                'NZBprov': nzbprov,
+                                'Status': action, 
+                                'NZBsize': nzbsize,
+                                'AuxInfo': auxinfo,
+                                'NZBmode': nzbmode
+                                }
+                            myDB.upsert("wanted", newValueDict, controlValueDict)                            
 
         if action == 'Delete':
             logger.info(u'Deleted %s items from past issues' % (len(maglist)))
@@ -1090,7 +1101,7 @@ class WebInterface(object):
                     logger.info(u'Status of magazine %s changed to %s' % (item, action))
                 elif (action == "Delete"):
                     myDB.action('DELETE from magazines WHERE Title="%s"' % item)
-                    myDB.action('DELETE from wanted WHERE BookID="%s"' % item)
+                    myDB.action('DELETE from pastissues WHERE BookID="%s"' % item)
                     myDB.action('DELETE from issues WHERE Title="%s"' % item)
                     logger.info(u'Magazine %s removed from database' % item)
                 elif (action == "Reset"):

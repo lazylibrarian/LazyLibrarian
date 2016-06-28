@@ -1279,10 +1279,11 @@ def dbcheck():
     db_version = result[0]
     
     # database version history:
-    # 0 original version
+    # 0 original version or new empty database
     # 1 changes up to June 2016
     # 2 removed " MB" from nzbsize field in wanted table
-    db_current_version = 2
+    # 3 removed SeriesOrder column from ooks table as redundant
+    db_current_version = 3
 
     if db_version < db_current_version:
         logger.info('Updating database to version %s, current version is %s' % (db_current_version, db_version))
@@ -1294,18 +1295,21 @@ def dbcheck():
             c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
                 BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
                 BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, \
-                BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesNum TEXT, SeriesOrder INTEGER, \
+                BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesNum TEXT, \
                 WorkPage TEXT)')
             c.execute('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, \
                 NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT)')
+            c.execute('CREATE TABLE IF NOT EXISTS pastissues AS SELECT * FROM wanted')  # same columns
             c.execute('CREATE TABLE IF NOT EXISTS magazines (Title TEXT, Frequency TEXT, Regex TEXT, Status TEXT, \
                 MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT)')
-            c.execute('CREATE TABLE IF NOT EXISTS languages ( isbn TEXT, lang TEXT )')
+            c.execute('CREATE TABLE IF NOT EXISTS languages (isbn TEXT, lang TEXT)')
             c.execute('CREATE TABLE IF NOT EXISTS issues (Title TEXT, IssueID TEXT, IssueAcquired TEXT, IssueDate TEXT, \
                 IssueFile TEXT)')
-            c.execute('CREATE TABLE IF NOT EXISTS stats ( authorname text, GR_book_hits int, GR_lang_hits int, \
-                LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int )')
+            c.execute('CREATE TABLE IF NOT EXISTS stats (authorname text, GR_book_hits int, GR_lang_hits int, \
+                LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int)')
     
+        # These are the incremental changes before database versioning was introduced. 
+        # New database tables already have these incorporated so we need to check first...
             try:
                 c.execute('SELECT BookSub from books')
             except sqlite3.OperationalError:
@@ -1395,7 +1399,7 @@ def dbcheck():
             try:
                 c.execute('SELECT Title from issues')
             except sqlite3.OperationalError:
-                logger.info('Updating database to hold Issues')
+                logger.info('Updating database to hold Issues table')
                 c.execute('CREATE TABLE issues (Title TEXT, IssueID TEXT, IssueAcquired TEXT, IssueDate TEXT, IssueFile TEXT)')
                 addedIssues = True
             try:
@@ -1441,17 +1445,6 @@ def dbcheck():
                 except Exception as z:
                     logger.info('Error: ' + str(z))
         
-            try:
-                authors = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL')
-                if authors:
-                    logger.info('Removing un-named authors from database')
-                    for author in authors:
-                        authorid = author["AuthorID"]
-                        myDB.action('DELETE from authors WHERE AuthorID="%s"' % authorid)
-                        myDB.action('DELETE from books WHERE AuthorID="%s"' % authorid)
-            except Exception as z:
-                logger.info('Error: ' + str(z))
-        
         if db_version < 2:
             try:
                 results = myDB.select('SELECT BookID,NZBsize FROM wanted WHERE NZBsize LIKE "% MB"')
@@ -1464,11 +1457,59 @@ def dbcheck():
                         
             except Exception as z:
                 logger.info('Error: ' + str(z))
+
+        if db_version < 3:
+            try:
+                c.execute('SELECT SeriesOrder from books')
+                logger.info('Removing SeriesOrder from books table')
+                try:
+                    c.execute('CREATE TABLE IF NOT EXISTS temp_books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
+                        BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
+                        BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, \
+                        BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesNum TEXT, \
+                        WorkPage TEXT)')
+                    c.execute('INSERT INTO temp_books SELECT AuthorID,AuthorName,AuthorLink,BookName,BookSub, \
+                        BookDesc,BookGenre,BookIsbn,BookPub,BookRate,BookImg,BookPages,BookLink,BookID, \
+                        BookFile,BookDate,BookLang,BookAdded,Status,Series,SeriesNum,WorkPage FROM books')
+                    c.execute('DROP TABLE books')
+                    c.execute('ALTER TABLE temp_books RENAME TO books')
+                    conn.commit()
+                except sqlite3.OperationalError:
+                    logger.warn('Failed to remove SeriesOrder from books table')
+            except sqlite3.OperationalError:
+                # no SeriesOrder column, nothing to remove
+                # (must be a new install, not an upgrade)
+                logger.debug('No SeriesOrder in books table')
+            
+            try:
+                c.execute('SELECT BookID from pastissues')
+                logger.debug('pastissues table already exists')  
+                # must be a new install,so nothing to move
+            except sqlite3.OperationalError:
+                logger.info('Moving magazine past issues into new table')
+                c.execute('CREATE TABLE pastissues AS SELECT * FROM wanted WHERE Status="Skipped" AND length(AuxInfo) > 0')
+                c.execute('DELETE FROM wanted WHERE Status="Skipped" AND length(AuxInfo) > 0')
     
         c.execute('PRAGMA user_version = %s' % db_current_version)       
+        conn.commit()
+        conn.close()
         logger.info('Database updated to version %s' % db_current_version)
-        c.close()
 
+# Now do any non-version-specific tidying
+
+        myDB = database.DBConnection()
+        try:
+            authors = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL')
+            if authors:
+                logger.info('Removing un-named authors from database')
+                for author in authors:
+                    authorid = author["AuthorID"]
+                    myDB.action('DELETE from authors WHERE AuthorID="%s"' % authorid)
+                    myDB.action('DELETE from books WHERE AuthorID="%s"' % authorid)
+        except Exception as z:
+            logger.info('Error: ' + str(z))
+        
+        
 def start():
     global __INITIALIZED__, started
 

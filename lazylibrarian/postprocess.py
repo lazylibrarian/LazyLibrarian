@@ -192,8 +192,7 @@ def processDir(force=False, reset=False):
                         # book auxinfo is a cleaned date, eg 2015-01-01
                         dest_path = lazylibrarian.MAG_DEST_FOLDER.replace(
                             '$IssueDate',
-                            book['AuxInfo']).replace('$Title',
-                                                     mag_name)
+                            book['AuxInfo']).replace('$Title', mag_name)
                         # dest_path = '_Magazines/'+title+'/'+book['AuxInfo']
                         if lazylibrarian.MAG_RELATIVE:
                             if dest_path[0] not in '._':
@@ -288,10 +287,13 @@ def processDir(force=False, reset=False):
                 if import_book(pp_path, bookID):
                     ppcount = ppcount + 1
 
-        if ppcount:
-            logger.info('%s books/mags have been processed.' % ppcount)
-        else:
+        if ppcount == 0:
             logger.info('No snatched books/mags have been found')
+        elif ppcount == 1:
+            logger.info('1 book/mag has been processed.')
+        else:
+            logger.info('%s books/mags have been processed.' % ppcount)
+            
     if reset:
         common.schedule_job(action='Restart', target='processDir')
 

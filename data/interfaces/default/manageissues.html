@@ -11,7 +11,7 @@
 
     <form action="pastIssues" method="get">
     Manage Issues with status <select name="whichStatus">
-        %for item in ['Skipped', 'Wanted', 'Snatched', 'Processed', 'Ignored']:
+        %for item in ['Skipped', 'Have', 'Ignored']:
             <option value="${item}"
                 %if whichStatus == item:
                     selected = "selected"
@@ -54,7 +54,7 @@
     <p>
 
     Change selected magazines to <select class="markPastIssues" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
-        %for item in ['Skipped', 'Wanted', 'Ignored', 'Delete']:
+        %for item in ['Skipped', 'Wanted', 'Have', 'Ignored', 'Delete']:
             %if whichStatus != item:
                 <option value="${item}">${item}</option>
             %endif
