@@ -3,6 +3,7 @@ import re
 import lazylibrarian
 import urllib2
 import socket
+import threading
 from lazylibrarian import logger, database, importer, formatter, common, bookwork
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
@@ -10,7 +11,7 @@ from xml.etree import ElementTree
 import lib.zipfile as zipfile
 from lib.mobi import Mobi
 from lazylibrarian.common import USER_AGENT
-
+from shutil import copyfile
 
 def opf_file(search_dir=None):
     # find an .opf file in this directory
@@ -184,6 +185,9 @@ def find_book_in_db(myDB, author, book):
 
 
 def LibraryScan(dir=None):
+    # rename this thread
+    threading.currentThread().name = "LIBRARYSYNC"
+    
     if not dir:
         if not lazylibrarian.DOWNLOAD_DIR:
             return
@@ -489,7 +493,15 @@ def LibraryScan(dir=None):
                                     myDB.action(
                                         'UPDATE books set BookFile="%s" where BookID="%s"' %
                                         (book_filename, bookid))
-
+                                        
+                                    # update cover file to cover.jpg in book folder (if exists)
+                                    bookdir = book_filename.rsplit(os.sep, 1)[0]
+                                    coverimg = os.path.join(bookdir, 'cover.jpg')
+                                    cachedir = os.path.join(str(lazylibrarian.PROG_DIR), 'data' + os.sep + 'images' + os.sep + 'cache')
+                                    cacheimg = os.path.join(cachedir, bookid + '.jpg')
+                                    if os.path.isfile(coverimg):
+                                        copyfile(coverimg, cacheimg)
+                                    
                                     new_book_count += 1
                             else:
                                 logger.debug(

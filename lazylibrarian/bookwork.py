@@ -3,15 +3,12 @@ import urllib
 import urllib2
 import socket
 import time
-import threading
 import lazylibrarian
 from lazylibrarian import logger, formatter, database
 from lazylibrarian.common import USER_AGENT
 
-def getBookCovers(thread=None):
+def getBookCovers():
     """ Try to get a cover image for all books """
-    if thread is None:
-        threading.currentThread().name = "GETBOOKCOVERS"
 
     myDB = database.DBConnection()
     books = myDB.select('select BookID,BookImg from books where BookImg like "%nocover%"')
@@ -31,10 +28,8 @@ def getBookCovers(thread=None):
         logger.debug('No missing covers')
 
        
-def setWorkPages(thread=None):
+def setWorkPages():
     """ Set the workpage link for any books that don't already have one """
-    if thread is None:
-        threading.currentThread().name = "SETWORKPAGES"
 
     myDB = database.DBConnection()
      

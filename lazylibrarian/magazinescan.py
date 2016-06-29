@@ -64,10 +64,9 @@ def create_id(issuename=None):
     return hashID
 
 
-def magazineScan(thread=None):
+def magazineScan():
     # rename this thread
-    if thread is None:
-        threading.currentThread().name = "MAGAZINESCAN"
+    threading.currentThread().name = "MAGAZINESCAN"
 
     myDB = database.DBConnection()
 
