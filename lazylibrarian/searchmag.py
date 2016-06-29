@@ -124,7 +124,6 @@ def search_magazines(mags=None, reset=False):
 
                     # Need to make sure that substrings of magazine titles don't get found
                     # (e.g. Maxim USA will find Maximum PC USA) - token_set_ratio takes care of this
-                    # keyword_check = nzbtitle_formatted.replace(bookid, '')
                     # remove extra spaces if they're in a row
                     nzbtitle_exploded_temp = " ".join(nzbtitle_formatted.split())
                     nzbtitle_exploded = nzbtitle_exploded_temp.split(' ')
@@ -277,7 +276,8 @@ def search_magazines(mags=None, reset=False):
                             bad_regex = bad_regex + 1
                             continue
 
-                        #  wanted issues go into wanted table, the rest into pastissues table
+                        #  wanted issues go into wanted table marked "Wanted"
+                        #  the rest into pastissues table marked "Skipped"
                         insert_table = "pastissues"
                         insert_status = "Skipped"
 
@@ -308,7 +308,6 @@ def search_magazines(mags=None, reset=False):
                             comp_date = 0
                             
                         if comp_date > 0:
-                            # Should probably only upsert when downloaded and processed in case snatch fails
                             # keep track of what we're going to download so we don't download dupes
                             new_date = new_date + 1
                             issue = bookid + ',' + newdatish
@@ -336,7 +335,6 @@ def search_magazines(mags=None, reset=False):
                         #  Don't add a new entry if this issue has been found on an earlier search
                         #  and status has been user-set ( we only delete the "Skipped" ones )
                         #  In "wanted" table it might be already snatched/downloading/processing
-                        #  or might have failed
                         
                         mag_entry = myDB.select('SELECT * from %s WHERE NZBtitle="%s" and NZBprov="%s"' % (
                                                 insert_table, nzbtitle, nzbprov))

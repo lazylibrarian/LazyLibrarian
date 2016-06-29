@@ -269,6 +269,7 @@ def processDir(force=False, reset=False):
                 newValueDict = {"Status": "Failed", "NZBDate": formatter.now()}
                 myDB.upsert("wanted", newValueDict, controlValueDict)
                 # if it's a book, reset status so we try for a different version
+                # if it's a magazine, user can select a different one from pastissued table
                 if bookname is not None:
                     myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % book['BookID'])                    
                     

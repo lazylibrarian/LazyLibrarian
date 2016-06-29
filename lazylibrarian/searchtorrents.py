@@ -165,30 +165,30 @@ def processResultList(resultlist, book, searchtype):
                 rejected = True
                 logger.debug("Rejecting %s, too large" % torTitle)
 
-        if (torAuthor_match >= match_ratio and torBook_match >= match_ratio and not rejected):
-            #logger.debug(u'Found Torrent: %s using %s search' % (tor['tor_title'], searchtype))
-            bookid = book['bookid']
-            tor_Title = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip() 
-
-            controlValueDict = {"NZBurl": tor_url}
-            newValueDict = {
-                "NZBprov": tor['tor_prov'],
-                "BookID": bookid,
-                "NZBdate": formatter.now(),  # when we asked for it
-                "NZBsize": tor_size,
-                "NZBtitle": tor_Title,
-                "NZBmode": "torrent",
-                "Status": "Skipped"
-            }
-
-            score = (torBook_match + torAuthor_match)/2  # as a percentage
-            # lose a point for each extra word in the title so we get the closest match
-            words = len(formatter.getList(torTitle))
-            words -= len(formatter.getList(author))
-            words -= len(formatter.getList(title))
-            score -= abs(words)
-            matches.append([score, torTitle, newValueDict, controlValueDict])
-
+        if not rejected:
+            if torAuthor_match >= match_ratio and torBook_match >= match_ratio:
+                bookid = book['bookid']
+                tor_Title = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip() 
+    
+                controlValueDict = {"NZBurl": tor_url}
+                newValueDict = {
+                    "NZBprov": tor['tor_prov'],
+                    "BookID": bookid,
+                    "NZBdate": formatter.now(),  # when we asked for it
+                    "NZBsize": tor_size,
+                    "NZBtitle": tor_Title,
+                    "NZBmode": "torrent",
+                    "Status": "Skipped"
+                }
+    
+                score = (torBook_match + torAuthor_match)/2  # as a percentage
+                # lose a point for each extra word in the title so we get the closest match
+                words = len(formatter.getList(torTitle))
+                words -= len(formatter.getList(author))
+                words -= len(formatter.getList(title))
+                score -= abs(words)
+                matches.append([score, torTitle, newValueDict, controlValueDict])
+    
     if matches:
         highest = max(matches, key=lambda x: x[0])
         score = highest[0]

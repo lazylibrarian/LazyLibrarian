@@ -8,7 +8,7 @@ import lazylibrarian
 from lazylibrarian import logger, database, formatter, notifiers, providers
 
 from lib.fuzzywuzzy import fuzz
-from hashlib import sha1
+#from hashlib import sha1
 import lazylibrarian.common as common
 from lazylibrarian.searchtorrents import TORDownloadMethod
 from lazylibrarian.searchnzb import NZBDownloadMethod
@@ -137,32 +137,32 @@ def processResultList(resultlist, author, title, book):
                 rejected = True
                 logger.debug("Rejecting %s, too large" % torTitle)
 
-        if (tor_Title_match >= match_ratio and tor_Author_match >= match_ratio and not rejected):
-            #logger.debug(u'Found RSS: %s' % tor['tor_title'])
-            bookid = book['bookid']
-            tor_Title = (book["authorName"] + ' - ' + book['bookName'] +
-                         ' LL.(' + book['bookid'] + ')').strip()
-            tor_prov = tor['tor_prov']
-            tor_feed = tor['tor_feed']
-
-            controlValueDict = {"NZBurl": tor_url}
-            newValueDict = {
-                "NZBprov": tor_prov,
-                "BookID": bookid,
-                "NZBdate": formatter.now(),  # when we asked for it
-                "NZBsize": tor_size,
-                "NZBtitle": tor_Title,
-                "NZBmode": "torrent",
-                "Status": "Skipped"
-            }
-            
-            score = (tor_Title_match + tor_Author_match)/2  # as a percentage
-            # lose a point for each extra word in the title so we get the closest match
-            words = len(formatter.getList(torTitle))
-            words -= len(formatter.getList(author))
-            words -= len(formatter.getList(title))
-            score -= abs(words)
-            matches.append([score, torTitle, newValueDict, controlValueDict])
+        if not rejected:
+            if tor_Title_match >= match_ratio and tor_Author_match >= match_ratio:
+                bookid = book['bookid']
+                tor_Title = (book["authorName"] + ' - ' + book['bookName'] +
+                             ' LL.(' + book['bookid'] + ')').strip()
+                tor_prov = tor['tor_prov']
+                tor_feed = tor['tor_feed']
+    
+                controlValueDict = {"NZBurl": tor_url}
+                newValueDict = {
+                    "NZBprov": tor_prov,
+                    "BookID": bookid,
+                    "NZBdate": formatter.now(),  # when we asked for it
+                    "NZBsize": tor_size,
+                    "NZBtitle": tor_Title,
+                    "NZBmode": "torrent",
+                    "Status": "Skipped"
+                }
+                
+                score = (tor_Title_match + tor_Author_match)/2  # as a percentage
+                # lose a point for each extra word in the title so we get the closest match
+                words = len(formatter.getList(torTitle))
+                words -= len(formatter.getList(author))
+                words -= len(formatter.getList(title))
+                score -= abs(words)
+                matches.append([score, torTitle, newValueDict, controlValueDict])
 
     if matches:
         highest = max(matches, key=lambda x: x[0])
