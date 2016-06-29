@@ -139,7 +139,7 @@ def search_magazines(mags=None, reset=False):
                     # do something like check left n words match title
                     # then check last n words are a date
 
-                    name_match = 1  # assume name matches for now
+                    rejected = False
                     if len(nzbtitle_exploded) > len(bookid_exploded):  # needs to be longer as it has to include a date
                         # check (nearly) all the words in the mag title are in the nzbtitle - allow some fuzz
                         mag_title_match = fuzz.token_set_ratio(
@@ -149,23 +149,30 @@ def search_magazines(mags=None, reset=False):
                             logger.debug(
                                 u"Magazine token set Match failed: " + str(
                                     mag_title_match) + "% for " + nzbtitle_formatted)
-                            name_match = 0
-
-                    if name_match:
+                            rejected = True
+                    
+                    if not rejected:
+                        already_failed = myDB.action('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' %
+                                                    nzburl).fetchone()
+                        if already_failed:
+                            logger.debug("Rejecting %s, blacklisted at %s" % (nzbtitle_formatted, already_failed['NZBprov']))
+                            rejected = True
+                    
+                    if not rejected:
                         lower_title = common.remove_accents(nzbtitle_formatted).lower()
                         lower_bookid = common.remove_accents(bookid).lower()
                         for word in reject_list:
                             if word in lower_title and not word in lower_bookid:
-                                name_match = 0
+                                rejected = True
                                 logger.debug("Rejecting %s, contains %s" % (nzbtitle_formatted, word))
                                 break
                                 
                     #maxsize = formatter.check_int(lazylibrarian.REJECT_MAXSIZE, 0)
                     #if maxsize and nzbsize > maxsize:
-                    #    name_match = 0
+                    #    rejected = True
                     #    logger.debug("Rejecting %s, too large" % nzbtitle_formatted)
                         
-                    if name_match:
+                    if not rejected:
                         # some magazine torrent uploaders add their sig in [] or {}
                         # Fortunately for us, they always seem to add it at the end
                         # also some magazine torrent titles are "magazine_name some_form_of_date pdf"
@@ -270,9 +277,6 @@ def search_magazines(mags=None, reset=False):
                             bad_regex = bad_regex + 1
                             continue
 
-                        #  store all the _new_ matching results
-                        #  don't add a new entry if this issue has been found on an earlier search
-                        #  because status might have been user-set
                         #  wanted issues go into wanted table, the rest into pastissues table
                         insert_table = "pastissues"
                         insert_status = "Skipped"
@@ -328,6 +332,12 @@ def search_magazines(mags=None, reset=False):
                                 logger.debug('This issue of %s is old; skipping.' % nzbtitle_formatted)
                                 old_date = old_date + 1
 
+                        #  store only the _new_ matching results
+                        #  Don't add a new entry if this issue has been found on an earlier search
+                        #  and status has been user-set ( we only delete the "Skipped" ones )
+                        #  In "wanted" table it might be already snatched/downloading/processing
+                        #  or might have failed
+                        
                         mag_entry = myDB.select('SELECT * from %s WHERE NZBtitle="%s" and NZBprov="%s"' % (
                                                 insert_table, nzbtitle, nzbprov))
                         if not mag_entry:
@@ -347,8 +357,7 @@ def search_magazines(mags=None, reset=False):
                             myDB.upsert(insert_table, newValueDict, controlValueDict)
 
                     else:
-                        logger.debug('Magazine [%s] does not completely match search term [%s].' % (
-                                     nzbtitle_formatted, bookid))
+                        #logger.debug('Magazine [%s] was rejected.' % nzbtitle_formatted)
                         bad_regex = bad_regex + 1
 
             logger.info('Found %i results for %s. %i new, %i old, %i fail date, %i fail name: %i to download' % (

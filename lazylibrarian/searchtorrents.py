@@ -137,14 +137,22 @@ def processResultList(resultlist, book, searchtype):
         torAuthor_match = fuzz.token_set_ratio(author, torTitle)
         torBook_match = fuzz.token_set_ratio(title, torTitle)
         logger.debug(u"TOR author/book Match: %s/%s for %s" % (torAuthor_match, torBook_match, torTitle))
-
+        tor_url = tor['tor_url']
+        
         rejected = False
-
-        for word in reject_list:
-            if word in torTitle.lower() and not word in author.lower() and not word in title.lower():
-                rejected = True
-                logger.debug("Rejecting %s, contains %s" % (torTitle, word))
-                break
+        
+        already_failed = myDB.action('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' %
+                                    tor_url).fetchone()
+        if already_failed:
+            logger.debug("Rejecting %s, blacklisted at %s" % (torTitle, already_failed['NZBprov']))
+            rejected = True
+        
+        if not rejected:    
+            for word in reject_list:
+                if word in torTitle.lower() and not word in author.lower() and not word in title.lower():
+                    rejected = True
+                    logger.debug("Rejecting %s, contains %s" % (torTitle, word))
+                    break
 
         tor_size_temp = tor['tor_size']  # Need to cater for when this is NONE (Issue 35)
         if tor_size_temp is None:
@@ -152,20 +160,19 @@ def processResultList(resultlist, book, searchtype):
         tor_size = round(float(tor_size_temp) / 1048576, 2)
 
         maxsize = formatter.check_int(lazylibrarian.REJECT_MAXSIZE, 0)
-        if maxsize and tor_size > maxsize:
-            rejected = True
-            logger.debug("Rejecting %s, too large" % torTitle)
+        if not rejected:
+            if maxsize and tor_size > maxsize:
+                rejected = True
+                logger.debug("Rejecting %s, too large" % torTitle)
 
         if (torAuthor_match >= match_ratio and torBook_match >= match_ratio and not rejected):
             #logger.debug(u'Found Torrent: %s using %s search' % (tor['tor_title'], searchtype))
             bookid = book['bookid']
-            tor_Title = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
-            tor_url = tor['tor_url']
-            tor_prov = tor['tor_prov']
+            tor_Title = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip() 
 
             controlValueDict = {"NZBurl": tor_url}
             newValueDict = {
-                "NZBprov": tor_prov,
+                "NZBprov": tor['tor_prov'],
                 "BookID": bookid,
                 "NZBdate": formatter.now(),  # when we asked for it
                 "NZBsize": tor_size,
