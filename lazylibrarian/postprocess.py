@@ -265,6 +265,14 @@ def processDir(force=False, reset=False):
             else:
                 logger.error('Postprocessing for %s has failed.' % global_name)
                 logger.error('Warning - Residual files remain in %s.fail' % pp_path)
+                controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
+                newValueDict = {"Status": "Failed", "NZBDate": formatter.now()}
+                myDB.upsert("wanted", newValueDict, controlValueDict)
+                # if it's a book, reset status so we try for a different version
+                # if it's a magazine, user can select a different one from pastissued table
+                if bookname is not None:
+                    myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % book['BookID'])                    
+                    
                 # at this point, as it failed we should move it or it will get postprocessed
                 # again (and fail again)
                 try:
@@ -345,6 +353,11 @@ def import_book(pp_path=None, bookID=None):
         else:
             logger.error('Postprocessing for %s has failed.' % global_name)
             logger.error('Warning - Residual files remain in %s.fail' % pp_path)
+            controlValueDict = {"BookID": bookID}
+            newValueDict = {"Status": "Failed", "NZBDate": formatter.now()}
+            myDB.upsert("wanted", newValueDict, controlValueDict)
+            # reset status so we try for a different version
+            myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % bookID)
             try:
                 os.rename(pp_path, pp_path + '.fail')
             except:

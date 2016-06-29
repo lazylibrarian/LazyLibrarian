@@ -137,13 +137,22 @@ def processResultList(resultlist, book, searchtype):
         nzbAuthor_match = fuzz.token_set_ratio(author, nzb_Title)
         nzbBook_match = fuzz.token_set_ratio(title, nzb_Title)
         logger.debug(u"NZB author/book Match: %s/%s for %s" % (nzbAuthor_match, nzbBook_match, nzb_Title))
+        nzburl = nzb['nzburl']
 
         rejected = False
-        for word in reject_list:
-            if word in nzb_Title.lower() and not word in author.lower() and not word in title.lower():
-                rejected = True
-                logger.debug("Rejecting %s, contains %s" % (nzb_Title, word))
-                break
+
+        already_failed = myDB.action('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' %
+                                    nzburl).fetchone()
+        if already_failed:
+            logger.debug("Rejecting %s, blacklisted at %s" % (nzb_Title, already_failed['NZBprov']))
+            rejected = True
+        
+        if not rejected:    
+            for word in reject_list:
+                if word in nzb_Title.lower() and not word in author.lower() and not word in title.lower():
+                    rejected = True
+                    logger.debug("Rejecting %s, contains %s" % (nzb_Title, word))
+                    break
 
         nzbsize_temp = nzb['nzbsize']  # Need to cater for when this is NONE (Issue 35)
         if nzbsize_temp is None:
@@ -151,37 +160,37 @@ def processResultList(resultlist, book, searchtype):
         nzbsize = round(float(nzbsize_temp) / 1048576, 2)
         
         maxsize = formatter.check_int(lazylibrarian.REJECT_MAXSIZE, 0)
-        if maxsize and nzbsize > maxsize:
-            rejected = True
-            logger.debug("Rejecting %s, too large" % nzb_Title)
-            
-        if (nzbAuthor_match >= match_ratio and nzbBook_match >= match_ratio and not rejected):
-            #logger.debug(u'Found NZB: %s using %s search' % (nzb['nzbtitle'], searchtype))
-            bookid = book['bookid']
-            nzbTitle = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
-            nzburl = nzb['nzburl']
-            nzbprov = nzb['nzbprov']
-            nzbdate_temp = nzb['nzbdate']
-            nzbdate = formatter.nzbdate2format(nzbdate_temp)
-            nzbmode = nzb['nzbmode']
-            controlValueDict = {"NZBurl": nzburl}
-            newValueDict = {
-                "NZBprov": nzbprov,
-                "BookID": bookid,
-                "NZBdate": formatter.now(),  # when we asked for it
-                "NZBsize": nzbsize,
-                "NZBtitle": nzbTitle,
-                "NZBmode": nzbmode,
-                "Status": "Skipped"
-            }
-
-            score = (nzbBook_match + nzbAuthor_match)/2  # as a percentage
-            # lose a point for each extra word in the title so we get the closest match
-            words = len(formatter.getList(nzb_Title))
-            words -= len(formatter.getList(author))
-            words -= len(formatter.getList(title))
-            score -= abs(words)
-            matches.append([score, nzb_Title, newValueDict, controlValueDict])
+        if not rejected:
+            if maxsize and nzbsize > maxsize:
+                rejected = True
+                logger.debug("Rejecting %s, too large" % nzb_Title)
+        
+        if not rejected:    
+            if nzbAuthor_match >= match_ratio and nzbBook_match >= match_ratio:
+                bookid = book['bookid']
+                nzbTitle = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
+                nzbprov = nzb['nzbprov']
+                nzbdate_temp = nzb['nzbdate']
+                nzbdate = formatter.nzbdate2format(nzbdate_temp)
+                nzbmode = nzb['nzbmode']
+                controlValueDict = {"NZBurl": nzburl}
+                newValueDict = {
+                    "NZBprov": nzbprov,
+                    "BookID": bookid,
+                    "NZBdate": formatter.now(),  # when we asked for it
+                    "NZBsize": nzbsize,
+                    "NZBtitle": nzbTitle,
+                    "NZBmode": nzbmode,
+                    "Status": "Skipped"
+                }
+    
+                score = (nzbBook_match + nzbAuthor_match)/2  # as a percentage
+                # lose a point for each extra word in the title so we get the closest match
+                words = len(formatter.getList(nzb_Title))
+                words -= len(formatter.getList(author))
+                words -= len(formatter.getList(title))
+                score -= abs(words)
+                matches.append([score, nzb_Title, newValueDict, controlValueDict])
 
     if matches:
         highest = max(matches, key=lambda x: x[0])
@@ -250,10 +259,7 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
                     f.write(nzbfile)
                 logger.debug('NZB file saved to: ' + nzbpath)
                 download = True
-                # try:
-                #    os.chmod(nzbpath, 0777)
-                # except Exception, e:
-                #    logger.error("Could not chmod path: " + str(nzbpath))
+              
             except Exception as e:
                 logger.error('%s not writable, NZB not saved. Error: %s' % (nzbpath, e))
                 download = False
