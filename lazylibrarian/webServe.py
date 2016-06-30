@@ -464,7 +464,7 @@ class WebInterface(object):
         if author is None:
             raise cherrypy.HTTPRedirect("home")
         return serve_template(
-            templatename="author.html", title=urllib.quote(author['AuthorName'].encode('utf-8')),
+            templatename="author.html", title=urllib.quote_plus(author['AuthorName'].encode('utf-8')),
                               author=author, books=books, languages=languages)
     authorPage.exposed = True
 
@@ -481,7 +481,7 @@ class WebInterface(object):
         logger.debug(
             u'AuthorID [%s]-[%s] Paused - redirecting to Author home page' % (AuthorID, AuthorName))
         raise cherrypy.HTTPRedirect(
-            "authorPage?AuthorName=%s" % urllib.quote(AuthorName.encode('utf-8')))
+            "authorPage?AuthorName=%s" % urllib.quote_plus(AuthorName.encode('utf-8')))
     pauseAuthor.exposed = True
 
     def resumeAuthor(self, AuthorID):
@@ -497,7 +497,7 @@ class WebInterface(object):
         logger.debug(
             u'AuthorID [%s]-[%s] Restarted - redirecting to Author home page' % (AuthorID, AuthorName))
         raise cherrypy.HTTPRedirect(
-            "authorPage?AuthorName=%s" % urllib.quote(AuthorName.encode('utf-8')))
+            "authorPage?AuthorName=%s" % urllib.quote_plus(AuthorName.encode('utf-8')))
     resumeAuthor.exposed = True
 
     def deleteAuthor(self, AuthorID):
@@ -515,13 +515,13 @@ class WebInterface(object):
     def refreshAuthor(self, AuthorName):
         threading.Thread(target=importer.addAuthorToDB, args=[AuthorName, True]).start()
         raise cherrypy.HTTPRedirect(
-            "authorPage?AuthorName=%s" % urllib.quote(AuthorName.encode('utf-8')))
+            "authorPage?AuthorName=%s" % urllib.quote_plus(AuthorName.encode('utf-8')))
     refreshAuthor.exposed = True
 
     def addAuthor(self, AuthorName):
         threading.Thread(target=importer.addAuthorToDB, name='ADDAUTHOR', args=[AuthorName, False]).start()
         raise cherrypy.HTTPRedirect(
-            "authorPage?AuthorName=%s" % urllib.quote(AuthorName.encode('utf-8')))
+            "authorPage?AuthorName=%s" % urllib.quote_plus(AuthorName.encode('utf-8')))
     addAuthor.exposed = True
 
 # BOOKS #############################################################
