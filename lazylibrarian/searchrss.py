@@ -15,7 +15,7 @@ from lazylibrarian.searchnzb import NZBDownloadMethod
 
 def cron_search_rss_book():
     threading.currentThread().name = "CRON-SEARCHRSS"
-    search_rss_book():
+    search_rss_book()
 
 def search_rss_book(books=None, reset=False):
     threadname = threading.currentThread().name
