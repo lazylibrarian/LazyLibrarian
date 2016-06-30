@@ -77,6 +77,10 @@ def processAlternate(source_dir=None):
         logger.warn("No book file found in %s" % source_dir)
 
 
+def cron_processDir():
+    threading.currentThread().name = "CRON-POSTPROCESS"
+    processDir()
+    
 def processDir(force=False, reset=False):
 
     threadname = threading.currentThread().name

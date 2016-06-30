@@ -12,6 +12,10 @@ from lazylibrarian.searchtorrents import TORDownloadMethod
 from lazylibrarian.searchnzb import NZBDownloadMethod
 
 
+def cron_search_magazines():
+    threading.currentThread().name = "CRON-SEARCHMAG"
+    search_magazines()
+    
 def search_magazines(mags=None, reset=False):
     # produce a list of magazines to search for, tor, nzb, torznab
 

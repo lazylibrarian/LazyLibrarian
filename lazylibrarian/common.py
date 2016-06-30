@@ -56,25 +56,25 @@ def schedule_job(action='Start', target=None):
                 return  # return if already running, if not, start a new one
         if 'processDir' in target and int(lazylibrarian.SCAN_INTERVAL):
             lazylibrarian.SCHED.add_interval_job(
-                lazylibrarian.postprocess.processDir,
+                lazylibrarian.postprocess.cron_processDir,
                 minutes=int(lazylibrarian.SCAN_INTERVAL))
             logger.debug("%s %s job" % (action, target))
         elif 'search_magazines' in target and int(lazylibrarian.SEARCH_INTERVAL):
             if lazylibrarian.USE_TOR() or lazylibrarian.USE_NZB():
                 lazylibrarian.SCHED.add_interval_job(
-                    lazylibrarian.searchmag.search_magazines,
+                    lazylibrarian.searchmag.cron_search_magazines,
                     minutes=int(lazylibrarian.SEARCH_INTERVAL))
                 logger.debug("%s %s job" % (action, target))
         elif 'search_nzb_book' in target and int(lazylibrarian.SEARCH_INTERVAL):
             if lazylibrarian.USE_NZB():
                 lazylibrarian.SCHED.add_interval_job(
-                    lazylibrarian.searchnzb.search_nzb_book,
+                    lazylibrarian.searchnzb.cron_search_nzb_book,
                     minutes=int(lazylibrarian.SEARCH_INTERVAL))
                 logger.debug("%s %s job" % (action, target))
         elif 'search_tor_book' in target and int(lazylibrarian.SEARCH_INTERVAL):
             if lazylibrarian.USE_TOR():
                 lazylibrarian.SCHED.add_interval_job(
-                    lazylibrarian.searchtorrents.search_tor_book,
+                    lazylibrarian.searchtorrents.cron_search_tor_book,
                     minutes=int(lazylibrarian.SEARCH_INTERVAL))
                 logger.debug("%s %s job" % (action, target))
         elif 'search_rss_book' in target and int(lazylibrarian.SEARCHRSS_INTERVAL):

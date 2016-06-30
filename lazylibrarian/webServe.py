@@ -1183,16 +1183,11 @@ class WebInterface(object):
 # UPDATES ###########################################################
 
     def checkForUpdates(self):
-        # Set the install type (win,git,source) &
-        # check the version when the application starts
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
             
-        versioncheck.getInstallType()
-        lazylibrarian.CURRENT_VERSION = versioncheck.getCurrentVersion()
-        lazylibrarian.LATEST_VERSION = versioncheck.getLatestVersion()
-        lazylibrarian.COMMITS_BEHIND, lazylibrarian.COMMIT_LIST = versioncheck.getCommitDifferenceFromGit()
+        versioncheck.checkForUpdates()
         if lazylibrarian.COMMITS_BEHIND == 0:
             message = "up to date"
             return serve_template(templatename="shutdown.html", title="Version Check", message=message, timer=5)

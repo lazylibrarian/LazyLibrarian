@@ -16,6 +16,9 @@ import lazylibrarian.common as common
 # new to support torrents
 from lazylibrarian.searchtorrents import TORDownloadMethod
 
+def cron_search_nzb_book():
+    threading.currentThread().name = "CRON-SEARCHNZB"
+    search_nzb_book()
 
 def search_nzb_book(books=None, reset=False):
     threadname = threading.currentThread().name

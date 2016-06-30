@@ -13,7 +13,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-from lazylibrarian import importer, postprocess, versioncheck, logger, database, \
+from lazylibrarian import importer, postprocess, logger, database, \
     updater, librarysync, magazinescan, formatter, common, bookwork
 from lazylibrarian.searchnzb import search_nzb_book
 from lazylibrarian.searchtorrents import search_tor_book
@@ -129,6 +129,10 @@ class Api(object):
 
     def fetchData(self):
 
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "API"
+            
         if self.data == 'OK':
             args = []
             if 'name' in self.kwargs:

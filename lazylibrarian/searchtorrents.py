@@ -22,6 +22,10 @@ from StringIO import StringIO
 import gzip
 
 
+def cron_search_tor_book():
+    threading.currentThread().name = "CRON-SEARCHTOR"
+    search_tor_book()
+
 def search_tor_book(books=None, reset=False):
     threadname = threading.currentThread().name
     if "Thread-" in threadname:

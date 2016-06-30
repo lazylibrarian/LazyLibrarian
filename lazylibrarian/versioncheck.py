@@ -162,16 +162,16 @@ def getCurrentGitBranch():
     return current_branch
 
 
-def checkForUpdates():  # This is the cron job
-    # rename this thread
-    threading.currentThread().name = "VERSIONCHECK"
+def checkForUpdates():
+    """ Called from webserver with thread name WEBSERVER, or as a cron job """
+    if 'Thread-' in threading.currentThread().name:
+        threading.currentThread().name = "CRON-VERSIONCHECK"
     logger.debug('Set Install Type, Current & Latest Version and Commit status')
     getInstallType()
     lazylibrarian.CURRENT_VERSION = getCurrentVersion()
     lazylibrarian.LATEST_VERSION = getLatestVersion()
     lazylibrarian.COMMITS_BEHIND, lazylibrarian.COMMIT_LIST = getCommitDifferenceFromGit()
     logger.debug('Update check complete')
-    # l = checkGithub()
 
 # Return latest version from GITHUB
 # if GIT install return latest on current branch
