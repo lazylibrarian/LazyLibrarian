@@ -391,13 +391,13 @@ class WebInterface(object):
             GB = GoogleBooks(name)
             queue = Queue.Queue()
             search_api = threading.Thread(
-                target=GB.find_results, args=[name, queue])
+                target=GB.find_results, name='GB-RESULTS', args=[name, queue])
             search_api.start()
         elif lazylibrarian.BOOK_API == "GoodReads":
             queue = Queue.Queue()
             GR = GoodReads(name)
             search_api = threading.Thread(
-                target=GR.find_results, args=[name, queue])
+                target=GR.find_results, name='GR-RESULTS', args=[name, queue])
             search_api.start()
         if len(name) == 0:
             raise cherrypy.HTTPRedirect("config")
@@ -519,7 +519,7 @@ class WebInterface(object):
     refreshAuthor.exposed = True
 
     def addAuthor(self, AuthorName):
-        threading.Thread(target=importer.addAuthorToDB, args=[AuthorName, False]).start()
+        threading.Thread(target=importer.addAuthorToDB, name='ADDAUTHOR', args=[AuthorName, False]).start()
         raise cherrypy.HTTPRedirect(
             "authorPage?AuthorName=%s" % urllib.quote(AuthorName.encode('utf-8')))
     addAuthor.exposed = True
@@ -714,13 +714,13 @@ class WebInterface(object):
                 GB = GoogleBooks(bookid)
                 queue = Queue.Queue()
                 find_book = threading.Thread(
-                    target=GB.find_book, args=[bookid, queue])
+                    target=GB.find_book, name='GB-BOOK', args=[bookid, queue])
                 find_book.start()
             elif lazylibrarian.BOOK_API == "GoodReads":
                 queue = Queue.Queue()
                 GR = GoodReads(bookid)
                 find_book = threading.Thread(
-                    target=GR.find_book, args=[bookid, queue])
+                    target=GR.find_book, name='GR-BOOK', args=[bookid, queue])
                 find_book.start()
             if len(bookid) == 0:
                 raise cherrypy.HTTPRedirect("config")
@@ -739,11 +739,11 @@ class WebInterface(object):
     def startBookSearch(self, books=None):
         if books:
             if lazylibrarian.USE_RSS():
-                threading.Thread(target=search_rss_book, args=[books]).start()
+                threading.Thread(target=search_rss_book, name='SEARCHRSS', args=[books]).start()
             if lazylibrarian.USE_NZB():
-                threading.Thread(target=search_nzb_book, args=[books]).start()
+                threading.Thread(target=search_nzb_book, name='SEARCHNZB', args=[books]).start()
             if lazylibrarian.USE_TOR():
-                threading.Thread(target=search_tor_book, args=[books]).start()
+                threading.Thread(target=search_tor_book, name='SEARCHTOR', args=[books]).start()
             if lazylibrarian.USE_RSS() or lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
                 logger.debug(u"Searching for book with id: " + books[0]["bookid"])
             else:
@@ -768,6 +768,10 @@ class WebInterface(object):
     searchForBook.exposed = True
 
     def openBook(self, bookid=None, **args):
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+            
         myDB = database.DBConnection()
 
         bookdata = myDB.select(
@@ -784,6 +788,10 @@ class WebInterface(object):
     openBook.exposed = True
 
     def markBooks(self, AuthorName=None, action=None, redirect=None, **args):
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+            
         myDB = database.DBConnection()
         if not redirect:
             redirect = "books"
@@ -845,11 +853,11 @@ class WebInterface(object):
                     books.append({"bookid": bookid})
 
             if lazylibrarian.USE_RSS():
-                threading.Thread(target=search_rss_book, args=[books]).start()
+                threading.Thread(target=search_rss_book, name='SEARCHRSS', args=[books]).start()
             if lazylibrarian.USE_NZB():
-                threading.Thread(target=search_nzb_book, args=[books]).start()
+                threading.Thread(target=search_nzb_book, name='SEARCHNZB', args=[books]).start()
             if lazylibrarian.USE_TOR():
-                threading.Thread(target=search_tor_book, args=[books]).start()
+                threading.Thread(target=search_tor_book, name='SEARCHTOR', args=[books]).start()
 
         if redirect == "author":
             raise cherrypy.HTTPRedirect(
@@ -980,6 +988,10 @@ class WebInterface(object):
     getPastIssues.exposed = True
 
     def openMag(self, bookid=None, **args):
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+            
         bookid = urllib.unquote_plus(bookid)
         myDB = database.DBConnection()
         # we may want to open an issue with a hashed bookid
@@ -1005,6 +1017,10 @@ class WebInterface(object):
     openMag.exposed = True
 
     def markPastIssues(self, AuthorName=None, action=None, redirect=None, **args):
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+            
         myDB = database.DBConnection()
         if not redirect:
             redirect = "magazines"
@@ -1131,7 +1147,7 @@ class WebInterface(object):
     def startMagazineSearch(self, mags=None):
         if mags:
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
-                threading.Thread(target=search_magazines, args=[mags, False]).start()
+                threading.Thread(target=search_magazines, name='SEARCHMAG', args=[mags, False]).start()
                 logger.debug(u"Searching for magazine with title: %s" % mags[0]["bookid"])
             else:
                 logger.warn(u"Not searching for magazine, no download methods set, check config")
@@ -1169,6 +1185,10 @@ class WebInterface(object):
     def checkForUpdates(self):
         # Set the install type (win,git,source) &
         # check the version when the application starts
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+            
         versioncheck.getInstallType()
         lazylibrarian.CURRENT_VERSION = versioncheck.getCurrentVersion()
         lazylibrarian.LATEST_VERSION = versioncheck.getLatestVersion()
@@ -1190,7 +1210,7 @@ class WebInterface(object):
 
     def forceUpdate(self):
         from lazylibrarian import updater
-        threading.Thread(target=updater.dbUpdate, args=[False]).start()
+        threading.Thread(target=updater.dbUpdate, name='DBUPDATE', args=[False]).start()
         raise cherrypy.HTTPRedirect("home")
     forceUpdate.exposed = True
 
@@ -1205,7 +1225,7 @@ class WebInterface(object):
 
     def libraryScan(self):
         try:
-            threading.Thread(target=librarysync.LibraryScan(lazylibrarian.DESTINATION_DIR)).start()
+            threading.Thread(target=librarysync.LibraryScan, name='LIBRARYSYNC', args=[lazylibrarian.DESTINATION_DIR]).start()
         except Exception as e:
             logger.error(u'Unable to complete the scan: %s' % e)
         raise cherrypy.HTTPRedirect("home")
@@ -1213,7 +1233,7 @@ class WebInterface(object):
 
     def magazineScan(self):
         try:
-            threading.Thread(target=magazinescan.magazineScan()).start()
+            threading.Thread(target=magazinescan.magazineScan, name='MAGAZINESCAN', args=[]).start()
         except Exception as e:
             logger.error(u'Unable to complete the scan: %s' % e)
         raise cherrypy.HTTPRedirect("magazines")
@@ -1221,7 +1241,7 @@ class WebInterface(object):
 
     def importAlternate(self):
         try:
-            threading.Thread(target=postprocess.processAlternate(lazylibrarian.ALTERNATE_DIR)).start()
+            threading.Thread(target=postprocess.processAlternate, name='IMPORTALT', args=[lazylibrarian.ALTERNATE_DIR]).start()
         except Exception as e:
             logger.error(u'Unable to complete the import: %s' % e)
         raise cherrypy.HTTPRedirect("manage")
@@ -1229,7 +1249,7 @@ class WebInterface(object):
 
     def importCSV(self):
         try:
-            threading.Thread(target=postprocess.processCSV(lazylibrarian.ALTERNATE_DIR)).start()
+            threading.Thread(target=postprocess.processCSV, name='PROCESSCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
         except Exception as e:
             logger.error(u'Unable to complete the import: %s' % e)
         raise cherrypy.HTTPRedirect("manage")
@@ -1237,7 +1257,7 @@ class WebInterface(object):
 
     def exportCSV(self):
         try:
-            threading.Thread(target=postprocess.exportCSV(lazylibrarian.ALTERNATE_DIR)).start()
+            threading.Thread(target=postprocess.exportCSV, name='EXPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
         except Exception as e:
             logger.error(u'Unable to complete the export: %s' % e)
         raise cherrypy.HTTPRedirect("manage")
@@ -1280,6 +1300,10 @@ class WebInterface(object):
 
     def clearLog(self):
         # Clear the log
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+            
         result = common.clearLog()
         logger.info(result)
         raise cherrypy.HTTPRedirect("logs")
@@ -1291,6 +1315,10 @@ class WebInterface(object):
         # 1 normal
         # 2 debug
         # >2 do not turn off file/console log
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+            
         if lazylibrarian.LOGFULL:  # if LOGLIST logging on, turn off
             lazylibrarian.LOGFULL = False
             if lazylibrarian.LOGLEVEL < 3:
@@ -1351,6 +1379,10 @@ class WebInterface(object):
     history.exposed = True
 
     def clearhistory(self, status=None):
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+            
         myDB = database.DBConnection()
         if status == 'all':
             logger.info(u"Clearing all history")
@@ -1457,21 +1489,21 @@ class WebInterface(object):
 # ALL ELSE ##########################################################
 
     def forceProcess(self, source=None):
-        threading.Thread(target=postprocess.processDir, args=[True, True]).start()
+        threading.Thread(target=postprocess.processDir, name='POSTPROCESS', args=[True, True]).start()
         raise cherrypy.HTTPRedirect(source)
     forceProcess.exposed = True
 
     def forceSearch(self, source=None):
         if source == "magazines":
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
-                threading.Thread(target=search_magazines, args=[None, True]).start()
+                threading.Thread(target=search_magazines, name='SEARCHMAG', args=[None, True]).start()
         elif source == "books":
             if lazylibrarian.USE_NZB():
-                threading.Thread(target=search_nzb_book).start()
+                threading.Thread(target=search_nzb_book, name='SEARCHNZB', args=[]).start()
             if lazylibrarian.USE_TOR():
-                threading.Thread(target=search_tor_book).start()
+                threading.Thread(target=search_tor_book, name='SEARCHTOR', args=[]).start()
             if lazylibrarian.USE_RSS():
-                threading.Thread(target=search_rss_book).start()
+                threading.Thread(target=search_rss_book, name='SEARCHRSS', args=[]).start()
         else:
             logger.debug(u"forceSearch called with bad source")
         raise cherrypy.HTTPRedirect(source)

@@ -1,9 +1,8 @@
-import threading
 import urllib2
 import socket
 import os
 import re
-
+import threading
 import lazylibrarian
 from . import request
 
@@ -19,11 +18,13 @@ from lazylibrarian.searchtorrents import TORDownloadMethod
 
 
 def search_nzb_book(books=None, reset=False):
+    threadname = threading.currentThread().name
+    if "Thread-" in threadname:
+        threading.currentThread().name = "SEARCHNZB"
+
     if not lazylibrarian.USE_NZB():
         logger.warn('No NEWZNAB/TORZNAB providers set, check config')
         return
-    # rename this thread
-    threading.currentThread().name = "SEARCHNZBBOOKS"
     myDB = database.DBConnection()
     searchlist = []
 

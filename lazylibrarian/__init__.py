@@ -1422,7 +1422,7 @@ def dbcheck():
             if addedWorkPage:
                 try:
                     logger.info('Adding WorkPage to existing books')
-                    threading.Thread(target=bookwork.setWorkPages, args=[]).start()
+                    threading.Thread(target=bookwork.setWorkPages, name="ADDWORKPAGE", args=[]).start()
                 except:
                     logger.debug("Failed to update WorkPages")
         

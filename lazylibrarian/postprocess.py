@@ -78,9 +78,11 @@ def processAlternate(source_dir=None):
 
 
 def processDir(force=False, reset=False):
-    # rename this thread
-    threading.currentThread().name = "POSTPROCESS"
 
+    threadname = threading.currentThread().name
+    if "Thread-" in threadname:
+        threading.currentThread().name = "POSTPROCESS"
+        
     if not lazylibrarian.DOWNLOAD_DIR or not os.path.isdir(lazylibrarian.DOWNLOAD_DIR):
         processpath = os.getcwd()
     else:

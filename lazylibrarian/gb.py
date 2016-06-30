@@ -7,7 +7,6 @@ import socket
 import json
 import time
 import re
-import threading
 from urllib2 import HTTPError
 
 import lazylibrarian
@@ -100,7 +99,6 @@ class GoogleBooks:
         return source_json, valid_cache
 
     def find_results(self, authorname=None, queue=None):
-        threading.currentThread().name = "GB-SEARCH"
         resultlist = []
         # See if we should check ISBN field, otherwise ignore it
         try:
@@ -675,7 +673,6 @@ class GoogleBooks:
         return books_dict
 
     def find_book(self, bookid=None, queue=None):
-        threading.currentThread().name = "GB-ADD-BOOK"
         myDB = database.DBConnection()
         if not lazylibrarian.GB_API:
             logger.warn('No GoogleBooks API key, check config')

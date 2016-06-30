@@ -1,13 +1,10 @@
 import os
-import threading
-
 import lazylibrarian
 from lazylibrarian import logger, formatter, database
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
 
 def addAuthorToDB(authorname=None, refresh=False):
-    threading.currentThread().name = "DBIMPORT"
 
     myDB = database.DBConnection()
 

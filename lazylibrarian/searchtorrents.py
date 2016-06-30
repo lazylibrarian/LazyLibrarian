@@ -1,4 +1,3 @@
-import threading
 import urllib2
 import socket
 import os
@@ -6,7 +5,7 @@ import re
 from base64 import b16encode, b32decode
 from lib.bencode import bencode as bencode, bdecode
 from hashlib import sha1
-
+import threading
 import lazylibrarian
 
 from lazylibrarian import logger, database, formatter, providers, notifiers, utorrent, transmission, qbittorrent, deluge
@@ -24,11 +23,14 @@ import gzip
 
 
 def search_tor_book(books=None, reset=False):
+    threadname = threading.currentThread().name
+    if "Thread-" in threadname:
+        threading.currentThread().name = "SEARCHTOR"
+
     if not lazylibrarian.USE_TOR():
         logger.warn('No Torrent providers set, check config')
         return
-    # rename this thread
-    threading.currentThread().name = "SEARCHTORBOOKS"
+
     myDB = database.DBConnection()
     searchlist = []
 

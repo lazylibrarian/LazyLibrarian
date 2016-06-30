@@ -1,11 +1,10 @@
 import time
-import threading
 import urllib2
 import re
 import datetime
 import os
 import lazylibrarian
-
+import threading
 from lazylibrarian import logger, database, formatter, providers, notifiers, common, postprocess
 
 from lib.fuzzywuzzy import fuzz
@@ -16,9 +15,12 @@ from lazylibrarian.searchnzb import NZBDownloadMethod
 def search_magazines(mags=None, reset=False):
     # produce a list of magazines to search for, tor, nzb, torznab
 
+    threadname = threading.currentThread().name
+    if "Thread-" in threadname:
+        threading.currentThread().name = "SEARCHMAG"
+
     myDB = database.DBConnection()
     searchlist = []
-    threading.currentThread().name = "SEARCHMAGS"
 
     if mags is None:  # backlog search
         searchmags = myDB.select('SELECT Title, LastAcquired, \

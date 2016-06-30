@@ -3,7 +3,6 @@ import re
 import lazylibrarian
 import urllib2
 import socket
-import threading
 from lazylibrarian import logger, database, importer, formatter, common, bookwork
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
@@ -185,9 +184,7 @@ def find_book_in_db(myDB, author, book):
 
 
 def LibraryScan(dir=None):
-    # rename this thread
-    threading.currentThread().name = "LIBRARYSYNC"
-    
+
     if not dir:
         if not lazylibrarian.DOWNLOAD_DIR:
             return
