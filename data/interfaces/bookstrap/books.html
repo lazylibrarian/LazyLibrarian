@@ -58,60 +58,6 @@
                     <th class="status text-center no-sort">Status</th>
                 </tr>
             </thead>
-<!-- This section is unused now, we use server-side processing instead
-            <tbody>
-            %for result in books:
-                    <%
-                        if result['bookrate'] < 0.5:
-                            starimg = '0-stars.png'
-                        elif result['bookrate'] >= 0.5 and result['bookrate'] < 1.5:
-                            starimg = '1-stars.png'
-                        elif result['bookrate'] >= 1.5 and result['bookrate'] < 2.5:
-                            starimg = '2-stars.png'
-                        elif result['bookrate'] >= 2.5 and result['bookrate'] < 3.5:
-                            starimg = '3-stars.png'
-                        elif result['bookrate'] >= 3.5 and result['bookrate'] < 4.5:
-                            starimg = '4-stars.png'
-                        elif result['bookrate'] >= 4.5:
-                            starimg = '5-stars.png'
-                        else:
-                            starimg = '0-stars.png'
-
-                    %>
-                    <tr>
-                        <td class="select"><input type="checkbox" name="${result['BookID']}" class="checkbox" /></td>
-                        <td class="bookart text-center hidden-xs"><a href="${result['bookimg']}" target="_blank" rel="noreferrer"><img src="${result['bookimg']}" alt="Cover" class="bookcover-sm img-responsive"></a></td>
-                        <td class="authorname"><a href="authorPage?AuthorName=${result['AuthorName']|u}">${result['authorname']}</a></td>
-                        %if result['booksub']:
-                        <td class="bookname"><a href="${result['booklink']}" target="_blank" rel="noreferrer">${result['bookname']}</a><br>
-                        <i class="smalltext">${result['booksub']}</i></td>
-                        %else:
-                        <td class="bookname"><a href="${result['booklink']}" target="_blank" rel="noreferrer">${result['bookname']}</a></td>
-                        %endif
-                        <td class="series">${result['Series']}</td>
-                        <td class="seriesNum text-center">${result['seriesNum']}</td>
-                        <td class="stars text-center hidden-xs"><img src="images/${starimg}" alt="Rating"></td>
-                        <td class="date text-center">${result['BookDate']}</td>
-                        %if result['Status'] == 'Open':
-                        <td class="status text-center"><a class="button green btn btn-xs btn-warning" href="openBook?bookid=${result['bookid']}" target="_self"><i class="fa fa-book"></i> ${result['Status']}</a></td>
-                        %else:
-                            %if result['Status'] == 'Wanted':
-                        <td class="status text-center">
-                            <p><a class="a btn btn-xs btn-danger">${result['Status']}</a></p>
-                            <p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=${result['BookID']}" target="_self"><i class="fa fa-search"></i> Search</a></p>
-                        </td>
-                            %else:
-                                %if result['Status'] == 'Snatched' or result['Status'] == 'Have':
-                        <td class="status text-center"><a class="button btn btn-xs btn-info">${result['Status']}</a></td>
-                                %else:
-                        <td class="status text-center"><a class="button btn btn-xs btn-default grey">${result['Status']}</a></td>
-                                %endif
-                            %endif
-                        %endif
-                    </tr>
-            %endfor
-            </tbody>
--->
         </table>
         </div>
     </form>

@@ -40,7 +40,7 @@
 
                     if authorlist:
                         if result['authorname'] in authorlist:
-                            destination = "authorPage?AuthorName="+result['safeauthorname']
+                            destination = "authorPage?AuthorID="+result['authorid']
                             value = "Have Author"
                             but_class = "button green"
                         else:

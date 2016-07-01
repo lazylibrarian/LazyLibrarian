@@ -405,7 +405,7 @@ class WebInterface(object):
         search_api.join()
         searchresults = queue.get()
 
-        authorsearch = myDB.select("SELECT * from authors")
+        authorsearch = myDB.select("SELECT AuthorName from authors")
         authorlist = []
         for item in authorsearch:
             authorlist.append(item['AuthorName'])
@@ -416,7 +416,7 @@ class WebInterface(object):
             booklist.append(item['BookID'])
 
         # need a url safe version of authorname for passing to
-        # searchresults.html
+        # searchresults.html as it might be a new author with no authorid yet
         resultlist = []
         for result in searchresults:
             result['safeauthorname'] = urllib.quote_plus(
@@ -432,32 +432,31 @@ class WebInterface(object):
 
 # AUTHOR ############################################################
 
-    def authorPage(self, AuthorName, BookLang=None, Ignored=False):
+    def authorPage(self, AuthorID, BookLang=None, Ignored=False):
         myDB = database.DBConnection()
 
         if Ignored:
-            languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorName LIKE ? \
-                                    AND Status ='Ignored'", [AuthorName.replace("'", "''")])
+            languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorID = '%s' \
+                                    AND Status ='Ignored'" % AuthorID)
             if BookLang:
-                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' AND BookLang = '%s' \
+                querybooks = "SELECT * from books WHERE AuthorID = '%s' AND BookLang = '%s' \
                               AND Status ='Ignored' order by BookDate DESC, BookRate DESC" % (
-                    AuthorName.replace("'", "''"), BookLang)
+                    AuthorID, BookLang)
             else:
-                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' and Status ='Ignored' \
-                              order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'", "''"))
+                querybooks = "SELECT * from books WHERE AuthorID = '%s' and Status ='Ignored' \
+                              order by BookDate DESC, BookRate DESC" % AuthorID
         else:
-            languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorName LIKE ? \
-                                    AND Status !='Ignored'", [AuthorName.replace("'", "''")])
+            languages = myDB.select(
+                "SELECT DISTINCT BookLang from books WHERE AuthorID = '%s' AND Status !='Ignored'" % AuthorID)
             if BookLang:
-                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' AND BookLang = '%s' \
+                querybooks = "SELECT * from books WHERE AuthorID = '%s' AND BookLang = '%s' \
                               AND Status !='Ignored' order by BookDate DESC, BookRate DESC" % (
-                    AuthorName.replace("'", "''"), BookLang)
+                    AuthorID, BookLang)
             else:
-                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' and Status !='Ignored' \
-                              order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'", "''"))
+                querybooks = "SELECT * from books WHERE AuthorID = '%s' and Status !='Ignored' \
+                              order by BookDate DESC, BookRate DESC" % AuthorID
 
-        queryauthors = "SELECT * from authors WHERE AuthorName LIKE '%s'" % AuthorName.replace(
-            "'", "''")
+        queryauthors = "SELECT * from authors WHERE AuthorID = '%s'" % AuthorID
 
         author = myDB.action(queryauthors).fetchone()
         books = myDB.select(querybooks)
@@ -480,8 +479,7 @@ class WebInterface(object):
         myDB.upsert("authors", newValueDict, controlValueDict)
         logger.debug(
             u'AuthorID [%s]-[%s] Paused - redirecting to Author home page' % (AuthorID, AuthorName))
-        raise cherrypy.HTTPRedirect(
-            "authorPage?AuthorName=%s" % urllib.quote_plus(AuthorName.encode('utf-8')))
+        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
     pauseAuthor.exposed = True
 
     def resumeAuthor(self, AuthorID):
@@ -496,8 +494,7 @@ class WebInterface(object):
         myDB.upsert("authors", newValueDict, controlValueDict)
         logger.debug(
             u'AuthorID [%s]-[%s] Restarted - redirecting to Author home page' % (AuthorID, AuthorName))
-        raise cherrypy.HTTPRedirect(
-            "authorPage?AuthorName=%s" % urllib.quote_plus(AuthorName.encode('utf-8')))
+        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
     resumeAuthor.exposed = True
 
     def deleteAuthor(self, AuthorID):
@@ -512,16 +509,19 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("home")
     deleteAuthor.exposed = True
 
-    def refreshAuthor(self, AuthorName):
-        threading.Thread(target=importer.addAuthorToDB, args=[AuthorName, True]).start()
-        raise cherrypy.HTTPRedirect(
-            "authorPage?AuthorName=%s" % urllib.quote_plus(AuthorName.encode('utf-8')))
+    def refreshAuthor(self, AuthorID):
+        myDB = database.DBConnection()
+        authorsearch = myDB.select(
+            'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
+        if len(authorsearch):  # to stop error if try to refresh an author while they are still loading
+            AuthorName = authorsearch[0]['AuthorName']
+            threading.Thread(target=importer.addAuthorToDB, name='REFRESHAUTHOR', args=[AuthorName, True]).start()
+        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
     refreshAuthor.exposed = True
 
     def addAuthor(self, AuthorName):
         threading.Thread(target=importer.addAuthorToDB, name='ADDAUTHOR', args=[AuthorName, False]).start()
-        raise cherrypy.HTTPRedirect(
-            "authorPage?AuthorName=%s" % urllib.quote_plus(AuthorName.encode('utf-8')))
+        raise cherrypy.HTTPRedirect("home")
     addAuthor.exposed = True
 
 # BOOKS #############################################################
@@ -544,10 +544,10 @@ class WebInterface(object):
         #   need to check and filter on BookLang if set
         if lazylibrarian.BOOKLANGFILTER is None or not len(lazylibrarian.BOOKLANGFILTER):
             rowlist = myDB.action(
-                'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid, booksub, booklink, workpage from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"').fetchall()
+                'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid, booksub, booklink, workpage, authorid from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"').fetchall()
         else:
             rowlist = myDB.action(
-                'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid, booksub, booklink, workpage from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored" and BOOKLANG="%s"' %
+                'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid, booksub, booklink, workpage, authorid from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored" and BOOKLANG="%s"' %
                 lazylibrarian.BOOKLANGFILTER).fetchall()
         # turn the sqlite rowlist into a list of lists
         d = []
@@ -582,7 +582,7 @@ class WebInterface(object):
                 l.append(
                     '<td id="bookart"><a href="%s" target="_new"><img src="%s" height="75" width="50"></a></td>' % (row[0], row[0]))
                 l.append(
-                    '<td id="authorname"><a href="authorPage?AuthorName=%s">%s</a></td>' % (row[1], row[1]))
+                    '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[12], row[1]))
                 if row[9]:  # is there a sub-title
                     l.append(
                         '<td id="bookname"><a href="%s" target="_new">%s</a><br><i class="smalltext">%s</i></td>' % (row[10], row[2], row[9]))
@@ -621,7 +621,7 @@ class WebInterface(object):
                 l.append(
                     '<td class="bookart text-center"><a href="%s" target="_blank" rel="noreferrer"><img src="%s" alt="Cover" class="bookcover-sm img-responsive"></a></td>' % (row[0], row[0]))
                 l.append(
-                    '<td class="authorname"><a href="authorPage?AuthorName=%s">%s</a></td>' % (row[1], row[1]))
+                    '<td class="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[12], row[1]))
                 if row[9]:  # is there a sub-title
                     l.append(
                         '<td class="bookname"><a href="%s" target="_blank" rel="noreferrer">%s</a><br><i class="smalltext">%s</i></td>' % (row[10], row[2], row[9]))
@@ -684,22 +684,22 @@ class WebInterface(object):
         if booksearch:
             myDB.upsert("books", {'Status': 'Wanted'}, {'BookID': bookid})
             for book in booksearch:
-                AuthorName = book['AuthorName']
+                AuthorID = book['AuthorID']
                 authorsearch = myDB.select(
-                    'SELECT * from authors WHERE AuthorName="%s"' % AuthorName)
+                    'SELECT * from authors WHERE AuthorID="%s"' % AuthorID)
                 if authorsearch:
                     # update authors needs to be updated every time a book is marked differently
                     lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE \
-                                           AuthorName="%s" AND Status != "Ignored" order by BookDate DESC' %
-                                           AuthorName).fetchone()
+                                           AuthorID="%s" AND Status != "Ignored" order by BookDate DESC' %
+                                           AuthorID).fetchone()
                     unignoredbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE \
-                                                 AuthorName="%s" AND Status != "Ignored"' % AuthorName).fetchone()
+                                                 AuthorID="%s" AND Status != "Ignored"' % AuthorID).fetchone()
                     totalbooks = myDB.action(
-                        'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s"' % AuthorName).fetchone()
-                    havebooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND \
-                                             (Status="Have" OR Status="Open")' % AuthorName).fetchone()
+                        'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % AuthorID).fetchone()
+                    havebooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND \
+                                             (Status="Have" OR Status="Open")' % AuthorID).fetchone()
 
-                    controlValueDict = {"AuthorName": AuthorName}
+                    controlValueDict = {"AuthorID": AuthorID}
                     newValueDict = {
                         "TotalBooks": totalbooks['counter'],
                         "UnignoredBooks": unignoredbooks['counter'],
@@ -730,8 +730,8 @@ class WebInterface(object):
         books = [{"bookid": bookid}]
         self.startBookSearch(books)
 
-        if AuthorName:
-            raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
+        if AuthorI:
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
         else:
             raise cherrypy.HTTPRedirect("books")
     addBook.exposed = True
@@ -757,14 +757,14 @@ class WebInterface(object):
 
         bookdata = myDB.select('SELECT * from books WHERE BookID="%s"' % bookid)
         if bookdata:
-            AuthorName = bookdata[0]["AuthorName"]
+            AuthorID = bookdata[0]["AuthorID"]
 
             # start searchthreads
             books = [{"bookid": bookid}]
             self.startBookSearch(books)
 
-        if AuthorName:
-            raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
+        if AuthorID:
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
     searchForBook.exposed = True
 
     def openBook(self, bookid=None, **args):
@@ -787,7 +787,7 @@ class WebInterface(object):
                 logger.info(u'Missing book %s,%s' % (authorName, bookName))
     openBook.exposed = True
 
-    def markBooks(self, AuthorName=None, action=None, redirect=None, **args):
+    def markBooks(self, AuthorID=None, action=None, redirect=None, **args):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
@@ -811,9 +811,9 @@ class WebInterface(object):
                     else:
                         authorsearch = myDB.select('SELECT * from books WHERE BookID = "%s"' % bookid)
                         for item in authorsearch:
-                            AuthorName = item['AuthorName']
+                            AuthorID = item['AuthorID']
                             bookname = item['BookName']
-                        authorcheck = myDB.select('SELECT * from authors WHERE AuthorName = "%s"' % AuthorName)
+                        authorcheck = myDB.select('SELECT * from authors WHERE AuthorID = "%s"' % AuthorID)
                         if authorcheck:
                             myDB.upsert("books", {"Status": "Skipped"}, {"BookID": bookid})
                             logger.info(u'Status set to Skipped for "%s"' % bookname)
@@ -824,16 +824,16 @@ class WebInterface(object):
         if redirect == "author" or authorcheck:
             # update authors needs to be updated every time a book is marked
             # differently
-            lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorName="%s" \
-                                   AND Status != "Ignored" order by BookDate DESC' % AuthorName).fetchone()
-            unignoredbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" \
-                                         AND Status != "Ignored"' % AuthorName).fetchone()
+            lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorID="%s" \
+                                   AND Status != "Ignored" order by BookDate DESC' % AuthorID).fetchone()
+            unignoredbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" \
+                                         AND Status != "Ignored"' % AuthorID).fetchone()
             totalbooks = myDB.action(
-                'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s"' % AuthorName).fetchone()
-            havebooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND \
-                                     (Status="Have" OR Status="Open")' % AuthorName).fetchone()
+                'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % AuthorID).fetchone()
+            havebooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND \
+                                     (Status="Have" OR Status="Open")' % AuthorID).fetchone()
 
-            controlValueDict = {"AuthorName": AuthorName}
+            controlValueDict = {"AuthorID": AuthorID}
             newValueDict = {
                 "TotalBooks": totalbooks['counter'],
                 "UnignoredBooks": unignoredbooks['counter'],
@@ -861,8 +861,7 @@ class WebInterface(object):
 
         if redirect == "author":
             raise cherrypy.HTTPRedirect(
-                "authorPage?AuthorName=%s" %
-                AuthorName)
+                "authorPage?AuthorID=%s" % AuthorID)
         elif redirect == "books":
             raise cherrypy.HTTPRedirect("books")
         else:
@@ -1016,7 +1015,7 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("issuePage?title=%s" % urllib.quote_plus(bookid.encode('utf-8')))
     openMag.exposed = True
 
-    def markPastIssues(self, AuthorName=None, action=None, redirect=None, **args):
+    def markPastIssues(self, action=None, redirect=None, **args):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
@@ -1504,7 +1503,7 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect(source)
     forceSearch.exposed = True
 
-    def manage(self, AuthorName=None, action=None, whichStatus=None, source=None, **args):
+    def manage(self, action=None, whichStatus=None, source=None, **args):
         # myDB = database.DBConnection()
         # books only holds status [skipped wanted open have ignored]
         # wanted holds status [snatched processed]
@@ -1525,7 +1524,7 @@ class WebInterface(object):
         # print "getManage %s" % iDisplayStart
         #   need to filter on whichStatus
         rowlist = myDB.action(
-            'SELECT authorname, bookname, series, seriesnum, bookdate, bookid, booklink, booksub from books WHERE STATUS="%s"' %
+            'SELECT authorname, bookname, series, seriesnum, bookdate, bookid, booklink, booksub, authorid from books WHERE STATUS="%s"' %
             lazylibrarian.MANAGEFILTER).fetchall()
         # turn the sqlite rowlist into a list of lists
         d = []
@@ -1534,7 +1533,7 @@ class WebInterface(object):
             l = []  # for each Row use a separate list
 
             l.append('<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[5])
-            l.append('<td id="authorname"><a href="authorPage?AuthorName=%s">%s</a></td>' % (row[0], row[0]))
+            l.append('<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[8], row[0]))
 
             if row[7]:  # is there a sub-title
                 l.append('<td id="bookname"><a href="%s" target="_new">%s</a><br><i class="smalltext">%s</i></td>' % (row[6], row[1], row[7]))

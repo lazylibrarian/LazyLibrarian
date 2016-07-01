@@ -6,18 +6,18 @@
 <%def name="headerIncludes()">
     <div id="subhead_container">
         <form id="subhead_menu" class="form-inline">            
-            <a href="refreshAuthor?AuthorName=${author['AuthorName']|u}" class="btn btn-sm btn-primary"><i class="fa fa-refresh"></i> Refresh Author</a>
+            <a href="refreshAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-refresh"></i> Refresh Author</a>
             <a href="deleteAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-remove"></i> Delete Author</a>
             %if author['Status'] == 'Paused':
                 <a href="resumeAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-play"></i> Resume Author</a>
             %else:
                 <a href="pauseAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-pause"></i> Pause Author</a>
             %endif
-            <a href="authorPage?AuthorName=${author['AuthorName']|u}&amp;Ignored=True" class="btn btn-sm btn-primary"><i class="fa fa-ban"></i> Ignored Books</a>
+            <a href="authorPage?AuthorID=${author['AuthorID']}&amp;Ignored=True" class="btn btn-sm btn-primary"><i class="fa fa-ban"></i> Ignored Books</a>
             %if len(languages) >= 1:
                 <div class="form-group pull-right">
                     <label for="chooselanguage"><small>Language</small></label>
-                    <select class="form-control input-sm" id="chooselanguage" onchange="location = 'authorPage?AuthorName=${author['AuthorName']|u}&amp;BookLang=' + this.options[this.selectedIndex].value;">
+                    <select class="form-control input-sm" id="chooselanguage" onchange="location = 'authorPage?AuthorID=${author['AuthorID']}&amp;BookLang=' + this.options[this.selectedIndex].value;">
                         <option value="">All</option>
                         %for language in languages:
                         <option value="${language['BookLang']}">${language['BookLang']}</option>
@@ -94,7 +94,7 @@
 <form action="markBooks" method="get" class="form-inline">            
     <div class="indented">
         
-            <input type="hidden" name="AuthorName" value="${author['AuthorName']}">
+            <input type="hidden" name="AuthorID" value="${author['AuthorID']}">
             <input type="hidden" name="redirect" value="author">
             <div class="form-group">
                 <label for="action" class="">Mark selected as</label>
