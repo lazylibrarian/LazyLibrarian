@@ -109,7 +109,7 @@ def processDir(force=False, reset=False):
     elif len(downloads) == 0:
         logger.info('No downloads are found. Nothing to process.')
     else:
-        logger.debug("Checking %s downloads for %s snatched files" % (len(downloads), len(snatched)))
+        logger.info("Checking %s downloads for %s snatched files" % (len(downloads), len(snatched)))
         ppcount = 0
         for book in snatched:
             found = False

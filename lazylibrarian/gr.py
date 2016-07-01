@@ -480,28 +480,33 @@ class GoodReads:
                     bookpages = book.find('num_pages').text
 
                     series,seriesNum = formatter.bookSeries(bookname)
-
-                    find_book_status = myDB.select('SELECT * FROM books WHERE BookID = "%s"' % bookid)
-                    if find_book_status:
-                        for resulted in find_book_status:
-                            book_status = resulted['Status']
-                    else:
-                        book_status = lazylibrarian.NEWBOOK_STATUS
-
+                    print bookname
                     dic = {':': '', '"': '', '\'': ''}
                     bookname = formatter.replace_all(bookname, dic)
 
                     bookname = unidecode(u'%s' % bookname)
                     bookname = bookname.strip()  # strip whitespace
 
+                    # GoodReads sometimes has multiple bookids for the same book (same author/title, different editions)
+                    # We use author/title instead of bookid so we just keep one...
+                    find_book_status = myDB.select('SELECT * FROM books WHERE BookName = "%s" and AuthorName = "%s"' % 
+                                                    (bookname, authorNameResult))
+                    if find_book_status:
+                        for resulted in find_book_status:
+                            book_status = resulted['Status']
+                    else:
+                        book_status = lazylibrarian.NEWBOOK_STATUS
+
                     if not (re.match('[^\w-]', bookname)):  # remove books with bad characters in title
                         if book_status != "Ignored":
-                            controlValueDict = {"BookID": bookid}
+                            #controlValueDict = {"BookID": bookid}
+                            controlValueDict = {"AuthorName": authorNameResult, "BookName": bookname}
                             newValueDict = {
-                                "AuthorName": authorNameResult,
+                                #"AuthorName": authorNameResult,
                                 "AuthorID": authorid,
                                 "AuthorLink": None,
-                                "BookName": bookname,
+                                #"BookName": bookname,
+                                "BookID": bookid,
                                 "BookSub": None,
                                 "BookDesc": bookdesc,
                                 "BookIsbn": bookisbn,

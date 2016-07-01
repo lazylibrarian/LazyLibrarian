@@ -534,9 +534,12 @@ class GoogleBooks:
                     bookrate = float(bookrate)
                     bookid = item['id']
 
+                    # use author/title instead of bookid, 
+                    # GoodReads has multiple bookids for the same book (different editions)
+                    # Not sure if googlebooks does too, but we only want one...
                     find_book_status = myDB.select(
-                        'SELECT * FROM books WHERE BookID = "%s"' %
-                        bookid)
+                        'SELECT * FROM books WHERE AuthorName = "%s" and BookName = "%s"' %
+                        (authorname, bookname))
                     if find_book_status:
                         for resulted in find_book_status:
                             book_status = resulted['Status']
@@ -545,13 +548,14 @@ class GoogleBooks:
 
                     if not (re.match('[^\w-]', bookname)):  # remove books with bad characters in title
                         if book_status != "Ignored":
-                            controlValueDict = {"BookID": bookid}
+                            controlValueDict = {"AuthorName": authorname, "BookName": bookname}
 
                             newValueDict = {
-                                "AuthorName": authorname,
+                                #"AuthorName": authorname,
+                                "BookID": bookid,
                                 "AuthorID": authorid,
                                 "AuthorLink": "",
-                                "BookName": bookname,
+                                #"BookName": bookname,
                                 "BookSub": booksub,
                                 "BookDesc": bookdesc,
                                 "BookIsbn": bookisbn,
