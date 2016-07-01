@@ -480,7 +480,6 @@ class GoodReads:
                     bookpages = book.find('num_pages').text
 
                     series,seriesNum = formatter.bookSeries(bookname)
-                    print bookname
                     dic = {':': '', '"': '', '\'': ''}
                     bookname = formatter.replace_all(bookname, dic)
 
@@ -488,92 +487,109 @@ class GoodReads:
                     bookname = bookname.strip()  # strip whitespace
 
                     # GoodReads sometimes has multiple bookids for the same book (same author/title, different editions)
-                    # We use author/title instead of bookid so we just keep one...
-                    find_book_status = myDB.select('SELECT * FROM books WHERE BookName = "%s" and AuthorName = "%s"' % 
-                                                    (bookname, authorNameResult))
+                    # and sometimes uses the same bookid if the book is the same but the title is slightly different
+                    # We use bookid, then reject if another author/title has a different bookid so we just keep one...
+                    find_book_status = myDB.select('SELECT * FROM books WHERE BookID = "%s"' % bookid)
                     if find_book_status:
                         for resulted in find_book_status:
                             book_status = resulted['Status']
                     else:
                         book_status = lazylibrarian.NEWBOOK_STATUS
-
-                    if not (re.match('[^\w-]', bookname)):  # remove books with bad characters in title
-                        if book_status != "Ignored":
-                            #controlValueDict = {"BookID": bookid}
-                            controlValueDict = {"AuthorName": authorNameResult, "BookName": bookname}
-                            newValueDict = {
-                                #"AuthorName": authorNameResult,
-                                "AuthorID": authorid,
-                                "AuthorLink": None,
-                                #"BookName": bookname,
-                                "BookID": bookid,
-                                "BookSub": None,
-                                "BookDesc": bookdesc,
-                                "BookIsbn": bookisbn,
-                                "BookPub": bookpub,
-                                "BookGenre": None,
-                                "BookImg": bookimg,
-                                "BookLink": booklink,
-                                "BookRate": bookrate,
-                                "BookPages": bookpages,
-                                "BookDate": pubyear,
-                                "BookLang": bookLanguage,
-                                "Status": book_status,
-                                "BookAdded": formatter.today(),
-                                "Series": series,
-                                "SeriesNum": seriesNum
-                            }
-
-                            resultsCount = resultsCount + 1
-
-                            myDB.upsert("books", newValueDict, controlValueDict)
-                            logger.debug(u"Book found: " + book.find('title').text + " " + pubyear)
-
-                            if 'nocover' in bookimg or 'nophoto' in bookimg:
-                                # try to get a cover from librarything
-                                workcover = bookwork.getBookCover(bookid)
-                                if workcover:
-                                    logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))
-                                    controlValueDict = {"BookID": bookid}
-                                    newValueDict = {"BookImg": workcover}
-                                    myDB.upsert("books", newValueDict, controlValueDict)
-
-                            elif bookimg.startswith('http'):
-                                link = bookwork.cache_cover(bookid, bookimg)
-                                if link is not None:
-                                    controlValueDict = {"BookID": bookid}
-                                    newValueDict = {"BookImg": link}
-                                    myDB.upsert("books", newValueDict, controlValueDict)
-
-                            if seriesNum == None:
-                                # try to get series info from librarything
-                                series, seriesNum = bookwork.getWorkSeries(bookid)
-                                if seriesNum:
-                                    logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))
-                                    controlValueDict = {"BookID": bookid}
-                                    newValueDict = {
-                                        "Series": series,
-                                        "SeriesNum": seriesNum
-                                    }
-                                    myDB.upsert("books", newValueDict, controlValueDict)
-
-                            worklink = bookwork.getWorkPage(bookid)
-                            if worklink:
-                                controlValueDict = {"BookID": bookid}
-                                newValueDict = {"WorkPage": worklink}
-                                myDB.upsert("books", newValueDict, controlValueDict)
-
-                            if not find_book_status:
-                                logger.debug(u"[%s] Added book: %s" % (authorname, bookname))
-                                added_count = added_count + 1
-                            else:
-                                logger.debug(u"[%s] Updated book: %s" % (authorname, bookname))
-                                updated_count = updated_count + 1
-                        else:
-                            book_ignore_count = book_ignore_count + 1
-                    else:
-                        logger.debug(u"removed result [" + bookname + "] for bad characters")
+                    
+                    rejected = False
+                    find_books = myDB.select('SELECT * FROM books WHERE BookName = "%s" and AuthorName = "%s"' % 
+                                                    (bookname, authorNameResult))                    
+                    if find_books:
+                        for find_book in find_books:
+                            if find_book['BookID'] != bookid:
+                                # we have a book with this author/title already
+                                logger.debug('Rejecting bookid %s for [%s][%s] got %s' % 
+                                    (find_book['BookID'], authorNameResult, bookname, bookid))
+                                rejected = True 
+                                 
+                    if not bookname:
+                        logger.debug('Rejecting bookid %s for %s, no bookname' % 
+                                (bookid, authorNameResult))
+                        rejected = True
+                                              
+                    if rejected:
                         removedResults = removedResults + 1
+                    else:
+                        if not (re.match('[^\w-]', bookname)):  # remove books with bad characters in title
+                            if book_status != "Ignored":
+                                controlValueDict = {"BookID": bookid}                              
+                                newValueDict = {
+                                    "AuthorName": authorNameResult,
+                                    "AuthorID": authorid,
+                                    "AuthorLink": None,
+                                    "BookName": bookname,
+                                    "BookSub": None,
+                                    "BookDesc": bookdesc,
+                                    "BookIsbn": bookisbn,
+                                    "BookPub": bookpub,
+                                    "BookGenre": None,
+                                    "BookImg": bookimg,
+                                    "BookLink": booklink,
+                                    "BookRate": bookrate,
+                                    "BookPages": bookpages,
+                                    "BookDate": pubyear,
+                                    "BookLang": bookLanguage,
+                                    "Status": book_status,
+                                    "BookAdded": formatter.today(),
+                                    "Series": series,
+                                    "SeriesNum": seriesNum
+                                }
+    
+                                resultsCount = resultsCount + 1
+    
+                                myDB.upsert("books", newValueDict, controlValueDict)
+                                logger.debug(u"Book found: " + book.find('title').text + " " + pubyear)
+    
+                                if 'nocover' in bookimg or 'nophoto' in bookimg:
+                                    # try to get a cover from librarything
+                                    workcover = bookwork.getBookCover(bookid)
+                                    if workcover:
+                                        logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))
+                                        controlValueDict = {"BookID": bookid}
+                                        newValueDict = {"BookImg": workcover}
+                                        myDB.upsert("books", newValueDict, controlValueDict)
+    
+                                elif bookimg.startswith('http'):
+                                    link = bookwork.cache_cover(bookid, bookimg)
+                                    if link is not None:
+                                        controlValueDict = {"BookID": bookid}
+                                        newValueDict = {"BookImg": link}
+                                        myDB.upsert("books", newValueDict, controlValueDict)
+    
+                                if seriesNum == None:
+                                    # try to get series info from librarything
+                                    series, seriesNum = bookwork.getWorkSeries(bookid)
+                                    if seriesNum:
+                                        logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))
+                                        controlValueDict = {"BookID": bookid}
+                                        newValueDict = {
+                                            "Series": series,
+                                            "SeriesNum": seriesNum
+                                        }
+                                        myDB.upsert("books", newValueDict, controlValueDict)
+    
+                                worklink = bookwork.getWorkPage(bookid)
+                                if worklink:
+                                    controlValueDict = {"BookID": bookid}
+                                    newValueDict = {"WorkPage": worklink}
+                                    myDB.upsert("books", newValueDict, controlValueDict)
+    
+                                if not find_book_status:
+                                    logger.debug(u"[%s] Added book: %s" % (authorname, bookname))
+                                    added_count = added_count + 1
+                                else:
+                                    logger.debug(u"[%s] Updated book: %s" % (authorname, bookname))
+                                    updated_count = updated_count + 1
+                            else:
+                                book_ignore_count = book_ignore_count + 1
+                        else:
+                            logger.debug(u"removed result [" + bookname + "] for bad characters")
+                            removedResults = removedResults + 1
 
                 loopCount = loopCount + 1
                 URL = 'http://www.goodreads.com/author/list/' + authorid + '.xml?' + \
@@ -620,7 +636,7 @@ class GoodReads:
 
         logger.debug("Found %s total books for author" % total_count)
         logger.debug("Removed %s bad language results for author" % ignored)
-        logger.debug("Removed %s bad character results for author" % removedResults)
+        logger.debug("Removed %s bad character or duplicate results for author" % removedResults)
         logger.debug("Ignored %s books by author marked as Ignored" % book_ignore_count)
         logger.debug("Imported/Updated %s books for author" % modified_count)
 
