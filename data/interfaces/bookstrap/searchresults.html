@@ -42,16 +42,16 @@
 
                     if authorlist:
                         if result['authorname'] in authorlist:
-                            destination = "authorPage?AuthorName="+result['authorname']
+                            destination = "authorPage?AuthorID="+result['authorid']
                             value = "Have Author"
                             but_class = "btn-info"
                         else:
-                            destination = "addAuthor?AuthorName="+result['authorname']
+                            destination = "addAuthor?AuthorName="+result['safeauthorname']
                             value = "Add Author"
                             but_class = "btn-success"
 
                     else:
-                        destination = "addAuthor?AuthorName="+result['authorname']
+                        destination = "addAuthor?AuthorName="+result['safeauthorname']
                         value = "Add Author"
                         but_class = "btn-success"
 

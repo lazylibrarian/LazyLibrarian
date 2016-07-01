@@ -391,13 +391,13 @@ class WebInterface(object):
             GB = GoogleBooks(name)
             queue = Queue.Queue()
             search_api = threading.Thread(
-                target=GB.find_results, args=[name, queue])
+                target=GB.find_results, name='GB-RESULTS', args=[name, queue])
             search_api.start()
         elif lazylibrarian.BOOK_API == "GoodReads":
             queue = Queue.Queue()
             GR = GoodReads(name)
             search_api = threading.Thread(
-                target=GR.find_results, args=[name, queue])
+                target=GR.find_results, name='GR-RESULTS', args=[name, queue])
             search_api.start()
         if len(name) == 0:
             raise cherrypy.HTTPRedirect("config")
@@ -405,7 +405,7 @@ class WebInterface(object):
         search_api.join()
         searchresults = queue.get()
 
-        authorsearch = myDB.select("SELECT * from authors")
+        authorsearch = myDB.select("SELECT AuthorName from authors")
         authorlist = []
         for item in authorsearch:
             authorlist.append(item['AuthorName'])
@@ -416,7 +416,7 @@ class WebInterface(object):
             booklist.append(item['BookID'])
 
         # need a url safe version of authorname for passing to
-        # searchresults.html
+        # searchresults.html as it might be a new author with no authorid yet
         resultlist = []
         for result in searchresults:
             result['safeauthorname'] = urllib.quote_plus(
@@ -432,39 +432,38 @@ class WebInterface(object):
 
 # AUTHOR ############################################################
 
-    def authorPage(self, AuthorName, BookLang=None, Ignored=False):
+    def authorPage(self, AuthorID, BookLang=None, Ignored=False):
         myDB = database.DBConnection()
 
         if Ignored:
-            languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorName LIKE ? \
-                                    AND Status ='Ignored'", [AuthorName.replace("'", "''")])
+            languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorID = '%s' \
+                                    AND Status ='Ignored'" % AuthorID)
             if BookLang:
-                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' AND BookLang = '%s' \
+                querybooks = "SELECT * from books WHERE AuthorID = '%s' AND BookLang = '%s' \
                               AND Status ='Ignored' order by BookDate DESC, BookRate DESC" % (
-                    AuthorName.replace("'", "''"), BookLang)
+                    AuthorID, BookLang)
             else:
-                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' and Status ='Ignored' \
-                              order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'", "''"))
+                querybooks = "SELECT * from books WHERE AuthorID = '%s' and Status ='Ignored' \
+                              order by BookDate DESC, BookRate DESC" % AuthorID
         else:
-            languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorName LIKE ? \
-                                    AND Status !='Ignored'", [AuthorName.replace("'", "''")])
+            languages = myDB.select(
+                "SELECT DISTINCT BookLang from books WHERE AuthorID = '%s' AND Status !='Ignored'" % AuthorID)
             if BookLang:
-                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' AND BookLang = '%s' \
+                querybooks = "SELECT * from books WHERE AuthorID = '%s' AND BookLang = '%s' \
                               AND Status !='Ignored' order by BookDate DESC, BookRate DESC" % (
-                    AuthorName.replace("'", "''"), BookLang)
+                    AuthorID, BookLang)
             else:
-                querybooks = "SELECT * from books WHERE AuthorName LIKE '%s' and Status !='Ignored' \
-                              order by BookDate DESC, BookRate DESC" % (AuthorName.replace("'", "''"))
+                querybooks = "SELECT * from books WHERE AuthorID = '%s' and Status !='Ignored' \
+                              order by BookDate DESC, BookRate DESC" % AuthorID
 
-        queryauthors = "SELECT * from authors WHERE AuthorName LIKE '%s'" % AuthorName.replace(
-            "'", "''")
+        queryauthors = "SELECT * from authors WHERE AuthorID = '%s'" % AuthorID
 
         author = myDB.action(queryauthors).fetchone()
         books = myDB.select(querybooks)
         if author is None:
             raise cherrypy.HTTPRedirect("home")
         return serve_template(
-            templatename="author.html", title=urllib.quote(author['AuthorName'].encode('utf-8')),
+            templatename="author.html", title=urllib.quote_plus(author['AuthorName'].encode('utf-8')),
                               author=author, books=books, languages=languages)
     authorPage.exposed = True
 
@@ -480,8 +479,7 @@ class WebInterface(object):
         myDB.upsert("authors", newValueDict, controlValueDict)
         logger.debug(
             u'AuthorID [%s]-[%s] Paused - redirecting to Author home page' % (AuthorID, AuthorName))
-        raise cherrypy.HTTPRedirect(
-            "authorPage?AuthorName=%s" % urllib.quote(AuthorName.encode('utf-8')))
+        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
     pauseAuthor.exposed = True
 
     def resumeAuthor(self, AuthorID):
@@ -496,8 +494,7 @@ class WebInterface(object):
         myDB.upsert("authors", newValueDict, controlValueDict)
         logger.debug(
             u'AuthorID [%s]-[%s] Restarted - redirecting to Author home page' % (AuthorID, AuthorName))
-        raise cherrypy.HTTPRedirect(
-            "authorPage?AuthorName=%s" % urllib.quote(AuthorName.encode('utf-8')))
+        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
     resumeAuthor.exposed = True
 
     def deleteAuthor(self, AuthorID):
@@ -512,16 +509,19 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("home")
     deleteAuthor.exposed = True
 
-    def refreshAuthor(self, AuthorName):
-        threading.Thread(target=importer.addAuthorToDB, args=[AuthorName, True]).start()
-        raise cherrypy.HTTPRedirect(
-            "authorPage?AuthorName=%s" % urllib.quote(AuthorName.encode('utf-8')))
+    def refreshAuthor(self, AuthorID):
+        myDB = database.DBConnection()
+        authorsearch = myDB.select(
+            'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
+        if len(authorsearch):  # to stop error if try to refresh an author while they are still loading
+            AuthorName = authorsearch[0]['AuthorName']
+            threading.Thread(target=importer.addAuthorToDB, name='REFRESHAUTHOR', args=[AuthorName, True]).start()
+        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
     refreshAuthor.exposed = True
 
     def addAuthor(self, AuthorName):
-        threading.Thread(target=importer.addAuthorToDB, args=[AuthorName, False]).start()
-        raise cherrypy.HTTPRedirect(
-            "authorPage?AuthorName=%s" % urllib.quote(AuthorName.encode('utf-8')))
+        threading.Thread(target=importer.addAuthorToDB, name='ADDAUTHOR', args=[AuthorName, False]).start()
+        raise cherrypy.HTTPRedirect("home")
     addAuthor.exposed = True
 
 # BOOKS #############################################################
@@ -544,10 +544,10 @@ class WebInterface(object):
         #   need to check and filter on BookLang if set
         if lazylibrarian.BOOKLANGFILTER is None or not len(lazylibrarian.BOOKLANGFILTER):
             rowlist = myDB.action(
-                'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid, booksub, booklink, workpage from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"').fetchall()
+                'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid, booksub, booklink, workpage, authorid from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"').fetchall()
         else:
             rowlist = myDB.action(
-                'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid, booksub, booklink, workpage from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored" and BOOKLANG="%s"' %
+                'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid, booksub, booklink, workpage, authorid from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored" and BOOKLANG="%s"' %
                 lazylibrarian.BOOKLANGFILTER).fetchall()
         # turn the sqlite rowlist into a list of lists
         d = []
@@ -582,7 +582,7 @@ class WebInterface(object):
                 l.append(
                     '<td id="bookart"><a href="%s" target="_new"><img src="%s" height="75" width="50"></a></td>' % (row[0], row[0]))
                 l.append(
-                    '<td id="authorname"><a href="authorPage?AuthorName=%s">%s</a></td>' % (row[1], row[1]))
+                    '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[12], row[1]))
                 if row[9]:  # is there a sub-title
                     l.append(
                         '<td id="bookname"><a href="%s" target="_new">%s</a><br><i class="smalltext">%s</i></td>' % (row[10], row[2], row[9]))
@@ -621,7 +621,7 @@ class WebInterface(object):
                 l.append(
                     '<td class="bookart text-center"><a href="%s" target="_blank" rel="noreferrer"><img src="%s" alt="Cover" class="bookcover-sm img-responsive"></a></td>' % (row[0], row[0]))
                 l.append(
-                    '<td class="authorname"><a href="authorPage?AuthorName=%s">%s</a></td>' % (row[1], row[1]))
+                    '<td class="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[12], row[1]))
                 if row[9]:  # is there a sub-title
                     l.append(
                         '<td class="bookname"><a href="%s" target="_blank" rel="noreferrer">%s</a><br><i class="smalltext">%s</i></td>' % (row[10], row[2], row[9]))
@@ -684,22 +684,22 @@ class WebInterface(object):
         if booksearch:
             myDB.upsert("books", {'Status': 'Wanted'}, {'BookID': bookid})
             for book in booksearch:
-                AuthorName = book['AuthorName']
+                AuthorID = book['AuthorID']
                 authorsearch = myDB.select(
-                    'SELECT * from authors WHERE AuthorName="%s"' % AuthorName)
+                    'SELECT * from authors WHERE AuthorID="%s"' % AuthorID)
                 if authorsearch:
                     # update authors needs to be updated every time a book is marked differently
                     lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE \
-                                           AuthorName="%s" AND Status != "Ignored" order by BookDate DESC' %
-                                           AuthorName).fetchone()
+                                           AuthorID="%s" AND Status != "Ignored" order by BookDate DESC' %
+                                           AuthorID).fetchone()
                     unignoredbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE \
-                                                 AuthorName="%s" AND Status != "Ignored"' % AuthorName).fetchone()
+                                                 AuthorID="%s" AND Status != "Ignored"' % AuthorID).fetchone()
                     totalbooks = myDB.action(
-                        'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s"' % AuthorName).fetchone()
-                    havebooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND \
-                                             (Status="Have" OR Status="Open")' % AuthorName).fetchone()
+                        'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % AuthorID).fetchone()
+                    havebooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND \
+                                             (Status="Have" OR Status="Open")' % AuthorID).fetchone()
 
-                    controlValueDict = {"AuthorName": AuthorName}
+                    controlValueDict = {"AuthorID": AuthorID}
                     newValueDict = {
                         "TotalBooks": totalbooks['counter'],
                         "UnignoredBooks": unignoredbooks['counter'],
@@ -714,13 +714,13 @@ class WebInterface(object):
                 GB = GoogleBooks(bookid)
                 queue = Queue.Queue()
                 find_book = threading.Thread(
-                    target=GB.find_book, args=[bookid, queue])
+                    target=GB.find_book, name='GB-BOOK', args=[bookid, queue])
                 find_book.start()
             elif lazylibrarian.BOOK_API == "GoodReads":
                 queue = Queue.Queue()
                 GR = GoodReads(bookid)
                 find_book = threading.Thread(
-                    target=GR.find_book, args=[bookid, queue])
+                    target=GR.find_book, name='GR-BOOK', args=[bookid, queue])
                 find_book.start()
             if len(bookid) == 0:
                 raise cherrypy.HTTPRedirect("config")
@@ -730,8 +730,8 @@ class WebInterface(object):
         books = [{"bookid": bookid}]
         self.startBookSearch(books)
 
-        if AuthorName:
-            raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
+        if AuthorI:
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
         else:
             raise cherrypy.HTTPRedirect("books")
     addBook.exposed = True
@@ -739,11 +739,11 @@ class WebInterface(object):
     def startBookSearch(self, books=None):
         if books:
             if lazylibrarian.USE_RSS():
-                threading.Thread(target=search_rss_book, args=[books]).start()
+                threading.Thread(target=search_rss_book, name='SEARCHRSS', args=[books]).start()
             if lazylibrarian.USE_NZB():
-                threading.Thread(target=search_nzb_book, args=[books]).start()
+                threading.Thread(target=search_nzb_book, name='SEARCHNZB', args=[books]).start()
             if lazylibrarian.USE_TOR():
-                threading.Thread(target=search_tor_book, args=[books]).start()
+                threading.Thread(target=search_tor_book, name='SEARCHTOR', args=[books]).start()
             if lazylibrarian.USE_RSS() or lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
                 logger.debug(u"Searching for book with id: " + books[0]["bookid"])
             else:
@@ -757,17 +757,21 @@ class WebInterface(object):
 
         bookdata = myDB.select('SELECT * from books WHERE BookID="%s"' % bookid)
         if bookdata:
-            AuthorName = bookdata[0]["AuthorName"]
+            AuthorID = bookdata[0]["AuthorID"]
 
             # start searchthreads
             books = [{"bookid": bookid}]
             self.startBookSearch(books)
 
-        if AuthorName:
-            raise cherrypy.HTTPRedirect("authorPage?AuthorName=%s" % AuthorName)
+        if AuthorID:
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
     searchForBook.exposed = True
 
     def openBook(self, bookid=None, **args):
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+            
         myDB = database.DBConnection()
 
         bookdata = myDB.select(
@@ -783,7 +787,11 @@ class WebInterface(object):
                 logger.info(u'Missing book %s,%s' % (authorName, bookName))
     openBook.exposed = True
 
-    def markBooks(self, AuthorName=None, action=None, redirect=None, **args):
+    def markBooks(self, AuthorID=None, action=None, redirect=None, **args):
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+            
         myDB = database.DBConnection()
         if not redirect:
             redirect = "books"
@@ -803,9 +811,9 @@ class WebInterface(object):
                     else:
                         authorsearch = myDB.select('SELECT * from books WHERE BookID = "%s"' % bookid)
                         for item in authorsearch:
-                            AuthorName = item['AuthorName']
+                            AuthorID = item['AuthorID']
                             bookname = item['BookName']
-                        authorcheck = myDB.select('SELECT * from authors WHERE AuthorName = "%s"' % AuthorName)
+                        authorcheck = myDB.select('SELECT * from authors WHERE AuthorID = "%s"' % AuthorID)
                         if authorcheck:
                             myDB.upsert("books", {"Status": "Skipped"}, {"BookID": bookid})
                             logger.info(u'Status set to Skipped for "%s"' % bookname)
@@ -816,16 +824,16 @@ class WebInterface(object):
         if redirect == "author" or authorcheck:
             # update authors needs to be updated every time a book is marked
             # differently
-            lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorName="%s" \
-                                   AND Status != "Ignored" order by BookDate DESC' % AuthorName).fetchone()
-            unignoredbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" \
-                                         AND Status != "Ignored"' % AuthorName).fetchone()
+            lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorID="%s" \
+                                   AND Status != "Ignored" order by BookDate DESC' % AuthorID).fetchone()
+            unignoredbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" \
+                                         AND Status != "Ignored"' % AuthorID).fetchone()
             totalbooks = myDB.action(
-                'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s"' % AuthorName).fetchone()
-            havebooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND \
-                                     (Status="Have" OR Status="Open")' % AuthorName).fetchone()
+                'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % AuthorID).fetchone()
+            havebooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND \
+                                     (Status="Have" OR Status="Open")' % AuthorID).fetchone()
 
-            controlValueDict = {"AuthorName": AuthorName}
+            controlValueDict = {"AuthorID": AuthorID}
             newValueDict = {
                 "TotalBooks": totalbooks['counter'],
                 "UnignoredBooks": unignoredbooks['counter'],
@@ -845,16 +853,15 @@ class WebInterface(object):
                     books.append({"bookid": bookid})
 
             if lazylibrarian.USE_RSS():
-                threading.Thread(target=search_rss_book, args=[books]).start()
+                threading.Thread(target=search_rss_book, name='SEARCHRSS', args=[books]).start()
             if lazylibrarian.USE_NZB():
-                threading.Thread(target=search_nzb_book, args=[books]).start()
+                threading.Thread(target=search_nzb_book, name='SEARCHNZB', args=[books]).start()
             if lazylibrarian.USE_TOR():
-                threading.Thread(target=search_tor_book, args=[books]).start()
+                threading.Thread(target=search_tor_book, name='SEARCHTOR', args=[books]).start()
 
         if redirect == "author":
             raise cherrypy.HTTPRedirect(
-                "authorPage?AuthorName=%s" %
-                AuthorName)
+                "authorPage?AuthorID=%s" % AuthorID)
         elif redirect == "books":
             raise cherrypy.HTTPRedirect("books")
         else:
@@ -980,6 +987,10 @@ class WebInterface(object):
     getPastIssues.exposed = True
 
     def openMag(self, bookid=None, **args):
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+            
         bookid = urllib.unquote_plus(bookid)
         myDB = database.DBConnection()
         # we may want to open an issue with a hashed bookid
@@ -1004,7 +1015,11 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("issuePage?title=%s" % urllib.quote_plus(bookid.encode('utf-8')))
     openMag.exposed = True
 
-    def markPastIssues(self, AuthorName=None, action=None, redirect=None, **args):
+    def markPastIssues(self, action=None, redirect=None, **args):
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+            
         myDB = database.DBConnection()
         if not redirect:
             redirect = "magazines"
@@ -1131,7 +1146,7 @@ class WebInterface(object):
     def startMagazineSearch(self, mags=None):
         if mags:
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
-                threading.Thread(target=search_magazines, args=[mags, False]).start()
+                threading.Thread(target=search_magazines, name='SEARCHMAG', args=[mags, False]).start()
                 logger.debug(u"Searching for magazine with title: %s" % mags[0]["bookid"])
             else:
                 logger.warn(u"Not searching for magazine, no download methods set, check config")
@@ -1167,12 +1182,11 @@ class WebInterface(object):
 # UPDATES ###########################################################
 
     def checkForUpdates(self):
-        # Set the install type (win,git,source) &
-        # check the version when the application starts
-        versioncheck.getInstallType()
-        lazylibrarian.CURRENT_VERSION = versioncheck.getCurrentVersion()
-        lazylibrarian.LATEST_VERSION = versioncheck.getLatestVersion()
-        lazylibrarian.COMMITS_BEHIND, lazylibrarian.COMMIT_LIST = versioncheck.getCommitDifferenceFromGit()
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+            
+        versioncheck.checkForUpdates()
         if lazylibrarian.COMMITS_BEHIND == 0:
             message = "up to date"
             return serve_template(templatename="shutdown.html", title="Version Check", message=message, timer=5)
@@ -1190,7 +1204,7 @@ class WebInterface(object):
 
     def forceUpdate(self):
         from lazylibrarian import updater
-        threading.Thread(target=updater.dbUpdate, args=[False]).start()
+        threading.Thread(target=updater.dbUpdate, name='DBUPDATE', args=[False]).start()
         raise cherrypy.HTTPRedirect("home")
     forceUpdate.exposed = True
 
@@ -1205,7 +1219,7 @@ class WebInterface(object):
 
     def libraryScan(self):
         try:
-            threading.Thread(target=librarysync.LibraryScan(lazylibrarian.DESTINATION_DIR)).start()
+            threading.Thread(target=librarysync.LibraryScan, name='LIBRARYSYNC', args=[lazylibrarian.DESTINATION_DIR]).start()
         except Exception as e:
             logger.error(u'Unable to complete the scan: %s' % e)
         raise cherrypy.HTTPRedirect("home")
@@ -1213,7 +1227,7 @@ class WebInterface(object):
 
     def magazineScan(self):
         try:
-            threading.Thread(target=magazinescan.magazineScan()).start()
+            threading.Thread(target=magazinescan.magazineScan, name='MAGAZINESCAN', args=[]).start()
         except Exception as e:
             logger.error(u'Unable to complete the scan: %s' % e)
         raise cherrypy.HTTPRedirect("magazines")
@@ -1221,7 +1235,7 @@ class WebInterface(object):
 
     def importAlternate(self):
         try:
-            threading.Thread(target=postprocess.processAlternate(lazylibrarian.ALTERNATE_DIR)).start()
+            threading.Thread(target=postprocess.processAlternate, name='IMPORTALT', args=[lazylibrarian.ALTERNATE_DIR]).start()
         except Exception as e:
             logger.error(u'Unable to complete the import: %s' % e)
         raise cherrypy.HTTPRedirect("manage")
@@ -1229,7 +1243,7 @@ class WebInterface(object):
 
     def importCSV(self):
         try:
-            threading.Thread(target=postprocess.processCSV(lazylibrarian.ALTERNATE_DIR)).start()
+            threading.Thread(target=postprocess.processCSV, name='PROCESSCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
         except Exception as e:
             logger.error(u'Unable to complete the import: %s' % e)
         raise cherrypy.HTTPRedirect("manage")
@@ -1237,7 +1251,7 @@ class WebInterface(object):
 
     def exportCSV(self):
         try:
-            threading.Thread(target=postprocess.exportCSV(lazylibrarian.ALTERNATE_DIR)).start()
+            threading.Thread(target=postprocess.exportCSV, name='EXPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
         except Exception as e:
             logger.error(u'Unable to complete the export: %s' % e)
         raise cherrypy.HTTPRedirect("manage")
@@ -1280,6 +1294,10 @@ class WebInterface(object):
 
     def clearLog(self):
         # Clear the log
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+            
         result = common.clearLog()
         logger.info(result)
         raise cherrypy.HTTPRedirect("logs")
@@ -1291,6 +1309,10 @@ class WebInterface(object):
         # 1 normal
         # 2 debug
         # >2 do not turn off file/console log
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+            
         if lazylibrarian.LOGFULL:  # if LOGLIST logging on, turn off
             lazylibrarian.LOGFULL = False
             if lazylibrarian.LOGLEVEL < 3:
@@ -1351,6 +1373,10 @@ class WebInterface(object):
     history.exposed = True
 
     def clearhistory(self, status=None):
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+            
         myDB = database.DBConnection()
         if status == 'all':
             logger.info(u"Clearing all history")
@@ -1457,27 +1483,27 @@ class WebInterface(object):
 # ALL ELSE ##########################################################
 
     def forceProcess(self, source=None):
-        threading.Thread(target=postprocess.processDir, args=[True, True]).start()
+        threading.Thread(target=postprocess.processDir, name='POSTPROCESS', args=[True, True]).start()
         raise cherrypy.HTTPRedirect(source)
     forceProcess.exposed = True
 
     def forceSearch(self, source=None):
         if source == "magazines":
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
-                threading.Thread(target=search_magazines, args=[None, True]).start()
+                threading.Thread(target=search_magazines, name='SEARCHMAG', args=[None, True]).start()
         elif source == "books":
             if lazylibrarian.USE_NZB():
-                threading.Thread(target=search_nzb_book).start()
+                threading.Thread(target=search_nzb_book, name='SEARCHNZB', args=[]).start()
             if lazylibrarian.USE_TOR():
-                threading.Thread(target=search_tor_book).start()
+                threading.Thread(target=search_tor_book, name='SEARCHTOR', args=[]).start()
             if lazylibrarian.USE_RSS():
-                threading.Thread(target=search_rss_book).start()
+                threading.Thread(target=search_rss_book, name='SEARCHRSS', args=[]).start()
         else:
             logger.debug(u"forceSearch called with bad source")
         raise cherrypy.HTTPRedirect(source)
     forceSearch.exposed = True
 
-    def manage(self, AuthorName=None, action=None, whichStatus=None, source=None, **args):
+    def manage(self, action=None, whichStatus=None, source=None, **args):
         # myDB = database.DBConnection()
         # books only holds status [skipped wanted open have ignored]
         # wanted holds status [snatched processed]
@@ -1498,7 +1524,7 @@ class WebInterface(object):
         # print "getManage %s" % iDisplayStart
         #   need to filter on whichStatus
         rowlist = myDB.action(
-            'SELECT authorname, bookname, series, seriesnum, bookdate, bookid, booklink, booksub from books WHERE STATUS="%s"' %
+            'SELECT authorname, bookname, series, seriesnum, bookdate, bookid, booklink, booksub, authorid from books WHERE STATUS="%s"' %
             lazylibrarian.MANAGEFILTER).fetchall()
         # turn the sqlite rowlist into a list of lists
         d = []
@@ -1507,7 +1533,7 @@ class WebInterface(object):
             l = []  # for each Row use a separate list
 
             l.append('<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[5])
-            l.append('<td id="authorname"><a href="authorPage?AuthorName=%s">%s</a></td>' % (row[0], row[0]))
+            l.append('<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[8], row[0]))
 
             if row[7]:  # is there a sub-title
                 l.append('<td id="bookname"><a href="%s" target="_new">%s</a><br><i class="smalltext">%s</i></td>' % (row[6], row[1], row[7]))

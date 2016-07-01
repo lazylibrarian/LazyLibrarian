@@ -1,8 +1,7 @@
-import threading
 import urllib2
 import os
 import re
-
+import threading
 import lazylibrarian
 
 from lazylibrarian import logger, database, formatter, notifiers, providers
@@ -14,13 +13,20 @@ from lazylibrarian.searchtorrents import TORDownloadMethod
 from lazylibrarian.searchnzb import NZBDownloadMethod
 
 
+def cron_search_rss_book():
+    threading.currentThread().name = "CRON-SEARCHRSS"
+    search_rss_book()
+
 def search_rss_book(books=None, reset=False):
+    threadname = threading.currentThread().name
+    if "Thread-" in threadname:
+        threading.currentThread().name = "SEARCHRSS"
+
     if not(lazylibrarian.USE_RSS()):
         logger.warn('RSS search is disabled')
         common.schedule_job(action='Stop', target='search_rss_book')
         return
-    # rename this thread
-    threading.currentThread().name = "SEARCHRSSBOOKS"
+
     myDB = database.DBConnection()
     searchlist = []
 

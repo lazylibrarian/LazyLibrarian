@@ -1,7 +1,6 @@
 import os
 import datetime
 import lazylibrarian
-import threading
 import subprocess
 from lazylibrarian import database, logger, formatter, notifiers, common
 from hashlib import sha1
@@ -64,10 +63,7 @@ def create_id(issuename=None):
     return hashID
 
 
-def magazineScan(thread=None):
-    # rename this thread
-    if thread is None:
-        threading.currentThread().name = "MAGAZINESCAN"
+def magazineScan():
 
     myDB = database.DBConnection()
 

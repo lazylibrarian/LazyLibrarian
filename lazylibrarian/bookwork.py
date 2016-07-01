@@ -3,15 +3,12 @@ import urllib
 import urllib2
 import socket
 import time
-import threading
 import lazylibrarian
 from lazylibrarian import logger, formatter, database
 from lazylibrarian.common import USER_AGENT
 
-def getBookCovers(thread=None):
+def getBookCovers():
     """ Try to get a cover image for all books """
-    if thread is None:
-        threading.currentThread().name = "GETBOOKCOVERS"
 
     myDB = database.DBConnection()
     books = myDB.select('select BookID,BookImg from books where BookImg like "%nocover%"')
@@ -31,10 +28,8 @@ def getBookCovers(thread=None):
         logger.debug('No missing covers')
 
        
-def setWorkPages(thread=None):
+def setWorkPages():
     """ Set the workpage link for any books that don't already have one """
-    if thread is None:
-        threading.currentThread().name = "SETWORKPAGES"
 
     myDB = database.DBConnection()
      
@@ -100,7 +95,7 @@ def librarything_wait():
     lazylibrarian.LAST_LIBRARYTHING = time_now
     
     
-def getBookWork(bookID=None):
+def getBookWork(bookID=None, reason=None):
     """ return the contents of the LibraryThing workpage for the given bookid
         preferably from the cache. If not already cached cache the results
         Return None if no workpage available """
@@ -108,6 +103,9 @@ def getBookWork(bookID=None):
         logger.error("getBookWork - No bookID")
         return None
 
+    if not reason:
+        reason = ""
+        
     myDB = database.DBConnection()
      
     item = myDB.action('select BookName,AuthorName,BookISBN from books where bookID="%s"' % bookID).fetchone()
@@ -123,7 +121,8 @@ def getBookWork(bookID=None):
         if os.path.isfile(workfile):
             # use cached file if possible to speed up refreshactiveauthors and librarysync re-runs
             lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
-            logger.debug(u"getBookWork: Returning Cached response for %s" % workfile)
+            
+            logger.debug(u"getBookWork: Returning Cached WorkPage for %s %s" % (bookID, reason))
             with open(workfile, "r") as cachefile:
                 source = cachefile.read()
             return source
@@ -173,7 +172,7 @@ def getWorkPage(bookID=None):
     if not bookID:
         logger.error("getWorkPage - No bookID")
         return ''
-    work = getBookWork(bookID)
+    work = getBookWork(bookID, "Workpage")
     if work:
         try:
             page = work.split('og:url')[1].split('="')[1].split('"')[0]
@@ -188,7 +187,7 @@ def getWorkSeries(bookID=None):
     if not bookID:
         logger.error("getWorkSeries - No bookID")
         return None, None
-    work = getBookWork(bookID)
+    work = getBookWork(bookID, "Series")
     if work:
         try:
             series = work.split('<a href="/series/')[1].split('">')[1].split('</a>')[0]
@@ -224,7 +223,7 @@ def getBookCover(bookID=None):
         return coverlink
                 
     lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1    
-    work = getBookWork(bookID)
+    work = getBookWork(bookID, "Cover")
     if work:
         try:
             img = work.split('og:image')[1].split('content="')[1].split('"')[0]

@@ -13,7 +13,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-from lazylibrarian import importer, postprocess, versioncheck, logger, database, \
+from lazylibrarian import importer, postprocess, logger, database, \
     updater, librarysync, magazinescan, formatter, common, bookwork
 from lazylibrarian.searchnzb import search_nzb_book
 from lazylibrarian.searchtorrents import search_tor_book
@@ -129,6 +129,10 @@ class Api(object):
 
     def fetchData(self):
 
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "API"
+            
         if self.data == 'OK':
             args = []
             if 'name' in self.kwargs:
@@ -342,14 +346,14 @@ class Api(object):
         if 'wait' in kwargs:
             updater.dbUpdate(False)
         else:
-            threading.Thread(target=updater.dbUpdate, args=[False]).start()
+            threading.Thread(target=updater.dbUpdate, name='API-DBUPDATE', args=[False]).start()
 
     def _forceMagSearch(self, **kwargs):
         if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
             if 'wait' in kwargs:
                 search_magazines(None, True)
             else:
-                threading.Thread(target=search_magazines, args=[None, True]).start()
+                threading.Thread(target=search_magazines, name='API-SEARCHMAGS', args=[None, True]).start()
         else:
             self.data = 'No search methods set, check config'
 
@@ -358,17 +362,17 @@ class Api(object):
             if 'wait' in kwargs:
                 search_nzb_book()
             else:
-                threading.Thread(target=search_nzb_book, args=[]).start()
+                threading.Thread(target=search_nzb_book, name='API-SEARCHNZB', args=[]).start()
         if lazylibrarian.USE_TOR():
             if 'wait' in kwargs:
                 search_tor_book()
             else:
-                threading.Thread(target=search_tor_book, args=[]).start()
+                threading.Thread(target=search_tor_book, name='API-SEARCHTOR', args=[]).start()
         if lazylibrarian.USE_RSS():
             if 'wait' in kwargs:
                 search_rss_book()
             else:
-                threading.Thread(target=search_rss_book, args=[]).start()
+                threading.Thread(target=search_rss_book, name='API-SEARCHRSS', args=[]).start()
         if not lazylibrarian.USE_RSS() and not lazylibrarian.USE_NZB() and not lazylibrarian.USE_TOR():
             self.data = "No search methods set, check config"
 
@@ -379,31 +383,31 @@ class Api(object):
         if 'wait' in kwargs:
             librarysync.LibraryScan(lazylibrarian.DESTINATION_DIR)
         else:
-            threading.Thread(target=librarysync.LibraryScan, args=[lazylibrarian.DESTINATION_DIR]).start()
+            threading.Thread(target=librarysync.LibraryScan, name='API-LIBRARYSCAN', args=[lazylibrarian.DESTINATION_DIR]).start()
     
     def _forceMagazineScan(self, **kwargs):
         if 'wait' in kwargs:
             magazinescan.magazineScan()
         else:
-            threading.Thread(target=magazinescan.magazineScan, args=[]).start()
+            threading.Thread(target=magazinescan.magazineScan, name='API-MAGSCAN', args=[]).start()
     
     def _cleanCache(self, **kwargs):
         if 'wait' in kwargs:
             common.cleanCache()
         else:
-            threading.Thread(target=common.cleanCache, args=[]).start()
+            threading.Thread(target=common.cleanCache, name='API-CLEANCACHE', args=[]).start()
             
     def _setWorkPages(self, **kwargs):
         if 'wait' in kwargs:
             bookwork.setWorkPages()
         else:
-            threading.Thread(target=bookwork.setWorkPages, args=[]).start()
+            threading.Thread(target=bookwork.setWorkPages, name='API-SETWORKPAGES', args=[]).start()
             
     def _getBookCovers(self, **kwargs):
         if 'wait' in kwargs:
             bookwork.getBookCovers()
         else:
-            threading.Thread(target=bookwork.getBookCovers, args=[]).start()
+            threading.Thread(target=bookwork.getBookCovers, name='API-GETBOOKCOVERS', args=[]).start()
             
     def _getVersion(self, **kwargs):
         self.data = {
@@ -431,12 +435,12 @@ class Api(object):
         if lazylibrarian.BOOK_API == "GoogleBooks":
             GB = GoogleBooks(kwargs['name'])
             queue = Queue.Queue()
-            search_api = threading.Thread(target=GB.find_results, args=[kwargs['name'], queue])
+            search_api = threading.Thread(target=GB.find_results, name='API-GBRESULTS', args=[kwargs['name'], queue])
             search_api.start()
         elif lazylibrarian.BOOK_API == "GoodReads":
             queue = Queue.Queue()
             GR = GoodReads(kwargs['name'])
-            search_api = threading.Thread(target=GR.find_results, args=[kwargs['name'], queue])
+            search_api = threading.Thread(target=GR.find_results, name='API-GRRESULTS', args=[kwargs['name'], queue])
             search_api.start()
 
         search_api.join()
@@ -450,12 +454,12 @@ class Api(object):
         if lazylibrarian.BOOK_API == "GoogleBooks":
             GB = GoogleBooks(kwargs['name'])
             queue = Queue.Queue()
-            search_api = threading.Thread(target=GB.find_results, args=[kwargs['name'], queue])
+            search_api = threading.Thread(target=GB.find_results, name='API-GBRESULTS', args=[kwargs['name'], queue])
             search_api.start()
         elif lazylibrarian.BOOK_API == "GoodReads":
             queue = Queue.Queue()
             GR = GoodReads(kwargs['name'])
-            search_api = threading.Thread(target=GR.find_results, args=[kwargs['name'], queue])
+            search_api = threading.Thread(target=GR.find_results, name='API-GRRESULTS', args=[kwargs['name'], queue])
             search_api.start()
 
         search_api.join()
@@ -484,17 +488,17 @@ class Api(object):
             if 'wait' in kwargs:
                 search_rss_book(books)
             else:
-                threading.Thread(target=search_rss_book, args=[books]).start()
+                threading.Thread(target=search_rss_book, name='API-SEARCHRSS', args=[books]).start()
         if lazylibrarian.USE_NZB():
             if 'wait' in kwargs:
                 search_nzb_book(books)
             else:
-                threading.Thread(target=search_nzb_book, args=[books]).start()
+                threading.Thread(target=search_nzb_book, name='API-SEARCHNZB', args=[books]).start()
         if lazylibrarian.USE_TOR():
             if 'wait' in kwargs:
                 search_tor_book(books)
             else:
-                threading.Thread(target=search_tor_book, args=[books]).start()
+                threading.Thread(target=search_tor_book, name='API-SEARCHTOR', args=[books]).start()
         if not lazylibrarian.USE_RSS() and not lazylibrarian.USE_NZB() and not lazylibrarian.USE_TOR():
             self.data = "No search methods set, check config"
 
@@ -583,19 +587,17 @@ class Api(object):
         if 'wait' in kwargs:
             postprocess.processAlternate(lazylibrarian.ALTERNATE_DIR)
         else:
-            threading.Thread(target=postprocess.processAlternate, args=[lazylibrarian.ALTERNATE_DIR]).start()
+            threading.Thread(target=postprocess.processAlternate, name='API-IMPORTALT', args=[lazylibrarian.ALTERNATE_DIR]).start()
             
     def _importCSVwishlist(self, **kwargs):
         if 'wait' in kwargs:
             postprocess.processCSV(lazylibrarian.ALTERNATE_DIR)
         else:
-            threading.Thread(target=postprocess.processCSV, args=[lazylibrarian.ALTERNATE_DIR]).start()
+            threading.Thread(target=postprocess.processCSV, name='API-PROCESSCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
             
     def _exportCSVwishlist(self, **kwargs):
         if 'wait' in kwargs:
             postprocess.exportCSV(lazylibrarian.ALTERNATE_DIR)
         else:
-            threading.Thread(target=postprocess.exportCSV, args=[lazylibrarian.ALTERNATE_DIR]).start()
+            threading.Thread(target=postprocess.exportCSV, name='API-EXPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
             
-
-

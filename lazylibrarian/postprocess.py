@@ -77,10 +77,16 @@ def processAlternate(source_dir=None):
         logger.warn("No book file found in %s" % source_dir)
 
 
+def cron_processDir():
+    threading.currentThread().name = "CRON-POSTPROCESS"
+    processDir()
+    
 def processDir(force=False, reset=False):
-    # rename this thread
-    threading.currentThread().name = "POSTPROCESS"
 
+    threadname = threading.currentThread().name
+    if "Thread-" in threadname:
+        threading.currentThread().name = "POSTPROCESS"
+        
     if not lazylibrarian.DOWNLOAD_DIR or not os.path.isdir(lazylibrarian.DOWNLOAD_DIR):
         processpath = os.getcwd()
     else:

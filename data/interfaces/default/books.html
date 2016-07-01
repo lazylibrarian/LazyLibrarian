@@ -42,61 +42,9 @@
 		<th id="seriesNum">Num</th>
                 <th id="stars">Rating</th>
                 <th id="date">Released</th>
-                <!-- <th id="language" hidden="true">Language</th> -->
                 <th id="status">Status</th>
             </tr>
         </thead>
-<!-- This section is unused now, we use server-side processing instead
-        <tbody>
-        %for result in books:
-                <%
-                    if result['bookrate'] < 0.5:
-                        starimg = '0-stars.png'
-                    elif result['bookrate'] >= 0.5 and result['bookrate'] < 1.5:
-                        starimg = '1-stars.png'
-                    elif result['bookrate'] >= 1.5 and result['bookrate'] < 2.5:
-                        starimg = '2-stars.png'
-                    elif result['bookrate'] >= 2.5 and result['bookrate'] < 3.5:
-                        starimg = '3-stars.png'
-                    elif result['bookrate'] >= 3.5 and result['bookrate'] < 4.5:
-                        starimg = '4-stars.png'
-                    elif result['bookrate'] >= 4.5:
-                        starimg = '5-stars.png'
-                    else:
-                        starimg = '0-stars.png'
-                %>
-                <tr class="gradeZ">
-                    <td id="select"><input type="checkbox" name="${result['BookID']}" class="checkbox" /></td>
-                    <td id="bookart"><a href="${result['bookimg']}" target="_new"><img src="${result['bookimg']}" height="75" width="50"></a></td>
-                    <td id="authorname"><a href="authorPage?AuthorName=${result['AuthorName']}">${result['authorname']}</a></td>
-                    %if result['booksub']:
-                        <td id="bookname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a><br>
-                        <i class="smalltext">${result['booksub']}</i></td>
-                    %else:
-                        <td id="bookname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a></td>
-                    %endif
-                    <td id="series">${result['Series']}</td>
-                    <td id="seriesNum">${result['seriesNum']}</td>
-                    <td id="stars"><img src="images/${starimg}" width="50" height="10"></td>
-                    <td id="date">${result['BookDate']}</td>
-                    <td id="language" hidden="true">${result['booklang']}</td>
-                    %if result['Status'] == 'Open':
-                        <td id="status"><a class="button green" href="openBook?bookid=${result['bookid']}" target="_self">${result['Status']}</a></td>
-                    %else:
-                        %if result['Status'] == 'Wanted':
-                            <td id="status"><a class="button red" href="searchForBook?bookid=${result['BookID']}" target="_self"><span class="a">${result['Status']}</span><span class="b">Search</span></a></td>
-                        %else:
-                            %if result['Status'] == 'Snatched':
-                                <td id="status"><a class="button">${result['Status']}</a></td>
-                            %else:
-                                <td id="status"><a class="button grey">${result['Status']}</a></td>
-                            %endif
-                        %endif
-                    %endif
-                </tr>
-        %endfor
-        </tbody>
--->
     </table>
 </%def>
 

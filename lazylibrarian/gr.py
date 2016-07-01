@@ -2,7 +2,6 @@ import urllib
 import urllib2
 import socket
 import re
-import threading
 import time
 from xml.etree import ElementTree
 import lazylibrarian
@@ -98,7 +97,6 @@ class GoodReads:
         return root, valid_cache
 
     def find_results(self, authorname=None, queue=None):
-        threading.currentThread().name = "GR-SEARCH"
         resultlist = []
         api_hits = 0
         # Goodreads doesn't like initials followed by spaces,
@@ -635,7 +633,6 @@ class GoodReads:
         return books_dict
 
     def find_book(self, bookid=None, queue=None):
-        threading.currentThread().name = "GR-ADD-BOOK"
         myDB = database.DBConnection()
 
         URL = 'https://www.goodreads.com/book/show/' + bookid + '?' + urllib.urlencode(self.params)
