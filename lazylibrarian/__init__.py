@@ -340,13 +340,14 @@ def initialize():
             except OSError:
                 if LOGLEVEL:
                     print '%s : Unable to create folder for logs. Only logging to console.' % LOGDIR
-
+        
         # Start the logger, silence console logging if we need to
         CFGLOGLEVEL = check_setting_int(CFG, 'General', 'loglevel', 3)
-        if CFGLOGLEVEL == 3:  # default value if none in config
-            LOGLEVEL = 2  # If not set in Config, then lets set to DEBUG
-        else:
-            LOGLEVEL = CFGLOGLEVEL  # Config setting picked up
+        if LOGLEVEL == 99:  # no debug or quiet on cmdline
+            if CFGLOGLEVEL == 3:  # default value if none in config
+                LOGLEVEL = 2  # If not set in Config, then lets set to DEBUG
+            else:
+                LOGLEVEL = CFGLOGLEVEL  # Config setting picked up
 
         logger.lazylibrarian_log.initLogger(loglevel=LOGLEVEL)
         logger.info("Log level set to [%s]- Log Directory is [%s] - Config level is [%s]" % (
