@@ -80,13 +80,13 @@ def processAlternate(source_dir=None):
 def cron_processDir():
     threading.currentThread().name = "CRON-POSTPROCESS"
     processDir()
-    
+
 def processDir(force=False, reset=False):
 
     threadname = threading.currentThread().name
     if "Thread-" in threadname:
         threading.currentThread().name = "POSTPROCESS"
-        
+
     if not lazylibrarian.DOWNLOAD_DIR or not os.path.isdir(lazylibrarian.DOWNLOAD_DIR):
         processpath = os.getcwd()
     else:
@@ -277,8 +277,8 @@ def processDir(force=False, reset=False):
                 # if it's a book, reset status so we try for a different version
                 # if it's a magazine, user can select a different one from pastissued table
                 if bookname is not None:
-                    myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % book['BookID'])                    
-                    
+                    myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % book['BookID'])
+
                 # at this point, as it failed we should move it or it will get postprocessed
                 # again (and fail again)
                 try:
@@ -307,7 +307,7 @@ def processDir(force=False, reset=False):
             logger.info('1 book/mag has been processed.')
         else:
             logger.info('%s books/mags have been processed.' % ppcount)
-            
+
     if reset:
         common.schedule_job(action='Restart', target='processDir')
 
@@ -638,7 +638,10 @@ def exportCSV(search_dir=None, status="Wanted"):
                         resulted['BookIsbn'], resulted['AuthorID']])
                 csvwrite.writerow([("%s" % s).encode(lazylibrarian.SYS_ENCODING) for s in row])
                 count = count + 1
-        logger.info(u"CSV exported %s books to %s" % (count, csvFile))
+        plural = 's'
+        if count == 1:
+            plural = ''
+        logger.info(u"CSV exported %s book%s to %s" % (count, plural, csvFile))
 
 
 def processCSV(search_dir=None):
@@ -731,8 +734,17 @@ def processCSV(search_dir=None):
             else:
                 logger.warn(u"Skipping book %s by %s, not found in database" % (bookname, authorname))
                 skipcount = skipcount + 1
-        logger.info(u"Added %i new authors, marked %i books as 'Wanted', %i books not found" %
-                    (authcount, bookcount, skipcount))
+        pluralauth = 's'
+        pluralbook = 's'
+        pluralskip = 's'
+        if authcount == 1:
+            pluralauth = ''
+        if bookcount == 1:
+            pluralbook = ''
+        if skipcount == 1:
+            pluralskip = ''
+        logger.info(u"Added %i new author%s, marked %i book%s as 'Wanted', %i book%s not found" %
+                    (authcount, pluralauth, bookcount, pluralbook, skipcount, pluralskip))
 
 
 class imgGoogle(FancyURLopener):

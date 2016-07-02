@@ -103,7 +103,7 @@ def search_nzb_book(books=None, reset=False):
             found = processResultList(resultlist, book, "author")
 
         if not found:
-            logger.debug("NZB Searches returned no results. Adding book %s to queue." % book['searchterm'])
+            logger.debug("NZB Searches for %s returned no results." % book['searchterm'])
         else:
             nzb_count = nzb_count + 1
 
@@ -150,8 +150,8 @@ def processResultList(resultlist, book, searchtype):
         if already_failed:
             logger.debug("Rejecting %s, blacklisted at %s" % (nzb_Title, already_failed['NZBprov']))
             rejected = True
-        
-        if not rejected:    
+
+        if not rejected:
             for word in reject_list:
                 if word in nzb_Title.lower() and not word in author.lower() and not word in title.lower():
                     rejected = True
@@ -162,14 +162,14 @@ def processResultList(resultlist, book, searchtype):
         if nzbsize_temp is None:
             nzbsize_temp = 1000
         nzbsize = round(float(nzbsize_temp) / 1048576, 2)
-        
+
         maxsize = formatter.check_int(lazylibrarian.REJECT_MAXSIZE, 0)
         if not rejected:
             if maxsize and nzbsize > maxsize:
                 rejected = True
                 logger.debug("Rejecting %s, too large" % nzb_Title)
-        
-        if not rejected:    
+
+        if not rejected:
             if nzbAuthor_match >= match_ratio and nzbBook_match >= match_ratio:
                 bookid = book['bookid']
                 nzbTitle = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
@@ -187,7 +187,7 @@ def processResultList(resultlist, book, searchtype):
                     "NZBmode": nzbmode,
                     "Status": "Skipped"
                 }
-    
+
                 score = (nzbBook_match + nzbAuthor_match)/2  # as a percentage
                 # lose a point for each extra word in the title so we get the closest match
                 words = len(formatter.getList(nzb_Title))
@@ -263,7 +263,7 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
                     f.write(nzbfile)
                 logger.debug('NZB file saved to: ' + nzbpath)
                 download = True
-              
+
             except Exception as e:
                 logger.error('%s not writable, NZB not saved. Error: %s' % (nzbpath, e))
                 download = False

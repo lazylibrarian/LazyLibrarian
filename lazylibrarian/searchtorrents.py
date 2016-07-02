@@ -105,7 +105,7 @@ def search_tor_book(books=None, reset=False):
             found = processResultList(resultlist, book, "author")
 
         if not found:
-            logger.debug("Searches returned no results. Adding book %s to queue." % book['searchterm'])
+            logger.debug("Searches for %s returned no results." % book['searchterm'])
         else:
             tor_count = tor_count + 1
 
@@ -144,16 +144,16 @@ def processResultList(resultlist, book, searchtype):
         torBook_match = fuzz.token_set_ratio(title, torTitle)
         logger.debug(u"TOR author/book Match: %s/%s for %s" % (torAuthor_match, torBook_match, torTitle))
         tor_url = tor['tor_url']
-        
+
         rejected = False
-        
+
         already_failed = myDB.action('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' %
                                     tor_url).fetchone()
         if already_failed:
             logger.debug("Rejecting %s, blacklisted at %s" % (torTitle, already_failed['NZBprov']))
             rejected = True
-        
-        if not rejected:    
+
+        if not rejected:
             for word in reject_list:
                 if word in torTitle.lower() and not word in author.lower() and not word in title.lower():
                     rejected = True
@@ -174,8 +174,8 @@ def processResultList(resultlist, book, searchtype):
         if not rejected:
             if torAuthor_match >= match_ratio and torBook_match >= match_ratio:
                 bookid = book['bookid']
-                tor_Title = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip() 
-    
+                tor_Title = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
+
                 controlValueDict = {"NZBurl": tor_url}
                 newValueDict = {
                     "NZBprov": tor['tor_prov'],
@@ -186,7 +186,7 @@ def processResultList(resultlist, book, searchtype):
                     "NZBmode": "torrent",
                     "Status": "Skipped"
                 }
-    
+
                 score = (torBook_match + torAuthor_match)/2  # as a percentage
                 # lose a point for each extra word in the title so we get the closest match
                 words = len(formatter.getList(torTitle))
@@ -194,7 +194,7 @@ def processResultList(resultlist, book, searchtype):
                 words -= len(formatter.getList(title))
                 score -= abs(words)
                 matches.append([score, torTitle, newValueDict, controlValueDict])
-    
+
     if matches:
         highest = max(matches, key=lambda x: x[0])
         score = highest[0]
