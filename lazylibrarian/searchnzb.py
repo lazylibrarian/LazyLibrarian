@@ -6,11 +6,12 @@ import threading
 import lazylibrarian
 from . import request
 
-from lazylibrarian import logger, database, formatter, providers, nzbget, sabnzbd, notifiers, classes, postprocess
+from lazylibrarian import logger, database, providers, nzbget, sabnzbd, notifiers, classes, postprocess
 
 from lib.fuzzywuzzy import fuzz
 
 from lazylibrarian.common import USER_AGENT
+from lazylibrarian.formatter import plural, latinToAscii, replace_all, getList, nzbdate2format, now, check_int
 
 import lazylibrarian.common as common
 # new to support torrents
@@ -47,7 +48,7 @@ def search_nzb_book(books=None, reset=False):
         logger.debug("NZB search requested for no books or invalid BookID")
         return
     else:
-        logger.info('NZB Searching for %i book%s' % (len(searchbooks), formatter.plural(len(searchbooks))))
+        logger.info('NZB Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
 
     for searchbook in searchbooks:
         bookid = searchbook[0]
@@ -58,12 +59,12 @@ def search_nzb_book(books=None, reset=False):
                ',': '', '*': '', ':': '', ';': ''}
         dicSearchFormatting = {'.': ' +', ' + ': ' '}
 
-        author = formatter.latinToAscii(formatter.replace_all(author, dic))
-        book = formatter.latinToAscii(formatter.replace_all(book, dic))
+        author = latinToAscii(replace_all(author, dic))
+        book = latinToAscii(replace_all(book, dic))
         if '(' in book:  # may have title (series/extended info)
             book = book.split('(')[0]
         # TRY SEARCH TERM just using author name and book
-        author = formatter.latinToAscii(formatter.replace_all(author, dicSearchFormatting))
+        author = latinToAscii(replace_all(author, dicSearchFormatting))
         searchterm = author + ' ' + book
         searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
         searchterm = re.sub(r'\(.*?\)', '', searchterm).encode('utf-8')
@@ -105,7 +106,7 @@ def search_nzb_book(books=None, reset=False):
         else:
             nzb_count = nzb_count + 1
 
-    logger.info("NZBSearch for Wanted items complete, found %s book%s" % (nzb_count, formatter.plural(nzb_count)))
+    logger.info("NZBSearch for Wanted items complete, found %s book%s" % (nzb_count, plural(nzb_count)))
 
     if reset:
         common.schedule_job(action='Restart', target='search_nzb_book')
@@ -124,13 +125,13 @@ def processResultList(resultlist, book, searchtype):
            ',': '', '*': '', ':': '', ';': '', '\'': ''}
 
     match_ratio = int(lazylibrarian.MATCH_RATIO)
-    reject_list = formatter.getList(lazylibrarian.REJECT_WORDS)
-    author = formatter.latinToAscii(formatter.replace_all(book['authorName'], dic))
-    title = formatter.latinToAscii(formatter.replace_all(book['bookName'], dic))
+    reject_list = getList(lazylibrarian.REJECT_WORDS)
+    author = latinToAscii(replace_all(book['authorName'], dic))
+    title = latinToAscii(replace_all(book['bookName'], dic))
 
     matches = []
     for nzb in resultlist:
-        nzb_Title = formatter.latinToAscii(formatter.replace_all(nzb['nzbtitle'], dictrepl)).strip()
+        nzb_Title = latinToAscii(replace_all(nzb['nzbtitle'], dictrepl)).strip()
         nzb_Title = re.sub(r"\s\s+", " ", nzb_Title)  # remove extra whitespace
 
         nzbAuthor_match = fuzz.token_set_ratio(author, nzb_Title)
@@ -158,7 +159,7 @@ def processResultList(resultlist, book, searchtype):
             nzbsize_temp = 1000
         nzbsize = round(float(nzbsize_temp) / 1048576, 2)
 
-        maxsize = formatter.check_int(lazylibrarian.REJECT_MAXSIZE, 0)
+        maxsize = check_int(lazylibrarian.REJECT_MAXSIZE, 0)
         if not rejected:
             if maxsize and nzbsize > maxsize:
                 rejected = True
@@ -170,13 +171,13 @@ def processResultList(resultlist, book, searchtype):
                 nzbTitle = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
                 nzbprov = nzb['nzbprov']
                 nzbdate_temp = nzb['nzbdate']
-                nzbdate = formatter.nzbdate2format(nzbdate_temp)
+                nzbdate = nzbdate2format(nzbdate_temp)
                 nzbmode = nzb['nzbmode']
                 controlValueDict = {"NZBurl": nzburl}
                 newValueDict = {
                     "NZBprov": nzbprov,
                     "BookID": bookid,
-                    "NZBdate": formatter.now(),  # when we asked for it
+                    "NZBdate": now(),  # when we asked for it
                     "NZBsize": nzbsize,
                     "NZBtitle": nzbTitle,
                     "NZBmode": nzbmode,
@@ -185,9 +186,9 @@ def processResultList(resultlist, book, searchtype):
 
                 score = (nzbBook_match + nzbAuthor_match)/2  # as a percentage
                 # lose a point for each extra word in the title so we get the closest match
-                words = len(formatter.getList(nzb_Title))
-                words -= len(formatter.getList(author))
-                words -= len(formatter.getList(title))
+                words = len(getList(nzb_Title))
+                words -= len(getList(author))
+                words -= len(getList(title))
                 score -= abs(words)
                 matches.append([score, nzb_Title, newValueDict, controlValueDict])
 
@@ -212,7 +213,7 @@ def processResultList(resultlist, book, searchtype):
                 snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
                                            newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             if snatch:
-                notifiers.notify_snatch(newValueDict["NZBtitle"] + ' at ' + formatter.now())
+                notifiers.notify_snatch(newValueDict["NZBtitle"] + ' at ' + now())
                 common.schedule_job(action='Start', target='processDir')
                 return True
 

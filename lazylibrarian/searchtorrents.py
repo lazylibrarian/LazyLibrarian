@@ -8,7 +8,7 @@ from hashlib import sha1
 import threading
 import lazylibrarian
 
-from lazylibrarian import logger, database, formatter, providers, notifiers, utorrent, transmission, qbittorrent, deluge
+from lazylibrarian import logger, database, utorrent, transmission, qbittorrent, deluge
 
 from lib.deluge_client import DelugeRPCClient
 
@@ -16,7 +16,11 @@ from lib.fuzzywuzzy import fuzz
 
 import unicodedata
 
-import lazylibrarian.common as common
+from lazylibrarian.common import schedule_job, USER_AGENT, removeDisallowedFilenameChars
+from lazylibrarian.formatter import plural, latinToAscii, replace_all, getList, check_int, now
+from lazylibrarian.providers import IterateOverTorrentSites
+from lazylibrarian.notifiers import notify_snatch
+
 # new to support torrents
 from StringIO import StringIO
 import gzip
@@ -54,7 +58,7 @@ def search_tor_book(books=None, reset=False):
         logger.debug("TOR search requested for no books or invalid BookID")
         return
     else:
-        logger.info('TOR Searching for %i book%s' % (len(searchbooks), formatter.plural(len(searchbooks))))
+        logger.info('TOR Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
 
     for searchbook in searchbooks:
         bookid = searchbook['BookID']
@@ -65,11 +69,11 @@ def search_tor_book(books=None, reset=False):
                ',': '', '*': '', ':': '', ';': ''}
         dicSearchFormatting = {'.': ' +', ' + ': ' '}
 
-        author = formatter.latinToAscii(formatter.replace_all(author, dic))
-        book = formatter.latinToAscii(formatter.replace_all(book, dic))
+        author = latinToAscii(replace_all(author, dic))
+        book = latinToAscii(replace_all(book, dic))
 
         # TRY SEARCH TERM just using author name and book type
-        author = formatter.latinToAscii(formatter.replace_all(author, dicSearchFormatting))
+        author = latinToAscii(replace_all(author, dicSearchFormatting))
         searchterm = author + ' ' + book  # + ' ' + lazylibrarian.EBOOK_TYPE
         searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
         searchterm = re.sub(r'\(.*?\)', '', searchterm).encode('utf-8')
@@ -80,7 +84,7 @@ def search_tor_book(books=None, reset=False):
     tor_count = 0
     for book in searchlist:
 
-        resultlist, nproviders = providers.IterateOverTorrentSites(book, 'book')
+        resultlist, nproviders = IterateOverTorrentSites(book, 'book')
         if not nproviders:
             logger.warn('No torrent providers are set, check config')
             return  # No point in continuing
@@ -89,17 +93,17 @@ def search_tor_book(books=None, reset=False):
 
         # if you can't find the book, try author/title without any "(extended details, series etc)"
         if not found and '(' in book['bookName']:
-            resultlist, nproviders = providers.IterateOverTorrentSites(book, 'shortbook')
+            resultlist, nproviders = IterateOverTorrentSites(book, 'shortbook')
             found = processResultList(resultlist, book, "shortbook")
 
         # if you can't find the book under "books", you might find under general search
         if not found:
-            resultlist, nproviders = providers.IterateOverTorrentSites(book, 'general')
+            resultlist, nproviders = IterateOverTorrentSites(book, 'general')
             found = processResultList(resultlist, book, "general")
 
         # if you still can't find the book, try with author only
         if not found:
-            resultlist, nproviders = providers.IterateOverTorrentSites(book, 'author')
+            resultlist, nproviders = IterateOverTorrentSites(book, 'author')
             found = processResultList(resultlist, book, "author")
 
         if not found:
@@ -107,10 +111,10 @@ def search_tor_book(books=None, reset=False):
         else:
             tor_count = tor_count + 1
 
-    logger.info("TORSearch for Wanted items complete, found %s book%s" % (tor_count, formatter.plural(tor_count)))
+    logger.info("TORSearch for Wanted items complete, found %s book%s" % (tor_count, plural(tor_count)))
 
     if reset:
-        common.schedule_job(action='Restart', target='search_tor_book')
+        schedule_job(action='Restart', target='search_tor_book')
 
 
 def processResultList(resultlist, book, searchtype):
@@ -126,13 +130,13 @@ def processResultList(resultlist, book, searchtype):
            ',': '', '*': '', ':': '', ';': ''}
 
     match_ratio = int(lazylibrarian.MATCH_RATIO)
-    reject_list = formatter.getList(lazylibrarian.REJECT_WORDS)
-    author = formatter.latinToAscii(formatter.replace_all(book['authorName'], dic))
-    title = formatter.latinToAscii(formatter.replace_all(book['bookName'], dic))
+    reject_list = getList(lazylibrarian.REJECT_WORDS)
+    author = latinToAscii(replace_all(book['authorName'], dic))
+    title = latinToAscii(replace_all(book['bookName'], dic))
 
     matches = []
     for tor in resultlist:
-        torTitle = formatter.latinToAscii(formatter.replace_all(str(tor['tor_title']), dictrepl)).strip()
+        torTitle = latinToAscii(replace_all(str(tor['tor_title']), dictrepl)).strip()
         torTitle = re.sub(r"\s\s+", " ", torTitle)  # remove extra whitespace
 
         torAuthor_match = fuzz.token_set_ratio(author, torTitle)
@@ -160,7 +164,7 @@ def processResultList(resultlist, book, searchtype):
             tor_size_temp = 1000
         tor_size = round(float(tor_size_temp) / 1048576, 2)
 
-        maxsize = formatter.check_int(lazylibrarian.REJECT_MAXSIZE, 0)
+        maxsize = check_int(lazylibrarian.REJECT_MAXSIZE, 0)
         if not rejected:
             if maxsize and tor_size > maxsize:
                 rejected = True
@@ -175,7 +179,7 @@ def processResultList(resultlist, book, searchtype):
                 newValueDict = {
                     "NZBprov": tor['tor_prov'],
                     "BookID": bookid,
-                    "NZBdate": formatter.now(),  # when we asked for it
+                    "NZBdate": now(),  # when we asked for it
                     "NZBsize": tor_size,
                     "NZBtitle": tor_Title,
                     "NZBmode": "torrent",
@@ -184,9 +188,9 @@ def processResultList(resultlist, book, searchtype):
 
                 score = (torBook_match + torAuthor_match)/2  # as a percentage
                 # lose a point for each extra word in the title so we get the closest match
-                words = len(formatter.getList(torTitle))
-                words -= len(formatter.getList(author))
-                words -= len(formatter.getList(title))
+                words = len(getList(torTitle))
+                words -= len(getList(author))
+                words -= len(getList(title))
                 score -= abs(words)
                 matches.append([score, torTitle, newValueDict, controlValueDict])
 
@@ -207,8 +211,8 @@ def processResultList(resultlist, book, searchtype):
             snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
                                            newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             if snatch:
-                notifiers.notify_snatch(newValueDict["NZBtitle"] + ' at ' + formatter.now())
-                common.schedule_job(action='Start', target='processDir')
+                notify_snatch(newValueDict["NZBtitle"] + ' at ' + now())
+                schedule_job(action='Start', target='processDir')
                 return True
 
     logger.debug("No torrent's found for " + (book["authorName"] + ' ' +
@@ -251,7 +255,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             if lazylibrarian.PROXY_HOST:
                 request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
             request.add_header('Accept-encoding', 'gzip')
-            request.add_header('User-Agent', common.USER_AGENT)
+            request.add_header('User-Agent', USER_AGENT)
 
             # PAB removed this, KAT serves us html instead of torrent if this header is sent
             # if tor_prov == 'KAT':
@@ -274,7 +278,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                 return False
 
         if lazylibrarian.TOR_DOWNLOADER_BLACKHOLE:
-            tor_title = common.removeDisallowedFilenameChars(tor_title)
+            tor_title = removeDisallowedFilenameChars(tor_title)
             logger.debug("Sending %s to blackhole" % tor_title)
             tor_name = str.replace(str(tor_title), ' ', '_')
             if tor_url.startswith('magnet'):

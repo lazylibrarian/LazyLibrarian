@@ -6,7 +6,7 @@ from xml.etree import ElementTree
 
 import lazylibrarian
 from lazylibrarian import logger, database
-import lazylibrarian.common as common
+from lazylibrarian.common import USER_AGENT, removeDisallowedFilenameChars
 from lazylibrarian.formatter import age, today, plural
 
 # new libraries to support torrents
@@ -118,7 +118,7 @@ def get_capabilities(provider):
         request = urllib2.Request(URL)
         if lazylibrarian.PROXY_HOST:
             request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-        request.add_header('User-Agent', common.USER_AGENT)
+        request.add_header('User-Agent', USER_AGENT)
         resp = ""
         try:
             resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
@@ -283,7 +283,7 @@ def RSS(host=None, feednr=None):
         request = urllib2.Request(URL)
         if lazylibrarian.PROXY_HOST:
             request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-        request.add_header('User-Agent', common.USER_AGENT)
+        request.add_header('User-Agent', USER_AGENT)
         resp = urllib2.urlopen(request, timeout=90)
         try:
             data = feedparser.parse(resp)
@@ -373,7 +373,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
             request = urllib2.Request(URL)
             if lazylibrarian.PROXY_HOST:
                 request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-            request.add_header('User-Agent', common.USER_AGENT)
+            request.add_header('User-Agent', USER_AGENT)
             resp = urllib2.urlopen(request, timeout=90)
             try:
                 data = ElementTree.parse(resp)
@@ -417,8 +417,8 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
             authorname = authorname[2:].strip()  # and leading whitespace
         # middle initials can't have a dot
         authorname = authorname.replace('. ', ' ')
-        authorname = common.removeDisallowedFilenameChars(authorname)
-        bookname = common.removeDisallowedFilenameChars(book['bookName'])
+        authorname = removeDisallowedFilenameChars(authorname)
+        bookname = removeDisallowedFilenameChars(book['bookName'])
         if provider['BOOKSEARCH'] and provider['BOOKCAT']:  # if specific booksearch, use it
             params = {
                 "t": provider['BOOKSEARCH'],
@@ -440,8 +440,8 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
             authorname = authorname[2:].strip()  # and leading whitespace
         # middle initials can't have a dot
         authorname = authorname.replace('. ', ' ')
-        authorname = common.removeDisallowedFilenameChars(authorname)
-        bookname = common.removeDisallowedFilenameChars(book['bookName'].split('(')[0]).strip()
+        authorname = removeDisallowedFilenameChars(authorname)
+        bookname = removeDisallowedFilenameChars(book['bookName'].split('(')[0]).strip()
         if provider['BOOKSEARCH'] and provider['BOOKCAT']:  # if specific booksearch, use it
             params = {
                 "t": provider['BOOKSEARCH'],
@@ -463,7 +463,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
             authorname = authorname[2:].strip()  # and leading whitespace
         # middle initials can't have a dot
         authorname = authorname.replace('. ', ' ')
-        authorname = common.removeDisallowedFilenameChars(authorname)
+        authorname = removeDisallowedFilenameChars(authorname)
         if provider['GENERALSEARCH']:
             params = {
                 "t": provider['GENERALSEARCH'],
@@ -599,7 +599,7 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None,
     resultFields = None
 
     nzbtitle = nzbdetails[0].text  # title is currently the same field for all searchtypes
-    # nzbtitle = common.removeDisallowedFilenameChars(nzbtitle)
+    # nzbtitle = removeDisallowedFilenameChars(nzbtitle)
 
     if searchMode == "torznab":  # For torznab results, either 8 or 9 contain a magnet link
         if nzbdetails[8].attrib.get('name') == 'magneturl':

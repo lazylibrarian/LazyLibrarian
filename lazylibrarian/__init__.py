@@ -22,8 +22,9 @@ import socket
 import json
 
 from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, \
-    librarysync, versioncheck, database, searchmag, magazinescan, common, bookwork
+    librarysync, versioncheck, database, searchmag, magazinescan, bookwork
 from lazylibrarian.formatter import getList, bookSeries, plural
+from lazylibrarian.common import USER_AGENT, remove_accents, restartJobs
 
 try:
     from wand.image import Image
@@ -1144,7 +1145,7 @@ def build_bookstrap_themes():
         request.set_proxy(PROXY_HOST, PROXY_TYPE)
 
     # bootswatch insists on having a user-agent
-    request.add_header('User-Agent', common.USER_AGENT)
+    request.add_header('User-Agent', USER_AGENT)
 
     try:
         resp = urllib2.urlopen(request, timeout=30)
@@ -1180,10 +1181,10 @@ def build_monthtable():
     if not lang.startswith('en_'):  # en_ is preloaded
         MONTHNAMES[0].append(lang)
         for f in range(1, 13):
-            MONTHNAMES[f].append(common.remove_accents(calendar.month_name[f]).lower())
+            MONTHNAMES[f].append(remove_accents(calendar.month_name[f]).lower())
         MONTHNAMES[0].append(lang)
         for f in range(1, 13):
-            MONTHNAMES[f].append(common.remove_accents(calendar.month_abbr[f]).lower().strip('.'))
+            MONTHNAMES[f].append(remove_accents(calendar.month_abbr[f]).lower().strip('.'))
             logger.info("Added month names for locale [%s], %s, %s ..." % (
                         lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
 
@@ -1193,10 +1194,10 @@ def build_monthtable():
                 locale.setlocale(locale.LC_ALL, lang)
                 MONTHNAMES[0].append(lang)
                 for f in range(1, 13):
-                    MONTHNAMES[f].append(common.remove_accents(calendar.month_name[f]).lower())
+                    MONTHNAMES[f].append(remove_accents(calendar.month_name[f]).lower())
                 MONTHNAMES[0].append(lang)
                 for f in range(1, 13):
-                    MONTHNAMES[f].append(common.remove_accents(calendar.month_abbr[f]).lower().strip('.'))
+                    MONTHNAMES[f].append(remove_accents(calendar.month_abbr[f]).lower().strip('.'))
                 locale.setlocale(locale.LC_ALL, current_locale)  # restore entry state
                 logger.info("Added month names for locale [%s], %s, %s ..." % (
                     lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
@@ -1519,7 +1520,7 @@ def start():
 
         # Crons and scheduled jobs started here
         SCHED.start()
-        common.restartJobs(start='Start')
+        restartJobs(start='Start')
         started = True
 
 

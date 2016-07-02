@@ -3,15 +3,16 @@ import re
 import lazylibrarian
 import urllib2
 import socket
-from lazylibrarian import logger, database, importer, common, bookwork
+from lazylibrarian import logger, database, bookwork
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 from xml.etree import ElementTree
 import lib.zipfile as zipfile
 from lib.mobi import Mobi
-from lazylibrarian.common import USER_AGENT
+from lazylibrarian.common import USER_AGENT, remove_accents
 from shutil import copyfile
 from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList
+from lazylibrarian.importer import addAuthorToDB
 
 def opf_file(search_dir=None):
     # find an .opf file in this directory
@@ -141,8 +142,8 @@ def find_book_in_db(myDB, author, book):
         for a_book in books:
             # tidy up everything to raise fuzziness scores
             # still need to lowercase for matching against partial_name later on
-            book_lower = common.remove_accents(book.lower())
-            a_book_lower = common.remove_accents(a_book['BookName'].lower())
+            book_lower = remove_accents(book.lower())
+            a_book_lower = remove_accents(a_book['BookName'].lower())
             #
             ratio = fuzz.ratio(book_lower, a_book_lower)
             partial = fuzz.partial_ratio(book_lower, a_book_lower)
@@ -416,8 +417,8 @@ def LibraryScan(dir=None):
                                 match_name = authorname.replace('.', '_')
                                 match_name = match_name.replace(' ', '_')
                                 match_name = match_name.replace('__', '_')
-                                match_name = common.remove_accents(match_name)
-                                match_auth = common.remove_accents(match_auth)
+                                match_name = remove_accents(match_name)
+                                match_auth = remove_accents(match_auth)
                                 # allow a degree of fuzziness to cater for different accented character handling.
                                 # some author names have accents,
                                 # filename may have the accented or un-accented version of the character
@@ -451,7 +452,7 @@ def LibraryScan(dir=None):
                                             "Adding new author [%s]" %
                                             author)
                                         try:
-                                            importer.addAuthorToDB(author)
+                                            addAuthorToDB(author)
                                             check_exist_author = myDB.action(
                                                 'SELECT * FROM authors where AuthorName="%s"' %
                                                 author).fetchone()

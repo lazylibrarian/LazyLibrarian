@@ -4,14 +4,15 @@ import re
 import threading
 import lazylibrarian
 
-from lazylibrarian import logger, database, formatter, notifiers, providers
+from lazylibrarian import logger, database
 
 from lib.fuzzywuzzy import fuzz
-#from hashlib import sha1
-import lazylibrarian.common as common
+from lazylibrarian.providers import IterateOverRSSSites
+from lazylibrarian.common import schedule_job
+from lazylibrarian.formatter import plural, latinToAscii, replace_all, getList, check_int, now
 from lazylibrarian.searchtorrents import TORDownloadMethod
 from lazylibrarian.searchnzb import NZBDownloadMethod
-
+from lazylibrarian.notifiers import notify_snatch
 
 def cron_search_rss_book():
     threading.currentThread().name = "CRON-SEARCHRSS"
@@ -24,7 +25,7 @@ def search_rss_book(books=None, reset=False):
 
     if not(lazylibrarian.USE_RSS()):
         logger.warn('RSS search is disabled')
-        common.schedule_job(action='Stop', target='search_rss_book')
+        schedule_job(action='Stop', target='search_rss_book')
         return
 
     myDB = database.DBConnection()
@@ -46,9 +47,9 @@ def search_rss_book(books=None, reset=False):
         logger.debug("RSS search requested for no books or invalid BookID")
         return
     else:
-        logger.info('RSS Searching for %i book%s' % (len(searchbooks), formatter.plural(len(searchbooks))))
+        logger.info('RSS Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
 
-    resultlist, nproviders = providers.IterateOverRSSSites()
+    resultlist, nproviders = IterateOverRSSSites()
     if not nproviders:
         logger.warn('No rss providers are set, check config')
         return  # No point in continuing
@@ -62,8 +63,8 @@ def search_rss_book(books=None, reset=False):
         author = book['AuthorName']
         title = book['BookName']
 
-        author = formatter.latinToAscii(formatter.replace_all(author, dic))
-        title = formatter.latinToAscii(formatter.replace_all(title, dic))
+        author = latinToAscii(replace_all(author, dic))
+        title = latinToAscii(replace_all(title, dic))
 
         found = processResultList(resultlist, author, title, book)
 
@@ -82,10 +83,10 @@ def search_rss_book(books=None, reset=False):
         else:
             rss_count = rss_count + 1
 
-    logger.info("RSS Search for Wanted items complete, found %s book%s" % (rss_count, formatter.plural(rss_count)))
+    logger.info("RSS Search for Wanted items complete, found %s book%s" % (rss_count, plural(rss_count)))
 
     if reset:
-        common.schedule_job(action='Restart', target='search_rss_book')
+        schedule_job(action='Restart', target='search_rss_book')
 
 
 def processResultList(resultlist, author, title, book):
@@ -98,13 +99,13 @@ def processResultList(resultlist, author, title, book):
                 # ' for ': ' ', ' my ': ' ', ' in ': ' ', ' at ': ' ', ' with ': ' '}
 
     match_ratio = int(lazylibrarian.MATCH_RATIO)
-    reject_list = formatter.getList(lazylibrarian.REJECT_WORDS)
+    reject_list = getList(lazylibrarian.REJECT_WORDS)
 
     matches = []
 
     # bit of a misnomer now, rss can search both tor and nzb rss feeds
     for tor in resultlist:
-        torTitle = formatter.latinToAscii(formatter.replace_all(tor['tor_title'], dictrepl)).strip()
+        torTitle = latinToAscii(replace_all(tor['tor_title'], dictrepl)).strip()
         torTitle = re.sub(r"\s\s+", " ", torTitle)  # remove extra whitespace
 
         tor_Author_match = fuzz.token_set_ratio(author, torTitle)
@@ -131,7 +132,7 @@ def processResultList(resultlist, author, title, book):
         if tor_size_temp is None:
             tor_size_temp = 1000
         tor_size = round(float(tor_size_temp) / 1048576, 2)
-        maxsize = formatter.check_int(lazylibrarian.REJECT_MAXSIZE, 0)
+        maxsize = check_int(lazylibrarian.REJECT_MAXSIZE, 0)
 
         if not rejected:
             if maxsize and tor_size > maxsize:
@@ -150,7 +151,7 @@ def processResultList(resultlist, author, title, book):
                 newValueDict = {
                     "NZBprov": tor_prov,
                     "BookID": bookid,
-                    "NZBdate": formatter.now(),  # when we asked for it
+                    "NZBdate": now(),  # when we asked for it
                     "NZBsize": tor_size,
                     "NZBtitle": tor_Title,
                     "NZBmode": "torrent",
@@ -159,9 +160,9 @@ def processResultList(resultlist, author, title, book):
 
                 score = (tor_Title_match + tor_Author_match)/2  # as a percentage
                 # lose a point for each extra word in the title so we get the closest match
-                words = len(formatter.getList(torTitle))
-                words -= len(formatter.getList(author))
-                words -= len(formatter.getList(title))
+                words = len(getList(torTitle))
+                words -= len(getList(author))
+                words -= len(getList(title))
                 score -= abs(words)
                 matches.append([score, torTitle, newValueDict, controlValueDict])
 
@@ -197,8 +198,8 @@ def processResultList(resultlist, author, title, book):
                                            newValueDict["NZBtitle"], tor_url)
 
             if snatch:
-                notifiers.notify_snatch(newValueDict["NZBtitle"] + ' at ' + formatter.now())
-                common.schedule_job(action='Start', target='processDir')
+                notify_snatch(newValueDict["NZBtitle"] + ' at ' + now())
+                schedule_job(action='Start', target='processDir')
                 return True
 
     logger.debug("No RSS found for " + (book["authorName"] + ' ' +

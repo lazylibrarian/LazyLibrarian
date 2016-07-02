@@ -8,9 +8,12 @@ from urllib import FancyURLopener
 from lib.fuzzywuzzy import fuzz
 import lazylibrarian
 
-from lazylibrarian import database, logger, notifiers, common, librarysync
-from lazylibrarian import importer, gr, magazinescan
+from lazylibrarian import database, logger, librarysync
+from lazylibrarian import gr, magazinescan
 from lazylibrarian.formatter import plural, now, today, is_valid_booktype, is_valid_isbn, latinToAscii, replace_all
+from lazylibrarian.common import schedule_job, remove_accents
+from lazylibrarian.notifiers import notify_download
+from lazylibrarian.importer import addAuthorToDB
 
 def processAlternate(source_dir=None):
     # import a book from an alternate directory
@@ -64,7 +67,7 @@ def processAlternate(source_dir=None):
                 logger.debug("ALT: Author %s found in database" % (authorname))
             else:
                 logger.debug("ALT: Author %s not found, adding to database" % (authorname))
-                importer.addAuthorToDB(authorname)
+                addAuthorToDB(authorname)
 
             bookid = librarysync.find_book_in_db(myDB, authorname, bookname)
             if bookid:
@@ -105,7 +108,7 @@ def processDir(reset=False):
 
     if len(snatched) == 0:
         logger.info('Nothing marked as snatched.')
-        common.schedule_job(action='Stop', target='processDir')
+        schedule_job(action='Stop', target='processDir')
         return
     elif len(downloads) == 0:
         logger.info('No downloads are found. Nothing to process.')
@@ -176,7 +179,7 @@ def processDir(reset=False):
                         '$Title', bookname)
                     global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace(
                         '$Title', bookname)
-                    global_name = common.remove_accents(global_name)
+                    global_name = remove_accents(global_name)
                     # dest_path = authorname+'/'+bookname
                     # global_name = bookname + ' - ' + authorname
                     # Remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
@@ -214,7 +217,7 @@ def processDir(reset=False):
                         bookname = None
                         global_name = lazylibrarian.MAG_DEST_FILE.replace('$IssueDate', book['AuxInfo']).replace(
                             '$Title', mag_name)
-                        global_name = common.remove_accents(global_name)
+                        global_name = remove_accents(global_name)
                         # global_name = book['AuxInfo']+' - '+title
                     else:
                         logger.debug("Snatched magazine %s is not in download directory" % (book['BookID']))
@@ -265,7 +268,7 @@ def processDir(reset=False):
 
                 logger.info('Successfully processed: %s' % global_name)
                 ppcount = ppcount + 1
-                notifiers.notify_download(latinToAscii(global_name) + ' at ' + now())
+                notify_download(latinToAscii(global_name) + ' at ' + now())
             else:
                 logger.error('Postprocessing for %s has failed.' % global_name)
                 logger.error('Warning - Residual files remain in %s.fail' % pp_path)
@@ -305,7 +308,7 @@ def processDir(reset=False):
             logger.info('%s book%s/mag%s processed.' % (ppcount, plural(ppcount), plural(ppcount)))
 
     if reset:
-        common.schedule_job(action='Restart', target='processDir')
+        schedule_job(action='Restart', target='processDir')
 
 
 def import_book(pp_path=None, bookID=None):
@@ -333,7 +336,7 @@ def import_book(pp_path=None, bookID=None):
 
         dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace('$Title', bookname)
         global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace('$Title', bookname)
-        global_name = common.remove_accents(global_name)
+        global_name = remove_accents(global_name)
         # Remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
         # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
         dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
@@ -350,7 +353,7 @@ def import_book(pp_path=None, bookID=None):
             myDB.upsert("wanted", newValueDict, controlValueDict)
             processExtras(myDB, dest_path, global_name, data)
             logger.info('Successfully processed: %s' % global_name)
-            notifiers.notify_download(latinToAscii(global_name) + ' at ' + now())
+            notify_download(latinToAscii(global_name) + ' at ' + now())
             return True
         else:
             logger.error('Postprocessing for %s has failed.' % global_name)
@@ -685,7 +688,7 @@ def processCSV(search_dir=None):
                 logger.debug(u"CSV: Author %s found in database" % (authorname))
             else:
                 logger.debug(u"CSV: Author %s not found, adding to database" % (authorname))
-                importer.addAuthorToDB(authorname)
+                addAuthorToDB(authorname)
                 authcount = authcount + 1
 
             bookmatch = 0
