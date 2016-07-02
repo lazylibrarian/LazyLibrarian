@@ -468,6 +468,10 @@ class WebInterface(object):
     authorPage.exposed = True
 
     def pauseAuthor(self, AuthorID):
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+            
         myDB = database.DBConnection()
         authorsearch = myDB.select(
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
@@ -483,6 +487,10 @@ class WebInterface(object):
     pauseAuthor.exposed = True
 
     def resumeAuthor(self, AuthorID):
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+            
         myDB = database.DBConnection()
         authorsearch = myDB.select(
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
@@ -498,6 +506,10 @@ class WebInterface(object):
     resumeAuthor.exposed = True
 
     def deleteAuthor(self, AuthorID):
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+            
         myDB = database.DBConnection()
         authorsearch = myDB.select(
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
@@ -510,6 +522,10 @@ class WebInterface(object):
     deleteAuthor.exposed = True
 
     def refreshAuthor(self, AuthorID):
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+            
         myDB = database.DBConnection()
         authorsearch = myDB.select(
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
