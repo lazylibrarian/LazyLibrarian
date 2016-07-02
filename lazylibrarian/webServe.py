@@ -471,7 +471,7 @@ class WebInterface(object):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
-            
+
         myDB = database.DBConnection()
         authorsearch = myDB.select(
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
@@ -490,7 +490,7 @@ class WebInterface(object):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
-            
+
         myDB = database.DBConnection()
         authorsearch = myDB.select(
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
@@ -509,7 +509,7 @@ class WebInterface(object):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
-            
+
         myDB = database.DBConnection()
         authorsearch = myDB.select(
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
@@ -525,7 +525,7 @@ class WebInterface(object):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
-            
+
         myDB = database.DBConnection()
         authorsearch = myDB.select(
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
@@ -787,7 +787,7 @@ class WebInterface(object):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
-            
+
         myDB = database.DBConnection()
 
         bookdata = myDB.select(
@@ -807,7 +807,7 @@ class WebInterface(object):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
-            
+
         myDB = database.DBConnection()
         if not redirect:
             redirect = "books"
@@ -1006,7 +1006,7 @@ class WebInterface(object):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
-            
+
         bookid = urllib.unquote_plus(bookid)
         myDB = database.DBConnection()
         # we may want to open an issue with a hashed bookid
@@ -1035,7 +1035,7 @@ class WebInterface(object):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
-            
+
         myDB = database.DBConnection()
         if not redirect:
             redirect = "magazines"
@@ -1075,12 +1075,12 @@ class WebInterface(object):
                                 'NZBtitle': nzbtitle,
                                 'NZBdate': formatter.now(),
                                 'NZBprov': nzbprov,
-                                'Status': action, 
+                                'Status': action,
                                 'NZBsize': nzbsize,
                                 'AuxInfo': auxinfo,
                                 'NZBmode': nzbmode
                                 }
-                            myDB.upsert("wanted", newValueDict, controlValueDict)                            
+                            myDB.upsert("wanted", newValueDict, controlValueDict)
 
         if action == 'Delete':
             logger.info(u'Deleted %s items from past issues' % (len(maglist)))
@@ -1201,7 +1201,7 @@ class WebInterface(object):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
-            
+
         versioncheck.checkForUpdates()
         if lazylibrarian.COMMITS_BEHIND == 0:
             message = "up to date"
@@ -1313,7 +1313,7 @@ class WebInterface(object):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
-            
+
         result = common.clearLog()
         logger.info(result)
         raise cherrypy.HTTPRedirect("logs")
@@ -1328,7 +1328,7 @@ class WebInterface(object):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
-            
+
         if lazylibrarian.LOGFULL:  # if LOGLIST logging on, turn off
             lazylibrarian.LOGFULL = False
             if lazylibrarian.LOGLEVEL < 3:
@@ -1392,7 +1392,7 @@ class WebInterface(object):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
-            
+
         myDB = database.DBConnection()
         if status == 'all':
             logger.info(u"Clearing all history")
@@ -1652,4 +1652,3 @@ class WebInterface(object):
     def testuTorrent(self):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         return utorrent.checkLink()
-
