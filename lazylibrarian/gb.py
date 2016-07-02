@@ -539,29 +539,29 @@ class GoogleBooks:
                             book_status = resulted['Status']
                     else:
                         book_status = lazylibrarian.NEWBOOK_STATUS
-                    
+
                     rejected = False
                     if re.match('[^\w-]', bookname):  # remove books with bad characters in title
                         logger.debug("[%s] removed book for bad characters" % bookname)
                         removedResults = removedResults + 1
                         rejected = True
-                    
+
                     if not rejected and not bookname:
-                        logger.debug('Rejecting bookid %s for %s, no bookname' % 
+                        logger.debug('Rejecting bookid %s for %s, no bookname' %
                                 (bookid, authorname))
                         rejected = True
 
-                    if not rejected:    
-                        find_books = myDB.select('SELECT * FROM books WHERE BookName = "%s" and AuthorName = "%s"' % 
-                                                        (bookname, authorname))                    
+                    if not rejected:
+                        find_books = myDB.select('SELECT * FROM books WHERE BookName = "%s" and AuthorName = "%s"' %
+                                                        (bookname, authorname))
                         if find_books:
                             for find_book in find_books:
                                 if find_book['BookID'] != bookid:
                                     # we have a book with this author/title already
-                                    logger.debug('Rejecting bookid %s for [%s][%s] already got %s' % 
+                                    logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
                                         (find_book['BookID'], authorname, bookname, bookid))
-                                    rejected = True 
-                                                                               
+                                    rejected = True
+
                     if rejected:
                         removedResults = removedResults + 1
                     else:
@@ -589,10 +589,10 @@ class GoogleBooks:
                                 "SeriesNum": seriesNum
                             }
                             resultcount = resultcount + 1
-    
+
                             myDB.upsert("books", newValueDict, controlValueDict)
                             logger.debug(u"Book found: " + bookname + " " + bookdate)
-    
+
                             if 'nocover' in bookimg or 'nophoto' in bookimg:
                                 # try to get a cover from librarything
                                 workcover = bookwork.getBookCover(bookid)
@@ -601,14 +601,14 @@ class GoogleBooks:
                                     controlValueDict = {"BookID": bookid}
                                     newValueDict = {"BookImg": workcover}
                                     myDB.upsert("books", newValueDict, controlValueDict)
-    
+
                             elif bookimg.startswith('http'):
                                 link = bookwork.cache_cover(bookid, bookimg)
                                 if link is not None:
                                     controlValueDict = {"BookID": bookid}
                                     newValueDict = {"BookImg": link}
                                     myDB.upsert("books", newValueDict, controlValueDict)
-    
+
                             if seriesNum == None:
                                 # try to get series info from librarything
                                 series, seriesNum = bookwork.getWorkSeries(bookid)
@@ -620,13 +620,13 @@ class GoogleBooks:
                                         "SeriesNum": seriesNum
                                     }
                                     myDB.upsert("books", newValueDict, controlValueDict)
-    
+
                             worklink = bookwork.getWorkPage(bookid)
                             if worklink:
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {"WorkPage": worklink}
                                 myDB.upsert("books", newValueDict, controlValueDict)
-    
+
                             if not find_book_status:
                                 logger.debug("[%s] Added book: %s [%s]" % (authorname, bookname, booklang))
                                 added_count = added_count + 1
@@ -853,4 +853,3 @@ class GoogleBooks:
             controlValueDict = {"BookID": bookid}
             newValueDict = {"WorkPage": worklink}
             myDB.upsert("books", newValueDict, controlValueDict)
-
