@@ -645,12 +645,19 @@ class GoodReads:
                     (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change,
                      cache_hits, ignored, removedResults, not_cached))
 
+        plural_added = 's'
+        plural_updated = 's'
+        if added_count == 1:
+            plural_added = ''
+        if updated_count == 1:
+            plural_updated = ''
+
         if refresh:
-            logger.info("[%s] Book processing complete: Added %s books / Updated %s books" %
-                        (authorname, str(added_count), str(updated_count)))
+            logger.info("[%s] Book processing complete: Added %s book%s / Updated %s book%s" %
+                        (authorname, added_count, plural_added, updated_count, plural_updated))
         else:
-            logger.info("[%s] Book processing complete: Added %s books to the database" %
-                        (authorname, str(added_count)))
+            logger.info("[%s] Book processing complete: Added %s book%s to the database" %
+                        (authorname, added_count, plural_added))
 
         return books_dict
 
