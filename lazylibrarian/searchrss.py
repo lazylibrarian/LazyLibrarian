@@ -45,10 +45,8 @@ def search_rss_book(books=None, reset=False):
     if len(searchbooks) == 0:
         logger.debug("RSS search requested for no books or invalid BookID")
         return
-    elif len(searchbooks) == 1:
-        logger.info('RSS Searching for one book')
     else:
-        logger.info('RSS Searching for %i books' % len(searchbooks))
+        logger.info('RSS Searching for %i book%s' % (len(searchbooks), formatter.plural(len(searchbooks))))
 
     resultlist, nproviders = providers.IterateOverRSSSites()
     if not nproviders:
@@ -84,10 +82,7 @@ def search_rss_book(books=None, reset=False):
         else:
             rss_count = rss_count + 1
 
-    plural = "s"
-    if rss_count == 1:
-        plural = ""
-    logger.info("RSS Search for Wanted items complete, found %s book%s" % (rss_count, plural))
+    logger.info("RSS Search for Wanted items complete, found %s book%s" % (rss_count, formatter.plural(rss_count)))
 
     if reset:
         common.schedule_job(action='Restart', target='search_rss_book')
@@ -106,7 +101,7 @@ def processResultList(resultlist, author, title, book):
     reject_list = formatter.getList(lazylibrarian.REJECT_WORDS)
 
     matches = []
-    
+
     # bit of a misnomer now, rss can search both tor and nzb rss feeds
     for tor in resultlist:
         torTitle = formatter.latinToAscii(formatter.replace_all(tor['tor_title'], dictrepl)).strip()
@@ -124,8 +119,8 @@ def processResultList(resultlist, author, title, book):
         if already_failed:
             logger.debug("Rejecting %s, blacklisted at %s" % (torTitle, already_failed['NZBprov']))
             rejected = True
-        
-        if not rejected:    
+
+        if not rejected:
             for word in reject_list:
                 if word in torTitle.lower() and not word in author.lower() and not word in book.lower():
                     rejected = True
@@ -150,7 +145,7 @@ def processResultList(resultlist, author, title, book):
                              ' LL.(' + book['bookid'] + ')').strip()
                 tor_prov = tor['tor_prov']
                 tor_feed = tor['tor_feed']
-    
+
                 controlValueDict = {"NZBurl": tor_url}
                 newValueDict = {
                     "NZBprov": tor_prov,
@@ -161,7 +156,7 @@ def processResultList(resultlist, author, title, book):
                     "NZBmode": "torrent",
                     "Status": "Skipped"
                 }
-                
+
                 score = (tor_Title_match + tor_Author_match)/2  # as a percentage
                 # lose a point for each extra word in the title so we get the closest match
                 words = len(formatter.getList(torTitle))
@@ -176,9 +171,9 @@ def processResultList(resultlist, author, title, book):
         nzb_Title = highest[1]
         newValueDict = highest[2]
         controlValueDict = highest[3]
-        logger.info(u'Best match RSS (%s%%): %s using %s search' % 
+        logger.info(u'Best match RSS (%s%%): %s using %s search' %
             (score, nzb_Title, searchtype))
-                  
+
         myDB.upsert("wanted", newValueDict, controlValueDict)
 
         snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
@@ -197,7 +192,7 @@ def processResultList(resultlist, author, title, book):
                     auth = lazylibrarian.RSS_PROV[tor_feed]['AUTH']
                     # don't know what form of password hash is required, try sha1
                     tor_url = tor_url.replace('<authkey>', auth).replace('<password.hashed>', sha1(pwd))
-                """  
+                """
                 snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
                                            newValueDict["NZBtitle"], tor_url)
 

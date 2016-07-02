@@ -46,10 +46,8 @@ def search_nzb_book(books=None, reset=False):
     if len(searchbooks) == 0:
         logger.debug("NZB search requested for no books or invalid BookID")
         return
-    elif len(searchbooks) == 1:
-        logger.info('NZB Searching for one book')
     else:
-        logger.info('NZB Searching for %i books' % len(searchbooks))
+        logger.info('NZB Searching for %i book%s' % (len(searchbooks), formatter.plural(len(searchbooks))))
 
     for searchbook in searchbooks:
         bookid = searchbook[0]
@@ -107,10 +105,7 @@ def search_nzb_book(books=None, reset=False):
         else:
             nzb_count = nzb_count + 1
 
-    plural = "s"
-    if nzb_count == 1:
-        plural = ""
-    logger.info("NZBSearch for Wanted items complete, found %s book%s" % (nzb_count, plural))
+    logger.info("NZBSearch for Wanted items complete, found %s book%s" % (nzb_count, formatter.plural(nzb_count)))
 
     if reset:
         common.schedule_job(action='Restart', target='search_nzb_book')

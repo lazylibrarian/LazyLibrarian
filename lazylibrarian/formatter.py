@@ -148,6 +148,16 @@ def datecompare(nzbdate, control_date):
     dtage = date1 - date2
     return dtage.days
 
+def plural(var):
+    """
+    Convenience function for log messages, if var = 1 return ''
+    if var is anything else return 's'
+    so book -> books, seeder -> seeders  etc
+    """
+    if check_int(var,0) == 1:
+        return ''
+    return 's'
+
 
 def check_int(var, default):
     try:

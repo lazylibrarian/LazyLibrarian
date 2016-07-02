@@ -10,11 +10,12 @@ import re
 from urllib2 import HTTPError
 
 import lazylibrarian
-from lazylibrarian import logger, formatter, database, bookwork
+from lazylibrarian import logger, database, bookwork
 from lazylibrarian.gr import GoodReads
 
 from lib.fuzzywuzzy import fuzz
 from lib.unidecode import unidecode
+from lazylibrarian.formatter import plural, today, replace_all
 import os
 import md5
 import hashlib
@@ -264,7 +265,7 @@ class GoogleBooks:
 
                         bookname = item['volumeInfo']['title']
                         dic = {':': '', '"': '', '\'': ''}
-                        bookname = formatter.replace_all(bookname, dic)
+                        bookname = replace_all(bookname, dic)
 
                         bookname = unidecode(u'%s' % bookname)
                         bookname = bookname.strip()  # strip whitespace
@@ -297,15 +298,15 @@ class GoogleBooks:
             except KeyError:
                 break
 
-        logger.debug("Found %s total results" % total_count)
-        logger.debug("Removed %s bad language results" % ignored)
-        logger.debug("Removed %s books with no author" % no_author_count)
+        logger.debug("Found %s total result%s" % (total_count,  plural(total_count)))
+        logger.debug("Removed %s bad language result%s" % (ignored, plural(ignored)))
+        logger.debug("Removed %s book%s with no author" % (no_author_count, plural(no_author_count)))
         logger.debug(
-            "Showing %s results for (%s) with keyword: %s" %
-            (resultcount, api_value, authorname))
+            "Showing %s result%s for (%s) with keyword: %s" %
+            (resultcount, plural(resultcount), api_value, authorname))
         logger.debug(
-            'The Google Books API was hit %s times for keyword %s' %
-            (str(api_hits), self.name))
+            'The Google Books API was hit %s time%s for keyword %s' %
+            (api_hits, plural(api_hits), self.name))
         queue.put(resultlist)
 
     def get_author_books(self, authorid=None, authorname=None, refresh=False):
@@ -368,7 +369,7 @@ class GoogleBooks:
                     logger.warn('Found no results for %s' % authorname)
                     break
                 else:
-                    logger.debug('Found %s results for %s' % (number_results, authorname))
+                    logger.debug('Found %s result%s for %s' % (number_results, plural(number_results), authorname))
 
                 startindex = startindex + 40
 
@@ -522,7 +523,7 @@ class GoogleBooks:
                     bookname = item['volumeInfo']['title']
                     bookname = unidecode(u'%s' % bookname)
                     dic = {':': '', '"': '', '\'': ''}
-                    bookname = formatter.replace_all(bookname, dic)
+                    bookname = replace_all(bookname, dic)
                     bookname = bookname.strip()  # strip whitespace
 
                     booklink = item['volumeInfo']['canonicalVolumeLink']
@@ -584,7 +585,7 @@ class GoogleBooks:
                                 "BookDate": bookdate,
                                 "BookLang": booklang,
                                 "Status": book_status,
-                                "BookAdded": formatter.today(),
+                                "BookAdded": today(),
                                 "Series": series,
                                 "SeriesNum": seriesNum
                             }
@@ -638,8 +639,8 @@ class GoogleBooks:
         except KeyError:
             pass
 
-        logger.debug('[%s] The Google Books API was hit %s times to populate book list' %
-                     (authorname, str(api_hits)))
+        logger.debug('[%s] The Google Books API was hit %s time%s to populate book list' %
+                     (authorname, api_hits, plural(api_hits)))
 
         lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorID="%s" \
                                AND Status != "Ignored" order by BookDate DESC' % authorid).fetchone()
@@ -663,34 +664,22 @@ class GoogleBooks:
 
         myDB.upsert("authors", newValueDict, controlValueDict)
 
-        logger.debug("Found %s total books for author" % total_count)
-        logger.debug("Removed %s bad language results for author" % ignored)
-        logger.debug(
-            "Removed %s bad character or duplicate results for author" %
-            removedResults)
-        logger.debug(
-            "Ignored %s books by author marked as Ignored" %
-            book_ignore_count)
-        logger.debug("Imported/Updated %s books for author" % resultcount)
+        logger.debug("Found %s total book%s for author" % (total_count, plural(total_count)))
+        logger.debug("Removed %s bad language result%s for author" % (ignored, plural(ignored)))
+        logger.debug("Removed %s bad character or duplicate result%s for author" % (removedResults, plural(removedResults)))
+        logger.debug("Ignored %s book%s by author marked as Ignored" % (book_ignore_count, plural(book_ignore_count)))
+        logger.debug("Imported/Updated %s book%s for author" % (resultcount, plural(resultcount)))
 
         myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' %
                     (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits,
                      ignored, removedResults, not_cached))
 
-        plural_added = 's'
-        plural_updated = 's'
-        if added_count == 1:
-            plural_added = ''
-        if updated_count == 1:
-            plural_updated = ''
-
         if refresh:
             logger.info("[%s] Book processing complete: Added %s book%s / Updated %s book%s" %
-                        (authorname, added_count, plural_added, updated_count, plural_updated))
+                        (authorname, added_count, plural(added_count), updated_count, plural(updated_count)))
         else:
             logger.info("[%s] Book processing complete: Added %s book%s to the database" %
-                        (authorname, added_count, plural_added))
-
+                        (authorname, added_count, plural(added_count)))
         return books_dict
 
     def find_book(self, bookid=None, queue=None):
@@ -707,7 +696,7 @@ class GoogleBooks:
 
         bookname = jsonresults['volumeInfo']['title']
         dic = {':': '', '"': '', '\'': ''}
-        bookname = formatter.replace_all(bookname, dic)
+        bookname = replace_all(bookname, dic)
 
         bookname = unidecode(u'%s' % bookname)
         bookname = bookname.strip()  # strip whitespace
@@ -819,7 +808,7 @@ class GoogleBooks:
             "BookDate": bookdate,
             "BookLang": booklang,
             "Status": "Wanted",
-            "BookAdded": formatter.today(),
+            "BookAdded": today(),
             "Series": series,
             "SeriesNum": seriesNum
         }

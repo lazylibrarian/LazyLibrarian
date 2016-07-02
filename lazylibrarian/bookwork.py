@@ -4,16 +4,17 @@ import urllib2
 import socket
 import time
 import lazylibrarian
-from lazylibrarian import logger, formatter, database
+from lazylibrarian import logger, database
 from lazylibrarian.common import USER_AGENT
+from lazylibrarian.formatter import safe_unicode
 
 def getBookCovers():
     """ Try to get a cover image for all books """
 
     myDB = database.DBConnection()
     books = myDB.select('select BookID,BookImg from books where BookImg like "%nocover%"')
-    if books:    
-        logger.info('Checking covers for %s books' % len(books))
+    if books:
+        logger.info('Checking covers for %s book%s' % (len(books), plural(len(books))))
         counter = 0
         for book in books:
             bookid = book['BookID']
@@ -23,19 +24,19 @@ def getBookCovers():
                 newValueDict = {"BookImg": coverlink}
                 myDB.upsert("books", newValueDict, controlValueDict)
                 counter += 1
-        logger.info('Cover check completed, updated %s covers' % counter)
+        logger.info('Cover check completed, updated %s cover%s' % (counter, plural(counter)))
     else:
         logger.debug('No missing covers')
 
-       
+
 def setWorkPages():
     """ Set the workpage link for any books that don't already have one """
 
     myDB = database.DBConnection()
-     
+
     books = myDB.select('select BookID,AuthorName,BookName from books where length(WorkPage) < 4')
-    if books:    
-        logger.debug('Setting WorkPage for %s books' % len(books))
+    if books:
+        logger.debug('Setting WorkPage for %s book%s' % (len(books), plural(len(books))))
         for book in books:
             bookid = book['BookID']
             worklink = getWorkPage(bookid)
@@ -44,14 +45,14 @@ def setWorkPages():
                 newValueDict = {"WorkPage": worklink}
                 myDB.upsert("books", newValueDict, controlValueDict)
             else:
-               logger.debug('No WorkPage found for %s: %s' % (book['AuthorName'], book['BookName'])) 
+               logger.debug('No WorkPage found for %s: %s' % (book['AuthorName'], book['BookName']))
         logger.debug('setWorkPages completed')
 
 def fetchURL(URL):
     """ Return the result of fetching a URL and True if success
         Otherwise return error message and False
         Allow one retry on timeout """
-    
+
     request = urllib2.Request(URL)
     if lazylibrarian.PROXY_HOST:
         request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
@@ -67,7 +68,7 @@ def fetchURL(URL):
                 return e, False
             return result, True
         else:
-            return str(resp), False  
+            return str(resp), False
     except (socket.timeout) as e:
         logger.warn(u"fetchURL: retrying - got timeout on %s" % URL)
         try:
@@ -80,21 +81,21 @@ def fetchURL(URL):
                     return e, False
                 return result, True
             else:
-                return str(resp), False  
+                return str(resp), False
         except (urllib2.URLError, socket.timeout) as e:
             logger.error(u"fetchURL: Error getting response for %s: %s" % (URL, e))
-            return e, False                    
+            return e, False
     except (urllib2.HTTPError, urllib2.URLError) as e:
         return e.reason, False
-            
+
 def librarything_wait():
     """ Wait for a second between librarything api calls """
     time_now = int(time.time())
     if time_now <= lazylibrarian.LAST_LIBRARYTHING:  # called within the last second?
         time.sleep(1)  # sleep 1 second to respect librarything api terms
     lazylibrarian.LAST_LIBRARYTHING = time_now
-    
-    
+
+
 def getBookWork(bookID=None, reason=None):
     """ return the contents of the LibraryThing workpage for the given bookid
         preferably from the cache. If not already cached cache the results
@@ -105,11 +106,11 @@ def getBookWork(bookID=None, reason=None):
 
     if not reason:
         reason = ""
-        
+
     myDB = database.DBConnection()
-     
+
     item = myDB.action('select BookName,AuthorName,BookISBN from books where bookID="%s"' % bookID).fetchone()
-    if item:    
+    if item:
         cacheLocation = "WorkCache"
         # does the workpage need to expire?
         # expireafter = lazylibrarian.CACHE_AGE
@@ -117,11 +118,11 @@ def getBookWork(bookID=None, reason=None):
         if not os.path.exists(cacheLocation):
             os.mkdir(cacheLocation)
         workfile = os.path.join(cacheLocation, bookID + '.html')
-        
+
         if os.path.isfile(workfile):
             # use cached file if possible to speed up refreshactiveauthors and librarysync re-runs
             lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
-            
+
             logger.debug(u"getBookWork: Returning Cached WorkPage for %s %s" % (bookID, reason))
             with open(workfile, "r") as cachefile:
                 source = cachefile.read()
@@ -132,15 +133,15 @@ def getBookWork(bookID=None, reason=None):
             if bookisbn:
                 URL='http://www.librarything.com/api/whatwork.php?isbn=' + bookisbn
             else:
-                title = formatter.safe_unicode(item['BookName']).encode('utf-8')
-                author = formatter.safe_unicode(item['AuthorName']).encode('utf-8')
+                title = safe_unicode(item['BookName']).encode('utf-8')
+                author = safe_unicode(item['AuthorName']).encode('utf-8')
                 safeparams = urllib.quote_plus("%s %s" % (author, title))
-                URL='http://www.librarything.com/api/whatwork.php?title=' + safeparams  
+                URL='http://www.librarything.com/api/whatwork.php?title=' + safeparams
             librarything_wait()
             result, success = fetchURL(URL)
             if success:
                 try:
-                    workpage = result.split('<link>')[1].split('</link>')[0] 
+                    workpage = result.split('<link>')[1].split('</link>')[0]
                     librarything_wait()
                     result, success = fetchURL(workpage)
                 except:
@@ -149,7 +150,7 @@ def getBookWork(bookID=None, reason=None):
                         # still cache if whatwork returned a result without a link, so we don't keep retrying
                         logger.debug(u"getBookWork: Got librarything error page: [%s] %s" % (errmsg, URL.split('?')[1]))
                     except:
-                        logger.debug(u"getBookWork: Unable to find workpage link for %s" % URL.split('?')[1])    
+                        logger.debug(u"getBookWork: Unable to find workpage link for %s" % URL.split('?')[1])
                         return None
                 if success:
                     logger.debug(u"getBookWork: Caching response for %s" % workfile)
@@ -163,7 +164,7 @@ def getBookWork(bookID=None, reason=None):
                 logger.debug(u"getBookWork: Unable to cache response for %s, got %s" % (URL, result))
                 return None
     else:
-        logger.debug('Get Book Work - Invalid bookID [%s]' % bookID)            
+        logger.debug('Get Book Work - Invalid bookID [%s]' % bookID)
         return None
 
 def getWorkPage(bookID=None):
@@ -180,7 +181,7 @@ def getWorkPage(bookID=None):
             return ''
         return page
     return ''
-        
+
 def getWorkSeries(bookID=None):
     """ Return the series name and number in series for the given bookid
         Returns None if no series or series number """
@@ -193,7 +194,7 @@ def getWorkSeries(bookID=None):
             series = work.split('<a href="/series/')[1].split('">')[1].split('</a>')[0]
         except IndexError:
             return None, None
-        series = formatter.safe_unicode(series).encode('utf-8')
+        series = safe_unicode(series).encode('utf-8')
         if series and '(' in series:
             seriesnum = series.split('(')[1].split(')')[0]
             series = series.split(' (')[0]
@@ -201,9 +202,9 @@ def getWorkSeries(bookID=None):
             seriesnum = None
         return series, seriesnum
     return None, None
-    
+
 def getBookCover(bookID=None):
-    """ Return link to a local file containing a book cover image for a bookid. 
+    """ Return link to a local file containing a book cover image for a bookid.
         Try 1. Local file cached from goodreads/googlebooks when book was imported
             2. LibraryThing whatwork
             3. Goodreads search if book was imported from goodreads
@@ -221,8 +222,8 @@ def getBookCover(bookID=None):
         logger.debug(u"getBookCover: Returning Cached response for %s" % coverfile)
         coverlink = 'images/cache/' + bookID + '.jpg'
         return coverlink
-                
-    lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1    
+
+    lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
     work = getBookWork(bookID, "Cover")
     if work:
         try:
@@ -236,24 +237,24 @@ def getBookCover(bookID=None):
                 logger.debug("getBookCover: No image found in work page for %s" % bookID)
         except IndexError:
             logger.debug('getBookCover: Image not found in work page for %s' % bookID)
-    
+
     # not found in librarything work page, try to get a cover from goodreads or google instead
 
     myDB = database.DBConnection()
-     
+
     item = myDB.action('select BookName,AuthorName,BookLink from books where bookID="%s"' % bookID).fetchone()
     if item:
-        title = formatter.safe_unicode(item['BookName']).encode('utf-8')
-        author = formatter.safe_unicode(item['AuthorName']).encode('utf-8')
+        title = safe_unicode(item['BookName']).encode('utf-8')
+        author = safe_unicode(item['AuthorName']).encode('utf-8')
         booklink = item['BookLink']
         safeparams = urllib.quote_plus("%s %s" % (author, title))
-        
+
         if 'goodreads' in booklink:
             # if the bookID is a goodreads one, we can call https://www.goodreads.com/book/show/{bookID}
             # and scrape the page for og:image
             # <meta property="og:image" content="https://i.gr-assets.com/images/S/photo.goodreads.com/books/1388267702i/16304._UY475_SS475_.jpg"/>
             # to get the cover
-                
+
             time_now = int(time.time())
             if time_now <= lazylibrarian.LAST_GOODREADS:
                 time.sleep(1)
@@ -279,7 +280,7 @@ def getBookCover(bookID=None):
                     logger.debug("getBookCover: No image found in goodreads page for %s" % bookID)
             else:
                 logger.debug("getBookCover: Error getting page %s, [%s]" % (booklink, result))
-      
+
         # if this failed, try a google image search...
         # tbm=isch      search books
         # tbs=isz:l     large images
@@ -301,14 +302,14 @@ def getBookCover(bookID=None):
             else:
                 logger.debug("getBookCover: No image found in google page for %s" % bookID)
         else:
-            logger.debug("getBookCover: Error getting google page for %s, [%s]" % (safeparams, result))        
+            logger.debug("getBookCover: Error getting google page for %s, [%s]" % (safeparams, result))
     return None
-        
+
 def cache_cover(bookID, img_url):
     """ Cache the image from the given URL in the local images cache
         linked to the bookid, return the link to the cached file
         or None if failed to cache """
-        
+
     cachedir = os.path.join(str(lazylibrarian.PROG_DIR),
                             'data' + os.sep + 'images' + os.sep + 'cache')
     if not os.path.isdir(cachedir):
@@ -319,7 +320,7 @@ def cache_cover(bookID, img_url):
     #    return link
 
     result, success = fetchURL(img_url)
-    
+
     if success:
         try:
             with open(coverfile, 'wb') as img:
@@ -328,4 +329,3 @@ def cache_cover(bookID, img_url):
         except:
             logger.debug("Error writing image to %s" % coverfile)
     return None
-

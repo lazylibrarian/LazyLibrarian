@@ -638,10 +638,7 @@ def exportCSV(search_dir=None, status="Wanted"):
                         resulted['BookIsbn'], resulted['AuthorID']])
                 csvwrite.writerow([("%s" % s).encode(lazylibrarian.SYS_ENCODING) for s in row])
                 count = count + 1
-        plural = 's'
-        if count == 1:
-            plural = ''
-        logger.info(u"CSV exported %s book%s to %s" % (count, plural, csvFile))
+        logger.info(u"CSV exported %s book%s to %s" % (count, formatter.plural(count), csvFile))
 
 
 def processCSV(search_dir=None):
@@ -734,17 +731,8 @@ def processCSV(search_dir=None):
             else:
                 logger.warn(u"Skipping book %s by %s, not found in database" % (bookname, authorname))
                 skipcount = skipcount + 1
-        pluralauth = 's'
-        pluralbook = 's'
-        pluralskip = 's'
-        if authcount == 1:
-            pluralauth = ''
-        if bookcount == 1:
-            pluralbook = ''
-        if skipcount == 1:
-            pluralskip = ''
         logger.info(u"Added %i new author%s, marked %i book%s as 'Wanted', %i book%s not found" %
-                    (authcount, pluralauth, bookcount, pluralbook, skipcount, pluralskip))
+                    (authcount, formatter.plural(authcount), bookcount, formatter.plural(bookcount), skipcount, formatter.plural(skipcount)))
 
 
 class imgGoogle(FancyURLopener):

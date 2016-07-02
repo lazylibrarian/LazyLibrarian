@@ -948,7 +948,7 @@ class WebInterface(object):
                 # this_issue['safeissuefile'] =
                 # urllib.quote_plus(magfile.encode('utf-8'))
                 mod_issues.append(this_issue)
-            logger.debug("Found %s covers" % covercount)
+            logger.debug("Found %s cover%s" % (covercount, formatter.plural(covercount)))
         return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
     issuePage.exposed = True
 
@@ -1083,9 +1083,9 @@ class WebInterface(object):
                             myDB.upsert("wanted", newValueDict, controlValueDict)
 
         if action == 'Delete':
-            logger.info(u'Deleted %s items from past issues' % (len(maglist)))
+            logger.info(u'Deleted %s item%s from past issues' % (len(maglist), formatter.plural(len(maglist))))
         else:
-            logger.info(u'Status set to %s for %s past issues' % (action, len(maglist)))
+            logger.info(u'Status set to %s for %s past issue%s' % (action, len(maglist), formatter.plural(len(maglist))))
         # start searchthreads
         if action == 'Wanted':
             for items in maglist:

@@ -1,7 +1,6 @@
 # Author: Nic Wolfe <nic@wolfeden.ca>
 # URL: http://code.google.com/p/sickbeard/
 #
-# This file is part of Sick Beard.
 #
 # Sick Beard is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +23,8 @@ import string
 import os
 import shutil
 import time
-from lazylibrarian import logger, database, formatter
+from lazylibrarian import logger, database
+from lazylibrarian.formatter import plural, next_run
 
 USER_AGENT = 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
 
@@ -128,7 +128,7 @@ def showJobs():
 
             jobinterval = job.split('[')[1].split(']')[0]
             jobtime = job.split('at: ')[1].split('.')[0]
-            jobtime = formatter.next_run(jobtime)
+            jobtime = next_run(jobtime)
             jobinfo = "%s: Next run in %s" % (jobname, jobtime)
             result.append(jobinfo)
         return result
@@ -197,7 +197,7 @@ def cleanCache():
                 cleaned += 1
             else:
                 kept += 1
-        logger.debug("Cleaned %i files from JSONCache, kept %i" % (cleaned, kept))
+        logger.debug("Cleaned %i file%s from JSONCache, kept %i" % (cleaned, plural(cleaned), kept))
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "XMLCache")
     cleaned = 0
@@ -213,7 +213,7 @@ def cleanCache():
                 cleaned += 1
             else:
                 kept += 1
-        logger.debug("Cleaned %i files from XMLCache, kept %i" % (cleaned, kept))
+        logger.debug("Cleaned %i file%s from XMLCache, kept %i" % (cleaned, plural(cleaned), kept))
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "WorkCache")
     cleaned = 0
@@ -233,7 +233,7 @@ def cleanCache():
                 cleaned += 1
             else:
                 kept += 1
-        logger.debug("Cleaned %i files from WorkCache, kept %i" % (cleaned, kept))
+        logger.debug("Cleaned %i file%s from WorkCache, kept %i" % (cleaned, plural(cleaned), kept))
 
     cache = os.path.join(lazylibrarian.PROG_DIR, 'data' + os.sep + 'images' + os.sep + 'cache')
     cleaned = 0
@@ -253,7 +253,7 @@ def cleanCache():
                 cleaned += 1
             else:
                 kept += 1
-        logger.debug("Cleaned %i files from ImageCache, kept %i" % (cleaned, kept))
+        logger.debug("Cleaned %i file%s from ImageCache, kept %i" % (cleaned, plural(cleaned), kept))
 
         # correct any '\' separators in the BookImg links
         cleaned = 0
@@ -263,7 +263,7 @@ def cleanCache():
             newname = oldname.replace('\\', '/')
             myDB.action('update books set BookImg="%s" where BookImg="%s"' % (newname, oldname))
             cleaned += 1
-        logger.debug("Corrected %i filenames in ImageCache" % cleaned)
+        logger.debug("Corrected %i filename%s in ImageCache" % (cleaned, plural(cleaned)))
 
         # verify the cover images referenced in the database are present
         covers = myDB.action('select BookImg,BookName,BookID from books')
@@ -281,5 +281,4 @@ def cleanCache():
                 myDB.action('update books set BookImg="images/nocover.png" where Bookid="%s"' % item['BookID'])
             else:
                 kept += 1
-        logger.debug("Cleaned %i missing cover files, kept %i" % (cleaned, kept))
-
+        logger.debug("Cleaned %i missing cover file%s, kept %i" % (cleaned, plural(cleaned), kept))

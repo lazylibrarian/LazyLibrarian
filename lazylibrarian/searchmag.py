@@ -15,7 +15,7 @@ from lazylibrarian.searchnzb import NZBDownloadMethod
 def cron_search_magazines():
     threading.currentThread().name = "CRON-SEARCHMAG"
     search_magazines()
-    
+
 def search_magazines(mags=None, reset=False):
     # produce a list of magazines to search for, tor, nzb, torznab
 
@@ -36,17 +36,14 @@ def search_magazines(mags=None, reset=False):
                                           WHERE Title="%s" AND Status="Active"' % (magazine['bookid']))
             for terms in searchmags_temp:
                 searchmags.append(terms)
-                
+
     # should clear old search results as might not be available any more
     # ie torrent not available, changed providers, out of news server retention etc.
     # Only delete the "skipped" ones, not wanted/snatched/processed/ignored
     logger.debug(u"Removing old magazine search results")
-    myDB.action('DELETE from pastissues WHERE Status="Skipped"')  
+    myDB.action('DELETE from pastissues WHERE Status="Skipped"')
 
-    if len(searchmags) == 1:
-        logger.info('Searching for one magazine')
-    else:
-        logger.info('Searching for %i magazines' % len(searchmags))
+    logger.info('Searching for %i magazine%s' % (len(searchmags), formatter.plural(len(searchmags))))
 
     for searchmag in searchmags:
         bookid = searchmag[0]
@@ -155,14 +152,14 @@ def search_magazines(mags=None, reset=False):
                                 u"Magazine token set Match failed: " + str(
                                     mag_title_match) + "% for " + nzbtitle_formatted)
                             rejected = True
-                    
+
                     if not rejected:
                         already_failed = myDB.action('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' %
                                                     nzburl).fetchone()
                         if already_failed:
                             logger.debug("Rejecting %s, blacklisted at %s" % (nzbtitle_formatted, already_failed['NZBprov']))
                             rejected = True
-                    
+
                     if not rejected:
                         lower_title = common.remove_accents(nzbtitle_formatted).lower()
                         lower_bookid = common.remove_accents(bookid).lower()
@@ -171,12 +168,12 @@ def search_magazines(mags=None, reset=False):
                                 rejected = True
                                 logger.debug("Rejecting %s, contains %s" % (nzbtitle_formatted, word))
                                 break
-                                
+
                     #maxsize = formatter.check_int(lazylibrarian.REJECT_MAXSIZE, 0)
                     #if maxsize and nzbsize > maxsize:
                     #    rejected = True
                     #    logger.debug("Rejecting %s, too large" % nzbtitle_formatted)
-                        
+
                     if not rejected:
                         # some magazine torrent uploaders add their sig in [] or {}
                         # Fortunately for us, they always seem to add it at the end
@@ -298,7 +295,7 @@ def search_magazines(mags=None, reset=False):
                                 control_date = time.strftime("%Y-%m-%d", time.localtime(start_time))
                             else:
                                 control_date = 0
-                        
+
                         if '-' in str(control_date) and '-' in str(newdatish):
                             # only grab a copy if it's newer than the most recent we have,
                             # or newer than a month ago if we have none
@@ -312,7 +309,7 @@ def search_magazines(mags=None, reset=False):
                             bad_date = bad_date + 1
                             newdatish = "1970-01-01"  # this is our fake date for ones we can't decipher
                             comp_date = 0
-                            
+
                         if comp_date > 0:
                             # keep track of what we're going to download so we don't download dupes
                             new_date = new_date + 1
@@ -341,7 +338,7 @@ def search_magazines(mags=None, reset=False):
                         #  Don't add a new entry if this issue has been found on an earlier search
                         #  and status has been user-set ( we only delete the "Skipped" ones )
                         #  In "wanted" table it might be already snatched/downloading/processing
-                        
+
                         mag_entry = myDB.select('SELECT * from %s WHERE NZBtitle="%s" and NZBprov="%s"' % (
                                                 insert_table, nzbtitle, nzbprov))
                         if not mag_entry:
@@ -364,8 +361,8 @@ def search_magazines(mags=None, reset=False):
                         #logger.debug('Magazine [%s] was rejected.' % nzbtitle_formatted)
                         bad_regex = bad_regex + 1
 
-            logger.info('Found %i results for %s. %i new, %i old, %i fail date, %i fail name: %i to download' % (
-                        total_nzbs, bookid, new_date, old_date, bad_date, bad_regex, len(maglist)))
+            logger.info('Found %i result%s for %s. %i new, %i old, %i fail date, %i fail name: %i to download' % (
+                        total_nzbs, formatter.plural(total_nzbs), bookid, new_date, old_date, bad_date, bad_regex, len(maglist)))
 
             for magazine in maglist:
                 if magazine['nzbmode'] == "torznab" or magazine['nzbmode'] == "torrent":

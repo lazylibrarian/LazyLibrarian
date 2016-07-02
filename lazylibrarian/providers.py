@@ -5,8 +5,9 @@ import socket
 from xml.etree import ElementTree
 
 import lazylibrarian
-from lazylibrarian import logger, formatter, database
+from lazylibrarian import logger, database
 import lazylibrarian.common as common
+from lazylibrarian.formatter import age, today, plural
 
 # new libraries to support torrents
 import lib.feedparser as feedparser
@@ -64,8 +65,8 @@ def KAT(book=None):
             pass
 
         else:
-            logger.debug(u"Found %i results from %s for %s, checking seeders" % (len(d.entries),
-                         provider, book['searchterm']))
+            logger.debug(u"Found %i result%s from %s for %s, checking seeders" % (len(d.entries),
+                         plural(len(d.entries)), provider, book['searchterm']))
             for item in d.entries:
                 try:
                     # rightformat = True
@@ -86,12 +87,7 @@ def KAT(book=None):
 
                         logger.debug('Found %s. Size: %s' % (title, size))
                     else:
-                        if int(seeders) == 0:
-                            logger.debug('Found %s but no seeders' % title)
-                        elif int(seeders) == 1:
-                            logger.debug('Found %s but only one seeder' % title)
-                        else:
-                            logger.debug('Found %s but only %s seeders' % (title, int(seeders)))
+                        logger.debug('Found %s but %s seeder%s' % (title, int(seeders), plural(int(seeders))))
 
                 except Exception as e:
                     logger.error(u"An unknown error occurred in the KAT parser: %s" % e)
@@ -101,12 +97,12 @@ def KAT(book=None):
 
 def get_capabilities(provider):
     """
-    query provider for caps if none loaded yet, or if config entry is too old and not set manually. 
-    """                
+    query provider for caps if none loaded yet, or if config entry is too old and not set manually.
+    """
     match = False
     if len(provider['UPDATED']) == 10: # any stored values?
         match = True
-        if (formatter.age(provider['UPDATED']) > lazylibrarian.CACHE_AGE) and not provider['MANUAL']:
+        if (age(provider['UPDATED']) > lazylibrarian.CACHE_AGE) and not provider['MANUAL']:
             logger.debug('Stored capabilities for %s are too old' % provider['HOST'])
             match = False
 
@@ -118,7 +114,7 @@ def get_capabilities(provider):
             host = 'http://' + host
         URL = host + '/api?t=caps&apikey=' + provider['API']
         logger.debug('Requesting capabilities for %s' % URL)
-        
+
         request = urllib2.Request(URL)
         if lazylibrarian.PROXY_HOST:
             request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
@@ -140,8 +136,8 @@ def get_capabilities(provider):
                     data = None
                 if len(data):
                     logger.debug(u"Parsing xml for capabilities of %s" % URL)
-                    
-                    ############################################################################# 
+
+                    #############################################################################
                     # book search isn't mentioned in the caps xml returned by
                     # nzbplanet,jackett,oznzb,usenet-crawler, so we can't use it as a test
                     # but the newznab+ ones usually support t=book and categories in 7000 range
@@ -150,7 +146,7 @@ def get_capabilities(provider):
                     # can't tell what queries will be accepted
                     # also category names can be lowercase or Mixed, magazine subcat name isn't
                     # consistent, and subcat can be just subcat or category/subcat subcat > lang
-                    # eg "Magazines" "Mags" or "Books/Magazines" "Mags > French" 
+                    # eg "Magazines" "Mags" or "Books/Magazines" "Mags > French"
                     # Load all languages for now as we don't know which the user might want
                     #############################################################################
                     #
@@ -166,8 +162,8 @@ def get_capabilities(provider):
                     search = data.find('searching/search')
                     if search is not None:
                         if 'available' in search.attrib:
-                            if search.attrib['available'] == 'yes': 
-                                provider['GENERALSEARCH'] = 'search'    
+                            if search.attrib['available'] == 'yes':
+                                provider['GENERALSEARCH'] = 'search'
                     categories = data.getiterator('category')
                     for cat in categories:
                         if 'name' in cat.attrib:
@@ -182,8 +178,8 @@ def get_capabilities(provider):
                                     search = data.find('searching/book-search')
                                     if search is not None:
                                         if 'available' in search.attrib:
-                                            if search.attrib['available'] == 'yes': 
-                                                provider['BOOKSEARCH'] = 'book'    
+                                            if search.attrib['available'] == 'yes':
+                                                provider['BOOKSEARCH'] = 'book'
                                             else:
                                                 provider['BOOKSEARCH'] = ''
                                 else:
@@ -193,8 +189,8 @@ def get_capabilities(provider):
                                     search = data.find('searching/book-search')
                                     if search is not None:
                                         if 'available' in search.attrib:
-                                            if search.attrib['available'] == 'yes': 
-                                                provider['BOOKSEARCH'] = 'book'    
+                                            if search.attrib['available'] == 'yes':
+                                                provider['BOOKSEARCH'] = 'book'
                                             else:
                                                 provider['BOOKSEARCH'] = ''
                                 subcats = cat.getiterator('subcat')
@@ -210,7 +206,7 @@ def get_capabilities(provider):
                                 if not provider['MAGCAT']:
                                     provider['MAGCAT'] = bookcat
                     logger.debug("Categories: Books %s : Mags %s" % (provider['BOOKCAT'], provider['MAGCAT']))
-                    provider['UPDATED'] = formatter.today()
+                    provider['UPDATED'] = today()
                 else:
                     logger.warn(u"Unable to get capabilities for %s: No data returned" % URL)
             else:
@@ -227,7 +223,7 @@ def IterateOverNewzNabSites(book=None, searchType=None):
     resultslist = []
     providers = 0
     myDB = database.DBConnection()
-    
+
     for provider in lazylibrarian.NEWZNAB_PROV:
         if (provider['ENABLED']):
             provider = get_capabilities(provider)
@@ -303,7 +299,7 @@ def RSS(host=None, feednr=None):
         # to debug because of api
         logger.debug(u'Parsing results from %s' % (URL))
         provider = data['feed']['link']
-        logger.debug("RSS %s returned %i results" % (provider, len(data.entries)))
+        logger.debug("RSS %s returned %i result%s" % (provider, len(data.entries), plural(len(data.entries))))
         for post in data.entries:
             title = None
             magnet = None
@@ -384,16 +380,16 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
             except (urllib2.URLError, socket.timeout, IOError, EOFError) as e:
                 logger.error('Error fetching data from %s: %s' % (host, e))
                 data = None
-    
+
         except Exception as e:
             logger.error("Error 403 opening url %s, %s" % (URL, e))
             data = None
-    
+
         if data:
             # to debug because of api
             logger.debug(u'Parsing results from <a href="%s">%s</a>' % (URL, host))
             rootxml = data.getroot()
-    
+
             if rootxml.tag == 'error':
                 errormsg = rootxml.get('description', default='unknown error')
                 logger.error(u"%s - %s" % (host, errormsg))
@@ -437,7 +433,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "apikey": api_key,
                 "q": authorname + ' ' + bookname,
                 "cat": provider['BOOKCAT']
-            }    
+            }
     elif searchType == "shortbook":
         authorname = book['authorName']
         while authorname[1] in '. ':  # strip any leading initials
@@ -460,7 +456,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "apikey": api_key,
                 "q": authorname + ' ' + bookname,
                 "cat": provider['BOOKCAT']
-            }            
+            }
     elif searchType == "author":
         authorname = book['authorName']
         while authorname[1] in '. ':  # strip any leading initials
@@ -505,7 +501,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
         logger.debug('[NewzNabPlus] - %s Search parameters set to %s' % (searchMode, str(params)))
     else:
         logger.debug('[NewzNabPlus] - %s No matching search parameters' % searchMode)
-            
+
     return params
 
 

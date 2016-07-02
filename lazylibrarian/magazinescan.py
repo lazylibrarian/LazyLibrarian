@@ -2,10 +2,10 @@ import os
 import datetime
 import lazylibrarian
 import subprocess
-from lazylibrarian import database, logger, formatter, notifiers, common
+from lazylibrarian import database, logger, notifiers, common
 from hashlib import sha1
 import re
-
+from lazylibrarian.formatter import getList, is_valid_booktype, plural
 try:
     from wand.image import Image
 except ImportError:
@@ -117,7 +117,7 @@ def magazineScan():
     # with regular expression matching
     booktypes = ''
     count = -1
-    booktype_list = formatter.getList(lazylibrarian.MAG_TYPE)
+    booktype_list = getList(lazylibrarian.MAG_TYPE)
     for book_type in booktype_list:
         count += 1
         if count == 0:
@@ -131,7 +131,7 @@ def magazineScan():
     for dirname, dirnames, filenames in os.walk(mag_path):
         for fname in filenames[:]:
             # maybe not all magazines will be pdf?
-            if formatter.is_valid_booktype(fname, booktype='mag'):
+            if is_valid_booktype(fname, booktype='mag'):
                 try:
                     match = pattern.match(fname)
                     if match:
@@ -231,4 +231,5 @@ def magazineScan():
     magcount = myDB.action("select count(*) from magazines").fetchone()
     isscount = myDB.action("select count(*) from issues").fetchone()
 
-    logger.info("Magazine scan complete, found %s magazines, %s issues" % (magcount['count(*)'], isscount['count(*)']))
+    logger.info("Magazine scan complete, found %s magazine%s, %s issue%s" %
+        (magcount['count(*)'], plural(magcount['count(*)']), isscount['count(*)'], plural(isscount['count(*)'])))

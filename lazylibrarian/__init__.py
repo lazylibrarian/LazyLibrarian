@@ -21,8 +21,9 @@ import urllib2
 import socket
 import json
 
-from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, formatter, \
+from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, \
     librarysync, versioncheck, database, searchmag, magazinescan, common, bookwork
+from lazylibrarian.formatter import getList, bookSeries, plural
 
 try:
     from wand.image import Image
@@ -1166,7 +1167,7 @@ def build_bookstrap_themes():
 
 
 def build_monthtable():
-    if len(formatter.getList(IMP_MONTHLANG)) == 0:  # any extra languages wanted?
+    if len(getList(IMP_MONTHLANG)) == 0:  # any extra languages wanted?
         return
     try:
         current_locale = locale.setlocale(locale.LC_ALL, '')  # read current state.
@@ -1186,7 +1187,7 @@ def build_monthtable():
             logger.info("Added month names for locale [%s], %s, %s ..." % (
                         lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
 
-    for lang in formatter.getList(IMP_MONTHLANG):
+    for lang in getList(IMP_MONTHLANG):
         try:
             if len(lang) > 1:
                 locale.setlocale(locale.LC_ALL, lang)
@@ -1435,7 +1436,7 @@ def dbcheck():
                     if books:
                         logger.info('Adding series to existing books')
                         for book in books:
-                            series,seriesNum = formatter.bookSeries(book["BookName"])
+                            series,seriesNum = bookSeries(book["BookName"])
                             if series:
                                 controlValueDict = {"BookID": book["BookID"]}
                                 newValueDict = {
@@ -1450,7 +1451,7 @@ def dbcheck():
             try:
                 results = myDB.select('SELECT BookID,NZBsize FROM wanted WHERE NZBsize LIKE "% MB"')
                 if results:
-                    logger.info('Removing %s units from wanted table' % len(results))
+                    logger.info('Removing %s unit%s from wanted table' % (len(results), plural(len(results))))
                     for units in results:
                         nzbsize = units["NZBsize"]
                         nzbsize = nzbsize.split(' ')[0]

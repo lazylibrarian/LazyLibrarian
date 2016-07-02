@@ -3,7 +3,7 @@ import re
 import lazylibrarian
 import urllib2
 import socket
-from lazylibrarian import logger, database, importer, formatter, common, bookwork
+from lazylibrarian import logger, database, importer, common, bookwork
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 from xml.etree import ElementTree
@@ -11,6 +11,7 @@ import lib.zipfile as zipfile
 from lib.mobi import Mobi
 from lazylibrarian.common import USER_AGENT
 from shutil import copyfile
+from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList
 
 def opf_file(search_dir=None):
     # find an .opf file in this directory
@@ -105,7 +106,7 @@ def get_book_info(fname):
         elif 'creator' in tag.lower():
             res['creator'] = txt
         elif 'identifier' in tag.lower() and 'isbn' in attrib.lower():
-            if formatter.is_valid_isbn(txt):
+            if is_valid_isbn(txt):
                 res['identifier'] = txt
         n = n + 1
     return res
@@ -136,7 +137,7 @@ def find_book_in_db(myDB, author, book):
         partial_name = ""
         ratio_id = 0
         partial_id = 0
-        #logger.debug("Found %s books for %s" % (len(books), author))
+
         for a_book in books:
             # tidy up everything to raise fuzziness scores
             # still need to lowercase for matching against partial_name later on
@@ -226,9 +227,9 @@ def LibraryScan(dir=None):
                 myDB.action('update books set Status="%s" where BookID="%s"' % (status, bookID))
                 myDB.action('update books set BookFile="" where BookID="%s"' % bookID)
                 logger.warn('Book %s - %s updated as not found on disk' % (bookAuthor, bookName))
-        
-    # to save repeat-scans of the same directory if it contains multiple formats of the same book, 
-    # keep track of which directories we've already looked at 
+
+    # to save repeat-scans of the same directory if it contains multiple formats of the same book,
+    # keep track of which directories we've already looked at
     processed_subdirectories = []
 
     matchString = ''
@@ -238,7 +239,7 @@ def LibraryScan(dir=None):
     # with regular expression matching
     booktypes = ''
     count = -1
-    booktype_list = formatter.getList(lazylibrarian.EBOOK_TYPE)
+    booktype_list = getList(lazylibrarian.EBOOK_TYPE)
     for book_type in booktype_list:
         count += 1
         if count == 0:
@@ -278,7 +279,7 @@ def LibraryScan(dir=None):
                 # If all else fails, try pattern match for author/title
                 # and look up isbn/lang from LT or GR later
                 match = 0
-                if formatter.is_valid_booktype(files):
+                if is_valid_booktype(files):
 
                     logger.debug("[%s] Now scanning subdirectory %s" %
                                  (dir, subdirectory))
@@ -288,7 +289,7 @@ def LibraryScan(dir=None):
                     book = ""
                     author = ""
                     extn = os.path.splitext(files)[1]
-                    
+
                     # if it's an epub or a mobi we can try to read metadata from it
                     if (extn == ".epub") or (extn == ".mobi"):
                         book_filename = os.path.join(
@@ -352,7 +353,7 @@ def LibraryScan(dir=None):
                         processed_subdirectories.append(subdirectory)
 
                         # If we have a valid looking isbn, and language != "Unknown", add it to cache
-                        if language != "Unknown" and formatter.is_valid_isbn(isbn):
+                        if language != "Unknown" and is_valid_isbn(isbn):
                             logger.debug(
                                 "Found Language [%s] ISBN [%s]" %
                                 (language, isbn))
@@ -490,7 +491,7 @@ def LibraryScan(dir=None):
                                     myDB.action(
                                         'UPDATE books set BookFile="%s" where BookID="%s"' %
                                         (book_filename, bookid))
-                                        
+
                                     # update cover file to cover.jpg in book folder (if exists)
                                     bookdir = book_filename.rsplit(os.sep, 1)[0]
                                     coverimg = os.path.join(bookdir, 'cover.jpg')
@@ -498,7 +499,7 @@ def LibraryScan(dir=None):
                                     cacheimg = os.path.join(cachedir, bookid + '.jpg')
                                     if os.path.isfile(coverimg):
                                         copyfile(coverimg, cacheimg)
-                                    
+
                                     new_book_count += 1
                             else:
                                 logger.debug(
@@ -507,49 +508,40 @@ def LibraryScan(dir=None):
 
 
     cachesize = myDB.action("select count('ISBN') as counter from languages").fetchone()
-    logger.info(
-        "%s new/modified books found and added to the database" %
-        new_book_count)
-    logger.info("%s files processed" % file_count)
+    logger.info("%s new/modified book%s found and added to the database" %
+                (new_book_count, plural(new_book_count)))
+    logger.info("%s file%s processed" % (file_count, plural(file_count)))
     stats = myDB.action(
         "SELECT sum(GR_book_hits), sum(GR_lang_hits), sum(LT_lang_hits), sum(GB_lang_change), \
             sum(cache_hits), sum(bad_lang), sum(bad_char), sum(uncached) FROM stats").fetchone()
     if stats['sum(GR_book_hits)'] is not None:
         # only show stats if new books added
         if lazylibrarian.BOOK_API == "GoogleBooks":
-            logger.debug(
-                "GoogleBooks was hit %s times for books" %
-                stats['sum(GR_book_hits)'])
-            logger.debug(
-                "GoogleBooks language was changed %s times" %
-                stats['sum(GB_lang_change)'])
+            logger.debug("GoogleBooks was hit %s time%s for books" %
+                (stats['sum(GR_book_hits)'], plural(stats['sum(GR_book_hits)'])))
+            logger.debug("GoogleBooks language was changed %s time%s" %
+                (stats['sum(GB_lang_change)'], plural(stats['sum(GB_lang_change)'])))
         if lazylibrarian.BOOK_API == "GoodReads":
-            logger.debug(
-                "GoodReads was hit %s times for books" %
-                stats['sum(GR_book_hits)'])
-            logger.debug(
-                "GoodReads was hit %s times for languages" %
-                stats['sum(GR_lang_hits)'])
-        logger.debug(
-            "LibraryThing was hit %s times for languages" %
-            stats['sum(LT_lang_hits)'])
-        logger.debug(
-            "Language cache was hit %s times" %
-            stats['sum(cache_hits)'])
-        logger.debug(
-            "Unwanted language removed %s books" %
-            stats['sum(bad_lang)'])
-        logger.debug(
-            "Unwanted characters removed %s books" %
-            stats['sum(bad_char)'])
-        logger.debug(
-            "Unable to cache %s books with missing ISBN" %
-            stats['sum(uncached)'])
-    logger.debug("Cache %s hits, %s miss" % (lazylibrarian.CACHE_HIT, lazylibrarian.CACHE_MISS))
+            logger.debug("GoodReads was hit %s time%s for books" %
+                (stats['sum(GR_book_hits)'], plural(stats['sum(GR_book_hits)'])))
+            logger.debug("GoodReads was hit %s time%s for languages" %
+                (stats['sum(GR_lang_hits)'], plural(stats['sum(GR_lang_hits)'])))
+        logger.debug("LibraryThing was hit %s time%s for languages" %
+            (stats['sum(LT_lang_hits)'], plural (stats['sum(LT_lang_hits)'])))
+        logger.debug("Language cache was hit %s time%s" %
+            (stats['sum(cache_hits)'], plural(stats['sum(cache_hits)'])))
+        logger.debug("Unwanted language removed %s book%s" %
+            (stats['sum(bad_lang)'], plural (stats['sum(bad_lang)'])))
+        logger.debug("Unwanted characters removed %s book%s" %
+            (stats['sum(bad_char)'], plural(stats['sum(bad_char)'])))
+        logger.debug("Unable to cache %s book%s with missing ISBN" %
+            (stats['sum(uncached)'], plural(stats['sum(uncached)'])))
+    logger.debug("Cache %s hit%s, %s miss" %
+        (lazylibrarian.CACHE_HIT, plural(lazylibrarian.CACHE_HIT), lazylibrarian.CACHE_MISS))
     logger.debug("ISBN Language cache holds %s entries" % cachesize['counter'])
     stats = len(myDB.select('select BookID from Books where status="Open" and BookLang="Unknown"'))
     if stats:
-        logger.warn("There are %s books in your library with unknown language" % stats)
+        logger.warn("Found %s book%s in your library with unknown language" % (stats, plural(stats)))
 
     authors = myDB.select('select AuthorName from authors')
     # Update bookcounts for all authors, not just new ones - refresh may have located
@@ -562,7 +554,7 @@ def LibraryScan(dir=None):
             name).fetchone()
         myDB.action('UPDATE authors set HaveBooks="%s" where AuthorName="%s"' % (havebooks['counter'], name))
         totalbooks = myDB.action(
-            'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s"' % name).fetchone()        
+            'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s"' % name).fetchone()
         myDB.action('UPDATE authors set TotalBooks="%s" where AuthorName="%s"' % (totalbooks['counter'], name))
         unignoredbooks = myDB.action(
             'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND Status!="Ignored"' %
@@ -571,7 +563,7 @@ def LibraryScan(dir=None):
 
     images = myDB.select('select bookid, bookimg, bookname from books where bookimg like "http%"')
     if len(images):
-        logger.info("Caching covers for %i books" % len(images))
+        logger.info("Caching cover%s for %i book%s" % (plural(len(images)), len(images), plural(len(images))))
         for item in images:
             bookid = item['bookid']
             bookimg = item['bookimg']
@@ -581,4 +573,3 @@ def LibraryScan(dir=None):
                 myDB.action('update books set BookImg="%s" where BookID="%s"' % (newimg, bookid))
     bookwork.setWorkPages()
     logger.info('Library scan complete')
-

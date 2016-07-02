@@ -1,8 +1,9 @@
 import os
 import lazylibrarian
-from lazylibrarian import logger, formatter, database
+from lazylibrarian import logger, database
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
+from lazylibrarian.formatter import today
 
 def addAuthorToDB(authorname=None, refresh=False):
 
@@ -37,7 +38,7 @@ def addAuthorToDB(authorname=None, refresh=False):
             "AuthorImg": authorimg,
             "AuthorBorn": author['authorborn'],
             "AuthorDeath": author['authordeath'],
-            "DateAdded": formatter.today(),
+            "DateAdded": today(),
             "Status": "Loading"
         }
         myDB.upsert("authors", newValueDict, controlValueDict)
@@ -57,7 +58,7 @@ def addAuthorToDB(authorname=None, refresh=False):
         authorname).fetchone()
     myDB.action('UPDATE authors set HaveBooks="%s" where AuthorName="%s"' % (havebooks['counter'], authorname))
     totalbooks = myDB.action(
-        'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s"' % authorname).fetchone()        
+        'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s"' % authorname).fetchone()
     myDB.action('UPDATE authors set TotalBooks="%s" where AuthorName="%s"' % (totalbooks['counter'], authorname))
     unignoredbooks = myDB.action(
         'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND Status!="Ignored"' %

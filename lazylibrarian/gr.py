@@ -5,8 +5,9 @@ import re
 import time
 from xml.etree import ElementTree
 import lazylibrarian
-from lazylibrarian import logger, formatter, database, bookwork
+from lazylibrarian import logger, database, bookwork
 from lazylibrarian.common import USER_AGENT
+from lazylibrarian.formatter import plural, today, replace_all, bookSeries
 from lib.fuzzywuzzy import fuzz
 from lib.unidecode import unidecode
 import os
@@ -206,8 +207,8 @@ class GoodReads:
             else:
                 logger.error('An unexpected error has occurred when searching for an author')
 
-        logger.debug('Found %s results with keyword: %s' % (resultcount, authorname))
-        logger.debug('The GoodReads API was hit %s times for keyword %s' % (str(api_hits), authorname))
+        logger.debug('Found %s result%s with keyword: %s' % (resultcount, plural(resultcount), authorname))
+        logger.debug('The GoodReads API was hit %s time%s for keyword %s' % (api_hits, plural(api_hits), authorname))
 
         queue.put(resultlist)
 
@@ -481,9 +482,9 @@ class GoodReads:
 
                     bookname = unidecode(u'%s' % bookname)
                     dic = {':': '', '"': '', '\'': ''}
-                    bookname = formatter.replace_all(bookname, dic)
+                    bookname = replace_all(bookname, dic)
                     bookname = bookname.strip()  # strip whitespace
-                    series,seriesNum = formatter.bookSeries(bookname)
+                    series,seriesNum = bookSeries(bookname)
 
                     # GoodReads sometimes has multiple bookids for the same book (same author/title, different editions)
                     # and sometimes uses the same bookid if the book is the same but the title is slightly different
@@ -539,7 +540,7 @@ class GoodReads:
                                 "BookDate": pubyear,
                                 "BookLang": bookLanguage,
                                 "Status": book_status,
-                                "BookAdded": formatter.today(),
+                                "BookAdded": today(),
                                 "Series": series,
                                 "SeriesNum": seriesNum
                             }
@@ -635,29 +636,22 @@ class GoodReads:
         # This is here because GoodReads sometimes has several entries with the same BookID!
         modified_count = added_count + updated_count
 
-        logger.debug("Found %s total books for author" % total_count)
-        logger.debug("Removed %s bad language results for author" % ignored)
-        logger.debug("Removed %s bad character or duplicate results for author" % removedResults)
-        logger.debug("Ignored %s books by author marked as Ignored" % book_ignore_count)
-        logger.debug("Imported/Updated %s books for author" % modified_count)
+        logger.debug("Found %s total book%s for author" % (total_count, plural(total_count)))
+        logger.debug("Removed %s bad language result%s for author" % (ignored, plural(ignored)))
+        logger.debug("Removed %s bad character or duplicate result%s for author" % (removedResults, plural(removedResults)))
+        logger.debug("Ignored %s book%s by author marked as Ignored" % (book_ignore_count, plural(book_ignore_count)))
+        logger.debug("Imported/Updated %s book%s for author" % (modified_count, plural(modified_count)))
 
         myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' %
                     (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change,
                      cache_hits, ignored, removedResults, not_cached))
 
-        plural_added = 's'
-        plural_updated = 's'
-        if added_count == 1:
-            plural_added = ''
-        if updated_count == 1:
-            plural_updated = ''
-
         if refresh:
             logger.info("[%s] Book processing complete: Added %s book%s / Updated %s book%s" %
-                        (authorname, added_count, plural_added, updated_count, plural_updated))
+                        (authorname, added_count, plural(added_count), updated_count, plural(updated_count)))
         else:
             logger.info("[%s] Book processing complete: Added %s book%s to the database" %
-                        (authorname, added_count, plural_added))
+                        (authorname, added_count, plural(added_count)))
 
         return books_dict
 
@@ -724,7 +718,7 @@ class GoodReads:
             seriesNum = None
 
         dic = {':': '', '"': '', '\'': ''}
-        bookname = formatter.replace_all(bookname, dic)
+        bookname = replace_all(bookname, dic)
 
         bookname = unidecode(u'%s' % bookname)
         bookname = bookname.strip()  # strip whitespace
@@ -747,7 +741,7 @@ class GoodReads:
             "BookDate": bookdate,
             "BookLang": bookLanguage,
             "Status": "Wanted",
-            "BookAdded": formatter.today(),
+            "BookAdded": today(),
             "Series": series,
             "SeriesNum": seriesNum
         }
