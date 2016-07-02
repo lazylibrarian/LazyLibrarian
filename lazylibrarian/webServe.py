@@ -1499,7 +1499,7 @@ class WebInterface(object):
 # ALL ELSE ##########################################################
 
     def forceProcess(self, source=None):
-        threading.Thread(target=postprocess.processDir, name='POSTPROCESS', args=[True, True]).start()
+        threading.Thread(target=postprocess.processDir, name='POSTPROCESS', args=[True]).start()
         raise cherrypy.HTTPRedirect(source)
     forceProcess.exposed = True
 
