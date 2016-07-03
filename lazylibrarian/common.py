@@ -99,16 +99,17 @@ def restartJobs(start='Restart'):
 
 def showJobs():
         result = []
-        result.append("Cache %i hits, %i miss" % (
+        result.append("Cache %i hit%s, %i miss" % (
             int(lazylibrarian.CACHE_HIT),
+            plural(int(lazylibrarian.CACHE_HIT)),
             int(lazylibrarian.CACHE_MISS)))
         myDB = database.DBConnection()
         snatched = myDB.action(
             "SELECT count('Status') as counter from wanted WHERE Status = 'Snatched'").fetchone()
         wanted = myDB.action(
             "SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'").fetchone()
-        result.append("%i items marked as Snatched" % snatched['counter'])
-        result.append("%i items marked as Wanted" % wanted['counter'])
+        result.append("%i item%s marked as Snatched" % (snatched['counter'], plural(snatched['counter'])))
+        result.append("%i item%s marked as Wanted" % (wanted['counter'], plural(wanted['counter'])))
         for job in lazylibrarian.SCHED.get_jobs():
             job = str(job)
             if "search_magazines" in job:

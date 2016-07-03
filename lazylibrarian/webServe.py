@@ -1244,7 +1244,7 @@ class WebInterface(object):
     restart.exposed = True
 
     @cherrypy.expose
-    def showJobs(self):
+    def show_Jobs(self):
         cherrypy.response.headers[
             'Cache-Control'] = "max-age=0,no-cache,no-store"
         # show the current status of LL cron jobs in the log
@@ -1255,11 +1255,10 @@ class WebInterface(object):
         return result
 
     @cherrypy.expose
-    def restartJobs(self):
+    def restart_Jobs(self):
         restartJobs(start='Restart')
         # and list the new run-times in the log
-        return self.showJobs()
-#    restartJobs.exposed = True
+        return self.show_Jobs()
 
 # LOGGING ###########################################################
 
