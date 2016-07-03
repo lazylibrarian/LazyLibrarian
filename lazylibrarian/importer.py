@@ -1,8 +1,9 @@
 import os
 import lazylibrarian
-from lazylibrarian import logger, formatter, database
+from lazylibrarian import logger, database
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
+from lazylibrarian.formatter import today
 
 def addAuthorToDB(authorname=None, refresh=False):
 
@@ -37,7 +38,7 @@ def addAuthorToDB(authorname=None, refresh=False):
             "AuthorImg": authorimg,
             "AuthorBorn": author['authorborn'],
             "AuthorDeath": author['authordeath'],
-            "DateAdded": formatter.today(),
+            "DateAdded": today(),
             "Status": "Loading"
         }
         myDB.upsert("authors", newValueDict, controlValueDict)
@@ -52,16 +53,33 @@ def addAuthorToDB(authorname=None, refresh=False):
     elif lazylibrarian.BOOK_API == "GoodReads":
         GR.get_author_books(authorid, authorname, refresh=refresh)
 
-    havebooks = myDB.action(
-        'SELECT count("BookID") as counter from books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' %
-        authorname).fetchone()
-    myDB.action('UPDATE authors set HaveBooks="%s" where AuthorName="%s"' % (havebooks['counter'], authorname))
-    totalbooks = myDB.action(
-        'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s"' % authorname).fetchone()        
-    myDB.action('UPDATE authors set TotalBooks="%s" where AuthorName="%s"' % (totalbooks['counter'], authorname))
-    unignoredbooks = myDB.action(
-        'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND Status!="Ignored"' %
-        authorname).fetchone()
-    myDB.action('UPDATE authors set UnignoredBooks="%s" where AuthorName="%s"' % (unignoredbooks['counter'], authorname))
-
+    update_totals(authorid)
     logger.debug("[%s] Author update complete" % authorname)
+
+def update_totals(AuthorID):
+    myDB = database.DBConnection()
+    # author totals needs to be updated every time a book is marked differently
+    authorsearch = myDB.select('SELECT * from authors WHERE AuthorID="%s"' % AuthorID)
+    if not authorsearch:
+        return
+
+    lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE \
+                           AuthorID="%s" AND Status != "Ignored" order by BookDate DESC' %
+                           AuthorID).fetchone()
+    unignoredbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE \
+                                 AuthorID="%s" AND Status != "Ignored"' % AuthorID).fetchone()
+    totalbooks = myDB.action(
+        'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % AuthorID).fetchone()
+    havebooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND \
+                            (Status="Have" OR Status="Open")' % AuthorID).fetchone()
+    controlValueDict = {"AuthorID": AuthorID}
+
+    newValueDict = {
+        "TotalBooks": totalbooks['counter'],
+        "UnignoredBooks": unignoredbooks['counter'],
+        "HaveBooks": havebooks['counter'],
+        "LastBook": lastbook['BookName'] if lastbook else None,
+        "LastLink": lastbook['BookLink'] if lastbook else None,
+        "LastDate": lastbook['BookDate'] if lastbook else None
+    }
+    myDB.upsert("authors", newValueDict, controlValueDict)

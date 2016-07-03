@@ -10,11 +10,12 @@ import re
 from urllib2 import HTTPError
 
 import lazylibrarian
-from lazylibrarian import logger, formatter, database, bookwork
+from lazylibrarian import logger, database, bookwork
 from lazylibrarian.gr import GoodReads
 
 from lib.fuzzywuzzy import fuzz
 from lib.unidecode import unidecode
+from lazylibrarian.formatter import plural, today, replace_all
 import os
 import md5
 import hashlib
@@ -126,7 +127,6 @@ class GoogleBooks:
             try:
                 startindex = 0
                 resultcount = 0
-                # removedResults = 0
                 ignored = 0
                 number_results = 1
                 total_count = 0
@@ -264,7 +264,7 @@ class GoogleBooks:
 
                         bookname = item['volumeInfo']['title']
                         dic = {':': '', '"': '', '\'': ''}
-                        bookname = formatter.replace_all(bookname, dic)
+                        bookname = replace_all(bookname, dic)
 
                         bookname = unidecode(u'%s' % bookname)
                         bookname = bookname.strip()  # strip whitespace
@@ -297,22 +297,20 @@ class GoogleBooks:
             except KeyError:
                 break
 
-        logger.debug("Found %s total results" % total_count)
-        logger.debug("Removed %s bad language results" % ignored)
-        logger.debug("Removed %s books with no author" % no_author_count)
+        logger.debug("Found %s total result%s" % (total_count,  plural(total_count)))
+        logger.debug("Removed %s bad language result%s" % (ignored, plural(ignored)))
+        logger.debug("Removed %s book%s with no author" % (no_author_count, plural(no_author_count)))
         logger.debug(
-            "Showing %s results for (%s) with keyword: %s" %
-            (resultcount, api_value, authorname))
+            "Showing %s result%s for (%s) with keyword: %s" %
+            (resultcount, plural(resultcount), api_value, authorname))
         logger.debug(
-            'The Google Books API was hit %s times for keyword %s' %
-            (str(api_hits), self.name))
+            'The Google Books API was hit %s time%s for keyword %s' %
+            (api_hits, plural(api_hits), self.name))
         queue.put(resultlist)
 
     def get_author_books(self, authorid=None, authorname=None, refresh=False):
 
-        logger.debug(
-            '[%s] Now processing books with Google Books API' %
-            authorname)
+        logger.debug('[%s] Now processing books with Google Books API' % authorname)
         # google doesnt like accents in author names
         aname = unidecode(u'%s' % authorname)
 
@@ -337,6 +335,7 @@ class GoogleBooks:
             startindex = 0
             resultcount = 0
             removedResults = 0
+            duplicates = 0
             ignored = 0
             added_count = 0
             updated_count = 0
@@ -367,12 +366,10 @@ class GoogleBooks:
                     break
 
                 if number_results == 0:
-                    logger.warn('Found no results for %s' % (authorname))
+                    logger.warn('Found no results for %s' % authorname)
                     break
                 else:
-                    logger.debug(
-                        'Found %s results for %s' %
-                        (number_results, authorname))
+                    logger.debug('Found %s result%s for %s' % (number_results, plural(number_results), authorname))
 
                 startindex = startindex + 40
 
@@ -524,29 +521,54 @@ class GoogleBooks:
                         bookdesc = None
 
                     bookname = item['volumeInfo']['title']
-                    dic = {':': '', '"': '', '\'': ''}
-                    bookname = formatter.replace_all(bookname, dic)
-
                     bookname = unidecode(u'%s' % bookname)
+                    dic = {':': '', '"': '', '\'': ''}
+                    bookname = replace_all(bookname, dic)
                     bookname = bookname.strip()  # strip whitespace
 
                     booklink = item['volumeInfo']['canonicalVolumeLink']
                     bookrate = float(bookrate)
                     bookid = item['id']
 
-                    find_book_status = myDB.select(
-                        'SELECT * FROM books WHERE BookID = "%s"' %
-                        bookid)
+                    # GoodReads sometimes has multiple bookids for the same book (same author/title, different editions)
+                    # and sometimes uses the same bookid if the book is the same but the title is slightly different
+                    #
+                    # Not sure if googlebooks does too, but we only want one...
+                    find_book_status = myDB.select('SELECT * FROM books WHERE BookID = "%s"' % bookid)
                     if find_book_status:
                         for resulted in find_book_status:
                             book_status = resulted['Status']
                     else:
                         book_status = lazylibrarian.NEWBOOK_STATUS
 
-                    if not (re.match('[^\w-]', bookname)):  # remove books with bad characters in title
+                    rejected = False
+                    if re.match('[^\w-]', bookname):  # remove books with bad characters in title
+                        logger.debug("[%s] removed book for bad characters" % bookname)
+                        removedResults = removedResults + 1
+                        rejected = True
+
+                    if not rejected and not bookname:
+                        logger.debug('Rejecting bookid %s for %s, no bookname' %
+                                (bookid, authorname))
+                        removedResults = removedResults + 1
+                        rejected = True
+
+                    if not rejected:
+                        find_books = myDB.select('SELECT * FROM books WHERE BookName = "%s" and AuthorName = "%s"' %
+                                                        (bookname, authorname))
+                        if find_books:
+                            for find_book in find_books:
+                                if find_book['BookID'] != bookid:
+                                    # we have a book with this author/title already
+                                    logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
+                                        (find_book['BookID'], authorname, bookname, bookid))
+                                    rejected = True
+                                    duplicates = duplicates + 1
+                                    break
+
+                    if not rejected:
                         if book_status != "Ignored":
                             controlValueDict = {"BookID": bookid}
-
                             newValueDict = {
                                 "AuthorName": authorname,
                                 "AuthorID": authorid,
@@ -564,7 +586,7 @@ class GoogleBooks:
                                 "BookDate": bookdate,
                                 "BookLang": booklang,
                                 "Status": book_status,
-                                "BookAdded": formatter.today(),
+                                "BookAdded": today(),
                                 "Series": series,
                                 "SeriesNum": seriesNum
                             }
@@ -615,17 +637,11 @@ class GoogleBooks:
                                 logger.debug("[%s] Updated book: %s" % (authorname, bookname))
                         else:
                             book_ignore_count = book_ignore_count + 1
-                    else:
-                        logger.debug(
-                            "[%s] removed book for bad characters" %
-                            (bookname))
-                        removedResults = removedResults + 1
-
         except KeyError:
             pass
 
-        logger.debug('[%s] The Google Books API was hit %s times to populate book list' %
-                     (authorname, str(api_hits)))
+        logger.debug('[%s] The Google Books API was hit %s time%s to populate book list' %
+                     (authorname, api_hits, plural(api_hits)))
 
         lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorID="%s" \
                                AND Status != "Ignored" order by BookDate DESC' % authorid).fetchone()
@@ -649,27 +665,23 @@ class GoogleBooks:
 
         myDB.upsert("authors", newValueDict, controlValueDict)
 
-        logger.debug("Found %s total books for author" % total_count)
-        logger.debug("Removed %s bad language results for author" % ignored)
-        logger.debug(
-            "Removed %s bad character results for author" %
-            removedResults)
-        logger.debug(
-            "Ignored %s books by author marked as Ignored" %
-            book_ignore_count)
-        logger.debug("Imported/Updated %s books for author" % resultcount)
+        logger.debug("Found %s total book%s for author" % (total_count, plural(total_count)))
+        logger.debug("Removed %s bad language result%s for author" % (ignored, plural(ignored)))
+        logger.debug("Removed %s bad character or no-name result%s for author" % (removedResults, plural(removedResults)))
+        logger.debug("Removed %s duplicate result%s for author" % (duplicates, plural(duplicates)))
+        logger.debug("Ignored %s book%s by author marked as Ignored" % (book_ignore_count, plural(book_ignore_count)))
+        logger.debug("Imported/Updated %s book%s for author" % (resultcount, plural(resultcount)))
 
-        myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' %
+        myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i, %i)' %
                     (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits,
-                     ignored, removedResults, not_cached))
+                     ignored, removedResults, not_cached, duplicates))
 
         if refresh:
-            logger.info("[%s] Book processing complete: Added %s books / Updated %s books" %
-                        (authorname, str(added_count), str(updated_count)))
+            logger.info("[%s] Book processing complete: Added %s book%s / Updated %s book%s" %
+                        (authorname, added_count, plural(added_count), updated_count, plural(updated_count)))
         else:
-            logger.info("[%s] Book processing complete: Added %s books to the database" %
-                        (authorname, str(added_count)))
-
+            logger.info("[%s] Book processing complete: Added %s book%s to the database" %
+                        (authorname, added_count, plural(added_count)))
         return books_dict
 
     def find_book(self, bookid=None, queue=None):
@@ -686,7 +698,7 @@ class GoogleBooks:
 
         bookname = jsonresults['volumeInfo']['title']
         dic = {':': '', '"': '', '\'': ''}
-        bookname = formatter.replace_all(bookname, dic)
+        bookname = replace_all(bookname, dic)
 
         bookname = unidecode(u'%s' % bookname)
         bookname = bookname.strip()  # strip whitespace
@@ -798,7 +810,7 @@ class GoogleBooks:
             "BookDate": bookdate,
             "BookLang": booklang,
             "Status": "Wanted",
-            "BookAdded": formatter.today(),
+            "BookAdded": today(),
             "Series": series,
             "SeriesNum": seriesNum
         }
@@ -839,4 +851,3 @@ class GoogleBooks:
             controlValueDict = {"BookID": bookid}
             newValueDict = {"WorkPage": worklink}
             myDB.upsert("books", newValueDict, controlValueDict)
-

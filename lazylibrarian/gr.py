@@ -5,8 +5,9 @@ import re
 import time
 from xml.etree import ElementTree
 import lazylibrarian
-from lazylibrarian import logger, formatter, database, bookwork
+from lazylibrarian import logger, database, bookwork
 from lazylibrarian.common import USER_AGENT
+from lazylibrarian.formatter import plural, today, replace_all, bookSeries
 from lib.fuzzywuzzy import fuzz
 from lib.unidecode import unidecode
 import os
@@ -206,8 +207,8 @@ class GoodReads:
             else:
                 logger.error('An unexpected error has occurred when searching for an author')
 
-        logger.debug('Found %s results with keyword: %s' % (resultcount, authorname))
-        logger.debug('The GoodReads API was hit %s times for keyword %s' % (str(api_hits), authorname))
+        logger.debug('Found %s result%s with keyword: %s' % (resultcount, plural(resultcount), authorname))
+        logger.debug('The GoodReads API was hit %s time%s for keyword %s' % (api_hits, plural(api_hits), authorname))
 
         queue.put(resultlist)
 
@@ -318,6 +319,7 @@ class GoodReads:
 
             resultsCount = 0
             removedResults = 0
+            duplicates = 0
             ignored = 0
             added_count = 0
             updated_count = 0
@@ -408,16 +410,16 @@ class GoodReads:
                                     lt_lang_hits = lt_lang_hits + 1
                                     logger.debug("LibraryThing reports language [%s] for %s" % (resp, isbnhead))
 
-                                    if (resp == 'invalid' or resp == 'unknown'):
+                                    if ('invalid' in resp or 'Unknown' in resp):
                                         find_field = "id"  # reset the field to force search on goodreads
                                     else:
                                         bookLanguage = resp  # found a language code
                                         myDB.action('insert into languages values ("%s", "%s")' %
                                                     (isbnhead, bookLanguage))
-                                        logger.debug(u"LT language: " + bookLanguage)
+                                        logger.debug(u"LT language %s: %s" % (isbnhead, bookLanguage))
                                 except Exception as e:
+                                    logger.error("Error finding LT language result for [%s], %s" % (isbn, e))
                                     find_field = "id"  # reset the field to search on goodreads
-                                    logger.error("Error finding LT language result: %s" % e)
 
                         if (find_field == 'id'):
                             # [or bookLanguage == "Unknown"] no earlier match, we'll have to search the goodreads api
@@ -479,8 +481,15 @@ class GoodReads:
                     bookrate = float(book.find('average_rating').text)
                     bookpages = book.find('num_pages').text
 
-                    series,seriesNum = formatter.bookSeries(bookname)
+                    bookname = unidecode(u'%s' % bookname)
+                    dic = {':': '', '"': '', '\'': ''}
+                    bookname = replace_all(bookname, dic)
+                    bookname = bookname.strip()  # strip whitespace
+                    series,seriesNum = bookSeries(bookname)
 
+                    # GoodReads sometimes has multiple bookids for the same book (same author/title, different editions)
+                    # and sometimes uses the same bookid if the book is the same but the title is slightly different
+                    # We use bookid, then reject if another author/title has a different bookid so we just keep one...
                     find_book_status = myDB.select('SELECT * FROM books WHERE BookID = "%s"' % bookid)
                     if find_book_status:
                         for resulted in find_book_status:
@@ -488,13 +497,33 @@ class GoodReads:
                     else:
                         book_status = lazylibrarian.NEWBOOK_STATUS
 
-                    dic = {':': '', '"': '', '\'': ''}
-                    bookname = formatter.replace_all(bookname, dic)
+                    rejected = False
 
-                    bookname = unidecode(u'%s' % bookname)
-                    bookname = bookname.strip()  # strip whitespace
+                    if re.match('[^\w-]', bookname):  # reject books with bad characters in title
+                        logger.debug(u"removed result [" + bookname + "] for bad characters")
+                        removedResults = removedResults + 1
+                        rejected = True
 
-                    if not (re.match('[^\w-]', bookname)):  # remove books with bad characters in title
+                    if not rejected and not bookname:
+                        logger.debug('Rejecting bookid %s for %s, no bookname' %
+                                (bookid, authorNameResult))
+                        removedResults = removedResults + 1
+                        rejected = True
+
+                    if not rejected:
+                        find_books = myDB.select('SELECT * FROM books WHERE BookName = "%s" and AuthorName = "%s"' %
+                                                    (bookname, authorNameResult))
+                        if find_books:
+                            for find_book in find_books:
+                                if find_book['BookID'] != bookid:
+                                    # we have a book with this author/title already
+                                    logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
+                                        (find_book['BookID'], authorNameResult, bookname, bookid))
+                                    duplicates = duplicates + 1
+                                    rejected = True
+                                    break
+
+                    if not rejected:
                         if book_status != "Ignored":
                             controlValueDict = {"BookID": bookid}
                             newValueDict = {
@@ -514,7 +543,7 @@ class GoodReads:
                                 "BookDate": pubyear,
                                 "BookLang": bookLanguage,
                                 "Status": book_status,
-                                "BookAdded": formatter.today(),
+                                "BookAdded": today(),
                                 "Series": series,
                                 "SeriesNum": seriesNum
                             }
@@ -566,9 +595,6 @@ class GoodReads:
                                 updated_count = updated_count + 1
                         else:
                             book_ignore_count = book_ignore_count + 1
-                    else:
-                        logger.debug(u"removed result [" + bookname + "] for bad characters")
-                        removedResults = removedResults + 1
 
                 loopCount = loopCount + 1
                 URL = 'http://www.goodreads.com/author/list/' + authorid + '.xml?' + \
@@ -613,22 +639,23 @@ class GoodReads:
         # This is here because GoodReads sometimes has several entries with the same BookID!
         modified_count = added_count + updated_count
 
-        logger.debug("Found %s total books for author" % total_count)
-        logger.debug("Removed %s bad language results for author" % ignored)
-        logger.debug("Removed %s bad character results for author" % removedResults)
-        logger.debug("Ignored %s books by author marked as Ignored" % book_ignore_count)
-        logger.debug("Imported/Updated %s books for author" % modified_count)
+        logger.debug("Found %s total book%s for author" % (total_count, plural(total_count)))
+        logger.debug("Removed %s bad language result%s for author" % (ignored, plural(ignored)))
+        logger.debug("Removed %s bad character or no-name result%s for author" % (removedResults, plural(removedResults)))
+        logger.debug("Removed %s duplicate result%s for author" % (duplicates, plural(duplicates)))
+        logger.debug("Ignored %s book%s by author marked as Ignored" % (book_ignore_count, plural(book_ignore_count)))
+        logger.debug("Imported/Updated %s book%s for author" % (modified_count, plural(modified_count)))
 
-        myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' %
+        myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i, %i)' %
                     (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change,
-                     cache_hits, ignored, removedResults, not_cached))
+                     cache_hits, ignored, removedResults, not_cached, duplicates))
 
         if refresh:
-            logger.info("[%s] Book processing complete: Added %s books / Updated %s books" %
-                        (authorname, str(added_count), str(updated_count)))
+            logger.info("[%s] Book processing complete: Added %s book%s / Updated %s book%s" %
+                        (authorname, added_count, plural(added_count), updated_count, plural(updated_count)))
         else:
-            logger.info("[%s] Book processing complete: Added %s books to the database" %
-                        (authorname, str(added_count)))
+            logger.info("[%s] Book processing complete: Added %s book%s to the database" %
+                        (authorname, added_count, plural(added_count)))
 
         return books_dict
 
@@ -695,7 +722,7 @@ class GoodReads:
             seriesNum = None
 
         dic = {':': '', '"': '', '\'': ''}
-        bookname = formatter.replace_all(bookname, dic)
+        bookname = replace_all(bookname, dic)
 
         bookname = unidecode(u'%s' % bookname)
         bookname = bookname.strip()  # strip whitespace
@@ -718,7 +745,7 @@ class GoodReads:
             "BookDate": bookdate,
             "BookLang": bookLanguage,
             "Status": "Wanted",
-            "BookAdded": formatter.today(),
+            "BookAdded": today(),
             "Series": series,
             "SeriesNum": seriesNum
         }
@@ -759,4 +786,3 @@ class GoodReads:
             controlValueDict = {"BookID": bookid}
             newValueDict = {"WorkPage": worklink}
             myDB.upsert("books", newValueDict, controlValueDict)
-

@@ -14,13 +14,17 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 from lazylibrarian import importer, postprocess, logger, database, \
-    updater, librarysync, magazinescan, formatter, common, bookwork
+    librarysync, bookwork
 from lazylibrarian.searchnzb import search_nzb_book
 from lazylibrarian.searchtorrents import search_tor_book
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
+from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs
+from lazylibrarian.formatter import today
+from lazylibrarian.updater import dbUpdate
+from lazylibrarian.magazinescan import magazineScan
 
 import lazylibrarian
 import json
@@ -132,19 +136,19 @@ class Api(object):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "API"
-            
+
         if self.data == 'OK':
             args = []
             if 'name' in self.kwargs:
-               args.append({"name": self.kwargs['name']}) 
+               args.append({"name": self.kwargs['name']})
             if 'id' in self.kwargs:
-               args.append({"id": self.kwargs['id']}) 
+               args.append({"id": self.kwargs['id']})
             if 'group' in self.kwargs:
-               args.append({"group": self.kwargs['group']}) 
+               args.append({"group": self.kwargs['group']})
             if 'value' in self.kwargs:
-               args.append({"value": self.kwargs['value']}) 
+               args.append({"value": self.kwargs['value']})
             if 'wait' in self.kwargs:
-               args.append({"wait": "True"}) 
+               args.append({"wait": "True"})
             if args == []:
                 args = ''
             logger.info('Received API command: %s %s' % (self.cmd, args))
@@ -182,7 +186,7 @@ class Api(object):
     def _getHistory(self, **kwargs):
         self.data = self._dic_from_query(
             "SELECT * from wanted WHERE Status != 'Skipped' and Status != 'Ignored'")
- 
+
     def _getWanted(self, **kwargs):
         self.data = self._dic_from_query(
             "SELECT * from books WHERE Status='Wanted'")
@@ -190,12 +194,12 @@ class Api(object):
     def _getSnatched(self, **kwargs):
         self.data = self._dic_from_query(
             "SELECT * from books WHERE Status='Snatched'")
-        
+
     def _getLogs(self, **kwargs):
         self.data = lazylibrarian.LOGLIST
 
     def _clearLogs(self, **kwargs):
-        self.data = common.clearLog()
+        self.data = clearLog()
 
     def _getIndex(self, **kwargs):
         self.data = self._dic_from_query(
@@ -212,7 +216,7 @@ class Api(object):
             'SELECT * from authors WHERE AuthorID="' + self.id + '"')
         books = self._dic_from_query(
             'SELECT * from books WHERE AuthorID="' + self.id + '"')
-        
+
         self.data = {'author': author, 'books': books}
 
 
@@ -236,7 +240,7 @@ class Api(object):
             'SELECT * from magazines WHERE Title="' + self.id + '"')
         issues = self._dic_from_query(
             'SELECT * from issues WHERE Title="' + self.id + '" order by IssueDate DESC')
-        
+
         self.data = {
             'magazine': magazine, 'issues': issues}
 
@@ -283,13 +287,13 @@ class Api(object):
             return
         else:
             self.id = kwargs['name']
-        
+
         controlValueDict = {"Title": self.id}
         newValueDict = {
             "Frequency": None,
             "Regex": None,
             "Status": "Active",
-            "MagazineAdded": formatter.today(),
+            "MagazineAdded": today(),
             "IssueStatus": "Wanted"
         }
         myDB.upsert("magazines", newValueDict, controlValueDict)
@@ -344,9 +348,9 @@ class Api(object):
 
     def _forceActiveAuthorsUpdate(self, **kwargs):
         if 'wait' in kwargs:
-            updater.dbUpdate(False)
+            dbUpdate(False)
         else:
-            threading.Thread(target=updater.dbUpdate, name='API-DBUPDATE', args=[False]).start()
+            threading.Thread(target=dbUpdate, name='API-DBUPDATE', args=[False]).start()
 
     def _forceMagSearch(self, **kwargs):
         if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
@@ -384,31 +388,31 @@ class Api(object):
             librarysync.LibraryScan(lazylibrarian.DESTINATION_DIR)
         else:
             threading.Thread(target=librarysync.LibraryScan, name='API-LIBRARYSCAN', args=[lazylibrarian.DESTINATION_DIR]).start()
-    
+
     def _forceMagazineScan(self, **kwargs):
         if 'wait' in kwargs:
-            magazinescan.magazineScan()
+            magazineScan()
         else:
-            threading.Thread(target=magazinescan.magazineScan, name='API-MAGSCAN', args=[]).start()
-    
+            threading.Thread(target=magazineScan, name='API-MAGSCAN', args=[]).start()
+
     def _cleanCache(self, **kwargs):
         if 'wait' in kwargs:
-            common.cleanCache()
+            cleanCache()
         else:
-            threading.Thread(target=common.cleanCache, name='API-CLEANCACHE', args=[]).start()
-            
+            threading.Thread(target=cleanCache, name='API-CLEANCACHE', args=[]).start()
+
     def _setWorkPages(self, **kwargs):
         if 'wait' in kwargs:
             bookwork.setWorkPages()
         else:
             threading.Thread(target=bookwork.setWorkPages, name='API-SETWORKPAGES', args=[]).start()
-            
+
     def _getBookCovers(self, **kwargs):
         if 'wait' in kwargs:
             bookwork.getBookCovers()
         else:
             threading.Thread(target=bookwork.getBookCovers, name='API-GETBOOKCOVERS', args=[]).start()
-            
+
     def _getVersion(self, **kwargs):
         self.data = {
             'install_type': lazylibrarian.INSTALL_TYPE,
@@ -464,7 +468,7 @@ class Api(object):
 
         search_api.join()
         self.data = queue.get()
-        
+
     def _addAuthor(self, **kwargs):
         if 'name' not in kwargs:
             self.data = 'Missing parameter: name'
@@ -482,7 +486,7 @@ class Api(object):
             return
         else:
             self.id = kwargs['id']
-        
+
         books = [{"bookid": id}]
         if lazylibrarian.USE_RSS():
             if 'wait' in kwargs:
@@ -528,7 +532,7 @@ class Api(object):
         if 'group' not in kwargs:
             self.data = 'Missing parameter: group'
             return
-        
+
         try:
             self.data = '["%s"]' % lazylibrarian.CFG.get(kwargs['group'], kwargs['name'])
             lazylibrarian.CFG.set(kwargs['group'], kwargs['name'], kwargs['value'])
@@ -537,7 +541,7 @@ class Api(object):
             lazylibrarian.config_read(reloaded=True)
         except:
             self.data = 'Unable to update CFG entry for %s: %s' % (kwargs['group'], kwargs['name'])
-            
+
     def _readCFG(self, **kwargs):
         if 'name' not in kwargs:
             self.data = 'Missing parameter: name'
@@ -549,7 +553,7 @@ class Api(object):
             self.data = '["%s"]' % lazylibrarian.CFG.get(kwargs['group'], kwargs['name'])
         except:
             self.data = 'No CFG entry for %s: %s' % (kwargs['group'], kwargs['name'])
-            
+
     def _loadCFG(self, **kwargs):
         lazylibrarian.config_read(reloaded=True)
 
@@ -576,28 +580,27 @@ class Api(object):
         else:
             self.id = kwargs['id']
         self.data = bookwork.getBookCover(self.id)
-        
+
     def _restartJobs(self, **kwargs):
-        common.restartJobs(start='Restart')
-        
+        restartJobs(start='Restart')
+
     def _showJobs(self, **kwargs):
-        self.data = common.showJobs()
-    
+        self.data = showJobs()
+
     def _importAlternate(self, **kwargs):
         if 'wait' in kwargs:
             postprocess.processAlternate(lazylibrarian.ALTERNATE_DIR)
         else:
             threading.Thread(target=postprocess.processAlternate, name='API-IMPORTALT', args=[lazylibrarian.ALTERNATE_DIR]).start()
-            
+
     def _importCSVwishlist(self, **kwargs):
         if 'wait' in kwargs:
             postprocess.processCSV(lazylibrarian.ALTERNATE_DIR)
         else:
             threading.Thread(target=postprocess.processCSV, name='API-PROCESSCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
-            
+
     def _exportCSVwishlist(self, **kwargs):
         if 'wait' in kwargs:
             postprocess.exportCSV(lazylibrarian.ALTERNATE_DIR)
         else:
             threading.Thread(target=postprocess.exportCSV, name='API-EXPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
-            

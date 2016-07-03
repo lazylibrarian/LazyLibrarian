@@ -1,7 +1,6 @@
 # Author: Nic Wolfe <nic@wolfeden.ca>
 # URL: http://code.google.com/p/sickbeard/
 #
-# This file is part of Sick Beard.
 #
 # Sick Beard is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +23,8 @@ import string
 import os
 import shutil
 import time
-from lazylibrarian import logger, database, formatter
+from lazylibrarian import logger, database
+from lazylibrarian.formatter import plural, next_run
 
 USER_AGENT = 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
 
@@ -37,7 +37,7 @@ notifyStrings[NOTIFY_SNATCH] = "Started Download"
 notifyStrings[NOTIFY_DOWNLOAD] = "Download Finished"
 
 
-def schedule_job(action='Start', target=None):
+def scheduleJob(action='Start', target=None):
     """ Start or stop or restart a cron job by name eg
         target=search_magazines, target=processDir, target=search_tor_book """
     if target is None:
@@ -90,25 +90,26 @@ def schedule_job(action='Start', target=None):
             logger.debug("%s %s job" % (action, target))
 
 def restartJobs(start='Restart'):
-    schedule_job(start, 'processDir')
-    schedule_job(start, 'search_nzb_book')
-    schedule_job(start, 'search_tor_book')
-    schedule_job(start, 'search_rss_book')
-    schedule_job(start, 'search_magazines')
-    schedule_job(start, 'checkForUpdates')
+    scheduleJob(start, 'processDir')
+    scheduleJob(start, 'search_nzb_book')
+    scheduleJob(start, 'search_tor_book')
+    scheduleJob(start, 'search_rss_book')
+    scheduleJob(start, 'search_magazines')
+    scheduleJob(start, 'checkForUpdates')
 
 def showJobs():
         result = []
-        result.append("Cache %i hits, %i miss" % (
+        result.append("Cache %i hit%s, %i miss" % (
             int(lazylibrarian.CACHE_HIT),
+            plural(int(lazylibrarian.CACHE_HIT)),
             int(lazylibrarian.CACHE_MISS)))
         myDB = database.DBConnection()
         snatched = myDB.action(
             "SELECT count('Status') as counter from wanted WHERE Status = 'Snatched'").fetchone()
         wanted = myDB.action(
             "SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'").fetchone()
-        result.append("%i items marked as Snatched" % snatched['counter'])
-        result.append("%i items marked as Wanted" % wanted['counter'])
+        result.append("%i item%s marked as Snatched" % (snatched['counter'], plural(snatched['counter'])))
+        result.append("%i item%s marked as Wanted" % (wanted['counter'], plural(wanted['counter'])))
         for job in lazylibrarian.SCHED.get_jobs():
             job = str(job)
             if "search_magazines" in job:
@@ -128,7 +129,7 @@ def showJobs():
 
             jobinterval = job.split('[')[1].split(']')[0]
             jobtime = job.split('at: ')[1].split('.')[0]
-            jobtime = formatter.next_run(jobtime)
+            jobtime = next_run(jobtime)
             jobinfo = "%s: Next run in %s" % (jobname, jobtime)
             result.append(jobinfo)
         return result
@@ -197,7 +198,7 @@ def cleanCache():
                 cleaned += 1
             else:
                 kept += 1
-        logger.debug("Cleaned %i files from JSONCache, kept %i" % (cleaned, kept))
+        logger.debug("Cleaned %i file%s from JSONCache, kept %i" % (cleaned, plural(cleaned), kept))
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "XMLCache")
     cleaned = 0
@@ -213,7 +214,7 @@ def cleanCache():
                 cleaned += 1
             else:
                 kept += 1
-        logger.debug("Cleaned %i files from XMLCache, kept %i" % (cleaned, kept))
+        logger.debug("Cleaned %i file%s from XMLCache, kept %i" % (cleaned, plural(cleaned), kept))
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "WorkCache")
     cleaned = 0
@@ -233,7 +234,7 @@ def cleanCache():
                 cleaned += 1
             else:
                 kept += 1
-        logger.debug("Cleaned %i files from WorkCache, kept %i" % (cleaned, kept))
+        logger.debug("Cleaned %i file%s from WorkCache, kept %i" % (cleaned, plural(cleaned), kept))
 
     cache = os.path.join(lazylibrarian.PROG_DIR, 'data' + os.sep + 'images' + os.sep + 'cache')
     cleaned = 0
@@ -253,7 +254,7 @@ def cleanCache():
                 cleaned += 1
             else:
                 kept += 1
-        logger.debug("Cleaned %i files from ImageCache, kept %i" % (cleaned, kept))
+        logger.debug("Cleaned %i file%s from ImageCache, kept %i" % (cleaned, plural(cleaned), kept))
 
         # correct any '\' separators in the BookImg links
         cleaned = 0
@@ -263,7 +264,7 @@ def cleanCache():
             newname = oldname.replace('\\', '/')
             myDB.action('update books set BookImg="%s" where BookImg="%s"' % (newname, oldname))
             cleaned += 1
-        logger.debug("Corrected %i filenames in ImageCache" % cleaned)
+        logger.debug("Corrected %i filename%s in ImageCache" % (cleaned, plural(cleaned)))
 
         # verify the cover images referenced in the database are present
         covers = myDB.action('select BookImg,BookName,BookID from books')
@@ -281,5 +282,4 @@ def cleanCache():
                 myDB.action('update books set BookImg="images/nocover.png" where Bookid="%s"' % item['BookID'])
             else:
                 kept += 1
-        logger.debug("Cleaned %i missing cover files, kept %i" % (cleaned, kept))
-
+        logger.debug("Cleaned %i missing cover file%s, kept %i" % (cleaned, plural(cleaned), kept))

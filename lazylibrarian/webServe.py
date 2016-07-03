@@ -13,13 +13,16 @@ import random
 import urllib
 import lazylibrarian
 
-from lazylibrarian import logger, importer, database, postprocess, formatter, \
-    notifiers, librarysync, versioncheck, magazinescan, common, bookwork, \
+from lazylibrarian import logger, database, postprocess, \
+    notifiers, librarysync, versioncheck, magazinescan, bookwork, \
     qbittorrent, utorrent, transmission, sabnzbd, nzbget, deluge
 from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
 from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchrss import search_rss_book
+from lazylibrarian.importer import addAuthorToDB, update_totals
+from lazylibrarian.formatter import plural, now, today, check_int
+from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
 from lib.deluge_client import DelugeRPCClient
@@ -132,7 +135,7 @@ class WebInterface(object):
         #      print arg
         lazylibrarian.HTTP_HOST = http_host
         lazylibrarian.HTTP_ROOT = http_root
-        lazylibrarian.HTTP_PORT = formatter.check_int(http_port, 5299)
+        lazylibrarian.HTTP_PORT = check_int(http_port, 5299)
         lazylibrarian.HTTP_USER = http_user
         lazylibrarian.HTTP_PASS = http_pass
         lazylibrarian.HTTP_LOOK = http_look
@@ -146,12 +149,12 @@ class WebInterface(object):
         lazylibrarian.PROXY_HOST = proxy_host
         lazylibrarian.PROXY_TYPE = proxy_type
         lazylibrarian.LOGDIR = logdir
-        lazylibrarian.LOGLIMIT = formatter.check_int(loglimit, 500)
-        lazylibrarian.LOGLEVEL = formatter.check_int(loglevel, 2)
-        lazylibrarian.LOGFILES = formatter.check_int(logfiles, 10)
-        lazylibrarian.LOGSIZE = formatter.check_int(logsize, 204800)
-        lazylibrarian.MATCH_RATIO = formatter.check_int(match_ratio, 80)
-        lazylibrarian.CACHE_AGE = formatter.check_int(cache_age, 30)
+        lazylibrarian.LOGLIMIT = check_int(loglimit, 500)
+        lazylibrarian.LOGLEVEL = check_int(loglevel, 2)
+        lazylibrarian.LOGFILES = check_int(logfiles, 10)
+        lazylibrarian.LOGSIZE = check_int(logsize, 204800)
+        lazylibrarian.MATCH_RATIO = check_int(match_ratio, 80)
+        lazylibrarian.CACHE_AGE = check_int(cache_age, 30)
 
         lazylibrarian.IMP_ONLYISBN = bool(imp_onlyisbn)
         lazylibrarian.IMP_SINGLEBOOK = bool(imp_singlebook)
@@ -162,7 +165,7 @@ class WebInterface(object):
         lazylibrarian.GIT_PROGRAM = git_program
 
         lazylibrarian.SAB_HOST = sab_host
-        lazylibrarian.SAB_PORT = formatter.check_int(sab_port, 0)
+        lazylibrarian.SAB_PORT = check_int(sab_port, 0)
         lazylibrarian.SAB_SUBDIR = sab_subdir
         lazylibrarian.SAB_API = sab_api
         lazylibrarian.SAB_USER = sab_user
@@ -170,23 +173,23 @@ class WebInterface(object):
         lazylibrarian.SAB_CAT = sab_cat
 
         lazylibrarian.NZBGET_HOST = nzbget_host
-        lazylibrarian.NZBGET_PORT = formatter.check_int(nzbget_port, 0)
+        lazylibrarian.NZBGET_PORT = check_int(nzbget_port, 0)
         lazylibrarian.NZBGET_USER = nzbget_user
         lazylibrarian.NZBGET_PASS = nzbget_pass
         lazylibrarian.NZBGET_CATEGORY = nzbget_cat
-        lazylibrarian.NZBGET_PRIORITY = formatter.check_int(nzbget_priority, 0)
+        lazylibrarian.NZBGET_PRIORITY = check_int(nzbget_priority, 0)
 
         lazylibrarian.DESTINATION_COPY = bool(destination_copy)
         lazylibrarian.DESTINATION_DIR = destination_dir
         lazylibrarian.ALTERNATE_DIR = alternate_dir
         lazylibrarian.DOWNLOAD_DIR = download_dir
-        lazylibrarian.USENET_RETENTION = formatter.check_int(usenet_retention, 0)
+        lazylibrarian.USENET_RETENTION = check_int(usenet_retention, 0)
         lazylibrarian.NZB_BLACKHOLEDIR = nzb_blackholedir
         lazylibrarian.NZB_DOWNLOADER_SABNZBD = bool(nzb_downloader_sabnzbd)
         lazylibrarian.NZB_DOWNLOADER_NZBGET = bool(nzb_downloader_nzbget)
         lazylibrarian.NZB_DOWNLOADER_BLACKHOLE = bool(nzb_downloader_blackhole)
         lazylibrarian.TORRENT_DIR = torrent_dir
-        lazylibrarian.NUMBEROFSEEDERS = formatter.check_int(numberofseeders, 0)
+        lazylibrarian.NUMBEROFSEEDERS = check_int(numberofseeders, 0)
         lazylibrarian.TOR_DOWNLOADER_BLACKHOLE = bool(tor_downloader_blackhole)
         lazylibrarian.TOR_DOWNLOADER_UTORRENT = bool(tor_downloader_utorrent)
         lazylibrarian.TOR_DOWNLOADER_QBITTORRENT = bool(
@@ -206,7 +209,7 @@ class WebInterface(object):
         lazylibrarian.UTORRENT_LABEL = utorrent_label
 
         lazylibrarian.QBITTORRENT_HOST = qbittorrent_host
-        lazylibrarian.QBITTORRENT_PORT = formatter.check_int(qbittorrent_port, 0)
+        lazylibrarian.QBITTORRENT_PORT = check_int(qbittorrent_port, 0)
         lazylibrarian.QBITTORRENT_USER = qbittorrent_user
         lazylibrarian.QBITTORRENT_PASS = qbittorrent_pass
         lazylibrarian.QBITTORRENT_LABEL = qbittorrent_label
@@ -217,7 +220,7 @@ class WebInterface(object):
         lazylibrarian.TRANSMISSION_PASS = transmission_pass
 
         lazylibrarian.DELUGE_HOST = deluge_host
-        lazylibrarian.DELUGE_PORT = formatter.check_int(deluge_port, 0)
+        lazylibrarian.DELUGE_PORT = check_int(deluge_port, 0)
         lazylibrarian.DELUGE_USER = deluge_user
         lazylibrarian.DELUGE_PASS = deluge_pass
         lazylibrarian.DELUGE_LABEL = deluge_label
@@ -233,13 +236,11 @@ class WebInterface(object):
         lazylibrarian.GR_API = gr_api
         lazylibrarian.GB_API = gb_api
 
-        lazylibrarian.SEARCH_INTERVAL = formatter.check_int(
-            search_interval, 360)
-        lazylibrarian.SCAN_INTERVAL = formatter.check_int(scan_interval, 10)
-        lazylibrarian.SEARCHRSS_INTERVAL = formatter.check_int(
+        lazylibrarian.SEARCH_INTERVAL = check_int(search_interval, 360)
+        lazylibrarian.SCAN_INTERVAL = check_int(scan_interval, 10)
+        lazylibrarian.SEARCHRSS_INTERVAL = check_int(
             searchrss_interval, 20)
-        lazylibrarian.VERSIONCHECK_INTERVAL = formatter.check_int(
-            versioncheck_interval, 24)
+        lazylibrarian.VERSIONCHECK_INTERVAL = check_int(versioncheck_interval, 24)
 
         lazylibrarian.FULL_SCAN = bool(full_scan)
         lazylibrarian.NOTFOUND_STATUS = notfound_status
@@ -275,8 +276,7 @@ class WebInterface(object):
         lazylibrarian.PUSHOVER_ONDOWNLOAD = bool(pushover_ondownload)
         lazylibrarian.PUSHOVER_KEYS = pushover_keys
         lazylibrarian.PUSHOVER_APITOKEN = pushover_apitoken
-        lazylibrarian.PUSHOVER_PRIORITY = formatter.check_int(
-            pushover_priority, 0)
+        lazylibrarian.PUSHOVER_PRIORITY = check_int(pushover_priority, 0)
         lazylibrarian.PUSHOVER_DEVICE = pushover_device
 
         lazylibrarian.USE_ANDROIDPN = bool(use_androidpn)
@@ -290,7 +290,7 @@ class WebInterface(object):
 
         lazylibrarian.USE_NMA = bool(use_nma)
         lazylibrarian.NMA_APIKEY = nma_apikey
-        lazylibrarian.NMA_PRIORITY = formatter.check_int(nma_priority, 0)
+        lazylibrarian.NMA_PRIORITY = check_int(nma_priority, 0)
         lazylibrarian.NMA_ONSNATCH = bool(nma_onsnatch)
         lazylibrarian.NMA_ONDOWNLOAD = bool(nma_ondownload)
 
@@ -399,8 +399,6 @@ class WebInterface(object):
             search_api = threading.Thread(
                 target=GR.find_results, name='GR-RESULTS', args=[name, queue])
             search_api.start()
-        if len(name) == 0:
-            raise cherrypy.HTTPRedirect("config")
 
         search_api.join()
         searchresults = queue.get()
@@ -468,6 +466,10 @@ class WebInterface(object):
     authorPage.exposed = True
 
     def pauseAuthor(self, AuthorID):
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+
         myDB = database.DBConnection()
         authorsearch = myDB.select(
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
@@ -483,6 +485,10 @@ class WebInterface(object):
     pauseAuthor.exposed = True
 
     def resumeAuthor(self, AuthorID):
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+
         myDB = database.DBConnection()
         authorsearch = myDB.select(
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
@@ -498,6 +504,10 @@ class WebInterface(object):
     resumeAuthor.exposed = True
 
     def deleteAuthor(self, AuthorID):
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+
         myDB = database.DBConnection()
         authorsearch = myDB.select(
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
@@ -510,17 +520,21 @@ class WebInterface(object):
     deleteAuthor.exposed = True
 
     def refreshAuthor(self, AuthorID):
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+
         myDB = database.DBConnection()
         authorsearch = myDB.select(
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         if len(authorsearch):  # to stop error if try to refresh an author while they are still loading
             AuthorName = authorsearch[0]['AuthorName']
-            threading.Thread(target=importer.addAuthorToDB, name='REFRESHAUTHOR', args=[AuthorName, True]).start()
+            threading.Thread(target=addAuthorToDB, name='REFRESHAUTHOR', args=[AuthorName, True]).start()
         raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
     refreshAuthor.exposed = True
 
     def addAuthor(self, AuthorName):
-        threading.Thread(target=importer.addAuthorToDB, name='ADDAUTHOR', args=[AuthorName, False]).start()
+        threading.Thread(target=addAuthorToDB, name='ADDAUTHOR', args=[AuthorName, False]).start()
         raise cherrypy.HTTPRedirect("home")
     addAuthor.exposed = True
 
@@ -685,30 +699,7 @@ class WebInterface(object):
             myDB.upsert("books", {'Status': 'Wanted'}, {'BookID': bookid})
             for book in booksearch:
                 AuthorID = book['AuthorID']
-                authorsearch = myDB.select(
-                    'SELECT * from authors WHERE AuthorID="%s"' % AuthorID)
-                if authorsearch:
-                    # update authors needs to be updated every time a book is marked differently
-                    lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE \
-                                           AuthorID="%s" AND Status != "Ignored" order by BookDate DESC' %
-                                           AuthorID).fetchone()
-                    unignoredbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE \
-                                                 AuthorID="%s" AND Status != "Ignored"' % AuthorID).fetchone()
-                    totalbooks = myDB.action(
-                        'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % AuthorID).fetchone()
-                    havebooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND \
-                                             (Status="Have" OR Status="Open")' % AuthorID).fetchone()
-
-                    controlValueDict = {"AuthorID": AuthorID}
-                    newValueDict = {
-                        "TotalBooks": totalbooks['counter'],
-                        "UnignoredBooks": unignoredbooks['counter'],
-                        "HaveBooks": havebooks['counter'],
-                        "LastBook": lastbook['BookName'],
-                        "LastLink": lastbook['BookLink'],
-                        "LastDate": lastbook['BookDate']
-                    }
-                    myDB.upsert("authors", newValueDict, controlValueDict)
+                update_totals(AuthorID)
         else:
             if lazylibrarian.BOOK_API == "GoogleBooks":
                 GB = GoogleBooks(bookid)
@@ -771,7 +762,7 @@ class WebInterface(object):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
-            
+
         myDB = database.DBConnection()
 
         bookdata = myDB.select(
@@ -791,7 +782,7 @@ class WebInterface(object):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
-            
+
         myDB = database.DBConnection()
         if not redirect:
             redirect = "books"
@@ -822,27 +813,7 @@ class WebInterface(object):
                             logger.info(u'Removed "%s" from database' % bookname)
 
         if redirect == "author" or authorcheck:
-            # update authors needs to be updated every time a book is marked
-            # differently
-            lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorID="%s" \
-                                   AND Status != "Ignored" order by BookDate DESC' % AuthorID).fetchone()
-            unignoredbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" \
-                                         AND Status != "Ignored"' % AuthorID).fetchone()
-            totalbooks = myDB.action(
-                'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % AuthorID).fetchone()
-            havebooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND \
-                                     (Status="Have" OR Status="Open")' % AuthorID).fetchone()
-
-            controlValueDict = {"AuthorID": AuthorID}
-            newValueDict = {
-                "TotalBooks": totalbooks['counter'],
-                "UnignoredBooks": unignoredbooks['counter'],
-                "HaveBooks": havebooks['counter'],
-                "LastBook": lastbook['BookName'],
-                "LastLink": lastbook['BookLink'],
-                "LastDate": lastbook['BookDate']
-            }
-            myDB.upsert("authors", newValueDict, controlValueDict)
+            update_totals(AuthorID)
 
         # start searchthreads
         if action == 'Wanted':
@@ -932,7 +903,7 @@ class WebInterface(object):
                 # this_issue['safeissuefile'] =
                 # urllib.quote_plus(magfile.encode('utf-8'))
                 mod_issues.append(this_issue)
-            logger.debug("Found %s covers" % covercount)
+            logger.debug("Found %s cover%s" % (covercount, plural(covercount)))
         return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
     issuePage.exposed = True
 
@@ -990,7 +961,7 @@ class WebInterface(object):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
-            
+
         bookid = urllib.unquote_plus(bookid)
         myDB = database.DBConnection()
         # we may want to open an issue with a hashed bookid
@@ -1019,7 +990,7 @@ class WebInterface(object):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
-            
+
         myDB = database.DBConnection()
         if not redirect:
             redirect = "magazines"
@@ -1057,19 +1028,19 @@ class WebInterface(object):
                             newValueDict = {
                                 'BookID': bookid,
                                 'NZBtitle': nzbtitle,
-                                'NZBdate': formatter.now(),
+                                'NZBdate': now(),
                                 'NZBprov': nzbprov,
-                                'Status': action, 
+                                'Status': action,
                                 'NZBsize': nzbsize,
                                 'AuxInfo': auxinfo,
                                 'NZBmode': nzbmode
                                 }
-                            myDB.upsert("wanted", newValueDict, controlValueDict)                            
+                            myDB.upsert("wanted", newValueDict, controlValueDict)
 
         if action == 'Delete':
-            logger.info(u'Deleted %s items from past issues' % (len(maglist)))
+            logger.info(u'Deleted %s item%s from past issues' % (len(maglist), plural(len(maglist))))
         else:
-            logger.info(u'Status set to %s for %s past issues' % (action, len(maglist)))
+            logger.info(u'Status set to %s for %s past issue%s' % (action, len(maglist), plural(len(maglist))))
         # start searchthreads
         if action == 'Wanted':
             for items in maglist:
@@ -1087,8 +1058,8 @@ class WebInterface(object):
                         items['nzbtitle'],
                         items['nzburl'])
                 if snatch:  # if snatch fails, downloadmethods already report it
-                    notifiers.notify_snatch(items['nzbtitle'] + ' at ' + formatter.now())
-                    common.schedule_job(action='Start', target='processDir')
+                    notifiers.notify_snatch(items['nzbtitle'] + ' at ' + now())
+                    scheduleJob(action='Start', target='processDir')
         raise cherrypy.HTTPRedirect("pastIssues")
     markPastIssues.exposed = True
 
@@ -1170,7 +1141,7 @@ class WebInterface(object):
                 "Frequency": None,
                 "Regex": regex,
                 "Status": "Active",
-                "MagazineAdded": formatter.today(),
+                "MagazineAdded": today(),
                 "IssueStatus": "Wanted"
             }
             myDB.upsert("magazines", newValueDict, controlValueDict)
@@ -1185,7 +1156,7 @@ class WebInterface(object):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
-            
+
         versioncheck.checkForUpdates()
         if lazylibrarian.COMMITS_BEHIND == 0:
             message = "up to date"
@@ -1273,22 +1244,21 @@ class WebInterface(object):
     restart.exposed = True
 
     @cherrypy.expose
-    def showJobs(self):
+    def show_Jobs(self):
         cherrypy.response.headers[
             'Cache-Control'] = "max-age=0,no-cache,no-store"
         # show the current status of LL cron jobs in the log
-        resultlist = common.showJobs()
+        resultlist = showJobs()
         result = ''
         for line in resultlist:
             result = result + line + '\n'
         return result
 
     @cherrypy.expose
-    def restartJobs(self):
-        common.restartJobs(start='Restart')
+    def restart_Jobs(self):
+        restartJobs(start='Restart')
         # and list the new run-times in the log
-        return self.showJobs()
-#    restartJobs.exposed = True
+        return self.show_Jobs()
 
 # LOGGING ###########################################################
 
@@ -1297,8 +1267,8 @@ class WebInterface(object):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
-            
-        result = common.clearLog()
+
+        result = clearLog()
         logger.info(result)
         raise cherrypy.HTTPRedirect("logs")
     clearLog.exposed = True
@@ -1312,7 +1282,7 @@ class WebInterface(object):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
-            
+
         if lazylibrarian.LOGFULL:  # if LOGLIST logging on, turn off
             lazylibrarian.LOGFULL = False
             if lazylibrarian.LOGLEVEL < 3:
@@ -1376,7 +1346,7 @@ class WebInterface(object):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
-            
+
         myDB = database.DBConnection()
         if status == 'all':
             logger.info(u"Clearing all history")
@@ -1483,7 +1453,7 @@ class WebInterface(object):
 # ALL ELSE ##########################################################
 
     def forceProcess(self, source=None):
-        threading.Thread(target=postprocess.processDir, name='POSTPROCESS', args=[True, True]).start()
+        threading.Thread(target=postprocess.processDir, name='POSTPROCESS', args=[True]).start()
         raise cherrypy.HTTPRedirect(source)
     forceProcess.exposed = True
 
@@ -1636,4 +1606,3 @@ class WebInterface(object):
     def testuTorrent(self):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         return utorrent.checkLink()
-

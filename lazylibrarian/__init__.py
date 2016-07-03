@@ -21,8 +21,10 @@ import urllib2
 import socket
 import json
 
-from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, formatter, \
-    librarysync, versioncheck, database, searchmag, magazinescan, common, bookwork
+from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, \
+    librarysync, versioncheck, database, searchmag, magazinescan, bookwork
+from lazylibrarian.formatter import getList, bookSeries, plural
+from lazylibrarian.common import USER_AGENT, remove_accents, restartJobs
 
 try:
     from wand.image import Image
@@ -343,10 +345,11 @@ def initialize():
 
         # Start the logger, silence console logging if we need to
         CFGLOGLEVEL = check_setting_int(CFG, 'General', 'loglevel', 3)
-        if CFGLOGLEVEL == 3:  # default value if none in config
-            LOGLEVEL = 2  # If not set in Config, then lets set to DEBUG
-        else:
-            LOGLEVEL = CFGLOGLEVEL  # Config setting picked up
+        if LOGLEVEL == 3:  # default if no debug or quiet on cmdline
+            if CFGLOGLEVEL == 3:  # default value if none in config
+                LOGLEVEL = 2  # If not set in Config, then lets set to DEBUG
+            else:
+                LOGLEVEL = CFGLOGLEVEL  # Config setting picked up
 
         logger.lazylibrarian_log.initLogger(loglevel=LOGLEVEL)
         logger.info("Log level set to [%s]- Log Directory is [%s] - Config level is [%s]" % (
@@ -1142,7 +1145,7 @@ def build_bookstrap_themes():
         request.set_proxy(PROXY_HOST, PROXY_TYPE)
 
     # bootswatch insists on having a user-agent
-    request.add_header('User-Agent', common.USER_AGENT)
+    request.add_header('User-Agent', USER_AGENT)
 
     try:
         resp = urllib2.urlopen(request, timeout=30)
@@ -1165,7 +1168,7 @@ def build_bookstrap_themes():
 
 
 def build_monthtable():
-    if len(formatter.getList(IMP_MONTHLANG)) == 0:  # any extra languages wanted?
+    if len(getList(IMP_MONTHLANG)) == 0:  # any extra languages wanted?
         return
     try:
         current_locale = locale.setlocale(locale.LC_ALL, '')  # read current state.
@@ -1178,23 +1181,23 @@ def build_monthtable():
     if not lang.startswith('en_'):  # en_ is preloaded
         MONTHNAMES[0].append(lang)
         for f in range(1, 13):
-            MONTHNAMES[f].append(common.remove_accents(calendar.month_name[f]).lower())
+            MONTHNAMES[f].append(remove_accents(calendar.month_name[f]).lower())
         MONTHNAMES[0].append(lang)
         for f in range(1, 13):
-            MONTHNAMES[f].append(common.remove_accents(calendar.month_abbr[f]).lower().strip('.'))
+            MONTHNAMES[f].append(remove_accents(calendar.month_abbr[f]).lower().strip('.'))
             logger.info("Added month names for locale [%s], %s, %s ..." % (
                         lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
 
-    for lang in formatter.getList(IMP_MONTHLANG):
+    for lang in getList(IMP_MONTHLANG):
         try:
             if len(lang) > 1:
                 locale.setlocale(locale.LC_ALL, lang)
                 MONTHNAMES[0].append(lang)
                 for f in range(1, 13):
-                    MONTHNAMES[f].append(common.remove_accents(calendar.month_name[f]).lower())
+                    MONTHNAMES[f].append(remove_accents(calendar.month_name[f]).lower())
                 MONTHNAMES[0].append(lang)
                 for f in range(1, 13):
-                    MONTHNAMES[f].append(common.remove_accents(calendar.month_abbr[f]).lower().strip('.'))
+                    MONTHNAMES[f].append(remove_accents(calendar.month_abbr[f]).lower().strip('.'))
                 locale.setlocale(locale.LC_ALL, current_locale)  # restore entry state
                 logger.info("Added month names for locale [%s], %s, %s ..." % (
                     lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
@@ -1277,17 +1280,18 @@ def dbcheck():
     c.execute('PRAGMA user_version')
     result = c.fetchone()
     db_version = result[0]
-    
+
     # database version history:
     # 0 original version or new empty database
     # 1 changes up to June 2016
     # 2 removed " MB" from nzbsize field in wanted table
-    # 3 removed SeriesOrder column from ooks table as redundant
-    db_current_version = 3
+    # 3 removed SeriesOrder column from books table as redundant
+    # 4 added duplicates column to stats table
+    db_current_version = 4
 
     if db_version < db_current_version:
         logger.info('Updating database to version %s, current version is %s' % (db_current_version, db_version))
-    
+
         if db_version < 1:
             c.execute('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT, AuthorName TEXT UNIQUE, AuthorImg TEXT, \
                  AuthorLink TEXT, DateAdded TEXT, Status TEXT, LastBook TEXT, LastLink Text, LastDate TEXT, \
@@ -1306,64 +1310,64 @@ def dbcheck():
             c.execute('CREATE TABLE IF NOT EXISTS issues (Title TEXT, IssueID TEXT, IssueAcquired TEXT, IssueDate TEXT, \
                 IssueFile TEXT)')
             c.execute('CREATE TABLE IF NOT EXISTS stats (authorname text, GR_book_hits int, GR_lang_hits int, \
-                LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int)')
-    
-        # These are the incremental changes before database versioning was introduced. 
+                LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int, duplicates int)')
+
+        # These are the incremental changes before database versioning was introduced.
         # New database tables already have these incorporated so we need to check first...
             try:
                 c.execute('SELECT BookSub from books')
             except sqlite3.OperationalError:
                 logger.info('Updating database to hold book subtitles.')
                 c.execute('ALTER TABLE books ADD COLUMN BookSub TEXT')
-    
+
             try:
                 c.execute('SELECT BookPub from books')
             except sqlite3.OperationalError:
                 logger.info('Updating database to hold book publisher')
                 c.execute('ALTER TABLE books ADD COLUMN BookPub TEXT')
-    
+
             try:
                 c.execute('SELECT BookGenre from books')
             except sqlite3.OperationalError:
                 logger.info('Updating database to hold bookgenre')
                 c.execute('ALTER TABLE books ADD COLUMN BookGenre TEXT')
-    
+
             try:
                 c.execute('SELECT BookFile from books')
             except sqlite3.OperationalError:
                 logger.info('Updating database to hold book filename')
                 c.execute('ALTER TABLE books ADD COLUMN BookFile TEXT')
-    
+
             try:
                 c.execute('SELECT AuxInfo from wanted')
             except sqlite3.OperationalError:
                 logger.info('Updating database to hold AuxInfo')
                 c.execute('ALTER TABLE wanted ADD COLUMN AuxInfo TEXT')
-    
+
             try:
                 c.execute('SELECT NZBsize from wanted')
             except sqlite3.OperationalError:
                 logger.info('Updating database to hold NZBsize')
                 c.execute('ALTER TABLE wanted ADD COLUMN NZBsize TEXT')
-    
+
             try:
                 c.execute('SELECT NZBmode from wanted')
             except sqlite3.OperationalError:
                 logger.info('Updating database to hold NZBmode')
                 c.execute('ALTER TABLE wanted ADD COLUMN NZBmode TEXT')
-    
+
             try:
                 c.execute('SELECT UnignoredBooks from authors')
             except sqlite3.OperationalError:
                 logger.info('Updating database to hold UnignoredBooks')
                 c.execute('ALTER TABLE authors ADD COLUMN UnignoredBooks INTEGER')
-    
+
             try:
                 c.execute('SELECT IssueStatus from magazines')
             except sqlite3.OperationalError:
                 logger.info('Updating database to hold IssueStatus')
                 c.execute('ALTER TABLE magazines ADD COLUMN IssueStatus TEXT')
-    
+
             addedWorkPage = False
             try:
                 c.execute('SELECT WorkPage from books')
@@ -1371,7 +1375,7 @@ def dbcheck():
                 logger.info('Updating database to hold WorkPage')
                 c.execute('ALTER TABLE books ADD COLUMN WorkPage TEXT')
                 addedWorkPage = True
-    
+
             addedSeries = False
             try:
                 c.execute('SELECT Series from books')
@@ -1379,7 +1383,7 @@ def dbcheck():
                 logger.info('Updating database to hold Series')
                 c.execute('ALTER TABLE books ADD COLUMN Series TEXT')
                 addedSeries = True
-        
+
             # SeriesOrder shouldn't be an integer, some later written books
             # and novellas logically go inbetween books of the main series,
             # and their SeriesOrder is not an integer, eg 1.5
@@ -1394,7 +1398,7 @@ def dbcheck():
                 c.execute('ALTER TABLE books ADD COLUMN SeriesNum TEXT')
                 c.execute('UPDATE books SET SeriesNum = SeriesOrder')
                 c.execute('UPDATE books SET SeriesOrder = Null')
-        
+
             addedIssues = False
             try:
                 c.execute('SELECT Title from issues')
@@ -1408,33 +1412,33 @@ def dbcheck():
                 logger.info('Updating Issues table to hold IssueID')
                 c.execute('ALTER TABLE issues ADD COLUMN IssueID TEXT')
                 addedIssues = True
-        
+
             c.execute('DROP TABLE if exists capabilities')
-        
+
             conn.commit()
-        
+
             if addedIssues:
                 try:
                     magazinescan.magazineScan(thread='MAIN')
                 except:
                     logger.debug("Failed to scan magazines")
-        
+
             if addedWorkPage:
                 try:
                     logger.info('Adding WorkPage to existing books')
                     threading.Thread(target=bookwork.setWorkPages, name="ADDWORKPAGE", args=[]).start()
                 except:
                     logger.debug("Failed to update WorkPages")
-        
+
             myDB = database.DBConnection()
-        
+
             if addedSeries:
                 try:
                     books = myDB.select('SELECT BookID, BookName FROM books')
                     if books:
                         logger.info('Adding series to existing books')
                         for book in books:
-                            series,seriesNum = formatter.bookSeries(book["BookName"])
+                            series,seriesNum = bookSeries(book["BookName"])
                             if series:
                                 controlValueDict = {"BookID": book["BookID"]}
                                 newValueDict = {
@@ -1444,17 +1448,17 @@ def dbcheck():
                                 myDB.upsert("books", newValueDict, controlValueDict)
                 except Exception as z:
                     logger.info('Error: ' + str(z))
-        
+
         if db_version < 2:
             try:
                 results = myDB.select('SELECT BookID,NZBsize FROM wanted WHERE NZBsize LIKE "% MB"')
                 if results:
-                    logger.info('Removing %s units from wanted table' % len(results))
+                    logger.info('Removing %s unit%s from wanted table' % (len(results), plural(len(results))))
                     for units in results:
                         nzbsize = units["NZBsize"]
                         nzbsize = nzbsize.split(' ')[0]
                         myDB.action('UPDATE wanted SET NZBsize = "%s" WHERE BookID = "%s"' % (nzbsize, units["BookID"]))
-                        
+
             except Exception as z:
                 logger.info('Error: ' + str(z))
 
@@ -1480,17 +1484,25 @@ def dbcheck():
                 # no SeriesOrder column, nothing to remove
                 # (must be a new install, not an upgrade)
                 logger.debug('No SeriesOrder in books table')
-            
+
             try:
                 c.execute('SELECT BookID from pastissues')
-                logger.debug('pastissues table already exists')  
+                logger.debug('pastissues table already exists')
                 # must be a new install,so nothing to move
             except sqlite3.OperationalError:
                 logger.info('Moving magazine past issues into new table')
                 c.execute('CREATE TABLE pastissues AS SELECT * FROM wanted WHERE Status="Skipped" AND length(AuxInfo) > 0')
                 c.execute('DELETE FROM wanted WHERE Status="Skipped" AND length(AuxInfo) > 0')
-    
-        c.execute('PRAGMA user_version = %s' % db_current_version)       
+
+        if db_version < 4:
+            try:
+                c.execute('SELECT duplicates from stats')
+            except sqlite3.OperationalError:
+                logger.info('Updating stats table to hold duplicates')
+                c.execute('ALTER TABLE stats ADD COLUMN duplicates INT')
+
+
+        c.execute('PRAGMA user_version = %s' % db_current_version)
         conn.commit()
         conn.close()
         logger.info('Database updated to version %s' % db_current_version)
@@ -1508,8 +1520,8 @@ def dbcheck():
                     myDB.action('DELETE from books WHERE AuthorID="%s"' % authorid)
         except Exception as z:
             logger.info('Error: ' + str(z))
-        
-        
+
+
 def start():
     global __INITIALIZED__, started
 
@@ -1517,7 +1529,7 @@ def start():
 
         # Crons and scheduled jobs started here
         SCHED.start()
-        common.restartJobs(start='Start')
+        restartJobs(start='Start')
         started = True
 
 
