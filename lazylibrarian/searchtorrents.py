@@ -16,7 +16,7 @@ from lib.fuzzywuzzy import fuzz
 
 import unicodedata
 
-from lazylibrarian.common import schedule_job, USER_AGENT, removeDisallowedFilenameChars
+from lazylibrarian.common import scheduleJob, USER_AGENT, removeDisallowedFilenameChars
 from lazylibrarian.formatter import plural, latinToAscii, replace_all, getList, check_int, now
 from lazylibrarian.providers import IterateOverTorrentSites
 from lazylibrarian.notifiers import notify_snatch
@@ -114,7 +114,7 @@ def search_tor_book(books=None, reset=False):
     logger.info("TORSearch for Wanted items complete, found %s book%s" % (tor_count, plural(tor_count)))
 
     if reset:
-        schedule_job(action='Restart', target='search_tor_book')
+        scheduleJob(action='Restart', target='search_tor_book')
 
 
 def processResultList(resultlist, book, searchtype):
@@ -212,7 +212,7 @@ def processResultList(resultlist, book, searchtype):
                                            newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             if snatch:
                 notify_snatch(newValueDict["NZBtitle"] + ' at ' + now())
-                schedule_job(action='Start', target='processDir')
+                scheduleJob(action='Start', target='processDir')
                 return True
 
     logger.debug("No torrent's found for " + (book["authorName"] + ' ' +

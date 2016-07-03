@@ -37,7 +37,7 @@ notifyStrings[NOTIFY_SNATCH] = "Started Download"
 notifyStrings[NOTIFY_DOWNLOAD] = "Download Finished"
 
 
-def schedule_job(action='Start', target=None):
+def scheduleJob(action='Start', target=None):
     """ Start or stop or restart a cron job by name eg
         target=search_magazines, target=processDir, target=search_tor_book """
     if target is None:
@@ -90,12 +90,12 @@ def schedule_job(action='Start', target=None):
             logger.debug("%s %s job" % (action, target))
 
 def restartJobs(start='Restart'):
-    schedule_job(start, 'processDir')
-    schedule_job(start, 'search_nzb_book')
-    schedule_job(start, 'search_tor_book')
-    schedule_job(start, 'search_rss_book')
-    schedule_job(start, 'search_magazines')
-    schedule_job(start, 'checkForUpdates')
+    scheduleJob(start, 'processDir')
+    scheduleJob(start, 'search_nzb_book')
+    scheduleJob(start, 'search_tor_book')
+    scheduleJob(start, 'search_rss_book')
+    scheduleJob(start, 'search_magazines')
+    scheduleJob(start, 'checkForUpdates')
 
 def showJobs():
         result = []

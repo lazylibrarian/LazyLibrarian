@@ -8,7 +8,7 @@ from lazylibrarian import logger, database
 
 from lib.fuzzywuzzy import fuzz
 from lazylibrarian.providers import IterateOverRSSSites
-from lazylibrarian.common import schedule_job
+from lazylibrarian.common import scheduleJob
 from lazylibrarian.formatter import plural, latinToAscii, replace_all, getList, check_int, now
 from lazylibrarian.searchtorrents import TORDownloadMethod
 from lazylibrarian.searchnzb import NZBDownloadMethod
@@ -25,7 +25,7 @@ def search_rss_book(books=None, reset=False):
 
     if not(lazylibrarian.USE_RSS()):
         logger.warn('RSS search is disabled')
-        schedule_job(action='Stop', target='search_rss_book')
+        scheduleJob(action='Stop', target='search_rss_book')
         return
 
     myDB = database.DBConnection()
@@ -86,7 +86,7 @@ def search_rss_book(books=None, reset=False):
     logger.info("RSS Search for Wanted items complete, found %s book%s" % (rss_count, plural(rss_count)))
 
     if reset:
-        schedule_job(action='Restart', target='search_rss_book')
+        scheduleJob(action='Restart', target='search_rss_book')
 
 
 def processResultList(resultlist, author, title, book):
@@ -199,7 +199,7 @@ def processResultList(resultlist, author, title, book):
 
             if snatch:
                 notify_snatch(newValueDict["NZBtitle"] + ' at ' + now())
-                schedule_job(action='Start', target='processDir')
+                scheduleJob(action='Start', target='processDir')
                 return True
 
     logger.debug("No RSS found for " + (book["authorName"] + ' ' +

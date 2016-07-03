@@ -11,7 +11,7 @@ import lazylibrarian
 from lazylibrarian import database, logger, librarysync
 from lazylibrarian import gr, magazinescan
 from lazylibrarian.formatter import plural, now, today, is_valid_booktype, is_valid_isbn, latinToAscii, replace_all
-from lazylibrarian.common import schedule_job, remove_accents
+from lazylibrarian.common import scheduleJob, remove_accents
 from lazylibrarian.notifiers import notify_download
 from lazylibrarian.importer import addAuthorToDB
 
@@ -108,7 +108,7 @@ def processDir(reset=False):
 
     if len(snatched) == 0:
         logger.info('Nothing marked as snatched.')
-        schedule_job(action='Stop', target='processDir')
+        scheduleJob(action='Stop', target='processDir')
         return
     elif len(downloads) == 0:
         logger.info('No downloads are found. Nothing to process.')
@@ -308,7 +308,7 @@ def processDir(reset=False):
             logger.info('%s book%s/mag%s processed.' % (ppcount, plural(ppcount), plural(ppcount)))
 
     if reset:
-        schedule_job(action='Restart', target='processDir')
+        scheduleJob(action='Restart', target='processDir')
 
 
 def import_book(pp_path=None, bookID=None):

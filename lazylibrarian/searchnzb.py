@@ -10,10 +10,9 @@ from lazylibrarian import logger, database, providers, nzbget, sabnzbd, notifier
 
 from lib.fuzzywuzzy import fuzz
 
-from lazylibrarian.common import USER_AGENT
+from lazylibrarian.common import USER_AGENT, scheduleJob
 from lazylibrarian.formatter import plural, latinToAscii, replace_all, getList, nzbdate2format, now, check_int
 
-import lazylibrarian.common as common
 # new to support torrents
 from lazylibrarian.searchtorrents import TORDownloadMethod
 
@@ -109,7 +108,7 @@ def search_nzb_book(books=None, reset=False):
     logger.info("NZBSearch for Wanted items complete, found %s book%s" % (nzb_count, plural(nzb_count)))
 
     if reset:
-        common.schedule_job(action='Restart', target='search_nzb_book')
+        scheduleJob(action='Restart', target='search_nzb_book')
 
 
 def processResultList(resultlist, book, searchtype):
@@ -214,7 +213,7 @@ def processResultList(resultlist, book, searchtype):
                                            newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             if snatch:
                 notifiers.notify_snatch(newValueDict["NZBtitle"] + ' at ' + now())
-                common.schedule_job(action='Start', target='processDir')
+                scheduleJob(action='Start', target='processDir')
                 return True
 
     logger.debug("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() +

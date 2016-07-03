@@ -11,7 +11,7 @@ from lib.fuzzywuzzy import fuzz
 from lazylibrarian.searchtorrents import TORDownloadMethod
 from lazylibrarian.searchnzb import NZBDownloadMethod
 from lazylibrarian.formatter import plural, now, latinToAscii, replace_all, nzbdate2format, getList, month2num, datecompare
-from lazylibrarian.common import remove_accents, schedule_job
+from lazylibrarian.common import remove_accents, scheduleJob
 from lazylibrarian.notifiers import notify_snatch
 from lazylibrarian.providers import IterateOverNewzNabSites, IterateOverTorrentSites
 
@@ -374,10 +374,10 @@ def search_magazines(mags=None, reset=False):
                     snatch = NZBDownloadMethod(magazine['bookid'], magazine['nzbprov'], magazine['nzbtitle'], magazine['nzburl'])
                 if snatch:
                     notify_snatch(latinToAscii(magazine['nzbtitle']) + ' at ' + now())
-                    schedule_job(action='Start', target='processDir')
+                    scheduleJob(action='Start', target='processDir')
             maglist = []
 
     if reset:
-        schedule_job(action='Restart', target='search_magazines')
+        scheduleJob(action='Restart', target='search_magazines')
 
     logger.info("Search for magazines complete")

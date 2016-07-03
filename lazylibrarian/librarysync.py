@@ -12,7 +12,7 @@ from lib.mobi import Mobi
 from lazylibrarian.common import USER_AGENT, remove_accents
 from shutil import copyfile
 from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList
-from lazylibrarian.importer import addAuthorToDB
+from lazylibrarian.importer import addAuthorToDB, update_totals
 
 def opf_file(search_dir=None):
     # find an .opf file in this directory
@@ -543,23 +543,12 @@ def LibraryScan(dir=None):
     if stats:
         logger.warn("Found %s book%s in your library with unknown language" % (stats, plural(stats)))
 
-    authors = myDB.select('select AuthorName from authors')
+    authors = myDB.select('select AuthorID from authors')
     # Update bookcounts for all authors, not just new ones - refresh may have located
     # new books for existing authors especially if switched provider gb/gr
     logger.debug('Updating bookcounts for %i authors' % len(authors))
     for author in authors:
-        name = author['AuthorName']
-        havebooks = myDB.action(
-            'SELECT count("BookID") as counter from books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' %
-            name).fetchone()
-        myDB.action('UPDATE authors set HaveBooks="%s" where AuthorName="%s"' % (havebooks['counter'], name))
-        totalbooks = myDB.action(
-            'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s"' % name).fetchone()
-        myDB.action('UPDATE authors set TotalBooks="%s" where AuthorName="%s"' % (totalbooks['counter'], name))
-        unignoredbooks = myDB.action(
-            'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND Status!="Ignored"' %
-            name).fetchone()
-        myDB.action('UPDATE authors set UnignoredBooks="%s" where AuthorName="%s"' % (unignoredbooks['counter'], name))
+        update_totals(author['AuthorID'])
 
     images = myDB.select('select bookid, bookimg, bookname from books where bookimg like "http%"')
     if len(images):
