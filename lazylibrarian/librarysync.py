@@ -3,25 +3,18 @@ import re
 import lazylibrarian
 import urllib2
 import socket
-from lazylibrarian import logger, database, bookwork
+import lib.zipfile as zipfile
+from shutil import copyfile
+from lazylibrarian import logger, database
+from lazylibrarian.bookwork import cache_cover, setWorkPages
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 from xml.etree import ElementTree
-import lib.zipfile as zipfile
 from lib.mobi import Mobi
 from lazylibrarian.common import USER_AGENT, remove_accents
-from shutil import copyfile
 from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList
 from lazylibrarian.importer import addAuthorToDB, update_totals
-
-def opf_file(search_dir=None):
-    # find an .opf file in this directory
-    # return full pathname of file, or empty string if no opf found
-    if search_dir and os.path.isdir(search_dir):
-        for fname in os.listdir(search_dir):
-            if fname.endswith('.opf'):
-                return os.path.join(search_dir.encode(lazylibrarian.SYS_ENCODING), fname.encode(lazylibrarian.SYS_ENCODING))
-    return ""
+from lazylibrarian.common import opf_file
 
 
 def get_book_info(fname):
@@ -557,8 +550,8 @@ def LibraryScan(dir=None):
             bookid = item['bookid']
             bookimg = item['bookimg']
             bookname = item['bookname']
-            newimg = bookwork.cache_cover(bookid, bookimg)
+            newimg = cache_cover(bookid, bookimg)
             if newimg is not None:
                 myDB.action('update books set BookImg="%s" where BookID="%s"' % (newimg, bookid))
-    bookwork.setWorkPages()
+    setWorkPages()
     logger.info('Library scan complete')

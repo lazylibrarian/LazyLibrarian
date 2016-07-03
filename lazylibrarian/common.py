@@ -24,7 +24,7 @@ import os
 import shutil
 import time
 from lazylibrarian import logger, database
-from lazylibrarian.formatter import plural, next_run
+from lazylibrarian.formatter import plural, next_run, is_valid_booktype
 
 USER_AGENT = 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
 
@@ -36,6 +36,32 @@ notifyStrings = {}
 notifyStrings[NOTIFY_SNATCH] = "Started Download"
 notifyStrings[NOTIFY_DOWNLOAD] = "Download Finished"
 
+def opf_file(search_dir=None):
+    # find an .opf file in this directory
+    # return full pathname of file, or empty string if no opf found
+    if search_dir and os.path.isdir(search_dir):
+        for fname in os.listdir(search_dir):
+            if fname.endswith('.opf'):
+                return os.path.join(search_dir, fname)
+    return ""
+
+def csv_file(search_dir=None):
+    # find a csv file in this directory, any will do
+    # return full pathname of file, or empty string if none found
+    if search_dir and os.path.isdir(search_dir):
+        for fname in os.listdir(search_dir):
+            if fname.endswith('.csv'):
+                return os.path.join(search_dir, fname)
+    return ""
+
+def book_file(search_dir=None, booktype=None):
+    # find a book/mag file in this directory, any book will do
+    # return full pathname of book/mag, or empty string if none found
+    if search_dir is not None and os.path.isdir(search_dir):
+        for fname in os.listdir(search_dir):
+            if is_valid_booktype(fname, booktype=booktype):
+                return os.path.join(search_dir, fname)
+    return ""
 
 def scheduleJob(action='Start', target=None):
     """ Start or stop or restart a cron job by name eg

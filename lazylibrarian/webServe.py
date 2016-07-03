@@ -1,11 +1,5 @@
 import os
-import shutil
 import cherrypy
-from cherrypy.lib.static import serve_file
-from mako.lookup import TemplateLookup
-from mako import exceptions
-from operator import itemgetter
-
 import threading
 import Queue
 import hashlib
@@ -13,8 +7,13 @@ import random
 import urllib
 import lazylibrarian
 
-from lazylibrarian import logger, database, postprocess, \
-    notifiers, librarysync, versioncheck, magazinescan, bookwork, \
+from cherrypy.lib.static import serve_file
+from mako.lookup import TemplateLookup
+from mako import exceptions
+from operator import itemgetter
+from shutil import copyfile
+
+from lazylibrarian import logger, database, notifiers, versioncheck, magazinescan, \
     qbittorrent, utorrent, transmission, sabnzbd, nzbget, deluge
 from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
 from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
@@ -25,6 +24,8 @@ from lazylibrarian.formatter import plural, now, today, check_int
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
+from lazylibrarian.librarysync import LibraryScan
+from lazylibrarian.postprocess import processAlternate, processCSV, exportCSV, processDir
 from lib.deluge_client import DelugeRPCClient
 
 import lib.simplejson as simplejson
@@ -891,7 +892,7 @@ class WebInterface(object):
                         if not os.path.isdir(cachedir):
                             os.makedirs(cachedir)
                         hashname = os.path.join(cachedir, myhash + ".jpg")
-                        shutil.copyfile(magimg, hashname)
+                        copyfile(magimg, hashname)
                         magimg = 'images/cache/' + myhash + '.jpg'
                         covercount = covercount + 1
                 else:
@@ -1190,7 +1191,7 @@ class WebInterface(object):
 
     def libraryScan(self):
         try:
-            threading.Thread(target=librarysync.LibraryScan, name='LIBRARYSYNC', args=[lazylibrarian.DESTINATION_DIR]).start()
+            threading.Thread(target=LibraryScan, name='LIBRARYSYNC', args=[lazylibrarian.DESTINATION_DIR]).start()
         except Exception as e:
             logger.error(u'Unable to complete the scan: %s' % e)
         raise cherrypy.HTTPRedirect("home")
@@ -1206,7 +1207,7 @@ class WebInterface(object):
 
     def importAlternate(self):
         try:
-            threading.Thread(target=postprocess.processAlternate, name='IMPORTALT', args=[lazylibrarian.ALTERNATE_DIR]).start()
+            threading.Thread(target=processAlternate, name='IMPORTALT', args=[lazylibrarian.ALTERNATE_DIR]).start()
         except Exception as e:
             logger.error(u'Unable to complete the import: %s' % e)
         raise cherrypy.HTTPRedirect("manage")
@@ -1214,7 +1215,7 @@ class WebInterface(object):
 
     def importCSV(self):
         try:
-            threading.Thread(target=postprocess.processCSV, name='PROCESSCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
+            threading.Thread(target=processCSV, name='PROCESSCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
         except Exception as e:
             logger.error(u'Unable to complete the import: %s' % e)
         raise cherrypy.HTTPRedirect("manage")
@@ -1222,7 +1223,7 @@ class WebInterface(object):
 
     def exportCSV(self):
         try:
-            threading.Thread(target=postprocess.exportCSV, name='EXPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
+            threading.Thread(target=exportCSV, name='EXPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
         except Exception as e:
             logger.error(u'Unable to complete the export: %s' % e)
         raise cherrypy.HTTPRedirect("manage")
@@ -1453,7 +1454,7 @@ class WebInterface(object):
 # ALL ELSE ##########################################################
 
     def forceProcess(self, source=None):
-        threading.Thread(target=postprocess.processDir, name='POSTPROCESS', args=[True]).start()
+        threading.Thread(target=processDir, name='POSTPROCESS', args=[True]).start()
         raise cherrypy.HTTPRedirect(source)
     forceProcess.exposed = True
 

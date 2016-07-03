@@ -8,12 +8,13 @@ from urllib import FancyURLopener
 from lib.fuzzywuzzy import fuzz
 import lazylibrarian
 
-from lazylibrarian import database, logger, librarysync
-from lazylibrarian import gr, magazinescan
+from lazylibrarian import database, logger, gr
+from lazylibrarian.magazinescan import create_id, create_cover
 from lazylibrarian.formatter import plural, now, today, is_valid_booktype, is_valid_isbn, latinToAscii, replace_all
-from lazylibrarian.common import scheduleJob, remove_accents
+from lazylibrarian.common import scheduleJob, remove_accents, book_file, opf_file, csv_file
 from lazylibrarian.notifiers import notify_download
 from lazylibrarian.importer import addAuthorToDB
+from lazylibrarian.librarysync import get_book_info, find_book_in_db
 
 def processAlternate(source_dir=None):
     # import a book from an alternate directory
@@ -42,10 +43,10 @@ def processAlternate(source_dir=None):
         # try book_name.opf first, or fall back to any filename.opf
         metafile = os.path.splitext(new_book)[0] + '.opf'
         if not os.path.isfile(metafile):
-            metafile = librarysync.opf_file(source_dir)
+            metafile = opf_file(source_dir)
         if os.path.isfile(metafile):
             try:
-                metadata = librarysync.get_book_info(metafile)
+                metadata = get_book_info(metafile)
             except:
                 logger.debug('Failed to read metadata from %s' % metafile)
         else:
@@ -53,7 +54,7 @@ def processAlternate(source_dir=None):
         if not 'title' in metadata and 'creator' in metadata:
             # try to get metadata from the book file
             try:
-                metadata = librarysync.get_book_info(new_book)
+                metadata = get_book_info(new_book)
             except:
                 logger.debug('No metadata found in %s' % new_book)
         if 'title' in metadata and 'creator' in metadata:
@@ -69,7 +70,7 @@ def processAlternate(source_dir=None):
                 logger.debug("ALT: Author %s not found, adding to database" % (authorname))
                 addAuthorToDB(authorname)
 
-            bookid = librarysync.find_book_in_db(myDB, authorname, bookname)
+            bookid = find_book_in_db(myDB, authorname, bookname)
             if bookid:
                 import_book(source_dir, bookid)
             else:
@@ -259,12 +260,12 @@ def processDir(reset=False):
                     controlValueDict = {"Title": book['BookID'], "IssueDate": book['AuxInfo']}
                     newValueDict = {"IssueAcquired": today(),
                                     "IssueFile": dest_file,
-                                    "IssueID": magazinescan.create_id("%s %s" % (book['BookID'], book['AuxInfo']))
+                                    "IssueID": create_id("%s %s" % (book['BookID'], book['AuxInfo']))
                                     }
                     myDB.upsert("issues", newValueDict, controlValueDict)
 
                     # create a thumbnail cover for the new issue
-                    magazinescan.create_cover(dest_file)
+                    create_cover(dest_file)
 
                 logger.info('Successfully processed: %s' % global_name)
                 ppcount = ppcount + 1
@@ -368,16 +369,6 @@ def import_book(pp_path=None, bookID=None):
             except:
                 logger.debug("Unable to rename %s" % pp_path)
             return False
-
-
-def book_file(search_dir=None, booktype=None):
-    # find a book/mag file in this directory, any book will do
-    # return full pathname of book/mag, or empty string if none found
-    if search_dir is not None and os.path.isdir(search_dir):
-        for fname in os.listdir(search_dir):
-            if is_valid_booktype(fname, booktype=booktype):
-                return os.path.join(search_dir, fname)  # .encode(lazylibrarian.SYS_ENCODING)
-    return ""
 
 
 def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
@@ -593,16 +584,6 @@ def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bo
         logger.debug('%s already exists. Did not create one.' % opfpath)
 
 
-def csv_file(search_dir=None):
-    # find a csv file in this directory, any will do
-    # return full pathname of file, or empty string if none found
-    if search_dir and os.path.isdir(search_dir) is True:
-        for fname in os.listdir(search_dir):
-            if fname.endswith('.csv'):
-                return os.path.join(search_dir, fname)  # .encode(lazylibrarian.SYS_ENCODING)
-    return ""
-
-
 def exportCSV(search_dir=None, status="Wanted"):
     """ Write a csv file to the search_dir containing all books marked as "Wanted" """
 
@@ -707,7 +688,7 @@ def processCSV(search_dir=None):
                 if is_valid_isbn(isbn13):
                     bookmatch = myDB.action('SELECT * FROM books where BookIsbn=%s' % (isbn13)).fetchone()
             if not bookmatch:
-                bookid = librarysync.find_book_in_db(myDB, authorname, bookname)
+                bookid = find_book_in_db(myDB, authorname, bookname)
                 if bookid:
                     bookmatch = myDB.action('SELECT * FROM books where BookID="%s"' % (bookid)).fetchone()
             if bookmatch:
