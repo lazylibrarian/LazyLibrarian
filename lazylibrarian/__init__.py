@@ -1285,8 +1285,9 @@ def dbcheck():
     # 0 original version or new empty database
     # 1 changes up to June 2016
     # 2 removed " MB" from nzbsize field in wanted table
-    # 3 removed SeriesOrder column from ooks table as redundant
-    db_current_version = 3
+    # 3 removed SeriesOrder column from books table as redundant
+    # 4 added duplicates column to stats table
+    db_current_version = 4
 
     if db_version < db_current_version:
         logger.info('Updating database to version %s, current version is %s' % (db_current_version, db_version))
@@ -1309,7 +1310,7 @@ def dbcheck():
             c.execute('CREATE TABLE IF NOT EXISTS issues (Title TEXT, IssueID TEXT, IssueAcquired TEXT, IssueDate TEXT, \
                 IssueFile TEXT)')
             c.execute('CREATE TABLE IF NOT EXISTS stats (authorname text, GR_book_hits int, GR_lang_hits int, \
-                LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int)')
+                LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int, duplicates int)')
 
         # These are the incremental changes before database versioning was introduced.
         # New database tables already have these incorporated so we need to check first...
@@ -1492,6 +1493,14 @@ def dbcheck():
                 logger.info('Moving magazine past issues into new table')
                 c.execute('CREATE TABLE pastissues AS SELECT * FROM wanted WHERE Status="Skipped" AND length(AuxInfo) > 0')
                 c.execute('DELETE FROM wanted WHERE Status="Skipped" AND length(AuxInfo) > 0')
+
+        if db_version < 4:
+            try:
+                c.execute('SELECT duplicates from stats')
+            except sqlite3.OperationalError:
+                logger.info('Updating stats table to hold duplicates')
+                c.execute('ALTER TABLE stats ADD COLUMN duplicates INT')
+
 
         c.execute('PRAGMA user_version = %s' % db_current_version)
         conn.commit()

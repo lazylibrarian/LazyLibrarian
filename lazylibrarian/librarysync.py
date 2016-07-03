@@ -201,10 +201,7 @@ def LibraryScan(dir=None):
 
     myDB = database.DBConnection()
 
-    myDB.action('drop table if exists stats')
-    myDB.action(
-        'create table stats (authorname text, GR_book_hits int, GR_lang_hits int, LT_lang_hits int, \
-                            GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int )')
+    myDB.action('DELETE from stats')
 
     logger.info(
         'Scanning ebook directory: %s' %
@@ -514,7 +511,7 @@ def LibraryScan(dir=None):
     logger.info("%s file%s processed" % (file_count, plural(file_count)))
     stats = myDB.action(
         "SELECT sum(GR_book_hits), sum(GR_lang_hits), sum(LT_lang_hits), sum(GB_lang_change), \
-            sum(cache_hits), sum(bad_lang), sum(bad_char), sum(uncached) FROM stats").fetchone()
+            sum(cache_hits), sum(bad_lang), sum(bad_char), sum(uncached), sum(duplicates) FROM stats").fetchone()
     if stats['sum(GR_book_hits)'] is not None:
         # only show stats if new books added
         if lazylibrarian.BOOK_API == "GoogleBooks":
@@ -537,9 +534,11 @@ def LibraryScan(dir=None):
             (stats['sum(bad_char)'], plural(stats['sum(bad_char)'])))
         logger.debug("Unable to cache %s book%s with missing ISBN" %
             (stats['sum(uncached)'], plural(stats['sum(uncached)'])))
-    logger.debug("Cache %s hit%s, %s miss" %
-        (lazylibrarian.CACHE_HIT, plural(lazylibrarian.CACHE_HIT), lazylibrarian.CACHE_MISS))
-    logger.debug("ISBN Language cache holds %s entries" % cachesize['counter'])
+        logger.debug("Found %s duplicate book%s" %
+            (stats['sum(duplicates)'], plural(stats['sum(duplicates)'])))
+        logger.debug("Cache %s hit%s, %s miss" %
+            (lazylibrarian.CACHE_HIT, plural(lazylibrarian.CACHE_HIT), lazylibrarian.CACHE_MISS))
+        logger.debug("ISBN Language cache holds %s entries" % cachesize['counter'])
     stats = len(myDB.select('select BookID from Books where status="Open" and BookLang="Unknown"'))
     if stats:
         logger.warn("Found %s book%s in your library with unknown language" % (stats, plural(stats)))

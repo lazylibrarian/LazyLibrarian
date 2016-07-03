@@ -319,6 +319,7 @@ class GoodReads:
 
             resultsCount = 0
             removedResults = 0
+            duplicates = 0
             ignored = 0
             added_count = 0
             updated_count = 0
@@ -500,11 +501,13 @@ class GoodReads:
 
                     if re.match('[^\w-]', bookname):  # reject books with bad characters in title
                         logger.debug(u"removed result [" + bookname + "] for bad characters")
+                        removedResults = removedResults + 1
                         rejected = True
 
                     if not rejected and not bookname:
                         logger.debug('Rejecting bookid %s for %s, no bookname' %
                                 (bookid, authorNameResult))
+                        removedResults = removedResults + 1
                         rejected = True
 
                     if not rejected:
@@ -516,11 +519,11 @@ class GoodReads:
                                     # we have a book with this author/title already
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
                                         (find_book['BookID'], authorNameResult, bookname, bookid))
+                                    duplicates = duplicates + 1
                                     rejected = True
+                                    break
 
-                    if rejected:
-                        removedResults = removedResults + 1
-                    else:
+                    if not rejected:
                         if book_status != "Ignored":
                             controlValueDict = {"BookID": bookid}
                             newValueDict = {
@@ -638,13 +641,14 @@ class GoodReads:
 
         logger.debug("Found %s total book%s for author" % (total_count, plural(total_count)))
         logger.debug("Removed %s bad language result%s for author" % (ignored, plural(ignored)))
-        logger.debug("Removed %s bad character or duplicate result%s for author" % (removedResults, plural(removedResults)))
+        logger.debug("Removed %s bad character or no-name result%s for author" % (removedResults, plural(removedResults)))
+        logger.debug("Removed %s duplicate result%s for author" % (duplicates, plural(duplicates)))
         logger.debug("Ignored %s book%s by author marked as Ignored" % (book_ignore_count, plural(book_ignore_count)))
         logger.debug("Imported/Updated %s book%s for author" % (modified_count, plural(modified_count)))
 
-        myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' %
+        myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i, %i)' %
                     (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change,
-                     cache_hits, ignored, removedResults, not_cached))
+                     cache_hits, ignored, removedResults, not_cached, duplicates))
 
         if refresh:
             logger.info("[%s] Book processing complete: Added %s book%s / Updated %s book%s" %

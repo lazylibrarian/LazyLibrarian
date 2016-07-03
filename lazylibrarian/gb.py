@@ -127,7 +127,6 @@ class GoogleBooks:
             try:
                 startindex = 0
                 resultcount = 0
-                # removedResults = 0
                 ignored = 0
                 number_results = 1
                 total_count = 0
@@ -336,6 +335,7 @@ class GoogleBooks:
             startindex = 0
             resultcount = 0
             removedResults = 0
+            duplicates = 0
             ignored = 0
             added_count = 0
             updated_count = 0
@@ -550,6 +550,7 @@ class GoogleBooks:
                     if not rejected and not bookname:
                         logger.debug('Rejecting bookid %s for %s, no bookname' %
                                 (bookid, authorname))
+                        removedResults = removedResults + 1
                         rejected = True
 
                     if not rejected:
@@ -562,10 +563,10 @@ class GoogleBooks:
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
                                         (find_book['BookID'], authorname, bookname, bookid))
                                     rejected = True
+                                    duplicates = duplicates + 1
+                                    break
 
-                    if rejected:
-                        removedResults = removedResults + 1
-                    else:
+                    if not rejected:
                         if book_status != "Ignored":
                             controlValueDict = {"BookID": bookid}
                             newValueDict = {
@@ -666,13 +667,14 @@ class GoogleBooks:
 
         logger.debug("Found %s total book%s for author" % (total_count, plural(total_count)))
         logger.debug("Removed %s bad language result%s for author" % (ignored, plural(ignored)))
-        logger.debug("Removed %s bad character or duplicate result%s for author" % (removedResults, plural(removedResults)))
+        logger.debug("Removed %s bad character or no-name result%s for author" % (removedResults, plural(removedResults)))
+        logger.debug("Removed %s duplicate result%s for author" % (duplicates, plural(duplicates)))
         logger.debug("Ignored %s book%s by author marked as Ignored" % (book_ignore_count, plural(book_ignore_count)))
         logger.debug("Imported/Updated %s book%s for author" % (resultcount, plural(resultcount)))
 
-        myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i)' %
+        myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i, %i)' %
                     (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits,
-                     ignored, removedResults, not_cached))
+                     ignored, removedResults, not_cached, duplicates))
 
         if refresh:
             logger.info("[%s] Book processing complete: Added %s book%s / Updated %s book%s" %
