@@ -6,7 +6,8 @@ import socket
 import lib.zipfile as zipfile
 from shutil import copyfile
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import cache_cover, setWorkPages
+from lazylibrarian.bookwork import setWorkPages
+from lazylibrarian.cache import cache_cover
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 from xml.etree import ElementTree

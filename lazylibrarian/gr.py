@@ -1,13 +1,12 @@
 import urllib
 import urllib2
-import socket
 import re
 import time
-from xml.etree import ElementTree
 import lazylibrarian
-from lazylibrarian import logger, database, bookwork
-from lazylibrarian.common import USER_AGENT
+from lazylibrarian import logger, database
+from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage
 from lazylibrarian.formatter import plural, today, replace_all, bookSeries
+from lazylibrarian.cache import get_xml_request, cache_cover
 from lib.fuzzywuzzy import fuzz
 from lib.unidecode import unidecode
 import os
@@ -25,77 +24,6 @@ class GoodReads:
             logger.warn('No Goodreads API key, check config')
         self.params = {"key": lazylibrarian.GR_API}
 
-    def get_request(self, my_url):
-        request = urllib2.Request(my_url)
-        if lazylibrarian.PROXY_HOST:
-            request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-        request.add_header('User-Agent', USER_AGENT)
-        # Original simplecache
-        # opener = urllib.request.build_opener(SimpleCache.CacheHandler(".AuthorCache"),
-        # SimpleCache.ThrottlingProcessor(5))
-        # resp = opener.open(request)
-        # Simplified simplecache, no throttling, no headers as we dont use them, added cache expiry
-        # we can simply cache the xml with...
-        # hashfilename = hash url
-        # if hashfilename exists, return its contents
-        # if not, urllib2.urlopen()
-        # store the xml
-        # return the xml, and whether it was found in the cache
-        # Need to expire the cache entries, or we won't search for anything new
-        # default to 30 days for now. Authors dont write that quickly.
-        #
-        cacheLocation = "XMLCache"
-        expireafter = lazylibrarian.CACHE_AGE
-        cacheLocation = os.path.join(lazylibrarian.CACHEDIR, cacheLocation)
-        if not os.path.exists(cacheLocation):
-            os.mkdir(cacheLocation)
-        myhash = md5.new(request.get_full_url()).hexdigest()
-        valid_cache = False
-        hashname = cacheLocation + os.sep + myhash + ".xml"
-        if os.path.isfile(hashname):
-            cache_modified_time = os.stat(hashname).st_mtime
-            time_now = time.time()
-            if cache_modified_time < time_now - (expireafter * 24 * 60 * 60):  # expire after this many seconds
-                # Cache is old, delete entry
-                os.remove(hashname)
-            else:
-                valid_cache = True
-
-        if valid_cache:
-            lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
-            logger.debug(u"CacheHandler: Returning CACHED response for %s" % request.get_full_url())
-            with open(hashname, "r") as cachefile:
-                source_xml = cachefile.read()
-        else:
-            lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
-            try:
-                resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
-            except socket.timeout as e:
-                logger.warn(u"Retrying - got timeout on %s" % my_url)
-                try:
-                    resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
-                except (urllib2.URLError, socket.timeout) as e:
-                    logger.error(u"Error getting response for %s: %s" % (my_url, e))
-                    return None, False
-            except urllib2.URLError as e:
-                logger.error(u"URLError getting response for %s: %s" % (my_url, e))
-                return None, False
-
-            if str(resp.getcode()).startswith("2"):  # (200 OK etc)
-                logger.debug(u"CacheHandler: Caching response for %s" % my_url)
-                try:
-                    source_xml = resp.read()  # .decode('utf-8')
-                except socket.error as e:
-                    logger.error(u"Error reading xml: %s" % e)
-                    return None, False
-                with open(hashname, "w") as cachefile:
-                    cachefile.write(source_xml)
-            else:
-                logger.warn(u"Got error response for %s: %s" % (my_url, resp.getcode()))
-                return None, False
-
-        root = ElementTree.fromstring(source_xml)
-        return root, valid_cache
 
     def find_results(self, authorname=None, queue=None):
         resultlist = []
@@ -114,7 +42,7 @@ class GoodReads:
 
         try:
             try:
-                rootxml, in_cache = self.get_request(set_url)
+                rootxml, in_cache = get_xml_request(set_url)
             except Exception as e:
                 logger.error("Error finding results: %s" % e)
                 return
@@ -225,7 +153,7 @@ class GoodReads:
 
         authorlist = []
         try:
-            rootxml, in_cache = self.get_request(URL)
+            rootxml, in_cache = get_xml_request(URL)
         except Exception as e:
             logger.error("Error finding authorid: %s, %s" % (e, URL))
             return authorlist
@@ -255,7 +183,7 @@ class GoodReads:
         author_dict = {}
 
         try:
-            rootxml, in_cache = self.get_request(URL)
+            rootxml, in_cache = get_xml_request(URL)
         except Exception as e:
             logger.error("Error getting author info: %s" % e)
             return author_dict
@@ -299,7 +227,7 @@ class GoodReads:
         myDB.upsert("authors", newValueDict, controlValueDict)
         books_dict = []
         try:
-            rootxml, in_cache = self.get_request(URL)
+            rootxml, in_cache = get_xml_request(URL)
         except Exception as e:
             logger.error("Error fetching author books: %s" % e)
             return books_dict
@@ -405,7 +333,7 @@ class GoodReads:
                                 # returns plain text, not xml
                                 BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + isbn
                                 try:
-                                    bookwork.librarything_wait()
+                                    librarything_wait()
                                     resp = urllib2.urlopen(BOOK_URL, timeout=30).read()
                                     lt_lang_hits = lt_lang_hits + 1
                                     logger.debug("LibraryThing reports language [%s] for %s" % (resp, isbnhead))
@@ -434,7 +362,7 @@ class GoodReads:
                                         if time_now <= lazylibrarian.LAST_GOODREADS:
                                             time.sleep(1)
 
-                                        BOOK_rootxml, in_cache = self.get_request(BOOK_URL)
+                                        BOOK_rootxml, in_cache = get_xml_request(BOOK_URL)
                                         if BOOK_rootxml is None:
                                             logger.debug('Error requesting book language code')
                                             bookLanguage = ""
@@ -555,7 +483,7 @@ class GoodReads:
 
                             if 'nocover' in bookimg or 'nophoto' in bookimg:
                                 # try to get a cover from librarything
-                                workcover = bookwork.getBookCover(bookid)
+                                workcover = getBookCover(bookid)
                                 if workcover:
                                     logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))
                                     controlValueDict = {"BookID": bookid}
@@ -563,7 +491,7 @@ class GoodReads:
                                     myDB.upsert("books", newValueDict, controlValueDict)
 
                             elif bookimg.startswith('http'):
-                                link = bookwork.cache_cover(bookid, bookimg)
+                                link = cache_cover(bookid, bookimg)
                                 if link is not None:
                                     controlValueDict = {"BookID": bookid}
                                     newValueDict = {"BookImg": link}
@@ -571,7 +499,7 @@ class GoodReads:
 
                             if seriesNum == None:
                                 # try to get series info from librarything
-                                series, seriesNum = bookwork.getWorkSeries(bookid)
+                                series, seriesNum = getWorkSeries(bookid)
                                 if seriesNum:
                                     logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))
                                     controlValueDict = {"BookID": bookid}
@@ -581,7 +509,7 @@ class GoodReads:
                                     }
                                     myDB.upsert("books", newValueDict, controlValueDict)
 
-                            worklink = bookwork.getWorkPage(bookid)
+                            worklink = getWorkPage(bookid)
                             if worklink:
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {"WorkPage": worklink}
@@ -601,7 +529,7 @@ class GoodReads:
                       urllib.urlencode(self.params) + '&page=' + str(loopCount)
                 resultxml = None
                 try:
-                    rootxml, in_cache = self.get_request(URL)
+                    rootxml, in_cache = get_xml_request(URL)
                     if rootxml is None:
                         logger.debug('Error requesting next page of results')
                     else:
@@ -665,7 +593,7 @@ class GoodReads:
         URL = 'https://www.goodreads.com/book/show/' + bookid + '?' + urllib.urlencode(self.params)
 
         try:
-            rootxml, in_cache = self.get_request(URL)
+            rootxml, in_cache = get_xml_request(URL)
             if rootxml is None:
                 logger.debug("Error requesting book")
                 return
@@ -755,7 +683,7 @@ class GoodReads:
 
         if 'nocover' in bookimg or 'nophoto' in bookimg:
             # try to get a cover from librarything
-            workcover = bookwork.getBookCover(bookid)
+            workcover = getBookCover(bookid)
             if workcover:
                 logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))
                 controlValueDict = {"BookID": bookid}
@@ -763,7 +691,7 @@ class GoodReads:
                 myDB.upsert("books", newValueDict, controlValueDict)
 
         elif bookimg.startswith('http'):
-            link = bookwork.cache_cover(bookid, bookimg)
+            link = cache_cover(bookid, bookimg)
             if link is not None:
                 controlValueDict = {"BookID": bookid}
                 newValueDict = {"BookImg": link}
@@ -771,7 +699,7 @@ class GoodReads:
 
         if seriesNum == None:
             #  try to get series info from librarything
-            series, seriesNum = bookwork.getWorkSeries(bookid)
+            series, seriesNum = getWorkSeries(bookid)
             if seriesNum:
                 logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))
                 controlValueDict = {"BookID": bookid}
@@ -781,7 +709,7 @@ class GoodReads:
                 }
                 myDB.upsert("books", newValueDict, controlValueDict)
 
-        worklink = bookwork.getWorkPage(bookid)
+        worklink = getWorkPage(bookid)
         if worklink:
             controlValueDict = {"BookID": bookid}
             newValueDict = {"WorkPage": worklink}
