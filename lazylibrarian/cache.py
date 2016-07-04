@@ -77,10 +77,6 @@ def cache_cover(bookID, img_url):
     return None
 
 def get_xml_request(my_url):
-    request = urllib2.Request(my_url)
-    if lazylibrarian.PROXY_HOST:
-        request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-    request.add_header('User-Agent', USER_AGENT)
     # Original simplecache
     # opener = urllib.request.build_opener(SimpleCache.CacheHandler(".AuthorCache"),
     # SimpleCache.ThrottlingProcessor(5))
@@ -96,17 +92,16 @@ def get_xml_request(my_url):
     # default to 30 days for now. Authors dont write that quickly.
     #
     cacheLocation = "XMLCache"
-    expireafter = lazylibrarian.CACHE_AGE
     cacheLocation = os.path.join(lazylibrarian.CACHEDIR, cacheLocation)
     if not os.path.exists(cacheLocation):
         os.mkdir(cacheLocation)
-    myhash = md5.new(request.get_full_url()).hexdigest()
+    myhash = md5.new(my_url).hexdigest()
     valid_cache = False
     hashname = cacheLocation + os.sep + myhash + ".xml"
     if os.path.isfile(hashname):
         cache_modified_time = os.stat(hashname).st_mtime
         time_now = time.time()
-        if cache_modified_time < time_now - (expireafter * 24 * 60 * 60):  # expire after this many seconds
+        if cache_modified_time < time_now - (lazylibrarian.CACHE_AGE * 24 * 60 * 60):  # expire after this many seconds
             # Cache is old, delete entry
             os.remove(hashname)
         else:
@@ -114,35 +109,18 @@ def get_xml_request(my_url):
 
     if valid_cache:
         lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
-        logger.debug(u"CacheHandler: Returning CACHED response for %s" % request.get_full_url())
+        logger.debug(u"CacheHandler: Returning CACHED response for %s" % my_url)
         with open(hashname, "r") as cachefile:
             source_xml = cachefile.read()
     else:
         lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
-        try:
-            resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
-        except socket.timeout as e:
-            logger.warn(u"Retrying - got timeout on %s" % my_url)
-            try:
-                resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
-            except (urllib2.URLError, socket.timeout) as e:
-                logger.error(u"Error getting response for %s: %s" % (my_url, e))
-                return None, False
-        except urllib2.URLError as e:
-            logger.error(u"URLError getting response for %s: %s" % (my_url, e))
-            return None, False
-
-        if str(resp.getcode()).startswith("2"):  # (200 OK etc)
-            logger.debug(u"CacheHandler: Caching response for %s" % my_url)
-            try:
-                source_xml = resp.read()  # .decode('utf-8')
-            except socket.error as e:
-                logger.error(u"Error reading xml: %s" % e)
-                return None, False
+        source_xml, success = fetchURL(my_url)
+        if success:
+            logger.debug(u"CacheHandler: Storing XML for %s" % my_url)
             with open(hashname, "w") as cachefile:
                 cachefile.write(source_xml)
         else:
-            logger.warn(u"Got error response for %s: %s" % (my_url, resp.getcode()))
+            logger.warn(u"Got error response for %s: %s" % (my_url, source_xml))
             return None, False
 
     root = ElementTree.fromstring(source_xml)
@@ -160,7 +138,6 @@ def get_json_request(my_url):
     # default to 30 days for now. Authors dont write that quickly.
     #
     cacheLocation = "JSONCache"
-    expireafter = lazylibrarian.CACHE_AGE
     cacheLocation = os.path.join(lazylibrarian.CACHEDIR, cacheLocation)
     if not os.path.exists(cacheLocation):
         os.mkdir(cacheLocation)
@@ -171,7 +148,7 @@ def get_json_request(my_url):
     if os.path.isfile(hashname):
         cache_modified_time = os.stat(hashname).st_mtime
         time_now = time.time()
-        if cache_modified_time < time_now - (expireafter * 24 * 60 * 60):  # expire after this many seconds
+        if cache_modified_time < time_now - (lazylibrarian.CACHE_AGE * 24 * 60 * 60):  # expire after this many seconds
             # Cache is old, delete entry
             os.remove(hashname)
         else:
@@ -180,35 +157,16 @@ def get_json_request(my_url):
     if valid_cache:
         lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
         logger.debug(
-            u"CacheHandler: Returning CACHED response for %s" %
-            my_url)
+            u"CacheHandler: Returning CACHED response for %s" % my_url)
         source_json = json.load(open(hashname))
     else:
         lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
-        # jsonresults = json.JSONDecoder().decode(urllib2.urlopen(URL,
-        # timeout=30).read())
-        try:
-            resp = urllib2.urlopen(my_url, timeout=30)  # don't get stuck
-        except socket.timeout as e:
-            logger.warn(u"Retrying - got timeout on %s" % my_url)
-            try:
-                resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
-            except (urllib2.URLError, socket.timeout) as e:
-                logger.error(u"Error getting response for %s: %s" % (my_url, e))
-                return None, False
-        except urllib2.URLError as e:
-            logger.error(u"URLError getting response for %s: %s" % (my_url, e))
-            return None, False
-
-        if str(resp.getcode()).startswith("2"):  # (200 OK etc)
-            logger.debug(u"CacheHandler: Caching response for %s" % my_url)
-            try:
-                source_json = json.JSONDecoder().decode(resp.read())
-            except socket.error as e:
-                logger.error(u"Error reading json: %s" % e)
-                return None, False
+        result, success = fetchURL(my_url)
+        if success:
+            logger.debug(u"CacheHandler: Storing JSON for %s" % my_url)
+            source_json = json.JSONDecoder().decode(result)
             json.dump(source_json, open(hashname, "w"))
         else:
-            logger.warn(u"Got error response for %s: %s" % (my_url, resp.getcode()))
+            logger.warn(u"Got error response for %s: %s" % (my_url, result))
             return None, False
     return source_json, valid_cache

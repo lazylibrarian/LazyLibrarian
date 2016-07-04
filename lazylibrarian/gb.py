@@ -18,6 +18,7 @@ from lazylibrarian.cache import get_json_request, cache_cover
 from lib.fuzzywuzzy import fuzz
 from lib.unidecode import unidecode
 from lazylibrarian.formatter import plural, today, replace_all
+from lazylibrarian.common import remove_accents
 
 
 class GoogleBooks:
@@ -247,9 +248,7 @@ class GoogleBooks:
 
         logger.debug('[%s] Now processing books with Google Books API' % authorname)
         # google doesnt like accents in author names
-        aname = unidecode(u'%s' % authorname)
-
-        set_url = self.url + urllib.quote('inauthor:' + '"' + aname + '"')
+        set_url = self.url + urllib.quote('inauthor:' + '"' + remove_accents(authorname) + '"')
         URL = set_url + '&' + urllib.urlencode(self.params)
 
         books_dict = []
