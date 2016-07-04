@@ -25,7 +25,8 @@ from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.librarysync import LibraryScan
-from lazylibrarian.postprocess import processAlternate, processCSV, exportCSV, processDir
+from lazylibrarian.postprocess import processAlternate, processDir
+from lazylibrarian.csv import  import_CSV, export_CSV
 from lib.deluge_client import DelugeRPCClient
 
 import lib.simplejson as simplejson
@@ -1215,7 +1216,7 @@ class WebInterface(object):
 
     def importCSV(self):
         try:
-            threading.Thread(target=processCSV, name='PROCESSCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
+            threading.Thread(target=import_CSV, name='IMPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
         except Exception as e:
             logger.error(u'Unable to complete the import: %s' % e)
         raise cherrypy.HTTPRedirect("manage")
@@ -1223,7 +1224,7 @@ class WebInterface(object):
 
     def exportCSV(self):
         try:
-            threading.Thread(target=exportCSV, name='EXPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
+            threading.Thread(target=export_CSV, name='EXPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
         except Exception as e:
             logger.error(u'Unable to complete the export: %s' % e)
         raise cherrypy.HTTPRedirect("manage")
