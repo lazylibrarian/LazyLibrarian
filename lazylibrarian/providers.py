@@ -61,7 +61,6 @@ def KAT(book=None):
         d = feedparser.parse(data)
 
         if not len(d.entries):
-            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
             pass
 
         else:
