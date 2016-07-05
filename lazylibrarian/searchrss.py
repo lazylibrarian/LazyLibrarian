@@ -9,7 +9,7 @@ from lazylibrarian import logger, database
 from lib.fuzzywuzzy import fuzz
 from lazylibrarian.providers import IterateOverRSSSites
 from lazylibrarian.common import scheduleJob
-from lazylibrarian.formatter import plural, latinToAscii, replace_all, getList, check_int, now
+from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, check_int, now
 from lazylibrarian.searchtorrents import TORDownloadMethod
 from lazylibrarian.searchnzb import NZBDownloadMethod
 from lazylibrarian.notifiers import notify_snatch
@@ -63,8 +63,8 @@ def search_rss_book(books=None, reset=False):
         author = book['AuthorName']
         title = book['BookName']
 
-        author = latinToAscii(replace_all(author, dic))
-        title = latinToAscii(replace_all(title, dic))
+        author = unaccented_str(replace_all(author, dic))
+        title = unaccented_str(replace_all(title, dic))
 
         found = processResultList(resultlist, author, title, book)
 
@@ -105,7 +105,7 @@ def processResultList(resultlist, author, title, book):
 
     # bit of a misnomer now, rss can search both tor and nzb rss feeds
     for tor in resultlist:
-        torTitle = latinToAscii(replace_all(tor['tor_title'], dictrepl)).strip()
+        torTitle = unaccented_str(replace_all(tor['tor_title'], dictrepl)).strip()
         torTitle = re.sub(r"\s\s+", " ", torTitle)  # remove extra whitespace
 
         tor_Author_match = fuzz.token_set_ratio(author, torTitle)

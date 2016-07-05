@@ -23,8 +23,8 @@ import json
 
 from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, \
     librarysync, versioncheck, database, searchmag, magazinescan, bookwork
-from lazylibrarian.formatter import getList, bookSeries, plural
-from lazylibrarian.common import USER_AGENT, remove_accents, restartJobs
+from lazylibrarian.formatter import getList, bookSeries, plural, unaccented
+from lazylibrarian.common import USER_AGENT, restartJobs
 
 try:
     from wand.image import Image
@@ -1181,10 +1181,10 @@ def build_monthtable():
     if not lang.startswith('en_'):  # en_ is preloaded
         MONTHNAMES[0].append(lang)
         for f in range(1, 13):
-            MONTHNAMES[f].append(remove_accents(calendar.month_name[f]).lower())
+            MONTHNAMES[f].append(unaccented(calendar.month_name[f]).lower())
         MONTHNAMES[0].append(lang)
         for f in range(1, 13):
-            MONTHNAMES[f].append(remove_accents(calendar.month_abbr[f]).lower().strip('.'))
+            MONTHNAMES[f].append(unaccented(calendar.month_abbr[f]).lower().strip('.'))
             logger.info("Added month names for locale [%s], %s, %s ..." % (
                         lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
 
@@ -1194,10 +1194,10 @@ def build_monthtable():
                 locale.setlocale(locale.LC_ALL, lang)
                 MONTHNAMES[0].append(lang)
                 for f in range(1, 13):
-                    MONTHNAMES[f].append(remove_accents(calendar.month_name[f]).lower())
+                    MONTHNAMES[f].append(unaccented(calendar.month_name[f]).lower())
                 MONTHNAMES[0].append(lang)
                 for f in range(1, 13):
-                    MONTHNAMES[f].append(remove_accents(calendar.month_abbr[f]).lower().strip('.'))
+                    MONTHNAMES[f].append(unaccented(calendar.month_abbr[f]).lower().strip('.'))
                 locale.setlocale(locale.LC_ALL, current_locale)  # restore entry state
                 logger.info("Added month names for locale [%s], %s, %s ..." % (
                     lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))

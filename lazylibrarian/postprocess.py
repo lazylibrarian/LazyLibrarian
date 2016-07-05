@@ -9,8 +9,8 @@ import lazylibrarian
 
 from lazylibrarian import database, logger, gr
 from lazylibrarian.magazinescan import create_id, create_cover
-from lazylibrarian.formatter import plural, now, today, is_valid_booktype, latinToAscii, replace_all
-from lazylibrarian.common import scheduleJob, remove_accents, book_file, opf_file, csv_file
+from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, unaccented
+from lazylibrarian.common import scheduleJob, book_file, opf_file
 from lazylibrarian.notifiers import notify_download
 from lazylibrarian.importer import addAuthorToDB
 from lazylibrarian.librarysync import get_book_info, find_book_in_db
@@ -179,14 +179,14 @@ def processDir(reset=False):
                         '$Title', bookname)
                     global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace(
                         '$Title', bookname)
-                    global_name = remove_accents(global_name)
+                    global_name = unaccented(global_name)
                     # dest_path = authorname+'/'+bookname
                     # global_name = bookname + ' - ' + authorname
                     # Remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
                     # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
                     dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
                            ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
-                    dest_path = latinToAscii(replace_all(dest_path, dic))
+                    dest_path = unaccented_str(replace_all(dest_path, dic))
                     dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(
                         lazylibrarian.SYS_ENCODING)
                 else:
@@ -200,7 +200,7 @@ def processDir(reset=False):
                         # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
                         dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
                                ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
-                        mag_name = latinToAscii(replace_all(book['BookID'], dic))
+                        mag_name = unaccented_str(replace_all(book['BookID'], dic))
                         # book auxinfo is a cleaned date, eg 2015-01-01
                         dest_path = lazylibrarian.MAG_DEST_FOLDER.replace(
                             '$IssueDate',
@@ -217,7 +217,7 @@ def processDir(reset=False):
                         bookname = None
                         global_name = lazylibrarian.MAG_DEST_FILE.replace('$IssueDate', book['AuxInfo']).replace(
                             '$Title', mag_name)
-                        global_name = remove_accents(global_name)
+                        global_name = unaccented(global_name)
                         # global_name = book['AuxInfo']+' - '+title
                     else:
                         logger.debug("Snatched magazine %s is not in download directory" % (book['BookID']))
@@ -268,7 +268,7 @@ def processDir(reset=False):
 
                 logger.info('Successfully processed: %s' % global_name)
                 ppcount = ppcount + 1
-                notify_download(latinToAscii(global_name) + ' at ' + now())
+                notify_download("%s at %s" % (global_name, now()))
             else:
                 logger.error('Postprocessing for %s has failed.' % global_name)
                 logger.error('Warning - Residual files remain in %s.fail' % pp_path)
@@ -336,12 +336,12 @@ def import_book(pp_path=None, bookID=None):
 
         dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace('$Title', bookname)
         global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace('$Title', bookname)
-        global_name = remove_accents(global_name)
+        global_name = unaccented(global_name)
         # Remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
         # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
         dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
                ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
-        dest_path = latinToAscii(replace_all(dest_path, dic))
+        dest_path = unaccented_str(replace_all(dest_path, dic))
         dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(lazylibrarian.SYS_ENCODING)
 
         processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name)
@@ -353,7 +353,7 @@ def import_book(pp_path=None, bookID=None):
             myDB.upsert("wanted", newValueDict, controlValueDict)
             processExtras(myDB, dest_path, global_name, data)
             logger.info('Successfully processed: %s' % global_name)
-            notify_download(latinToAscii(global_name) + ' at ' + now())
+            notify_download("%s at %s" % (global_name, now()))
             return True
         else:
             logger.error('Postprocessing for %s has failed.' % global_name)
@@ -571,7 +571,7 @@ def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bo
 
     dic = {'...': '', ' & ': ' ', ' = ': ' ', '$': 's', ' + ': ' ', ',': '', '*': ''}
 
-    opfinfo = latinToAscii(replace_all(opfinfo, dic))
+    opfinfo = unaccented_str(replace_all(opfinfo, dic))
 
     # handle metadata
     opfpath = os.path.join(dest_path, global_name + '.opf')

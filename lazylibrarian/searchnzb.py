@@ -7,11 +7,9 @@ import lazylibrarian
 from . import request
 
 from lazylibrarian import logger, database, providers, nzbget, sabnzbd, notifiers, classes, postprocess
-
 from lib.fuzzywuzzy import fuzz
-
 from lazylibrarian.common import USER_AGENT, scheduleJob
-from lazylibrarian.formatter import plural, latinToAscii, replace_all, getList, nzbdate2format, now, check_int
+from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, nzbdate2format, now, check_int
 
 # new to support torrents
 from lazylibrarian.searchtorrents import TORDownloadMethod
@@ -58,12 +56,12 @@ def search_nzb_book(books=None, reset=False):
                ',': '', '*': '', ':': '', ';': ''}
         dicSearchFormatting = {'.': ' +', ' + ': ' '}
 
-        author = latinToAscii(replace_all(author, dic))
-        book = latinToAscii(replace_all(book, dic))
+        author = unaccented_str(replace_all(author, dic))
+        book = unaccented_str(replace_all(book, dic))
         if '(' in book:  # may have title (series/extended info)
             book = book.split('(')[0]
         # TRY SEARCH TERM just using author name and book
-        author = latinToAscii(replace_all(author, dicSearchFormatting))
+        author = unaccented_str(replace_all(author, dicSearchFormatting))
         searchterm = author + ' ' + book
         searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
         searchterm = re.sub(r'\(.*?\)', '', searchterm).encode('utf-8')
@@ -125,12 +123,12 @@ def processResultList(resultlist, book, searchtype):
 
     match_ratio = int(lazylibrarian.MATCH_RATIO)
     reject_list = getList(lazylibrarian.REJECT_WORDS)
-    author = latinToAscii(replace_all(book['authorName'], dic))
-    title = latinToAscii(replace_all(book['bookName'], dic))
+    author = unaccented_str(replace_all(book['authorName'], dic))
+    title = unaccented_str(replace_all(book['bookName'], dic))
 
     matches = []
     for nzb in resultlist:
-        nzb_Title = latinToAscii(replace_all(nzb['nzbtitle'], dictrepl)).strip()
+        nzb_Title = unaccented_str(replace_all(nzb['nzbtitle'], dictrepl)).strip()
         nzb_Title = re.sub(r"\s\s+", " ", nzb_Title)  # remove extra whitespace
 
         nzbAuthor_match = fuzz.token_set_ratio(author, nzb_Title)

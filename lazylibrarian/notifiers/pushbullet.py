@@ -26,7 +26,8 @@ import lazylibrarian
 from httplib import HTTPSConnection, HTTPException
 from urllib import urlencode
 from lazylibrarian import logger
-from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD, remove_accents
+from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
+from lazylibrarian.formatter import unaccented
 from pushbullet2 import PushBullet
 
 class PushbulletNotifier:
@@ -71,7 +72,7 @@ class PushbulletNotifier:
         force: If True then the notification will be sent even if pushbullet is disabled in the config
         """
         try:
-            message = remove_accents(message)
+            message = unaccented(message)
         except Exception, e:
             logger.warn("Pushbullet: could not convert  message: %s" % e)
 

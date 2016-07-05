@@ -3,8 +3,10 @@ import lib.csv as csv
 import lazylibrarian
 
 from lazylibrarian import database, logger
-from lazylibrarian.formatter import latinToAscii, plural, is_valid_isbn
+from lazylibrarian.formatter import plural, is_valid_isbn, now
 from lazylibrarian.importer import addAuthorToDB
+from lazylibrarian.common import csv_file
+from lazylibrarian.librarysync import find_book_in_db
 
 
 def export_CSV(search_dir=None, status="Wanted"):
@@ -84,8 +86,10 @@ def import_CSV(search_dir=None):
         skipcount = 0
         logger.debug(u"CSV: Found %s book%s in csv file" % (len(content.keys()), plural(len(content.keys()))))
         for bookid in content.keys():
+            authorname = content[bookid]['Author']
+            if hasattr(authorname, 'decode'):
+                authorname = authorname.decode('utf-8')
 
-            authorname = latinToAscii(content[bookid]['Author'])
             authmatch = myDB.action('SELECT * FROM authors where AuthorName="%s"' % (authorname)).fetchone()
 
             if authmatch:
@@ -98,7 +102,9 @@ def import_CSV(search_dir=None):
             bookmatch = 0
             isbn10 = ""
             isbn13 = ""
-            bookname = latinToAscii(content[bookid]['Title'])
+            bookname = content[bookid]['Title']
+            if hasattr(bookname, 'decode'):
+                bookname = bookname.decode('utf-8')
             if 'ISBN' in headers:
                 isbn10 = content[bookid]['ISBN']
             if 'ISBN13' in headers:

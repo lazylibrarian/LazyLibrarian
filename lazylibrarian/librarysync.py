@@ -12,10 +12,9 @@ from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 from xml.etree import ElementTree
 from lib.mobi import Mobi
-from lazylibrarian.common import USER_AGENT, remove_accents
-from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList
+from lazylibrarian.common import USER_AGENT, opf_file
+from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList, unaccented
 from lazylibrarian.importer import addAuthorToDB, update_totals
-from lazylibrarian.common import opf_file
 
 
 def get_book_info(fname):
@@ -136,8 +135,8 @@ def find_book_in_db(myDB, author, book):
         for a_book in books:
             # tidy up everything to raise fuzziness scores
             # still need to lowercase for matching against partial_name later on
-            book_lower = remove_accents(book.lower())
-            a_book_lower = remove_accents(a_book['BookName'].lower())
+            book_lower = unaccented(book.lower())
+            a_book_lower = unaccented(a_book['BookName'].lower())
             #
             ratio = fuzz.ratio(book_lower, a_book_lower)
             partial = fuzz.partial_ratio(book_lower, a_book_lower)
@@ -408,8 +407,8 @@ def LibraryScan(dir=None):
                                 match_name = authorname.replace('.', '_')
                                 match_name = match_name.replace(' ', '_')
                                 match_name = match_name.replace('__', '_')
-                                match_name = remove_accents(match_name)
-                                match_auth = remove_accents(match_auth)
+                                match_name = unaccented(match_name)
+                                match_auth = unaccented(match_auth)
                                 # allow a degree of fuzziness to cater for different accented character handling.
                                 # some author names have accents,
                                 # filename may have the accented or un-accented version of the character

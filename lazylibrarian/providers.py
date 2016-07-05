@@ -6,8 +6,8 @@ from xml.etree import ElementTree
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.common import USER_AGENT, removeDisallowedFilenameChars
-from lazylibrarian.formatter import age, today, plural
+from lazylibrarian.common import USER_AGENT
+from lazylibrarian.formatter import age, today, plural, cleanName
 
 # new libraries to support torrents
 import lib.feedparser as feedparser
@@ -417,8 +417,8 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
             authorname = authorname[2:].strip()  # and leading whitespace
         # middle initials can't have a dot
         authorname = authorname.replace('. ', ' ')
-        authorname = removeDisallowedFilenameChars(authorname)
-        bookname = removeDisallowedFilenameChars(book['bookName'])
+        authorname = cleanName(authorname)
+        bookname = cleanName(book['bookName'])
         if provider['BOOKSEARCH'] and provider['BOOKCAT']:  # if specific booksearch, use it
             params = {
                 "t": provider['BOOKSEARCH'],
@@ -440,8 +440,8 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
             authorname = authorname[2:].strip()  # and leading whitespace
         # middle initials can't have a dot
         authorname = authorname.replace('. ', ' ')
-        authorname = removeDisallowedFilenameChars(authorname)
-        bookname = removeDisallowedFilenameChars(book['bookName'].split('(')[0]).strip()
+        authorname = cleanName(authorname)
+        bookname = cleanName(book['bookName'].split('(')[0]).strip()
         if provider['BOOKSEARCH'] and provider['BOOKCAT']:  # if specific booksearch, use it
             params = {
                 "t": provider['BOOKSEARCH'],
@@ -463,7 +463,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
             authorname = authorname[2:].strip()  # and leading whitespace
         # middle initials can't have a dot
         authorname = authorname.replace('. ', ' ')
-        authorname = removeDisallowedFilenameChars(authorname)
+        authorname = cleanName(authorname)
         if provider['GENERALSEARCH']:
             params = {
                 "t": provider['GENERALSEARCH'],
@@ -599,7 +599,7 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None,
     resultFields = None
 
     nzbtitle = nzbdetails[0].text  # title is currently the same field for all searchtypes
-    # nzbtitle = removeDisallowedFilenameChars(nzbtitle)
+    # nzbtitle = cleanName(nzbtitle)
 
     if searchMode == "torznab":  # For torznab results, either 8 or 9 contain a magnet link
         if nzbdetails[8].attrib.get('name') == 'magneturl':

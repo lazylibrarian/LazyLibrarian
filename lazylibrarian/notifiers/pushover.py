@@ -26,7 +26,8 @@ import lazylibrarian
 from httplib import HTTPSConnection, HTTPException
 from urllib import urlencode
 from lazylibrarian import logger
-from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD, remove_accents
+from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
+from lazylibrarian.formatter import unaccented
 
 
 class PushoverNotifier:
@@ -109,7 +110,7 @@ class PushoverNotifier:
         force: If True then the notification will be sent even if pushover is disabled in the config
         """
         try:
-            message = remove_accents(message)
+            message = unaccented(message)
         except Exception, e:
             logger.warn("Pushover: could not convert  message: %s" % e)
         # suppress notifications if the notifier is disabled but the notify options are checked

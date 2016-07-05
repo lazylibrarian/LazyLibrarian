@@ -178,30 +178,6 @@ def clearLog():
             return "Log cleared, level set to [%s]- Log Directory is [%s]" % (
                 lazylibrarian.LOGLEVEL, lazylibrarian.LOGDIR)
 
-def remove_accents(str_or_unicode):
-    try:
-        nfkd_form = unicodedata.normalize('NFKD', str_or_unicode)
-    except TypeError:
-        nfkd_form = unicodedata.normalize('NFKD', str_or_unicode.decode(lazylibrarian.SYS_ENCODING, 'replace'))
-    # turn accented chars into non-accented
-    stripped = u''.join([c for c in nfkd_form if not unicodedata.combining(c)])
-    # now get rid of any other non-ascii
-    return stripped.encode('ASCII', 'ignore').decode(lazylibrarian.SYS_ENCODING)
-    # returns unicode
-
-
-def removeDisallowedFilenameChars(filename):
-    validFilenameChars = u"-_.() %s%s" % (string.ascii_letters, string.digits)
-    try:
-        cleanedFilename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore')
-    except TypeError:
-        cleanedFilename = unicodedata.normalize('NFKD', filename.decode('utf-8')).encode('ASCII', 'ignore')
-    # return u''.join(c for c in cleanedFilename if c in validFilenameChars)
-    #  does not work on python3, complains c is int
-    # if you coerce c to str it fails to match, returns empty string.
-    # re.sub works on python2 and 3
-    return u'' + re.sub(validFilenameChars, "", str(cleanedFilename))
-    # returns unicode
 
 def cleanCache():
     """ Remove unused files from the cache - delete if expired or unused.

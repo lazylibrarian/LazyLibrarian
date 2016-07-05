@@ -10,8 +10,8 @@ from lazylibrarian import logger, database
 from lib.fuzzywuzzy import fuzz
 from lazylibrarian.searchtorrents import TORDownloadMethod
 from lazylibrarian.searchnzb import NZBDownloadMethod
-from lazylibrarian.formatter import plural, now, latinToAscii, replace_all, nzbdate2format, getList, month2num, datecompare
-from lazylibrarian.common import remove_accents, scheduleJob
+from lazylibrarian.formatter import plural, now, unaccented_str, replace_all, unaccented, nzbdate2format, getList, month2num, datecompare
+from lazylibrarian.common import scheduleJob
 from lazylibrarian.notifiers import notify_snatch
 from lazylibrarian.providers import IterateOverNewzNabSites, IterateOverTorrentSites
 
@@ -57,7 +57,7 @@ def search_magazines(mags=None, reset=False):
 
         dic = {'...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': ''}
 
-        searchterm = latinToAscii(replace_all(searchterm, dic))
+        searchterm = unaccented_str(replace_all(searchterm, dic))
         searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
         searchlist.append({"bookid": bookid, "searchterm": searchterm})
 
@@ -148,8 +148,8 @@ def search_magazines(mags=None, reset=False):
                     if len(nzbtitle_exploded) > len(bookid_exploded):  # needs to be longer as it has to include a date
                         # check (nearly) all the words in the mag title are in the nzbtitle - allow some fuzz
                         mag_title_match = fuzz.token_set_ratio(
-                            remove_accents(bookid),
-                            remove_accents(nzbtitle_formatted))
+                            unaccented(bookid),
+                            unaccented(nzbtitle_formatted))
                         if mag_title_match < lazylibrarian.MATCH_RATIO:
                             logger.debug(
                                 u"Magazine token set Match failed: " + str(
@@ -164,8 +164,8 @@ def search_magazines(mags=None, reset=False):
                             rejected = True
 
                     if not rejected:
-                        lower_title = remove_accents(nzbtitle_formatted).lower()
-                        lower_bookid = remove_accents(bookid).lower()
+                        lower_title = unaccented(nzbtitle_formatted).lower()
+                        lower_bookid = unaccented(bookid).lower()
                         for word in reject_list:
                             if word in lower_title and not word in lower_bookid:
                                 rejected = True
@@ -191,7 +191,7 @@ def search_magazines(mags=None, reset=False):
                             # regexA = DD MonthName YYYY OR MonthName YYYY or Issue nn, MonthName YYYY
                             regexA_year = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
                             regexA_month_temp = nzbtitle_exploded[len(nzbtitle_exploded) - 2]
-                            regexA_month = month2num(remove_accents(regexA_month_temp))
+                            regexA_month = month2num(unaccented(regexA_month_temp))
                             if not regexA_year.isdigit() or int(regexA_year) < 1900 or int(regexA_year) > 2100:
                                 regexA_year = 'fail'  # force date failure
 
@@ -215,7 +215,7 @@ def search_magazines(mags=None, reset=False):
                                 # regexB = MonthName DD YYYY or MonthName DD, YYYY
                                 regexB_year = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
                                 regexB_month_temp = nzbtitle_exploded[len(nzbtitle_exploded) - 3]
-                                regexB_month = month2num(remove_accents(regexB_month_temp))
+                                regexB_month = month2num(unaccented(regexB_month_temp))
                                 regexB_day = nzbtitle_exploded[len(nzbtitle_exploded) - 2].rstrip(',').zfill(2)
                                 if not regexB_year.isdigit() or int(regexB_year) < 1900 or int(regexB_year) > 2100:
                                     regexB_year = 'fail'
@@ -373,7 +373,7 @@ def search_magazines(mags=None, reset=False):
                 else:
                     snatch = NZBDownloadMethod(magazine['bookid'], magazine['nzbprov'], magazine['nzbtitle'], magazine['nzburl'])
                 if snatch:
-                    notify_snatch(latinToAscii(magazine['nzbtitle']) + ' at ' + now())
+                    notify_snatch("%s at %s" % (unaccented(magazine['nzbtitle']), now()))
                     scheduleJob(action='Start', target='processDir')
             maglist = []
 
