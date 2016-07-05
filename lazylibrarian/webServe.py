@@ -1484,7 +1484,7 @@ class WebInterface(object):
         # books = myDB.select('SELECT * FROM books WHERE Status = ?',
         # [whichStatus])
         if whichStatus is None:
-            whichStatus = "Skipped"
+            whichStatus = "Wanted"
         lazylibrarian.MANAGEFILTER = whichStatus
         return serve_template(templatename="managebooks.html", title="Book Status Management",
                               books=[], whichStatus=whichStatus)
