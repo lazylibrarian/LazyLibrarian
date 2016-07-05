@@ -22,12 +22,11 @@ import urllib
 import urllib2
 import time
 import lazylibrarian
-import lazylibrarian.common as common
 
 from httplib import HTTPSConnection, HTTPException
 from urllib import urlencode
 from lazylibrarian import logger
-from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
+from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD, remove_accents
 
 
 class PushoverNotifier:
@@ -61,7 +60,7 @@ class PushoverNotifier:
             logger.debug("Pushover notification type: " + str(notificationType))
 
         http_handler = HTTPSConnection('api.pushover.net')
-        
+
         try:
             data = {'token': pushover_apitoken,
                     'user': pushover_keys,
@@ -89,7 +88,7 @@ class PushoverNotifier:
                 if 'devices' in request_body:
                     return "Devices: %s" % request_body.split('[')[1].split(']')[0]
                 else:
-                    return request_body  
+                    return request_body
             else:
                 return True
         elif request_status >= 400 and request_status < 500:
@@ -110,7 +109,7 @@ class PushoverNotifier:
         force: If True then the notification will be sent even if pushover is disabled in the config
         """
         try:
-            message = common.remove_accents(message)
+            message = remove_accents(message)
         except Exception, e:
             logger.warn("Pushover: could not convert  message: %s" % e)
         # suppress notifications if the notifier is disabled but the notify options are checked
