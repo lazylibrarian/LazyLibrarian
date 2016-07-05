@@ -4,6 +4,7 @@ import lazylibrarian
 import shlex
 import time
 import os
+import string
 import unicodedata
 
 def bookSeries(bookname):
