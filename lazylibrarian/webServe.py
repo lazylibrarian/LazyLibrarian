@@ -1080,6 +1080,8 @@ class WebInterface(object):
     def markMagazines(self, action=None, **args):
         myDB = database.DBConnection()
         for item in args:
+            if hasattr(item, 'decode'):
+                item = item.decode('utf-8')
             # ouch dirty workaround...
             if not item == 'book_table_length':
                 if (action == "Paused" or action == "Active"):
