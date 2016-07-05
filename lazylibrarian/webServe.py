@@ -102,7 +102,7 @@ class WebInterface(object):
                      http_pass='', http_look='', launch_browser=0, api_key='', api_enabled=0,
                      logdir='', loglevel=2, loglimit=500, logfiles=10, logsize=204800, git_program='',
                      imp_onlyisbn=0, imp_singlebook=0, imp_preflang='', imp_monthlang='', imp_convert='',
-                     imp_autoadd='', match_ratio=80, nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0,
+                     imp_autoadd='', match_ratio=80, dload_ratio=90, nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0,
                      nzb_downloader_blackhole=0, proxy_host='', proxy_type='',
                      sab_host='', sab_port=0, sab_subdir='', sab_api='', sab_user='', sab_pass='',
                      destination_copy=0, destination_dir='', download_dir='', sab_cat='', usenet_retention=0,
@@ -156,6 +156,7 @@ class WebInterface(object):
         lazylibrarian.LOGFILES = check_int(logfiles, 10)
         lazylibrarian.LOGSIZE = check_int(logsize, 204800)
         lazylibrarian.MATCH_RATIO = check_int(match_ratio, 80)
+        lazylibrarian.DLOAD_RATIO = check_int(dload_ratio, 90)
         lazylibrarian.CACHE_AGE = check_int(cache_age, 30)
 
         lazylibrarian.IMP_ONLYISBN = bool(imp_onlyisbn)

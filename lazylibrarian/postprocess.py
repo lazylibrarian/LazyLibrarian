@@ -136,7 +136,7 @@ def processDir(reset=False):
                         if ' LL.(' in matchtitle:
                             matchtitle = matchtitle.split(' LL.(')[0]
                         match = fuzz.token_set_ratio(matchtitle, matchname)
-                    if match >= 95:
+                    if match >= lazylibrarian.DLOAD_RATIO:
                         fname = matchname
                         if os.path.isfile(os.path.join(processpath, fname)):
                             # handle single file downloads here...

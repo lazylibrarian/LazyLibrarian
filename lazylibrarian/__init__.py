@@ -77,6 +77,7 @@ LOGFILES = 10  # 10 log files
 LOGSIZE = 204800  # each up to 200K
 
 MATCH_RATIO = 80
+DLOAD_RATIO = 90
 
 HTTP_HOST = None
 HTTP_PORT = 5299
@@ -396,7 +397,7 @@ def initialize():
 def config_read(reloaded=False):
         global FULL_PATH, PROG_DIR, DAEMON, \
             HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_PROXY, HTTP_ROOT, HTTP_LOOK, API_KEY, API_ENABLED, \
-            LAUNCH_BROWSER, LOGDIR, CACHE_AGE, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, GIT_PROGRAM, \
+            LAUNCH_BROWSER, LOGDIR, CACHE_AGE, MATCH_RATIO, DLOAD_RATIO, PROXY_HOST, PROXY_TYPE, GIT_PROGRAM, \
             IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, IMP_CONVERT, \
             MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, \
             MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, CONFIGFILE, CFG, LOGLIMIT, \
@@ -450,6 +451,7 @@ def config_read(reloaded=False):
             HTTP_PORT = 5299
 
         MATCH_RATIO = check_setting_int(CFG, 'General', 'match_ratio', 80)
+        DLOAD_RATIO = check_setting_int(CFG, 'General', 'dload_ratio', 90)
         HTTP_HOST = check_setting_str(CFG, 'General', 'http_host', '0.0.0.0')
         HTTP_USER = check_setting_str(CFG, 'General', 'http_user', '')
         HTTP_PASS = check_setting_str(CFG, 'General', 'http_pass', '')
@@ -808,6 +810,7 @@ def config_write():
     CFG.set('General', 'logsize', LOGSIZE)
     CFG.set('General', 'logfiles', LOGFILES)
     CFG.set('General', 'match_ratio', MATCH_RATIO)
+    CFG.set('General', 'dload_ratio', DLOAD_RATIO)
     CFG.set('General', 'imp_onlyisbn', IMP_ONLYISBN)
     CFG.set('General', 'imp_singlebook', IMP_SINGLEBOOK)
     CFG.set('General', 'imp_preflang', IMP_PREFLANG)
