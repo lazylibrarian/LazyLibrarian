@@ -671,14 +671,11 @@ class WebInterface(object):
                 l.append(btn + worklink)
 
             d.append(l)  # add the rowlist to the masterlist
-        filtered = d
 
         if sSearch != "":
-            results = [row for row in d for column in row if sSearch in column]
-            filtered = []
-            for value in results:
-                if value not in filtered:
-                    filtered.append(value)
+            filtered = [row for row in d if sSearch in str(row)]
+        else:
+            filtered = d
 
         sortcolumn = int(iSortCol_0)
 
@@ -945,14 +942,12 @@ class WebInterface(object):
             l.append('<td id="provider">%s</td>' % row[4])
             l.append('<td id="status">%s</td>' % row[5])
             d.append(l)  # add the rowlist to the masterlist
-        filtered = d
 
         if sSearch != "":
-            results = [row for row in d for column in row if sSearch in column]
-            filtered = []
-            for value in results:
-                if value not in filtered:
-                    filtered.append(value)
+            filtered = [row for row in d if sSearch in str(row)]
+        else:
+            filtered = d
+
         sortcolumn = int(iSortCol_0)
 
         filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
@@ -1321,15 +1316,12 @@ class WebInterface(object):
     def getLog(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
-        filtered = []
+
         if sSearch == "":
             filtered = lazylibrarian.LOGLIST[::]
         else:
-            results = [row for row in lazylibrarian.LOGLIST for column in row if sSearch in column]
-            filtered = []
-            for value in results:
-                if value not in filtered:
-                    filtered.append(value)
+            filtered = [row for row in lazylibrarian.LOGLIST if sSearch in str(row)]
+
         sortcolumn = 0
         if iSortCol_0 == '1':
             sortcolumn = 2
@@ -1541,14 +1533,12 @@ class WebInterface(object):
             l.append('<td id="date">%s</td>' % row[4])
 
             d.append(l)  # add the rowlist to the masterlist
-        filtered = d
 
         if sSearch != "":
-            results = [row for row in d for column in row if sSearch in column]
-            filtered = []
-            for value in results:
-                if value not in filtered:
-                    filtered.append(value)
+            filtered = [row for row in d if sSearch in str(row)]
+        else:
+            filtered = d
+
         sortcolumn = int(iSortCol_0)
 
         filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
