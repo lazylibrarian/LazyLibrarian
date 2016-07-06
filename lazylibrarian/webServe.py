@@ -673,7 +673,7 @@ class WebInterface(object):
             d.append(l)  # add the rowlist to the masterlist
 
         if sSearch != "":
-            filtered = [row for row in d if sSearch in str(row)]
+            filtered = filter(lambda x: sSearch in str(x), d)
         else:
             filtered = d
 
@@ -944,7 +944,7 @@ class WebInterface(object):
             d.append(l)  # add the rowlist to the masterlist
 
         if sSearch != "":
-            filtered = [row for row in d if sSearch in str(row)]
+            filtered = filter(lambda x: sSearch in str(x), d)
         else:
             filtered = d
 
@@ -1320,7 +1320,7 @@ class WebInterface(object):
         if sSearch == "":
             filtered = lazylibrarian.LOGLIST[::]
         else:
-            filtered = [row for row in lazylibrarian.LOGLIST if sSearch in str(row)]
+            filtered = filter(lambda x: sSearch in str(x), lazylibrarian.LOGLIST[::])
 
         sortcolumn = 0
         if iSortCol_0 == '1':
@@ -1535,7 +1535,7 @@ class WebInterface(object):
             d.append(l)  # add the rowlist to the masterlist
 
         if sSearch != "":
-            filtered = [row for row in d if sSearch in str(row)]
+            filtered = filter(lambda x: sSearch in str(x), d)
         else:
             filtered = d
 
