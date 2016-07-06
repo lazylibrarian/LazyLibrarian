@@ -3,25 +3,18 @@ import re
 import lazylibrarian
 import urllib2
 import socket
-from lazylibrarian import logger, database, bookwork
+import lib.zipfile as zipfile
+from shutil import copyfile
+from lazylibrarian import logger, database
+from lazylibrarian.bookwork import setWorkPages
+from lazylibrarian.cache import cache_cover
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 from xml.etree import ElementTree
-import lib.zipfile as zipfile
 from lib.mobi import Mobi
-from lazylibrarian.common import USER_AGENT, remove_accents
-from shutil import copyfile
-from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList
+from lazylibrarian.common import USER_AGENT, opf_file
+from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList, unaccented
 from lazylibrarian.importer import addAuthorToDB, update_totals
-
-def opf_file(search_dir=None):
-    # find an .opf file in this directory
-    # return full pathname of file, or empty string if no opf found
-    if search_dir and os.path.isdir(search_dir):
-        for fname in os.listdir(search_dir):
-            if fname.endswith('.opf'):
-                return os.path.join(search_dir.encode(lazylibrarian.SYS_ENCODING), fname.encode(lazylibrarian.SYS_ENCODING))
-    return ""
 
 
 def get_book_info(fname):
@@ -142,8 +135,8 @@ def find_book_in_db(myDB, author, book):
         for a_book in books:
             # tidy up everything to raise fuzziness scores
             # still need to lowercase for matching against partial_name later on
-            book_lower = remove_accents(book.lower())
-            a_book_lower = remove_accents(a_book['BookName'].lower())
+            book_lower = unaccented(book.lower())
+            a_book_lower = unaccented(a_book['BookName'].lower())
             #
             ratio = fuzz.ratio(book_lower, a_book_lower)
             partial = fuzz.partial_ratio(book_lower, a_book_lower)
@@ -414,8 +407,8 @@ def LibraryScan(dir=None):
                                 match_name = authorname.replace('.', '_')
                                 match_name = match_name.replace(' ', '_')
                                 match_name = match_name.replace('__', '_')
-                                match_name = remove_accents(match_name)
-                                match_auth = remove_accents(match_auth)
+                                match_name = unaccented(match_name)
+                                match_auth = unaccented(match_auth)
                                 # allow a degree of fuzziness to cater for different accented character handling.
                                 # some author names have accents,
                                 # filename may have the accented or un-accented version of the character
@@ -557,8 +550,8 @@ def LibraryScan(dir=None):
             bookid = item['bookid']
             bookimg = item['bookimg']
             bookname = item['bookname']
-            newimg = bookwork.cache_cover(bookid, bookimg)
+            newimg = cache_cover(bookid, bookimg)
             if newimg is not None:
                 myDB.action('update books set BookImg="%s" where BookID="%s"' % (newimg, bookid))
-    bookwork.setWorkPages()
+    setWorkPages()
     logger.info('Library scan complete')

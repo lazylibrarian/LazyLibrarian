@@ -10,15 +10,14 @@ import re
 from urllib2 import HTTPError
 
 import lazylibrarian
-from lazylibrarian import logger, database, bookwork
+from lazylibrarian import logger, database
+from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage
 from lazylibrarian.gr import GoodReads
+from lazylibrarian.cache import get_json_request, cache_cover
 
 from lib.fuzzywuzzy import fuzz
 from lib.unidecode import unidecode
-from lazylibrarian.formatter import plural, today, replace_all
-import os
-import md5
-import hashlib
+from lazylibrarian.formatter import plural, today, replace_all, unaccented
 
 
 class GoogleBooks:
@@ -34,70 +33,6 @@ class GoogleBooks:
             'printType': 'books',
             'key': lazylibrarian.GB_API
         }
-
-    def get_request(self, my_url):
-        # broadly similar to the routine in gr.py, but caches jsonresults
-        # hashfilename = hash url
-        # if hashfilename exists, return its contents
-        # if not, urllib2.urlopen()
-        # store the result
-        # return the result, and whether it was found in the cache
-        # Need to expire the cache entries, or we won't search for anything new
-        # default to 30 days for now. Authors dont write that quickly.
-        #
-        cacheLocation = "JSONCache"
-        expireafter = lazylibrarian.CACHE_AGE
-        cacheLocation = os.path.join(lazylibrarian.CACHEDIR, cacheLocation)
-        if not os.path.exists(cacheLocation):
-            os.mkdir(cacheLocation)
-        myhash = md5.new(my_url).hexdigest()
-        valid_cache = False
-        hashname = cacheLocation + os.sep + myhash + ".json"
-
-        if os.path.isfile(hashname):
-            cache_modified_time = os.stat(hashname).st_mtime
-            time_now = time.time()
-            if cache_modified_time < time_now - (expireafter * 24 * 60 * 60):  # expire after this many seconds
-                # Cache is old, delete entry
-                os.remove(hashname)
-            else:
-                valid_cache = True
-
-        if valid_cache:
-            lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
-            logger.debug(
-                u"CacheHandler: Returning CACHED response for %s" %
-                my_url)
-            source_json = json.load(open(hashname))
-        else:
-            lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
-            # jsonresults = json.JSONDecoder().decode(urllib2.urlopen(URL,
-            # timeout=30).read())
-            try:
-                resp = urllib2.urlopen(my_url, timeout=30)  # don't get stuck
-            except socket.timeout as e:
-                logger.warn(u"Retrying - got timeout on %s" % my_url)
-                try:
-                    resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
-                except (urllib2.URLError, socket.timeout) as e:
-                    logger.error(u"Error getting response for %s: %s" % (my_url, e))
-                    return None, False
-            except urllib2.URLError as e:
-                logger.error(u"URLError getting response for %s: %s" % (my_url, e))
-                return None, False
-
-            if str(resp.getcode()).startswith("2"):  # (200 OK etc)
-                logger.debug(u"CacheHandler: Caching response for %s" % my_url)
-                try:
-                    source_json = json.JSONDecoder().decode(resp.read())
-                except socket.error as e:
-                    logger.error(u"Error reading json: %s" % e)
-                    return None, False
-                json.dump(source_json, open(hashname, "w"))
-            else:
-                logger.warn(u"Got error response for %s: %s" % (my_url, resp.getcode()))
-                return None, False
-        return source_json, valid_cache
 
     def find_results(self, authorname=None, queue=None):
         resultlist = []
@@ -138,7 +73,7 @@ class GoogleBooks:
                     URL = set_url + '&' + urllib.urlencode(self.params)
 
                     try:
-                        jsonresults, in_cache = self.get_request(URL)
+                        jsonresults, in_cache = get_json_request(URL)
                         if jsonresults is None:
                             number_results = 0
                         else:
@@ -312,9 +247,7 @@ class GoogleBooks:
 
         logger.debug('[%s] Now processing books with Google Books API' % authorname)
         # google doesnt like accents in author names
-        aname = unidecode(u'%s' % authorname)
-
-        set_url = self.url + urllib.quote('inauthor:' + '"' + aname + '"')
+        set_url = self.url + urllib.quote('inauthor:"%s"' % unaccented_str(authorname))
         URL = set_url + '&' + urllib.urlencode(self.params)
 
         books_dict = []
@@ -352,7 +285,7 @@ class GoogleBooks:
                 URL = set_url + '&' + urllib.urlencode(self.params)
 
                 try:
-                    jsonresults, in_cache = self.get_request(URL)
+                    jsonresults, in_cache = get_json_request(URL)
                     if jsonresults is None:
                         number_results = 0
                     else:
@@ -425,7 +358,7 @@ class GoogleBooks:
                                     BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + \
                                         bookisbn
                                     try:
-                                        time.sleep(1)  # sleep 1 second to respect librarything api terms
+                                        librarything_wait()
                                         resp = urllib2.urlopen(BOOK_URL, timeout=30).read()
                                         lt_lang_hits = lt_lang_hits + 1
                                         logger.debug(
@@ -597,7 +530,7 @@ class GoogleBooks:
 
                             if 'nocover' in bookimg or 'nophoto' in bookimg:
                                 # try to get a cover from librarything
-                                workcover = bookwork.getBookCover(bookid)
+                                workcover = getBookCover(bookid)
                                 if workcover:
                                     logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))
                                     controlValueDict = {"BookID": bookid}
@@ -605,7 +538,7 @@ class GoogleBooks:
                                     myDB.upsert("books", newValueDict, controlValueDict)
 
                             elif bookimg.startswith('http'):
-                                link = bookwork.cache_cover(bookid, bookimg)
+                                link = cache_cover(bookid, bookimg)
                                 if link is not None:
                                     controlValueDict = {"BookID": bookid}
                                     newValueDict = {"BookImg": link}
@@ -613,7 +546,7 @@ class GoogleBooks:
 
                             if seriesNum == None:
                                 # try to get series info from librarything
-                                series, seriesNum = bookwork.getWorkSeries(bookid)
+                                series, seriesNum = getWorkSeries(bookid)
                                 if seriesNum:
                                     logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))
                                     controlValueDict = {"BookID": bookid}
@@ -623,7 +556,7 @@ class GoogleBooks:
                                     }
                                     myDB.upsert("books", newValueDict, controlValueDict)
 
-                            worklink = bookwork.getWorkPage(bookid)
+                            worklink = getWorkPage(bookid)
                             if worklink:
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {"WorkPage": worklink}
@@ -690,7 +623,7 @@ class GoogleBooks:
             logger.warn('No GoogleBooks API key, check config')
         URL = 'https://www.googleapis.com/books/v1/volumes/' + \
             str(bookid) + "?key=" + lazylibrarian.GB_API
-        jsonresults, in_cache = self.get_request(URL)
+        jsonresults, in_cache = get_json_request(URL)
 
         if jsonresults is None:
             logger.debug('No results found for %s' % bookname)
@@ -820,7 +753,7 @@ class GoogleBooks:
 
         if 'nocover' in bookimg or 'nophoto' in bookimg:
             # try to get a cover from librarything
-            workcover = bookwork.getBookCover(bookid)
+            workcover = getBookCover(bookid)
             if workcover:
                 logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))
                 controlValueDict = {"BookID": bookid}
@@ -828,7 +761,7 @@ class GoogleBooks:
                 myDB.upsert("books", newValueDict, controlValueDict)
 
             elif bookimg.startswith('http'):
-                link = bookwork.cache_cover(bookid, bookimg)
+                link = cache_cover(bookid, bookimg)
                 if link is not None:
                     controlValueDict = {"BookID": bookid}
                     newValueDict = {"BookImg": link}
@@ -836,7 +769,7 @@ class GoogleBooks:
 
         if seriesNum == None:
             # try to get series info from librarything
-            series, seriesNum = bookwork.getWorkSeries(bookid)
+            series, seriesNum = getWorkSeries(bookid)
             if seriesNum:
                 logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))
                 controlValueDict = {"BookID": bookid}
@@ -846,7 +779,7 @@ class GoogleBooks:
                 }
                 myDB.upsert("books", newValueDict, controlValueDict)
 
-        worklink = bookwork.getWorkPage(bookid)
+        worklink = getWorkPage(bookid)
         if worklink:
             controlValueDict = {"BookID": bookid}
             newValueDict = {"WorkPage": worklink}

@@ -7,6 +7,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.common import USER_AGENT
 from lazylibrarian.formatter import safe_unicode
+from lazylibrarian.cache import cache_cover, fetchURL
 
 def getBookCovers():
     """ Try to get a cover image for all books """
@@ -48,45 +49,6 @@ def setWorkPages():
                logger.debug('No WorkPage found for %s: %s' % (book['AuthorName'], book['BookName']))
         logger.debug('setWorkPages completed')
 
-def fetchURL(URL):
-    """ Return the result of fetching a URL and True if success
-        Otherwise return error message and False
-        Allow one retry on timeout """
-
-    request = urllib2.Request(URL)
-    if lazylibrarian.PROXY_HOST:
-        request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-    # google insists on having a user-agent
-    request.add_header('User-Agent', USER_AGENT)
-    try:
-        resp = urllib2.urlopen(request, timeout=30)
-        if str(resp.getcode()).startswith("2"):
-            # (200 OK etc)
-            try:
-                result = resp.read()
-            except socket.error as e:
-                return e, False
-            return result, True
-        else:
-            return str(resp), False
-    except (socket.timeout) as e:
-        logger.warn(u"fetchURL: retrying - got timeout on %s" % URL)
-        try:
-            resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
-            if str(resp.getcode()).startswith("2"):
-                # (200 OK etc)
-                try:
-                    result = resp.read()
-                except socket.error as e:
-                    return e, False
-                return result, True
-            else:
-                return str(resp), False
-        except (urllib2.URLError, socket.timeout) as e:
-            logger.error(u"fetchURL: Error getting response for %s: %s" % (URL, e))
-            return e, False
-    except (urllib2.HTTPError, urllib2.URLError) as e:
-        return e.reason, False
 
 def librarything_wait():
     """ Wait for a second between librarything api calls """
@@ -303,29 +265,4 @@ def getBookCover(bookID=None):
                 logger.debug("getBookCover: No image found in google page for %s" % bookID)
         else:
             logger.debug("getBookCover: Error getting google page for %s, [%s]" % (safeparams, result))
-    return None
-
-def cache_cover(bookID, img_url):
-    """ Cache the image from the given URL in the local images cache
-        linked to the bookid, return the link to the cached file
-        or None if failed to cache """
-
-    cachedir = os.path.join(str(lazylibrarian.PROG_DIR),
-                            'data' + os.sep + 'images' + os.sep + 'cache')
-    if not os.path.isdir(cachedir):
-        os.makedirs(cachedir)
-    coverfile = os.path.join(cachedir, bookID + '.jpg')
-    link = 'images/cache/' + bookID + '.jpg'
-    #if os.path.isfile(coverfile):  # overwrite any cached image
-    #    return link
-
-    result, success = fetchURL(img_url)
-
-    if success:
-        try:
-            with open(coverfile, 'wb') as img:
-                img.write(result)
-            return link
-        except:
-            logger.debug("Error writing image to %s" % coverfile)
     return None

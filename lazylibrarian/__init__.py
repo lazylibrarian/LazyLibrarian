@@ -23,8 +23,8 @@ import json
 
 from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, \
     librarysync, versioncheck, database, searchmag, magazinescan, bookwork
-from lazylibrarian.formatter import getList, bookSeries, plural
-from lazylibrarian.common import USER_AGENT, remove_accents, restartJobs
+from lazylibrarian.formatter import getList, bookSeries, plural, unaccented
+from lazylibrarian.common import USER_AGENT, restartJobs
 
 try:
     from wand.image import Image
@@ -77,6 +77,7 @@ LOGFILES = 10  # 10 log files
 LOGSIZE = 204800  # each up to 200K
 
 MATCH_RATIO = 80
+DLOAD_RATIO = 90
 
 HTTP_HOST = None
 HTTP_PORT = 5299
@@ -396,7 +397,7 @@ def initialize():
 def config_read(reloaded=False):
         global FULL_PATH, PROG_DIR, DAEMON, \
             HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_PROXY, HTTP_ROOT, HTTP_LOOK, API_KEY, API_ENABLED, \
-            LAUNCH_BROWSER, LOGDIR, CACHE_AGE, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, GIT_PROGRAM, \
+            LAUNCH_BROWSER, LOGDIR, CACHE_AGE, MATCH_RATIO, DLOAD_RATIO, PROXY_HOST, PROXY_TYPE, GIT_PROGRAM, \
             IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, IMP_CONVERT, \
             MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, \
             MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, CONFIGFILE, CFG, LOGLIMIT, \
@@ -450,6 +451,7 @@ def config_read(reloaded=False):
             HTTP_PORT = 5299
 
         MATCH_RATIO = check_setting_int(CFG, 'General', 'match_ratio', 80)
+        DLOAD_RATIO = check_setting_int(CFG, 'General', 'dload_ratio', 90)
         HTTP_HOST = check_setting_str(CFG, 'General', 'http_host', '0.0.0.0')
         HTTP_USER = check_setting_str(CFG, 'General', 'http_user', '')
         HTTP_PASS = check_setting_str(CFG, 'General', 'http_pass', '')
@@ -808,6 +810,7 @@ def config_write():
     CFG.set('General', 'logsize', LOGSIZE)
     CFG.set('General', 'logfiles', LOGFILES)
     CFG.set('General', 'match_ratio', MATCH_RATIO)
+    CFG.set('General', 'dload_ratio', DLOAD_RATIO)
     CFG.set('General', 'imp_onlyisbn', IMP_ONLYISBN)
     CFG.set('General', 'imp_singlebook', IMP_SINGLEBOOK)
     CFG.set('General', 'imp_preflang', IMP_PREFLANG)
@@ -1181,10 +1184,10 @@ def build_monthtable():
     if not lang.startswith('en_'):  # en_ is preloaded
         MONTHNAMES[0].append(lang)
         for f in range(1, 13):
-            MONTHNAMES[f].append(remove_accents(calendar.month_name[f]).lower())
+            MONTHNAMES[f].append(unaccented(calendar.month_name[f]).lower())
         MONTHNAMES[0].append(lang)
         for f in range(1, 13):
-            MONTHNAMES[f].append(remove_accents(calendar.month_abbr[f]).lower().strip('.'))
+            MONTHNAMES[f].append(unaccented(calendar.month_abbr[f]).lower().strip('.'))
             logger.info("Added month names for locale [%s], %s, %s ..." % (
                         lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
 
@@ -1194,10 +1197,10 @@ def build_monthtable():
                 locale.setlocale(locale.LC_ALL, lang)
                 MONTHNAMES[0].append(lang)
                 for f in range(1, 13):
-                    MONTHNAMES[f].append(remove_accents(calendar.month_name[f]).lower())
+                    MONTHNAMES[f].append(unaccented(calendar.month_name[f]).lower())
                 MONTHNAMES[0].append(lang)
                 for f in range(1, 13):
-                    MONTHNAMES[f].append(remove_accents(calendar.month_abbr[f]).lower().strip('.'))
+                    MONTHNAMES[f].append(unaccented(calendar.month_abbr[f]).lower().strip('.'))
                 locale.setlocale(locale.LC_ALL, current_locale)  # restore entry state
                 logger.info("Added month names for locale [%s], %s, %s ..." % (
                     lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))

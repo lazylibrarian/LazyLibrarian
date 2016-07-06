@@ -7,17 +7,14 @@ from lib.bencode import bencode as bencode, bdecode
 from hashlib import sha1
 import threading
 import lazylibrarian
-
-from lazylibrarian import logger, database, utorrent, transmission, qbittorrent, deluge
-
-from lib.deluge_client import DelugeRPCClient
-
-from lib.fuzzywuzzy import fuzz
-
 import unicodedata
 
-from lazylibrarian.common import scheduleJob, USER_AGENT, removeDisallowedFilenameChars
-from lazylibrarian.formatter import plural, latinToAscii, replace_all, getList, check_int, now
+from lazylibrarian import logger, database, utorrent, transmission, qbittorrent, deluge
+from lib.deluge_client import DelugeRPCClient
+from lib.fuzzywuzzy import fuzz
+
+from lazylibrarian.common import scheduleJob, USER_AGENT
+from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, check_int, now, cleanName
 from lazylibrarian.providers import IterateOverTorrentSites
 from lazylibrarian.notifiers import notify_snatch
 
@@ -69,11 +66,11 @@ def search_tor_book(books=None, reset=False):
                ',': '', '*': '', ':': '', ';': ''}
         dicSearchFormatting = {'.': ' +', ' + ': ' '}
 
-        author = latinToAscii(replace_all(author, dic))
-        book = latinToAscii(replace_all(book, dic))
+        author = unaccented_str(replace_all(author, dic))
+        book = unaccented_str(replace_all(book, dic))
 
         # TRY SEARCH TERM just using author name and book type
-        author = latinToAscii(replace_all(author, dicSearchFormatting))
+        author = unaccented_str(replace_all(author, dicSearchFormatting))
         searchterm = author + ' ' + book  # + ' ' + lazylibrarian.EBOOK_TYPE
         searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
         searchterm = re.sub(r'\(.*?\)', '', searchterm).encode('utf-8')
@@ -131,12 +128,12 @@ def processResultList(resultlist, book, searchtype):
 
     match_ratio = int(lazylibrarian.MATCH_RATIO)
     reject_list = getList(lazylibrarian.REJECT_WORDS)
-    author = latinToAscii(replace_all(book['authorName'], dic))
-    title = latinToAscii(replace_all(book['bookName'], dic))
+    author = unaccented_str(replace_all(book['authorName'], dic))
+    title = unaccented_str(replace_all(book['bookName'], dic))
 
     matches = []
     for tor in resultlist:
-        torTitle = latinToAscii(replace_all(str(tor['tor_title']), dictrepl)).strip()
+        torTitle = unaccented_str(replace_all(str(tor['tor_title']), dictrepl)).strip()
         torTitle = re.sub(r"\s\s+", " ", torTitle)  # remove extra whitespace
 
         torAuthor_match = fuzz.token_set_ratio(author, torTitle)
@@ -278,7 +275,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                 return False
 
         if lazylibrarian.TOR_DOWNLOADER_BLACKHOLE:
-            tor_title = removeDisallowedFilenameChars(tor_title)
+            tor_title = cleanName(tor_title)
             logger.debug("Sending %s to blackhole" % tor_title)
             tor_name = str.replace(str(tor_title), ' ', '_')
             if tor_url.startswith('magnet'):

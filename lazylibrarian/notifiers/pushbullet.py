@@ -22,12 +22,12 @@ import urllib
 import urllib2
 import time
 import lazylibrarian
-import lazylibrarian.common as common
 
 from httplib import HTTPSConnection, HTTPException
 from urllib import urlencode
 from lazylibrarian import logger
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
+from lazylibrarian.formatter import unaccented
 from pushbullet2 import PushBullet
 
 class PushbulletNotifier:
@@ -49,7 +49,7 @@ class PushbulletNotifier:
         logger.debug("Pushbullet devices: " + str(pushbullet_deviceid))
 
         pb = PushBullet(str(pushbullet_token))
-        
+
         if event == 'LLTest': # special case, return device list
             devices = pb.getDevices()
             ret = ""
@@ -72,7 +72,7 @@ class PushbulletNotifier:
         force: If True then the notification will be sent even if pushbullet is disabled in the config
         """
         try:
-            message = common.remove_accents(message)
+            message = unaccented(message)
         except Exception, e:
             logger.warn("Pushbullet: could not convert  message: %s" % e)
 

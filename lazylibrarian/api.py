@@ -13,8 +13,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-from lazylibrarian import importer, postprocess, logger, database, \
-    librarysync, bookwork
+from lazylibrarian import importer, logger, database
 from lazylibrarian.searchnzb import search_nzb_book
 from lazylibrarian.searchtorrents import search_tor_book
 from lazylibrarian.searchmag import search_magazines
@@ -25,6 +24,10 @@ from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs
 from lazylibrarian.formatter import today
 from lazylibrarian.updater import dbUpdate
 from lazylibrarian.magazinescan import magazineScan
+from lazylibrarian.csv import  import_CSV, export_CSV
+from lazylibrarian.postprocess import processDir, processAlternate
+from lazylibrarian.librarysync import LibraryScan
+from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, getBookCover
 
 import lazylibrarian
 import json
@@ -381,13 +384,13 @@ class Api(object):
             self.data = "No search methods set, check config"
 
     def _forceProcess(self, **kwargs):
-        postprocess.processDir()
+        processDir()
 
     def _forceLibraryScan(self, **kwargs):
         if 'wait' in kwargs:
-            librarysync.LibraryScan(lazylibrarian.DESTINATION_DIR)
+            LibraryScan(lazylibrarian.DESTINATION_DIR)
         else:
-            threading.Thread(target=librarysync.LibraryScan, name='API-LIBRARYSCAN', args=[lazylibrarian.DESTINATION_DIR]).start()
+            threading.Thread(target=LibraryScan, name='API-LIBRARYSCAN', args=[lazylibrarian.DESTINATION_DIR]).start()
 
     def _forceMagazineScan(self, **kwargs):
         if 'wait' in kwargs:
@@ -403,15 +406,15 @@ class Api(object):
 
     def _setWorkPages(self, **kwargs):
         if 'wait' in kwargs:
-            bookwork.setWorkPages()
+            setWorkPages()
         else:
-            threading.Thread(target=bookwork.setWorkPages, name='API-SETWORKPAGES', args=[]).start()
+            threading.Thread(target=setWorkPages, name='API-SETWORKPAGES', args=[]).start()
 
     def _getBookCovers(self, **kwargs):
         if 'wait' in kwargs:
-            bookwork.getBookCovers()
+            getBookCovers()
         else:
-            threading.Thread(target=bookwork.getBookCovers, name='API-GETBOOKCOVERS', args=[]).start()
+            threading.Thread(target=getBookCovers, name='API-GETBOOKCOVERS', args=[]).start()
 
     def _getVersion(self, **kwargs):
         self.data = {
@@ -563,7 +566,7 @@ class Api(object):
             return
         else:
             self.id = kwargs['id']
-        self.data = bookwork.getWorkSeries(self.id)
+        self.data = getWorkSeries(self.id)
 
     def _getWorkPage(self, **kwargs):
         if 'id' not in kwargs:
@@ -571,7 +574,7 @@ class Api(object):
             return
         else:
             self.id = kwargs['id']
-        self.data = bookwork.getWorkPage(self.id)
+        self.data = getWorkPage(self.id)
 
     def _getBookCover(self, **kwargs):
         if 'id' not in kwargs:
@@ -579,7 +582,7 @@ class Api(object):
             return
         else:
             self.id = kwargs['id']
-        self.data = bookwork.getBookCover(self.id)
+        self.data = getBookCover(self.id)
 
     def _restartJobs(self, **kwargs):
         restartJobs(start='Restart')
@@ -589,18 +592,18 @@ class Api(object):
 
     def _importAlternate(self, **kwargs):
         if 'wait' in kwargs:
-            postprocess.processAlternate(lazylibrarian.ALTERNATE_DIR)
+            processAlternate(lazylibrarian.ALTERNATE_DIR)
         else:
-            threading.Thread(target=postprocess.processAlternate, name='API-IMPORTALT', args=[lazylibrarian.ALTERNATE_DIR]).start()
+            threading.Thread(target=processAlternate, name='API-IMPORTALT', args=[lazylibrarian.ALTERNATE_DIR]).start()
 
     def _importCSVwishlist(self, **kwargs):
         if 'wait' in kwargs:
-            postprocess.processCSV(lazylibrarian.ALTERNATE_DIR)
+            import_CSV(lazylibrarian.ALTERNATE_DIR)
         else:
-            threading.Thread(target=postprocess.processCSV, name='API-PROCESSCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
+            threading.Thread(target=import_CSV, name='API-IMPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
 
     def _exportCSVwishlist(self, **kwargs):
         if 'wait' in kwargs:
-            postprocess.exportCSV(lazylibrarian.ALTERNATE_DIR)
+            export_CSV(lazylibrarian.ALTERNATE_DIR)
         else:
-            threading.Thread(target=postprocess.exportCSV, name='API-EXPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
+            threading.Thread(target=export_CSV, name='API-EXPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()

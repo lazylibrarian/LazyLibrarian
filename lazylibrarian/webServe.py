@@ -1,11 +1,5 @@
 import os
-import shutil
 import cherrypy
-from cherrypy.lib.static import serve_file
-from mako.lookup import TemplateLookup
-from mako import exceptions
-from operator import itemgetter
-
 import threading
 import Queue
 import hashlib
@@ -13,8 +7,13 @@ import random
 import urllib
 import lazylibrarian
 
-from lazylibrarian import logger, database, postprocess, \
-    notifiers, librarysync, versioncheck, magazinescan, bookwork, \
+from cherrypy.lib.static import serve_file
+from mako.lookup import TemplateLookup
+from mako import exceptions
+from operator import itemgetter
+from shutil import copyfile
+
+from lazylibrarian import logger, database, notifiers, versioncheck, magazinescan, \
     qbittorrent, utorrent, transmission, sabnzbd, nzbget, deluge
 from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
 from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
@@ -25,6 +24,9 @@ from lazylibrarian.formatter import plural, now, today, check_int
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
+from lazylibrarian.librarysync import LibraryScan
+from lazylibrarian.postprocess import processAlternate, processDir
+from lazylibrarian.csv import  import_CSV, export_CSV
 from lib.deluge_client import DelugeRPCClient
 
 import lib.simplejson as simplejson
@@ -100,7 +102,7 @@ class WebInterface(object):
                      http_pass='', http_look='', launch_browser=0, api_key='', api_enabled=0,
                      logdir='', loglevel=2, loglimit=500, logfiles=10, logsize=204800, git_program='',
                      imp_onlyisbn=0, imp_singlebook=0, imp_preflang='', imp_monthlang='', imp_convert='',
-                     imp_autoadd='', match_ratio=80, nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0,
+                     imp_autoadd='', match_ratio=80, dload_ratio=90, nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0,
                      nzb_downloader_blackhole=0, proxy_host='', proxy_type='',
                      sab_host='', sab_port=0, sab_subdir='', sab_api='', sab_user='', sab_pass='',
                      destination_copy=0, destination_dir='', download_dir='', sab_cat='', usenet_retention=0,
@@ -154,6 +156,7 @@ class WebInterface(object):
         lazylibrarian.LOGFILES = check_int(logfiles, 10)
         lazylibrarian.LOGSIZE = check_int(logsize, 204800)
         lazylibrarian.MATCH_RATIO = check_int(match_ratio, 80)
+        lazylibrarian.DLOAD_RATIO = check_int(dload_ratio, 90)
         lazylibrarian.CACHE_AGE = check_int(cache_age, 30)
 
         lazylibrarian.IMP_ONLYISBN = bool(imp_onlyisbn)
@@ -668,10 +671,12 @@ class WebInterface(object):
                 l.append(btn + worklink)
 
             d.append(l)  # add the rowlist to the masterlist
-        filtered = d
 
         if sSearch != "":
-            filtered = [row for row in d for column in row if sSearch in column]
+            filtered = filter(lambda x: sSearch in str(x), d)
+        else:
+            filtered = d
+
         sortcolumn = int(iSortCol_0)
 
         filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
@@ -891,7 +896,7 @@ class WebInterface(object):
                         if not os.path.isdir(cachedir):
                             os.makedirs(cachedir)
                         hashname = os.path.join(cachedir, myhash + ".jpg")
-                        shutil.copyfile(magimg, hashname)
+                        copyfile(magimg, hashname)
                         magimg = 'images/cache/' + myhash + '.jpg'
                         covercount = covercount + 1
                 else:
@@ -937,10 +942,12 @@ class WebInterface(object):
             l.append('<td id="provider">%s</td>' % row[4])
             l.append('<td id="status">%s</td>' % row[5])
             d.append(l)  # add the rowlist to the masterlist
-        filtered = d
 
         if sSearch != "":
-            filtered = [row for row in d for column in row if sSearch in column]
+            filtered = filter(lambda x: sSearch in str(x), d)
+        else:
+            filtered = d
+
         sortcolumn = int(iSortCol_0)
 
         filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
@@ -1078,6 +1085,8 @@ class WebInterface(object):
     def markMagazines(self, action=None, **args):
         myDB = database.DBConnection()
         for item in args:
+            if hasattr(item, 'decode'):
+                item = item.decode('utf-8')
             # ouch dirty workaround...
             if not item == 'book_table_length':
                 if (action == "Paused" or action == "Active"):
@@ -1190,7 +1199,7 @@ class WebInterface(object):
 
     def libraryScan(self):
         try:
-            threading.Thread(target=librarysync.LibraryScan, name='LIBRARYSYNC', args=[lazylibrarian.DESTINATION_DIR]).start()
+            threading.Thread(target=LibraryScan, name='LIBRARYSYNC', args=[lazylibrarian.DESTINATION_DIR]).start()
         except Exception as e:
             logger.error(u'Unable to complete the scan: %s' % e)
         raise cherrypy.HTTPRedirect("home")
@@ -1206,7 +1215,7 @@ class WebInterface(object):
 
     def importAlternate(self):
         try:
-            threading.Thread(target=postprocess.processAlternate, name='IMPORTALT', args=[lazylibrarian.ALTERNATE_DIR]).start()
+            threading.Thread(target=processAlternate, name='IMPORTALT', args=[lazylibrarian.ALTERNATE_DIR]).start()
         except Exception as e:
             logger.error(u'Unable to complete the import: %s' % e)
         raise cherrypy.HTTPRedirect("manage")
@@ -1214,7 +1223,7 @@ class WebInterface(object):
 
     def importCSV(self):
         try:
-            threading.Thread(target=postprocess.processCSV, name='PROCESSCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
+            threading.Thread(target=import_CSV, name='IMPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
         except Exception as e:
             logger.error(u'Unable to complete the import: %s' % e)
         raise cherrypy.HTTPRedirect("manage")
@@ -1222,7 +1231,7 @@ class WebInterface(object):
 
     def exportCSV(self):
         try:
-            threading.Thread(target=postprocess.exportCSV, name='EXPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
+            threading.Thread(target=export_CSV, name='EXPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
         except Exception as e:
             logger.error(u'Unable to complete the export: %s' % e)
         raise cherrypy.HTTPRedirect("manage")
@@ -1307,11 +1316,12 @@ class WebInterface(object):
     def getLog(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
-        filtered = []
+
         if sSearch == "":
             filtered = lazylibrarian.LOGLIST[::]
         else:
-            filtered = [row for row in lazylibrarian.LOGLIST for column in row if sSearch in column]
+            filtered = filter(lambda x: sSearch in str(x), lazylibrarian.LOGLIST[::])
+
         sortcolumn = 0
         if iSortCol_0 == '1':
             sortcolumn = 2
@@ -1453,7 +1463,7 @@ class WebInterface(object):
 # ALL ELSE ##########################################################
 
     def forceProcess(self, source=None):
-        threading.Thread(target=postprocess.processDir, name='POSTPROCESS', args=[True]).start()
+        threading.Thread(target=processDir, name='POSTPROCESS', args=[True]).start()
         raise cherrypy.HTTPRedirect(source)
     forceProcess.exposed = True
 
@@ -1480,7 +1490,7 @@ class WebInterface(object):
         # books = myDB.select('SELECT * FROM books WHERE Status = ?',
         # [whichStatus])
         if whichStatus is None:
-            whichStatus = "Skipped"
+            whichStatus = "Wanted"
         lazylibrarian.MANAGEFILTER = whichStatus
         return serve_template(templatename="managebooks.html", title="Book Status Management",
                               books=[], whichStatus=whichStatus)
@@ -1523,10 +1533,12 @@ class WebInterface(object):
             l.append('<td id="date">%s</td>' % row[4])
 
             d.append(l)  # add the rowlist to the masterlist
-        filtered = d
 
         if sSearch != "":
-            filtered = [row for row in d for column in row if sSearch in column]
+            filtered = filter(lambda x: sSearch in str(x), d)
+        else:
+            filtered = d
+
         sortcolumn = int(iSortCol_0)
 
         filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")

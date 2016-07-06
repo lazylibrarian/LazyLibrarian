@@ -1,19 +1,19 @@
 import shutil
 import os
 import threading
-import lib.csv as csv
 import platform
 import hashlib
 from urllib import FancyURLopener
 from lib.fuzzywuzzy import fuzz
 import lazylibrarian
 
-from lazylibrarian import database, logger, librarysync
-from lazylibrarian import gr, magazinescan
-from lazylibrarian.formatter import plural, now, today, is_valid_booktype, is_valid_isbn, latinToAscii, replace_all
-from lazylibrarian.common import scheduleJob, remove_accents
+from lazylibrarian import database, logger, gr
+from lazylibrarian.magazinescan import create_id, create_cover
+from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, unaccented
+from lazylibrarian.common import scheduleJob, book_file, opf_file
 from lazylibrarian.notifiers import notify_download
 from lazylibrarian.importer import addAuthorToDB
+from lazylibrarian.librarysync import get_book_info, find_book_in_db
 
 def processAlternate(source_dir=None):
     # import a book from an alternate directory
@@ -42,10 +42,10 @@ def processAlternate(source_dir=None):
         # try book_name.opf first, or fall back to any filename.opf
         metafile = os.path.splitext(new_book)[0] + '.opf'
         if not os.path.isfile(metafile):
-            metafile = librarysync.opf_file(source_dir)
+            metafile = opf_file(source_dir)
         if os.path.isfile(metafile):
             try:
-                metadata = librarysync.get_book_info(metafile)
+                metadata = get_book_info(metafile)
             except:
                 logger.debug('Failed to read metadata from %s' % metafile)
         else:
@@ -53,7 +53,7 @@ def processAlternate(source_dir=None):
         if not 'title' in metadata and 'creator' in metadata:
             # try to get metadata from the book file
             try:
-                metadata = librarysync.get_book_info(new_book)
+                metadata = get_book_info(new_book)
             except:
                 logger.debug('No metadata found in %s' % new_book)
         if 'title' in metadata and 'creator' in metadata:
@@ -69,7 +69,7 @@ def processAlternate(source_dir=None):
                 logger.debug("ALT: Author %s not found, adding to database" % (authorname))
                 addAuthorToDB(authorname)
 
-            bookid = librarysync.find_book_in_db(myDB, authorname, bookname)
+            bookid = find_book_in_db(myDB, authorname, bookname)
             if bookid:
                 import_book(source_dir, bookid)
             else:
@@ -136,7 +136,7 @@ def processDir(reset=False):
                         if ' LL.(' in matchtitle:
                             matchtitle = matchtitle.split(' LL.(')[0]
                         match = fuzz.token_set_ratio(matchtitle, matchname)
-                    if match >= 95:
+                    if match >= lazylibrarian.DLOAD_RATIO:
                         fname = matchname
                         if os.path.isfile(os.path.join(processpath, fname)):
                             # handle single file downloads here...
@@ -179,14 +179,14 @@ def processDir(reset=False):
                         '$Title', bookname)
                     global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace(
                         '$Title', bookname)
-                    global_name = remove_accents(global_name)
+                    global_name = unaccented(global_name)
                     # dest_path = authorname+'/'+bookname
                     # global_name = bookname + ' - ' + authorname
                     # Remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
                     # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
                     dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
                            ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
-                    dest_path = latinToAscii(replace_all(dest_path, dic))
+                    dest_path = unaccented_str(replace_all(dest_path, dic))
                     dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(
                         lazylibrarian.SYS_ENCODING)
                 else:
@@ -200,7 +200,7 @@ def processDir(reset=False):
                         # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
                         dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
                                ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
-                        mag_name = latinToAscii(replace_all(book['BookID'], dic))
+                        mag_name = unaccented_str(replace_all(book['BookID'], dic))
                         # book auxinfo is a cleaned date, eg 2015-01-01
                         dest_path = lazylibrarian.MAG_DEST_FOLDER.replace(
                             '$IssueDate',
@@ -217,7 +217,7 @@ def processDir(reset=False):
                         bookname = None
                         global_name = lazylibrarian.MAG_DEST_FILE.replace('$IssueDate', book['AuxInfo']).replace(
                             '$Title', mag_name)
-                        global_name = remove_accents(global_name)
+                        global_name = unaccented(global_name)
                         # global_name = book['AuxInfo']+' - '+title
                     else:
                         logger.debug("Snatched magazine %s is not in download directory" % (book['BookID']))
@@ -259,16 +259,16 @@ def processDir(reset=False):
                     controlValueDict = {"Title": book['BookID'], "IssueDate": book['AuxInfo']}
                     newValueDict = {"IssueAcquired": today(),
                                     "IssueFile": dest_file,
-                                    "IssueID": magazinescan.create_id("%s %s" % (book['BookID'], book['AuxInfo']))
+                                    "IssueID": create_id("%s %s" % (book['BookID'], book['AuxInfo']))
                                     }
                     myDB.upsert("issues", newValueDict, controlValueDict)
 
                     # create a thumbnail cover for the new issue
-                    magazinescan.create_cover(dest_file)
+                    create_cover(dest_file)
 
                 logger.info('Successfully processed: %s' % global_name)
                 ppcount = ppcount + 1
-                notify_download(latinToAscii(global_name) + ' at ' + now())
+                notify_download("%s at %s" % (global_name, now()))
             else:
                 logger.error('Postprocessing for %s has failed.' % global_name)
                 logger.error('Warning - Residual files remain in %s.fail' % pp_path)
@@ -336,12 +336,12 @@ def import_book(pp_path=None, bookID=None):
 
         dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace('$Title', bookname)
         global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace('$Title', bookname)
-        global_name = remove_accents(global_name)
+        global_name = unaccented(global_name)
         # Remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
         # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
         dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
                ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
-        dest_path = latinToAscii(replace_all(dest_path, dic))
+        dest_path = unaccented_str(replace_all(dest_path, dic))
         dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(lazylibrarian.SYS_ENCODING)
 
         processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name)
@@ -353,7 +353,7 @@ def import_book(pp_path=None, bookID=None):
             myDB.upsert("wanted", newValueDict, controlValueDict)
             processExtras(myDB, dest_path, global_name, data)
             logger.info('Successfully processed: %s' % global_name)
-            notify_download(latinToAscii(global_name) + ' at ' + now())
+            notify_download("%s at %s" % (global_name, now()))
             return True
         else:
             logger.error('Postprocessing for %s has failed.' % global_name)
@@ -368,16 +368,6 @@ def import_book(pp_path=None, bookID=None):
             except:
                 logger.debug("Unable to rename %s" % pp_path)
             return False
-
-
-def book_file(search_dir=None, booktype=None):
-    # find a book/mag file in this directory, any book will do
-    # return full pathname of book/mag, or empty string if none found
-    if search_dir is not None and os.path.isdir(search_dir):
-        for fname in os.listdir(search_dir):
-            if is_valid_booktype(fname, booktype=booktype):
-                return os.path.join(search_dir, fname)  # .encode(lazylibrarian.SYS_ENCODING)
-    return ""
 
 
 def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
@@ -581,7 +571,7 @@ def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bo
 
     dic = {'...': '', ' & ': ' ', ' = ': ' ', '$': 's', ' + ': ' ', ',': '', '*': ''}
 
-    opfinfo = latinToAscii(replace_all(opfinfo, dic))
+    opfinfo = unaccented_str(replace_all(opfinfo, dic))
 
     # handle metadata
     opfpath = os.path.join(dest_path, global_name + '.opf')
@@ -591,144 +581,6 @@ def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bo
         logger.debug('Saved metadata to: ' + opfpath)
     else:
         logger.debug('%s already exists. Did not create one.' % opfpath)
-
-
-def csv_file(search_dir=None):
-    # find a csv file in this directory, any will do
-    # return full pathname of file, or empty string if none found
-    if search_dir and os.path.isdir(search_dir) is True:
-        for fname in os.listdir(search_dir):
-            if fname.endswith('.csv'):
-                return os.path.join(search_dir, fname)  # .encode(lazylibrarian.SYS_ENCODING)
-    return ""
-
-
-def exportCSV(search_dir=None, status="Wanted"):
-    """ Write a csv file to the search_dir containing all books marked as "Wanted" """
-
-    if not search_dir or os.path.isdir(search_dir) is False:
-        logger.warn("Please check Alternate Directory setting")
-        return False
-
-    csvFile = os.path.join(search_dir, "%s - %s.csv" % (status, now().replace(':', '-')))
-
-    myDB = database.DBConnection()
-
-    find_status = myDB.select('SELECT * FROM books WHERE Status = "%s"' % status)
-
-    if not find_status:
-        logger.warn(u"No books marked as %s" % status)
-    else:
-        count = 0
-        with open(csvFile, 'wb') as csvfile:
-            csvwrite = csv.writer(csvfile, delimiter=',',
-                                  quotechar='"', quoting=csv.QUOTE_MINIMAL)
-
-            # write headers, change AuthorName BookName BookIsbn to match import csv names (Author, Title, ISBN10)
-            csvwrite.writerow(['BookID', 'Author', 'Title', 'ISBN', 'AuthorID'])
-
-            for resulted in find_status:
-                logger.debug(u"Exported CSV for book %s" % resulted['BookName'].encode(lazylibrarian.SYS_ENCODING))
-                row = ([resulted['BookID'], resulted['AuthorName'], resulted['BookName'],
-                        resulted['BookIsbn'], resulted['AuthorID']])
-                csvwrite.writerow([("%s" % s).encode(lazylibrarian.SYS_ENCODING) for s in row])
-                count = count + 1
-        logger.info(u"CSV exported %s book%s to %s" % (count, plural(count), csvFile))
-
-
-def processCSV(search_dir=None):
-    """ Find a csv file in the search_dir and process all the books in it,
-    adding authors to the database if not found, and marking the books as "Wanted" """
-
-    if not search_dir or os.path.isdir(search_dir) is False:
-        logger.warn(u"Please check Alternate Directory setting")
-        return False
-
-    csvFile = csv_file(search_dir)
-
-    headers = None
-    content = {}
-
-    if not csvFile:
-        logger.warn(u"No CSV file found in %s" % search_dir)
-    else:
-        logger.debug(u'Reading file %s' % csvFile)
-        reader = csv.reader(open(csvFile))
-        for row in reader:
-            if reader.line_num == 1:
-                # If we are on the first line, create the headers list from the first row
-                # by taking a slice from item 1  as we don't need the very first header.
-                headers = row[1:]
-            else:
-                # Otherwise, the key in the content dictionary is the first item in the
-                # row and we can create the sub-dictionary by using the zip() function.
-                content[row[0]] = dict(zip(headers, row[1:]))
-
-        # We can now get to the content by using the resulting dictionary, so to see
-        # the list of lines, we can do:
-        # print content.keys() # to get a list of bookIDs
-        # To see the list of fields available for each book
-        # print headers
-
-        if 'Author' not in headers or 'Title' not in headers:
-            logger.warn(u'Invalid CSV file found %s' % csvFile)
-            return
-
-        myDB = database.DBConnection()
-        bookcount = 0
-        authcount = 0
-        skipcount = 0
-        logger.debug(u"CSV: Found %s book%s in csv file" % (len(content.keys()), plural(len(content.keys()))))
-        for bookid in content.keys():
-
-            authorname = latinToAscii(content[bookid]['Author'])
-            authmatch = myDB.action('SELECT * FROM authors where AuthorName="%s"' % (authorname)).fetchone()
-
-            if authmatch:
-                logger.debug(u"CSV: Author %s found in database" % (authorname))
-            else:
-                logger.debug(u"CSV: Author %s not found, adding to database" % (authorname))
-                addAuthorToDB(authorname)
-                authcount = authcount + 1
-
-            bookmatch = 0
-            isbn10 = ""
-            isbn13 = ""
-            bookname = latinToAscii(content[bookid]['Title'])
-            if 'ISBN' in headers:
-                isbn10 = content[bookid]['ISBN']
-            if 'ISBN13' in headers:
-                isbn13 = content[bookid]['ISBN13']
-
-            # try to find book in our database using isbn, or if that fails, name matching
-            if is_valid_isbn(isbn10):
-                bookmatch = myDB.action('SELECT * FROM books where Bookisbn=%s' % (isbn10)).fetchone()
-            if not bookmatch:
-                if is_valid_isbn(isbn13):
-                    bookmatch = myDB.action('SELECT * FROM books where BookIsbn=%s' % (isbn13)).fetchone()
-            if not bookmatch:
-                bookid = librarysync.find_book_in_db(myDB, authorname, bookname)
-                if bookid:
-                    bookmatch = myDB.action('SELECT * FROM books where BookID="%s"' % (bookid)).fetchone()
-            if bookmatch:
-                authorname = bookmatch['AuthorName']
-                bookname = bookmatch['BookName']
-                bookid = bookmatch['BookID']
-                bookstatus = bookmatch['Status']
-                if bookstatus == 'Open' or bookstatus == 'Wanted' or bookstatus == 'Have':
-                    logger.info(u'Found book %s by %s, already marked as "%s"' % (bookname, authorname, bookstatus))
-                else:  # skipped/ignored
-                    logger.info(u'Found book %s by %s, marking as "Wanted"' % (bookname, authorname))
-                    controlValueDict = {"BookID": bookid}
-                    newValueDict = {"Status": "Wanted"}
-                    myDB.upsert("books", newValueDict, controlValueDict)
-                    bookcount = bookcount + 1
-            else:
-                logger.warn(u"Skipping book %s by %s, not found in database" % (bookname, authorname))
-                skipcount = skipcount + 1
-        logger.info(u"Added %i new author%s, marked %i book%s as 'Wanted', %i book%s not found" %
-                    (authcount, plural(authcount), bookcount, plural(bookcount), skipcount, plural(skipcount)))
-
 
 class imgGoogle(FancyURLopener):
     # Hack because Google wants a user agent for downloading images,
