@@ -674,7 +674,12 @@ class WebInterface(object):
         filtered = d
 
         if sSearch != "":
-            filtered = [row for row in d for column in row if sSearch in column]
+            results = [row for row in d for column in row if sSearch in column]
+            filtered = []
+            for value in results:
+                if value not in filtered:
+                    filtered.append(value)
+
         sortcolumn = int(iSortCol_0)
 
         filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
@@ -943,7 +948,11 @@ class WebInterface(object):
         filtered = d
 
         if sSearch != "":
-            filtered = [row for row in d for column in row if sSearch in column]
+            results = [row for row in d for column in row if sSearch in column]
+            filtered = []
+            for value in results:
+                if value not in filtered:
+                    filtered.append(value)
         sortcolumn = int(iSortCol_0)
 
         filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
@@ -1316,7 +1325,11 @@ class WebInterface(object):
         if sSearch == "":
             filtered = lazylibrarian.LOGLIST[::]
         else:
-            filtered = [row for row in lazylibrarian.LOGLIST for column in row if sSearch in column]
+            results = [row for row in lazylibrarian.LOGLIST for column in row if sSearch in column]
+            filtered = []
+            for value in results:
+                if value not in filtered:
+                    filtered.append(value)
         sortcolumn = 0
         if iSortCol_0 == '1':
             sortcolumn = 2
@@ -1531,7 +1544,11 @@ class WebInterface(object):
         filtered = d
 
         if sSearch != "":
-            filtered = [row for row in d for column in row if sSearch in column]
+            results = [row for row in d for column in row if sSearch in column]
+            filtered = []
+            for value in results:
+                if value not in filtered:
+                    filtered.append(value)
         sortcolumn = int(iSortCol_0)
 
         filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
