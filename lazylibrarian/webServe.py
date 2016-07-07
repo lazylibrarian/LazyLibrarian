@@ -697,7 +697,7 @@ class WebInterface(object):
 
     def addBook(self, bookid=None):
         myDB = database.DBConnection()
-        AuthorName = ""
+        AuthorID = ""
         booksearch = myDB.select(
             'SELECT * from books WHERE BookID="%s"' % bookid)
         if booksearch:
