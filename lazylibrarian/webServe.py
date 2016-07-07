@@ -726,7 +726,7 @@ class WebInterface(object):
         books = [{"bookid": bookid}]
         self.startBookSearch(books)
 
-        if AuthorI:
+        if AuthorID:
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
         else:
             raise cherrypy.HTTPRedirect("books")
