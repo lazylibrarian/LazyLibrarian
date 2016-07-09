@@ -183,7 +183,8 @@ def search_magazines(mags=None, reset=False):
                         # also some magazine torrent titles are "magazine_name some_form_of_date pdf"
                         # so strip all the trailing junk...
                         while nzbtitle_exploded[len(nzbtitle_exploded) - 1][0] in '[{' or \
-                                nzbtitle_exploded[len(nzbtitle_exploded) - 1].lower() == 'pdf':
+                                nzbtitle_exploded[len(nzbtitle_exploded) - 1].lower() in \
+                                 ['pdf', 'true', 'truepdf']:
                                 nzbtitle_exploded.pop()  # gotta love the function names
 
                         # need at least one word magazine title and two date components
@@ -252,7 +253,7 @@ def search_magazines(mags=None, reset=False):
                                                  # issue nn
                                                 regexD_issue = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
                                                 if regexD_issue.isdigit():
-                                                    newdatish = str(regexD_issue)
+                                                    newdatish = str(int(regexD_issue)) # 4 == 04 == 004
                                             else:
                                                 IssueLabel = nzbtitle_exploded[len(nzbtitle_exploded) - 3]
                                                 if IssueLabel.lower() in ["issue", "no", "vol"]:
@@ -260,7 +261,7 @@ def search_magazines(mags=None, reset=False):
                                                     regexD_issue = nzbtitle_exploded[len(nzbtitle_exploded) - 2]
                                                     regexD_issue = regexD_issue.strip(',')
                                                     if regexD_issue.isdigit():
-                                                        newdatish = str(regexD_issue)
+                                                        newdatish = str(int(regexD_issue)) # 4 == 04 == 004
                                                     else:
                                                         raise ValueError
                                                     regexD_year = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
