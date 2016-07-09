@@ -20,7 +20,7 @@ from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.importer import addAuthorToDB, update_totals
-from lazylibrarian.formatter import plural, now, today, check_int, unaccented, safe_unicode
+from lazylibrarian.formatter import plural, now, today, check_int, replace_all
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
@@ -310,9 +310,10 @@ class WebInterface(object):
             for mag in magazines:
                 title = mag['Title']
                 regex = mag['Regex']
-                # seems kwargs passes parameters as latin-1
-                # need to correct on accented magazine names
+                # seems kwargs parameters are passed as latin-1, can't see how to
+                # configure it, so we need to correct it on accented magazine names
                 # eg "Elle Quebec" where we might have e-acute
+                # otherwise the comparison fails
                 new_regex = kwargs.get('reject_list[%s]' % title.encode('latin-1'), None)
                 if not new_regex == regex:
                     controlValueDict = {'Title': title}
