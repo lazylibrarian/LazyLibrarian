@@ -20,7 +20,7 @@ from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.importer import addAuthorToDB, update_totals
-from lazylibrarian.formatter import plural, now, today, check_int
+from lazylibrarian.formatter import plural, now, today, check_int, unaccented, safe_unicode
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
@@ -132,9 +132,11 @@ class WebInterface(object):
                      androidpn_url='', androidpn_username='', androidpn_broadcast=0, bookstrap_theme='',
                      use_nma=0, nma_apikey='', nma_priority=0, nma_onsnatch=0, nma_ondownload=0,
                      https_enabled=0, https_cert='', https_key='', **kwargs):
-        #  print len(kwargs)
-        #  for arg in kwargs:
-        #      print arg
+        #print len(kwargs)
+        #for arg in kwargs:
+        #    if "reject" in arg:
+        #        print arg
+        #        print repr(arg)
         lazylibrarian.HTTP_HOST = http_host
         lazylibrarian.HTTP_ROOT = http_root
         lazylibrarian.HTTP_PORT = check_int(http_port, 5299)
@@ -297,6 +299,10 @@ class WebInterface(object):
         lazylibrarian.NMA_ONSNATCH = bool(nma_onsnatch)
         lazylibrarian.NMA_ONDOWNLOAD = bool(nma_ondownload)
 
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+
         myDB = database.DBConnection()
         magazines = myDB.select('SELECT Title,Regex from magazines ORDER by Title')
 
@@ -304,7 +310,10 @@ class WebInterface(object):
             for mag in magazines:
                 title = mag['Title']
                 regex = mag['Regex']
-                new_regex = kwargs.get('reject_list[%s]' % title, None)
+                # seems kwargs passes parameters as latin-1
+                # need to correct on accented magazine names
+                # eg "Elle Quebec" where we might have e-acute
+                new_regex = kwargs.get('reject_list[%s]' % title.encode('latin-1'), None)
                 if not new_regex == regex:
                     controlValueDict = {'Title': title}
                     newValueDict = {'Regex': new_regex}
@@ -1145,6 +1154,11 @@ class WebInterface(object):
             if '~' in title:  # separate out the "reject words" list
                 regex = title.split('~',1)[1].strip()
                 title = title.split('~',1)[0].strip()
+
+            # replace any non-ascii quotes/apostrophes with ascii ones eg "Collector's"
+            dic = {u'\u2018': u"'", u'\u2019': u"'", u'\u201c': u'"', u'\u201d': u'"'}
+            title = replace_all(title, dic)
+
             controlValueDict = {"Title": title}
             newValueDict = {
                 "Frequency": None,
