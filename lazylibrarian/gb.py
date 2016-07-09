@@ -16,7 +16,6 @@ from lazylibrarian.gr import GoodReads
 from lazylibrarian.cache import get_json_request, cache_cover
 
 from lib.fuzzywuzzy import fuzz
-from lib.unidecode import unidecode
 from lazylibrarian.formatter import plural, today, replace_all, unaccented
 
 
@@ -201,7 +200,7 @@ class GoogleBooks:
                         dic = {':': '', '"': '', '\'': ''}
                         bookname = replace_all(bookname, dic)
 
-                        bookname = unidecode(u'%s' % bookname)
+                        bookname = unaccented(bookname)
                         bookname = bookname.strip()  # strip whitespace
                         bookid = item['id']
 
@@ -454,7 +453,7 @@ class GoogleBooks:
                         bookdesc = None
 
                     bookname = item['volumeInfo']['title']
-                    bookname = unidecode(u'%s' % bookname)
+                    bookname = unaccented(bookname)
                     dic = {':': '', '"': '', '\'': ''}
                     bookname = replace_all(bookname, dic)
                     bookname = bookname.strip()  # strip whitespace
@@ -633,7 +632,7 @@ class GoogleBooks:
         dic = {':': '', '"': '', '\'': ''}
         bookname = replace_all(bookname, dic)
 
-        bookname = unidecode(u'%s' % bookname)
+        bookname = unaccented(bookname)
         bookname = bookname.strip()  # strip whitespace
 
         try:

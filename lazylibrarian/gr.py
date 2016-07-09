@@ -5,10 +5,9 @@ import time
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage
-from lazylibrarian.formatter import plural, today, replace_all, bookSeries
+from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented
 from lazylibrarian.cache import get_xml_request, cache_cover
 from lib.fuzzywuzzy import fuzz
-from lib.unidecode import unidecode
 import os
 import md5
 import hashlib
@@ -409,7 +408,7 @@ class GoodReads:
                     bookrate = float(book.find('average_rating').text)
                     bookpages = book.find('num_pages').text
 
-                    bookname = unidecode(u'%s' % bookname)
+                    bookname = unaccented(bookname)
                     dic = {':': '', '"': '', '\'': ''}
                     bookname = replace_all(bookname, dic)
                     bookname = bookname.strip()  # strip whitespace
@@ -652,7 +651,7 @@ class GoodReads:
         dic = {':': '', '"': '', '\'': ''}
         bookname = replace_all(bookname, dic)
 
-        bookname = unidecode(u'%s' % bookname)
+        bookname = unaccented(bookname)
         bookname = bookname.strip()  # strip whitespace
 
         controlValueDict = {"BookID": bookid}
