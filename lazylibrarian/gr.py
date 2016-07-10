@@ -17,7 +17,7 @@ class GoodReads:
     # http://www.goodreads.com/api/
 
     def __init__(self, name=None):
-        self.name = name.encode('utf-8')
+        self.name = name.encode(lazylibrarian.SYS_ENCODING)
         # self.type = type
         if not lazylibrarian.GR_API:
             logger.warn('No Goodreads API key, check config')
@@ -34,7 +34,7 @@ class GoodReads:
             authorname = authorname.replace(' ', '.')
             authorname = authorname.replace('..', '.')
 
-        url = urllib.quote_plus(authorname.encode('utf-8'))
+        url = urllib.quote_plus(authorname.encode(lazylibrarian.SYS_ENCODING))
         set_url = 'http://www.goodreads.com/search.xml?q=' + url + '&' + urllib.urlencode(self.params)
         logger.debug('Now searching GoodReads API with keyword: ' + authorname)
         logger.debug('Searching for %s at: %s' % (authorname, set_url))

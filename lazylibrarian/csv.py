@@ -34,7 +34,7 @@ def export_CSV(search_dir=None, status="Wanted"):
             csvwrite.writerow(['BookID', 'Author', 'Title', 'ISBN', 'AuthorID'])
 
             for resulted in find_status:
-                logger.debug(u"Exported CSV for book %s" % resulted['BookName'].encode(lazylibrarian.SYS_ENCODING))
+                logger.debug(u"Exported CSV for book %s" % resulted['BookName'])
                 row = ([resulted['BookID'], resulted['AuthorName'], resulted['BookName'],
                         resulted['BookIsbn'], resulted['AuthorID']])
                 csvwrite.writerow([("%s" % s).encode(lazylibrarian.SYS_ENCODING) for s in row])
@@ -88,7 +88,7 @@ def import_CSV(search_dir=None):
         for bookid in content.keys():
             authorname = content[bookid]['Author']
             if hasattr(authorname, 'decode'):
-                authorname = authorname.decode('utf-8')
+                authorname = authorname.decode(lazylibrarian.SYS_ENCODING)
 
             authmatch = myDB.action('SELECT * FROM authors where AuthorName="%s"' % (authorname)).fetchone()
 
@@ -104,7 +104,7 @@ def import_CSV(search_dir=None):
             isbn13 = ""
             bookname = content[bookid]['Title']
             if hasattr(bookname, 'decode'):
-                bookname = bookname.decode('utf-8')
+                bookname = bookname.decode(lazylibrarian.SYS_ENCODING)
             if 'ISBN' in headers:
                 isbn10 = content[bookid]['ISBN']
             if 'ISBN13' in headers:

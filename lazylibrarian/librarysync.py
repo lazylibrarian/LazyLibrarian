@@ -253,7 +253,7 @@ def LibraryScan(dir=None):
             file_count += 1
 
             if isinstance(r, str):
-                r = r.decode('utf-8')
+                r = r.decode(lazylibrarian.SYS_ENCODING)
 
             subdirectory = r.replace(dir, '')
             # Added new code to skip if we've done this directory before.

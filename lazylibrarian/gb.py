@@ -53,10 +53,10 @@ class GoogleBooks:
         for api_value in api_strings:
             startindex = 0
             if api_value == "isbn:":
-                set_url = self.url + urllib.quote(api_value + self.name.encode('utf-8'))
+                set_url = self.url + urllib.quote(api_value + self.name.encode(lazylibrarian.SYS_ENCODING))
             else:
                 set_url = self.url + \
-                    urllib.quote(api_value + '"' + self.name.encode('utf-8') + '"')
+                    urllib.quote(api_value + '"' + self.name.encode(lazylibrarian.SYS_ENCODING) + '"')
 
             try:
                 startindex = 0

@@ -63,8 +63,8 @@ def search_nzb_book(books=None, reset=False):
         # TRY SEARCH TERM just using author name and book
         author = unaccented_str(replace_all(author, dicSearchFormatting))
         searchterm = author + ' ' + book
-        searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
-        searchterm = re.sub(r'\(.*?\)', '', searchterm).encode('utf-8')
+        searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode(lazylibrarian.SYS_ENCODING)
+        searchterm = re.sub(r'\(.*?\)', '', searchterm).encode(lazylibrarian.SYS_ENCODING)
         searchterm = re.sub(r"\s\s+", " ", searchterm)  # strip any double white space
         searchlist.append({"bookid": bookid, "bookName": searchbook[2], "authorName": searchbook[1],
                            "searchterm": searchterm.strip()})
