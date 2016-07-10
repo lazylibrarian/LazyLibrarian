@@ -431,7 +431,7 @@ class WebInterface(object):
         resultlist = []
         for result in searchresults:
             result['safeauthorname'] = urllib.quote_plus(
-                result['authorname'].encode('utf-8'))
+                result['authorname'].encode(lazylibrarian.SYS_ENCODING))
             resultlist.append(result)
 
         sortedlist_final = sorted(
@@ -474,7 +474,7 @@ class WebInterface(object):
         if author is None:
             raise cherrypy.HTTPRedirect("home")
         return serve_template(
-            templatename="author.html", title=urllib.quote_plus(author['AuthorName'].encode('utf-8')),
+            templatename="author.html", title=urllib.quote_plus(author['AuthorName'].encode(lazylibrarian.SYS_ENCODING)),
                               author=author, books=books, languages=languages)
     authorPage.exposed = True
 
@@ -876,7 +876,7 @@ class WebInterface(object):
                     issues = 0
                 this_mag = dict(mag)
                 this_mag['Count'] = issues
-                this_mag['safetitle'] = urllib.quote_plus(mag['Title'].encode('utf-8'))
+                this_mag['safetitle'] = urllib.quote_plus(mag['Title'].encode(lazylibrarian.SYS_ENCODING))
                 mags.append(this_mag)
 
         return serve_template(templatename="magazines.html", title="Magazines", magazines=mags)
@@ -916,7 +916,7 @@ class WebInterface(object):
                 this_issue = dict(issue)
                 this_issue['Cover'] = magimg
                 # this_issue['safeissuefile'] =
-                # urllib.quote_plus(magfile.encode('utf-8'))
+                # urllib.quote_plus(magfile.encode(lazylibrarian.SYS_ENCODING))
                 mod_issues.append(this_issue)
             logger.debug("Found %s cover%s" % (covercount, plural(covercount)))
         return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
@@ -1000,7 +1000,7 @@ class WebInterface(object):
             return serve_file(IssueFile, "application/x-download", "attachment")
         elif len(mag_data) > 1:  # multiple issues, show a list
             logger.debug(u"%s has %s issues" % (bookid, len(mag_data)))
-            raise cherrypy.HTTPRedirect("issuePage?title=%s" % urllib.quote_plus(bookid.encode('utf-8')))
+            raise cherrypy.HTTPRedirect("issuePage?title=%s" % urllib.quote_plus(bookid.encode(lazylibrarian.SYS_ENCODING)))
     openMag.exposed = True
 
     def markPastIssues(self, action=None, redirect=None, **args):
@@ -1015,7 +1015,7 @@ class WebInterface(object):
         maglist = []
         for nzburl in args:
             if hasattr(nzburl, 'decode'):
-                nzburl = nzburl.decode('utf-8')
+                nzburl = nzburl.decode(lazylibrarian.SYS_ENCODING)
             # ouch dirty workaround...
             if not nzburl == 'book_table_length':
                 title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s"' % nzburl)
@@ -1096,7 +1096,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         for item in args:
             if hasattr(item, 'decode'):
-                item = item.decode('utf-8')
+                item = item.decode(lazylibrarian.SYS_ENCODING)
             # ouch dirty workaround...
             if not item == 'book_table_length':
                 if (action == "Paused" or action == "Active"):

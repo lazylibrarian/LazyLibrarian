@@ -95,8 +95,8 @@ def getBookWork(bookID=None, reason=None):
             if bookisbn:
                 URL='http://www.librarything.com/api/whatwork.php?isbn=' + bookisbn
             else:
-                title = safe_unicode(item['BookName']).encode('utf-8')
-                author = safe_unicode(item['AuthorName']).encode('utf-8')
+                title = safe_unicode(item['BookName']).encode(lazylibrarian.SYS_ENCODING)
+                author = safe_unicode(item['AuthorName']).encode(lazylibrarian.SYS_ENCODING)
                 safeparams = urllib.quote_plus("%s %s" % (author, title))
                 URL='http://www.librarything.com/api/whatwork.php?title=' + safeparams
             librarything_wait()
@@ -156,7 +156,7 @@ def getWorkSeries(bookID=None):
             series = work.split('<a href="/series/')[1].split('">')[1].split('</a>')[0]
         except IndexError:
             return None, None
-        series = safe_unicode(series).encode('utf-8')
+        series = safe_unicode(series).encode(lazylibrarian.SYS_ENCODING)
         if series and '(' in series:
             seriesnum = series.split('(')[1].split(')')[0]
             series = series.split(' (')[0]
@@ -206,8 +206,8 @@ def getBookCover(bookID=None):
 
     item = myDB.action('select BookName,AuthorName,BookLink from books where bookID="%s"' % bookID).fetchone()
     if item:
-        title = safe_unicode(item['BookName']).encode('utf-8')
-        author = safe_unicode(item['AuthorName']).encode('utf-8')
+        title = safe_unicode(item['BookName']).encode(lazylibrarian.SYS_ENCODING)
+        author = safe_unicode(item['AuthorName']).encode(lazylibrarian.SYS_ENCODING)
         booklink = item['BookLink']
         safeparams = urllib.quote_plus("%s %s" % (author, title))
 

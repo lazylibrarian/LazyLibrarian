@@ -5,10 +5,9 @@ import time
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage
-from lazylibrarian.formatter import plural, today, replace_all, bookSeries
+from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented
 from lazylibrarian.cache import get_xml_request, cache_cover
 from lib.fuzzywuzzy import fuzz
-from lib.unidecode import unidecode
 import os
 import md5
 import hashlib
@@ -18,7 +17,7 @@ class GoodReads:
     # http://www.goodreads.com/api/
 
     def __init__(self, name=None):
-        self.name = name.encode('utf-8')
+        self.name = name.encode(lazylibrarian.SYS_ENCODING)
         # self.type = type
         if not lazylibrarian.GR_API:
             logger.warn('No Goodreads API key, check config')
@@ -35,7 +34,7 @@ class GoodReads:
             authorname = authorname.replace(' ', '.')
             authorname = authorname.replace('..', '.')
 
-        url = urllib.quote_plus(authorname.encode('utf-8'))
+        url = urllib.quote_plus(authorname.encode(lazylibrarian.SYS_ENCODING))
         set_url = 'http://www.goodreads.com/search.xml?q=' + url + '&' + urllib.urlencode(self.params)
         logger.debug('Now searching GoodReads API with keyword: ' + authorname)
         logger.debug('Searching for %s at: %s' % (authorname, set_url))
@@ -409,7 +408,7 @@ class GoodReads:
                     bookrate = float(book.find('average_rating').text)
                     bookpages = book.find('num_pages').text
 
-                    bookname = unidecode(u'%s' % bookname)
+                    bookname = unaccented(bookname)
                     dic = {':': '', '"': '', '\'': ''}
                     bookname = replace_all(bookname, dic)
                     bookname = bookname.strip()  # strip whitespace
@@ -652,7 +651,7 @@ class GoodReads:
         dic = {':': '', '"': '', '\'': ''}
         bookname = replace_all(bookname, dic)
 
-        bookname = unidecode(u'%s' % bookname)
+        bookname = unaccented(bookname)
         bookname = bookname.strip()  # strip whitespace
 
         controlValueDict = {"BookID": bookid}

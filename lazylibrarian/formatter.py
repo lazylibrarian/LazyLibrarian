@@ -216,7 +216,7 @@ def cleanName(name):
     try:
         cleanedName = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore')
     except TypeError:
-        cleanedName = unicodedata.normalize('NFKD', name.decode('utf-8')).encode('ASCII', 'ignore')
+        cleanedName = unicodedata.normalize('NFKD', name.decode(lazylibrarian.SYS_ENCODING)).encode('ASCII', 'ignore')
     return u''.join(c for c in cleanedName if c in validNameChars)
 
 def unaccented(str_or_unicode):

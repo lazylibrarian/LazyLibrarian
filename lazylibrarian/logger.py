@@ -17,11 +17,11 @@ class RotatingLogger(object):
         self.filehandler = None
         self.consolehandler = None
 
-    def stopLogger(self): 
+    def stopLogger(self):
         l = logging.getLogger('lazylibrarian')
         l.removeHandler(self.filehandler)
-        l.removeHandler(self.consolehandler) 
-    
+        l.removeHandler(self.consolehandler)
+
     def initLogger(self, loglevel=1):
 
         l = logging.getLogger('lazylibrarian')
@@ -41,7 +41,7 @@ class RotatingLogger(object):
         filehandler.setFormatter(fileformatter)
         l.addHandler(filehandler)
         self.filehandler = filehandler
-        
+
         if loglevel:
             consolehandler = logging.StreamHandler()
             if loglevel == 1:
@@ -59,8 +59,8 @@ class RotatingLogger(object):
 
         threadname = threading.currentThread().getName()
 
-        # Ensure messages are utf-8 as some author names contain accents and the web page doesnt like them
-        message = formatter.safe_unicode(message).encode('utf-8')
+        # Ensure messages are correctly encoded as some author names contain accents and the web page doesnt like them
+        message = formatter.safe_unicode(message).encode(lazylibrarian.SYS_ENCODING)
 
         if level != 'DEBUG' or lazylibrarian.LOGFULL is True:
             # Limit the size of the "in-memory" log, as gets slow if too long

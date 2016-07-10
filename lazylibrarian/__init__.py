@@ -315,7 +315,7 @@ def check_setting_str(config, cfg_name, item_name, def_val, log=True):
     if log:
         logger.debug(cfg_name + ":" + item_name + " -> " + my_val)
 
-    return my_val.decode('utf-8')
+    return my_val.decode(SYS_ENCODING)
 
 def initialize():
 
@@ -804,7 +804,7 @@ def config_write():
     CFG.set('General', 'api_key', API_KEY)
     CFG.set('General', 'proxy_host', PROXY_HOST)
     CFG.set('General', 'proxy_type', PROXY_TYPE)
-    CFG.set('General', 'logdir', LOGDIR.encode('utf-8'))
+    CFG.set('General', 'logdir', LOGDIR.encode(SYS_ENCODING))
     CFG.set('General', 'loglimit', LOGLIMIT)
     CFG.set('General', 'loglevel', LOGLEVEL)
     CFG.set('General', 'logsize', LOGSIZE)
@@ -820,12 +820,12 @@ def config_write():
     CFG.set('General', 'git_program', GIT_PROGRAM.strip())
     CFG.set('General', 'ebook_type', EBOOK_TYPE.lower())
     CFG.set('General', 'mag_type', MAG_TYPE.lower())
-    CFG.set('General', 'reject_words', REJECT_WORDS.encode('utf-8').lower())
+    CFG.set('General', 'reject_words', REJECT_WORDS.encode(SYS_ENCODING).lower())
     CFG.set('General', 'reject_maxsize', REJECT_MAXSIZE)
-    CFG.set('General', 'destination_dir', DESTINATION_DIR.encode('utf-8'))
-    CFG.set('General', 'alternate_dir', ALTERNATE_DIR.encode('utf-8'))
+    CFG.set('General', 'destination_dir', DESTINATION_DIR.encode(SYS_ENCODING))
+    CFG.set('General', 'alternate_dir', ALTERNATE_DIR.encode(SYS_ENCODING))
     CFG.set('General', 'destination_copy', DESTINATION_COPY)
-    CFG.set('General', 'download_dir', DOWNLOAD_DIR.encode('utf-8'))
+    CFG.set('General', 'download_dir', DOWNLOAD_DIR.encode(SYS_ENCODING))
     CFG.set('General', 'cache_age', CACHE_AGE)
 #
     check_section('Git')
@@ -980,10 +980,10 @@ def config_write():
     CFG.set('LibraryScan', 'newbook_status', NEWBOOK_STATUS)
 #
     check_section('PostProcess')
-    CFG.set('PostProcess', 'ebook_dest_folder', EBOOK_DEST_FOLDER.encode('utf-8'))
-    CFG.set('PostProcess', 'ebook_dest_file', EBOOK_DEST_FILE.encode('utf-8'))
-    CFG.set('PostProcess', 'mag_dest_folder', MAG_DEST_FOLDER.encode('utf-8'))
-    CFG.set('PostProcess', 'mag_dest_file', MAG_DEST_FILE.encode('utf-8'))
+    CFG.set('PostProcess', 'ebook_dest_folder', EBOOK_DEST_FOLDER.encode(SYS_ENCODING))
+    CFG.set('PostProcess', 'ebook_dest_file', EBOOK_DEST_FILE.encode(SYS_ENCODING))
+    CFG.set('PostProcess', 'mag_dest_folder', MAG_DEST_FOLDER.encode(SYS_ENCODING))
+    CFG.set('PostProcess', 'mag_dest_file', MAG_DEST_FILE.encode(SYS_ENCODING))
     CFG.set('PostProcess', 'mag_relative', MAG_RELATIVE)
 #
     check_section('Twitter')
@@ -1290,10 +1290,12 @@ def dbcheck():
     # 2 removed " MB" from nzbsize field in wanted table
     # 3 removed SeriesOrder column from books table as redundant
     # 4 added duplicates column to stats table
-    db_current_version = 4
+    # 5 issue numbers padded to 4 digits with leading zeros
+    db_current_version = 5
 
     if db_version < db_current_version:
         logger.info('Updating database to version %s, current version is %s' % (db_current_version, db_version))
+        myDB = database.DBConnection()
 
         if db_version < 1:
             c.execute('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT, AuthorName TEXT UNIQUE, AuthorImg TEXT, \
@@ -1433,8 +1435,6 @@ def dbcheck():
                 except:
                     logger.debug("Failed to update WorkPages")
 
-            myDB = database.DBConnection()
-
             if addedSeries:
                 try:
                     books = myDB.select('SELECT BookID, BookName FROM books')
@@ -1503,6 +1503,25 @@ def dbcheck():
             except sqlite3.OperationalError:
                 logger.info('Updating stats table to hold duplicates')
                 c.execute('ALTER TABLE stats ADD COLUMN duplicates INT')
+
+        if db_version < 5:
+            issues = myDB.select('SELECT IssueID,IssueDate from issues WHERE length(IssueDate) < 4')
+            if issues:
+                logger.info('Updating issues table to hold 4 digit issue numbers')
+                for issue in issues:
+                    issueid = issue['IssueID']
+                    issuedate = str(issue['IssueDate'])
+                    issuedate = issuedate.zfill(4)
+                    myDB.action('UPDATE issues SET IssueDate="%s" WHERE IssueID="%s"' % (issuedate, issueid))
+
+            mags = myDB.select('SELECT Title,IssueDate from magazines WHERE length(IssueDate) < 4 and length(IssueDate) > 0')
+            if mags:
+                logger.info('Updating magazines table to match')
+                for mag in mags:
+                    title = mag['Title']
+                    issuedate = str(mag['IssueDate'])
+                    issuedate = issuedate.zfill(4)
+                    myDB.action('UPDATE magazines SET IssueDate="%s" WHERE Title="%s"' % (issuedate, title))
 
 
         c.execute('PRAGMA user_version = %s' % db_current_version)

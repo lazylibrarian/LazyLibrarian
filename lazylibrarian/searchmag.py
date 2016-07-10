@@ -58,7 +58,7 @@ def search_magazines(mags=None, reset=False):
         dic = {'...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': ''}
 
         searchterm = unaccented_str(replace_all(searchterm, dic))
-        searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode('utf-8')
+        searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode(lazylibrarian.SYS_ENCODING)
         searchlist.append({"bookid": bookid, "searchterm": searchterm})
 
     if searchlist == []:
@@ -307,6 +307,8 @@ def search_magazines(mags=None, reset=False):
                         elif not '-' in str(control_date) and not '-' in str(newdatish):
                             # for issue numbers, check if later than last one we have
                             comp_date = int(newdatish) - int(control_date)
+                            newdatish = "%s" % newdatish
+                            newdatish = newdatish.zfill(4)  # pad so we sort correctly
                         else:
                             # invalid comparison of date and issue
                             logger.debug('Magazine %s incorrect date or issue format.' % nzbtitle_formatted)
