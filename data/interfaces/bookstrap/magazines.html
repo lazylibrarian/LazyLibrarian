@@ -6,7 +6,7 @@
 <%def name="headerIncludes()">
 
     <div id="subhead_container" class="row">
-        <form action="addMagazine" method="get">    
+        <form action="addMagazine" method="get">
         <input type="hidden" name="search" value="magazine">
         <div id="subhead_menu" class="col-xs-12 col-md-8">
             <a href="forceSearch?source=magazines" class="button btn btn-sm btn-primary"><i class="fa fa-search"></i> Force Search</a>
@@ -25,7 +25,7 @@
                     </span>
                 </div>
             </div>
-            
+
         </div>
 
         </form>
@@ -36,7 +36,7 @@
 
 <form action="markMagazines" method="get" class="form-inline">
     <h1>Magazines</h1>
-    <div class="indented">        
+    <div class="indented">
             <div class="form-group">
                 <label for="action" class="">Mark selected as</label>
                 <select class="markMagazines form-control input-sm" id="action" name="action">
@@ -44,7 +44,7 @@
                     <option value="Paused">Paused</option>
                     <option value="Reset">Reset</option>
                     <option value="Delete">Delete</option>
-                </select>                
+                </select>
             </div>
             <input type="submit" class="markMagazines btn btn-sm btn-primary" value="Go">
     </div>
@@ -59,7 +59,7 @@
                     <!--<th class="frequency">Frequency</th>-->
                     <th class="seriesOrder">Num</th>
                     <th class="lastacquired">Acquired</th>
-                    <th class="issuedate">Issue Date</th>
+                    <th class="issuedate">Latest Issue</th>
                     <th class="status">Status</th>
                     <th class="issue no-sort">Magazine</th>
                 </tr>
@@ -71,7 +71,7 @@
                         <td class="select"><input type="checkbox" name="${result['Title']}" id="${result['safetitle']}" class="checkbox" /></td>
                         <td class="magtitle">${result['Title']}</td>
                         <!--<td class="frequency">${result['Frequency']}</td>-->
-                        <!-- <td id="regex"> -->      
+                        <!-- <td id="regex"> -->
                             <!-- <form action="updateRegex" method="get"><input type="hidden" name="title" value="${result['Title']}">-->
                                 <!-- <select name="regex">-->
                                     <!-- <option selected="selected">${result['Regex']}</option>-->
@@ -112,12 +112,12 @@
 </%def>
 
 <%def name="headIncludes()">
-    
+
 </%def>
 
 <%def name="javascriptIncludes()">
     <script>
-        
+
     $(document).ready(function()
     {
 
@@ -125,7 +125,7 @@
             {
                 "responsive": true,
                 "order": [[ 1, 'asc']],
-                "columnDefs": 
+                "columnDefs":
                     [{ targets: 'no-sort', orderable: false }]
                 ,
                 "oLanguage": {
