@@ -28,7 +28,7 @@ def create_cover(issuefile=None):
             converter = lazylibrarian.MAGICK
             if len(lazylibrarian.IMP_CONVERT):
                 converter = lazylibrarian.IMP_CONVERT
-            logger.debug("Creating cover for %s using %s" % (issuefile, converter))
+            logger.debug("Creating cover %s for %s using %s" % (coverfile, issuefile, converter))
             try:
                 # No PythonMagick in python3, hence allow wand, but more complicated
                 # to install - try to use external imagemagick convert?
@@ -53,6 +53,16 @@ def create_cover(issuefile=None):
                     img = PythonMagick.Image()
                     img.read(issuefile + '[0]')
                     img.write(coverfile)
+                else:
+                    try:
+                        params = [lazylibrarian.MAGICK, issuefile + '[0]', coverfile]
+                        res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                        if res:
+                            logger.debug('%s reports: %s' % (lazylibrarian.IMP_CONVERT, res))
+                    except subprocess.CalledProcessError as e:
+                        logger.debug(params)
+                        logger.debug('ImageMagick "convert" failed %s' % e.output)
+
             except:
                 logger.debug("Unable to create cover for %s using %s" % (issuefile, lazylibrarian.MAGICK))
 

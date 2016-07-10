@@ -118,7 +118,7 @@ def processDir(reset=False):
             (len(downloads), plural(len(downloads)), len(snatched), plural(len(snatched))))
         ppcount = 0
         for book in snatched:
-            found = False
+            matches = []
             for fname in downloads:
                 if not fname.endswith('.fail'):  # has this failed before?
                     # this is to get round differences in torrent filenames.
@@ -157,15 +157,21 @@ def processDir(reset=False):
                                             (fname, dirname, str(why)))
                         if os.path.isdir(os.path.join(processpath, fname)):
                             pp_path = os.path.join(processpath, fname)
-                            logger.debug('Found folder %s for %s' % (pp_path, book['NZBtitle']))
-                            found = True
-                            break
+                            logger.debug('Found folder (%s%%) %s for %s' % (match, pp_path, book['NZBtitle']))
+                            matches.append([match, pp_path, book])
                     else:
                         logger.debug('No match (%s%%) %s for %s' % (match, matchname, matchtitle))
                 else:
                     logger.debug('Skipping %s' % fname)
 
-            if found:
+            if matches:
+                highest = max(matches, key=lambda x: x[0])
+                match = highest[0]
+                pp_path = highest[1]
+                book = highest[2]
+                logger.info(u'Best match (%s%%): %s for %s' %
+                        (match, pp_path, book['NZBtitle']))
+
                 data = myDB.select('SELECT * from books WHERE BookID="%s"' % book['BookID'])
                 if data:
                     authorname = data[0]['AuthorName']

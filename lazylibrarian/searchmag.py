@@ -307,6 +307,8 @@ def search_magazines(mags=None, reset=False):
                         elif not '-' in str(control_date) and not '-' in str(newdatish):
                             # for issue numbers, check if later than last one we have
                             comp_date = int(newdatish) - int(control_date)
+                            newdatish = "%s" % newdatish
+                            newdatish = newdatish.zfill(3)  # pad so we sort correctly
                         else:
                             # invalid comparison of date and issue
                             logger.debug('Magazine %s incorrect date or issue format.' % nzbtitle_formatted)
