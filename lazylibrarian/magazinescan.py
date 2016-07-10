@@ -187,6 +187,9 @@ def magazineScan():
                     maglastacquired = mag_entry[0]['LastAcquired']
                     magissuedate = mag_entry[0]['IssueDate']
                     magazineadded = mag_entry[0]['MagazineAdded']
+                    magissuedate = str(magissuedate).zfill(4)
+
+                issuedate = str(issuedate).zfill(4)  # for sorting issue numbers
 
                 # is this issue already in the database?
                 controlValueDict = {"Title": title, "IssueDate": issuedate}
