@@ -1290,10 +1290,12 @@ def dbcheck():
     # 2 removed " MB" from nzbsize field in wanted table
     # 3 removed SeriesOrder column from books table as redundant
     # 4 added duplicates column to stats table
-    db_current_version = 4
+    # 5 issue numbers padded to 4 digits with leading zeros
+    db_current_version = 5
 
     if db_version < db_current_version:
         logger.info('Updating database to version %s, current version is %s' % (db_current_version, db_version))
+        myDB = database.DBConnection()
 
         if db_version < 1:
             c.execute('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT, AuthorName TEXT UNIQUE, AuthorImg TEXT, \
@@ -1433,8 +1435,6 @@ def dbcheck():
                 except:
                     logger.debug("Failed to update WorkPages")
 
-            myDB = database.DBConnection()
-
             if addedSeries:
                 try:
                     books = myDB.select('SELECT BookID, BookName FROM books')
@@ -1503,6 +1503,25 @@ def dbcheck():
             except sqlite3.OperationalError:
                 logger.info('Updating stats table to hold duplicates')
                 c.execute('ALTER TABLE stats ADD COLUMN duplicates INT')
+
+        if db_version < 5:
+            issues = myDB.select('SELECT IssueID,IssueDate from issues WHERE length(IssueDate) < 4')
+            if issues:
+                logger.info('Updating issues table to hold 4 digit issue numbers')
+                for issue in issues:
+                    issueid = issue['IssueID']
+                    issuedate = str(issue['IssueDate'])
+                    issuedate = issuedate.zfill(4)
+                    myDB.action('UPDATE issues SET IssueDate="%s" WHERE IssueID="%s"' % (issuedate, issueid))
+
+            mags = myDB.select('SELECT Title,IssueDate from magazines WHERE length(IssueDate) < 4 and length(IssueDate) > 0')
+            if mags:
+                logger.info('Updating magazines table to match')
+                for mag in mags:
+                    title = mag['Title']
+                    issuedate = str(mag['IssueDate'])
+                    issuedate = issuedate.zfill(4)
+                    myDB.action('UPDATE magazines SET IssueDate="%s" WHERE Title="%s"' % (issuedate, title))
 
 
         c.execute('PRAGMA user_version = %s' % db_current_version)
