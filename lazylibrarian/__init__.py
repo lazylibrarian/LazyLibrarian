@@ -1484,14 +1484,11 @@ def dbcheck():
                 except sqlite3.OperationalError:
                     logger.warn('Failed to remove SeriesOrder from books table')
             except sqlite3.OperationalError:
-                # no SeriesOrder column, nothing to remove
-                # (must be a new install, not an upgrade)
-                logger.debug('No SeriesOrder in books table')
+                # if it's a new install there is no SeriesOrder column, so nothing to remove
+                pass
 
             try:
                 c.execute('SELECT BookID from pastissues')
-                logger.debug('pastissues table already exists')
-                # must be a new install,so nothing to move
             except sqlite3.OperationalError:
                 logger.info('Moving magazine past issues into new table')
                 c.execute('CREATE TABLE pastissues AS SELECT * FROM wanted WHERE Status="Skipped" AND length(AuxInfo) > 0')
@@ -1505,7 +1502,7 @@ def dbcheck():
                 c.execute('ALTER TABLE stats ADD COLUMN duplicates INT')
 
         if db_version < 5:
-            issues = myDB.select('SELECT IssueID,IssueDate from issues WHERE length(IssueDate) < 4')
+            issues = myDB.select('SELECT IssueID,IssueDate from issues WHERE length(IssueDate) < 4 and length(IssueDate) > 0')
             if issues:
                 logger.info('Updating issues table to hold 4 digit issue numbers')
                 for issue in issues:

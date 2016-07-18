@@ -10,7 +10,7 @@
             <li><a href="pastIssues?whichStatus=Skipped" id="button"> Past Issues </a></li>
                 <div style="float:right; margin-right:15px; margin-top:2px;">
                 <li><input type="text" placeholder="Magazine Title" name="title"></li>
-                <li><input type="submit" value="+Magazine"></li> 
+                <li><input type="submit" value="+Magazine"></li>
                 </div>
         </ul>
     </form>
@@ -40,7 +40,7 @@
                 <th id="magtitle">Title</th>
                 <th id="seriesOrder">Num</th>
                 <th id="lastacquired">Acquired</th>
-                <th id="issuedate">Issue Date</th>
+                <th id="issuedate">Latest Issue</th>
                 <th id="status">Status</th>
                 <th id="issue">Magazine</th>
             </tr>
@@ -51,7 +51,7 @@
                 <tr class="gradeZ">
                     <td id="select"><input type="checkbox" name="${result['Title']}" class="checkbox" /></td>
                     <td id="magtitle">${result['Title']}</td>
-                    <!-- <td id="regex"> -->      
+                    <!-- <td id="regex"> -->
                         <!-- <form action="updateRegex" method="get"><input type="hidden" name="title" value="${result['Title']}">-->
                             <!-- <select name="regex">-->
                                 <!-- <option selected="selected">${result['Regex']}</option>-->
@@ -92,7 +92,7 @@
 <%def name="javascriptIncludes()">
     <script src="js/libs/jquery.dataTables.min.js"></script>
     <script>
-        
+
     $(document).ready(function()
     {
 

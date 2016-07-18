@@ -61,6 +61,11 @@ class WebInterface(object):
         return serve_template(templatename="index.html", title="Home", authors=authors)
     home.exposed = True
 
+    def label_thread(self):
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "WEBSERVER"
+
 # CONFIG ############################################################
 
     def config(self):
@@ -299,9 +304,7 @@ class WebInterface(object):
         lazylibrarian.NMA_ONSNATCH = bool(nma_onsnatch)
         lazylibrarian.NMA_ONDOWNLOAD = bool(nma_ondownload)
 
-        threadname = threading.currentThread().name
-        if "Thread-" in threadname:
-            threading.currentThread().name = "WEBSERVER"
+        self.label_thread()
 
         myDB = database.DBConnection()
         magazines = myDB.select('SELECT Title,Regex from magazines ORDER by Title')
@@ -479,9 +482,7 @@ class WebInterface(object):
     authorPage.exposed = True
 
     def pauseAuthor(self, AuthorID):
-        threadname = threading.currentThread().name
-        if "Thread-" in threadname:
-            threading.currentThread().name = "WEBSERVER"
+        self.label_thread()
 
         myDB = database.DBConnection()
         authorsearch = myDB.select(
@@ -498,9 +499,7 @@ class WebInterface(object):
     pauseAuthor.exposed = True
 
     def resumeAuthor(self, AuthorID):
-        threadname = threading.currentThread().name
-        if "Thread-" in threadname:
-            threading.currentThread().name = "WEBSERVER"
+        self.label_thread()
 
         myDB = database.DBConnection()
         authorsearch = myDB.select(
@@ -517,9 +516,7 @@ class WebInterface(object):
     resumeAuthor.exposed = True
 
     def deleteAuthor(self, AuthorID):
-        threadname = threading.currentThread().name
-        if "Thread-" in threadname:
-            threading.currentThread().name = "WEBSERVER"
+        self.label_thread()
 
         myDB = database.DBConnection()
         authorsearch = myDB.select(
@@ -533,9 +530,7 @@ class WebInterface(object):
     deleteAuthor.exposed = True
 
     def refreshAuthor(self, AuthorID):
-        threadname = threading.currentThread().name
-        if "Thread-" in threadname:
-            threading.currentThread().name = "WEBSERVER"
+        self.label_thread()
 
         myDB = database.DBConnection()
         authorsearch = myDB.select(
@@ -774,9 +769,7 @@ class WebInterface(object):
     searchForBook.exposed = True
 
     def openBook(self, bookid=None, **args):
-        threadname = threading.currentThread().name
-        if "Thread-" in threadname:
-            threading.currentThread().name = "WEBSERVER"
+        self.label_thread()
 
         myDB = database.DBConnection()
 
@@ -794,9 +787,7 @@ class WebInterface(object):
     openBook.exposed = True
 
     def markBooks(self, AuthorID=None, action=None, redirect=None, **args):
-        threadname = threading.currentThread().name
-        if "Thread-" in threadname:
-            threading.currentThread().name = "WEBSERVER"
+        self.label_thread()
 
         myDB = database.DBConnection()
         if not redirect:
@@ -975,9 +966,7 @@ class WebInterface(object):
     getPastIssues.exposed = True
 
     def openMag(self, bookid=None, **args):
-        threadname = threading.currentThread().name
-        if "Thread-" in threadname:
-            threading.currentThread().name = "WEBSERVER"
+        self.label_thread()
 
         bookid = urllib.unquote_plus(bookid)
         myDB = database.DBConnection()
@@ -1004,9 +993,7 @@ class WebInterface(object):
     openMag.exposed = True
 
     def markPastIssues(self, action=None, redirect=None, **args):
-        threadname = threading.currentThread().name
-        if "Thread-" in threadname:
-            threading.currentThread().name = "WEBSERVER"
+        self.label_thread()
 
         myDB = database.DBConnection()
         if not redirect:
@@ -1081,6 +1068,8 @@ class WebInterface(object):
     markPastIssues.exposed = True
 
     def markIssues(self, action=None, **args):
+        self.label_thread()
+
         myDB = database.DBConnection()
         for item in args:
             # ouch dirty workaround...
@@ -1093,6 +1082,8 @@ class WebInterface(object):
     markIssues.exposed = True
 
     def markMagazines(self, action=None, **args):
+        self.label_thread()
+
         myDB = database.DBConnection()
         for item in args:
             if hasattr(item, 'decode'):
@@ -1145,6 +1136,7 @@ class WebInterface(object):
     startMagazineSearch.exposed = True
 
     def addMagazine(self, search=None, title=None, frequency=None, **args):
+        self.label_thread()
         myDB = database.DBConnection()
         # if search == 'magazine':  # we never call this unless search ==
         # 'magazine'
@@ -1177,9 +1169,7 @@ class WebInterface(object):
 # UPDATES ###########################################################
 
     def checkForUpdates(self):
-        threadname = threading.currentThread().name
-        if "Thread-" in threadname:
-            threading.currentThread().name = "WEBSERVER"
+        self.label_thread()
 
         versioncheck.checkForUpdates()
         if lazylibrarian.COMMITS_BEHIND == 0:
@@ -1288,9 +1278,7 @@ class WebInterface(object):
 
     def clearLog(self):
         # Clear the log
-        threadname = threading.currentThread().name
-        if "Thread-" in threadname:
-            threading.currentThread().name = "WEBSERVER"
+        self.label_thread()
 
         result = clearLog()
         logger.info(result)
@@ -1303,9 +1291,7 @@ class WebInterface(object):
         # 1 normal
         # 2 debug
         # >2 do not turn off file/console log
-        threadname = threading.currentThread().name
-        if "Thread-" in threadname:
-            threading.currentThread().name = "WEBSERVER"
+        self.label_thread()
 
         if lazylibrarian.LOGFULL:  # if LOGLIST logging on, turn off
             lazylibrarian.LOGFULL = False
@@ -1368,9 +1354,7 @@ class WebInterface(object):
     history.exposed = True
 
     def clearhistory(self, status=None):
-        threadname = threading.currentThread().name
-        if "Thread-" in threadname:
-            threading.currentThread().name = "WEBSERVER"
+        self.label_thread()
 
         myDB = database.DBConnection()
         if status == 'all':
