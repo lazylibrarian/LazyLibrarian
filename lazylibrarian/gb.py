@@ -16,7 +16,7 @@ from lazylibrarian.gr import GoodReads
 from lazylibrarian.cache import get_json_request, cache_cover
 
 from lib.fuzzywuzzy import fuzz
-from lazylibrarian.formatter import plural, today, replace_all, unaccented
+from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str
 
 
 class GoogleBooks:
