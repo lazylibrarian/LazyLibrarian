@@ -226,7 +226,7 @@ class GoodReads:
         myDB.upsert("authors", newValueDict, controlValueDict)
         books_dict = []
         try:
-            rootxml, in_cache = get_xml_request(URL)
+            rootxml, in_cache = get_xml_request(URL, useCache=not refresh)
         except Exception as e:
             logger.error("Error fetching author books: %s" % e)
             return books_dict
@@ -528,7 +528,7 @@ class GoodReads:
                       urllib.urlencode(self.params) + '&page=' + str(loopCount)
                 resultxml = None
                 try:
-                    rootxml, in_cache = get_xml_request(URL)
+                    rootxml, in_cache = get_xml_request(URL, useCache=not refresh)
                     if rootxml is None:
                         logger.debug('Error requesting next page of results')
                     else:

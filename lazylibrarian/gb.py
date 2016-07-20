@@ -284,7 +284,7 @@ class GoogleBooks:
                 URL = set_url + '&' + urllib.urlencode(self.params)
 
                 try:
-                    jsonresults, in_cache = get_json_request(URL)
+                    jsonresults, in_cache = get_json_request(URL, useCache=not refresh)
                     if jsonresults is None:
                         number_results = 0
                     else:
