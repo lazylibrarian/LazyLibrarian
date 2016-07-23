@@ -76,7 +76,7 @@ def cache_cover(bookID, img_url):
             logger.debug("Error writing image to %s" % coverfile)
     return None
 
-def get_xml_request(my_url):
+def get_xml_request(my_url, useCache=True):
     # Original simplecache
     # opener = urllib.request.build_opener(SimpleCache.CacheHandler(".AuthorCache"),
     # SimpleCache.ThrottlingProcessor(5))
@@ -98,7 +98,8 @@ def get_xml_request(my_url):
     myhash = md5.new(my_url).hexdigest()
     valid_cache = False
     hashname = cacheLocation + os.sep + myhash + ".xml"
-    if os.path.isfile(hashname):
+
+    if useCache and os.path.isfile(hashname):
         cache_modified_time = os.stat(hashname).st_mtime
         time_now = time.time()
         if cache_modified_time < time_now - (lazylibrarian.CACHE_AGE * 24 * 60 * 60):  # expire after this many seconds
@@ -127,7 +128,7 @@ def get_xml_request(my_url):
     return root, valid_cache
 
 
-def get_json_request(my_url):
+def get_json_request(my_url, useCache=True):
     # broadly similar to get_xml_request above, but caches json results
     # hashfilename = hash url
     # if hashfilename exists, return its contents
@@ -145,7 +146,7 @@ def get_json_request(my_url):
     valid_cache = False
     hashname = cacheLocation + os.sep + myhash + ".json"
 
-    if os.path.isfile(hashname):
+    if useCache and os.path.isfile(hashname):
         cache_modified_time = os.stat(hashname).st_mtime
         time_now = time.time()
         if cache_modified_time < time_now - (lazylibrarian.CACHE_AGE * 24 * 60 * 60):  # expire after this many seconds
