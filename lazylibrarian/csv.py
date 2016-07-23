@@ -42,9 +42,50 @@ def export_CSV(search_dir=None, status="Wanted"):
         logger.info(u"CSV exported %s book%s to %s" % (count, plural(count), csvFile))
 
 
+def finditem(item, headers):
+    """
+    Try to find book matching the csv item in the database
+    Return database entry, or False if not found
+    """
+    myDB = database.DBConnection()
+    bookmatch = False
+    isbn10 = ""
+    isbn13 = ""
+    bookid = ""
+    bookname = item['Title']
+    authorname = item['Author']
+    if hasattr(authorname, 'decode'):
+        authorname = authorname.decode(lazylibrarian.SYS_ENCODING)
+    if hasattr(bookname, 'decode'):
+        bookname = bookname.decode(lazylibrarian.SYS_ENCODING)
+    if 'ISBN' in headers:
+        isbn10 = item['ISBN']
+    if 'ISBN13' in headers:
+        isbn13 = item['ISBN13']
+    if 'BookID' in headers:
+        bookid = item['BookID']
+
+    # try to find book in our database using bookid or isbn, or if that fails, name matching
+    if bookid:
+        bookmatch = myDB.action('SELECT * FROM books where BookID=%s' % (bookid)).fetchone()
+    if not bookmatch:
+        if is_valid_isbn(isbn10):
+            bookmatch = myDB.action('SELECT * FROM books where BookIsbn=%s' % (isbn10)).fetchone()
+    if not bookmatch:
+        if is_valid_isbn(isbn13):
+            bookmatch = myDB.action('SELECT * FROM books where BookIsbn=%s' % (isbn13)).fetchone()
+    if not bookmatch:
+        bookid = find_book_in_db(myDB, authorname, bookname)
+        if bookid:
+            bookmatch = myDB.action('SELECT * FROM books where BookID="%s"' % (bookid)).fetchone()
+    return bookmatch
+
+
 def import_CSV(search_dir=None):
     """ Find a csv file in the search_dir and process all the books in it,
-    adding authors to the database if not found, and marking the books as "Wanted" """
+        adding authors to the database if not found
+        and marking the books as "Wanted"
+    """
 
     if not search_dir or os.path.isdir(search_dir) is False:
         logger.warn(u"Please check Alternate Directory setting")
@@ -63,16 +104,17 @@ def import_CSV(search_dir=None):
         for row in reader:
             if reader.line_num == 1:
                 # If we are on the first line, create the headers list from the first row
-                # by taking a slice from item 1  as we don't need the very first header.
-                headers = row[1:]
+                headers = row
             else:
                 # Otherwise, the key in the content dictionary is the first item in the
                 # row and we can create the sub-dictionary by using the zip() function.
-                content[row[0]] = dict(zip(headers, row[1:]))
+                # we include the key in the dictionary as our exported csv files use
+                # bookid as the key
+                content[row[0]] = dict(zip(headers, row))
 
         # We can now get to the content by using the resulting dictionary, so to see
         # the list of lines, we can do:
-        # print content.keys() # to get a list of bookIDs
+        # print content.keys() # to get a list of keys
         # To see the list of fields available for each book
         # print headers
 
@@ -85,41 +127,29 @@ def import_CSV(search_dir=None):
         authcount = 0
         skipcount = 0
         logger.debug(u"CSV: Found %s book%s in csv file" % (len(content.keys()), plural(len(content.keys()))))
-        for bookid in content.keys():
-            authorname = content[bookid]['Author']
+        for item in content.keys():
+            authorname = content[item]['Author']
             if hasattr(authorname, 'decode'):
                 authorname = authorname.decode(lazylibrarian.SYS_ENCODING)
 
             authmatch = myDB.action('SELECT * FROM authors where AuthorName="%s"' % (authorname)).fetchone()
 
             if authmatch:
+                newauthor = False
                 logger.debug(u"CSV: Author %s found in database" % (authorname))
             else:
+                newauthor = True
                 logger.debug(u"CSV: Author %s not found, adding to database" % (authorname))
                 addAuthorToDB(authorname)
                 authcount = authcount + 1
 
-            bookmatch = 0
-            isbn10 = ""
-            isbn13 = ""
-            bookname = content[bookid]['Title']
-            if hasattr(bookname, 'decode'):
-                bookname = bookname.decode(lazylibrarian.SYS_ENCODING)
-            if 'ISBN' in headers:
-                isbn10 = content[bookid]['ISBN']
-            if 'ISBN13' in headers:
-                isbn13 = content[bookid]['ISBN13']
+            bookmatch = finditem(content[item], headers)
 
-            # try to find book in our database using isbn, or if that fails, name matching
-            if is_valid_isbn(isbn10):
-                bookmatch = myDB.action('SELECT * FROM books where Bookisbn=%s' % (isbn10)).fetchone()
-            if not bookmatch:
-                if is_valid_isbn(isbn13):
-                    bookmatch = myDB.action('SELECT * FROM books where BookIsbn=%s' % (isbn13)).fetchone()
-            if not bookmatch:
-                bookid = find_book_in_db(myDB, authorname, bookname)
-                if bookid:
-                    bookmatch = myDB.action('SELECT * FROM books where BookID="%s"' % (bookid)).fetchone()
+            # if we didn't find it, maybe author info is stale
+            if not bookmatch and not newauthor:
+                addAuthorToDB(authorname, refresh=True)
+                bookmatch = finditem(content[item], headers)
+
             if bookmatch:
                 authorname = bookmatch['AuthorName']
                 bookname = bookmatch['BookName']
