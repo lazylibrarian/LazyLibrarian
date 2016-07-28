@@ -43,7 +43,7 @@ def KAT(book=None):
 
     try:
         data = urllib2.urlopen(searchURL, timeout=90)
-    except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
+    except urllib2.HTTPError as e:
         # seems KAT returns 404 if no results, not really an error
         if not e.code == 404:
             logger.debug(searchURL)
@@ -51,6 +51,10 @@ def KAT(book=None):
         else:
             logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
         data = False
+    except (urllib2.URLError, socket.timeout) as e:
+        logger.debug(u"No results found from %s for %s, %s" % (provider, book['searchterm'], e))
+        data = False
+
 
     results = []
 
