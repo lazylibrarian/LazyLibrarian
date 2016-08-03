@@ -33,7 +33,7 @@ NOTIFY_DOWNLOAD = 2
 
 notifyStrings = {}
 notifyStrings[NOTIFY_SNATCH] = "Started Download"
-notifyStrings[NOTIFY_DOWNLOAD] = "Download Finished"
+notifyStrings[NOTIFY_DOWNLOAD] = "Added to Library"
 
 def opf_file(search_dir=None):
     # find an .opf file in this directory

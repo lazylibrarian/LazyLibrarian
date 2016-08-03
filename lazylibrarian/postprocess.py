@@ -69,12 +69,10 @@ def processAlternate(source_dir=None):
                 # try goodreads preferred authorname
                 logger.debug( "Checking GoodReads for [%s]" % authorname)
                 GR = GoodReads(authorname)
-                print "got GR"
                 try:
                     author_gr = GR.find_author_id()
                 except:
                     logger.debug( "No author id for [%s]" % authorname)
-                print "got author_gr"
                 if author_gr:
                     grauthorname = author_gr['authorname']
                     logger.debug( "GoodReads reports [%s] for [%s]" % (grauthorname, authorname))
