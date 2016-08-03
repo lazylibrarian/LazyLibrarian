@@ -122,6 +122,7 @@ IMP_ONLYISBN = 0
 IMP_SINGLEBOOK = 1
 IMP_AUTOADD = None
 IMP_CONVERT = None
+IMP_CALIBREDB = None
 GIT_PROGRAM = None
 
 BOOK_API = None
@@ -398,7 +399,7 @@ def config_read(reloaded=False):
         global FULL_PATH, PROG_DIR, DAEMON, \
             HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_PROXY, HTTP_ROOT, HTTP_LOOK, API_KEY, API_ENABLED, \
             LAUNCH_BROWSER, LOGDIR, CACHE_AGE, MATCH_RATIO, DLOAD_RATIO, PROXY_HOST, PROXY_TYPE, GIT_PROGRAM, \
-            IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, IMP_CONVERT, \
+            IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, IMP_CONVERT, IMP_CALIBREDB, \
             MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, \
             MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, CONFIGFILE, CFG, LOGLIMIT, \
             SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, SAB_CAT, \
@@ -473,6 +474,7 @@ def config_read(reloaded=False):
         IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', 'en, eng, en-US, en-GB')
         IMP_MONTHLANG = check_setting_str(CFG, 'General', 'imp_monthlang', '')
         IMP_AUTOADD = check_setting_str(CFG, 'General', 'imp_autoadd', '')
+        IMP_CALIBREDB = check_setting_str(CFG, 'General', 'imp_calibredb', '')
         IMP_ONLYISBN = check_setting_bool(CFG, 'General', 'imp_onlyisbn', 0)
         IMP_SINGLEBOOK = check_setting_bool(CFG, 'General', 'imp_singlebook', 0)
         IMP_CONVERT = check_setting_str(CFG, 'General', 'imp_convert', '')
@@ -816,6 +818,7 @@ def config_write():
     CFG.set('General', 'imp_preflang', IMP_PREFLANG)
     CFG.set('General', 'imp_monthlang', IMP_MONTHLANG)
     CFG.set('General', 'imp_autoadd', IMP_AUTOADD)
+    CFG.set('General', 'imp_calibredb', IMP_CALIBREDB)
     CFG.set('General', 'imp_convert', IMP_CONVERT.strip())
     CFG.set('General', 'git_program', GIT_PROGRAM.strip())
     CFG.set('General', 'ebook_type', EBOOK_TYPE.lower())

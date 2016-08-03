@@ -1,5 +1,6 @@
 import shutil
 import os
+import subprocess
 import threading
 import platform
 import hashlib
@@ -13,7 +14,8 @@ from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unacc
 from lazylibrarian.common import scheduleJob, book_file, opf_file
 from lazylibrarian.notifiers import notify_download
 from lazylibrarian.importer import addAuthorToDB
-from lazylibrarian.librarysync import get_book_info, find_book_in_db
+from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
+from lazylibrarian.gr import GoodReads
 
 def processAlternate(source_dir=None):
     # import a book from an alternate directory
@@ -63,6 +65,22 @@ def processAlternate(source_dir=None):
 
             authmatch = myDB.action('SELECT * FROM authors where AuthorName="%s"' % (authorname)).fetchone()
 
+            if not authmatch:
+                # try goodreads preferred authorname
+                logger.debug( "Checking GoodReads for [%s]" % authorname)
+                GR = GoodReads(authorname)
+                print "got GR"
+                try:
+                    author_gr = GR.find_author_id()
+                except:
+                    logger.debug( "No author id for [%s]" % authorname)
+                print "got author_gr"
+                if author_gr:
+                    grauthorname = author_gr['authorname']
+                    logger.debug( "GoodReads reports [%s] for [%s]" % (grauthorname, authorname))
+                    authorname = grauthorname
+                    authmatch = myDB.action('SELECT * FROM authors where AuthorName="%s"' % (authorname)).fetchone()
+
             if authmatch:
                 logger.debug("ALT: Author %s found in database" % (authorname))
             else:
@@ -103,15 +121,16 @@ def processDir(reset=False):
         logger.error('Could not access [%s] directory [%s]' % (processpath, why.strerror))
         return
 
+    if len(downloads) == 0:
+        logger.info('No downloads are found. Nothing to process.')
+        return
+
     myDB = database.DBConnection()
     snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
 
     if len(snatched) == 0:
         logger.info('Nothing marked as snatched.')
         scheduleJob(action='Stop', target='processDir')
-        return
-    elif len(downloads) == 0:
-        logger.info('No downloads are found. Nothing to process.')
         return
     else:
         logger.info("Checking %s download%s for %s snatched file%s" %
@@ -242,7 +261,10 @@ def processDir(reset=False):
                 myDB.upsert("wanted", newValueDict, controlValueDict)
 
                 if bookname is not None:  # it's a book, if None it's a magazine
-                    processExtras(myDB, dest_path, global_name, data)
+                    if len(lazylibrarian.IMP_CALIBREDB):
+                        logger.debug('Calibre should have created the extras for us')
+                    else:
+                        processExtras(myDB, dest_path, global_name, data)
                 else:
                     # update mags
                     controlValueDict = {"Title": book['BookID']}
@@ -354,10 +376,16 @@ def import_book(pp_path=None, bookID=None):
 
         if processBook:
             # update nzbs
-            controlValueDict = {"BookID": bookID}
-            newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
-            myDB.upsert("wanted", newValueDict, controlValueDict)
-            processExtras(myDB, dest_path, global_name, data)
+            was_snatched = len(myDB.select('SELECT BookID FROM wanted WHERE BookID="%s"' % bookID))
+            if was_snatched:
+                controlValueDict = {"BookID": bookID}
+                newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
+                myDB.upsert("wanted", newValueDict, controlValueDict)
+            if bookname:
+                if len(lazylibrarian.IMP_CALIBREDB):
+                    logger.debug('Calibre should have created the extras for us')
+                else:
+                    processExtras(myDB, dest_path, global_name, data)
             logger.info('Successfully processed: %s' % global_name)
             notify_download("%s at %s" % (global_name, now()))
             return True
@@ -373,7 +401,7 @@ def import_book(pp_path=None, bookID=None):
                 os.rename(pp_path, pp_path + '.fail')
             except:
                 logger.debug("Unable to rename %s" % pp_path)
-            return False
+    return False
 
 
 def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
@@ -440,41 +468,64 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         logger.warn('Failed to locate a book/magazine in %s, leaving for manual processing' % pp_path)
         return False
 
-    if not os.path.exists(dest_path):
-        logger.debug('%s does not exist, so it\'s safe to create it' % dest_path)
-    elif not os.path.isdir(dest_path):
-        logger.debug('%s exists but is not a directory, deleting it' % dest_path)
+    # Do we want calibre to import the book for us
+    if bookname and len(lazylibrarian.IMP_CALIBREDB):
         try:
-            os.remove(dest_path)
-        except OSError as why:
-            logger.debug('Failed to delete %s, %s' % (dest_path, why.strerror))
-            return False
-
-    if not os.path.exists(dest_path):
-        try:
-            os.makedirs(dest_path)
-        except OSError as why:
-            logger.debug('Failed to create directory %s, %s' % (dest_path, why.strerror))
-            return False
-
-    # ok, we've got a target directory, try to copy only the files we want, renaming them on the fly.
-    # After the copy completes, delete source files if DESTINATION_COPY not set,
-    # but don't delete source files if copy failed or if in root of download dir
-    for fname in os.listdir(pp_path):
-        if fname.lower().endswith(".jpg") or fname.lower().endswith(".opf") or \
-                is_valid_booktype(fname, booktype=booktype):
-            logger.debug('Copying %s to directory %s' % (fname, dest_path))
-            try:
-                shutil.copyfile(os.path.join(pp_path, fname), os.path.join(
-                    dest_path, global_name + os.path.splitext(fname)[1]))
-            except Exception as why:
-                logger.debug("Failed to copy file %s to %s, %s" % (
-                    fname, dest_path, str(why)))
+            logger.debug('Importing %s, %s into calibre library' % (authorname, bookname))
+            params = [lazylibrarian.IMP_CALIBREDB, 'add', '-1', '--with-library', lazylibrarian.DESTINATION_DIR, pp_path]
+            logger.debug(str(params))
+            res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+            if res:
+                logger.debug('%s reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
+            calibre_dir = os.path.join(lazylibrarian.DESTINATION_DIR, unaccented_str(authorname), '')
+            imported = LibraryScan(calibre_dir)  # rescan authors directory so we get the new book in our database
+            if not imported and not 'already exist' in res:
                 return False
-        else:
-            logger.debug('Ignoring unwanted file: %s' % fname)
+        except subprocess.CalledProcessError as e:
+            logger.debug(params)
+            logger.debug('calibredb import failed: %s' % e.output)
+            return False
+        except OSError as e:
+            logger.debug('calibredb failed, %s' % e.strerror)
+            return False
 
-    # copied the files we want, now delete source files if not in download root dir
+    else:
+        # we are copying the files ourselves
+        if not os.path.exists(dest_path):
+            logger.debug('%s does not exist, so it\'s safe to create it' % dest_path)
+        elif not os.path.isdir(dest_path):
+            logger.debug('%s exists but is not a directory, deleting it' % dest_path)
+            try:
+                os.remove(dest_path)
+            except OSError as why:
+                logger.debug('Failed to delete %s, %s' % (dest_path, why.strerror))
+                return False
+
+        if not os.path.exists(dest_path):
+            try:
+                os.makedirs(dest_path)
+            except OSError as why:
+                logger.debug('Failed to create directory %s, %s' % (dest_path, why.strerror))
+                return False
+
+        # ok, we've got a target directory, try to copy only the files we want, renaming them on the fly.
+        # After the copy completes, delete source files if DESTINATION_COPY not set,
+        # but don't delete source files if copy failed or if in root of download dir
+        for fname in os.listdir(pp_path):
+            if fname.lower().endswith(".jpg") or fname.lower().endswith(".opf") or \
+                    is_valid_booktype(fname, booktype=booktype):
+                logger.debug('Copying %s to directory %s' % (fname, dest_path))
+                try:
+                    shutil.copyfile(os.path.join(pp_path, fname), os.path.join(
+                        dest_path, global_name + os.path.splitext(fname)[1]))
+                except Exception as why:
+                    logger.debug("Failed to copy file %s to %s, %s" % (
+                        fname, dest_path, str(why)))
+                    return False
+            else:
+                logger.debug('Ignoring unwanted file: %s' % fname)
+
+    # calibre or ll copied the files we want, now delete source files if not in download root dir
     if not lazylibrarian.DESTINATION_COPY:
         if pp_path != lazylibrarian.DOWNLOAD_DIR:
             try:
