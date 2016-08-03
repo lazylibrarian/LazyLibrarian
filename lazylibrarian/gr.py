@@ -2,6 +2,7 @@ import urllib
 import urllib2
 import re
 import time
+import unicodedata
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage
@@ -148,6 +149,12 @@ class GoodReads:
             author = author.replace(' ', '.')
             author = author.replace('..', '.')
         URL = 'http://www.goodreads.com/api/author_url/' + urllib.quote(author) + '?' + urllib.urlencode(self.params)
+
+        # googlebooks gives us author names with long form unicode characters
+        if isinstance(author, str):
+            author = author.decode('utf-8')  # make unicode
+        author = unicodedata.normalize('NFC', author)  # normalize to short form
+
         logger.debug("Searching for author with name: %s" % author)
 
         authorlist = []
