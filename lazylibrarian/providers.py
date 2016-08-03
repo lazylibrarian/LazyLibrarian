@@ -43,27 +43,20 @@ def KAT(book=None):
 
     try:
         data = urllib2.urlopen(searchURL, timeout=90)
-    except urllib2.HTTPError as e:
+    except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
         # seems KAT returns 404 if no results, not really an error
-        if not e.code == 404:
+        if hasattr(e, 'code') and e.code == 404:
+            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+        else:
             logger.debug(searchURL)
             logger.debug('Error fetching data from %s: %s' % (provider, e))
-        else:
-            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
-        data = False
-    except (urllib2.URLError, socket.timeout) as e:
-        logger.debug(u"No results found from %s for %s, %s" % (provider, book['searchterm'], e))
-        data = False
-
+            data = False
 
     results = []
 
     if data:
-
         logger.debug(u'Parsing results from <a href="%s">KAT</a>' % searchURL)
-
         d = feedparser.parse(data)
-
         if not len(d.entries):
             pass
 
@@ -72,7 +65,6 @@ def KAT(book=None):
                          plural(len(d.entries)), provider, book['searchterm']))
             for item in d.entries:
                 try:
-                    # rightformat = True
                     title = item['title']
 
                     seeders = item['torrent_seeds']
@@ -385,7 +377,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
                 data = None
 
         except Exception as e:
-            logger.error("Error 403 opening url %s, %s" % (URL, e))
+            logger.error("Error opening url %s, %s" % (URL, e))
             data = None
 
         if data:
