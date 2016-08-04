@@ -119,10 +119,6 @@ def processDir(reset=False):
         logger.error('Could not access [%s] directory [%s]' % (processpath, why.strerror))
         return
 
-    if len(downloads) == 0:
-        logger.info('No downloads are found. Nothing to process.')
-        return
-
     myDB = database.DBConnection()
     snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
 
@@ -131,6 +127,10 @@ def processDir(reset=False):
         scheduleJob(action='Stop', target='processDir')
         return
     else:
+        if len(downloads) == 0:
+            logger.info('No downloads are found. Nothing to process.')
+            return
+
         logger.info("Checking %s download%s for %s snatched file%s" %
             (len(downloads), plural(len(downloads)), len(snatched), plural(len(snatched))))
         ppcount = 0
