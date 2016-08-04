@@ -127,7 +127,7 @@ def find_book_in_db(myDB, author, book):
     else:
         # No exact match
         # Try a more complex fuzzy match against each book in the db by this author
-        # Using hard-coded ratios for now, ratio high (>90), partial_ratio lower (>65)
+        # Using hard-coded ratios for now, ratio high (>90), partial_ratio lower (>75)
         # These are results that work well on my library, minimal false matches and no misses
         # on books that should be matched
         # Maybe make ratios configurable in config.ini later
@@ -175,7 +175,7 @@ def find_book_in_db(myDB, author, book):
                 "Fuzz match   ratio [%d] [%s] [%s]" %
                 (best_ratio, book, ratio_name))
             return ratio_id
-        if best_partial > 90:
+        if best_partial > 75:
             logger.debug(
                 "Fuzz match partial [%d] [%s] [%s]" %
                 (best_partial, book, partial_name))
