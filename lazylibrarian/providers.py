@@ -42,7 +42,11 @@ def KAT(book=None):
     searchURL = providerurl + "/?%s" % urllib.urlencode(params)
 
     try:
-        data = urllib2.urlopen(searchURL, timeout=90)
+        request = urllib2.Request(searchURL)
+        if lazylibrarian.PROXY_HOST:
+            request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
+        request.add_header('User-Agent', USER_AGENT)
+        data = urllib2.urlopen(request, timeout=90)
     except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
         # seems KAT returns 404 if no results, not really an error
         if hasattr(e, 'code') and e.code == 404:
