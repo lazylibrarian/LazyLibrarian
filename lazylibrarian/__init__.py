@@ -174,6 +174,8 @@ DELUGE_LABEL = None
 
 KAT = 0
 KAT_HOST = None
+TPB = 0
+TPB_HOST = None
 
 NZB_DOWNLOADER_SABNZBD = 0
 NZB_DOWNLOADER_NZBGET = 0
@@ -407,7 +409,7 @@ def config_read(reloaded=False):
             ALTERNATE_DIR, GR_API, GB_API, BOOK_API, MAGICK, \
             NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, \
             NZBGET_PORT, NZB_DOWNLOADER_NZBGET, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
-            NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, EBOOK_TYPE, MAG_TYPE, KAT, KAT_HOST, \
+            NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, EBOOK_TYPE, MAG_TYPE, KAT, KAT_HOST, TPB, TPB_HOST,\
             NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, REJECT_WORDS, REJECT_MAXSIZE, \
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, SEARCHRSS_INTERVAL, \
             EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, \
@@ -710,7 +712,9 @@ def config_read(reloaded=False):
         DELUGE_LABEL = check_setting_str(CFG, 'DELUGE', 'deluge_label', '')
 
         KAT = check_setting_bool(CFG, 'KAT', 'kat', 0)
-        KAT_HOST = check_setting_str(CFG, 'KAT', 'kat_host', 'kat.cr')
+        KAT_HOST = check_setting_str(CFG, 'KAT', 'kat_host', 'kickass.cd')
+        TPB = check_setting_bool(CFG, 'TPB', 'tpb', 0)
+        TPB_HOST = check_setting_str(CFG, 'TPB', 'tpb_host', 'https://piratebays.co')
 
         NEWZBIN = check_setting_bool(CFG, 'Newzbin', 'newzbin', 0)
         NEWZBIN_UID = check_setting_str(CFG, 'Newzbin', 'newzbin_uid', '')
@@ -970,6 +974,10 @@ def config_write():
     CFG.set('KAT', 'kat', KAT)
     CFG.set('KAT', 'kat_host', KAT_HOST)
 #
+    check_section('TPB')
+    CFG.set('TPB', 'tpb', TPB)
+    CFG.set('TPB', 'tpb_host', TPB_HOST)
+#
     check_section('SearchScan')
     CFG.set('SearchScan', 'search_interval', SEARCH_INTERVAL)
     CFG.set('SearchScan', 'scan_interval', SCAN_INTERVAL)
@@ -1135,6 +1143,8 @@ def USE_RSS():
 
 def USE_TOR():
     if bool(KAT):
+        return True
+    if bool(TPB):
         return True
     return False
 

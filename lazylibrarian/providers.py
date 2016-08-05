@@ -8,6 +8,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.common import USER_AGENT
 from lazylibrarian.formatter import age, today, plural, cleanName
+from lazylibrarian.cache import fetchURL
 
 # new libraries to support torrents
 import lib.feedparser as feedparser
@@ -23,7 +24,253 @@ def url_fix(s, charset='utf-8'):
     return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
 
 
+def TPB(book=None):
+
+    provider = "TPB"
+    host = lazylibrarian.TPB_HOST
+    if not str(host)[:4] == "http":
+        host = 'http://' + host
+
+    providerurl = url_fix(host + "/s/?q=" + book['searchterm'])
+    minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
+
+    params = {
+        "category": "601",
+        "page": "0",
+        "orderby": "99"
+    }
+    searchURL = providerurl + "&%s" % urllib.urlencode(params)
+
+    result, success = fetchURL(searchURL)
+    if not success:
+        # seems KAT returns 404 if no results, not really an error
+        if '404' in result:
+            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+            result = False
+        else:
+            logger.debug(searchURL)
+            logger.debug('Error fetching data from %s: %s' % (provider, result))
+            result = False
+
+    results = []
+
+    if result:
+        logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
+        lines = result.split('\n')
+        finish = len(lines)
+        current = 0
+        rows = []
+        row = []
+
+        # pick all the table rows out of the results page
+        while current < finish:
+            line = lines[current]
+            if '<tr>' in line:
+                row.append(current)
+                current += 1
+                line = lines[current]
+            if '</tr>' in line:
+                row.append(current)
+                if len(row) == 2:
+                    rows.append(row)
+                row = []
+            current += 1
+
+        if len(rows) > 0:
+            logger.debug(u"Found %i result%s from %s for %s, checking seeders" % (len(rows),
+                         plural(len(rows)), provider, book['searchterm']))
+            try:
+                rownum = 0
+                while rownum < len(rows):
+                    cur = rows[rownum][0]
+                    fin = rows[rownum][1]
+
+                    while cur < fin:
+                        line = lines[cur]
+                        if 'class="detLink"' in line:
+                            try:
+                                magnet = line.split('href="')[1].split('"')[0]
+                            except IndexError:
+                                magnet = None
+                            try:
+                                title = line.split('</a>')[0].split('>')[-1]
+                            except IndexError:
+                                title = None
+                        elif 'class="detDesc"' in line:
+                            #try:
+                            #    age = line.split('class="detDesc"')[1].split('Uploaded ')[1].split(',')[0].decode('ascii','ignore')
+                		    #   age = str(age[:5]+'-'+age[5:])
+                            #except IndexError:
+                            #    age = None
+                            try:
+                                size = float(line.split('class="detDesc"')[1].split('Size ')[1].split('KiB')[0].decode('ascii', 'ignore'))
+                            except IndexError:
+                                size = None
+                        cur += 1
+
+                    try:
+                        seeders = lines[fin-2].split('</td>')[0].split('>')[1]
+                    except IndexError:
+                        seeders = 0
+                    #try:
+                    #    leechers = lines[fin-1].split('</td>')[0].split('>')[1]
+                    #except IndexError:
+                    #    leechers = 0
+
+                    url = '%s/%s' % (host, magnet)
+
+                    result, success = fetchURL(url)
+                    if not success:
+                        logger.debug('Error fetching url %s, %s' % (url, result))
+                    else:
+                        links = result.split('\n')
+
+                        magnet = None
+                        for link in links:
+                            if 'href="magnet' in link:
+                                magnet = 'magnet' + link.split('href="magnet')[1].split('"')[0]
+
+                        if not magnet or not title:
+                            logger.debug('No magnet or title found')
+                        elif  minimumseeders < seeders:
+                            results.append({
+                                'bookid': book['bookid'],
+                                'tor_prov': provider,
+                                'tor_title': title,
+                                'tor_url': magnet,
+                                'tor_size': size,
+                            })
+                            logger.debug('Found %s. Size: %s' % (title, size))
+                        else :
+                            logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
+                    rownum += 1
+
+            except Exception as e:
+                logger.error(u"An unknown error occurred in the %s parser: %s" % (provider, e))
+
+    logger.debug(u"Found %i result%s from %s for %s" % (len(results), plural(len(results)), provider, book['searchterm']))
+    return results
+
 def KAT(book=None):
+
+    provider = "KAT"
+    host = lazylibrarian.KAT_HOST
+    if not str(host)[:4] == "http":
+        host = 'http://' + host
+
+    providerurl = url_fix(host + "/usearch/" + book['searchterm'])
+    minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
+
+    params = {
+        "category": "books",
+        "field": "seeders",
+        "sorder": "desc"
+    }
+    searchURL = providerurl + "/?%s" % urllib.urlencode(params)
+
+    result, success = fetchURL(searchURL)
+    if not success:
+        # seems KAT returns 404 if no results, not really an error
+        if '404' in result:
+            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+            result = False
+        else:
+            logger.debug(searchURL)
+            logger.debug('Error fetching data from %s: %s' % (provider, result))
+            result = False
+
+    results = []
+
+    if result:
+        logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
+        lines = result.split('\n')
+        finish = len(lines)
+        current = 0
+        rows = []
+        row = []
+
+        # pick all the table rows out of the results page
+        while current < finish:
+            line = lines[current]
+            if '<tr ' in line:
+                row.append(current)
+            if '</tr>' in line:
+                row.append(current)
+                if len(row) == 2:
+                    rows.append(row)
+                row = []
+            current += 1
+
+        # first row is the column headers
+        if len(rows) < 2:
+            pass
+        else:
+            logger.debug(u"Found %i result%s from %s for %s, checking seeders" % (len(rows)-1,
+                         plural(len(rows)-1), provider, book['searchterm']))
+            try:
+                rownum = 1
+                while rownum < len(rows):
+                    cur = rows[rownum][0]
+                    fin = rows[rownum][1]
+
+                    while cur < fin:
+                        line = lines[cur]
+                        if 'title="Torrent magnet link"' in line:
+                            try:
+                                magnet = line.split('href="')[1].split('"')[0]
+                            except IndexError:
+                                magnet = None
+                        elif 'title="Download torrent file"' in line:
+                            try:
+                                torrent = line.split('href="')[1].split('?')[0]
+                                title = line.split('?title=')[1].split(']')[1].split('"')[0]
+                            except IndexError:
+                                torrent = None
+                                title = None
+                        cur += 1
+                    try:
+                        size = lines[fin-4].split('</td>')[0].split('>')[1].split('&')[0].strip()
+                    except IndexError:
+                        size = 0
+                    #try:
+                    #        age = lines[fin-3].split('</td>')[0].split('>')[1].replace('&nbsp;','-').strip()
+                    #except IndexError:
+                    #    age = 0
+                    try:
+                        seeders = lines[fin-2].split('</td>')[0].split('>')[1]
+                    except IndexError:
+                        seeders = 0
+                    #try:
+                    #    leechers = lines[fin-1].split('</td>')[0].split('>')[1]
+                    #except IndexError:
+                    #    leechers = 0
+
+                    url = magnet  # prefer magnet over torrent
+                    if not url:
+                        url = torrent
+
+                    if not url or not title:
+                        logger.debug('No url or title found')
+                    elif  minimumseeders < seeders:
+                        results.append({
+                            'bookid': book['bookid'],
+                            'tor_prov': provider,
+                            'tor_title': title,
+                            'tor_url': url,
+                            'tor_size': size,
+                        })
+                        logger.debug('Found %s. Size: %s' % (title, size))
+                    else :
+                        logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
+                    rownum += 1
+
+            except Exception as e:
+                logger.error(u"An unknown error occurred in the %s parser: %s" % (provider, e))
+
+    logger.debug(u"Found %i result%s from %s for %s" % (len(results), plural(len(results)), provider, book['searchterm']))
+    return results
+
+def oldKAT(book=None):
 
     provider = "KAT"
     host = lazylibrarian.KAT_HOST
@@ -249,6 +496,10 @@ def IterateOverTorrentSites(book=None, searchType=None):
         providers += 1
         logger.debug('[IterateOverTorrentSites] - KAT')
         resultslist += KAT(book)
+    if (lazylibrarian.TPB):
+        providers += 1
+        logger.debug('[IterateOverTorrentSites] - TPB')
+        resultslist += TPB(book)
 
     return resultslist, providers
 

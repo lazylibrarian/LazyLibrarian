@@ -661,6 +661,8 @@ class GoogleBooks:
         except KeyError:
             bookpub = None
 
+        series = None
+        seriesNum = None
         try:
             booksub = jsonresults['volumeInfo']['subtitle']
             try:

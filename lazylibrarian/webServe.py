@@ -114,7 +114,7 @@ class WebInterface(object):
                      nzb_blackholedir='', alternate_dir='', torrent_dir='', numberofseeders=0,
                      tor_downloader_blackhole=0, tor_downloader_utorrent=0, tor_downloader_qbittorrent=0,
                      nzbget_host='', nzbget_port=0, nzbget_user='', nzbget_pass='', nzbget_cat='', nzbget_priority=0,
-                     newzbin=0, newzbin_uid='', newzbin_pass='', kat=0, kat_host='',
+                     newzbin=0, newzbin_uid='', newzbin_pass='', kat=0, kat_host='', tpb=0, tpb_host='',
                      ebook_type='', mag_type='', reject_words='', reject_maxsize=0,
                      book_api='', gr_api='', gb_api='',
                      versioncheck_interval='', search_interval='', scan_interval='', searchrss_interval=20,
@@ -238,6 +238,8 @@ class WebInterface(object):
 
         lazylibrarian.KAT = bool(kat)
         lazylibrarian.KAT_HOST = kat_host
+        lazylibrarian.TPB = bool(tpb)
+        lazylibrarian.TPB_HOST = tpb_host
 
         lazylibrarian.EBOOK_TYPE = ebook_type
         lazylibrarian.MAG_TYPE = mag_type
