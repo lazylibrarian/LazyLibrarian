@@ -726,6 +726,21 @@
                                                 <input type="text" placeholder="KAT Host" id="kat_host" name="kat_host" value="${lazylibrarian.KAT_HOST}" class="form-control">
                                             </div>
                                         </div>
+                                        <%
+                                        if lazylibrarian.TPB == True:
+                                            checked = 'checked="checked"'
+                                        else:
+                                            checked = ''
+                                        %>
+                                        <div class="form-group">
+                                            <label for="tpb_host" class="sr-only">TPB Host</label>
+                                            <div class="input-group">
+                                                <span class="input-group-addon">
+                                                    <input type="checkbox" id="tpb" name="tpb" value="1" ${checked} />
+                                                </span>
+                                                <input type="text" placeholder="TPB Host" id="tpb_host" name="tpb_host" value="${lazylibrarian.TPB_HOST}" class="form-control">
+                                            </div>
+                                        </div>
                                     </fieldset>
                                 </div>
                             </div>
