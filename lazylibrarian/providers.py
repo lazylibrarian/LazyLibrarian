@@ -103,9 +103,13 @@ def TPB(book=None):
                             #except IndexError:
                             #    age = None
                             try:
-                                size = float(line.split('class="detDesc"')[1].split('Size ')[1].split('KiB')[0].decode('ascii', 'ignore'))
+                                size = line.split('class="detDesc"')[1].split('Size ')[1].split('KiB')[0].decode('ascii', 'ignore')
+                                try:
+                                    size = float(size) * 1024
+                                except ValueError:
+                                    size = 0
                             except IndexError:
-                                size = None
+                                size = 0
                         cur += 1
 
                     try:
@@ -230,6 +234,10 @@ def KAT(book=None):
                         cur += 1
                     try:
                         size = lines[fin-4].split('</td>')[0].split('>')[1].split('&')[0].strip()
+                        try:
+                            size = float(size) * 1024
+                        except ValueError:
+                            size = 0
                     except IndexError:
                         size = 0
                     #try:
