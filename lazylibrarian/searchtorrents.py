@@ -133,7 +133,8 @@ def processResultList(resultlist, book, searchtype):
 
     matches = []
     for tor in resultlist:
-        torTitle = unaccented_str(replace_all(str(tor['tor_title']), dictrepl)).strip()
+        torTitle = unaccented_str(tor['tor_title'])
+        torTitle = replace_all(torTitle, dictrepl).strip()
         torTitle = re.sub(r"\s\s+", " ", torTitle)  # remove extra whitespace
 
         torAuthor_match = fuzz.token_set_ratio(author, torTitle)

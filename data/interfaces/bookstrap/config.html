@@ -741,6 +741,36 @@
                                                 <input type="text" placeholder="TPB Host" id="tpb_host" name="tpb_host" value="${lazylibrarian.TPB_HOST}" class="form-control">
                                             </div>
                                         </div>
+                                        <%
+                                        if lazylibrarian.ZOO == True:
+                                            checked = 'checked="checked"'
+                                        else:
+                                            checked = ''
+                                        %>
+                                        <div class="form-group">
+                                            <label for="zoo_host" class="sr-only">zooqle host</label>
+                                            <div class="input-group">
+                                                <span class="input-group-addon">
+                                                    <input type="checkbox" id="zoo" name="zoo" value="1" ${checked} />
+                                                </span>
+                                                <input type="text" placeholder="zooqle host" id="zoo_host" name="zoo_host" value="${lazylibrarian.ZOO_HOST}" class="form-control">
+                                            </div>
+                                        </div>
+                                        <%
+                                        if lazylibrarian.TDL == True:
+                                            checked = 'checked="checked"'
+                                        else:
+                                            checked = ''
+                                        %>
+                                        <div class="form-group">
+                                            <label for="tdl_host" class="sr-only">torrentdownload host</label>
+                                            <div class="input-group">
+                                                <span class="input-group-addon">
+                                                    <input type="checkbox" id="tdl" name="tdl" value="1" ${checked} />
+                                                </span>
+                                                <input type="text" placeholder="torrentdownload host" id="tdl_host" name="tdl_host" value="${lazylibrarian.TDL_HOST}" class="form-control">
+                                            </div>
+                                        </div>
                                     </fieldset>
                                 </div>
                             </div>

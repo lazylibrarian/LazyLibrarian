@@ -572,7 +572,7 @@
                     else:
                         checked = ''
                     %>
-            		<input type="checkbox" name="kat" value=1 ${checked} style="margin-bottom:4px;" /> KAT
+            		<input type="checkbox" name="kat" value=1 ${checked} style="margin-bottom:4px;" /> kickass
  	    		    <input type="text" placeholder="Enter URL Here" name="kat_host" value="${lazylibrarian.KAT_HOST}" size="26">
  	  		        <br>
  	  		        <%
@@ -581,8 +581,26 @@
                     else:
                         checked = ''
                     %>
-            		<input type="checkbox" name="tpb" value=1 ${checked} style="margin-bottom:4px;" /> TPB
+            		<input type="checkbox" name="tpb" value=1 ${checked} style="margin-bottom:4px;" /> piratebay
  	    		    <input type="text" placeholder="Enter URL Here" name="tpb_host" value="${lazylibrarian.TPB_HOST}" size="26">
+ 	  		        <br>
+ 	  		        <%
+                    if lazylibrarian.ZOO == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+            		<input type="checkbox" name="zoo" value=1 ${checked} style="margin-bottom:4px;" /> zooqle
+ 	    		    <input type="text" placeholder="Enter URL Here" name="zoo_host" value="${lazylibrarian.ZOO_HOST}" size="26">
+ 	  		        <br>
+ 	  		        <%
+                    if lazylibrarian.TDL == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+            		<input type="checkbox" name="tdl" value=1 ${checked} style="margin-bottom:4px;" /> torrentdownload
+ 	    		    <input type="text" placeholder="Enter URL Here" name="tdl_host" value="${lazylibrarian.TDL_HOST}" size="26">
  	    		</td>
             </tr>
         </table>
