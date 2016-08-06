@@ -6,7 +6,6 @@ from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
 from lazylibrarian.formatter import plural
 from lazylibrarian.cache import fetchURL
-
 import lib.feedparser as feedparser
 import urlparse
 
@@ -122,7 +121,8 @@ def TPB(book=None):
                     #    leechers = lines[fin-1].split('</td>')[0].split('>')[1]
                     #except IndexError:
                     #    leechers = 0
-                    if magnet:
+                    if magnet and minimumseeders < seeders:
+                        # no point in asking for magnet link if not enough seeders
                         magurl = '%s/%s' % (host, magnet)
                         result, success = fetchURL(magurl)
                         if not success:
@@ -139,17 +139,18 @@ def TPB(book=None):
                                     except IndexError:
                                         magnet = None
 
-                    if not magnet or not title:
-                        logger.debug('No magnet or title found')
-                    elif  minimumseeders < seeders:
-                        results.append({
-                            'bookid': book['bookid'],
-                            'tor_prov': provider,
-                            'tor_title': title,
-                            'tor_url': magnet,
-                            'tor_size': size,
-                        })
-                        logger.debug('Found %s. Size: %s' % (title, size))
+                    if  minimumseeders < seeders:
+                        if not magnet or not title:
+                            logger.debug('No magnet or title found')
+                        else:
+                            results.append({
+                                'bookid': book['bookid'],
+                                'tor_prov': provider,
+                                'tor_title': title,
+                                'tor_url': magnet,
+                                'tor_size': size,
+                            })
+                            logger.debug('Found %s. Size: %s' % (title, size))
                     else :
                         logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
                     rownum += 1
@@ -463,8 +464,10 @@ def TDL(book=None):
                     seeders = item['seeders']
                     link = item['link']
                     size = int(item['size'])
+                    url = None
 
-                    if link:
+                    if link and minimumseeders < seeders:
+                        # no point requesting the magnet link if not enough seeders
                         request = urllib2.Request(link)
                         if lazylibrarian.PROXY_HOST:
                             request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
@@ -473,7 +476,6 @@ def TDL(book=None):
                         conn = urllib2.urlopen(request, timeout=90)
                         result = conn.read()
                         lines = result.split('\n')
-                        url = None
                         for line in lines:
                             if 'href="magnet' in line:
                                 try:
@@ -482,18 +484,18 @@ def TDL(book=None):
                                 except IndexError:
                                     url = None
 
-                    if not url or not title:
-                        logger.debug('No url or title found')
-                    elif minimumseeders < int(seeders):
-                        results.append({
-                            'bookid': book['bookid'],
-                            'tor_prov': provider,
-                            'tor_title': title,
-                            'tor_url': url,
-                            'tor_size': str(size),
-                        })
-
-                        logger.debug('Found %s. Size: %s' % (title, size))
+                    if minimumseeders < int(seeders):
+                        if not url or not title:
+                            logger.debug('No url or title found')
+                        else:
+                            results.append({
+                                'bookid': book['bookid'],
+                                'tor_prov': provider,
+                                'tor_title': title,
+                                'tor_url': url,
+                                'tor_size': str(size),
+                            })
+                            logger.debug('Found %s. Size: %s' % (title, size))
                     else:
                         logger.debug('Found %s but %s seeder%s' % (title, int(seeders), plural(int(seeders))))
 
