@@ -104,9 +104,16 @@ def TPB(book=None):
                             #except IndexError:
                             #    age = None
                             try:
-                                size = line.split('class="detDesc"')[1].split('Size ')[1].split('KiB')[0].decode('ascii', 'ignore')
+                                size = line.split('class="detDesc"')[1].split('Size ')[1].split('iB')[0].decode('ascii', 'ignore')
                                 try:
-                                    size = float(size) * 1024
+                                    mult = 1
+                                    if 'K' in size:
+                                        size = size.split('K')[0]
+                                        mult = 1024
+                                    if 'M' in size:
+                                        size = size.split('M')[0]
+                                        mult = 1024*1024
+                                    size = int(float(size) * mult)
                                 except ValueError:
                                     size = 0
                             except IndexError:
@@ -148,7 +155,7 @@ def TPB(book=None):
                                 'tor_prov': provider,
                                 'tor_title': title,
                                 'tor_url': magnet,
-                                'tor_size': size,
+                                'tor_size': str(size),
                             })
                             logger.debug('Found %s. Size: %s' % (title, size))
                     else :
@@ -223,7 +230,7 @@ def KAT(book=None):
                     try:
                         size = lines[fin-4].split('</td>')[0].split('>')[1].split('&')[0].strip()
                         try:
-                            size = float(size) * 1024
+                            size = int(float(size) * 1024)
                         except ValueError:
                             size = 0
                     except IndexError:
@@ -253,7 +260,7 @@ def KAT(book=None):
                             'tor_prov': provider,
                             'tor_title': title,
                             'tor_url': url,
-                            'tor_size': size,
+                            'tor_size': str(size),
                         })
                         logger.debug('Found %s. Size: %s' % (title, size))
                     else :
