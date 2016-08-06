@@ -1,3 +1,15 @@
+import urllib
+import urllib2
+import socket
+import lazylibrarian
+from lazylibrarian import logger
+from lazylibrarian.common import USER_AGENT
+from lazylibrarian.formatter import plural
+from lazylibrarian.cache import fetchURL
+
+import lib.feedparser as feedparser
+import urlparse
+
 def findrows(lines, startrow, endrow):
     """ given an array of lines from a webpage, find the data table
         and return an array of start_line,end_line for each row in the table
@@ -22,18 +34,6 @@ def findrows(lines, startrow, endrow):
             row = []
         current += 1
     return rows
-
-import urllib
-import urllib2
-import socket
-import lazylibrarian
-from lazylibrarian import logger, database
-from lazylibrarian.common import USER_AGENT
-from lazylibrarian.formatter import age, today, plural, cleanName
-from lazylibrarian.cache import fetchURL
-
-import lib.feedparser as feedparser
-import urlparse
 
 def url_fix(s, charset='utf-8'):
     if isinstance(s, unicode):
