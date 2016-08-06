@@ -1,36 +1,3 @@
-## LazyLibrarian
-
-### 2014 ###
-Jan,20 Exciting news update. TheGuardian has gracefully agreed to review the code base with a view to bringing in his improvements into the new UI. All going well this branch will hopefully include
-- Twitter notifications
-- magasine search
-- improved configurations
-- optimised UI workflow to the Herman-Rodgers UI
-
-And a shout out to nncrypted for bring forth changes and enhancement patches also.
-
-Thanks folks, because I was going cross-eyed trying to bring in the huge volume of changes you both have added to the original branch over a new UI.
-
-
-To all other contributors - Patches are gratefully received espically when they can be auto merged :).
-
-Thanks - DobyTang
-
-
-Drive for this year is unit test expansion
-New Features
-Stability
-
-
-##### Dec 2013 #####
-Back after a hectic 6 months, apologies for the late update of branch back to master.
-Thats now complete.
-
-Notice a few forks from the branches, happy to facilitate pull requests, i've alot more time over the next two weeks.
-
-issues list is open again for additions
-
-
 #### LazyLibrarian
 LazyLibrarian is a program to follow authors and grab metadata for all your digital reading needs. 
 It uses Goodreads.com (for author info and book info) websites as a source. License: GNU GPL v3 
@@ -61,8 +28,28 @@ Linux / Mac OS X:
 * Fill in all the config fields
 =======
 * Run "python LazyLibrarian.py -daemon" to start in deamon mode  
-* Set your username & password in the settings if you want.  
-* Fill in all the config stuff  
+
+
+## Minimal Configuration (uTorrent):
+This is the bare minimum to get you up and running.
+
+*Downloaders
+Open localhost:5299/config.
+Select Downloaders tab and check the uTorrent box.
+Host: localhost
+Port: Found in uTorrent | Options Menu | Preferences | Connections | Port used for incoming connections
+In uTorrent settings | Advanced | WebUI check Enable WebUI and make a user name and password. Fill that user name and password in to LazyLibrarian.
+In Download Settings Directory in Lazylibrarian change the path to where uTorrent keeps your completed downloads.
+Found in uTorrent Settings | Directories | Move completed downloads to
+
+*Providers
+Check the KAT and TPB boxes for two public torrent providers.
+
+*Processing
+In Folders | Base Destination Folder type the directory where you want to keep the books LazyLib downloads. For example putting a books folder in Documents. The system documents folder for windows is "C:\Users\USERNAME\Documents\Books\" where USERNAME is your Windows User Name.
+
+*Useage
+Open localhost:5299/home or click the LazyLibrarian icon in the top left. Type a book or author name in to the top right search bar. Then on the search results screen select "Add Book" to make LazyLib start searching for the book. Not all books can be found instantly, but LazyLib will keep searching!
 
 
 ## Update
