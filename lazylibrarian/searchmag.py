@@ -105,7 +105,7 @@ def search_magazines(mags=None, reset=False):
             for nzb in resultlist:
                 total_nzbs = total_nzbs + 1
                 bookid = nzb['bookid']
-                nzbtitle = (u'%s' % nzb['nzbtitle'])
+                nzbtitle = unaccented_str(nzb['nzbtitle'])
                 nzbtitle = nzbtitle.replace('"', '').replace("'", "")  # suppress " in titles
                 nzburl = nzb['nzburl']
                 nzbprov = nzb['nzbprov']
