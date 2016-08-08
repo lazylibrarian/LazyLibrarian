@@ -103,7 +103,7 @@ class WebInterface(object):
     config.exposed = True
 
     def configUpdate(
-        self, http_host='0.0.0.0', http_root='', http_user='', http_port=5299,
+        self, http_host='0.0.0.0', http_root='', http_user='', http_port=5299, current_tab='0',
                      http_pass='', http_look='', launch_browser=0, api_key='', api_enabled=0,
                      logdir='', loglevel=2, loglimit=500, logfiles=10, logsize=204800, git_program='',
                      imp_onlyisbn=0, imp_singlebook=0, imp_preflang='', imp_monthlang='', imp_convert='', imp_calibredb='',
@@ -142,6 +142,8 @@ class WebInterface(object):
         #    if "reject" in arg:
         #        print arg
         #        print repr(arg)
+        #print current_tab
+        lazylibrarian.CURRENT_TAB = current_tab
         lazylibrarian.HTTP_HOST = http_host
         lazylibrarian.HTTP_ROOT = http_root
         lazylibrarian.HTTP_PORT = check_int(http_port, 5299)

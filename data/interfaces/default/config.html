@@ -19,14 +19,14 @@
     <div id="form">
     <div id="tabs">
         <ul>
-            <li id="tabs1" class="active"><a  href="#tabs-1" onclick="$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('#tabs7').removeClass('active');$('#tabs8').removeClass('active');$('.table_wrapper').hide();$('.tabs-1').parent().show();$('#tabs1').addClass('active');">Interface</a></li>
-            <li id="tabs2" ><a  href="#tabs-2" onclick="$('#tabs1').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('#tabs7').removeClass('active');$('#tabs8').removeClass('active');$('.table_wrapper').hide();$('.tabs-2').parent().show();$('#tabs2').addClass('active');">Importing</a></li>
-            <li id="tabs3" ><a  href="#tabs-3" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('#tabs7').removeClass('active');$('#tabs8').removeClass('active');$('.table_wrapper').hide();$('.tabs-3').parent().show();$('#tabs3').addClass('active');">Downloaders</a></li>
-            <li id="tabs4" ><a  href="#tabs-4" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('#tabs7').removeClass('active');$('#tabs8').removeClass('active');$('.table_wrapper').hide();$('.tabs-4').parent().show();$('#tabs4').addClass('active');">Providers</a></li>
-            <li id="tabs5" ><a  href="#tabs-5" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs6').removeClass('active');$('#tabs7').removeClass('active');$('#tabs8').removeClass('active');$('.table_wrapper').hide();$('.tabs-5').parent().show();$('#tabs5').addClass('active');">Processing</a></li>
-            <li id="tabs6" ><a  href="#tabs-6" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs7').removeClass('active');$('#tabs8').removeClass('active');$('.table_wrapper').hide();$('.tabs-6').parent().show();$('#tabs6').addClass('active');">Notifications</a></li>
-            <li id="tabs7" ><a  href="#tabs-7" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('#tabs8').removeClass('active');$('.table_wrapper').hide();$('.tabs-7').parent().show();$('#tabs7').addClass('active');">Categories</a></li>
-            <li id="tabs8" ><a  href="#tabs-8" onclick="$('#tabs1').removeClass('active');$('#tabs2').removeClass('active');$('#tabs3').removeClass('active');$('#tabs4').removeClass('active');$('#tabs5').removeClass('active');$('#tabs6').removeClass('active');$('#tabs7').removeClass('active');$('.table_wrapper').hide();$('.tabs-8').parent().show();$('#tabs8').addClass('active');">Filters</a></li>
+            <li id="tabs1" ><a  href="#tabs-1">Interface</a></li>
+            <li id="tabs2" ><a  href="#tabs-2">Importing</a></li>
+            <li id="tabs3" ><a  href="#tabs-3">Downloaders</a></li>
+            <li id="tabs4" ><a  href="#tabs-4">Providers</a></li>
+            <li id="tabs5" ><a  href="#tabs-5">Processing</a></li>
+            <li id="tabs6" ><a  href="#tabs-6">Notifications</a></li>
+            <li id="tabs7" ><a  href="#tabs-7">Categories</a></li>
+            <li id="tabs8" ><a  href="#tabs-8">Filters</a></li>
         </ul>
     </div>
     <div class="table_wrapper">
@@ -36,6 +36,7 @@
             <tr>
                 <td>
                   <div>
+                  <input type="text" id="current_tab" name="current_tab" value="${lazylibrarian.CURRENT_TAB}" class="hidden">
                   <label>Hostname:</label><input type="text" name="http_host" value="${lazylibrarian.HTTP_HOST}" size="20">
                   </div>
                   <div>
@@ -1706,6 +1707,116 @@
                         $("#testAndroidPN-result").html(data);
                     });
                 });
+
+            switch ($("#current_tab").val())
+            {
+               case "2":
+                   $('#tabs ul li').removeClass('active');
+                   $('.table_wrapper').hide();
+                   $('.tabs-2').parent().show();
+                   $('#tabs2').addClass('active');
+                   break;
+               case "3":
+                   $('#tabs ul li').removeClass('active');
+                   $('.table_wrapper').hide();
+                   $('.tabs-3').parent().show();
+                   $('#tabs3').addClass('active');
+                   break;
+               case "4":
+                   $('#tabs ul li').removeClass('active');
+                   $('.table_wrapper').hide();
+                   $('.tabs-4').parent().show();
+                   $('#tabs4').addClass('active');
+                   break;
+               case "5":
+                   $('#tabs ul li').removeClass('active');
+                   $('.table_wrapper').hide();
+                   $('.tabs-5').parent().show();
+                   $('#tabs5').addClass('active');
+                   break;
+               case "6":
+                   $('#tabs ul li').removeClass('active');
+                   $('.table_wrapper').hide();
+                   $('.tabs-6').parent().show();
+                   $('#tabs6').addClass('active');
+                   break;
+               case "7":
+                   $('#tabs ul li').removeClass('active');
+                   $('.table_wrapper').hide();
+                   $('.tabs-7').parent().show();
+                   $('#tabs7').addClass('active');
+                   break;
+               case "8":
+                   $('#tabs ul li').removeClass('active');
+                   $('.table_wrapper').hide();
+                   $('.tabs-8').parent().show();
+                   $('#tabs8').addClass('active');
+                   break;
+
+               default:
+                   $('#tabs ul li').removeClass('active');
+                   $('.table_wrapper').hide();
+                   $('.tabs-1').parent().show();
+                   $('#tabs1').addClass('active');
+            }
+
+            $('#tabs1').click(function(){
+                $("#current_tab").val('1');
+                $('#tabs ul li').removeClass('active');
+                $('.table_wrapper').hide();
+                $('.tabs-1').parent().show();
+                $('#tabs1').addClass('active');
+            })
+            $('#tabs2').click(function(){
+                $("#current_tab").val('2');
+                $('#tabs ul li').removeClass('active');
+                $('.table_wrapper').hide();
+                $('.tabs-2').parent().show();
+                $('#tabs2').addClass('active');
+            })
+            $('#tabs3').click(function(){
+                $("#current_tab").val('3');
+                $('#tabs ul li').removeClass('active');
+                $('.table_wrapper').hide();
+                $('.tabs-3').parent().show();
+                $('#tabs3').addClass('active');
+            })
+            $('#tabs4').click(function(){
+                $("#current_tab").val('4');
+                $('#tabs ul li').removeClass('active');
+                $('.table_wrapper').hide();
+                $('.tabs-4').parent().show();
+                $('#tabs4').addClass('active');
+            })
+            $('#tabs5').click(function(){
+                $("#current_tab").val('5');
+                $('#tabs ul li').removeClass('active');
+                $('.table_wrapper').hide();
+                $('.tabs-5').parent().show();
+                $('#tabs5').addClass('active');
+            })
+            $('#tabs6').click(function(){
+                $("#current_tab").val('6');
+                $('#tabs ul li').removeClass('active');
+                $('.table_wrapper').hide();
+                $('.tabs-6').parent().show();
+                $('#tabs6').addClass('active');
+            })
+            $('#tabs7').click(function(){
+                $("#current_tab").val('7');
+                $('#tabs ul li').removeClass('active');
+                $('.table_wrapper').hide();
+                $('.tabs-7').parent().show();
+                $('#tabs7').addClass('active');
+            })
+            $('#tabs8').click(function(){
+                $("#current_tab").val('8');
+                $('#tabs ul li').removeClass('active');
+                $('.table_wrapper').hide();
+                $('.tabs-8').parent().show();
+                $('#tabs8').addClass('active');
+            })
+
         }
 
         $(document).ready(function() {
