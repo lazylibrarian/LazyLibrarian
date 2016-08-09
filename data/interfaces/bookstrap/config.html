@@ -15,30 +15,31 @@
 <%def name="body()">
     <form action="configUpdate" method="post">
 
-        <div>
+        <div role="tab-table" class="hidden">
 
             <div>
                 <ul class="nav nav-tabs" role="tablist" id="configtabs">
-                    <li role="presentation" class="active"><a role="tab" data-toggle="tab" aria-controls="webinterface" href="#webinterface">Interface</a></li>
-                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="importoptions" href="#importoptions">Importing</a></li>
-                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="downloadsettings" href="#downloadsettings">Downloaders</a></li>
-                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="providers" href="#providers">Providers</a></li>
-                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="searchprocessing" href="#searchprocessing">Processing</a></li>
-                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="notifications" href="#notifications">Notifications</a></li>
-                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="capabilities" href="#capabilities">Categories</a></li>
-                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="filters" href="#filters">Filters</a></li>
+                    <li role="presentation" id="1" aria-controls="webinterface"><a role="tab" data-toggle="tab" aria-controls="webinterface" href="#webinterface">Interface</a></li>
+                    <li role="presentation" id="2" aria-controls="importoptions"><a role="tab" data-toggle="tab" aria-controls="importoptions" href="#importoptions">Importing</a></li>
+                    <li role="presentation" id="3" aria-controls="downloadsettings"><a role="tab" data-toggle="tab" aria-controls="downloadsettings" href="#downloadsettings">Downloaders</a></li>
+                    <li role="presentation" id="4" aria-controls="providers"><a role="tab" data-toggle="tab" aria-controls="providers" href="#providers">Providers</a></li>
+                    <li role="presentation" id="5" aria-controls="searchprocessing"><a role="tab" data-toggle="tab" aria-controls="searchprocessing" href="#searchprocessing">Processing</a></li>
+                    <li role="presentation" id="6" aria-controls="notifications"><a role="tab" data-toggle="tab" aria-controls="notifications" href="#notifications">Notifications</a></li>
+                    <li role="presentation" id="7" aria-controls="capabilities"><a role="tab" data-toggle="tab" aria-controls="capabilities" href="#capabilities">Categories</a></li>
+                    <li role="presentation" id="8" aria-controls="filters"><a role="tab" data-toggle="tab" aria-controls="filters" href="#filters">Filters</a></li>
                 </ul>
 
 
                 <div class="tab-content">
 
-                    <div role="tabpanel" class="tab-pane active" id="webinterface">
+                    <div role="tabpanel" class="tab-pane" id="webinterface">
                         <div class="configtable">
                             <div class="row">
                                 <div class="col-md-6">
                                     <fieldset>
                                         <legend>Server Details</legend>
                                         <div class="form-group">
+                                            <input type="text" id="current_tab" name="current_tab" value="${lazylibrarian.CURRENT_TAB}" class="hidden">
                                             <label for="http_host" class="control-label">Hostname:</label>
                                             <input type="text" id="http_host" name="http_host" value="${lazylibrarian.HTTP_HOST}" class="form-control" placeholder="Hostname">
                                         </div>
@@ -1471,17 +1472,16 @@
 
             </div> <!-- tabs -->
 
+            <div class="table_wrapper_button">
+                <input type="submit" value="Save changes" id="add" class="btn btn-primary">
+            </div>
+
+            <p>&nbsp;</p>
+            <p>Branch: ${lazylibrarian.CURRENT_BRANCH} Current Version: ${lazylibrarian.CURRENT_VERSION}  : Latest  Version:    ${lazylibrarian.LATEST_VERSION}</p>
         </div> <!-- form -->
-
-
-        <div class="table_wrapper_button">
-            <input type="submit" value="Save changes" id="add" class="btn btn-primary">
-        </div>
 
     </form>
 
-    <p>&nbsp;</p>
-    <p>Branch: ${lazylibrarian.CURRENT_BRANCH} Current Version: ${lazylibrarian.CURRENT_VERSION}  : Latest  Version: ${lazylibrarian.LATEST_VERSION}</p>
 
 </%def>
 
@@ -2024,10 +2024,31 @@
                 }
             });
 
+            // when the page first loads, hide all tab headers and panels
+            $("li[role='presentation']").attr("aria-selected", "false");
+            $("li[role='presentation']").removeClass('active');
+            $("div[role='tabpanel']").attr("aria-hidden", "true");
+            $("div[role='tabpanel']").removeClass('active');
+            // which one do we want to show
+            var tabnum = $("#current_tab").val();
+            var tabid = $("#" + tabnum);
+            var tabpanel = tabid.attr('aria-controls');
+            var tabpanelid = $("#" + tabpanel);
+            // show the tab header and panel we want
+            tabpanelid.attr("aria-hidden", "false");
+            tabpanelid.addClass('active');
+            tabid.attr("aria-selected", "true");
+            tabid.addClass('active');
+            $("div[role='tab-table']").removeClass('hidden');
+
+            // when a tab is clicked
+            $("li[role='presentation']").click(function(){
+                var tabnum = $(this).attr('id');    // store current tab for python
+                $("#current_tab").val(tabnum);
+            });
+
 
         } // End Init
-
-
 
         $(document).ready(function() {
             initThisPage();
