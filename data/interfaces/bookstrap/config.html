@@ -15,7 +15,7 @@
 <%def name="body()">
     <form action="configUpdate" method="post">
 
-        <div>
+        <div role="tab-table" class="hidden">
 
             <div>
                 <ul class="nav nav-tabs" role="tablist" id="configtabs">
@@ -32,7 +32,7 @@
 
                 <div class="tab-content">
 
-                    <div role="tabpanel" class="tab-pane active" id="webinterface">
+                    <div role="tabpanel" class="tab-pane" id="webinterface">
                         <div class="configtable">
                             <div class="row">
                                 <div class="col-md-6">
@@ -1472,17 +1472,16 @@
 
             </div> <!-- tabs -->
 
+            <div class="table_wrapper_button">
+                <input type="submit" value="Save changes" id="add" class="btn btn-primary">
+            </div>
+
+            <p>&nbsp;</p>
+            <p>Branch: ${lazylibrarian.CURRENT_BRANCH} Current Version: ${lazylibrarian.CURRENT_VERSION}  : Latest  Version:    ${lazylibrarian.LATEST_VERSION}</p>
         </div> <!-- form -->
-
-
-        <div class="table_wrapper_button">
-            <input type="submit" value="Save changes" id="add" class="btn btn-primary">
-        </div>
 
     </form>
 
-    <p>&nbsp;</p>
-    <p>Branch: ${lazylibrarian.CURRENT_BRANCH} Current Version: ${lazylibrarian.CURRENT_VERSION}  : Latest  Version: ${lazylibrarian.LATEST_VERSION}</p>
 
 </%def>
 
@@ -2025,26 +2024,26 @@
                 }
             });
 
-            // when the page first loads, use python variable to show required tab
+            // when the page first loads, hide all tab headers and panels
             $("li[role='presentation']").attr("aria-selected", "false");
             $("li[role='presentation']").removeClass('active');
-            $('.tab-content').hide();
-            var tabnum = $("#current_tab").val();
-            var tabid = $("#" + tabnum);
-            var tabpan = tabid.attr('aria-controls');
-            var tabpanid = $("#" + tabpan);
             $("div[role='tabpanel']").attr("aria-hidden", "true");
             $("div[role='tabpanel']").removeClass('active');
-            tabpanid.attr("aria-hidden", "false");
-            tabpanid.addClass('active');
+            // which one do we want to show
+            var tabnum = $("#current_tab").val();
+            var tabid = $("#" + tabnum);
+            var tabpanel = tabid.attr('aria-controls');
+            var tabpanelid = $("#" + tabpanel);
+            // show the tab header and panel we want
+            tabpanelid.attr("aria-hidden", "false");
+            tabpanelid.addClass('active');
             tabid.attr("aria-selected", "true");
             tabid.addClass('active');
-            $('.tab-content').show();
+            $("div[role='tab-table']").removeClass('hidden');
 
-
-            // when a tab is clicked, set variable to pass to python on config save
+            // when a tab is clicked
             $("li[role='presentation']").click(function(){
-                var tabnum = $(this).attr('id');
+                var tabnum = $(this).attr('id');    // store current tab for python
                 $("#current_tab").val(tabnum);
             });
 

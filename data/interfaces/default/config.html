@@ -1708,19 +1708,25 @@
                     });
                 });
 
-            var tabnum = $("#current_tab").val()
+            // when the page first loads, hide all tab headers and panels
             $('#tabs ul li').removeClass('active');
             $('.table_wrapper').hide();
+            // then show the one we want
+            var tabnum = $("#current_tab").val()
             var tabid = $(".tabs-" + tabnum);
             $(tabid).parent().show();
             var tabid = $("#" + tabnum);
             tabid.addClass('active');
 
+            // when a tab is clicked
             $("li[role='presentation']").click(function(){
+                // store current tab for python
                 var tabnum = $(this).attr('id');
                 $("#current_tab").val(tabnum);
+                // hide all tab headers and panels
                 $('#tabs ul li').removeClass('active');
                 $('.table_wrapper').hide();
+                // then show the one we want
                 var tabid = $(".tabs-" + tabnum);
                 tabid.parent().show();
                 var tabid = $("#" + tabnum);
