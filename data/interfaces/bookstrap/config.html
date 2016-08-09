@@ -19,14 +19,14 @@
 
             <div>
                 <ul class="nav nav-tabs" role="tablist" id="configtabs">
-                    <li role="presentation" class="active"><a role="tab" data-toggle="tab" aria-controls="webinterface" href="#webinterface">Interface</a></li>
-                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="importoptions" href="#importoptions">Importing</a></li>
-                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="downloadsettings" href="#downloadsettings">Downloaders</a></li>
-                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="providers" href="#providers">Providers</a></li>
-                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="searchprocessing" href="#searchprocessing">Processing</a></li>
-                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="notifications" href="#notifications">Notifications</a></li>
-                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="capabilities" href="#capabilities">Categories</a></li>
-                    <li role="presentation"><a role="tab" data-toggle="tab" aria-controls="filters" href="#filters">Filters</a></li>
+                    <li role="presentation" id="1" aria-controls="webinterface"><a role="tab" data-toggle="tab" aria-controls="webinterface" href="#webinterface">Interface</a></li>
+                    <li role="presentation" id="2" aria-controls="importoptions"><a role="tab" data-toggle="tab" aria-controls="importoptions" href="#importoptions">Importing</a></li>
+                    <li role="presentation" id="3" aria-controls="downloadsettings"><a role="tab" data-toggle="tab" aria-controls="downloadsettings" href="#downloadsettings">Downloaders</a></li>
+                    <li role="presentation" id="4" aria-controls="providers"><a role="tab" data-toggle="tab" aria-controls="providers" href="#providers">Providers</a></li>
+                    <li role="presentation" id="5" aria-controls="searchprocessing"><a role="tab" data-toggle="tab" aria-controls="searchprocessing" href="#searchprocessing">Processing</a></li>
+                    <li role="presentation" id="6" aria-controls="notifications"><a role="tab" data-toggle="tab" aria-controls="notifications" href="#notifications">Notifications</a></li>
+                    <li role="presentation" id="7" aria-controls="capabilities"><a role="tab" data-toggle="tab" aria-controls="capabilities" href="#capabilities">Categories</a></li>
+                    <li role="presentation" id="8" aria-controls="filters"><a role="tab" data-toggle="tab" aria-controls="filters" href="#filters">Filters</a></li>
                 </ul>
 
 
@@ -39,6 +39,7 @@
                                     <fieldset>
                                         <legend>Server Details</legend>
                                         <div class="form-group">
+                                            <input type="text" id="current_tab" name="current_tab" value="${lazylibrarian.CURRENT_TAB}" class="hidden">
                                             <label for="http_host" class="control-label">Hostname:</label>
                                             <input type="text" id="http_host" name="http_host" value="${lazylibrarian.HTTP_HOST}" class="form-control" placeholder="Hostname">
                                         </div>
@@ -2024,10 +2025,31 @@
                 }
             });
 
+            // when the page first loads, use python variable to show required tab
+            $("li[role='presentation']").attr("aria-selected", "false");
+            $("li[role='presentation']").removeClass('active');
+            $('.tab-content').hide();
+            var tabnum = $("#current_tab").val();
+            var tabid = $("#" + tabnum);
+            var tabpan = tabid.attr('aria-controls');
+            var tabpanid = $("#" + tabpan);
+            $("div[role='tabpanel']").attr("aria-hidden", "true");
+            $("div[role='tabpanel']").removeClass('active');
+            tabpanid.attr("aria-hidden", "false");
+            tabpanid.addClass('active');
+            tabid.attr("aria-selected", "true");
+            tabid.addClass('active');
+            $('.tab-content').show();
+
+
+            // when a tab is clicked, set variable to pass to python on config save
+            $("li[role='presentation']").click(function(){
+                var tabnum = $(this).attr('id');
+                $("#current_tab").val(tabnum);
+            });
+
 
         } // End Init
-
-
 
         $(document).ready(function() {
             initThisPage();
