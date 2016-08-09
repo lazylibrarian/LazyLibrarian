@@ -130,6 +130,9 @@ def addTorrent(link, data=None):
 
         if retid:
             logger.info('Deluge: Torrent sent to Deluge successfully  (%s)' % retid)
+            if lazylibrarian.DELUGE_LABEL:
+                labelled = setTorrentLabel(result)
+                logger.debug('Deluge label returned: %s' % labelled)
             return retid
         else:
             logger.info('Deluge returned status %s' % retid)
@@ -219,9 +222,9 @@ def _get_auth():
 
     if delugeweb_host.endswith('/'):
         delugeweb_host = delugeweb_host[:-1]
-    
+
     delugeweb_host = "%s:%s" % (delugeweb_host, lazylibrarian.DELUGE_PORT)
-    
+
     delugeweb_url = delugeweb_host + '/json'
 
     post_data = json.dumps({"method": "auth.login",
@@ -341,7 +344,7 @@ def _add_torrent_file(result):
         result['hash'] = json.loads(response.text)['result']
         print response
         print response.text
-        
+
         logger.debug('Deluge: Response was %s' % str(json.loads(response.text)['result']))
         return json.loads(response.text)['result']
     except Exception as e:
@@ -459,7 +462,7 @@ def setTorrentPause(result):
         return not json.loads(response.text)['error']
 
     return True
-    
+
 def checkLink():
     logger.debug('Deluge: Checking connection')
     msg = "Deluge: Connection successful"
