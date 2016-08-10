@@ -557,8 +557,6 @@ class WebInterface(object):
 
 # BOOKS #############################################################
 
-# not very clean here, using a global variable BOOKLANGFILTER to pass booklang from books to getbooks
-#
     def books(self, BookLang=None):
         myDB = database.DBConnection()
         languages = myDB.select('SELECT DISTINCT BookLang from books WHERE NOT \
@@ -567,7 +565,7 @@ class WebInterface(object):
         return serve_template(templatename="books.html", title='Books', books=[], languages=languages)
     books.exposed = True
 
-    def getBooks(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=1, sSortDir_0="desc", sSearch="", **kwargs):
+    def getBooks(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
@@ -582,126 +580,138 @@ class WebInterface(object):
                 lazylibrarian.BOOKLANGFILTER).fetchall()
         # turn the sqlite rowlist into a list of lists
         d = []
-        # the masterlist to be filled with the row data and to be returned
-        for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
-            l = []  # for each Row use a separate list
+        filtered = []
+        if len(rowlist):
+            # the masterlist to be filled with the row data
+            for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
+                l = []  # for each Row use a separate list
+                for column in row:
+                    l.append(column)
+                d.append(l)  # add the rowlist to the masterlist
 
-            bookrate = float(row[5])
-            if bookrate < 0.5:
-                starimg = '0-stars.png'
-            elif bookrate >= 0.5 and bookrate < 1.5:
-                starimg = '1-stars.png'
-            elif bookrate >= 1.5 and bookrate < 2.5:
-                starimg = '2-stars.png'
-            elif bookrate >= 2.5 and bookrate < 3.5:
-                starimg = '3-stars.png'
-            elif bookrate >= 3.5 and bookrate < 4.5:
-                starimg = '4-stars.png'
-            elif bookrate >= 4.5:
-                starimg = '5-stars.png'
+            if sSearch != "":
+                filtered = filter(lambda x: sSearch in str(x), d)
             else:
-                starimg = '0-stars.png'
+                filtered = d
 
-            worklink = ''
-            if row[11]: # is there a workpage link
-                if len(row[11]) > 4:
-                    worklink = '<br><td><a href="' + row[11] + '" target="_new">WorkPage</a></td>'
+            sortcolumn = int(iSortCol_0)
 
-            if lazylibrarian.HTTP_LOOK == 'default':
-                l.append(
-                    '<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[8])
-                l.append(
-                    '<td id="bookart"><a href="%s" target="_new"><img src="%s" height="75" width="50"></a></td>' % (row[0], row[0]))
-                l.append(
-                    '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[12], row[1]))
-                if row[9]:  # is there a sub-title
+            if sortcolumn > 1 and sortcolumn < 8:  # only sort on columns 2 to 7
+                sortcolumn -= 1  # indexed from 0
+                filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+
+            if iDisplayLength < 0:  # display = all
+                rows = filtered
+            else:
+                rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+
+            # now add html to the ones we want to display
+            d = [] # the masterlist to be filled with the html data
+            for row in rows:
+                l = []  # for each Row use a separate list
+                bookrate = float(row[5])
+                if bookrate < 0.5:
+                    starimg = '0-stars.png'
+                elif bookrate >= 0.5 and bookrate < 1.5:
+                    starimg = '1-stars.png'
+                elif bookrate >= 1.5 and bookrate < 2.5:
+                    starimg = '2-stars.png'
+                elif bookrate >= 2.5 and bookrate < 3.5:
+                    starimg = '3-stars.png'
+                elif bookrate >= 3.5 and bookrate < 4.5:
+                    starimg = '4-stars.png'
+                elif bookrate >= 4.5:
+                    starimg = '5-stars.png'
+                else:
+                    starimg = '0-stars.png'
+
+                worklink = ''
+                if row[11]: # is there a workpage link
+                    if len(row[11]) > 4:
+                        worklink = '<br><td><a href="' + row[11] + '" target="_new">WorkPage</a></td>'
+
+                if lazylibrarian.HTTP_LOOK == 'default':
                     l.append(
-                        '<td id="bookname"><a href="%s" target="_new">%s</a><br><i class="smalltext">%s</i></td>' % (row[10], row[2], row[9]))
-                else:
+                        '<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[8])
                     l.append(
-                        '<td id="bookname"><a href="%s" target="_new">%s</a></td>' % (row[10], row[2]))
-
-                if row[3]:  # is the book part of a series
-                    l.append('<td id="series">%s</td>' % row[3])
-                else:
-                    l.append('<td id="series">None</td>')
-
-                if row[4]:
-                    l.append('<td id="seriesNum">%s</td>' % row[4])
-                else:
-                    l.append('<td id="seriesNum">None</td>')
-
-                l.append(
-                    '<td id="stars"><img src="images/' + starimg + '" width="50" height="10"></td>')
-
-                l.append('<td id="date">%s</td>' % row[6])
-
-                if row[7] == 'Open':
-                    btn = '<td id="status"><a class="button green" href="openBook?bookid=%s" target="_self">Open</a></td>' % row[8]
-                elif row[7] == 'Wanted':
-                    btn = '<td id="status"><a class="button red" href="searchForBook?bookid=%s" target="_self"><span class="a">Wanted</span><span class="b">Search</span></a></td>' % row[8]
-                elif row[7] == 'Snatched' or row[7] == 'Have':
-                    btn = '<td id="status"><a class="button">%s</a></td>' % row[7]
-                else:
-                    btn = '<td id="status"><a class="button grey">%s</a></td>' % row[7]
-                l.append(btn + worklink)
-
-            elif lazylibrarian.HTTP_LOOK == 'bookstrap':
-                l.append(
-                    '<td class="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[8])
-                l.append(
-                    '<td class="bookart text-center"><a href="%s" target="_blank" rel="noreferrer"><img src="%s" alt="Cover" class="bookcover-sm img-responsive"></a></td>' % (row[0], row[0]))
-                l.append(
-                    '<td class="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[12], row[1]))
-                if row[9]:  # is there a sub-title
+                        '<td id="bookart"><a href="%s" target="_new"><img src="%s" height="75" width="50"></a></td>' % (row[0], row[0]))
                     l.append(
-                        '<td class="bookname"><a href="%s" target="_blank" rel="noreferrer">%s</a><br><i class="smalltext">%s</i></td>' % (row[10], row[2], row[9]))
-                else:
+                        '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[12], row[1]))
+                    if row[9]:  # is there a sub-title
+                        l.append(
+                          '<td id="bookname"><a href="%s" target="_new">%s</a><br><i class="smalltext">%s</i></td>' % (row[10], row[2], row[9]))
+                    else:
+                        l.append(
+                            '<td id="bookname"><a href="%s" target="_new">%s</a></td>' % (row[10], row[2]))
+
+                    if row[3]:  # is the book part of a series
+                        l.append('<td id="series">%s</td>' % row[3])
+                    else:
+                        l.append('<td id="series">None</td>')
+
+                    if row[4]:
+                        l.append('<td id="seriesNum">%s</td>' % row[4])
+                    else:
+                        l.append('<td id="seriesNum">None</td>')
+
                     l.append(
-                        '<td class="bookname"><a href="%s" target="_blank" rel="noreferrer">%s</a></td>' % (row[10], row[2]))
+                        '<td id="stars"><img src="images/' + starimg + '" width="50" height="10"></td>')
 
-                if row[3]:  # is the book part of a series
-                    l.append('<td class="series">%s</td>' % row[3])
-                else:
-                    l.append('<td class="series">None</td>')
+                    l.append('<td id="date">%s</td>' % row[6])
 
-                if row[4]:
-                    l.append('<td class="seriesNum text-center">%s</td>' % row[4])
-                else:
-                    l.append('<td class="seriesNum text-center">None</td>')
+                    if row[7] == 'Open':
+                        btn = '<td id="status"><a class="button green" href="openBook?bookid=%s" target="_self">Open</a></td>' % row[8]
+                    elif row[7] == 'Wanted':
+                        btn = '<td id="status"><a class="button red" href="searchForBook?bookid=%s" target="_self"><span class="a">Wanted</span><span class="b">Search</span></a></td>' % row[8]
+                    elif row[7] == 'Snatched' or row[7] == 'Have':
+                        btn = '<td id="status"><a class="button">%s</a></td>' % row[7]
+                    else:
+                        btn = '<td id="status"><a class="button grey">%s</a></td>' % row[7]
+                    l.append(btn + worklink)
 
-                l.append(
-                    '<td class="stars text-center"><img src="images/' + starimg + '" alt="Rating"></td>')
+                elif lazylibrarian.HTTP_LOOK == 'bookstrap':
+                    l.append(
+                        '<td class="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[8])
+                    l.append(
+                        '<td class="bookart text-center"><a href="%s" target="_blank" rel="noreferrer"><img src="%s" alt="Cover" class="bookcover-sm img-responsive"></a></td>' % (row[0], row[0]))
+                    l.append(
+                        '<td class="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[12], row[1]))
+                    if row[9]:  # is there a sub-title
+                        l.append(
+                            '<td class="bookname"><a href="%s" target="_blank" rel="noreferrer">%s</a><br><i class="smalltext">%s</i></td>' % (row[10], row[2], row[9]))
+                    else:
+                        l.append(
+                            '<td class="bookname"><a href="%s" target="_blank" rel="noreferrer">%s</a></td>' % (row[10], row[2]))
 
-                l.append('<td class="date text-center">%s</td>' % row[6])
-                if row[7] == 'Open':
-                    btn = '<td class="status text-center"><a class="button green btn btn-xs btn-warning" href="openBook?bookid=%s" target="_self"><i class="fa fa-book"></i>%s</a></td>' % (row[8], row[7])
-                elif row[7] == 'Wanted':
-                    btn = '<td class="status text-center"><p><a class="a btn btn-xs btn-danger">%s</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=%s" target="_self"><i class="fa fa-search"></i> Search</a></p></td>' % (row[7], row[8])
-                elif row[7] == 'Snatched' or row[7] == 'Have':
-                    btn = '<td class="status text-center"><a class="button btn btn-xs btn-info">%s</a></td>' % row[7]
-                else:
-                    btn = '<td class="status text-center"><a class="button btn btn-xs btn-default grey">%s</a></td>' % row[7]
-                l.append(btn + worklink)
+                    if row[3]:  # is the book part of a series
+                        l.append('<td class="series">%s</td>' % row[3])
+                    else:
+                        l.append('<td class="series">None</td>')
 
-            d.append(l)  # add the rowlist to the masterlist
+                    if row[4]:
+                        l.append('<td class="seriesNum text-center">%s</td>' % row[4])
+                    else:
+                        l.append('<td class="seriesNum text-center">None</td>')
 
-        if sSearch != "":
-            filtered = filter(lambda x: sSearch in str(x), d)
-        else:
-            filtered = d
+                    l.append(
+                        '<td class="stars text-center"><img src="images/' + starimg + '" alt="Rating"></td>')
 
-        sortcolumn = int(iSortCol_0)
+                    l.append('<td class="date text-center">%s</td>' % row[6])
+                    if row[7] == 'Open':
+                        btn = '<td class="status text-center"><a class="button green btn btn-xs btn-warning" href="openBook?bookid=%s" target="_self"><i class="fa fa-book"></i>%s</a></td>' % (row[8], row[7])
+                    elif row[7] == 'Wanted':
+                        btn = '<td class="status text-center"><p><a class="a btn btn-xs btn-danger">%s</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=%s" target="_self"><i class="fa fa-search"></i> Search</a></p></td>' % (row[7], row[8])
+                    elif row[7] == 'Snatched' or row[7] == 'Have':
+                        btn = '<td class="status text-center"><a class="button btn btn-xs btn-info">%s</a></td>' % row[7]
+                    else:
+                       btn = '<td class="status text-center"><a class="button btn btn-xs btn-default grey">%s</a></td>' % row[7]
+                    l.append(btn + worklink)
 
-        filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
-        if iDisplayLength < 0:  # display = all
-            rows = filtered
-        else:
-            rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+                d.append(l)  # add the rowlist to the masterlist
 
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
-                  'aaData': rows,
+                  'aaData': d,
                   }
         s = simplejson.dumps(mydict)
         # print ("Getbooks returning %s to %s" % (iDisplayStart, iDisplayStart
@@ -936,39 +946,48 @@ class WebInterface(object):
         iDisplayLength = int(iDisplayLength)
         # need to filter on whichStatus
         rowlist = myDB.action(
-            'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov, Status from pastissues WHERE Status="%s"' %
+            'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov from pastissues WHERE Status="%s"' %
             lazylibrarian.ISSUEFILTER).fetchall()
 
-        # turn the sqlite rowlist into a list of lists
         d = []
-        # the masterlist to be filled with the row data and to be returned
-        for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
-            l = []  # for each Row use a separate list
+        filtered = []
+        if len(rowlist):
+            # the masterlist to be filled with the row data
+            for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
+                l = []  # for each Row use a separate list
+                for column in row:
+                    l.append(column)
+                d.append(l)  # add the rowlist to the masterlist
 
-            l.append('<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[0])
-            l.append('<td id="magtitle">%s</td>' % row[1])
-            l.append('<td id="lastacquired">%s</td>' % row[2])
-            l.append('<td id="issuedate">%s</td>' % row[3])
-            l.append('<td id="provider">%s</td>' % row[4])
-            l.append('<td id="status">%s</td>' % row[5])
-            d.append(l)  # add the rowlist to the masterlist
+            if sSearch != "":
+                filtered = filter(lambda x: sSearch in str(x), d)
+            else:
+                filtered = d
 
-        if sSearch != "":
-            filtered = filter(lambda x: sSearch in str(x), d)
-        else:
-            filtered = d
+            sortcolumn = int(iSortCol_0)
+            if sortcolumn and sortcolumn < 5:  # only sort on columns 1 to 4
+                # indexed from 1 to skip NZBurl on rowlist[0]
+                filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
 
-        sortcolumn = int(iSortCol_0)
+            if iDisplayLength < 0:  # display = all
+                rows = filtered
+            else:
+                rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
-        filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
-        if iDisplayLength < 0:  # display = all
-            rows = filtered
-        else:
-            rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+            # now add html to the ones we want to display
+            d = [] # the masterlist to be filled with the html data
+            for row in rows:
+                l = []  # for each Row use a separate list
+                l.append('<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[0])
+                l.append('<td id="magtitle">%s</td>' % row[1])
+                l.append('<td id="lastacquired">%s</td>' % row[2])
+                l.append('<td id="issuedate">%s</td>' % row[3])
+                l.append('<td id="provider">%s</td>' % row[4])
+                d.append(l)  # add the rowlist to the masterlist
 
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
-                  'aaData': rows,
+                  'aaData': d,
                   }
         s = simplejson.dumps(mydict)
         return s
@@ -1332,17 +1351,13 @@ class WebInterface(object):
         else:
             filtered = filter(lambda x: sSearch in str(x), lazylibrarian.LOGLIST[::])
 
-        sortcolumn = 0
-        if iSortCol_0 == '1':
-            sortcolumn = 2
-        elif iSortCol_0 == '2':
-            sortcolumn = 1
+        sortcolumn = int(iSortCol_0)
         filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
         if iDisplayLength < 0:  # display = all
             rows = filtered
         else:
             rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
-        # rows = [[row[0], row[2], row[1]] for row in rows]
+
         mydict = {'iTotalDisplayRecords': len(filtered),
                 'iTotalRecords': len(lazylibrarian.LOGLIST),
                 'aaData': rows,
@@ -1514,50 +1529,63 @@ class WebInterface(object):
         rowlist = myDB.action(
             'SELECT authorname, bookname, series, seriesnum, bookdate, bookid, booklink, booksub, authorid from books WHERE STATUS="%s"' %
             lazylibrarian.MANAGEFILTER).fetchall()
-        # turn the sqlite rowlist into a list of lists
+
         d = []
-        # the masterlist to be filled with the row data and to be returned
-        for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
-            l = []  # for each Row use a separate list
+        filtered = []
+        if len(rowlist):
+            # the masterlist to be filled with the row data
+            for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
+                l = []  # for each Row use a separate list
+                for column in row:
+                    l.append(column)
+                d.append(l)  # add the rowlist to the masterlist
 
-            l.append('<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[5])
-            l.append('<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[8], row[0]))
-
-            if row[7]:  # is there a sub-title
-                l.append('<td id="bookname"><a href="%s" target="_new">%s</a><br><i class="smalltext">%s</i></td>' % (row[6], row[1], row[7]))
+            if sSearch != "":
+                filtered = filter(lambda x: sSearch in str(x), d)
             else:
-                l.append('<td id="bookname"><a href="%s" target="_new">%s</a></td>' % (row[6], row[1]))
+                filtered = d
 
-            if row[2]:  # is the book part of a series
-                l.append('<td id="series">%s</td>' % row[2])
+            sortcolumn = int(iSortCol_0)
+
+            if sortcolumn and sortcolumn < 6:  # only sort on columns 1 to 5
+                sortcolumn -= 1  # indexed from 0
+                filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+
+            if iDisplayLength < 0:  # display = all
+                rows = filtered
             else:
-                l.append('<td id="series">None</td>')
+                rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
-            if row[3]:
-                l.append('<td id="seriesNum">%s</td>' % row[3])
-            else:
-                l.append('<td id="seriesNum">None</td>')
+            # now add html to the ones we want to display
+            d = [] # the masterlist to be filled with the html data
+            for row in rows:
+                l = []  # for each Row use a separate list
 
-            l.append('<td id="date">%s</td>' % row[4])
+                l.append('<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[5])
+                l.append('<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[8], row[0]))
 
-            d.append(l)  # add the rowlist to the masterlist
+                if row[7]:  # is there a sub-title
+                    l.append('<td id="bookname"><a href="%s" target="_new">%s</a><br><i class="smalltext">%s</i></td>' % (row [6], row[1], row[7]))
+                else:
+                    l.append('<td id="bookname"><a href="%s" target="_new">%s</a></td>' % (row[6], row[1]))
 
-        if sSearch != "":
-            filtered = filter(lambda x: sSearch in str(x), d)
-        else:
-            filtered = d
+                if row[2]:  # is the book part of a series
+                    l.append('<td id="series">%s</td>' % row[2])
+                else:
+                    l.append('<td id="series">None</td>')
 
-        sortcolumn = int(iSortCol_0)
+                if row[3]:
+                    l.append('<td id="seriesNum">%s</td>' % row[3])
+                else:
+                    l.append('<td id="seriesNum">None</td>')
 
-        filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
-        if iDisplayLength < 0:  # display = all
-            rows = filtered
-        else:
-            rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+                l.append('<td id="date">%s</td>' % row[4])
+
+                d.append(l)  # add the rowlist to the masterlist
 
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
-                  'aaData': rows,
+                  'aaData': d,
                   }
         s = simplejson.dumps(mydict)
         # print ("getManage returning %s to %s" % (iDisplayStart, iDisplayStart

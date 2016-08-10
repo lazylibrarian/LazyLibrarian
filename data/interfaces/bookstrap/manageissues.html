@@ -10,10 +10,10 @@
 
 <%def name="body()">
     <h1>Past Issues</h1>
-    
+
     <form action="pastIssues" method="get" class="form-inline">
         <div class="form-group">
-            <label for="whicStatus" class="control-label">Manage Issues with status: </label>
+            <label for="whichStatus" class="control-label">Manage Issues with status: </label>
             <select name="whichStatus" id="whichStatus" class="form-control input-sm">
                 %for item in ['Skipped', 'Have', 'Ignored']:
                     <option value="${item}"
@@ -39,7 +39,6 @@
                 <th class="lastacquired text-center">NZB&nbsp;Date</th>
                 <th class="issuedate text-center">Issue&nbsp;Date</th>
                 <th class="Provider">Provider</th>
-                <th class="status text-center">Status</th>
            </tr>
         </thead>
 <!--
@@ -76,17 +75,17 @@
 </%def>
 
 <%def name="headIncludes()">
-    
+
 </%def>
 
-<%def name="javascriptIncludes()">    
+<%def name="javascriptIncludes()">
     <script type="text/javascript">
     $(document).ready(function() {
         $('#book_table').dataTable(
             {
                 "responsive": true,
                 "order": [[ 1, 'asc']],
-                "columnDefs": 
+                "columnDefs":
                     [{ targets: 'no-sort', orderable: false }]
                 ,
                 "oLanguage": {
@@ -101,7 +100,7 @@
                 "iDisplayLength": 10,
                 "aaSorting": [[1, 'asc']],
                 "bServerSide": true,
-                // need to pass requested status filter 
+                // need to pass requested status filter
                 "sAjaxSource": 'getPastIssues?whichStatus=Skipped',
                 "bFilter": true,
             });

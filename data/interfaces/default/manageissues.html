@@ -33,7 +33,6 @@
                 <th id="lastacquired">NZBdate</th>
                 <th id="issuedate">Issue Date</th>
                 <th id="provider">NZBprov</th>
-                <th id="status">Status</th>
            </tr>
         </thead>
 <!--
@@ -83,7 +82,6 @@
                     null,
                     null,
                     null,
-                    null,
                     null
                     ],
                 "oLanguage": {
@@ -98,7 +96,7 @@
                 "sPaginationType": "full_numbers",
                 "aaSorting": [[1, 'asc']],
                 "bServerSide": true,
-                // need to pass requested status filter 
+                // need to pass requested status filter
                 "sAjaxSource": 'getPastIssues?whichStatus=Skipped',
                 "bFilter": true,
             });
