@@ -72,7 +72,7 @@
             {
                 "order": [[ 1, 'asc' ]],
                 "aoColumns": [
-                    null,
+                    {"bSortable": false},
                     null,
                     null,
                     null,
@@ -91,7 +91,7 @@
                 "sPaginationType": "full_numbers",
                 "aaSorting": [[1, 'asc']],
                  "bServerSide": true,
-                // need to pass requested status to getManage 
+                // need to pass requested status to getManage
                 "sAjaxSource": 'getManage?whichStatus=Skipped',
                 "bFilter": true,
             });
