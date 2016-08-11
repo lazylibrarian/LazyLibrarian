@@ -28,8 +28,6 @@ Linux / Mac OS X:
 * Run "python LazyLibrarian.py -d" to start in daemon mode
 * Fill in all the config (see [Configuration Wiki](https://github.com/DobyTang/LazyLibrarian/wiki/Configuration) for full configuration)
 
-=======
-
 * Start in daemon mode with `python LazyLibrarian.py -daemon`
 
 ## Minimal Configuration (uTorrent):
