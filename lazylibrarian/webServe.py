@@ -595,10 +595,8 @@ class WebInterface(object):
                 filtered = d
 
             sortcolumn = int(iSortCol_0)
-
-            if sortcolumn > 1 and sortcolumn < 8:  # only sort on columns 2 to 7
-                sortcolumn -= 1  # indexed from 0
-                filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+            sortcolumn -= 1  # indexed from 0
+            filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
 
             if iDisplayLength < 0:  # display = all
                 rows = filtered
@@ -965,9 +963,7 @@ class WebInterface(object):
                 filtered = d
 
             sortcolumn = int(iSortCol_0)
-            if sortcolumn and sortcolumn < 5:  # only sort on columns 1 to 4
-                # indexed from 1 to skip NZBurl on rowlist[0]
-                filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+            filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
 
             if iDisplayLength < 0:  # display = all
                 rows = filtered
@@ -1546,10 +1542,8 @@ class WebInterface(object):
                 filtered = d
 
             sortcolumn = int(iSortCol_0)
-
-            if sortcolumn and sortcolumn < 6:  # only sort on columns 1 to 5
-                sortcolumn -= 1  # indexed from 0
-                filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+            sortcolumn -= 1  # indexed from 0
+            filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
 
             if iDisplayLength < 0:  # display = all
                 rows = filtered
