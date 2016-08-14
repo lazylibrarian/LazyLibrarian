@@ -3,7 +3,7 @@
 <%def name="headerIncludes()">
     <div id="subhead_container">
         <ul id="subhead_menu">
-            
+
             <li><a href="refreshAuthor?AuthorID=${author['AuthorID']}" id="button"> Refresh Author </a></li>
             <li><a href="deleteAuthor?AuthorID=${author['AuthorID']}" id="button"> Delete Author </a></li>
             %if author['Status'] == 'Paused':
@@ -14,7 +14,7 @@
             <li><a href="authorPage?AuthorID=${author['AuthorID']}&Ignored=True" id="button"> Ignored Books </a></li>
             %if len(languages) >= 1:
                 <li>Language:&nbsp</li>
-                
+
                 <li><select onchange="window.location = 'authorPage?AuthorID=${author['AuthorID']}&BookLang=' + this.options[this.selectedIndex].value">
                     <option>Select</option>
                 %for language in languages:
@@ -100,8 +100,8 @@
                 <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
                 <th id="bookart">Cover</th>
                 <th id="bookname">Title</th>
-		<th id="series">Series</th>
-		<th id="seriesNum">Num.</th>
+		        <th id="series">Series</th>
+		        <th id="seriesNum">Num.</th>
                 <th id="stars">Rating</th>
                 <th id="date">Released</th>
                 <th id="language">Language</th>
@@ -126,19 +126,25 @@
                         starimg = '5-stars.png'
                     else:
                         starimg = '0-stars.png'
+
+                    if 'goodreads' in result['booklink']:
+                        sitelink = '<a href="' + result['booklink'] + '" target="_new"><i class="smalltext">GoodReads</i></a>'
+                    if 'google' in result['booklink']:
+                        sitelink = '<a href="' + result['booklink'] + '" target="_new"><i class="smalltext">GoogleBooks</i></a>'
+
                     workpage = ''
                     if result['workpage']:
                         if len(result['workpage']) > 4:
-                            workpage = '<br><a href="' + result['workpage'] + '" target="_new">WorkPage</a>' 
+                            workpage = '<a href="' + result['workpage'] + '" target="_new"><i class="smalltext">LibraryThing</i></a>'
                 %>
                 <tr class="gradeZ">
                     <td id="select"><input type="checkbox" name="${result['BookID']}" class="checkbox" /></td>
                     <td id="bookart"><a href="${result['bookimg']}" target="_new"><img src="${result['bookimg']}" height="75" width="50"></a></td>
                     %if result['booksub']:
-                        <td id="bookname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a><br>
-                        <i class="smalltext">${result['booksub']}</i></td>
+                        <td id="bookname">${result['bookname']}<br>
+                        <i class="smalltext">${result['booksub']}</i><br>${workpage}&nbsp;${sitelink}</td>
                     %else:
-                        <td id="bookname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a></td>
+                        <td id="bookname">${result['bookname']}<br>${workpage}&nbsp;${sitelink}</td>
                     %endif
                     <td id="series">${result['Series']}</td>
                     <td id="seriesNum">${result['seriesNum']}</td>
@@ -150,12 +156,12 @@
                         <td id="status"><a class="button green" href="openBook?bookid=${result['bookID']}" target="_self">${result['Status']}</a>${workpage}</td>
                     %else:
                         %if result['Status'] == 'Wanted':
-                            <td id="status"><a class="button red" href="searchForBook?bookid=${result['bookID']}" target="_self"><span class="a">${result['Status']}</span><span class="b">Search</span></a>${workpage}</td>
+                            <td id="status"><a class="button red" href="searchForBook?bookid=${result['bookID']}" target="_self"><span class="a">${result['Status']}</span><span class="b">Search</span></a></td>
                         %else:
                             %if result['Status'] == 'Snatched':
-                                <td id="status"><a class="button">${result['Status']}</a>${workpage}</td>
+                                <td id="status"><a class="button">${result['Status']}</a></td>
                             %else:
-                                <td id="status"><a class="button grey">${result['Status']}</a>${workpage}</td>
+                                <td id="status"><a class="button grey">${result['Status']}</a></td>
                             %endif
                         %endif
                     %endif
@@ -182,7 +188,7 @@
 <%def name="javascriptIncludes()">
     <script src="js/libs/jquery.dataTables.min.js"></script>
     <script>
-        
+
     $(document).ready(function()
     {
         var oTable = $('#book_table').dataTable(
@@ -199,40 +205,39 @@
                 "iDisplayLength": 10,
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     var w = window.innerWidth;
-                    if ( w < 320 ) 
+                    if ( w < 320 )
                     {   // hide cover,series,seriesnum,stars,date on smallest devices
                         $('td', nRow).eq(1).addClass('hidden');
                         $('td', nRow).eq(3).addClass('hidden');
                         $('td', nRow).eq(4).addClass('hidden');
                         $('td', nRow).eq(5).addClass('hidden');
                         $('td', nRow).eq(6).addClass('hidden');
-                    }                                    
-                    if ( w < 640 ) 
+                    }
+                    if ( w < 640 )
                     {   // hide cover,series,seriesnum,stars,date on smaller devices
                         $('td', nRow).eq(1).addClass('hidden');
                         $('td', nRow).eq(3).addClass('hidden');
                         $('td', nRow).eq(4).addClass('hidden');
                         $('td', nRow).eq(5).addClass('hidden');
                         $('td', nRow).eq(6).addClass('hidden');
-                    }                                    
-                    if ( w < 768 ) 
+                    }
+                    if ( w < 768 )
                     {   // hide cover,seriesnum,stars,date on small devices
                         $('td', nRow).eq(1).addClass('hidden');
                         $('td', nRow).eq(4).addClass('hidden');
                         $('td', nRow).eq(5).addClass('hidden');
                         $('td', nRow).eq(6).addClass('hidden');
-                    }                                    
-                    if ( w < 1024 ) 
+                    }
+                    if ( w < 1024 )
                     {   // hide stars,date on medium devices
                         $('td', nRow).eq(5).addClass('hidden');
                         $('td', nRow).eq(6).addClass('hidden');
-                    }                                    
+                    }
                     return nRow;
-                },          
+                },
             });
 			$('.dataTables_filter input').attr("placeholder", "Search table here");
             $(window).resize(function() {oTable.fnDraw(false)});
     });
     </script>
 </%def>
-

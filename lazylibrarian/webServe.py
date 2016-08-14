@@ -626,7 +626,12 @@ class WebInterface(object):
                 worklink = ''
                 if row[11]: # is there a workpage link
                     if len(row[11]) > 4:
-                        worklink = '<br><td><a href="' + row[11] + '" target="_new">WorkPage</a></td>'
+                        worklink = '<td><a href="' + row[11] + '" target="_new"><i class="smalltext">LibraryThing</i></a></td>'
+
+                if 'goodreads' in row[10]:
+                    sitelink = '<td><a href="' + row[10] + '" target="_new"><i class="smalltext">GoodReads</i></a></td>'
+                if 'google' in row[10]:
+                    sitelink = '<td><a href="' + row[10] + '" target="_new"><i class="smalltext">GoogleBooks</i></a></td>'
 
                 if lazylibrarian.HTTP_LOOK == 'default':
                     l.append(
@@ -636,11 +641,10 @@ class WebInterface(object):
                     l.append(
                         '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[12], row[1]))
                     if row[9]:  # is there a sub-title
-                        l.append(
-                          '<td id="bookname"><a href="%s" target="_new">%s</a><br><i class="smalltext">%s</i></td>' % (row[10], row[2], row[9]))
+                        title = '<td id="bookname">%s<br><i class="smalltext">%s</i></td>' % (row[2], row[9])
                     else:
-                        l.append(
-                            '<td id="bookname"><a href="%s" target="_new">%s</a></td>' % (row[10], row[2]))
+                        title = '<td id="bookname">%s</td>' % row[2]
+                    l.append(title + '<br>' + sitelink + '&nbsp;' + worklink)
 
                     if row[3]:  # is the book part of a series
                         l.append('<td id="series">%s</td>' % row[3])
@@ -665,7 +669,7 @@ class WebInterface(object):
                         btn = '<td id="status"><a class="button">%s</a></td>' % row[7]
                     else:
                         btn = '<td id="status"><a class="button grey">%s</a></td>' % row[7]
-                    l.append(btn + worklink)
+                    l.append(btn)
 
                 elif lazylibrarian.HTTP_LOOK == 'bookstrap':
                     l.append(
@@ -675,11 +679,10 @@ class WebInterface(object):
                     l.append(
                         '<td class="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[12], row[1]))
                     if row[9]:  # is there a sub-title
-                        l.append(
-                            '<td class="bookname"><a href="%s" target="_blank" rel="noreferrer">%s</a><br><i class="smalltext">%s</i></td>' % (row[10], row[2], row[9]))
+                        title = '<td class="bookname">%s<br><i class="smalltext">%s</i></td>' % (row[2], row[9])
                     else:
-                        l.append(
-                            '<td class="bookname"><a href="%s" target="_blank" rel="noreferrer">%s</a></td>' % (row[10], row[2]))
+                        title = '<td class="bookname">%s</td>' % row[2]
+                    l.append(title + '<br>' + sitelink + '&nbsp;' + worklink)
 
                     if row[3]:  # is the book part of a series
                         l.append('<td class="series">%s</td>' % row[3])
@@ -703,7 +706,7 @@ class WebInterface(object):
                         btn = '<td class="status text-center"><a class="button btn btn-xs btn-info">%s</a></td>' % row[7]
                     else:
                        btn = '<td class="status text-center"><a class="button btn btn-xs btn-default grey">%s</a></td>' % row[7]
-                    l.append(btn + worklink)
+                    l.append(btn)
 
                 d.append(l)  # add the rowlist to the masterlist
 

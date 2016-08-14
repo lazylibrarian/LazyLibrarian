@@ -131,8 +131,9 @@ def find_book_in_db(myDB, author, book):
         # These are results that work well on my library, minimal false matches and no misses
         # on books that should be matched
         # Maybe make ratios configurable in config.ini later
-
+        print "**", repr(author)
         books = myDB.select('SELECT BookID,BookName FROM books where AuthorName="%s"' % author)
+
         best_ratio = 0
         best_partial = 0
         ratio_name = ""
