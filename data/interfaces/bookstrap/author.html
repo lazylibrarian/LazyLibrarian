@@ -146,23 +146,23 @@
                         starimg = '0-stars.png'
 
                     if 'goodreads' in result['booklink']:
-                        sitelink = '<a href="' + result['booklink'] + '" target="_new"><i class="smalltext">GoodReads</i></a>'
+                        sitelink = '<a href="' + result['booklink'] + '" target="_new"><small><i>GoodReads</i></small></a>'
                     if 'google' in result['booklink']:
-                        sitelink = '<a href="' + result['booklink'] + '" target="_new"><i class="smalltext">GoogleBooks</i></a>'
+                        sitelink = '<a href="' + result['booklink'] + '" target="_new"><small><i>GoogleBooks</i></small></a>'
 
                     workpage = ''
                     if result['workpage']:
                         if len(result['workpage']) > 4:
-                            workpage = '<a href="' + result['workpage'] + '" target="_new"><i class="smalltext">LibraryThing</i></a>'
+                            workpage = '<a href="' + result['workpage'] + '" target="_new"><small><i>LibraryThing</i></small></a>'
                 %>
                 <tr>
                     <td class="select"><input type="checkbox" name="${result['BookID']}" /></td>
                     <td class="bookart text-center"><a href="${result['bookimg']}" target="_blank" rel="noreferrer"><img src="${result['bookimg']}" class="bookcover-xs img-responsive" alt="Cover"></a></td>
                     %if result['booksub']:
                         <td class id="bookname">${result['bookname']}<br>
-                        <i class="smalltext">${result['booksub']}</i><br>${workpage}&nbsp;${sitelink}</td>
+                        <small><i>${result['booksub']}</i></small><br>${sitelink}&nbsp;${workpage}</td>
                     %else:
-                        <td class="bookname">${result['bookname']}<br>${workpage}&nbsp;${sitelink}</td>
+                        <td class="bookname">${result['bookname']}<br>${sitelink}&nbsp;${workpage}</td>
                     %endif
                     <td class="series">${result['Series']}</td>
                     <td class="seriesNum text-center">${result['seriesNum']}</td>

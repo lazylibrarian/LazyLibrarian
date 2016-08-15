@@ -142,9 +142,9 @@
                     <td id="bookart"><a href="${result['bookimg']}" target="_new"><img src="${result['bookimg']}" height="75" width="50"></a></td>
                     %if result['booksub']:
                         <td id="bookname">${result['bookname']}<br>
-                        <i class="smalltext">${result['booksub']}</i><br>${workpage}&nbsp;${sitelink}</td>
+                        <i class="smalltext">${result['booksub']}</i><br>${sitelink}&nbsp;${workpage}</td>
                     %else:
-                        <td id="bookname">${result['bookname']}<br>${workpage}&nbsp;${sitelink}</td>
+                        <td id="bookname">${result['bookname']}<br>${sitelink}&nbsp;${workpage}</td>
                     %endif
                     <td id="series">${result['Series']}</td>
                     <td id="seriesNum">${result['seriesNum']}</td>
