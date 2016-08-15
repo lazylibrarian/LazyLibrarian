@@ -201,19 +201,21 @@ def processResultList(resultlist, book, searchtype):
         logger.info(u'Best match TOR (%s%%): %s using %s search' %
             (score, nzb_Title, searchtype))
 
-        myDB.upsert("wanted", newValueDict, controlValueDict)
-
         snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
                                     newValueDict["BookID"]).fetchone()
-        if not snatchedbooks:
+        if snatchedbooks:
+            logger.debug('%s already marked snatched' % nzb_Title)
+            return False
+        else:
+            myDB.upsert("wanted", newValueDict, controlValueDict)
             snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
                                            newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             if snatch:
                 notify_snatch(newValueDict["NZBtitle"] + ' at ' + now())
                 scheduleJob(action='Start', target='processDir')
                 return True
-
-    logger.debug("No torrent's found for " + (book["authorName"] + ' ' +
+    else:
+        logger.debug("No torrent's found for " + (book["authorName"] + ' ' +
                  book['bookName']).strip() + " using searchtype " + searchtype)
     return False
 

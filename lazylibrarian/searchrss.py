@@ -175,12 +175,14 @@ def processResultList(resultlist, author, title, book):
         logger.info(u'Best match RSS (%s%%): %s using %s search' %
             (score, nzb_Title, searchtype))
 
-        myDB.upsert("wanted", newValueDict, controlValueDict)
-
         snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
                                     newValueDict["BookID"]).fetchone()
 
-        if not snatchedbooks:  # check if one of the other downloaders got there first
+        if snatchedbooks:  # check if one of the other downloaders got there first
+            logger.debug('%s already marked snatched' % nzb_Title)
+            return False
+        else:
+            myDB.upsert("wanted", newValueDict, controlValueDict)
             tor_url = controlValueDict["NZBurl"]
             if '.nzb' in tor_url:
                 snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
@@ -201,7 +203,7 @@ def processResultList(resultlist, author, title, book):
                 notify_snatch(newValueDict["NZBtitle"] + ' at ' + now())
                 scheduleJob(action='Start', target='processDir')
                 return True
-
-    logger.debug("No RSS found for " + (book["authorName"] + ' ' +
+    else:
+        logger.debug("No RSS found for " + (book["authorName"] + ' ' +
                 book['bookName']).strip())
     return False
