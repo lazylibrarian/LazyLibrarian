@@ -80,7 +80,7 @@ def search_rss_book(books=None, reset=False):
 
         if not found:
             logger.debug("Searches returned no results. Adding book %s - %s to queue." % (author, title))
-        else:
+        if found > True:
             rss_count = rss_count + 1
 
     logger.info("RSS Search for Wanted items complete, found %s book%s" % (rss_count, plural(rss_count)))
@@ -180,7 +180,7 @@ def processResultList(resultlist, author, title, book):
 
         if snatchedbooks:  # check if one of the other downloaders got there first
             logger.debug('%s already marked snatched' % nzb_Title)
-            return False
+            return True
         else:
             myDB.upsert("wanted", newValueDict, controlValueDict)
             tor_url = controlValueDict["NZBurl"]
@@ -202,7 +202,7 @@ def processResultList(resultlist, author, title, book):
             if snatch:
                 notify_snatch(newValueDict["NZBtitle"] + ' at ' + now())
                 scheduleJob(action='Start', target='processDir')
-                return True
+                return True + True  # we found it
     else:
         logger.debug("No RSS found for " + (book["authorName"] + ' ' +
                 book['bookName']).strip())

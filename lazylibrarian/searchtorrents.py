@@ -105,7 +105,7 @@ def search_tor_book(books=None, reset=False):
 
         if not found:
             logger.debug("Searches for %s returned no results." % book['searchterm'])
-        else:
+        if found > True:
             tor_count = tor_count + 1
 
     logger.info("TORSearch for Wanted items complete, found %s book%s" % (tor_count, plural(tor_count)))
@@ -205,7 +205,7 @@ def processResultList(resultlist, book, searchtype):
                                     newValueDict["BookID"]).fetchone()
         if snatchedbooks:
             logger.debug('%s already marked snatched' % nzb_Title)
-            return False
+            return True  # someone else found it, not us
         else:
             myDB.upsert("wanted", newValueDict, controlValueDict)
             snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
@@ -213,7 +213,7 @@ def processResultList(resultlist, book, searchtype):
             if snatch:
                 notify_snatch(newValueDict["NZBtitle"] + ' at ' + now())
                 scheduleJob(action='Start', target='processDir')
-                return True
+                return True + True  # we found it
     else:
         logger.debug("No torrent's found for " + (book["authorName"] + ' ' +
                  book['bookName']).strip() + " using searchtype " + searchtype)

@@ -100,8 +100,8 @@ def search_nzb_book(books=None, reset=False):
 
         if not found:
             logger.debug("NZB Searches for %s returned no results." % book['searchterm'])
-        else:
-            nzb_count = nzb_count + 1
+        if found > True:
+            nzb_count = nzb_count + 1  # we found it
 
     logger.info("NZBSearch for Wanted items complete, found %s book%s" % (nzb_count, plural(nzb_count)))
 
@@ -202,7 +202,7 @@ def processResultList(resultlist, book, searchtype):
                                     newValueDict["BookID"]).fetchone()
         if snatchedbooks:
             logger.debug('%s already marked snatched' % nzb_Title)
-            return False
+            return True  # someone else found it
         else:
             myDB.upsert("wanted", newValueDict, controlValueDict)
             if nzbmode == "torznab":
@@ -214,7 +214,7 @@ def processResultList(resultlist, book, searchtype):
             if snatch:
                 notifiers.notify_snatch(newValueDict["NZBtitle"] + ' at ' + now())
                 scheduleJob(action='Start', target='processDir')
-                return True
+                return True + True  # we found it
     else:
         logger.debug("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() +
                  " using searchtype " + searchtype)
