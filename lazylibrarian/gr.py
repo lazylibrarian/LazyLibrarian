@@ -437,8 +437,10 @@ class GoodReads:
                     if find_book_status:
                         for resulted in find_book_status:
                             book_status = resulted['Status']
+                            locked = resulted ['Manual']
                     else:
                         book_status = lazylibrarian.NEWBOOK_STATUS
+                        locked = False
 
                     rejected = False
 
@@ -467,7 +469,7 @@ class GoodReads:
                                     break
 
                     if not rejected:
-                        if book_status != "Ignored":
+                        if book_status != "Ignored" and not locked:
                             controlValueDict = {"BookID": bookid}
                             newValueDict = {
                                 "AuthorName": authorNameResult,

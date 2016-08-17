@@ -816,6 +816,90 @@ class WebInterface(object):
                 logger.info(u'Missing book %s,%s' % (authorName, bookName))
     openBook.exposed = True
 
+    def editBook(self, bookid=None, **args):
+
+        myDB = database.DBConnection()
+
+        authors = myDB.select(
+                "SELECT AuthorName from authors WHERE Status !='Ignored' ORDER by AuthorName COLLATE NOCASE")
+        bookdata = myDB.select(
+            'SELECT * from books WHERE BookID="%s"' % bookid)
+        if bookdata:
+            return serve_template(templatename="editbook.html", title="Edit Book", config=bookdata[0], authors=authors)
+        else:
+            logger.info(u'Missing book %s' % bookid)
+    editBook.exposed = True
+
+    def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre=None,
+                    series=None, seriesnum=None, manual='0', authorname='', **kwargs):
+        myDB = database.DBConnection()
+
+        if bookid:
+            bookdata = myDB.select(
+                'SELECT * from books WHERE BookID="%s"' % bookid)
+            if bookdata:
+                edited = False
+                moved = False
+                if series == 'None' or not len(series):
+                    series = None
+                if seriesnum == 'None' or not len(seriesnum):
+                    seriesnum = None
+                if bookgenre == 'None' or not len(bookgenre):
+                    bookgenre = None
+                manual = bool(check_int(manual, 0))
+
+                if not (bookdata[0]["BookName"] == bookname):
+                    edited = True
+                if not (bookdata[0]["BookSub"] == booksub):
+                    edited = True
+                if not (bookdata[0]["BookGenre"] == bookgenre):
+                    edited = True
+                if not (bookdata[0]["Series"] == series):
+                    edited = True
+                if not (bookdata[0]["SeriesNum"] == seriesnum):
+                    edited = True
+                if not (bool(check_int(bookdata[0]["Manual"], 0)) == manual):
+                    edited = True
+
+                if not (bookdata[0]["AuthorName"] == authorname):
+                    moved = True
+
+                if edited:
+                    controlValueDict = {'BookID': bookid}
+                    newValueDict = {
+                        'BookName': bookname,
+                        'BookSub': booksub,
+                        'BookGenre': bookgenre,
+                        'Series': series,
+                        'SeriesNum': seriesnum,
+                        'Manual': bool(manual)
+                    }
+                    myDB.upsert("books", newValueDict, controlValueDict)
+                    logger.info('Book [%s] has been updated' % bookname)
+                else:
+                    logger.debug('Book [%s] has not been changed' % bookname)
+
+                if moved:
+                    authordata = myDB.select(
+                        'SELECT AuthorID,AuthorLink from authors WHERE AuthorName="%s"' % authorname)
+                    if authordata:
+                        controlValueDict = {'BookID': bookid}
+                        newValueDict = {
+                            'AuthorName': authorname,
+                            'AuthorID': authordata[0]['AuthorID'],
+                            'AuthorLink': authordata[0]['AuthorLink']
+                        }
+                        myDB.upsert("books", newValueDict, controlValueDict)
+
+
+                    logger.info('Book [%s] has been moved' % bookname)
+                else:
+                    logger.info('Book [%s] has not been moved' % bookname)
+
+        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % bookdata[0]["AuthorID"])
+
+    bookUpdate.exposed = True
+
     def markBooks(self, AuthorID=None, action=None, redirect=None, **args):
         self.label_thread()
 

@@ -1,0 +1,90 @@
+<%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
+
+<%def name="headerIncludes()">
+    <div id="subhead_container">
+    </div>
+</%def>
+<%def name="body()">
+<BR><br>
+<h1>&nbsp&nbsp${config['authorName']}</h1>
+<br><br>
+    <form action="bookUpdate" method="post">
+    <div class="table_wrapper">
+        <table class="configtable">
+            <tr>
+            <td>
+            <div>
+                <input type="text" name="bookid" value="${config['bookID']}" class="hidden">
+            </div>
+            <div class="row">
+                <label>Change author to: </label>
+                <select class="form-control" name="authorname" size="36">
+                %for item in authors:
+                    <option value="${item['AuthorName']}"
+                    %if config['authorName'] == item['AuthorName']:
+                        selected = "selected"
+                    %endif
+                    >${item['AuthorName']}</option>
+                %endfor
+                </select>
+            </div>
+
+            <div class="row">
+                <label>Book Title:</label>
+                <input type="text" name="bookname" value="${config['bookName']}" class="form-control" placeholder="Book Title" size="36">
+                <br><br>
+            </div>
+            <div class="row">
+                <label>Subtitle:</label>
+                <input type="text" name="booksub" value="${config['bookSub']}" class="form-control" placeholder="Subtitle" size="36">
+                <br><br>
+            </div>
+            <div class="row">
+                <label>Genre:</label>
+                <input type="text" name="bookgenre" value="${config['bookGenre']}" class="form-control" placeholder="Genre" size="36">
+                <br><br>
+            </div>
+            <div class="row">
+                <label>Series:</label>
+                <input type="text" id="series" name="series" value="${config['Series']}" class="form-control" size="36" placeholder="Series">
+                <br><br>
+            </div>
+            <div class="row">
+                <label>Series Number:</label>
+                <input type="text" name="seriesnum" value="${config['SeriesNum']}" placeholder="Series Number" size="36">
+                <br><br>
+            </div>
+            <%
+                if config['Manual'] == "1":
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+            %>
+            <BR>
+            <input type="checkbox" id="manual" name="manual" value=1 ${checked} />
+            <label>  Lock settings</label>
+            </td></tr></table>
+        </div>
+
+    <div class="table_wrapper_button">
+        <p><input type="submit" value="Save changes" id="add"></p>
+    </div>
+
+</form>
+</%def>
+
+<%def name="javascriptIncludes()">
+    <script>
+        function initThisPage()
+        {
+
+        }
+
+        $(document).ready(function() {
+            initThisPage();
+        });
+    </script>
+</%def>

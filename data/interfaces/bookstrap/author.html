@@ -154,15 +154,16 @@
                     if result['workpage']:
                         if len(result['workpage']) > 4:
                             workpage = '<a href="' + result['workpage'] + '" target="_new"><small><i>LibraryThing</i></small></a>'
+                    editpage = '<a href="editBook?bookid=' + result['bookID'] + '" target="_new"><small><i>Edit</i></a>'
                 %>
                 <tr>
                     <td class="select"><input type="checkbox" name="${result['BookID']}" /></td>
                     <td class="bookart text-center"><a href="${result['bookimg']}" target="_blank" rel="noreferrer"><img src="${result['bookimg']}" class="bookcover-xs img-responsive" alt="Cover"></a></td>
                     %if result['booksub']:
                         <td class id="bookname">${result['bookname']}<br>
-                        <small><i>${result['booksub']}</i></small><br>${sitelink}&nbsp;${workpage}</td>
+                        <small><i>${result['booksub']}</i></small><br>${sitelink}&nbsp;${workpage}&nbsp;${editpage}</td>
                     %else:
-                        <td class="bookname">${result['bookname']}<br>${sitelink}&nbsp;${workpage}</td>
+                        <td class="bookname">${result['bookname']}<br>${sitelink}&nbsp;${workpage}&nbsp;${editpage}</td>
                     %endif
                     <td class="series">${result['Series']}</td>
                     <td class="seriesNum text-center">${result['seriesNum']}</td>

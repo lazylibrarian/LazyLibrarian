@@ -1,0 +1,90 @@
+<%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
+
+<%def name="headerIncludes()">
+    <div id="subhead_container">
+        <div id="subhead_menu">
+        </div>
+    </div>
+</%def>
+<%def name="body()">
+    <form action="bookUpdate" method="post">
+        <div class="configtable">
+        <fieldset>
+            <legend>${config['authorName']}</legend>
+            <div class="form-group">
+                <label for="moveBook" class="control-label">Change author to: </label>
+                <select id="moveBook" class="moveBook form-control input-sm" name="authorname">
+                %for item in authors:
+                    <option value="${item['AuthorName']}"
+                    %if config['authorName'] == item['AuthorName']:
+                        selected = "selected"
+                    %endif
+                    >${item['AuthorName']}</option>
+                %endfor
+                </select>
+            </div>
+
+            <div class="form-group">
+                <input type="text" id="bookid" name="bookid" value="${config['bookID']}" class="hidden">
+            </div>
+            <div class="form-group">
+                <label for="bookname" class="control-label">Book Title:</label>
+                <input type="text" id="bookname" name="bookname" value="${config['bookName']}" class="form-control" placeholder="Book Title">
+            </div>
+            <div class="form-group">
+                <label for="booksub" class="control-label">Subtitle:</label>
+                <input type="text" id="booksub" name="booksub" value="${config['bookSub']}" class="form-control" placeholder="Subtitle">
+            </div>
+            <div class="form-group">
+                <label for="bookgenre" class="control-label">Genre:</label>
+                <input type="text" id="bookgenre" name="bookgenre" value="${config['bookGenre']}" class="form-control" placeholder="Genre">
+            </div>
+            <div class="form-group">
+                <label for="series" class="control-label">Series:</label>
+                <input type="text" id="series" name="series" value="${config['Series']}" class="form-control" placeholder="Series">
+            </div>
+            <div class="form-group">
+                <label for="seriesnum" class="control-label">Series Number:</label>
+                <input type="text" id="seriesnum" name="seriesnum" value="${config['SeriesNum']}" class="form-control" placeholder="Series Number">
+            </div>
+            <div class="checkbox">
+                <%
+                    if config['Manual'] == "1":
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                %>
+                <label for="manual" class="control-label">
+                <input type="checkbox" id="manual" name="manual" value="1" ${checked} />
+                Lock settings</label>
+            </div>
+
+        </fieldset>
+
+        <div class="table_wrapper_button">
+            <input type="submit" value="Save changes" id="add" class="btn btn-primary">
+        </div>
+
+    </div> <!-- form -->
+
+    </form>
+
+
+</%def>
+
+<%def name="javascriptIncludes()">
+    <script type="text/javascript">
+        function initThisPage()
+
+        {
+            "use strict";
+        }
+        $(document).ready(function() {
+            initThisPage();
+        });
+    </script>
+</%def>
+<html><head></head><body></body></html>
