@@ -624,11 +624,17 @@ class WebInterface(object):
                     starimg = '0-stars.png'
 
                 worklink = ''
-                if row[11]: # is there a workpage link
-                    if len(row[11]) > 4:
-                        worklink = '<br><td><a href="' + row[11] + '" target="_new">WorkPage</a></td>'
 
                 if lazylibrarian.HTTP_LOOK == 'default':
+                    if row[11]: # is there a workpage link
+                        if len(row[11]) > 4:
+                            worklink = '<td><a href="' + row[11] + '" target="_new"><i class="smalltext">LibraryThing</i></a></td>'
+
+                    if 'goodreads' in row[10]:
+                        sitelink = '<td><a href="' + row[10] + '" target="_new"><i class="smalltext">GoodReads</i></a></td>'
+                    if 'google' in row[10]:
+                        sitelink = '<td><a href="' + row[10] + '" target="_new"><i class="smalltext">GoogleBooks</i></a></td>'
+
                     l.append(
                         '<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[8])
                     l.append(
@@ -636,11 +642,10 @@ class WebInterface(object):
                     l.append(
                         '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[12], row[1]))
                     if row[9]:  # is there a sub-title
-                        l.append(
-                          '<td id="bookname"><a href="%s" target="_new">%s</a><br><i class="smalltext">%s</i></td>' % (row[10], row[2], row[9]))
+                        title = '<td id="bookname">%s<br><i class="smalltext">%s</i></td>' % (row[2], row[9])
                     else:
-                        l.append(
-                            '<td id="bookname"><a href="%s" target="_new">%s</a></td>' % (row[10], row[2]))
+                        title = '<td id="bookname">%s</td>' % row[2]
+                    l.append(title + '<br>' + sitelink + '&nbsp;' + worklink)
 
                     if row[3]:  # is the book part of a series
                         l.append('<td id="series">%s</td>' % row[3])
@@ -665,9 +670,18 @@ class WebInterface(object):
                         btn = '<td id="status"><a class="button">%s</a></td>' % row[7]
                     else:
                         btn = '<td id="status"><a class="button grey">%s</a></td>' % row[7]
-                    l.append(btn + worklink)
+                    l.append(btn)
 
                 elif lazylibrarian.HTTP_LOOK == 'bookstrap':
+                    if row[11]: # is there a workpage link
+                        if len(row[11]) > 4:
+                            worklink = '<td><a href="' + row[11] + '" target="_new"><small><i>LibraryThing</i></small></a></td>'
+
+                    if 'goodreads' in row[10]:
+                        sitelink = '<td><a href="' + row[10] + '" target="_new"><small><i>GoodReads</i></small></a></td>'
+                    if 'google' in row[10]:
+                        sitelink = '<td><a href="' + row[10] + '" target="_new"><small><i>GoogleBooks</i></small></a></td>'
+
                     l.append(
                         '<td class="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[8])
                     l.append(
@@ -675,11 +689,10 @@ class WebInterface(object):
                     l.append(
                         '<td class="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[12], row[1]))
                     if row[9]:  # is there a sub-title
-                        l.append(
-                            '<td class="bookname"><a href="%s" target="_blank" rel="noreferrer">%s</a><br><i class="smalltext">%s</i></td>' % (row[10], row[2], row[9]))
+                        title = '<td class="bookname">%s<br><small><i>%s</i></small></td>' % (row[2], row[9])
                     else:
-                        l.append(
-                            '<td class="bookname"><a href="%s" target="_blank" rel="noreferrer">%s</a></td>' % (row[10], row[2]))
+                        title = '<td class="bookname">%s</td>' % row[2]
+                    l.append(title + '<br>' + sitelink + '&nbsp;' + worklink)
 
                     if row[3]:  # is the book part of a series
                         l.append('<td class="series">%s</td>' % row[3])
@@ -703,7 +716,7 @@ class WebInterface(object):
                         btn = '<td class="status text-center"><a class="button btn btn-xs btn-info">%s</a></td>' % row[7]
                     else:
                        btn = '<td class="status text-center"><a class="button btn btn-xs btn-default grey">%s</a></td>' % row[7]
-                    l.append(btn + worklink)
+                    l.append(btn)
 
                 d.append(l)  # add the rowlist to the masterlist
 
@@ -802,6 +815,91 @@ class WebInterface(object):
                 bookName = bookdata[0]["BookName"]
                 logger.info(u'Missing book %s,%s' % (authorName, bookName))
     openBook.exposed = True
+
+    def editBook(self, bookid=None, **args):
+
+        myDB = database.DBConnection()
+
+        authors = myDB.select(
+                "SELECT AuthorName from authors WHERE Status !='Ignored' ORDER by AuthorName COLLATE NOCASE")
+        bookdata = myDB.select(
+            'SELECT * from books WHERE BookID="%s"' % bookid)
+        if bookdata:
+            return serve_template(templatename="editbook.html", title="Edit Book", config=bookdata[0], authors=authors)
+        else:
+            logger.info(u'Missing book %s' % bookid)
+    editBook.exposed = True
+
+    def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre=None,
+                    series=None, seriesnum=None, manual='0', authorname='', **kwargs):
+        myDB = database.DBConnection()
+
+        if bookid:
+            bookdata = myDB.select(
+                'SELECT * from books WHERE BookID="%s"' % bookid)
+            if bookdata:
+                edited = False
+                moved = False
+                if series == 'None' or not len(series):
+                    series = None
+                if seriesnum == 'None' or not len(seriesnum):
+                    seriesnum = None
+                if bookgenre == 'None' or not len(bookgenre):
+                    bookgenre = None
+                manual = bool(check_int(manual, 0))
+
+                if not (bookdata[0]["BookName"] == bookname):
+                    edited = True
+                if not (bookdata[0]["BookSub"] == booksub):
+                    edited = True
+                if not (bookdata[0]["BookGenre"] == bookgenre):
+                    edited = True
+                if not (bookdata[0]["Series"] == series):
+                    edited = True
+                if not (bookdata[0]["SeriesNum"] == seriesnum):
+                    edited = True
+                if not (bool(check_int(bookdata[0]["Manual"], 0)) == manual):
+                    edited = True
+
+                if not (bookdata[0]["AuthorName"] == authorname):
+                    moved = True
+
+                if edited:
+                    controlValueDict = {'BookID': bookid}
+                    newValueDict = {
+                        'BookName': bookname,
+                        'BookSub': booksub,
+                        'BookGenre': bookgenre,
+                        'Series': series,
+                        'SeriesNum': seriesnum,
+                        'Manual': bool(manual)
+                    }
+                    myDB.upsert("books", newValueDict, controlValueDict)
+                    logger.info('Book [%s] has been updated' % bookname)
+                else:
+                    logger.debug('Book [%s] has not been changed' % bookname)
+
+                if moved:
+                    authordata = myDB.select(
+                        'SELECT AuthorID,AuthorLink from authors WHERE AuthorName="%s"' % authorname)
+                    if authordata:
+                        controlValueDict = {'BookID': bookid}
+                        newValueDict = {
+                            'AuthorName': authorname,
+                            'AuthorID': authordata[0]['AuthorID'],
+                            'AuthorLink': authordata[0]['AuthorLink']
+                        }
+                        myDB.upsert("books", newValueDict, controlValueDict)
+                        update_totals(bookdata[0]["AuthorID"])    # we moved from here
+                        update_totals(authordata[0]['AuthorID'])  # to here
+
+                    logger.info('Book [%s] has been moved' % bookname)
+                else:
+                    logger.debug('Book [%s] has not been moved' % bookname)
+
+        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % bookdata[0]["AuthorID"])
+
+    bookUpdate.exposed = True
 
     def markBooks(self, AuthorID=None, action=None, redirect=None, **args):
         self.label_thread()
@@ -1557,11 +1655,26 @@ class WebInterface(object):
 
                 l.append('<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[5])
                 l.append('<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[8], row[0]))
+                if lazylibrarian.HTTP_LOOK == 'default':
+                    if 'goodreads' in row[6]:
+                        sitelink = '<a href="' + row[6] + '" target="_new"><i class="smalltext">GoodReads</i></a>'
+                    if 'google' in row[6]:
+                        sitelink = '<a href="' + row[6] + '" target="_new"><i class="smalltext">GoogleBooks</i></a>'
 
-                if row[7]:  # is there a sub-title
-                    l.append('<td id="bookname"><a href="%s" target="_new">%s</a><br><i class="smalltext">%s</i></td>' % (row [6], row[1], row[7]))
-                else:
-                    l.append('<td id="bookname"><a href="%s" target="_new">%s</a></td>' % (row[6], row[1]))
+                    if row[7]:  # is there a sub-title
+                        l.append('<td id="bookname">%s<br><i class="smalltext">%s</i><br>%s</td>' % (row[1], row[7], sitelink))
+                    else:
+                        l.append('<td id="bookname">%s<br>%s</td>' % (row[1], sitelink))
+                elif lazylibrarian.HTTP_LOOK == 'bookstrap':
+                    if 'goodreads' in row[6]:
+                        sitelink = '<a href="' + row[6] + '" target="_new"><small><i>GoodReads</i></small></a>'
+                    if 'google' in row[6]:
+                        sitelink = '<a href="' + row[6] + '" target="_new"><small><i>GoogleBooks</i></small></a>'
+
+                    if row[7]:  # is there a sub-title
+                        l.append('<td id="bookname">%s<br><small><i>%s</i></small><br>%s</td>' % (row[1], row[7], sitelink))
+                    else:
+                        l.append('<td id="bookname">%s<br>%s</td>' % (row[1], sitelink))
 
                 if row[2]:  # is the book part of a series
                     l.append('<td id="series">%s</td>' % row[2])

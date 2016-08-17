@@ -405,7 +405,6 @@ class GoodReads:
                             logger.debug('Skipped a book with language %s' % bookLanguage)
                             ignored = ignored + 1
                             continue
-
                     bookname = book.find('title').text
                     bookid = book.find('id').text
                     bookdesc = book.find('description').text
@@ -414,12 +413,22 @@ class GoodReads:
                     booklink = book.find('link').text
                     bookrate = float(book.find('average_rating').text)
                     bookpages = book.find('num_pages').text
-
                     bookname = unaccented(bookname)
+                    if ': ' in bookname:
+                        parts = bookname.split(': ', 1)
+                        bookname = parts[0]
+                        booksub = parts[1]
+                    else:
+                        booksub = ''
                     dic = {':': '', '"': '', '\'': ''}
                     bookname = replace_all(bookname, dic)
                     bookname = bookname.strip()  # strip whitespace
-                    series,seriesNum = bookSeries(bookname)
+                    booksub = replace_all(booksub, dic)
+                    booksub = booksub.strip()  # strip whitespace
+                    if booksub:
+                        series,seriesNum = bookSeries(booksub)
+                    else:
+                        series,seriesNum = bookSeries(bookname)
 
                     # GoodReads sometimes has multiple bookids for the same book (same author/title, different editions)
                     # and sometimes uses the same bookid if the book is the same but the title is slightly different
@@ -428,8 +437,10 @@ class GoodReads:
                     if find_book_status:
                         for resulted in find_book_status:
                             book_status = resulted['Status']
+                            locked = resulted ['Manual']
                     else:
                         book_status = lazylibrarian.NEWBOOK_STATUS
+                        locked = False
 
                     rejected = False
 
@@ -458,34 +469,45 @@ class GoodReads:
                                     break
 
                     if not rejected:
+                        find_books = myDB.select('SELECT * FROM books WHERE BookID = "%s"' % bookid)
+                        if find_books:
+                            # we have a book with this bookid already
+                            logger.debug('Rejecting bookid %s for [%s][%s] already got bookid' %
+                                (bookid, authorNameResult, bookname))
+                            duplicates = duplicates + 1
+                            rejected = True
+                            break
+
+                    if not rejected:
                         if book_status != "Ignored":
-                            controlValueDict = {"BookID": bookid}
-                            newValueDict = {
-                                "AuthorName": authorNameResult,
-                                "AuthorID": authorid,
-                                "AuthorLink": None,
-                                "BookName": bookname,
-                                "BookSub": None,
-                                "BookDesc": bookdesc,
-                                "BookIsbn": bookisbn,
-                                "BookPub": bookpub,
-                                "BookGenre": None,
-                                "BookImg": bookimg,
-                                "BookLink": booklink,
-                                "BookRate": bookrate,
-                                "BookPages": bookpages,
-                                "BookDate": pubyear,
-                                "BookLang": bookLanguage,
-                                "Status": book_status,
-                                "BookAdded": today(),
-                                "Series": series,
-                                "SeriesNum": seriesNum
-                            }
+                            if not locked:
+                                controlValueDict = {"BookID": bookid}
+                                newValueDict = {
+                                    "AuthorName": authorNameResult,
+                                    "AuthorID": authorid,
+                                    "AuthorLink": None,
+                                    "BookName": bookname,
+                                    "BookSub": booksub,
+                                    "BookDesc": bookdesc,
+                                    "BookIsbn": bookisbn,
+                                    "BookPub": bookpub,
+                                    "BookGenre": None,
+                                    "BookImg": bookimg,
+                                    "BookLink": booklink,
+                                    "BookRate": bookrate,
+                                    "BookPages": bookpages,
+                                    "BookDate": pubyear,
+                                    "BookLang": bookLanguage,
+                                    "Status": book_status,
+                                    "BookAdded": today(),
+                                    "Series": series,
+                                    "SeriesNum": seriesNum
+                                }
 
-                            resultsCount = resultsCount + 1
+                                resultsCount = resultsCount + 1
 
-                            myDB.upsert("books", newValueDict, controlValueDict)
-                            logger.debug(u"Book found: " + book.find('title').text + " " + pubyear)
+                                myDB.upsert("books", newValueDict, controlValueDict)
+                                logger.debug(u"Book found: " + book.find('title').text + " " + pubyear)
 
                             if 'nocover' in bookimg or 'nophoto' in bookimg:
                                 # try to get a cover from librarything
@@ -645,21 +667,24 @@ class GoodReads:
         if author:
             AuthorID = author['authorid']
 
-        result = re.search(r"\(([\S\s]+),? #(\d+\.?-?\d{0,})", bookname)
-        if result:
-            series = result.group(1)
-            if series[-1] == ',':
-                series = series[:-1]
-            seriesNum = result.group(2)
-        else:
-            series = None
-            seriesNum = None
-
         dic = {':': '', '"': '', '\'': ''}
         bookname = replace_all(bookname, dic)
 
         bookname = unaccented(bookname)
+        if ': ' in bookname:
+            parts = bookname.split(': ', 1)
+            bookname = parts[0]
+            booksub = parts[1]
+
+        dic = {':': '', '"': '', '\'': ''}
+        bookname = replace_all(bookname, dic)
         bookname = bookname.strip()  # strip whitespace
+        booksub = replace_all(booksub, dic)
+        booksub = booksub.strip()  # strip whitespace
+        if booksub:
+           series,seriesNum = bookSeries(booksub)
+        else:
+           series,seriesNum = bookSeries(bookname)
 
         controlValueDict = {"BookID": bookid}
         newValueDict = {
@@ -667,7 +692,7 @@ class GoodReads:
             "AuthorID": AuthorID,
             "AuthorLink": None,
             "BookName": bookname,
-            "BookSub": None,
+            "BookSub": booksub,
             "BookDesc": bookdesc,
             "BookIsbn": bookisbn,
             "BookPub": bookpub,

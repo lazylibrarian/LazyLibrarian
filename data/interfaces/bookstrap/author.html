@@ -5,7 +5,7 @@
 
 <%def name="headerIncludes()">
     <div id="subhead_container">
-        <form id="subhead_menu" class="form-inline">            
+        <form id="subhead_menu" class="form-inline">
             <a href="refreshAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-refresh"></i> Refresh Author</a>
             <a href="deleteAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-remove"></i> Delete Author</a>
             %if author['Status'] == 'Paused':
@@ -23,7 +23,7 @@
                         <option value="${language['BookLang']}">${language['BookLang']}</option>
                         %endfor
                     </select>
-                </div>            
+                </div>
             %endif
         </form>
     </div>
@@ -80,9 +80,9 @@
                 <div class="progress">
                     <div class="progress-bar" role="progressbar" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100" style="width: ${percent}%;">
                         <span class="sr-only">${percent}% Complete</span>
-                    </div>                    
+                    </div>
                 </div>
-                </div>                
+                </div>
                 <div class="col-xs-4">
                     <span class="progressbar-front-text">${havebooks} / ${totalbooks}</span>
                 </div>
@@ -91,9 +91,9 @@
     </div>
 </div>
 
-<form action="markBooks" method="get" class="form-inline">            
+<form action="markBooks" method="get" class="form-inline">
     <div class="indented">
-        
+
             <input type="hidden" name="AuthorID" value="${author['AuthorID']}">
             <input type="hidden" name="redirect" value="author">
             <div class="form-group">
@@ -103,10 +103,10 @@
                     <option value="Have">Have</option>
                     <option value="Skipped">Skipped</option>
                     <option value="Ignored">Ignored</option>
-                </select>                
+                </select>
             </div>
             <input type="submit" class="markBooks btn btn-sm btn-primary" value="Go">
-        
+
     </div>
     <p>&nbsp;</p>
 <div class="table-responsive">
@@ -144,19 +144,26 @@
                         starimg = '5-stars.png'
                     else:
                         starimg = '0-stars.png'
+
+                    if 'goodreads' in result['booklink']:
+                        sitelink = '<a href="' + result['booklink'] + '" target="_new"><small><i>GoodReads</i></small></a>'
+                    if 'google' in result['booklink']:
+                        sitelink = '<a href="' + result['booklink'] + '" target="_new"><small><i>GoogleBooks</i></small></a>'
+
                     workpage = ''
                     if result['workpage']:
                         if len(result['workpage']) > 4:
-                            workpage = '<br><a href="' + result['workpage'] + '" target="_new">WorkPage</a>' 
+                            workpage = '<a href="' + result['workpage'] + '" target="_new"><small><i>LibraryThing</i></small></a>'
+                    editpage = '<a href="editBook?bookid=' + result['bookID'] + '" target="_new"><small><i>Edit</i></a>'
                 %>
                 <tr>
                     <td class="select"><input type="checkbox" name="${result['BookID']}" /></td>
                     <td class="bookart text-center"><a href="${result['bookimg']}" target="_blank" rel="noreferrer"><img src="${result['bookimg']}" class="bookcover-xs img-responsive" alt="Cover"></a></td>
                     %if result['booksub']:
-                        <td class id="bookname"><a href="${result['booklink']}" target="_blank" rel="noreferrer">${result['bookname']}</a><br>
-                        <i class="smalltext">${result['booksub']}</i></td>
+                        <td class id="bookname">${result['bookname']}<br>
+                        <small><i>${result['booksub']}</i></small><br>${sitelink}&nbsp;${workpage}&nbsp;${editpage}</td>
                     %else:
-                        <td class="bookname"><a href="${result['booklink']}" target="_blank" rel="noreferrer">${result['bookname']}</a></td>
+                        <td class="bookname">${result['bookname']}<br>${sitelink}&nbsp;${workpage}&nbsp;${editpage}</td>
                     %endif
                     <td class="series">${result['Series']}</td>
                     <td class="seriesNum text-center">${result['seriesNum']}</td>
@@ -165,21 +172,21 @@
                     <td class="language text-center">${result['booklang']}</td>
 
                     %if result['Status'] == 'Open':
-                        <td class="status text-center"><a class="btn btn-xs btn-warning button green" href="openBook?bookid=${result['bookID']}" target="_self"><i class="fa fa-book"></i> ${result['Status']}</a>${workpage}</td>
+                        <td class="status text-center"><a class="btn btn-xs btn-warning button green" href="openBook?bookid=${result['bookID']}" target="_self"><i class="fa fa-book"></i> ${result['Status']}</a></td>
                     %else:
                         %if result['Status'] == 'Wanted':
                             <td class="status text-center">
                                 <!--<p><a class="btn btn-xs btn-danger" href="searchForBook?bookid=${result['bookID']}" target="_self"></p>-->
                                 <p><a class="a btn btn-xs btn-danger">${result['Status']}</a></p>
-                                <p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=${result['bookID']}" title="Search Now"><i class="fa fa-search"></i> Search</a></p>${workpage}</td>
+                                <p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=${result['bookID']}" title="Search Now"><i class="fa fa-search"></i> Search</a></p></td>
                         %else:
                             %if result['Status'] == 'Snatched':
-                                <td class="status text-center"><a class="btn btn-xs btn-info button">${result['Status']}</a>${workpage}</td>
+                                <td class="status text-center"><a class="btn btn-xs btn-info button">${result['Status']}</a></td>
                             %else:
                                 %if result['Status'] == 'Have':
-                                    <td class="status text-center"><a class="btn btn-xs btn-info button">${result['Status']}</a>${workpage}</td>
+                                    <td class="status text-center"><a class="btn btn-xs btn-info button">${result['Status']}</a></td>
                                 %else:
-                                    <td class="status text-center"><a class="btn btn-xs btn-default button">${result['Status']}</a>${workpage}</td>
+                                    <td class="status text-center"><a class="btn btn-xs btn-default button">${result['Status']}</a></td>
                                 %endif:
                             %endif
                         %endif
@@ -194,7 +201,7 @@
 </%def>
 
 <%def name="headIncludes()">
-    
+
     %if author['Status'] == 'Loading':
     <meta http-equiv="refresh" content="12">
     <script type="text/javascript">
@@ -205,14 +212,14 @@
     %endif
 </%def>
 
-<%def name="javascriptIncludes()">    
+<%def name="javascriptIncludes()">
 <script type="text/javascript">
     $(document).ready(function()
     {
         var oTable = $('#book_table').dataTable(
             {
                 "order": [],
-                "columnDefs": 
+                "columnDefs":
                     [{ targets: 'no-sort', orderable: false }] // Don't allow colums of class no-sort to be sorted
                 ,
                 "oLanguage": {
@@ -227,19 +234,18 @@
                 "iDisplayLength": 10,
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     var w = window.innerWidth;
-                    if ( w < 768 ) 
+                    if ( w < 768 )
                     {   // hide cover,seriesnum,stars,date on small devices
                         $('td', nRow).eq(1).addClass('hidden');
                         $('td', nRow).eq(4).addClass('hidden');
                         $('td', nRow).eq(5).addClass('hidden');
                         $('td', nRow).eq(6).addClass('hidden');
-                    }                                    
+                    }
                     return nRow;
-                },          
+                },
             });
 			$('.dataTables_filter input').attr("placeholder", "Search filter");
 			$(window).resize(function() {oTable.fnDraw(false)});
     });
 </script>
 </%def>
-

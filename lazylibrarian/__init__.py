@@ -1325,7 +1325,8 @@ def dbcheck():
     # 3 removed SeriesOrder column from books table as redundant
     # 4 added duplicates column to stats table
     # 5 issue numbers padded to 4 digits with leading zeros
-    db_current_version = 5
+    # 6 added Manual field to books table for user editing
+    db_current_version = 6
 
     if db_version < db_current_version:
         logger.info('Updating database to version %s, current version is %s' % (db_current_version, db_version))
@@ -1339,7 +1340,7 @@ def dbcheck():
                 BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
                 BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, \
                 BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesNum TEXT, \
-                WorkPage TEXT)')
+                WorkPage TEXT, Manual TEXT)')
             c.execute('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, \
                 NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT)')
             c.execute('CREATE TABLE IF NOT EXISTS pastissues AS SELECT * FROM wanted')  # same columns
@@ -1554,6 +1555,12 @@ def dbcheck():
                     issuedate = issuedate.zfill(4)
                     myDB.action('UPDATE magazines SET IssueDate="%s" WHERE Title="%s"' % (issuedate, title))
 
+        if db_version < 6:
+            try:
+                c.execute('SELECT Manual from books')
+            except sqlite3.OperationalError:
+                logger.info('Updating books table to hold Manual')
+                c.execute('ALTER TABLE books ADD COLUMN Manual TEXT')
 
         c.execute('PRAGMA user_version = %s' % db_current_version)
         conn.commit()

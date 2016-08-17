@@ -24,7 +24,7 @@
             %endif
             </div>
         </form>
-    </div>    
+    </div>
 </%def>
 
 <%def name="body()">
@@ -37,7 +37,7 @@
                 <option value="Wanted">Wanted</option>
                 <option value="Have">Have</option>
                 <option value="Remove">Remove</option>
-            </select>                
+            </select>
         </div>
         <input type="submit" class="markBooks btn btn-sm btn-primary" value="Go">
 
@@ -64,16 +64,16 @@
 </%def>
 
 <%def name="headIncludes()">
-    
+
 </%def>
 
-<%def name="javascriptIncludes()">    
+<%def name="javascriptIncludes()">
     <script type="text/javascript">
     $(document).ready(function() {
         var oTable = $('#book_table').dataTable({
             "bAutoWidth": false,
             "order": [[ 2, 'asc' ]],
-            "columnDefs": 
+            "columnDefs":
                 [{ targets: 'no-sort', orderable: false }]
             ,
             "oLanguage": {
@@ -92,22 +92,22 @@
             "bFilter": true,
             "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                 var w = window.innerWidth;
-                if ( w < 768 ) 
+                if ( w < 768 )
                 {   // hide cover,seriesnum,stars,date on small devices
                     $('td', nRow).eq(1).addClass('hidden');
                     $('td', nRow).eq(5).addClass('hidden');
                     $('td', nRow).eq(6).addClass('hidden');
                     $('td', nRow).eq(7).addClass('hidden');
-                }                                    
+                }
                 return nRow;
-            },          
+            },
         });
         $('.dataTables_filter input').attr("placeholder", "Search filter");
     	$(window).resize(function() {oTable.fnDraw(false)});
-        
+
         $('#chooselanguage').val(getUrlVars()['BookLang']);
     });
-    
+
     // Read a page's GET URL variables and return them as an associative array.
 	function getUrlVars() {
         var vars = [], hash;
@@ -118,6 +118,6 @@
             vars[hash[0]] = hash[1];
         }
         return vars;
-    }        
+    }
     </script>
 </%def>
