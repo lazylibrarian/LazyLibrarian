@@ -890,11 +890,12 @@ class WebInterface(object):
                             'AuthorLink': authordata[0]['AuthorLink']
                         }
                         myDB.upsert("books", newValueDict, controlValueDict)
-
+                        update_totals(bookdata[0]["AuthorID"])    # we moved from here
+                        update_totals(authordata[0]['AuthorID'])  # to here
 
                     logger.info('Book [%s] has been moved' % bookname)
                 else:
-                    logger.info('Book [%s] has not been moved' % bookname)
+                    logger.debug('Book [%s] has not been moved' % bookname)
 
         raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % bookdata[0]["AuthorID"])
 

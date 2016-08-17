@@ -1557,12 +1557,10 @@ def dbcheck():
 
         if db_version < 6:
             try:
-                c.execute('SELECT Manual from bookss')
+                c.execute('SELECT Manual from books')
             except sqlite3.OperationalError:
                 logger.info('Updating books table to hold Manual')
                 c.execute('ALTER TABLE books ADD COLUMN Manual TEXT')
-
-
 
         c.execute('PRAGMA user_version = %s' % db_current_version)
         conn.commit()
