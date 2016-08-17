@@ -469,34 +469,45 @@ class GoodReads:
                                     break
 
                     if not rejected:
-                        if book_status != "Ignored" and not locked:
-                            controlValueDict = {"BookID": bookid}
-                            newValueDict = {
-                                "AuthorName": authorNameResult,
-                                "AuthorID": authorid,
-                                "AuthorLink": None,
-                                "BookName": bookname,
-                                "BookSub": booksub,
-                                "BookDesc": bookdesc,
-                                "BookIsbn": bookisbn,
-                                "BookPub": bookpub,
-                                "BookGenre": None,
-                                "BookImg": bookimg,
-                                "BookLink": booklink,
-                                "BookRate": bookrate,
-                                "BookPages": bookpages,
-                                "BookDate": pubyear,
-                                "BookLang": bookLanguage,
-                                "Status": book_status,
-                                "BookAdded": today(),
-                                "Series": series,
-                                "SeriesNum": seriesNum
-                            }
+                        find_books = myDB.select('SELECT * FROM books WHERE BookID = "%s"' % bookid)
+                        if find_books:
+                            # we have a book with this bookid already
+                            logger.debug('Rejecting bookid %s for [%s][%s] already got bookid' %
+                                (bookid, authorNameResult, bookname))
+                            duplicates = duplicates + 1
+                            rejected = True
+                            break
 
-                            resultsCount = resultsCount + 1
+                    if not rejected:
+                        if book_status != "Ignored":
+                            if not locked:
+                                controlValueDict = {"BookID": bookid}
+                                newValueDict = {
+                                    "AuthorName": authorNameResult,
+                                    "AuthorID": authorid,
+                                    "AuthorLink": None,
+                                    "BookName": bookname,
+                                    "BookSub": booksub,
+                                    "BookDesc": bookdesc,
+                                    "BookIsbn": bookisbn,
+                                    "BookPub": bookpub,
+                                    "BookGenre": None,
+                                    "BookImg": bookimg,
+                                    "BookLink": booklink,
+                                    "BookRate": bookrate,
+                                    "BookPages": bookpages,
+                                    "BookDate": pubyear,
+                                    "BookLang": bookLanguage,
+                                    "Status": book_status,
+                                    "BookAdded": today(),
+                                    "Series": series,
+                                    "SeriesNum": seriesNum
+                                }
 
-                            myDB.upsert("books", newValueDict, controlValueDict)
-                            logger.debug(u"Book found: " + book.find('title').text + " " + pubyear)
+                                resultsCount = resultsCount + 1
+
+                                myDB.upsert("books", newValueDict, controlValueDict)
+                                logger.debug(u"Book found: " + book.find('title').text + " " + pubyear)
 
                             if 'nocover' in bookimg or 'nophoto' in bookimg:
                                 # try to get a cover from librarything

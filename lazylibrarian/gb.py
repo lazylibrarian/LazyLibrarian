@@ -499,6 +499,15 @@ class GoogleBooks:
                                     rejected = True
                                     duplicates = duplicates + 1
                                     break
+                    if not rejected:
+                        find_books = myDB.select('SELECT * FROM books WHERE BookID = "%s"' % bookid)
+                        if find_books:
+                            # we have a book with this bookid already
+                            logger.debug('Rejecting bookid %s for [%s][%s] already got bookid' %
+                                (bookid, authorNameResult, bookname))
+                            duplicates = duplicates + 1
+                            rejected = True
+                            break
 
                     if not rejected:
                         if book_status != "Ignored" and not locked:
