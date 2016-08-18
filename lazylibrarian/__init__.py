@@ -370,6 +370,7 @@ def initialize():
             logger.info("Screen Log set to INFO/WARN/ERROR")
 
         config_read()
+        logger.info('SYS_ENCODING is %s' % SYS_ENCODING)
 
         # Put the cache dir in the data dir for now
         CACHEDIR = os.path.join(DATADIR, 'cache')
