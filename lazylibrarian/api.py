@@ -51,6 +51,8 @@ cmd_dict = {'help':'list available commands. ' + \
             'forceProcess':'process books/mags in download dir',
             'pauseAuthor':'&id= pause author by AuthorID',
             'resumeAuthor':'&id= resume author by AuthorID',
+            'ignoreAuthor':'&id= ignore author by AuthorID',
+            'unignoreAuthor':'&id= unignore author by AuthorID',
             'refreshAuthor':'&name= refresh author by name',
             'forceActiveAuthorsUpdate':'[&wait] refresh all active authors and reload their books',
             'forceLibraryScan':'[&wait] refresh whole book library',
@@ -61,6 +63,8 @@ cmd_dict = {'help':'list available commands. ' + \
             'update':'update lazylibrarian',
             'findAuthor':'&name= search goodreads/googlebooks for named author',
             'findBook':'&name= search goodreads/googlebooks for named book',
+            'moveBooks':'&from= &to= move all books from one author to another by AuthorName',
+            'moveBook':'&id= &to= move one book to new author by BookID and AuthorName',
             'addAuthor':'&name= add author to database by name',
             'delAuthor':'&id= delete author from database by AuthorID',
             'addMagazine':'&name= add magazine to database by name',
@@ -325,6 +329,30 @@ class Api(object):
         newValueDict = {'Status': 'Paused'}
         myDB.upsert("authors", newValueDict, controlValueDict)
 
+    def _ignoreAuthor(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+
+        myDB = database.DBConnection()
+        controlValueDict = {'AuthorID': self.id}
+        newValueDict = {'Status': 'Ignored'}
+        myDB.upsert("authors", newValueDict, controlValueDict)
+
+    def _unignoreAuthor(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+
+        myDB = database.DBConnection()
+        controlValueDict = {'AuthorID': self.id}
+        newValueDict = {'Status': 'Active'}
+        myDB.upsert("authors", newValueDict, controlValueDict)
+
     def _resumeAuthor(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
@@ -471,6 +499,61 @@ class Api(object):
 
         search_api.join()
         self.data = queue.get()
+
+    def _moveBook(self, **kwargs):
+        if 'from' not in kwargs:
+            self.data = 'Missing parameter: from'
+            return
+        if 'to' not in kwargs:
+            self.data = 'Missing parameter: to'
+            return
+        try:
+            myDB = database.DBConnection()
+            authordata = myDB.select(
+                'SELECT AuthorID,AuthorLink from authors WHERE AuthorName="%s"' % kwargs['to'])
+            if not authordata:
+                self.data = "No destination author [%s] in the database" % kwargs['to']
+            else:
+                controlValueDict = {'BookID': kwargs['from']}
+                newValueDict = {
+                    'AuthorName': kwargs['to'],
+                    'AuthorID': authordata[0]['AuthorID'],
+                    'AuthorLink': authordata[0]['AuthorLink']
+                }
+                myDB.upsert("books", newValueDict, controlValueDict)
+                update_totals(bookdata[0]["AuthorID"])    # we moved from here
+                update_totals(authordata[0]['AuthorID'])  # to here
+                self.data = "Moved book %s to [%s]" % (kwargs['from'], kwargs['to'])
+            logger.debug(self.data)
+        except Exception as e:
+            self.data = e
+
+    def _moveBooks(self, **kwargs):
+        if 'from' not in kwargs:
+            self.data = 'Missing parameter: from'
+            return
+        if 'to' not in kwargs:
+            self.data = 'Missing parameter: to'
+            return
+        try:
+            myDB = database.DBConnection()
+
+            fromhere = myDB.action('SELECT bookid,authorid from books where authorname="%s"' % kwargs['from']).fetchall()
+            tohere = myDB.action('SELECT authorid, authorlink from authors where authorname="%s"' % kwargs['to']).fetchone()
+            if not len(fromhere):
+                self.data = "No books by [%s] in the database" % kwargs['from']
+            else:
+                if not tohere:
+                    self.data = "No destination author [%s] in the database" % kwargs['to']
+                else:
+                    myDB.action('UPDATE books SET authorid="%s", authorname="%s", authorlink="%s" where authorname="%s"' % (tohere[0], kwargs['to'], tohere[1], kwargs['from']))
+                    self.data = "Moved %s books from %s to %s" % (len(fromhere), kwargs['from'], kwargs['to'])
+                    importer.update_totals(fromhere[0][1])    # we moved from here
+                    importer.update_totals(tohere[0])  # to here
+
+            logger.debug(self.data)
+        except Exception as e:
+            self.data = e
 
     def _addAuthor(self, **kwargs):
         if 'name' not in kwargs:

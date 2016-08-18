@@ -11,6 +11,11 @@
             %else:
                 <li><a href="pauseAuthor?AuthorID=${author['AuthorID']}" id="button"> Pause Author</a></li>
             %endif
+            %if author['Status'] != 'Ignored':
+                <li><a href="ignoreAuthor?AuthorID=${author['AuthorID']}" id="button"> Ignore Author</a></li>
+            %else:
+                <li><a href="resumeAuthor?AuthorID=${author['AuthorID']}" id="button"> Unignore Author</a></li>
+            %endif
             <li><a href="authorPage?AuthorID=${author['AuthorID']}&Ignored=True" id="button"> Ignored Books </a></li>
             %if len(languages) >= 1:
                 <li>Language:&nbsp</li>

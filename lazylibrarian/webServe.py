@@ -57,7 +57,7 @@ class WebInterface(object):
     def home(self):
         myDB = database.DBConnection()
         authors = myDB.select(
-            'SELECT * from authors order by AuthorName COLLATE NOCASE')
+            'SELECT * from authors where Status != "Ignored" order by AuthorName COLLATE NOCASE')
         return serve_template(templatename="index.html", title="Home", authors=authors)
     home.exposed = True
 
@@ -523,6 +523,23 @@ class WebInterface(object):
             u'AuthorID [%s]-[%s] Restarted - redirecting to Author home page' % (AuthorID, AuthorName))
         raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
     resumeAuthor.exposed = True
+
+    def ignoreAuthor(self, AuthorID):
+        self.label_thread()
+
+        myDB = database.DBConnection()
+        authorsearch = myDB.select(
+            'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
+        AuthorName = authorsearch[0]['AuthorName']
+        logger.info(u"Ignoring author: %s" % AuthorName)
+
+        controlValueDict = {'AuthorID': AuthorID}
+        newValueDict = {'Status': 'Ignored'}
+        myDB.upsert("authors", newValueDict, controlValueDict)
+        logger.debug(
+            u'AuthorID [%s]-[%s] Ignored - redirecting to home page' % (AuthorID, AuthorName))
+        raise cherrypy.HTTPRedirect("home")
+    ignoreAuthor.exposed = True
 
     def deleteAuthor(self, AuthorID):
         self.label_thread()

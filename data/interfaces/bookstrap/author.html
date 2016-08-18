@@ -13,6 +13,11 @@
             %else:
                 <a href="pauseAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-pause"></i> Pause Author</a>
             %endif
+            %if author['Status'] != 'Ignored':
+                <a href="ignoreAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-ban"></i> Ignore Author</a>
+            %else:
+                <a href="resumeAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-play"></i> Unignore Author</a>
+            %endif
             <a href="authorPage?AuthorID=${author['AuthorID']}&amp;Ignored=True" class="btn btn-sm btn-primary"><i class="fa fa-ban"></i> Ignored Books</a>
             %if len(languages) >= 1:
                 <div class="form-group pull-right">
