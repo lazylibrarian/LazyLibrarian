@@ -63,8 +63,8 @@ cmd_dict = {'help':'list available commands. ' + \
             'update':'update lazylibrarian',
             'findAuthor':'&name= search goodreads/googlebooks for named author',
             'findBook':'&name= search goodreads/googlebooks for named book',
-            'moveBooks':'&from= &to= move all books from one author to another by AuthorName',
-            'moveBook':'&id= &to= move one book to new author by BookID and AuthorName',
+            'moveBooks':'&fromname= &toname= move all books from one author to another by AuthorName',
+            'moveBook':'&id= &toid= move one book to new author by BookID and AuthorID',
             'addAuthor':'&name= add author to database by name',
             'delAuthor':'&id= delete author from database by AuthorID',
             'addMagazine':'&name= add magazine to database by name',
@@ -501,53 +501,57 @@ class Api(object):
         self.data = queue.get()
 
     def _moveBook(self, **kwargs):
-        if 'from' not in kwargs:
-            self.data = 'Missing parameter: from'
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
             return
-        if 'to' not in kwargs:
-            self.data = 'Missing parameter: to'
+        if 'toid' not in kwargs:
+            self.data = 'Missing parameter: toid'
             return
         try:
             myDB = database.DBConnection()
-            authordata = myDB.select(
-                'SELECT AuthorID,AuthorLink from authors WHERE AuthorName="%s"' % kwargs['to'])
+            authordata = myDB.action(
+                'SELECT AuthorName, AuthorLink from authors WHERE AuthorID="%s"' % kwargs['toid']).fetchone()
             if not authordata:
-                self.data = "No destination author [%s] in the database" % kwargs['to']
+                self.data = "No destination author [%s] in the database" % kwargs['toid']
             else:
-                controlValueDict = {'BookID': kwargs['from']}
-                newValueDict = {
-                    'AuthorName': kwargs['to'],
-                    'AuthorID': authordata[0]['AuthorID'],
-                    'AuthorLink': authordata[0]['AuthorLink']
-                }
-                myDB.upsert("books", newValueDict, controlValueDict)
-                update_totals(bookdata[0]["AuthorID"])    # we moved from here
-                update_totals(authordata[0]['AuthorID'])  # to here
-                self.data = "Moved book %s to [%s]" % (kwargs['from'], kwargs['to'])
+                bookdata = myDB.action('SELECT AuthorID, BookName from books where BookID="%s"' % kwargs['id']).fetchone()
+                if not bookdata:
+                    self.data = "No bookid [%s] in the database" % kwargs['id']
+                else:
+                    controlValueDict = {'BookID': kwargs['id']}
+                    newValueDict = {
+                        'AuthorID': kwargs['toid'],
+                        'AuthorName': authordata[0],
+                        'AuthorLink': authordata[1]
+                    }
+                    myDB.upsert("books", newValueDict, controlValueDict)
+                    importer.update_totals(bookdata[0])    # we moved from here
+                    importer.update_totals(kwargs['toid'])  # to here
+                    self.data = "Moved book [%s] to [%s]" % (bookdata[1], authordata[0])
             logger.debug(self.data)
         except Exception as e:
             self.data = e
 
     def _moveBooks(self, **kwargs):
-        if 'from' not in kwargs:
-            self.data = 'Missing parameter: from'
+        if 'fromname' not in kwargs:
+            self.data = 'Missing parameter: fromname'
             return
-        if 'to' not in kwargs:
-            self.data = 'Missing parameter: to'
+        if 'toname' not in kwargs:
+            self.data = 'Missing parameter: toname'
             return
         try:
             myDB = database.DBConnection()
 
-            fromhere = myDB.action('SELECT bookid,authorid from books where authorname="%s"' % kwargs['from']).fetchall()
-            tohere = myDB.action('SELECT authorid, authorlink from authors where authorname="%s"' % kwargs['to']).fetchone()
+            fromhere = myDB.action('SELECT bookid,authorid from books where authorname="%s"' % kwargs['fromname']).fetchall()
+            tohere = myDB.action('SELECT authorid, authorlink from authors where authorname="%s"' % kwargs['toname']).fetchone()
             if not len(fromhere):
-                self.data = "No books by [%s] in the database" % kwargs['from']
+                self.data = "No books by [%s] in the database" % kwargs['fromname']
             else:
                 if not tohere:
-                    self.data = "No destination author [%s] in the database" % kwargs['to']
+                    self.data = "No destination author [%s] in the database" % kwargs['toname']
                 else:
-                    myDB.action('UPDATE books SET authorid="%s", authorname="%s", authorlink="%s" where authorname="%s"' % (tohere[0], kwargs['to'], tohere[1], kwargs['from']))
-                    self.data = "Moved %s books from %s to %s" % (len(fromhere), kwargs['from'], kwargs['to'])
+                    myDB.action('UPDATE books SET authorid="%s", authorname="%s", authorlink="%s" where authorname="%s"' % (tohere[0], kwargs['toname'], tohere[1], kwargs['fromname']))
+                    self.data = "Moved %s books from %s to %s" % (len(fromhere), kwargs['fromname'], kwargs['toname'])
                     importer.update_totals(fromhere[0][1])    # we moved from here
                     importer.update_totals(tohere[0])  # to here
 
