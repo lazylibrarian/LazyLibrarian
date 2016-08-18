@@ -27,7 +27,7 @@ from lazylibrarian.magazinescan import magazineScan
 from lazylibrarian.csv import  import_CSV, export_CSV
 from lazylibrarian.postprocess import processDir, processAlternate
 from lazylibrarian.librarysync import LibraryScan
-from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, getBookCover
+from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, getBookCover, getAuthorImage, getAuthorImages
 
 import lazylibrarian
 import json
@@ -39,6 +39,8 @@ cmd_dict = {'help':'list available commands. ' + \
             'otherwise they return OK straight away and run in the background',
             'getIndex':'list all authors',
             'getAuthor':'&id= get author and list their books from AuthorID',
+            'getAuthorImage':'&name= get image for this author',
+            'getAuthorImages':'get images for all authors without one',
             'getWanted':'list wanted books',
             'getSnatched':'list snatched books',
             'getHistory':'list history',
@@ -444,6 +446,12 @@ class Api(object):
         else:
             threading.Thread(target=getBookCovers, name='API-GETBOOKCOVERS', args=[]).start()
 
+    def _getAuthorImages(self, **kwargs):
+        if 'wait' in kwargs:
+            getAuthorImages()
+        else:
+            threading.Thread(target=getAuthorImages, name='API-GETAUTHORIMAGES', args=[]).start()
+
     def _getVersion(self, **kwargs):
         self.data = {
             'install_type': lazylibrarian.INSTALL_TYPE,
@@ -670,6 +678,14 @@ class Api(object):
         else:
             self.id = kwargs['id']
         self.data = getBookCover(self.id)
+
+    def _getAuthorImage(self, **kwargs):
+        if 'name' not in kwargs:
+            self.data = 'Missing parameter: name'
+            return
+        else:
+            self.id = kwargs['name']
+        self.data = getAuthorImage(self.name)
 
     def _restartJobs(self, **kwargs):
         restartJobs(start='Restart')
