@@ -571,6 +571,17 @@ def LibraryScan(startdir=None):
             newimg = cache_cover(bookid, bookimg)
             if newimg is not None:
                 myDB.action('update books set BookImg="%s" where BookID="%s"' % (newimg, bookid))
+
+    images = myDB.select('select AuthorID, AuthorImg, AuthorName from authors where AuthorImg like "http%"')
+    if len(images):
+        logger.info("Caching image%s for %i author%s" % (plural(len(images)), len(images), plural(len(images))))
+        for item in images:
+            authorid = item['authorid']
+            authorimg = item['authorimg']
+            authorname = item['authorname']
+            newimg = cache_cover(authorid, authorimg)
+            if newimg is not None:
+                myDB.action('update authors set AuthorImg="%s" where AuthorID="%s"' % (newimg, authorid))
     setWorkPages()
     logger.info('Library scan complete')
     return new_book_count
