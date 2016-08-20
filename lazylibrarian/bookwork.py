@@ -263,7 +263,7 @@ def getBookCover(bookID=None):
                 logger.debug("getBookCover: Error getting page %s, [%s]" % (booklink, result))
 
         # if this failed, try a google image search...
-        # tbm=isch      search books
+        # tbm=isch      search images
         # tbs=isz:l     large images
         # ift:jpg       jpeg file type
         URL="https://www.google.com/search?tbm=isch&tbs=isz:l,ift:jpg&as_q=" + safeparams + "+ebook"
@@ -287,10 +287,8 @@ def getBookCover(bookID=None):
     return None
 
 def getAuthorImage(authorid=None):
-    # try a google image search...
-    # tbm=isch      search books
-    # tbs=isz:l     large images
-    # ift:jpg       jpeg file type
+    # tbm=isch      search images
+    # tbs=ift:jpg  jpeg file type
     if not authorid:
         logger.error("getAuthorImage: No authorid")
         return None
@@ -310,7 +308,7 @@ def getAuthorImage(authorid=None):
     if authors:
         authorname = authors[0][0]
         safeparams = urllib.quote_plus("%s" % authorname)
-        URL="https://www.google.com/search?tbm=isch&tbs=isz:l,ift:jpg&as_q=" + safeparams
+        URL="https://www.google.com/search?tbm=isch&tbs=ift:jpg&as_q=" + safeparams
         result, success = fetchURL(URL)
         if success:
             try:
