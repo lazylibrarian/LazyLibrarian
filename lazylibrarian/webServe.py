@@ -11,7 +11,7 @@ from cherrypy.lib.static import serve_file
 from mako.lookup import TemplateLookup
 from mako import exceptions
 from operator import itemgetter
-from shutil import copyfile
+from shutil import copyfile, rmtree
 
 from lazylibrarian import logger, database, notifiers, versioncheck, magazinescan, \
     qbittorrent, utorrent, transmission, sabnzbd, nzbget, deluge
@@ -1038,8 +1038,6 @@ class WebInterface(object):
 
                 this_issue = dict(issue)
                 this_issue['Cover'] = magimg
-                # this_issue['safeissuefile'] =
-                # urllib.quote_plus(magfile.encode(lazylibrarian.SYS_ENCODING))
                 mod_issues.append(this_issue)
             logger.debug("Found %s cover%s" % (covercount, plural(covercount)))
         return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
@@ -1213,10 +1211,17 @@ class WebInterface(object):
         for item in args:
             # ouch dirty workaround...
             if not item == 'book_table_length':
-                if (action == "Remove"):
-                    myDB.action('DELETE from issues WHERE IssueID="%s"' % item)
-                    logger.info(
-                        u'Issue with id %s removed from database' % item)
+                issue = myDB.action('SELECT IssueFile,Title,IssueDate from issues WHERE IssueID="%s"' % item).fetchone()
+                if issue:
+                    if action == "Delete":
+                        try:
+                            rmtree(os.path.dirname(issue['IssueFile']), ignore_errors=True)
+                            logger.info(u'Issue %s of %s deleted from disc' % (issue['IssueDate'], issue['Title']))
+                        except Exception as e:
+                            logger.debug('rmtree failed on %s, %e' % (issue['IssueFile'], e))
+                    if (action == "Remove" or action == "Delete"):
+                        myDB.action('DELETE from issues WHERE IssueID="%s"' % item)
+                        logger.info(u'Issue %s of %s removed from database' % (issue['IssueDate'], issue['Title']))
         raise cherrypy.HTTPRedirect("magazines")
     markIssues.exposed = True
 
@@ -1234,12 +1239,21 @@ class WebInterface(object):
                     newValueDict = {"Status": action}
                     myDB.upsert("magazines", newValueDict, controlValueDict)
                     logger.info(u'Status of magazine %s changed to %s' % (item, action))
-                elif (action == "Remove"):
+                if action == "Delete":
+                    issue = myDB.action('SELECT IssueFile from issues WHERE Title="%s"' % item).fetchone()
+                    if issue:
+                        try:
+                            issuedir = os.path.dirname(issue['IssueFile'])
+                            rmtree(os.path.dirname(issuedir), ignore_errors=True)
+                            logger.info(u'Magazine %s deleted from disc' % item)
+                        except Exception as e:
+                            logger.debug('rmtree failed on %s, %e' % (issue['IssueFile'], e))
+                if (action == "Remove" or action == "Delete"):
                     myDB.action('DELETE from magazines WHERE Title="%s"' % item)
                     myDB.action('DELETE from pastissues WHERE BookID="%s"' % item)
                     myDB.action('DELETE from issues WHERE Title="%s"' % item)
                     logger.info(u'Magazine %s removed from database' % item)
-                elif (action == "Reset"):
+                if (action == "Reset"):
                     controlValueDict = {"Title": item}
                     newValueDict = {
                         "LastAcquired": None,
