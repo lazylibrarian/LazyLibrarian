@@ -168,6 +168,7 @@ def find_book_in_db(myDB, author, book):
             if partial == best_partial:
                 # prefer the match closest to the left, ie prefer starting with a match and ignoring the rest
                 # this eliminates most false matches against omnibuses
+                # find the position of the shortest string in the longest
                 if len(getList(book_lower)) >= len(getList(a_book_lower)):
                     match1 = book_lower.find(a_book_lower)
                 else:
@@ -180,8 +181,8 @@ def find_book_in_db(myDB, author, book):
 
                 if match1 < match2:
                     logger.debug(
-                        "Fuzz left change, prefer [%s] over [%s]" %
-                        (a_book['BookName'], partial_name))
+                        "Fuzz left change, prefer [%s] over [%s] for [%s]" %
+                        (a_book['BookName'], partial_name, book))
                     best_partial = partial
                     partial_name = a_book['BookName']
                     partial_id = a_book['BookID']

@@ -503,7 +503,7 @@ class GoogleBooks:
                         find_books = myDB.select('SELECT * FROM books WHERE BookID = "%s"' % bookid)
                         if find_books:
                             # we have a book with this bookid already
-                            logger.debug('Rejecting bookid %s for [%s][%s] already got bookid' %
+                            logger.debug('Rejecting bookid %s for [%s][%s] already got this bookid in database' %
                                 (bookid, authorNameResult, bookname))
                             duplicates = duplicates + 1
                             rejected = True
