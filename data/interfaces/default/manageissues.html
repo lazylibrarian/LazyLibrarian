@@ -53,7 +53,7 @@
     <p>
 
     Change selected magazines to <select class="markPastIssues" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
-        %for item in ['Skipped', 'Wanted', 'Have', 'Ignored', 'Delete']:
+        %for item in ['Skipped', 'Wanted', 'Have', 'Ignored', 'Remove']:
             %if whichStatus != item:
                 <option value="${item}">${item}</option>
             %endif
