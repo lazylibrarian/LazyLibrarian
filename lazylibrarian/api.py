@@ -27,7 +27,7 @@ from lazylibrarian.magazinescan import magazineScan
 from lazylibrarian.csv import  import_CSV, export_CSV
 from lazylibrarian.postprocess import processDir, processAlternate
 from lazylibrarian.librarysync import LibraryScan
-from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, getBookCover
+from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, getBookCover, getAuthorImage, getAuthorImages
 
 import lazylibrarian
 import json
@@ -39,6 +39,8 @@ cmd_dict = {'help':'list available commands. ' + \
             'otherwise they return OK straight away and run in the background',
             'getIndex':'list all authors',
             'getAuthor':'&id= get author and list their books from AuthorID',
+            'getAuthorImage':'&name= get image for this author',
+            'getAuthorImages':'get images for all authors without one',
             'getWanted':'list wanted books',
             'getSnatched':'list snatched books',
             'getHistory':'list history',
@@ -66,9 +68,9 @@ cmd_dict = {'help':'list available commands. ' + \
             'moveBooks':'&fromname= &toname= move all books from one author to another by AuthorName',
             'moveBook':'&id= &toid= move one book to new author by BookID and AuthorID',
             'addAuthor':'&name= add author to database by name',
-            'delAuthor':'&id= delete author from database by AuthorID',
+            'removeAuthor':'&id= removee author from database by AuthorID',
             'addMagazine':'&name= add magazine to database by name',
-            'delMagazine':'&name= delete magazine and issues from database by name',
+            'removeMagazine':'&name= remove magazine and issues from database by name',
             'queueBook':'&id= mark book as Wanted',
             'unqueueBook':'&id= mark book as Skipped',
             'readCFG':'&name=&group= read value of config variable "name" in section "group"',
@@ -305,7 +307,7 @@ class Api(object):
         }
         myDB.upsert("magazines", newValueDict, controlValueDict)
 
-    def _delMagazine(self, **kwargs):
+    def _removeMagazine(self, **kwargs):
         if 'name' not in kwargs:
             self.data = 'Missing parameter: name'
             return
@@ -443,6 +445,12 @@ class Api(object):
             getBookCovers()
         else:
             threading.Thread(target=getBookCovers, name='API-GETBOOKCOVERS', args=[]).start()
+
+    def _getAuthorImages(self, **kwargs):
+        if 'wait' in kwargs:
+            getAuthorImages()
+        else:
+            threading.Thread(target=getAuthorImages, name='API-GETAUTHORIMAGES', args=[]).start()
 
     def _getVersion(self, **kwargs):
         self.data = {
@@ -596,7 +604,7 @@ class Api(object):
         if not lazylibrarian.USE_RSS() and not lazylibrarian.USE_NZB() and not lazylibrarian.USE_TOR():
             self.data = "No search methods set, check config"
 
-    def _delAuthor(self, **kwargs):
+    def _removeAuthor(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
             return
@@ -606,7 +614,7 @@ class Api(object):
         myDB = database.DBConnection()
         authorsearch = myDB.select(
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
-        if len(authorsearch):  # to stop error if try to delete an author while they are still loading
+        if len(authorsearch):  # to stop error if try to remove an author while they are still loading
             AuthorName = authorsearch[0]['AuthorName']
             logger.info(u"Removing all references to author: %s" % AuthorName)
             myDB.action('DELETE from authors WHERE AuthorID="%s"' % AuthorID)
@@ -670,6 +678,14 @@ class Api(object):
         else:
             self.id = kwargs['id']
         self.data = getBookCover(self.id)
+
+    def _getAuthorImage(self, **kwargs):
+        if 'name' not in kwargs:
+            self.data = 'Missing parameter: name'
+            return
+        else:
+            self.id = kwargs['name']
+        self.data = getAuthorImage(self.name)
 
     def _restartJobs(self, **kwargs):
         restartJobs(start='Restart')

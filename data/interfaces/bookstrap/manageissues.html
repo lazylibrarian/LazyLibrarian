@@ -61,7 +61,7 @@
         <div class="form-group">
             <label class="control-label">Change selected magazines to:</label>
             <select class="form-control input-sm" name="action">
-        %for item in ['Skipped', 'Wanted', 'Have', 'Ignored', 'Delete']:
+        %for item in ['Skipped', 'Wanted', 'Have', 'Ignored', 'Remove']:
             %if whichStatus != item:
                 <option value="${item}">${item}</option>
             %endif

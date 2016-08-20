@@ -195,8 +195,9 @@ def is_valid_booktype(filename, booktype=None):
 
 def getList(st):
     # split a string into a list
+    # changed posix to "false" to not baulk at apostrophes
     if st:
-        my_splitter = shlex.shlex(st, posix=True)
+        my_splitter = shlex.shlex(st, posix=False)
         my_splitter.whitespace += ','
         my_splitter.whitespace_split = True
         return list(my_splitter)

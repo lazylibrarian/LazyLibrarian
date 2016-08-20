@@ -541,19 +541,19 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("home")
     ignoreAuthor.exposed = True
 
-    def deleteAuthor(self, AuthorID):
+    def removeAuthor(self, AuthorID):
         self.label_thread()
 
         myDB = database.DBConnection()
         authorsearch = myDB.select(
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
-        if len(authorsearch):  # to stop error if try to delete an author while they are still loading
+        if len(authorsearch):  # to stop error if try to remove an author while they are still loading
             AuthorName = authorsearch[0]['AuthorName']
             logger.info(u"Removing all references to author: %s" % AuthorName)
             myDB.action('DELETE from authors WHERE AuthorID="%s"' % AuthorID)
             myDB.action('DELETE from books WHERE AuthorID="%s"' % AuthorID)
         raise cherrypy.HTTPRedirect("home")
-    deleteAuthor.exposed = True
+    removeAuthor.exposed = True
 
     def refreshAuthor(self, AuthorID):
         self.label_thread()
@@ -939,18 +939,18 @@ class WebInterface(object):
                             logger.info(u'Status set to "%s" for "%s"' % (action, bookname))
                     else:
                         authorsearch = myDB.select('SELECT * from books WHERE BookID = "%s"' % bookid)
-                        for item in authorsearch:
-                            AuthorID = item['AuthorID']
-                            bookname = item['BookName']
-                        authorcheck = myDB.select('SELECT * from authors WHERE AuthorID = "%s"' % AuthorID)
-                        if authorcheck:
-                            myDB.upsert("books", {"Status": "Skipped"}, {"BookID": bookid})
-                            logger.info(u'Status set to Skipped for "%s"' % bookname)
-                        else:
-                            myDB.action('DELETE from books WHERE BookID = "%s"' % bookid)
-                            logger.info(u'Removed "%s" from database' % bookname)
+                        if len(authorsearch):
+                            AuthorID = authorsearch[0]['AuthorID']
+                            bookname = authorsearch[0]['BookName']
+                            authorcheck = myDB.select('SELECT * from authors WHERE AuthorID = "%s"' % AuthorID)
+                            if len(authorcheck):
+                                myDB.upsert("books", {"Status": "Skipped"}, {"BookID": bookid})
+                                logger.info(u'Status set to Skipped for "%s"' % bookname)
+                            else:
+                                myDB.action('DELETE from books WHERE BookID = "%s"' % bookid)
+                                logger.info(u'Removed "%s" from database' % bookname)
 
-        if redirect == "author" or authorcheck:
+        if redirect == "author" or len(authorcheck):
             update_totals(AuthorID)
 
         # start searchthreads
@@ -1147,9 +1147,9 @@ class WebInterface(object):
                 title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s"' % nzburl)
                 for item in title:
                     nzburl = item['NZBurl']
-                    if action == 'Delete':
+                    if action == 'Remove':
                         myDB.action('DELETE from pastissues WHERE NZBurl="%s"' % nzburl)
-                        logger.debug(u'Item %s deleted from past issues' % nzburl)
+                        logger.debug(u'Item %s removed from past issues' % nzburl)
                         maglist.append({'nzburl': nzburl})
                     else:
                         bookid = item['BookID']
@@ -1180,8 +1180,8 @@ class WebInterface(object):
                                 }
                             myDB.upsert("wanted", newValueDict, controlValueDict)
 
-        if action == 'Delete':
-            logger.info(u'Deleted %s item%s from past issues' % (len(maglist), plural(len(maglist))))
+        if action == 'Remove':
+            logger.info(u'Removed %s item%s from past issues' % (len(maglist), plural(len(maglist))))
         else:
             logger.info(u'Status set to %s for %s past issue%s' % (action, len(maglist), plural(len(maglist))))
         # start searchthreads
@@ -1213,7 +1213,7 @@ class WebInterface(object):
         for item in args:
             # ouch dirty workaround...
             if not item == 'book_table_length':
-                if (action == "Delete"):
+                if (action == "Remove"):
                     myDB.action('DELETE from issues WHERE IssueID="%s"' % item)
                     logger.info(
                         u'Issue with id %s removed from database' % item)
@@ -1234,7 +1234,7 @@ class WebInterface(object):
                     newValueDict = {"Status": action}
                     myDB.upsert("magazines", newValueDict, controlValueDict)
                     logger.info(u'Status of magazine %s changed to %s' % (item, action))
-                elif (action == "Delete"):
+                elif (action == "Remove"):
                     myDB.action('DELETE from magazines WHERE Title="%s"' % item)
                     myDB.action('DELETE from pastissues WHERE BookID="%s"' % item)
                     myDB.action('DELETE from issues WHERE Title="%s"' % item)

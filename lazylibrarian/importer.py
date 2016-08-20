@@ -4,6 +4,8 @@ from lazylibrarian import logger, database
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.formatter import today
+from lazylibrarian.cache import cache_cover
+from lazylibrarian.bookwork import getAuthorImage
 
 def addAuthorToDB(authorname=None, refresh=False):
 
@@ -31,6 +33,12 @@ def addAuthorToDB(authorname=None, refresh=False):
         authorid = author['authorid']
         authorlink = author['authorlink']
         authorimg = author['authorimg']
+        if 'nophoto' in authorimg:
+            authorimg = getAuthorImage(authorid)
+        if authorimg.startswith('http'):
+            newimg = cache_cover(authorid, authorimg)
+            if newimg is not None:
+                authorimg = newimg
         controlValueDict = {"AuthorName": authorname}
         newValueDict = {
             "AuthorID": authorid,

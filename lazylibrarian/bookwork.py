@@ -6,8 +6,27 @@ import time
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.common import USER_AGENT
-from lazylibrarian.formatter import safe_unicode
+from lazylibrarian.formatter import safe_unicode, plural
 from lazylibrarian.cache import cache_cover, fetchURL
+
+def getAuthorImages():
+    """ Try to get an author image for all authors without one"""
+    myDB = database.DBConnection()
+    authors = myDB.select('select AuthorID from authors where AuthorImg like "%nophoto%"')
+    if authors:
+        logger.info('Checking images for %s author%s' % (len(authors), plural(len(authors))))
+        counter = 0
+        for author in authors:
+            authorid = author['AuthorID']
+            imagelink = getAuthorImage(authorid)
+            if imagelink and not "nophoto" in imagelink:
+                controlValueDict = {"AuthorID": authorid}
+                newValueDict = {"AuthorImg": imagelink}
+                myDB.upsert("authors", newValueDict, controlValueDict)
+                counter += 1
+        logger.info('Author Image check completed, updated %s image%s' % (counter, plural(counter)))
+    else:
+        logger.debug('No missing images')
 
 def getBookCovers():
     """ Try to get a cover image for all books """
@@ -244,7 +263,7 @@ def getBookCover(bookID=None):
                 logger.debug("getBookCover: Error getting page %s, [%s]" % (booklink, result))
 
         # if this failed, try a google image search...
-        # tbm=isch      search books
+        # tbm=isch      search images
         # tbs=isz:l     large images
         # ift:jpg       jpeg file type
         URL="https://www.google.com/search?tbm=isch&tbs=isz:l,ift:jpg&as_q=" + safeparams + "+ebook"
@@ -265,4 +284,48 @@ def getBookCover(bookID=None):
                 logger.debug("getBookCover: No image found in google page for %s" % bookID)
         else:
             logger.debug("getBookCover: Error getting google page for %s, [%s]" % (safeparams, result))
+    return None
+
+def getAuthorImage(authorid=None):
+    # tbm=isch      search images
+    # tbs=ift:jpg  jpeg file type
+    if not authorid:
+        logger.error("getAuthorImage: No authorid")
+        return None
+
+    cachedir = os.path.join(str(lazylibrarian.PROG_DIR), 'data' + os.sep + 'images' + os.sep + 'cache')
+    coverfile = os.path.join(cachedir, authorid + '.jpg')
+
+    if os.path.isfile(coverfile):  # use cached image if there is one
+        lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
+        logger.debug(u"getAuthorImage: Returning Cached response for %s" % coverfile)
+        coverlink = 'images/cache/' + authorid + '.jpg'
+        return coverlink
+
+    lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
+    myDB = database.DBConnection()
+    authors = myDB.select('select AuthorName from authors where AuthorID = "%s"' % authorid)
+    if authors:
+        authorname = authors[0][0]
+        safeparams = urllib.quote_plus("%s" % authorname)
+        URL="https://www.google.com/search?tbm=isch&tbs=ift:jpg&as_q=" + safeparams
+        result, success = fetchURL(URL)
+        if success:
+            try:
+                img = result.split('url?q=')[1].split('">')[1].split('src="')[1].split('"')[0]
+            except IndexError:
+                img = None
+            if img and img.startswith('http'):
+                coverlink = cache_cover(authorid, img)
+                if coverlink is not None:
+                    logger.debug("Cached google image for %s" % authorname)
+                    return coverlink
+                else:
+                    logger.debug("Error getting google image %s, [%s]" % (img, result))
+            else:
+                logger.debug("No image found in google page for %s" % authorname)
+        else:
+            logger.debug("Error getting google page for %s, [%s]" % (safeparams, result))
+    else:
+        logger.debug("No author found for %s" % authorid)
     return None

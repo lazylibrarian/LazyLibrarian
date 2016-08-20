@@ -131,7 +131,7 @@ def find_book_in_db(myDB, author, book):
         # These are results that work well on my library, minimal false matches and no misses
         # on books that should be matched
         # Maybe make ratios configurable in config.ini later
-        print "**", repr(author)
+
         books = myDB.select('SELECT BookID,BookName FROM books where AuthorName="%s"' % author)
 
         best_ratio = 0
@@ -150,6 +150,12 @@ def find_book_in_db(myDB, author, book):
             ratio = fuzz.ratio(book_lower, a_book_lower)
             partial = fuzz.partial_ratio(book_lower, a_book_lower)
 
+            # lose a point for each extra word in the fuzzy matches so we get the closest match
+            words = len(getList(book_lower))
+            words -= len(getList(a_book_lower))
+            ratio -= abs(words)
+            partial -= abs(words)
+
             if ratio > best_ratio:
                 best_ratio = ratio
                 ratio_name = a_book['BookName']
@@ -159,17 +165,27 @@ def find_book_in_db(myDB, author, book):
                 partial_name = a_book['BookName']
                 partial_id = a_book['BookID']
 
-            else:
-                if partial == best_partial:
-                    # prefer the match closest to the left, ie prefer starting with a match and ignoring the rest
-                    # this eliminates most false matches against omnibuses
-                    if a_book_lower.find(book_lower) < partial_name.lower().find(book_lower):
-                        logger.debug(
-                            "Fuzz left prefer [%s] over [%s]" %
-                            (a_book['BookName'], partial_name))
-                        best_partial = partial
-                        partial_name = a_book['BookName']
-                        partial_id = a_book['BookID']
+            if partial == best_partial:
+                # prefer the match closest to the left, ie prefer starting with a match and ignoring the rest
+                # this eliminates most false matches against omnibuses
+                # find the position of the shortest string in the longest
+                if len(getList(book_lower)) >= len(getList(a_book_lower)):
+                    match1 = book_lower.find(a_book_lower)
+                else:
+                    match1 = a_book_lower.find(book_lower)
+
+                if len(getList(book_lower)) >= len(getList(partial_name.lower())):
+                    match2 = book_lower.find(partial_name.lower())
+                else:
+                    match2 = partial_name.lower().find(book_lower)
+
+                if match1 < match2:
+                    logger.debug(
+                        "Fuzz left change, prefer [%s] over [%s] for [%s]" %
+                        (a_book['BookName'], partial_name, book))
+                    best_partial = partial
+                    partial_name = a_book['BookName']
+                    partial_id = a_book['BookID']
 
         if best_ratio > 90:
             logger.debug(
@@ -571,6 +587,17 @@ def LibraryScan(startdir=None):
             newimg = cache_cover(bookid, bookimg)
             if newimg is not None:
                 myDB.action('update books set BookImg="%s" where BookID="%s"' % (newimg, bookid))
+
+    images = myDB.select('select AuthorID, AuthorImg, AuthorName from authors where AuthorImg like "http%"')
+    if len(images):
+        logger.info("Caching image%s for %i author%s" % (plural(len(images)), len(images), plural(len(images))))
+        for item in images:
+            authorid = item['authorid']
+            authorimg = item['authorimg']
+            authorname = item['authorname']
+            newimg = cache_cover(authorid, authorimg)
+            if newimg is not None:
+                myDB.action('update authors set AuthorImg="%s" where AuthorID="%s"' % (newimg, authorid))
     setWorkPages()
     logger.info('Library scan complete')
     return new_book_count
