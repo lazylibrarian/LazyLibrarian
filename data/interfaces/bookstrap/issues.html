@@ -19,11 +19,13 @@
     <h1>Issues</h1>
     <form action="markIssues" method="get" class="form-inline">
         <div class="form-group">
-            <label for="action" class="control-label">With selected issues:</label>
+            <label for="action" class="control-label">Selected issues:</label>
                 <select name="action" id="action" class="form-control input-sm">
                       <option value="Remove" selected>Remove</option>
+                      <option value="Delete">Delete</option>
+                      <option value="Leave" hidden>Leave</option>
                 </select>
-            <button type="submit" value="Go" class="btn btn-sm btn-primary">Go</button>
+            <button type="submit" value="Go" id="go" class="btn btn-sm btn-primary">Go</button>
         </div>
         <p>&nbsp;</p>
         <div class="table-responsive">
@@ -73,6 +75,20 @@
 
     $(document).ready(function()
     {
+
+        $('#go').click(function () {
+                var action = $("#action").val();
+                if (action == "Delete") {
+                    if (confirm('Are you sure you want to permanently delete the selected issues?')) {
+                        return
+                    } else {
+                        $("#action").val("Leave")
+                        return
+                    }
+                } else {
+                    return
+                }
+            });
 
         $('#book_table').dataTable(
             {

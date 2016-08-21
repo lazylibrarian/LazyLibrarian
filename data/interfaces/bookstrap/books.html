@@ -33,13 +33,15 @@
         <div class="indented">
         <div class="form-group">
             <label for="markBooks" class="control-label">Mark selected books as</label>
-            <select class="markBooks form-control input-sm" id="markBooks" name="action">
+            <select class="markBooks form-control input-sm" id="action" name="action">
                 <option value="Wanted">Wanted</option>
                 <option value="Have">Have</option>
                 <option value="Remove">Remove</option>
+                <option value="Delete">Delete</option>
+                <option value="Leave" hidden>Leave</option>
             </select>
         </div>
-        <input type="submit" class="markBooks btn btn-sm btn-primary" value="Go">
+        <input type="submit" class="markBooks btn btn-sm btn-primary" id="go" value="Go">
 
         </div>
         <p>&nbsp;</p>
@@ -70,6 +72,21 @@
 <%def name="javascriptIncludes()">
     <script type="text/javascript">
     $(document).ready(function() {
+
+        $('#go').click(function () {
+                var action = $("#action").val();
+                if (action == "Delete") {
+                    if (confirm('Are you sure you want to permanently delete the selected books?')) {
+                        return
+                    } else {
+                        $("#action").val("Leave")
+                        return
+                    }
+                } else {
+                    return
+                }
+            });
+
         var oTable = $('#book_table').dataTable({
             "bAutoWidth": false,
             "order": [[ 2, 'asc' ]],

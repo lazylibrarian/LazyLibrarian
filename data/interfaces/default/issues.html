@@ -15,10 +15,12 @@
 
     <p class="indented">
         <form action="markIssues" method="get">
-            <select name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
-                  <option value="Remove">Remove</option>
+            <select name="action" id="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
+                  <option value="Remove" selected>Remove</option>
+                  <option value="Delete">Delete</option>
+                  <option value="Leave" hidden>Leave</option>
             </select>
-        <input type="submit" value="Go">
+        <input type="submit" id="go" value="Go">
     </p>
 
     <table class="display" id="book_table" style="margin-top:60px;">
@@ -64,6 +66,19 @@
 
     $(document).ready(function()
     {
+        $('#go').click(function () {
+                var action = $("#action").val();
+                if (action == "Delete") {
+                    if (confirm('Are you sure you want to permanently delete the selected issues?')) {
+                        return
+                    } else {
+                        $("#action").val("Leave")
+                        return
+                    }
+                } else {
+                    return
+                }
+            });
 
         $('#book_table').dataTable(
             {
