@@ -924,7 +924,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         if not redirect:
             redirect = "books"
-        authorcheck = None
+        authorcheck = []
         if action is not None:
             for bookid in args:
                 # ouch dirty workaround...

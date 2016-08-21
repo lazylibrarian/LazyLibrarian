@@ -321,6 +321,20 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
             if rootxml.tag == 'error':
                 errormsg = rootxml.get('description', default='unknown error')
                 logger.error(u"%s - %s" % (host, errormsg))
+                if provider['BOOKSEARCH']:  # maybe the host doesn't support it
+                    errorlist = ['no such function', 'unknown parameter', 'unknown function', 'incorrect parameter']
+                    match = False
+                    for item in errorlist:
+                        if item in errormsg.lower() and provider['BOOKSEARCH'].lower() in errormsg.lower():
+                            match = True
+                    if match:
+                        count = 0
+                        while count < len(lazylibrarian.NEWZNAB_PROV):
+                            if lazylibrarian.NEWZNAB_PROV[count]['HOST'] == provider['HOST']:
+                                logger.error("Disabled booksearch=%s for %s" % (provider['BOOKSEARCH'],provider['HOST']))
+                                lazylibrarian.NEWZNAB_PROV[count]['BOOKSEARCH'] = ""
+                                lazylibrarian.config_write()
+                            count += 1
             else:
                 resultxml = rootxml.getiterator('item')
                 nzbcount = 0
