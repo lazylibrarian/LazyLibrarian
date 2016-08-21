@@ -929,7 +929,7 @@ class WebInterface(object):
             for bookid in args:
                 # ouch dirty workaround...
                 if not bookid == 'book_table_length':
-                    if action != "Remove":
+                    if action == "Wanted" or action == "Have":
                         controlValueDict = {'BookID': bookid}
                         newValueDict = {'Status': action}
                         myDB.upsert("books", newValueDict, controlValueDict)
@@ -937,11 +937,20 @@ class WebInterface(object):
                         for item in title:
                             bookname = item['BookName']
                             logger.info(u'Status set to "%s" for "%s"' % (action, bookname))
-                    else:
+                    if action =="Remove" or action == "Delete":
                         authorsearch = myDB.select('SELECT * from books WHERE BookID = "%s"' % bookid)
                         if len(authorsearch):
                             AuthorID = authorsearch[0]['AuthorID']
                             bookname = authorsearch[0]['BookName']
+                            bookfile = authorsearch[0]['BookLink']
+                            if action == "Delete":
+                                if bookfile and os.path.isfile(bookfile):
+                                    try:
+                                        rmtree(os.path.dirname(bookfile), ignore_errors=True)
+                                        logger.info(u'Book %s deleted from disc' % bookname)
+                                    except Exception as e:
+                                        logger.debug('rmtree failed on %s, %e' % (bookfile, e))
+
                             authorcheck = myDB.select('SELECT * from authors WHERE AuthorID = "%s"' % AuthorID)
                             if len(authorcheck):
                                 myDB.upsert("books", {"Status": "Skipped"}, {"BookID": bookid})

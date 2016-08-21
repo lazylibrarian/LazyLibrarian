@@ -45,9 +45,10 @@
                     <option value="Reset">Reset</option>
                     <option value="Remove">Remove</option>
                     <option value="Delete">Delete</option>
+                    <option value="Leave" hidden>Leave</option>
                 </select>
             </div>
-            <input type="submit" class="markMagazines btn btn-sm btn-primary" value="Go">
+            <input type="submit" class="markMagazines btn btn-sm btn-primary" id="go" value="Go">
     </div>
     <p>&nbsp;</p>
 
@@ -121,6 +122,20 @@
 
     $(document).ready(function()
     {
+
+        $('#go').click(function () {
+                var action = $("#action").val();
+                if (action == "Delete") {
+                    if (confirm('Are you sure you want to permanently delete the selected magazines?')) {
+                        return
+                    } else {
+                        $("#action").val("Leave")
+                        return
+                    }
+                } else {
+                    return
+                }
+            });
 
         $('#book_table').dataTable(
             {
