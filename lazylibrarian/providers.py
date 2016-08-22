@@ -331,9 +331,12 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
                         count = 0
                         while count < len(lazylibrarian.NEWZNAB_PROV):
                             if lazylibrarian.NEWZNAB_PROV[count]['HOST'] == provider['HOST']:
-                                logger.error("Disabled booksearch=%s for %s" % (provider['BOOKSEARCH'],provider['HOST']))
-                                lazylibrarian.NEWZNAB_PROV[count]['BOOKSEARCH'] = ""
-                                lazylibrarian.config_write()
+                                if str(provider['MANUAL']) == 'False':
+                                    logger.error("Disabled booksearch=%s for %s" % (provider['BOOKSEARCH'],provider['HOST']))
+                                    lazylibrarian.NEWZNAB_PROV[count]['BOOKSEARCH'] = ""
+                                    lazylibrarian.config_write()
+                                else:
+                                    logger.error("Unable to disable booksearch for %s [MANUAL=%s]" % (provider['HOST'], provider['MANUAL']))
                             count += 1
             else:
                 resultxml = rootxml.getiterator('item')

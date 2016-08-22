@@ -390,9 +390,11 @@ def import_book(pp_path=None, bookID=None):
         else:
             logger.error('Postprocessing for %s has failed.' % global_name)
             logger.error('Warning - Residual files remain in %s.fail' % pp_path)
-            controlValueDict = {"BookID": bookID}
-            newValueDict = {"Status": "Failed", "NZBDate": now()}
-            myDB.upsert("wanted", newValueDict, controlValueDict)
+            was_snatched = len(myDB.select('SELECT BookID FROM wanted WHERE BookID="%s"' % bookID))
+            if was_snatched:
+                controlValueDict = {"BookID": bookID}
+                newValueDict = {"Status": "Failed", "NZBDate": now()}
+                myDB.upsert("wanted", newValueDict, controlValueDict)
             # reset status so we try for a different version
             myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % bookID)
             try:

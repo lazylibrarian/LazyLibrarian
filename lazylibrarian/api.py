@@ -630,7 +630,6 @@ class Api(object):
         if 'group' not in kwargs:
             self.data = 'Missing parameter: group'
             return
-
         try:
             self.data = '["%s"]' % lazylibrarian.CFG.get(kwargs['group'], kwargs['name'])
             lazylibrarian.CFG.set(kwargs['group'], kwargs['name'], kwargs['value'])
