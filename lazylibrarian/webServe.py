@@ -929,7 +929,7 @@ class WebInterface(object):
             for bookid in args:
                 # ouch dirty workaround...
                 if not bookid == 'book_table_length':
-                    if action == "Wanted" or action == "Have":
+                    if action in ["Wanted", "Have", "Ignored", "Skipped"]:
                         controlValueDict = {'BookID': bookid}
                         newValueDict = {'Status': action}
                         myDB.upsert("books", newValueDict, controlValueDict)
@@ -937,7 +937,7 @@ class WebInterface(object):
                         for item in title:
                             bookname = item['BookName']
                             logger.info(u'Status set to "%s" for "%s"' % (action, bookname))
-                    if action =="Remove" or action == "Delete":
+                    if action in ["Remove", "Delete"]:
                         authorsearch = myDB.select('SELECT * from books WHERE BookID = "%s"' % bookid)
                         if len(authorsearch):
                             AuthorID = authorsearch[0]['AuthorID']

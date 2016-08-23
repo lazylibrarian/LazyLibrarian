@@ -88,10 +88,13 @@
         <form action="markBooks" method="get"><input type="hidden" name="AuthorID" value="${author['AuthorID']}">
             <input type="hidden" name="redirect" value="author">
             <select class="markBooks" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
-                  <option value="Wanted">Wanted</option>
-                  <option value="Have">Have</option>
-                <option value="Skipped">Skipped</option>
+                <option value="Wanted">Wanted</option>
+                <option value="Have">Have</option>
                 <option value="Ignored">Ignored</option>
+                <option value="Skipped">Skipped</option>
+                <option value="Remove">Remove</option>
+                <option value="Delete">Delete</option>
+                <option value="Leave" hidden>Leave</option>
             </select>
         <input type="submit" class="markBooks" value="Go">
     </p>
