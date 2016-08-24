@@ -35,7 +35,7 @@ def addAuthorToDB(authorname=None, refresh=False):
         authorimg = author['authorimg']
         if 'nophoto' in authorimg:
             authorimg = getAuthorImage(authorid)
-        if authorimg.startswith('http'):
+        if authorimg is not None and authorimg.startswith('http'):
             newimg = cache_cover(authorid, authorimg)
             if newimg is not None:
                 authorimg = newimg
