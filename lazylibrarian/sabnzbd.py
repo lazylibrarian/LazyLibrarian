@@ -41,12 +41,12 @@ def SABnzbd(title=None, nzburl=None):
         HOST = HOST + "/" + lazylibrarian.SAB_SUBDIR
 
     params = {}
-    
+
     if nzburl == 'auth' or nzburl == 'get_cats':
-        params['mode'] = nzburl 
+        params['mode'] = nzburl
         if lazylibrarian.SAB_API:
             params['apikey'] = lazylibrarian.SAB_API
-        title = 'Test ' + nzburl 
+        title = 'Test ' + nzburl
         # connection test, check auth mode or get_cats
     else:
         params['mode'] = 'addurl'
@@ -99,7 +99,7 @@ def SABnzbd(title=None, nzburl=None):
     if result == "ok":
         logger.info(title + " sent to SAB successfully.")
         return True
-    elif title.startswith('Test'):
+    elif title and title.startswith('Test'):
         return result
     elif result == "Missing authentication":
         logger.error("Incorrect username/password.")

@@ -45,13 +45,13 @@ def addTorrent(link, data=None):
         result = {}
         retid = False
 
-        if link.startswith('magnet:'):
+        if link and link.startswith('magnet:'):
             logger.debug('Deluge: Got a magnet link: %s' % link)
             result = {'type': 'magnet',
                         'url': link}
             retid = _add_torrent_magnet(result)
 
-        elif link.startswith('http://') or link.startswith('https://'):
+        elif link and (link.startswith('http://') or link.startswith('https://')):
             logger.debug('Deluge: Got a URL: %s' % link)
             result = {'type': 'url',
                         'url': link}
@@ -98,7 +98,7 @@ def addTorrent(link, data=None):
             retid = _add_torrent_file(result)
             """
         # elif link.endswith('.torrent') or data:
-        elif not (link.startswith('http://') or link.startswith('https://')):
+        elif link and not (link.startswith('http://') or link.startswith('https://')):
             if data:
                 logger.debug('Deluge: Getting .torrent data')
                 torrentfile = data

@@ -547,7 +547,7 @@ class GoogleBooks:
                                     newValueDict = {"BookImg": workcover}
                                     myDB.upsert("books", newValueDict, controlValueDict)
 
-                            elif bookimg.startswith('http'):
+                            elif bookimg and bookimg.startswith('http'):
                                 link = cache_cover(bookid, bookimg)
                                 if link is not None:
                                     controlValueDict = {"BookID": bookid}
@@ -772,7 +772,7 @@ class GoogleBooks:
                 newValueDict = {"BookImg": workcover}
                 myDB.upsert("books", newValueDict, controlValueDict)
 
-            elif bookimg.startswith('http'):
+            elif bookimg and bookimg.startswith('http'):
                 link = cache_cover(bookid, bookimg)
                 if link is not None:
                     controlValueDict = {"BookID": bookid}
