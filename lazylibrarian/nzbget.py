@@ -29,7 +29,7 @@ import xmlrpclib
 import socket
 
 from lazylibrarian import logger
-       
+
 def checkLink():
     #socket.setdefaulttimeout(2)
     test = sendNZB("test")
@@ -40,7 +40,7 @@ def checkLink():
 
 def sendNZB(nzb):
     if nzb == "test":
-        nzb = None    
+        nzb = None
     addToTop = False
     nzbgetXMLrpc = "%(username)s:%(password)s@%(host)s:%(port)s/xmlrpc"
 
@@ -49,13 +49,13 @@ def sendNZB(nzb):
         return False
 
     host = lazylibrarian.NZBGET_HOST
-    if host.startswith('https://'):
+    if host and host.startswith('https://'):
         nzbgetXMLrpc = 'https://' + nzbgetXMLrpc
         host.replace('https://', '', 1)
     else:
         nzbgetXMLrpc = 'http://' + nzbgetXMLrpc
         host.replace('http://', '', 1)
-    
+
     url = nzbgetXMLrpc % {"host": host, "username": lazylibrarian.NZBGET_USER,
                           "port": lazylibrarian.NZBGET_PORT, "password": lazylibrarian.NZBGET_PASS}
     try:
@@ -63,7 +63,7 @@ def sendNZB(nzb):
     except Exception as err:
         logger.debug("NZBget connection to %s failed: %s" % (url, err))
         return False
-        
+
     if nzb is None:
         msg = "lazylibrarian connection test"
     else:
@@ -162,4 +162,3 @@ def sendNZB(nzb):
     except Exception as e:
         logger.error(u"Connect Error to NZBget: could not add %s to the queue: %s" % (nzb.name + ".nzb", e))
         return False
- 

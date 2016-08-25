@@ -583,7 +583,7 @@ def processAutoAdd(src_path=None):
 def processIMG(dest_path=None, bookimg=None, global_name=None):
     # handle pictures
     try:
-        if bookimg.startswith('http'):
+        if bookimg and bookimg.startswith('http'):
             logger.debug('Downloading cover from ' + bookimg)
             coverpath = os.path.join(dest_path, global_name + '.jpg')
             with open(coverpath, 'wb') as img:

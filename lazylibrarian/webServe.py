@@ -576,8 +576,8 @@ class WebInterface(object):
 
     def books(self, BookLang=None):
         myDB = database.DBConnection()
-        languages = myDB.select('SELECT DISTINCT BookLang from books WHERE NOT \
-                                STATUS="Skipped" AND NOT STATUS="Ignored"')
+        languages = myDB.select('SELECT DISTINCT BookLang from books WHERE \
+                                STATUS !="Skipped" AND STATUS !="Ignored"')
         lazylibrarian.BOOKLANGFILTER = BookLang
         return serve_template(templatename="books.html", title='Books', books=[], languages=languages)
     books.exposed = True
@@ -590,10 +590,10 @@ class WebInterface(object):
         #   need to check and filter on BookLang if set
         if lazylibrarian.BOOKLANGFILTER is None or not len(lazylibrarian.BOOKLANGFILTER):
             rowlist = myDB.action(
-                'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid, booksub, booklink, workpage, authorid from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored"').fetchall()
+                'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid, booksub, booklink, workpage, authorid from books WHERE STATUS !="Skipped" AND STATUS !="Ignored"').fetchall()
         else:
             rowlist = myDB.action(
-                'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid, booksub, booklink, workpage, authorid from books WHERE NOT STATUS="Skipped" AND NOT STATUS="Ignored" and BOOKLANG="%s"' %
+                'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid, booksub, booklink, workpage, authorid from books WHERE STATUS !="Skipped" AND STATUS !="Ignored" and BOOKLANG="%s"' %
                 lazylibrarian.BOOKLANGFILTER).fetchall()
         # turn the sqlite rowlist into a list of lists
         d = []
@@ -930,19 +930,17 @@ class WebInterface(object):
                 # ouch dirty workaround...
                 if not bookid == 'book_table_length':
                     if action in ["Wanted", "Have", "Ignored", "Skipped"]:
-                        controlValueDict = {'BookID': bookid}
-                        newValueDict = {'Status': action}
-                        myDB.upsert("books", newValueDict, controlValueDict)
                         title = myDB.select('SELECT * from books WHERE BookID = "%s"' % bookid)
-                        for item in title:
-                            bookname = item['BookName']
+                        if len(title):
+                            bookname = title[0]['BookName']
+                            myDB.upsert("books", {'Status': action}, {'BookID': bookid})
                             logger.info(u'Status set to "%s" for "%s"' % (action, bookname))
                     if action in ["Remove", "Delete"]:
-                        authorsearch = myDB.select('SELECT * from books WHERE BookID = "%s"' % bookid)
-                        if len(authorsearch):
-                            AuthorID = authorsearch[0]['AuthorID']
-                            bookname = authorsearch[0]['BookName']
-                            bookfile = authorsearch[0]['BookLink']
+                        bookdata = myDB.select('SELECT AuthorID,Bookname,BookFile from books WHERE BookID = "%s"' % bookid)
+                        if len(bookdata):
+                            AuthorID = bookdata[0]['AuthorID']
+                            bookname = bookdata[0]['BookName']
+                            bookfile = bookdata[0]['BookFile']
                             if action == "Delete":
                                 if bookfile and os.path.isfile(bookfile):
                                     try:
@@ -951,10 +949,10 @@ class WebInterface(object):
                                     except Exception as e:
                                         logger.debug('rmtree failed on %s, %e' % (bookfile, e))
 
-                            authorcheck = myDB.select('SELECT * from authors WHERE AuthorID = "%s"' % AuthorID)
+                            authorcheck = myDB.select('SELECT AuthorID from authors WHERE AuthorID = "%s"' % AuthorID)
                             if len(authorcheck):
-                                myDB.upsert("books", {"Status": "Skipped"}, {"BookID": bookid})
-                                logger.info(u'Status set to Skipped for "%s"' % bookname)
+                                myDB.upsert("books", {"Status": "Ignored"}, {"BookID": bookid})
+                                logger.info(u'Status set to Ignored for "%s"' % bookname)
                             else:
                                 myDB.action('DELETE from books WHERE BookID = "%s"' % bookid)
                                 logger.info(u'Removed "%s" from database' % bookname)

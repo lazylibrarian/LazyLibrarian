@@ -69,7 +69,11 @@
                     <td id="issuedate">${result['IssueDate']}</td>
                     <td id="status">${result['Status']}</td>
                     %if result['IssueStatus'] == 'Open':
-                        <td id="issue"><a class="button green" href="openMag?bookid=${result['safetitle']}" target="_self">${result['IssueStatus']}</a></td>
+                            %if result['Count'] > 1:
+                                <td id="issue"><a class="button orange" href="openMag?bookid=${result['safetitle']}" target="_self">Show</a></td>
+                            %else:
+                                <td id="issue"><a class="button green" href="openMag?bookid=${result['safetitle']}" target="_self">Open</a></td>
+                            %endif
                     %else:
                         %if result['IssueStatus'] == 'Wanted':
                             <td id="issue"><a class="button red" href="searchForMag?bookid=${result['safetitle']}" target="_self"><span class="a">${result['IssueStatus']}</span><span class="b">Search</span></a></td>

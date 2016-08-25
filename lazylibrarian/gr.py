@@ -518,7 +518,7 @@ class GoodReads:
                                     newValueDict = {"BookImg": workcover}
                                     myDB.upsert("books", newValueDict, controlValueDict)
 
-                            elif bookimg.startswith('http'):
+                            elif bookimg and bookimg.startswith('http'):
                                 link = cache_cover(bookid, bookimg)
                                 if link is not None:
                                     controlValueDict = {"BookID": bookid}
@@ -648,7 +648,7 @@ class GoodReads:
 
         try:
             bookimg = rootxml.find('./book/img_url').text
-            if (bookimg == 'http://www.goodreads.com/assets/nocover/111x148.png'):
+            if 'assets/nocover' in bookimg:
                 bookimg = 'images/nocover.png'
         except (KeyError, AttributeError):
             bookimg = 'images/nocover.png'
@@ -669,7 +669,7 @@ class GoodReads:
 
         dic = {':': '', '"': '', '\'': ''}
         bookname = replace_all(bookname, dic)
-
+        booksub = ''
         bookname = unaccented(bookname)
         if ': ' in bookname:
             parts = bookname.split(': ', 1)
@@ -721,7 +721,7 @@ class GoodReads:
                 newValueDict = {"BookImg": workcover}
                 myDB.upsert("books", newValueDict, controlValueDict)
 
-        elif bookimg.startswith('http'):
+        elif bookimg and bookimg.startswith('http'):
             link = cache_cover(bookid, bookimg)
             if link is not None:
                 controlValueDict = {"BookID": bookid}

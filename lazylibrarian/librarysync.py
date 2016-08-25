@@ -270,10 +270,8 @@ def LibraryScan(startdir=None):
 
     for r, d, f in os.walk(startdir):
         for directory in d[:]:
-            if directory.startswith("."):
-                d.remove(directory)
             # prevent magazine being scanned
-            if directory.startswith("_"):
+            if directory.startswith("_") or directory.startswith("."):
                 d.remove(directory)
 
         for files in f:

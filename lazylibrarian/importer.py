@@ -35,9 +35,9 @@ def addAuthorToDB(authorname=None, refresh=False):
         authorimg = author['authorimg']
         if 'nophoto' in authorimg:
             authorimg = getAuthorImage(authorid)
-        if authorimg is not None and authorimg.startswith('http'):
+        if authorimg and authorimg.startswith('http'):
             newimg = cache_cover(authorid, authorimg)
-            if newimg is not None:
+            if newimg:
                 authorimg = newimg
         controlValueDict = {"AuthorName": authorname}
         newValueDict = {

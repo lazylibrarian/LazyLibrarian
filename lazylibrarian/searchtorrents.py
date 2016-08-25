@@ -230,7 +230,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         lazylibrarian.TOR_DOWNLOADER_BLACKHOLE or
         lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
 
-        if tor_url.startswith('magnet'):
+        if tor_url and tor_url.startswith('magnet'):
             torrent = tor_url  # allow magnet link to write to blackhole and hash to utorrent
         else:
             if '&file=' in tor_url:
@@ -281,7 +281,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             tor_title = cleanName(tor_title)
             logger.debug("Sending %s to blackhole" % tor_title)
             tor_name = str.replace(str(tor_title), ' ', '_')
-            if tor_url.startswith('magnet'):
+            if tor_url and tor_url.startswith('magnet'):
                 tor_name = tor_name + '.magnet'
             else:
                 tor_name = tor_name + '.torrent'
@@ -339,7 +339,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
 
 def CalcTorrentHash(torrent):
 
-    if torrent.startswith('magnet'):
+    if torrent and torrent.startswith('magnet'):
         hash = re.findall('urn:btih:([\w]{32,40})', torrent)[0]
         if len(hash) == 32:
             hash = b16encode(b32decode(hash)).lower()
