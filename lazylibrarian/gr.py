@@ -667,8 +667,6 @@ class GoodReads:
         if author:
             AuthorID = author['authorid']
 
-        dic = {':': '', '"': '', '\'': ''}
-        bookname = replace_all(bookname, dic)
         booksub = ''
         bookname = unaccented(bookname)
         if ': ' in bookname:
