@@ -669,7 +669,7 @@ class GoodReads:
 
         dic = {':': '', '"': '', '\'': ''}
         bookname = replace_all(bookname, dic)
-
+        booksub = ''
         bookname = unaccented(bookname)
         if ': ' in bookname:
             parts = bookname.split(': ', 1)
