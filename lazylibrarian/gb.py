@@ -34,6 +34,8 @@ class GoogleBooks:
         }
 
     def find_results(self, authorname=None, queue=None):
+
+        myDB = database.DBConnection()
         resultlist = []
         # See if we should check ISBN field, otherwise ignore it
         try:
@@ -204,8 +206,15 @@ class GoogleBooks:
                         bookname = bookname.strip()  # strip whitespace
                         bookid = item['id']
 
+                        author = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName = "%s"' % Author)
+                        if author:
+                            AuthorID = author[0]['authorid']
+                        else:
+                            AuthorID = ''
+
                         resultlist.append({
                             'authorname': Author,
+                            'authorid': AuthorID,
                             'bookid': bookid,
                             'bookname': bookname,
                             'booksub': booksub,
