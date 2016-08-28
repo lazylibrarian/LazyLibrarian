@@ -43,7 +43,7 @@ class SlackNotifier:
         url = url + slack_token
         headers = {"Content-Type": "application/json"}
 
-        postdata = '{"username": "LazyLibrarian", "icon_url":"https://raw.githubusercontent.com/DobyTang/LazyLibrarian/master/data/images/ll.ico", "text":"%s"}' % message
+        postdata = '{"username": "LazyLibrarian", "icon_url":"https://raw.githubusercontent.com/DobyTang/LazyLibrarian/master/data/images/ll.png", "text":"%s"}' % message
         r = requests.request(method,
                              url,
                              data=postdata,
