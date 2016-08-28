@@ -242,6 +242,12 @@ NMA_PRIORITY = 0
 NMA_ONSNATCH = None
 NMA_ONDOWNLOAD = None
 
+USE_SLACK = 0
+SLACK_TOKEN = None
+SLACK_NOTIFY_ONSNATCH = 0
+SLACK_NOTIFY_ONDOWNLOAD = 0
+
+
 # Month names table to hold long/short month names for multiple languages
 # which we can match against magazine issues
 # Defined as global and initialised early, because locale changes are not thread safe
@@ -432,6 +438,7 @@ def config_read(reloaded=False):
             PUSHOVER_PRIORITY, PUSHOVER_ONDOWNLOAD, PUSHOVER_DEVICE, \
             USE_ANDROIDPN, ANDROIDPN_NOTIFY_ONSNATCH, ANDROIDPN_NOTIFY_ONDOWNLOAD, \
             ANDROIDPN_URL, ANDROIDPN_USERNAME, ANDROIDPN_BROADCAST, \
+            USE_SLACK, SLACK_NOTIFY_ONSNATCH, SLACK_NOTIFY_ONDOWNLOAD, SLACK_TOKEN, \
             TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PORT, TRANSMISSION_PASS, TRANSMISSION_USER, \
             TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, DELUGE_LABEL, \
             FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, \
@@ -792,6 +799,11 @@ def config_read(reloaded=False):
         NMA_ONSNATCH = check_setting_bool(CFG, 'NMA', 'nma_onsnatch', 0)
         NMA_ONDOWNLOAD = check_setting_bool(CFG, 'NMA', 'nma_ondownload', 0)
 
+        USE_SLACK = check_setting_bool(CFG, 'Slack', 'use_slack', 0)
+        SLACK_NOTIFY_ONSNATCH = check_setting_bool(CFG, 'Slack', 'slack_notify_onsnatch', 0)
+        SLACK_NOTIFY_ONDOWNLOAD = check_setting_bool(CFG, 'Slack', 'slack_notify_ondownload', 0)
+        SLACK_TOKEN = check_setting_str(CFG, 'Slack', 'slack_token', '')
+
         BOOK_API = check_setting_str(CFG, 'API', 'book_api', 'GoodReads')
         GR_API = check_setting_str(CFG, 'API', 'gr_api', 'ckvsiSDsuqh7omh74ZZ6Q')
         GB_API = check_setting_str(CFG, 'API', 'gb_api', '')
@@ -1059,6 +1071,12 @@ def config_write():
     CFG.set('NMA', 'nma_priority', NMA_PRIORITY)
     CFG.set('NMA', 'nma_onsnatch', NMA_ONSNATCH)
     CFG.set('NMA', 'nma_ondownload', NMA_ONDOWNLOAD)
+#
+    check_section('Slack')
+    CFG.set('Slack', 'use_slack', USE_SLACK)
+    CFG.set('Slack', 'slack_notify_onsnatch', SLACK_NOTIFY_ONSNATCH)
+    CFG.set('Slack', 'slack_notify_ondownload', SLACK_NOTIFY_ONDOWNLOAD)
+    CFG.set('Slack', 'slack_token', SLACK_TOKEN)
 
     with open(CONFIGFILE, 'wb') as configfile:
         CFG.write(configfile)

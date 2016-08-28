@@ -136,6 +136,7 @@ class WebInterface(object):
                      use_androidpn=0, androidpn_notify_onsnatch=0, androidpn_notify_ondownload=0,
                      androidpn_url='', androidpn_username='', androidpn_broadcast=0, bookstrap_theme='',
                      use_nma=0, nma_apikey='', nma_priority=0, nma_onsnatch=0, nma_ondownload=0,
+                     use_slack=0, slack_notify_onsnatch=0, slack_notify_ondownload=0, slack_token='',
                      https_enabled=0, https_cert='', https_key='', **kwargs):
         #print len(kwargs)
         #for arg in kwargs:
@@ -312,6 +313,13 @@ class WebInterface(object):
         lazylibrarian.NMA_PRIORITY = check_int(nma_priority, 0)
         lazylibrarian.NMA_ONSNATCH = bool(nma_onsnatch)
         lazylibrarian.NMA_ONDOWNLOAD = bool(nma_ondownload)
+
+        lazylibrarian.USE_SLACK = bool(use_slack)
+        lazylibrarian.SLACK_NOTIFY_ONSNATCH = bool(
+            slack_notify_onsnatch)
+        lazylibrarian.SLACK_NOTIFY_ONDOWNLOAD = bool(
+            slack_notify_ondownload)
+        lazylibrarian.SLACK_TOKEN = slack_token
 
         self.label_thread()
 
@@ -1598,6 +1606,17 @@ class WebInterface(object):
             return "Test NMA notice sent successfully"
         else:
             return "Test NMA notice failed"
+
+    @cherrypy.expose
+    def testSlack(self):
+        cherrypy.response.headers[
+            'Cache-Control'] = "max-age=0,no-cache,no-store"
+
+        result = notifiers.slack_notifier.test_notify()
+        if result != "ok":
+            return "Slack notification failed,\n%s" % result
+        else:
+            return "Slack notification successful"
 
 # API ###############################################################
     @cherrypy.expose
