@@ -86,11 +86,6 @@ def search_tor_book(books=None, reset=False):
             resultlist, nproviders = IterateOverTorrentSites(book, 'general')
             found = processResultList(resultlist, book, "general")
 
-        # if you still can't find the book, try with author only
-        if not found:
-            resultlist, nproviders = IterateOverTorrentSites(book, 'author')
-            found = processResultList(resultlist, book, "author")
-
         if not found:
             logger.debug("Searches for %s returned no results." % book['searchterm'])
         if found > True:
@@ -172,11 +167,7 @@ def processResultList(resultlist, book, searchtype):
                     "Status": "Skipped"
                 }
 
-                if searchtype == 'author':
-                    # author should be ok, focus the score on title
-                    score = torBook_match
-                else:
-                    score = (torBook_match + torAuthor_match)/2  # as a percentage
+                score = (torBook_match + torAuthor_match)/2  # as a percentage
                 # lose a point for each extra word in the title so we get the closest match
                 words = len(getList(torTitle))
                 words -= len(getList(author))

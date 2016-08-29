@@ -80,11 +80,6 @@ def search_nzb_book(books=None, reset=False):
             resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'general')
             found = processResultList(resultlist, book, "general")
 
-        # if you still can't find the book, try with author only
-        if not found:
-            resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'author')
-            found = processResultList(resultlist, book, "author")
-
         if not found:
             logger.debug("NZB Searches for %s returned no results." % book['searchterm'])
         if found > True:
@@ -168,11 +163,7 @@ def processResultList(resultlist, book, searchtype):
                     "Status": "Skipped"
                 }
 
-                if searchtype == 'author':
-                    # author should be ok, focus the score on title
-                    score = nzbBook_match
-                else:
-                    score = (nzbBook_match + nzbAuthor_match)/2  # as a percentage
+                score = (nzbBook_match + nzbAuthor_match)/2  # as a percentage
                 # lose a point for each extra word in the title so we get the closest match
                 words = len(getList(nzb_Title))
                 words -= len(getList(author))

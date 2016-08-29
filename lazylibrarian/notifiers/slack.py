@@ -35,12 +35,12 @@ class SlackNotifier:
         if event == "Test":
             logger.debug("Testing Slack notification")
         else:
-            logger.debug("Slack message: " + str(message))
+            logger.debug("Slack message: " + str(event) + str(message))
 
         url = url + slack_token
         headers = {"Content-Type": "application/json"}
 
-        postdata = '{"username": "LazyLibrarian", "text":"%s"}' % message
+        postdata = '{"username": "LazyLibrarian", "text":"%s\n%s"}' % (event, message)
         r = requests.request(method,
                              url,
                              data=postdata,
@@ -75,11 +75,11 @@ class SlackNotifier:
 #
 
     def notify_snatch(self, title):
-        if lazylibrarian.SLACK_ONSNATCH:
+        if lazylibrarian.SLACK_NOTIFY_ONSNATCH:
             self._notify(message=title, event=notifyStrings[NOTIFY_SNATCH], slack_token=None)
 
     def notify_download(self, title):
-        if lazylibrarian.SLACK_ONDOWNLOAD:
+        if lazylibrarian.SLACK_NOTIFY_ONDOWNLOAD:
             self._notify(message=title, event=notifyStrings[NOTIFY_DOWNLOAD], slack_token=None)
 
     def test_notify(self, title="Test"):

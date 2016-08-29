@@ -365,7 +365,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
         authorname = cleanName(authorname)
         bookname = cleanName(book['bookName'])
         if bookname == authorname and book['bookSub']:
-            # books like "Spike Milligan: In his own words"
+            # books like "Spike Milligan: Man of Letters"
             # where we split the title/subtitle on ':'
             bookname = cleanName(book['bookSub'])
         if bookname.startswith(authorname) and len(bookname) > len(authorname):
@@ -420,20 +420,6 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "apikey": api_key,
                 "q": authorname + ' ' + bookname,
                 "cat": provider['BOOKCAT']
-            }
-    elif searchType == "author":
-        authorname = book['authorName']
-        while authorname[1] in '. ':  # strip any leading initials
-            authorname = authorname[2:].strip()  # and leading whitespace
-        # middle initials can't have a dot
-        authorname = authorname.replace('. ', ' ')
-        authorname = cleanName(authorname)
-        if provider['GENERALSEARCH']:
-            params = {
-                "t": provider['GENERALSEARCH'],
-                "apikey": api_key,
-                "q": authorname,
-                "extended": provider['EXTENDED'],
             }
     elif searchType == "mag":
         if provider['MAGSEARCH'] and provider['MAGCAT']:  # if specific magsearch, use it
