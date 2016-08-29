@@ -364,6 +364,15 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
         authorname = authorname.replace('. ', ' ')
         authorname = cleanName(authorname)
         bookname = cleanName(book['bookName'])
+        if bookname == authorname and book['bookSub']:
+            # books like "Spike Milligan: In his own words"
+            # where we split the title/subtitle on ':'
+            bookname = cleanName(book['bookSub'])
+        if bookname.startswith(authorname) and len(bookname) > len(authorname):
+            # books like "Spike Milligan In his own words"
+            # where we don't want to look for "Spike Milligan Spike Milligan In his own words"
+            bookname = bookname[len(authorname)+1:]
+
         if provider['BOOKSEARCH'] and provider['BOOKCAT']:  # if specific booksearch, use it
             params = {
                 "t": provider['BOOKSEARCH'],
@@ -386,7 +395,17 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
         # middle initials can't have a dot
         authorname = authorname.replace('. ', ' ')
         authorname = cleanName(authorname)
-        bookname = cleanName(book['bookName'].split('(')[0]).strip()
+        bookname = cleanName(book['bookName'])
+        if bookname == authorname and book['bookSub']:
+            # books like "Spike Milligan: In his own words"
+            # where we split the title/subtitle on ':'
+            bookname = cleanName(book['bookSub'])
+        if bookname.startswith(authorname) and len(bookname) > len(authorname):
+            # books like "Spike Milligan In his own words"
+            # where we don't want to look for "Spike Milligan Spike Milligan In his own words"
+            bookname = bookname[len(authorname)+1:]
+        if '(' in bookname:
+            bookname = bookname.split('(')[0].strip()
         if provider['BOOKSEARCH'] and provider['BOOKCAT']:  # if specific booksearch, use it
             params = {
                 "t": provider['BOOKSEARCH'],

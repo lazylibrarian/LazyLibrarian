@@ -49,8 +49,8 @@ def search_magazines(mags=None, reset=False):
     logger.info('Searching for %i magazine%s' % (len(searchmags), plural(len(searchmags))))
 
     for searchmag in searchmags:
-        bookid = searchmag[0]
-        searchterm = searchmag[0]
+        bookid = searchmag['Title']
+        searchterm = searchmag['Title']
         # frequency = searchmag[1]
         # last_acquired = searchmag[2]
         # issue_date = searchmag[3]

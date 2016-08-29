@@ -41,12 +41,12 @@ def search_tor_book(books=None, reset=False):
 
     if books is None:
         # We are performing a backlog search
-        searchbooks = myDB.select('SELECT BookID, AuthorName, Bookname, BookAdded from books WHERE Status="Wanted" order by BookAdded desc')
+        searchbooks = myDB.select('SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books WHERE Status="Wanted" order by BookAdded desc')
     else:
         # The user has added a new book
         searchbooks = []
         for book in books:
-            searchbook = myDB.select('SELECT BookID, AuthorName, BookName from books WHERE BookID="%s" \
+            searchbook = myDB.select('SELECT BookID, AuthorName, BookName, BookSub from books WHERE BookID="%s" \
                                      AND Status="Wanted"' % book['bookid'])
             for terms in searchbook:
                 searchbooks.append(terms)
@@ -58,25 +58,13 @@ def search_tor_book(books=None, reset=False):
         logger.info('TOR Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
 
     for searchbook in searchbooks:
-        bookid = searchbook['BookID']
-        author = searchbook['AuthorName']
-        book = searchbook['BookName']
+        # searchterm is only used for display purposes
+        searchterm = searchbook['AuthorName'] + ' "' + searchbook['BookName']
+        if searchbook['BookSub']:
+            searchterm = searchterm + ': ' + searchbook['BookSub']
+        searchterm = searchterm + '"'
 
-        dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
-               ',': '', '*': '', ':': '', ';': ''}
-        dicSearchFormatting = {'.': ' +', ' + ': ' '}
-
-        author = unaccented_str(replace_all(author, dic))
-        book = unaccented_str(replace_all(book, dic))
-
-        # TRY SEARCH TERM just using author name and book type
-        author = unaccented_str(replace_all(author, dicSearchFormatting))
-        searchterm = author + ' ' + book  # + ' ' + lazylibrarian.EBOOK_TYPE
-        searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode(lazylibrarian.SYS_ENCODING)
-        searchterm = re.sub(r'\(.*?\)', '', searchterm).encode(lazylibrarian.SYS_ENCODING)
-        searchterm = re.sub(r"\s\s+", " ", searchterm)  # strip any double white space
-        searchlist.append({"bookid": bookid, "bookName": searchbook[2], "authorName": searchbook[1],
-                           "searchterm": searchterm.strip()})
+        searchlist.append({"bookid": searchbook['BookID'], "bookName": searchbook['BookName'], "bookSub": searchbook['BookSub'], "authorName": searchbook['AuthorName'], "searchterm": searchterm})
 
     tor_count = 0
     for book in searchlist:
@@ -184,7 +172,11 @@ def processResultList(resultlist, book, searchtype):
                     "Status": "Skipped"
                 }
 
-                score = (torBook_match + torAuthor_match)/2  # as a percentage
+                if searchtype == 'author':
+                    # author should be ok, focus the score on title
+                    score = torBook_match
+                else:
+                    score = (torBook_match + torAuthor_match)/2  # as a percentage
                 # lose a point for each extra word in the title so we get the closest match
                 words = len(getList(torTitle))
                 words -= len(getList(author))
@@ -215,8 +207,7 @@ def processResultList(resultlist, book, searchtype):
                 scheduleJob(action='Start', target='processDir')
                 return True + True  # we found it
     else:
-        logger.debug("No torrent's found for " + (book["authorName"] + ' ' +
-                 book['bookName']).strip() + " using searchtype " + searchtype)
+        logger.debug("No torrent's found for [%s] using searchtype %s" % (book["searchterm"], searchtype))
     return False
 
 
