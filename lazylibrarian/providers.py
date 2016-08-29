@@ -397,12 +397,12 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
         authorname = cleanName(authorname)
         bookname = cleanName(book['bookName'])
         if bookname == authorname and book['bookSub']:
-            # books like "Spike Milligan: In his own words"
+            # books like "Spike Milligan: Man of Letters"
             # where we split the title/subtitle on ':'
             bookname = cleanName(book['bookSub'])
         if bookname.startswith(authorname) and len(bookname) > len(authorname):
-            # books like "Spike Milligan In his own words"
-            # where we don't want to look for "Spike Milligan Spike Milligan In his own words"
+            # books like "Spike Milligan in his own words"
+            # where we don't want to look for "Spike Milligan Spike Milligan in his own words"
             bookname = bookname[len(authorname)+1:]
         if '(' in bookname:
             bookname = bookname.split('(')[0].strip()
