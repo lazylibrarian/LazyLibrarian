@@ -33,24 +33,23 @@ class SlackNotifier:
         if method == None:
             method = 'POST'
         if event == "Test":
-            testMessage = True
             logger.debug("Testing Slack notification")
         else:
-            testMessage = False
             logger.debug("Slack message: " + str(message))
-            logger.debug("Slack token: " + str(slack_token))
 
         url = url + slack_token
         headers = {"Content-Type": "application/json"}
 
-        postdata = '{"username": "LazyLibrarian", "icon_url":"https://raw.githubusercontent.com/DobyTang/LazyLibrarian/master/data/images/ll.png", "text":"%s"}' % message
+        postdata = '{"username": "LazyLibrarian", "text":"%s"}' % message
         r = requests.request(method,
                              url,
                              data=postdata,
                              headers=headers
                              )
-        #r.raise_for_status()
-        logger.debug("Slack returned %s" % r.text)
+        if r.text.startswith('<!DOCTYPE html>'):
+            logger.debug("Slack returned html errorpage")
+            return "Invalid or missing Webhook"
+        logger.debug("Slack returned [%s]" % r.text)
         return r.text
 
 
@@ -64,12 +63,10 @@ class SlackNotifier:
         try:
             message = unaccented(message)
         except Exception, e:
-            logger.warn("Slack: could not convert  message: %s" % e)
+            logger.warn("Slack: could not convert message: %s" % e)
         # suppress notifications if the notifier is disabled but the notify options are checked
         if not lazylibrarian.USE_SLACK and not force:
             return False
-
-        logger.debug("Slack: Sending notification " + str(message))
 
         return self._sendSlack(message, event, slack_token, method, force)
 
