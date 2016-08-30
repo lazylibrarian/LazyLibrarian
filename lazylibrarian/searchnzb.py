@@ -186,6 +186,7 @@ def processResultList(resultlist, book, searchtype):
             logger.debug('%s already marked snatched' % nzb_Title)
             return True  # someone else found it
         else:
+            logger.debug('%s adding to wanted' % nzb_Title)
             myDB.upsert("wanted", newValueDict, controlValueDict)
             if nzbmode == "torznab":
                 snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],

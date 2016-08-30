@@ -481,7 +481,6 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             bookdate=''
             bookdesc=''
             processOPF(dest_path, authorname, bookname, bookisbn, bookid, bookpub, bookdate, bookdesc, booklang, global_name)
-            return False
             logger.debug('Importing %s, %s into calibre library' % (authorname, bookname))
             params = [lazylibrarian.IMP_CALIBREDB, 'add', '-1', '--with-library', lazylibrarian.DESTINATION_DIR, pp_path]
             logger.debug(str(params))

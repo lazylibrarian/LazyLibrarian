@@ -70,6 +70,7 @@ def get_book_info(fname):
             att = tree[0][n].attrib
             if 'full-path' in att:
                 cfname = att['full-path']
+                break
             n = n + 1
 
         # grab the metadata block from the contents metafile
