@@ -1330,6 +1330,52 @@
                                     </fieldset>
                                 </div>
 
+                                <div class="checkbox">
+                                    <%
+                                    if lazylibrarian.USE_SLACK == True:
+                                        checked = 'checked="checked"'
+                                    else:
+                                        checked = ''
+                                    %>
+                                    <label for="use_slack" class="control-label">
+                                    <input type="checkbox" id="use_slack" name="use_slack" value="1" ${checked} />
+                                    Enable Slack Notifications</label>
+                                </div>
+                                <div id="slackoptions">
+                                    <fieldset>
+                                        <legend>Slack</legend>
+                                        <div class="checkbox">
+                                            <%
+                                            if lazylibrarian.SLACK_NOTIFY_ONSNATCH == True:
+                                                checked = 'checked="checked"'
+                                            else:
+                                                checked = ''
+                                            %>
+                                            <label for="slack_notify_onsnatch">
+                                            <input type="checkbox" id="slack_notify_onsnatch" name="slack_notify_onsnatch" value="1" ${checked} />
+                                            Notify on snatch</label>
+                                        </div>
+                                        <div class="checkbox">
+                                            <%
+                                            if lazylibrarian.SLACK_NOTIFY_ONDOWNLOAD == True:
+                                                checked = 'checked="checked"'
+                                            else:
+                                                checked = ''
+                                            %>
+                                            <label for="slack_notify_ondownload">
+                                            <input type="checkbox" id="slack_notify_ondownload" name="slack_notify_ondownload" value="1" ${checked} />
+                                            Notify on download</label>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="slack_token">Slack Webhook</label>
+                                            <input type="text" id="slack_token" name="slack_token" value="${lazylibrarian.SLACK_TOKEN}" class="form-control" placeholder="Slack Webhook">
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="button" value="Test Slack" id="testSlack" class="btn btn-default">
+                                        </div>
+                                    </fieldset>
+                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -1971,6 +2017,27 @@
                         }
                 });
 
+            if ($("#use_slack").is(":checked"))
+                    {
+                            $("#slackoptions").show();
+                    }
+            else
+                    {
+                            $("#slackoptions").hide();
+                    }
+
+            $("#use_slack").click(function(){
+                    if ($("#use_slack").is(":checked"))
+                    {
+                            $("#slackoptions").slideDown();
+                    }
+                    else
+                    {
+                            $("#slackoptions").slideUp();
+                    }
+            });
+
+
             $('#twitterStep1').click(function () {
                 $('#testTwitter-result').html('');
                 $.get("twitterStep1", function (data) {window.open(data); })
@@ -2004,6 +2071,12 @@
             $('#testNMA').click(function () {
                 $.get("testNMA",
                     function (data) { window.alert(data) });
+            });
+
+            $('#testSlack').click(function () {
+                $.get("testSlack",
+                    function (data) { window.alert(data) });
+
             });
 
             $("#testAndroidPN").click(function () {

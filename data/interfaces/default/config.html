@@ -1118,7 +1118,47 @@
                                         <input type="button" value="Test NMA" id="testNMA">
                                     </div>
                                 </div>
-		</fieldset>
+		        </fieldset>
+                <fieldset>
+                    <BR>
+                    <h3>Slack</h3>
+                    <div class="row checkbox">
+                    <%
+                    if lazylibrarian.USE_SLACK == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                        <input type="checkbox" name="use_slack" id="slack" value="1" ${checked} />
+                        <label>Enable Slack Notifications</label>
+                    </div>
+                    <div id="slackoptions">
+                        <div class="row">
+                    <%
+                    if lazylibrarian.SLACK_NOTIFY_ONSNATCH == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                            <input type="checkbox" name="slack_notify_onsnatch" value="1" ${checked} />Notify on snatch
+                        </div>
+                        <div class="row">
+                    <%
+                    if lazylibrarian.SLACK_NOTIFY_ONDOWNLOAD == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                            <input type="checkbox" name="slack_notify_ondownload" value="1" ${checked} />Notify on download
+                        </div>
+                        <div class="row">
+                            <input type="text" name="slack_token" value="${lazylibrarian.SLACK_TOKEN}" size="26" placeholder="Slack Webhook">
+                        </div>
+                        <div class="row">
+                            <input type="button" value="Test Slack" id="testSlack">
+                        </div>
+                     </div>
+                </fieldset>
             </td>
         </table>
         </div>
@@ -1535,6 +1575,26 @@
                     }
             });
 
+            if ($("#slack").is(":checked"))
+                    {
+                            $("#slackoptions").show();
+                    }
+            else
+                    {
+                            $("#slackoptions").hide();
+                    }
+
+            $("#slack").click(function(){
+                    if ($("#slack").is(":checked"))
+                    {
+                            $("#slackoptions").slideDown();
+                    }
+                    else
+                    {
+                            $("#slackoptions").slideUp();
+                    }
+            });
+
             if ($("#pushover").is(":checked"))
                     {
                             $("#pushoveroptions").show();
@@ -1686,6 +1746,11 @@
 
             $('#testPushbullet').click(function () {
                 $.get("testPushbullet",
+                    function (data) { alert(data); });
+            });
+
+            $('#testSlack').click(function () {
+                $.get("testSlack",
                     function (data) { alert(data); });
             });
 

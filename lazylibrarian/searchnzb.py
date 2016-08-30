@@ -31,12 +31,12 @@ def search_nzb_book(books=None, reset=False):
 
     if books is None:
         # We are performing a backlog search
-        searchbooks = myDB.select('SELECT BookID, AuthorName, Bookname, BookAdded from books WHERE Status="Wanted" order by BookAdded desc')
+        searchbooks = myDB.select('SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books WHERE Status="Wanted" order by BookAdded desc')
     else:
         # The user has added a new book
         searchbooks = []
         for book in books:
-            searchbook = myDB.select('SELECT BookID, AuthorName, BookName from books WHERE BookID="%s" \
+            searchbook = myDB.select('SELECT BookID, AuthorName, BookName, BookSub from books WHERE BookID="%s" \
                                      AND Status="Wanted"' % book['bookid'])
             for terms in searchbook:
                 searchbooks.append(terms)
@@ -48,26 +48,13 @@ def search_nzb_book(books=None, reset=False):
         logger.info('NZB Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
 
     for searchbook in searchbooks:
-        bookid = searchbook[0]
-        author = searchbook[1]
-        book = searchbook[2]
+        # searchterm is only used for display purposes
+        searchterm = searchbook['AuthorName'] + ' "' + searchbook['BookName']
+        if searchbook['BookSub']:
+            searchterm = searchterm + ': ' + searchbook['BookSub']
+        searchterm = searchterm + '"'
 
-        dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
-               ',': '', '*': '', ':': '', ';': ''}
-        dicSearchFormatting = {'.': ' +', ' + ': ' '}
-
-        author = unaccented_str(replace_all(author, dic))
-        book = unaccented_str(replace_all(book, dic))
-        if '(' in book:  # may have title (series/extended info)
-            book = book.split('(')[0]
-        # TRY SEARCH TERM just using author name and book
-        author = unaccented_str(replace_all(author, dicSearchFormatting))
-        searchterm = author + ' ' + book
-        searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode(lazylibrarian.SYS_ENCODING)
-        searchterm = re.sub(r'\(.*?\)', '', searchterm).encode(lazylibrarian.SYS_ENCODING)
-        searchterm = re.sub(r"\s\s+", " ", searchterm)  # strip any double white space
-        searchlist.append({"bookid": bookid, "bookName": searchbook[2], "authorName": searchbook[1],
-                           "searchterm": searchterm.strip()})
+        searchlist.append({"bookid": searchbook['BookID'], "bookName": searchbook['BookName'], "bookSub": searchbook['BookSub'], "authorName": searchbook['AuthorName'], "searchterm": searchterm})
 
     if not lazylibrarian.SAB_HOST and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE and not lazylibrarian.NZBGET_HOST:
         logger.warn('No download method is set, use SABnzbd/NZBGet or blackhole, check config')
@@ -92,11 +79,6 @@ def search_nzb_book(books=None, reset=False):
         if not found:
             resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'general')
             found = processResultList(resultlist, book, "general")
-
-        # if you still can't find the book, try with author only
-        if not found:
-            resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'author')
-            found = processResultList(resultlist, book, "author")
 
         if not found:
             logger.debug("NZB Searches for %s returned no results." % book['searchterm'])
@@ -204,6 +186,7 @@ def processResultList(resultlist, book, searchtype):
             logger.debug('%s already marked snatched' % nzb_Title)
             return True  # someone else found it
         else:
+            logger.debug('%s adding to wanted' % nzb_Title)
             myDB.upsert("wanted", newValueDict, controlValueDict)
             if nzbmode == "torznab":
                 snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
@@ -216,8 +199,7 @@ def processResultList(resultlist, book, searchtype):
                 scheduleJob(action='Start', target='processDir')
                 return True + True  # we found it
     else:
-        logger.debug("No nzb's found for " + (book["authorName"] + ' ' + book['bookName']).strip() +
-                 " using searchtype " + searchtype)
+        logger.debug("No nzb's found for [%s] using searchtype %s" % (book["searchterm"], searchtype))
     return False
 
 

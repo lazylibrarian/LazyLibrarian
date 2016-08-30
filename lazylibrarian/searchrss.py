@@ -33,12 +33,12 @@ def search_rss_book(books=None, reset=False):
 
     if books is None:
         # We are performing a backlog search
-        searchbooks = myDB.select('SELECT BookID, AuthorName, Bookname, BookAdded from books WHERE Status="Wanted" order by BookAdded desc')
+        searchbooks = myDB.select('SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books WHERE Status="Wanted" order by BookAdded desc')
     else:
         # The user has added a new book
         searchbooks = []
         for book in books:
-            searchbook = myDB.select('SELECT BookID, AuthorName, BookName from books WHERE BookID="%s" \
+            searchbook = myDB.select('SELECT BookID, AuthorName, BookName, BookSub from books WHERE BookID="%s" \
                                      AND Status="Wanted"' % book['bookid'])
             for terms in searchbook:
                 searchbooks.append(terms)
@@ -59,7 +59,6 @@ def search_rss_book(books=None, reset=False):
 
     rss_count = 0
     for book in searchbooks:
-        bookid = book['BookID']
         author = book['AuthorName']
         title = book['BookName']
 

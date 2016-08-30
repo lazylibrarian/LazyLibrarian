@@ -460,7 +460,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     got_book = False
     for bookfile in os.listdir(pp_path):
         if is_valid_booktype(bookfile, booktype=booktype):
-            got_book = True
+            got_book = bookfile
             break
 
     if got_book is False:
@@ -471,6 +471,16 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     # Do we want calibre to import the book for us
     if bookname and len(lazylibrarian.IMP_CALIBREDB):
         try:
+            logger.debug('Creating metadata for calibre')
+            dest_path=pp_path
+            global_name=os.path.splitext(got_book)[0]
+            bookid=''
+            booklang=''
+            bookisbn=''
+            bookpub=''
+            bookdate=''
+            bookdesc=''
+            processOPF(dest_path, authorname, bookname, bookisbn, bookid, bookpub, bookdate, bookdesc, booklang, global_name)
             logger.debug('Importing %s, %s into calibre library' % (authorname, bookname))
             params = [lazylibrarian.IMP_CALIBREDB, 'add', '-1', '--with-library', lazylibrarian.DESTINATION_DIR, pp_path]
             logger.debug(str(params))
@@ -478,7 +488,10 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             if res:
                 logger.debug('%s reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
             calibre_dir = os.path.join(lazylibrarian.DESTINATION_DIR, unaccented_str(authorname), '')
-            imported = LibraryScan(calibre_dir)  # rescan authors directory so we get the new book in our database
+            if os.path.isdir(calibre_dir):
+                imported = LibraryScan(calibre_dir)  # rescan authors directory so we get the new book in our database
+            else:
+                imported = LibraryScan(lazylibrarian.DESTINATION_DIR)  # may have to rescan whole library instead
             if not imported and not 'already exist' in res:
                 return False
         except subprocess.CalledProcessError as e:
