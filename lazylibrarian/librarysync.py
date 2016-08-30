@@ -113,7 +113,7 @@ def get_book_info(fname):
             elif 'identifier' in tag and 'isbn' in attrib:
                 if is_valid_isbn(txt):
                     res['identifier'] = txt
-            n = n + 1
+        n = n + 1
     return res
 
 
