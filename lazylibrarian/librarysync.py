@@ -19,12 +19,13 @@ from lazylibrarian.importer import addAuthorToDB, update_totals
 
 def get_book_info(fname):
     # only handles epub, mobi and opf for now,
-    # for pdf see below
+    # for pdf see notes below
     res = {}
     extn = os.path.splitext(fname)[1]
     if not extn:
         return res
     if extn == ".mobi":
+        res['type'] = "mobi"
         try:
             book = Mobi(fname)
             book.parse()
@@ -34,84 +35,85 @@ def get_book_info(fname):
         res['title'] = book.title()
         res['language'] = book.language()
         res['identifier'] = book.isbn()
-        res['type'] = "mobi"
         return res
 
-    """
-    # none of the pdfs in my library had language,isbn
-    # most didn't have author, or had the wrong author
-    # (author set to publisher, or software used)
-    # so probably not much point in looking at pdfs
-    #
-    # if (extn == ".pdf"):
-    #	  pdf = PdfFileReader(open(fname, "rb"))
-    #	  txt = pdf.getDocumentInfo()
-          # repackage the data here to get components we need
-    #     res = {}
-    #     for s in ['title','language','creator']:
-    #         res[s] = txt[s]
-    #	  res['identifier'] = txt['isbn']
-    #     res['type'] = "pdf"
-    #	  return res
-    """
+        # none of the pdfs in my library had language,isbn
+        # most didn't have author, or had the wrong author
+        # (author set to publisher, or software used)
+        # so probably not much point in looking at pdfs
+        #
+        # if (extn == ".pdf"):
+        #	  pdf = PdfFileReader(open(fname, "rb"))
+        #	  txt = pdf.getDocumentInfo()
+              # repackage the data here to get components we need
+        #     res = {}
+        #     for s in ['title','language','creator']:
+        #         res[s] = txt[s]
+        #	  res['identifier'] = txt['isbn']
+        #     res['type'] = "pdf"
+        #	  return res
 
-    if extn == ".epub":
+    elif extn == ".epub":
+        res['type'] = "epub"
+
         # prepare to read from the .epub file
-        zipdata = zipfile.ZipFile(fname)
+        try:
+            zipdata = zipfile.ZipFile(fname)
+        except:
+            return res
+
         # find the contents metafile
         txt = zipdata.read('META-INF/container.xml')
         tree = ElementTree.fromstring(txt)
         n = 0
         cfname = ""
         if not len(tree):
-            return res
+           return res
 
         while n < len(tree[0]):
-            att = tree[0][n].attrib
-            if 'full-path' in att:
-                cfname = att['full-path']
-                break
-            n = n + 1
+           att = tree[0][n].attrib
+           if 'full-path' in att:
+               cfname = att['full-path']
+               break
+           n = n + 1
 
         # grab the metadata block from the contents metafile
         txt = zipdata.read(cfname)
-        tree = ElementTree.fromstring(txt)
-        res['type'] = "epub"
-    else:
-        if extn == ".opf":
-            txt = open(fname).read()
-            # sanitize any unmatched html tags or ElementTree won't parse
-            dic = {'<br>': '', '</br>': ''}
-            txt = replace_all(txt, dic)
-            try:
-                tree = ElementTree.fromstring(txt)
-                res['type'] = "opf"
-            except Exception as e:
-                logger.error("Error parsing metadata from %s" % fname)
-                logger.error(str(e))
-                return ""
-        else:
-            return ""
 
-    # repackage the data
+    elif extn == ".opf":
+        res['type'] = "opf"
+        txt = open(fname).read()
+        # sanitize any unmatched html tags or ElementTree won't parse
+        dic = {'<br>': '', '</br>': ''}
+        txt = replace_all(txt, dic)
+
+    # repackage epub or opf metadata
+    try:
+        tree = ElementTree.fromstring(txt)
+    except Exception as e:
+        logger.error("Error parsing metadata from %s" % fname)
+        logger.error(str(e))
+        return res
+
     if not len(tree):
         return res
     n = 0
     while n < len(tree[0]):
-        tag = str(tree[0][n].tag).split('}')[1]
-        txt = tree[0][n].text
-        attrib = str(tree[0][n].attrib)
-        isbn = ""
-        if 'title' in tag.lower():
-            res['title'] = txt
-        elif 'language' in tag.lower():
-            res['language'] = txt
-        elif 'creator' in tag.lower():
-            res['creator'] = txt
-        elif 'identifier' in tag.lower() and 'isbn' in attrib.lower():
-            if is_valid_isbn(txt):
-                res['identifier'] = txt
-        n = n + 1
+        tag = str(tree[0][n].tag).lower()
+        if '}' in tag:
+            tag = tag.split('}')[1]
+            txt = tree[0][n].text
+            attrib = str(tree[0][n].attrib).lower()
+            if 'title' in tag:
+                res['title'] = txt
+            elif 'language' in tag:
+                res['language'] = txt
+            elif 'creator' in tag:
+                res['creator'] = txt
+            elif 'identifier' in tag and 'isbn' in attrib:
+                if is_valid_isbn(txt):
+                    res['identifier'] = txt
+            n = n + 1
     return res
 
 
