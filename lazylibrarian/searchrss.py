@@ -139,31 +139,30 @@ def processResultList(resultlist, author, title, book):
                 logger.debug("Rejecting %s, too large" % torTitle)
 
         if not rejected:
-            if tor_Title_match >= match_ratio and tor_Author_match >= match_ratio:
-                bookid = book['bookid']
-                tor_Title = (book["authorName"] + ' - ' + book['bookName'] +
-                             ' LL.(' + book['bookid'] + ')').strip()
-                tor_prov = tor['tor_prov']
-                tor_feed = tor['tor_feed']
+            bookid = book['bookid']
+            tor_Title = (book["authorName"] + ' - ' + book['bookName'] +
+                         ' LL.(' + book['bookid'] + ')').strip()
+            tor_prov = tor['tor_prov']
+            tor_feed = tor['tor_feed']
 
-                controlValueDict = {"NZBurl": tor_url}
-                newValueDict = {
-                    "NZBprov": tor_prov,
-                    "BookID": bookid,
-                    "NZBdate": now(),  # when we asked for it
-                    "NZBsize": tor_size,
-                    "NZBtitle": tor_Title,
-                    "NZBmode": "torrent",
-                    "Status": "Skipped"
-                }
+            controlValueDict = {"NZBurl": tor_url}
+            newValueDict = {
+                "NZBprov": tor_prov,
+                "BookID": bookid,
+                "NZBdate": now(),  # when we asked for it
+                "NZBsize": tor_size,
+                "NZBtitle": tor_Title,
+                "NZBmode": "torrent",
+                "Status": "Skipped"
+            }
 
-                score = (tor_Title_match + tor_Author_match)/2  # as a percentage
-                # lose a point for each extra word in the title so we get the closest match
-                words = len(getList(torTitle))
-                words -= len(getList(author))
-                words -= len(getList(title))
-                score -= abs(words)
-                matches.append([score, torTitle, newValueDict, controlValueDict])
+            score = (tor_Title_match + tor_Author_match)/2  # as a percentage
+            # lose a point for each extra word in the title so we get the closest match
+            words = len(getList(torTitle))
+            words -= len(getList(author))
+            words -= len(getList(title))
+            score -= abs(words)
+            matches.append([score, torTitle, newValueDict, controlValueDict])
 
     if matches:
         highest = max(matches, key=lambda x: x[0])
@@ -171,14 +170,20 @@ def processResultList(resultlist, author, title, book):
         nzb_Title = highest[1]
         newValueDict = highest[2]
         controlValueDict = highest[3]
-        logger.info(u'Best match RSS (%s%%): %s using %s search' %
+
+        if score < match_ratio:
+            logger.debug(u'Nearest RSS match (%s%%): %s using %s search for %s %s' %
+                (score, nzb_Title, searchtype, author, title))
+            return False
+
+        logger.info(u'Best RSS match (%s%%): %s using %s search' %
             (score, nzb_Title, searchtype))
 
         snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
                                     newValueDict["BookID"]).fetchone()
 
         if snatchedbooks:  # check if one of the other downloaders got there first
-            logger.debug('%s already marked snatched' % nzb_Title)
+            logger.info('%s already marked snatched' % nzb_Title)
             return True
         else:
             myDB.upsert("wanted", newValueDict, controlValueDict)
