@@ -466,7 +466,6 @@ class GoodReads:
                                         (find_book['BookID'], authorNameResult, bookname, bookid))
                                     duplicates = duplicates + 1
                                     rejected = True
-                                    break
 
                     if not rejected:
                         find_books = myDB.select('SELECT * FROM books WHERE BookID = "%s"' % bookid)
@@ -476,7 +475,6 @@ class GoodReads:
                                 (bookid, authorNameResult, bookname))
                             duplicates = duplicates + 1
                             rejected = True
-                            break
 
                     if not rejected:
                         if book_status != "Ignored":
