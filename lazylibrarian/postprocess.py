@@ -471,18 +471,23 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     # Do we want calibre to import the book for us
     if bookname and len(lazylibrarian.IMP_CALIBREDB):
         try:
-            logger.debug('Creating metadata for calibre')
-            dest_path=pp_path
-            global_name=os.path.splitext(got_book)[0]
-            bookid=''
-            booklang=''
-            bookisbn=''
-            bookpub=''
-            bookdate=''
-            bookdesc=''
-            processOPF(dest_path, authorname, bookname, bookisbn, bookid, bookpub, bookdate, bookdesc, booklang, global_name)
-            logger.debug('Importing %s, %s into calibre library' % (authorname, bookname))
-            params = [lazylibrarian.IMP_CALIBREDB, 'add', '-1', '--with-library', lazylibrarian.DESTINATION_DIR, pp_path]
+            logger.debug('Importing %s into calibre library' % (global_name))
+            # calibre is broken, ignores metadata.opf and book_name.opf
+            # also ignores --title and --author as parameters
+            # so we have to configure calibre to parse the filename for author/title
+            # and rename the book to the format we want calibre to use
+            for bookfile in os.listdir(pp_path):
+                filename, extn = os.path.splitext(bookfile)
+                os.rename(os.path.join(pp_path, filename + extn), os.path.join(pp_path, global_name + extn))
+
+            params =    [lazylibrarian.IMP_CALIBREDB,
+                            'add',
+                            #'--title="%s"' % bookname,
+                            #'--author="%s"' % unaccented(authorname),
+                            '-1',
+                            '--with-library',
+                            lazylibrarian.DESTINATION_DIR, pp_path
+                        ]
             logger.debug(str(params))
             res = subprocess.check_output(params, stderr=subprocess.STDOUT)
             if res:
@@ -491,7 +496,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             if os.path.isdir(calibre_dir):
                 imported = LibraryScan(calibre_dir)  # rescan authors directory so we get the new book in our database
             else:
-                imported = LibraryScan(lazylibrarian.DESTINATION_DIR)  # may have to rescan whole library instead
+                logger.error("Failed to locate calibre dir [%s]" % calibre_dir)
+                imported = False
+                #imported = LibraryScan(lazylibrarian.DESTINATION_DIR)  # may have to rescan whole library instead
             if not imported and not 'already exist' in res:
                 return False
         except subprocess.CalledProcessError as e:
@@ -541,11 +548,13 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     # calibre or ll copied the files we want, now delete source files if not in download root dir
     if not lazylibrarian.DESTINATION_COPY:
         if pp_path != lazylibrarian.DOWNLOAD_DIR:
-            try:
-                shutil.rmtree(pp_path)
-            except Exception as why:
-                logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
-                return False
+            if os.path.isdir(pp_path):
+                # calibre might have already deleted it
+                try:
+                    shutil.rmtree(pp_path)
+                except Exception as why:
+                    logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
+                    return False
     return True
 
 
