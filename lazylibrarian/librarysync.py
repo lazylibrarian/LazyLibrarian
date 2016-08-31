@@ -18,14 +18,14 @@ from lazylibrarian.importer import addAuthorToDB, update_totals
 
 
 def get_book_info(fname):
-    # only handles epub, mobi and opf for now,
+    # only handles epub, mobi, azw3 and opf for now,
     # for pdf see notes below
     res = {}
     extn = os.path.splitext(fname)[1]
     if not extn:
         return res
-    if extn == ".mobi":
-        res['type'] = "mobi"
+    if extn == ".mobi" or extn == ".azw3":
+        res['type'] = extn[1:]
         try:
             book = Mobi(fname)
             book.parse()
