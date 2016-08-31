@@ -145,31 +145,31 @@ def processResultList(resultlist, book, searchtype):
                 logger.debug("Rejecting %s, too large" % nzb_Title)
 
         if not rejected:
-            if nzbAuthor_match >= match_ratio and nzbBook_match >= match_ratio:
-                bookid = book['bookid']
-                nzbTitle = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
-                nzbprov = nzb['nzbprov']
-                nzbdate_temp = nzb['nzbdate']
-                nzbdate = nzbdate2format(nzbdate_temp)
-                nzbmode = nzb['nzbmode']
-                controlValueDict = {"NZBurl": nzburl}
-                newValueDict = {
-                    "NZBprov": nzbprov,
-                    "BookID": bookid,
-                    "NZBdate": now(),  # when we asked for it
-                    "NZBsize": nzbsize,
-                    "NZBtitle": nzbTitle,
-                    "NZBmode": nzbmode,
-                    "Status": "Skipped"
-                }
+            #if nzbAuthor_match >= match_ratio and nzbBook_match >= match_ratio:
+            bookid = book['bookid']
+            nzbTitle = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
+            nzbprov = nzb['nzbprov']
+            nzbdate_temp = nzb['nzbdate']
+            nzbdate = nzbdate2format(nzbdate_temp)
+            nzbmode = nzb['nzbmode']
+            controlValueDict = {"NZBurl": nzburl}
+            newValueDict = {
+                "NZBprov": nzbprov,
+                "BookID": bookid,
+                "NZBdate": now(),  # when we asked for it
+                "NZBsize": nzbsize,
+                "NZBtitle": nzbTitle,
+                "NZBmode": nzbmode,
+                "Status": "Skipped"
+            }
 
-                score = (nzbBook_match + nzbAuthor_match)/2  # as a percentage
-                # lose a point for each extra word in the title so we get the closest match
-                words = len(getList(nzb_Title))
-                words -= len(getList(author))
-                words -= len(getList(title))
-                score -= abs(words)
-                matches.append([score, nzb_Title, newValueDict, controlValueDict])
+            score = (nzbBook_match + nzbAuthor_match)/2  # as a percentage
+            # lose a point for each extra word in the title so we get the closest match
+            words = len(getList(nzb_Title))
+            words -= len(getList(author))
+            words -= len(getList(title))
+            score -= abs(words)
+            matches.append([score, nzb_Title, newValueDict, controlValueDict])
 
     if matches:
         highest = max(matches, key=lambda x: x[0])
@@ -177,7 +177,13 @@ def processResultList(resultlist, book, searchtype):
         nzb_Title = highest[1]
         newValueDict = highest[2]
         controlValueDict = highest[3]
-        logger.info(u'Best match NZB (%s%%): %s using %s search' %
+
+        if score < match_ratio:
+            logger.info(u'Nearest NZB match (%s%%): %s using %s search for %s %s' %
+                (score, nzb_Title, searchtype, author, title))
+            return False
+
+        logger.info(u'Best NZB match (%s%%): %s using %s search' %
             (score, nzb_Title, searchtype))
 
         snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
