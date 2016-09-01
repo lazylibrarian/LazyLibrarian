@@ -575,6 +575,26 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
     refreshAuthor.exposed = True
 
+    def libraryScanAuthor(self, AuthorID):
+        self.label_thread()
+
+        myDB = database.DBConnection()
+        authorsearch = myDB.select(
+            'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
+        if len(authorsearch):  # to stop error if try to refresh an author while they are still loading
+            AuthorName = authorsearch[0]['AuthorName']
+            authordir = os.path.join(lazylibrarian.DESTINATION_DIR, AuthorName)
+            if os.path.isdir(authordir):
+                try:
+                    threading.Thread(target=LibraryScan, name='SCANAUTHOR', args=[authordir]).start()
+                except Exception as e:
+                    logger.error(u'Unable to complete the scan: %s' % e)
+            else:
+                # maybe we don't have any of their books
+                logger.debug(u'Unable to find author directory: %s' % authordir)
+        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+    libraryScanAuthor.exposed = True
+
     def addAuthor(self, AuthorName):
         threading.Thread(target=addAuthorToDB, name='ADDAUTHOR', args=[AuthorName, False]).start()
         raise cherrypy.HTTPRedirect("home")

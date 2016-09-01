@@ -139,19 +139,29 @@ def find_book_in_db(myDB, author, book):
 
         best_ratio = 0
         best_partial = 0
+        best_partname = 0
         ratio_name = ""
         partial_name = ""
+        partname_name = ""
         ratio_id = 0
         partial_id = 0
+        partname_id = 0
+        partname = 0
+
+        book_lower = unaccented(book.lower())
+        book_partname = ''
+        if ':' in book_lower:
+            book_partname = book_lower.split(':')[0]
 
         for a_book in books:
             # tidy up everything to raise fuzziness scores
             # still need to lowercase for matching against partial_name later on
-            book_lower = unaccented(book.lower())
             a_book_lower = unaccented(a_book['BookName'].lower())
             #
             ratio = fuzz.ratio(book_lower, a_book_lower)
             partial = fuzz.partial_ratio(book_lower, a_book_lower)
+            if book_partname:
+                partname = fuzz.partial_ratio(book_partname, a_book_lower)
 
             # lose a point for each extra word in the fuzzy matches so we get the closest match
             words = len(getList(book_lower))
@@ -167,6 +177,10 @@ def find_book_in_db(myDB, author, book):
                 best_partial = partial
                 partial_name = a_book['BookName']
                 partial_id = a_book['BookID']
+            if partname > best_partname:
+                best_partname = partname
+                partname_name = a_book['BookName']
+                partname_id = a_book['BookID']
 
             if partial == best_partial:
                 # prefer the match closest to the left, ie prefer starting with a match and ignoring the rest
@@ -200,10 +214,15 @@ def find_book_in_db(myDB, author, book):
                 "Fuzz match partial [%d] [%s] [%s]" %
                 (best_partial, book, partial_name))
             return partial_id
+        if best_partname > 95:
+            logger.debug(
+                "Fuzz match partname [%d] [%s] [%s]" %
+                (best_partname, book, partname_name))
+            return partname_id
 
         logger.debug(
-            'Fuzz failed [%s - %s] ratio [%d,%s], partial [%d,%s]' %
-            (author, book, best_ratio, ratio_name, best_partial, partial_name))
+            'Fuzz failed [%s - %s] ratio [%d,%s], partial [%d,%s], partname [%d,%s]' %
+            (author, book, best_ratio, ratio_name, best_partial, partial_name, best_partname, partname_name))
         return 0
 
 
@@ -230,6 +249,7 @@ def LibraryScan(startdir=None):
     logger.info('Scanning ebook directory: %s' % startdir)
 
     new_book_count = 0
+    modified_count = 0
     file_count = 0
     author = ""
 
@@ -489,45 +509,41 @@ def LibraryScan(startdir=None):
                             bookid = find_book_in_db(myDB, author, book)
 
                             if bookid:
-                                # check if book is already marked as "Open" (if so,
-                                # we already had it)
-
                                 check_status = myDB.action(
-                                    'SELECT Status from books where BookID="%s"' %
+                                    'SELECT Status, BookFile from books where BookID="%s"' %
                                     bookid).fetchone()
                                 if check_status['Status'] != 'Open':
-                                    # update status as we've got this book
-
+                                    # we found a new book
+                                    new_book_count += 1
                                     myDB.action(
                                         'UPDATE books set Status="Open" where BookID="%s"' %
                                         bookid)
 
-                                    book_filename = os.path.join(r, files)
-
-                                    # update book location so we can check if it
-                                    # gets removed, or allow click-to-open
-
+                                # update book location so we can check if it gets removed
+                                # location may have changed since last scan
+                                book_filename = os.path.join(r, files)
+                                if book_filename != check_status['BookFile']:
+                                    modified_count += 1
+                                    logger.debug("Updating book location for %s %s" % (author, book))
                                     myDB.action(
                                         'UPDATE books set BookFile="%s" where BookID="%s"' %
                                         (book_filename, bookid))
 
-                                    # update cover file to cover.jpg in book folder (if exists)
-                                    bookdir = book_filename.rsplit(os.sep, 1)[0]
-                                    coverimg = os.path.join(bookdir, 'cover.jpg')
+                                # update cover file to cover.jpg in book folder (if exists)
+                                bookdir = os.path.dirname(book_filename)
+                                coverimg = os.path.join(bookdir, 'cover.jpg')
+                                if os.path.isfile(coverimg):
                                     cachedir = os.path.join(str(lazylibrarian.PROG_DIR), 'data' + os.sep + 'images' + os.sep + 'cache')
                                     cacheimg = os.path.join(cachedir, bookid + '.jpg')
-                                    if os.path.isfile(coverimg):
-                                        copyfile(coverimg, cacheimg)
-
-                                    new_book_count += 1
+                                    copyfile(coverimg, cacheimg)
                             else:
                                 logger.debug(
                                     "Failed to match book [%s] by [%s] in database" %
                                     (book, author))
 
 
-    logger.info("%s new/modified book%s found and added to the database" %
-                (new_book_count, plural(new_book_count)))
+    logger.info("%s/%s new/modified book%s found and added to the database" %
+                (new_book_count, modified_count, plural(new_book_count + modified_count)))
     logger.info("%s file%s processed" % (file_count, plural(file_count)))
 
     # show statistics of full library scans
