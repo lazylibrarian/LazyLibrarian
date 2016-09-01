@@ -7,6 +7,7 @@
     <div id="subhead_container">
         <form id="subhead_menu" class="form-inline">
             <a href="refreshAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-refresh"></i> Refresh Author</a>
+            <a href="libraryScanAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-refresh"></i> Library Scan</a>
             <a href="removeAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-remove"></i> Remove Author</a>
             %if author['Status'] == 'Paused':
                 <a href="resumeAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-play"></i> Resume Author</a>
