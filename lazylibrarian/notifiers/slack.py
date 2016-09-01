@@ -35,7 +35,7 @@ class SlackNotifier:
         if event == "Test":
             logger.debug("Testing Slack notification")
         else:
-            logger.debug("Slack message: " + str(event) + str(message))
+            logger.debug("Slack message: %s: %s" % (event, message))
 
         if slack_token.startswith(url):
             url = slack_token
@@ -43,7 +43,10 @@ class SlackNotifier:
             url = url + slack_token
         headers = {"Content-Type": "application/json"}
 
-        postdata = '{"username": "LazyLibrarian", "text":"%s\n%s"}' % (event, message)
+        postdata = '{"username": "LazyLibrarian", '
+        postdata += '"attachments": [{"text": "%s", "thumb_url": ' % message
+        postdata += '"https://github.com/DobyTang/LazyLibrarian/raw/master/data/images/ll.png"}], '
+        postdata += '"text":"%s"}' % event
         r = requests.request(method,
                              url,
                              data=postdata,
