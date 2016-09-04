@@ -59,10 +59,9 @@ def search_tor_book(books=None, reset=False):
 
     for searchbook in searchbooks:
         # searchterm is only used for display purposes
-        searchterm = searchbook['AuthorName'] + ' "' + searchbook['BookName']
+        searchterm = searchbook['AuthorName'] + ' ' + searchbook['BookName']
         if searchbook['BookSub']:
             searchterm = searchterm + ': ' + searchbook['BookSub']
-        searchterm = searchterm + '"'
 
         searchlist.append({"bookid": searchbook['BookID'], "bookName": searchbook['BookName'], "bookSub": searchbook['BookSub'], "authorName": searchbook['AuthorName'], "searchterm": searchterm})
 

@@ -123,7 +123,7 @@ def find_book_in_db(myDB, author, book):
     # prefer an exact match on author & book
     match = myDB.action(
         'SELECT BookID FROM books where AuthorName="%s" and BookName="%s"' %
-        (author, book)).fetchone()
+        (author.replace('"','""'), book.replace('"','""'))).fetchone()
     if match:
         logger.debug('Exact match [%s]' % book)
         return match['BookID']
@@ -135,7 +135,7 @@ def find_book_in_db(myDB, author, book):
         # on books that should be matched
         # Maybe make ratios configurable in config.ini later
 
-        books = myDB.select('SELECT BookID,BookName FROM books where AuthorName="%s"' % author)
+        books = myDB.select('SELECT BookID,BookName FROM books where AuthorName="%s"' % author.replace('"','""'))
 
         best_ratio = 0
         best_partial = 0
@@ -430,7 +430,7 @@ def LibraryScan(startdir=None):
                         #
                         check_exist_author = myDB.action(
                             'SELECT * FROM authors where AuthorName="%s"' %
-                            author).fetchone()
+                            author.replace('"','""')).fetchone()
                         if not check_exist_author and lazylibrarian.ADD_AUTHOR:
                             # no match for supplied author, but we're allowed to
                             # add new ones
@@ -484,7 +484,7 @@ def LibraryScan(startdir=None):
                                     # database, so check again
                                     check_exist_author = myDB.action(
                                         'SELECT * FROM authors where AuthorName="%s"' %
-                                        author).fetchone()
+                                        author.replace('"','""')).fetchone()
                                     if not check_exist_author:
                                         logger.info(
                                             "Adding new author [%s]" %
@@ -493,7 +493,7 @@ def LibraryScan(startdir=None):
                                             addAuthorToDB(author)
                                             check_exist_author = myDB.action(
                                                 'SELECT * FROM authors where AuthorName="%s"' %
-                                                author).fetchone()
+                                                author.replace('"','""')).fetchone()
                                         except:
                                             continue
 
@@ -505,7 +505,7 @@ def LibraryScan(startdir=None):
                         else:
                             # author exists, check if this book by this author is in our database
                             # metadata might have quotes in book name
-                            book = book.replace('"', '').replace("'", "")
+                            book = book.replace("'", "")
                             bookid = find_book_in_db(myDB, author, book)
 
                             if bookid:
@@ -588,7 +588,7 @@ def LibraryScan(startdir=None):
         # new books for existing authors especially if switched provider gb/gr
     else:
         # single author/book import
-        authors = myDB.select('select AuthorID from authors where AuthorName = "%s"' % author)
+        authors = myDB.select('select AuthorID from authors where AuthorName = "%s"' % author.replace('"','""'))
 
     logger.debug('Updating bookcounts for %i author%s' % (len(authors), plural(len(authors))))
     for author in authors:

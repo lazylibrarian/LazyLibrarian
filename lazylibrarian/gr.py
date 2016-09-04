@@ -457,7 +457,7 @@ class GoodReads:
 
                     if not rejected:
                         find_books = myDB.select('SELECT * FROM books WHERE BookName = "%s" and AuthorName = "%s"' %
-                                                    (bookname, authorNameResult))
+                                                    (bookname, authorNameResult.replace('"','""')))
                         if find_books:
                             for find_book in find_books:
                                 if find_book['BookID'] != bookid:
@@ -601,7 +601,7 @@ class GoodReads:
         logger.debug("Imported/Updated %s book%s for author" % (modified_count, plural(modified_count)))
 
         myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i, %i)' %
-                    (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change,
+                    (authorname.replace('"','""'), api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change,
                      cache_hits, ignored, removedResults, not_cached, duplicates))
 
         if refresh:
