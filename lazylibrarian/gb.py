@@ -206,7 +206,7 @@ class GoogleBooks:
                         bookname = bookname.strip()  # strip whitespace
                         bookid = item['id']
 
-                        author = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName = "%s"' % Author)
+                        author = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName = "%s"' % Author.replace('"','""'))
                         if author:
                             AuthorID = author[0]['authorid']
                         else:
@@ -498,7 +498,7 @@ class GoogleBooks:
 
                     if not rejected:
                         find_books = myDB.select('SELECT * FROM books WHERE BookName = "%s" and AuthorName = "%s"' %
-                                                        (bookname, authorname))
+                                                        (bookname.replace('"','""'), authorname.replace('"','""')))
                         if find_books:
                             for find_book in find_books:
                                 if find_book['BookID'] != bookid:
@@ -513,7 +513,7 @@ class GoogleBooks:
                         if find_books:
                             # we have a book with this bookid already
                             logger.debug('Rejecting bookid %s for [%s][%s] already got this bookid in database' %
-                                (bookid, authorNameResult, bookname))
+                                (bookid, authorname, bookname))
                             duplicates = duplicates + 1
                             rejected = True
 
@@ -624,7 +624,7 @@ class GoogleBooks:
         logger.debug("Imported/Updated %s book%s for author" % (resultcount, plural(resultcount)))
 
         myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i, %i)' %
-                    (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits,
+                    (authorname.replace('"','""'), api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits,
                      ignored, removedResults, not_cached, duplicates))
 
         if refresh:

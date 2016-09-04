@@ -478,7 +478,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             # and rename the book to the format we want calibre to use
             for bookfile in os.listdir(pp_path):
                 filename, extn = os.path.splitext(bookfile)
-                os.rename(os.path.join(pp_path, filename + extn), os.path.join(pp_path, global_name + extn))
+                # calibre does not like quotes in author names
+                os.rename(os.path.join(pp_path, filename + extn), os.path.join(pp_path, global_name.replace('"','_') + extn))
 
             params =    [lazylibrarian.IMP_CALIBREDB,
                             'add',
@@ -492,7 +493,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             res = subprocess.check_output(params, stderr=subprocess.STDOUT)
             if res:
                 logger.debug('%s reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
-            calibre_dir = os.path.join(lazylibrarian.DESTINATION_DIR, unaccented_str(authorname), '')
+            # calibre does not like quotes in author names
+            calibre_dir = os.path.join(lazylibrarian.DESTINATION_DIR, unaccented_str(authorname.replace('"','_')), '')
             if os.path.isdir(calibre_dir):
                 imported = LibraryScan(calibre_dir)  # rescan authors directory so we get the new book in our database
             else:
