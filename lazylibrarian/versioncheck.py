@@ -240,7 +240,9 @@ def getCommitDifferenceFromGit():
     # Takes current latest version value and trys to diff it with the latest
     # version in the current branch.
     commit_list = ''
-    if lazylibrarian.CURRENT_VERSION:
+    if lazylibrarian.LATEST_VERSION == 'Not_Available_From_GitHUB':
+        commits = 0  # don't report a commit diff as we don't know anything
+    if lazylibrarian.CURRENT_VERSION and commits != 0:
         logger.info('[VersionCheck] -  Comparing currently installed version with latest github version')
         url = 'https://api.github.com/repos/%s/LazyLibrarian/compare/%s...%s' % (
             lazylibrarian.GIT_USER, lazylibrarian.CURRENT_VERSION, lazylibrarian.LATEST_VERSION)
@@ -270,7 +272,7 @@ def getCommitDifferenceFromGit():
 
         except:
             logger.warn(
-                '(getCommitDifferenceFromGit) -  Could not get commits behind from github. Can happen if you have a local commit not pushed to repo')
+                '(getCommitDifferenceFromGit) -  Could not get commits behind from github. Can happen if you have a local commit not pushed to repo or no connection to github')
 
         if commits > 1:
             logger.info('[VersionCheck] -  New version is available. You are %s commits behind' % commits)
@@ -282,6 +284,8 @@ def getCommitDifferenceFromGit():
             logger.info(
                 '[VersionCheck] -  You are running an unknown version of lazylibrarian. Run the updater to identify your version')
 
+    elif lazylibrarian.LATEST_VERSION == 'Not_Available_From_GitHUB':
+        logger.info('Unable to contact github to check lazylibrarian version')
     else:
         logger.info('You are running an unknown version of lazylibrarian. Run the updater to identify your version')
 
