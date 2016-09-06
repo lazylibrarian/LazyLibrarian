@@ -285,7 +285,8 @@ def getCommitDifferenceFromGit():
                 '[VersionCheck] -  You are running an unknown version of lazylibrarian. Run the updater to identify your version')
 
     elif lazylibrarian.LATEST_VERSION == 'Not_Available_From_GitHUB':
-        logger.info('Unable to contact github to check lazylibrarian version')
+        commit_list = 'Unable to get latest version from GitHub'
+        logger.info(commit_list)
     else:
         logger.info('You are running an unknown version of lazylibrarian. Run the updater to identify your version')
 

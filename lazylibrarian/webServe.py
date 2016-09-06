@@ -1361,13 +1361,15 @@ class WebInterface(object):
 
         versioncheck.checkForUpdates()
         if lazylibrarian.COMMITS_BEHIND == 0:
-            message = "up to date"
+            if lazylibrarian.COMMIT_LIST:
+                message = "unknown status"
+                messages = lazylibrarian.COMMIT_LIST.replace('\n', '<br>')
+                message = message + '<br><small>' + messages
+            else:
+                message = "up to date"
             return serve_template(templatename="shutdown.html", title="Version Check", message=message, timer=5)
         if lazylibrarian.COMMITS_BEHIND > 0:
-            multi = ''
-            if lazylibrarian.COMMITS_BEHIND > 1:
-                multi = 's'
-            message = "behind by %s commit%s" % (lazylibrarian.COMMITS_BEHIND, multi)
+            message = "behind by %s commit%s" % (lazylibrarian.COMMITS_BEHIND, plural(lazylibrarian.COMMITS_BEHIND))
             messages = lazylibrarian.COMMIT_LIST.replace('\n', '<br>')
             message = message + '<br><small>' + messages
             return serve_template(templatename="shutdown.html", title="Commits", message=message, timer=15)
