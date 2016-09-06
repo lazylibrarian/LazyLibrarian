@@ -1368,9 +1368,18 @@ class WebInterface(object):
             else:
                 message = "up to date"
             return serve_template(templatename="shutdown.html", title="Version Check", message=message, timer=5)
-        if lazylibrarian.COMMITS_BEHIND > 0:
+
+        elif lazylibrarian.COMMITS_BEHIND > 0:
             message = "behind by %s commit%s" % (lazylibrarian.COMMITS_BEHIND, plural(lazylibrarian.COMMITS_BEHIND))
             messages = lazylibrarian.COMMIT_LIST.replace('\n', '<br>')
+            message = message + '<br><small>' + messages
+            return serve_template(templatename="shutdown.html", title="Commits", message=message, timer=15)
+
+        else:
+            message = "unknown version"
+            messages = "%s is not recognised at<br>https://github.com/%s/%s  Branch: %s" % (
+                    lazylibrarian.CURRENT_VERSION, lazylibrarian.GIT_USER,
+                    lazylibrarian.GIT_REPO, lazylibrarian.GIT_BRANCH)
             message = message + '<br><small>' + messages
             return serve_template(templatename="shutdown.html", title="Commits", message=message, timer=15)
 
