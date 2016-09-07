@@ -42,7 +42,11 @@ def get_capabilities(provider):
             logger.debug("Timeout getting capabilities for %s" % request.get_full_url())
             resp = ""
         except (urllib2.HTTPError, urllib2.URLError) as e:
-            logger.debug("Error getting capabilities: %s" % e.reason)
+            if hasattr(e, 'reason'):
+                errmsg = e.reason
+            else:
+                errmsg = str(e)
+            logger.debug("Error getting capabilities: %s" % errmsg)
             resp = ""
         if resp:
             if str(resp.getcode()).startswith("2"):  # (200 OK etc)
