@@ -168,11 +168,11 @@ def clearLog():
                 shutil.rmtree(lazylibrarian.LOGDIR)
                 os.mkdir(lazylibrarian.LOGDIR)
             except OSError as e:
-                error = e
+                error = e.strerror
         logger.lazylibrarian_log.initLogger(loglevel=lazylibrarian.LOGLEVEL)
 
         if error:
-            return 'Failed to clear log: %s' % e.strerror
+            return 'Failed to clear log: %s' % error
         else:
             lazylibrarian.LOGLIST = []
             return "Log cleared, level set to [%s]- Log Directory is [%s]" % (

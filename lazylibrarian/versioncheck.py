@@ -228,7 +228,12 @@ def getLatestVersion_FromGit():
                              branch, latest_version))
             except Exception as e:
                 logger.warn('(getLatestVersion_FromGit) Could not get the latest commit from github')
-                logger.debug('git error was %s' % e)
+                if hasattr(e, 'reason'):
+                    errmsg = e.reason
+                else:
+                    errmsg = str(e)
+
+                logger.debug('git error: %s' % errmsg)
                 latest_version = 'Not_Available_From_GitHUB'
 
     return latest_version
@@ -351,9 +356,17 @@ def update():
         try:
             logger.info('(update) Downloading update from: ' + tar_download_url)
             data = urllib2.urlopen(tar_download_url, timeout=30)
-        except (IOError, urllib2.URLError, socket.timeout) as e:
+        except (socket.timeout) as e:
             logger.error(
-                "(update) Unable to retrieve new version from " + tar_download_url + ", can't update: %s" % e)
+                "(update) Timeout retrieving new version from " + tar_download_url)
+            return
+        except (urllib2.HTTPError, urllib2.URLError) as e:
+            if hasattr(e, 'reason'):
+                errmsg = e.reason
+            else:
+                errmsg = str(e)
+            logger.error(
+                "(update) Unable to retrieve new version from " + tar_download_url + ", can't update: %s" % errmsg)
             return
 
         download_name = data.geturl().split('/')[-1]

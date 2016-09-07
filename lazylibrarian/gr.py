@@ -133,7 +133,7 @@ class GoodReads:
             if err.code == 403:
                 logger.warn('Access to api is denied: usage exceeded')
             else:
-                logger.error('An unexpected error has occurred when searching for an author')
+                logger.error('An unexpected error has occurred when searching for an author: %s' % str(err))
 
         logger.debug('Found %s result%s with keyword: %s' % (resultcount, plural(resultcount), authorname))
         logger.debug('The GoodReads API was hit %s time%s for keyword %s' % (api_hits, plural(api_hits), authorname))

@@ -231,8 +231,12 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
             req.add_header('User-Agent', USER_AGENT)
             nzbfile = urllib2.urlopen(req, timeout=90).read()
 
-        except (urllib2.URLError, socket.timeout) as e:
-            logger.warn('Error fetching nzb from url: %s, %s' % (nzburl, e))
+        except (socket.timeout) as e:
+            logger.warn('Timeout fetching nzb from url: %s' % nzburl)
+            nzbfile = False
+
+        except (urllib2.URLError) as e:
+            logger.warn('Error fetching nzb from url: %s, %s' % (nzburl, e.reason))
             nzbfile = False
 
         if nzbfile:
