@@ -163,7 +163,7 @@ def TPB(book=None):
                     rownum += 1
 
             except Exception as e:
-                logger.error(u"An unknown error occurred in the %s parser: %s" % (provider, e))
+                logger.error(u"An unknown error occurred in the %s parser: %s" % (provider, str(e)))
 
     logger.debug(u"Found %i result%s from %s for %s" % (len(results), plural(len(results)), provider, book['searchterm']))
     return results
@@ -268,7 +268,7 @@ def KAT(book=None):
                     rownum += 1
 
             except Exception as e:
-                logger.error(u"An unknown error occurred in the %s parser: %s" % (provider, e))
+                logger.error(u"An unknown error occurred in the %s parser: %s" % (provider, str(e)))
 
     logger.debug(u"Found %i result%s from %s for %s" % (len(results), plural(len(results)), provider, book['searchterm']))
     return results
@@ -346,7 +346,7 @@ def oldKAT(book=None):
                         logger.debug('Found %s but %s seeder%s' % (title, int(seeders), plural(int(seeders))))
 
                 except Exception as e:
-                    logger.error(u"An unknown error occurred in the KAT parser: %s" % e)
+                    logger.error(u"An unknown error occurred in the KAT parser: %s" % str(e))
 
     logger.debug(u"Found %i results from %s for %s" % (len(results), provider, book['searchterm']))
     return results
@@ -430,7 +430,7 @@ def ZOO(book=None):
                         logger.debug('Found %s but %s seeder%s' % (title, int(seeders), plural(int(seeders))))
 
                 except Exception as e:
-                    logger.error(u"An unknown error occurred in the %s parser: %s" % (provider, e))
+                    logger.error(u"An unknown error occurred in the %s parser: %s" % (provider, str(e)))
 
     logger.debug(u"Found %i results from %s for %s" % (len(results), provider, book['searchterm']))
     return results
@@ -528,7 +528,7 @@ def TDL(book=None):
                         logger.debug('Found %s but %s seeder%s' % (title, int(seeders), plural(int(seeders))))
 
                 except Exception as e:
-                    logger.error(u"An unknown error occurred in the %s parser: %s" % (provider, e))
+                    logger.error(u"An unknown error occurred in the %s parser: %s" % (provider, str(e)))
 
     logger.debug(u"Found %i results from %s for %s" % (len(results), provider, book['searchterm']))
     return results

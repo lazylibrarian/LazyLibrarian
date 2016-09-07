@@ -46,7 +46,7 @@ class qbittorrentclient(object):
 
         if host.endswith('/gui'):
             host = host[:-4]
-    
+
         host = "%s:%s" % (host, lazylibrarian.QBITTORRENT_PORT)
         self.base_url = host
         self.username = lazylibrarian.QBITTORRENT_USER
@@ -197,9 +197,9 @@ def checkLink():
                 return "qBittorrent login successful, label not checked"
             return "qBittorrent login successful"
         return "qBittorrent login FAILED\nCheck debug log"
-    except Exception as e:
-        return "qBittorrent login FAILED: %s" % e
-        
+    except Exception as err:
+        return "qBittorrent login FAILED: %s" % str(err)
+
 def addTorrent(link):
     logger.debug('addTorrent(%s)' % link)
 

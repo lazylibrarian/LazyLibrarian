@@ -636,8 +636,8 @@ class Api(object):
             with open(lazylibrarian.CONFIGFILE, 'wb') as configfile:
                 lazylibrarian.CFG.write(configfile)
             lazylibrarian.config_read(reloaded=True)
-        except:
-            self.data = 'Unable to update CFG entry for %s: %s' % (kwargs['group'], kwargs['name'])
+        except Exception as e:
+            self.data = 'Unable to update CFG entry for %s: %s, %s' % (kwargs['group'], kwargs['name'], str(e))
 
     def _readCFG(self, **kwargs):
         if 'name' not in kwargs:
@@ -648,7 +648,7 @@ class Api(object):
             return
         try:
             self.data = '["%s"]' % lazylibrarian.CFG.get(kwargs['group'], kwargs['name'])
-        except:
+        except Exception:
             self.data = 'No CFG entry for %s: %s' % (kwargs['group'], kwargs['name'])
 
     def _loadCFG(self, **kwargs):

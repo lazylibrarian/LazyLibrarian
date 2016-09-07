@@ -33,7 +33,7 @@ except ImportError:
     try:
         import PythonMagick
         MAGICK = "pythonmagick"
-    except:
+    except ImportError:
         MAGICK = 'convert'  # may have external, don't know yet
 
 FULL_PATH = None
@@ -290,7 +290,7 @@ def check_setting_bool(config, cfg_name, item_name, def_val, log=True):
     """ Check if option exists and coerce to boolean, if not create it """
     try:
         my_val = config.getboolean(cfg_name, item_name)
-    except:
+    except Exception:
         my_val = def_val
         check_section(cfg_name)
         config.set(cfg_name, item_name, my_val)
@@ -303,7 +303,7 @@ def check_setting_int(config, cfg_name, item_name, def_val, log=True):
     """ Check if option exists and coerce to int, if not create it """
     try:
         my_val = config.getint(cfg_name, item_name)
-    except:
+    except Exception:
         my_val = def_val
         check_section(cfg_name)
         config.set(cfg_name, item_name, my_val)
@@ -321,7 +321,7 @@ def check_setting_str(config, cfg_name, item_name, def_val, log=True):
             my_val = my_val[1:]
         if my_val.endswith('"'):
             my_val = my_val[:-1]
-    except:
+    except Exception:
         my_val = def_val
         check_section(cfg_name)
         config.set(cfg_name, item_name, my_val)
@@ -400,7 +400,7 @@ def initialize():
         try:
             dbcheck()
         except Exception as e:
-            logger.error("Can't connect to the database: %s" % e)
+            logger.error("Can't connect to the database: %s" % str(e))
 
         build_monthtable()
         BOOKSTRAP_THEMELIST = build_bookstrap_themes()
@@ -457,11 +457,7 @@ def config_read(reloaded=False):
         LOGLIMIT = check_setting_int(CFG, 'General', 'loglimit', 500)
         LOGFILES = check_setting_int(CFG, 'General', 'logfiles', 10)
         LOGSIZE = check_setting_int(CFG, 'General', 'logsize', 204800)
-
-        try:
-            HTTP_PORT = check_setting_int(CFG, 'General', 'http_port', 5299)
-        except:
-            HTTP_PORT = 5299
+        HTTP_PORT = check_setting_int(CFG, 'General', 'http_port', 5299)
 
         if HTTP_PORT < 21 or HTTP_PORT > 65535:
             HTTP_PORT = 5299
@@ -1223,9 +1219,9 @@ def build_bookstrap_themes():
             results = json.JSONDecoder().decode(resp.read())
             for theme in results['themes']:
                 themelist.append(theme['name'].lower())
-        except:
+        except Exception as e:
             # error reading results
-            logger.debug('JSON Error reading bookstrap themes')
+            logger.debug('JSON Error reading bookstrap themes, %s' % str(e))
     else:
         logger.debug('bootswatch returned error %s' % resp.getcode())
 
@@ -1267,9 +1263,9 @@ def build_monthtable():
                 locale.setlocale(locale.LC_ALL, current_locale)  # restore entry state
                 logger.info("Added month names for locale [%s], %s, %s ..." % (
                     lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
-        except:
+        except Exception as e:
             locale.setlocale(locale.LC_ALL, current_locale)  # restore entry state
-            logger.warn("Unable to load requested locale [%s]" % lang)
+            logger.warn("Unable to load requested locale [%s] %s" % (lang, str(e)))
             try:
                 if '_' in lang:
                     wanted_lang = lang.split('_')[0]
@@ -1285,8 +1281,8 @@ def build_monthtable():
                     logger.warn("Found these alternatives: " + str(locale_list))
                 else:
                     logger.warn("Unable to find an alternative")
-            except:
-                logger.warn("Unable to get a list of alternatives")
+            except Exception as e:
+                logger.warn("Unable to get a list of alternatives, %s" % str(e))
             logger.info("Set locale back to entry state %s" % current_locale)
 
 
@@ -1335,7 +1331,7 @@ def launch_browser(host, port, root):
     try:
         webbrowser.open('http://%s:%i%s' % (host, port, root))
     except Exception as e:
-        logger.error('Could not launch browser: %s' % e)
+        logger.error('Could not launch browser: %s' % str(e))
 
 
 def dbcheck():
@@ -1489,15 +1485,15 @@ def dbcheck():
             if addedIssues:
                 try:
                     magazinescan.magazineScan(thread='MAIN')
-                except:
-                    logger.debug("Failed to scan magazines")
+                except Exception as e:
+                    logger.debug("Failed to scan magazines, %s" % str(e))
 
             if addedWorkPage:
                 try:
                     logger.info('Adding WorkPage to existing books')
                     threading.Thread(target=bookwork.setWorkPages, name="ADDWORKPAGE", args=[]).start()
-                except:
-                    logger.debug("Failed to update WorkPages")
+                except Exception as e:
+                    logger.debug("Failed to update WorkPages, %s" % str(e))
 
             if addedSeries:
                 try:
@@ -1635,7 +1631,7 @@ def shutdown(restart=False, update=False):
         try:
             versioncheck.update()
         except Exception as e:
-            logger.warn('LazyLibrarian failed to update: %s. Restarting.' % e)
+            logger.warn('LazyLibrarian failed to update: %s. Restarting.' % str(e))
 
     if PIDFILE:
         logger.info('Removing pidfile %s' % PIDFILE)

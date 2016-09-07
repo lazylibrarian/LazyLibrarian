@@ -48,7 +48,7 @@ def serve_template(templatename, **kwargs):
     try:
         template = _hplookup.get_template(templatename)
         return template.render(**kwargs)
-    except:
+    except Exception:
         return exceptions.html_error_template().render()
 
 
@@ -592,7 +592,7 @@ class WebInterface(object):
                 try:
                     threading.Thread(target=LibraryScan, name='SCANAUTHOR', args=[authordir]).start()
                 except Exception as e:
-                    logger.error(u'Unable to complete the scan: %s' % e)
+                    logger.error(u'Unable to complete the scan: %s' % str(e))
             else:
                 # maybe we don't have any of their books
                 logger.debug(u'Unable to find author directory: %s' % authordir)
@@ -979,7 +979,7 @@ class WebInterface(object):
                                         rmtree(os.path.dirname(bookfile), ignore_errors=True)
                                         logger.info(u'Book %s deleted from disc' % bookname)
                                     except Exception as e:
-                                        logger.debug('rmtree failed on %s, %e' % (bookfile, e))
+                                        logger.debug('rmtree failed on %s, %e' % (bookfile, str(e)))
 
                             authorcheck = myDB.select('SELECT AuthorID from authors WHERE AuthorID = "%s"' % AuthorID)
                             if len(authorcheck):
@@ -1257,7 +1257,7 @@ class WebInterface(object):
                             rmtree(os.path.dirname(issue['IssueFile']), ignore_errors=True)
                             logger.info(u'Issue %s of %s deleted from disc' % (issue['IssueDate'], issue['Title']))
                         except Exception as e:
-                            logger.debug('rmtree failed on %s, %e' % (issue['IssueFile'], e))
+                            logger.debug('rmtree failed on %s, %e' % (issue['IssueFile'], str(e)))
                     if (action == "Remove" or action == "Delete"):
                         myDB.action('DELETE from issues WHERE IssueID="%s"' % item)
                         logger.info(u'Issue %s of %s removed from database' % (issue['IssueDate'], issue['Title']))
@@ -1286,7 +1286,7 @@ class WebInterface(object):
                             rmtree(os.path.dirname(issuedir), ignore_errors=True)
                             logger.info(u'Magazine %s deleted from disc' % item)
                         except Exception as e:
-                            logger.debug('rmtree failed on %s, %e' % (issue['IssueFile'], e))
+                            logger.debug('rmtree failed on %s, %e' % (issue['IssueFile'], str(e)))
                 if (action == "Remove" or action == "Delete"):
                     myDB.action('DELETE from magazines WHERE Title="%s"' % item)
                     myDB.action('DELETE from pastissues WHERE BookID="%s"' % item)
@@ -1409,7 +1409,7 @@ class WebInterface(object):
         try:
             threading.Thread(target=LibraryScan, name='LIBRARYSYNC', args=[lazylibrarian.DESTINATION_DIR]).start()
         except Exception as e:
-            logger.error(u'Unable to complete the scan: %s' % e)
+            logger.error(u'Unable to complete the scan: %s' % str(e))
         raise cherrypy.HTTPRedirect("home")
     libraryScan.exposed = True
 
@@ -1417,7 +1417,7 @@ class WebInterface(object):
         try:
             threading.Thread(target=magazinescan.magazineScan, name='MAGAZINESCAN', args=[]).start()
         except Exception as e:
-            logger.error(u'Unable to complete the scan: %s' % e)
+            logger.error(u'Unable to complete the scan: %s' % str(e))
         raise cherrypy.HTTPRedirect("magazines")
     magazineScan.exposed = True
 
@@ -1425,7 +1425,7 @@ class WebInterface(object):
         try:
             threading.Thread(target=processAlternate, name='IMPORTALT', args=[lazylibrarian.ALTERNATE_DIR]).start()
         except Exception as e:
-            logger.error(u'Unable to complete the import: %s' % e)
+            logger.error(u'Unable to complete the import: %s' % str(e))
         raise cherrypy.HTTPRedirect("manage")
     importAlternate.exposed = True
 
@@ -1433,7 +1433,7 @@ class WebInterface(object):
         try:
             threading.Thread(target=import_CSV, name='IMPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
         except Exception as e:
-            logger.error(u'Unable to complete the import: %s' % e)
+            logger.error(u'Unable to complete the import: %s' % str(e))
         raise cherrypy.HTTPRedirect("manage")
     importCSV.exposed = True
 
@@ -1441,7 +1441,7 @@ class WebInterface(object):
         try:
             threading.Thread(target=export_CSV, name='EXPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
         except Exception as e:
-            logger.error(u'Unable to complete the export: %s' % e)
+            logger.error(u'Unable to complete the export: %s' % str(e))
         raise cherrypy.HTTPRedirect("manage")
     exportCSV.exposed = True
 

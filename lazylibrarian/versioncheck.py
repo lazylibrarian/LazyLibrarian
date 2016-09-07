@@ -70,7 +70,7 @@ def getInstallType():
             lazylibrarian.CURRENT_BRANCH = 'Windows'
             logger.debug('(getInstallType) [Windows] install detected. Setting Branch to [%s]' %
                          lazylibrarian.CURRENT_BRANCH)
-    except:
+    except Exception:
         if os.path.isdir(os.path.join(lazylibrarian.PROG_DIR, '.git')):
             lazylibrarian.INSTALL_TYPE = 'git'
             lazylibrarian.CURRENT_BRANCH = getCurrentGitBranch()
@@ -272,10 +272,10 @@ def getCommitDifferenceFromGit():
                         messages.insert(0, item['commit']['message'])
                     for line in messages:
                         commit_list = "%s\n%s" % (commit_list, line)
-            except:
+            except Exception:
                 logger.warn('(getCommitDifferenceFromGit) -  could not get difference status from GitHub')
 
-        except:
+        except Exception:
             logger.warn(
                 '(getCommitDifferenceFromGit) -  Could not get commits behind from github. Can happen if you have a local commit not pushed to repo or no connection to github')
 
@@ -314,7 +314,7 @@ def updateVersionFile(new_version_id):
             ver_file.close()
         except IOError as e:
             logger.error(
-                u"(updateVersionFile) Unable to write current version to version.txt, update not complete: %s" % e)
+                u"(updateVersionFile) Unable to write current version to version.txt, update not complete: %s" % str(e))
 
 
 def update():

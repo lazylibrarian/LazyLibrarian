@@ -29,7 +29,8 @@ def get_book_info(fname):
         try:
             book = Mobi(fname)
             book.parse()
-        except:
+        except Exception as e:
+            logger.debug('Unable to parse mobi in %s, %s' % (fname, str(e)))
             return res
         res['creator'] = book.author()
         res['title'] = book.title()
@@ -59,7 +60,8 @@ def get_book_info(fname):
         # prepare to read from the .epub file
         try:
             zipdata = zipfile.ZipFile(fname)
-        except:
+        except Exception as e:
+            logger.debug('Unable to parse zipfile %s, %s' % (fname, str(e)))
             return res
 
         # find the contents metafile
@@ -91,7 +93,7 @@ def get_book_info(fname):
     try:
         tree = ElementTree.fromstring(txt)
     except Exception as e:
-        logger.error("Error parsing metadata from %s" % fname)
+        logger.error("Error parsing metadata from %s, %s" % (fname, str(e)))
         logger.error(str(e))
         return res
 
@@ -336,7 +338,8 @@ def LibraryScan(startdir=None):
 
                         try:
                             res = get_book_info(book_filename)
-                        except:
+                        except Exception as e:
+                            logger.debug('get_book_info failed for %s, %s' % (book_filename, str(e)))
                             res = {}
                         if 'title' in res and 'creator' in res:  # this is the minimum we need
                             match = 1
@@ -363,7 +366,8 @@ def LibraryScan(startdir=None):
                     metafile = opf_file(r)
                     try:
                         res = get_book_info(metafile)
-                    except:
+                    except Exception as e:
+                        logger.debug('get_book_info failed for %s, %s' % (metafile, str(e)))
                         res = {}
                     if 'title' in res and 'creator' in res:  # this is the minimum we need
                         match = 1
@@ -438,10 +442,10 @@ def LibraryScan(startdir=None):
                             GR = GoodReads(author)
                             try:
                                 author_gr = GR.find_author_id()
-                            except:
+                            except Exception as e:
                                 logger.warn(
-                                    "Error finding author id for [%s]" %
-                                    author)
+                                    "Error finding author id for [%s] %s" %
+                                    (author, str(e)))
                                 continue
 
                             # only try to add if GR data matches found author data
@@ -494,7 +498,7 @@ def LibraryScan(startdir=None):
                                             check_exist_author = myDB.action(
                                                 'SELECT * FROM authors where AuthorName="%s"' %
                                                 author.replace('"','""')).fetchone()
-                                        except:
+                                        except Exception:
                                             continue
 
                         # check author exists in db, either newly loaded or already there

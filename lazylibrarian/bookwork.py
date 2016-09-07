@@ -125,12 +125,12 @@ def getBookWork(bookID=None, reason=None):
                     workpage = result.split('<link>')[1].split('</link>')[0]
                     librarything_wait()
                     result, success = fetchURL(workpage)
-                except:
+                except Exception:
                     try:
                         errmsg = result.split('<error>')[1].split('</error>')[0]
                         # still cache if whatwork returned a result without a link, so we don't keep retrying
                         logger.debug(u"getBookWork: Got librarything error page: [%s] %s" % (errmsg, URL.split('?')[1]))
-                    except:
+                    except Exception:
                         logger.debug(u"getBookWork: Unable to find workpage link for %s" % URL.split('?')[1])
                         return None
                 if success:
