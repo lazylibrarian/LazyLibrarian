@@ -226,8 +226,9 @@ def getLatestVersion_FromGit():
                 latest_version = git['sha']
                 logger.debug('(getLatestVersion_FromGit) Branch [%s] has Latest Version has been set to [%s]' % (
                              branch, latest_version))
-            except:
+            except Exception as e:
                 logger.warn('(getLatestVersion_FromGit) Could not get the latest commit from github')
+                logger.debug('git error was %s' % e)
                 latest_version = 'Not_Available_From_GitHUB'
 
     return latest_version
@@ -262,7 +263,6 @@ def getCommitDifferenceFromGit():
 
                 if git['total_commits'] > 0:
                     messages = []
-                    commit_list = ""
                     for item in git['commits']:
                         messages.insert(0, item['commit']['message'])
                     for line in messages:
