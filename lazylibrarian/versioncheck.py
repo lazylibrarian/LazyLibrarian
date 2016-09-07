@@ -233,7 +233,7 @@ def getLatestVersion_FromGit():
                 else:
                     errmsg = str(e)
 
-                logger.debug('git error: %s' % errmsg)
+                logger.debug('git error for %s: %s' % (url, errmsg))
                 latest_version = 'Not_Available_From_GitHUB'
 
     return latest_version
