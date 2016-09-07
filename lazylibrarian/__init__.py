@@ -1218,6 +1218,8 @@ def build_bookstrap_themes():
         except:
             # error reading results
             logger.debug('JSON Error reading bookstrap themes')
+    else:
+        logger.debug('bootswatch returned error %s' % resp.getcode())
 
     logger.debug("Bookstrap found %i themes" % len(themelist))
     return themelist

@@ -186,7 +186,7 @@ def processDir(reset=False):
             match = highest[0]
             pp_path = highest[1]
             book = highest[2]
-            logger.info(u'Best match (%s%%): %s for %s' %
+            logger.debug(u'Best match (%s%%): %s for %s' %
                     (match, pp_path, book['NZBtitle']))
 
             data = myDB.select('SELECT * from books WHERE BookID="%s"' % book['BookID'])
