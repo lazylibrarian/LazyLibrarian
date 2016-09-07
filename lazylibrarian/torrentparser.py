@@ -297,13 +297,20 @@ def oldKAT(book=None):
             request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
         request.add_header('User-Agent', USER_AGENT)
         data = urllib2.urlopen(request, timeout=90)
-    except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
+    except (socket.timeout) as e:
+        logger.debug('Timeout fetching data from %s' % provider)
+        data = False
+    except (urllib2.HTTPError, urllib2.URLError) as e:
         # seems KAT returns 404 if no results, not really an error
         if hasattr(e, 'code') and e.code == 404:
             logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
         else:
             logger.debug(searchURL)
-            logger.debug('Error fetching data from %s: %s' % (provider, e))
+            if hasattr(e, 'reason'):
+                errmsg = e.reason
+            else:
+                errmsg = str(e)
+            logger.debug('Error fetching data from %s: %s' % (provider, errmsg))
         data = False
 
     results = []
@@ -365,13 +372,20 @@ def ZOO(book=None):
             request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
         request.add_header('User-Agent', USER_AGENT)
         data = urllib2.urlopen(request, timeout=90)
-    except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
+    except (socket.timeout) as e:
+        logger.debug('Timeout fetching data from %s' % provider)
+        data = False
+    except (urllib2.HTTPError, urllib2.URLError) as e:
         # seems KAT returns 404 if no results, not really an error
         if hasattr(e, 'code') and e.code == 404:
             logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
         else:
             logger.debug(searchURL)
-            logger.debug('Error fetching data from %s: %s' % (provider, e))
+            if hasattr(e, 'reason'):
+                errmsg = e.reason
+            else:
+                errmsg = str(e)
+            logger.debug('Error fetching data from %s: %s' % (provider, errmsg))
         data = False
 
     results = []
@@ -443,14 +457,21 @@ def TDL(book=None):
             request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
         request.add_header('User-Agent', USER_AGENT)
         data = urllib2.urlopen(request, timeout=90)
-    except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
+    except (socket.timeout) as e:
+        logger.debug('Timeout fetching data from %s' % provider)
+        data = False
+    except (urllib2.HTTPError, urllib2.URLError) as e:
         # seems KAT returns 404 if no results, not really an error
         if hasattr(e, 'code') and e.code == 404:
             logger.debug(searchURL)
             logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
         else:
             logger.debug(searchURL)
-            logger.debug('Error fetching data from %s: %s' % (provider, e))
+            if hasattr(e, 'reason'):
+                errmsg = e.reason
+            else:
+                errmsg = str(e)
+            logger.debug('Error fetching data from %s: %s' % (provider, errmsg))
         data = False
 
     results = []

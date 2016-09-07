@@ -619,7 +619,12 @@ def processIMG(dest_path=None, bookimg=None, global_name=None):
             #    logger.error("Could not chmod path: " + str(coverpath))
 
     except (IOError, EOFError) as e:
-        logger.error('Error fetching cover from url: %s, %s' % (bookimg, e))
+        if hasattr(e, 'strerror'):
+            errmsg = e.strerror
+        else:
+            errmsg = str(e)
+
+        logger.error('Error fetching cover from url: %s, %s' % (bookimg, errmsg))
 
 
 def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bookid=None,

@@ -45,9 +45,12 @@ def fetchURL(URL):
                 return result, True
             else:
                 return str(resp), False
-        except (urllib2.URLError, socket.timeout) as e:
-            logger.error(u"fetchURL: Error getting response for %s: %s" % (URL, e))
+        except (socket.timeout) as e:
+            logger.error(u"fetchURL: Timeout getting response from %s" % URL)
             return e, False
+        except (urllib2.URLError) as e:
+            logger.error(u"fetchURL: Error getting response for %s: %s" % (URL, e.reason))
+            return e.reason, False
     except (urllib2.HTTPError, urllib2.URLError) as e:
         return e.reason, False
 

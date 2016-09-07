@@ -38,8 +38,11 @@ def get_capabilities(provider):
         resp = ""
         try:
             resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
-        except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
-            logger.debug("Error getting capabilities: %s" % e)
+        except (socket.timeout) as e:
+            logger.debug("Timeout getting capabilities for %s" % request.get_full_url())
+            resp = ""
+        except (urllib2.HTTPError, urllib2.URLError) as e:
+            logger.debug("Error getting capabilities: %s" % e.reason)
             resp = ""
         if resp:
             if str(resp.getcode()).startswith("2"):  # (200 OK etc)
@@ -215,8 +218,18 @@ def RSS(host=None, feednr=None):
         resp = urllib2.urlopen(request, timeout=90)
         try:
             data = feedparser.parse(resp)
-        except (urllib2.URLError, socket.timeout, IOError, EOFError) as e:
-            logger.error('Error fetching data from %s: %s' % (host, e))
+        except (socket.timeout) as e:
+            logger.error('Timeout fetching data from %s' % host)
+            data = None
+        except (urllib2.URLError, IOError, EOFError) as e:
+            if hasattr(e, 'reason'):
+                errmsg = e.reason
+            elif hasattr(e, 'strerror'):
+                errmsg = e.strerror
+            else:
+                errmsg = str(e)
+
+            logger.error('Error fetching data from %s: %s' % (host, errmsg))
             data = None
 
     except Exception as e:
@@ -291,12 +304,10 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
 
     params = ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode)
 
-    if not str(host)[:4] == "http":
-        host = 'http://' + host
-
     if params:
+        if not str(host)[:4] == "http":
+            host = 'http://' + host
         URL = host + '/api?' + urllib.urlencode(params)
-
         try:
             request = urllib2.Request(URL)
             if lazylibrarian.PROXY_HOST:
@@ -305,13 +316,20 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
             resp = urllib2.urlopen(request, timeout=90)
             try:
                 data = ElementTree.parse(resp)
-            except (urllib2.URLError, socket.timeout, IOError, EOFError) as e:
-                logger.error('Error fetching data from %s: %s' % (host, e))
+            except Exception as e:
+                logger.error('Error parsing data from %s: %s' % (host, str(e)))
                 data = None
+        except (socket.timeout) as e:
+            logger.error('Timeout fetching data from %s' % host)
 
-        except Exception as e:
-            logger.error("Error opening url %s, %s" % (URL, e))
-            data = None
+        except (urllib2.URLError, IOError, EOFError) as e:
+            if hasattr(e, 'reason'):
+                errmsg = e.reason
+            elif hasattr(e, 'strerror'):
+                errmsg = e.strerror
+            else:
+                errmsg = str(e)
+            logger.error('Error fetching data from %s: %s' % (host, errmsg))
 
         if data:
             # to debug because of api

@@ -1205,8 +1205,16 @@ def build_bookstrap_themes():
 
     try:
         resp = urllib2.urlopen(request, timeout=30)
-    except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
-        logger.debug("Error getting bookstrap themes : %s" % e)
+    except (socket.timeout) as e:
+        logger.debug("Timeout getting bookstrap themes")
+        return themelist
+    except (urllib2.HTTPError, urllib2.URLError) as e:
+        if hasattr(e, 'reason'):
+            errmsg = e.reason
+        else:
+            errmsg = str(e)
+
+        logger.debug("Error getting bookstrap themes : %s" % errmsg)
         return themelist
 
     if str(resp.getcode()).startswith("2"):

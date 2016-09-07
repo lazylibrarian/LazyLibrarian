@@ -80,8 +80,18 @@ def SABnzbd(title=None, nzburl=None):
         request = urllib2.urlopen(URL, timeout=30)
         logger.debug(u'Sending Nzbfile to SAB <a href="%s">URL</a>' % URL)
         logger.debug(u'Sending Nzbfile to SAB')
-    except (EOFError, IOError, urllib2.URLError, socket.timeout) as e:
-        logger.error(u"Unable to connect to SAB with URL: %s, %s" % (URL, e))
+    except (socket.error) as e:
+        logger.error(u"Timeout connecting to SAB with URL: %s" % URL)
+        return False
+    except (EOFError, IOError, urllib2.URLError) as e:
+        if hasattr(e, 'reason'):
+            errmsg = e.reason
+        elif hasattr(e, 'strerror'):
+            errmsg = e.strerror
+        else:
+            errmsg = str(e)
+
+        logger.error(u"Unable to connect to SAB with URL: %s, %s" % (URL, errmsg))
         return False
 
     except urllib2.HTTPError as e:
