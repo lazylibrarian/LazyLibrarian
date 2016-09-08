@@ -136,7 +136,9 @@
             % elif (lazylibrarian.INSTALL_TYPE == 'source' and lazylibrarian.CURRENT_VERSION == 'No Version File' ):
                 msg = 'Running Unknown version via source install. Update from central area now <a href="update" class="btn btn-xs btn-primary pull-right">Update</a>
             % elif lazylibrarian.CURRENT_VERSION != lazylibrarian.LATEST_VERSION:
-                % if lazylibrarian.COMMITS_BEHIND < 0:
+                % if lazylibrarian.LATEST_VERSION == 'Not_Available_From_GitHUB':
+                    msg = 'Unable to get latest version from GITHub'
+                % elif lazylibrarian.COMMITS_BEHIND < 0:
                     msg = 'Running a local updated version. Push changes to GITHub or rollback to Master release'
                 % elif lazylibrarian.COMMITS_BEHIND > 1:
                     msg = 'New version available. You are ${lazylibrarian.COMMITS_BEHIND} commits behind.<br/><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the update message for 24 hours" id="ignoreUpdate">Ignore</a>&nbsp;<a href="update" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Update to the latest release">Update</a></div>'
