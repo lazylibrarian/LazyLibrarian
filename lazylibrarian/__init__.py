@@ -1641,6 +1641,8 @@ def shutdown(restart=False, update=False):
         logger.info('LazyLibrarian is restarting ...')
         popen_list = [sys.executable, FULL_PATH]
         popen_list += ARGS
+        if '--update' in popen_list:
+            popen_list.remove('--update')
         if '--nolaunch' not in popen_list:
             popen_list += ['--nolaunch']
             logger.info('Restarting LazyLibrarian with ' + str(popen_list))
