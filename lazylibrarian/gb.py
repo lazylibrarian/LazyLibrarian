@@ -44,7 +44,7 @@ class GoogleBooks:
                 api_strings = ['isbn:']
             else:
                 api_strings = ['inauthor:', 'intitle:']
-        except:
+        except Exception:
             api_strings = ['inauthor:', 'intitle:']
 
         api_hits = 0
@@ -194,7 +194,7 @@ class GoogleBooks:
                                 isbn_fuzz = int(100)
                             else:
                                 isbn_fuzz = int(0)
-                        except:
+                        except Exception:
                             isbn_fuzz = int(0)
                         highest_fuzz = max(author_fuzz, book_fuzz, isbn_fuzz)
 
@@ -379,7 +379,7 @@ class GoogleBooks:
                                             logger.debug(u"LT language: " + booklang)
                                     except Exception as e:
                                         booklang = ""
-                                        logger.error("Error finding language: %s" % e)
+                                        logger.error("Error finding language: %s" % str(e))
 
                                 if googlelang == "en" and booklang not in "en-US, en-GB, eng":
                                     # these are all english, may need to expand

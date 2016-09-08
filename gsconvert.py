@@ -11,9 +11,9 @@ else:
     if not os.path.isfile(GS):
         params = ["which", "gs"]
         try:
-            GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()        
-        except:
-            print("Cannot find gs, unable to continue")
+            GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+        except Exception as e:
+            print("Cannot find gs, %s, unable to continue" % str(e))
     if os.path.isfile(GS):
         try:
             params = [GS, "--version"]
@@ -29,7 +29,6 @@ else:
             if not os.path.isfile(jpeg):
                 print("Failed: %s" % res)
         except subprocess.CalledProcessError as e:
-            print("Failed: %s" % e)
+            print("Failed: %s" % str(e))
     else:
         print ("Cannot find gs, [%s] unable to continue" % GS)
-

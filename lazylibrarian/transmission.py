@@ -116,7 +116,8 @@ def removeTorrent(torrentid, remove_data=False):
         else:
             logger.info('%s has not finished seeding yet, torrent will not be removed, \
                         will try again on next run' % name)
-    except:
+    except Exception as e:
+        logger.debug('Unable to remove torrent %s, %s' % (torrentid, str(e)))
         return False
 
     return False
@@ -152,10 +153,10 @@ def torrentAction(method, arguments):
 
     if not parts[0] in ("http", "https"):
         parts[0] = "http"
-        
+
     if not ':' in parts[1]:
         parts[1] += ":%s" % port
-        
+
     if not parts[2].endswith("/rpc"):
         parts[2] += "/transmission/rpc"
 
@@ -185,8 +186,8 @@ def torrentAction(method, arguments):
         if not session_id:
             logger.error("Expected a Session ID from Transmission")
             return
-            
-            
+
+
     # Prepare next request
     headers = {'x-transmission-session-id': session_id}
     data = {'method': method, 'arguments': arguments}

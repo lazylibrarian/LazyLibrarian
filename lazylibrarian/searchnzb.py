@@ -251,7 +251,7 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
                 download = True
 
             except Exception as e:
-                logger.error('%s not writable, NZB not saved. Error: %s' % (nzbpath, e))
+                logger.error('%s not writable, NZB not saved. Error: %s' % (nzbpath, str(e)))
                 download = False
 
     else:

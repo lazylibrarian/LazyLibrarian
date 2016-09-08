@@ -245,7 +245,7 @@ def search_magazines(mags=None, reset=False):
                                         newdatish = regexC_year + '-' + regexC_month + '-' + regexC_day
                                         # datetime will give a ValueError if not a good date or a param is not int
                                         date1 = datetime.date(int(regexC_year), int(regexC_month), int(regexC_day))
-                                    except:
+                                    except Exception:
                                         # regexD Issue/No/Vol nn, YYYY or Issue/No/Vol nn
                                         try:
                                             IssueLabel = nzbtitle_exploded[len(nzbtitle_exploded) - 2]
@@ -270,7 +270,7 @@ def search_magazines(mags=None, reset=False):
                                                             newdatish = 0  # it's old
                                                 else:
                                                     raise ValueError
-                                        except:
+                                        except Exception:
                                             logger.debug('Magazine %s not in proper date format.' % nzbtitle_formatted)
                                             bad_date = bad_date + 1
                                             # allow issues with good name but bad date to be included

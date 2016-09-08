@@ -60,8 +60,8 @@ def sendNZB(nzb):
                           "port": lazylibrarian.NZBGET_PORT, "password": lazylibrarian.NZBGET_PASS}
     try:
         nzbGetRPC = xmlrpclib.ServerProxy(url)
-    except Exception as err:
-        logger.debug("NZBget connection to %s failed: %s" % (url, err))
+    except Exception as e:
+        logger.debug("NZBget connection to %s failed: %s" % (url, str(e)))
         return False
 
     if nzb is None:
@@ -160,5 +160,5 @@ def sendNZB(nzb):
             logger.error(u"NZBget could not add %s to the queue" % (nzb.name + ".nzb"))
             return False
     except Exception as e:
-        logger.error(u"Connect Error to NZBget: could not add %s to the queue: %s" % (nzb.name + ".nzb", e))
+        logger.error(u"Connect Error to NZBget: could not add %s to the queue: %s" % (nzb.name + ".nzb", str(e)))
         return False

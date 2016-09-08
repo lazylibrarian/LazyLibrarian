@@ -36,13 +36,13 @@ class utorrentclient(object):
         host = lazylibrarian.UTORRENT_HOST
         if not host.startswith('http'):
             host = 'http://' + host
-            
+
         if host.endswith('/'):
             host = host[:-1]
-            
+
         if host.endswith('/gui'):
             host = host[:-4]
-            
+
         host = "%s:%s" % (host, lazylibrarian.UTORRENT_PORT)
         self.base_url = host
         self.username = lazylibrarian.UTORRENT_USER
@@ -161,9 +161,9 @@ def checkLink():
                 return "uTorrent login successful, label not checked"
             return "uTorrent login successful"
         return "uTorrent login FAILED\nCheck debug log"
-    except Exception as e:
-        return "uTorrent login FAILED: %s" % str(e)
-        
+    except Exception as err:
+        return "uTorrent login FAILED: %s" % str(err)
+
 def labelTorrent(hash):
     label = lazylibrarian.UTORRENT_LABEL
     uTorrentClient = utorrentclient()

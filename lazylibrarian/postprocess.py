@@ -48,16 +48,16 @@ def processAlternate(source_dir=None):
         if os.path.isfile(metafile):
             try:
                 metadata = get_book_info(metafile)
-            except:
-                logger.debug('Failed to read metadata from %s' % metafile)
+            except Exception as e:
+                logger.debug('Failed to read metadata from %s, %s' % (metafile, str(e)))
         else:
             logger.debug('No metadata file found for %s' % new_book)
         if not 'title' in metadata and 'creator' in metadata:
             # try to get metadata from the book file
             try:
                 metadata = get_book_info(new_book)
-            except:
-                logger.debug('No metadata found in %s' % new_book)
+            except Exception as e:
+                logger.debug('No metadata found in %s, %s' % (new_book, str(e)))
         if 'title' in metadata and 'creator' in metadata:
             authorname = metadata['creator']
             bookname = metadata['title']
@@ -71,7 +71,7 @@ def processAlternate(source_dir=None):
                 GR = GoodReads(authorname)
                 try:
                     author_gr = GR.find_author_id()
-                except:
+                except Exception:
                     logger.debug( "No author id for [%s]" % authorname)
                 if author_gr:
                     grauthorname = author_gr['authorname']
@@ -310,8 +310,8 @@ def processDir(reset=False):
             # again (and fail again)
             try:
                 os.rename(pp_path, pp_path + '.fail')
-            except:
-                logger.debug("Unable to rename %s" % pp_path)
+            except Exception as e:
+                logger.debug("Unable to rename %s, %s" % (pp_path, str(e)))
 
     downloads = os.listdir(processpath)  # check in case we processed/deleted some above
     for directory in downloads:
@@ -399,8 +399,8 @@ def import_book(pp_path=None, bookID=None):
             myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % bookID)
             try:
                 os.rename(pp_path, pp_path + '.fail')
-            except:
-                logger.debug("Unable to rename %s" % pp_path)
+            except Exception as e:
+                logger.debug("Unable to rename %s, %s" % (pp_path, str(e)))
     return False
 
 

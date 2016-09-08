@@ -11,7 +11,7 @@ try:
 except ImportError:
     try:
         import PythonMagick
-    except:
+    except ImportError:
         lazylibrarian.MAGICK = 'convert'  # may have external, don't know yet
 
 
@@ -63,7 +63,7 @@ def create_cover(issuefile=None):
                         logger.debug(params)
                         logger.debug('ImageMagick "convert" failed %s' % e.output)
 
-            except:
+            except Exception:
                 logger.debug("Unable to create cover for %s using %s" % (issuefile, lazylibrarian.MAGICK))
 
 
@@ -150,7 +150,7 @@ def magazineScan():
                     else:
                         logger.debug("Pattern match failed for [%s]" % fname)
                         continue
-                except:
+                except Exception:
                     logger.debug("Invalid name format for [%s]" % fname)
                     continue
 

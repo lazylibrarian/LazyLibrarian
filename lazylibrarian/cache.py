@@ -28,7 +28,7 @@ def fetchURL(URL):
             try:
                 result = resp.read()
             except socket.error as e:
-                return e, False
+                return str(e), False
             return result, True
         else:
             return str(resp), False
@@ -41,18 +41,21 @@ def fetchURL(URL):
                 try:
                     result = resp.read()
                 except socket.error as e:
-                    return e, False
+                    return str(e), False
                 return result, True
             else:
                 return str(resp), False
         except (socket.timeout) as e:
             logger.error(u"fetchURL: Timeout getting response from %s" % URL)
-            return e, False
+            return str(e), False
         except (urllib2.URLError) as e:
             logger.error(u"fetchURL: Error getting response for %s: %s" % (URL, e.reason))
             return e.reason, False
     except (urllib2.HTTPError, urllib2.URLError) as e:
-        return e.reason, False
+        if hasattr(e, 'reason'):
+            return e.reason, False
+        else:
+            return str(e), False
 
 def cache_cover(bookID, img_url):
     """ Cache the image from the given URL in the local images cache
@@ -75,8 +78,8 @@ def cache_cover(bookID, img_url):
             with open(coverfile, 'wb') as img:
                 img.write(result)
             return link
-        except:
-            logger.debug("Error writing image to %s" % coverfile)
+        except Exception as e:
+            logger.debug("Error writing image to %s, %s" % (coverfile, str(e)))
     return None
 
 def get_xml_request(my_url, useCache=True):
