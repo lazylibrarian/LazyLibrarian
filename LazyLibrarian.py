@@ -144,6 +144,13 @@ def main():
     logger.debug('Current Version [%s] - Latest remote version [%s] - Install type [%s]' % (
         lazylibrarian.CURRENT_VERSION, lazylibrarian.LATEST_VERSION, lazylibrarian.INSTALL_TYPE))
 
+    if lazylibrarian.COMMITS_BEHIND <= 0 and lazylibrarian.SIGNAL == 'update':
+        lazylibrarian.SIGNAL = None
+        if lazylibrarian.COMMITS_BEHIND == 0:
+            logger.debug('Not updating, LazyLibrarian is already up to date')
+        else:
+            logger.debug('Not updating, LazyLibrarian has local changes')
+
     if options.port:
         lazylibrarian.HTTP_PORT = int(options.port)
         logger.info('Starting LazyLibrarian on forced port: %s' % lazylibrarian.HTTP_PORT)
