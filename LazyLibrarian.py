@@ -151,6 +151,10 @@ def main():
         else:
             logger.debug('Not updating, LazyLibrarian has local changes')
 
+    if  lazylibrarian.INSTALL_TYPE != 'git' and lazylibrarian.SIGNAL == 'update':
+        lazylibrarian.SIGNAL = None
+        logger.debug('Not updating, not a git installation')
+
     if options.port:
         lazylibrarian.HTTP_PORT = int(options.port)
         logger.info('Starting LazyLibrarian on forced port: %s' % lazylibrarian.HTTP_PORT)
