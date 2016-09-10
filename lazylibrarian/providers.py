@@ -9,7 +9,7 @@ from lazylibrarian import logger, database
 from lazylibrarian.common import USER_AGENT
 from lazylibrarian.formatter import age, today, plural, cleanName
 from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL
-
+import lib.feedparser as feedparser
 
 def get_capabilities(provider):
     """

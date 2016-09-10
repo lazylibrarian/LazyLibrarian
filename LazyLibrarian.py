@@ -64,7 +64,7 @@ def main():
     p.add_option('--nolaunch', action="store_true",
                  dest='nolaunch', help="Don't start browser")
     p.add_option('--update', action="store_true",
-                 dest='update', help="Update to latest version")
+                 dest='update', help="Update to latest version (only git installs)")
     p.add_option('--port',
                  dest='port', default=None,
                  help="Force webinterface to listen on this port")
@@ -150,6 +150,10 @@ def main():
             logger.debug('Not updating, LazyLibrarian is already up to date')
         else:
             logger.debug('Not updating, LazyLibrarian has local changes')
+
+    if lazylibrarian.INSTALL_TYPE != 'git' and lazylibrarian.SIGNAL == 'update':
+        lazylibrarian.SIGNAL = None
+        logger.debug('Not updating, not a git installation')
 
     if options.port:
         lazylibrarian.HTTP_PORT = int(options.port)
