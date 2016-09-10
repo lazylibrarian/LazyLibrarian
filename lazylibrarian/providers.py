@@ -219,8 +219,8 @@ def RSS(host=None, feednr=None):
         if lazylibrarian.PROXY_HOST:
             request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
         request.add_header('User-Agent', USER_AGENT)
-        resp = urllib2.urlopen(request, timeout=90)
         try:
+            resp = urllib2.urlopen(request, timeout=90)
             data = feedparser.parse(resp)
         except (socket.timeout) as e:
             logger.error('Timeout fetching data from %s' % host)
@@ -251,7 +251,7 @@ def RSS(host=None, feednr=None):
             size = None
             torrent = None
             nzb = None
-
+            url = None
             if 'title' in post:
                 title = post.title
             if 'links' in post:
@@ -273,6 +273,10 @@ def RSS(host=None, feednr=None):
                 url = magnet
             if nzb:
                 url = nzb
+
+            if not url:
+                if 'link' in post:
+                    url = post.link
 
             if not size:
                 size = 1000
