@@ -65,7 +65,7 @@ def search_rss_book(books=None, reset=False):
         author = unaccented_str(replace_all(author, dic))
         title = unaccented_str(replace_all(title, dic))
 
-        found = processResultList(resultlist, author, title, book)
+        found = processResultList(resultlist, author, title, book, 'full')
 
         # if you can't find the book, try author without initials,
         # and title without any "(extended details, series etc)"
@@ -75,7 +75,7 @@ def search_rss_book(books=None, reset=False):
                     author = author[2:].strip()  # and leading whitespace
                 if '(' in title:
                     title = title.split('(')[0]
-                found = processResultList(resultlist, author, title, book)
+                found = processResultList(resultlist, author, title, book, 'short')
 
         if not found:
             logger.debug("Searches returned no results. Adding book %s - %s to queue." % (author, title))
@@ -88,7 +88,7 @@ def search_rss_book(books=None, reset=False):
         scheduleJob(action='Restart', target='search_rss_book')
 
 
-def processResultList(resultlist, author, title, book):
+def processResultList(resultlist, author, title, book, searchtype):
     myDB = database.DBConnection()
     dictrepl = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
                 ',': ' ', '*': '', '(': '', ')': '', '[': '', ']': '', '#': '', '0': '', '1': '', '2': '',
