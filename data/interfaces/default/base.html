@@ -93,7 +93,7 @@
 <body>
     <div id="container">
         <div id="ajaxMsg"></div>
-            % if lazylibrarian.INSTALL_TYPE != 'win':
+            % if lazylibrarian.INSTALL_TYPE == 'git':
                 % if not lazylibrarian.CURRENT_VERSION:
                     <div id="updatebar">
                         You're running an unknown version of lazylibrarian. <a href="update">Update</a> or

@@ -130,7 +130,7 @@
 
 <script type="text/javascript">
     msg = '';
-        % if lazylibrarian.INSTALL_TYPE != 'win':
+        % if lazylibrarian.INSTALL_TYPE == 'git':
             % if not lazylibrarian.CURRENT_VERSION:
                 msg = 'You\'re running an unknown version of lazylibrarian.<br/><a href="update" class="btn btn-xs btn-primary pull-right">Update</a>'
             % elif (lazylibrarian.INSTALL_TYPE == 'source' and lazylibrarian.CURRENT_VERSION == 'No Version File' ):
