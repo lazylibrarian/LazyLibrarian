@@ -269,14 +269,18 @@ def RSS(host=None, feednr=None):
 
             if torrent:
                 url = torrent
+                tortype = 'torrent'
             if magnet:  # prefer magnet over torrent
                 url = magnet
+                tortype = 'magnet'
             if nzb:
                 url = nzb
+                tortype = 'nzb'
 
             if not url:
                 if 'link' in post:
                     url = post.link
+                    tortype = 'torrent'
 
             if not size:
                 size = 1000
@@ -286,7 +290,8 @@ def RSS(host=None, feednr=None):
                     'tor_title': title,
                     'tor_url': url,
                     'tor_size': str(size),
-                    'tor_feed': feednr
+                    'tor_feed': feednr,
+                    'tor_type': tortype
                 })
 
     else:

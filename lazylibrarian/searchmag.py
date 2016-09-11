@@ -13,14 +13,14 @@ from lazylibrarian.searchnzb import NZBDownloadMethod
 from lazylibrarian.formatter import plural, now, unaccented_str, replace_all, unaccented, nzbdate2format, getList, month2num, datecompare
 from lazylibrarian.common import scheduleJob
 from lazylibrarian.notifiers import notify_snatch
-from lazylibrarian.providers import IterateOverNewzNabSites, IterateOverTorrentSites
+from lazylibrarian.providers import IterateOverNewzNabSites, IterateOverTorrentSites, IterateOverRSSSites
 
 def cron_search_magazines():
     threading.currentThread().name = "CRON-SEARCHMAG"
     search_magazines()
 
 def search_magazines(mags=None, reset=False):
-    # produce a list of magazines to search for, tor, nzb, torznab
+    # produce a list of magazines to search for, tor, nzb, torznab, rss
 
     threadname = threading.currentThread().name
     if "Thread-" in threadname:
@@ -88,6 +88,23 @@ def search_magazines(mags=None, reset=False):
                         'nzbdate': 'Fri, 01 Jan 1970 00:00:00 +0100',  # fake date as none returned from torrents
                         'nzbsize': item['tor_size'],
                         'nzbmode': 'torrent'
+                    })
+
+        if lazylibrarian.USE_RSS():
+            rss_resultlist, nproviders = IterateOverRSSSites(book, 'mag')
+            if not nproviders:
+                logger.warn('No rss providers are set. Check config for RSS providers')
+
+            if rss_resultlist:
+                for item in rss_resultlist:  # reformat the rss results so they look like nzbs
+                    resultlist.append({
+                        'bookid': book['bookid'],
+                        'nzbprov': item['tor_prov'],
+                        'nzbtitle': item['tor_title'],
+                        'nzburl': item['tor_url'],
+                        'nzbdate': 'Fri, 01 Jan 1970 00:00:00 +0100',  # fake date as none returned from rss
+                        'nzbsize': item['tor_size'],
+                        'nzbmode': item['tor_type']
                     })
 
         if not resultlist:
@@ -371,7 +388,7 @@ def search_magazines(mags=None, reset=False):
                         total_nzbs, plural(total_nzbs), bookid, new_date, old_date, bad_date, bad_regex, len(maglist)))
 
             for magazine in maglist:
-                if magazine['nzbmode'] == "torznab" or magazine['nzbmode'] == "torrent":
+                if magazine['nzbmode'] == "torznab" or magazine['nzbmode'] == "torrent" or magazine['nzbmode'] == "magnet":
                     snatch = TORDownloadMethod(magazine['bookid'], magazine['nzbprov'], magazine['nzbtitle'], magazine['nzburl'])
                 else:
                     snatch = NZBDownloadMethod(magazine['bookid'], magazine['nzbprov'], magazine['nzbtitle'], magazine['nzburl'])
