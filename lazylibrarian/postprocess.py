@@ -191,12 +191,12 @@ def processDir(reset=False):
 
             data = myDB.select('SELECT * from books WHERE BookID="%s"' % book['BookID'])
             if data:
+                logger.debug(u'Processing book %s' % book['BookID'])
                 authorname = data[0]['AuthorName']
                 bookname = data[0]['BookName']
                 if 'windows' in platform.system().lower() and '/' in lazylibrarian.EBOOK_DEST_FOLDER:
                     logger.warn('Please check your EBOOK_DEST_FOLDER setting')
                     lazylibrarian.EBOOK_DEST_FOLDER = lazylibrarian.EBOOK_DEST_FOLDER.replace('/', '\\')
-
                 # Default destination path, should be allowed change per config file.
                 dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace(
                     '$Title', bookname)
@@ -215,6 +215,7 @@ def processDir(reset=False):
             else:
                 data = myDB.select('SELECT * from magazines WHERE Title="%s"' % book['BookID'])
                 if data:
+                    logger.debug(u'Processing magazine %s' % book['BookID'])
                     # AuxInfo was added for magazine release date, normally housed in 'magazines' but if multiple
                     # files are downloading, there will be an error in post-processing, trying to go to the
                     # same directory.

@@ -219,8 +219,8 @@ def RSS(host=None, feednr=None):
         if lazylibrarian.PROXY_HOST:
             request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
         request.add_header('User-Agent', USER_AGENT)
-        resp = urllib2.urlopen(request, timeout=90)
         try:
+            resp = urllib2.urlopen(request, timeout=90)
             data = feedparser.parse(resp)
         except (socket.timeout) as e:
             logger.error('Timeout fetching data from %s' % host)
@@ -251,6 +251,8 @@ def RSS(host=None, feednr=None):
             size = None
             torrent = None
             nzb = None
+            url = None
+            tortype = 'torrent'
 
             if 'title' in post:
                 title = post.title
@@ -262,17 +264,32 @@ def RSS(host=None, feednr=None):
                         break
                     if 'x-nzb' in f['type']:
                         size = f['length']
-                        torrent = f['href']
+                        nzb = f['href']
                         break
+
             if 'torrent_magneturi' in post:
                 magnet = post.torrent_magneturi
 
             if torrent:
                 url = torrent
+                tortype = 'torrent'
+
             if magnet:  # prefer magnet over torrent
                 url = magnet
-            if nzb:
+                tortype = 'magnet'
+
+            if nzb:     # prefer nzb over torrent/magnet
                 url = nzb
+                tortype = 'nzb'
+
+            if not url:
+                if 'link' in post:
+                    url = post.link
+
+            tor_date = 'Fri, 01 Jan 1970 00:00:00 +0100'
+            if 'newznab_attr' in post:
+                if post.newznab_attr['name'] == 'usenetdate':
+                    tor_date = post.newznab_attr['value']
 
             if not size:
                 size = 1000
@@ -282,7 +299,9 @@ def RSS(host=None, feednr=None):
                     'tor_title': title,
                     'tor_url': url,
                     'tor_size': str(size),
-                    'tor_feed': feednr
+                    'tor_date': tor_date,
+                    'tor_feed': feednr,
+                    'tor_type': tortype
                 })
 
     else:

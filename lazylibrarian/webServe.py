@@ -1318,7 +1318,7 @@ class WebInterface(object):
 
     def startMagazineSearch(self, mags=None):
         if mags:
-            if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
+            if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
                 threading.Thread(target=search_magazines, name='SEARCHMAG', args=[mags, False]).start()
                 logger.debug(u"Searching for magazine with title: %s" % mags[0]["bookid"])
             else:
@@ -1678,7 +1678,7 @@ class WebInterface(object):
 
     def forceSearch(self, source=None):
         if source == "magazines":
-            if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
+            if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
                 threading.Thread(target=search_magazines, name='SEARCHMAG', args=[None, True]).start()
         elif source == "books":
             if lazylibrarian.USE_NZB():
