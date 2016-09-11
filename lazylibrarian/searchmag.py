@@ -102,7 +102,7 @@ def search_magazines(mags=None, reset=False):
                         'nzbprov': item['tor_prov'],
                         'nzbtitle': item['tor_title'],
                         'nzburl': item['tor_url'],
-                        'nzbdate': 'Fri, 01 Jan 1970 00:00:00 +0100',  # fake date as none returned from rss
+                        'nzbdate': item['tor_date'],  # may be fake date as none returned from rss torrents, only rss nzb
                         'nzbsize': item['tor_size'],
                         'nzbmode': item['tor_type']
                     })
@@ -167,11 +167,14 @@ def search_magazines(mags=None, reset=False):
                         mag_title_match = fuzz.token_set_ratio(
                             unaccented(bookid),
                             unaccented(nzbtitle_formatted))
+
                         if mag_title_match < lazylibrarian.MATCH_RATIO:
                             logger.debug(
                                 u"Magazine token set Match failed: " + str(
                                     mag_title_match) + "% for " + nzbtitle_formatted)
                             rejected = True
+                    else:
+                        rejected = True
 
                     if not rejected:
                         already_failed = myDB.action('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' %
