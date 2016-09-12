@@ -16,7 +16,7 @@ from lazylibrarian.gr import GoodReads
 from lazylibrarian.cache import get_json_request, cache_cover
 
 from lib.fuzzywuzzy import fuzz
-from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str
+from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn
 
 
 class GoogleBooks:
@@ -38,14 +38,9 @@ class GoogleBooks:
         myDB = database.DBConnection()
         resultlist = []
         # See if we should check ISBN field, otherwise ignore it
-        try:
-            isbn_check = int(authorname[:-1])
-            if (len(str(isbn_check)) == 9) or (len(str(isbn_check)) == 12):
-                api_strings = ['isbn:']
-            else:
-                api_strings = ['inauthor:', 'intitle:']
-        except Exception:
-            api_strings = ['inauthor:', 'intitle:']
+        api_strings = ['inauthor:', 'intitle:']
+        if is_valid_isbn(authorname):
+            api_strings = ['isbn:']
 
         api_hits = 0
         logger.debug(
@@ -188,14 +183,11 @@ class GoogleBooks:
                         book_fuzz = fuzz.token_set_ratio(
                             item['volumeInfo']['title'],
                             authorname)
-                        try:
-                            isbn_check = int(authorname[:-1])
-                            if (len(str(isbn_check)) == 9) or (len(str(isbn_check)) == 12):
-                                isbn_fuzz = int(100)
-                            else:
-                                isbn_fuzz = int(0)
-                        except Exception:
-                            isbn_fuzz = int(0)
+
+                        isbn_fuzz = 0
+                        if is_valid_isbn(authorname):
+                            isbn_fuzz = 100
+
                         highest_fuzz = max(author_fuzz, book_fuzz, isbn_fuzz)
 
                         bookname = item['volumeInfo']['title']

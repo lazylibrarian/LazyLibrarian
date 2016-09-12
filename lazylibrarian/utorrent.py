@@ -71,7 +71,7 @@ class utorrentclient(object):
             response = self.opener.open(url)
         except Exception as err:
             logger.debug('URL: %s' % url)
-            logger.debug('Error getting Token. uTorrent responded with error: ' + str(err))
+            logger.debug('Error getting Token. uTorrent responded with: %s' % str(err))
             return None
         match = re.search(utorrentclient.TOKEN_REGEX, response.read())
         return match.group(1)

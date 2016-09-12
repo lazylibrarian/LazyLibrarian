@@ -375,7 +375,7 @@ class Api(object):
         try:
             importer.addAuthorToDB(self.id, refresh=True)
         except Exception as e:
-            self.data = e
+            self.data = str(e)
 
     def _forceActiveAuthorsUpdate(self, **kwargs):
         if 'wait' in kwargs:
@@ -538,7 +538,7 @@ class Api(object):
                     self.data = "Moved book [%s] to [%s]" % (bookdata[1], authordata[0])
             logger.debug(self.data)
         except Exception as e:
-            self.data = e
+            self.data = str(e)
 
     def _moveBooks(self, **kwargs):
         if 'fromname' not in kwargs:
@@ -571,7 +571,7 @@ class Api(object):
 
             logger.debug(self.data)
         except Exception as e:
-            self.data = e
+            self.data = str(e)
 
     def _addAuthor(self, **kwargs):
         if 'name' not in kwargs:
@@ -582,7 +582,7 @@ class Api(object):
         try:
             importer.addAuthorToDB(self.id, refresh=False)
         except Exception as e:
-            self.data = e
+            self.data = str(e)
 
     def _searchBook(self, **kwargs):
         if 'id' not in kwargs:

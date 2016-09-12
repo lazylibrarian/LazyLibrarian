@@ -1518,8 +1518,8 @@ def dbcheck():
                                     "seriesNum": seriesNum
                                 }
                                 myDB.upsert("books", newValueDict, controlValueDict)
-                except Exception as z:
-                    logger.info('Error: ' + str(z))
+                except Exception as e:
+                    logger.info('Error: ' + str(e))
 
         if db_version < 2:
             try:
@@ -1531,8 +1531,8 @@ def dbcheck():
                         nzbsize = nzbsize.split(' ')[0]
                         myDB.action('UPDATE wanted SET NZBsize = "%s" WHERE BookID = "%s"' % (nzbsize, units["BookID"]))
 
-            except Exception as z:
-                logger.info('Error: ' + str(z))
+            except Exception as e:
+                logger.info('Error: ' + str(e))
 
         if db_version < 3:
             try:
@@ -1541,9 +1541,9 @@ def dbcheck():
                 try:
                     c.execute('CREATE TABLE IF NOT EXISTS temp_books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
                         BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
-                        BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, \
-                        BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesNum TEXT, \
-                        WorkPage TEXT)')
+                        BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, \
+                        BookFile TEXT, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, \
+                        SeriesNum TEXT, WorkPage TEXT)')
                     c.execute('INSERT INTO temp_books SELECT AuthorID,AuthorName,AuthorLink,BookName,BookSub, \
                         BookDesc,BookGenre,BookIsbn,BookPub,BookRate,BookImg,BookPages,BookLink,BookID, \
                         BookFile,BookDate,BookLang,BookAdded,Status,Series,SeriesNum,WorkPage FROM books')
@@ -1615,8 +1615,8 @@ def dbcheck():
                     authorid = author["AuthorID"]
                     myDB.action('DELETE from authors WHERE AuthorID="%s"' % authorid)
                     myDB.action('DELETE from books WHERE AuthorID="%s"' % authorid)
-        except Exception as z:
-            logger.info('Error: ' + str(z))
+        except Exception as e:
+            logger.info('Error: ' + str(e))
 
 
 def start():

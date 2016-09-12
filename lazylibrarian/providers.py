@@ -56,7 +56,7 @@ def get_capabilities(provider):
                     source_xml = resp.read()  # .decode('utf-8')
                     data = ElementTree.fromstring(source_xml)
                 except Exception as e:
-                    logger.debug(u"Error getting xml from %s, " % (URL, str(e)))
+                    logger.debug(u"Error getting xml from %s, %s" % (URL, str(e)))
                     data = None
                 if len(data):
                     logger.debug(u"Parsing xml for capabilities of %s" % URL)

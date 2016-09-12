@@ -444,9 +444,7 @@ def LibraryScan(startdir=None):
                             try:
                                 author_gr = GR.find_author_id()
                             except Exception as e:
-                                logger.warn(
-                                    "Error finding author id for [%s] %s" %
-                                    (author, str(e)))
+                                logger.warn("Error finding author id for [%s] %s" % (author, str(e)))
                                 continue
 
                             # only try to add if GR data matches found author data

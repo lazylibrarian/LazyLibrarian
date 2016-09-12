@@ -145,7 +145,7 @@ class WebInterface(object):
         # for arg in kwargs:
         #    if "reject" in arg:
         #        print arg
-        #        print repr(arg)
+        #        print str(arg)
         # print current_tab
         lazylibrarian.CURRENT_TAB = current_tab
         lazylibrarian.HTTP_HOST = http_host
@@ -993,7 +993,7 @@ class WebInterface(object):
                                         rmtree(os.path.dirname(bookfile), ignore_errors=True)
                                         logger.info(u'Book %s deleted from disc' % bookname)
                                     except Exception as e:
-                                        logger.debug('rmtree failed on %s, %e' % (bookfile, str(e)))
+                                        logger.debug('rmtree failed on %s, %s' % (bookfile, str(e)))
 
                             authorcheck = myDB.select('SELECT AuthorID from authors WHERE AuthorID = "%s"' % AuthorID)
                             if len(authorcheck):
@@ -1273,7 +1273,7 @@ class WebInterface(object):
                             rmtree(os.path.dirname(issue['IssueFile']), ignore_errors=True)
                             logger.info(u'Issue %s of %s deleted from disc' % (issue['IssueDate'], issue['Title']))
                         except Exception as e:
-                            logger.debug('rmtree failed on %s, %e' % (issue['IssueFile'], str(e)))
+                            logger.debug('rmtree failed on %s, %s' % (issue['IssueFile'], str(e)))
                     if (action == "Remove" or action == "Delete"):
                         myDB.action('DELETE from issues WHERE IssueID="%s"' % item)
                         logger.info(u'Issue %s of %s removed from database' % (issue['IssueDate'], issue['Title']))
@@ -1302,7 +1302,7 @@ class WebInterface(object):
                             rmtree(os.path.dirname(issuedir), ignore_errors=True)
                             logger.info(u'Magazine %s deleted from disc' % item)
                         except Exception as e:
-                            logger.debug('rmtree failed on %s, %e' % (issue['IssueFile'], str(e)))
+                            logger.debug('rmtree failed on %s, %s' % (issue['IssueFile'], str(e)))
                 if (action == "Remove" or action == "Delete"):
                     myDB.action('DELETE from magazines WHERE Title="%s"' % item)
                     myDB.action('DELETE from pastissues WHERE BookID="%s"' % item)

@@ -160,7 +160,7 @@ class GoodReads:
         try:
             rootxml, in_cache = get_xml_request(URL)
         except Exception as e:
-            logger.error("Error finding authorid: %s, %s" % (str(e), URL))
+            logger.error("Error finding authorid: %s, %s" % (URL, str(e)))
             return authorlist
         if rootxml is None:
             logger.debug("Error requesting authorid")
