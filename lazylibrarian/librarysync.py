@@ -38,22 +38,23 @@ def get_book_info(fname):
         res['identifier'] = book.isbn()
         return res
 
+        """
         # none of the pdfs in my library had language,isbn
         # most didn't have author, or had the wrong author
         # (author set to publisher, or software used)
         # so probably not much point in looking at pdfs
         #
-        # if (extn == ".pdf"):
-        #	  pdf = PdfFileReader(open(fname, "rb"))
-        #	  txt = pdf.getDocumentInfo()
-              # repackage the data here to get components we need
-        #     res = {}
-        #     for s in ['title','language','creator']:
-        #         res[s] = txt[s]
-        #	  res['identifier'] = txt['isbn']
-        #     res['type'] = "pdf"
-        #	  return res
-
+        if (extn == ".pdf"):
+            pdf = PdfFileReader(open(fname, "rb"))
+            txt = pdf.getDocumentInfo()
+            # repackage the data here to get components we need
+            res = {}
+            for s in ['title','language','creator']:
+                res[s] = txt[s]
+            res['identifier'] = txt['isbn']
+            res['type'] = "pdf"
+            return res
+        """
     elif extn == ".epub":
         res['type'] = "epub"
 
@@ -70,14 +71,14 @@ def get_book_info(fname):
         n = 0
         cfname = ""
         if not len(tree):
-           return res
+            return res
 
         while n < len(tree[0]):
-           att = tree[0][n].attrib
-           if 'full-path' in att:
-               cfname = att['full-path']
-               break
-           n = n + 1
+            att = tree[0][n].attrib
+            if 'full-path' in att:
+                cfname = att['full-path']
+                break
+            n = n + 1
 
         # grab the metadata block from the contents metafile
         txt = zipdata.read(cfname)
@@ -125,7 +126,7 @@ def find_book_in_db(myDB, author, book):
     # prefer an exact match on author & book
     match = myDB.action(
         'SELECT BookID FROM books where AuthorName="%s" and BookName="%s"' %
-        (author.replace('"','""'), book.replace('"','""'))).fetchone()
+        (author.replace('"', '""'), book.replace('"', '""'))).fetchone()
     if match:
         logger.debug('Exact match [%s]' % book)
         return match['BookID']
@@ -137,7 +138,7 @@ def find_book_in_db(myDB, author, book):
         # on books that should be matched
         # Maybe make ratios configurable in config.ini later
 
-        books = myDB.select('SELECT BookID,BookName FROM books where AuthorName="%s"' % author.replace('"','""'))
+        books = myDB.select('SELECT BookID,BookName FROM books where AuthorName="%s"' % author.replace('"', '""'))
 
         best_ratio = 0
         best_partial = 0
@@ -434,7 +435,7 @@ def LibraryScan(startdir=None):
                         #
                         check_exist_author = myDB.action(
                             'SELECT * FROM authors where AuthorName="%s"' %
-                            author.replace('"','""')).fetchone()
+                            author.replace('"', '""')).fetchone()
                         if not check_exist_author and lazylibrarian.ADD_AUTHOR:
                             # no match for supplied author, but we're allowed to
                             # add new ones
@@ -488,7 +489,7 @@ def LibraryScan(startdir=None):
                                     # database, so check again
                                     check_exist_author = myDB.action(
                                         'SELECT * FROM authors where AuthorName="%s"' %
-                                        author.replace('"','""')).fetchone()
+                                        author.replace('"', '""')).fetchone()
                                     if not check_exist_author:
                                         logger.info(
                                             "Adding new author [%s]" %
@@ -497,7 +498,7 @@ def LibraryScan(startdir=None):
                                             addAuthorToDB(author)
                                             check_exist_author = myDB.action(
                                                 'SELECT * FROM authors where AuthorName="%s"' %
-                                                author.replace('"','""')).fetchone()
+                                                author.replace('"', '""')).fetchone()
                                         except Exception:
                                             continue
 
@@ -537,14 +538,15 @@ def LibraryScan(startdir=None):
                                 bookdir = os.path.dirname(book_filename)
                                 coverimg = os.path.join(bookdir, 'cover.jpg')
                                 if os.path.isfile(coverimg):
-                                    cachedir = os.path.join(str(lazylibrarian.PROG_DIR), 'data' + os.sep + 'images' + os.sep + 'cache')
+                                    cachedir = os.path.join(
+                                        str(lazylibrarian.PROG_DIR),
+                                        'data' + os.sep + 'images' + os.sep + 'cache')
                                     cacheimg = os.path.join(cachedir, bookid + '.jpg')
                                     copyfile(coverimg, cacheimg)
                             else:
                                 logger.debug(
                                     "Failed to match book [%s] by [%s] in database" %
                                     (book, author))
-
 
     logger.info("%s/%s new/modified book%s found and added to the database" %
                 (new_book_count, modified_count, plural(new_book_count + modified_count)))
@@ -559,28 +561,28 @@ def LibraryScan(startdir=None):
             # only show stats if new books added
             if lazylibrarian.BOOK_API == "GoogleBooks":
                 logger.debug("GoogleBooks was hit %s time%s for books" %
-                    (stats['sum(GR_book_hits)'], plural(stats['sum(GR_book_hits)'])))
+                             (stats['sum(GR_book_hits)'], plural(stats['sum(GR_book_hits)'])))
                 logger.debug("GoogleBooks language was changed %s time%s" %
-                    (stats['sum(GB_lang_change)'], plural(stats['sum(GB_lang_change)'])))
+                             (stats['sum(GB_lang_change)'], plural(stats['sum(GB_lang_change)'])))
             if lazylibrarian.BOOK_API == "GoodReads":
                 logger.debug("GoodReads was hit %s time%s for books" %
-                    (stats['sum(GR_book_hits)'], plural(stats['sum(GR_book_hits)'])))
+                             (stats['sum(GR_book_hits)'], plural(stats['sum(GR_book_hits)'])))
                 logger.debug("GoodReads was hit %s time%s for languages" %
-                    (stats['sum(GR_lang_hits)'], plural(stats['sum(GR_lang_hits)'])))
+                             (stats['sum(GR_lang_hits)'], plural(stats['sum(GR_lang_hits)'])))
             logger.debug("LibraryThing was hit %s time%s for languages" %
-                (stats['sum(LT_lang_hits)'], plural (stats['sum(LT_lang_hits)'])))
+                         (stats['sum(LT_lang_hits)'], plural(stats['sum(LT_lang_hits)'])))
             logger.debug("Language cache was hit %s time%s" %
-                (stats['sum(cache_hits)'], plural(stats['sum(cache_hits)'])))
+                         (stats['sum(cache_hits)'], plural(stats['sum(cache_hits)'])))
             logger.debug("Unwanted language removed %s book%s" %
-                (stats['sum(bad_lang)'], plural (stats['sum(bad_lang)'])))
+                         (stats['sum(bad_lang)'], plural(stats['sum(bad_lang)'])))
             logger.debug("Unwanted characters removed %s book%s" %
-                (stats['sum(bad_char)'], plural(stats['sum(bad_char)'])))
+                         (stats['sum(bad_char)'], plural(stats['sum(bad_char)'])))
             logger.debug("Unable to cache %s book%s with missing ISBN" %
-                (stats['sum(uncached)'], plural(stats['sum(uncached)'])))
+                         (stats['sum(uncached)'], plural(stats['sum(uncached)'])))
             logger.debug("Found %s duplicate book%s" %
-                (stats['sum(duplicates)'], plural(stats['sum(duplicates)'])))
+                         (stats['sum(duplicates)'], plural(stats['sum(duplicates)'])))
             logger.debug("Cache %s hit%s, %s miss" %
-                (lazylibrarian.CACHE_HIT, plural(lazylibrarian.CACHE_HIT), lazylibrarian.CACHE_MISS))
+                         (lazylibrarian.CACHE_HIT, plural(lazylibrarian.CACHE_HIT), lazylibrarian.CACHE_MISS))
             cachesize = myDB.action("select count('ISBN') as counter from languages").fetchone()
             logger.debug("ISBN Language cache holds %s entries" % cachesize['counter'])
             nolang = len(myDB.select('select BookID from Books where status="Open" and BookLang="Unknown"'))
@@ -592,7 +594,7 @@ def LibraryScan(startdir=None):
         # new books for existing authors especially if switched provider gb/gr
     else:
         # single author/book import
-        authors = myDB.select('select AuthorID from authors where AuthorName = "%s"' % author.replace('"','""'))
+        authors = myDB.select('select AuthorID from authors where AuthorName = "%s"' % author.replace('"', '""'))
 
     logger.debug('Updating bookcounts for %i author%s' % (len(authors), plural(len(authors))))
     for author in authors:

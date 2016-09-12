@@ -122,6 +122,7 @@ def removeTorrent(torrentid, remove_data=False):
 
     return False
 
+
 def checkLink():
 
     method = 'session-stats'
@@ -133,6 +134,7 @@ def checkLink():
             # does transmission handle labels?
             return "Transmission login successful"
     return "Transmission login FAILED\nCheck debug log"
+
 
 def torrentAction(method, arguments):
 
@@ -151,10 +153,10 @@ def torrentAction(method, arguments):
     # so add it if it is missing.
     parts = list(urlparse.urlparse(host))
 
-    if not parts[0] in ("http", "https"):
+    if parts[0] not in ("http", "https"):
         parts[0] = "http"
 
-    if not ':' in parts[1]:
+    if ':' not in parts[1]:
         parts[1] += ":%s" % port
 
     if not parts[2].endswith("/rpc"):
@@ -186,7 +188,6 @@ def torrentAction(method, arguments):
         if not session_id:
             logger.error("Expected a Session ID from Transmission")
             return
-
 
     # Prepare next request
     headers = {'x-transmission-session-id': session_id}

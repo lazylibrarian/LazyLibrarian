@@ -7,6 +7,7 @@ from lazylibrarian.formatter import today
 from lazylibrarian.cache import cache_cover
 from lazylibrarian.bookwork import getAuthorImage
 
+
 def addAuthorToDB(authorname=None, refresh=False):
 
     myDB = database.DBConnection()
@@ -63,6 +64,7 @@ def addAuthorToDB(authorname=None, refresh=False):
 
     update_totals(authorid)
     logger.debug("[%s] Author update complete" % authorname)
+
 
 def update_totals(AuthorID):
     myDB = database.DBConnection()

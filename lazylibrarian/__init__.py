@@ -330,6 +330,7 @@ def check_setting_str(config, cfg_name, item_name, def_val, log=True):
 
     return my_val.decode(SYS_ENCODING)
 
+
 def initialize():
 
     with INIT_LOCK:
@@ -407,6 +408,7 @@ def initialize():
 
         __INITIALIZED__ = True
         return True
+
 
 def config_read(reloaded=False):
         global FULL_PATH, PROG_DIR, DAEMON, \
@@ -489,7 +491,7 @@ def config_read(reloaded=False):
         IMP_ONLYISBN = check_setting_bool(CFG, 'General', 'imp_onlyisbn', 0)
         IMP_SINGLEBOOK = check_setting_bool(CFG, 'General', 'imp_singlebook', 0)
         IMP_CONVERT = check_setting_str(CFG, 'General', 'imp_convert', '')
-        GIT_PROGRAM = check_setting_str(CFG, 'General', 'git_program','')
+        GIT_PROGRAM = check_setting_str(CFG, 'General', 'git_program', '')
         CACHE_AGE = check_setting_int(CFG, 'General', 'cache_age', 30)
 
         GIT_USER = check_setting_str(CFG, 'Git', 'git_user', 'dobytang')
@@ -535,11 +537,15 @@ def config_read(reloaded=False):
         ALTERNATE_DIR = check_setting_str(CFG, 'General', 'alternate_dir', '')
         DOWNLOAD_DIR = check_setting_str(CFG, 'General', 'download_dir', '')
         if not DOWNLOAD_DIR:
-            logger.warn("Download dir not found, books will be downloaded to %s" % os.getcwd())
+            logger.warn("Download dir not configured, books will be downloaded to %s" % os.getcwd())
         elif not os.path.isdir(DOWNLOAD_DIR):
-            logger.warn("Download dir [%s] not found, books will be downloaded to %s" % (repr(DOWNLOAD_DIR), os.getcwd()))
+            logger.warn(
+                "Download dir [%s] not found, books will be downloaded to %s" %
+                (repr(DOWNLOAD_DIR), os.getcwd()))
         elif not os.access(DOWNLOAD_DIR, os.W_OK | os.X_OK):
-            logger.warn("Download dir [%s] not writeable, books will be downloaded to %s" % (repr(DOWNLOAD_DIR), os.getcwd()))
+            logger.warn(
+                "Download dir [%s] not writeable, books will be downloaded to %s" %
+                (repr(DOWNLOAD_DIR), os.getcwd()))
 
         NZB_DOWNLOADER_SABNZBD = check_setting_bool(CFG, 'USENET', 'nzb_downloader_sabnzbd', 0)
         NZB_DOWNLOADER_NZBGET = check_setting_bool(CFG, 'USENET', 'nzb_downloader_nzbget', 0)
@@ -1109,6 +1115,7 @@ def add_newz_slot():
                              "MANUAL": 0
                              })
 
+
 def add_torz_slot():
     count = len(TORZNAB_PROV)
     if count == 0 or len(CFG.get('Torznab%i' % int(count - 1), 'HOST')):
@@ -1138,6 +1145,7 @@ def add_torz_slot():
                              "UPDATED": '',
                              "MANUAL": 0
                              })
+
 
 def USE_NZB():
     for provider in NEWZNAB_PROV:
@@ -1469,7 +1477,8 @@ def dbcheck():
                 c.execute('SELECT Title from issues')
             except sqlite3.OperationalError:
                 logger.info('Updating database to hold Issues table')
-                c.execute('CREATE TABLE issues (Title TEXT, IssueID TEXT, IssueAcquired TEXT, IssueDate TEXT, IssueFile TEXT)')
+                c.execute(
+                    'CREATE TABLE issues (Title TEXT, IssueID TEXT, IssueAcquired TEXT, IssueDate TEXT, IssueFile TEXT)')
                 addedIssues = True
             try:
                 c.execute('SELECT IssueID from issues')
@@ -1501,7 +1510,7 @@ def dbcheck():
                     if books:
                         logger.info('Adding series to existing books')
                         for book in books:
-                            series,seriesNum = bookSeries(book["BookName"])
+                            series, seriesNum = bookSeries(book["BookName"])
                             if series:
                                 controlValueDict = {"BookID": book["BookID"]}
                                 newValueDict = {
@@ -1551,7 +1560,8 @@ def dbcheck():
                 c.execute('SELECT BookID from pastissues')
             except sqlite3.OperationalError:
                 logger.info('Moving magazine past issues into new table')
-                c.execute('CREATE TABLE pastissues AS SELECT * FROM wanted WHERE Status="Skipped" AND length(AuxInfo) > 0')
+                c.execute(
+                    'CREATE TABLE pastissues AS SELECT * FROM wanted WHERE Status="Skipped" AND length(AuxInfo) > 0')
                 c.execute('DELETE FROM wanted WHERE Status="Skipped" AND length(AuxInfo) > 0')
 
         if db_version < 4:
@@ -1562,7 +1572,8 @@ def dbcheck():
                 c.execute('ALTER TABLE stats ADD COLUMN duplicates INT')
 
         if db_version < 5:
-            issues = myDB.select('SELECT IssueID,IssueDate from issues WHERE length(IssueDate) < 4 and length(IssueDate) > 0')
+            issues = myDB.select(
+                'SELECT IssueID,IssueDate from issues WHERE length(IssueDate) < 4 and length(IssueDate) > 0')
             if issues:
                 logger.info('Updating issues table to hold 4 digit issue numbers')
                 for issue in issues:
@@ -1571,7 +1582,8 @@ def dbcheck():
                     issuedate = issuedate.zfill(4)
                     myDB.action('UPDATE issues SET IssueDate="%s" WHERE IssueID="%s"' % (issuedate, issueid))
 
-            mags = myDB.select('SELECT Title,IssueDate from magazines WHERE length(IssueDate) < 4 and length(IssueDate) > 0')
+            mags = myDB.select(
+                'SELECT Title,IssueDate from magazines WHERE length(IssueDate) < 4 and length(IssueDate) > 0')
             if mags:
                 logger.info('Updating magazines table to match')
                 for mag in mags:

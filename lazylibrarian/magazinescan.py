@@ -245,4 +245,5 @@ def magazineScan():
     isscount = myDB.action("select count(*) from issues").fetchone()
 
     logger.info("Magazine scan complete, found %s magazine%s, %s issue%s" %
-        (magcount['count(*)'], plural(magcount['count(*)']), isscount['count(*)'], plural(isscount['count(*)'])))
+                (magcount['count(*)'], plural(magcount['count(*)']),
+                 isscount['count(*)'], plural(isscount['count(*)'])))

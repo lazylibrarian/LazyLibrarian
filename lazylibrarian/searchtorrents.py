@@ -27,6 +27,7 @@ def cron_search_tor_book():
     threading.currentThread().name = "CRON-SEARCHTOR"
     search_tor_book()
 
+
 def search_tor_book(books=None, reset=False):
     threadname = threading.currentThread().name
     if "Thread-" in threadname:
@@ -41,7 +42,8 @@ def search_tor_book(books=None, reset=False):
 
     if books is None:
         # We are performing a backlog search
-        searchbooks = myDB.select('SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books WHERE Status="Wanted" order by BookAdded desc')
+        searchbooks = myDB.select(
+            'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books WHERE Status="Wanted" order by BookAdded desc')
     else:
         # The user has added a new book
         searchbooks = []
@@ -63,7 +65,12 @@ def search_tor_book(books=None, reset=False):
         if searchbook['BookSub']:
             searchterm = searchterm + ': ' + searchbook['BookSub']
 
-        searchlist.append({"bookid": searchbook['BookID'], "bookName": searchbook['BookName'], "bookSub": searchbook['BookSub'], "authorName": searchbook['AuthorName'], "searchterm": searchterm})
+        searchlist.append(
+            {"bookid": searchbook['BookID'],
+             "bookName": searchbook['BookName'],
+             "bookSub": searchbook['BookSub'],
+             "authorName": searchbook['AuthorName'],
+             "searchterm": searchterm})
 
     tor_count = 0
     for book in searchlist:
@@ -102,8 +109,6 @@ def processResultList(resultlist, book, searchtype):
                 ',': ' ', '*': '', '(': '', ')': '', '[': '', ']': '', '#': '', '0': '', '1': '', '2': '',
                 '3': '', '4': '', '5': '', '6': '', '7': '', '8': '', '9': '', '\'': '', ':': '', '!': '',
                 '-': ' ', '\s\s': ' '}
-                # ' the ': ' ', ' a ': ' ', ' and ': ' ', ' to ': ' ', ' of ': ' ',
-                # ' for ': ' ', ' my ': ' ', ' in ': ' ', ' at ': ' ', ' with ': ' '}
 
     dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
            ',': '', '*': '', ':': '', ';': ''}
@@ -127,14 +132,14 @@ def processResultList(resultlist, book, searchtype):
         rejected = False
 
         already_failed = myDB.action('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' %
-                                    tor_url).fetchone()
+                                     tor_url).fetchone()
         if already_failed:
             logger.debug("Rejecting %s, blacklisted at %s" % (torTitle, already_failed['NZBprov']))
             rejected = True
 
         if not rejected:
             for word in reject_list:
-                if word in torTitle.lower() and not word in author.lower() and not word in title.lower():
+                if word in torTitle.lower() and word not in author.lower() and word not in title.lower():
                     rejected = True
                     logger.debug("Rejecting %s, contains %s" % (torTitle, word))
                     break
@@ -165,7 +170,7 @@ def processResultList(resultlist, book, searchtype):
                 "Status": "Skipped"
             }
 
-            score = (torBook_match + torAuthor_match)/2  # as a percentage
+            score = (torBook_match + torAuthor_match) / 2  # as a percentage
             # lose a point for each extra word in the title so we get the closest match
             words = len(getList(torTitle))
             words -= len(getList(author))
@@ -182,11 +187,11 @@ def processResultList(resultlist, book, searchtype):
 
         if score < match_ratio:
             logger.info(u'Nearest TOR match (%s%%): %s using %s search for %s %s' %
-                (score, nzb_Title, searchtype, author, title))
+                        (score, nzb_Title, searchtype, author, title))
             return False
 
         logger.info(u'Best TOR match (%s%%): %s using %s search' %
-            (score, nzb_Title, searchtype))
+                    (score, nzb_Title, searchtype))
 
         snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
                                     newValueDict["BookID"]).fetchone()
@@ -196,7 +201,7 @@ def processResultList(resultlist, book, searchtype):
         else:
             myDB.upsert("wanted", newValueDict, controlValueDict)
             snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
-                                           newValueDict["NZBtitle"], controlValueDict["NZBurl"])
+                                       newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             if snatch:
                 notify_snatch(newValueDict["NZBtitle"] + ' at ' + now())
                 scheduleJob(action='Start', target='processDir')
@@ -214,7 +219,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         lazylibrarian.TOR_DOWNLOADER_UTORRENT or
         lazylibrarian.TOR_DOWNLOADER_QBITTORRENT or
         lazylibrarian.TOR_DOWNLOADER_BLACKHOLE or
-        lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
+            lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
 
         if tor_url and tor_url.startswith('magnet'):
             torrent = tor_url  # allow magnet link to write to blackhole and hash to utorrent
@@ -280,20 +285,20 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             logger.debug('Torrent file saved: %s' % tor_title)
             download = True
 
-        if  (lazylibrarian.TOR_DOWNLOADER_UTORRENT and lazylibrarian.UTORRENT_HOST):
+        if (lazylibrarian.TOR_DOWNLOADER_UTORRENT and lazylibrarian.UTORRENT_HOST):
             logger.debug("Sending %s to Utorrent" % tor_title)
             hash = CalcTorrentHash(torrent)
             download = utorrent.addTorrent(tor_url, hash)
 
-        if  (lazylibrarian.TOR_DOWNLOADER_QBITTORRENT and lazylibrarian.QBITTORRENT_HOST):
+        if (lazylibrarian.TOR_DOWNLOADER_QBITTORRENT and lazylibrarian.QBITTORRENT_HOST):
             logger.debug("Sending %s to qbittorrent" % tor_title)
             download = qbittorrent.addTorrent(tor_url)
 
-        if  (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION and lazylibrarian.TRANSMISSION_HOST):
+        if (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION and lazylibrarian.TRANSMISSION_HOST):
             logger.debug("Sending %s to Transmission" % tor_title)
             download = transmission.addTorrent(tor_url)
 
-        if  (lazylibrarian.TOR_DOWNLOADER_DELUGE and lazylibrarian.DELUGE_HOST):
+        if (lazylibrarian.TOR_DOWNLOADER_DELUGE and lazylibrarian.DELUGE_HOST):
             logger.debug("Sending %s to Deluge" % tor_title)
             if not lazylibrarian.DELUGE_USER:
                 # no username, talk to the webui
@@ -301,9 +306,9 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             else:
                 # have username, talk to the daemon
                 client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
-                                     int(lazylibrarian.DELUGE_PORT),
-                                     lazylibrarian.DELUGE_USER,
-                                     lazylibrarian.DELUGE_PASS)
+                                         int(lazylibrarian.DELUGE_PORT),
+                                         lazylibrarian.DELUGE_USER,
+                                         lazylibrarian.DELUGE_PASS)
                 client.connect()
                 args = {"name": tor_title}
                 download = client.call('core.add_torrent_url', tor_url, args)

@@ -11,12 +11,13 @@ from lazylibrarian.formatter import age, today, plural, cleanName
 from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL
 import lib.feedparser as feedparser
 
+
 def get_capabilities(provider):
     """
     query provider for caps if none loaded yet, or if config entry is too old and not set manually.
     """
     match = False
-    if len(provider['UPDATED']) == 10: # any stored values?
+    if len(provider['UPDATED']) == 10:  # any stored values?
         match = True
         if (age(provider['UPDATED']) > lazylibrarian.CACHE_AGE) and not provider['MANUAL']:
             logger.debug('Stored capabilities for %s are too old' % provider['HOST'])
@@ -60,7 +61,7 @@ def get_capabilities(provider):
                 if len(data):
                     logger.debug(u"Parsing xml for capabilities of %s" % URL)
 
-                    #############################################################################
+                    #
                     # book search isn't mentioned in the caps xml returned by
                     # nzbplanet,jackett,oznzb,usenet-crawler, so we can't use it as a test
                     # but the newznab+ ones usually support t=book and categories in 7000 range
@@ -71,7 +72,7 @@ def get_capabilities(provider):
                     # consistent, and subcat can be just subcat or category/subcat subcat > lang
                     # eg "Magazines" "Mags" or "Books/Magazines" "Mags > French"
                     # Load all languages for now as we don't know which the user might want
-                    #############################################################################
+                    #
                     #
                     #  set some defaults
                     #
@@ -91,7 +92,7 @@ def get_capabilities(provider):
                     for cat in categories:
                         if 'name' in cat.attrib:
                             if cat.attrib['name'].lower() == 'books':
-                                bookcat = cat.attrib['id'] # keep main bookcat for later
+                                bookcat = cat.attrib['id']  # keep main bookcat for later
                                 provider['BOOKCAT'] = bookcat
                                 provider['MAGCAT'] = ''
                                 if provider['BOOKCAT'] == '7000':
@@ -119,10 +120,10 @@ def get_capabilities(provider):
                                 subcats = cat.getiterator('subcat')
                                 for subcat in subcats:
                                     if 'ebook' in subcat.attrib['name'].lower():
-                                        provider['BOOKCAT'] = "%s,%s" % (provider['BOOKCAT'],subcat.attrib['id'])
-                                    if  'magazines' in subcat.attrib['name'].lower() or 'mags' in subcat.attrib['name'].lower():
+                                        provider['BOOKCAT'] = "%s,%s" % (provider['BOOKCAT'], subcat.attrib['id'])
+                                    if 'magazines' in subcat.attrib['name'].lower() or 'mags' in subcat.attrib['name'].lower():
                                         if provider['MAGCAT']:
-                                            provider['MAGCAT'] = "%s,%s" % (provider['MAGCAT'],subcat.attrib['id'])
+                                            provider['MAGCAT'] = "%s,%s" % (provider['MAGCAT'], subcat.attrib['id'])
                                         else:
                                             provider['MAGCAT'] = subcat.attrib['id']
                                 # if no specific magazine subcategory, use books
@@ -135,6 +136,7 @@ def get_capabilities(provider):
             else:
                 logger.warn(u"Unable to get capabilities for %s: Got %s" % (URL, resp.getcode()))
     return provider
+
 
 def IterateOverNewzNabSites(book=None, searchType=None):
     """
@@ -373,11 +375,15 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
                         while count < len(lazylibrarian.NEWZNAB_PROV):
                             if lazylibrarian.NEWZNAB_PROV[count]['HOST'] == provider['HOST']:
                                 if str(provider['MANUAL']) == 'False':
-                                    logger.error("Disabled booksearch=%s for %s" % (provider['BOOKSEARCH'],provider['HOST']))
+                                    logger.error(
+                                        "Disabled booksearch=%s for %s" %
+                                        (provider['BOOKSEARCH'], provider['HOST']))
                                     lazylibrarian.NEWZNAB_PROV[count]['BOOKSEARCH'] = ""
                                     lazylibrarian.config_write()
                                 else:
-                                    logger.error("Unable to disable booksearch for %s [MANUAL=%s]" % (provider['HOST'], provider['MANUAL']))
+                                    logger.error(
+                                        "Unable to disable booksearch for %s [MANUAL=%s]" %
+                                        (provider['HOST'], provider['MANUAL']))
                             count += 1
             else:
                 resultxml = rootxml.getiterator('item')
@@ -412,7 +418,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
         if bookname.startswith(authorname) and len(bookname) > len(authorname):
             # books like "Spike Milligan In his own words"
             # where we don't want to look for "Spike Milligan Spike Milligan In his own words"
-            bookname = bookname[len(authorname)+1:]
+            bookname = bookname[len(authorname) + 1:]
 
         if provider['BOOKSEARCH'] and provider['BOOKCAT']:  # if specific booksearch, use it
             params = {
@@ -422,7 +428,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "author": authorname,
                 "cat": provider['BOOKCAT']
             }
-        elif provider['GENERALSEARCH'] and provider['BOOKCAT']: # if not, try general search
+        elif provider['GENERALSEARCH'] and provider['BOOKCAT']:  # if not, try general search
             params = {
                 "t": provider['GENERALSEARCH'],
                 "apikey": api_key,
@@ -444,7 +450,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
         if bookname.startswith(authorname) and len(bookname) > len(authorname):
             # books like "Spike Milligan in his own words"
             # where we don't want to look for "Spike Milligan Spike Milligan in his own words"
-            bookname = bookname[len(authorname)+1:]
+            bookname = bookname[len(authorname) + 1:]
         if '(' in bookname:
             bookname = bookname.split('(')[0].strip()
         if provider['BOOKSEARCH'] and provider['BOOKCAT']:  # if specific booksearch, use it
@@ -473,12 +479,12 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
             }
         elif provider['GENERALSEARCH'] and provider['MAGCAT']:
             params = {
-               "t": provider['GENERALSEARCH'],
-               "apikey": api_key,
-               "cat": provider['MAGCAT'],
-               "q": book['searchterm'],
-               "extended": provider['EXTENDED'],
-           }
+                "t": provider['GENERALSEARCH'],
+                "apikey": api_key,
+                "cat": provider['MAGCAT'],
+                "q": book['searchterm'],
+                "extended": provider['EXTENDED'],
+            }
     else:
         if provider['GENERALSEARCH']:
             params = {
@@ -497,6 +503,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
 
 
 def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None, host=None, searchMode=None):
+    """
     # searchType has multiple query params for t=, which return different results sets.
     # books have a dedicated check, so will use that.
     # mags don't so will have more generic search term.
@@ -586,7 +593,7 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None,
     # <torznab:attr name="minimumratio" value="1" />
     # <torznab:attr name="minimumseedtime" value="172800" />
     # </item>
-
+    """
     resultFields = None
 
     nzbtitle = nzbdetails[0].text  # title is currently the same field for all searchtypes

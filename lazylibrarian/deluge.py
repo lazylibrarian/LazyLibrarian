@@ -25,7 +25,7 @@
 from __future__ import unicode_literals
 
 from lazylibrarian import logger
-#from headphones import request
+# from headphones import request
 
 import time
 import re
@@ -48,13 +48,13 @@ def addTorrent(link, data=None):
         if link and link.startswith('magnet:'):
             logger.debug('Deluge: Got a magnet link: %s' % link)
             result = {'type': 'magnet',
-                        'url': link}
+                      'url': link}
             retid = _add_torrent_magnet(result)
 
         elif link and (link.startswith('http://') or link.startswith('https://')):
             logger.debug('Deluge: Got a URL: %s' % link)
             result = {'type': 'url',
-                        'url': link}
+                      'url': link}
             retid = _add_torrent_url(result)
 
             """
@@ -121,8 +121,8 @@ def addTorrent(link, data=None):
                     name = name[:-len('.torrent')]
             logger.debug('Deluge: Sending Deluge torrent with name %s and content [%s...]' % (name, torrentfile[:40]))
             result = {'type': 'torrent',
-                        'name': name,
-                        'content': torrentfile}
+                      'name': name,
+                      'content': torrentfile}
             retid = _add_torrent_file(result)
 
         else:
@@ -201,7 +201,7 @@ def removeTorrent(torrentid, remove_data=False):
                             "params": [
                                 torrentid,
                                 remove_data
-                                ],
+                            ],
                             "id": 25})
     response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
     result = json.loads(response.text)['result']
@@ -338,7 +338,8 @@ def _add_torrent_file(result):
     try:
         # content is torrent file contents that needs to be encoded to base64
         post_data = json.dumps({"method": "core.add_torrent_file",
-                                "params": [result['name'] + '.torrent', b64encode(result['content'].encode('utf8')), {}],
+                                "params":
+                                    [result['name'] + '.torrent', b64encode(result['content'].encode('utf8')), {}],
                                 "id": 2})
         response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
         result['hash'] = json.loads(response.text)['result']
@@ -462,6 +463,7 @@ def setTorrentPause(result):
         return not json.loads(response.text)['error']
 
     return True
+
 
 def checkLink():
     logger.debug('Deluge: Checking connection')

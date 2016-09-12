@@ -3,6 +3,7 @@ import lazylibrarian
 from lazylibrarian import logger, database, importer
 from lazylibrarian.formatter import plural
 
+
 def dbUpdate(forcefull=False):
 
     myDB = database.DBConnection()

@@ -7,6 +7,7 @@ import os
 import string
 import unicodedata
 
+
 def bookSeries(bookname):
     """
     Try to get a book series/seriesNum from a bookname, or return None
@@ -50,6 +51,7 @@ def bookSeries(bookname):
         series = series[:-5]
 
     return series, seriesNum
+
 
 def next_run(when_run):
     now = time.time()
@@ -103,6 +105,7 @@ def age(histdate):
     except ValueError:
         return 0
 
+
 def nzbdate2format(nzbdate):
     mmname = nzbdate.split()[2].zfill(2)
     day = nzbdate.split()[1]
@@ -150,13 +153,14 @@ def datecompare(nzbdate, control_date):
     dtage = date1 - date2
     return dtage.days
 
+
 def plural(var):
     """
     Convenience function for log messages, if var = 1 return ''
     if var is anything else return 's'
     so book -> books, seeder -> seeders  etc
     """
-    if check_int(var,0) == 1:
+    if check_int(var, 0) == 1:
         return ''
     return 's'
 
@@ -203,6 +207,7 @@ def getList(st):
         return list(my_splitter)
     return []
 
+
 def safe_unicode(obj, *args):
     """ return the unicode representation of obj """
     try:
@@ -212,6 +217,7 @@ def safe_unicode(obj, *args):
         ascii_text = str(obj).encode('string_escape')
         return unicode(ascii_text)
 
+
 def cleanName(name):
     validNameChars = u"-_.() %s%s" % (string.ascii_letters, string.digits)
     try:
@@ -220,9 +226,11 @@ def cleanName(name):
         cleanedName = unicodedata.normalize('NFKD', name.decode(lazylibrarian.SYS_ENCODING)).encode('ASCII', 'ignore')
     return u''.join(c for c in cleanedName if c in validNameChars)
 
+
 def unaccented(str_or_unicode):
     return unaccented_str(str_or_unicode).decode(lazylibrarian.SYS_ENCODING)
     # returns unicode
+
 
 def unaccented_str(str_or_unicode):
     try:
@@ -237,6 +245,7 @@ def unaccented_str(str_or_unicode):
     # now get rid of any other non-ascii
     return stripped.encode('ASCII', 'ignore')
     # returns str
+
 
 def replace_all(text, dic):
     for i, j in dic.iteritems():

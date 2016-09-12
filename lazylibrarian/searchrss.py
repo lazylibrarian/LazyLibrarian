@@ -14,9 +14,11 @@ from lazylibrarian.searchtorrents import TORDownloadMethod
 from lazylibrarian.searchnzb import NZBDownloadMethod
 from lazylibrarian.notifiers import notify_snatch
 
+
 def cron_search_rss_book():
     threading.currentThread().name = "CRON-SEARCHRSS"
     search_rss_book()
+
 
 def search_rss_book(books=None, reset=False):
     threadname = threading.currentThread().name
@@ -33,7 +35,8 @@ def search_rss_book(books=None, reset=False):
 
     if books is None:
         # We are performing a backlog search
-        searchbooks = myDB.select('SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books WHERE Status="Wanted" order by BookAdded desc')
+        searchbooks = myDB.select(
+            'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books WHERE Status="Wanted" order by BookAdded desc')
     else:
         # The user has added a new book
         searchbooks = []
@@ -94,8 +97,6 @@ def processResultList(resultlist, author, title, book, searchtype):
                 ',': ' ', '*': '', '(': '', ')': '', '[': '', ']': '', '#': '', '0': '', '1': '', '2': '',
                 '3': '', '4': '', '5': '', '6': '', '7': '', '8': '', '9': '', '\'': '', ':': '', '!': '',
                 '-': ' ', '\s\s': ' '}
-                # ' the ': ' ', ' a ': ' ', ' and ': ' ', ' to ': ' ', ' of ': ' ',
-                # ' for ': ' ', ' my ': ' ', ' in ': ' ', ' at ': ' ', ' with ': ' '}
 
     match_ratio = int(lazylibrarian.MATCH_RATIO)
     reject_list = getList(lazylibrarian.REJECT_WORDS)
@@ -115,14 +116,14 @@ def processResultList(resultlist, author, title, book, searchtype):
         rejected = False
 
         already_failed = myDB.action('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' %
-                                    tor_url).fetchone()
+                                     tor_url).fetchone()
         if already_failed:
             logger.debug("Rejecting %s, blacklisted at %s" % (torTitle, already_failed['NZBprov']))
             rejected = True
 
         if not rejected:
             for word in reject_list:
-                if word in torTitle.lower() and not word in author.lower() and not word in book.lower():
+                if word in torTitle.lower() and word not in author.lower() and word not in book.lower():
                     rejected = True
                     logger.debug("Rejecting %s, contains %s" % (torTitle, word))
                     break
@@ -156,7 +157,7 @@ def processResultList(resultlist, author, title, book, searchtype):
                 "Status": "Skipped"
             }
 
-            score = (tor_Title_match + tor_Author_match)/2  # as a percentage
+            score = (tor_Title_match + tor_Author_match) / 2  # as a percentage
             # lose a point for each extra word in the title so we get the closest match
             words = len(getList(torTitle))
             words -= len(getList(author))
@@ -173,11 +174,11 @@ def processResultList(resultlist, author, title, book, searchtype):
 
         if score < match_ratio:
             logger.debug(u'Nearest RSS match (%s%%): %s using %s search for %s %s' %
-                (score, nzb_Title, searchtype, author, title))
+                         (score, nzb_Title, searchtype, author, title))
             return False
 
         logger.info(u'Best RSS match (%s%%): %s using %s search' %
-            (score, nzb_Title, searchtype))
+                    (score, nzb_Title, searchtype))
 
         snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
                                     newValueDict["BookID"]).fetchone()
@@ -209,5 +210,5 @@ def processResultList(resultlist, author, title, book, searchtype):
                 return True + True  # we found it
     else:
         logger.debug("No RSS found for " + (book["authorName"] + ' ' +
-                book['bookName']).strip())
+                                            book['bookName']).strip())
     return False

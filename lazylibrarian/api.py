@@ -24,7 +24,7 @@ from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs
 from lazylibrarian.formatter import today
 from lazylibrarian.updater import dbUpdate
 from lazylibrarian.magazinescan import magazineScan
-from lazylibrarian.csv import  import_CSV, export_CSV
+from lazylibrarian.csv import import_CSV, export_CSV
 from lazylibrarian.postprocess import processDir, processAlternate
 from lazylibrarian.librarysync import LibraryScan
 from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, getBookCover, getAuthorImage, getAuthorImages
@@ -34,62 +34,63 @@ import json
 import threading
 import Queue
 
-cmd_dict = {'help':'list available commands. ' + \
-            'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' + \
+cmd_dict = {'help': 'list available commands. ' +
+            'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +
             'otherwise they return OK straight away and run in the background',
-            'getIndex':'list all authors',
-            'getAuthor':'&id= get author and list their books from AuthorID',
-            'getAuthorImage':'&name= get image for this author',
-            'getAuthorImages':'get images for all authors without one',
-            'getWanted':'list wanted books',
-            'getSnatched':'list snatched books',
-            'getHistory':'list history',
-            'getLogs':'show current log',
-            'clearLogs':'clear current log',
-            'getMagazines':'list magazines',
-            'getIssues':'&name= list issues for named magazine',
-            'forceMagSearch':'[&wait] search for all wanted magazines',
-            'forceBookSearch':'[&wait] search for all wanted books',
-            'forceProcess':'process books/mags in download dir',
-            'pauseAuthor':'&id= pause author by AuthorID',
-            'resumeAuthor':'&id= resume author by AuthorID',
-            'ignoreAuthor':'&id= ignore author by AuthorID',
-            'unignoreAuthor':'&id= unignore author by AuthorID',
-            'refreshAuthor':'&name= refresh author by name',
-            'forceActiveAuthorsUpdate':'[&wait] refresh all active authors and reload their books',
-            'forceLibraryScan':'[&wait] refresh whole book library',
-            'forceMagazineScan':'[&wait] refresh whole magazine library',
-            'getVersion':'show git version',
-            'shutdown':'stop lazylibrarian',
-            'restart':'restart lazylibrarian',
-            'update':'update lazylibrarian',
-            'findAuthor':'&name= search goodreads/googlebooks for named author',
-            'findBook':'&name= search goodreads/googlebooks for named book',
-            'moveBooks':'&fromname= &toname= move all books from one author to another by AuthorName',
-            'moveBook':'&id= &toid= move one book to new author by BookID and AuthorID',
-            'addAuthor':'&name= add author to database by name',
-            'removeAuthor':'&id= removee author from database by AuthorID',
-            'addMagazine':'&name= add magazine to database by name',
-            'removeMagazine':'&name= remove magazine and issues from database by name',
-            'queueBook':'&id= mark book as Wanted',
-            'unqueueBook':'&id= mark book as Skipped',
-            'readCFG':'&name=&group= read value of config variable "name" in section "group"',
-            'writeCFG':'&name=&group=&value= set config variable "name" in section "group" to value',
-            'loadCFG':'reload config from file',
-            'getBookCover':'&id= fetch a link to a cover from cache/librarything/goodreads/google for a BookID',
-            'getAllBooks':'list all books in the database',
-            'searchBook':'&id= [&wait] search for one book by BookID',
-            'showJobs':'show status of running jobs',
-            'restartJobs':'reschedule/restart background jobs',
-            'getWorkSeries':'&id= Get series & seriesNum from Librarything BookWork using BookID',
-            'getWorkPage':'&id= Get url of Librarything BookWork using BookID',
-            'getBookCovers':'[&wait] Check all books for cached cover and download if missing',
-            'cleanCache':'[&wait] Clean unused/old files from the LazyLibrarian caches',
-            'setWorkPages':'[&wait] Set the WorkPages links in the database',
-            'importAlternate':'[&wait] Import books from alternate folder and any subfolders',
-            'importCSVwishlist':'[&wait] Import a CSV wishlist',
-            'exportCSVwishlist':'[&wait] Export a CSV wishlist'
+            'getIndex': 'list all authors',
+            'getAuthor': '&id= get author and list their books from AuthorID',
+            'getAuthorImage': '&name= get image for this author',
+            'getAuthorImages': 'get images for all authors without one',
+            'getWanted': 'list wanted books',
+            'getSnatched': 'list snatched books',
+            'getHistory': 'list history',
+            'getLogs': 'show current log',
+            'clearLogs': 'clear current log',
+            'getMagazines': 'list magazines',
+            'getIssues': '&name= list issues for named magazine',
+            'forceMagSearch': '[&wait] search for all wanted magazines',
+            'forceBookSearch': '[&wait] search for all wanted books',
+            'forceProcess': 'process books/mags in download dir',
+            'pauseAuthor': '&id= pause author by AuthorID',
+            'resumeAuthor': '&id= resume author by AuthorID',
+            'ignoreAuthor': '&id= ignore author by AuthorID',
+            'unignoreAuthor': '&id= unignore author by AuthorID',
+            'refreshAuthor': '&name= refresh author by name',
+            'forceActiveAuthorsUpdate': '[&wait] refresh all active authors and reload their books',
+            'forceLibraryScan': '[&wait] refresh whole book library',
+            'forceMagazineScan': '[&wait] refresh whole magazine library',
+            'getVersion': 'show git version',
+            'shutdown': 'stop lazylibrarian',
+            'restart': 'restart lazylibrarian',
+            'update': 'update lazylibrarian',
+            'findAuthor': '&name= search goodreads/googlebooks for named author',
+            'findBook': '&name= search goodreads/googlebooks for named book',
+            'moveBooks': '&fromname= &toname= move all books from one author to another by AuthorName',
+            'moveBook': '&id= &toid= move one book to new author by BookID and AuthorID',
+            'addAuthor': '&name= add author to database by name',
+            'removeAuthor': '&id= removee author from database by AuthorID',
+            'addMagazine': '&name= add magazine to database by name',
+            'removeMagazine': '&name= remove magazine and issues from database by name',
+            'queueBook': '&id= mark book as Wanted',
+            'unqueueBook': '&id= mark book as Skipped',
+            'readCFG': '&name=&group= read value of config variable "name" in section "group"',
+            'writeCFG': '&name=&group=&value= set config variable "name" in section "group" to value',
+            'loadCFG': 'reload config from file',
+            'getBookCover': '&id= fetch a link to a cover from cache/librarything/goodreads/google for a BookID',
+            'getAllBooks': 'list all books in the database',
+            'searchBook': '&id= [&wait] search for one book by BookID',
+            'showJobs': 'show status of running jobs',
+            'restartJobs': 'reschedule/restart background jobs',
+            'getWorkSeries': '&id= Get series & seriesNum from Librarything BookWork using BookID',
+            'getWorkPage': '&id= Get url of Librarything BookWork using BookID',
+            'getBookCovers': '[&wait] Check all books for cached cover and download if missing',
+            'cleanCache': '[&wait] Clean unused/old files from the LazyLibrarian caches',
+            'setWorkPages': '[&wait] Set the WorkPages links in the database',
+            'importAlternate': '[&wait] Import books from alternate folder and any subfolders',
+            'importCSVwishlist': '[&wait] Import a CSV wishlist',
+            'exportCSVwishlist': '[&wait] Export a CSV wishlist'
             }
+
 
 class Api(object):
 
@@ -149,15 +150,15 @@ class Api(object):
         if self.data == 'OK':
             args = []
             if 'name' in self.kwargs:
-               args.append({"name": self.kwargs['name']})
+                args.append({"name": self.kwargs['name']})
             if 'id' in self.kwargs:
-               args.append({"id": self.kwargs['id']})
+                args.append({"id": self.kwargs['id']})
             if 'group' in self.kwargs:
-               args.append({"group": self.kwargs['group']})
+                args.append({"group": self.kwargs['group']})
             if 'value' in self.kwargs:
-               args.append({"value": self.kwargs['value']})
+                args.append({"value": self.kwargs['value']})
             if 'wait' in self.kwargs:
-               args.append({"wait": "True"})
+                args.append({"wait": "True"})
             if args == []:
                 args = ''
             logger.info('Received API command: %s %s' % (self.cmd, args))
@@ -228,7 +229,6 @@ class Api(object):
 
         self.data = {'author': author, 'books': books}
 
-
     def _getMagazines(self, **kwargs):
         self.data = self._dic_from_query('SELECT * from magazines order by Title COLLATE NOCASE')
 
@@ -253,7 +253,6 @@ class Api(object):
         self.data = {
             'magazine': magazine, 'issues': issues}
 
-
     def _getBook(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
@@ -264,7 +263,6 @@ class Api(object):
         book = self._dic_from_query(
             'SELECT * from books WHERE BookID="' + self.id + '"')
         self.data = {'book': book}
-
 
     def _queueBook(self, **kwargs):
         if 'id' not in kwargs:
@@ -522,7 +520,9 @@ class Api(object):
             if not authordata:
                 self.data = "No destination author [%s] in the database" % kwargs['toid']
             else:
-                bookdata = myDB.action('SELECT AuthorID, BookName from books where BookID="%s"' % kwargs['id']).fetchone()
+                bookdata = myDB.action(
+                    'SELECT AuthorID, BookName from books where BookID="%s"' %
+                    kwargs['id']).fetchone()
                 if not bookdata:
                     self.data = "No bookid [%s] in the database" % kwargs['id']
                 else:
@@ -550,15 +550,21 @@ class Api(object):
         try:
             myDB = database.DBConnection()
 
-            fromhere = myDB.action('SELECT bookid,authorid from books where authorname="%s"' % kwargs['fromname']).fetchall()
-            tohere = myDB.action('SELECT authorid, authorlink from authors where authorname="%s"' % kwargs['toname']).fetchone()
+            fromhere = myDB.action(
+                'SELECT bookid,authorid from books where authorname="%s"' %
+                kwargs['fromname']).fetchall()
+            tohere = myDB.action(
+                'SELECT authorid, authorlink from authors where authorname="%s"' %
+                kwargs['toname']).fetchone()
             if not len(fromhere):
                 self.data = "No books by [%s] in the database" % kwargs['fromname']
             else:
                 if not tohere:
                     self.data = "No destination author [%s] in the database" % kwargs['toname']
                 else:
-                    myDB.action('UPDATE books SET authorid="%s", authorname="%s", authorlink="%s" where authorname="%s"' % (tohere[0], kwargs['toname'], tohere[1], kwargs['fromname']))
+                    myDB.action(
+                        'UPDATE books SET authorid="%s", authorname="%s", authorlink="%s" where authorname="%s"' %
+                        (tohere[0], kwargs['toname'], tohere[1], kwargs['fromname']))
                     self.data = "Moved %s books from %s to %s" % (len(fromhere), kwargs['fromname'], kwargs['toname'])
                     importer.update_totals(fromhere[0][1])    # we moved from here
                     importer.update_totals(tohere[0])  # to here

@@ -149,6 +149,7 @@ class utorrentclient(object):
             logger.debug('URL: %s' % url)
             logger.debug('uTorrent webUI raised the following error: ' + str(err))
 
+
 def checkLink():
     """ Check we can talk to utorrent"""
     try:
@@ -163,6 +164,7 @@ def checkLink():
         return "uTorrent login FAILED\nCheck debug log"
     except Exception as err:
         return "uTorrent login FAILED: %s" % str(err)
+
 
 def labelTorrent(hash):
     label = lazylibrarian.UTORRENT_LABEL

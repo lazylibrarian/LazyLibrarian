@@ -8,6 +8,7 @@ import lazylibrarian
 
 from lazylibrarian import logger, database, formatter
 
+
 def checkLink():
     # connection test, check host/port
     auth = SABnzbd(nzburl='auth')
@@ -20,7 +21,7 @@ def checkLink():
     # check category exists
     if lazylibrarian.SAB_CAT:
         catlist = formatter.getList(cats)
-        if not lazylibrarian.SAB_CAT in catlist:
+        if lazylibrarian.SAB_CAT not in catlist:
             msg = "SABnzbd: Unknown category [%s]\n" % lazylibrarian.SAB_CAT
             if catlist:
                 msg += "Valid categories:\n"
@@ -30,6 +31,7 @@ def checkLink():
                 msg += "SABnzbd seems to have no categories set"
             return msg
     return "SABnzbd connection successful"
+
 
 def SABnzbd(title=None, nzburl=None):
 

@@ -9,6 +9,7 @@ from lazylibrarian.cache import fetchURL
 import lib.feedparser as feedparser
 import urlparse
 
+
 def findrows(lines, startrow, endrow):
     """ given an array of lines from a webpage, find the data table
         and return an array of start_line,end_line for each row in the table
@@ -33,6 +34,7 @@ def findrows(lines, startrow, endrow):
             row = []
         current += 1
     return rows
+
 
 def url_fix(s, charset='utf-8'):
     if isinstance(s, unicode):
@@ -98,13 +100,14 @@ def TPB(book=None):
                             except IndexError:
                                 title = None
                         elif 'class="detDesc"' in line:
-                            #try:
+                            # try:
                             #    age = line.split('class="detDesc"')[1].split('Uploaded ')[1].split(',')[0].decode('ascii','ignore')
-                		    #   age = str(age[:5]+'-'+age[5:])
-                            #except IndexError:
+                                    #   age = str(age[:5]+'-'+age[5:])
+                            # except IndexError:
                             #    age = None
                             try:
-                                size = line.split('class="detDesc"')[1].split('Size ')[1].split('iB')[0].decode('ascii', 'ignore')
+                                size = line.split('class="detDesc"')[1].split(
+                                    'Size ')[1].split('iB')[0].decode('ascii', 'ignore')
                                 try:
                                     mult = 1
                                     if 'K' in size:
@@ -112,7 +115,7 @@ def TPB(book=None):
                                         mult = 1024
                                     if 'M' in size:
                                         size = size.split('M')[0]
-                                        mult = 1024*1024
+                                        mult = 1024 * 1024
                                     size = int(float(size) * mult)
                                 except ValueError:
                                     size = 0
@@ -121,12 +124,12 @@ def TPB(book=None):
                         cur += 1
 
                     try:
-                        seeders = lines[fin-2].split('</td>')[0].split('>')[1]
+                        seeders = lines[fin - 2].split('</td>')[0].split('>')[1]
                     except IndexError:
                         seeders = 0
-                    #try:
+                    # try:
                     #    leechers = lines[fin-1].split('</td>')[0].split('>')[1]
-                    #except IndexError:
+                    # except IndexError:
                     #    leechers = 0
                     if magnet and minimumseeders < seeders:
                         # no point in asking for magnet link if not enough seeders
@@ -146,7 +149,7 @@ def TPB(book=None):
                                     except IndexError:
                                         magnet = None
 
-                    if  minimumseeders < seeders:
+                    if minimumseeders < seeders:
                         if not magnet or not title:
                             logger.debug('No magnet or title found')
                         else:
@@ -158,15 +161,18 @@ def TPB(book=None):
                                 'tor_size': str(size),
                             })
                             logger.debug('Found %s. Size: %s' % (title, size))
-                    else :
+                    else:
                         logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
                     rownum += 1
 
             except Exception as e:
                 logger.error(u"An unknown error occurred in the %s parser: %s" % (provider, str(e)))
 
-    logger.debug(u"Found %i result%s from %s for %s" % (len(results), plural(len(results)), provider, book['searchterm']))
+    logger.debug(
+        u"Found %i result%s from %s for %s" %
+        (len(results), plural(len(results)), provider, book['searchterm']))
     return results
+
 
 def KAT(book=None):
 
@@ -203,8 +209,8 @@ def KAT(book=None):
         rows = findrows(lines, '<tr ', '</tr>')
         # first row is the column headers
         if len(rows) > 1:
-            logger.debug(u"Found %i result%s from %s for %s, checking seeders" % (len(rows)-1,
-                         plural(len(rows)-1), provider, book['searchterm']))
+            logger.debug(u"Found %i result%s from %s for %s, checking seeders" % (len(rows) - 1,
+                         plural(len(rows) - 1), provider, book['searchterm']))
             minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
             try:
                 rownum = 1
@@ -228,24 +234,24 @@ def KAT(book=None):
                                 title = None
                         cur += 1
                     try:
-                        size = lines[fin-4].split('</td>')[0].split('>')[1].split('&')[0].strip()
+                        size = lines[fin - 4].split('</td>')[0].split('>')[1].split('&')[0].strip()
                         try:
                             size = int(float(size) * 1024)
                         except ValueError:
                             size = 0
                     except IndexError:
                         size = 0
-                    #try:
+                    # try:
                     #        age = lines[fin-3].split('</td>')[0].split('>')[1].replace('&nbsp;','-').strip()
-                    #except IndexError:
+                    # except IndexError:
                     #    age = 0
                     try:
-                        seeders = lines[fin-2].split('</td>')[0].split('>')[1]
+                        seeders = lines[fin - 2].split('</td>')[0].split('>')[1]
                     except IndexError:
                         seeders = 0
-                    #try:
+                    # try:
                     #    leechers = lines[fin-1].split('</td>')[0].split('>')[1]
-                    #except IndexError:
+                    # except IndexError:
                     #    leechers = 0
 
                     url = magnet  # prefer magnet over torrent
@@ -254,7 +260,7 @@ def KAT(book=None):
 
                     if not url or not title:
                         logger.debug('No url or title found')
-                    elif  minimumseeders < seeders:
+                    elif minimumseeders < seeders:
                         results.append({
                             'bookid': book['bookid'],
                             'tor_prov': provider,
@@ -263,15 +269,18 @@ def KAT(book=None):
                             'tor_size': str(size),
                         })
                         logger.debug('Found %s. Size: %s' % (title, size))
-                    else :
+                    else:
                         logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
                     rownum += 1
 
             except Exception as e:
                 logger.error(u"An unknown error occurred in the %s parser: %s" % (provider, str(e)))
 
-    logger.debug(u"Found %i result%s from %s for %s" % (len(results), plural(len(results)), provider, book['searchterm']))
+    logger.debug(
+        u"Found %i result%s from %s for %s" %
+        (len(results), plural(len(results)), provider, book['searchterm']))
     return results
+
 
 def oldKAT(book=None):
 
@@ -350,6 +359,7 @@ def oldKAT(book=None):
 
     logger.debug(u"Found %i results from %s for %s" % (len(results), provider, book['searchterm']))
     return results
+
 
 def ZOO(book=None):
 
@@ -434,6 +444,7 @@ def ZOO(book=None):
 
     logger.debug(u"Found %i results from %s for %s" % (len(results), provider, book['searchterm']))
     return results
+
 
 def TDL(book=None):
 

@@ -206,7 +206,9 @@ class GoogleBooks:
                         bookname = bookname.strip()  # strip whitespace
                         bookid = item['id']
 
-                        author = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName = "%s"' % Author.replace('"','""'))
+                        author = myDB.select(
+                            'SELECT AuthorID FROM authors WHERE AuthorName = "%s"' %
+                            Author.replace('"', '""'))
                         if author:
                             AuthorID = author[0]['authorid']
                         else:
@@ -240,7 +242,7 @@ class GoogleBooks:
             except KeyError:
                 break
 
-        logger.debug("Found %s total result%s" % (total_count,  plural(total_count)))
+        logger.debug("Found %s total result%s" % (total_count, plural(total_count)))
         logger.debug("Removed %s bad language result%s" % (ignored, plural(ignored)))
         logger.debug("Removed %s book%s with no author" % (no_author_count, plural(no_author_count)))
         logger.debug(
@@ -492,19 +494,19 @@ class GoogleBooks:
 
                     if not rejected and not bookname:
                         logger.debug('Rejecting bookid %s for %s, no bookname' %
-                                (bookid, authorname))
+                                     (bookid, authorname))
                         removedResults = removedResults + 1
                         rejected = True
 
                     if not rejected:
                         find_books = myDB.select('SELECT * FROM books WHERE BookName = "%s" and AuthorName = "%s"' %
-                                                        (bookname.replace('"','""'), authorname.replace('"','""')))
+                                                 (bookname.replace('"', '""'), authorname.replace('"', '""')))
                         if find_books:
                             for find_book in find_books:
                                 if find_book['BookID'] != bookid:
                                     # we have a book with this author/title already
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
-                                        (find_book['BookID'], authorname, bookname, bookid))
+                                                 (find_book['BookID'], authorname, bookname, bookid))
                                     rejected = True
                                     duplicates = duplicates + 1
 
@@ -513,7 +515,7 @@ class GoogleBooks:
                         if find_books:
                             # we have a book with this bookid already
                             logger.debug('Rejecting bookid %s for [%s][%s] already got this bookid in database' %
-                                (bookid, authorname, bookname))
+                                         (bookid, authorname, bookname))
                             duplicates = duplicates + 1
                             rejected = True
 
@@ -562,7 +564,7 @@ class GoogleBooks:
                                     newValueDict = {"BookImg": link}
                                     myDB.upsert("books", newValueDict, controlValueDict)
 
-                            if seriesNum == None:
+                            if seriesNum is None:
                                 # try to get series info from librarything
                                 series, seriesNum = getWorkSeries(bookid)
                                 if seriesNum:
@@ -618,13 +620,15 @@ class GoogleBooks:
 
         logger.debug("Found %s total book%s for author" % (total_count, plural(total_count)))
         logger.debug("Removed %s bad language result%s for author" % (ignored, plural(ignored)))
-        logger.debug("Removed %s bad character or no-name result%s for author" % (removedResults, plural(removedResults)))
+        logger.debug(
+            "Removed %s bad character or no-name result%s for author" %
+            (removedResults, plural(removedResults)))
         logger.debug("Removed %s duplicate result%s for author" % (duplicates, plural(duplicates)))
         logger.debug("Ignored %s book%s by author marked as Ignored" % (book_ignore_count, plural(book_ignore_count)))
         logger.debug("Imported/Updated %s book%s for author" % (resultcount, plural(resultcount)))
 
         myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i, %i)' %
-                    (authorname.replace('"','""'), api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits,
+                    (authorname.replace('"', '""'), api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits,
                      ignored, removedResults, not_cached, duplicates))
 
         if refresh:
@@ -787,7 +791,7 @@ class GoogleBooks:
                     newValueDict = {"BookImg": link}
                     myDB.upsert("books", newValueDict, controlValueDict)
 
-        if seriesNum == None:
+        if seriesNum is None:
             # try to get series info from librarything
             series, seriesNum = getWorkSeries(bookid)
             if seriesNum:

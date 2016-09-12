@@ -57,6 +57,7 @@ def fetchURL(URL):
         else:
             return str(e), False
 
+
 def cache_cover(bookID, img_url):
     """ Cache the image from the given URL in the local images cache
         linked to the bookid, return the link to the cached file
@@ -68,7 +69,7 @@ def cache_cover(bookID, img_url):
         os.makedirs(cachedir)
     coverfile = os.path.join(cachedir, bookID + '.jpg')
     link = 'images/cache/' + bookID + '.jpg'
-    #if os.path.isfile(coverfile):  # overwrite any cached image
+    # if os.path.isfile(coverfile):  # overwrite any cached image
     #    return link
 
     result, success = fetchURL(img_url)
@@ -81,6 +82,7 @@ def cache_cover(bookID, img_url):
         except Exception as e:
             logger.debug("Error writing image to %s, %s" % (coverfile, str(e)))
     return None
+
 
 def get_xml_request(my_url, useCache=True):
     # Original simplecache

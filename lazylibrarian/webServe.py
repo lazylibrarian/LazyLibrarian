@@ -26,7 +26,7 @@ from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.librarysync import LibraryScan
 from lazylibrarian.postprocess import processAlternate, processDir
-from lazylibrarian.csv import  import_CSV, export_CSV
+from lazylibrarian.csv import import_CSV, export_CSV
 from lib.deluge_client import DelugeRPCClient
 
 import lib.simplejson as simplejson
@@ -110,9 +110,9 @@ class WebInterface(object):
         self, http_host='0.0.0.0', http_root='', http_user='', http_port=5299, current_tab='0',
                      http_pass='', http_look='', launch_browser=0, api_key='', api_enabled=0,
                      logdir='', loglevel=2, loglimit=500, logfiles=10, logsize=204800, git_program='',
-                     imp_onlyisbn=0, imp_singlebook=0, imp_preflang='', imp_monthlang='', imp_convert='', imp_calibredb='',
-                     imp_autoadd='', match_ratio=80, dload_ratio=90, nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0,
-                     nzb_downloader_blackhole=0, proxy_host='', proxy_type='',
+                     imp_onlyisbn=0, imp_singlebook=0, imp_preflang='', imp_monthlang='', imp_convert='',
+                     imp_calibredb='', imp_autoadd='', match_ratio=80, dload_ratio=90, nzb_downloader_sabnzbd=0,
+                     nzb_downloader_nzbget=0, nzb_downloader_blackhole=0, proxy_host='', proxy_type='',
                      sab_host='', sab_port=0, sab_subdir='', sab_api='', sab_user='', sab_pass='',
                      destination_copy=0, destination_dir='', download_dir='', sab_cat='', usenet_retention=0,
                      nzb_blackholedir='', alternate_dir='', torrent_dir='', numberofseeders=0,
@@ -126,13 +126,12 @@ class WebInterface(object):
                      mag_relative=0, mag_dest_folder='', mag_dest_file='', cache_age=30,
                      use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
                      utorrent_host='', utorrent_port=0, utorrent_user='', utorrent_pass='', utorrent_label='',
-                     qbittorrent_host='', qbittorrent_port=0, qbittorrent_user='', qbittorrent_pass='', qbittorrent_label='',
-                     notfound_status='Skipped', newbook_status='Skipped', full_scan=0, add_author=0,
-                     tor_downloader_transmission=0, transmission_host='', transmission_port=0, transmission_user='',
-                     transmission_pass='', tor_downloader_deluge=0, deluge_host='', deluge_user='',
-                     deluge_pass='', deluge_port=0, deluge_label='',
-                     use_boxcar=0, boxcar_notify_onsnatch=0,
-                     boxcar_notify_ondownload=0, boxcar_token='',
+                     qbittorrent_host='', qbittorrent_port=0, qbittorrent_user='', qbittorrent_pass='',
+                     qbittorrent_label='', notfound_status='Skipped', newbook_status='Skipped', full_scan=0,
+                     add_author=0, tor_downloader_transmission=0, transmission_host='', transmission_port=0,
+                     transmission_user='', transmission_pass='', tor_downloader_deluge=0, deluge_host='',
+                     deluge_user='', deluge_pass='', deluge_port=0, deluge_label='',
+                     use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token='',
                      use_pushbullet=0, pushbullet_notify_onsnatch=0,
                      pushbullet_notify_ondownload=0, pushbullet_token='', pushbullet_deviceid='',
                      use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys='',
@@ -142,12 +141,12 @@ class WebInterface(object):
                      use_nma=0, nma_apikey='', nma_priority=0, nma_onsnatch=0, nma_ondownload=0,
                      use_slack=0, slack_notify_onsnatch=0, slack_notify_ondownload=0, slack_token='',
                      https_enabled=0, https_cert='', https_key='', **kwargs):
-        #print len(kwargs)
-        #for arg in kwargs:
+        # print len(kwargs)
+        # for arg in kwargs:
         #    if "reject" in arg:
         #        print arg
         #        print repr(arg)
-        #print current_tab
+        # print current_tab
         lazylibrarian.CURRENT_TAB = current_tab
         lazylibrarian.HTTP_HOST = http_host
         lazylibrarian.HTTP_ROOT = http_root
@@ -210,10 +209,8 @@ class WebInterface(object):
         lazylibrarian.NUMBEROFSEEDERS = check_int(numberofseeders, 0)
         lazylibrarian.TOR_DOWNLOADER_BLACKHOLE = bool(tor_downloader_blackhole)
         lazylibrarian.TOR_DOWNLOADER_UTORRENT = bool(tor_downloader_utorrent)
-        lazylibrarian.TOR_DOWNLOADER_QBITTORRENT = bool(
-            tor_downloader_qbittorrent)
-        lazylibrarian.TOR_DOWNLOADER_TRANSMISSION = bool(
-            tor_downloader_transmission)
+        lazylibrarian.TOR_DOWNLOADER_QBITTORRENT = bool(tor_downloader_qbittorrent)
+        lazylibrarian.TOR_DOWNLOADER_TRANSMISSION = bool(tor_downloader_transmission)
         lazylibrarian.TOR_DOWNLOADER_DELUGE = bool(tor_downloader_deluge)
 
         lazylibrarian.NEWZBIN = bool(newzbin)
@@ -262,8 +259,7 @@ class WebInterface(object):
 
         lazylibrarian.SEARCH_INTERVAL = check_int(search_interval, 360)
         lazylibrarian.SCAN_INTERVAL = check_int(scan_interval, 10)
-        lazylibrarian.SEARCHRSS_INTERVAL = check_int(
-            searchrss_interval, 20)
+        lazylibrarian.SEARCHRSS_INTERVAL = check_int(searchrss_interval, 20)
         lazylibrarian.VERSIONCHECK_INTERVAL = check_int(versioncheck_interval, 24)
 
         lazylibrarian.FULL_SCAN = bool(full_scan)
@@ -279,8 +275,7 @@ class WebInterface(object):
 
         lazylibrarian.USE_TWITTER = bool(use_twitter)
         lazylibrarian.TWITTER_NOTIFY_ONSNATCH = bool(twitter_notify_onsnatch)
-        lazylibrarian.TWITTER_NOTIFY_ONDOWNLOAD = bool(
-            twitter_notify_ondownload)
+        lazylibrarian.TWITTER_NOTIFY_ONDOWNLOAD = bool(twitter_notify_ondownload)
 
         lazylibrarian.USE_BOXCAR = bool(use_boxcar)
         lazylibrarian.BOXCAR_NOTIFY_ONSNATCH = bool(boxcar_notify_onsnatch)
@@ -288,10 +283,8 @@ class WebInterface(object):
         lazylibrarian.BOXCAR_TOKEN = boxcar_token
 
         lazylibrarian.USE_PUSHBULLET = bool(use_pushbullet)
-        lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH = bool(
-            pushbullet_notify_onsnatch)
-        lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD = bool(
-            pushbullet_notify_ondownload)
+        lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH = bool(pushbullet_notify_onsnatch)
+        lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD = bool(pushbullet_notify_ondownload)
         lazylibrarian.PUSHBULLET_TOKEN = pushbullet_token
         lazylibrarian.PUSHBULLET_DEVICEID = pushbullet_deviceid
 
@@ -304,10 +297,8 @@ class WebInterface(object):
         lazylibrarian.PUSHOVER_DEVICE = pushover_device
 
         lazylibrarian.USE_ANDROIDPN = bool(use_androidpn)
-        lazylibrarian.ANDROIDPN_NOTIFY_ONSNATCH = bool(
-            androidpn_notify_onsnatch)
-        lazylibrarian.ANDROIDPN_NOTIFY_ONDOWNLOAD = bool(
-            androidpn_notify_ondownload)
+        lazylibrarian.ANDROIDPN_NOTIFY_ONSNATCH = bool(androidpn_notify_onsnatch)
+        lazylibrarian.ANDROIDPN_NOTIFY_ONDOWNLOAD = bool(androidpn_notify_ondownload)
         lazylibrarian.ANDROIDPN_URL = androidpn_url
         lazylibrarian.ANDROIDPN_USERNAME = androidpn_username
         lazylibrarian.ANDROIDPN_BROADCAST = bool(androidpn_broadcast)
@@ -319,10 +310,8 @@ class WebInterface(object):
         lazylibrarian.NMA_ONDOWNLOAD = bool(nma_ondownload)
 
         lazylibrarian.USE_SLACK = bool(use_slack)
-        lazylibrarian.SLACK_NOTIFY_ONSNATCH = bool(
-            slack_notify_onsnatch)
-        lazylibrarian.SLACK_NOTIFY_ONDOWNLOAD = bool(
-            slack_notify_ondownload)
+        lazylibrarian.SLACK_NOTIFY_ONSNATCH = bool(slack_notify_onsnatch)
+        lazylibrarian.SLACK_NOTIFY_ONDOWNLOAD = bool(slack_notify_ondownload)
         lazylibrarian.SLACK_TOKEN = slack_token
 
         self.label_thread()
@@ -401,11 +390,11 @@ class WebInterface(object):
             lazylibrarian.RSS_PROV[count]['ENABLED'] = bool(
                 kwargs.get('rss[%i][enabled]' % count, False))
             lazylibrarian.RSS_PROV[count]['HOST'] = kwargs.get(
-                        'rss[%i][host]' % count, '')
+                'rss[%i][host]' % count, '')
             lazylibrarian.RSS_PROV[count]['USER'] = kwargs.get(
-                        'rss[%i][user]' % count, '')
+                'rss[%i][user]' % count, '')
             lazylibrarian.RSS_PROV[count]['PASS'] = kwargs.get(
-                        'rss[%i][pass]' % count, '')
+                'rss[%i][pass]' % count, '')
             count += 1
 
         lazylibrarian.config_write()
@@ -497,8 +486,9 @@ class WebInterface(object):
         books = myDB.select(querybooks)
         if author is None:
             raise cherrypy.HTTPRedirect("home")
+        authorname = author['AuthorName'].encode(lazylibrarian.SYS_ENCODING)
         return serve_template(
-            templatename="author.html", title=urllib.quote_plus(author['AuthorName'].encode(lazylibrarian.SYS_ENCODING)),
+            templatename="author.html", title=urllib.quote_plus(authorname),
                               author=author, books=books, languages=languages)
     authorPage.exposed = True
 
@@ -621,12 +611,15 @@ class WebInterface(object):
 
         #   need to check and filter on BookLang if set
         if lazylibrarian.BOOKLANGFILTER is None or not len(lazylibrarian.BOOKLANGFILTER):
-            rowlist = myDB.action(
-                'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid, booksub, booklink, workpage, authorid from books WHERE STATUS !="Skipped" AND STATUS !="Ignored"').fetchall()
+            cmd = 'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid,'
+            cmd = cmd + ' booksub, booklink, workpage, authorid from books WHERE STATUS !="Skipped"'
+            cmd = cmd + ' AND STATUS !="Ignored"'
+            rowlist = myDB.action(cmd).fetchall()
         else:
-            rowlist = myDB.action(
-                'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid, booksub, booklink, workpage, authorid from books WHERE STATUS !="Skipped" AND STATUS !="Ignored" and BOOKLANG="%s"' %
-                lazylibrarian.BOOKLANGFILTER).fetchall()
+            cmd = 'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid,'
+            cmd = cmd + ' booksub, booklink, workpage, authorid from books WHERE STATUS !="Skipped"'
+            cmd = cmd + ' AND STATUS !="Ignored" and BOOKLANG="' + lazylibrarian.BOOKLANGFILTER + '"'
+            rowlist = myDB.action(cmd).fetchall()
         # turn the sqlite rowlist into a list of lists
         d = []
         filtered = []
@@ -653,7 +646,7 @@ class WebInterface(object):
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
             # now add html to the ones we want to display
-            d = [] # the masterlist to be filled with the html data
+            d = []  # the masterlist to be filled with the html data
             for row in rows:
                 l = []  # for each Row use a separate list
                 bookrate = float(row[5])
@@ -675,19 +668,24 @@ class WebInterface(object):
                 worklink = ''
 
                 if lazylibrarian.HTTP_LOOK == 'bookstrap':
-                    if row[11]: # is there a workpage link
+                    if row[11]:  # is there a workpage link
                         if len(row[11]) > 4:
-                            worklink = '<td><a href="' + row[11] + '" target="_new"><small><i>LibraryThing</i></small></a></td>'
+                            worklink = '<td><a href="' + \
+                                row[11] + '" target="_new"><small><i>LibraryThing</i></small></a></td>'
 
                     if 'goodreads' in row[10]:
-                        sitelink = '<td><a href="' + row[10] + '" target="_new"><small><i>GoodReads</i></small></a></td>'
+                        sitelink = '<td><a href="' + \
+                            row[10] + '" target="_new"><small><i>GoodReads</i></small></a></td>'
                     if 'google' in row[10]:
-                        sitelink = '<td><a href="' + row[10] + '" target="_new"><small><i>GoogleBooks</i></small></a></td>'
+                        sitelink = '<td><a href="' + \
+                            row[10] + '" target="_new"><small><i>GoogleBooks</i></small></a></td>'
 
                     l.append(
                         '<td class="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[8])
-                    l.append(
-                        '<td class="bookart text-center"><a href="%s" target="_blank" rel="noreferrer"><img src="%s" alt="Cover" class="bookcover-sm img-responsive"></a></td>' % (row[0], row[0]))
+                    lref = '<td class="bookart text-center"><a href="' + row[0]
+                    lref = lref + '" target="_blank" rel="noreferrer"><img src="' + row[0]
+                    lref = lref + '" alt="Cover" class="bookcover-sm img-responsive"></a></td>'
+                    l.append(lref)
                     l.append(
                         '<td class="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[12], row[1]))
                     if row[9]:  # is there a sub-title
@@ -711,29 +709,40 @@ class WebInterface(object):
 
                     l.append('<td class="date text-center">%s</td>' % row[6])
                     if row[7] == 'Open':
-                        btn = '<td class="status text-center"><a class="button green btn btn-xs btn-warning" href="openBook?bookid=%s" target="_self"><i class="fa fa-book"></i>%s</a></td>' % (row[8], row[7])
+                        btn = '<td class="status text-center"><a class="button green btn btn-xs btn-warning"'
+                        btn = btn + ' href="openBook?bookid=' + row[8] + '" target="_self"><i class="fa fa-book"></i>'
+                        btn = btn + row[7] + '</a></td>'
                     elif row[7] == 'Wanted':
-                        btn = '<td class="status text-center"><p><a class="a btn btn-xs btn-danger">%s</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=%s" target="_self"><i class="fa fa-search"></i> Search</a></p></td>' % (row[7], row[8])
+                        btn = '<td class="status text-center"><p><a class="a btn btn-xs btn-danger">'
+                        btn = btn + row[7] + '</a></p><p><a class="b btn btn-xs btn-success" '
+                        btn = btn + 'href="searchForBook?bookid=' + row[8]
+                        btn = btn + '" target="_self"><i class="fa fa-search"></i> Search</a></p></td>'
                     elif row[7] == 'Snatched' or row[7] == 'Have':
-                        btn = '<td class="status text-center"><a class="button btn btn-xs btn-info">%s</a></td>' % row[7]
+                        btn = '<td class="status text-center"><a class="button btn btn-xs btn-info">'
+                        btn = btn + row[7] + '</a></td>'
                     else:
-                       btn = '<td class="status text-center"><a class="button btn btn-xs btn-default grey">%s</a></td>' % row[7]
+                        btn = '<td class="status text-center"><a class="button btn btn-xs btn-default grey">'
+                        btn = btn + row[7] + '</a></td>'
                     l.append(btn)
 
                 else:  # lazylibrarian.HTTP_LOOK == 'default':
-                    if row[11]: # is there a workpage link
+                    if row[11]:  # is there a workpage link
                         if len(row[11]) > 4:
-                            worklink = '<td><a href="' + row[11] + '" target="_new"><i class="smalltext">LibraryThing</i></a></td>'
+                            worklink = '<td><a href="' + \
+                                row[11] + '" target="_new"><i class="smalltext">LibraryThing</i></a></td>'
 
                     if 'goodreads' in row[10]:
-                        sitelink = '<td><a href="' + row[10] + '" target="_new"><i class="smalltext">GoodReads</i></a></td>'
+                        sitelink = '<td><a href="' + \
+                            row[10] + '" target="_new"><i class="smalltext">GoodReads</i></a></td>'
                     if 'google' in row[10]:
-                        sitelink = '<td><a href="' + row[10] + '" target="_new"><i class="smalltext">GoogleBooks</i></a></td>'
+                        sitelink = '<td><a href="' + \
+                            row[10] + '" target="_new"><i class="smalltext">GoogleBooks</i></a></td>'
 
                     l.append(
                         '<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[8])
-                    l.append(
-                        '<td id="bookart"><a href="%s" target="_new"><img src="%s" height="75" width="50"></a></td>' % (row[0], row[0]))
+                    lref = '<td id="bookart"><a href="' + row[0] + '" target="_new"><img src="'
+                    lref = lref + row[0] + '" height="75" width="50"></a></td>'
+                    l.append(lref)
                     l.append(
                         '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[12], row[1]))
                     if row[9]:  # is there a sub-title
@@ -758,9 +767,12 @@ class WebInterface(object):
                     l.append('<td id="date">%s</td>' % row[6])
 
                     if row[7] == 'Open':
-                        btn = '<td id="status"><a class="button green" href="openBook?bookid=%s" target="_self">Open</a></td>' % row[8]
+                        btn = '<td id="status"><a class="button green" href="openBook?bookid='
+                        btn = btn + row[8] + '" target="_self">Open</a></td>'
                     elif row[7] == 'Wanted':
-                        btn = '<td id="status"><a class="button red" href="searchForBook?bookid=%s" target="_self"><span class="a">Wanted</span><span class="b">Search</span></a></td>' % row[8]
+                        btn = '<td id="status"><a class="button red" href="searchForBook?bookid='
+                        btn = btn + row[8] + '" target="_self"><span class="a">Wanted</span>'
+                        btn = btn + '<span class="b">Search</span></a></td>'
                     elif row[7] == 'Snatched' or row[7] == 'Have':
                         btn = '<td id="status"><a class="button">%s</a></td>' % row[7]
                     else:
@@ -870,7 +882,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
 
         authors = myDB.select(
-                "SELECT AuthorName from authors WHERE Status !='Ignored' ORDER by AuthorName COLLATE NOCASE")
+            "SELECT AuthorName from authors WHERE Status !='Ignored' ORDER by AuthorName COLLATE NOCASE")
         bookdata = myDB.select(
             'SELECT * from books WHERE BookID="%s"' % bookid)
         if bookdata:
@@ -880,7 +892,7 @@ class WebInterface(object):
     editBook.exposed = True
 
     def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre=None,
-                    series=None, seriesnum=None, manual='0', authorname='', **kwargs):
+                   series=None, seriesnum=None, manual='0', authorname='', **kwargs):
         myDB = database.DBConnection()
 
         if bookid:
@@ -968,7 +980,9 @@ class WebInterface(object):
                             myDB.upsert("books", {'Status': action}, {'BookID': bookid})
                             logger.info(u'Status set to "%s" for "%s"' % (action, bookname))
                     if action in ["Remove", "Delete"]:
-                        bookdata = myDB.select('SELECT AuthorID,Bookname,BookFile from books WHERE BookID = "%s"' % bookid)
+                        bookdata = myDB.select(
+                            'SELECT AuthorID,Bookname,BookFile from books WHERE BookID = "%s"' %
+                            bookid)
                         if len(bookdata):
                             AuthorID = bookdata[0]['AuthorID']
                             bookname = bookdata[0]['BookName']
@@ -1123,7 +1137,7 @@ class WebInterface(object):
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
             # now add html to the ones we want to display
-            d = [] # the masterlist to be filled with the html data
+            d = []  # the masterlist to be filled with the html data
             for row in rows:
                 l = []  # for each Row use a separate list
                 l.append('<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[0])
@@ -1165,7 +1179,9 @@ class WebInterface(object):
             return serve_file(IssueFile, "application/x-download", "attachment")
         elif len(mag_data) > 1:  # multiple issues, show a list
             logger.debug(u"%s has %s issues" % (bookid, len(mag_data)))
-            raise cherrypy.HTTPRedirect("issuePage?title=%s" % urllib.quote_plus(bookid.encode(lazylibrarian.SYS_ENCODING)))
+            raise cherrypy.HTTPRedirect(
+                "issuePage?title=%s" %
+                urllib.quote_plus(bookid.encode(lazylibrarian.SYS_ENCODING)))
     openMag.exposed = True
 
     def markPastIssues(self, action=None, redirect=None, **args):
@@ -1214,7 +1230,7 @@ class WebInterface(object):
                                 'NZBsize': nzbsize,
                                 'AuxInfo': auxinfo,
                                 'NZBmode': nzbmode
-                                }
+                            }
                             myDB.upsert("wanted", newValueDict, controlValueDict)
 
         if action == 'Remove':
@@ -1337,8 +1353,8 @@ class WebInterface(object):
         else:
             regex = None
             if '~' in title:  # separate out the "reject words" list
-                regex = title.split('~',1)[1].strip()
-                title = title.split('~',1)[0].strip()
+                regex = title.split('~', 1)[1].strip()
+                title = title.split('~', 1)[0].strip()
 
             # replace any non-ascii quotes/apostrophes with ascii ones eg "Collector's"
             dic = {u'\u2018': u"'", u'\u2019': u"'", u'\u201c': u'"', u'\u201d': u'"'}
@@ -1382,7 +1398,7 @@ class WebInterface(object):
         else:
             message = "unknown version"
             messages = "%s is not recognised at<br>https://github.com/%s/%s  Branch: %s" % (
-                    lazylibrarian.CURRENT_VERSION, lazylibrarian.GIT_USER,
+                lazylibrarian.CURRENT_VERSION, lazylibrarian.GIT_USER,
                     lazylibrarian.GIT_REPO, lazylibrarian.GIT_BRANCH)
             message = message + '<br><small>' + messages
             return serve_template(templatename="shutdown.html", title="Commits", message=message, timer=15)
@@ -1534,9 +1550,9 @@ class WebInterface(object):
             rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
         mydict = {'iTotalDisplayRecords': len(filtered),
-                'iTotalRecords': len(lazylibrarian.LOGLIST),
-                'aaData': rows,
-                }
+                  'iTotalRecords': len(lazylibrarian.LOGLIST),
+                  'aaData': rows,
+                  }
         s = simplejson.dumps(mydict)
         return s
     getLog.exposed = True
@@ -1712,9 +1728,9 @@ class WebInterface(object):
         iDisplayLength = int(iDisplayLength)
         # print "getManage %s" % iDisplayStart
         #   need to filter on whichStatus
-        rowlist = myDB.action(
-            'SELECT authorname, bookname, series, seriesnum, bookdate, bookid, booklink, booksub, authorid from books WHERE STATUS="%s"' %
-            lazylibrarian.MANAGEFILTER).fetchall()
+        cmd = 'SELECT authorname, bookname, series, seriesnum, bookdate, bookid, booklink, booksub, authorid '
+        cmd = cmd + 'from books WHERE STATUS="' + lazylibrarian.MANAGEFILTER + '"'
+        rowlist = myDB.action(cmd).fetchall()
 
         d = []
         filtered = []
@@ -1741,7 +1757,7 @@ class WebInterface(object):
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
             # now add html to the ones we want to display
-            d = [] # the masterlist to be filled with the html data
+            d = []  # the masterlist to be filled with the html data
             for row in rows:
                 l = []  # for each Row use a separate list
 
@@ -1755,18 +1771,22 @@ class WebInterface(object):
                         sitelink = '<a href="' + row[6] + '" target="_new"><small><i>GoogleBooks</i></small></a>'
 
                     if row[7]:  # is there a sub-title
-                        l.append('<td id="bookname">%s<br><small><i>%s</i></small><br>%s</td>' % (row[1], row[7], sitelink))
+                        l.append(
+                            '<td id="bookname">%s<br><small><i>%s</i></small><br>%s</td>' %
+                            (row[1], row[7], sitelink))
                     else:
                         l.append('<td id="bookname">%s<br>%s</td>' % (row[1], sitelink))
 
-                else: # lazylibrarian.HTTP_LOOK == 'default':
+                else:  # lazylibrarian.HTTP_LOOK == 'default':
                     if 'goodreads' in row[6]:
                         sitelink = '<a href="' + row[6] + '" target="_new"><i class="smalltext">GoodReads</i></a>'
                     if 'google' in row[6]:
                         sitelink = '<a href="' + row[6] + '" target="_new"><i class="smalltext">GoogleBooks</i></a>'
 
                     if row[7]:  # is there a sub-title
-                        l.append('<td id="bookname">%s<br><i class="smalltext">%s</i><br>%s</td>' % (row[1], row[7], sitelink))
+                        l.append(
+                            '<td id="bookname">%s<br><i class="smalltext">%s</i><br>%s</td>' %
+                            (row[1], row[7], sitelink))
                     else:
                         l.append('<td id="bookname">%s<br>%s</td>' % (row[1], sitelink))
 
@@ -1804,13 +1824,13 @@ class WebInterface(object):
 
             # if there's a username, talk to the daemon directly
             client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
-                int(lazylibrarian.DELUGE_PORT),
-                lazylibrarian.DELUGE_USER,
-                lazylibrarian.DELUGE_PASS)
+                                     int(lazylibrarian.DELUGE_PORT),
+                                     lazylibrarian.DELUGE_USER,
+                                     lazylibrarian.DELUGE_PASS)
             client.connect()
             if lazylibrarian.DELUGE_LABEL:
                 labels = client.call('label.get_labels')
-                if not lazylibrarian.DELUGE_LABEL in labels:
+                if lazylibrarian.DELUGE_LABEL not in labels:
                     msg = "Deluge: Unknown label [%s]\n" % lazylibrarian.DELUGE_LABEL
                     if labels:
                         msg += "Valid labels:\n"

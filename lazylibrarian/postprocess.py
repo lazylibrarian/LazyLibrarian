@@ -17,6 +17,7 @@ from lazylibrarian.importer import addAuthorToDB
 from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
 from lazylibrarian.gr import GoodReads
 
+
 def processAlternate(source_dir=None):
     # import a book from an alternate directory
     if not source_dir or os.path.isdir(source_dir) is False:
@@ -52,7 +53,7 @@ def processAlternate(source_dir=None):
                 logger.debug('Failed to read metadata from %s, %s' % (metafile, str(e)))
         else:
             logger.debug('No metadata file found for %s' % new_book)
-        if not 'title' in metadata and 'creator' in metadata:
+        if 'title' not in metadata or 'creator' not in metadata:
             # try to get metadata from the book file
             try:
                 metadata = get_book_info(new_book)
@@ -67,15 +68,15 @@ def processAlternate(source_dir=None):
 
             if not authmatch:
                 # try goodreads preferred authorname
-                logger.debug( "Checking GoodReads for [%s]" % authorname)
+                logger.debug("Checking GoodReads for [%s]" % authorname)
                 GR = GoodReads(authorname)
                 try:
                     author_gr = GR.find_author_id()
                 except Exception:
-                    logger.debug( "No author id for [%s]" % authorname)
+                    logger.debug("No author id for [%s]" % authorname)
                 if author_gr:
                     grauthorname = author_gr['authorname']
-                    logger.debug( "GoodReads reports [%s] for [%s]" % (grauthorname, authorname))
+                    logger.debug("GoodReads reports [%s] for [%s]" % (grauthorname, authorname))
                     authorname = grauthorname
                     authmatch = myDB.action('SELECT * FROM authors where AuthorName="%s"' % (authorname)).fetchone()
 
@@ -99,6 +100,7 @@ def processAlternate(source_dir=None):
 def cron_processDir():
     threading.currentThread().name = "CRON-POSTPROCESS"
     processDir()
+
 
 def processDir(reset=False):
 
@@ -132,7 +134,7 @@ def processDir(reset=False):
         return
 
     logger.info("Checking %s download%s for %s snatched file%s" %
-        (len(downloads), plural(len(downloads)), len(snatched), plural(len(snatched))))
+                (len(downloads), plural(len(downloads)), len(snatched), plural(len(snatched))))
     ppcount = 0
     for book in snatched:
         matches = []
@@ -158,7 +160,7 @@ def processDir(reset=False):
                     if os.path.isfile(os.path.join(processpath, fname)):
                         # handle single file downloads here...
                         if is_valid_booktype(fname, booktype="book") \
-                            or is_valid_booktype(fname, booktype="mag"):
+                                or is_valid_booktype(fname, booktype="mag"):
                             dirname = os.path.join(processpath, os.path.splitext(fname)[0])
                             if not os.path.exists(dirname):
                                 try:
@@ -171,7 +173,7 @@ def processDir(reset=False):
                                     fname = os.path.splitext(fname)[0]
                                 except Exception as why:
                                     logger.debug("Failed to move file %s to %s, %s" %
-                                        (fname, dirname, str(why)))
+                                                 (fname, dirname, str(why)))
                     if os.path.isdir(os.path.join(processpath, fname)):
                         pp_path = os.path.join(processpath, fname)
                         logger.debug('Found folder (%s%%) %s for %s' % (match, pp_path, book['NZBtitle']))
@@ -187,7 +189,7 @@ def processDir(reset=False):
             pp_path = highest[1]
             book = highest[2]
             logger.debug(u'Best match (%s%%): %s for %s' %
-                    (match, pp_path, book['NZBtitle']))
+                         (match, pp_path, book['NZBtitle']))
 
             data = myDB.select('SELECT * from books WHERE BookID="%s"' % book['BookID'])
             if data:
@@ -269,7 +271,7 @@ def processDir(reset=False):
                 controlValueDict = {"Title": book['BookID']}
                 if mostrecentissue:
                     if mostrecentissue.isdigit() and str(book['AuxInfo']).isdigit():
-                        older = int(mostrecentissue) > int(book['AuxInfo']) # issuenumber
+                        older = int(mostrecentissue) > int(book['AuxInfo'])  # issuenumber
                     else:
                         older = mostrecentissue > book['AuxInfo']  # YYYY-MM-DD
                 else:
@@ -480,29 +482,30 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             for bookfile in os.listdir(pp_path):
                 filename, extn = os.path.splitext(bookfile)
                 # calibre does not like quotes in author names
-                os.rename(os.path.join(pp_path, filename + extn), os.path.join(pp_path, global_name.replace('"','_') + extn))
+                os.rename(os.path.join(pp_path, filename + extn), os.path.join(
+                    pp_path, global_name.replace('"', '_') + extn))
 
-            params =    [lazylibrarian.IMP_CALIBREDB,
-                            'add',
-                            #'--title="%s"' % bookname,
-                            #'--author="%s"' % unaccented(authorname),
-                            '-1',
-                            '--with-library',
-                            lazylibrarian.DESTINATION_DIR, pp_path
-                        ]
+            params = [lazylibrarian.IMP_CALIBREDB,
+                      'add',
+                      # '--title="%s"' % bookname,
+                      # '--author="%s"' % unaccented(authorname),
+                      '-1',
+                      '--with-library',
+                      lazylibrarian.DESTINATION_DIR, pp_path
+                      ]
             logger.debug(str(params))
             res = subprocess.check_output(params, stderr=subprocess.STDOUT)
             if res:
                 logger.debug('%s reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
             # calibre does not like quotes in author names
-            calibre_dir = os.path.join(lazylibrarian.DESTINATION_DIR, unaccented_str(authorname.replace('"','_')), '')
+            calibre_dir = os.path.join(lazylibrarian.DESTINATION_DIR, unaccented_str(authorname.replace('"', '_')), '')
             if os.path.isdir(calibre_dir):
                 imported = LibraryScan(calibre_dir)  # rescan authors directory so we get the new book in our database
             else:
                 logger.error("Failed to locate calibre dir [%s]" % calibre_dir)
                 imported = False
-                #imported = LibraryScan(lazylibrarian.DESTINATION_DIR)  # may have to rescan whole library instead
-            if not imported and not 'already exist' in res:
+                # imported = LibraryScan(lazylibrarian.DESTINATION_DIR)  # may have to rescan whole library instead
+            if not imported and 'already exist' not in res:
                 return False
         except subprocess.CalledProcessError as e:
             logger.debug(params)
@@ -668,6 +671,7 @@ def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bo
         logger.debug('Saved metadata to: ' + opfpath)
     else:
         logger.debug('%s already exists. Did not create one.' % opfpath)
+
 
 class imgGoogle(FancyURLopener):
     # Hack because Google wants a user agent for downloading images,
