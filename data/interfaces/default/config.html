@@ -602,6 +602,15 @@
                     %>
             		<input type="checkbox" name="tdl" value=1 ${checked} style="margin-bottom:4px;" /> torrentdownload
  	    		    <input type="text" placeholder="Enter URL Here" name="tdl_host" value="${lazylibrarian.TDL_HOST}" size="26">
+ 	  		        <br>
+ 	  		        <%
+                    if lazylibrarian.GEN == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+            		<input type="checkbox" name="gen" value=1 ${checked} style="margin-bottom:4px;" /> libgen
+ 	    		    <input type="text" placeholder="Enter URL Here" name="gen_host" value="${lazylibrarian.GEN_HOST}" size="26">
  	    		</td>
             </tr>
         </table>

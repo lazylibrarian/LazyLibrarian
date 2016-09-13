@@ -54,7 +54,7 @@ def processAlternate(source_dir=None):
         else:
             logger.debug('No metadata file found for %s' % new_book)
         if 'title' not in metadata or 'creator' not in metadata:
-            # try to get metadata from the book file
+            # if not got both, try to get metadata from the book file
             try:
                 metadata = get_book_info(new_book)
             except Exception as e:

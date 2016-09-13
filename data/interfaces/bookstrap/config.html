@@ -772,6 +772,21 @@
                                                 <input type="text" placeholder="torrentdownload host" id="tdl_host" name="tdl_host" value="${lazylibrarian.TDL_HOST}" class="form-control">
                                             </div>
                                         </div>
+                                        <%
+                                        if lazylibrarian.GEN == True:
+                                            checked = 'checked="checked"'
+                                        else:
+                                            checked = ''
+                                        %>
+                                        <div class="form-group">
+                                            <label for="gen_host" class="sr-only">libgen host</label>
+                                            <div class="input-group">
+                                                <span class="input-group-addon">
+                                                    <input type="checkbox" id="gen" name="gen" value="1" ${checked} />
+                                                </span>
+                                                <input type="text" placeholder="libgen host" id="gen_host" name="gen_host" value="${lazylibrarian.GEN_HOST}" class="form-control">
+                                            </div>
+                                        </div>
                                     </fieldset>
                                 </div>
                             </div>

@@ -180,6 +180,8 @@ ZOO = 0
 ZOO_HOST = None
 TDL = 0
 TDL_HOST = None
+GEN = 0
+GEN_HOST = None
 
 NZB_DOWNLOADER_SABNZBD = 0
 NZB_DOWNLOADER_NZBGET = 0
@@ -423,7 +425,7 @@ def config_read(reloaded=False):
             NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, \
             NZBGET_PORT, NZB_DOWNLOADER_NZBGET, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
             NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, EBOOK_TYPE, MAG_TYPE, \
-            KAT, KAT_HOST, TPB, TPB_HOST, ZOO, ZOO_HOST, TDL, TDL_HOST, \
+            KAT, KAT_HOST, TPB, TPB_HOST, ZOO, ZOO_HOST, TDL, TDL_HOST, GEN, GEN_HOST, \
             NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, REJECT_WORDS, REJECT_MAXSIZE, \
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, SEARCHRSS_INTERVAL, \
             EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, \
@@ -734,6 +736,8 @@ def config_read(reloaded=False):
         ZOO_HOST = check_setting_str(CFG, 'ZOO', 'zoo_host', 'https://zooqle.com')
         TDL = check_setting_bool(CFG, 'TDL', 'tdl', 0)
         TDL_HOST = check_setting_str(CFG, 'TDL', 'tdl_host', 'torrentdownloads.me')
+        GEN = check_setting_bool(CFG, 'GEN', 'gen', 0)
+        GEN_HOST = check_setting_str(CFG, 'GEN', 'gen_host', 'libgen.io')
 
         NEWZBIN = check_setting_bool(CFG, 'Newzbin', 'newzbin', 0)
         NEWZBIN_UID = check_setting_str(CFG, 'Newzbin', 'newzbin_uid', '')
@@ -1006,7 +1010,11 @@ def config_write():
     CFG.set('ZOO', 'zoo', ZOO)
     CFG.set('ZOO', 'zoo_host', ZOO_HOST)
 #
-    check_section('TPB')
+    check_section('GEN')
+    CFG.set('GEN', 'gen', GEN)
+    CFG.set('GEN', 'gen_host', GEN_HOST)
+#
+    check_section('TDL')
     CFG.set('TDL', 'tdl', TDL)
     CFG.set('TDL', 'tdl_host', TDL_HOST)
 #
@@ -1189,6 +1197,8 @@ def USE_TOR():
     if bool(ZOO):
         return True
     if bool(TDL):
+        return True
+    if bool(GEN):
         return True
     return False
 

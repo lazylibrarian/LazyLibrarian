@@ -24,6 +24,7 @@ def findrows(lines, startrow, endrow):
     while current < finish:
         line = lines[current]
         if startrow in line:
+            row = []
             row.append(current)
             current += 1
             line = lines[current]
@@ -443,6 +444,88 @@ def ZOO(book=None):
                     logger.error(u"An unknown error occurred in the %s parser: %s" % (provider, str(e)))
 
     logger.debug(u"Found %i results from %s for %s" % (len(results), provider, book['searchterm']))
+    return results
+
+
+def GEN(book=None):
+
+    provider = "libgen"
+    host = lazylibrarian.GEN_HOST
+    if not str(host)[:4] == "http":
+        host = 'http://' + host
+
+    searchURL = url_fix(host + "/search.php?view=simple&open=0&phrase=0&column=def&res=100&req=" + \
+                        book['searchterm'])
+
+    result, success = fetchURL(searchURL)
+    if not success:
+        # seems KAT returns 404 if no results, not really an error
+        if '404' in result:
+            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+            result = False
+        else:
+            logger.debug(searchURL)
+            logger.debug('Error fetching data from %s: %s' % (provider, result))
+        result = False
+
+    results = []
+
+    if result:
+        logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
+        lines = result.split('\n')
+        rows = findrows(lines, '<tr ', '</tr>')
+
+        if len(rows):
+            logger.debug(u"Found %i result%s from %s for %s, no seeder information" % (len(rows),
+                         plural(len(rows)), provider, book['searchterm']))
+
+            try:
+                rownum = 0
+                while rownum < len(rows):
+                    cur = rows[rownum][0]
+                    fin = rows[rownum][1]
+                    author = None
+                    while cur < fin:
+                        line = lines[cur]
+
+                        if "author'>" in line:
+                            try:
+                                author = line.split("author'>")[1].split('<')[0]
+                            except  IndexError:
+                                author = None
+
+                        if "href='book/" in line:
+                            try:
+                                link = line.split("href='")[1].split("'")[0]
+                                title = line.split('>')[2].split('<')[0]
+                                url = host + '/' + link + '&oftorrent='
+                            except IndexError:
+                                url = None
+                        cur += 1
+                    size = 0
+                    seeders = 0
+
+                    if not url or not title:
+                        logger.debug('No url or title found')
+                    else:
+                        if author:
+                            title = author + ' ' + title
+                        results.append({
+                            'bookid': book['bookid'],
+                            'tor_prov': provider,
+                            'tor_title': title,
+                            'tor_url': url,
+                            'tor_size': str(size),
+                        })
+                        logger.debug('Found %s' % title)
+                    rownum += 1
+
+            except Exception as e:
+                logger.error(u"An unknown error occurred in the %s parser: %s" % (provider, str(e)))
+
+    logger.debug(
+        u"Found %i result%s from %s for %s" %
+        (len(results), plural(len(results)), provider, book['searchterm']))
     return results
 
 

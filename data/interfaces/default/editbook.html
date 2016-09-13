@@ -21,7 +21,7 @@
             </div>
             <div class="row">
                 <label>Change author to: </label>
-                <select class="form-control" name="authorname" size="36">
+                <select name="authorname">
                 %for item in authors:
                     <option value="${item['AuthorName']}"
                     %if config['authorName'] == item['AuthorName']:
@@ -30,6 +30,7 @@
                     >${item['AuthorName']}</option>
                 %endfor
                 </select>
+                <br><br>
             </div>
 
             <div class="row">

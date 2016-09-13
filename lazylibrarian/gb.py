@@ -375,7 +375,7 @@ class GoogleBooks:
                                         booklang = ""
                                         logger.error("Error finding language: %s" % str(e))
 
-                                if googlelang == "en" and booklang not in "en-US, en-GB, eng":
+                                if googlelang == "en" and booklang not in ["en-US", "en-GB", "eng"]:
                                     # these are all english, may need to expand
                                     # this list
                                     booknamealt = item['volumeInfo']['title']

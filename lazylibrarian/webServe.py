@@ -120,7 +120,7 @@ class WebInterface(object):
                      nzbget_host='', nzbget_port=0, nzbget_user='', nzbget_pass='', nzbget_cat='', nzbget_priority=0,
                      newzbin=0, newzbin_uid='', newzbin_pass='', kat=0, kat_host='', tpb=0, tpb_host='', tdl=0,
                      tdl_host='', zoo=0, zoo_host='', ebook_type='', mag_type='', reject_words='', reject_maxsize=0,
-                     book_api='', gr_api='', gb_api='',
+                     gen=0, gen_host='', book_api='', gr_api='', gb_api='',
                      versioncheck_interval='', search_interval='', scan_interval='', searchrss_interval=20,
                      ebook_dest_folder='', ebook_dest_file='',
                      mag_relative=0, mag_dest_folder='', mag_dest_file='', cache_age=30,
@@ -248,6 +248,8 @@ class WebInterface(object):
         lazylibrarian.ZOO_HOST = zoo_host
         lazylibrarian.TDL = bool(tdl)
         lazylibrarian.TDL_HOST = tdl_host
+        lazylibrarian.GEN = bool(gen)
+        lazylibrarian.GEN_HOST = gen_host
 
         lazylibrarian.EBOOK_TYPE = ebook_type
         lazylibrarian.MAG_TYPE = mag_type
@@ -682,8 +684,8 @@ class WebInterface(object):
 
                     l.append(
                         '<td class="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[8])
-                    lref = '<td class="bookart text-center"><a href="' + row[0]
-                    lref = lref + '" target="_blank" rel="noreferrer"><img src="' + row[0]
+                    lref = '<td class="bookart text-center"><a href="%s' % row[0]
+                    lref = lref + '" target="_blank" rel="noreferrer"><img src="%s' % row[0]
                     lref = lref + '" alt="Cover" class="bookcover-sm img-responsive"></a></td>'
                     l.append(lref)
                     l.append(
@@ -710,19 +712,19 @@ class WebInterface(object):
                     l.append('<td class="date text-center">%s</td>' % row[6])
                     if row[7] == 'Open':
                         btn = '<td class="status text-center"><a class="button green btn btn-xs btn-warning"'
-                        btn = btn + ' href="openBook?bookid=' + row[8] + '" target="_self"><i class="fa fa-book"></i>'
-                        btn = btn + row[7] + '</a></td>'
+                        btn = btn + ' href="openBook?bookid=%s' % row[8]
+                        btn = btn + '" target="_self"><i class="fa fa-book"></i>%s</a></td>' % row[7]
                     elif row[7] == 'Wanted':
-                        btn = '<td class="status text-center"><p><a class="a btn btn-xs btn-danger">'
-                        btn = btn + row[7] + '</a></p><p><a class="b btn btn-xs btn-success" '
-                        btn = btn + 'href="searchForBook?bookid=' + row[8]
+                        btn = '<td class="status text-center"><p><a class="a btn btn-xs btn-danger">%s' % row[7]
+                        btn = btn + '</a></p><p><a class="b btn btn-xs btn-success" '
+                        btn = btn + 'href="searchForBook?bookid=%s' % row[8]
                         btn = btn + '" target="_self"><i class="fa fa-search"></i> Search</a></p></td>'
                     elif row[7] == 'Snatched' or row[7] == 'Have':
-                        btn = '<td class="status text-center"><a class="button btn btn-xs btn-info">'
-                        btn = btn + row[7] + '</a></td>'
+                        btn = '<td class="status text-center"><a class="button btn btn-xs btn-info">%s' % row[7]
+                        btn = btn + '</a></td>'
                     else:
-                        btn = '<td class="status text-center"><a class="button btn btn-xs btn-default grey">'
-                        btn = btn + row[7] + '</a></td>'
+                        btn = '<td class="status text-center"><a class="button btn btn-xs btn-default grey">%s' % row[7]
+                        btn = btn + '</a></td>'
                     l.append(btn)
 
                 else:  # lazylibrarian.HTTP_LOOK == 'default':
@@ -740,8 +742,8 @@ class WebInterface(object):
 
                     l.append(
                         '<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[8])
-                    lref = '<td id="bookart"><a href="' + row[0] + '" target="_new"><img src="'
-                    lref = lref + row[0] + '" height="75" width="50"></a></td>'
+                    lref = '<td id="bookart"><a href="%s" target="_new"><img src="%s' % (row[0], row[0])
+                    lref = lref + '" height="75" width="50"></a></td>'
                     l.append(lref)
                     l.append(
                         '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[12], row[1]))
@@ -767,11 +769,11 @@ class WebInterface(object):
                     l.append('<td id="date">%s</td>' % row[6])
 
                     if row[7] == 'Open':
-                        btn = '<td id="status"><a class="button green" href="openBook?bookid='
-                        btn = btn + row[8] + '" target="_self">Open</a></td>'
+                        btn = '<td id="status"><a class="button green" href="openBook?bookid=%s' % row[8]
+                        btn = btn + '" target="_self">Open</a></td>'
                     elif row[7] == 'Wanted':
-                        btn = '<td id="status"><a class="button red" href="searchForBook?bookid='
-                        btn = btn + row[8] + '" target="_self"><span class="a">Wanted</span>'
+                        btn = '<td id="status"><a class="button red" href="searchForBook?bookid=%s' % row[8]
+                        btn = btn + '" target="_self"><span class="a">Wanted</span>'
                         btn = btn + '<span class="b">Search</span></a></td>'
                     elif row[7] == 'Snatched' or row[7] == 'Have':
                         btn = '<td id="status"><a class="button">%s</a></td>' % row[7]
@@ -1766,9 +1768,9 @@ class WebInterface(object):
 
                 if lazylibrarian.HTTP_LOOK == 'bookstrap':
                     if 'goodreads' in row[6]:
-                        sitelink = '<a href="' + row[6] + '" target="_new"><small><i>GoodReads</i></small></a>'
+                        sitelink = '<a href="%s" target="_new"><small><i>GoodReads</i></small></a>' % row[6]
                     if 'google' in row[6]:
-                        sitelink = '<a href="' + row[6] + '" target="_new"><small><i>GoogleBooks</i></small></a>'
+                        sitelink = '<a href="%s" target="_new"><small><i>GoogleBooks</i></small></a>' % row[6]
 
                     if row[7]:  # is there a sub-title
                         l.append(
@@ -1779,9 +1781,9 @@ class WebInterface(object):
 
                 else:  # lazylibrarian.HTTP_LOOK == 'default':
                     if 'goodreads' in row[6]:
-                        sitelink = '<a href="' + row[6] + '" target="_new"><i class="smalltext">GoodReads</i></a>'
+                        sitelink = '<a href="%s" target="_new"><i class="smalltext">GoodReads</i></a>' % row[6]
                     if 'google' in row[6]:
-                        sitelink = '<a href="' + row[6] + '" target="_new"><i class="smalltext">GoogleBooks</i></a>'
+                        sitelink = '<a href="%s" target="_new"><i class="smalltext">GoogleBooks</i></a>' % row[6]
 
                     if row[7]:  # is there a sub-title
                         l.append(
