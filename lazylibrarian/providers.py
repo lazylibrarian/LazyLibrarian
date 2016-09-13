@@ -12,6 +12,37 @@ from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL, GEN
 import lib.feedparser as feedparser
 
 
+
+def get_searchterm(book, searchType):
+    authorname = book['authorName']
+    bookname = book['bookName']
+    if searchType == "book" or searchType == "shortbook":
+        while authorname[1] in '. ':  # strip any leading initials
+            authorname = authorname[2:].strip()  # and leading whitespace
+        # middle initials can't have a dot
+        authorname = authorname.replace('. ', ' ')
+        authorname = cleanName(authorname)
+        bookname = cleanName(bookname)
+        if bookname == authorname and book['bookSub']:
+            # books like "Spike Milligan: Man of Letters"
+            # where we split the title/subtitle on ':'
+            bookname = cleanName(book['bookSub'])
+        if bookname.startswith(authorname) and len(bookname) > len(authorname):
+            # books like "Spike Milligan In his own words"
+            # where we don't want to look for "Spike Milligan Spike Milligan In his own words"
+            bookname = bookname[len(authorname) + 1:]
+        bookname = bookname.strip()
+
+        if searchType == "book":
+            return authorname, bookname
+
+        if searchtype == "shortbook" and '(' in bookname:
+            bookname = bookname.split('(')[0].strip()
+            return authorname, bookname
+
+    # any other searchType
+    return authorname, bookname
+
 def get_capabilities(provider):
     """
     query provider for caps if none loaded yet, or if config entry is too old and not set manually.
@@ -171,6 +202,8 @@ def IterateOverTorrentSites(book=None, searchType=None):
 
     resultslist = []
     providers = 0
+    authorname, bookname = get_searchterm(book, searchType)
+    book['searchterm'] = authorname + ' ' + bookname
     if (lazylibrarian.KAT):
         providers += 1
         logger.debug('[IterateOverTorrentSites] - KAT')
@@ -407,23 +440,8 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
 def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
 
     params = None
+    authorname, bookname = get_searchterm(book, searchType)
     if searchType == "book":
-        authorname = book['authorName']
-        while authorname[1] in '. ':  # strip any leading initials
-            authorname = authorname[2:].strip()  # and leading whitespace
-        # middle initials can't have a dot
-        authorname = authorname.replace('. ', ' ')
-        authorname = cleanName(authorname)
-        bookname = cleanName(book['bookName'])
-        if bookname == authorname and book['bookSub']:
-            # books like "Spike Milligan: Man of Letters"
-            # where we split the title/subtitle on ':'
-            bookname = cleanName(book['bookSub'])
-        if bookname.startswith(authorname) and len(bookname) > len(authorname):
-            # books like "Spike Milligan In his own words"
-            # where we don't want to look for "Spike Milligan Spike Milligan In his own words"
-            bookname = bookname[len(authorname) + 1:]
-
         if provider['BOOKSEARCH'] and provider['BOOKCAT']:  # if specific booksearch, use it
             params = {
                 "t": provider['BOOKSEARCH'],
@@ -440,23 +458,6 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "cat": provider['BOOKCAT']
             }
     elif searchType == "shortbook":
-        authorname = book['authorName']
-        while authorname[1] in '. ':  # strip any leading initials
-            authorname = authorname[2:].strip()  # and leading whitespace
-        # middle initials can't have a dot
-        authorname = authorname.replace('. ', ' ')
-        authorname = cleanName(authorname)
-        bookname = cleanName(book['bookName'])
-        if bookname == authorname and book['bookSub']:
-            # books like "Spike Milligan: Man of Letters"
-            # where we split the title/subtitle on ':'
-            bookname = cleanName(book['bookSub'])
-        if bookname.startswith(authorname) and len(bookname) > len(authorname):
-            # books like "Spike Milligan in his own words"
-            # where we don't want to look for "Spike Milligan Spike Milligan in his own words"
-            bookname = bookname[len(authorname) + 1:]
-        if '(' in bookname:
-            bookname = bookname.split('(')[0].strip()
         if provider['BOOKSEARCH'] and provider['BOOKCAT']:  # if specific booksearch, use it
             params = {
                 "t": provider['BOOKSEARCH'],

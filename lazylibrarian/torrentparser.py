@@ -80,8 +80,6 @@ def TPB(book=None):
         lines = result.split('\n')
         rows = findrows(lines, '<tr>', '</tr>')
         if len(rows) > 0:
-            logger.debug(u"Found %i result%s from %s for %s, checking seeders" % (len(rows),
-                         plural(len(rows)), provider, book['searchterm']))
             minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
             try:
                 rownum = 0
@@ -210,8 +208,6 @@ def KAT(book=None):
         rows = findrows(lines, '<tr ', '</tr>')
         # first row is the column headers
         if len(rows) > 1:
-            logger.debug(u"Found %i result%s from %s for %s, checking seeders" % (len(rows) - 1,
-                         plural(len(rows) - 1), provider, book['searchterm']))
             minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
             try:
                 rownum = 1
@@ -407,10 +403,7 @@ def ZOO(book=None):
         d = feedparser.parse(data)
         if not len(d.entries):
             pass
-
         else:
-            logger.debug(u"Found %i result%s from %s for %s, checking seeders" % (len(d.entries),
-                         plural(len(d.entries)), provider, book['searchterm']))
             for item in d.entries:
                 try:
                     title = item['title']
@@ -586,10 +579,7 @@ def TDL(book=None):
         d = feedparser.parse(data)
         if not len(d.entries):
             pass
-
         else:
-            logger.debug(u"Found %i result%s from %s for %s, checking seeders" % (len(d.entries),
-                         plural(len(d.entries)), provider, book['searchterm']))
             for item in d.entries:
                 try:
                     title = item['title']

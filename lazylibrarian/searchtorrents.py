@@ -87,10 +87,10 @@ def search_tor_book(books=None, reset=False):
             resultlist, nproviders = IterateOverTorrentSites(book, 'shortbook')
             found = processResultList(resultlist, book, "shortbook")
 
-        # if you can't find the book under "books", you might find under general search
-        if not found:
-            resultlist, nproviders = IterateOverTorrentSites(book, 'general')
-            found = processResultList(resultlist, book, "general")
+        # general search is the same as booksearch for torrents
+        # if not found:
+        #    resultlist, nproviders = IterateOverTorrentSites(book, 'general')
+        #    found = processResultList(resultlist, book, "general")
 
         if not found:
             logger.debug("Searches for %s returned no results." % book['searchterm'])
