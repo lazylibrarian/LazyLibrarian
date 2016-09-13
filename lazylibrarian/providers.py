@@ -36,7 +36,7 @@ def get_searchterm(book, searchType):
         if searchType == "book":
             return authorname, bookname
 
-        if searchtype == "shortbook" and '(' in bookname:
+        if searchType == "shortbook" and '(' in bookname:
             bookname = bookname.split('(')[0].strip()
             return authorname, bookname
 
