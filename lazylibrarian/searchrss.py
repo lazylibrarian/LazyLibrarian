@@ -7,7 +7,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 
 from lib.fuzzywuzzy import fuzz
-from lazylibrarian.providers import IterateOverRSSSites
+from lazylibrarian.providers import IterateOverRSSSites, get_searchterm
 from lazylibrarian.common import scheduleJob
 from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, check_int, now
 from lazylibrarian.searchtorrents import TORDownloadMethod
@@ -62,26 +62,17 @@ def search_rss_book(books=None, reset=False):
 
     rss_count = 0
     for book in searchbooks:
-        author = book['AuthorName']
-        title = book['BookName']
+        authorname, bookname = get_searchterm(book, "book")
+        found = processResultList(resultlist, authorname, bookname, book, 'book')
 
-        author = unaccented_str(replace_all(author, dic))
-        title = unaccented_str(replace_all(title, dic))
-
-        found = processResultList(resultlist, author, title, book, 'full')
-
-        # if you can't find the book, try author without initials,
-        # and title without any "(extended details, series etc)"
+        # if you can't find the book, try title without any "(extended details, series etc)"
         if not found:
-            if author[1] in '. ' or '(' in title:  # anything to shorten?
-                while author[1] in '. ':  # strip any initials
-                    author = author[2:].strip()  # and leading whitespace
-                if '(' in title:
-                    title = title.split('(')[0]
-                found = processResultList(resultlist, author, title, book, 'short')
+            if '(' in bookname:  # anything to shorten?
+                authorname, bookname = get_searchterm(book, "shortbook")
+                found = processResultList(resultlist, authorname, bookname, book, 'shortbook')
 
         if not found:
-            logger.debug("Searches returned no results. Adding book %s - %s to queue." % (author, title))
+            logger.debug("Searches returned no results. Adding book %s - %s to queue." % (authorname, bookname))
         if found > True:
             rss_count = rss_count + 1
 
@@ -91,7 +82,7 @@ def search_rss_book(books=None, reset=False):
         scheduleJob(action='Restart', target='search_rss_book')
 
 
-def processResultList(resultlist, author, title, book, searchtype):
+def processResultList(resultlist, authorname, bookname, book, searchtype):
     myDB = database.DBConnection()
     dictrepl = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
                 ',': ' ', '*': '', '(': '', ')': '', '[': '', ']': '', '#': '', '0': '', '1': '', '2': '',
@@ -108,8 +99,8 @@ def processResultList(resultlist, author, title, book, searchtype):
         torTitle = unaccented_str(replace_all(tor['tor_title'], dictrepl)).strip()
         torTitle = re.sub(r"\s\s+", " ", torTitle)  # remove extra whitespace
 
-        tor_Author_match = fuzz.token_set_ratio(author, torTitle)
-        tor_Title_match = fuzz.token_set_ratio(title, torTitle)
+        tor_Author_match = fuzz.token_set_ratio(authorname, torTitle)
+        tor_Title_match = fuzz.token_set_ratio(bookname, torTitle)
         logger.debug("RSS Author/Title Match: %s/%s for %s" % (tor_Author_match, tor_Title_match, torTitle))
         tor_url = tor['tor_url']
 
@@ -123,7 +114,7 @@ def processResultList(resultlist, author, title, book, searchtype):
 
         if not rejected:
             for word in reject_list:
-                if word in torTitle.lower() and word not in author.lower() and word not in book.lower():
+                if word in torTitle.lower() and word not in authorname.lower() and word not in bookname.lower():
                     rejected = True
                     logger.debug("Rejecting %s, contains %s" % (torTitle, word))
                     break
@@ -160,8 +151,8 @@ def processResultList(resultlist, author, title, book, searchtype):
             score = (tor_Title_match + tor_Author_match) / 2  # as a percentage
             # lose a point for each extra word in the title so we get the closest match
             words = len(getList(torTitle))
-            words -= len(getList(author))
-            words -= len(getList(title))
+            words -= len(getList(authorname))
+            words -= len(getList(bookname))
             score -= abs(words)
             matches.append([score, torTitle, newValueDict, controlValueDict])
 
@@ -174,7 +165,7 @@ def processResultList(resultlist, author, title, book, searchtype):
 
         if score < match_ratio:
             logger.debug(u'Nearest RSS match (%s%%): %s using %s search for %s %s' %
-                         (score, nzb_Title, searchtype, author, title))
+                         (score, nzb_Title, searchtype, authorname, bookname))
             return False
 
         logger.info(u'Best RSS match (%s%%): %s using %s search' %
