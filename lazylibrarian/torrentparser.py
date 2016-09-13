@@ -476,15 +476,13 @@ def GEN(book=None):
         rows = findrows(lines, '<tr ', '</tr>')
 
         if len(rows):
-            logger.debug(u"Found %i result%s from %s for %s, no seeder information" % (len(rows),
-                         plural(len(rows)), provider, book['searchterm']))
-
             try:
                 rownum = 0
                 while rownum < len(rows):
                     cur = rows[rownum][0]
                     fin = rows[rownum][1]
                     author = None
+                    url = None
                     size = 0
                     while cur < fin:
                         line = lines[cur]
@@ -519,9 +517,7 @@ def GEN(book=None):
                         cur += 1
                     seeders = 0
 
-                    if not url or not title:
-                        logger.debug('No url or title found')
-                    else:
+                    if url and title:
                         if author:
                             title = author.strip() + ' ' + title.strip()
                         results.append({
