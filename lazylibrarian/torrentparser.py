@@ -485,14 +485,9 @@ def GEN(book=None):
                     cur = rows[rownum][0]
                     fin = rows[rownum][1]
                     author = None
+                    size = 0
                     while cur < fin:
                         line = lines[cur]
-
-                        if "author'>" in line:
-                            try:
-                                author = line.split("author'>")[1].split('<')[0]
-                            except  IndexError:
-                                author = None
 
                         if "href='book/" in line:
                             try:
@@ -501,15 +496,34 @@ def GEN(book=None):
                                 url = host + '/' + link + '&oftorrent='
                             except IndexError:
                                 url = None
+
+                            try:
+                                auth = lines[cur - 1]
+                                author = auth.split("author'>")[1].split('<')[0]
+                            except IndexError:
+                                author = None
+                            try:
+                                size = lines[cur + 5]
+                                size = size.split("nowrap>")[1].split("<")[0]
+                                if ' ' in size:
+                                    units = size.split(' ')[1].lower()
+                                    size = int(size.split(' ')[0])
+                                    if 'kb' in units:
+                                        size = size * 1024
+                                    if 'mb' in units:
+                                        size = size * 1024 * 1024
+                                else:
+                                    size = int(size)
+                            except Exception:
+                                size = 0
                         cur += 1
-                    size = 0
                     seeders = 0
 
                     if not url or not title:
                         logger.debug('No url or title found')
                     else:
                         if author:
-                            title = author + ' ' + title
+                            title = author.strip() + ' ' + title.strip()
                         results.append({
                             'bookid': book['bookid'],
                             'tor_prov': provider,
@@ -517,7 +531,7 @@ def GEN(book=None):
                             'tor_url': url,
                             'tor_size': str(size),
                         })
-                        logger.debug('Found %s' % title)
+                        logger.debug('Found %s, size %s' % (title, size))
                     rownum += 1
 
             except Exception as e:
