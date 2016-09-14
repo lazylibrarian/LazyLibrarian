@@ -202,8 +202,10 @@ def IterateOverTorrentSites(book=None, searchType=None):
 
     resultslist = []
     providers = 0
-    authorname, bookname = get_searchterm(book, searchType)
-    book['searchterm'] = authorname + ' ' + bookname
+    if searchType != 'mag':
+        authorname, bookname = get_searchterm(book, searchType)
+        book['searchterm'] = authorname + ' ' + bookname
+
     if (lazylibrarian.KAT):
         providers += 1
         logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.KAT_HOST)
