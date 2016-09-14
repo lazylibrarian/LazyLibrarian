@@ -58,6 +58,17 @@ def addTorrent(link):
         return False
 
 
+def renameTorrent(torrentid, location, name):
+    method = 'torrent-set-location'
+    arguments = {'torrent_id': torrentid, 'location': location + '/' + name, 'move': True}
+
+    response = torrentAction(method, arguments)
+
+    if not response:
+        return False
+    return response
+
+
 def getTorrentFolder(torrentid):
     method = 'torrent-get'
     arguments = {'ids': torrentid, 'fields': ['name', 'percentDone']}

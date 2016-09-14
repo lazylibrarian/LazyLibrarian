@@ -200,8 +200,13 @@ def processResultList(resultlist, book, searchtype):
             return True  # someone else found it, not us
         else:
             myDB.upsert("wanted", newValueDict, controlValueDict)
-            snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
-                                       newValueDict["NZBtitle"], controlValueDict["NZBurl"])
+            if newValueDict["NZBprov"] == 'libgen':
+                # for libgen we use direct download links
+                snatch = DirectDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
+                                              newValueDict["NZBtitle"], controlValueDict["NZBurl"], nzb_Title)
+            else:
+                snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
+                                           newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             if snatch:
                 notify_snatch(newValueDict["NZBtitle"] + ' at ' + now())
                 scheduleJob(action='Start', target='processDir')
@@ -209,6 +214,60 @@ def processResultList(resultlist, book, searchtype):
     else:
         logger.debug("No torrent's found for [%s] using searchtype %s" % (book["searchterm"], searchtype))
     return False
+
+
+def DirectDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None, bookname=None):
+    myDB = database.DBConnection()
+    download = False
+    full_url = tor_url  # keep the url as stored in "wanted" table
+
+    request = urllib2.Request(ur'%s' % tor_url)
+    if lazylibrarian.PROXY_HOST:
+        request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
+    request.add_header('Accept-encoding', 'gzip')
+    request.add_header('User-Agent', USER_AGENT)
+
+    try:
+        response = urllib2.urlopen(request, timeout=90)
+        if response.info().get('Content-Encoding') == 'gzip':
+            buf = StringIO(response.read())
+            f = gzip.GzipFile(fileobj=buf)
+            fdata = f.read()
+        else:
+            fdata = response.read()
+        bookname = '.'.join(bookname.rsplit(' ', 1))  # last word is the extension
+        logger.debug("File download got %s bytes for %s/%s" % (len(fdata), tor_title, bookname))
+        destdir = os.path.join(lazylibrarian.DOWNLOAD_DIR, tor_title)
+        try:
+            os.makedirs(destdir)
+        except OSError as e:
+            if 'File exists' not in e.strerror:  # directory already exists is ok
+                logger.debug("Error creating directory %s, %s" % (destdir, e.strerror))
+
+        destfile = os.path.join(destdir, bookname)
+        try:
+            with open(destfile, 'wb') as bookfile:
+                bookfile.write(fdata)
+            download = True
+        except Exception as e:
+            logger.debug("Error writing book to %s, %s" % (destfile, str(e)))
+
+    except (socket.timeout) as e:
+        logger.warn('Timeout fetching file from url: %s' % tor_url)
+        return False
+    except (urllib2.URLError) as e:
+        logger.warn('Error fetching file from url: %s, %s' % (tor_url, e.reason))
+        return False
+
+    if download:
+        logger.debug(u'File %s has been downloaded from %s' % (tor_title, tor_url))
+        myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
+        myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl="%s"' % full_url)
+        return True
+    else:
+        logger.error(u'Failed to download file @ <a href="%s">%s</a>' % (full_url, tor_url))
+        myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl="%s"' % full_url)
+        return False
 
 
 def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
@@ -297,7 +356,10 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         if (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION and lazylibrarian.TRANSMISSION_HOST):
             logger.debug("Sending %s to Transmission" % tor_title)
             download = transmission.addTorrent(tor_url)
-
+            if download:
+                logger.debug("Renaming %s to %s" % (tor_url, tor_title))
+                rename = transmission.renameTorrent(download, lazylibrarian.DOWNLOAD_DIR, tor_title)
+                logger.debug(rename)
         if (lazylibrarian.TOR_DOWNLOADER_DELUGE and lazylibrarian.DELUGE_HOST):
             logger.debug("Sending %s to Deluge" % tor_title)
             if not lazylibrarian.DELUGE_USER:

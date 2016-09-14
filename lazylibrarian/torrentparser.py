@@ -476,23 +476,30 @@ def GEN(book=None):
                     fin = rows[rownum][1]
                     author = None
                     url = None
+                    link = None
+                    ftype = None
                     size = 0
                     while cur < fin:
                         line = lines[cur]
 
                         if "href='book/" in line:
                             try:
-                                link = line.split("href='")[1].split("'")[0]
+                                link = line.split("href='book/")[1].split("'")[0]
                                 title = line.split('>')[2].split('<')[0]
-                                url = host + '/' + link + '&oftorrent='
+                                link = link.split('?')[1]
                             except IndexError:
-                                url = None
+                                link = None
 
                             try:
                                 auth = lines[cur - 1]
                                 author = auth.split("author'>")[1].split('<')[0]
                             except IndexError:
                                 author = None
+                            try:
+                                ftype = lines[cur + 6]
+                                ftype = ftype.split("nowrap>")[1].split('<')[0]
+                            except IndexError:
+                                ftype = None
                             try:
                                 size = lines[cur + 5]
                                 size = size.split("nowrap>")[1].split("<")[0]
@@ -510,17 +517,42 @@ def GEN(book=None):
                         cur += 1
                     seeders = 0
 
-                    if url and title:
+                    if link and title:
                         if author:
                             title = author.strip() + ' ' + title.strip()
-                        results.append({
-                            'bookid': book['bookid'],
-                            'tor_prov': provider,
-                            'tor_title': title,
-                            'tor_url': url,
-                            'tor_size': str(size),
-                        })
-                        logger.debug('Found %s, size %s' % (title, size))
+                        if ftype:
+                            title = title + '.' + ftype
+
+                        bookURL = url_fix(host + "/ads.php?" + link)
+                        bookresult, success = fetchURL(bookURL)
+                        if not success:
+                            # seems KAT returns 404 if no results, not really an error
+                            if '404' in bookresult:
+                                logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+                                bookresult = False
+                            else:
+                                logger.debug(bookURL)
+                                logger.debug('Error fetching data from %s: %s' % (provider, bookresult))
+                            bookresult = False
+                        if bookresult:
+                            url = None
+                            booklines = bookresult.split('\n')
+                            for bookline in booklines:
+                                if "href='/get.php" in bookline:
+                                    try:
+                                        url = url_fix(host + bookline.split("href='")[1].split("'")[0])
+                                        break
+                                    except IndexError:
+                                        pass
+                            if url:
+                                results.append({
+                                    'bookid': book['bookid'],
+                                    'tor_prov': provider,
+                                    'tor_title': title,
+                                    'tor_url': url,
+                                    'tor_size': str(size),
+                                })
+                                logger.debug('Found %s, size %s, %s' % (title, size, url))
                     rownum += 1
 
             except Exception as e:

@@ -206,23 +206,23 @@ def IterateOverTorrentSites(book=None, searchType=None):
     book['searchterm'] = authorname + ' ' + bookname
     if (lazylibrarian.KAT):
         providers += 1
-        logger.debug('[IterateOverTorrentSites] - KAT')
+        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.KAT_HOST)
         resultslist += KAT(book)
     if (lazylibrarian.TPB):
         providers += 1
-        logger.debug('[IterateOverTorrentSites] - TPB')
+        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.TPB_HOST)
         resultslist += TPB(book)
     if (lazylibrarian.ZOO):
         providers += 1
-        logger.debug('[IterateOverTorrentSites] - ZOO')
+        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.ZOO_HOST)
         resultslist += ZOO(book)
     if (lazylibrarian.TDL):
         providers += 1
-        logger.debug('[IterateOverTorrentSites] - TDL')
+        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.TDL_HOST)
         resultslist += TDL(book)
     if (lazylibrarian.GEN):
         providers += 1
-        logger.debug('[IterateOverTorrentSites] - GEN')
+        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.GEN_HOST)
         resultslist += GEN(book)
 
     return resultslist, providers
