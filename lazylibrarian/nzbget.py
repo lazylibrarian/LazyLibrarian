@@ -30,13 +30,15 @@ import socket
 
 from lazylibrarian import logger
 
+
 def checkLink():
-    #socket.setdefaulttimeout(2)
+    # socket.setdefaulttimeout(2)
     test = sendNZB("test")
-    #socket.setdefaulttimeout(None)
+    # socket.setdefaulttimeout(None)
     if test:
         return "NZBget connection successful"
     return "NZBget connection FAILED\nCheck debug log"
+
 
 def sendNZB(nzb):
     if nzb == "test":

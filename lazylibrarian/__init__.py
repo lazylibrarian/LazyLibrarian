@@ -180,6 +180,8 @@ ZOO = 0
 ZOO_HOST = None
 TDL = 0
 TDL_HOST = None
+GEN = 0
+GEN_HOST = None
 
 NZB_DOWNLOADER_SABNZBD = 0
 NZB_DOWNLOADER_NZBGET = 0
@@ -330,6 +332,7 @@ def check_setting_str(config, cfg_name, item_name, def_val, log=True):
 
     return my_val.decode(SYS_ENCODING)
 
+
 def initialize():
 
     with INIT_LOCK:
@@ -408,6 +411,7 @@ def initialize():
         __INITIALIZED__ = True
         return True
 
+
 def config_read(reloaded=False):
         global FULL_PATH, PROG_DIR, DAEMON, \
             HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_PROXY, HTTP_ROOT, HTTP_LOOK, API_KEY, API_ENABLED, \
@@ -421,7 +425,7 @@ def config_read(reloaded=False):
             NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, \
             NZBGET_PORT, NZB_DOWNLOADER_NZBGET, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
             NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, EBOOK_TYPE, MAG_TYPE, \
-            KAT, KAT_HOST, TPB, TPB_HOST, ZOO, ZOO_HOST, TDL, TDL_HOST, \
+            KAT, KAT_HOST, TPB, TPB_HOST, ZOO, ZOO_HOST, TDL, TDL_HOST, GEN, GEN_HOST, \
             NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, REJECT_WORDS, REJECT_MAXSIZE, \
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, SEARCHRSS_INTERVAL, \
             EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, \
@@ -489,7 +493,7 @@ def config_read(reloaded=False):
         IMP_ONLYISBN = check_setting_bool(CFG, 'General', 'imp_onlyisbn', 0)
         IMP_SINGLEBOOK = check_setting_bool(CFG, 'General', 'imp_singlebook', 0)
         IMP_CONVERT = check_setting_str(CFG, 'General', 'imp_convert', '')
-        GIT_PROGRAM = check_setting_str(CFG, 'General', 'git_program','')
+        GIT_PROGRAM = check_setting_str(CFG, 'General', 'git_program', '')
         CACHE_AGE = check_setting_int(CFG, 'General', 'cache_age', 30)
 
         GIT_USER = check_setting_str(CFG, 'Git', 'git_user', 'dobytang')
@@ -535,11 +539,15 @@ def config_read(reloaded=False):
         ALTERNATE_DIR = check_setting_str(CFG, 'General', 'alternate_dir', '')
         DOWNLOAD_DIR = check_setting_str(CFG, 'General', 'download_dir', '')
         if not DOWNLOAD_DIR:
-            logger.warn("Download dir not found, books will be downloaded to %s" % os.getcwd())
+            logger.warn("Download dir not configured, books will be downloaded to %s" % os.getcwd())
         elif not os.path.isdir(DOWNLOAD_DIR):
-            logger.warn("Download dir [%s] not found, books will be downloaded to %s" % (repr(DOWNLOAD_DIR), os.getcwd()))
+            logger.warn(
+                "Download dir [%s] not found, books will be downloaded to %s" %
+                (repr(DOWNLOAD_DIR), os.getcwd()))
         elif not os.access(DOWNLOAD_DIR, os.W_OK | os.X_OK):
-            logger.warn("Download dir [%s] not writeable, books will be downloaded to %s" % (repr(DOWNLOAD_DIR), os.getcwd()))
+            logger.warn(
+                "Download dir [%s] not writeable, books will be downloaded to %s" %
+                (repr(DOWNLOAD_DIR), os.getcwd()))
 
         NZB_DOWNLOADER_SABNZBD = check_setting_bool(CFG, 'USENET', 'nzb_downloader_sabnzbd', 0)
         NZB_DOWNLOADER_NZBGET = check_setting_bool(CFG, 'USENET', 'nzb_downloader_nzbget', 0)
@@ -728,6 +736,8 @@ def config_read(reloaded=False):
         ZOO_HOST = check_setting_str(CFG, 'ZOO', 'zoo_host', 'https://zooqle.com')
         TDL = check_setting_bool(CFG, 'TDL', 'tdl', 0)
         TDL_HOST = check_setting_str(CFG, 'TDL', 'tdl_host', 'torrentdownloads.me')
+        GEN = check_setting_bool(CFG, 'GEN', 'gen', 0)
+        GEN_HOST = check_setting_str(CFG, 'GEN', 'gen_host', 'libgen.io')
 
         NEWZBIN = check_setting_bool(CFG, 'Newzbin', 'newzbin', 0)
         NEWZBIN_UID = check_setting_str(CFG, 'Newzbin', 'newzbin_uid', '')
@@ -1000,7 +1010,11 @@ def config_write():
     CFG.set('ZOO', 'zoo', ZOO)
     CFG.set('ZOO', 'zoo_host', ZOO_HOST)
 #
-    check_section('TPB')
+    check_section('GEN')
+    CFG.set('GEN', 'gen', GEN)
+    CFG.set('GEN', 'gen_host', GEN_HOST)
+#
+    check_section('TDL')
     CFG.set('TDL', 'tdl', TDL)
     CFG.set('TDL', 'tdl_host', TDL_HOST)
 #
@@ -1109,6 +1123,7 @@ def add_newz_slot():
                              "MANUAL": 0
                              })
 
+
 def add_torz_slot():
     count = len(TORZNAB_PROV)
     if count == 0 or len(CFG.get('Torznab%i' % int(count - 1), 'HOST')):
@@ -1138,6 +1153,7 @@ def add_torz_slot():
                              "UPDATED": '',
                              "MANUAL": 0
                              })
+
 
 def USE_NZB():
     for provider in NEWZNAB_PROV:
@@ -1181,6 +1197,8 @@ def USE_TOR():
     if bool(ZOO):
         return True
     if bool(TDL):
+        return True
+    if bool(GEN):
         return True
     return False
 
@@ -1469,7 +1487,8 @@ def dbcheck():
                 c.execute('SELECT Title from issues')
             except sqlite3.OperationalError:
                 logger.info('Updating database to hold Issues table')
-                c.execute('CREATE TABLE issues (Title TEXT, IssueID TEXT, IssueAcquired TEXT, IssueDate TEXT, IssueFile TEXT)')
+                c.execute(
+                    'CREATE TABLE issues (Title TEXT, IssueID TEXT, IssueAcquired TEXT, IssueDate TEXT, IssueFile TEXT)')
                 addedIssues = True
             try:
                 c.execute('SELECT IssueID from issues')
@@ -1501,7 +1520,7 @@ def dbcheck():
                     if books:
                         logger.info('Adding series to existing books')
                         for book in books:
-                            series,seriesNum = bookSeries(book["BookName"])
+                            series, seriesNum = bookSeries(book["BookName"])
                             if series:
                                 controlValueDict = {"BookID": book["BookID"]}
                                 newValueDict = {
@@ -1509,8 +1528,8 @@ def dbcheck():
                                     "seriesNum": seriesNum
                                 }
                                 myDB.upsert("books", newValueDict, controlValueDict)
-                except Exception as z:
-                    logger.info('Error: ' + str(z))
+                except Exception as e:
+                    logger.info('Error: ' + str(e))
 
         if db_version < 2:
             try:
@@ -1522,8 +1541,8 @@ def dbcheck():
                         nzbsize = nzbsize.split(' ')[0]
                         myDB.action('UPDATE wanted SET NZBsize = "%s" WHERE BookID = "%s"' % (nzbsize, units["BookID"]))
 
-            except Exception as z:
-                logger.info('Error: ' + str(z))
+            except Exception as e:
+                logger.info('Error: ' + str(e))
 
         if db_version < 3:
             try:
@@ -1532,9 +1551,9 @@ def dbcheck():
                 try:
                     c.execute('CREATE TABLE IF NOT EXISTS temp_books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
                         BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
-                        BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, \
-                        BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesNum TEXT, \
-                        WorkPage TEXT)')
+                        BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, \
+                        BookFile TEXT, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, \
+                        SeriesNum TEXT, WorkPage TEXT)')
                     c.execute('INSERT INTO temp_books SELECT AuthorID,AuthorName,AuthorLink,BookName,BookSub, \
                         BookDesc,BookGenre,BookIsbn,BookPub,BookRate,BookImg,BookPages,BookLink,BookID, \
                         BookFile,BookDate,BookLang,BookAdded,Status,Series,SeriesNum,WorkPage FROM books')
@@ -1551,7 +1570,8 @@ def dbcheck():
                 c.execute('SELECT BookID from pastissues')
             except sqlite3.OperationalError:
                 logger.info('Moving magazine past issues into new table')
-                c.execute('CREATE TABLE pastissues AS SELECT * FROM wanted WHERE Status="Skipped" AND length(AuxInfo) > 0')
+                c.execute(
+                    'CREATE TABLE pastissues AS SELECT * FROM wanted WHERE Status="Skipped" AND length(AuxInfo) > 0')
                 c.execute('DELETE FROM wanted WHERE Status="Skipped" AND length(AuxInfo) > 0')
 
         if db_version < 4:
@@ -1562,7 +1582,8 @@ def dbcheck():
                 c.execute('ALTER TABLE stats ADD COLUMN duplicates INT')
 
         if db_version < 5:
-            issues = myDB.select('SELECT IssueID,IssueDate from issues WHERE length(IssueDate) < 4 and length(IssueDate) > 0')
+            issues = myDB.select(
+                'SELECT IssueID,IssueDate from issues WHERE length(IssueDate) < 4 and length(IssueDate) > 0')
             if issues:
                 logger.info('Updating issues table to hold 4 digit issue numbers')
                 for issue in issues:
@@ -1571,7 +1592,8 @@ def dbcheck():
                     issuedate = issuedate.zfill(4)
                     myDB.action('UPDATE issues SET IssueDate="%s" WHERE IssueID="%s"' % (issuedate, issueid))
 
-            mags = myDB.select('SELECT Title,IssueDate from magazines WHERE length(IssueDate) < 4 and length(IssueDate) > 0')
+            mags = myDB.select(
+                'SELECT Title,IssueDate from magazines WHERE length(IssueDate) < 4 and length(IssueDate) > 0')
             if mags:
                 logger.info('Updating magazines table to match')
                 for mag in mags:
@@ -1603,8 +1625,8 @@ def dbcheck():
                     authorid = author["AuthorID"]
                     myDB.action('DELETE from authors WHERE AuthorID="%s"' % authorid)
                     myDB.action('DELETE from books WHERE AuthorID="%s"' % authorid)
-        except Exception as z:
-            logger.info('Error: ' + str(z))
+        except Exception as e:
+            logger.info('Error: ' + str(e))
 
 
 def start():

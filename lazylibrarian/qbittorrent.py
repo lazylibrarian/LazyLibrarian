@@ -22,6 +22,9 @@ import re
 import os
 import platform
 import time
+import mimetypes
+import random
+import string
 
 import lazylibrarian
 
@@ -186,6 +189,7 @@ def removeTorrent(hash, remove_data=False):
                 return False
     return False
 
+
 def checkLink():
     """ Check we can talk to qbittorrent"""
     try:
@@ -199,6 +203,7 @@ def checkLink():
         return "qBittorrent login FAILED\nCheck debug log"
     except Exception as err:
         return "qBittorrent login FAILED: %s" % str(err)
+
 
 def addTorrent(link):
     logger.debug('addTorrent(%s)' % link)
@@ -248,13 +253,9 @@ def getFolder(hash):
         torrent_folder = qbclient.get_savepath(hash)
         return torrent_folder
     else:
-        if not 'windows' in platform.system().lower():
+        if 'windows' not in platform.system().lower():
             torrent_folder = torrent_folder.replace('\\', '/')
         return os.path.basename(os.path.normpath(torrent_folder))
-
-import mimetypes
-import random
-import string
 
 _BOUNDARY_CHARS = string.digits + string.ascii_letters
 
@@ -309,7 +310,7 @@ def encode_multipart(fields, files, boundary=None):
         lines.extend((
             '--{0}'.format(boundary),
             'Content-Disposition: form-data; name="{0}"; filename="{1}"'.format(
-            escape_quote(name), escape_quote(filename)),
+                escape_quote(name), escape_quote(filename)),
             'Content-Type: {0}'.format(mimetype),
             '',
             value['content'],

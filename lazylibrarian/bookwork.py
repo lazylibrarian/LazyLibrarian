@@ -9,6 +9,7 @@ from lazylibrarian.common import USER_AGENT
 from lazylibrarian.formatter import safe_unicode, plural
 from lazylibrarian.cache import cache_cover, fetchURL
 
+
 def getAuthorImages():
     """ Try to get an author image for all authors without one"""
     myDB = database.DBConnection()
@@ -19,7 +20,7 @@ def getAuthorImages():
         for author in authors:
             authorid = author['AuthorID']
             imagelink = getAuthorImage(authorid)
-            if imagelink and not "nophoto" in imagelink:
+            if imagelink and "nophoto" not in imagelink:
                 controlValueDict = {"AuthorID": authorid}
                 newValueDict = {"AuthorImg": imagelink}
                 myDB.upsert("authors", newValueDict, controlValueDict)
@@ -27,6 +28,7 @@ def getAuthorImages():
         logger.info('Author Image check completed, updated %s image%s' % (counter, plural(counter)))
     else:
         logger.debug('No missing images')
+
 
 def getBookCovers():
     """ Try to get a cover image for all books """
@@ -39,7 +41,7 @@ def getBookCovers():
         for book in books:
             bookid = book['BookID']
             coverlink = getBookCover(bookid)
-            if coverlink and not "nocover" in coverlink:
+            if coverlink and "nocover" not in coverlink:
                 controlValueDict = {"BookID": bookid}
                 newValueDict = {"BookImg": coverlink}
                 myDB.upsert("books", newValueDict, controlValueDict)
@@ -65,7 +67,7 @@ def setWorkPages():
                 newValueDict = {"WorkPage": worklink}
                 myDB.upsert("books", newValueDict, controlValueDict)
             else:
-               logger.debug('No WorkPage found for %s: %s' % (book['AuthorName'], book['BookName']))
+                logger.debug('No WorkPage found for %s: %s' % (book['AuthorName'], book['BookName']))
         logger.debug('setWorkPages completed')
 
 
@@ -112,12 +114,12 @@ def getBookWork(bookID=None, reason=None):
             lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
             bookisbn = item['BookISBN']
             if bookisbn:
-                URL='http://www.librarything.com/api/whatwork.php?isbn=' + bookisbn
+                URL = 'http://www.librarything.com/api/whatwork.php?isbn=' + bookisbn
             else:
                 title = safe_unicode(item['BookName']).encode(lazylibrarian.SYS_ENCODING)
                 author = safe_unicode(item['AuthorName']).encode(lazylibrarian.SYS_ENCODING)
                 safeparams = urllib.quote_plus("%s %s" % (author, title))
-                URL='http://www.librarything.com/api/whatwork.php?title=' + safeparams
+                URL = 'http://www.librarything.com/api/whatwork.php?title=' + safeparams
             librarything_wait()
             result, success = fetchURL(URL)
             if success:
@@ -148,6 +150,7 @@ def getBookWork(bookID=None, reason=None):
         logger.debug('Get Book Work - Invalid bookID [%s]' % bookID)
         return None
 
+
 def getWorkPage(bookID=None):
     """ return the URL of the LibraryThing workpage for the given bookid
         or an empty string if no workpage available """
@@ -162,6 +165,7 @@ def getWorkPage(bookID=None):
             return ''
         return page
     return ''
+
 
 def getWorkSeries(bookID=None):
     """ Return the series name and number in series for the given bookid
@@ -183,6 +187,7 @@ def getWorkSeries(bookID=None):
             seriesnum = None
         return series, seriesnum
     return None, None
+
 
 def getBookCover(bookID=None):
     """ Return link to a local file containing a book cover image for a bookid.
@@ -246,7 +251,7 @@ def getBookCover(bookID=None):
                     img = result.split('og:image')[1].split('content="')[1].split('"/>')[0]
                 except IndexError:
                     img = None
-                if img and img.startswith('http') and not 'nocover' in img and not 'nophoto' in img:
+                if img and img.startswith('http') and 'nocover' not in img and 'nophoto' not in img:
                     time_now = int(time.time())
                     if time_now <= lazylibrarian.LAST_GOODREADS:
                         time.sleep(1)
@@ -266,7 +271,7 @@ def getBookCover(bookID=None):
         # tbm=isch      search images
         # tbs=isz:l     large images
         # ift:jpg       jpeg file type
-        URL="https://www.google.com/search?tbm=isch&tbs=isz:l,ift:jpg&as_q=" + safeparams + "+ebook"
+        URL = "https://www.google.com/search?tbm=isch&tbs=isz:l,ift:jpg&as_q=" + safeparams + "+ebook"
         result, success = fetchURL(URL)
         if success:
             try:
@@ -285,6 +290,7 @@ def getBookCover(bookID=None):
         else:
             logger.debug("getBookCover: Error getting google page for %s, [%s]" % (safeparams, result))
     return None
+
 
 def getAuthorImage(authorid=None):
     # tbm=isch      search images
@@ -308,7 +314,7 @@ def getAuthorImage(authorid=None):
     if authors:
         authorname = authors[0][0]
         safeparams = urllib.quote_plus("%s" % authorname)
-        URL="https://www.google.com/search?tbm=isch&tbs=ift:jpg&as_q=" + safeparams
+        URL = "https://www.google.com/search?tbm=isch&tbs=ift:jpg&as_q=" + safeparams
         result, success = fetchURL(URL)
         if success:
             try:

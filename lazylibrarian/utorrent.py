@@ -71,7 +71,7 @@ class utorrentclient(object):
             response = self.opener.open(url)
         except Exception as err:
             logger.debug('URL: %s' % url)
-            logger.debug('Error getting Token. uTorrent responded with error: ' + str(err))
+            logger.debug('Error getting Token. uTorrent responded with: %s' % str(err))
             return None
         match = re.search(utorrentclient.TOKEN_REGEX, response.read())
         return match.group(1)
@@ -149,6 +149,7 @@ class utorrentclient(object):
             logger.debug('URL: %s' % url)
             logger.debug('uTorrent webUI raised the following error: ' + str(err))
 
+
 def checkLink():
     """ Check we can talk to utorrent"""
     try:
@@ -163,6 +164,7 @@ def checkLink():
         return "uTorrent login FAILED\nCheck debug log"
     except Exception as err:
         return "uTorrent login FAILED: %s" % str(err)
+
 
 def labelTorrent(hash):
     label = lazylibrarian.UTORRENT_LABEL

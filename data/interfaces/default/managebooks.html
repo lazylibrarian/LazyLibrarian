@@ -17,7 +17,8 @@
 <BR>
 <h1>&nbsp&nbspManage Books</h1><br>
     <form action="manage" method="get">
-    Manage books with status <select name="whichStatus">
+        <label>Manage books with status: </label>
+        <select name="whichStatus">
         %for item in ['Skipped', 'Wanted', 'Open', 'Have', 'Ignored']:
             <option value="${item}"
                 %if whichStatus == item:

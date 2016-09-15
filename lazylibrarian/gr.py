@@ -24,7 +24,6 @@ class GoodReads:
             logger.warn('No Goodreads API key, check config')
         self.params = {"key": lazylibrarian.GR_API}
 
-
     def find_results(self, authorname=None, queue=None):
         resultlist = []
         api_hits = 0
@@ -161,7 +160,7 @@ class GoodReads:
         try:
             rootxml, in_cache = get_xml_request(URL)
         except Exception as e:
-            logger.error("Error finding authorid: %s, %s" % (str(e), URL))
+            logger.error("Error finding authorid: %s, %s" % (URL, str(e)))
             return authorlist
         if rootxml is None:
             logger.debug("Error requesting authorid")
@@ -278,7 +277,7 @@ class GoodReads:
                         bookimg = book.find('image_url').text
                         if ('nocover' in bookimg):
                             bookimg = 'images/nocover.png'
-                    except (KeyError,AttributeError):
+                    except (KeyError, AttributeError):
                         bookimg = 'images/nocover.png'
 
     # PAB this next section tries to get the book language using the isbn13 to look it up. If no isbn13 we skip the
@@ -426,9 +425,9 @@ class GoodReads:
                     booksub = replace_all(booksub, dic)
                     booksub = booksub.strip()  # strip whitespace
                     if booksub:
-                        series,seriesNum = bookSeries(booksub)
+                        series, seriesNum = bookSeries(booksub)
                     else:
-                        series,seriesNum = bookSeries(bookname)
+                        series, seriesNum = bookSeries(bookname)
 
                     # GoodReads sometimes has multiple bookids for the same book (same author/title, different editions)
                     # and sometimes uses the same bookid if the book is the same but the title is slightly different
@@ -437,7 +436,7 @@ class GoodReads:
                     if find_book_status:
                         for resulted in find_book_status:
                             book_status = resulted['Status']
-                            locked = resulted ['Manual']
+                            locked = resulted['Manual']
                     else:
                         book_status = lazylibrarian.NEWBOOK_STATUS
                         locked = False
@@ -451,19 +450,19 @@ class GoodReads:
 
                     if not rejected and not bookname:
                         logger.debug('Rejecting bookid %s for %s, no bookname' %
-                                (bookid, authorNameResult))
+                                     (bookid, authorNameResult))
                         removedResults = removedResults + 1
                         rejected = True
 
                     if not rejected:
                         find_books = myDB.select('SELECT * FROM books WHERE BookName = "%s" and AuthorName = "%s"' %
-                                                    (bookname, authorNameResult.replace('"','""')))
+                                                 (bookname, authorNameResult.replace('"', '""')))
                         if find_books:
                             for find_book in find_books:
                                 if find_book['BookID'] != bookid:
                                     # we have a book with this author/title already
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
-                                        (find_book['BookID'], authorNameResult, bookname, bookid))
+                                                 (find_book['BookID'], authorNameResult, bookname, bookid))
                                     duplicates = duplicates + 1
                                     rejected = True
 
@@ -472,7 +471,7 @@ class GoodReads:
                         if find_books:
                             # we have a book with this bookid already
                             logger.debug('Rejecting bookid %s for [%s][%s] already got this bookid in database' %
-                                (bookid, authorNameResult, bookname))
+                                         (bookid, authorNameResult, bookname))
                             duplicates = duplicates + 1
                             rejected = True
 
@@ -523,7 +522,7 @@ class GoodReads:
                                     newValueDict = {"BookImg": link}
                                     myDB.upsert("books", newValueDict, controlValueDict)
 
-                            if seriesNum == None:
+                            if seriesNum is None:
                                 # try to get series info from librarything
                                 series, seriesNum = getWorkSeries(bookid)
                                 if seriesNum:
@@ -595,13 +594,15 @@ class GoodReads:
 
         logger.debug("Found %s total book%s for author" % (total_count, plural(total_count)))
         logger.debug("Removed %s bad language result%s for author" % (ignored, plural(ignored)))
-        logger.debug("Removed %s bad character or no-name result%s for author" % (removedResults, plural(removedResults)))
+        logger.debug(
+            "Removed %s bad character or no-name result%s for author" %
+            (removedResults, plural(removedResults)))
         logger.debug("Removed %s duplicate result%s for author" % (duplicates, plural(duplicates)))
         logger.debug("Ignored %s book%s by author marked as Ignored" % (book_ignore_count, plural(book_ignore_count)))
         logger.debug("Imported/Updated %s book%s for author" % (modified_count, plural(modified_count)))
 
         myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i, %i)' %
-                    (authorname.replace('"','""'), api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change,
+                    (authorname.replace('"', '""'), api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change,
                      cache_hits, ignored, removedResults, not_cached, duplicates))
 
         if refresh:
@@ -678,9 +679,9 @@ class GoodReads:
         booksub = replace_all(booksub, dic)
         booksub = booksub.strip()  # strip whitespace
         if booksub:
-           series,seriesNum = bookSeries(booksub)
+            series, seriesNum = bookSeries(booksub)
         else:
-           series,seriesNum = bookSeries(bookname)
+            series, seriesNum = bookSeries(bookname)
 
         controlValueDict = {"BookID": bookid}
         newValueDict = {
@@ -724,7 +725,7 @@ class GoodReads:
                 newValueDict = {"BookImg": link}
                 myDB.upsert("books", newValueDict, controlValueDict)
 
-        if seriesNum == None:
+        if seriesNum is None:
             #  try to get series info from librarything
             series, seriesNum = getWorkSeries(bookid)
             if seriesNum:

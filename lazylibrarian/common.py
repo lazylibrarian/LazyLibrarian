@@ -36,6 +36,7 @@ notifyStrings = {}
 notifyStrings[NOTIFY_SNATCH] = "Started Download"
 notifyStrings[NOTIFY_DOWNLOAD] = "Added to Library"
 
+
 def opf_file(search_dir=None):
     # find an .opf file in this directory
     # return full pathname of file, or empty string if no opf found
@@ -44,6 +45,7 @@ def opf_file(search_dir=None):
             if fname.endswith('.opf'):
                 return os.path.join(search_dir, fname)
     return ""
+
 
 def csv_file(search_dir=None):
     # find a csv file in this directory, any will do
@@ -54,6 +56,7 @@ def csv_file(search_dir=None):
                 return os.path.join(search_dir, fname)
     return ""
 
+
 def book_file(search_dir=None, booktype=None):
     # find a book/mag file in this directory, any book will do
     # return full pathname of book/mag, or empty string if none found
@@ -62,6 +65,7 @@ def book_file(search_dir=None, booktype=None):
             if is_valid_booktype(fname, booktype=booktype):
                 return os.path.join(search_dir, fname)
     return ""
+
 
 def scheduleJob(action='Start', target=None):
     """ Start or stop or restart a cron job by name eg
@@ -115,6 +119,7 @@ def scheduleJob(action='Start', target=None):
                 hours=int(lazylibrarian.VERSIONCHECK_INTERVAL))
             logger.debug("%s %s job" % (action, target))
 
+
 def restartJobs(start='Restart'):
     scheduleJob(start, 'processDir')
     scheduleJob(start, 'search_nzb_book')
@@ -122,6 +127,7 @@ def restartJobs(start='Restart'):
     scheduleJob(start, 'search_rss_book')
     scheduleJob(start, 'search_magazines')
     scheduleJob(start, 'checkForUpdates')
+
 
 def showJobs():
         result = []
@@ -159,6 +165,7 @@ def showJobs():
             jobinfo = "%s: Next run in %s" % (jobname, jobtime)
             result.append(jobinfo)
         return result
+
 
 def clearLog():
         logger.lazylibrarian_log.stopLogger()

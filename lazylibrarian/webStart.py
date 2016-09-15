@@ -17,7 +17,7 @@ def initialize(options={}):
         if not (os.path.exists(https_cert) and os.path.exists(https_key)):
             logger.warn("Disabled HTTPS because of missing certificate and key.")
             https_enabled = False
-    
+
     options_dict = {
         'log.screen': False,
         'server.thread_pool': 10,
@@ -28,16 +28,16 @@ def initialize(options={}):
         'tools.encode.encoding': 'utf-8',
         'tools.decode.on': True,
     }
-    
+
     if https_enabled:
         options_dict['server.ssl_certificate'] = https_cert
         options_dict['server.ssl_private_key'] = https_key
         protocol = "https"
     else:
         protocol = "http"
-        
+
     logger.info("Starting LazyLibrarian web server on %s://%s:%d/" %
-            (protocol, options['http_host'], options['http_port']))
+                (protocol, options['http_host'], options['http_port']))
     cherrypy.config.update(options_dict)
 
     conf = {

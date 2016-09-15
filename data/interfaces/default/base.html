@@ -93,10 +93,10 @@
 <body>
     <div id="container">
         <div id="ajaxMsg"></div>
-            % if lazylibrarian.INSTALL_TYPE == 'git':
+            % if lazylibrarian.INSTALL_TYPE == 'git' or  lazylibrarian.INSTALL_TYPE == 'source':
                 % if not lazylibrarian.CURRENT_VERSION:
                     <div id="updatebar">
-                        You're running an unknown version of lazylibrarian. <a href="update">Update</a> or
+                        You are running an unknown version of lazylibrarian. <a href="update">Update</a> or
                         <a href="#" onclick="$('#updatebar').slideUp('slow');">Close</a>
                     </div>
                 % elif (lazylibrarian.INSTALL_TYPE == 'source' and lazylibrarian.CURRENT_VERSION == 'No Version File' ):
