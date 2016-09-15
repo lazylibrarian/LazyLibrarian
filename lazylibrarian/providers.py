@@ -442,8 +442,8 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
 def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
 
     params = None
-    authorname, bookname = get_searchterm(book, searchType)
     if searchType == "book":
+        authorname, bookname = get_searchterm(book, searchType)
         if provider['BOOKSEARCH'] and provider['BOOKCAT']:  # if specific booksearch, use it
             params = {
                 "t": provider['BOOKSEARCH'],
@@ -460,6 +460,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "cat": provider['BOOKCAT']
             }
     elif searchType == "shortbook":
+        authorname, bookname = get_searchterm(book, searchType)
         if provider['BOOKSEARCH'] and provider['BOOKCAT']:  # if specific booksearch, use it
             params = {
                 "t": provider['BOOKSEARCH'],
