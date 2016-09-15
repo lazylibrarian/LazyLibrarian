@@ -76,6 +76,11 @@ def getInstallType():
             lazylibrarian.CURRENT_BRANCH = getCurrentGitBranch()
             logger.debug('(getInstallType) [GIT] install detected. Setting Branch to [%s] ' %
                          lazylibrarian.CURRENT_BRANCH)
+        elif os.path.exists(os.path.join(lazylibrarian.PROG_DIR, '.package')):
+            lazylibrarian.INSTALL_TYPE = 'package'
+            lazylibrarian.CURRENT_BRANCH = 'Package'
+            logger.debug('(getInstallType) [Package] install detected. Setting Branch to [%s] ' %
+                         lazylibrarian.CURRENT_BRANCH)
         else:
             lazylibrarian.INSTALL_TYPE = 'source'
             lazylibrarian.CURRENT_BRANCH = 'master'
@@ -111,7 +116,7 @@ def getCurrentVersion():
 
         version = cur_commit_hash
 
-    elif lazylibrarian.INSTALL_TYPE == 'source':
+    elif lazylibrarian.INSTALL_TYPE in ['source', 'package']:
 
         version_file = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
 
@@ -183,12 +188,10 @@ def getLatestVersion():
     latest_version = 'Unknown'
     lazylibrarian.COMMITS_BEHIND = 'Unknown'
 
-    if lazylibrarian.INSTALL_TYPE == 'git':
+    if lazylibrarian.INSTALL_TYPE in ['git', 'source', 'package']:
         latest_version = getLatestVersion_FromGit()
-    elif lazylibrarian.INSTALL_TYPE == 'source':
-        latest_version = getLatestVersion_FromGit()
-    elif lazylibrarian.INSTALL_TYPE == 'win':
-        latest_version = 'WIN INSTALL'
+    elif lazylibrarian.INSTALL_TYPE in ['win']:
+        latest_version = 'WINDOWS INSTALL'
     else:
         latest_version = 'UNKNOWN INSTALL'
 
@@ -224,7 +227,7 @@ def getLatestVersion_FromGit():
                 result = urllib2.urlopen(url, timeout=30).read()
                 git = simplejson.JSONDecoder().decode(result)
                 latest_version = git['sha']
-                logger.debug('(getLatestVersion_FromGit) Branch [%s] has Latest Version has been set to [%s]' % (
+                logger.debug('(getLatestVersion_FromGit) Branch [%s] Latest Version has been set to [%s]' % (
                              branch, latest_version))
             except Exception as e:
                 logger.warn('(getLatestVersion_FromGit) Could not get the latest commit from github')
@@ -318,13 +321,15 @@ def updateVersionFile(new_version_id):
 
 
 def update():
-
     if lazylibrarian.INSTALL_TYPE == 'win':
         logger.debug('(update) Windows install - no update available')
         logger.info('(update) Windows .exe updating not supported yet.')
         # pass
+    elif lazylibrarian.INSTALL_TYPE == 'package':
+        logger.debug('(update) Package install - no update available')
+        logger.info('(update) Please use your package manager to update')
+        # pass
     elif lazylibrarian.INSTALL_TYPE == 'git':
-
         branch = getCurrentGitBranch()
 
         output, err = runGit('stash clear')
