@@ -356,7 +356,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         if (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION and lazylibrarian.TRANSMISSION_HOST):
             logger.debug("Sending %s to Transmission" % tor_title)
             download = transmission.addTorrent(tor_url)
-            if download:
+            if download and not tor_url.startswith('magnet'):
                 logger.debug("Renaming %s to %s" % (tor_url, tor_title))
                 rename = transmission.renameTorrent(download, lazylibrarian.DOWNLOAD_DIR, tor_title)
                 logger.debug(rename)
