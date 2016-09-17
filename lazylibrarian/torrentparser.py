@@ -71,8 +71,7 @@ def TPB(book=None):
             try:
                 title = str(col1).split('title=')[1].split('>')[1].split('<')[0]
                 magnet = str(col1).split('href="')[1].split('"')[0]
-                seeders = col2.text
-                size = col1.text.split(', Size ')[1].split('iB')[0].decode('ascii', 'ignore')
+                size = col1.text.split(', Size ')[1].split('iB')[0].replace(u'\xa0', ' ')
                 mult = 1
                 try:
                     if 'K' in size:
@@ -82,47 +81,47 @@ def TPB(book=None):
                         size = size.split('M')[0]
                         mult = 1024 * 1024
                     size = int(float(size) * mult)
-                except (ValueError, IndexError) as e:
+                except (ValueError, IndexError):
                     size = 0
-            except Exception:
-                magnet = None
-                title = None
-                seeders = None
-                size = 0
-                pass
+                try:
+                    seeders = int(col2.text)
+                except ValueError:
+                    seeders = 0
 
-            if magnet and minimumseeders < seeders:
-                # no point in asking for magnet link if not enough seeders
-                magurl = '%s/%s' % (host, magnet)
-                result, success = fetchURL(magurl)
-                if not success:
-                    logger.debug('Error fetching url %s, %s' % (magurl, result))
-                else:
-                    links = result.split('\n')
-
-                    magnet = None
-                    for link in links:
-                        if 'href="magnet' in link:
-                            try:
-                                magnet = 'magnet' + link.split('href="magnet')[1].split('"')[0]
-                                break
-                            except IndexError:
-                                magnet = None
-
-                if not magnet or not title:
-                    logger.debug('Missing magnet or title')
-                else:
-                    if minimumseeders < seeders:
-                        results.append({
-                            'bookid': book['bookid'],
-                            'tor_prov': provider,
-                            'tor_title': title,
-                            'tor_url': magnet,
-                            'tor_size': str(size),
-                        })
-                        logger.debug('Found %s. Size: %s' % (title, size))
+                if magnet and minimumseeders < seeders:
+                    # no point in asking for magnet link if not enough seeders
+                    magurl = '%s/%s' % (host, magnet)
+                    result, success = fetchURL(magurl)
+                    if not success:
+                        logger.debug('Error fetching url %s, %s' % (magurl, result))
                     else:
-                        logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
+                        links = result.split('\n')
+
+                        magnet = None
+                        for link in links:
+                            if 'href="magnet' in link:
+                                try:
+                                    magnet = 'magnet' + link.split('href="magnet')[1].split('"')[0]
+                                    break
+                                except IndexError:
+                                    magnet = None
+
+                    if not magnet or not title:
+                        logger.debug('Missing magnet or title')
+                    else:
+                        if minimumseeders < seeders:
+                            results.append({
+                                'bookid': book['bookid'],
+                                'tor_prov': provider,
+                                'tor_title': title,
+                                'tor_url': magnet,
+                                'tor_size': str(size),
+                            })
+                            logger.debug('Found %s. Size: %s' % (title, size))
+                        else:
+                            logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
+            except Exception as e:
+                logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
 
     logger.debug(u"Found %i result%s from %s for %s" %
                 (len(results), plural(len(results)), provider, book['searchterm']))
@@ -166,7 +165,7 @@ def KAT(book=None):
         try:
             table = soup.findAll('table')[1]
             rows = table.findAll('tr')
-        except Exception:
+        except Exception:  # no results = no table in result page
             rows = []
 
         c0 = []
@@ -180,19 +179,16 @@ def KAT(book=None):
                 c3.append(row.findAll('td')[3])
 
         for col0, col1, col3 in zip(c0, c1, c3):
-            title = None
-            url = None
-            size = 0
-            seeders = 0
             try:
                 title = str(col0).split('cellMainLink">')[1].split('<')[0]
-                # kat can return magnet or torrent or both, prefer magnet...
-                torrent = 'http' + str(col0).split('href="http')[1].split('.torrent?')[0] + '.torrent'
-                url = torrent
-                magnet = 'magnet' + str(col0).split('href="magnet')[1].split('"')[0]
-                url = magnet
-                seeders = col3.text
+                # kat can return magnet or torrent or both. If both, prefer magnet...
+                try:
+                    url = 'magnet' + str(col0).split('href="magnet')[1].split('"')[0]
+                except IndexError:
+                    url = 'http' + str(col0).split('href="http')[1].split('.torrent?')[0] + '.torrent'
+
                 size = col1.text
+
                 try:
                     size = size.replace('&nbsp;', '').upper()
                     mult = 1
@@ -203,25 +199,28 @@ def KAT(book=None):
                         size = size.split('M')[0]
                         mult = 1024 * 1024
                     size = int(float(size) * mult)
-                except ValueError, IndexError:
+                except (ValueError, IndexError):
                     size = 0
+                try:
+                    seeders = int(col3.text)
+                except ValueError:
+                    seeders = 0
 
-            except IndexError:
-                pass
-
-            if not url or not title:
-                logger.debug('Missing url or title')
-            elif minimumseeders < seeders:
-                results.append({
-                    'bookid': book['bookid'],
-                    'tor_prov': provider,
-                    'tor_title': title,
-                    'tor_url': url,
-                    'tor_size': str(size),
-                })
-                logger.debug('Found %s. Size: %s' % (title, size))
-            else:
-                logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
+                if not url or not title:
+                    logger.debug('Missing url or title')
+                elif minimumseeders < seeders:
+                    results.append({
+                        'bookid': book['bookid'],
+                        'tor_prov': provider,
+                        'tor_title': title,
+                        'tor_url': url,
+                        'tor_size': str(size),
+                    })
+                    logger.debug('Found %s. Size: %s' % (title, size))
+                else:
+                    logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
+            except Exception as e:
+                logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
 
     logger.debug(u"Found %i result%s from %s for %s" %
                 (len(results), plural(len(results)), provider, book['searchterm']))
@@ -273,10 +272,7 @@ def oldKAT(book=None):
     if data:
         logger.debug(u'Parsing results from <a href="%s">KAT</a>' % searchURL)
         d = feedparser.parse(data)
-        if not len(d.entries):
-            pass
-
-        else:
+        if len(d.entries):
             logger.debug(u"Found %i result%s from %s for %s, checking seeders" % (len(d.entries),
                          plural(len(d.entries)), provider, book['searchterm']))
             for item in d.entries:
@@ -350,13 +346,11 @@ def ZOO(book=None):
     if data:
         logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
         d = feedparser.parse(data)
-        if not len(d.entries):
-            pass
-        else:
+        if len(d.entries):
             for item in d.entries:
                 try:
                     title = item['title']
-                    seeders = item['torrent_seeds']
+                    seeders = int(item['torrent_seeds'])
                     link = item['links'][1]['href']
                     size = int(item['links'][1]['length'])
                     magnet = item['torrent_magneturi']
@@ -369,7 +363,7 @@ def ZOO(book=None):
 
                     if not url or not title:
                         logger.debug('No url or title found')
-                    elif minimumseeders < int(seeders):
+                    elif minimumseeders < seeders:
                         results.append({
                             'bookid': book['bookid'],
                             'tor_prov': provider,
@@ -377,13 +371,12 @@ def ZOO(book=None):
                             'tor_url': url,
                             'tor_size': str(size),
                         })
-
                         logger.debug('Found %s. Size: %s' % (title, size))
                     else:
-                        logger.debug('Found %s but %s seeder%s' % (title, int(seeders), plural(int(seeders))))
+                        logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
 
                 except Exception as e:
-                    logger.error(u"An unknown error occurred in the %s parser: %s" % (provider, str(e)))
+                    logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
 
     logger.debug(u"Found %i results from %s for %s" % (len(results), provider, book['searchterm']))
     return results
@@ -404,7 +397,6 @@ def GEN(book=None):
         # may return 404 if no results, not really an error
         if '404' in result:
             logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
-            result = False
         else:
             logger.debug(searchURL)
             logger.debug('Error fetching data from %s: %s' % (provider, result))
@@ -418,7 +410,7 @@ def GEN(book=None):
         try:
             table = soup.findAll('table')[2]
             rows = table.findAll('tr')
-        except Exception:
+        except Exception:  # no results = no table in result page
             rows = []
 
         c1 = []
@@ -438,69 +430,63 @@ def GEN(book=None):
                 author = col1.text
                 title = str(col2).split('>')[2].split('<')[0].strip()
                 link = str(col2).split('href="')[1].split('?')[1].split('"')[0]
-                size = col7.text
+                size = col7.text.decode('ascii', 'ignore').upper()
                 extn = col8.text
-            except IndexError:
-                author = None
-                title = None
-                link = None
-                size = '0'
-                extn = None
-                pass
 
-            size = size.decode('ascii', 'ignore').upper()
-            try:
-                mult = 1
-                if 'K' in size:
-                    size = size.split('K')[0]
-                    mult = 1024
-                elif 'M' in size:
-                    size = size.split('M')[0]
-                    mult = 1024 * 1024
-                size = int(float(size) * mult)
-            except ValueError, IndexError:
-                size = 0
+                try:
+                    mult = 1
+                    if 'K' in size:
+                        size = size.split('K')[0]
+                        mult = 1024
+                    elif 'M' in size:
+                        size = size.split('M')[0]
+                        mult = 1024 * 1024
+                    size = int(float(size) * mult)
+                except (ValueError, IndexError) as e:
+                    size = 0
 
-            if link and title:
-                if author:
-                    title = author.strip() + ' ' + title.strip()
-                if extn:
-                    title = title + '.' + extn
+                if link and title:
+                    if author:
+                        title = author.strip() + ' ' + title.strip()
+                    if extn:
+                        title = title + '.' + extn
 
-                bookURL = url_fix(host + "/ads.php?" + link)
-                bookresult, success = fetchURL(bookURL)
-                if not success:
-                    # may return 404 if no results, not really an error
-                    if '404' in bookresult:
-                        logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+                    bookURL = url_fix(host + "/ads.php?" + link)
+                    bookresult, success = fetchURL(bookURL)
+                    if not success:
+                        # may return 404 if no results, not really an error
+                        if '404' in bookresult:
+                            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+                            bookresult = False
+                        else:
+                            logger.debug(bookURL)
+                            logger.debug('Error fetching data from %s: %s' % (provider, bookresult))
                         bookresult = False
-                    else:
-                        logger.debug(bookURL)
-                        logger.debug('Error fetching data from %s: %s' % (provider, bookresult))
-                    bookresult = False
-                if bookresult:
-                    url = None
-                    booklines = bookresult.split('\n')
-                    for bookline in booklines:
-                        if "href='/get.php" in bookline:
-                            try:
-                                url = url_fix(host + bookline.split("href='")[1].split("'")[0])
-                                break
-                            except IndexError:
-                                pass
-                    if url:
-                        results.append({
-                            'bookid': book['bookid'],
-                            'tor_prov': provider,
-                            'tor_title': title,
-                            'tor_url': url,
-                            'tor_size': str(size),
-                        })
-                        logger.debug('Found %s, Size %s' % (title, size))
+                    if bookresult:
+                        url = None
+                        booklines = bookresult.split('\n')
+                        for bookline in booklines:
+                            if "href='/get.php" in bookline:
+                                try:
+                                    url = url_fix(host + bookline.split("href='")[1].split("'")[0])
+                                    break
+                                except IndexError:
+                                    url = None
+                        if url:
+                            results.append({
+                                'bookid': book['bookid'],
+                                'tor_prov': provider,
+                                'tor_title': title,
+                                'tor_url': url,
+                                'tor_size': str(size),
+                            })
+                            logger.debug('Found %s, Size %s' % (title, size))
 
-    logger.debug(
-        u"Found %i result%s from %s for %s" %
-        (len(results), plural(len(results)), provider, book['searchterm']))
+            except Exception as e:
+                logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+
+    logger.debug(u"Found %i result%s from %s for %s" %
+                (len(results), plural(len(results)), provider, book['searchterm']))
     return results
 
 
@@ -549,13 +535,11 @@ def TDL(book=None):
     if data:
         logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
         d = feedparser.parse(data)
-        if not len(d.entries):
-            pass
-        else:
+        if len(d.entries):
             for item in d.entries:
                 try:
                     title = item['title']
-                    seeders = item['seeders']
+                    seeders = int(item['seeders'])
                     link = item['link']
                     size = int(item['size'])
                     url = None
@@ -591,10 +575,10 @@ def TDL(book=None):
                             })
                             logger.debug('Found %s. Size: %s' % (title, size))
                     else:
-                        logger.debug('Found %s but %s seeder%s' % (title, int(seeders), plural(int(seeders))))
+                        logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
 
                 except Exception as e:
-                    logger.error(u"An unknown error occurred in the %s parser: %s" % (provider, str(e)))
+                    logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
 
     logger.debug(u"Found %i results from %s for %s" % (len(results), provider, book['searchterm']))
     return results
