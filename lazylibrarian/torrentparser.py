@@ -95,17 +95,13 @@ def TPB(book=None):
                     if not success:
                         logger.debug('Error fetching url %s, %s' % (magurl, result))
                     else:
-                        links = result.split('\n')
-
                         magnet = None
-                        for link in links:
-                            if 'href="magnet' in link:
-                                try:
-                                    magnet = 'magnet' + link.split('href="magnet')[1].split('"')[0]
-                                    break
-                                except IndexError:
-                                    magnet = None
-
+                        new_soup = BeautifulSoup(result)
+                        for link in new_soup.findAll('a'):
+                            output = link.get('href')
+                            if output and output.startswith('magnet'):
+                                magnet = output
+                                break
                     if not magnet or not title:
                         logger.debug('Missing magnet or title')
                     else:
@@ -273,8 +269,8 @@ def oldKAT(book=None):
         logger.debug(u'Parsing results from <a href="%s">KAT</a>' % searchURL)
         d = feedparser.parse(data)
         if len(d.entries):
-            logger.debug(u"Found %i result%s from %s for %s, checking seeders" % (len(d.entries),
-                         plural(len(d.entries)), provider, book['searchterm']))
+            logger.debug(u"Found %i result%s from %s for %s, checking seeders" %
+                        (len(d.entries), plural(len(d.entries)), provider, book['searchterm']))
             for item in d.entries:
                 try:
                     title = item['title']
@@ -299,7 +295,8 @@ def oldKAT(book=None):
                 except Exception as e:
                     logger.error(u"An unknown error occurred in the KAT parser: %s" % str(e))
 
-    logger.debug(u"Found %i results from %s for %s" % (len(results), provider, book['searchterm']))
+    logger.debug(u"Found %i result%s from %s for %s" %
+                (len(results), plural(len(results)), provider, book['searchterm']))
     return results
 
 
@@ -378,7 +375,8 @@ def ZOO(book=None):
                 except Exception as e:
                     logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
 
-    logger.debug(u"Found %i results from %s for %s" % (len(results), provider, book['searchterm']))
+    logger.debug(u"Found %i result%s from %s for %s" %
+                (len(results), plural(len(results)), provider, book['searchterm']))
     return results
 
 
@@ -464,15 +462,15 @@ def GEN(book=None):
                         bookresult = False
                     if bookresult:
                         url = None
-                        booklines = bookresult.split('\n')
-                        for bookline in booklines:
-                            if "href='/get.php" in bookline:
-                                try:
-                                    url = url_fix(host + bookline.split("href='")[1].split("'")[0])
-                                    break
-                                except IndexError:
-                                    url = None
+                        new_soup = BeautifulSoup(bookresult)
+                        for link in new_soup.findAll('a'):
+                            output = link.get('href')
+                            if output and output.startswith('/get.php'):
+                                url = output
+                                break
+
                         if url:
+                            url = url_fix(host + url)
                             results.append({
                                 'bookid': book['bookid'],
                                 'tor_prov': provider,
@@ -553,14 +551,13 @@ def TDL(book=None):
 
                         conn = urllib2.urlopen(request, timeout=90)
                         result = conn.read()
-                        lines = result.split('\n')
-                        for line in lines:
-                            if 'href="magnet' in line:
-                                try:
-                                    url = 'magnet' + line.split('href="magnet')[1].split('"')[0]
-                                    break
-                                except IndexError:
-                                    url = None
+                        url = None
+                        new_soup = BeautifulSoup(result)
+                        for link in new_soup.findAll('a'):
+                            output = link.get('href')
+                            if output and output.startswith('magnet'):
+                                url = output
+                                break
 
                     if minimumseeders < int(seeders):
                         if not url or not title:
@@ -580,5 +577,6 @@ def TDL(book=None):
                 except Exception as e:
                     logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
 
-    logger.debug(u"Found %i results from %s for %s" % (len(results), provider, book['searchterm']))
+    logger.debug(u"Found %i result%s from %s for %s" %
+                (len(results), plural(len(results)), provider, book['searchterm']))
     return results
