@@ -213,7 +213,7 @@ def getBookCover(bookID=None):
     work = getBookWork(bookID, "Cover")
     if work:
         try:
-            img = work.split('og:image')[1].split('content="')[1].split('"')[0]
+            img = work.split('og:image')[1].split('="')[1].split('"')[0]
             if img and img.startswith('http'):
                 coverlink = cache_cover(bookID, img)
                 if coverlink is not None:
@@ -248,7 +248,7 @@ def getBookCover(bookID=None):
             result, success = fetchURL(booklink)
             if success:
                 try:
-                    img = result.split('og:image')[1].split('content="')[1].split('"/>')[0]
+                    img = result.split('og:image')[1].split('="')[1].split('"')[0]
                 except IndexError:
                     img = None
                 if img and img.startswith('http') and 'nocover' not in img and 'nophoto' not in img:
