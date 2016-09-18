@@ -4,7 +4,7 @@ import socket
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
-from lazylibrarian.formatter import plural
+from lazylibrarian.formatter import plural, unaccented
 from lazylibrarian.cache import fetchURL
 import lib.feedparser as feedparser
 import urlparse
@@ -69,9 +69,9 @@ def TPB(book=None):
 
         for col1, col2 in zip(c1, c2):
             try:
-                title = str(col1).split('title=')[1].split('>')[1].split('<')[0]
+                title = unaccented(str(col1).split('title=')[1].split('>')[1].split('<')[0])
                 magnet = str(col1).split('href="')[1].split('"')[0]
-                size = col1.text.split(', Size ')[1].split('iB')[0].replace(u'\xa0', ' ')
+                size = unaccented(col1.text.split(', Size ')[1].split('iB')[0])
                 mult = 1
                 try:
                     if 'K' in size:
@@ -116,6 +116,8 @@ def TPB(book=None):
                             logger.debug('Found %s. Size: %s' % (title, size))
                         else:
                             logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
+                else:
+                    logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
             except Exception as e:
                 logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
 
@@ -176,17 +178,15 @@ def KAT(book=None):
 
         for col0, col1, col3 in zip(c0, c1, c3):
             try:
-                title = str(col0).split('cellMainLink">')[1].split('<')[0]
+                title = unaccented(str(col0).split('cellMainLink">')[1].split('<')[0])
                 # kat can return magnet or torrent or both. If both, prefer magnet...
                 try:
                     url = 'magnet' + str(col0).split('href="magnet')[1].split('"')[0]
                 except IndexError:
                     url = 'http' + str(col0).split('href="http')[1].split('.torrent?')[0] + '.torrent'
 
-                size = col1.text
-
                 try:
-                    size = size.replace('&nbsp;', '').upper()
+                    size = str(col1.text).replace('&nbsp;', '').upper()
                     mult = 1
                     if 'K' in size:
                         size = size.split('K')[0]
@@ -346,7 +346,7 @@ def ZOO(book=None):
         if len(d.entries):
             for item in d.entries:
                 try:
-                    title = item['title']
+                    title = unaccented(item['title'])
                     seeders = int(item['torrent_seeds'])
                     link = item['links'][1]['href']
                     size = int(item['links'][1]['length'])
@@ -373,7 +373,11 @@ def ZOO(book=None):
                         logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
 
                 except Exception as e:
-                    logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+                    if 'forbidden' in str(e).lower():
+                        # looks like zooqle has ip based access limits
+                        logger.error('Access forbidden. Please wait a while before trying %s again.' % provider)
+                    else:
+                        logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
 
     logger.debug(u"Found %i result%s from %s for %s" %
                 (len(results), plural(len(results)), provider, book['searchterm']))
@@ -395,6 +399,9 @@ def GEN(book=None):
         # may return 404 if no results, not really an error
         if '404' in result:
             logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+        elif '111' in result:
+            # looks like libgen has ip based access limits
+            logger.error('Access forbidden. Please wait a while before trying %s again.' % provider)
         else:
             logger.debug(searchURL)
             logger.debug('Error fetching data from %s: %s' % (provider, result))
@@ -425,10 +432,10 @@ def GEN(book=None):
 
         for col1, col2, col7, col8 in zip(c1, c2, c7, c8):
             try:
-                author = col1.text
-                title = str(col2).split('>')[2].split('<')[0].strip()
+                author = unaccented(col1.text)
+                title = unaccented(str(col2).split('>')[2].split('<')[0].strip())
                 link = str(col2).split('href="')[1].split('?')[1].split('"')[0]
-                size = col7.text.decode('ascii', 'ignore').upper()
+                size = unaccented(col7.text).upper()
                 extn = col8.text
 
                 try:
