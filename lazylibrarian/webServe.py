@@ -1200,6 +1200,14 @@ class WebInterface(object):
             # ouch dirty workaround...
             if not nzburl == 'book_table_length':
                 title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s"' % nzburl)
+                if len(title) == 0:
+                    if '&' in nzburl and not '&amp;' in nzburl:
+                        nzburl = nzburl.replace('&', '&amp;')
+                        title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s"' % nzburl)
+                    elif '&amp;' in nzburl:
+                        nzburl = nzburl.replace('&amp;', '&')
+                        title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s"' % nzburl)
+
                 for item in title:
                     nzburl = item['NZBurl']
                     if action == 'Remove':
