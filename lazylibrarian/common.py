@@ -142,11 +142,11 @@ def ensureRunning(jobname):
 def checkRunningJobs():
     # make sure the relevant jobs are running
     # search jobs start when something gets marked "wanted" but are
-    # not aware of any config changes that happen later,
-    # ie enable or disable providers, so check whenever config file is written out
+    # not aware of any config changes that happen later, ie enable or disable providers,
+    # so we check whenever config is saved
     # processdir is started when something gets marked "snatched"
     # and cancels itself once everything is processed so should be ok
-    # check anyway for completeness...
+    # but check anyway for completeness...
 
     myDB = database.DBConnection()
     snatched = myDB.action(
@@ -162,8 +162,15 @@ def checkRunningJobs():
             ensureRunning('search_tor_book')
         if lazylibrarian.USE_RSS():
             ensureRunning('search_rss_book')
+    else:
+        scheduleJob('Stop', 'search_nzb_book')
+        scheduleJob('Stop', 'search_tor_book')
+        scheduleJob('Stop', 'search_rss_book')
+
     if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
         ensureRunning('search_magazines')
+    else:
+        scheduleJob('Stop', 'search_magazines')
 
 
 def showJobs():
