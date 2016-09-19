@@ -90,7 +90,7 @@ def scheduleJob(action='Start', target=None):
                 minutes=int(lazylibrarian.SCAN_INTERVAL))
             logger.debug("%s %s job" % (action, target))
         elif 'search_magazines' in target and int(lazylibrarian.SEARCH_INTERVAL):
-            if lazylibrarian.USE_TOR() or lazylibrarian.USE_NZB():
+            if lazylibrarian.USE_TOR() or lazylibrarian.USE_NZB() or lazylibrarian.USE_RSS():
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchmag.cron_search_magazines,
                     minutes=int(lazylibrarian.SEARCH_INTERVAL))
@@ -127,6 +127,43 @@ def restartJobs(start='Restart'):
     scheduleJob(start, 'search_rss_book')
     scheduleJob(start, 'search_magazines')
     scheduleJob(start, 'checkForUpdates')
+
+
+def ensureRunning(jobname):
+    found = False
+    for job in lazylibrarian.SCHED.get_jobs():
+        if jobname in str(job):
+            found = True
+            break
+    if not found:
+        scheduleJob('Start', jobname)
+
+
+def checkRunningJobs():
+    # make sure the relevant jobs are running
+    # search jobs start when something gets marked "wanted" but are
+    # not aware of any config changes that happen later,
+    # ie enable or disable providers, so check whenever config file is written out
+    # processdir is started when something gets marked "snatched"
+    # and cancels itself once everything is processed so should be ok
+    # check anyway for completeness...
+
+    myDB = database.DBConnection()
+    snatched = myDB.action(
+        "SELECT count('Status') as counter from wanted WHERE Status = 'Snatched'").fetchone()
+    wanted = myDB.action(
+        "SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'").fetchone()
+    if snatched:
+        ensureRunning('processDir')
+    if wanted:
+        if lazylibrarian.USE_NZB():
+            ensureRunning('search_nzb_book')
+        if lazylibrarian.USE_TOR():
+            ensureRunning('search_tor_book')
+        if lazylibrarian.USE_RSS():
+            ensureRunning('search_rss_book')
+    if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
+        ensureRunning('search_magazines')
 
 
 def showJobs():

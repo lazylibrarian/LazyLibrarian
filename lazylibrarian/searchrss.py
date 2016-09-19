@@ -47,10 +47,9 @@ def search_rss_book(books=None, reset=False):
                 searchbooks.append(terms)
 
     if len(searchbooks) == 0:
-        logger.debug("RSS search requested for no books or invalid BookID")
         return
-    else:
-        logger.info('RSS Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
+
+    logger.info('RSS Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
 
     resultlist, nproviders = IterateOverRSSSites()
     if not nproviders:

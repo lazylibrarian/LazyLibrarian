@@ -54,10 +54,9 @@ def search_tor_book(books=None, reset=False):
                 searchbooks.append(terms)
 
     if len(searchbooks) == 0:
-        logger.debug("TOR search requested for no books or invalid BookID")
         return
-    else:
-        logger.info('TOR Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
+
+    logger.info('TOR Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
 
     for searchbook in searchbooks:
         # searchterm is only used for display purposes

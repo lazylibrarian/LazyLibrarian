@@ -20,7 +20,7 @@ from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
-from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs
+from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs
 from lazylibrarian.formatter import today
 from lazylibrarian.updater import dbUpdate
 from lazylibrarian.magazinescan import magazineScan
@@ -81,6 +81,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'searchBook': '&id= [&wait] search for one book by BookID',
             'showJobs': 'show status of running jobs',
             'restartJobs': 'reschedule/restart background jobs',
+            'checkRunningJobs': 'ensure all needed jobs are running',
             'getWorkSeries': '&id= Get series & seriesNum from Librarything BookWork using BookID',
             'getWorkPage': '&id= Get url of Librarything BookWork using BookID',
             'getBookCovers': '[&wait] Check all books for cached cover and download if missing',
@@ -694,6 +695,9 @@ class Api(object):
 
     def _restartJobs(self, **kwargs):
         restartJobs(start='Restart')
+
+    def _checkRunningJobs(self, **kwargs):
+        checkRunningJobs()
 
     def _showJobs(self, **kwargs):
         self.data = showJobs()

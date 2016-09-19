@@ -95,7 +95,6 @@ def get_book_info(fname):
         tree = ElementTree.fromstring(txt)
     except Exception as e:
         logger.error("Error parsing metadata from %s, %s" % (fname, str(e)))
-        logger.error(str(e))
         return res
 
     if not len(tree):

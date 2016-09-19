@@ -21,7 +21,7 @@ from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.importer import addAuthorToDB, update_totals
 from lazylibrarian.formatter import plural, now, today, check_int, replace_all
-from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob
+from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.librarysync import LibraryScan
@@ -400,9 +400,9 @@ class WebInterface(object):
             count += 1
 
         lazylibrarian.config_write()
+        checkRunningJobs()
 
-        logger.info(
-            'Config file [%s] has been updated' % lazylibrarian.CONFIGFILE)
+        logger.info('Config file [%s] has been updated' % lazylibrarian.CONFIGFILE)
 
         raise cherrypy.HTTPRedirect("config")
 
