@@ -297,7 +297,7 @@ def processDir(reset=False):
 
             logger.info('Successfully processed: %s' % global_name)
             ppcount = ppcount + 1
-            notify_download("%s at %s" % (global_name, now()))
+            notify_download("%s from %s at %s" % (global_name, book['NZBprov'], now()))
         else:
             logger.error('Postprocessing for %s has failed.' % global_name)
             logger.error('Warning - Residual files remain in %s.fail' % pp_path)

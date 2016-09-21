@@ -53,17 +53,18 @@ def serve_template(templatename, **kwargs):
 
 
 class WebInterface(object):
-
+    @cherrypy.expose
     def index(self):
         raise cherrypy.HTTPRedirect("home")
-    index.exposed = True
 
+
+    @cherrypy.expose
     def home(self):
         myDB = database.DBConnection()
         authors = myDB.select(
             'SELECT * from authors where Status != "Ignored" order by AuthorName COLLATE NOCASE')
         return serve_template(templatename="index.html", title="Home", authors=authors)
-    home.exposed = True
+
 
     def label_thread(self):
         threadname = threading.currentThread().name
@@ -72,6 +73,7 @@ class WebInterface(object):
 
 # CONFIG ############################################################
 
+    @cherrypy.expose
     def config(self):
         http_look_dir = os.path.join(
             str(lazylibrarian.PROG_DIR),
@@ -104,8 +106,9 @@ class WebInterface(object):
             "magazines_list": mags_list
         }
         return serve_template(templatename="config.html", title="Settings", config=config)
-    config.exposed = True
 
+
+    @cherrypy.expose
     def configUpdate(
         self, http_host='0.0.0.0', http_root='', http_user='', http_port=5299, current_tab='0',
                      http_pass='', http_look='', launch_browser=0, api_key='', api_enabled=0,
@@ -406,10 +409,10 @@ class WebInterface(object):
 
         raise cherrypy.HTTPRedirect("config")
 
-    configUpdate.exposed = True
 
 # SEARCH ############################################################
 
+    @cherrypy.expose
     def search(self, name):
         if name is None or not len(name):
             raise cherrypy.HTTPRedirect("home")
@@ -454,10 +457,11 @@ class WebInterface(object):
         return serve_template(templatename="searchresults.html", title='Search Results for: "' +
                               name + '"', searchresults=sortedlist_final, authorlist=authorlist,
                               booklist=booklist, booksearch=booksearch)
-    search.exposed = True
+
 
 # AUTHOR ############################################################
 
+    @cherrypy.expose
     def authorPage(self, AuthorID, BookLang=None, Ignored=False):
         myDB = database.DBConnection()
 
@@ -492,8 +496,9 @@ class WebInterface(object):
         return serve_template(
             templatename="author.html", title=urllib.quote_plus(authorname),
                               author=author, books=books, languages=languages)
-    authorPage.exposed = True
 
+
+    @cherrypy.expose
     def pauseAuthor(self, AuthorID):
         self.label_thread()
 
@@ -509,8 +514,9 @@ class WebInterface(object):
         logger.debug(
             u'AuthorID [%s]-[%s] Paused - redirecting to Author home page' % (AuthorID, AuthorName))
         raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
-    pauseAuthor.exposed = True
 
+
+    @cherrypy.expose
     def resumeAuthor(self, AuthorID):
         self.label_thread()
 
@@ -526,8 +532,9 @@ class WebInterface(object):
         logger.debug(
             u'AuthorID [%s]-[%s] Restarted - redirecting to Author home page' % (AuthorID, AuthorName))
         raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
-    resumeAuthor.exposed = True
 
+
+    @cherrypy.expose
     def ignoreAuthor(self, AuthorID):
         self.label_thread()
 
@@ -543,8 +550,9 @@ class WebInterface(object):
         logger.debug(
             u'AuthorID [%s]-[%s] Ignored - redirecting to home page' % (AuthorID, AuthorName))
         raise cherrypy.HTTPRedirect("home")
-    ignoreAuthor.exposed = True
 
+
+    @cherrypy.expose
     def removeAuthor(self, AuthorID):
         self.label_thread()
 
@@ -557,8 +565,9 @@ class WebInterface(object):
             myDB.action('DELETE from authors WHERE AuthorID="%s"' % AuthorID)
             myDB.action('DELETE from books WHERE AuthorID="%s"' % AuthorID)
         raise cherrypy.HTTPRedirect("home")
-    removeAuthor.exposed = True
 
+
+    @cherrypy.expose
     def refreshAuthor(self, AuthorID):
         self.label_thread()
 
@@ -569,8 +578,9 @@ class WebInterface(object):
             AuthorName = authorsearch[0]['AuthorName']
             threading.Thread(target=addAuthorToDB, name='REFRESHAUTHOR', args=[AuthorName, True]).start()
         raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
-    refreshAuthor.exposed = True
 
+
+    @cherrypy.expose
     def libraryScanAuthor(self, AuthorID):
         self.label_thread()
 
@@ -589,23 +599,26 @@ class WebInterface(object):
                 # maybe we don't have any of their books
                 logger.debug(u'Unable to find author directory: %s' % authordir)
         raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
-    libraryScanAuthor.exposed = True
 
+
+    @cherrypy.expose
     def addAuthor(self, AuthorName):
         threading.Thread(target=addAuthorToDB, name='ADDAUTHOR', args=[AuthorName, False]).start()
         raise cherrypy.HTTPRedirect("home")
-    addAuthor.exposed = True
+
 
 # BOOKS #############################################################
 
+    @cherrypy.expose
     def books(self, BookLang=None):
         myDB = database.DBConnection()
         languages = myDB.select('SELECT DISTINCT BookLang from books WHERE \
                                 STATUS !="Skipped" AND STATUS !="Ignored"')
         lazylibrarian.BOOKLANGFILTER = BookLang
         return serve_template(templatename="books.html", title='Books', books=[], languages=languages)
-    books.exposed = True
 
+
+    @cherrypy.expose
     def getBooks(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
@@ -791,8 +804,9 @@ class WebInterface(object):
         # print ("Getbooks returning %s to %s" % (iDisplayStart, iDisplayStart
         # + iDisplayLength))
         return s
-    getBooks.exposed = True
 
+
+    @cherrypy.expose
     def addBook(self, bookid=None):
         myDB = database.DBConnection()
         AuthorID = ""
@@ -828,8 +842,9 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
         else:
             raise cherrypy.HTTPRedirect("books")
-    addBook.exposed = True
 
+
+    @cherrypy.expose
     def startBookSearch(self, books=None):
         if books:
             if lazylibrarian.USE_RSS():
@@ -844,8 +859,9 @@ class WebInterface(object):
                 logger.warn(u"Not searching for book, no search methods set, check config.")
         else:
             logger.debug(u"BookSearch called with no books")
-    startBookSearch.exposed = True
 
+
+    @cherrypy.expose
     def searchForBook(self, bookid=None, action=None, **args):
         myDB = database.DBConnection()
 
@@ -859,8 +875,9 @@ class WebInterface(object):
 
         if AuthorID:
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
-    searchForBook.exposed = True
 
+
+    @cherrypy.expose
     def openBook(self, bookid=None, **args):
         self.label_thread()
 
@@ -877,8 +894,9 @@ class WebInterface(object):
                 authorName = bookdata[0]["AuthorName"]
                 bookName = bookdata[0]["BookName"]
                 logger.info(u'Missing book %s,%s' % (authorName, bookName))
-    openBook.exposed = True
 
+
+    @cherrypy.expose
     def editBook(self, bookid=None, **args):
 
         myDB = database.DBConnection()
@@ -891,8 +909,9 @@ class WebInterface(object):
             return serve_template(templatename="editbook.html", title="Edit Book", config=bookdata[0], authors=authors)
         else:
             logger.info(u'Missing book %s' % bookid)
-    editBook.exposed = True
 
+
+    @cherrypy.expose
     def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre=None,
                    series=None, seriesnum=None, manual='0', authorname='', **kwargs):
         myDB = database.DBConnection()
@@ -962,8 +981,8 @@ class WebInterface(object):
 
         raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % bookdata[0]["AuthorID"])
 
-    bookUpdate.exposed = True
 
+    @cherrypy.expose
     def markBooks(self, AuthorID=None, action=None, redirect=None, **args):
         self.label_thread()
 
@@ -1030,10 +1049,11 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("books")
         else:
             raise cherrypy.HTTPRedirect("manage")
-    markBooks.exposed = True
+
 
 # MAGAZINES #########################################################
 
+    @cherrypy.expose
     def magazines(self):
         myDB = database.DBConnection()
 
@@ -1058,8 +1078,9 @@ class WebInterface(object):
                 mags.append(this_mag)
 
         return serve_template(templatename="magazines.html", title="Magazines", magazines=mags)
-    magazines.exposed = True
 
+
+    @cherrypy.expose
     def issuePage(self, title):
         myDB = database.DBConnection()
 
@@ -1096,16 +1117,18 @@ class WebInterface(object):
                 mod_issues.append(this_issue)
             logger.debug("Found %s cover%s" % (covercount, plural(covercount)))
         return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
-    issuePage.exposed = True
 
+
+    @cherrypy.expose
     def pastIssues(self, whichStatus=None):
         if whichStatus is None:
             whichStatus = "Skipped"
         lazylibrarian.ISSUEFILTER = whichStatus
         return serve_template(
             templatename="manageissues.html", title="Magazine Status Management", issues=[], whichStatus=whichStatus)
-    pastIssues.exposed = True
 
+
+    @cherrypy.expose
     def getPastIssues(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
@@ -1155,8 +1178,9 @@ class WebInterface(object):
                   }
         s = simplejson.dumps(mydict)
         return s
-    getPastIssues.exposed = True
 
+
+    @cherrypy.expose
     def openMag(self, bookid=None, **args):
         self.label_thread()
 
@@ -1184,8 +1208,9 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect(
                 "issuePage?title=%s" %
                 urllib.quote_plus(bookid.encode(lazylibrarian.SYS_ENCODING)))
-    openMag.exposed = True
 
+
+    @cherrypy.expose
     def markPastIssues(self, action=None, redirect=None, **args):
         self.label_thread()
 
@@ -1267,8 +1292,9 @@ class WebInterface(object):
                     notifiers.notify_snatch(items['nzbtitle'] + ' at ' + now())
                     scheduleJob(action='Start', target='processDir')
         raise cherrypy.HTTPRedirect("pastIssues")
-    markPastIssues.exposed = True
 
+
+    @cherrypy.expose
     def markIssues(self, action=None, **args):
         self.label_thread()
 
@@ -1288,8 +1314,9 @@ class WebInterface(object):
                         myDB.action('DELETE from issues WHERE IssueID="%s"' % item)
                         logger.info(u'Issue %s of %s removed from database' % (issue['IssueDate'], issue['Title']))
         raise cherrypy.HTTPRedirect("magazines")
-    markIssues.exposed = True
 
+
+    @cherrypy.expose
     def markMagazines(self, action=None, **args):
         self.label_thread()
 
@@ -1329,8 +1356,9 @@ class WebInterface(object):
                     logger.info(u'Magazine %s details reset' % item)
 
         raise cherrypy.HTTPRedirect("magazines")
-    markMagazines.exposed = True
 
+
+    @cherrypy.expose
     def searchForMag(self, bookid=None, action=None, **args):
         myDB = database.DBConnection()
         bookid = urllib.unquote_plus(bookid)
@@ -1340,8 +1368,9 @@ class WebInterface(object):
             mags = [{"bookid": bookid}]
             self.startMagazineSearch(mags)
             raise cherrypy.HTTPRedirect("magazines")
-    searchForMag.exposed = True
 
+
+    @cherrypy.expose
     def startMagazineSearch(self, mags=None):
         if mags:
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
@@ -1351,8 +1380,9 @@ class WebInterface(object):
                 logger.warn(u"Not searching for magazine, no download methods set, check config")
         else:
             logger.debug(u"MagazineSearch called with no magazines")
-    startMagazineSearch.exposed = True
 
+
+    @cherrypy.expose
     def addMagazine(self, search=None, title=None, frequency=None, **args):
         self.label_thread()
         myDB = database.DBConnection()
@@ -1382,10 +1412,11 @@ class WebInterface(object):
             mags = [{"bookid": title}]
             self.startMagazineSearch(mags)
             raise cherrypy.HTTPRedirect("magazines")
-    addMagazine.exposed = True
+
 
 # UPDATES ###########################################################
 
+    @cherrypy.expose
     def checkForUpdates(self):
         self.label_thread()
 
@@ -1414,77 +1445,86 @@ class WebInterface(object):
             return serve_template(templatename="shutdown.html", title="Commits", message=message, timer=15)
 
         raise cherrypy.HTTPRedirect("config")
-    checkForUpdates.exposed = True
 
+
+    @cherrypy.expose
     def forceUpdate(self):
         from lazylibrarian import updater
         threading.Thread(target=updater.dbUpdate, name='DBUPDATE', args=[False]).start()
         raise cherrypy.HTTPRedirect("home")
-    forceUpdate.exposed = True
 
+
+    @cherrypy.expose
     def update(self):
         logger.debug('(webServe-Update) - Performing update')
         lazylibrarian.SIGNAL = 'update'
         message = 'Updating...'
         return serve_template(templatename="shutdown.html", title="Updating", message=message, timer=30)
-    update.exposed = True
+
 
 # IMPORT/EXPORT #####################################################
 
+    @cherrypy.expose
     def libraryScan(self):
         try:
             threading.Thread(target=LibraryScan, name='LIBRARYSYNC', args=[lazylibrarian.DESTINATION_DIR]).start()
         except Exception as e:
             logger.error(u'Unable to complete the scan: %s' % str(e))
         raise cherrypy.HTTPRedirect("home")
-    libraryScan.exposed = True
 
+
+    @cherrypy.expose
     def magazineScan(self):
         try:
             threading.Thread(target=magazinescan.magazineScan, name='MAGAZINESCAN', args=[]).start()
         except Exception as e:
             logger.error(u'Unable to complete the scan: %s' % str(e))
         raise cherrypy.HTTPRedirect("magazines")
-    magazineScan.exposed = True
 
+
+    @cherrypy.expose
     def importAlternate(self):
         try:
             threading.Thread(target=processAlternate, name='IMPORTALT', args=[lazylibrarian.ALTERNATE_DIR]).start()
         except Exception as e:
             logger.error(u'Unable to complete the import: %s' % str(e))
         raise cherrypy.HTTPRedirect("manage")
-    importAlternate.exposed = True
 
+
+    @cherrypy.expose
     def importCSV(self):
         try:
             threading.Thread(target=import_CSV, name='IMPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
         except Exception as e:
             logger.error(u'Unable to complete the import: %s' % str(e))
         raise cherrypy.HTTPRedirect("manage")
-    importCSV.exposed = True
 
+
+    @cherrypy.expose
     def exportCSV(self):
         try:
             threading.Thread(target=export_CSV, name='EXPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
         except Exception as e:
             logger.error(u'Unable to complete the export: %s' % str(e))
         raise cherrypy.HTTPRedirect("manage")
-    exportCSV.exposed = True
+
 
 # JOB CONTROL #######################################################
 
+    @cherrypy.expose
     def shutdown(self):
         lazylibrarian.config_write()
         lazylibrarian.SIGNAL = 'shutdown'
         message = 'closing ...'
         return serve_template(templatename="shutdown.html", title="Close library", message=message, timer=15)
-    shutdown.exposed = True
 
+
+    @cherrypy.expose
     def restart(self):
         lazylibrarian.SIGNAL = 'restart'
         message = 'reopening ...'
         return serve_template(templatename="shutdown.html", title="Reopen library", message=message, timer=30)
-    restart.exposed = True
+
 
     @cherrypy.expose
     def show_Jobs(self):
@@ -1505,6 +1545,7 @@ class WebInterface(object):
 
 # LOGGING ###########################################################
 
+    @cherrypy.expose
     def clearLog(self):
         # Clear the log
         self.label_thread()
@@ -1512,8 +1553,9 @@ class WebInterface(object):
         result = clearLog()
         logger.info(result)
         raise cherrypy.HTTPRedirect("logs")
-    clearLog.exposed = True
 
+
+    @cherrypy.expose
     def toggleLog(self):
         # Toggle the debug log
         # LOGLEVEL 0, quiet
@@ -1537,12 +1579,14 @@ class WebInterface(object):
                 u'Debug log display ON, loglevel is %s' %
                 lazylibrarian.LOGLEVEL)
         raise cherrypy.HTTPRedirect("logs")
-    toggleLog.exposed = True
 
+
+    @cherrypy.expose
     def logs(self):
         return serve_template(templatename="logs.html", title="Log", lineList=[])  # lazylibrarian.LOGLIST)
-    logs.exposed = True
 
+
+    @cherrypy.expose
     def getLog(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
@@ -1565,10 +1609,11 @@ class WebInterface(object):
                   }
         s = simplejson.dumps(mydict)
         return s
-    getLog.exposed = True
+
 
 # HISTORY ###########################################################
 
+    @cherrypy.expose
     def history(self, source=None):
         myDB = database.DBConnection()
         if not source:
@@ -1576,8 +1621,9 @@ class WebInterface(object):
             # ignored for magazine back issues
             history = myDB.select("SELECT * from wanted WHERE Status != 'Skipped' and Status != 'Ignored'")
             return serve_template(templatename="history.html", title="History", history=history)
-    history.exposed = True
 
+
+    @cherrypy.expose
     def clearhistory(self, status=None):
         self.label_thread()
 
@@ -1589,7 +1635,7 @@ class WebInterface(object):
             logger.info(u"Clearing history where status is %s" % status)
             myDB.action('DELETE from wanted WHERE Status="%s"' % status)
         raise cherrypy.HTTPRedirect("history")
-    clearhistory.exposed = True
+
 
 # NOTIFIERS #########################################################
 
@@ -1693,15 +1739,17 @@ class WebInterface(object):
         lazylibrarian.API_KEY = api_key
         logger.info("New API generated")
         raise cherrypy.HTTPRedirect("config")
-    generateAPI.exposed = True
+
 
 # ALL ELSE ##########################################################
 
+    @cherrypy.expose
     def forceProcess(self, source=None):
         threading.Thread(target=processDir, name='POSTPROCESS', args=[True]).start()
         raise cherrypy.HTTPRedirect(source)
-    forceProcess.exposed = True
 
+
+    @cherrypy.expose
     def forceSearch(self, source=None):
         if source == "magazines":
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
@@ -1716,8 +1764,9 @@ class WebInterface(object):
         else:
             logger.debug(u"forceSearch called with bad source")
         raise cherrypy.HTTPRedirect(source)
-    forceSearch.exposed = True
 
+
+    @cherrypy.expose
     def manage(self, action=None, whichStatus=None, source=None, **args):
         # myDB = database.DBConnection()
         # books only holds status [skipped wanted open have ignored]
@@ -1729,8 +1778,9 @@ class WebInterface(object):
         lazylibrarian.MANAGEFILTER = whichStatus
         return serve_template(templatename="managebooks.html", title="Book Status Management",
                               books=[], whichStatus=whichStatus)
-    manage.exposed = True
 
+
+    @cherrypy.expose
     def getManage(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
 
         myDB = database.DBConnection()
@@ -1822,7 +1872,7 @@ class WebInterface(object):
         # print ("getManage returning %s to %s" % (iDisplayStart, iDisplayStart
         # + iDisplayLength))
         return s
-    getManage.exposed = True
+
 
     @cherrypy.expose
     def testDeluge(self):

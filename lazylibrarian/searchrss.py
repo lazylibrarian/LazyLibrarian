@@ -195,7 +195,8 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
                                            newValueDict["NZBtitle"], tor_url)
 
             if snatch:
-                notify_snatch(newValueDict["NZBtitle"] + ' at ' + now())
+                notify_snatch("%s from %s at %s" %
+                             (newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
                 scheduleJob(action='Start', target='processDir')
                 return True + True  # we found it
     else:

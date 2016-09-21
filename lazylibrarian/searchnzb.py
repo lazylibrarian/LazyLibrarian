@@ -10,6 +10,7 @@ from lazylibrarian import logger, database, providers, nzbget, sabnzbd, notifier
 from lib.fuzzywuzzy import fuzz
 from lazylibrarian.common import USER_AGENT, scheduleJob
 from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, nzbdate2format, now, check_int
+from lazylibrarian.notifiers import notify_snatch
 
 # new to support torrents
 from lazylibrarian.searchtorrents import TORDownloadMethod
@@ -205,7 +206,8 @@ def processResultList(resultlist, book, searchtype):
                 snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
                                            newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             if snatch:
-                notifiers.notify_snatch(newValueDict["NZBtitle"] + ' at ' + now())
+                notify_snatch("%s from %s at %s" %
+                             (newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
                 scheduleJob(action='Start', target='processDir')
                 return True + True  # we found it
     else:

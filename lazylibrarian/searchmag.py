@@ -412,7 +412,8 @@ def search_magazines(mags=None, reset=False):
                         magazine['nzbtitle'],
                         magazine['nzburl'])
                 if snatch:
-                    notify_snatch("%s at %s" % (unaccented(magazine['nzbtitle']), now()))
+                    notify_snatch("%s from %s at %s" %
+                                 (unaccented(magazine['nzbtitle']), magazine["nzbprov"], now()))
                     scheduleJob(action='Start', target='processDir')
             maglist = []
 
