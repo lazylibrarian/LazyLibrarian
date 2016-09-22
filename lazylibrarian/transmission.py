@@ -19,6 +19,7 @@ import time
 import json
 import urlparse
 import lazylibrarian
+import os
 
 # This is just a simple script to send torrents to transmission. The
 # intention is to turn this into a class where we can check the state
@@ -27,7 +28,7 @@ import lazylibrarian
 #       Store torrent id so we can check up on it
 
 
-def addTorrent(link):
+def addTorrent(link, directory=None):
     method = 'torrent-add'
     # print type(link), link
     # if link.endswith('.torrent'):
@@ -35,7 +36,9 @@ def addTorrent(link):
     #        metainfo = str(base64.b64encode(f.read()))
     #    arguments = {'metainfo': metainfo }
     # else:
-    arguments = {'filename': link, 'download-dir': lazylibrarian.DOWNLOAD_DIR}
+    if directory is None:
+        directory = lazylibrarian.DOWNLOAD_DIR
+    arguments = {'filename': link, 'download-dir': directory}
 
     response = torrentAction(method, arguments)
 
@@ -44,29 +47,18 @@ def addTorrent(link):
 
     if response['result'] == 'success':
         if 'torrent-added' in response['arguments']:
-            retid = response['arguments']['torrent-added']['hashString']
+            retid = response['arguments']['torrent-added']['id']
         elif 'torrent-duplicate' in response['arguments']:
-            retid = response['arguments']['torrent-duplicate']['hashString']
+            retid = response['arguments']['torrent-duplicate']['id']
         else:
             retid = False
 
-        logger.info(u"Torrent sent to Transmission successfully")
+        logger.debug(u"Torrent sent to Transmission successfully")
         return retid
 
     else:
-        logger.info('Transmission returned status %s' % response['result'])
+        logger.debug('Transmission returned status %s' % response['result'])
         return False
-
-
-def renameTorrent(torrentid, location, name):
-    method = 'torrent-set-location'
-    arguments = {'torrent_id': torrentid, 'location': location + '/' + name, 'move': True}
-
-    response = torrentAction(method, arguments)
-
-    if not response:
-        return False
-    return response
 
 
 def getTorrentFolder(torrentid):
@@ -116,7 +108,7 @@ def removeTorrent(torrentid, remove_data=False):
         name = response['arguments']['torrents'][0]['name']
 
         if finished:
-            logger.info('%s has finished seeding, removing torrent and data' % name)
+            logger.debug('%s has finished seeding, removing torrent and data' % name)
             method = 'torrent-remove'
             if remove_data:
                 arguments = {'delete-local-data': True, 'ids': torrentid}
@@ -125,7 +117,7 @@ def removeTorrent(torrentid, remove_data=False):
             response = torrentAction(method, arguments)
             return True
         else:
-            logger.info('%s has not finished seeding yet, torrent will not be removed, \
+            logger.debug('%s has not finished seeding yet, torrent will not be removed, \
                         will try again on next run' % name)
     except Exception as e:
         logger.debug('Unable to remove torrent %s, %s' % (torrentid, str(e)))

@@ -43,6 +43,9 @@ def search_magazines(mags=None, reset=False):
             for terms in searchmags_temp:
                 searchmags.append(terms)
 
+    if len(searchmags) == 0:
+        return
+
     # should clear old search results as might not be available any more
     # ie torrent not available, changed providers, out of news server retention etc.
     # Only delete the "skipped" ones, not wanted/snatched/processed/ignored
@@ -409,7 +412,9 @@ def search_magazines(mags=None, reset=False):
                         magazine['nzbtitle'],
                         magazine['nzburl'])
                 if snatch:
-                    notify_snatch("%s at %s" % (unaccented(magazine['nzbtitle']), now()))
+                    logger.info('Downloading %s from %s' % (magazine['nzbtitle'], magazine["nzbprov"]))
+                    notify_snatch("%s from %s at %s" %
+                                 (unaccented(magazine['nzbtitle']), magazine["nzbprov"], now()))
                     scheduleJob(action='Start', target='processDir')
             maglist = []
 

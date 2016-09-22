@@ -10,6 +10,7 @@ from lazylibrarian import logger, database, providers, nzbget, sabnzbd, notifier
 from lib.fuzzywuzzy import fuzz
 from lazylibrarian.common import USER_AGENT, scheduleJob
 from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, nzbdate2format, now, check_int
+from lazylibrarian.notifiers import notify_snatch
 
 # new to support torrents
 from lazylibrarian.searchtorrents import TORDownloadMethod
@@ -45,10 +46,9 @@ def search_nzb_book(books=None, reset=False):
                 searchbooks.append(terms)
 
     if len(searchbooks) == 0:
-        logger.debug("NZB search requested for no books or invalid BookID")
         return
-    else:
-        logger.info('NZB Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
+
+    logger.info('NZB Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
 
     for searchbook in searchbooks:
         # searchterm is only used for display purposes
@@ -206,7 +206,9 @@ def processResultList(resultlist, book, searchtype):
                 snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
                                            newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             if snatch:
-                notifiers.notify_snatch(newValueDict["NZBtitle"] + ' at ' + now())
+                logger.info('Downloading %s from %s' % (newValueDict["NZBtitle"], newValueDict["NZBprov"]))
+                notify_snatch("%s from %s at %s" %
+                             (newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
                 scheduleJob(action='Start', target='processDir')
                 return True + True  # we found it
     else:

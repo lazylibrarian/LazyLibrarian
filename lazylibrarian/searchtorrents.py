@@ -54,10 +54,9 @@ def search_tor_book(books=None, reset=False):
                 searchbooks.append(terms)
 
     if len(searchbooks) == 0:
-        logger.debug("TOR search requested for no books or invalid BookID")
         return
-    else:
-        logger.info('TOR Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
+
+    logger.info('TOR Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
 
     for searchbook in searchbooks:
         # searchterm is only used for display purposes
@@ -208,7 +207,9 @@ def processResultList(resultlist, book, searchtype):
                 snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
                                            newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             if snatch:
-                notify_snatch(newValueDict["NZBtitle"] + ' at ' + now())
+                logger.info('Downloading %s from %s' % (newValueDict["NZBtitle"], newValueDict["NZBprov"]))
+                notify_snatch("%s from %s at %s" %
+                             (newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
                 scheduleJob(action='Start', target='processDir')
                 return True + True  # we found it
     else:
@@ -356,10 +357,8 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         if (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION and lazylibrarian.TRANSMISSION_HOST):
             logger.debug("Sending %s to Transmission" % tor_title)
             download = transmission.addTorrent(tor_url)
-            if download and not tor_url.startswith('magnet'):
-                logger.debug("Renaming %s to %s" % (tor_url, tor_title))
-                rename = transmission.renameTorrent(download, lazylibrarian.DOWNLOAD_DIR, tor_title)
-                logger.debug(rename)
+
+
         if (lazylibrarian.TOR_DOWNLOADER_DELUGE and lazylibrarian.DELUGE_HOST):
             logger.debug("Sending %s to Deluge" % tor_title)
             if not lazylibrarian.DELUGE_USER:
@@ -383,7 +382,6 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         return False
 
     if download:
-        logger.debug(u'Torrent id %s has been downloaded from %s' % (download, tor_url))
         myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
         myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl="%s"' % full_url)
         return True

@@ -158,10 +158,12 @@ def main():
 
     if options.port:
         lazylibrarian.HTTP_PORT = int(options.port)
-        logger.info('Starting LazyLibrarian on forced port: %s' % lazylibrarian.HTTP_PORT)
+        logger.info('Starting LazyLibrarian on forced port: %s, webroot "%s"' %
+                    (lazylibrarian.HTTP_PORT, lazylibrarian.HTTP_ROOT))
     else:
         lazylibrarian.HTTP_PORT = int(lazylibrarian.HTTP_PORT)
-        logger.info('Starting LazyLibrarian on port: %s' % lazylibrarian.HTTP_PORT)
+        logger.info('Starting LazyLibrarian on port: %s, webroot "%s"' %
+                    (lazylibrarian.HTTP_PORT, lazylibrarian.HTTP_ROOT))
 
     if lazylibrarian.DAEMON:
         lazylibrarian.daemonize()

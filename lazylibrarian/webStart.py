@@ -23,7 +23,7 @@ def initialize(options={}):
         'server.thread_pool': 10,
         'server.socket_port': options['http_port'],
         'server.socket_host': options['http_host'],
-        'engine.autoreload_on': False,
+        'engine.autoreload.on': False,
         'tools.encode.on': True,
         'tools.encode.encoding': 'utf-8',
         'tools.decode.on': True,
@@ -77,12 +77,12 @@ def initialize(options={}):
 
     # Prevent time-outs
     cherrypy.engine.timeout_monitor.unsubscribe()
-    cherrypy.tree.mount(WebInterface(), options['http_root'], config=conf)
+    cherrypy.tree.mount(WebInterface(), str(options['http_root']), config=conf)
 
     cherrypy.engine.autoreload.subscribe()
 
     try:
-        cherrypy.process.servers.check_port(options['http_host'], options['http_port'])
+        cherrypy.process.servers.check_port(str(options['http_host']), options['http_port'])
         cherrypy.server.start()
     except IOError:
         print 'Failed to start on port: %i. Is something else running?' % (options['http_port'])

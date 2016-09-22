@@ -1088,8 +1088,18 @@ def config_write():
     CFG.set('Slack', 'slack_notify_ondownload', SLACK_NOTIFY_ONDOWNLOAD)
     CFG.set('Slack', 'slack_token', SLACK_TOKEN)
 
-    with open(CONFIGFILE, 'wb') as configfile:
+    with open(CONFIGFILE + '.new', 'wb') as configfile:
         CFG.write(configfile)
+    try:
+        os.remove(CONFIGFILE + '.bak')
+    except OSError as e:
+        if 'No such file' not in e.strerror:  # doesn't exist is ok
+            logger.debug("Error deleting backup %s, %s" % (CONFIGFILE + '.bak', e.strerror))
+    try:
+        os.rename(CONFIGFILE, CONFIGFILE + '.bak')
+        os.rename(CONFIGFILE + '.new', CONFIGFILE)
+    except OSError as e:
+        logger.debug("Unable to backup config file: %s" % str(e))
 
 
 def add_newz_slot():
@@ -1644,7 +1654,7 @@ def shutdown(restart=False, update=False):
 
     cherrypy.engine.exit()
     SCHED.shutdown(wait=False)
-    config_write()
+    # config_write() don't automatically rewrite config on exit
 
     if not restart and not update:
         logger.info('LazyLibrarian is shutting down...')

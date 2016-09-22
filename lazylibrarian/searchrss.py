@@ -47,10 +47,9 @@ def search_rss_book(books=None, reset=False):
                 searchbooks.append(terms)
 
     if len(searchbooks) == 0:
-        logger.debug("RSS search requested for no books or invalid BookID")
         return
-    else:
-        logger.info('RSS Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
+
+    logger.info('RSS Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
 
     resultlist, nproviders = IterateOverRSSSites()
     if not nproviders:
@@ -196,7 +195,9 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
                                            newValueDict["NZBtitle"], tor_url)
 
             if snatch:
-                notify_snatch(newValueDict["NZBtitle"] + ' at ' + now())
+                logger.info('Downloading %s from %s' % (newValueDict["NZBtitle"], newValueDict["NZBprov"]))
+                notify_snatch("%s from %s at %s" %
+                             (newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
                 scheduleJob(action='Start', target='processDir')
                 return True + True  # we found it
     else:
