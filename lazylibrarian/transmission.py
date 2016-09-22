@@ -44,7 +44,7 @@ def addTorrent(link, directory=None):
 
     if not response:
         return False
-    print str(response)
+
     if response['result'] == 'success':
         if 'torrent-added' in response['arguments']:
             retid = response['arguments']['torrent-added']['id']
@@ -53,11 +53,11 @@ def addTorrent(link, directory=None):
         else:
             retid = False
 
-        logger.info(u"Torrent sent to Transmission successfully")
+        logger.debug(u"Torrent sent to Transmission successfully")
         return retid
 
     else:
-        logger.info('Transmission returned status %s' % response['result'])
+        logger.debug('Transmission returned status %s' % response['result'])
         return False
 
 
@@ -108,7 +108,7 @@ def removeTorrent(torrentid, remove_data=False):
         name = response['arguments']['torrents'][0]['name']
 
         if finished:
-            logger.info('%s has finished seeding, removing torrent and data' % name)
+            logger.debug('%s has finished seeding, removing torrent and data' % name)
             method = 'torrent-remove'
             if remove_data:
                 arguments = {'delete-local-data': True, 'ids': torrentid}
@@ -117,7 +117,7 @@ def removeTorrent(torrentid, remove_data=False):
             response = torrentAction(method, arguments)
             return True
         else:
-            logger.info('%s has not finished seeding yet, torrent will not be removed, \
+            logger.debug('%s has not finished seeding yet, torrent will not be removed, \
                         will try again on next run' % name)
     except Exception as e:
         logger.debug('Unable to remove torrent %s, %s' % (torrentid, str(e)))

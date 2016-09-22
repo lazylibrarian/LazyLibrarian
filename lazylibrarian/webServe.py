@@ -1276,7 +1276,7 @@ class WebInterface(object):
         if action == 'Wanted':
             for items in maglist:
                 logger.debug(u'Snatching %s' % items['nzbtitle'])
-                if items['nzbmode'] == 'torznab' or items['nzbmode'] == 'torrent':
+                if items['nzbmode'] in ['torznab', 'torrent', 'magnet']:
                     snatch = TORDownloadMethod(
                         items['bookid'],
                         items['nzbprov'],
@@ -1289,6 +1289,7 @@ class WebInterface(object):
                         items['nzbtitle'],
                         items['nzburl'])
                 if snatch:  # if snatch fails, downloadmethods already report it
+                    logger.info('Downloading %s from %s' % (items['nzbtitle'], items['nzbprov']))
                     notifiers.notify_snatch(items['nzbtitle'] + ' at ' + now())
                     scheduleJob(action='Start', target='processDir')
         raise cherrypy.HTTPRedirect("pastIssues")

@@ -207,6 +207,7 @@ def processResultList(resultlist, book, searchtype):
                 snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
                                            newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             if snatch:
+                logger.info('Downloading %s from %s' % (newValueDict["NZBtitle"], newValueDict["NZBprov"]))
                 notify_snatch("%s from %s at %s" %
                              (newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
                 scheduleJob(action='Start', target='processDir')
@@ -381,7 +382,6 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         return False
 
     if download:
-        logger.debug(u'Torrent id %s has been downloaded from %s' % (download, tor_url))
         myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
         myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl="%s"' % full_url)
         return True

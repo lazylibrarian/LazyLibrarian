@@ -162,7 +162,8 @@ def processDir(reset=False):
                         # move the file into it's own subdirectory so we don't move things that aren't ours
                         if is_valid_booktype(fname, booktype="book") \
                                 or is_valid_booktype(fname, booktype="mag"):
-                            dirname = os.path.join(processpath, os.path.splitext(fname)[0])
+                            fname = os.path.splitext(fname)[0]
+                            dirname = os.path.join(processpath, fname)
                             if not os.path.exists(dirname):
                                 try:
                                     os.makedirs(dirname)
@@ -173,9 +174,9 @@ def processDir(reset=False):
                                 # ie other book formats, or opf, jpg with same title
                                 # can't move metadata.opf or cover.jpg or similar
                                 # as can't be sure they are ours
-                                basename = os.path.splitext(fname)[0]
+
                                 for ourfile in downloads:
-                                    if ourfile.startswith(basename):
+                                    if ourfile.startswith(fname):
                                         if is_valid_booktype(ourfile, booktype="book") \
                                             or is_valid_booktype(ourfile, booktype="mag") \
                                                 or os.path.splitext(ourfile)[1].lower() in ['.opf', '.jpg']:
