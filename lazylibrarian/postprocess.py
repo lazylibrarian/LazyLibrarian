@@ -158,7 +158,8 @@ def processDir(reset=False):
                 if match >= lazylibrarian.DLOAD_RATIO:
                     fname = matchname
                     if os.path.isfile(os.path.join(processpath, fname)):
-                        # handle single file downloads here...
+                        # handle single file downloads here. Book/mag file in download root.
+                        # move the file into it's own subdirectory so we don't move things that aren't ours
                         if is_valid_booktype(fname, booktype="book") \
                                 or is_valid_booktype(fname, booktype="mag"):
                             dirname = os.path.join(processpath, os.path.splitext(fname)[0])
@@ -168,12 +169,23 @@ def processDir(reset=False):
                                 except OSError as why:
                                     logger.debug('Failed to create directory %s, %s' % (dirname, why.strerror))
                             if os.path.exists(dirname):
-                                try:
-                                    shutil.move(os.path.join(processpath, fname), os.path.join(dirname, fname))
-                                    fname = os.path.splitext(fname)[0]
-                                except Exception as why:
-                                    logger.debug("Failed to move file %s to %s, %s" %
-                                                 (fname, dirname, str(why)))
+                                # move the book and any related files too
+                                # ie other book formats, or opf, jpg with same title
+                                # can't move metadata.opf or cover.jpg or similar
+                                # as can't be sure they are ours
+                                basename = os.path.splitext(fname)[0]
+                                for ourfile in downloads:
+                                    if ourfile.startswith(basename):
+                                        if is_valid_booktype(ourfile, booktype="book") \
+                                            or is_valid_booktype(ourfile, booktype="mag") \
+                                                or os.path.splitext(ourfile)[1].lower() in ['.opf', '.jpg']:
+                                            try:
+                                                shutil.move(os.path.join(processpath, ourfile),
+                                                            os.path.join(dirname, ourfile))
+                                            except Exception as why:
+                                                logger.debug("Failed to move file %s to %s, %s" %
+                                                            (ourfile, dirname, str(why)))
+
                     if os.path.isdir(os.path.join(processpath, fname)):
                         pp_path = os.path.join(processpath, fname)
                         logger.debug('Found folder (%s%%) %s for %s' % (match, pp_path, book['NZBtitle']))
@@ -516,7 +528,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             return False
 
     else:
-        # we are copying the files ourselves
+        # we are copying the files ourselves, either it's a magazine or we don't want to use calibre
         if not os.path.exists(dest_path):
             logger.debug('%s does not exist, so it\'s safe to create it' % dest_path)
         elif not os.path.isdir(dest_path):

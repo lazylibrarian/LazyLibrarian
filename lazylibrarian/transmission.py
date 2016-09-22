@@ -19,6 +19,7 @@ import time
 import json
 import urlparse
 import lazylibrarian
+import os
 
 # This is just a simple script to send torrents to transmission. The
 # intention is to turn this into a class where we can check the state
@@ -27,7 +28,7 @@ import lazylibrarian
 #       Store torrent id so we can check up on it
 
 
-def addTorrent(link):
+def addTorrent(link, directory=None):
     method = 'torrent-add'
     # print type(link), link
     # if link.endswith('.torrent'):
@@ -35,18 +36,20 @@ def addTorrent(link):
     #        metainfo = str(base64.b64encode(f.read()))
     #    arguments = {'metainfo': metainfo }
     # else:
-    arguments = {'filename': link, 'download-dir': lazylibrarian.DOWNLOAD_DIR}
+    if directory is None:
+        directory = lazylibrarian.DOWNLOAD_DIR
+    arguments = {'filename': link, 'download-dir': directory}
 
     response = torrentAction(method, arguments)
 
     if not response:
         return False
-
+    print str(response)
     if response['result'] == 'success':
         if 'torrent-added' in response['arguments']:
-            retid = response['arguments']['torrent-added']['hashString']
+            retid = response['arguments']['torrent-added']['id']
         elif 'torrent-duplicate' in response['arguments']:
-            retid = response['arguments']['torrent-duplicate']['hashString']
+            retid = response['arguments']['torrent-duplicate']['id']
         else:
             retid = False
 
@@ -56,17 +59,6 @@ def addTorrent(link):
     else:
         logger.info('Transmission returned status %s' % response['result'])
         return False
-
-
-def renameTorrent(torrentid, location, name):
-    method = 'torrent-set-location'
-    arguments = {'torrent_id': torrentid, 'location': location + '/' + name, 'move': True}
-
-    response = torrentAction(method, arguments)
-
-    if not response:
-        return False
-    return response
 
 
 def getTorrentFolder(torrentid):

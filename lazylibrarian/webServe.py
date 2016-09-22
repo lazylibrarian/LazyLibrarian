@@ -1444,7 +1444,7 @@ class WebInterface(object):
             message = message + '<br><small>' + messages
             return serve_template(templatename="shutdown.html", title="Commits", message=message, timer=15)
 
-        raise cherrypy.HTTPRedirect("config")
+        #raise cherrypy.HTTPRedirect("config")
 
 
     @cherrypy.expose
