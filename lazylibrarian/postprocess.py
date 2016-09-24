@@ -391,16 +391,16 @@ def import_book(pp_path=None, bookID=None):
 
         if processBook:
             # update nzbs
-            was_snatched = len(myDB.select('SELECT BookID, NZBprov FROM wanted WHERE BookID="%s"' % bookID))
+            was_snatched = myDB.action('SELECT BookID, NZBprov FROM wanted WHERE BookID="%s"' % bookID).fetchone()
             if was_snatched:
                 controlValueDict = {"BookID": bookID}
                 newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
                 myDB.upsert("wanted", newValueDict, controlValueDict)
-            if bookname:
-                if len(lazylibrarian.IMP_CALIBREDB):
-                    logger.debug('Calibre should have created the extras for us')
-                else:
-                    processExtras(myDB, dest_path, global_name, data)
+                if bookname:
+                    if len(lazylibrarian.IMP_CALIBREDB):
+                        logger.debug('Calibre should have created the extras for us')
+                    else:
+                        processExtras(myDB, dest_path, global_name, data)
             logger.info('Successfully processed: %s' % global_name)
             notify_download("%s from %s at %s" % (global_name, was_snatched['NZBprov'], now()))
             return True
