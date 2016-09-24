@@ -219,7 +219,8 @@ def processResultList(resultlist, book, searchtype):
 
 def DirectDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None, bookname=None):
     myDB = database.DBConnection()
-    download = False
+    downloadID = False
+    Source = "DIRECT"
     full_url = tor_url  # keep the url as stored in "wanted" table
 
     request = urllib2.Request(ur'%s' % tor_url)
@@ -249,7 +250,7 @@ def DirectDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=Non
         try:
             with open(destfile, 'wb') as bookfile:
                 bookfile.write(fdata)
-            download = True
+            downloadID = True
         except Exception as e:
             logger.debug("Error writing book to %s, %s" % (destfile, str(e)))
 
@@ -260,10 +261,11 @@ def DirectDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=Non
         logger.warn('Error fetching file from url: %s, %s' % (tor_url, e.reason))
         return False
 
-    if download:
+    if downloadID:
         logger.debug(u'File %s has been downloaded from %s' % (tor_title, tor_url))
         myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
-        myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl="%s"' % full_url)
+        myDB.action('UPDATE wanted SET status = "Snatched", Source = "%s", DownloadID = "%s" WHERE NZBurl="%s"' %
+                    (Source, downloadID, full_url))
         return True
     else:
         logger.error(u'Failed to download file @ <a href="%s">%s</a>' % (full_url, tor_url))
@@ -273,7 +275,7 @@ def DirectDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=Non
 
 def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
     myDB = database.DBConnection()
-    download = False
+    downloadID = False
     full_url = tor_url  # keep the url as stored in "wanted" table
     if (lazylibrarian.TOR_DOWNLOADER_DELUGE or
         lazylibrarian.TOR_DOWNLOADER_UTORRENT or
@@ -332,6 +334,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                 return False
 
         if lazylibrarian.TOR_DOWNLOADER_BLACKHOLE:
+            Source = "BLACKHOLE"
             tor_title = cleanName(tor_title)
             logger.debug("Sending %s to blackhole" % tor_title)
             tor_name = str.replace(str(tor_title), ' ', '_')
@@ -343,47 +346,53 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             with open(tor_path, 'wb') as torrent_file:
                 torrent_file.write(torrent)
             logger.debug('Torrent file saved: %s' % tor_title)
-            download = True
+            downloadID = True
 
         if (lazylibrarian.TOR_DOWNLOADER_UTORRENT and lazylibrarian.UTORRENT_HOST):
             logger.debug("Sending %s to Utorrent" % tor_title)
+            Source = "UTORRENT"
             hash = CalcTorrentHash(torrent)
-            download = utorrent.addTorrent(tor_url, hash)
+            downloadID = utorrent.addTorrent(tor_url, hash)
 
         if (lazylibrarian.TOR_DOWNLOADER_QBITTORRENT and lazylibrarian.QBITTORRENT_HOST):
             logger.debug("Sending %s to qbittorrent" % tor_title)
-            download = qbittorrent.addTorrent(tor_url)
+            Source = "QBITTORRENT"
+            downloadID = qbittorrent.addTorrent(tor_url)
 
         if (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION and lazylibrarian.TRANSMISSION_HOST):
             logger.debug("Sending %s to Transmission" % tor_title)
-            download = transmission.addTorrent(tor_url)
+            Source = "TRANSMISSION"
+            downloadID = transmission.addTorrent(tor_url)  # returns torrent_id or False
 
 
         if (lazylibrarian.TOR_DOWNLOADER_DELUGE and lazylibrarian.DELUGE_HOST):
             logger.debug("Sending %s to Deluge" % tor_title)
             if not lazylibrarian.DELUGE_USER:
                 # no username, talk to the webui
-                download = deluge.addTorrent(tor_url)
+                Source = "DELUGEWEBUI"
+                downloadID = deluge.addTorrent(tor_url)
             else:
                 # have username, talk to the daemon
+                Source = "DELUGERPC"
                 client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
                                          int(lazylibrarian.DELUGE_PORT),
                                          lazylibrarian.DELUGE_USER,
                                          lazylibrarian.DELUGE_PASS)
                 client.connect()
                 args = {"name": tor_title}
-                download = client.call('core.add_torrent_url', tor_url, args)
-                logger.debug('Deluge torrent_id: %s' % download)
-                if download and lazylibrarian.DELUGE_LABEL:
-                    labelled = client.call('label.set_torrent', download, lazylibrarian.DELUGE_LABEL)
+                downloadID = client.call('core.add_torrent_url', tor_url, args)
+                logger.debug('Deluge torrent_id: %s' % downloadID)
+                if downloadID and lazylibrarian.DELUGE_LABEL:
+                    labelled = client.call('label.set_torrent', downloadID, lazylibrarian.DELUGE_LABEL)
                     logger.debug('Deluge label returned: %s' % labelled)
     else:
         logger.warn('No torrent download method is enabled, check config.')
         return False
 
-    if download:
+    if downloadID:
         myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
-        myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl="%s"' % full_url)
+        myDB.action('UPDATE wanted SET status = "Snatched", Source = "%s", DownloadID = "%s" WHERE NZBurl="%s"' %
+                    (Source, downloadID, full_url))
         return True
     else:
         logger.error(u'Failed to download torrent @ <a href="%s">%s</a>' % (full_url, tor_url))

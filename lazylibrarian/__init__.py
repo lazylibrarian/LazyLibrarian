@@ -1379,7 +1379,8 @@ def dbcheck():
     # 4 added duplicates column to stats table
     # 5 issue numbers padded to 4 digits with leading zeros
     # 6 added Manual field to books table for user editing
-    db_current_version = 6
+    # 7 added Source and DownloadID to wanted table for download monitoring
+    db_current_version = 7
 
     if db_version < db_current_version:
         logger.info('Updating database to version %s, current version is %s' % (db_current_version, db_version))
@@ -1395,7 +1396,7 @@ def dbcheck():
                 BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesNum TEXT, \
                 WorkPage TEXT, Manual TEXT)')
             c.execute('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, \
-                NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT)')
+                NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, Source TEXT, DownloadID TEXT)')
             c.execute('CREATE TABLE IF NOT EXISTS pastissues AS SELECT * FROM wanted')  # same columns
             c.execute('CREATE TABLE IF NOT EXISTS magazines (Title TEXT, Frequency TEXT, Regex TEXT, Status TEXT, \
                 MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT)')
@@ -1618,6 +1619,14 @@ def dbcheck():
             except sqlite3.OperationalError:
                 logger.info('Updating books table to hold Manual')
                 c.execute('ALTER TABLE books ADD COLUMN Manual TEXT')
+
+        if db_version < 7:
+            try:
+                c.execute('SELECT Source from wanted')
+            except sqlite3.OperationalError:
+                logger.info('Updating wanted table to hold Source and DownloadID')
+                c.execute('ALTER TABLE wanted ADD COLUMN Source TEXT')
+                c.execute('ALTER TABLE wanted ADD COLUMN DownloadID TEXT')
 
         c.execute('PRAGMA user_version = %s' % db_current_version)
         conn.commit()

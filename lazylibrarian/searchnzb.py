@@ -220,18 +220,21 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
 
     myDB = database.DBConnection()
     if (lazylibrarian.NZB_DOWNLOADER_SABNZBD and lazylibrarian.SAB_HOST) and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
-        download = sabnzbd.SABnzbd(nzbtitle, nzburl)
+        Source = "SABNZBD"
+        downloadID = sabnzbd.SABnzbd(nzbtitle, nzburl)  # returns nzb_ids or False
+
     elif (lazylibrarian.NZB_DOWNLOADER_NZBGET and lazylibrarian.NZBGET_HOST) and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
+        Source = "NZBGET"
         headers = {'User-Agent': USER_AGENT}
         data = request.request_content(url=nzburl, headers=headers)
         nzb = classes.NZBDataSearchResult()
         nzb.extraInfo.append(data)
         nzb.name = nzbtitle
         nzb.url = nzburl
-        download = nzbget.sendNZB(nzb)
+        downloadID = nzbget.sendNZB(nzb)
 
     elif lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
-
+        Source = "BLACKHOLE"
         try:
             req = urllib2.Request(nzburl)
             if lazylibrarian.PROXY_HOST:
@@ -256,20 +259,21 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
                 with open(nzbpath, 'w') as f:
                     f.write(nzbfile)
                 logger.debug('NZB file saved to: ' + nzbpath)
-                download = True
+                downloadID = True
 
             except Exception as e:
                 logger.error('%s not writable, NZB not saved. Error: %s' % (nzbpath, str(e)))
-                download = False
+                downloadID = False
 
     else:
         logger.warn('No NZB download method is enabled, check config.')
         return False
 
-    if download:
+    if downloadID:
         logger.debug('Nzbfile has been downloaded from ' + str(nzburl))
         myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
-        myDB.action('UPDATE wanted SET status = "Snatched" WHERE NZBurl="%s"' % nzburl)
+        myDB.action('UPDATE wanted SET status = "Snatched", Source = "%s", DownloadID = "%s" WHERE NZBurl="%s"' %
+                    (Source, downloadID, nzburl))
         return True
     else:
         logger.error(u'Failed to download nzb @ <a href="%s">%s</a>' % (nzburl, nzbprov))

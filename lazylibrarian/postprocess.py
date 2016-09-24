@@ -158,8 +158,8 @@ def processDir(reset=False):
                 if match >= lazylibrarian.DLOAD_RATIO:
                     fname = matchname
                     if os.path.isfile(os.path.join(processpath, fname)):
-                        # handle single file downloads here. Book/mag file in download root.
-                        # move the file into it's own subdirectory so we don't move things that aren't ours
+                        # not a directory, handle single file downloads here. Book/mag file in download root.
+                        # move the file into it's own subdirectory so we don't move/delete things that aren't ours
                         if is_valid_booktype(fname, booktype="book") \
                                 or is_valid_booktype(fname, booktype="mag"):
                             fname = os.path.splitext(fname)[0]
@@ -174,8 +174,9 @@ def processDir(reset=False):
                                 # ie other book formats, or opf, jpg with same title
                                 # can't move metadata.opf or cover.jpg or similar
                                 # as can't be sure they are ours
-
-                                for ourfile in downloads:
+                                # not sure if we need a new listdir here, or whether we can use the old one
+                                list_dir = os.listdir(processpath)
+                                for ourfile in list_dir:
                                     if ourfile.startswith(fname):
                                         if is_valid_booktype(ourfile, booktype="book") \
                                             or is_valid_booktype(ourfile, booktype="mag") \

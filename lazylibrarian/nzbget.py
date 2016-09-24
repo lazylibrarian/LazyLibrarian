@@ -143,10 +143,12 @@ def sendNZB(nzb):
         # also the return value has changed from boolean to integer
         # (Positive number representing NZBID of the queue item. 0 and negative numbers represent error codes.)
         elif nzbget_version >= 13:
-            nzbget_result = True if nzbGetRPC.append(nzb.name + ".nzb", nzbcontent64 if nzbcontent64 is not None
-                                                     else nzb.url, lazylibrarian.NZBGET_CATEGORY,
-                                                     lazylibrarian.NZBGET_PRIORITY, False, False, dupekey,
-                                                     dupescore, "score") > 0 else False
+            nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", nzbcontent64 if nzbcontent64 is not None
+                                            else nzb.url, lazylibrarian.NZBGET_CATEGORY,
+                                            lazylibrarian.NZBGET_PRIORITY, False, False, dupekey,
+                                            dupescore, "score")
+            if nzbget_result <= 0:
+                nzbget_result = False
         else:
             if nzbcontent64 is not None:
                 nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", lazylibrarian.NZBGET_CATEGORY,
@@ -157,7 +159,7 @@ def sendNZB(nzb):
 
         if nzbget_result:
             logger.debug(u"NZB sent to NZBget successfully")
-            return True
+            return nzbget_result
         else:
             logger.error(u"NZBget could not add %s to the queue" % (nzb.name + ".nzb"))
             return False

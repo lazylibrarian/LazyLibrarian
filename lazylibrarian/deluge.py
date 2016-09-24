@@ -329,7 +329,7 @@ def _add_torrent_url(result):
         return json.loads(response.text)['result']
     except Exception as err:
         logger.error('Deluge: Adding torrent URL failed: %s' % str(err))
-
+        return False
 
 def _add_torrent_file(result):
     logger.debug('Deluge: Adding file')
@@ -343,8 +343,6 @@ def _add_torrent_file(result):
                                 "id": 2})
         response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
         result['hash'] = json.loads(response.text)['result']
-        print response
-        print response.text
 
         logger.debug('Deluge: Response was %s' % str(json.loads(response.text)['result']))
         return json.loads(response.text)['result']
@@ -352,6 +350,7 @@ def _add_torrent_file(result):
         logger.error('Deluge: Adding torrent file failed: %s' % str(err))
         formatted_lines = traceback.format_exc().splitlines()
         logger.error('; '.join(formatted_lines))
+        return False
 
 
 def setTorrentLabel(result):
