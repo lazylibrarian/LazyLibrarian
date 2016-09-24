@@ -3,7 +3,7 @@ import urllib
 import urllib2
 import socket
 import datetime
-
+import json
 import lazylibrarian
 
 from lazylibrarian import logger, database, formatter
@@ -52,6 +52,7 @@ def SABnzbd(title=None, nzburl=None):
         # connection test, check auth mode or get_cats
     else:
         params['mode'] = 'addurl'
+        params['output'] = 'json'
         if nzburl:
             params['name'] = nzburl
         if title:
@@ -81,7 +82,6 @@ def SABnzbd(title=None, nzburl=None):
     try:
         request = urllib2.urlopen(URL, timeout=30)
         logger.debug(u'Sending Nzbfile to SAB <a href="%s">URL</a>' % URL)
-        logger.debug(u'Sending Nzbfile to SAB')
     except (socket.error) as e:
         logger.error(u"Timeout connecting to SAB with URL: %s" % URL)
         return False
@@ -102,20 +102,20 @@ def SABnzbd(title=None, nzburl=None):
             HOST)
         return False
 
-    result = request.read().strip()
+    result = json.loads(request.read())
     if not result:
         log.error("SABnzbd didn't return anything.")
         return False
 
-    logger.debug("Result text from SAB: " + result)
-    if result == "ok":
+    logger.debug("Result text from SAB: " + str(result))
+    if result['status'] is True:
         logger.info(title + " sent to SAB successfully.")
-        return True
+        return result['nzo_ids'][0]
     elif title and title.startswith('Test'):
-        return result
-    elif result == "Missing authentication":
-        logger.error("Incorrect username/password.")
+        return str(result)
+    elif result['status'] is False:
+        logger.error("SAB returned Error: %s" % result['error'])
         return False
     else:
-        logger.error("Unknown error: " + result)
+        logger.error("Unknown error: " + str(result))
         return False

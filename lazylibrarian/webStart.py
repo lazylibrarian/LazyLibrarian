@@ -68,12 +68,15 @@ def initialize(options={}):
     }
 
     if options['http_pass'] != "":
+        logger.info("Web server authentication is enabled, username is '%s'" % options['http_user'])
         conf['/'].update({
             'tools.auth_basic.on': True,
             'tools.auth_basic.realm': 'LazyLibrarian',
-            'tools.auth_basic.checkpassword': cherrypy.lib.auth_basic.checkpassword_dict(
-                {options['http_user']: options['http_pass']})
+            'tools.auth_basic.checkpassword': cherrypy.lib.auth_basic.checkpassword_dict({
+                options['http_user']: options['http_pass']
+            })
         })
+        conf['/api'] = {'tools.auth_basic.on': False}
 
     # Prevent time-outs
     cherrypy.engine.timeout_monitor.unsubscribe()
@@ -86,6 +89,6 @@ def initialize(options={}):
         cherrypy.server.start()
     except IOError:
         print 'Failed to start on port: %i. Is something else running?' % (options['http_port'])
-        sys.exit(0)
+        sys.exit(1)
 
     cherrypy.server.wait()

@@ -158,8 +158,8 @@ def processDir(reset=False):
                 if match >= lazylibrarian.DLOAD_RATIO:
                     fname = matchname
                     if os.path.isfile(os.path.join(processpath, fname)):
-                        # handle single file downloads here. Book/mag file in download root.
-                        # move the file into it's own subdirectory so we don't move things that aren't ours
+                        # not a directory, handle single file downloads here. Book/mag file in download root.
+                        # move the file into it's own subdirectory so we don't move/delete things that aren't ours
                         if is_valid_booktype(fname, booktype="book") \
                                 or is_valid_booktype(fname, booktype="mag"):
                             fname = os.path.splitext(fname)[0]
@@ -174,8 +174,9 @@ def processDir(reset=False):
                                 # ie other book formats, or opf, jpg with same title
                                 # can't move metadata.opf or cover.jpg or similar
                                 # as can't be sure they are ours
-
-                                for ourfile in downloads:
+                                # not sure if we need a new listdir here, or whether we can use the old one
+                                list_dir = os.listdir(processpath)
+                                for ourfile in list_dir:
                                     if ourfile.startswith(fname):
                                         if is_valid_booktype(ourfile, booktype="book") \
                                             or is_valid_booktype(ourfile, booktype="mag") \
@@ -390,18 +391,18 @@ def import_book(pp_path=None, bookID=None):
 
         if processBook:
             # update nzbs
-            was_snatched = len(myDB.select('SELECT BookID FROM wanted WHERE BookID="%s"' % bookID))
+            was_snatched = myDB.action('SELECT BookID, NZBprov FROM wanted WHERE BookID="%s"' % bookID).fetchone()
             if was_snatched:
                 controlValueDict = {"BookID": bookID}
                 newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
                 myDB.upsert("wanted", newValueDict, controlValueDict)
-            if bookname:
-                if len(lazylibrarian.IMP_CALIBREDB):
-                    logger.debug('Calibre should have created the extras for us')
-                else:
-                    processExtras(myDB, dest_path, global_name, data)
+                if bookname:
+                    if len(lazylibrarian.IMP_CALIBREDB):
+                        logger.debug('Calibre should have created the extras for us')
+                    else:
+                        processExtras(myDB, dest_path, global_name, data)
             logger.info('Successfully processed: %s' % global_name)
-            notify_download("%s at %s" % (global_name, now()))
+            notify_download("%s from %s at %s" % (global_name, was_snatched['NZBprov'], now()))
             return True
         else:
             logger.error('Postprocessing for %s has failed.' % global_name)
