@@ -391,7 +391,7 @@ def import_book(pp_path=None, bookID=None):
 
         if processBook:
             # update nzbs
-            was_snatched = len(myDB.select('SELECT BookID FROM wanted WHERE BookID="%s"' % bookID))
+            was_snatched = len(myDB.select('SELECT BookID, NZBprov FROM wanted WHERE BookID="%s"' % bookID))
             if was_snatched:
                 controlValueDict = {"BookID": bookID}
                 newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
@@ -402,7 +402,7 @@ def import_book(pp_path=None, bookID=None):
                 else:
                     processExtras(myDB, dest_path, global_name, data)
             logger.info('Successfully processed: %s' % global_name)
-            notify_download("%s at %s" % (global_name, now()))
+            notify_download("%s from %s at %s" % (global_name, was_snatched['NZBprov'], now()))
             return True
         else:
             logger.error('Postprocessing for %s has failed.' % global_name)
