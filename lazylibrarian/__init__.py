@@ -142,12 +142,19 @@ REJECT_WORDS = None
 REJECT_MAXSIZE = 0
 
 TOR_DOWNLOADER_BLACKHOLE = 0
+TOR_CONVERT_MAGNET = 0
 TOR_DOWNLOADER_UTORRENT = 0
+TOR_DOWNLOADER_RTORRENT = 0
 TOR_DOWNLOADER_QBITTORRENT = 0
 TOR_DOWNLOADER_TRANSMISSION = 0
 TOR_DOWNLOADER_DELUGE = 0
 NUMBEROFSEEDERS = 10
 TORRENT_DIR = None
+
+RTORRENT_HOST = None
+RTORRENT_USER = None
+RTORRENT_PASS = None
+RTORRENT_LABEL = None
 
 UTORRENT_HOST = None
 UTORRENT_PORT = 0
@@ -430,13 +437,13 @@ def config_read(reloaded=False):
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, SEARCHRSS_INTERVAL, \
             EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, \
             USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, \
-            TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
+            TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, TOR_CONVERT_MAGNET, \
             USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, \
-            TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, \
+            TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, TOR_DOWNLOADER_RTORRENT, \
             TOR_DOWNLOADER_QBITTORRENT, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
             USE_PUSHBULLET, PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, \
-            PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, \
-            UTORRENT_HOST, UTORRENT_PORT, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
+            PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, RTORRENT_HOST, RTORRENT_USER, RTORRENT_PASS, \
+            RTORRENT_LABEL, UTORRENT_HOST, UTORRENT_PORT, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
             QBITTORRENT_HOST, QBITTORRENT_PORT, QBITTORRENT_USER, QBITTORRENT_PASS, QBITTORRENT_LABEL, \
             USE_PUSHOVER, PUSHOVER_ONSNATCH, PUSHOVER_KEYS, PUSHOVER_APITOKEN, \
             PUSHOVER_PRIORITY, PUSHOVER_ONDOWNLOAD, PUSHOVER_DEVICE, \
@@ -653,12 +660,19 @@ def config_read(reloaded=False):
         add_rss_slot()
 
         TOR_DOWNLOADER_BLACKHOLE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_blackhole', 0)
+        TOR_CONVERT_MAGNET = check_setting_bool(CFG, 'TORRENT', 'tor_convert_magnet', 0)
         TOR_DOWNLOADER_UTORRENT = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_utorrent', 0)
+        TOR_DOWNLOADER_RTORRENT = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_rtorrent', 0)
         TOR_DOWNLOADER_QBITTORRENT = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_qbittorrent', 0)
         TOR_DOWNLOADER_TRANSMISSION = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_transmission', 0)
         TOR_DOWNLOADER_DELUGE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_deluge', 0)
         NUMBEROFSEEDERS = check_setting_int(CFG, 'TORRENT', 'numberofseeders', 10)
         TORRENT_DIR = check_setting_str(CFG, 'TORRENT', 'torrent_dir', '')
+
+        RTORRENT_HOST = check_setting_str(CFG, 'RTORRENT', 'rtorrent_host', '')
+        RTORRENT_USER = check_setting_str(CFG, 'RTORRENT', 'rtorrent_user', '')
+        RTORRENT_PASS = check_setting_str(CFG, 'RTORRENT', 'rtorrent_pass', '')
+        RTORRENT_LABEL = check_setting_str(CFG, 'RTORRENT', 'rtorrent_label', '')
 
         # legacy name conversion, separate out utorrent host/port
         if not CFG.has_option('UTORRENT', 'utorrent_port'):
@@ -964,12 +978,20 @@ def config_write():
 #
     check_section('TORRENT')
     CFG.set('TORRENT', 'tor_downloader_blackhole', TOR_DOWNLOADER_BLACKHOLE)
+    CFG.set('TORRENT', 'tor_convert_magnet', TOR_CONVERT_MAGNET)
     CFG.set('TORRENT', 'tor_downloader_utorrent', TOR_DOWNLOADER_UTORRENT)
+    CFG.set('TORRENT', 'tor_downloader_rtorrent', TOR_DOWNLOADER_RTORRENT)
     CFG.set('TORRENT', 'tor_downloader_qbittorrent', TOR_DOWNLOADER_QBITTORRENT)
     CFG.set('TORRENT', 'tor_downloader_transmission', TOR_DOWNLOADER_TRANSMISSION)
     CFG.set('TORRENT', 'tor_downloader_deluge', TOR_DOWNLOADER_DELUGE)
     CFG.set('TORRENT', 'numberofseeders', NUMBEROFSEEDERS)
     CFG.set('TORRENT', 'torrent_dir', TORRENT_DIR)
+#
+    check_section('RTORRENT')
+    CFG.set('RTORRENT', 'rtorrent_host', RTORRENT_HOST)
+    CFG.set('RTORRENT', 'rtorrent_user', RTORRENT_USER)
+    CFG.set('RTORRENT', 'rtorrent_pass', RTORRENT_PASS)
+    CFG.set('RTORRENT', 'rtorrent_label', RTORRENT_LABEL)
 #
     check_section('UTORRENT')
     CFG.set('UTORRENT', 'utorrent_host', UTORRENT_HOST)

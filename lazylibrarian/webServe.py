@@ -14,7 +14,7 @@ from operator import itemgetter
 from shutil import copyfile, rmtree
 
 from lazylibrarian import logger, database, notifiers, versioncheck, magazinescan, \
-    qbittorrent, utorrent, transmission, sabnzbd, nzbget, deluge
+    qbittorrent, utorrent, rtorrent, transmission, sabnzbd, nzbget, deluge
 from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
 from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
 from lazylibrarian.searchmag import search_magazines
@@ -118,16 +118,16 @@ class WebInterface(object):
                      nzb_downloader_nzbget=0, nzb_downloader_blackhole=0, proxy_host='', proxy_type='',
                      sab_host='', sab_port=0, sab_subdir='', sab_api='', sab_user='', sab_pass='',
                      destination_copy=0, destination_dir='', download_dir='', sab_cat='', usenet_retention=0,
-                     nzb_blackholedir='', alternate_dir='', torrent_dir='', numberofseeders=0,
+                     nzb_blackholedir='', alternate_dir='', torrent_dir='', numberofseeders=0, tor_convert_magnet=0,
                      tor_downloader_blackhole=0, tor_downloader_utorrent=0, tor_downloader_qbittorrent=0,
                      nzbget_host='', nzbget_port=0, nzbget_user='', nzbget_pass='', nzbget_cat='', nzbget_priority=0,
                      newzbin=0, newzbin_uid='', newzbin_pass='', kat=0, kat_host='', tpb=0, tpb_host='', tdl=0,
                      tdl_host='', zoo=0, zoo_host='', ebook_type='', mag_type='', reject_words='', reject_maxsize=0,
-                     gen=0, gen_host='', book_api='', gr_api='', gb_api='',
-                     versioncheck_interval='', search_interval='', scan_interval='', searchrss_interval=20,
-                     ebook_dest_folder='', ebook_dest_file='',
-                     mag_relative=0, mag_dest_folder='', mag_dest_file='', cache_age=30,
-                     use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
+                     gen=0, gen_host='', book_api='', gr_api='', gb_api='', versioncheck_interval='',
+                     search_interval='', scan_interval='', searchrss_interval=20, ebook_dest_folder='',
+                     ebook_dest_file='', tor_downloader_rtorrent=0, rtorrent_host='', mag_relative=0,
+                     mag_dest_folder='', mag_dest_file='', cache_age=30, rtorrent_user='', rtorrent_pass='',
+                     rtorrent_label='', use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
                      utorrent_host='', utorrent_port=0, utorrent_user='', utorrent_pass='', utorrent_label='',
                      qbittorrent_host='', qbittorrent_port=0, qbittorrent_user='', qbittorrent_pass='',
                      qbittorrent_label='', notfound_status='Skipped', newbook_status='Skipped', full_scan=0,
@@ -211,7 +211,9 @@ class WebInterface(object):
         lazylibrarian.TORRENT_DIR = torrent_dir
         lazylibrarian.NUMBEROFSEEDERS = check_int(numberofseeders, 0)
         lazylibrarian.TOR_DOWNLOADER_BLACKHOLE = bool(tor_downloader_blackhole)
+        lazylibrarian.TOR_CONVERT_MAGNET = bool(tor_convert_magnet)
         lazylibrarian.TOR_DOWNLOADER_UTORRENT = bool(tor_downloader_utorrent)
+        lazylibrarian.TOR_DOWNLOADER_RTORRENT = bool(tor_downloader_rtorrent)
         lazylibrarian.TOR_DOWNLOADER_QBITTORRENT = bool(tor_downloader_qbittorrent)
         lazylibrarian.TOR_DOWNLOADER_TRANSMISSION = bool(tor_downloader_transmission)
         lazylibrarian.TOR_DOWNLOADER_DELUGE = bool(tor_downloader_deluge)
@@ -219,6 +221,11 @@ class WebInterface(object):
         lazylibrarian.NEWZBIN = bool(newzbin)
         lazylibrarian.NEWZBIN_UID = newzbin_uid
         lazylibrarian.NEWZBIN_PASS = newzbin_pass
+
+        lazylibrarian.RTORRENT_HOST = rtorrent_host
+        lazylibrarian.RTORRENT_USER = rtorrent_user
+        lazylibrarian.RTORRENT_PASS = rtorrent_pass
+        lazylibrarian.RTORRENT_LABEL = rtorrent_label
 
         lazylibrarian.UTORRENT_HOST = utorrent_host
         lazylibrarian.UTORRENT_PORT = utorrent_port
@@ -1936,3 +1943,8 @@ class WebInterface(object):
     def testuTorrent(self):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         return utorrent.checkLink()
+
+    @cherrypy.expose
+    def testrTorrent(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        return rtorrent.checkLink()

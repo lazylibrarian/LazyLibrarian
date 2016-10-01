@@ -64,8 +64,9 @@ def TPB(book=None):
 
         if len(rows) > 1:
             for row in rows[1:]:
-                c1.append(row.findAll('td')[1])
-                c2.append(row.findAll('td')[2])
+                if len(row.findAll('td')) > 2:
+                    c1.append(row.findAll('td')[1])
+                    c2.append(row.findAll('td')[2])
 
         for col1, col2 in zip(c1, c2):
             try:
@@ -172,9 +173,10 @@ def KAT(book=None):
 
         if len(rows) > 1:
             for row in rows[1:]:
-                c0.append(row.findAll('td')[0])
-                c1.append(row.findAll('td')[1])
-                c3.append(row.findAll('td')[3])
+                if len(row.findAll('td')) > 3:
+                    c0.append(row.findAll('td')[0])
+                    c1.append(row.findAll('td')[1])
+                    c3.append(row.findAll('td')[3])
 
         for col0, col1, col3 in zip(c0, c1, c3):
             try:
@@ -425,10 +427,11 @@ def GEN(book=None):
 
         if len(rows) > 1:
             for row in rows[1:]:
-                c1.append(row.findAll('td')[1])
-                c2.append(row.findAll('td')[2])
-                c7.append(row.findAll('td')[7])
-                c8.append(row.findAll('td')[8])
+                if len(row.findAll('td')) > 8:
+                    c1.append(row.findAll('td')[1])
+                    c2.append(row.findAll('td')[2])
+                    c7.append(row.findAll('td')[7])
+                    c8.append(row.findAll('td')[8])
 
         for col1, col2, col7, col8 in zip(c1, c2, c7, c8):
             try:

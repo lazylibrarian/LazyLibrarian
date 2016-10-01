@@ -11,16 +11,19 @@ from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
 
 
-def fetchURL(URL):
+def fetchURL(URL, headers=None):
     """ Return the result of fetching a URL and True if success
         Otherwise return error message and False
         Allow one retry on timeout """
-
     request = urllib2.Request(URL)
     if lazylibrarian.PROXY_HOST:
         request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-    # google insists on having a user-agent
-    request.add_header('User-Agent', USER_AGENT)
+    if headers is None:
+        # google insists on having a user-agent
+        request.add_header('User-Agent', USER_AGENT)
+    if headers is not None:
+        for item in headers:
+            request.add_header(item, headers[item])
     try:
         resp = urllib2.urlopen(request, timeout=30)
         if str(resp.getcode()).startswith("2"):

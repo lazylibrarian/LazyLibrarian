@@ -503,6 +503,43 @@
 
                                              <div class="checkbox">
                                                 <%
+                                                if lazylibrarian.TOR_DOWNLOADER_RTORRENT == True:
+                                                    checked = 'checked="checked"'
+                                                else:
+                                                    checked = ''
+                                                %>
+                                                <label for="tor_downloader_rtorrent" class="control-label">
+                                                <input type="checkbox" id="tor_downloader_rtorrent" name="tor_downloader_rtorrent" value="1" ${checked} />
+                                                Use rTorrent</label>
+                                            </div>
+                                            <fieldset id="rtorrent_options">
+                                                <legend>rTorrent</legend>
+                                                <div class="row">
+                                                    <div class="form-group col-md-8">
+                                                        <label for="rtorrent_host" class="control-label">rTorrent Host:</label>
+                                                        <input type="text" id="rtorrent_host" name="rtorrent_host" value="${lazylibrarian.RTORRENT_HOST}" class="form-control" placeholder="rTorrent Host">
+                                                    </div>
+                                                <div class="form-group col-md-6">
+                                                    <label for="rtorrent_user" class="control-label">rTorrent User:</label>
+                                                    <input type="text" id="rtorrent_user" name="rtorrent_user" value="${lazylibrarian.RTORRENT_USER}" class="form-control" placeholder="rTorrent User">
+                                                </div>
+                                                <div class="form-group col-md-6">
+                                                    <label for="rtorrent_pass" class="control-label">rTorrent Password:</label>
+                                                    <input type="text" id="rtorrent_pass" name="rtorrent_pass" value="${lazylibrarian.RTORRENT_PASS}" class="form-control" placeholder="rTorrent Password">
+                                                </div>
+                                                <div class="form-group col-md-6">
+                                                    <label for="rtorrent_label" class="control-label">rTorrent Label:</label>
+                                                    <input type="text" id="rtorrent_label" name="rtorrent_label" value="${lazylibrarian.RTORRENT_LABEL}" class="form-control" placeholder="rTorrent Label">
+                                                </div>
+                                                    <div class="form-group col-md-6">
+                                                        <label for="testrTorrent" class="control-label">rTorrent Connection:</label><br>
+                                                        <button class="button btn btn-sm btn-primary" type="button" value="Test rTorrent" id="testrTorrent"><i class="fa fa-list-ul"></i> Test rTorrent</button>
+                                                        <br><br>
+                                                    </div>
+                                            </fieldset>
+
+                                             <div class="checkbox">
+                                                <%
                                                 if lazylibrarian.TOR_DOWNLOADER_UTORRENT == True:
                                                     checked = 'checked="checked"'
                                                 else:
@@ -599,6 +636,17 @@
                                                 <div class="form-group">
                                                     <label for="torrent_dir" class="control-label">Torrent Blackhole Directory:</label>
                                                     <input type="text" id="torrent_dir" name="torrent_dir" value="${lazylibrarian.TORRENT_DIR}" class="form-control" placeholder="Torrent Blackhole Directory">
+                                                </div>
+                                                <div class="checkbox">
+                                                    <%
+                                                    if lazylibrarian.TOR_CONVERT_MAGNET == True:
+                                                        checked = 'checked="checked"'
+                                                    else:
+                                                        checked = ''
+                                                    %>
+                                                     <label for="tor_convert_magnet" class="control-label">
+                                                     <input type="checkbox" id="tor_convert_magnet" name="tor_convert_magnet" value="1" ${checked} />
+                                                     Convert magnet links into torrent files</label>
                                                 </div>
                                             </fieldset>
                                             <div class="form-group">
@@ -1674,6 +1722,26 @@
                     }
             });
 
+            if ($("#tor_downloader_rtorrent").is(":checked"))
+                {
+                        $("#rtorrent_options").show();
+                }
+            else
+                {
+                        $("#rtorrent_options").hide();
+                }
+
+            $("#tor_downloader_rtorrent").click(function(){
+                    if ($("#tor_downloader_rtorrent").is(":checked"))
+                    {
+                            $("#rtorrent_options").slideDown();
+                    }
+                    else
+                    {
+                            $("#rtorrent_options").slideUp();
+                    }
+            });
+
             if ($("#tor_downloader_qbittorrent").is(":checked"))
                 {
                         $("#qbittorrent_options").show();
@@ -1867,6 +1935,21 @@
                 $.get('testuTorrent', function(data) {
                     bootbox.dialog({
                         title: 'uTorrent Connection',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
+            });
+
+            $('#testrTorrent').on('click', function(e) {
+                $.get('testrTorrent', function(data) {
+                    bootbox.dialog({
+                        title: 'rTorrent Connection',
                         message: '<pre>'+data+'</pre>',
                         buttons: {
                             primary: {

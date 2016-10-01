@@ -5,11 +5,12 @@ import re
 from base64 import b16encode, b32decode
 from lib.bencode import bencode as bencode, bdecode
 from hashlib import sha1
+from magnet2torrent import magnet2torrent
 import threading
 import lazylibrarian
 import unicodedata
 
-from lazylibrarian import logger, database, utorrent, transmission, qbittorrent, deluge
+from lazylibrarian import logger, database, utorrent, transmission, qbittorrent, deluge, rtorrent
 from lib.deluge_client import DelugeRPCClient
 from lib.fuzzywuzzy import fuzz
 
@@ -279,12 +280,13 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
     full_url = tor_url  # keep the url as stored in "wanted" table
     if (lazylibrarian.TOR_DOWNLOADER_DELUGE or
         lazylibrarian.TOR_DOWNLOADER_UTORRENT or
+        lazylibrarian.TOR_DOWNLOADER_RTORRENT or
         lazylibrarian.TOR_DOWNLOADER_QBITTORRENT or
         lazylibrarian.TOR_DOWNLOADER_BLACKHOLE or
             lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
 
         if tor_url and tor_url.startswith('magnet'):
-            torrent = tor_url  # allow magnet link to write to blackhole and hash to utorrent
+            torrent = tor_url  # allow magnet link to write to blackhole and hash to utorrent/rtorrent
         else:
             if '&file=' in tor_url:
                 # torznab results need to be re-encoded
@@ -339,20 +341,49 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             logger.debug("Sending %s to blackhole" % tor_title)
             tor_name = str.replace(str(tor_title), ' ', '_')
             if tor_url and tor_url.startswith('magnet'):
-                tor_name = tor_name + '.magnet'
+                if lazylibrarian.TOR_CONVERT_MAGNET:
+                    hashid = CalcTorrentHash(tor_url)
+                    tor_name = 'meta-' + hashid + '.torrent'
+                    tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
+                    result = magnet2torrent(tor_url, tor_path)
+                    if result is not False:
+                        logger.debug('Magnet file saved as: %s' % tor_path)
+                        downloadID = True
+                else:
+                    tor_name = tor_name + '.magnet'
+                    tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
+                    with open(tor_path, 'wb') as torrent_file:
+                        torrent_file.write(torrent)
+                    logger.debug('Magnet file saved: %s' % tor_path)
+                    downloadID = True
             else:
                 tor_name = tor_name + '.torrent'
-            tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
-            with open(tor_path, 'wb') as torrent_file:
-                torrent_file.write(torrent)
-            logger.debug('Torrent file saved: %s' % tor_title)
-            downloadID = True
+                tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
+                with open(tor_path, 'wb') as torrent_file:
+                    torrent_file.write(torrent)
+                logger.debug('Torrent file saved: %s' % tor_title)
+                downloadID = True
 
         if (lazylibrarian.TOR_DOWNLOADER_UTORRENT and lazylibrarian.UTORRENT_HOST):
             logger.debug("Sending %s to Utorrent" % tor_title)
             Source = "UTORRENT"
-            hash = CalcTorrentHash(torrent)
-            downloadID = utorrent.addTorrent(tor_url, hash)
+            hashid = CalcTorrentHash(torrent)
+            downloadID = utorrent.addTorrent(tor_url, hashid)
+
+        if (lazylibrarian.TOR_DOWNLOADER_RTORRENT and lazylibrarian.RTORRENT_HOST):
+            logger.debug("Sending %s to rTorrent" % tor_title)
+            Source = "RTORRENT"
+            hashid = CalcTorrentHash(torrent)
+            if tor_url.startswith('magnet'):
+                # don't send magnets to rtorrent - not working correctly
+                tor_name = 'meta-' + hashid + '.torrent'
+                tor_file = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
+                result = magnet2torrent(tor_url, tor_file)
+                if result is not False:
+                    downloadID = rtorrent.addTorrent(tor_file, hashid)
+                    os.remove(tor_file)
+            else:
+                downloadID = rtorrent.addTorrent(tor_url, hashid)
 
         if (lazylibrarian.TOR_DOWNLOADER_QBITTORRENT and lazylibrarian.QBITTORRENT_HOST):
             logger.debug("Sending %s to qbittorrent" % tor_title)
@@ -403,11 +434,11 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
 def CalcTorrentHash(torrent):
 
     if torrent and torrent.startswith('magnet'):
-        hash = re.findall('urn:btih:([\w]{32,40})', torrent)[0]
-        if len(hash) == 32:
-            hash = b16encode(b32decode(hash)).lower()
+        hashid = re.findall('urn:btih:([\w]{32,40})', torrent)[0]
+        if len(hashid) == 32:
+            hashid = b16encode(b32decode(hashid)).lower()
     else:
         info = bdecode(torrent)["info"]
-        hash = sha1(bencode(info)).hexdigest()
-    logger.debug('Torrent Hash: ' + hash)
-    return hash
+        hashid = sha1(bencode(info)).hexdigest()
+    logger.debug('Torrent Hash: ' + hashid)
+    return hashid
