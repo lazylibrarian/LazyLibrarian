@@ -381,7 +381,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                 result = magnet2torrent(tor_url, tor_file)
                 if result is not False:
                     downloadID = rtorrent.addTorrent(tor_file, hashid)
-                    os.remove(tor_file)
+                    # os.remove(tor_file)  # rtorrent complains if we remove the torrent file while seeding
             else:
                 downloadID = rtorrent.addTorrent(tor_url, hashid)
 
