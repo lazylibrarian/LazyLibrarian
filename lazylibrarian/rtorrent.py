@@ -44,9 +44,7 @@ def addTorrent(torrent, hashID, directory=None):
         label = lazylibrarian.RTORRENT_LABEL
         if label:
             server.d.set_custom1(hashID, label)
-        if lazylibrarian.RTORRENT_SEND_DIR:
-            if directory is None:
-                directory = lazylibrarian.DOWNLOAD_DIR
+        if directory:
             server.d.set_directory(hashID, directory)
         server.d.start(hashID)
         # read mainview to see if we are there, as response tells us nothing

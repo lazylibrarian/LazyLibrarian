@@ -375,16 +375,17 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             logger.debug("Sending %s to rTorrent" % tor_title)
             Source = "RTORRENT"
             hashid = CalcTorrentHash(torrent)
+            directory = lazylibrarian.RTORRENT_DIR
             if tor_url.startswith('magnet'):
                 # don't send magnets to rtorrent - not working correctly
                 tor_name = 'meta-' + hashid + '.torrent'
                 tor_file = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
                 result = magnet2torrent(tor_url, tor_file)
                 if result is not False:
-                    downloadID = rtorrent.addTorrent(tor_file, hashid)
+                    downloadID = rtorrent.addTorrent(tor_file, hashid, directory)
                     # os.remove(tor_file)  # rtorrent complains if we remove the torrent file while seeding
             else:
-                downloadID = rtorrent.addTorrent(tor_url, hashid)
+                downloadID = rtorrent.addTorrent(tor_url, hashid, directory)
 
         if (lazylibrarian.TOR_DOWNLOADER_QBITTORRENT and lazylibrarian.QBITTORRENT_HOST):
             logger.debug("Sending %s to qbittorrent" % tor_title)

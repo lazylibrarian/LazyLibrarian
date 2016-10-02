@@ -420,16 +420,13 @@
                                     <label>rTorrent Label:</label>
                                     <input type="text" name="rtorrent_label" value="${lazylibrarian.RTORRENT_LABEL}" size="26">
                                 </div>
-                             <div class="row checkbox">
-                                <%
-                                if lazylibrarian.RTORRENT_SEND_DIR == True:
-                                    checked = 'checked="checked"'
-                                else:
-                                    checked = ''
-                                %>
-                                <input type="checkbox" name="rtorrent_send_dir" id="rtorrent_send_dir" value="1" ${checked} />
-                                <label>Send LazyLibrarian download directory to rTorrent</label>
-                            </div>
+                                <div class="row">
+                                    <label>rTorrent Directory:</label>
+                                    <input type="text" name="rtorrent_dir" value="${lazylibrarian.RTORRENT_DIR}" size="26">
+                                    <br><small>
+                                    Leave rTorrent directory blank to use rtorrent defaults
+                                    </small>
+                                </div>
                                 <div class="row">
                                     <input type="button" value="Test rTorrent" id="testrTorrent" style="float:right;">
                                 </div>
@@ -592,10 +589,6 @@
  	    		    <input type="text" placeholder="Enter URL Here" name="torznab[${loop.index}][host]" value="${prov['HOST']}" size="26" class="providers-input">
  	    		    <br>
  	    		    %endfor
-                    <small>
-                    Current limitation: TORZNAB results are returned as magnet links
-                    where possible, which may not work automatically with blackhole
-                    </small>
  	    		</fieldset>
             </tr>
             <tr>
@@ -657,13 +650,22 @@
  	    		    <input type="text" placeholder="Enter URL Here" name="tdl_host" value="${lazylibrarian.TDL_HOST}" size="26">
  	  		        <br>
  	  		        <%
-                    if lazylibrarian.EXT == True:
+                    if lazylibrarian.EXTRA == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
-            		<input type="checkbox" name="ext" value=1 ${checked} style="margin-bottom:4px;" /> extratorrent
- 	    		    <input type="text" placeholder="Enter URL Here" name="ext_host" value="${lazylibrarian.EXT_HOST}" size="26">
+            		<input type="checkbox" name="extra" value=1 ${checked} style="margin-bottom:4px;" /> extratorrent
+ 	    		    <input type="text" placeholder="Enter URL Here" name="extra_host" value="${lazylibrarian.EXTRA_HOST}" size="26">
+ 	  		        <br>
+ 	  		        <%
+                    if lazylibrarian.LIME == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+            		<input type="checkbox" name="lime" value=1 ${checked} style="margin-bottom:4px;" /> limetorrent
+ 	    		    <input type="text" placeholder="Enter URL Here" name="lime_host" value="${lazylibrarian.LIME_HOST}" size="26">
  	  		        <br>
                    <br><h3>Direct Download Providers</h3><br>
  	  		        <%

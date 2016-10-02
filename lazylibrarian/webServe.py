@@ -123,10 +123,10 @@ class WebInterface(object):
                      nzbget_host='', nzbget_port=0, nzbget_user='', nzbget_pass='', nzbget_cat='', nzbget_priority=0,
                      newzbin=0, newzbin_uid='', newzbin_pass='', kat=0, kat_host='', tpb=0, tpb_host='', tdl=0,
                      tdl_host='', zoo=0, zoo_host='', ebook_type='', mag_type='', reject_words='', reject_maxsize=0,
-                     ext=0, ext_host='', gen=0, gen_host='', book_api='', gr_api='', gb_api='',
-                     versioncheck_interval='', search_interval='', scan_interval='', searchrss_interval=20,
+                     extra=0, extra_host='', gen=0, gen_host='', lime=0, lime_host='', book_api='', gr_api='',
+                     gb_api='', versioncheck_interval='', search_interval='', scan_interval='', searchrss_interval=20,
                      ebook_dest_folder='', ebook_dest_file='', tor_downloader_rtorrent=0,
-                     rtorrent_host='', rtorrent_send_dir=0, rtorrent_user='', rtorrent_pass='', rtorrent_label='',
+                     rtorrent_host='', rtorrent_dir='', rtorrent_user='', rtorrent_pass='', rtorrent_label='',
                      use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
                      mag_dest_folder='', mag_dest_file='', mag_relative=0, cache_age=30,
                      utorrent_host='', utorrent_port=0, utorrent_user='', utorrent_pass='', utorrent_label='',
@@ -227,7 +227,7 @@ class WebInterface(object):
         lazylibrarian.RTORRENT_USER = rtorrent_user
         lazylibrarian.RTORRENT_PASS = rtorrent_pass
         lazylibrarian.RTORRENT_LABEL = rtorrent_label
-        lazylibrarian.RTORRENT_SEND_DIR = rtorrent_send_dir
+        lazylibrarian.RTORRENT_DIR = rtorrent_dir
 
         lazylibrarian.UTORRENT_HOST = utorrent_host
         lazylibrarian.UTORRENT_PORT = utorrent_port
@@ -258,12 +258,14 @@ class WebInterface(object):
         lazylibrarian.TPB_HOST = tpb_host
         lazylibrarian.ZOO = bool(zoo)
         lazylibrarian.ZOO_HOST = zoo_host
-        lazylibrarian.EXT = bool(ext)
-        lazylibrarian.EXT_HOST = ext_host
+        lazylibrarian.EXTRA = bool(extra)
+        lazylibrarian.EXTRA_HOST = extra_host
         lazylibrarian.TDL = bool(tdl)
         lazylibrarian.TDL_HOST = tdl_host
         lazylibrarian.GEN = bool(gen)
         lazylibrarian.GEN_HOST = gen_host
+        lazylibrarian.LIME = bool(lime)
+        lazylibrarian.LIME_HOST = lime_host
 
         lazylibrarian.EBOOK_TYPE = ebook_type
         lazylibrarian.MAG_TYPE = mag_type

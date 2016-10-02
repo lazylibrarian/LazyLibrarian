@@ -532,18 +532,14 @@
                                                     <input type="text" id="rtorrent_label" name="rtorrent_label" value="${lazylibrarian.RTORRENT_LABEL}" class="form-control" placeholder="rTorrent Label">
                                                 </div>
                                                 <div class="form-group col-md-6">
-                                                <div class="checkbox">
-                                                <%
-                                                if lazylibrarian.RTORRENT_SEND_DIR == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                                %>
-                                                <label for="rtorrent_send_dir" class="control-label">
-                                                <input type="checkbox" id="rtorrent_send_dir" name="rtorrent_send_dir" value="1" ${checked} />
-                                                Send LazyLibrarian download directory to rTorrent</label>
+                                                    <label for="rtorrent_dir" class="control-label">rTorrent Directory:</label>
+                                                    <input type="text" id="rtorrent_dir" name="rtorrent_dir" value="${lazylibrarian.RTORRENT_DIR}" class="form-control" placeholder="rTorrent Directory">
                                                 </div>
+                                                <div class="form-group col-md-6">
+                                                <span class="help-block">Leave rTorrent directory blank to use rtorrent defaults
+                                                </span></div>
                                                 <div>
+                                                    <div class="form-group col-md-6">
                                                     <label for="testrTorrent" class="control-label">rTorrent Connection:</label><br>
                                                     <button class="button btn btn-sm btn-primary" type="button" value="Test rTorrent" id="testrTorrent"><i class="fa fa-list-ul"></i> Test rTorrent</button>
                                                     <br><br>
@@ -731,11 +727,6 @@
                                             <input type="text" placeholder="Torznab API #${loop.index}" id="torznab[${loop.index}][api]" name="torznab[${loop.index}][api]" value="${provider['API']}" class="form-control">
                                         </div>
                                         %endfor
-                                        <div>
-                                            <span class="help-block">Current limitation: TORZNAB results are returned as magnet links
-                                            where possible, which may not work automatically with blackhole
-                                            </span>
-                                        </div>
                                     </fieldset>
                                 </div>
                                 <div class="col-md-4">
@@ -833,18 +824,33 @@
                                             </div>
                                         </div>
                                         <%
-                                        if lazylibrarian.EXT == True:
+                                        if lazylibrarian.EXTRA == True:
                                             checked = 'checked="checked"'
                                         else:
                                             checked = ''
                                         %>
                                         <div class="form-group">
-                                            <label for="ext_host" class="sr-only">extratorrent host</label>
+                                            <label for="extra_host" class="sr-only">extratorrent host</label>
                                             <div class="input-group">
                                                 <span class="input-group-addon">
-                                                    <input type="checkbox" id="ext" name="ext" value="1" ${checked} />
+                                                    <input type="checkbox" id="extra" name="extra" value="1" ${checked} />
                                                 </span>
-                                                <input type="text" placeholder="extratorrent host" id="ext_host" name="ext_host" value="${lazylibrarian.EXT_HOST}" class="form-control">
+                                                <input type="text" placeholder="extratorrent host" id="extra_host" name="extra_host" value="${lazylibrarian.EXTRA_HOST}" class="form-control">
+                                            </div>
+                                        </div>
+                                        <%
+                                        if lazylibrarian.LIME == True:
+                                            checked = 'checked="checked"'
+                                        else:
+                                            checked = ''
+                                        %>
+                                        <div class="form-group">
+                                            <label for="lime_host" class="sr-only">limetorrent host</label>
+                                            <div class="input-group">
+                                                <span class="input-group-addon">
+                                                    <input type="checkbox" id="lime" name="lime" value="1" ${checked} />
+                                                </span>
+                                                <input type="text" placeholder="limetorrent host" id="lime_host" name="lime_host" value="${lazylibrarian.LIME_HOST}" class="form-control">
                                             </div>
                                         </div>
                                     </fieldset>
