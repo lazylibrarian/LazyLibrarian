@@ -15,6 +15,7 @@ from lib.deluge_client import DelugeRPCClient
 from lib.fuzzywuzzy import fuzz
 
 from lazylibrarian.common import scheduleJob, USER_AGENT
+from lazylibrarian.cache import fetchURL
 from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, check_int, now, cleanName
 from lazylibrarian.providers import IterateOverTorrentSites
 from lazylibrarian.notifiers import notify_snatch

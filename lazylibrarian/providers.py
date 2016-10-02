@@ -8,7 +8,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.common import USER_AGENT
 from lazylibrarian.formatter import age, today, plural, cleanName
-from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL, GEN
+from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL, GEN, EXT
 import lib.feedparser as feedparser
 
 
@@ -218,6 +218,10 @@ def IterateOverTorrentSites(book=None, searchType=None):
         providers += 1
         logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.ZOO_HOST)
         resultslist += ZOO(book)
+    if (lazylibrarian.EXT):
+        providers += 1
+        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.EXT_HOST)
+        resultslist += EXT(book)
     if (lazylibrarian.TDL):
         providers += 1
         logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.TDL_HOST)

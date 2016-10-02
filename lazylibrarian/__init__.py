@@ -155,6 +155,7 @@ RTORRENT_HOST = None
 RTORRENT_USER = None
 RTORRENT_PASS = None
 RTORRENT_LABEL = None
+RTORRENT_SEND_DIR = None
 
 UTORRENT_HOST = None
 UTORRENT_PORT = 0
@@ -185,6 +186,8 @@ TPB = 0
 TPB_HOST = None
 ZOO = 0
 ZOO_HOST = None
+EXT = 0
+EXT_HOST = None
 TDL = 0
 TDL_HOST = None
 GEN = 0
@@ -432,7 +435,7 @@ def config_read(reloaded=False):
             NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, \
             NZBGET_PORT, NZB_DOWNLOADER_NZBGET, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
             NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, EBOOK_TYPE, MAG_TYPE, \
-            KAT, KAT_HOST, TPB, TPB_HOST, ZOO, ZOO_HOST, TDL, TDL_HOST, GEN, GEN_HOST, \
+            KAT, KAT_HOST, TPB, TPB_HOST, ZOO, ZOO_HOST, TDL, TDL_HOST, GEN, GEN_HOST, EXT, EXT_HOST, \
             NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, REJECT_WORDS, REJECT_MAXSIZE, \
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, SEARCHRSS_INTERVAL, \
             EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, \
@@ -442,7 +445,7 @@ def config_read(reloaded=False):
             TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, TOR_DOWNLOADER_RTORRENT, \
             TOR_DOWNLOADER_QBITTORRENT, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
             USE_PUSHBULLET, PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, \
-            PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, RTORRENT_HOST, RTORRENT_USER, RTORRENT_PASS, \
+            PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, RTORRENT_HOST, RTORRENT_USER, RTORRENT_PASS, RTORRENT_SEND_DIR, \
             RTORRENT_LABEL, UTORRENT_HOST, UTORRENT_PORT, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
             QBITTORRENT_HOST, QBITTORRENT_PORT, QBITTORRENT_USER, QBITTORRENT_PASS, QBITTORRENT_LABEL, \
             USE_PUSHOVER, PUSHOVER_ONSNATCH, PUSHOVER_KEYS, PUSHOVER_APITOKEN, \
@@ -673,6 +676,7 @@ def config_read(reloaded=False):
         RTORRENT_USER = check_setting_str(CFG, 'RTORRENT', 'rtorrent_user', '')
         RTORRENT_PASS = check_setting_str(CFG, 'RTORRENT', 'rtorrent_pass', '')
         RTORRENT_LABEL = check_setting_str(CFG, 'RTORRENT', 'rtorrent_label', '')
+        RTORRENT_SEND_DIR = check_setting_bool(CFG, 'RTORRENT', 'rtorrent_send_dir', 1)
 
         # legacy name conversion, separate out utorrent host/port
         if not CFG.has_option('UTORRENT', 'utorrent_port'):
@@ -748,6 +752,8 @@ def config_read(reloaded=False):
         TPB_HOST = check_setting_str(CFG, 'TPB', 'tpb_host', 'https://piratebays.co')
         ZOO = check_setting_bool(CFG, 'ZOO', 'zoo', 0)
         ZOO_HOST = check_setting_str(CFG, 'ZOO', 'zoo_host', 'https://zooqle.com')
+        EXT = check_setting_bool(CFG, 'EXT', 'ext', 0)
+        EXT_HOST = check_setting_str(CFG, 'EXT', 'ext_host', 'extratorrent.cc')
         TDL = check_setting_bool(CFG, 'TDL', 'tdl', 0)
         TDL_HOST = check_setting_str(CFG, 'TDL', 'tdl_host', 'torrentdownloads.me')
         GEN = check_setting_bool(CFG, 'GEN', 'gen', 0)
@@ -992,6 +998,7 @@ def config_write():
     CFG.set('RTORRENT', 'rtorrent_user', RTORRENT_USER)
     CFG.set('RTORRENT', 'rtorrent_pass', RTORRENT_PASS)
     CFG.set('RTORRENT', 'rtorrent_label', RTORRENT_LABEL)
+    CFG.set('RTORRENT', 'rtorrent_send_dir', RTORRENT_SEND_DIR)
 #
     check_section('UTORRENT')
     CFG.set('UTORRENT', 'utorrent_host', UTORRENT_HOST)
@@ -1031,6 +1038,10 @@ def config_write():
     check_section('ZOO')
     CFG.set('ZOO', 'zoo', ZOO)
     CFG.set('ZOO', 'zoo_host', ZOO_HOST)
+#
+    check_section('EXT')
+    CFG.set('EXT', 'ext', EXT)
+    CFG.set('EXT', 'ext_host', EXT_HOST)
 #
     check_section('GEN')
     CFG.set('GEN', 'gen', GEN)
@@ -1227,6 +1238,8 @@ def USE_TOR():
     if bool(TPB):
         return True
     if bool(ZOO):
+        return True
+    if bool(EXT):
         return True
     if bool(TDL):
         return True

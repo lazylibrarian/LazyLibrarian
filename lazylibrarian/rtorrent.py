@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import os
+from time import sleep
 import lazylibrarian
 from lazylibrarian import logger
 import lib.xmlrpclib as xmlrpclib
@@ -34,16 +35,19 @@ def addTorrent(torrent, hashID, directory=None):
     server = getServer()
     if server is False:
         return False
-
+    logger.debug('rTorrent adding %s' % torrent)
     socket.setdefaulttimeout(10)  # set a timeout
     try:
         response = server.load(torrent)  # response isn't anything useful, always 0
+        # need a short pause while rtorrent grabs the metadata
+        sleep(5)
         label = lazylibrarian.RTORRENT_LABEL
         if label:
             server.d.set_custom1(hashID, label)
-        if directory is None:
-            directory = lazylibrarian.DOWNLOAD_DIR
-        server.d.set_directory(hashID, directory)
+        if lazylibrarian.RTORRENT_SEND_DIR:
+            if directory is None:
+                directory = lazylibrarian.DOWNLOAD_DIR
+            server.d.set_directory(hashID, directory)
         server.d.start(hashID)
         # read mainview to see if we are there, as response tells us nothing
         mainview = server.download_list("", "main")

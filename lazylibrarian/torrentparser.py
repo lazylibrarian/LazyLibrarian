@@ -225,6 +225,92 @@ def KAT(book=None):
     return results
 
 
+def EXT(book=None):
+
+    provider = "Extratorrent"
+    host = lazylibrarian.EXT_HOST
+    if not str(host)[:4] == "http":
+        host = 'http://' + host
+
+    providerurl = url_fix(host + "/rss/")
+
+    params = {
+        "type": "search",
+        "s_cat": "2",
+        "search": book['searchterm']
+    }
+    searchURL = providerurl + "/?%s" % urllib.urlencode(params)
+
+    try:
+        request = urllib2.Request(searchURL)
+        if lazylibrarian.PROXY_HOST:
+            request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
+        request.add_header('User-Agent', USER_AGENT)
+        data = urllib2.urlopen(request, timeout=90)
+    except (socket.timeout) as e:
+        logger.debug('Timeout fetching data from %s' % provider)
+        data = False
+    except (urllib2.HTTPError, urllib2.URLError) as e:
+        # may return 404 if no results, not really an error
+        if hasattr(e, 'code') and e.code == 404:
+            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+        else:
+            logger.debug(searchURL)
+            if hasattr(e, 'reason'):
+                errmsg = e.reason
+            else:
+                errmsg = str(e)
+            logger.debug('Error fetching data from %s: %s' % (provider, errmsg))
+        data = False
+
+    results = []
+
+    minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
+    if data:
+        logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
+        d = feedparser.parse(data)
+        if len(d.entries):
+            for item in d.entries:
+                try:
+                    title = unaccented(item['title'])
+
+                    try:
+                        seeders = int(item['seeders'])
+                    except ValueError:
+                        seeders = 0
+
+                    try:
+                        size = int(item['size'])
+                    except ValueError:
+                        size = 0
+
+                    url = None
+                    for link in item['links']:
+                        if 'x-bittorrent' in link['type']:
+                            url = link['href']
+
+                    if not url or not title:
+                        logger.debug('No url or title found')
+                    elif minimumseeders < seeders:
+                        results.append({
+                            'bookid': book['bookid'],
+                            'tor_prov': provider,
+                            'tor_title': title,
+                            'tor_url': url,
+                            'tor_size': str(size),
+                        })
+                        logger.debug('Found %s. Size: %s' % (title, size))
+                    else:
+                        logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
+
+                except Exception as e:
+                    logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+
+    logger.debug(u"Found %i result%s from %s for %s" %
+                (len(results), plural(len(results)), provider, book['searchterm']))
+    return results
+
+
 def oldKAT(book=None):
 
     provider = "KAT"

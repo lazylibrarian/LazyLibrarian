@@ -420,6 +420,16 @@
                                     <label>rTorrent Label:</label>
                                     <input type="text" name="rtorrent_label" value="${lazylibrarian.RTORRENT_LABEL}" size="26">
                                 </div>
+                             <div class="row checkbox">
+                                <%
+                                if lazylibrarian.RTORRENT_SEND_DIR == True:
+                                    checked = 'checked="checked"'
+                                else:
+                                    checked = ''
+                                %>
+                                <input type="checkbox" name="rtorrent_send_dir" id="rtorrent_send_dir" value="1" ${checked} />
+                                <label>Send LazyLibrarian download directory to rTorrent</label>
+                            </div>
                                 <div class="row">
                                     <input type="button" value="Test rTorrent" id="testrTorrent" style="float:right;">
                                 </div>
@@ -646,7 +656,16 @@
             		<input type="checkbox" name="tdl" value=1 ${checked} style="margin-bottom:4px;" /> torrentdownload
  	    		    <input type="text" placeholder="Enter URL Here" name="tdl_host" value="${lazylibrarian.TDL_HOST}" size="26">
  	  		        <br>
-                    <br><h3>Direct Download Providers</h3><br>
+ 	  		        <%
+                    if lazylibrarian.EXT == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+            		<input type="checkbox" name="ext" value=1 ${checked} style="margin-bottom:4px;" /> extratorrent
+ 	    		    <input type="text" placeholder="Enter URL Here" name="ext_host" value="${lazylibrarian.EXT_HOST}" size="26">
+ 	  		        <br>
+                   <br><h3>Direct Download Providers</h3><br>
  	  		        <%
                     if lazylibrarian.GEN == True:
                         checked = 'checked="checked"'
