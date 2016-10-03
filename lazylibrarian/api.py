@@ -551,9 +551,8 @@ class Api(object):
         try:
             myDB = database.DBConnection()
 
-            fromhere = myDB.action(
-                'SELECT bookid,authorid from books where authorname="%s"' %
-                kwargs['fromname']).fetchall()
+            fromhere = myDB.select(
+                'SELECT bookid,authorid from books where authorname="%s"' % kwargs['fromname'])
             tohere = myDB.match(
                 'SELECT authorid, authorlink from authors where authorname="%s"' % kwargs['toname'])
             if not len(fromhere):

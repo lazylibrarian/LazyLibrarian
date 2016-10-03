@@ -632,12 +632,12 @@ class WebInterface(object):
             cmd = 'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid,'
             cmd = cmd + ' booksub, booklink, workpage, authorid from books WHERE STATUS !="Skipped"'
             cmd = cmd + ' AND STATUS !="Ignored"'
-            rowlist = myDB.action(cmd).fetchall()
+            rowlist = myDB.select(cmd)
         else:
             cmd = 'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid,'
             cmd = cmd + ' booksub, booklink, workpage, authorid from books WHERE STATUS !="Skipped"'
             cmd = cmd + ' AND STATUS !="Ignored" and BOOKLANG="' + lazylibrarian.BOOKLANGFILTER + '"'
-            rowlist = myDB.action(cmd).fetchall()
+            rowlist = myDB.select(cmd)
         # turn the sqlite rowlist into a list of lists
         d = []
         filtered = []
@@ -1129,9 +1129,9 @@ class WebInterface(object):
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
         # need to filter on whichStatus
-        rowlist = myDB.action(
+        rowlist = myDB.select(
             'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov from pastissues WHERE Status="%s"' %
-            lazylibrarian.ISSUEFILTER).fetchall()
+            lazylibrarian.ISSUEFILTER)
 
         d = []
         filtered = []
@@ -1764,7 +1764,7 @@ class WebInterface(object):
         #   need to filter on whichStatus
         cmd = 'SELECT authorname, bookname, series, seriesnum, bookdate, bookid, booklink, booksub, authorid '
         cmd = cmd + 'from books WHERE STATUS="' + lazylibrarian.MANAGEFILTER + '"'
-        rowlist = myDB.action(cmd).fetchall()
+        rowlist = myDB.select(cmd)
 
         d = []
         filtered = []
