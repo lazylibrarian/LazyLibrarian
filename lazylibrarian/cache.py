@@ -54,7 +54,7 @@ def fetchURL(URL, headers=None):
         except (urllib2.URLError) as e:
             logger.error(u"fetchURL: Error getting response for %s: %s" % (URL, e.reason))
             return e.reason, False
-    except (urllib2.HTTPError, urllib2.URLError) as e:
+    except (urllib2.HTTPError, urllib2.URLError, urllib2.SSLError) as e:
         if hasattr(e, 'reason'):
             return e.reason, False
         else:

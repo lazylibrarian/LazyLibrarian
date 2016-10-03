@@ -73,7 +73,7 @@ def get_capabilities(provider):
         except (socket.timeout) as e:
             logger.debug("Timeout getting capabilities for %s" % request.get_full_url())
             resp = ""
-        except (urllib2.HTTPError, urllib2.URLError) as e:
+        except (urllib2.HTTPError, urllib2.URLError, urllib2.SSLError) as e:
             if hasattr(e, 'reason'):
                 errmsg = e.reason
             else:
