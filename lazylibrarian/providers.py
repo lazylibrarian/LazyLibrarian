@@ -12,7 +12,6 @@ from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL, GEN, EXTRA, LIME
 import lib.feedparser as feedparser
 
 
-
 def get_searchterm(book, searchType):
     authorname = book['authorName']
     bookname = book['bookName']
@@ -42,6 +41,7 @@ def get_searchterm(book, searchType):
 
     # any other searchType
     return authorname, bookname
+
 
 def get_capabilities(provider):
     """

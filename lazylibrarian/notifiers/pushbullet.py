@@ -30,6 +30,7 @@ from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
 from lazylibrarian.formatter import unaccented
 from pushbullet2 import PushBullet
 
+
 class PushbulletNotifier:
 
     def _sendPushbullet(self, message=None, event=None, pushbullet_token=None, pushbullet_deviceid=None, force=False):
@@ -50,7 +51,7 @@ class PushbulletNotifier:
 
         pb = PushBullet(str(pushbullet_token))
 
-        if event == 'LLTest': # special case, return device list
+        if event == 'LLTest':  # special case, return device list
             devices = pb.getDevices()
             ret = ""
             for device in devices:

@@ -149,10 +149,8 @@ def checkRunningJobs():
     # but check anyway for completeness...
 
     myDB = database.DBConnection()
-    snatched = myDB.action(
-        "SELECT count('Status') as counter from wanted WHERE Status = 'Snatched'").fetchone()
-    wanted = myDB.action(
-        "SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'").fetchone()
+    snatched = myDB.match("SELECT count('Status') as counter from wanted WHERE Status = 'Snatched'")
+    wanted = myDB.match("SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'")
     if snatched:
         ensureRunning('processDir')
     if wanted:
@@ -180,10 +178,8 @@ def showJobs():
             plural(int(lazylibrarian.CACHE_HIT)),
             int(lazylibrarian.CACHE_MISS)))
         myDB = database.DBConnection()
-        snatched = myDB.action(
-            "SELECT count('Status') as counter from wanted WHERE Status = 'Snatched'").fetchone()
-        wanted = myDB.action(
-            "SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'").fetchone()
+        snatched = myDB.match("SELECT count('Status') as counter from wanted WHERE Status = 'Snatched'")
+        wanted = myDB.match("SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'")
         result.append("%i item%s marked as Snatched" % (snatched['counter'], plural(snatched['counter'])))
         result.append("%i item%s marked as Wanted" % (wanted['counter'], plural(wanted['counter'])))
         for job in lazylibrarian.SCHED.get_jobs():
@@ -233,7 +229,7 @@ def clearLog():
 def cleanCache():
     """ Remove unused files from the cache - delete if expired or unused.
         Check JSONCache  WorkCache  XMLCache data/images/cache
-        Check covers referenced in the database exist and change if missing """
+        Check covers and authorimages referenced in the database exist and change if missing """
 
     myDB = database.DBConnection()
 
@@ -280,7 +276,7 @@ def cleanCache():
             except IndexError:
                 logger.error('Clean Cache: Error splitting %s' % cached_file)
                 continue
-            item = myDB.action('select BookID from books where BookID="%s"' % bookid).fetchone()
+            item = myDB.match('select BookID from books where BookID="%s"' % bookid)
             if not item:
                 # WorkPage no longer referenced in database, delete cached_file
                 os.remove(target)
@@ -300,7 +296,7 @@ def cleanCache():
             except IndexError:
                 logger.error('Clean Cache: Error splitting %s' % cached_file)
                 continue
-            item = myDB.action('select BookID from books where BookID="%s"' % bookid).fetchone()
+            item = myDB.match('select BookID from books where BookID="%s"' % bookid)
             if not item:
                 # Image no longer referenced in database, delete cached_file
                 os.remove(target)
@@ -336,3 +332,21 @@ def cleanCache():
             else:
                 kept += 1
         logger.debug("Cleaned %i missing cover file%s, kept %i" % (cleaned, plural(cleaned), kept))
+
+        # verify the author images referenced in the database are present
+        images = myDB.action('select AuthorImg,AuthorName,AuthorID from authors')
+        cachedir = os.path.join(lazylibrarian.PROG_DIR, 'data' + os.sep + 'images' + os.sep + 'cache' + os.sep)
+
+        cleaned = 0
+        kept = 0
+        for item in images:
+            # html uses '/' as separator, but os might not
+            imgname = item['AuthorImg'].rsplit('/')[-1]
+            imgfile = cachedir + imgname
+            if not os.path.isfile(imgfile) and not item['AuthorImg'].startswith('http'):
+                cleaned += 1
+                logger.debug('Image missing for %s %s' % (item['AuthorName'], imgfile))
+                myDB.action('update authors set AuthorImg="images/nophoto.png" where AuthorID="%s"' % item['AuthorID'])
+            else:
+                kept += 1
+        logger.debug("Cleaned %i missing author image%s, kept %i" % (cleaned, plural(cleaned), kept))

@@ -132,8 +132,8 @@ def processResultList(resultlist, book, searchtype):
 
         rejected = False
 
-        already_failed = myDB.action('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' %
-                                     tor_url).fetchone()
+        already_failed = myDB.match('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' %
+                                    tor_url)
         if already_failed:
             logger.debug("Rejecting %s, blacklisted at %s" % (torTitle, already_failed['NZBprov']))
             rejected = True
@@ -194,8 +194,8 @@ def processResultList(resultlist, book, searchtype):
         logger.info(u'Best TOR match (%s%%): %s using %s search' %
                     (score, nzb_Title, searchtype))
 
-        snatchedbooks = myDB.action('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
-                                    newValueDict["BookID"]).fetchone()
+        snatchedbooks = myDB.match('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
+                                   newValueDict["BookID"])
         if snatchedbooks:
             logger.debug('%s already marked snatched' % nzb_Title)
             return True  # someone else found it, not us
@@ -211,7 +211,7 @@ def processResultList(resultlist, book, searchtype):
             if snatch:
                 logger.info('Downloading %s from %s' % (newValueDict["NZBtitle"], newValueDict["NZBprov"]))
                 notify_snatch("%s from %s at %s" %
-                             (newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
+                              (newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
                 scheduleJob(action='Start', target='processDir')
                 return True + True  # we found it
     else:
@@ -396,7 +396,6 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             logger.debug("Sending %s to Transmission" % tor_title)
             Source = "TRANSMISSION"
             downloadID = transmission.addTorrent(tor_url)  # returns torrent_id or False
-
 
         if (lazylibrarian.TOR_DOWNLOADER_DELUGE and lazylibrarian.DELUGE_HOST):
             logger.debug("Sending %s to Deluge" % tor_title)

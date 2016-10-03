@@ -123,7 +123,7 @@ def TPB(book=None):
                 logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
 
     logger.debug(u"Found %i result%s from %s for %s" %
-                (len(results), plural(len(results)), provider, book['searchterm']))
+                 (len(results), plural(len(results)), provider, book['searchterm']))
     return results
 
 
@@ -221,7 +221,7 @@ def KAT(book=None):
                 logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
 
     logger.debug(u"Found %i result%s from %s for %s" %
-                (len(results), plural(len(results)), provider, book['searchterm']))
+                 (len(results), plural(len(results)), provider, book['searchterm']))
     return results
 
 
@@ -307,7 +307,7 @@ def EXTRA(book=None):
                     logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
 
     logger.debug(u"Found %i result%s from %s for %s" %
-                (len(results), plural(len(results)), provider, book['searchterm']))
+                 (len(results), plural(len(results)), provider, book['searchterm']))
     return results
 
 
@@ -358,7 +358,7 @@ def oldKAT(book=None):
         d = feedparser.parse(data)
         if len(d.entries):
             logger.debug(u"Found %i result%s from %s for %s, checking seeders" %
-                        (len(d.entries), plural(len(d.entries)), provider, book['searchterm']))
+                         (len(d.entries), plural(len(d.entries)), provider, book['searchterm']))
             for item in d.entries:
                 try:
                     title = item['title']
@@ -384,7 +384,7 @@ def oldKAT(book=None):
                     logger.error(u"An unknown error occurred in the KAT parser: %s" % str(e))
 
     logger.debug(u"Found %i result%s from %s for %s" %
-                (len(results), plural(len(results)), provider, book['searchterm']))
+                 (len(results), plural(len(results)), provider, book['searchterm']))
     return results
 
 
@@ -468,7 +468,7 @@ def ZOO(book=None):
                         logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
 
     logger.debug(u"Found %i result%s from %s for %s" %
-                (len(results), plural(len(results)), provider, book['searchterm']))
+                 (len(results), plural(len(results)), provider, book['searchterm']))
     return results
 
 
@@ -552,7 +552,7 @@ def LIME(book=None):
                         logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
 
     logger.debug(u"Found %i result%s from %s for %s" %
-                (len(results), plural(len(results)), provider, book['searchterm']))
+                 (len(results), plural(len(results)), provider, book['searchterm']))
     return results
 
 
@@ -563,7 +563,7 @@ def GEN(book=None):
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
-    searchURL = url_fix(host + "/search.php?view=simple&open=0&phrase=0&column=def&res=100&req=" + \
+    searchURL = url_fix(host + "/search.php?view=simple&open=0&phrase=0&column=def&res=100&req=" +
                         book['searchterm'])
 
     result, success = fetchURL(searchURL)
@@ -664,7 +664,7 @@ def GEN(book=None):
                 logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
 
     logger.debug(u"Found %i result%s from %s for %s" %
-                (len(results), plural(len(results)), provider, book['searchterm']))
+                 (len(results), plural(len(results)), provider, book['searchterm']))
     return results
 
 
@@ -758,5 +758,5 @@ def TDL(book=None):
                     logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
 
     logger.debug(u"Found %i result%s from %s for %s" %
-                (len(results), plural(len(results)), provider, book['searchterm']))
+                 (len(results), plural(len(results)), provider, book['searchterm']))
     return results

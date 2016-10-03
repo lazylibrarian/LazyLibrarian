@@ -344,8 +344,8 @@ class GoogleBooks:
                             # are in english when they are not
                             if booklang == "Unknown" or booklang == "en":
                                 googlelang = booklang
-                                match = myDB.action('SELECT lang FROM languages where isbn = "%s"' %
-                                                    (isbnhead)).fetchone()
+                                match = myDB.match('SELECT lang FROM languages where isbn = "%s"' %
+                                                   (isbnhead))
                                 if (match):
                                     booklang = match['lang']
                                     cache_hits = cache_hits + 1
@@ -383,8 +383,8 @@ class GoogleBooks:
                                                  (booknamealt, googlelang, booklang))
                                     gb_lang_change = gb_lang_change + 1
                             else:
-                                match = myDB.action('SELECT lang FROM languages where isbn = "%s"' %
-                                                    (isbnhead)).fetchone()
+                                match = myDB.match('SELECT lang FROM languages where isbn = "%s"' %
+                                                   (isbnhead))
                                 if (not match):
                                     myDB.action(
                                         'insert into languages values ("%s", "%s")' %
@@ -588,8 +588,8 @@ class GoogleBooks:
         logger.debug('[%s] The Google Books API was hit %s time%s to populate book list' %
                      (authorname, api_hits, plural(api_hits)))
 
-        lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorID="%s" \
-                               AND Status != "Ignored" order by BookDate DESC' % authorid).fetchone()
+        lastbook = myDB.match('SELECT BookName, BookLink, BookDate from books WHERE AuthorID="%s" \
+                               AND Status != "Ignored" order by BookDate DESC' % authorid)
 
         if lastbook:  # maybe there are no books [remaining] for this author
             lastbookname = lastbook['BookName']

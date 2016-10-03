@@ -34,6 +34,7 @@ from argparse import ArgumentParser
 import lazylibrarian
 from lazylibrarian import logger
 
+
 def magnet2torrent(magnet, output_name=None):
     try:
         import libtorrent as lt

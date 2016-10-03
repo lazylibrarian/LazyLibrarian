@@ -516,14 +516,14 @@ class Api(object):
             return
         try:
             myDB = database.DBConnection()
-            authordata = myDB.action(
-                'SELECT AuthorName, AuthorLink from authors WHERE AuthorID="%s"' % kwargs['toid']).fetchone()
+            authordata = myDB.match(
+                'SELECT AuthorName, AuthorLink from authors WHERE AuthorID="%s"' % kwargs['toid'])
             if not authordata:
                 self.data = "No destination author [%s] in the database" % kwargs['toid']
             else:
-                bookdata = myDB.action(
+                bookdata = myDB.match(
                     'SELECT AuthorID, BookName from books where BookID="%s"' %
-                    kwargs['id']).fetchone()
+                    kwargs['id'])
                 if not bookdata:
                     self.data = "No bookid [%s] in the database" % kwargs['id']
                 else:
@@ -554,9 +554,8 @@ class Api(object):
             fromhere = myDB.action(
                 'SELECT bookid,authorid from books where authorname="%s"' %
                 kwargs['fromname']).fetchall()
-            tohere = myDB.action(
-                'SELECT authorid, authorlink from authors where authorname="%s"' %
-                kwargs['toname']).fetchone()
+            tohere = myDB.match(
+                'SELECT authorid, authorlink from authors where authorname="%s"' % kwargs['toname'])
             if not len(fromhere):
                 self.data = "No books by [%s] in the database" % kwargs['fromname']
             else:

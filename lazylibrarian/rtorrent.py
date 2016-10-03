@@ -7,6 +7,7 @@ from lazylibrarian import logger
 import lib.xmlrpclib as xmlrpclib
 import socket
 
+
 def getServer():
     host = lazylibrarian.RTORRENT_HOST
     if not host:
@@ -17,7 +18,7 @@ def getServer():
     if host.endswith('/'):
         host = host[:-1]
 
-    if  lazylibrarian.RTORRENT_USER:
+    if lazylibrarian.RTORRENT_USER:
         user = lazylibrarian.RTORRENT_USER
         password = lazylibrarian.RTORRENT_PASS
         parts = host.split('://')
@@ -58,7 +59,7 @@ def addTorrent(torrent, hashID, directory=None):
 
     # For each torrent in the main view
     for torrent in mainview:
-        if torrent == hashID.upper(): # we are there
+        if torrent == hashID.upper():  # we are there
             name = server.d.get_name(torrent)
             directory = server.d.get_directory(torrent)
             label = server.d.get_custom1(torrent)
@@ -69,6 +70,7 @@ def addTorrent(torrent, hashID, directory=None):
             return hashID
     return False  # not found
 
+
 def checkLink():
     msg = ""
     server = getServer()
@@ -76,7 +78,7 @@ def checkLink():
         try:
             socket.setdefaulttimeout(5)  # set the timeout to 5 seconds
             result = server.system.listMethods()
-            msg ="rTorrent login successful"
+            msg = "rTorrent login successful"
         except Exception as e:
             logger.debug("rTorrent connection: %s" % str(e))
     socket.setdefaulttimeout(None)  # set the default back

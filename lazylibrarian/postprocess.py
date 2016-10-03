@@ -64,7 +64,7 @@ def processAlternate(source_dir=None):
             bookname = metadata['title']
             myDB = database.DBConnection()
 
-            authmatch = myDB.action('SELECT * FROM authors where AuthorName="%s"' % (authorname)).fetchone()
+            authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % (authorname))
 
             if not authmatch:
                 # try goodreads preferred authorname
@@ -78,7 +78,7 @@ def processAlternate(source_dir=None):
                     grauthorname = author_gr['authorname']
                     logger.debug("GoodReads reports [%s] for [%s]" % (grauthorname, authorname))
                     authorname = grauthorname
-                    authmatch = myDB.action('SELECT * FROM authors where AuthorName="%s"' % (authorname)).fetchone()
+                    authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % (authorname))
 
             if authmatch:
                 logger.debug("ALT: Author %s found in database" % (authorname))
@@ -186,7 +186,7 @@ def processDir(reset=False):
                                                             os.path.join(dirname, ourfile))
                                             except Exception as why:
                                                 logger.debug("Failed to move file %s to %s, %s" %
-                                                            (ourfile, dirname, str(why)))
+                                                             (ourfile, dirname, str(why)))
 
                     if os.path.isdir(os.path.join(processpath, fname)):
                         pp_path = os.path.join(processpath, fname)
@@ -205,7 +205,7 @@ def processDir(reset=False):
             logger.debug(u'Best match (%s%%): %s for %s' %
                          (match, pp_path, book['NZBtitle']))
 
-            data = myDB.action('SELECT * from books WHERE BookID="%s"' % book['BookID']).fetchone()
+            data = myDB.match('SELECT * from books WHERE BookID="%s"' % book['BookID'])
             if data:
                 logger.debug(u'Processing book %s' % book['BookID'])
                 authorname = data['AuthorName']
@@ -229,7 +229,7 @@ def processDir(reset=False):
                 dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(
                     lazylibrarian.SYS_ENCODING)
             else:
-                data = myDB.action('SELECT * from magazines WHERE Title="%s"' % book['BookID']).fetchone()
+                data = myDB.match('SELECT * from magazines WHERE Title="%s"' % book['BookID'])
                 if data:
                     logger.debug(u'Processing magazine %s' % book['BookID'])
                     # AuxInfo was added for magazine release date, normally housed in 'magazines' but if multiple
@@ -362,7 +362,7 @@ def import_book(pp_path=None, bookID=None):
     #         ppcount = ppcount + 1
     #
     myDB = database.DBConnection()
-    data = myDB.action('SELECT * from books WHERE BookID="%s"' % bookID).fetchone()
+    data = myDB.match('SELECT * from books WHERE BookID="%s"' % bookID)
     if data:
         authorname = data['AuthorName']
         bookname = data['BookName']
@@ -391,7 +391,7 @@ def import_book(pp_path=None, bookID=None):
 
         if processBook:
             # update nzbs
-            was_snatched = myDB.action('SELECT BookID, NZBprov FROM wanted WHERE BookID="%s"' % bookID).fetchone()
+            was_snatched = myDB.match('SELECT BookID, NZBprov FROM wanted WHERE BookID="%s"' % bookID)
             if was_snatched:
                 controlValueDict = {"BookID": bookID}
                 newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
@@ -456,9 +456,9 @@ def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
     myDB.upsert("books", newValueDict, controlValueDict)
 
     # update authors
-    havebooks = myDB.action(
+    havebooks = myDB.match(
         'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' %
-        authorname).fetchone()
+        authorname)
     controlValueDict = {"AuthorName": authorname}
     newValueDict = {"HaveBooks": havebooks['counter']}
     countauthor = len(myDB.select('SELECT AuthorID FROM authors WHERE AuthorName="%s"' % authorname))

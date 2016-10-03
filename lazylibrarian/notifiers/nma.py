@@ -5,7 +5,6 @@ from lib.pynma import pynma
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
 
 
-
 class NMA_Notifier:
 
     def _sendNMA(self, nma_api=None, nma_priority=None, event=None, message=None, force=False):
