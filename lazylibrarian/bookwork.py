@@ -13,7 +13,7 @@ from lazylibrarian.cache import cache_cover, fetchURL
 def getAuthorImages():
     """ Try to get an author image for all authors without one"""
     myDB = database.DBConnection()
-    authors = myDB.select('select AuthorID from authors where AuthorImg like "%nophoto%"')
+    authors = myDB.select('select AuthorID, AuthorName from authors where AuthorImg like "%nophoto%"')
     if authors:
         logger.info('Checking images for %s author%s' % (len(authors), plural(len(authors))))
         counter = 0
@@ -21,6 +21,7 @@ def getAuthorImages():
             authorid = author['AuthorID']
             imagelink = getAuthorImage(authorid)
             if imagelink and "nophoto" not in imagelink:
+                logger.debug('Updating %s image to %s' % (author['AuthorName'], imagelink))
                 controlValueDict = {"AuthorID": authorid}
                 newValueDict = {"AuthorImg": imagelink}
                 myDB.upsert("authors", newValueDict, controlValueDict)
