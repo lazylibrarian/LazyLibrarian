@@ -2,6 +2,7 @@ import os
 import urllib
 import urllib2
 import socket
+import ssl
 import datetime
 import json
 import lazylibrarian
@@ -96,7 +97,7 @@ def SABnzbd(title=None, nzburl=None):
         logger.error(u"Unable to connect to SAB with URL: %s, %s" % (URL, errmsg))
         return False
 
-    except (urllib2.HTTPError, urllib2.SSLError) as e:
+    except (urllib2.HTTPError, ssl.SSLError) as e:
         logger.error(
             u"Invalid SAB host, check your config. Current host: %s" %
             HOST)

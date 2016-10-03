@@ -1,6 +1,7 @@
 import urllib
 import urllib2
 import socket
+import ssl
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
@@ -250,7 +251,7 @@ def EXTRA(book=None):
     except (socket.timeout) as e:
         logger.debug('Timeout fetching data from %s' % provider)
         data = False
-    except (urllib2.HTTPError, urllib2.URLError, urllib2.SSLError) as e:
+    except (urllib2.HTTPError, urllib2.URLError, ssl.SSLError) as e:
         # may return 404 if no results, not really an error
         if hasattr(e, 'code') and e.code == 404:
             logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
@@ -338,7 +339,7 @@ def oldKAT(book=None):
     except (socket.timeout) as e:
         logger.debug('Timeout fetching data from %s' % provider)
         data = False
-    except (urllib2.HTTPError, urllib2.URLError, urllib2.SSLError) as e:
+    except (urllib2.HTTPError, urllib2.URLError, ssl.SSLError) as e:
         # seems KAT returns 404 if no results, not really an error
         if hasattr(e, 'code') and e.code == 404:
             logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
@@ -412,7 +413,7 @@ def ZOO(book=None):
     except (socket.timeout) as e:
         logger.debug('Timeout fetching data from %s' % provider)
         data = False
-    except (urllib2.HTTPError, urllib2.URLError, urllib2.SSLError) as e:
+    except (urllib2.HTTPError, urllib2.URLError, ssl.SSLError) as e:
         # may return 404 if no results, not really an error
         if hasattr(e, 'code') and e.code == 404:
             logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
@@ -490,7 +491,7 @@ def LIME(book=None):
     except (socket.timeout) as e:
         logger.debug('Timeout fetching data from %s' % provider)
         data = False
-    except (urllib2.HTTPError, urllib2.URLError, urllib2.SSLError) as e:
+    except (urllib2.HTTPError, urllib2.URLError, ssl.SSLError) as e:
         # may return 404 if no results, not really an error
         if hasattr(e, 'code') and e.code == 404:
             logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
@@ -693,7 +694,7 @@ def TDL(book=None):
     except (socket.timeout) as e:
         logger.debug('Timeout fetching data from %s' % provider)
         data = False
-    except (urllib2.HTTPError, urllib2.URLError, urllib2.SSLError) as e:
+    except (urllib2.HTTPError, urllib2.URLError, ssl.SSLError) as e:
         # may return 404 if no results, not really an error
         if hasattr(e, 'code') and e.code == 404:
             logger.debug(searchURL)
