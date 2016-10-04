@@ -325,8 +325,7 @@ class GoodReads:
                                 isbnhead = isbn[3:6]
                         if (find_field != 'id'):  # isbn or isbn13 found
 
-                            match = myDB.action('SELECT lang FROM languages where isbn = "%s"' %
-                                                (isbnhead)).fetchone()
+                            match = myDB.match('SELECT lang FROM languages where isbn = "%s"' % (isbnhead))
                             if (match):
                                 bookLanguage = match['lang']
                                 cache_hits = cache_hits + 1
@@ -569,8 +568,8 @@ class GoodReads:
                     if all(False for book in resultxml):  # returns True if iterator is empty
                         resultxml = None
 
-        lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE AuthorID="%s" \
-                                AND Status != "Ignored" order by BookDate DESC' % authorid).fetchone()
+        lastbook = myDB.match('SELECT BookName, BookLink, BookDate from books WHERE AuthorID="%s" \
+                                AND Status != "Ignored" order by BookDate DESC' % authorid)
         if lastbook:
             lastbookname = lastbook['BookName']
             lastbooklink = lastbook['BookLink']

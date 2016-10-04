@@ -87,16 +87,19 @@ class BoxcarNotifier:
 
             # HTTP status 404 if the provided email address isn't a Boxcar user.
             if e.code == 404:
-                logger.log(u"BOXCAR: Username is wrong/not a boxcar email. Boxcar will send an email to it", logger.WARNING)
+                logger.log(
+                    u"BOXCAR: Username is wrong/not a boxcar email. Boxcar will send an email to it", logger.WARNING)
                 return False
 
-            # For HTTP status code 401's, it is because you are passing in either an invalid token, or the user has not added your service.
+            # For HTTP status code 401's, it is because you are passing in either an
+            # invalid token, or the user has not added your service.
             elif e.code == 401:
 
                 # If the user has already added your service, we'll return an HTTP status code of 401.
                 if subscribe:
                     logger.log(u"BOXCAR: Already subscribed to service", logger.ERROR)
-                    # i dont know if this is true or false ... its neither but i also dont know how we got here in the first place
+                    # i dont know if this is true or false ... its neither but i also dont
+                    # know how we got here in the first place
                     return False
 
                 # HTTP status 401 if the user doesn't have the service added

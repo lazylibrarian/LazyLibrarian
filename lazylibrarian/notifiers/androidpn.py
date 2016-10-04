@@ -26,6 +26,7 @@ import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
 
+
 class AndroidPNNotifier:
 
     def _sendAndroidPN(self, title, msg, url, username, broadcast):
@@ -40,7 +41,7 @@ class AndroidPNNotifier:
             'title': title,
             'username': username,
             'message': msg.encode('utf-8'),
-            })
+        })
 
         # send the request to pushover
         try:
@@ -63,10 +64,12 @@ class AndroidPNNotifier:
 
             # HTTP status 404 if the provided email address isn't a AndroidPN user.
             if e.code == 404:
-                logger.warning(u"ANDROIDPN: Username is wrong/not a AndroidPN email. AndroidPN will send an email to it")
+                logger.warning(
+                    u"ANDROIDPN: Username is wrong/not a AndroidPN email. AndroidPN will send an email to it")
                 return False
 
-            # For HTTP status code 401's, it is because you are passing in either an invalid token, or the user has not added your service.
+            # For HTTP status code 401's, it is because you are passing in either an
+            # invalid token, or the user has not added your service.
             elif e.code == 401:
 
                 # HTTP status 401 if the user doesn't have the service added
@@ -107,13 +110,14 @@ class AndroidPNNotifier:
             else:
                 broadcast = 'N'
 
-        logger.debug(u"ANDROIDPN: Sending notice with details: title=\"%s\", message=\"%s\", username=%s, url=%s, broadcast=%s" % (title, message, username, url, broadcast))
+        logger.debug(u"ANDROIDPN: Sending notice with details: title=\"%s\", message=\"%s\", username=%s, url=%s, broadcast=%s" %
+                     (title, message, username, url, broadcast))
 
         return self._sendAndroidPN(title, message, url, username, broadcast)
 
-##############################################################################
+#
 # Public functions
-##############################################################################
+#
 
     def notify_snatch(self, ep_name):
         if lazylibrarian.ANDROIDPN_NOTIFY_ONSNATCH:

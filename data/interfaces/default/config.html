@@ -395,6 +395,46 @@
 
                              <div class="row checkbox">
                                 <%
+                                if lazylibrarian.TOR_DOWNLOADER_RTORRENT == True:
+                                    checked = 'checked="checked"'
+                                else:
+                                    checked = ''
+                                %>
+                                <input type="checkbox" name="tor_downloader_rtorrent" id="tor_downloader_rtorrent" value="1" ${checked} />
+                                <label>Use rTorrent</label>
+                            </div>
+                            <fieldset id="rtorrent_options">
+                                <div class="row">
+                                    <label>rTorrent Host:</label>
+                                    <input type="text" name="rtorrent_host" value="${lazylibrarian.RTORRENT_HOST}" size="26">
+                                </div>
+                                <div class="row">
+                                    <label>rTorrent User:</label>
+                                    <input type="text" name="rtorrent_user" value="${lazylibrarian.RTORRENT_USER}" size="26">
+                                </div>
+                                <div class="row">
+                                    <label>rTorrent Password:</label>
+                                    <input type="text" name="rtorrent_pass" value="${lazylibrarian.RTORRENT_PASS}" size="26">
+                                </div>
+                                <div class="row">
+                                    <label>rTorrent Label:</label>
+                                    <input type="text" name="rtorrent_label" value="${lazylibrarian.RTORRENT_LABEL}" size="26">
+                                </div>
+                                <div class="row">
+                                    <label>rTorrent Directory:</label>
+                                    <input type="text" name="rtorrent_dir" value="${lazylibrarian.RTORRENT_DIR}" size="26">
+                                    <br><small>
+                                    Leave rTorrent directory blank to use rtorrent defaults
+                                    </small>
+                                </div>
+                                <div class="row">
+                                    <input type="button" value="Test rTorrent" id="testrTorrent" style="float:right;">
+                                </div>
+                            </fieldset>
+
+
+                             <div class="row checkbox">
+                                <%
                                 if lazylibrarian.TOR_DOWNLOADER_UTORRENT == True:
                                     checked = 'checked="checked"'
                                 else:
@@ -478,6 +518,16 @@
                                     <label>Torrent Blackhole Directory:</label>
                                     <input type="text" name="torrent_dir" value="${lazylibrarian.TORRENT_DIR}" size="26">
                                 </div>
+                                <div class="row checkbox">
+                                    <%
+                                    if lazylibrarian.TOR_CONVERT_MAGNET == True:
+                                        checked = 'checked="checked"'
+                                    else:
+                                        checked = ''
+                                    %>
+                                     <input type="checkbox" name="tor_convert_magnet" id="tor_convert_magnet" value="1" ${checked} />
+                                     <label>Convert magnet links into torrent files</label>
+                                </div>
                             </fieldset>
                             <div>
                                 <label>Minimum seeders:</label>
@@ -539,10 +589,6 @@
  	    		    <input type="text" placeholder="Enter URL Here" name="torznab[${loop.index}][host]" value="${prov['HOST']}" size="26" class="providers-input">
  	    		    <br>
  	    		    %endfor
-                    <small>
-                    Current limitation: TORZNAB results are returned as magnet links
-                    where possible, which may not work automatically with blackhole
-                    </small>
  	    		</fieldset>
             </tr>
             <tr>
@@ -603,7 +649,25 @@
             		<input type="checkbox" name="tdl" value=1 ${checked} style="margin-bottom:4px;" /> torrentdownload
  	    		    <input type="text" placeholder="Enter URL Here" name="tdl_host" value="${lazylibrarian.TDL_HOST}" size="26">
  	  		        <br>
-                    <br><h3>Direct Download Providers</h3><br>
+ 	  		        <%
+                    if lazylibrarian.EXTRA == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+            		<input type="checkbox" name="extra" value=1 ${checked} style="margin-bottom:4px;" /> extratorrent
+ 	    		    <input type="text" placeholder="Enter URL Here" name="extra_host" value="${lazylibrarian.EXTRA_HOST}" size="26">
+ 	  		        <br>
+ 	  		        <%
+                    if lazylibrarian.LIME == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+            		<input type="checkbox" name="lime" value=1 ${checked} style="margin-bottom:4px;" /> limetorrent
+ 	    		    <input type="text" placeholder="Enter URL Here" name="lime_host" value="${lazylibrarian.LIME_HOST}" size="26">
+ 	  		        <br>
+                   <br><h3>Direct Download Providers</h3><br>
  	  		        <%
                     if lazylibrarian.GEN == True:
                         checked = 'checked="checked"'
@@ -1407,6 +1471,26 @@
                     }
             });
 
+            if ($("#tor_downloader_rtorrent").is(":checked"))
+                {
+                        $("#rtorrent_options").show();
+                }
+            else
+                {
+                        $("#rtorrent_options").hide();
+                }
+
+            $("#tor_downloader_rtorrent").click(function(){
+                    if ($("#tor_downloader_rtorrent").is(":checked"))
+                    {
+                            $("#rtorrent_options").slideDown();
+                    }
+                    else
+                    {
+                            $("#rtorrent_options").slideUp();
+                    }
+            });
+
             if ($("#tor_downloader_utorrent").is(":checked"))
                 {
                         $("#utorrent_options").show();
@@ -1732,6 +1816,12 @@
 
             $('#testuTorrent').click(function () {
                 $.get("testuTorrent",
+                    function (data) { alert(data); });
+
+            });
+
+            $('#testrTorrent').click(function () {
+                $.get("testrTorrent",
                     function (data) { alert(data); });
 
             });

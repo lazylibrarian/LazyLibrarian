@@ -11,7 +11,7 @@ from lib.fuzzywuzzy import fuzz
 from lazylibrarian.searchtorrents import TORDownloadMethod
 from lazylibrarian.searchnzb import NZBDownloadMethod
 from lazylibrarian.formatter import plural, now, unaccented_str, replace_all, unaccented, \
-                                    nzbdate2format, getList, month2num, datecompare
+    nzbdate2format, getList, month2num, datecompare
 from lazylibrarian.common import scheduleJob
 from lazylibrarian.notifiers import notify_snatch
 from lazylibrarian.providers import IterateOverNewzNabSites, IterateOverTorrentSites, IterateOverRSSSites
@@ -141,7 +141,7 @@ def search_magazines(mags=None, reset=False):
                 nzbdate = nzbdate2format(nzbdate_temp)
                 nzbmode = nzb['nzbmode']
 
-                results = myDB.action('SELECT * from magazines WHERE Title="%s"' % bookid).fetchone()
+                results = myDB.match('SELECT * from magazines WHERE Title="%s"' % bookid)
                 if not results:
                     logger.debug('Magazine [%s] does not match search term [%s].' % (nzbtitle, bookid))
                     bad_regex = bad_regex + 1
@@ -184,8 +184,8 @@ def search_magazines(mags=None, reset=False):
                         rejected = True
 
                     if not rejected:
-                        already_failed = myDB.action('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' %
-                                                     nzburl).fetchone()
+                        already_failed = myDB.match('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' %
+                                                    nzburl)
                         if already_failed:
                             logger.debug(
                                 "Rejecting %s, blacklisted at %s" %
@@ -414,7 +414,7 @@ def search_magazines(mags=None, reset=False):
                 if snatch:
                     logger.info('Downloading %s from %s' % (magazine['nzbtitle'], magazine["nzbprov"]))
                     notify_snatch("%s from %s at %s" %
-                                 (unaccented(magazine['nzbtitle']), magazine["nzbprov"], now()))
+                                  (unaccented(magazine['nzbtitle']), magazine["nzbprov"], now()))
                     scheduleJob(action='Start', target='processDir')
             maglist = []
 

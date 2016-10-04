@@ -13,7 +13,7 @@ from lazylibrarian.cache import cache_cover, fetchURL
 def getAuthorImages():
     """ Try to get an author image for all authors without one"""
     myDB = database.DBConnection()
-    authors = myDB.select('select AuthorID from authors where AuthorImg like "%nophoto%"')
+    authors = myDB.select('select AuthorID, AuthorName from authors where AuthorImg like "%nophoto%"')
     if authors:
         logger.info('Checking images for %s author%s' % (len(authors), plural(len(authors))))
         counter = 0
@@ -21,6 +21,7 @@ def getAuthorImages():
             authorid = author['AuthorID']
             imagelink = getAuthorImage(authorid)
             if imagelink and "nophoto" not in imagelink:
+                logger.debug('Updating %s image to %s' % (author['AuthorName'], imagelink))
                 controlValueDict = {"AuthorID": authorid}
                 newValueDict = {"AuthorImg": imagelink}
                 myDB.upsert("authors", newValueDict, controlValueDict)
@@ -92,7 +93,7 @@ def getBookWork(bookID=None, reason=None):
 
     myDB = database.DBConnection()
 
-    item = myDB.action('select BookName,AuthorName,BookISBN from books where bookID="%s"' % bookID).fetchone()
+    item = myDB.match('select BookName,AuthorName,BookISBN from books where bookID="%s"' % bookID)
     if item:
         cacheLocation = "WorkCache"
         # does the workpage need to expire?
@@ -228,7 +229,7 @@ def getBookCover(bookID=None):
 
     myDB = database.DBConnection()
 
-    item = myDB.action('select BookName,AuthorName,BookLink from books where bookID="%s"' % bookID).fetchone()
+    item = myDB.match('select BookName,AuthorName,BookLink from books where bookID="%s"' % bookID)
     if item:
         title = safe_unicode(item['BookName']).encode(lazylibrarian.SYS_ENCODING)
         author = safe_unicode(item['AuthorName']).encode(lazylibrarian.SYS_ENCODING)
@@ -312,7 +313,7 @@ def getAuthorImage(authorid=None):
     myDB = database.DBConnection()
     authors = myDB.select('select AuthorName from authors where AuthorID = "%s"' % authorid)
     if authors:
-        authorname = authors[0][0]
+        authorname = safe_unicode(authors[0][0]).encode(lazylibrarian.SYS_ENCODING)
         safeparams = urllib.quote_plus("%s" % authorname)
         URL = "https://www.google.com/search?tbm=isch&tbs=ift:jpg&as_q=" + safeparams
         result, success = fetchURL(URL)

@@ -331,6 +331,7 @@ def _add_torrent_url(result):
         logger.error('Deluge: Adding torrent URL failed: %s' % str(err))
         return False
 
+
 def _add_torrent_file(result):
     logger.debug('Deluge: Adding file')
     if not any(delugeweb_auth):

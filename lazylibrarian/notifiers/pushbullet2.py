@@ -13,14 +13,15 @@
 
 import lib.simplejson as json
 import lib.requests as requests
-#import websocket
+# import websocket
 from lib.requests.auth import HTTPBasicAuth
-#from websocket import create_connection
+# from websocket import create_connection
 
 HOST = "https://api.pushbullet.com/v2"
 
 
 class PushBullet():
+
     def __init__(self, apiKey):
         self.apiKey = apiKey
 
@@ -104,9 +105,9 @@ class PushBullet():
         data = {"type": "address",
                 "name": name,
                 "address": address}
-				
+
         data[recipient_type] = recipient
-				
+
         return self._request("POST", HOST + "/pushes", data)
 
     def pushList(self, recipient, title, items, recipient_type="device_iden"):
@@ -122,7 +123,7 @@ class PushBullet():
         data = {"type": "list",
                 "title": title,
                 "items": items}
-				
+
         data[recipient_type] = recipient
 
         return self._request("POST", HOST + "/pushes", data)
@@ -140,9 +141,9 @@ class PushBullet():
         data = {"type": "link",
                 "title": title,
                 "url": url}
-				
+
         data[recipient_type] = recipient
-				
+
         return self._request("POST", HOST + "/pushes", data)
 
     def pushFile(self, recipient, file_name, body, file, file_type=None, recipient_type="device_iden"):
@@ -182,7 +183,7 @@ class PushBullet():
                 "file_type": file_type,
                 "file_url": upload_request["file_url"],
                 "body": body}
-				
+
         data[recipient_type] = recipient
 
         return self._request("POST", HOST + "/pushes", data)
@@ -236,7 +237,7 @@ class PushBullet():
 #            from the server, nop messages are filtered.
 #            Arguments:
 #            callback -- The function to call on activity
-#        """#
+# """#
 #
 #        url = "wss://stream.pushbullet.com/websocket/" + self.apiKey
 #        ws = create_connection(url)

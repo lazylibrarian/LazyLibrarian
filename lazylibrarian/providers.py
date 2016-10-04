@@ -1,16 +1,15 @@
 import urllib
 import urllib2
 import socket
-
+import ssl
 from xml.etree import ElementTree
 
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.common import USER_AGENT
 from lazylibrarian.formatter import age, today, plural, cleanName
-from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL, GEN
+from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL, GEN, EXTRA, LIME
 import lib.feedparser as feedparser
-
 
 
 def get_searchterm(book, searchType):
@@ -43,6 +42,7 @@ def get_searchterm(book, searchType):
     # any other searchType
     return authorname, bookname
 
+
 def get_capabilities(provider):
     """
     query provider for caps if none loaded yet, or if config entry is too old and not set manually.
@@ -73,7 +73,7 @@ def get_capabilities(provider):
         except (socket.timeout) as e:
             logger.debug("Timeout getting capabilities for %s" % request.get_full_url())
             resp = ""
-        except (urllib2.HTTPError, urllib2.URLError) as e:
+        except (urllib2.HTTPError, urllib2.URLError, ssl.SSLError) as e:
             if hasattr(e, 'reason'):
                 errmsg = e.reason
             else:
@@ -218,6 +218,10 @@ def IterateOverTorrentSites(book=None, searchType=None):
         providers += 1
         logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.ZOO_HOST)
         resultslist += ZOO(book)
+    if (lazylibrarian.EXTRA):
+        providers += 1
+        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.EXTRA_HOST)
+        resultslist += EXTRA(book)
     if (lazylibrarian.TDL):
         providers += 1
         logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.TDL_HOST)
@@ -226,6 +230,10 @@ def IterateOverTorrentSites(book=None, searchType=None):
         providers += 1
         logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.GEN_HOST)
         resultslist += GEN(book)
+    if (lazylibrarian.LIME):
+        providers += 1
+        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.LIME_HOST)
+        resultslist += LIME(book)
 
     return resultslist, providers
 

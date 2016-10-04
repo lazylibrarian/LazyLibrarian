@@ -23,7 +23,7 @@ from lazylibrarian.formatter import unaccented
 class SlackNotifier:
 
     def _sendSlack(self, message=None, event=None, slack_token=None,
-                 method=None, force=False):
+                   method=None, force=False):
         if not lazylibrarian.USE_SLACK and not force:
             return False
 
@@ -57,7 +57,6 @@ class SlackNotifier:
             return "Invalid or missing Webhook"
         logger.debug("Slack returned [%s]" % r.text)
         return r.text
-
 
     def _notify(self, message=None, event=None, slack_token=None, method=None, force=False):
         """

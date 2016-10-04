@@ -67,17 +67,17 @@ def finditem(item, headers):
 
     # try to find book in our database using bookid or isbn, or if that fails, name matching
     if bookid:
-        bookmatch = myDB.action('SELECT * FROM books where BookID=%s' % (bookid)).fetchone()
+        bookmatch = myDB.match('SELECT * FROM books where BookID=%s' % (bookid))
     if not bookmatch:
         if is_valid_isbn(isbn10):
-            bookmatch = myDB.action('SELECT * FROM books where BookIsbn=%s' % (isbn10)).fetchone()
+            bookmatch = myDB.match('SELECT * FROM books where BookIsbn=%s' % (isbn10))
     if not bookmatch:
         if is_valid_isbn(isbn13):
-            bookmatch = myDB.action('SELECT * FROM books where BookIsbn=%s' % (isbn13)).fetchone()
+            bookmatch = myDB.match('SELECT * FROM books where BookIsbn=%s' % (isbn13))
     if not bookmatch:
         bookid = find_book_in_db(myDB, authorname, bookname)
         if bookid:
-            bookmatch = myDB.action('SELECT * FROM books where BookID="%s"' % (bookid)).fetchone()
+            bookmatch = myDB.match('SELECT * FROM books where BookID="%s"' % (bookid))
     return bookmatch
 
 
@@ -132,7 +132,7 @@ def import_CSV(search_dir=None):
             if hasattr(authorname, 'decode'):
                 authorname = authorname.decode(lazylibrarian.SYS_ENCODING)
 
-            authmatch = myDB.action('SELECT * FROM authors where AuthorName="%s"' % (authorname)).fetchone()
+            authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % (authorname))
 
             if authmatch:
                 newauthor = False

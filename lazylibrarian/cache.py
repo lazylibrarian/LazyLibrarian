@@ -5,22 +5,26 @@ import hashlib
 import json
 import urllib2
 import socket
+import ssl
 import time
 from xml.etree import ElementTree
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
 
 
-def fetchURL(URL):
+def fetchURL(URL, headers=None):
     """ Return the result of fetching a URL and True if success
         Otherwise return error message and False
         Allow one retry on timeout """
-
     request = urllib2.Request(URL)
     if lazylibrarian.PROXY_HOST:
         request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-    # google insists on having a user-agent
-    request.add_header('User-Agent', USER_AGENT)
+    if headers is None:
+        # google insists on having a user-agent
+        request.add_header('User-Agent', USER_AGENT)
+    if headers is not None:
+        for item in headers:
+            request.add_header(item, headers[item])
     try:
         resp = urllib2.urlopen(request, timeout=30)
         if str(resp.getcode()).startswith("2"):
@@ -51,7 +55,7 @@ def fetchURL(URL):
         except (urllib2.URLError) as e:
             logger.error(u"fetchURL: Error getting response for %s: %s" % (URL, e.reason))
             return e.reason, False
-    except (urllib2.HTTPError, urllib2.URLError) as e:
+    except (urllib2.HTTPError, urllib2.URLError, ssl.SSLError) as e:
         if hasattr(e, 'reason'):
             return e.reason, False
         else:

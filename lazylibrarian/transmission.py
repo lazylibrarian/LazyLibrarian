@@ -173,7 +173,7 @@ def torrentAction(method, arguments):
                                         whitelist_status_code=[401, 409])
 
     if response is None:
-        logger.error("Error gettings Transmission session ID")
+        logger.error("Error getting Transmission session ID")
         return
 
     # Parse response

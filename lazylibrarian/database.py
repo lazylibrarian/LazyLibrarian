@@ -60,9 +60,23 @@ class DBConnection:
 
             return sqlResult
 
-    def select(self, query, args=None):
-        sqlResults = self.action(query, args).fetchall()
+    def match(self, query, args=None):
+        try:
+            # if there are no results, action() returns None and .fetchone() fails
+            sqlResults = self.action(query, args).fetchone()
+        except Exception:
+            sqlResults = None
+        if not sqlResults:
+            return []
 
+        return sqlResults
+
+    def select(self, query, args=None):
+        try:
+            # if there are no results, action() returns None and .fetchall() fails
+            sqlResults = self.action(query, args).fetchall()
+        except Exception:
+            sqlResults = None
         if not sqlResults:
             return []
 

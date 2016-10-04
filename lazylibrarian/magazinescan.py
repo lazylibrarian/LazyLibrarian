@@ -241,8 +241,8 @@ def magazineScan():
                         newValueDict = {"IssueDate": issuedate}
                         myDB.upsert("magazines", newValueDict, controlValueDict)
 
-    magcount = myDB.action("select count(*) from magazines").fetchone()
-    isscount = myDB.action("select count(*) from issues").fetchone()
+    magcount = myDB.match("select count(*) from magazines")
+    isscount = myDB.match("select count(*) from issues")
 
     logger.info("Magazine scan complete, found %s magazine%s, %s issue%s" %
                 (magcount['count(*)'], plural(magcount['count(*)']),

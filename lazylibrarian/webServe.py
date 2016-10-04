@@ -14,7 +14,7 @@ from operator import itemgetter
 from shutil import copyfile, rmtree
 
 from lazylibrarian import logger, database, notifiers, versioncheck, magazinescan, \
-    qbittorrent, utorrent, transmission, sabnzbd, nzbget, deluge
+    qbittorrent, utorrent, rtorrent, transmission, sabnzbd, nzbget, deluge
 from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
 from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
 from lazylibrarian.searchmag import search_magazines
@@ -53,10 +53,10 @@ def serve_template(templatename, **kwargs):
 
 
 class WebInterface(object):
+
     @cherrypy.expose
     def index(self):
         raise cherrypy.HTTPRedirect("home")
-
 
     @cherrypy.expose
     def home(self):
@@ -64,7 +64,6 @@ class WebInterface(object):
         authors = myDB.select(
             'SELECT * from authors where Status != "Ignored" order by AuthorName COLLATE NOCASE')
         return serve_template(templatename="index.html", title="Home", authors=authors)
-
 
     def label_thread(self):
         threadname = threading.currentThread().name
@@ -107,7 +106,6 @@ class WebInterface(object):
         }
         return serve_template(templatename="config.html", title="Settings", config=config)
 
-
     @cherrypy.expose
     def configUpdate(
         self, http_host='0.0.0.0', http_root='', http_user='', http_port=5299, current_tab='0',
@@ -118,16 +116,17 @@ class WebInterface(object):
                      nzb_downloader_nzbget=0, nzb_downloader_blackhole=0, proxy_host='', proxy_type='',
                      sab_host='', sab_port=0, sab_subdir='', sab_api='', sab_user='', sab_pass='',
                      destination_copy=0, destination_dir='', download_dir='', sab_cat='', usenet_retention=0,
-                     nzb_blackholedir='', alternate_dir='', torrent_dir='', numberofseeders=0,
+                     nzb_blackholedir='', alternate_dir='', torrent_dir='', numberofseeders=0, tor_convert_magnet=0,
                      tor_downloader_blackhole=0, tor_downloader_utorrent=0, tor_downloader_qbittorrent=0,
                      nzbget_host='', nzbget_port=0, nzbget_user='', nzbget_pass='', nzbget_cat='', nzbget_priority=0,
                      newzbin=0, newzbin_uid='', newzbin_pass='', kat=0, kat_host='', tpb=0, tpb_host='', tdl=0,
                      tdl_host='', zoo=0, zoo_host='', ebook_type='', mag_type='', reject_words='', reject_maxsize=0,
-                     gen=0, gen_host='', book_api='', gr_api='', gb_api='',
-                     versioncheck_interval='', search_interval='', scan_interval='', searchrss_interval=20,
-                     ebook_dest_folder='', ebook_dest_file='',
-                     mag_relative=0, mag_dest_folder='', mag_dest_file='', cache_age=30,
+                     extra=0, extra_host='', gen=0, gen_host='', lime=0, lime_host='', book_api='', gr_api='',
+                     gb_api='', versioncheck_interval='', search_interval='', scan_interval='', searchrss_interval=20,
+                     ebook_dest_folder='', ebook_dest_file='', tor_downloader_rtorrent=0,
+                     rtorrent_host='', rtorrent_dir='', rtorrent_user='', rtorrent_pass='', rtorrent_label='',
                      use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
+                     mag_dest_folder='', mag_dest_file='', mag_relative=0, cache_age=30,
                      utorrent_host='', utorrent_port=0, utorrent_user='', utorrent_pass='', utorrent_label='',
                      qbittorrent_host='', qbittorrent_port=0, qbittorrent_user='', qbittorrent_pass='',
                      qbittorrent_label='', notfound_status='Skipped', newbook_status='Skipped', full_scan=0,
@@ -211,7 +210,9 @@ class WebInterface(object):
         lazylibrarian.TORRENT_DIR = torrent_dir
         lazylibrarian.NUMBEROFSEEDERS = check_int(numberofseeders, 0)
         lazylibrarian.TOR_DOWNLOADER_BLACKHOLE = bool(tor_downloader_blackhole)
+        lazylibrarian.TOR_CONVERT_MAGNET = bool(tor_convert_magnet)
         lazylibrarian.TOR_DOWNLOADER_UTORRENT = bool(tor_downloader_utorrent)
+        lazylibrarian.TOR_DOWNLOADER_RTORRENT = bool(tor_downloader_rtorrent)
         lazylibrarian.TOR_DOWNLOADER_QBITTORRENT = bool(tor_downloader_qbittorrent)
         lazylibrarian.TOR_DOWNLOADER_TRANSMISSION = bool(tor_downloader_transmission)
         lazylibrarian.TOR_DOWNLOADER_DELUGE = bool(tor_downloader_deluge)
@@ -219,6 +220,12 @@ class WebInterface(object):
         lazylibrarian.NEWZBIN = bool(newzbin)
         lazylibrarian.NEWZBIN_UID = newzbin_uid
         lazylibrarian.NEWZBIN_PASS = newzbin_pass
+
+        lazylibrarian.RTORRENT_HOST = rtorrent_host
+        lazylibrarian.RTORRENT_USER = rtorrent_user
+        lazylibrarian.RTORRENT_PASS = rtorrent_pass
+        lazylibrarian.RTORRENT_LABEL = rtorrent_label
+        lazylibrarian.RTORRENT_DIR = rtorrent_dir
 
         lazylibrarian.UTORRENT_HOST = utorrent_host
         lazylibrarian.UTORRENT_PORT = utorrent_port
@@ -249,10 +256,14 @@ class WebInterface(object):
         lazylibrarian.TPB_HOST = tpb_host
         lazylibrarian.ZOO = bool(zoo)
         lazylibrarian.ZOO_HOST = zoo_host
+        lazylibrarian.EXTRA = bool(extra)
+        lazylibrarian.EXTRA_HOST = extra_host
         lazylibrarian.TDL = bool(tdl)
         lazylibrarian.TDL_HOST = tdl_host
         lazylibrarian.GEN = bool(gen)
         lazylibrarian.GEN_HOST = gen_host
+        lazylibrarian.LIME = bool(lime)
+        lazylibrarian.LIME_HOST = lime_host
 
         lazylibrarian.EBOOK_TYPE = ebook_type
         lazylibrarian.MAG_TYPE = mag_type
@@ -488,7 +499,7 @@ class WebInterface(object):
 
         queryauthors = "SELECT * from authors WHERE AuthorID = '%s'" % AuthorID
 
-        author = myDB.action(queryauthors).fetchone()
+        author = myDB.match(queryauthors)
         books = myDB.select(querybooks)
         if author is None:
             raise cherrypy.HTTPRedirect("home")
@@ -496,7 +507,6 @@ class WebInterface(object):
         return serve_template(
             templatename="author.html", title=urllib.quote_plus(authorname),
                               author=author, books=books, languages=languages)
-
 
     @cherrypy.expose
     def pauseAuthor(self, AuthorID):
@@ -515,7 +525,6 @@ class WebInterface(object):
             u'AuthorID [%s]-[%s] Paused - redirecting to Author home page' % (AuthorID, AuthorName))
         raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
 
-
     @cherrypy.expose
     def resumeAuthor(self, AuthorID):
         self.label_thread()
@@ -532,7 +541,6 @@ class WebInterface(object):
         logger.debug(
             u'AuthorID [%s]-[%s] Restarted - redirecting to Author home page' % (AuthorID, AuthorName))
         raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
-
 
     @cherrypy.expose
     def ignoreAuthor(self, AuthorID):
@@ -551,7 +559,6 @@ class WebInterface(object):
             u'AuthorID [%s]-[%s] Ignored - redirecting to home page' % (AuthorID, AuthorName))
         raise cherrypy.HTTPRedirect("home")
 
-
     @cherrypy.expose
     def removeAuthor(self, AuthorID):
         self.label_thread()
@@ -566,7 +573,6 @@ class WebInterface(object):
             myDB.action('DELETE from books WHERE AuthorID="%s"' % AuthorID)
         raise cherrypy.HTTPRedirect("home")
 
-
     @cherrypy.expose
     def refreshAuthor(self, AuthorID):
         self.label_thread()
@@ -578,7 +584,6 @@ class WebInterface(object):
             AuthorName = authorsearch[0]['AuthorName']
             threading.Thread(target=addAuthorToDB, name='REFRESHAUTHOR', args=[AuthorName, True]).start()
         raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
-
 
     @cherrypy.expose
     def libraryScanAuthor(self, AuthorID):
@@ -600,7 +605,6 @@ class WebInterface(object):
                 logger.debug(u'Unable to find author directory: %s' % authordir)
         raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
 
-
     @cherrypy.expose
     def addAuthor(self, AuthorName):
         threading.Thread(target=addAuthorToDB, name='ADDAUTHOR', args=[AuthorName, False]).start()
@@ -617,7 +621,6 @@ class WebInterface(object):
         lazylibrarian.BOOKLANGFILTER = BookLang
         return serve_template(templatename="books.html", title='Books', books=[], languages=languages)
 
-
     @cherrypy.expose
     def getBooks(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         myDB = database.DBConnection()
@@ -629,12 +632,12 @@ class WebInterface(object):
             cmd = 'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid,'
             cmd = cmd + ' booksub, booklink, workpage, authorid from books WHERE STATUS !="Skipped"'
             cmd = cmd + ' AND STATUS !="Ignored"'
-            rowlist = myDB.action(cmd).fetchall()
+            rowlist = myDB.select(cmd)
         else:
             cmd = 'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid,'
             cmd = cmd + ' booksub, booklink, workpage, authorid from books WHERE STATUS !="Skipped"'
             cmd = cmd + ' AND STATUS !="Ignored" and BOOKLANG="' + lazylibrarian.BOOKLANGFILTER + '"'
-            rowlist = myDB.action(cmd).fetchall()
+            rowlist = myDB.select(cmd)
         # turn the sqlite rowlist into a list of lists
         d = []
         filtered = []
@@ -688,6 +691,7 @@ class WebInterface(object):
                             worklink = '<td><a href="' + \
                                 row[11] + '" target="_new"><small><i>LibraryThing</i></small></a></td>'
 
+                    sitelink = ''
                     if 'goodreads' in row[10]:
                         sitelink = '<td><a href="' + \
                             row[10] + '" target="_new"><small><i>GoodReads</i></small></a></td>'
@@ -746,6 +750,7 @@ class WebInterface(object):
                             worklink = '<td><a href="' + \
                                 row[11] + '" target="_new"><i class="smalltext">LibraryThing</i></a></td>'
 
+                    sitelink = ''
                     if 'goodreads' in row[10]:
                         sitelink = '<td><a href="' + \
                             row[10] + '" target="_new"><i class="smalltext">GoodReads</i></a></td>'
@@ -805,7 +810,6 @@ class WebInterface(object):
         # + iDisplayLength))
         return s
 
-
     @cherrypy.expose
     def addBook(self, bookid=None):
         myDB = database.DBConnection()
@@ -843,7 +847,6 @@ class WebInterface(object):
         else:
             raise cherrypy.HTTPRedirect("books")
 
-
     @cherrypy.expose
     def startBookSearch(self, books=None):
         if books:
@@ -860,7 +863,6 @@ class WebInterface(object):
         else:
             logger.debug(u"BookSearch called with no books")
 
-
     @cherrypy.expose
     def searchForBook(self, bookid=None, action=None, **args):
         myDB = database.DBConnection()
@@ -875,7 +877,6 @@ class WebInterface(object):
 
         if AuthorID:
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
-
 
     @cherrypy.expose
     def openBook(self, bookid=None, **args):
@@ -895,7 +896,6 @@ class WebInterface(object):
                 bookName = bookdata[0]["BookName"]
                 logger.info(u'Missing book %s,%s' % (authorName, bookName))
 
-
     @cherrypy.expose
     def editBook(self, bookid=None, **args):
 
@@ -909,7 +909,6 @@ class WebInterface(object):
             return serve_template(templatename="editbook.html", title="Edit Book", config=bookdata[0], authors=authors)
         else:
             logger.info(u'Missing book %s' % bookid)
-
 
     @cherrypy.expose
     def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre=None,
@@ -980,7 +979,6 @@ class WebInterface(object):
                     logger.debug('Book [%s] has not been moved' % bookname)
 
         raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % bookdata[0]["AuthorID"])
-
 
     @cherrypy.expose
     def markBooks(self, AuthorID=None, action=None, redirect=None, **args):
@@ -1079,7 +1077,6 @@ class WebInterface(object):
 
         return serve_template(templatename="magazines.html", title="Magazines", magazines=mags)
 
-
     @cherrypy.expose
     def issuePage(self, title):
         myDB = database.DBConnection()
@@ -1118,7 +1115,6 @@ class WebInterface(object):
             logger.debug("Found %s cover%s" % (covercount, plural(covercount)))
         return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
 
-
     @cherrypy.expose
     def pastIssues(self, whichStatus=None):
         if whichStatus is None:
@@ -1127,16 +1123,15 @@ class WebInterface(object):
         return serve_template(
             templatename="manageissues.html", title="Magazine Status Management", issues=[], whichStatus=whichStatus)
 
-
     @cherrypy.expose
     def getPastIssues(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
         # need to filter on whichStatus
-        rowlist = myDB.action(
+        rowlist = myDB.select(
             'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov from pastissues WHERE Status="%s"' %
-            lazylibrarian.ISSUEFILTER).fetchall()
+            lazylibrarian.ISSUEFILTER)
 
         d = []
         filtered = []
@@ -1179,7 +1174,6 @@ class WebInterface(object):
         s = simplejson.dumps(mydict)
         return s
 
-
     @cherrypy.expose
     def openMag(self, bookid=None, **args):
         self.label_thread()
@@ -1208,7 +1202,6 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect(
                 "issuePage?title=%s" %
                 urllib.quote_plus(bookid.encode(lazylibrarian.SYS_ENCODING)))
-
 
     @cherrypy.expose
     def markPastIssues(self, action=None, redirect=None, **args):
@@ -1294,7 +1287,6 @@ class WebInterface(object):
                     scheduleJob(action='Start', target='processDir')
         raise cherrypy.HTTPRedirect("pastIssues")
 
-
     @cherrypy.expose
     def markIssues(self, action=None, **args):
         self.label_thread()
@@ -1303,7 +1295,7 @@ class WebInterface(object):
         for item in args:
             # ouch dirty workaround...
             if not item == 'book_table_length':
-                issue = myDB.action('SELECT IssueFile,Title,IssueDate from issues WHERE IssueID="%s"' % item).fetchone()
+                issue = myDB.match('SELECT IssueFile,Title,IssueDate from issues WHERE IssueID="%s"' % item)
                 if issue:
                     if action == "Delete":
                         try:
@@ -1315,7 +1307,6 @@ class WebInterface(object):
                         myDB.action('DELETE from issues WHERE IssueID="%s"' % item)
                         logger.info(u'Issue %s of %s removed from database' % (issue['IssueDate'], issue['Title']))
         raise cherrypy.HTTPRedirect("magazines")
-
 
     @cherrypy.expose
     def markMagazines(self, action=None, **args):
@@ -1333,7 +1324,7 @@ class WebInterface(object):
                     myDB.upsert("magazines", newValueDict, controlValueDict)
                     logger.info(u'Status of magazine %s changed to %s' % (item, action))
                 if action == "Delete":
-                    issue = myDB.action('SELECT IssueFile from issues WHERE Title="%s"' % item).fetchone()
+                    issue = myDB.match('SELECT IssueFile from issues WHERE Title="%s"' % item)
                     if issue:
                         try:
                             issuedir = os.path.dirname(issue['IssueFile'])
@@ -1358,7 +1349,6 @@ class WebInterface(object):
 
         raise cherrypy.HTTPRedirect("magazines")
 
-
     @cherrypy.expose
     def searchForMag(self, bookid=None, action=None, **args):
         myDB = database.DBConnection()
@@ -1370,7 +1360,6 @@ class WebInterface(object):
             self.startMagazineSearch(mags)
             raise cherrypy.HTTPRedirect("magazines")
 
-
     @cherrypy.expose
     def startMagazineSearch(self, mags=None):
         if mags:
@@ -1381,7 +1370,6 @@ class WebInterface(object):
                 logger.warn(u"Not searching for magazine, no download methods set, check config")
         else:
             logger.debug(u"MagazineSearch called with no magazines")
-
 
     @cherrypy.expose
     def addMagazine(self, search=None, title=None, frequency=None, **args):
@@ -1445,15 +1433,13 @@ class WebInterface(object):
             message = message + '<br><small>' + messages
             return serve_template(templatename="shutdown.html", title="Commits", message=message, timer=15)
 
-        #raise cherrypy.HTTPRedirect("config")
-
+        # raise cherrypy.HTTPRedirect("config")
 
     @cherrypy.expose
     def forceUpdate(self):
         from lazylibrarian import updater
         threading.Thread(target=updater.dbUpdate, name='DBUPDATE', args=[False]).start()
         raise cherrypy.HTTPRedirect("home")
-
 
     @cherrypy.expose
     def update(self):
@@ -1473,7 +1459,6 @@ class WebInterface(object):
             logger.error(u'Unable to complete the scan: %s' % str(e))
         raise cherrypy.HTTPRedirect("home")
 
-
     @cherrypy.expose
     def magazineScan(self):
         try:
@@ -1481,7 +1466,6 @@ class WebInterface(object):
         except Exception as e:
             logger.error(u'Unable to complete the scan: %s' % str(e))
         raise cherrypy.HTTPRedirect("magazines")
-
 
     @cherrypy.expose
     def importAlternate(self):
@@ -1491,7 +1475,6 @@ class WebInterface(object):
             logger.error(u'Unable to complete the import: %s' % str(e))
         raise cherrypy.HTTPRedirect("manage")
 
-
     @cherrypy.expose
     def importCSV(self):
         try:
@@ -1499,7 +1482,6 @@ class WebInterface(object):
         except Exception as e:
             logger.error(u'Unable to complete the import: %s' % str(e))
         raise cherrypy.HTTPRedirect("manage")
-
 
     @cherrypy.expose
     def exportCSV(self):
@@ -1519,13 +1501,11 @@ class WebInterface(object):
         message = 'closing ...'
         return serve_template(templatename="shutdown.html", title="Close library", message=message, timer=15)
 
-
     @cherrypy.expose
     def restart(self):
         lazylibrarian.SIGNAL = 'restart'
         message = 'reopening ...'
         return serve_template(templatename="shutdown.html", title="Reopen library", message=message, timer=30)
-
 
     @cherrypy.expose
     def show_Jobs(self):
@@ -1555,7 +1535,6 @@ class WebInterface(object):
         logger.info(result)
         raise cherrypy.HTTPRedirect("logs")
 
-
     @cherrypy.expose
     def toggleLog(self):
         # Toggle the debug log
@@ -1581,11 +1560,9 @@ class WebInterface(object):
                 lazylibrarian.LOGLEVEL)
         raise cherrypy.HTTPRedirect("logs")
 
-
     @cherrypy.expose
     def logs(self):
         return serve_template(templatename="logs.html", title="Log", lineList=[])  # lazylibrarian.LOGLIST)
-
 
     @cherrypy.expose
     def getLog(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
@@ -1622,7 +1599,6 @@ class WebInterface(object):
             # ignored for magazine back issues
             history = myDB.select("SELECT * from wanted WHERE Status != 'Skipped' and Status != 'Ignored'")
             return serve_template(templatename="history.html", title="History", history=history)
-
 
     @cherrypy.expose
     def clearhistory(self, status=None):
@@ -1749,7 +1725,6 @@ class WebInterface(object):
         threading.Thread(target=processDir, name='POSTPROCESS', args=[True]).start()
         raise cherrypy.HTTPRedirect(source)
 
-
     @cherrypy.expose
     def forceSearch(self, source=None):
         if source == "magazines":
@@ -1766,7 +1741,6 @@ class WebInterface(object):
             logger.debug(u"forceSearch called with bad source")
         raise cherrypy.HTTPRedirect(source)
 
-
     @cherrypy.expose
     def manage(self, action=None, whichStatus=None, source=None, **args):
         # myDB = database.DBConnection()
@@ -1780,7 +1754,6 @@ class WebInterface(object):
         return serve_template(templatename="managebooks.html", title="Book Status Management",
                               books=[], whichStatus=whichStatus)
 
-
     @cherrypy.expose
     def getManage(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
 
@@ -1791,7 +1764,7 @@ class WebInterface(object):
         #   need to filter on whichStatus
         cmd = 'SELECT authorname, bookname, series, seriesnum, bookdate, bookid, booklink, booksub, authorid '
         cmd = cmd + 'from books WHERE STATUS="' + lazylibrarian.MANAGEFILTER + '"'
-        rowlist = myDB.action(cmd).fetchall()
+        rowlist = myDB.select(cmd)
 
         d = []
         filtered = []
@@ -1826,6 +1799,7 @@ class WebInterface(object):
                 l.append('<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[8], row[0]))
 
                 if lazylibrarian.HTTP_LOOK == 'bookstrap':
+                    sitelink = ''
                     if 'goodreads' in row[6]:
                         sitelink = '<a href="%s" target="_new"><small><i>GoodReads</i></small></a>' % row[6]
                     if 'google' in row[6]:
@@ -1839,6 +1813,7 @@ class WebInterface(object):
                         l.append('<td id="bookname">%s<br>%s</td>' % (row[1], sitelink))
 
                 else:  # lazylibrarian.HTTP_LOOK == 'default':
+                    sitelink = ''
                     if 'goodreads' in row[6]:
                         sitelink = '<a href="%s" target="_new"><i class="smalltext">GoodReads</i></a>' % row[6]
                     if 'google' in row[6]:
@@ -1873,7 +1848,6 @@ class WebInterface(object):
         # print ("getManage returning %s to %s" % (iDisplayStart, iDisplayStart
         # + iDisplayLength))
         return s
-
 
     @cherrypy.expose
     def testDeluge(self):
@@ -1936,3 +1910,8 @@ class WebInterface(object):
     def testuTorrent(self):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         return utorrent.checkLink()
+
+    @cherrypy.expose
+    def testrTorrent(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        return rtorrent.checkLink()

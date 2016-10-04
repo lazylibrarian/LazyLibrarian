@@ -123,9 +123,8 @@ def find_book_in_db(myDB, author, book):
     # PAB fuzzy search for book in library, return LL bookid if found or zero
     # if not, return bookid to more easily update status
     # prefer an exact match on author & book
-    match = myDB.action(
-        'SELECT BookID FROM books where AuthorName="%s" and BookName="%s"' %
-        (author.replace('"', '""'), book.replace('"', '""'))).fetchone()
+    match = myDB.match('SELECT BookID FROM books where AuthorName="%s" and BookName="%s"' %
+                       (author.replace('"', '""'), book.replace('"', '""')))
     if match:
         logger.debug('Exact match [%s]' % book)
         return match['BookID']
@@ -406,9 +405,7 @@ def LibraryScan(startdir=None):
                                 isbnhead = isbn[0:3]
                             else:
                                 isbnhead = isbn[3:6]
-                            match = myDB.action(
-                                'SELECT lang FROM languages where isbn = "%s"' %
-                                (isbnhead)).fetchone()
+                            match = myDB.match('SELECT lang FROM languages where isbn = "%s"' % (isbnhead))
                             if not match:
                                 myDB.action(
                                     'insert into languages values ("%s", "%s")' %
@@ -432,9 +429,8 @@ def LibraryScan(startdir=None):
                         # Check if the author exists, and import the author if not,
                         # before starting any complicated book-name matching to save repeating the search
                         #
-                        check_exist_author = myDB.action(
-                            'SELECT * FROM authors where AuthorName="%s"' %
-                            author.replace('"', '""')).fetchone()
+                        check_exist_author = myDB.match(
+                            'SELECT * FROM authors where AuthorName="%s"' % author.replace('"', '""'))
                         if not check_exist_author and lazylibrarian.ADD_AUTHOR:
                             # no match for supplied author, but we're allowed to
                             # add new ones
@@ -484,18 +480,17 @@ def LibraryScan(startdir=None):
                                     author = author_gr['authorname']
                                     # this new authorname may already be in the
                                     # database, so check again
-                                    check_exist_author = myDB.action(
-                                        'SELECT * FROM authors where AuthorName="%s"' %
-                                        author.replace('"', '""')).fetchone()
+                                    check_exist_author = myDB.match(
+                                        'SELECT * FROM authors where AuthorName="%s"' % author.replace('"', '""'))
                                     if not check_exist_author:
                                         logger.info(
                                             "Adding new author [%s]" %
                                             author)
                                         try:
                                             addAuthorToDB(author)
-                                            check_exist_author = myDB.action(
+                                            check_exist_author = myDB.match(
                                                 'SELECT * FROM authors where AuthorName="%s"' %
-                                                author.replace('"', '""')).fetchone()
+                                                author.replace('"', '""'))
                                         except Exception:
                                             continue
 
@@ -511,9 +506,8 @@ def LibraryScan(startdir=None):
                             bookid = find_book_in_db(myDB, author, book)
 
                             if bookid:
-                                check_status = myDB.action(
-                                    'SELECT Status, BookFile from books where BookID="%s"' %
-                                    bookid).fetchone()
+                                check_status = myDB.match(
+                                    'SELECT Status, BookFile from books where BookID="%s"' % bookid)
                                 if check_status['Status'] != 'Open':
                                     # we found a new book
                                     new_book_count += 1
@@ -551,9 +545,9 @@ def LibraryScan(startdir=None):
 
     # show statistics of full library scans
     if startdir == lazylibrarian.DESTINATION_DIR:
-        stats = myDB.action(
+        stats = myDB.match(
             "SELECT sum(GR_book_hits), sum(GR_lang_hits), sum(LT_lang_hits), sum(GB_lang_change), \
-                sum(cache_hits), sum(bad_lang), sum(bad_char), sum(uncached), sum(duplicates) FROM stats").fetchone()
+                sum(cache_hits), sum(bad_lang), sum(bad_char), sum(uncached), sum(duplicates) FROM stats")
         if stats['sum(GR_book_hits)'] is not None:
             # only show stats if new books added
             if lazylibrarian.BOOK_API == "GoogleBooks":
@@ -580,7 +574,7 @@ def LibraryScan(startdir=None):
                          (stats['sum(duplicates)'], plural(stats['sum(duplicates)'])))
             logger.debug("Cache %s hit%s, %s miss" %
                          (lazylibrarian.CACHE_HIT, plural(lazylibrarian.CACHE_HIT), lazylibrarian.CACHE_MISS))
-            cachesize = myDB.action("select count('ISBN') as counter from languages").fetchone()
+            cachesize = myDB.match("select count('ISBN') as counter from languages")
             logger.debug("ISBN Language cache holds %s entries" % cachesize['counter'])
             nolang = len(myDB.select('select BookID from Books where status="Open" and BookLang="Unknown"'))
             if nolang:

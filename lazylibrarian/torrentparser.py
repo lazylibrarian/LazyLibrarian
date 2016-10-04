@@ -1,6 +1,7 @@
 import urllib
 import urllib2
 import socket
+import ssl
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
@@ -64,8 +65,9 @@ def TPB(book=None):
 
         if len(rows) > 1:
             for row in rows[1:]:
-                c1.append(row.findAll('td')[1])
-                c2.append(row.findAll('td')[2])
+                if len(row.findAll('td')) > 2:
+                    c1.append(row.findAll('td')[1])
+                    c2.append(row.findAll('td')[2])
 
         for col1, col2 in zip(c1, c2):
             try:
@@ -122,7 +124,7 @@ def TPB(book=None):
                 logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
 
     logger.debug(u"Found %i result%s from %s for %s" %
-                (len(results), plural(len(results)), provider, book['searchterm']))
+                 (len(results), plural(len(results)), provider, book['searchterm']))
     return results
 
 
@@ -172,9 +174,10 @@ def KAT(book=None):
 
         if len(rows) > 1:
             for row in rows[1:]:
-                c0.append(row.findAll('td')[0])
-                c1.append(row.findAll('td')[1])
-                c3.append(row.findAll('td')[3])
+                if len(row.findAll('td')) > 3:
+                    c0.append(row.findAll('td')[0])
+                    c1.append(row.findAll('td')[1])
+                    c3.append(row.findAll('td')[3])
 
         for col0, col1, col3 in zip(c0, c1, c3):
             try:
@@ -219,7 +222,93 @@ def KAT(book=None):
                 logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
 
     logger.debug(u"Found %i result%s from %s for %s" %
-                (len(results), plural(len(results)), provider, book['searchterm']))
+                 (len(results), plural(len(results)), provider, book['searchterm']))
+    return results
+
+
+def EXTRA(book=None):
+
+    provider = "Extratorrent"
+    host = lazylibrarian.EXTRA_HOST
+    if not str(host)[:4] == "http":
+        host = 'http://' + host
+
+    providerurl = url_fix(host + "/rss")
+
+    params = {
+        "type": "search",
+        "s_cat": "2",
+        "search": book['searchterm']
+    }
+    searchURL = providerurl + "/?%s" % urllib.urlencode(params)
+
+    try:
+        request = urllib2.Request(searchURL)
+        if lazylibrarian.PROXY_HOST:
+            request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
+        request.add_header('User-Agent', USER_AGENT)
+        data = urllib2.urlopen(request, timeout=90)
+    except (socket.timeout) as e:
+        logger.debug('Timeout fetching data from %s' % provider)
+        data = False
+    except (urllib2.HTTPError, urllib2.URLError, ssl.SSLError) as e:
+        # may return 404 if no results, not really an error
+        if hasattr(e, 'code') and e.code == 404:
+            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+        else:
+            logger.debug(searchURL)
+            if hasattr(e, 'reason'):
+                errmsg = e.reason
+            else:
+                errmsg = str(e)
+            logger.debug('Error fetching data from %s: %s' % (provider, errmsg))
+        data = False
+
+    results = []
+
+    minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
+    if data:
+        logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
+        d = feedparser.parse(data)
+        if len(d.entries):
+            for item in d.entries:
+                try:
+                    title = unaccented(item['title'])
+
+                    try:
+                        seeders = int(item['seeders'])
+                    except ValueError:
+                        seeders = 0
+
+                    try:
+                        size = int(item['size'])
+                    except ValueError:
+                        size = 0
+
+                    url = None
+                    for link in item['links']:
+                        if 'x-bittorrent' in link['type']:
+                            url = link['href']
+
+                    if not url or not title:
+                        logger.debug('No url or title found')
+                    elif minimumseeders < seeders:
+                        results.append({
+                            'bookid': book['bookid'],
+                            'tor_prov': provider,
+                            'tor_title': title,
+                            'tor_url': url,
+                            'tor_size': str(size),
+                        })
+                        logger.debug('Found %s. Size: %s' % (title, size))
+                    else:
+                        logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
+
+                except Exception as e:
+                    logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+
+    logger.debug(u"Found %i result%s from %s for %s" %
+                 (len(results), plural(len(results)), provider, book['searchterm']))
     return results
 
 
@@ -250,7 +339,7 @@ def oldKAT(book=None):
     except (socket.timeout) as e:
         logger.debug('Timeout fetching data from %s' % provider)
         data = False
-    except (urllib2.HTTPError, urllib2.URLError) as e:
+    except (urllib2.HTTPError, urllib2.URLError, ssl.SSLError) as e:
         # seems KAT returns 404 if no results, not really an error
         if hasattr(e, 'code') and e.code == 404:
             logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
@@ -270,7 +359,7 @@ def oldKAT(book=None):
         d = feedparser.parse(data)
         if len(d.entries):
             logger.debug(u"Found %i result%s from %s for %s, checking seeders" %
-                        (len(d.entries), plural(len(d.entries)), provider, book['searchterm']))
+                         (len(d.entries), plural(len(d.entries)), provider, book['searchterm']))
             for item in d.entries:
                 try:
                     title = item['title']
@@ -296,7 +385,7 @@ def oldKAT(book=None):
                     logger.error(u"An unknown error occurred in the KAT parser: %s" % str(e))
 
     logger.debug(u"Found %i result%s from %s for %s" %
-                (len(results), plural(len(results)), provider, book['searchterm']))
+                 (len(results), plural(len(results)), provider, book['searchterm']))
     return results
 
 
@@ -324,7 +413,7 @@ def ZOO(book=None):
     except (socket.timeout) as e:
         logger.debug('Timeout fetching data from %s' % provider)
         data = False
-    except (urllib2.HTTPError, urllib2.URLError) as e:
+    except (urllib2.HTTPError, urllib2.URLError, ssl.SSLError) as e:
         # may return 404 if no results, not really an error
         if hasattr(e, 'code') and e.code == 404:
             logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
@@ -380,7 +469,91 @@ def ZOO(book=None):
                         logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
 
     logger.debug(u"Found %i result%s from %s for %s" %
-                (len(results), plural(len(results)), provider, book['searchterm']))
+                 (len(results), plural(len(results)), provider, book['searchterm']))
+    return results
+
+
+def LIME(book=None):
+
+    provider = "Limetorrent"
+    host = lazylibrarian.LIME_HOST
+    if not str(host)[:4] == "http":
+        host = 'http://' + host
+
+    searchURL = url_fix(host + "/searchrss/other/?q=" + book['searchterm'])
+
+    try:
+        request = urllib2.Request(searchURL)
+        if lazylibrarian.PROXY_HOST:
+            request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
+        request.add_header('User-Agent', USER_AGENT)
+        data = urllib2.urlopen(request, timeout=90)
+    except (socket.timeout) as e:
+        logger.debug('Timeout fetching data from %s' % provider)
+        data = False
+    except (urllib2.HTTPError, urllib2.URLError, ssl.SSLError) as e:
+        # may return 404 if no results, not really an error
+        if hasattr(e, 'code') and e.code == 404:
+            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+        else:
+            logger.debug(searchURL)
+            if hasattr(e, 'reason'):
+                errmsg = e.reason
+            else:
+                errmsg = str(e)
+            logger.debug('Error fetching data from %s: %s' % (provider, errmsg))
+        data = False
+
+    results = []
+
+    minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
+    if data:
+        logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
+        d = feedparser.parse(data)
+        if len(d.entries):
+            for item in d.entries:
+                try:
+                    title = unaccented(item['title'])
+                    try:
+                        seeders = item['description']
+                        seeders = int(seeders.split('Seeds:')[1].split(',')[0].strip())
+                    except (IndexError, ValueError) as e:
+                        seeders = 0
+
+                    size = item['size']
+                    try:
+                        size = int(size)
+                    except ValueError:
+                        size = 0
+
+                    url = None
+                    for link in item['links']:
+                        if 'x-bittorrent' in link['type']:
+                            url = link['url']
+
+                    if not url or not title:
+                        logger.debug('No url or title found')
+                    elif minimumseeders < seeders:
+                        results.append({
+                            'bookid': book['bookid'],
+                            'tor_prov': provider,
+                            'tor_title': title,
+                            'tor_url': url,
+                            'tor_size': str(size),
+                        })
+                        logger.debug('Found %s. Size: %s' % (title, size))
+                    else:
+                        logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
+
+                except Exception as e:
+                    if 'forbidden' in str(e).lower():
+                        # may have ip based access limits
+                        logger.error('Access forbidden. Please wait a while before trying %s again.' % provider)
+                    else:
+                        logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+
+    logger.debug(u"Found %i result%s from %s for %s" %
+                 (len(results), plural(len(results)), provider, book['searchterm']))
     return results
 
 
@@ -391,7 +564,7 @@ def GEN(book=None):
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
-    searchURL = url_fix(host + "/search.php?view=simple&open=0&phrase=0&column=def&res=100&req=" + \
+    searchURL = url_fix(host + "/search.php?view=simple&open=0&phrase=0&column=def&res=100&req=" +
                         book['searchterm'])
 
     result, success = fetchURL(searchURL)
@@ -425,10 +598,11 @@ def GEN(book=None):
 
         if len(rows) > 1:
             for row in rows[1:]:
-                c1.append(row.findAll('td')[1])
-                c2.append(row.findAll('td')[2])
-                c7.append(row.findAll('td')[7])
-                c8.append(row.findAll('td')[8])
+                if len(row.findAll('td')) > 8:
+                    c1.append(row.findAll('td')[1])
+                    c2.append(row.findAll('td')[2])
+                    c7.append(row.findAll('td')[7])
+                    c8.append(row.findAll('td')[8])
 
         for col1, col2, col7, col8 in zip(c1, c2, c7, c8):
             try:
@@ -491,7 +665,7 @@ def GEN(book=None):
                 logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
 
     logger.debug(u"Found %i result%s from %s for %s" %
-                (len(results), plural(len(results)), provider, book['searchterm']))
+                 (len(results), plural(len(results)), provider, book['searchterm']))
     return results
 
 
@@ -520,7 +694,7 @@ def TDL(book=None):
     except (socket.timeout) as e:
         logger.debug('Timeout fetching data from %s' % provider)
         data = False
-    except (urllib2.HTTPError, urllib2.URLError) as e:
+    except (urllib2.HTTPError, urllib2.URLError, ssl.SSLError) as e:
         # may return 404 if no results, not really an error
         if hasattr(e, 'code') and e.code == 404:
             logger.debug(searchURL)
@@ -585,5 +759,5 @@ def TDL(book=None):
                     logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
 
     logger.debug(u"Found %i result%s from %s for %s" %
-                (len(results), plural(len(results)), provider, book['searchterm']))
+                 (len(results), plural(len(results)), provider, book['searchterm']))
     return results

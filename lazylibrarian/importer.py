@@ -15,7 +15,7 @@ def addAuthorToDB(authorname=None, refresh=False):
     GR = GoodReads(authorname)
 
     query = "SELECT * from authors WHERE AuthorName='%s'" % authorname.replace("'", "''")
-    dbauthor = myDB.action(query).fetchone()
+    dbauthor = myDB.match(query)
     controlValueDict = {"AuthorName": authorname}
 
     if dbauthor is None:
@@ -73,15 +73,15 @@ def update_totals(AuthorID):
     if not authorsearch:
         return
 
-    lastbook = myDB.action('SELECT BookName, BookLink, BookDate from books WHERE \
+    lastbook = myDB.match('SELECT BookName, BookLink, BookDate from books WHERE \
                            AuthorID="%s" AND Status != "Ignored" order by BookDate DESC' %
-                           AuthorID).fetchone()
-    unignoredbooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE \
-                                 AuthorID="%s" AND Status != "Ignored"' % AuthorID).fetchone()
-    totalbooks = myDB.action(
-        'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % AuthorID).fetchone()
-    havebooks = myDB.action('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND \
-                            (Status="Have" OR Status="Open")' % AuthorID).fetchone()
+                          AuthorID)
+    unignoredbooks = myDB.match('SELECT count("BookID") as counter FROM books WHERE \
+                                 AuthorID="%s" AND Status != "Ignored"' % AuthorID)
+    totalbooks = myDB.match(
+        'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % AuthorID)
+    havebooks = myDB.match('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND \
+                            (Status="Have" OR Status="Open")' % AuthorID)
     controlValueDict = {"AuthorID": AuthorID}
 
     newValueDict = {
