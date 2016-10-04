@@ -4,6 +4,7 @@ import os
 from time import sleep
 import lazylibrarian
 from lazylibrarian import logger
+from magnet2torrent import magnet2torrent
 import lib.xmlrpclib as xmlrpclib
 import socket
 
@@ -31,24 +32,45 @@ def getServer():
     return server
 
 
-def addTorrent(torrent, hashID, directory=None):
+def addTorrent(tor_url, hashID):
 
     server = getServer()
     if server is False:
         return False
-    logger.debug('rTorrent adding %s' % torrent)
+
     socket.setdefaulttimeout(10)  # set a timeout
+
+    directory = lazylibrarian.RTORRENT_DIR
+
+    if tor_url.startswith('magnet') and directory:
+        # can't send magnets to rtorrent with a directory - not working correctly
+        # convert magnet to torrent instead
+        tor_name = 'meta-' + hashID + '.torrent'
+        tor_file = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
+        torrent = magnet2torrent(tor_url, tor_file)
+        if torrent is False:
+            return False
     try:
         response = server.load(torrent)  # response isn't anything useful, always 0
-        # need a short pause while rtorrent grabs the metadata
-        sleep(5)
+        # need a short pause while rtorrent loads it
+        RETRIES = 5
+        while RETRIES:
+            mainview = server.download_list("", "main")
+            for tor in mainview:
+                if tor.upper() == torrentID.upper():
+                    break
+            sleep(1)
+            RETRIES -= 1
+
+        server.d.start(hashID)
+
         label = lazylibrarian.RTORRENT_LABEL
         if label:
             server.d.set_custom1(hashID, label)
+
         if directory:
             server.d.set_directory(hashID, directory)
-        server.d.start(hashID)
-        # read mainview to see if we are there, as response tells us nothing
+
         mainview = server.download_list("", "main")
     except Exception as e:
         logger.error("rTorrent Error: %s" % str(e))
@@ -58,11 +80,11 @@ def addTorrent(torrent, hashID, directory=None):
     socket.setdefaulttimeout(None)  # reset timeout
 
     # For each torrent in the main view
-    for torrent in mainview:
-        if torrent == hashID.upper():  # we are there
-            name = server.d.get_name(torrent)
-            directory = server.d.get_directory(torrent)
-            label = server.d.get_custom1(torrent)
+    for tor in mainview:
+        if tor.upper() == hashID.upper():  # we are there
+            name = server.d.get_name(tor)
+            directory = server.d.get_directory(tor)
+            label = server.d.get_custom1(tor)
             if label:
                 logger.debug('rtorrent downloading %s to %s with label %s' % (name, directory, label))
             else:
