@@ -50,8 +50,9 @@ def addTorrent(tor_url, hashID):
         torrent = magnet2torrent(tor_url, tor_file)
         if torrent is False:
             return False
+        tor_url = torrent
     try:
-        response = server.load(torrent)  # response isn't anything useful, always 0
+        response = server.load(tor_url)  # response isn't anything useful, always 0
         # need a short pause while rtorrent loads it
         RETRIES = 5
         while RETRIES:
