@@ -34,13 +34,13 @@ Linux / Mac OS X:
 This is the bare minimum to get you up and running. For more options see the [Configuration Wiki](https://github.com/DobyTang/LazyLibrarian/wiki/Configuration).
 
 ### Downloaders
-Open localhost:5299/config
-Select Downloaders tab and check the uTorrent box.
-Host: localhost
-Port: Found in "uTorrent | Options Menu | Preferences | Connections | Port used for incoming connections"
-In "uTorrent settings | Advanced | WebUI" check Enable WebUI and make a username and password. Fill that username and password in to LazyLibrarian.
-In Download Settings Directory in Lazylibrarian change the path to where uTorrent keeps your completed downloads.
-Found in "uTorrent Settings | Directories | Move completed downloads to"
+- Open localhost:5299/config
+- Select Downloaders tab and check the uTorrent box.
+- Host: localhost
+- Port: Found in "uTorrent | Options Menu | Preferences | Connections | Port used for incoming connections"
+- In "uTorrent settings | Advanced | WebUI" check Enable WebUI and make a username and password. Fill that username and password in to LazyLibrarian.
+- In Download Settings Directory in Lazylibrarian change the path to where uTorrent keeps your completed downloads.
+Found in "uTorrent Settings | Directories | Move completed downloads to"  
 
 ### Providers
 Check some or all of the torrent provider boxes.
