@@ -217,7 +217,7 @@ def getBookCover(bookID=None):
             img = work.split('og:image')[1].split('="')[1].split('"')[0]
             if img and img.startswith('http'):
                 coverlink = cache_cover(bookID, img)
-                if coverlink is not None:
+                if coverlink:
                     logger.debug(u"getBookCover: Caching librarything cover for %s" % bookID)
                     return coverlink
             else:
@@ -258,7 +258,7 @@ def getBookCover(bookID=None):
                         time.sleep(1)
                         lazylibrarian.LAST_GOODREADS = time_now
                     coverlink = cache_cover(bookID, img)
-                    if coverlink is not None:
+                    if coverlink:
                         logger.debug("getBookCover: Caching goodreads cover for %s %s" % (author, title))
                         return coverlink
                     else:
@@ -281,7 +281,7 @@ def getBookCover(bookID=None):
                 img = None
             if img and img.startswith('http'):
                 coverlink = cache_cover(bookID, img)
-                if coverlink is not None:
+                if coverlink:
                     logger.debug("getBookCover: Caching google cover for %s %s" % (author, title))
                     return coverlink
                 else:
@@ -324,7 +324,7 @@ def getAuthorImage(authorid=None):
                 img = None
             if img and img.startswith('http'):
                 coverlink = cache_cover(authorid, img)
-                if coverlink is not None:
+                if coverlink:
                     logger.debug("Cached google image for %s" % authorname)
                     return coverlink
                 else:

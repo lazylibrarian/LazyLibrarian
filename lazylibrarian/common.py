@@ -60,7 +60,7 @@ def csv_file(search_dir=None):
 def book_file(search_dir=None, booktype=None):
     # find a book/mag file in this directory, any book will do
     # return full pathname of book/mag, or empty string if none found
-    if search_dir is not None and os.path.isdir(search_dir):
+    if search_dir and os.path.isdir(search_dir):
         for fname in os.listdir(search_dir):
             if is_valid_booktype(fname, booktype=booktype):
                 return os.path.join(search_dir, fname)

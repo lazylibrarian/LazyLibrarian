@@ -28,9 +28,9 @@ class SlackNotifier:
             return False
 
         url = "https://hooks.slack.com/services/"
-        if slack_token == None:
+        if slack_token is None:
             slack_token = lazylibrarian.SLACK_TOKEN
-        if method == None:
+        if method is None:
             method = 'POST'
         if event == "Test":
             logger.debug("Testing Slack notification")
@@ -67,7 +67,7 @@ class SlackNotifier:
         """
         try:
             message = unaccented(message)
-        except Exception, e:
+        except Exception as e:
             logger.warn("Slack: could not convert message: %s" % e)
         # suppress notifications if the notifier is disabled but the notify options are checked
         if not lazylibrarian.USE_SLACK and not force:

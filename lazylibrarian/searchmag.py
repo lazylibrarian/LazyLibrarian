@@ -188,7 +188,7 @@ def search_magazines(mags=None, reset=False):
                                                     nzburl)
                         if already_failed:
                             logger.debug("Rejecting %s, blacklisted at %s" %
-                                        (nzbtitle_formatted, already_failed['NZBprov']))
+                                         (nzbtitle_formatted, already_failed['NZBprov']))
                             rejected = True
 
                     if not rejected:

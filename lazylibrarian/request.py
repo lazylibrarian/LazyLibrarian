@@ -85,7 +85,7 @@ def request_response(url, method="get", auto_raise=True,
         logger.error(
             "Request timed out. The remote host did not respond timely.")
     except requests.HTTPError as e:
-        if e.response is not None:
+        if e.response:
             if e.response.status_code >= 500:
                 cause = "remote server error"
             elif e.response.status_code >= 400:
@@ -114,7 +114,7 @@ def request_soup(url, **kwargs):
     parser = kwargs.pop("parser", "html5lib")
     response = request_response(url, **kwargs)
 
-    if response is not None:
+    if response:
         return response.content
 
 
@@ -126,7 +126,7 @@ def request_minidom(url, **kwargs):
 
     response = request_response(url, **kwargs)
 
-    if response is not None:
+    if response:
         return minidom.parseString(response.content)
 
 
@@ -142,7 +142,7 @@ def request_json(url, **kwargs):
     validator = kwargs.pop("validator", None)
     response = request_response(url, **kwargs)
 
-    if response is not None:
+    if response:
         try:
             result = response.json()
 
@@ -164,7 +164,7 @@ def request_content(url, **kwargs):
 
     response = request_response(url, **kwargs)
 
-    if response is not None:
+    if response:
         return response.content
 
 
@@ -175,7 +175,7 @@ def request_feed(url, **kwargs):
 
     response = request_response(url, **kwargs)
 
-    if response is not None:
+    if response:
         return feedparser.parse(response.content)
 
 

@@ -86,7 +86,7 @@ class WebInterface(object):
 
         magazines = myDB.select('SELECT Title,Regex from magazines ORDER by Title')
 
-        if magazines is not None:
+        if magazines:
             for mag in magazines:
                 title = mag['Title']
                 regex = mag['Regex']
@@ -335,7 +335,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         magazines = myDB.select('SELECT Title,Regex from magazines ORDER by Title')
 
-        if magazines is not None:
+        if magazines:
             for mag in magazines:
                 title = mag['Title']
                 regex = mag['Regex']
@@ -988,7 +988,7 @@ class WebInterface(object):
         if not redirect:
             redirect = "books"
         authorcheck = []
-        if action is not None:
+        if action:
             for bookid in args:
                 # ouch dirty workaround...
                 if not bookid == 'book_table_length':

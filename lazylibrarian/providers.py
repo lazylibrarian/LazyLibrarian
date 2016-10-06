@@ -115,7 +115,7 @@ def get_capabilities(provider):
                     provider['MAGSEARCH'] = ''
                     #
                     search = data.find('searching/search')
-                    if search is not None:
+                    if search:
                         if 'available' in search.attrib:
                             if search.attrib['available'] == 'yes':
                                 provider['GENERALSEARCH'] = 'search'
@@ -131,7 +131,7 @@ def get_capabilities(provider):
                                     provider['BOOKSEARCH'] = 'book'
                                     # but check in case
                                     search = data.find('searching/book-search')
-                                    if search is not None:
+                                    if search:
                                         if 'available' in search.attrib:
                                             if search.attrib['available'] == 'yes':
                                                 provider['BOOKSEARCH'] = 'book'
@@ -142,7 +142,7 @@ def get_capabilities(provider):
                                     provider['BOOKSEARCH'] = ''
                                     # but check in case
                                     search = data.find('searching/book-search')
-                                    if search is not None:
+                                    if search:
                                         if 'available' in search.attrib:
                                             if search.attrib['available'] == 'yes':
                                                 provider['BOOKSEARCH'] = 'book'

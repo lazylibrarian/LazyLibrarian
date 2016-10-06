@@ -49,7 +49,7 @@ class AndroidPNNotifier:
             handle = urllib2.urlopen(req, data)
             handle.close()
 
-        except urllib2.URLError, e:
+        except urllib2.URLError as e:
             # FIXME: Python 2.5 hack, it wrongly reports 201 as an error
             if hasattr(e, 'code') and e.code == 201:
                 logger.debug(u"ANDROIDPN: Notification successful.")
