@@ -326,7 +326,7 @@ class GoodReads:
                         if (find_field != 'id'):  # isbn or isbn13 found
 
                             match = myDB.match('SELECT lang FROM languages where isbn = "%s"' % (isbnhead))
-                            if (match):
+                            if match:
                                 bookLanguage = match['lang']
                                 cache_hits = cache_hits + 1
                                 logger.debug("Found cached language [%s] for %s [%s]" %

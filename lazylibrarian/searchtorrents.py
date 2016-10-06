@@ -132,8 +132,7 @@ def processResultList(resultlist, book, searchtype):
 
         rejected = False
 
-        already_failed = myDB.match('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' %
-                                    tor_url)
+        already_failed = myDB.match('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' % tor_url)
         if already_failed:
             logger.debug("Rejecting %s, blacklisted at %s" % (torTitle, already_failed['NZBprov']))
             rejected = True

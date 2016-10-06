@@ -187,9 +187,8 @@ def search_magazines(mags=None, reset=False):
                         already_failed = myDB.match('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' %
                                                     nzburl)
                         if already_failed:
-                            logger.debug(
-                                "Rejecting %s, blacklisted at %s" %
-                                (nzbtitle_formatted, already_failed['NZBprov']))
+                            logger.debug("Rejecting %s, blacklisted at %s" %
+                                        (nzbtitle_formatted, already_failed['NZBprov']))
                             rejected = True
 
                     if not rejected:

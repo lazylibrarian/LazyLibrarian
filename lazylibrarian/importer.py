@@ -18,7 +18,7 @@ def addAuthorToDB(authorname=None, refresh=False):
     dbauthor = myDB.match(query)
     controlValueDict = {"AuthorName": authorname}
 
-    if dbauthor is None:
+    if not dbauthor:
         newValueDict = {
             "AuthorID": "0: %s" % (authorname),
             "Status": "Loading"
