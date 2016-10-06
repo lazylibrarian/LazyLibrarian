@@ -346,7 +346,7 @@ class GoogleBooks:
                                 googlelang = booklang
                                 match = myDB.match('SELECT lang FROM languages where isbn = "%s"' %
                                                    (isbnhead))
-                                if (match):
+                                if match:
                                     booklang = match['lang']
                                     cache_hits = cache_hits + 1
                                     logger.debug(
@@ -385,7 +385,7 @@ class GoogleBooks:
                             else:
                                 match = myDB.match('SELECT lang FROM languages where isbn = "%s"' %
                                                    (isbnhead))
-                                if (not match):
+                                if not match:
                                     myDB.action(
                                         'insert into languages values ("%s", "%s")' %
                                         (isbnhead, booklang))

@@ -407,16 +407,10 @@ def LibraryScan(startdir=None):
                                 isbnhead = isbn[3:6]
                             match = myDB.match('SELECT lang FROM languages where isbn = "%s"' % (isbnhead))
                             if not match:
-                                myDB.action(
-                                    'insert into languages values ("%s", "%s")' %
-                                    (isbnhead, language))
-                                logger.debug(
-                                    "Cached Lang [%s] ISBN [%s]" %
-                                    (language, isbnhead))
+                                myDB.action('insert into languages values ("%s", "%s")' % (isbnhead, language))
+                                logger.debug("Cached Lang [%s] ISBN [%s]" % (language, isbnhead))
                             else:
-                                logger.debug(
-                                    "Already cached Lang [%s] ISBN [%s]" %
-                                    (language, isbnhead))
+                                logger.debug("Already cached Lang [%s] ISBN [%s]" % (language, isbnhead))
 
                         # get authors name in a consistent format
                         if "," in author:  # "surname, forename"
@@ -483,9 +477,7 @@ def LibraryScan(startdir=None):
                                     check_exist_author = myDB.match(
                                         'SELECT * FROM authors where AuthorName="%s"' % author.replace('"', '""'))
                                     if not check_exist_author:
-                                        logger.info(
-                                            "Adding new author [%s]" %
-                                            author)
+                                        logger.info("Adding new author [%s]" % author)
                                         try:
                                             addAuthorToDB(author)
                                             check_exist_author = myDB.match(
@@ -508,7 +500,7 @@ def LibraryScan(startdir=None):
                             if bookid:
                                 check_status = myDB.match(
                                     'SELECT Status, BookFile from books where BookID="%s"' % bookid)
-                                if check_status['Status'] != 'Open':
+                                if check_status and check_status['Status'] != 'Open':
                                     # we found a new book
                                     new_book_count += 1
                                     myDB.action(
@@ -548,7 +540,7 @@ def LibraryScan(startdir=None):
         stats = myDB.match(
             "SELECT sum(GR_book_hits), sum(GR_lang_hits), sum(LT_lang_hits), sum(GB_lang_change), \
                 sum(cache_hits), sum(bad_lang), sum(bad_char), sum(uncached), sum(duplicates) FROM stats")
-        if stats['sum(GR_book_hits)'] is not None:
+        if stats and stats['sum(GR_book_hits)'] is not None:
             # only show stats if new books added
             if lazylibrarian.BOOK_API == "GoogleBooks":
                 logger.debug("GoogleBooks was hit %s time%s for books" %

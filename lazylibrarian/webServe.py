@@ -501,7 +501,7 @@ class WebInterface(object):
 
         author = myDB.match(queryauthors)
         books = myDB.select(querybooks)
-        if author is None:
+        if not author:
             raise cherrypy.HTTPRedirect("home")
         authorname = author['AuthorName'].encode(lazylibrarian.SYS_ENCODING)
         return serve_template(
