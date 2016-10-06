@@ -275,7 +275,7 @@ def processDir(reset=False):
             newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
             myDB.upsert("wanted", newValueDict, controlValueDict)
 
-            if bookname is not None:  # it's a book, if None it's a magazine
+            if bookname:  # it's a book, if None it's a magazine
                 if len(lazylibrarian.IMP_CALIBREDB):
                     logger.debug('Calibre should have created the extras for us')
                 else:
@@ -320,7 +320,7 @@ def processDir(reset=False):
             myDB.upsert("wanted", newValueDict, controlValueDict)
             # if it's a book, reset status so we try for a different version
             # if it's a magazine, user can select a different one from pastissues table
-            if bookname is not None:
+            if bookname:
                 myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % book['BookID'])
 
             # at this point, as it failed we should move it or it will get postprocessed

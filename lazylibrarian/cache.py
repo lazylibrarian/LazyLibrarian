@@ -19,10 +19,10 @@ def fetchURL(URL, headers=None):
     request = urllib2.Request(URL)
     if lazylibrarian.PROXY_HOST:
         request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-    if headers is None:
-        # google insists on having a user-agent
+    if not headers:
+        # some sites insist on having a user-agent
         request.add_header('User-Agent', USER_AGENT)
-    if headers is not None:
+    else:
         for item in headers:
             request.add_header(item, headers[item])
     try:

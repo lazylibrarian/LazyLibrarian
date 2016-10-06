@@ -372,7 +372,7 @@ def setTorrentLabel(result):
         response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
         labels = json.loads(response.text)['result']
 
-        if labels is not None:
+        if labels:
             if label not in labels:
                 try:
                     logger.debug('Deluge: %s label doesn\'t exist in Deluge, let\'s add it' % label)

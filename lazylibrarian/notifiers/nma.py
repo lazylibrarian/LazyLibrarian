@@ -15,10 +15,10 @@ class NMA_Notifier:
         if not lazylibrarian.USE_NMA and not force:
             return False
 
-        if nma_api == None:
+        if nma_api is None:
             nma_api = lazylibrarian.NMA_APIKEY
 
-        if nma_priority == None:
+        if nma_priority is None:
             nma_priority = lazylibrarian.NMA_PRIORITY
 
         logger.debug(u"NMA: title: " + title)

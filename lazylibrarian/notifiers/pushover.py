@@ -38,15 +38,15 @@ class PushoverNotifier:
         if not lazylibrarian.USE_PUSHOVER and not force:
             return False
 
-        if pushover_apitoken == None:
+        if pushover_apitoken is None:
             pushover_apitoken = lazylibrarian.PUSHOVER_APITOKEN
-        if pushover_keys == None:
+        if pushover_keys is None:
             pushover_keys = lazylibrarian.PUSHOVER_KEYS
-        if pushover_device == None:
+        if pushover_device is None:
             pushover_device = lazylibrarian.PUSHOVER_DEVICE
-        if method == None:
+        if method is None:
             method = 'POST'
-        if notificationType == None:
+        if notificationType is None:
             testMessage = True
             uri = "/1/users/validate.json"
             logger.debug("Testing Pushover authentication and retrieving the device list.")
@@ -74,7 +74,7 @@ class PushoverNotifier:
                                  headers={'Content-type': "application/x-www-form-urlencoded"},
                                  body=urlencode(data))
             pass
-        except Exception, e:
+        except Exception as e:
             logger.error(str(e))
             return False
 
@@ -111,7 +111,7 @@ class PushoverNotifier:
         """
         try:
             message = unaccented(message)
-        except Exception, e:
+        except Exception as e:
             logger.warn("Pushover: could not convert  message: %s" % e)
         # suppress notifications if the notifier is disabled but the notify options are checked
         if not lazylibrarian.USE_PUSHOVER and not force:

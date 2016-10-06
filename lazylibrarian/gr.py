@@ -264,7 +264,7 @@ class GoodReads:
             logger.debug(u"author name " + authorNameResult)
             loopCount = 1
 
-            while resultxml is not None:
+            while resultxml:
                 for book in resultxml:
                     total_count = total_count + 1
 
@@ -314,12 +314,12 @@ class GoodReads:
                     isbn = ""
                     isbnhead = ""
                     if "All" not in valid_langs:  # do we care about language
-                        if (book.find('isbn').text is not None):
+                        if book.find('isbn').text:
                             find_field = "isbn"
                             isbn = book.find('isbn').text
                             isbnhead = isbn[0:3]
                         else:
-                            if (book.find('isbn13').text is not None):
+                            if book.find('isbn13').text:
                                 find_field = "isbn13"
                                 isbn = book.find('isbn13').text
                                 isbnhead = isbn[3:6]
@@ -356,7 +356,7 @@ class GoodReads:
                         if (find_field == 'id'):
                             # [or bookLanguage == "Unknown"] no earlier match, we'll have to search the goodreads api
                             try:
-                                if (book.find(find_field).text is not None):
+                                if book.find(find_field).text:
                                     BOOK_URL = 'http://www.goodreads.com/book/show?id=' + \
                                         book.find(find_field).text + '&' + urllib.urlencode(self.params)
                                     logger.debug(u"Book URL: " + BOOK_URL)
@@ -516,7 +516,7 @@ class GoodReads:
 
                             elif bookimg and bookimg.startswith('http'):
                                 link = cache_cover(bookid, bookimg)
-                                if link is not None:
+                                if link:
                                     controlValueDict = {"BookID": bookid}
                                     newValueDict = {"BookImg": link}
                                     myDB.upsert("books", newValueDict, controlValueDict)
@@ -564,7 +564,7 @@ class GoodReads:
                     resultxml = None
                     logger.error("Error finding next page of results: %s" % str(e))
 
-                if resultxml is not None:
+                if resultxml:
                     if all(False for book in resultxml):  # returns True if iterator is empty
                         resultxml = None
 
@@ -719,7 +719,7 @@ class GoodReads:
 
         elif bookimg and bookimg.startswith('http'):
             link = cache_cover(bookid, bookimg)
-            if link is not None:
+            if link:
                 controlValueDict = {"BookID": bookid}
                 newValueDict = {"BookImg": link}
                 myDB.upsert("books", newValueDict, controlValueDict)

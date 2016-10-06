@@ -118,7 +118,7 @@ class TwitterNotifier:
 
         try:
             api.PostUpdate(message)
-        except Exception, e:
+        except Exception as e:
             logger.error(u"Error Sending Tweet: %s" % e)
             return False
 

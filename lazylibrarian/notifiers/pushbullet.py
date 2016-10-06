@@ -38,9 +38,9 @@ class PushbulletNotifier:
         if not lazylibrarian.USE_PUSHBULLET and not force:
             return False
 
-        if pushbullet_token == None:
+        if pushbullet_token is None:
             pushbullet_token = lazylibrarian.PUSHBULLET_TOKEN
-        if pushbullet_deviceid == None:
+        if pushbullet_deviceid is None:
             if lazylibrarian.PUSHBULLET_DEVICEID:
                 pushbullet_deviceid = lazylibrarian.PUSHBULLET_DEVICEID
 
@@ -74,7 +74,7 @@ class PushbulletNotifier:
         """
         try:
             message = unaccented(message)
-        except Exception, e:
+        except Exception as e:
             logger.warn("Pushbullet: could not convert  message: %s" % e)
 
         # suppress notifications if the notifier is disabled but the notify options are checked

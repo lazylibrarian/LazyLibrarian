@@ -116,7 +116,7 @@ def sendNZB(nzb):
         # for some reason 14 seems to not work with >= 13 method? I get invalid param autoAdd
         # PAB think its fixed now, code had autoAdd param as "False", it's not a string, it's bool so False
         if nzbget_version == 0:  # or nzbget_version == 14:
-            if nzbcontent64 is not None:
+            if nzbcontent64:
                     nzbget_result = nzbGetRPC.append(nzb.name + ".nzb",
                                                      lazylibrarian.NZBGET_CATEGORY, addToTop, nzbcontent64)
             else:
@@ -131,7 +131,7 @@ def sendNZB(nzb):
                 #       addToTop, nzbcontent64)
                 return False
         elif nzbget_version == 12:
-            if nzbcontent64 is not None:
+            if nzbcontent64:
                 nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", lazylibrarian.NZBGET_CATEGORY,
                                                  lazylibrarian.NZBGET_PRIORITY, False,
                                                  nzbcontent64, False, dupekey, dupescore, "score")
@@ -150,7 +150,7 @@ def sendNZB(nzb):
             if nzbget_result <= 0:
                 nzbget_result = False
         else:
-            if nzbcontent64 is not None:
+            if nzbcontent64:
                 nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", lazylibrarian.NZBGET_CATEGORY,
                                                  lazylibrarian.NZBGET_PRIORITY, False, nzbcontent64)
             else:

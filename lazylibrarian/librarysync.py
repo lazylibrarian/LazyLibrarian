@@ -540,7 +540,7 @@ def LibraryScan(startdir=None):
         stats = myDB.match(
             "SELECT sum(GR_book_hits), sum(GR_lang_hits), sum(LT_lang_hits), sum(GB_lang_change), \
                 sum(cache_hits), sum(bad_lang), sum(bad_char), sum(uncached), sum(duplicates) FROM stats")
-        if stats and stats['sum(GR_book_hits)'] is not None:
+        if stats and stats['sum(GR_book_hits)']:
             # only show stats if new books added
             if lazylibrarian.BOOK_API == "GoogleBooks":
                 logger.debug("GoogleBooks was hit %s time%s for books" %
@@ -591,7 +591,7 @@ def LibraryScan(startdir=None):
             bookimg = item['bookimg']
             bookname = item['bookname']
             newimg = cache_cover(bookid, bookimg)
-            if newimg is not None:
+            if newimg:
                 myDB.action('update books set BookImg="%s" where BookID="%s"' % (newimg, bookid))
 
     images = myDB.select('select AuthorID, AuthorImg, AuthorName from authors where AuthorImg like "http%"')
@@ -602,7 +602,7 @@ def LibraryScan(startdir=None):
             authorimg = item['authorimg']
             authorname = item['authorname']
             newimg = cache_cover(authorid, authorimg)
-            if newimg is not None:
+            if newimg:
                 myDB.action('update authors set AuthorImg="%s" where AuthorID="%s"' % (newimg, authorid))
     setWorkPages()
     logger.info('Library scan complete')
