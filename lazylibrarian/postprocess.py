@@ -193,20 +193,21 @@ def processDir(reset=False):
                         logger.debug('Found folder (%s%%) %s for %s' % (match, pp_path, book['NZBtitle']))
                         matches.append([match, pp_path, book])
                 else:
-                    logger.debug('No match (%s%%) %s for %s' % (match, matchname, matchtitle))
+                    pp_path = os.path.join(processpath, fname)
+                    matches.append([match, pp_path, book])  # so we can report closest match
             else:
                 logger.debug('Skipping %s' % fname)
 
+        match = 0
         if matches:
             highest = max(matches, key=lambda x: x[0])
             match = highest[0]
             pp_path = highest[1]
             book = highest[2]
-            logger.debug(u'Best match (%s%%): %s for %s' %
-                         (match, pp_path, book['NZBtitle']))
-
+        if match >= lazylibrarian.DLOAD_RATIO:
+            logger.debug(u'Found match (%s%%): %s for %s' % (match, pp_path, book['NZBtitle']))
             data = myDB.match('SELECT * from books WHERE BookID="%s"' % book['BookID'])
-            if data:
+            if data:  # it's a book
                 logger.debug(u'Processing book %s' % book['BookID'])
                 authorname = data['AuthorName']
                 bookname = data['BookName']
@@ -230,7 +231,7 @@ def processDir(reset=False):
                     lazylibrarian.SYS_ENCODING)
             else:
                 data = myDB.match('SELECT * from magazines WHERE Title="%s"' % book['BookID'])
-                if data:
+                if data:  # it's a magazine
                     logger.debug(u'Processing magazine %s' % book['BookID'])
                     # AuxInfo was added for magazine release date, normally housed in 'magazines' but if multiple
                     # files are downloading, there will be an error in post-processing, trying to go to the
@@ -258,12 +259,13 @@ def processDir(reset=False):
                     global_name = lazylibrarian.MAG_DEST_FILE.replace('$IssueDate', book['AuxInfo']).replace(
                         '$Title', mag_name)
                     global_name = unaccented(global_name)
-                    # global_name = book['AuxInfo']+' - '+title
-                else:
-                    logger.debug("Snatched magazine %s is not in download directory" % (book['BookID']))
+                else:  # not recognised
+                    logger.debug('Nothing in database matching "%s"' % book['BookID'])
                     continue
         else:
             logger.debug("Snatched %s %s is not in download directory" % (book['NZBmode'], book['NZBtitle']))
+            if match:
+                logger.debug(u'Closest match (%s%%): %s' % (match, pp_path))
             continue
 
         processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name, book['NZBmode'])

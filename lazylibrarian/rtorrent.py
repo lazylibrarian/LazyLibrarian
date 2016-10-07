@@ -58,7 +58,7 @@ def addTorrent(tor_url, hashID):
         while RETRIES:
             mainview = server.download_list("", "main")
             for tor in mainview:
-                if tor.upper() == torrentID.upper():
+                if tor.upper() == hashID.upper():
                     break
             sleep(1)
             RETRIES -= 1
@@ -91,6 +91,18 @@ def addTorrent(tor_url, hashID):
             else:
                 logger.debug('rtorrent downloading %s to %s' % (name, directory))
             return hashID
+    return False  # not found
+
+
+def getName(hashID):
+    server = getServer()
+    if server is False:
+        return False
+
+    mainview = server.download_list("", "main")
+    for tor in mainview:
+        if tor.upper() == hashID.upper():
+            return server.d.get_name(tor)
     return False  # not found
 
 
