@@ -337,9 +337,9 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
 
         if lazylibrarian.TOR_DOWNLOADER_BLACKHOLE:
             Source = "BLACKHOLE"
-            tor_title = cleanName(tor_title)
             logger.debug("Sending %s to blackhole" % tor_title)
-            tor_name = str.replace(str(tor_title), ' ', '_')
+            tor_name = cleanName(tor_title).replace(' ', '_')
+            tor_title = None
             if tor_url and tor_url.startswith('magnet'):
                 if lazylibrarian.TOR_CONVERT_MAGNET:
                     hashid = CalcTorrentHash(tor_url)
@@ -348,50 +348,69 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                     result = magnet2torrent(tor_url, tor_path)
                     if result is not False:
                         logger.debug('Magnet file saved as: %s' % tor_path)
-                        downloadID = True
+                        downloadID = Source
                 else:
                     tor_name = tor_name + '.magnet'
                     tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
                     with open(tor_path, 'wb') as torrent_file:
                         torrent_file.write(torrent)
                     logger.debug('Magnet file saved: %s' % tor_path)
-                    downloadID = True
+                    downloadID = Source
             else:
                 tor_name = tor_name + '.torrent'
                 tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
                 with open(tor_path, 'wb') as torrent_file:
                     torrent_file.write(torrent)
-                logger.debug('Torrent file saved: %s' % tor_title)
-                downloadID = True
+                logger.debug('Torrent file saved: %s' % tor_name)
+                downloadID = Source
 
         if (lazylibrarian.TOR_DOWNLOADER_UTORRENT and lazylibrarian.UTORRENT_HOST):
             logger.debug("Sending %s to Utorrent" % tor_title)
             Source = "UTORRENT"
             hashid = CalcTorrentHash(torrent)
-            downloadID = utorrent.addTorrent(tor_url, hashid)
+            downloadID = utorrent.addTorrent(tor_url, hashid)  # returns hash or False
+            tor_title = None
+            # if downloadID:
+            #     tor_title = utorrent.dirTorrent(downloadID)
 
         if (lazylibrarian.TOR_DOWNLOADER_RTORRENT and lazylibrarian.RTORRENT_HOST):
             logger.debug("Sending %s to rTorrent" % tor_title)
             Source = "RTORRENT"
             hashid = CalcTorrentHash(torrent)
-            downloadID = rtorrent.addTorrent(tor_url, hashid)
+            downloadID = rtorrent.addTorrent(tor_url, hashid)  # returns hash or False
+            if downloadID:
+                tor_title = rtorrent.getName(downloadID)
+                if tor_title.upper().startswith(hashid.upper()):
+                    tor_title = None  # name hasn't changed yet, probably magnet not loaded
+                else:
+                    logger.debug('rtorrent setting name to [%s]' % tor_title)
 
         if (lazylibrarian.TOR_DOWNLOADER_QBITTORRENT and lazylibrarian.QBITTORRENT_HOST):
             logger.debug("Sending %s to qbittorrent" % tor_title)
             Source = "QBITTORRENT"
-            downloadID = qbittorrent.addTorrent(tor_url)
+            hashid = CalcTorrentHash(torrent)
+            if qbittorrent.addTorrent(tor_url):  # returns or True or False
+                downloadID = hashid
+                tor_title = None
+                # tor_title = qbittorrent.getFolder(hashid)
 
         if (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION and lazylibrarian.TRANSMISSION_HOST):
             logger.debug("Sending %s to Transmission" % tor_title)
             Source = "TRANSMISSION"
-            downloadID = transmission.addTorrent(tor_url)  # returns torrent_id or False
+            downloadID = transmission.addTorrent(tor_url)  # returns id or False
+            if downloadID:
+                tor_title = transmission.getTorrentFolder(downloadID)
+                logger.debug('transmission setting name to [%s]' % tor_title)
 
         if (lazylibrarian.TOR_DOWNLOADER_DELUGE and lazylibrarian.DELUGE_HOST):
             logger.debug("Sending %s to Deluge" % tor_title)
             if not lazylibrarian.DELUGE_USER:
                 # no username, talk to the webui
                 Source = "DELUGEWEBUI"
-                downloadID = deluge.addTorrent(tor_url)
+                downloadID = deluge.addTorrent(tor_url)  # returns hash or False
+                if downloadID:
+                    tor_title = deluge.getTorrentFolder(downloadID)
+                    logger.debug('deluge setting name to [%s]' % tor_title)
             else:
                 # have username, talk to the daemon
                 Source = "DELUGERPC"
@@ -399,13 +418,28 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                                          int(lazylibrarian.DELUGE_PORT),
                                          lazylibrarian.DELUGE_USER,
                                          lazylibrarian.DELUGE_PASS)
-                client.connect()
-                args = {"name": tor_title}
-                downloadID = client.call('core.add_torrent_url', tor_url, args)
-                logger.debug('Deluge torrent_id: %s' % downloadID)
-                if downloadID and lazylibrarian.DELUGE_LABEL:
-                    labelled = client.call('label.set_torrent', downloadID, lazylibrarian.DELUGE_LABEL)
-                    logger.debug('Deluge label returned: %s' % labelled)
+                try:
+                    client.connect()
+                    args = {"name": tor_title}
+                    downloadID = client.call('core.add_torrent_url', tor_url, args)
+                    if downloadID:
+                        if lazylibrarian.DELUGE_LABEL:
+                            labelled = client.call('label.set_torrent', downloadID, lazylibrarian.DELUGE_LABEL)
+                        args = [
+                                    "name",
+                                    "save_path",
+                                    "total_size",
+                                    "num_files",
+                                    "message",
+                                    "tracker",
+                                    "comment"
+                                ]
+                        result = client.call('core.get_torrent_status', downloadID, args)
+                        tor_title = result['name']
+                        logger.debug('delugerpc setting name to [%s]' % tor_title)
+                except Exception as e:
+                    logger.debug('DelugeRPC failed %s' % str(e))
+                    return False
     else:
         logger.warn('No torrent download method is enabled, check config.')
         return False
@@ -414,6 +448,8 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
         myDB.action('UPDATE wanted SET status = "Snatched", Source = "%s", DownloadID = "%s" WHERE NZBurl="%s"' %
                     (Source, downloadID, full_url))
+        if tor_title:
+            myDB.action('UPDATE wanted SET NZBtitle = "%s" WHERE NZBurl="%s"' % (tor_title, full_url))
         return True
     else:
         logger.error(u'Failed to download torrent @ <a href="%s">%s</a>' % (full_url, tor_url))

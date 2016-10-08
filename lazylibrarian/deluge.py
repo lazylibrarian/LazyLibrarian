@@ -144,7 +144,7 @@ def addTorrent(link, data=None):
         logger.error('; '.join(formatted_lines))
 
 
-def getTorrentFolder(result):
+def getTorrentFolder(torrentid):
     logger.debug('Deluge: Get torrent folder name')
     if not any(delugeweb_auth):
         _get_auth()
@@ -152,23 +152,23 @@ def getTorrentFolder(result):
     try:
         post_data = json.dumps({"method": "web.get_torrent_status",
                                 "params": [
-                                    result['hash'],
+                                    torrentid,
                                     ["total_done"]
                                 ],
                                 "id": 22})
         response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
-        result['total_done'] = json.loads(response.text)['result']['total_done']
+        total_done = json.loads(response.text)['result']['total_done']
 
         tries = 0
-        while result['total_done'] == 0 and tries < 10:
+        while total_done == 0 and tries < 10:
             tries += 1
             time.sleep(5)
             response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
-            result['total_done'] = json.loads(response.text)['result']['total_done']
+            total_done = json.loads(response.text)['result']['total_done']
 
         post_data = json.dumps({"method": "web.get_torrent_status",
                                 "params": [
-                                    result['hash'],
+                                    torrentid,
                                     [
                                         "name",
                                         "save_path",
@@ -183,10 +183,10 @@ def getTorrentFolder(result):
 
         response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
 
-        result['save_path'] = json.loads(response.text)['result']['save_path']
-        result['name'] = json.loads(response.text)['result']['name']
+        save_path = json.loads(response.text)['result']['save_path']
+        name = json.loads(response.text)['result']['name']
 
-        return json.loads(response.text)['result']['name']
+        return name
     except Exception as err:
         logger.debug('Deluge: Could not get torrent folder name: %s' % str(err))
 

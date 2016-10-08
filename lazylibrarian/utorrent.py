@@ -192,4 +192,6 @@ def addTorrent(link, hash):
     uTorrentClient = utorrentclient()
     uTorrentClient.add_url(link)
     labelTorrent(hash)
-    return dirTorrent(hash)
+    if dirTorrent(hash):
+        return hash
+    return False
