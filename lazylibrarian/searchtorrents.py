@@ -369,9 +369,9 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             Source = "UTORRENT"
             hashid = CalcTorrentHash(torrent)
             downloadID = utorrent.addTorrent(tor_url, hashid)  # returns hash or False
-            tor_title = None
-            # if downloadID:
-            #     tor_title = utorrent.dirTorrent(downloadID)
+            if downloadID:
+                tor_title = utorrent.nameTorrent(downloadID)
+                logger.debug('utorrent setting name to [%s]' % tor_title)
 
         if (lazylibrarian.TOR_DOWNLOADER_RTORRENT and lazylibrarian.RTORRENT_HOST):
             logger.debug("Sending %s to rTorrent" % tor_title)
@@ -389,10 +389,13 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             logger.debug("Sending %s to qbittorrent" % tor_title)
             Source = "QBITTORRENT"
             hashid = CalcTorrentHash(torrent)
-            if qbittorrent.addTorrent(tor_url):  # returns or True or False
+            status = qbittorrent.addTorrent(tor_url)  # returns hash or False
+            if status:
                 downloadID = hashid
-                tor_title = None
-                # tor_title = qbittorrent.getFolder(hashid)
+                tor_title = qbittorrent.getName(hashid)
+                logger.debug('qbittorrent setting name to [%s]' % tor_title)
+            else:
+                logger.debug("qbittorrent returned: %s" % str(response))
 
         if (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION and lazylibrarian.TRANSMISSION_HOST):
             logger.debug("Sending %s to Transmission" % tor_title)
