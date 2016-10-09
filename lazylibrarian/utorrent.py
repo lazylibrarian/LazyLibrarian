@@ -188,6 +188,15 @@ def dirTorrent(hash):
     return False
 
 
+def nameTorrent(hash):
+    uTorrentClient = utorrentclient()
+    torrentList = uTorrentClient.list()
+    for torrent in torrentList[1].get('torrents'):
+        if (torrent[0].lower() == hash):
+            return torrent[2]
+    return False
+
+
 def addTorrent(link, hash):
     uTorrentClient = utorrentclient()
     uTorrentClient.add_url(link)
