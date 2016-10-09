@@ -1233,6 +1233,79 @@
                         </div>
                      </div>
                 </fieldset>
+                <fieldset>
+                    <BR>
+                    <h3>Email</h3>
+                    <div class="row checkbox">
+                    <%
+                    if lazylibrarian.USE_EMAIL == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                        <input type="checkbox" name="use_email" id="email" value="1" ${checked} />
+                        <label>Enable Email Notifications</label>
+                    </div>
+                    <div id="emailoptions">
+                        <div class="row">
+                    <%
+                    if lazylibrarian.EMAIL_NOTIFY_ONSNATCH == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                            <input type="checkbox" name="email_notify_onsnatch" value="1" ${checked} />Notify on snatch
+                        </div>
+                        <div class="row">
+                    <%
+                    if lazylibrarian.EMAIL_NOTIFY_ONDOWNLOAD == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                            <input type="checkbox" name="email_notify_ondownload" value="1" ${checked} />Notify on download
+                        </div>
+                        <div class="row">
+                            <input type="text" name="email_from" value="${lazylibrarian.EMAIL_FROM}" size="26" placeholder="Email From">
+                        </div>
+                        <div class="row">
+                            <input type="text" name="email_to" value="${lazylibrarian.EMAIL_TO}" size="26" placeholder="Email To">
+                        </div>
+                        <div class="row">
+                            <input type="text" name="email_smtp_server" value="${lazylibrarian.EMAIL_SMTP_SERVER}" size="26" placeholder="SMTP Server">
+                        </div>
+                        <div class="row">
+                            <input type="text" name="email_smtp_user" value="${lazylibrarian.EMAIL_SMTP_USER}" size="26" placeholder="SMTP User">
+                        </div>
+                        <div class="row">
+                            <input type="text" name="email_smtp_password" value="${lazylibrarian.EMAIL_SMTP_PASSWORD}" size="26" placeholder="SMTP Password">
+                        </div>
+                        <div class="row">
+                            <input type="text" name="email_smtp_port" value="${lazylibrarian.EMAIL_SMTP_PORT}" size="26" placeholder="SMTP Port">
+                        </div>
+                        <div class="row">
+                            <%
+                            if lazylibrarian.EMAIL_SSL == True:
+                                checked = 'checked="checked"'
+                            else:
+                                checked = ''
+                            %>
+                            <input type="checkbox" name="email_ssl" value="1" ${checked} />SSL
+                        </div>
+                        <div class="row">
+                            <%
+                            if lazylibrarian.EMAIL_TLS == True:
+                                checked = 'checked="checked"'
+                            else:
+                                checked = ''
+                            %>
+                            <input type="checkbox" name="email_tls" value="1" ${checked} />TLS
+                        </div>
+                        <div class="row">
+                            <input type="button" value="Test Email" id="testEmail">
+                        </div>
+                     </div>
+                </fieldset>
             </td>
         </table>
         </div>
@@ -1689,6 +1762,26 @@
                     }
             });
 
+            if ($("#email").is(":checked"))
+                    {
+                            $("#emailoptions").show();
+                    }
+            else
+                    {
+                            $("#emailoptions").hide();
+                    }
+
+            $("#email").click(function(){
+                    if ($("#email").is(":checked"))
+                    {
+                            $("#emailoptions").slideDown();
+                    }
+                    else
+                    {
+                            $("#emailoptions").slideUp();
+                    }
+            });
+
             if ($("#pushover").is(":checked"))
                     {
                             $("#pushoveroptions").show();
@@ -1851,6 +1944,11 @@
 
             $('#testSlack').click(function () {
                 $.get("testSlack",
+                    function (data) { alert(data); });
+            });
+
+            $('#testEmail').click(function () {
+                $.get("testEmail",
                     function (data) { alert(data); });
             });
 

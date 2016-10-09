@@ -1474,6 +1474,93 @@
                                         </div>
                                     </fieldset>
                                 </div>
+                                <div class="checkbox">
+                                    <%
+                                    if lazylibrarian.USE_EMAIL == True:
+                                        checked = 'checked="checked"'
+                                    else:
+                                        checked = ''
+                                    %>
+                                    <label for="use_email" class="control-label">
+                                    <input type="checkbox" id="use_email" name="use_email" value="1" ${checked} />
+                                    Enable Email Notifications</label>
+                                </div>
+                                <div id="emailoptions">
+                                    <fieldset>
+                                        <legend>Email</legend>
+                                        <div class="checkbox">
+                                            <%
+                                            if lazylibrarian.EMAIL_NOTIFY_ONSNATCH == True:
+                                                checked = 'checked="checked"'
+                                            else:
+                                                checked = ''
+                                            %>
+                                            <label for="email_notify_onsnatch">
+                                            <input type="checkbox" id="email_notify_onsnatch" name="email_notify_onsnatch" value="1" ${checked} />
+                                            Notify on snatch</label>
+                                        </div>
+                                        <div class="checkbox">
+                                            <%
+                                            if lazylibrarian.EMAIL_NOTIFY_ONDOWNLOAD == True:
+                                                checked = 'checked="checked"'
+                                            else:
+                                                checked = ''
+                                            %>
+                                            <label for="email_notify_ondownload">
+                                            <input type="checkbox" id="email_notify_ondownload" name="email_notify_ondownload" value="1" ${checked} />
+                                            Notify on download</label>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="email_from">Email From</label>
+                                            <input type="text" id="email_from" name="email_from" value="${lazylibrarian.EMAIL_FROM}" class="form-control" placeholder="Email From Address">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="email_to">Email To</label>
+                                            <input type="text" id="email_to" name="email_to" value="${lazylibrarian.EMAIL_TO}" class="form-control" placeholder="Email To Address">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="email_smtp_server">SMTP Server</label>
+                                            <input type="text" id="email_smtp_server" name="email_smtp_server" value="${lazylibrarian.EMAIL_SMTP_SERVER}" class="form-control" placeholder="SMTP Server">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="email_smtp_user">SMTP User</label>
+                                            <input type="text" id="email_smtp_user" name="email_smtp_user" value="${lazylibrarian.EMAIL_SMTP_USER}" class="form-control" placeholder="SMTP User">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="email_smtp_password">SMTP Password</label>
+                                            <input type="text" id="email_smtp_password" name="email_smtp_password" value="${lazylibrarian.EMAIL_SMTP_PASSWORD}" class="form-control" placeholder="SMTP Password">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="email_smtp_port">SMTP Port</label>
+                                            <input type="text" id="email_smtp_port" name="email_smtp_port" value="${lazylibrarian.EMAIL_SMTP_PORT}" class="form-control" placeholder="SMTP Port">
+                                        </div>
+                                        <div class="checkbox">
+                                            <%
+                                            if lazylibrarian.EMAIL_SSL == True:
+                                                checked = 'checked="checked"'
+                                            else:
+                                                checked = ''
+                                            %>
+                                            <label for="email_ssl">
+                                            <input type="checkbox" id="email_ssl" name="email_ssl" value="1" ${checked} />
+                                            SSL</label>
+                                        </div>
+                                        <div class="checkbox">
+                                            <%
+                                            if lazylibrarian.EMAIL_TLS == True:
+                                                checked = 'checked="checked"'
+                                            else:
+                                                checked = ''
+                                            %>
+                                            <label for="email_tls">
+                                            <input type="checkbox" id="email_tls" name="email_tls" value="1" ${checked} />
+                                            TLS</label>
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="button" value="Test Email" id="testEmail" class="btn btn-default">
+                                        </div>
+                                    </fieldset>
+                                </div>
 
                             </div>
                         </div>
@@ -2171,6 +2258,26 @@
                     }
             });
 
+            if ($("#use_email").is(":checked"))
+                    {
+                            $("#emailoptions").show();
+                    }
+            else
+                    {
+                            $("#emailoptions").hide();
+                    }
+
+            $("#use_email").click(function(){
+                    if ($("#use_email").is(":checked"))
+                    {
+                            $("#emailoptions").slideDown();
+                    }
+                    else
+                    {
+                            $("#emailoptions").slideUp();
+                    }
+            });
+
 
             $('#twitterStep1').click(function () {
                 $('#testTwitter-result').html('');
@@ -2209,6 +2316,12 @@
 
             $('#testSlack').click(function () {
                 $.get("testSlack",
+                    function (data) { window.alert(data) });
+
+            });
+
+            $('#testEmail').click(function () {
+                $.get("testEmail",
                     function (data) { window.alert(data) });
 
             });
