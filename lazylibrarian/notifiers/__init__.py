@@ -25,6 +25,7 @@ import pushover
 import nma
 import androidpn
 import slack
+import email_notify
 
 from lazylibrarian.common import *
 
@@ -36,6 +37,7 @@ pushover_notifier = pushover.PushoverNotifier()
 androidpn_notifier = androidpn.AndroidPNNotifier()
 nma_notifier = nma.NMA_Notifier()
 slack_notifier = slack.SlackNotifier()
+email_notifier = email_notify.EmailNotifier()
 
 notifiers = [
     twitter_notifier,
@@ -44,7 +46,8 @@ notifiers = [
     pushover_notifier,
     androidpn_notifier,
     nma_notifier,
-    slack_notifier
+    slack_notifier,
+    email_notifier
 ]
 
 

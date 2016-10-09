@@ -25,6 +25,7 @@ import time
 import mimetypes
 import random
 import string
+import time
 
 import lazylibrarian
 
@@ -103,12 +104,8 @@ class qbittorrentclient(object):
             if info:
                 if info.getheader('content-type'):
                     if info.getheader('content-type') == 'application/json':
-                        resp = ''
-                        for line in response:
-                            resp = resp + line
-                        # return response.code, json.loads(resp)
+                        return json.loads(response.read())
                         # response code is always 200, whether success or fail
-                        return response.code
                     else:
                         resp = ''
                         for line in response:
@@ -125,7 +122,7 @@ class qbittorrentclient(object):
         return self._command('query/torrents', args)
 
     def _get_settings(self):
-        status, value = self._command('query/preferences')
+        value = self._command('query/preferences')
         logger.debug('get_settings() returned %d items' % len(value))
         return value
 
@@ -221,6 +218,24 @@ def addFile(data):
     qbclient = qbittorrentclient()
     files = {'torrents': {'filename': '', 'content': data}}
     return qbclient._command('command/upload', filelist=files)
+
+
+def getName(hash):
+    logger.debug('getName(%s)' % hash)
+
+    qbclient = qbittorrentclient()
+    RETRIES = 5
+    while RETRIES:
+        torrents = qbclient._get_list()
+        if hash.upper() in str(torrents).upper() :
+            break
+        time.sleep(2)
+        RETRIES -= 1
+
+    for tor in torrents:
+        if tor['hash'].upper() == hash.upper():
+            return tor['name']
+    return ''
 
 
 def getFolder(hash):

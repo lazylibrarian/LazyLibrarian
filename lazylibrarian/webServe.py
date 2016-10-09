@@ -142,6 +142,9 @@ class WebInterface(object):
                      androidpn_url='', androidpn_username='', androidpn_broadcast=0, bookstrap_theme='',
                      use_nma=0, nma_apikey='', nma_priority=0, nma_onsnatch=0, nma_ondownload=0,
                      use_slack=0, slack_notify_onsnatch=0, slack_notify_ondownload=0, slack_token='',
+                     use_email=0, email_notify_onsnatch=0, email_notify_ondownload=0, email_from='',
+                     email_to='', email_ssl=0, email_smtp_server='', email_smtp_port=0, email_tls=0,
+                     email_smtp_user='', email_smtp_password='',
                      https_enabled=0, https_cert='', https_key='', **kwargs):
         # print len(kwargs)
         # for arg in kwargs:
@@ -329,6 +332,18 @@ class WebInterface(object):
         lazylibrarian.SLACK_NOTIFY_ONSNATCH = bool(slack_notify_onsnatch)
         lazylibrarian.SLACK_NOTIFY_ONDOWNLOAD = bool(slack_notify_ondownload)
         lazylibrarian.SLACK_TOKEN = slack_token
+
+        lazylibrarian.USE_EMAIL = bool(use_email)
+        lazylibrarian.EMAIL_NOTIFY_ONSNATCH = bool(email_notify_onsnatch)
+        lazylibrarian.EMAIL_NOTIFY_ONDOWNLOAD = bool(email_notify_ondownload)
+        lazylibrarian.EMAIL_FROM = email_from
+        lazylibrarian.EMAIL_TO = email_to
+        lazylibrarian.EMAIL_SSL = bool(email_ssl)
+        lazylibrarian.EMAIL_SMTP_SERVER = email_smtp_server
+        lazylibrarian.EMAIL_SMTP_PORT = check_int(email_smtp_port, 25)
+        lazylibrarian.EMAIL_TLS = bool(email_tls)
+        lazylibrarian.EMAIL_SMTP_USER = email_smtp_user
+        lazylibrarian.EMAIL_SMTP_PASSWORD = email_smtp_password
 
         self.label_thread()
 
@@ -1701,6 +1716,17 @@ class WebInterface(object):
             return "Slack notification failed,\n%s" % result
         else:
             return "Slack notification successful"
+
+    @cherrypy.expose
+    def testEmail(self):
+        cherrypy.response.headers[
+            'Cache-Control'] = "max-age=0,no-cache,no-store"
+
+        result = notifiers.email_notifier.test_notify()
+        if not result:
+            return "Email notification failed"
+        else:
+            return "Email notification successful, check your email"
 
 # API ###############################################################
     @cherrypy.expose

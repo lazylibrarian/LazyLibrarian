@@ -138,10 +138,14 @@ def processDir(reset=False):
     ppcount = 0
     for book in snatched:
         matches = []
-        for fname in downloads:
-            if not fname.endswith('.fail'):  # has this failed before?
+        for fname in downloads:  # skip if failed before or incomplete torrents
+            if not (fname.endswith('.fail') or \
+                    fname.endswith('.part') or \
+                    fname.endswith('.!ut')):
                 # this is to get round differences in torrent filenames.
-                # Torrents aren't always returned with the name we searched for
+                # Usenet is ok, but Torrents aren't always returned with the name we searched for
+                # We ask the torrent downloader for the torrent name, but don't always get an answer
+                # eg if magnet not resolved yet, so we try to do a "best match" on the name,
                 # there might be a better way...
                 if isinstance(fname, str):
                     matchname = fname.decode(lazylibrarian.SYS_ENCODING)
@@ -334,7 +338,9 @@ def processDir(reset=False):
 
     downloads = os.listdir(processpath)  # check in case we processed/deleted some above
     for directory in downloads:
-        if "LL.(" in directory and not directory.endswith('.fail'):
+        if "LL.(" in directory and not (directory.endswith('.fail') or \
+                                        directory.endswith('.part') or \
+                                        directory.endswith('.!ut')):
             bookID = str(directory).split("LL.(")[1].split(")")[0]
             logger.debug("Book with id: " + str(bookID) + " is in downloads")
             pp_path = os.path.join(processpath, directory)

@@ -261,6 +261,17 @@ SLACK_TOKEN = None
 SLACK_NOTIFY_ONSNATCH = 0
 SLACK_NOTIFY_ONDOWNLOAD = 0
 
+USE_EMAIL = 0
+EMAIL_NOTIFY_ONSNATCH = 0
+EMAIL_NOTIFY_ONDOWNLOAD = 0
+EMAIL_FROM = None
+EMAIL_TO = None
+EMAIL_SSL = 0
+EMAIL_SMTP_SERVER = None
+EMAIL_SMTP_PORT = None
+EMAIL_TLS = 0
+EMAIL_SMTP_USER = None
+EMAIL_SMTP_PASSWORD = None
 
 # Month names table to hold long/short month names for multiple languages
 # which we can match against magazine issues
@@ -455,6 +466,8 @@ def config_read(reloaded=False):
             USE_ANDROIDPN, ANDROIDPN_NOTIFY_ONSNATCH, ANDROIDPN_NOTIFY_ONDOWNLOAD, \
             ANDROIDPN_URL, ANDROIDPN_USERNAME, ANDROIDPN_BROADCAST, \
             USE_SLACK, SLACK_NOTIFY_ONSNATCH, SLACK_NOTIFY_ONDOWNLOAD, SLACK_TOKEN, \
+            USE_EMAIL, EMAIL_NOTIFY_ONSNATCH, EMAIL_NOTIFY_ONDOWNLOAD, EMAIL_FROM, EMAIL_TO, \
+            EMAIL_SSL, EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT, EMAIL_TLS, EMAIL_SMTP_USER, EMAIL_SMTP_PASSWORD, \
             TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PORT, TRANSMISSION_PASS, TRANSMISSION_USER, \
             TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, DELUGE_LABEL, \
             FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, \
@@ -834,6 +847,18 @@ def config_read(reloaded=False):
         SLACK_NOTIFY_ONDOWNLOAD = check_setting_bool(CFG, 'Slack', 'slack_notify_ondownload', 0)
         SLACK_TOKEN = check_setting_str(CFG, 'Slack', 'slack_token', '')
 
+        USE_EMAIL = check_setting_bool(CFG, 'Email', 'use_email', 0)
+        EMAIL_NOTIFY_ONSNATCH = check_setting_bool(CFG, 'Email', 'email_notify_onsnatch', 0)
+        EMAIL_NOTIFY_ONDOWNLOAD = check_setting_bool(CFG, 'Email', 'email_notify_ondownload', 0)
+        EMAIL_FROM = check_setting_str(CFG, 'Email', 'email_from', '')
+        EMAIL_TO = check_setting_str(CFG, 'Email', 'email_to', '')
+        EMAIL_SSL = check_setting_bool(CFG, 'Email', 'email_ssl', 0)
+        EMAIL_SMTP_SERVER = check_setting_str(CFG, 'Email', 'email_smtp_server', '')
+        EMAIL_SMTP_PORT = check_setting_int(CFG, 'Email', 'email_smtp_port', 25)
+        EMAIL_TLS = check_setting_bool(CFG, 'Email', 'email_tls', 0)
+        EMAIL_SMTP_USER = check_setting_str(CFG, 'Email', 'email_smtp_user', '')
+        EMAIL_SMTP_PASSWORD =check_setting_str(CFG, 'Email', 'email_smtp_password', '')
+
         BOOK_API = check_setting_str(CFG, 'API', 'book_api', 'GoodReads')
         GR_API = check_setting_str(CFG, 'API', 'gr_api', 'ckvsiSDsuqh7omh74ZZ6Q')
         GB_API = check_setting_str(CFG, 'API', 'gb_api', '')
@@ -1128,6 +1153,19 @@ def config_write():
     CFG.set('Slack', 'slack_notify_onsnatch', SLACK_NOTIFY_ONSNATCH)
     CFG.set('Slack', 'slack_notify_ondownload', SLACK_NOTIFY_ONDOWNLOAD)
     CFG.set('Slack', 'slack_token', SLACK_TOKEN)
+#
+    check_section('Email')
+    CFG.set('Email', 'use_email', USE_EMAIL)
+    CFG.set('Email', 'email_notify_onsnatch', EMAIL_NOTIFY_ONSNATCH)
+    CFG.set('Email', 'email_notify_ondownload', EMAIL_NOTIFY_ONDOWNLOAD)
+    CFG.set('Email', 'email_from', EMAIL_FROM)
+    CFG.set('Email', 'email_to', EMAIL_TO)
+    CFG.set('Email', 'email_ssl', EMAIL_SSL)
+    CFG.set('Email', 'email_smtp_server', EMAIL_SMTP_SERVER)
+    CFG.set('Email', 'email_smtp_port', EMAIL_SMTP_PORT)
+    CFG.set('Email', 'email_tls', EMAIL_TLS)
+    CFG.set('Email', 'email_smtp_user', EMAIL_SMTP_USER)
+    CFG.set('Email', 'email_smtp_password', EMAIL_SMTP_PASSWORD)
 
     with open(CONFIGFILE + '.new', 'wb') as configfile:
         CFG.write(configfile)
