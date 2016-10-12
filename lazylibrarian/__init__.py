@@ -20,6 +20,7 @@ from lib.apscheduler.scheduler import Scheduler
 import urllib2
 import socket
 import json
+import shutil
 
 from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, \
     librarysync, versioncheck, database, searchmag, magazinescan, bookwork
@@ -149,6 +150,7 @@ TOR_DOWNLOADER_QBITTORRENT = 0
 TOR_DOWNLOADER_TRANSMISSION = 0
 TOR_DOWNLOADER_DELUGE = 0
 NUMBEROFSEEDERS = 10
+KEEP_SEEDING = 0
 TORRENT_DIR = None
 
 RTORRENT_HOST = None
@@ -473,7 +475,7 @@ def config_read(reloaded=False):
             FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, \
             USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
             GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, COMMIT_LIST, \
-            LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, SCHED, CACHE_HIT, CACHE_MISS, \
+            LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, KEEP_SEEDING, SCHED, CACHE_HIT, CACHE_MISS, \
             BOOKSTRAP_THEME, LOGFILES, LOGSIZE, HTTPS_ENABLED, HTTPS_CERT, HTTPS_KEY
 
         NEWZNAB_PROV = []
@@ -685,7 +687,8 @@ def config_read(reloaded=False):
         TOR_DOWNLOADER_TRANSMISSION = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_transmission', 0)
         TOR_DOWNLOADER_DELUGE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_deluge', 0)
         NUMBEROFSEEDERS = check_setting_int(CFG, 'TORRENT', 'numberofseeders', 10)
-        TORRENT_DIR = check_setting_str(CFG, 'TORRENT', 'torrent_dir', '')
+        TOR_DOWNLOADER_DELUGE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_deluge', 0)
+        KEEP_SEEDING = check_setting_bool(CFG, 'TORRENT', 'keep_seeding', 1)
 
         RTORRENT_HOST = check_setting_str(CFG, 'RTORRENT', 'rtorrent_host', '')
         RTORRENT_USER = check_setting_str(CFG, 'RTORRENT', 'rtorrent_user', '')
@@ -908,9 +911,9 @@ def config_write():
     CFG.set('General', 'reject_maxsize', REJECT_MAXSIZE)
     CFG.set('General', 'destination_dir', DESTINATION_DIR.encode(SYS_ENCODING))
     CFG.set('General', 'alternate_dir', ALTERNATE_DIR.encode(SYS_ENCODING))
-    CFG.set('General', 'destination_copy', DESTINATION_COPY)
     CFG.set('General', 'download_dir', DOWNLOAD_DIR.encode(SYS_ENCODING))
     CFG.set('General', 'cache_age', CACHE_AGE)
+    CFG.set('General', 'destination_copy', DESTINATION_COPY)
 #
     check_section('Git')
     CFG.set('Git', 'git_user', GIT_USER)
@@ -1021,6 +1024,7 @@ def config_write():
     CFG.set('TORRENT', 'tor_downloader_deluge', TOR_DOWNLOADER_DELUGE)
     CFG.set('TORRENT', 'numberofseeders', NUMBEROFSEEDERS)
     CFG.set('TORRENT', 'torrent_dir', TORRENT_DIR)
+    CFG.set('TORRENT', 'keep_seeding', KEEP_SEEDING)
 #
     check_section('RTORRENT')
     CFG.set('RTORRENT', 'rtorrent_host', RTORRENT_HOST)
@@ -1463,7 +1467,8 @@ def dbcheck():
     # 5 issue numbers padded to 4 digits with leading zeros
     # 6 added Manual field to books table for user editing
     # 7 added Source and DownloadID to wanted table for download monitoring
-    db_current_version = 7
+    # 8 move image cache from data/images/cache into datadir
+    db_current_version = 8
 
     if db_version < db_current_version:
         logger.info('Updating database to version %s, current version is %s' % (db_current_version, db_version))
@@ -1711,6 +1716,31 @@ def dbcheck():
                 c.execute('ALTER TABLE wanted ADD COLUMN Source TEXT')
                 c.execute('ALTER TABLE wanted ADD COLUMN DownloadID TEXT')
 
+        if db_version < 8:
+            images = myDB.select('SELECT AuthorID, AuthorImg FROM authors WHERE AuthorImg LIKE "images/cache/%"')
+            if images:
+                logger.info("Moving %s author images to new location" % len(images))
+                for image in images:
+                    img = image['AuthorImg']
+                    img = img[7:]
+                    myDB.action('UPDATE authors SET AuthorImg="%s" WHERE AuthorID="%s"' % (img, image['AuthorID']))
+
+            images = myDB.select('SELECT BookID, BookImg FROM books WHERE BookImg LIKE "images/cache/%"')
+            if images:
+                logger.info("Moving %s book images to new location" % len(images))
+                for image in images:
+                    img = image['BookImg']
+                    img = img[7:]
+                    myDB.action('UPDATE books SET BookImg="%s" WHERE BookID="%s"' % (img, image['BookID']))
+
+            src = os.path.join(PROG_DIR, 'data/images/cache/')
+            dst = CACHEDIR
+            for fname in os.listdir(src):
+                if fname.endswith('.jpg'):
+                    shutil.move(os.path.join(src, fname), os.path.join(dst, fname))
+
+            logger.info("Image cache updated")
+
         c.execute('PRAGMA user_version = %s' % db_current_version)
         conn.commit()
         conn.close()
@@ -1718,7 +1748,6 @@ def dbcheck():
 
 # Now do any non-version-specific tidying
 
-        myDB = database.DBConnection()
         try:
             authors = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL')
             if authors:
