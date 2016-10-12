@@ -4,6 +4,7 @@ import subprocess
 import threading
 import platform
 import hashlib
+import time
 from urllib import FancyURLopener
 from lib.fuzzywuzzy import fuzz
 import lazylibrarian
@@ -402,6 +403,21 @@ def processDir(reset=False):
     else:
         logger.info('%s book%s/mag%s processed.' % (ppcount, plural(ppcount), plural(ppcount)))
 
+    snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
+    if len(snatched) > 0:
+        for snatch in snatched:
+            print snatch['NZBtitle']
+            # warn if been snatched for over 2 hours and not processed
+            # if its stalled we could mark as failed and delete from the downloader
+            try:
+                when_snatched = time.strptime(snatch['NZBdate'], '%Y-%m-%d %H:%M:%S')
+                when_snatched = time.mktime(when_snatched)
+                diff = time.time() - when_snatched  # time difference in seconds
+            except:
+                diff = 0
+            hours = int(diff / 3600)
+            if hours > 1:
+                logger.warn('%s was sent to %s %s hours ago' % (snatch['NZBtitle'], snatch['Source'].lower(), hours))
     if reset:
         scheduleJob(action='Restart', target='processDir')
 
