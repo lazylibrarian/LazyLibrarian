@@ -535,6 +535,16 @@
                                 <BR>
                                 <small>Number of minimum seeders a torrent must have to be accepted</small>
                             </div>
+                            <div class="row checkbox">
+                                <%
+                                if lazylibrarian.KEEP_SEEDING == True:
+                                    checked = 'checked="checked"'
+                                else:
+                                    checked = ''
+                                %>
+                                 <input type="checkbox" name="keep_seeding" id="keep_seeding" value="1" ${checked} />
+                                 <label>Keep seeding after processing</label>
+                            </div>
 
                         </fieldset>
                         <br>

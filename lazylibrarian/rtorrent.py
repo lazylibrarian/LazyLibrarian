@@ -83,7 +83,14 @@ def addTorrent(tor_url, hashID):
     # For each torrent in the main view
     for tor in mainview:
         if tor.upper() == hashID.upper():  # we are there
-            name = server.d.get_name(tor)
+            RETRIES = 5
+            while RETRIES:
+                name = server.d.get_name(tor)
+                if tor.upper() not in name:
+                    break
+                sleep(5)
+                RETRIES -= 1
+
             directory = server.d.get_directory(tor)
             label = server.d.get_custom1(tor)
             if label:
@@ -102,7 +109,26 @@ def getName(hashID):
     mainview = server.download_list("", "main")
     for tor in mainview:
         if tor.upper() == hashID.upper():
-            return server.d.get_name(tor)
+            RETRIES = 5
+            while RETRIES:
+                name = server.d.get_name(tor)
+                if tor.upper() not in name:
+                    break
+                sleep(5)
+                RETRIES -= 1
+            return name
+    return False  # not found
+
+
+def removeTorrent(hashID, remove_data=False):
+    server = getServer()
+    if server is False:
+        return False
+
+    mainview = server.download_list("", "main")
+    for tor in mainview:
+        if tor.upper() == hashID.upper():
+            return server.d.erase(tor)
     return False  # not found
 
 

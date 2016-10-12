@@ -118,6 +118,14 @@ class utorrentclient(object):
         params = [('action', 'getprops'), ('hash', hash)]
         return self._action(params)
 
+    def removedata(self, hash):
+        params = [('action', 'removedata'), ('hash', hash)]
+        return self._action(params)
+
+    def remove(self, hash):
+        params = [('action', 'remove'), ('hash', hash)]
+        return self._action(params)
+
     def setprops(self, hash, s, v):
         params = [('action', 'setprops'), ('hash', hash), ("s", s), ("v", v)]
         return self._action(params)
@@ -194,6 +202,19 @@ def nameTorrent(hash):
     for torrent in torrentList[1].get('torrents'):
         if (torrent[0].lower() == hash):
             return torrent[2]
+    return False
+
+
+def removeTorrent(hash, remove_data=False):
+    uTorrentClient = utorrentclient()
+    torrentList = uTorrentClient.list()
+    for torrent in torrentList[1].get('torrents'):
+        if (torrent[0].lower() == hash):
+            if remove_data:
+                uTorrentClient.removedata(hash)
+            else:
+                uTorrentClient.remove(hash)
+            return True
     return False
 
 

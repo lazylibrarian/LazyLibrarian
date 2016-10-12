@@ -128,7 +128,7 @@ class qbittorrentclient(object):
 
     def get_savepath(self, hash):
         logger.debug('qb.get_savepath(%s)' % hash)
-        status, torrentList = self._get_list()
+        torrentList = self._get_list()
         for torrent in torrentList:
             if torrent['hash']:
                 if torrent['hash'].upper() == hash.upper():
@@ -172,7 +172,7 @@ def removeTorrent(hash, remove_data=False):
     logger.debug('removeTorrent(%s,%s)' % (hash, remove_data))
 
     qbclient = qbittorrentclient()
-    status, torrentList = qbclient._get_list()
+    torrentList = qbclient._get_list()
     for torrent in torrentList:
         if torrent['hash'].upper() == hash.upper():
             if torrent['state'] == 'uploading' or torrent['state'] == 'stalledUP':
