@@ -173,17 +173,18 @@ def removeTorrent(hash, remove_data=False):
 
     qbclient = qbittorrentclient()
     torrentList = qbclient._get_list()
-    for torrent in torrentList:
-        if torrent['hash'].upper() == hash.upper():
-            if torrent['state'] == 'uploading' or torrent['state'] == 'stalledUP':
-                logger.info('%s has finished seeding, removing torrent and data' % torrent['name'])
-                qbclient.remove(hash, remove_data)
-                return True
-            else:
-                logger.info(
-                    '%s has not finished seeding yet, torrent will not be removed, will try again on next run' %
-                    torrent['name'])
-                return False
+    if torrentlist:
+        for torrent in torrentList:
+            if torrent['hash'].upper() == hash.upper():
+                if torrent['state'] == 'uploading' or torrent['state'] == 'stalledUP':
+                    logger.info('%s has finished seeding, removing torrent and data' % torrent['name'])
+                    qbclient.remove(hash, remove_data)
+                    return True
+                else:
+                    logger.info(
+                        '%s has not finished seeding yet, torrent will not be removed, will try again on next run' %
+                        torrent['name'])
+                    return False
     return False
 
 
@@ -227,8 +228,9 @@ def getName(hash):
     RETRIES = 5
     while RETRIES:
         torrents = qbclient._get_list()
-        if hash.upper() in str(torrents).upper() :
-            break
+        if torrents:
+            if hash.upper() in str(torrents).upper() :
+                break
         time.sleep(2)
         RETRIES -= 1
 
