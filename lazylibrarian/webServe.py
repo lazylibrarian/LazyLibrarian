@@ -56,7 +56,11 @@ class WebInterface(object):
 
     @cherrypy.expose
     def index(self):
-        raise cherrypy.HTTPRedirect("home")
+        if lazylibrarian.db_needs_update():
+            message = "Updating database, please wait"
+            return serve_template(templatename="dbupdate.html", title="Database Update", message=message, timer=5)
+        else:
+            raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
     def home(self):
