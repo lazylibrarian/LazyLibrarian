@@ -4,7 +4,7 @@ import os
 import sqlite3
 import threading
 import time
-
+import shutil
 import lazylibrarian
 
 from lazylibrarian import logger
@@ -339,12 +339,13 @@ def dbupdate(db_current_version):
             src = os.path.join(lazylibrarian.PROG_DIR, 'data/images/cache/')
             tot = maximgs
             cnt = 0
-            logger.info('Moving cache images to new location')
-            for fname in os.listdir(src):
-                if fname.endswith('.jpg'):
-                    cnt += 1
-                    lazylibrarian.UPDATE_MSG = "Moving cache images: %s of %s" % (cnt, tot)
-                    shutil.move(os.path.join(src, fname), os.path.join(dst, fname))
+            if tot:
+                logger.info('Moving cache images to new location')
+                for fname in os.listdir(src):
+                    if fname.endswith('.jpg'):
+                        cnt += 1
+                        lazylibrarian.UPDATE_MSG = "Moving cache images: %s of %s" % (cnt, tot)
+                        shutil.move(os.path.join(src, fname), os.path.join(dst, fname))
 
             logger.info("Image cache updated")
 
