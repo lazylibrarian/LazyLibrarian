@@ -20,6 +20,7 @@ from lib.apscheduler.scheduler import Scheduler
 import urllib2
 import socket
 import json
+import shutil
 
 from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, \
     librarysync, versioncheck, database, searchmag, magazinescan, bookwork
@@ -64,6 +65,7 @@ COMMIT_LIST = None
 
 DATADIR = None
 DBFILE = None
+UPDATE_MSG = None
 CONFIGFILE = None
 CFG = None
 CURRENT_TAB = '1'
@@ -149,6 +151,7 @@ TOR_DOWNLOADER_QBITTORRENT = 0
 TOR_DOWNLOADER_TRANSMISSION = 0
 TOR_DOWNLOADER_DELUGE = 0
 NUMBEROFSEEDERS = 10
+KEEP_SEEDING = 0
 TORRENT_DIR = None
 
 RTORRENT_HOST = None
@@ -361,7 +364,7 @@ def initialize():
     with INIT_LOCK:
         global __INITIALIZED__, LOGDIR, LOGLIMIT, LOGFILES, LOGSIZE, CFG, CFGLOGLEVEL, LOGLEVEL, \
             LOGFULL, CACHEDIR, DATADIR, LAST_LIBRARYTHING, LAST_GOODREADS, BOOKLANGFILTER, MANAGEFILTER, \
-            ISSUEFILTER, IMP_MONTHLANG, BOOKSTRAP_THEMELIST, CURRENT_TAB
+            ISSUEFILTER, IMP_MONTHLANG, BOOKSTRAP_THEMELIST, CURRENT_TAB, UPDATE_MSG
 
         if __INITIALIZED__:
             return False
@@ -424,7 +427,10 @@ def initialize():
 
         # Initialize the database
         try:
-            dbcheck()
+            update = db_needs_update()
+            if update:
+                threading.Thread(target=database.dbupdate, name="DBUPDATE", args=[update]).start()
+                #dbupdate(update)
         except Exception as e:
             logger.error("Can't connect to the database: %s" % str(e))
 
@@ -473,7 +479,7 @@ def config_read(reloaded=False):
             FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, \
             USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
             GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, COMMIT_LIST, \
-            LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, SCHED, CACHE_HIT, CACHE_MISS, \
+            LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, KEEP_SEEDING, SCHED, CACHE_HIT, CACHE_MISS, \
             BOOKSTRAP_THEME, LOGFILES, LOGSIZE, HTTPS_ENABLED, HTTPS_CERT, HTTPS_KEY
 
         NEWZNAB_PROV = []
@@ -685,7 +691,8 @@ def config_read(reloaded=False):
         TOR_DOWNLOADER_TRANSMISSION = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_transmission', 0)
         TOR_DOWNLOADER_DELUGE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_deluge', 0)
         NUMBEROFSEEDERS = check_setting_int(CFG, 'TORRENT', 'numberofseeders', 10)
-        TORRENT_DIR = check_setting_str(CFG, 'TORRENT', 'torrent_dir', '')
+        TOR_DOWNLOADER_DELUGE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_deluge', 0)
+        KEEP_SEEDING = check_setting_bool(CFG, 'TORRENT', 'keep_seeding', 1)
 
         RTORRENT_HOST = check_setting_str(CFG, 'RTORRENT', 'rtorrent_host', '')
         RTORRENT_USER = check_setting_str(CFG, 'RTORRENT', 'rtorrent_user', '')
@@ -908,9 +915,9 @@ def config_write():
     CFG.set('General', 'reject_maxsize', REJECT_MAXSIZE)
     CFG.set('General', 'destination_dir', DESTINATION_DIR.encode(SYS_ENCODING))
     CFG.set('General', 'alternate_dir', ALTERNATE_DIR.encode(SYS_ENCODING))
-    CFG.set('General', 'destination_copy', DESTINATION_COPY)
     CFG.set('General', 'download_dir', DOWNLOAD_DIR.encode(SYS_ENCODING))
     CFG.set('General', 'cache_age', CACHE_AGE)
+    CFG.set('General', 'destination_copy', DESTINATION_COPY)
 #
     check_section('Git')
     CFG.set('Git', 'git_user', GIT_USER)
@@ -1021,6 +1028,7 @@ def config_write():
     CFG.set('TORRENT', 'tor_downloader_deluge', TOR_DOWNLOADER_DELUGE)
     CFG.set('TORRENT', 'numberofseeders', NUMBEROFSEEDERS)
     CFG.set('TORRENT', 'torrent_dir', TORRENT_DIR)
+    CFG.set('TORRENT', 'keep_seeding', KEEP_SEEDING)
 #
     check_section('RTORRENT')
     CFG.set('RTORRENT', 'rtorrent_host', RTORRENT_HOST)
@@ -1445,13 +1453,15 @@ def launch_browser(host, port, root):
         logger.error('Could not launch browser: %s' % str(e))
 
 
-def dbcheck():
+def db_needs_update():
+    """
+    Check if database needs updating
+    Return zero if up-to-date
+    Return current version if needs update
+    """
 
-    conn = sqlite3.connect(DBFILE)
-    c = conn.cursor()
-
-    c.execute('PRAGMA user_version')
-    result = c.fetchone()
+    myDB = database.DBConnection()
+    result = myDB.match('PRAGMA user_version')
     db_version = result[0]
 
     # database version history:
@@ -1463,272 +1473,13 @@ def dbcheck():
     # 5 issue numbers padded to 4 digits with leading zeros
     # 6 added Manual field to books table for user editing
     # 7 added Source and DownloadID to wanted table for download monitoring
-    db_current_version = 7
-
+    # 8 move image cache from data/images/cache into datadir
+    db_current_version = 8
     if db_version < db_current_version:
-        logger.info('Updating database to version %s, current version is %s' % (db_current_version, db_version))
-        myDB = database.DBConnection()
+        return db_current_version
+    return 0
 
-        if db_version < 1:
-            c.execute('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT, AuthorName TEXT UNIQUE, AuthorImg TEXT, \
-                 AuthorLink TEXT, DateAdded TEXT, Status TEXT, LastBook TEXT, LastLink Text, LastDate TEXT, \
-                 HaveBooks INTEGER, TotalBooks INTEGER, AuthorBorn TEXT, AuthorDeath TEXT, UnignoredBooks INTEGER)')
-            c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
-                BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
-                BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, \
-                BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesNum TEXT, \
-                WorkPage TEXT, Manual TEXT)')
-            c.execute('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, \
-                NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, Source TEXT, DownloadID TEXT)')
-            c.execute('CREATE TABLE IF NOT EXISTS pastissues AS SELECT * FROM wanted')  # same columns
-            c.execute('CREATE TABLE IF NOT EXISTS magazines (Title TEXT, Frequency TEXT, Regex TEXT, Status TEXT, \
-                MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT)')
-            c.execute('CREATE TABLE IF NOT EXISTS languages (isbn TEXT, lang TEXT)')
-            c.execute('CREATE TABLE IF NOT EXISTS issues (Title TEXT, IssueID TEXT, IssueAcquired TEXT, IssueDate TEXT, \
-                IssueFile TEXT)')
-            c.execute('CREATE TABLE IF NOT EXISTS stats (authorname text, GR_book_hits int, GR_lang_hits int, \
-                LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int, duplicates int)')
 
-        # These are the incremental changes before database versioning was introduced.
-        # New database tables already have these incorporated so we need to check first...
-            try:
-                c.execute('SELECT BookSub from books')
-            except sqlite3.OperationalError:
-                logger.info('Updating database to hold book subtitles.')
-                c.execute('ALTER TABLE books ADD COLUMN BookSub TEXT')
-
-            try:
-                c.execute('SELECT BookPub from books')
-            except sqlite3.OperationalError:
-                logger.info('Updating database to hold book publisher')
-                c.execute('ALTER TABLE books ADD COLUMN BookPub TEXT')
-
-            try:
-                c.execute('SELECT BookGenre from books')
-            except sqlite3.OperationalError:
-                logger.info('Updating database to hold bookgenre')
-                c.execute('ALTER TABLE books ADD COLUMN BookGenre TEXT')
-
-            try:
-                c.execute('SELECT BookFile from books')
-            except sqlite3.OperationalError:
-                logger.info('Updating database to hold book filename')
-                c.execute('ALTER TABLE books ADD COLUMN BookFile TEXT')
-
-            try:
-                c.execute('SELECT AuxInfo from wanted')
-            except sqlite3.OperationalError:
-                logger.info('Updating database to hold AuxInfo')
-                c.execute('ALTER TABLE wanted ADD COLUMN AuxInfo TEXT')
-
-            try:
-                c.execute('SELECT NZBsize from wanted')
-            except sqlite3.OperationalError:
-                logger.info('Updating database to hold NZBsize')
-                c.execute('ALTER TABLE wanted ADD COLUMN NZBsize TEXT')
-
-            try:
-                c.execute('SELECT NZBmode from wanted')
-            except sqlite3.OperationalError:
-                logger.info('Updating database to hold NZBmode')
-                c.execute('ALTER TABLE wanted ADD COLUMN NZBmode TEXT')
-
-            try:
-                c.execute('SELECT UnignoredBooks from authors')
-            except sqlite3.OperationalError:
-                logger.info('Updating database to hold UnignoredBooks')
-                c.execute('ALTER TABLE authors ADD COLUMN UnignoredBooks INTEGER')
-
-            try:
-                c.execute('SELECT IssueStatus from magazines')
-            except sqlite3.OperationalError:
-                logger.info('Updating database to hold IssueStatus')
-                c.execute('ALTER TABLE magazines ADD COLUMN IssueStatus TEXT')
-
-            addedWorkPage = False
-            try:
-                c.execute('SELECT WorkPage from books')
-            except sqlite3.OperationalError:
-                logger.info('Updating database to hold WorkPage')
-                c.execute('ALTER TABLE books ADD COLUMN WorkPage TEXT')
-                addedWorkPage = True
-
-            addedSeries = False
-            try:
-                c.execute('SELECT Series from books')
-            except sqlite3.OperationalError:
-                logger.info('Updating database to hold Series')
-                c.execute('ALTER TABLE books ADD COLUMN Series TEXT')
-                addedSeries = True
-
-            # SeriesOrder shouldn't be an integer, some later written books
-            # and novellas logically go inbetween books of the main series,
-            # and their SeriesOrder is not an integer, eg 1.5
-            # so we need to update SeriesOrder to store as text.
-            # Because sqlite can't drop columns we create a new column SeriesNum,
-            # inherit the old column values, and use SeriesNum instead
-            try:
-                c.execute('SELECT SeriesNum from books')
-            except sqlite3.OperationalError:
-                # no SeriesNum column, so create one
-                logger.info('Updating books to hold SeriesNum')
-                c.execute('ALTER TABLE books ADD COLUMN SeriesNum TEXT')
-                c.execute('UPDATE books SET SeriesNum = SeriesOrder')
-                c.execute('UPDATE books SET SeriesOrder = Null')
-
-            addedIssues = False
-            try:
-                c.execute('SELECT Title from issues')
-            except sqlite3.OperationalError:
-                logger.info('Updating database to hold Issues table')
-                c.execute(
-                    'CREATE TABLE issues (Title TEXT, IssueID TEXT, IssueAcquired TEXT, IssueDate TEXT, IssueFile TEXT)')
-                addedIssues = True
-            try:
-                c.execute('SELECT IssueID from issues')
-            except sqlite3.OperationalError:
-                logger.info('Updating Issues table to hold IssueID')
-                c.execute('ALTER TABLE issues ADD COLUMN IssueID TEXT')
-                addedIssues = True
-
-            c.execute('DROP TABLE if exists capabilities')
-
-            conn.commit()
-
-            if addedIssues:
-                try:
-                    magazinescan.magazineScan(thread='MAIN')
-                except Exception as e:
-                    logger.debug("Failed to scan magazines, %s" % str(e))
-
-            if addedWorkPage:
-                try:
-                    logger.info('Adding WorkPage to existing books')
-                    threading.Thread(target=bookwork.setWorkPages, name="ADDWORKPAGE", args=[]).start()
-                except Exception as e:
-                    logger.debug("Failed to update WorkPages, %s" % str(e))
-
-            if addedSeries:
-                try:
-                    books = myDB.select('SELECT BookID, BookName FROM books')
-                    if books:
-                        logger.info('Adding series to existing books')
-                        for book in books:
-                            series, seriesNum = bookSeries(book["BookName"])
-                            if series:
-                                controlValueDict = {"BookID": book["BookID"]}
-                                newValueDict = {
-                                    "series": series,
-                                    "seriesNum": seriesNum
-                                }
-                                myDB.upsert("books", newValueDict, controlValueDict)
-                except Exception as e:
-                    logger.info('Error: ' + str(e))
-
-        if db_version < 2:
-            try:
-                results = myDB.select('SELECT BookID,NZBsize FROM wanted WHERE NZBsize LIKE "% MB"')
-                if results:
-                    logger.info('Removing %s unit%s from wanted table' % (len(results), plural(len(results))))
-                    for units in results:
-                        nzbsize = units["NZBsize"]
-                        nzbsize = nzbsize.split(' ')[0]
-                        myDB.action('UPDATE wanted SET NZBsize = "%s" WHERE BookID = "%s"' % (nzbsize, units["BookID"]))
-
-            except Exception as e:
-                logger.info('Error: ' + str(e))
-
-        if db_version < 3:
-            try:
-                c.execute('SELECT SeriesOrder from books')
-                logger.info('Removing SeriesOrder from books table')
-                try:
-                    c.execute('CREATE TABLE IF NOT EXISTS temp_books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
-                        BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
-                        BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, \
-                        BookFile TEXT, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, \
-                        SeriesNum TEXT, WorkPage TEXT)')
-                    c.execute('INSERT INTO temp_books SELECT AuthorID,AuthorName,AuthorLink,BookName,BookSub, \
-                        BookDesc,BookGenre,BookIsbn,BookPub,BookRate,BookImg,BookPages,BookLink,BookID, \
-                        BookFile,BookDate,BookLang,BookAdded,Status,Series,SeriesNum,WorkPage FROM books')
-                    c.execute('DROP TABLE books')
-                    c.execute('ALTER TABLE temp_books RENAME TO books')
-                    conn.commit()
-                except sqlite3.OperationalError:
-                    logger.warn('Failed to remove SeriesOrder from books table')
-            except sqlite3.OperationalError:
-                # if it's a new install there is no SeriesOrder column, so nothing to remove
-                pass
-
-            try:
-                c.execute('SELECT BookID from pastissues')
-            except sqlite3.OperationalError:
-                logger.info('Moving magazine past issues into new table')
-                c.execute(
-                    'CREATE TABLE pastissues AS SELECT * FROM wanted WHERE Status="Skipped" AND length(AuxInfo) > 0')
-                c.execute('DELETE FROM wanted WHERE Status="Skipped" AND length(AuxInfo) > 0')
-
-        if db_version < 4:
-            try:
-                c.execute('SELECT duplicates from stats')
-            except sqlite3.OperationalError:
-                logger.info('Updating stats table to hold duplicates')
-                c.execute('ALTER TABLE stats ADD COLUMN duplicates INT')
-
-        if db_version < 5:
-            issues = myDB.select(
-                'SELECT IssueID,IssueDate from issues WHERE length(IssueDate) < 4 and length(IssueDate) > 0')
-            if issues:
-                logger.info('Updating issues table to hold 4 digit issue numbers')
-                for issue in issues:
-                    issueid = issue['IssueID']
-                    issuedate = str(issue['IssueDate'])
-                    issuedate = issuedate.zfill(4)
-                    myDB.action('UPDATE issues SET IssueDate="%s" WHERE IssueID="%s"' % (issuedate, issueid))
-
-            mags = myDB.select(
-                'SELECT Title,IssueDate from magazines WHERE length(IssueDate) < 4 and length(IssueDate) > 0')
-            if mags:
-                logger.info('Updating magazines table to match')
-                for mag in mags:
-                    title = mag['Title']
-                    issuedate = str(mag['IssueDate'])
-                    issuedate = issuedate.zfill(4)
-                    myDB.action('UPDATE magazines SET IssueDate="%s" WHERE Title="%s"' % (issuedate, title))
-
-        if db_version < 6:
-            try:
-                c.execute('SELECT Manual from books')
-            except sqlite3.OperationalError:
-                logger.info('Updating books table to hold Manual')
-                c.execute('ALTER TABLE books ADD COLUMN Manual TEXT')
-
-        if db_version < 7:
-            try:
-                c.execute('SELECT Source from wanted')
-            except sqlite3.OperationalError:
-                logger.info('Updating wanted table to hold Source and DownloadID')
-                c.execute('ALTER TABLE wanted ADD COLUMN Source TEXT')
-                c.execute('ALTER TABLE wanted ADD COLUMN DownloadID TEXT')
-
-        c.execute('PRAGMA user_version = %s' % db_current_version)
-        conn.commit()
-        conn.close()
-        logger.info('Database updated to version %s' % db_current_version)
-
-# Now do any non-version-specific tidying
-
-        myDB = database.DBConnection()
-        try:
-            authors = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL')
-            if authors:
-                logger.info('Removing un-named authors from database')
-                for author in authors:
-                    authorid = author["AuthorID"]
-                    myDB.action('DELETE from authors WHERE AuthorID="%s"' % authorid)
-                    myDB.action('DELETE from books WHERE AuthorID="%s"' % authorid)
-        except Exception as e:
-            logger.info('Error: ' + str(e))
 
 
 def start():

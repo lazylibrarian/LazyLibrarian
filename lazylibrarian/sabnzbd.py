@@ -21,13 +21,11 @@ def checkLink():
         return "Unable to talk to SABnzbd, check APIKEY"
     # check category exists
     if lazylibrarian.SAB_CAT:
-        catlist = formatter.getList(cats)
-        if lazylibrarian.SAB_CAT not in catlist:
+        if lazylibrarian.SAB_CAT not in cats['categories']:
             msg = "SABnzbd: Unknown category [%s]\n" % lazylibrarian.SAB_CAT
             if catlist:
                 msg += "Valid categories:\n"
-                for cat in catlist:
-                    msg += '%s\n' % cat
+                msg += str(cats['categories'])
             else:
                 msg += "SABnzbd seems to have no categories set"
             return msg
@@ -47,6 +45,7 @@ def SABnzbd(title=None, nzburl=None):
 
     if nzburl == 'auth' or nzburl == 'get_cats':
         params['mode'] = nzburl
+        params['output'] = 'json'
         if lazylibrarian.SAB_API:
             params['apikey'] = lazylibrarian.SAB_API
         title = 'Test ' + nzburl
@@ -109,11 +108,11 @@ def SABnzbd(title=None, nzburl=None):
         return False
 
     logger.debug("Result text from SAB: " + str(result))
-    if result['status'] is True:
+    if title and title.startswith('Test'):
+        return result
+    elif result['status'] is True:
         logger.info(title + " sent to SAB successfully.")
         return result['nzo_ids'][0]
-    elif title and title.startswith('Test'):
-        return str(result)
     elif result['status'] is False:
         logger.error("SAB returned Error: %s" % result['error'])
         return False

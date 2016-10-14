@@ -42,24 +42,29 @@ def initialize(options={}):
 
     conf = {
         '/': {
-            'tools.staticdir.root': os.path.join(lazylibrarian.PROG_DIR, 'data'),
+            'tools.staticdir.on': True,
+            'tools.staticdir.dir': os.path.join(lazylibrarian.PROG_DIR, 'data'),
             'tools.proxy.on': options['http_proxy']
         },
         '/interfaces': {
             'tools.staticdir.on': True,
-            'tools.staticdir.dir': "interfaces"
+            'tools.staticdir.dir': os.path.join(lazylibrarian.PROG_DIR, 'data', 'interfaces')
         },
         '/images': {
             'tools.staticdir.on': True,
-            'tools.staticdir.dir': "images"
+            'tools.staticdir.dir': os.path.join(lazylibrarian.PROG_DIR, 'data', 'images')
+        },
+        '/cache': {
+            'tools.staticdir.on': True,
+            'tools.staticdir.dir': lazylibrarian.CACHEDIR
         },
         '/css': {
             'tools.staticdir.on': True,
-            'tools.staticdir.dir': "css"
+            'tools.staticdir.dir': os.path.join(lazylibrarian.PROG_DIR, 'data', 'css')
         },
         '/js': {
             'tools.staticdir.on': True,
-            'tools.staticdir.dir': "js"
+            'tools.staticdir.dir': os.path.join(lazylibrarian.PROG_DIR, 'data', 'js')
         },
         '/favicon.ico': {
             'tools.staticfile.on': True,

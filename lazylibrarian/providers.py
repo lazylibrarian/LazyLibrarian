@@ -107,7 +107,7 @@ def get_capabilities(provider):
                     #
                     #  set some defaults
                     #
-                    provider['GENERALSEARCH'] = ''
+                    provider['GENERALSEARCH'] = 'search'
                     provider['EXTENDED'] = '1'
                     provider['BOOKCAT'] = ''
                     provider['MAGCAT'] = ''

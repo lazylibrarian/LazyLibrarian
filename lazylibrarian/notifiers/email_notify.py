@@ -25,10 +25,16 @@ class EmailNotifier:
     def _notify(self, message, event):
 
         subject = event
+        text = message
         message = MIMEText(message, 'plain', "utf-8")
         message['Subject'] = subject
         message['From'] = email.utils.formataddr(('LazyLibrarian', lazylibrarian.EMAIL_FROM))
         message['To'] = lazylibrarian.EMAIL_TO
+
+        logger.debug('Email notification: %s' % message['Subject'])
+        logger.debug('Email from: %s' % message['From'])
+        logger.debug('Email to: %s' % message['To'])
+        logger.debug('Email text: %s' % text)
 
         try:
             if lazylibrarian.EMAIL_SSL:

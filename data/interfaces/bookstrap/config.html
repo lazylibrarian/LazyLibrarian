@@ -662,6 +662,17 @@
                                                 <input type="text" id="numberofseeders" name="numberofseeders" value="${lazylibrarian.NUMBEROFSEEDERS}" class="form-control" placeholder="Number of Seeders">
                                                 <span class="help-block">Number of minimum seeders a torrent must have to be accepted</span>
                                             </div>
+                                                <div class="checkbox">
+                                                    <%
+                                                    if lazylibrarian.KEEP_SEEDING == True:
+                                                        checked = 'checked="checked"'
+                                                    else:
+                                                        checked = ''
+                                                    %>
+                                                     <label for="keep_seeding" class="control-label">
+                                                     <input type="checkbox" id="keep_seeding" name="keep_seeding" value="1" ${checked} />
+                                                     Keep seeding after processing</label>
+                                                </div>
                                             <div class="form-group">
                                                 <label for="download_dir" class="control-label">Directory:</label>
                                                 <input type="text" id="download_dir" name="download_dir" value="${lazylibrarian.DOWNLOAD_DIR}" class="form-control" placeholder="Download Directory">

@@ -4,11 +4,13 @@ import subprocess
 import threading
 import platform
 import hashlib
+import time
 from urllib import FancyURLopener
 from lib.fuzzywuzzy import fuzz
 import lazylibrarian
 
-from lazylibrarian import database, logger, gr
+from lazylibrarian import database, logger, gr, utorrent, transmission, qbittorrent, deluge, rtorrent
+from lib.deluge_client import DelugeRPCClient
 from lazylibrarian.magazinescan import create_id, create_cover
 from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, unaccented
 from lazylibrarian.common import scheduleJob, book_file, opf_file
@@ -138,6 +140,7 @@ def processDir(reset=False):
     ppcount = 0
     for book in snatched:
         matches = []
+        logger.debug('Looking for %s in %s' % (book['NZBtitle'], processpath))
         for fname in downloads:  # skip if failed before or incomplete torrents
             if not (fname.endswith('.fail') or \
                     fname.endswith('.part') or \
@@ -186,10 +189,14 @@ def processDir(reset=False):
                                             or is_valid_booktype(ourfile, booktype="mag") \
                                                 or os.path.splitext(ourfile)[1].lower() in ['.opf', '.jpg']:
                                             try:
-                                                shutil.move(os.path.join(processpath, ourfile),
-                                                            os.path.join(dirname, ourfile))
+                                                if lazylibrarian.DESTINATION_COPY:
+                                                    shutil.copyfile(os.path.join(processpath, ourfile),
+                                                                    os.path.join(dirname, ourfile))
+                                                else:
+                                                    shutil.move(os.path.join(processpath, ourfile),
+                                                                os.path.join(dirname, ourfile))
                                             except Exception as why:
-                                                logger.debug("Failed to move file %s to %s, %s" %
+                                                logger.debug("Failed to copy/move file %s to %s, %s" %
                                                              (ourfile, dirname, str(why)))
 
                     if os.path.isdir(os.path.join(processpath, fname)):
@@ -272,12 +279,12 @@ def processDir(reset=False):
                 logger.debug(u'Closest match (%s%%): %s' % (match, pp_path))
             continue
 
-        processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name, book['NZBmode'])
+        processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name)
 
         if processBook:
             logger.debug("Processing %s, %s" % (global_name, book['NZBurl']))
             # update nzbs, only update the snatched ones in case multiple matches for same book / magazine issue
-            controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
+            controlValueDict = {"BookID": book['BookID'], "NZBurl": book['NZBurl'], "Status": "Snatched"}
             newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
             myDB.upsert("wanted", newValueDict, controlValueDict)
 
@@ -315,6 +322,45 @@ def processDir(reset=False):
                 # create a thumbnail cover for the new issue
                 create_cover(dest_file)
 
+            # calibre or ll copied/moved the files we want, now delete source files
+            # Only delete torrents if we said delete after processing, as we may be seeding
+
+            if book['NZBmode'] in ['torrent', 'magnet']:
+                if lazylibrarian.KEEP_SEEDING:
+                    logger.debug('Seeding %s %s' % (book['NZBmode'], book['NZBtitle']))
+                else:
+                    # ask downloader to delete the torrent
+                    logger.debug('Removing %s from %s' % (book['NZBtitle'], book['Source'].lower()))
+                    if book['Source'] == "UTORRENT":
+                        utorrent.removeTorrent(book['DownloadID'], remove_data=True)
+                    elif book['Source'] == "RTORRENT":
+                        rtorrent.removeTorrent(book['DownloadID'], remove_data=True)
+                    elif book['Source'] == "QBITTORRENT":
+                        qbittorrent.removeTorrent(book['DownloadID'], remove_data=True)
+                    elif book['Source'] == "TRANSMISSION":
+                        transmission.removeTorrent(book['DownloadID'], remove_data=True)
+                    elif book['Source'] == "DELUGEWEBUI":
+                        deluge.removeTorrent(book['DownloadID'], remove_data=True)
+                    elif book['Source'] == "DELUGERPC":
+                        client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
+                                                 int(lazylibrarian.DELUGE_PORT),
+                                                 lazylibrarian.DELUGE_USER,
+                                                 lazylibrarian.DELUGE_PASS)
+                        try:
+                            client.connect()
+                            client.call('core.remove_torrent', book['DownloadID'], True)
+                        except Exception as e:
+                            logger.debug('DelugeRPC failed %s' % str(e))
+            else:
+                # only delete if not in download root dir and if DESTINATION_COPY not set
+                if not lazylibrarian.DESTINATION_COPY and pp_path != lazylibrarian.DOWNLOAD_DIR:
+                    if os.path.isdir(pp_path):
+                        # calibre might have already deleted it?
+                        try:
+                            shutil.rmtree(pp_path)
+                        except Exception as why:
+                            logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
+
             logger.info('Successfully processed: %s' % global_name)
             ppcount = ppcount + 1
             notify_download("%s from %s at %s" % (global_name, book['NZBprov'], now()))
@@ -342,44 +388,49 @@ def processDir(reset=False):
                                         directory.endswith('.part') or \
                                         directory.endswith('.!ut')):
             bookID = str(directory).split("LL.(")[1].split(")")[0]
-            logger.debug("Book with id: " + str(bookID) + " is in downloads")
+            logger.debug("Book with id: " + str(bookID) + " found in download directory")
             pp_path = os.path.join(processpath, directory)
 
             if os.path.isfile(pp_path):
                 pp_path = os.path.join(processpath)
 
             if (os.path.isdir(pp_path)):
-                logger.debug('Found LL folder %s.' % pp_path)
-            if import_book(pp_path, bookID):
-                ppcount = ppcount + 1
+                if import_book(pp_path, bookID):
+                    ppcount = ppcount + 1
 
     if ppcount == 0:
         logger.info('No snatched books/mags have been found')
     else:
         logger.info('%s book%s/mag%s processed.' % (ppcount, plural(ppcount), plural(ppcount)))
 
+    snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
+    if len(snatched) > 0:
+        for snatch in snatched:
+            # warn if been snatched for over 2 hours and not processed
+            # if its stalled we could mark as failed and delete from the downloader
+            try:
+                when_snatched = time.strptime(snatch['NZBdate'], '%Y-%m-%d %H:%M:%S')
+                when_snatched = time.mktime(when_snatched)
+                diff = time.time() - when_snatched  # time difference in seconds
+            except:
+                diff = 0
+            hours = int(diff / 3600)
+            if hours > 1:
+                logger.warn('%s was sent to %s %s hours ago' % (snatch['NZBtitle'], snatch['Source'].lower(), hours))
     if reset:
         scheduleJob(action='Restart', target='processDir')
 
 
 def import_book(pp_path=None, bookID=None):
 
-    # Separated this into a function so we can more easily import books from an alternate directory
-    # and move them into LL folder structure given just the bookID, returns True or False
-    # eg if import_book(source_directory, bookID):
-    #         ppcount = ppcount + 1
+    # Move a book into LL folder structure given just the folder and bookID, returns True or False
+    # Called from "import_alternate" or if we find an "ll.(xxx)" folder that doesn't match a snatched book/mag
     #
     myDB = database.DBConnection()
     data = myDB.match('SELECT * from books WHERE BookID="%s"' % bookID)
     if data:
         authorname = data['AuthorName']
         bookname = data['BookName']
-
-        # try:
-        #    auth_dir = os.path.join(lazylibrarian.DESTINATION_DIR, authorname).encode(lazylibrarian.SYS_ENCODING)
-        #    os.chmod(auth_dir, 0777)
-        # except Exception, e:
-        #    logger.debug("Could not chmod author directory: " + str(auth_dir))
 
         if 'windows' in platform.system().lower() and '/' in lazylibrarian.EBOOK_DEST_FOLDER:
             logger.warn('Please check your EBOOK_DEST_FOLDER setting')
@@ -406,9 +457,18 @@ def import_book(pp_path=None, bookID=None):
                 myDB.upsert("wanted", newValueDict, controlValueDict)
                 if bookname:
                     if len(lazylibrarian.IMP_CALIBREDB):
-                        logger.debug('Calibre should have created the extras for us')
+                        logger.debug('Calibre should have created the extras')
                     else:
                         processExtras(myDB, dest_path, global_name, data)
+
+                if not lazylibrarian.DESTINATION_COPY and pp_path != lazylibrarian.DOWNLOAD_DIR:
+                    if os.path.isdir(pp_path):
+                        # calibre might have already deleted it?
+                        try:
+                            shutil.rmtree(pp_path)
+                        except Exception as why:
+                            logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
+
             logger.info('Successfully processed: %s' % global_name)
             notify_download("%s from %s at %s" % (global_name, was_snatched['NZBprov'], now()))
             return True
@@ -474,7 +534,7 @@ def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
         myDB.upsert("authors", newValueDict, controlValueDict)
 
 
-def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, mode=None):
+def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None):
 
     # check we got a book/magazine in the downloaded files, if not, return
     if bookname:
@@ -570,22 +630,6 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     return False
             else:
                 logger.debug('Ignoring unwanted file: %s' % fname)
-
-    # calibre or ll copied the files we want, now delete source files if not in download root dir
-    # and if DESTINATION_COPY not set, but don't delete source files if copy failed
-    # also we shouldn't delete if source was a torrent as we may be seeding
-    if mode is None:
-        mode = 'unknown'  # no mode for alternate_import
-    if mode is not 'torrent'and mode is not 'magnet':
-        if not lazylibrarian.DESTINATION_COPY:
-            if pp_path != lazylibrarian.DOWNLOAD_DIR:
-                if os.path.isdir(pp_path):
-                    # calibre might have already deleted it
-                    try:
-                        shutil.rmtree(pp_path)
-                    except Exception as why:
-                        logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
-                        return False
     return True
 
 

@@ -228,7 +228,7 @@ def clearLog():
 
 def cleanCache():
     """ Remove unused files from the cache - delete if expired or unused.
-        Check JSONCache  WorkCache  XMLCache data/images/cache
+        Check JSONCache  WorkCache  XMLCache cache
         Check covers and authorimages referenced in the database exist and change if missing """
 
     myDB = database.DBConnection()
@@ -285,7 +285,7 @@ def cleanCache():
                 kept += 1
         logger.debug("Cleaned %i file%s from WorkCache, kept %i" % (cleaned, plural(cleaned), kept))
 
-    cache = os.path.join(lazylibrarian.PROG_DIR, 'data' + os.sep + 'images' + os.sep + 'cache')
+    cache = lazylibrarian.CACHEDIR
     cleaned = 0
     kept = 0
     for r, d, f in os.walk(cache):
@@ -311,7 +311,7 @@ def cleanCache():
 
         # correct any '\' separators in the BookImg links
         cleaned = 0
-        covers = myDB.select('select BookImg from books where BookImg like "images\cache\%"')
+        covers = myDB.select('select BookImg from books where BookImg like "cache\%"')
         for item in covers:
             oldname = item['BookImg']
             newname = oldname.replace('\\', '/')
@@ -321,7 +321,7 @@ def cleanCache():
 
         # verify the cover images referenced in the database are present
         covers = myDB.action('select BookImg,BookName,BookID from books')
-        cachedir = os.path.join(lazylibrarian.PROG_DIR, 'data' + os.sep + 'images' + os.sep + 'cache' + os.sep)
+        cachedir = lazylibrarian.CACHEDIR
 
         cleaned = 0
         kept = 0
@@ -346,7 +346,7 @@ def cleanCache():
 
         # verify the author images referenced in the database are present
         images = myDB.action('select AuthorImg,AuthorName,AuthorID from authors')
-        cachedir = os.path.join(lazylibrarian.PROG_DIR, 'data' + os.sep + 'images' + os.sep + 'cache' + os.sep)
+        cachedir = lazylibrarian.CACHEDIR
 
         cleaned = 0
         kept = 0

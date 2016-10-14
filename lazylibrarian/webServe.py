@@ -56,7 +56,11 @@ class WebInterface(object):
 
     @cherrypy.expose
     def index(self):
-        raise cherrypy.HTTPRedirect("home")
+        if lazylibrarian.db_needs_update():
+            message = "Updating database, please wait"
+            return serve_template(templatename="dbupdate.html", title="Database Update", message=message, timer=5)
+        else:
+            raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
     def home(self):
@@ -1112,13 +1116,12 @@ class WebInterface(object):
                         magimg = 'images/nocover.png'
                     else:
                         myhash = hashlib.md5(magimg).hexdigest()
-                        cachedir = os.path.join(str(lazylibrarian.PROG_DIR),
-                                                'data' + os.sep + 'images' + os.sep + 'cache')
+                        cachedir = lazylibrarian.CACHEDIR
                         if not os.path.isdir(cachedir):
                             os.makedirs(cachedir)
                         hashname = os.path.join(cachedir, myhash + ".jpg")
                         copyfile(magimg, hashname)
-                        magimg = 'images/cache/' + myhash + '.jpg'
+                        magimg = 'cache/' + myhash + '.jpg'
                         covercount = covercount + 1
                 else:
                     logger.debug('No extension found on %s' % magfile)

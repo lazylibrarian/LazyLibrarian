@@ -198,11 +198,7 @@ def removeTorrent(torrentid, remove_data=False):
 
     result = False
     post_data = json.dumps({"method": "core.remove_torrent",
-                            "params": [
-                                torrentid,
-                                remove_data
-                            ],
-                            "id": 25})
+                            "params": [torrentid, remove_data], "id": 25})
     response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
     result = json.loads(response.text)['result']
 

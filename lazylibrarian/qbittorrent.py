@@ -128,7 +128,7 @@ class qbittorrentclient(object):
 
     def get_savepath(self, hash):
         logger.debug('qb.get_savepath(%s)' % hash)
-        status, torrentList = self._get_list()
+        torrentList = self._get_list()
         for torrent in torrentList:
             if torrent['hash']:
                 if torrent['hash'].upper() == hash.upper():
@@ -172,18 +172,19 @@ def removeTorrent(hash, remove_data=False):
     logger.debug('removeTorrent(%s,%s)' % (hash, remove_data))
 
     qbclient = qbittorrentclient()
-    status, torrentList = qbclient._get_list()
-    for torrent in torrentList:
-        if torrent['hash'].upper() == hash.upper():
-            if torrent['state'] == 'uploading' or torrent['state'] == 'stalledUP':
-                logger.info('%s has finished seeding, removing torrent and data' % torrent['name'])
-                qbclient.remove(hash, remove_data)
-                return True
-            else:
-                logger.info(
-                    '%s has not finished seeding yet, torrent will not be removed, will try again on next run' %
-                    torrent['name'])
-                return False
+    torrentList = qbclient._get_list()
+    if torrentlist:
+        for torrent in torrentList:
+            if torrent['hash'].upper() == hash.upper():
+                if torrent['state'] == 'uploading' or torrent['state'] == 'stalledUP':
+                    logger.info('%s has finished seeding, removing torrent and data' % torrent['name'])
+                    qbclient.remove(hash, remove_data)
+                    return True
+                else:
+                    logger.info(
+                        '%s has not finished seeding yet, torrent will not be removed, will try again on next run' %
+                        torrent['name'])
+                    return False
     return False
 
 
@@ -227,8 +228,9 @@ def getName(hash):
     RETRIES = 5
     while RETRIES:
         torrents = qbclient._get_list()
-        if hash.upper() in str(torrents).upper() :
-            break
+        if torrents:
+            if hash.upper() in str(torrents).upper() :
+                break
         time.sleep(2)
         RETRIES -= 1
 

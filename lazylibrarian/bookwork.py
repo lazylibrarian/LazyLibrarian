@@ -201,13 +201,13 @@ def getBookCover(bookID=None):
         logger.error("getBookCover- No bookID")
         return None
 
-    cachedir = os.path.join(str(lazylibrarian.PROG_DIR), 'data' + os.sep + 'images' + os.sep + 'cache')
+    cachedir = lazylibrarian.CACHEDIR
     coverfile = os.path.join(cachedir, bookID + '.jpg')
 
     if os.path.isfile(coverfile):  # use cached image if there is one
         lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
         logger.debug(u"getBookCover: Returning Cached response for %s" % coverfile)
-        coverlink = 'images/cache/' + bookID + '.jpg'
+        coverlink = 'cache/' + bookID + '.jpg'
         return coverlink
 
     lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
@@ -300,13 +300,13 @@ def getAuthorImage(authorid=None):
         logger.error("getAuthorImage: No authorid")
         return None
 
-    cachedir = os.path.join(str(lazylibrarian.PROG_DIR), 'data' + os.sep + 'images' + os.sep + 'cache')
+    cachedir = lazylibrarian.CACHEDIR
     coverfile = os.path.join(cachedir, authorid + '.jpg')
 
     if os.path.isfile(coverfile):  # use cached image if there is one
         lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
         logger.debug(u"getAuthorImage: Returning Cached response for %s" % coverfile)
-        coverlink = 'images/cache/' + authorid + '.jpg'
+        coverlink = 'cache/' + authorid + '.jpg'
         return coverlink
 
     lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
