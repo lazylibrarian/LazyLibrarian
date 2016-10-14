@@ -277,6 +277,7 @@ def DirectDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=Non
 def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
     myDB = database.DBConnection()
     downloadID = False
+    Source = "No Source"
     full_url = tor_url  # keep the url as stored in "wanted" table
     if (lazylibrarian.TOR_DOWNLOADER_DELUGE or
         lazylibrarian.TOR_DOWNLOADER_UTORRENT or
@@ -396,6 +397,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             Source = "TRANSMISSION"
             downloadID = transmission.addTorrent(tor_url)  # returns id or False
             if downloadID:
+                downloadID = str(downloadID)  # transmission returns int
                 tor_title = transmission.getTorrentFolder(downloadID)
 
         if (lazylibrarian.TOR_DOWNLOADER_DELUGE and lazylibrarian.DELUGE_HOST):
@@ -454,7 +456,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                 myDB.action('UPDATE wanted SET NZBtitle = "%s" WHERE NZBurl="%s"' % (tor_title, full_url))
         return True
     else:
-        logger.error(u'Failed to download torrent @ <a href="%s">%s</a>' % (full_url, tor_url))
+        logger.error(u'Failed to download torrent from %s, %s' % (Source, tor_url))
         myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl="%s"' % full_url)
         return False
 

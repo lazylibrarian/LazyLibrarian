@@ -64,20 +64,17 @@ def addTorrent(link, directory=None):
 def getTorrentFolder(torrentid):
     method = 'torrent-get'
     arguments = {'ids': torrentid, 'fields': ['name', 'percentDone']}
-
-    response = torrentAction(method, arguments)
-    percentdone = response['arguments']['torrents'][0]['percentDone']
-    torrent_folder_name = response['arguments']['torrents'][0]['name']
-
+    torrent_folder_name = ''
     tries = 1
-
+    percentdone = 0
     while percentdone == 0 and tries < 10:
+        response = torrentAction(method, arguments)
+        if response and len(response['arguments']['torrents']):
+            percentdone = response['arguments']['torrents'][0]['percentDone']
+            torrent_folder_name = response['arguments']['torrents'][0]['name']
+            break
         tries += 1
         time.sleep(5)
-        response = torrentAction(method, arguments)
-        percentdone = response['arguments']['torrents'][0]['percentDone']
-
-    torrent_folder_name = response['arguments']['torrents'][0]['name']
 
     return torrent_folder_name
 

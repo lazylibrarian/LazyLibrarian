@@ -406,7 +406,6 @@ def processDir(reset=False):
     snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
     if len(snatched) > 0:
         for snatch in snatched:
-            print snatch['NZBtitle']
             # warn if been snatched for over 2 hours and not processed
             # if its stalled we could mark as failed and delete from the downloader
             try:

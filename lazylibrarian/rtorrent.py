@@ -26,10 +26,15 @@ def getServer():
         host = parts[0] + '://' + user + ':' + password + '@' + parts[1]
     try:
         server = xmlrpclib.ServerProxy(host)
+        result = server.system.listMethods()
     except Exception as e:
         logger.debug("xmlrpclib error: %s" % str(e))
         return False
-    return server
+    if result:
+        return server
+    else:
+        logger.warn('No response from rTorrent server')
+        return False
 
 
 def addTorrent(tor_url, hashID):
