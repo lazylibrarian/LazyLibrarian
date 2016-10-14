@@ -309,12 +309,12 @@ def dbupdate(db_current_version):
                 c.execute('ALTER TABLE wanted ADD COLUMN DownloadID TEXT')
 
         if db_version < 8:
-            maximgs = 0
+            src = os.path.join(lazylibrarian.PROG_DIR, 'data/images/cache/')
+            dst = lazylibrarian.CACHEDIR
             images = myDB.select('SELECT AuthorID, AuthorImg FROM authors WHERE AuthorImg LIKE "images/cache/%"')
             if images:
                 logger.info('Moving author images to new location')
                 tot = len(images)
-                maximgs = tot
                 cnt = 0
                 for image in images:
                     cnt += 1
@@ -322,12 +322,16 @@ def dbupdate(db_current_version):
                     img = image['AuthorImg']
                     img = img[7:]
                     myDB.action('UPDATE authors SET AuthorImg="%s" WHERE AuthorID="%s"' % (img, image['AuthorID']))
+                    img = img[6:]
+                    try:
+                        shutil.move(os.path.join(src, img), os.path.join(dst, img))
+                    except Exception as e:
+                        pass
 
             images = myDB.select('SELECT BookID, BookImg FROM books WHERE BookImg LIKE "images/cache/%"')
             if images:
                 logger.info('Moving book images to new location')
                 tot = len(images)
-                maximgs += tot
                 cnt = 0
                 for image in images:
                     cnt += 1
@@ -335,17 +339,11 @@ def dbupdate(db_current_version):
                     img = image['BookImg']
                     img = img[7:]
                     myDB.action('UPDATE books SET BookImg="%s" WHERE BookID="%s"' % (img, image['BookID']))
-
-            src = os.path.join(lazylibrarian.PROG_DIR, 'data/images/cache/')
-            tot = maximgs
-            cnt = 0
-            if tot:
-                logger.info('Moving cache images to new location')
-                for fname in os.listdir(src):
-                    if fname.endswith('.jpg'):
-                        cnt += 1
-                        lazylibrarian.UPDATE_MSG = "Moving cache images: %s of %s" % (cnt, tot)
-                        shutil.move(os.path.join(src, fname), os.path.join(dst, fname))
+                    img = img[6:]
+                    try:
+                        shutil.move(os.path.join(src, img), os.path.join(dst, img))
+                    except Exception as e:
+                        pass
 
             logger.info("Image cache updated")
 
