@@ -1463,7 +1463,7 @@ def db_needs_update():
     myDB = database.DBConnection()
     result = myDB.match('PRAGMA user_version')
     db_version = result[0]
-
+    logger.info("Database is version %s" % db_version)
     # database version history:
     # 0 original version or new empty database
     # 1 changes up to June 2016
