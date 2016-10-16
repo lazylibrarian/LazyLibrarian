@@ -40,7 +40,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'getIndex': 'list all authors',
             'getAuthor': '&id= get author and list their books from AuthorID',
             'getAuthorImage': '&name= get image for this author',
-            'getAuthorImages': 'get images for all authors without one',
+            'getAuthorImages': '[&wait] get images for all authors without one',
             'getWanted': 'list wanted books',
             'getSnatched': 'list snatched books',
             'getHistory': 'list history',
