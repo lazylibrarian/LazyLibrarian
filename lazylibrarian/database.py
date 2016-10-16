@@ -323,10 +323,12 @@ def dbupdate(db_current_version):
                     img = img[7:]
                     myDB.action('UPDATE authors SET AuthorImg="%s" WHERE AuthorID="%s"' % (img, image['AuthorID']))
                     img = img[6:]
-                    try:
-                        shutil.move(os.path.join(src, img), os.path.join(dst, img))
-                    except Exception as e:
-                        pass
+                    srcfile = os.path.join(src, img)
+                    if os.path.isfile(srcfile):
+                        try:
+                            shutil.move(os.path.join(src, img), os.path.join(dst, img))
+                        except Exception as e:
+                            logger.warn("dbupdate: %s" % str(e))
 
             images = myDB.select('SELECT BookID, BookImg FROM books WHERE BookImg LIKE "images/cache/%"')
             if images:
@@ -340,10 +342,12 @@ def dbupdate(db_current_version):
                     img = img[7:]
                     myDB.action('UPDATE books SET BookImg="%s" WHERE BookID="%s"' % (img, image['BookID']))
                     img = img[6:]
-                    try:
-                        shutil.move(os.path.join(src, img), os.path.join(dst, img))
-                    except Exception as e:
-                        pass
+                    srcfile = os.path.join(src, img)
+                    if os.path.isfile(srcfile):
+                        try:
+                            shutil.move(srcfile, os.path.join(dst, img))
+                        except Exception as e:
+                            logger.warn("dbupdate: %s" % str(e))
 
             logger.info("Image cache updated")
 
