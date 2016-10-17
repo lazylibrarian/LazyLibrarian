@@ -22,7 +22,11 @@ import email.utils
 
 class EmailNotifier:
 
-    def _notify(self, message, event):
+    def _notify(self, message, event, force=False):
+
+        # suppress notifications if the notifier is disabled but the notify options are checked
+        if not lazylibrarian.USE_EMAIL and not force:
+            return False
 
         subject = event
         text = message
@@ -71,6 +75,6 @@ class EmailNotifier:
             self._notify(message=title, event=notifyStrings[NOTIFY_DOWNLOAD])
 
     def test_notify(self, title="Test"):
-        return self._notify(message="This is a test notification from LazyLibrarian", event=title)
+        return self._notify(message="This is a test notification from LazyLibrarian", event=title, force=True)
 
 notifier = EmailNotifier

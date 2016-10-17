@@ -382,9 +382,9 @@ def initialize():
         if not os.path.exists(LOGDIR):
             try:
                 os.makedirs(LOGDIR)
-            except OSError:
+            except OSError as e:
                 if LOGLEVEL:
-                    print '%s : Unable to create folder for logs. Only logging to console.' % LOGDIR
+                    print '%s : Unable to create folder for logs: %s. Only logging to console.' % (LOGDIR, str(e))
 
         # Start the logger, silence console logging if we need to
         CFGLOGLEVEL = check_setting_int(CFG, 'General', 'loglevel', 3)
@@ -430,7 +430,11 @@ def initialize():
             update = db_needs_update()
             if update:
                 threading.Thread(target=database.dbupdate, name="DBUPDATE", args=[update]).start()
-                #dbupdate(update)
+            else:
+                myDB = database.DBConnection()
+                result = myDB.match('PRAGMA user_version')
+                logger.info("Database is version %s" % result[0])
+
         except Exception as e:
             logger.error("Can't connect to the database: %s" % str(e))
 
@@ -1463,7 +1467,7 @@ def db_needs_update():
     myDB = database.DBConnection()
     result = myDB.match('PRAGMA user_version')
     db_version = result[0]
-    logger.info("Database is version %s" % db_version)
+
     # database version history:
     # 0 original version or new empty database
     # 1 changes up to June 2016
@@ -1478,8 +1482,6 @@ def db_needs_update():
     if db_version < db_current_version:
         return db_current_version
     return 0
-
-
 
 
 def start():
