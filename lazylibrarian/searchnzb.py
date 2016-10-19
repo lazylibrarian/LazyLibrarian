@@ -63,9 +63,6 @@ def search_nzb_book(books=None, reset=False):
              "authorName": searchbook['AuthorName'],
              "searchterm": searchterm})
 
-    if not lazylibrarian.SAB_HOST and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE and not lazylibrarian.NZBGET_HOST:
-        logger.warn('No download method is set, use SABnzbd/NZBGet or blackhole, check config')
-
     nzb_count = 0
     for book in searchlist:
         # first attempt, try author/title in category "book"
