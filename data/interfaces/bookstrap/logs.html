@@ -13,7 +13,7 @@
 		    <a href="toggleLog" class="button btn btn-sm btn-primary">Start Debug Log</a>
 		  %endif
 		</div>
-	</div>	
+	</div>
 </%def>
 <%def name="body()">
     <h1>Logs</h1>
@@ -50,7 +50,7 @@
 </%def>
 
 <%def name="headIncludes()">
-    
+
 </%def>
 
 <%def name="javascriptIncludes()">
@@ -67,9 +67,8 @@
                     "sInfoEmpty":"Showing 0 to 0 of 0 rows",
                     "sInfoFiltered":"(filtered from _MAX_ total rows)"
                 },
-                "bStateSave": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
-                "iDisplayLength": 10,
+                "iDisplayLength": ${lazylibrarian.DISPLAYLENGTH},
                 "sPaginationType": "full_numbers",
                 "aaSorting": [],
                 "bServerSide": true,
@@ -80,16 +79,16 @@
                         $('td', nRow).closest('tr').addClass("text-danger");
                     } else {
                         $('td', nRow).closest('tr').addClass("text-info");
-                    }                                                        
+                    }
                     var w = window.innerWidth;
                     if ( w < 640 ) // hide timestamp on smallest devices
                     {
                         $('td', nRow).eq(0).addClass('hidden');
-                    }                                    
+                    }
                     return nRow;
                 },
                 "fnServerData": function (sSource, aoData, fnCallback) {
-//                     Add some extra data to the sender 
+//                     Add some extra data to the sender
                     $.getJSON(sSource, aoData, function (json) {
                         fnCallback(json)
                     });
@@ -98,8 +97,8 @@
             $('.dataTables_filter input').attr("placeholder", "Search filter");
             $(window).resize(function() {oTable.fnDraw(false)});
         });
-        
-        
+
+
 
     </script>
 </%def>

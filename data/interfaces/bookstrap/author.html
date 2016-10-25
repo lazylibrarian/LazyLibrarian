@@ -1,5 +1,6 @@
 <%inherit file="base.html"/>
 <%!
+    import lazylibrarian
     from lazylibrarian import database
 %>
 
@@ -239,9 +240,8 @@
                     "sInfoEmpty":"Showing 0 to 0 of 0 rows",
                     "sInfoFiltered":"(filtered from _MAX_ total rows)"},
                 "sPaginationType": "full_numbers",
-                "bStateSave": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
-                "iDisplayLength": 10,
+                "iDisplayLength": ${lazylibrarian.DISPLAYLENGTH},
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     var w = window.innerWidth;
                     if ( w < 768 )

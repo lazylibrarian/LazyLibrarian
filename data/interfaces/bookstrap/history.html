@@ -1,6 +1,7 @@
 <%inherit file="base.html"/>
 <%!
-	from lazylibrarian import database
+    import lazylibrarian
+    from lazylibrarian import database
 %>
 
 <%def name="headerIncludes()">
@@ -11,7 +12,7 @@
 			<a href="clearhistory?status=Snatched" class="button btn btn-sm btn-primary">Clear Snatched</a>
 			<a href="clearhistory?status=Failed" class="button btn btn-sm btn-primary">Clear Failed</a>
         </div>
-	</div>	
+	</div>
 </%def>
 
 <%def name="body()">
@@ -55,12 +56,12 @@
 </%def>
 
 <%def name="headIncludes()">
-	
+
 </%def>
 
 <%def name="javascriptIncludes()">
     <script>
-        
+
     $(document).ready(function()
     {
 
@@ -75,9 +76,8 @@
                     "sInfoEmpty":"Showing 0 to 0 of 0 rows",
                     "sInfoFiltered":"(filtered from _MAX_ total rows)"},
                 "sPaginationType": "full_numbers",
-                "bStateSave": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
-                "iDisplayLength": 10,
+                "iDisplayLength": ${lazylibrarian.DISPLAYLENGTH},
             });
             $('.dataTables_filter input').attr("placeholder", "Search filter");
     });

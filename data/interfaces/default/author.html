@@ -1,4 +1,7 @@
 <%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
 
 <%def name="headerIncludes()">
     <div id="subhead_container">
@@ -211,9 +214,8 @@
                     "sInfoEmpty":"Showing 0 to 0 of 0 books",
                     "sInfoFiltered":"(filtered from _MAX_ total books)"},
                 "sPaginationType": "full_numbers",
-                "bStateSave": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
-                "iDisplayLength": 10,
+                "iDisplayLength": ${lazylibrarian.DISPLAYLENGTH},
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     var w = window.innerWidth;
                     if ( w < 320 )

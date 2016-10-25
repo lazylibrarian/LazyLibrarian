@@ -1,4 +1,7 @@
 <%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
 
 <%def name="body()">
 
@@ -124,7 +127,7 @@
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
                     "sInfoEmpty":"Showing 0 to 0 of 0 books",
                     "sInfoFiltered":"(filtered from _MAX_ total books)"},
-                "iDisplayLength": 10,
+                "iDisplayLength": ${lazylibrarian.DISPLAYLENGTH},
                 "sPaginationType": "full_numbers",
             });
 			$('.dataTables_filter input').attr("placeholder", "Search table here");
