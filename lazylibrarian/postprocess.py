@@ -139,6 +139,47 @@ def processDir(reset=False):
                 (len(downloads), plural(len(downloads)), len(snatched), plural(len(snatched))))
     ppcount = 0
     for book in snatched:
+        # if torrent, see if we can get current status from the downloader as the name
+        # may have been changed once magnet resolved, or download started or completed
+        # Usenet doesn't change the name
+        torrentname = ''
+        if book['Source'] == 'TRANSMISSION':
+            torrentname = transmission.getTorrentFolder(book['DownloadID'])
+        elif book['Source'] == 'UTORRENT':
+            torrentname = utorrent.nameTorrent(book['DownloadID'])
+        elif book['Source'] == 'RTORRENT':
+            torrentname = rtorrent.getName(book['DownloadID'])
+        elif book['Source'] == 'QBITTORRENT':
+            torrentname = qbittorrent.getName(book['DownloadID'])
+        elif book['Source'] == 'DELUGEWEBUI':
+            torrentname = deluge.getTorrentFolder(book['DownloadID'])
+        elif book['Source'] == 'DELUGERPC':
+            client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
+                                     int(lazylibrarian.DELUGE_PORT),
+                                     lazylibrarian.DELUGE_USER,
+                                     lazylibrarian.DELUGE_PASS)
+            try:
+                client.connect()
+                args = [
+                            "name",
+                            "save_path",
+                            "total_size",
+                            "num_files",
+                            "message",
+                            "tracker",
+                            "comment"
+                        ]
+                result = client.call('core.get_torrent_status', book['DownloadID'], args)
+                torrentname = result['name']
+            except Exception as e:
+                logger.debug('DelugeRPC failed %s' % str(e))
+
+        if torrentname and torrentname != book['NZBtitle']:
+            logger.debug("%s Changing [%s] to [%s]" % (book['Source'], book['NZBtitle'], torrentname))
+            book['NZBtitle'] = torrentname
+            # we could also check percentage downloaded or eta?
+            # If downloader says it hasn't completed, no need to look for it.
+
         matches = []
         logger.debug('Looking for %s in %s' % (book['NZBtitle'], processpath))
         for fname in downloads:  # skip if failed before or incomplete torrents
@@ -403,11 +444,13 @@ def processDir(reset=False):
     else:
         logger.info('%s book%s/mag%s processed.' % (ppcount, plural(ppcount), plural(ppcount)))
 
+    # Now check for any that are still marked snatched...
     snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
     if len(snatched) > 0:
         for snatch in snatched:
-            # warn if been snatched for over 2 hours and not processed
+            # For now just warn if been snatched for over 2 hours and not processed
             # if its stalled we could mark as failed and delete from the downloader
+            # we could also check percentage downloaded or eta?
             try:
                 when_snatched = time.strptime(snatch['NZBdate'], '%Y-%m-%d %H:%M:%S')
                 when_snatched = time.mktime(when_snatched)
