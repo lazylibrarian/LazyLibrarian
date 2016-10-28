@@ -177,16 +177,17 @@ def processDir(reset=False):
 
         logger.info('DBG: Torrent name = [%s]' % torrentname)
         logger.info('DBG: Torrent title = [%s]' % book['NZBtitle'])
+        matchtitle = book['NZBtitle']
         if torrentname and torrentname != book['NZBtitle']:
             logger.info("DBG: %s Changing [%s] to [%s]" % (book['Source'], book['NZBtitle'], torrentname))
             #logger.debug("%s Changing [%s] to [%s]" % (book['Source'], book['NZBtitle'], torrentname))
-            book['NZBtitle'] = torrentname
+            matchtitle = torrentname
             # we could also check percentage downloaded or eta?
             # If downloader says it hasn't completed, no need to look for it.
 
         matches = []
-        logger.info('DBG: Looking for %s in %s' % (book['NZBtitle'], processpath))
-        #logger.info('Looking for %s in %s' % (book['NZBtitle'], processpath))
+        logger.info('DBG: Looking for %s in %s' % (matchtitle, processpath))
+        #logger.info('Looking for %s in %s' % (matchtitle, processpath))
         for fname in downloads:  # skip if failed before or incomplete torrents
             if not (fname.endswith('.fail') or \
                     fname.endswith('.part') or \
@@ -202,7 +203,7 @@ def processDir(reset=False):
                     matchname = fname
                 if ' LL.(' in matchname:
                     matchname = matchname.split(' LL.(')[0]
-                matchtitle = book['NZBtitle']
+
                 match = 0
                 if matchtitle:
                     if ' LL.(' in matchtitle:
@@ -253,7 +254,7 @@ def processDir(reset=False):
                     if os.path.isdir(os.path.join(processpath, fname)):
                         logger.info('DBG: filename [%s] is a directory' % os.path.join(processpath, fname))
                         pp_path = os.path.join(processpath, fname)
-                        logger.debug('Found folder (%s%%) %s for %s' % (match, pp_path, book['NZBtitle']))
+                        logger.debug('Found folder (%s%%) %s for %s' % (match, pp_path, matchtitle))
                         matches.append([match, pp_path, book])
                 else:
                     pp_path = os.path.join(processpath, fname)

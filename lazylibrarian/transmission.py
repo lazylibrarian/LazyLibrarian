@@ -63,11 +63,11 @@ def addTorrent(link, directory=None):
 
 def getTorrentFolder(torrentid):
     method = 'torrent-get'
-    arguments = {'ids': torrentid, 'fields': ['name', 'percentDone']}
+    arguments = {'ids': [torrentid], 'fields': ['name', 'percentDone']}
     torrent_folder_name = ''
     tries = 1
     percentdone = 0
-    while percentdone == 0 and tries < 10:
+    while percentdone == 0 and tries < 3:
         logger.info('DBG: Transmission try %s for torrent [%s]' % (tries, torrentid))
         response = torrentAction(method, arguments)
         if response and len(response['arguments']['torrents']):
