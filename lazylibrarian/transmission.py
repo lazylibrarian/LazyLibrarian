@@ -68,11 +68,20 @@ def getTorrentFolder(torrentid):
     tries = 1
     percentdone = 0
     while percentdone == 0 and tries < 10:
+        logger.info('DBG: Transmission try %s for torrent [%s]' % (tries, torrentid))
         response = torrentAction(method, arguments)
         if response and len(response['arguments']['torrents']):
+            logger.info('DBG: Transmission returned %s torrent' % len(response['arguments']['torrents']))
             percentdone = response['arguments']['torrents'][0]['percentDone']
+            logger.info('DBG: Transmission %s%% done' % percentdone)
             torrent_folder_name = response['arguments']['torrents'][0]['name']
+            logger.info('DBG: Transmission name [%s]' % torrent_folder_name)
             break
+        else:
+            if response:
+                logger.info('DBG: Transmission returned %s torrents' % len(response['arguments']['torrents']))
+            else:
+                logger.info('No response from transmission')
         tries += 1
         time.sleep(5)
 
