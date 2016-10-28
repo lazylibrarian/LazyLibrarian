@@ -74,7 +74,7 @@ def getTorrentFolder(torrentid):
             torrent_folder_name = response['arguments']['torrents'][0]['name']
             break
         else:
-            logger.info('No response from transmission')
+            logger.debug('getTorrentFolder: No response from transmission')
         tries += 1
         time.sleep(5)
 

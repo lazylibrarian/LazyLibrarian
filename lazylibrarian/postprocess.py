@@ -141,7 +141,7 @@ def processDir(reset=False):
     for book in snatched:
         # if torrent, see if we can get current status from the downloader as the name
         # may have been changed once magnet resolved, or download started or completed
-        # Usenet doesn't change the name
+        # depending on torrent downloader. Usenet doesn't change the name
 
         torrentname = ''
         if book['Source'] == 'TRANSMISSION':
@@ -178,9 +178,11 @@ def processDir(reset=False):
         matchtitle = book['NZBtitle']
         if torrentname and torrentname != book['NZBtitle']:
             logger.debug("%s Changing [%s] to [%s]" % (book['Source'], book['NZBtitle'], torrentname))
+            myDB.action('UPDATE wanted SET NZBtitle = "%s" WHERE NZBurl = "%s"' % (torrentname, book['NZBurl']))
             matchtitle = torrentname
-            # we could also check percentage downloaded or eta?
-            # If downloader says it hasn't completed, no need to look for it.
+
+        # here we could also check percentage downloaded or eta or status?
+        # If downloader says it hasn't completed, no need to look for it.
 
         matches = []
         logger.info('Looking for %s in %s' % (matchtitle, processpath))
