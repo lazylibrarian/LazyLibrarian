@@ -142,7 +142,7 @@ def processDir(reset=False):
         # if torrent, see if we can get current status from the downloader as the name
         # may have been changed once magnet resolved, or download started or completed
         # Usenet doesn't change the name
-        logger.info('DBG: source = [%s]' % book['Source'])
+
         torrentname = ''
         if book['Source'] == 'TRANSMISSION':
             torrentname = transmission.getTorrentFolder(book['DownloadID'])
@@ -175,19 +175,15 @@ def processDir(reset=False):
             except Exception as e:
                 logger.debug('DelugeRPC failed %s' % str(e))
 
-        logger.info('DBG: Torrent name = [%s]' % torrentname)
-        logger.info('DBG: Torrent title = [%s]' % book['NZBtitle'])
         matchtitle = book['NZBtitle']
         if torrentname and torrentname != book['NZBtitle']:
-            logger.info("DBG: %s Changing [%s] to [%s]" % (book['Source'], book['NZBtitle'], torrentname))
-            #logger.debug("%s Changing [%s] to [%s]" % (book['Source'], book['NZBtitle'], torrentname))
+            logger.debug("%s Changing [%s] to [%s]" % (book['Source'], book['NZBtitle'], torrentname))
             matchtitle = torrentname
             # we could also check percentage downloaded or eta?
             # If downloader says it hasn't completed, no need to look for it.
 
         matches = []
-        logger.info('DBG: Looking for %s in %s' % (matchtitle, processpath))
-        #logger.info('Looking for %s in %s' % (matchtitle, processpath))
+        logger.info('Looking for %s in %s' % (matchtitle, processpath))
         for fname in downloads:  # skip if failed before or incomplete torrents
             if not (fname.endswith('.fail') or \
                     fname.endswith('.part') or \
@@ -209,24 +205,23 @@ def processDir(reset=False):
                     if ' LL.(' in matchtitle:
                         matchtitle = matchtitle.split(' LL.(')[0]
                     match = fuzz.token_set_ratio(matchtitle, matchname)
-                logger.info('DBG: title [%s], file [%s], match %s' % (matchtitle, matchname, match))
+
                 if match >= lazylibrarian.DLOAD_RATIO:
                     fname = matchname
                     if os.path.isfile(os.path.join(processpath, fname)):
                         # not a directory, handle single file downloads here. Book/mag file in download root.
                         # move the file into it's own subdirectory so we don't move/delete things that aren't ours
-                        logger.info('DBG: filename [%s] is a file' % os.path.join(processpath, fname))
+                        logger.debug('filename [%s] is a file' % os.path.join(processpath, fname))
                         if is_valid_booktype(fname, booktype="book") \
                                 or is_valid_booktype(fname, booktype="mag"):
-                            logger.info('DBG: filename [%s] is a valid book/mag' % os.path.join(processpath, fname))
+                            logger.debug('filename [%s] is a valid book/mag' % os.path.join(processpath, fname))
                             fname = os.path.splitext(fname)[0]
                             dirname = os.path.join(processpath, fname)
                             if not os.path.exists(dirname):
                                 try:
                                     os.makedirs(dirname)
                                 except OSError as why:
-                                    logger.info('DBG: Failed to create directory %s, %s' % (dirname, why.strerror))
-                                    #logger.debug('Failed to create directory %s, %s' % (dirname, why.strerror))
+                                    logger.debug('Failed to create directory %s, %s' % (dirname, why.strerror))
                             if os.path.exists(dirname):
                                 # move the book and any related files too
                                 # ie other book formats, or opf, jpg with same title
@@ -247,12 +242,10 @@ def processDir(reset=False):
                                                     shutil.move(os.path.join(processpath, ourfile),
                                                                 os.path.join(dirname, ourfile))
                                             except Exception as why:
-                                                #logger.debug("Failed to copy/move file %s to %s, %s" %
-                                                logger.info("DBG: Failed to copy/move file %s to %s, %s" %
-                                                             (ourfile, dirname, str(why)))
+                                                logger.debug("Failed to copy/move file %s to %s, %s" %
+                                                            (ourfile, dirname, str(why)))
 
                     if os.path.isdir(os.path.join(processpath, fname)):
-                        logger.info('DBG: filename [%s] is a directory' % os.path.join(processpath, fname))
                         pp_path = os.path.join(processpath, fname)
                         logger.debug('Found folder (%s%%) %s for %s' % (match, pp_path, matchtitle))
                         matches.append([match, pp_path, book])
@@ -269,12 +262,10 @@ def processDir(reset=False):
             pp_path = highest[1]
             book = highest[2]
         if match >= lazylibrarian.DLOAD_RATIO:
-            logger.info(u'DBG: Found match (%s%%): %s for %s' % (match, pp_path, book['NZBtitle']))
-            #logger.debug(u'Found match (%s%%): %s for %s' % (match, pp_path, book['NZBtitle']))
+            logger.debug(u'Found match (%s%%): %s for %s' % (match, pp_path, book['NZBtitle']))
             data = myDB.match('SELECT * from books WHERE BookID="%s"' % book['BookID'])
             if data:  # it's a book
-                #logger.debug(u'Processing book %s' % book['BookID'])
-                logger.info(u'DBG: Processing book %s' % book['BookID'])
+                logger.debug(u'Processing book %s' % book['BookID'])
                 authorname = data['AuthorName']
                 bookname = data['BookName']
                 if 'windows' in platform.system().lower() and '/' in lazylibrarian.EBOOK_DEST_FOLDER:
@@ -298,8 +289,7 @@ def processDir(reset=False):
             else:
                 data = myDB.match('SELECT * from magazines WHERE Title="%s"' % book['BookID'])
                 if data:  # it's a magazine
-                    #logger.debug(u'Processing magazine %s' % book['BookID'])
-                    logger.info(u'DBG: Processing magazine %s' % book['BookID'])
+                    logger.debug(u'Processing magazine %s' % book['BookID'])
                     # AuxInfo was added for magazine release date, normally housed in 'magazines' but if multiple
                     # files are downloading, there will be an error in post-processing, trying to go to the
                     # same directory.
@@ -327,17 +317,14 @@ def processDir(reset=False):
                         '$Title', mag_name)
                     global_name = unaccented(global_name)
                 else:  # not recognised
-                    #logger.debug('Nothing in database matching "%s"' % book['BookID'])
-                    logger.info('DBG: Nothing in database matching "%s"' % book['BookID'])
+                    logger.debug('Nothing in database matching "%s"' % book['BookID'])
                     continue
         else:
-            #logger.debug("Snatched %s %s is not in download directory" % (book['NZBmode'], book['NZBtitle']))
-            logger.info("DBG: Snatched %s %s is not in download directory" % (book['NZBmode'], book['NZBtitle']))
+            logger.debug("Snatched %s %s is not in download directory" % (book['NZBmode'], book['NZBtitle']))
             if match:
-                logger.info(u'DBG: Closest match (%s%%): %s' % (match, pp_path))
-                #logger.debug(u'Closest match (%s%%): %s' % (match, pp_path))
-                for match in matches:
-                    logger.info('DBG: %s%%  %s' % (match[0], match[1]))
+                logger.debug(u'Closest match (%s%%): %s' % (match, pp_path))
+                #for match in matches:
+                #    logger.info('Match: %s%%  %s' % (match[0], match[1]))
             continue
 
         processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name)
