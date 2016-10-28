@@ -63,16 +63,18 @@ def addTorrent(link, directory=None):
 
 def getTorrentFolder(torrentid):
     method = 'torrent-get'
-    arguments = {'ids': torrentid, 'fields': ['name', 'percentDone']}
+    arguments = {'ids': [torrentid], 'fields': ['name', 'percentDone']}
     torrent_folder_name = ''
     tries = 1
     percentdone = 0
-    while percentdone == 0 and tries < 10:
+    while percentdone == 0 and tries < 3:
         response = torrentAction(method, arguments)
         if response and len(response['arguments']['torrents']):
             percentdone = response['arguments']['torrents'][0]['percentDone']
             torrent_folder_name = response['arguments']['torrents'][0]['name']
             break
+        else:
+            logger.debug('getTorrentFolder: No response from transmission')
         tries += 1
         time.sleep(5)
 
@@ -82,9 +84,9 @@ def getTorrentFolder(torrentid):
 def setSeedRatio(torrentid, ratio):
     method = 'torrent-set'
     if ratio != 0:
-        arguments = {'seedRatioLimit': ratio, 'seedRatioMode': 1, 'ids': torrentid}
+        arguments = {'seedRatioLimit': ratio, 'seedRatioMode': 1, 'ids': [torrentid]}
     else:
-        arguments = {'seedRatioMode': 2, 'ids': torrentid}
+        arguments = {'seedRatioMode': 2, 'ids': [torrentid]}
 
     response = torrentAction(method, arguments)
     if not response:
@@ -94,7 +96,7 @@ def setSeedRatio(torrentid, ratio):
 def removeTorrent(torrentid, remove_data=False):
 
     method = 'torrent-get'
-    arguments = {'ids': torrentid, 'fields': ['isFinished', 'name']}
+    arguments = {'ids': [torrentid], 'fields': ['isFinished', 'name']}
 
     response = torrentAction(method, arguments)
     if not response:
@@ -108,9 +110,9 @@ def removeTorrent(torrentid, remove_data=False):
             logger.debug('%s has finished seeding, removing torrent and data' % name)
             method = 'torrent-remove'
             if remove_data:
-                arguments = {'delete-local-data': True, 'ids': torrentid}
+                arguments = {'delete-local-data': True, 'ids': [torrentid]}
             else:
-                arguments = {'ids': torrentid}
+                arguments = {'ids': [torrentid]}
             response = torrentAction(method, arguments)
             return True
         else:
@@ -193,8 +195,12 @@ def torrentAction(method, arguments):
     headers = {'x-transmission-session-id': session_id}
     data = {'method': method, 'arguments': arguments}
 
-    response = request.request_json(host, method="POST", data=json.dumps(data),
-                                    headers=headers, auth=auth)
+    try:
+        response = request.request_json(host, method="POST", data=json.dumps(data),
+                                        headers=headers, auth=auth)
+    except Exception as e:
+        logger.debug('Transmission error %s' % str(e))
+        response = ''
 
     if not response:
         logger.error("Error sending torrent to Transmission")

@@ -97,6 +97,21 @@
                                             <input type="text" id="loglevel" name="loglevel" value="${lazylibrarian.LOGLEVEL}" class="form-control" placeholder="Log Level">
                                             <span class="help-block">0=Quiet, 1=Normal, 2=Debug, >2=file/console log always set to debug (ignores toggle)</span>
                                         </div>
+                                        <div class="form-group">
+                                            <label for="displaylength">Table Display Length:</label>
+                                                <select name="displaylength" id="displaylength" class="form-control">
+                                                %for displaylength in [5, 10, 15, 25, 50, 100, -1]:
+                                                    <%
+                                                        if displaylength == lazylibrarian.DISPLAYLENGTH:
+                                                            selected = 'selected="selected"'
+                                                        else:
+                                                            selected = ''
+                                                    %>
+                                                    <option value="${displaylength}" ${selected}>${displaylength}</option>
+                                                %endfor
+                                                </select>
+                                            <span class="help-block">Use -1 to display all rows</span>
+                                        </div>
                                     </fieldset>
                                     <fieldset>
                                         <legend>Proxy Details</legend>
@@ -1023,8 +1038,8 @@
                                             <span class="help-block">Git program, unless already in your path. Usually leave this blank</span>
                                         </div>
                                         <div class="form-group">
-                                            <label for="imp_convert">Conversion program:</label>
-                                            <input type="text" placeholder="Conversion program" id="imp_convert" name="imp_convert" value="${lazylibrarian.IMP_CONVERT}" class="form-control">
+                                            <label for="imp_convert">Cover creation program:</label>
+                                            <input type="text" placeholder="Cover creation program" id="imp_convert" name="imp_convert" value="${lazylibrarian.IMP_CONVERT}" class="form-control">
                                             <span class="help-block">Program for creating magazine covers (example: ImageMagick "convert")<br/>Leave blank to use PythonMagick or Wand interfaces to ImageMagick, put None to disable cover creation</span>
                                         </div>
                                         <div class="checkbox">

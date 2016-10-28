@@ -80,6 +80,7 @@ LOGSIZE = 204800  # each up to 200K
 
 MATCH_RATIO = 80
 DLOAD_RATIO = 90
+DISPLAYLENGTH = 5
 
 HTTP_HOST = None
 HTTP_PORT = 5299
@@ -446,7 +447,7 @@ def initialize():
 
 
 def config_read(reloaded=False):
-        global FULL_PATH, PROG_DIR, DAEMON, \
+        global FULL_PATH, PROG_DIR, DAEMON, DISPLAYLENGTH, \
             HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_PROXY, HTTP_ROOT, HTTP_LOOK, API_KEY, API_ENABLED, \
             LAUNCH_BROWSER, LOGDIR, CACHE_AGE, MATCH_RATIO, DLOAD_RATIO, PROXY_HOST, PROXY_TYPE, GIT_PROGRAM, \
             IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, IMP_CONVERT, IMP_CALIBREDB, \
@@ -503,6 +504,7 @@ def config_read(reloaded=False):
 
         MATCH_RATIO = check_setting_int(CFG, 'General', 'match_ratio', 80)
         DLOAD_RATIO = check_setting_int(CFG, 'General', 'dload_ratio', 90)
+        DISPLAYLENGTH = check_setting_int(CFG, 'General', 'displaylength', 10)
         HTTP_HOST = check_setting_str(CFG, 'General', 'http_host', '0.0.0.0')
         HTTP_USER = check_setting_str(CFG, 'General', 'http_user', '')
         HTTP_PASS = check_setting_str(CFG, 'General', 'http_pass', '')
@@ -922,6 +924,8 @@ def config_write():
     CFG.set('General', 'download_dir', DOWNLOAD_DIR.encode(SYS_ENCODING))
     CFG.set('General', 'cache_age', CACHE_AGE)
     CFG.set('General', 'destination_copy', DESTINATION_COPY)
+#
+    CFG.set('General', 'displaylength', DISPLAYLENGTH)
 #
     check_section('Git')
     CFG.set('Git', 'git_user', GIT_USER)

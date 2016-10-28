@@ -113,7 +113,7 @@ class WebInterface(object):
     @cherrypy.expose
     def configUpdate(
         self, http_host='0.0.0.0', http_root='', http_user='', http_port=5299, current_tab='0',
-                     http_pass='', http_look='', launch_browser=0, api_key='', api_enabled=0,
+                     http_pass='', http_look='', launch_browser=0, api_key='', api_enabled=0, displaylength=0,
                      logdir='', loglevel=2, loglimit=500, logfiles=10, logsize=204800, git_program='',
                      imp_onlyisbn=0, imp_singlebook=0, imp_preflang='', imp_monthlang='', imp_convert='',
                      imp_calibredb='', imp_autoadd='', match_ratio=80, dload_ratio=90, nzb_downloader_sabnzbd=0,
@@ -180,6 +180,7 @@ class WebInterface(object):
         lazylibrarian.MATCH_RATIO = check_int(match_ratio, 80)
         lazylibrarian.DLOAD_RATIO = check_int(dload_ratio, 90)
         lazylibrarian.CACHE_AGE = check_int(cache_age, 30)
+        lazylibrarian.DISPLAYLENGTH = check_int(displaylength, 10)
 
         lazylibrarian.IMP_ONLYISBN = bool(imp_onlyisbn)
         lazylibrarian.IMP_SINGLEBOOK = bool(imp_singlebook)
@@ -532,50 +533,61 @@ class WebInterface(object):
         self.label_thread()
 
         myDB = database.DBConnection()
-        authorsearch = myDB.select(
+        authorsearch = myDB.match(
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
-        AuthorName = authorsearch[0]['AuthorName']
-        logger.info(u"Pausing author: %s" % AuthorName)
+        if authorsearch:
+            AuthorName = authorsearch['AuthorName']
+            logger.info(u"Pausing author: %s" % AuthorName)
 
-        controlValueDict = {'AuthorID': AuthorID}
-        newValueDict = {'Status': 'Paused'}
-        myDB.upsert("authors", newValueDict, controlValueDict)
-        logger.debug(
-            u'AuthorID [%s]-[%s] Paused - redirecting to Author home page' % (AuthorID, AuthorName))
-        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+            controlValueDict = {'AuthorID': AuthorID}
+            newValueDict = {'Status': 'Paused'}
+            myDB.upsert("authors", newValueDict, controlValueDict)
+            logger.debug(
+                u'AuthorID [%s]-[%s] Paused - redirecting to Author home page' % (AuthorID, AuthorName))
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+        else:
+            logger.debug('pauseAuthor Invalid authorid [%s]' % AuthorID)
+            raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
     def resumeAuthor(self, AuthorID):
         self.label_thread()
 
         myDB = database.DBConnection()
-        authorsearch = myDB.select(
+        authorsearch = myDB.match(
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
-        AuthorName = authorsearch[0]['AuthorName']
-        logger.info(u"Resuming author: %s" % AuthorName)
+        if authorsearch:
+            AuthorName = authorsearch['AuthorName']
+            logger.info(u"Resuming author: %s" % AuthorName)
 
-        controlValueDict = {'AuthorID': AuthorID}
-        newValueDict = {'Status': 'Active'}
-        myDB.upsert("authors", newValueDict, controlValueDict)
-        logger.debug(
-            u'AuthorID [%s]-[%s] Restarted - redirecting to Author home page' % (AuthorID, AuthorName))
-        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+            controlValueDict = {'AuthorID': AuthorID}
+            newValueDict = {'Status': 'Active'}
+            myDB.upsert("authors", newValueDict, controlValueDict)
+            logger.debug(
+                u'AuthorID [%s]-[%s] Restarted - redirecting to Author home page' % (AuthorID, AuthorName))
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+        else:
+            logger.debug('resumeAuthor Invalid authorid [%s]' % AuthorID)
+            raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
     def ignoreAuthor(self, AuthorID):
         self.label_thread()
 
         myDB = database.DBConnection()
-        authorsearch = myDB.select(
+        authorsearch = myDB.match(
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
-        AuthorName = authorsearch[0]['AuthorName']
-        logger.info(u"Ignoring author: %s" % AuthorName)
+        if authorsearch:
+            AuthorName = authorsearch[0]['AuthorName']
+            logger.info(u"Ignoring author: %s" % AuthorName)
 
-        controlValueDict = {'AuthorID': AuthorID}
-        newValueDict = {'Status': 'Ignored'}
-        myDB.upsert("authors", newValueDict, controlValueDict)
-        logger.debug(
-            u'AuthorID [%s]-[%s] Ignored - redirecting to home page' % (AuthorID, AuthorName))
+            controlValueDict = {'AuthorID': AuthorID}
+            newValueDict = {'Status': 'Ignored'}
+            myDB.upsert("authors", newValueDict, controlValueDict)
+            logger.debug(
+                u'AuthorID [%s]-[%s] Ignored - redirecting to home page' % (AuthorID, AuthorName))
+        else:
+            logger.debug('ignoreAuthor Invalid authorid [%s]' % AuthorID)
         raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
@@ -583,10 +595,10 @@ class WebInterface(object):
         self.label_thread()
 
         myDB = database.DBConnection()
-        authorsearch = myDB.select(
+        authorsearch = myDB.match(
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
-        if len(authorsearch):  # to stop error if try to remove an author while they are still loading
-            AuthorName = authorsearch[0]['AuthorName']
+        if authorsearch:  # to stop error if try to remove an author while they are still loading
+            AuthorName = authorsearch['AuthorName']
             logger.info(u"Removing all references to author: %s" % AuthorName)
             myDB.action('DELETE from authors WHERE AuthorID="%s"' % AuthorID)
             myDB.action('DELETE from books WHERE AuthorID="%s"' % AuthorID)
@@ -597,22 +609,25 @@ class WebInterface(object):
         self.label_thread()
 
         myDB = database.DBConnection()
-        authorsearch = myDB.select(
+        authorsearch = myDB.match(
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
-        if len(authorsearch):  # to stop error if try to refresh an author while they are still loading
-            AuthorName = authorsearch[0]['AuthorName']
+        if authorsearch:  # to stop error if try to refresh an author while they are still loading
+            AuthorName = authorsearch['AuthorName']
             threading.Thread(target=addAuthorToDB, name='REFRESHAUTHOR', args=[AuthorName, True]).start()
-        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+        else:
+            logger.debug('refreshAuthor Invalid authorid [%s]' % AuthorID)
+            raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
     def libraryScanAuthor(self, AuthorID):
         self.label_thread()
 
         myDB = database.DBConnection()
-        authorsearch = myDB.select(
+        authorsearch = myDB.match(
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
-        if len(authorsearch):  # to stop error if try to refresh an author while they are still loading
-            AuthorName = authorsearch[0]['AuthorName']
+        if authorsearch:  # to stop error if try to refresh an author while they are still loading
+            AuthorName = authorsearch['AuthorName']
             authordir = os.path.join(lazylibrarian.DESTINATION_DIR, AuthorName)
             if os.path.isdir(authordir):
                 try:
@@ -622,7 +637,10 @@ class WebInterface(object):
             else:
                 # maybe we don't have any of their books
                 logger.debug(u'Unable to find author directory: %s' % authordir)
-        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+        else:
+            logger.debug('scanAuthor Invalid authorid [%s]' % AuthorID)
+            raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
     def addAuthor(self, AuthorName):
@@ -645,6 +663,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
+        lazylibrarian.DISPLAYLENGTH = iDisplayLength
 
         #   need to check and filter on BookLang if set
         if lazylibrarian.BOOKLANGFILTER is None or not len(lazylibrarian.BOOKLANGFILTER):
@@ -835,7 +854,7 @@ class WebInterface(object):
         AuthorID = ""
         booksearch = myDB.select(
             'SELECT * from books WHERE BookID="%s"' % bookid)
-        if booksearch:
+        if len(booksearch):
             myDB.upsert("books", {'Status': 'Wanted'}, {'BookID': bookid})
             for book in booksearch:
                 AuthorID = book['AuthorID']
@@ -903,16 +922,16 @@ class WebInterface(object):
 
         myDB = database.DBConnection()
 
-        bookdata = myDB.select(
+        bookdata = myDB.match(
             'SELECT * from books WHERE BookID="%s"' % bookid)
         if bookdata:
-            bookfile = bookdata[0]["BookFile"]
+            bookfile = bookdata["BookFile"]
             if bookfile and os.path.isfile(bookfile):
                 logger.info(u'Opening file %s' % bookfile)
                 return serve_file(bookfile, "application/x-download", "attachment")
             else:
-                authorName = bookdata[0]["AuthorName"]
-                bookName = bookdata[0]["BookName"]
+                authorName = bookdata["AuthorName"]
+                bookName = bookdata["BookName"]
                 logger.info(u'Missing book %s,%s' % (authorName, bookName))
 
     @cherrypy.expose
@@ -922,10 +941,10 @@ class WebInterface(object):
 
         authors = myDB.select(
             "SELECT AuthorName from authors WHERE Status !='Ignored' ORDER by AuthorName COLLATE NOCASE")
-        bookdata = myDB.select(
+        bookdata = myDB.match(
             'SELECT * from books WHERE BookID="%s"' % bookid)
         if bookdata:
-            return serve_template(templatename="editbook.html", title="Edit Book", config=bookdata[0], authors=authors)
+            return serve_template(templatename="editbook.html", title="Edit Book", config=bookdata, authors=authors)
         else:
             logger.info(u'Missing book %s' % bookid)
 
@@ -935,7 +954,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
 
         if bookid:
-            bookdata = myDB.select(
+            bookdata = myDB.match(
                 'SELECT * from books WHERE BookID="%s"' % bookid)
             if bookdata:
                 edited = False
@@ -948,20 +967,20 @@ class WebInterface(object):
                     bookgenre = None
                 manual = bool(check_int(manual, 0))
 
-                if not (bookdata[0]["BookName"] == bookname):
+                if not (bookdata["BookName"] == bookname):
                     edited = True
-                if not (bookdata[0]["BookSub"] == booksub):
+                if not (bookdata["BookSub"] == booksub):
                     edited = True
-                if not (bookdata[0]["BookGenre"] == bookgenre):
+                if not (bookdata["BookGenre"] == bookgenre):
                     edited = True
-                if not (bookdata[0]["Series"] == series):
+                if not (bookdata["Series"] == series):
                     edited = True
-                if not (bookdata[0]["SeriesNum"] == seriesnum):
+                if not (bookdata["SeriesNum"] == seriesnum):
                     edited = True
-                if not (bool(check_int(bookdata[0]["Manual"], 0)) == manual):
+                if not (bool(check_int(bookdata["Manual"], 0)) == manual):
                     edited = True
 
-                if not (bookdata[0]["AuthorName"] == authorname):
+                if not (bookdata["AuthorName"] == authorname):
                     moved = True
 
                 if edited:
@@ -980,24 +999,24 @@ class WebInterface(object):
                     logger.debug('Book [%s] has not been changed' % bookname)
 
                 if moved:
-                    authordata = myDB.select(
+                    authordata = myDB.match(
                         'SELECT AuthorID,AuthorLink from authors WHERE AuthorName="%s"' % authorname)
                     if authordata:
                         controlValueDict = {'BookID': bookid}
                         newValueDict = {
                             'AuthorName': authorname,
-                            'AuthorID': authordata[0]['AuthorID'],
-                            'AuthorLink': authordata[0]['AuthorLink']
+                            'AuthorID': authordata['AuthorID'],
+                            'AuthorLink': authordata['AuthorLink']
                         }
                         myDB.upsert("books", newValueDict, controlValueDict)
-                        update_totals(bookdata[0]["AuthorID"])    # we moved from here
-                        update_totals(authordata[0]['AuthorID'])  # to here
+                        update_totals(bookdata["AuthorID"])    # we moved from here
+                        update_totals(authordata['AuthorID'])  # to here
 
                     logger.info('Book [%s] has been moved' % bookname)
                 else:
                     logger.debug('Book [%s] has not been moved' % bookname)
 
-        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % bookdata[0]["AuthorID"])
+        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % bookdata["AuthorID"])
 
     @cherrypy.expose
     def markBooks(self, AuthorID=None, action=None, redirect=None, **args):
@@ -1012,19 +1031,19 @@ class WebInterface(object):
                 # ouch dirty workaround...
                 if not bookid == 'book_table_length':
                     if action in ["Wanted", "Have", "Ignored", "Skipped"]:
-                        title = myDB.select('SELECT * from books WHERE BookID = "%s"' % bookid)
-                        if len(title):
-                            bookname = title[0]['BookName']
+                        title = myDB.match('SELECT * from books WHERE BookID = "%s"' % bookid)
+                        if title:
+                            bookname = title['BookName']
                             myDB.upsert("books", {'Status': action}, {'BookID': bookid})
                             logger.info(u'Status set to "%s" for "%s"' % (action, bookname))
                     if action in ["Remove", "Delete"]:
-                        bookdata = myDB.select(
+                        bookdata = myDB.match(
                             'SELECT AuthorID,Bookname,BookFile from books WHERE BookID = "%s"' %
                             bookid)
-                        if len(bookdata):
-                            AuthorID = bookdata[0]['AuthorID']
-                            bookname = bookdata[0]['BookName']
-                            bookfile = bookdata[0]['BookFile']
+                        if bookdata:
+                            AuthorID = bookdata['AuthorID']
+                            bookname = bookdata['BookName']
+                            bookfile = bookdata['BookFile']
                             if action == "Delete":
                                 if bookfile and os.path.isfile(bookfile):
                                     try:
@@ -1033,8 +1052,8 @@ class WebInterface(object):
                                     except Exception as e:
                                         logger.debug('rmtree failed on %s, %s' % (bookfile, str(e)))
 
-                            authorcheck = myDB.select('SELECT AuthorID from authors WHERE AuthorID = "%s"' % AuthorID)
-                            if len(authorcheck):
+                            authorcheck = myDB.match('SELECT AuthorID from authors WHERE AuthorID = "%s"' % AuthorID)
+                            if authorcheck:
                                 myDB.upsert("books", {"Status": "Ignored"}, {"BookID": bookid})
                                 logger.info(u'Status set to Ignored for "%s"' % bookname)
                             else:
@@ -1075,18 +1094,14 @@ class WebInterface(object):
         myDB = database.DBConnection()
 
         magazines = myDB.select('SELECT * from magazines ORDER by Title')
-
-        if magazines is None:
-            raise cherrypy.HTTPRedirect("magazines")
-        else:
-            mags = []
+        mags = []
+        if magazines:
             for mag in magazines:
                 title = mag['Title']
-                count = myDB.select(
-                    'SELECT COUNT(Title) as counter FROM issues WHERE Title="%s"' %
-                    title)
+                count = myDB.match(
+                    'SELECT COUNT(Title) as counter FROM issues WHERE Title="%s"' % title)
                 if count:
-                    issues = count[0]['counter']
+                    issues = count['counter']
                 else:
                     issues = 0
                 this_mag = dict(mag)
@@ -1102,7 +1117,7 @@ class WebInterface(object):
 
         issues = myDB.select('SELECT * from issues WHERE Title="%s" order by IssueDate DESC' % title)
 
-        if issues is None:
+        if not len(issues):
             raise cherrypy.HTTPRedirect("magazines")
         else:
             mod_issues = []
@@ -1146,6 +1161,8 @@ class WebInterface(object):
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
+        lazylibrarian.DISPLAYLENGTH = iDisplayLength
+
         # need to filter on whichStatus
         rowlist = myDB.select(
             'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov from pastissues WHERE Status="%s"' %
@@ -1199,9 +1216,9 @@ class WebInterface(object):
         bookid = urllib.unquote_plus(bookid)
         myDB = database.DBConnection()
         # we may want to open an issue with a hashed bookid
-        mag_data = myDB.select('SELECT * from issues WHERE IssueID="%s"' % bookid)
-        if len(mag_data):
-            IssueFile = mag_data[0]["IssueFile"]
+        mag_data = myDB.match('SELECT * from issues WHERE IssueID="%s"' % bookid)
+        if mag_data:
+            IssueFile = mag_data["IssueFile"]
             if IssueFile and os.path.isfile(IssueFile):
                 logger.info(u'Opening file %s' % IssueFile)
                 return serve_file(IssueFile, "application/x-download", "attachment")
@@ -1371,7 +1388,7 @@ class WebInterface(object):
     def searchForMag(self, bookid=None, action=None, **args):
         myDB = database.DBConnection()
         bookid = urllib.unquote_plus(bookid)
-        bookdata = myDB.select('SELECT * from magazines WHERE Title="%s"' % bookid)
+        bookdata = myDB.match('SELECT * from magazines WHERE Title="%s"' % bookid)
         if bookdata:
             # start searchthreads
             mags = [{"bookid": bookid}]
@@ -1586,6 +1603,7 @@ class WebInterface(object):
     def getLog(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
+        lazylibrarian.DISPLAYLENGTH = iDisplayLength
 
         if sSearch == "":
             filtered = lazylibrarian.LOGLIST[::]
@@ -1772,11 +1790,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def manage(self, action=None, whichStatus=None, source=None, **args):
-        # myDB = database.DBConnection()
-        # books only holds status [skipped wanted open have ignored]
-        # wanted holds status [snatched processed]
-        # books = myDB.select('SELECT * FROM books WHERE Status = ?',
-        # [whichStatus])
         if whichStatus is None:
             whichStatus = "Wanted"
         lazylibrarian.MANAGEFILTER = whichStatus
@@ -1789,6 +1802,8 @@ class WebInterface(object):
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
+        lazylibrarian.DISPLAYLENGTH = iDisplayLength
+
         # print "getManage %s" % iDisplayStart
         #   need to filter on whichStatus
         cmd = 'SELECT authorname, bookname, series, seriesnum, bookdate, bookid, booklink, booksub, authorid '

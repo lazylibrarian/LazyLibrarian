@@ -1,4 +1,7 @@
 <%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
 
 <%def name="headerIncludes()">
 	<div id="subhead_container">
@@ -8,7 +11,7 @@
 			<li><a href="clearhistory?status=Snatched" id="button">Clear Snatched</a></li>
 			<li><a href="clearhistory?status=Failed" id="button">Clear Failed</a></li>
 			</ul>
-	</div>	
+	</div>
 </%def>
 
 <%def name="body()">
@@ -58,7 +61,7 @@
 <%def name="javascriptIncludes()">
     <script src="js/libs/jquery.dataTables.min.js"></script>
     <script>
-        
+
     $(document).ready(function()
     {
 
@@ -79,9 +82,8 @@
                     "sInfoEmpty":"Showing 0 to 0 of 0 rows",
                     "sInfoFiltered":"(filtered from _MAX_ total rows)"},
                 "sPaginationType": "full_numbers",
-                "bStateSave": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
-                "iDisplayLength": 10,
+                "iDisplayLength": ${lazylibrarian.DISPLAYLENGTH},
             });
             $('.dataTables_filter input').attr("placeholder", "Search table here");
     });

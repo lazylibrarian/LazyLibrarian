@@ -81,7 +81,6 @@ def SABnzbd(title=None, nzburl=None):
 
     try:
         request = urllib2.urlopen(URL, timeout=30)
-        logger.debug(u'Sending Nzbfile to SAB <a href="%s">URL</a>' % URL)
     except (socket.error) as e:
         logger.error(u"Timeout connecting to SAB with URL: %s" % URL)
         return False
@@ -97,14 +96,12 @@ def SABnzbd(title=None, nzburl=None):
         return False
 
     except (urllib2.HTTPError, ssl.SSLError) as e:
-        logger.error(
-            u"Invalid SAB host, check your config. Current host: %s" %
-            HOST)
+        logger.error(u"Invalid SAB host, check your config. Current host: %s" % HOST)
         return False
 
     result = json.loads(request.read())
     if not result:
-        log.error("SABnzbd didn't return anything.")
+        log.error("SABnzbd didn't return any json")
         return False
 
     logger.debug("Result text from SAB: " + str(result))

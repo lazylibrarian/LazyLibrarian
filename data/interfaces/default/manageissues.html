@@ -1,4 +1,7 @@
 <%inherit file="base.html" />
+<%!
+    import lazylibrarian
+%>
 
 <%def name="headerIncludes()">
     <div id="subhead_container">
@@ -90,9 +93,8 @@
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
                     "sInfoEmpty":"Showing 0 to 0 of 0 magazines",
                     "sInfoFiltered":"(filtered from _MAX_ total magazines)"},
-                "bStateSave": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
-                "iDisplayLength": 10,
+                "iDisplayLength": ${lazylibrarian.DISPLAYLENGTH},
                 "sPaginationType": "full_numbers",
                 "aaSorting": [[1, 'asc']],
                 "bServerSide": true,
