@@ -180,6 +180,10 @@ def search_magazines(mags=None, reset=False):
                                 u"Magazine token set Match failed: " + str(
                                     mag_title_match) + "% for " + nzbtitle_formatted)
                             rejected = True
+                        else:
+                            logger.debug(
+                                u"Magazine matched: " + str(
+                                    mag_title_match) + "% " + bookid + " for " + nzbtitle_formatted)
                     else:
                         rejected = True
 
