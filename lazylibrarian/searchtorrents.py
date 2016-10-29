@@ -397,8 +397,8 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             Source = "TRANSMISSION"
             downloadID = transmission.addTorrent(tor_url)  # returns id or False
             if downloadID:
-                downloadID = str(downloadID)  # transmission returns int
-                downloadID = CalcTorrentHash(torrent) # store hashid instead
+                # transmission returns it's own int, but we store hashid instead
+                downloadID = CalcTorrentHash(torrent)
                 tor_title = transmission.getTorrentFolder(downloadID)
 
         if (lazylibrarian.TOR_DOWNLOADER_DELUGE and lazylibrarian.DELUGE_HOST):
