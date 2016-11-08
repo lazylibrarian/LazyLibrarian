@@ -87,9 +87,9 @@ cmd_dict = {'help': 'list available commands. ' +
             'getBookCovers': '[&wait] Check all books for cached cover and download if missing',
             'cleanCache': '[&wait] Clean unused/old files from the LazyLibrarian caches',
             'setWorkPages': '[&wait] Set the WorkPages links in the database',
-            'importAlternate': '[&wait] Import books from alternate folder and any subfolders',
-            'importCSVwishlist': '[&wait] Import a CSV wishlist',
-            'exportCSVwishlist': '[&wait] Export a CSV wishlist'
+            'importAlternate': '[&wait] [&dir=] Import books from named or alternate folder and any subfolders',
+            'importCSVwishlist': '[&wait] [&dir=] Import a CSV wishlist from named or alternate directory',
+            'exportCSVwishlist': '[&wait] [&dir=] Export a CSV wishlist to named or alternate directory'
             }
 
 
@@ -417,9 +417,9 @@ class Api(object):
 
     def _forceLibraryScan(self, **kwargs):
         if 'wait' in kwargs:
-            LibraryScan(lazylibrarian.DESTINATION_DIR)
+            LibraryScan()
         else:
-            threading.Thread(target=LibraryScan, name='API-LIBRARYSCAN', args=[lazylibrarian.DESTINATION_DIR]).start()
+            threading.Thread(target=LibraryScan, name='API-LIBRARYSCAN', args=[]).start()
 
     def _forceMagazineScan(self, **kwargs):
         if 'wait' in kwargs:
@@ -701,19 +701,31 @@ class Api(object):
         self.data = showJobs()
 
     def _importAlternate(self, **kwargs):
-        if 'wait' in kwargs:
-            processAlternate(lazylibrarian.ALTERNATE_DIR)
+        if 'dir' in kwargs:
+            usedir = kwargs['dir']
         else:
-            threading.Thread(target=processAlternate, name='API-IMPORTALT', args=[lazylibrarian.ALTERNATE_DIR]).start()
+            usedir = lazylibrarian.ALTERNATE_DIR
+        if 'wait' in kwargs:
+            processAlternate(usedir)
+        else:
+            threading.Thread(target=processAlternate, name='API-IMPORTALT', args=[usedir]).start()
 
     def _importCSVwishlist(self, **kwargs):
-        if 'wait' in kwargs:
-            import_CSV(lazylibrarian.ALTERNATE_DIR)
+        if 'dir' in kwargs:
+            usedir = kwargs['dir']
         else:
-            threading.Thread(target=import_CSV, name='API-IMPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
+            usedir = lazylibrarian.ALTERNATE_DIR
+        if 'wait' in kwargs:
+            import_CSV(usedir)
+        else:
+            threading.Thread(target=import_CSV, name='API-IMPORTCSV', args=[usedir]).start()
 
     def _exportCSVwishlist(self, **kwargs):
-        if 'wait' in kwargs:
-            export_CSV(lazylibrarian.ALTERNATE_DIR)
+        if 'dir' in kwargs:
+            usedir = kwargs['dir']
         else:
-            threading.Thread(target=export_CSV, name='API-EXPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
+            usedir = lazylibrarian.ALTERNATE_DIR
+        if 'wait' in kwargs:
+            export_CSV(usedir)
+        else:
+            threading.Thread(target=export_CSV, name='API-EXPORTCSV', args=[usedir]).start()
