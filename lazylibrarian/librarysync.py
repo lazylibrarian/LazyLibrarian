@@ -230,11 +230,11 @@ def find_book_in_db(myDB, author, book):
 def LibraryScan(startdir=None):
     """ Scan a directory tree adding new books into database
         Return how many books you added """
+    destdir = lazylibrarian.DIRECTORY('Destination')
     if not startdir:
-        if not lazylibrarian.DESTINATION_DIR:
+        if not destdir:
             return 0
-        else:
-            startdir = lazylibrarian.DESTINATION_DIR
+        startdir = destdir
 
     if not os.path.isdir(startdir):
         logger.warn(
@@ -244,7 +244,7 @@ def LibraryScan(startdir=None):
     myDB = database.DBConnection()
 
     # keep statistics of full library scans
-    if startdir == lazylibrarian.DESTINATION_DIR:
+    if startdir == destdir:
         myDB.action('DELETE from stats')
 
     logger.info('Scanning ebook directory: %s' % startdir)
@@ -254,7 +254,7 @@ def LibraryScan(startdir=None):
     file_count = 0
     author = ""
 
-    if lazylibrarian.FULL_SCAN and startdir == lazylibrarian.DESTINATION_DIR:
+    if lazylibrarian.FULL_SCAN and startdir == destdir:
         books = myDB.select(
             'select AuthorName, BookName, BookFile, BookID from books where Status="Open"')
         status = lazylibrarian.NOTFOUND_STATUS
@@ -534,7 +534,7 @@ def LibraryScan(startdir=None):
     logger.info("%s file%s processed" % (file_count, plural(file_count)))
 
     # show statistics of full library scans
-    if startdir == lazylibrarian.DESTINATION_DIR:
+    if startdir == destdir:
         stats = myDB.match(
             "SELECT sum(GR_book_hits), sum(GR_lang_hits), sum(LT_lang_hits), sum(GB_lang_change), \
                 sum(cache_hits), sum(bad_lang), sum(bad_char), sum(uncached), sum(duplicates) FROM stats")

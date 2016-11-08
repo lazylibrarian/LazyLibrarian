@@ -37,7 +37,7 @@ def addTorrent(link, directory=None):
     #    arguments = {'metainfo': metainfo }
     # else:
     if directory is None:
-        directory = lazylibrarian.DOWNLOAD_DIR
+        directory = lazylibrarian.DIRECTORY('Download')
     arguments = {'filename': link, 'download-dir': directory}
 
     response = torrentAction(method, arguments)

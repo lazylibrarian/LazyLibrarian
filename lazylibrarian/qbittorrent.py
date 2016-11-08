@@ -207,7 +207,7 @@ def addTorrent(link):
     logger.debug('addTorrent(%s)' % link)
 
     qbclient = qbittorrentclient()
-    args = {'urls': link, 'savepath': lazylibrarian.DOWNLOAD_DIR}
+    args = {'urls': link, 'savepath': lazylibrarian.DIRECTORY('Download')}
     if lazylibrarian.QBITTORRENT_LABEL:
         args['label'] = lazylibrarian.QBITTORRENT_LABEL
     return qbclient._command('command/download', args, 'application/x-www-form-urlencoded')

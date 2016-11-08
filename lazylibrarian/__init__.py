@@ -150,6 +150,7 @@ TOR_DOWNLOADER_UTORRENT = 0
 TOR_DOWNLOADER_RTORRENT = 0
 TOR_DOWNLOADER_QBITTORRENT = 0
 TOR_DOWNLOADER_TRANSMISSION = 0
+TOR_DOWNLOADER_SYNOLOGY = 0
 TOR_DOWNLOADER_DELUGE = 0
 NUMBEROFSEEDERS = 10
 KEEP_SEEDING = 0
@@ -166,6 +167,12 @@ UTORRENT_PORT = 0
 UTORRENT_USER = None
 UTORRENT_PASS = None
 UTORRENT_LABEL = None
+
+SYNOLOGY_HOST = None
+SYNOLOGY_PORT = 0
+SYNOLOGY_USER = None
+SYNOLOGY_PASS = None
+USE_SYNOLOGY = 0
 
 QBITTORRENT_HOST = None
 QBITTORRENT_PORT = 0
@@ -201,6 +208,7 @@ LIME_HOST = None
 
 NZB_DOWNLOADER_SABNZBD = 0
 NZB_DOWNLOADER_NZBGET = 0
+NZB_DOWNLOADER_SYNOLOGY = 0
 NZB_DOWNLOADER_BLACKHOLE = 0
 NZB_BLACKHOLEDIR = None
 USENET_RETENTION = 0
@@ -467,21 +475,21 @@ def config_read(reloaded=False):
             TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, TOR_CONVERT_MAGNET, \
             USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, \
             TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, TOR_DOWNLOADER_RTORRENT, \
-            TOR_DOWNLOADER_QBITTORRENT, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
-            USE_PUSHBULLET, PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, \
+            TOR_DOWNLOADER_QBITTORRENT, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_SYNOLOGY, NZB_DOWNLOADER_BLACKHOLE, \
+            USE_SYNOLOGY, USE_PUSHBULLET, PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, \
             PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, RTORRENT_HOST, RTORRENT_USER, RTORRENT_PASS, RTORRENT_DIR, \
             RTORRENT_LABEL, UTORRENT_HOST, UTORRENT_PORT, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
             QBITTORRENT_HOST, QBITTORRENT_PORT, QBITTORRENT_USER, QBITTORRENT_PASS, QBITTORRENT_LABEL, \
-            USE_PUSHOVER, PUSHOVER_ONSNATCH, PUSHOVER_KEYS, PUSHOVER_APITOKEN, \
-            PUSHOVER_PRIORITY, PUSHOVER_ONDOWNLOAD, PUSHOVER_DEVICE, \
+            SYNOLOGY_PORT, SYNOLOGY_HOST, SYNOLOGY_USER, SYNOLOGY_PASS, USE_PUSHOVER, PUSHOVER_ONSNATCH, \
+            PUSHOVER_KEYS, PUSHOVER_APITOKEN, PUSHOVER_PRIORITY, PUSHOVER_ONDOWNLOAD, PUSHOVER_DEVICE, \
             USE_ANDROIDPN, ANDROIDPN_NOTIFY_ONSNATCH, ANDROIDPN_NOTIFY_ONDOWNLOAD, \
             ANDROIDPN_URL, ANDROIDPN_USERNAME, ANDROIDPN_BROADCAST, \
             USE_SLACK, SLACK_NOTIFY_ONSNATCH, SLACK_NOTIFY_ONDOWNLOAD, SLACK_TOKEN, \
             USE_EMAIL, EMAIL_NOTIFY_ONSNATCH, EMAIL_NOTIFY_ONDOWNLOAD, EMAIL_FROM, EMAIL_TO, \
             EMAIL_SSL, EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT, EMAIL_TLS, EMAIL_SMTP_USER, EMAIL_SMTP_PASSWORD, \
             TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PORT, TRANSMISSION_PASS, TRANSMISSION_USER, \
-            TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, DELUGE_LABEL, \
-            FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, \
+            TOR_DOWNLOADER_SYNOLOGY, TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, \
+            DELUGE_LABEL, FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, \
             USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
             GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, COMMIT_LIST, \
             LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, KEEP_SEEDING, SCHED, CACHE_HIT, CACHE_MISS, \
@@ -575,19 +583,10 @@ def config_read(reloaded=False):
         DESTINATION_DIR = check_setting_str(CFG, 'General', 'destination_dir', '')
         ALTERNATE_DIR = check_setting_str(CFG, 'General', 'alternate_dir', '')
         DOWNLOAD_DIR = check_setting_str(CFG, 'General', 'download_dir', '')
-        if not DOWNLOAD_DIR:
-            logger.warn("Download dir not configured, books will be downloaded to %s" % os.getcwd())
-        elif not os.path.isdir(DOWNLOAD_DIR):
-            logger.warn(
-                "Download dir [%s] not found, books will be downloaded to %s" %
-                (repr(DOWNLOAD_DIR), os.getcwd()))
-        elif not os.access(DOWNLOAD_DIR, os.W_OK | os.X_OK):
-            logger.warn(
-                "Download dir [%s] not writeable, books will be downloaded to %s" %
-                (repr(DOWNLOAD_DIR), os.getcwd()))
 
         NZB_DOWNLOADER_SABNZBD = check_setting_bool(CFG, 'USENET', 'nzb_downloader_sabnzbd', 0)
         NZB_DOWNLOADER_NZBGET = check_setting_bool(CFG, 'USENET', 'nzb_downloader_nzbget', 0)
+        NZB_DOWNLOADER_SYNOLOGY = check_setting_bool(CFG, 'USENET', 'nzb_downloader_synology', 0)
         NZB_DOWNLOADER_BLACKHOLE = check_setting_bool(CFG, 'USENET', 'nzb_downloader_blackhole', 0)
         NZB_BLACKHOLEDIR = check_setting_str(CFG, 'USENET', 'nzb_blackholedir', '')
         USENET_RETENTION = check_setting_int(CFG, 'USENET', 'usenet_retention', 0)
@@ -695,6 +694,7 @@ def config_read(reloaded=False):
         TOR_DOWNLOADER_RTORRENT = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_rtorrent', 0)
         TOR_DOWNLOADER_QBITTORRENT = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_qbittorrent', 0)
         TOR_DOWNLOADER_TRANSMISSION = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_transmission', 0)
+        TOR_DOWNLOADER_SYNOLOGY = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_synology', 0)
         TOR_DOWNLOADER_DELUGE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_deluge', 0)
         NUMBEROFSEEDERS = check_setting_int(CFG, 'TORRENT', 'numberofseeders', 10)
         TOR_DOWNLOADER_DELUGE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_deluge', 0)
@@ -773,6 +773,12 @@ def config_read(reloaded=False):
         DELUGE_USER = check_setting_str(CFG, 'DELUGE', 'deluge_user', '')
         DELUGE_PASS = check_setting_str(CFG, 'DELUGE', 'deluge_pass', '')
         DELUGE_LABEL = check_setting_str(CFG, 'DELUGE', 'deluge_label', '')
+
+        SYNOLOGY_HOST = check_setting_str(CFG, 'SYNOLOGY', 'synology_host', '')
+        SYNOLOGY_PORT = check_setting_int(CFG, 'SYNOLOGY', 'synology_port', 0)
+        SYNOLOGY_USER = check_setting_str(CFG, 'SYNOLOGY', 'synology_user', '')
+        SYNOLOGY_PASS = check_setting_str(CFG, 'SYNOLOGY', 'synology_pass', '')
+        USE_SYNOLOGY = check_setting_bool(CFG, 'SYNOLOGY', 'use_synology', 0)
 
         KAT = check_setting_bool(CFG, 'KAT', 'kat', 0)
         KAT_HOST = check_setting_str(CFG, 'KAT', 'kat_host', 'kickass.cd')
@@ -939,6 +945,7 @@ def config_write():
     check_section('USENET')
     CFG.set('USENET', 'nzb_downloader_sabnzbd', NZB_DOWNLOADER_SABNZBD)
     CFG.set('USENET', 'nzb_downloader_nzbget', NZB_DOWNLOADER_NZBGET)
+    CFG.set('USENET', 'nzb_downloader_synology', NZB_DOWNLOADER_SYNOLOGY)
     CFG.set('USENET', 'nzb_downloader_blackhole', NZB_DOWNLOADER_BLACKHOLE)
     CFG.set('USENET', 'nzb_blackholedir', NZB_BLACKHOLEDIR)
     CFG.set('USENET', 'usenet_retention', USENET_RETENTION)
@@ -1033,6 +1040,7 @@ def config_write():
     CFG.set('TORRENT', 'tor_downloader_rtorrent', TOR_DOWNLOADER_RTORRENT)
     CFG.set('TORRENT', 'tor_downloader_qbittorrent', TOR_DOWNLOADER_QBITTORRENT)
     CFG.set('TORRENT', 'tor_downloader_transmission', TOR_DOWNLOADER_TRANSMISSION)
+    CFG.set('TORRENT', 'tor_downloader_synology', TOR_DOWNLOADER_SYNOLOGY)
     CFG.set('TORRENT', 'tor_downloader_deluge', TOR_DOWNLOADER_DELUGE)
     CFG.set('TORRENT', 'numberofseeders', NUMBEROFSEEDERS)
     CFG.set('TORRENT', 'torrent_dir', TORRENT_DIR)
@@ -1051,6 +1059,13 @@ def config_write():
     CFG.set('UTORRENT', 'utorrent_user', UTORRENT_USER)
     CFG.set('UTORRENT', 'utorrent_pass', UTORRENT_PASS)
     CFG.set('UTORRENT', 'utorrent_label', UTORRENT_LABEL)
+#
+    check_section('SYNOLOGY')
+    CFG.set('SYNOLOGY', 'synology_host', SYNOLOGY_HOST)
+    CFG.set('SYNOLOGY', 'synology_port', SYNOLOGY_PORT)
+    CFG.set('SYNOLOGY', 'synology_user', SYNOLOGY_USER)
+    CFG.set('SYNOLOGY', 'synology_pass', SYNOLOGY_PASS)
+    CFG.set('SYNOLOGY', 'use_synology', USE_SYNOLOGY)
 #
     check_section('QBITTORRENT')
     CFG.set('QBITTORRENT', 'qbittorrent_host', QBITTORRENT_HOST)
@@ -1268,6 +1283,29 @@ def USE_NZB():
         if bool(provider['ENABLED']):
             return True
     return False
+
+
+def DIRECTORY(dirname):
+    if dirname == "Destination":
+        usedir = DESTINATION_DIR
+    elif dirname == "Download":
+        usedir = DOWNLOAD_DIR
+    #elif dirname == "Alternate":
+    #    usedir = ALTERNATE_DIR
+    else:
+        return ""
+
+    if not usedir:
+        logger.warn("%s dir not configured, using %s" % (dirname, os.getcwd()))
+    elif not os.path.isdir(usedir):
+        logger.warn("%s dir [%s] not found, using %s" %
+            (dirname, repr(usedir), os.getcwd()))
+    elif not os.access(usedir, os.W_OK | os.X_OK):
+        logger.warn("%s dir [%s] not writeable, using %s" %
+            (dirname, repr(usedir), os.getcwd()))
+    else:
+        return usedir
+    return os.getcwd()
 
 
 def add_rss_slot():
