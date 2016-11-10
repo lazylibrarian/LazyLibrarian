@@ -109,7 +109,10 @@ def SABnzbd(title=None, nzburl=None):
         return result
     elif result['status'] is True:
         logger.info(title + " sent to SAB successfully.")
-        return result['nzo_ids'][0]
+        # sab versions earlier than 0.8.0 don't return nzo_ids
+        if 'nzo_ids' in result:
+            return result['nzo_ids'][0]
+        return 'unknown'
     elif result['status'] is False:
         logger.error("SAB returned Error: %s" % result['error'])
         return False
