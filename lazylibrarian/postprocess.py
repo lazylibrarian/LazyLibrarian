@@ -9,7 +9,8 @@ from urllib import FancyURLopener
 from lib.fuzzywuzzy import fuzz
 import lazylibrarian
 
-from lazylibrarian import database, logger, gr, utorrent, transmission, qbittorrent, deluge, rtorrent, synology
+from lazylibrarian import database, logger, gr, utorrent, transmission, qbittorrent, \
+                            deluge, rtorrent, synology, sabnzbd
 from lib.deluge_client import DelugeRPCClient
 from lazylibrarian.magazinescan import create_id, create_cover
 from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, unaccented
@@ -377,38 +378,24 @@ def processDir(reset=False):
                 create_cover(dest_file)
 
             # calibre or ll copied/moved the files we want, now delete source files
-            # Only delete torrents if we said delete after processing, as we may be seeding
 
+            to_delete = True
             if book['NZBmode'] in ['torrent', 'magnet']:
+                # Only delete torrents if we don't want to keep seeding
                 if lazylibrarian.KEEP_SEEDING:
-                    logger.debug('Seeding %s %s' % (book['NZBmode'], book['NZBtitle']))
+                    logger.warn('Seeding %s %s' % (book['NZBmode'], book['NZBtitle']))
+                    to_delete = False
                 else:
-                    # ask downloader to delete the torrent
-                    logger.debug('Removing %s from %s' % (book['NZBtitle'], book['Source'].lower()))
-                    if book['Source'] == "UTORRENT":
-                        utorrent.removeTorrent(book['DownloadID'], remove_data=True)
-                    elif book['Source'] == "RTORRENT":
-                        rtorrent.removeTorrent(book['DownloadID'], remove_data=True)
-                    elif book['Source'] == "QBITTORRENT":
-                        qbittorrent.removeTorrent(book['DownloadID'], remove_data=True)
-                    elif book['Source'] == "TRANSMISSION":
-                        transmission.removeTorrent(book['DownloadID'], remove_data=True)
-                    elif book['Source'] == "SYNOLOGY_TOR":
-                        synology.removeTorrent(book['DownloadID'], remove_data=True)
-                    elif book['Source'] == "DELUGEWEBUI":
-                        deluge.removeTorrent(book['DownloadID'], remove_data=True)
-                    elif book['Source'] == "DELUGERPC":
-                        client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
-                                                 int(lazylibrarian.DELUGE_PORT),
-                                                 lazylibrarian.DELUGE_USER,
-                                                 lazylibrarian.DELUGE_PASS)
-                        try:
-                            client.connect()
-                            client.call('core.remove_torrent', book['DownloadID'], True)
-                        except Exception as e:
-                            logger.debug('DelugeRPC failed %s' % str(e))
-            else:
-                # only delete if not in download root dir and if DESTINATION_COPY not set
+                    # ask downloader to delete the torrent, but not the files
+                    if book['DownloadID'] != "unknown":
+                        logger.debug('Removing %s from %s' % (book['NZBtitle'], book['Source'].lower()))
+                        delete_task(book['Source'], book['DownloadID'], False)
+                    else:
+                        logger.warn("Unable to remove %s from %s, no DownloadID" %
+                            (book['NZBtitle'], book['Source'].lower()))
+
+            if to_delete:
+                # only delete the files if not in download root dir and if DESTINATION_COPY not set
                 if not lazylibrarian.DESTINATION_COPY and pp_path != lazylibrarian.DIRECTORY('Download'):
                     if os.path.isdir(pp_path):
                         # calibre might have already deleted it?
@@ -473,10 +460,50 @@ def processDir(reset=False):
             except:
                 diff = 0
             hours = int(diff / 3600)
-            if hours > 1:
-                logger.warn('%s was sent to %s %s hours ago' % (snatch['NZBtitle'], snatch['Source'].lower(), hours))
+            if hours >= 2:
+                logger.warn('%s was sent to %s %s hours ago, deleting failed task' %
+                            (snatch['NZBtitle'], snatch['Source'].lower(), hours))
+                # change status to "Failed", and ask downloader to delete task and files
+                if snatch['BookID'] != 'unknown':
+                    myDB.action('UPDATE wanted SET Status="Failed" where BookID=%s' % snatch['BookID'])
+                    myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % snatch['BookID'])
+                    delete_task(snatch['Source'], snatch['DownloadID'], True)
     if reset:
         scheduleJob(action='Restart', target='processDir')
+
+
+def delete_task(Source, DownloadID, remove_data):
+    # NOTE - nzbget not included yet
+    if DownloadID == "unknown":
+        return False
+    if Source == "SABNZBD":
+        sabnzbd.SABnzbd(DownloadID, 'delete', remove_data)
+    elif Source == "UTORRENT":
+        utorrent.removeTorrent(DownloadID, remove_data)
+    elif Source == "RTORRENT":
+        rtorrent.removeTorrent(DownloadID, remove_data)
+    elif Source == "QBITTORRENT":
+        qbittorrent.removeTorrent(DownloadID, remove_data)
+    elif Source == "TRANSMISSION":
+        transmission.removeTorrent(DownloadID, remove_data)
+    elif  Source == "SYNOLOGY_TOR" or Source == "SYNOLOGY_NZB":
+        synology.removeTorrent(DownloadID, remove_data)
+    elif Source == "DELUGEWEBUI":
+        deluge.removeTorrent(DownloadID, remove_data)
+    elif Source == "DELUGERPC":
+        client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
+                                 int(lazylibrarian.DELUGE_PORT),
+                                 lazylibrarian.DELUGE_USER,
+                                 lazylibrarian.DELUGE_PASS)
+        try:
+            client.connect()
+            client.call('core.remove_torrent', DownloadID, remove_data)
+        except Exception as e:
+            logger.debug('DelugeRPC failed %s' % str(e))
+            return False
+    else:
+        return False
+    return True
 
 
 def import_book(pp_path=None, bookID=None):

@@ -218,7 +218,7 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
     Source = ''
     if lazylibrarian.NZB_DOWNLOADER_SABNZBD and lazylibrarian.SAB_HOST:
         Source = "SABNZBD"
-        downloadID = sabnzbd.SABnzbd(nzbtitle, nzburl)  # returns nzb_ids or False
+        downloadID = sabnzbd.SABnzbd(nzbtitle, nzburl, False)  # returns nzb_ids or False
 
     if lazylibrarian.NZB_DOWNLOADER_NZBGET and lazylibrarian.NZBGET_HOST:
         Source = "NZBGET"
