@@ -411,6 +411,73 @@
 
                                             <div class="checkbox">
                                                 <%
+                                                if lazylibrarian.USE_SYNOLOGY == True:
+                                                    checked = 'checked="checked"'
+                                                else:
+                                                    checked = ''
+                                                %>
+                                                <label for="use_synology" class="control-label">
+                                                <input type="checkbox" id="use_synology" name="use_synology" value="1" ${checked} />
+                                                Use Synology DownloadStation</label>
+                                            </div>
+
+                                            <fieldset id="synology_options">
+                                                <legend>Synology</legend>
+                                                <div class="row">
+                                                    <div class="form-group col-md-8">
+                                                        <label for="synology_host" class="control-label">Synology Host:</label>
+                                                        <input type="text" id="synology_host" name="synology_host" value="${lazylibrarian.SYNOLOGY_HOST}" class="form-control" placeholder="Synology Host">
+                                                    </div>
+                                                    <div class="form-group col-md-4">
+                                                        <label for="synology_port" class="control-label">Port</label>
+                                                        <input type="text" id="synology_port" name="synology_port" value="${lazylibrarian.SYNOLOGY_PORT}" class="form-control" placeholder="Synology Port">
+                                                    </div>
+                                                    <div class="form-group col-md-6">
+                                                        <label for="synology_user" class="control-label">Username</label>
+                                                        <input type="text" id="synology_user" name="synology_user" value="${lazylibrarian.SYNOLOGY_USER}" class="form-control" placeholder="Synology Username">
+                                                    </div>
+                                                    <div class="form-group col-md-6">
+                                                        <label for="synology_pass">Password:</label>
+                                                        <input type="password" id="synology_pass" name="synology_pass" value="${lazylibrarian.SYNOLOGY_PASS}" class="form-control" placeholder="Synology Password">
+                                                    </div>
+                                                    <div class="form-group col-md-6">
+                                                        <label for="synology_dir">Directory:</label>
+                                                        <input type="text" id="synology_dir" name="synology_dir" value="${lazylibrarian.SYNOLOGY_DIR}" class="form-control" placeholder="Synology Directory">
+                                                    </div>
+                                                </div>
+                                            <div class="checkbox">
+                                                <%
+                                                if lazylibrarian.NZB_DOWNLOADER_SYNOLOGY == True:
+                                                    checked = 'checked="checked"'
+                                                else:
+                                                    checked = ''
+                                                %>
+                                                <label for="nzb_downloader_synology" class="control-label">
+                                                <input type="checkbox" id="nzb_downloader_synology" name="nzb_downloader_synology" value="1" ${checked} />
+                                                Use DownloadStation for usenet</label>
+                                            </div>
+
+                                            <div class="checkbox">
+                                                <%
+                                                if lazylibrarian.TOR_DOWNLOADER_SYNOLOGY == True:
+                                                    checked = 'checked="checked"'
+                                                else:
+                                                    checked = ''
+                                                %>
+                                                <label for="tor_downloader_synology" class="control-label">
+                                                <input type="checkbox" id="tor_downloader_synology" name="tor_downloader_synology" value="1" ${checked} />
+                                                Use DownloadStation for torrents</label>
+                                            </div>
+
+                                                <div class="form-group col-md-6">
+                                                    <label for="testSynology" class="control-label">Synology Connection:</label><br>
+                                                    <button class="button btn btn-sm btn-primary" type="button" value="Test Synology" id="testSynology"><i class="fa fa-list-ul"></i> Test Synology</button>
+                                                    <br><br>
+                                                </div>
+                                            </fieldset>
+
+                                            <div class="checkbox">
+                                                <%
                                                 if lazylibrarian.NZB_DOWNLOADER_BLACKHOLE == True:
                                                     checked = 'checked="checked"'
                                                 else:
@@ -1966,6 +2033,25 @@
                     }
             });
 
+            if ($("#use_synology").is(":checked"))
+                {
+                        $("#synology_options").show();
+                }
+            else
+                {
+                        $("#synology_options").hide();
+                }
+            $("#use_synology").click(function(){
+                    if ($("#use_synology").is(":checked"))
+                    {
+                            $("#synology_options").slideDown();
+                    }
+                    else
+                    {
+                            $("#synology_options").slideUp();
+                    }
+            });
+
             $('#generateAPI').click(function () {
                 $.get("generateAPI",
                     function (data) { });
@@ -2021,6 +2107,21 @@
                 $.get('testNZBget', function(data) {
                     bootbox.dialog({
                         title: 'NZBget Connection',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
+            });
+
+            $('#testSynology').on('click', function(e) {
+                $.get('testSynology', function(data) {
+                    bootbox.dialog({
+                        title: 'Synology Connection',
                         message: '<pre>'+data+'</pre>',
                         buttons: {
                             primary: {

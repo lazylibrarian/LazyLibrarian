@@ -136,7 +136,7 @@ class WebInterface(object):
                      qbittorrent_label='', notfound_status='Skipped', newbook_status='Skipped', full_scan=0,
                      add_author=0, tor_downloader_transmission=0, transmission_host='', transmission_port=0,
                      transmission_user='', transmission_pass='', tor_downloader_deluge=0, deluge_host='',
-                     deluge_user='', deluge_pass='', deluge_port=0, deluge_label='', use_synology=0,
+                     deluge_user='', deluge_pass='', deluge_port=0, deluge_label='', use_synology=0, synology_dir='',
                      tor_downloader_synology=0, synology_host='', synology_port=0, synology_user='', synology_pass='',
                      use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token='',
                      use_pushbullet=0, pushbullet_notify_onsnatch=0,
@@ -259,6 +259,7 @@ class WebInterface(object):
         lazylibrarian.SYNOLOGY_PORT = synology_port
         lazylibrarian.SYNOLOGY_USER = synology_user
         lazylibrarian.SYNOLOGY_PASS = synology_pass
+        lazylibrarian.SYNOLOGY_DIR = synology_dir
         lazylibrarian.USE_SYNOLOGY = bool(use_synology)
 
         lazylibrarian.DELUGE_HOST = deluge_host
