@@ -34,6 +34,10 @@ def checkLink():
 
 def SABnzbd(title=None, nzburl=None, remove_data=False):
 
+    if nzburl == 'delete' and title == 'unknown':
+        logger.debug('Delete function unavailable in this version of sabnzbd, no nzb_ids')
+        return False
+
     HOST = "%s:%i" % (lazylibrarian.SAB_HOST, lazylibrarian.SAB_PORT)
     if not HOST.startswith("http"):
         HOST = 'http://' + HOST
