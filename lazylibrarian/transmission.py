@@ -37,7 +37,7 @@ def addTorrent(link, directory=None):
     #    arguments = {'metainfo': metainfo }
     # else:
     if directory is None:
-        directory = lazylibrarian.DOWNLOAD_DIR
+        directory = lazylibrarian.DIRECTORY('Download')
     arguments = {'filename': link, 'download-dir': directory}
 
     response = torrentAction(method, arguments)
@@ -61,24 +61,51 @@ def addTorrent(link, directory=None):
         return False
 
 
-def getTorrentFolder(torrentid):
+def getTorrentFolder(torrentid):  # uses hashid
     method = 'torrent-get'
     arguments = {'ids': [torrentid], 'fields': ['name', 'percentDone']}
-    torrent_folder_name = ''
-    tries = 1
-    percentdone = 0
-    while percentdone == 0 and tries < 3:
+    retries = 3
+    while retries:
         response = torrentAction(method, arguments)
         if response and len(response['arguments']['torrents']):
             percentdone = response['arguments']['torrents'][0]['percentDone']
-            torrent_folder_name = response['arguments']['torrents'][0]['name']
-            break
+            if percentdone:
+                return response['arguments']['torrents'][0]['name']
         else:
             logger.debug('getTorrentFolder: No response from transmission')
-        tries += 1
-        time.sleep(5)
+            return ''
 
-    return torrent_folder_name
+        retries -= 1
+        if retries:
+            time.sleep(5)
+
+    return ''
+
+
+def getTorrentFolderbyID(torrentid):  # uses transmission id
+    method = 'torrent-get'
+    arguments = {'fields': ['name', 'percentDone', 'id']}
+    retries = 3
+    while retries:
+        response = torrentAction(method, arguments)
+        if response and len(response['arguments']['torrents']):
+            tor = 0
+            while tor < len(response['arguments']['torrents']):
+                percentdone = response['arguments']['torrents'][tor]['percentDone']
+                if percentdone:
+                    torid = response['arguments']['torrents'][tor]['id']
+                    if str(torid) == str(torrentid):
+                        return response['arguments']['torrents'][tor]['name']
+                tor += 1
+        else:
+            logger.debug('getTorrentFolder: No response from transmission')
+            return ''
+
+        retries -= 1
+        if retries:
+            time.sleep(5)
+
+    return ''
 
 
 def setSeedRatio(torrentid, ratio):

@@ -424,13 +424,13 @@ def setTorrentPath(result):
     if not any(delugeweb_auth):
         _get_auth()
 
-    if lazylibrarian.DOWNLOAD_DIR:
+    if lazylibrarian.DIRECTORY('Download'):
         post_data = json.dumps({"method": "core.set_torrent_move_completed",
                                 "params": [result['hash'], True],
                                 "id": 7})
         response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
 
-        move_to = lazylibrarian.DOWNLOAD_DIR
+        move_to = lazylibrarian.DIRECTORY('Download')
 
         if not os.path.exists(move_to):
             logger.debug('Deluge: %s directory doesn\'t exist, let\'s create it' % move_to)

@@ -9,7 +9,8 @@ from urllib import FancyURLopener
 from lib.fuzzywuzzy import fuzz
 import lazylibrarian
 
-from lazylibrarian import database, logger, gr, utorrent, transmission, qbittorrent, deluge, rtorrent
+from lazylibrarian import database, logger, gr, utorrent, transmission, qbittorrent, \
+                            deluge, rtorrent, synology, sabnzbd
 from lib.deluge_client import DelugeRPCClient
 from lazylibrarian.magazinescan import create_id, create_cover
 from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, unaccented
@@ -22,12 +23,15 @@ from lazylibrarian.gr import GoodReads
 
 def processAlternate(source_dir=None):
     # import a book from an alternate directory
-    if not source_dir or os.path.isdir(source_dir) is False:
-        logger.warn('Alternate directory not found')
-        return
-    if source_dir == lazylibrarian.DESTINATION_DIR:
-        logger.warn('Alternate directory must not be the same as destination')
-        return
+    if not source_dir:
+        logger.warn("Alternate Directory not configured")
+        return False
+    elif not os.path.isdir(source_dir):
+        logger.warn("Alternate Directory [%s] not found" % source_dir)
+        return False
+    if source_dir == lazylibrarian.DIRECTORY('Destination'):
+        logger.warn('Alternate directory must not be the same as Destination')
+        return False
 
     logger.debug('Processing alternate directory %s' % source_dir)
     # first, recursively process any books in subdirectories
@@ -90,14 +94,14 @@ def processAlternate(source_dir=None):
 
             bookid = find_book_in_db(myDB, authorname, bookname)
             if bookid:
-                import_book(source_dir, bookid)
+                return import_book(source_dir, bookid)
             else:
                 logger.warn("Book %s by %s not found in database" % (bookname, authorname))
         else:
             logger.warn('Book %s has no metadata, unable to import' % new_book)
     else:
         logger.warn("No book file found in %s" % source_dir)
-
+    return False
 
 def cron_processDir():
     threading.currentThread().name = "CRON-POSTPROCESS"
@@ -110,10 +114,7 @@ def processDir(reset=False):
     if "Thread-" in threadname:
         threading.currentThread().name = "POSTPROCESS"
 
-    if not lazylibrarian.DOWNLOAD_DIR or not os.path.isdir(lazylibrarian.DOWNLOAD_DIR):
-        processpath = os.getcwd()
-    else:
-        processpath = lazylibrarian.DOWNLOAD_DIR
+    processpath = lazylibrarian.DIRECTORY('Download')
 
     logger.debug(' Checking [%s] for files to post process' % processpath)
 
@@ -152,6 +153,8 @@ def processDir(reset=False):
             torrentname = rtorrent.getName(book['DownloadID'])
         elif book['Source'] == 'QBITTORRENT':
             torrentname = qbittorrent.getName(book['DownloadID'])
+        elif book['Source'] == 'SYNOLOGY_TOR':
+            torrentname = synology.getName(book['DownloadID'])
         elif book['Source'] == 'DELUGEWEBUI':
             torrentname = deluge.getTorrentFolder(book['DownloadID'])
         elif book['Source'] == 'DELUGERPC':
@@ -286,8 +289,7 @@ def processDir(reset=False):
                 dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
                        ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
                 dest_path = unaccented_str(replace_all(dest_path, dic))
-                dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(
-                    lazylibrarian.SYS_ENCODING)
+                dest_path = os.path.join(processpath, dest_path).encode(lazylibrarian.SYS_ENCODING)
             else:
                 data = myDB.match('SELECT * from magazines WHERE Title="%s"' % book['BookID'])
                 if data:  # it's a magazine
@@ -303,13 +305,12 @@ def processDir(reset=False):
                     mag_name = unaccented_str(replace_all(book['BookID'], dic))
                     # book auxinfo is a cleaned date, eg 2015-01-01
                     dest_path = lazylibrarian.MAG_DEST_FOLDER.replace(
-                        '$IssueDate',
-                        book['AuxInfo']).replace('$Title', mag_name)
-                    # dest_path = '_Magazines/'+title+'/'+book['AuxInfo']
+                        '$IssueDate', book['AuxInfo']).replace('$Title', mag_name)
+
                     if lazylibrarian.MAG_RELATIVE:
                         if dest_path[0] not in '._':
                             dest_path = '_' + dest_path
-                        dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(
+                        dest_path = os.path.join(processpath, dest_path).encode(
                             lazylibrarian.SYS_ENCODING)
                     else:
                         dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
@@ -373,37 +374,25 @@ def processDir(reset=False):
                 create_cover(dest_file)
 
             # calibre or ll copied/moved the files we want, now delete source files
-            # Only delete torrents if we said delete after processing, as we may be seeding
 
+            to_delete = True
             if book['NZBmode'] in ['torrent', 'magnet']:
+                # Only delete torrents if we don't want to keep seeding
                 if lazylibrarian.KEEP_SEEDING:
-                    logger.debug('Seeding %s %s' % (book['NZBmode'], book['NZBtitle']))
+                    logger.warn('Seeding %s %s' % (book['NZBmode'], book['NZBtitle']))
+                    to_delete = False
                 else:
-                    # ask downloader to delete the torrent
-                    logger.debug('Removing %s from %s' % (book['NZBtitle'], book['Source'].lower()))
-                    if book['Source'] == "UTORRENT":
-                        utorrent.removeTorrent(book['DownloadID'], remove_data=True)
-                    elif book['Source'] == "RTORRENT":
-                        rtorrent.removeTorrent(book['DownloadID'], remove_data=True)
-                    elif book['Source'] == "QBITTORRENT":
-                        qbittorrent.removeTorrent(book['DownloadID'], remove_data=True)
-                    elif book['Source'] == "TRANSMISSION":
-                        transmission.removeTorrent(book['DownloadID'], remove_data=True)
-                    elif book['Source'] == "DELUGEWEBUI":
-                        deluge.removeTorrent(book['DownloadID'], remove_data=True)
-                    elif book['Source'] == "DELUGERPC":
-                        client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
-                                                 int(lazylibrarian.DELUGE_PORT),
-                                                 lazylibrarian.DELUGE_USER,
-                                                 lazylibrarian.DELUGE_PASS)
-                        try:
-                            client.connect()
-                            client.call('core.remove_torrent', book['DownloadID'], True)
-                        except Exception as e:
-                            logger.debug('DelugeRPC failed %s' % str(e))
-            else:
-                # only delete if not in download root dir and if DESTINATION_COPY not set
-                if not lazylibrarian.DESTINATION_COPY and pp_path != lazylibrarian.DOWNLOAD_DIR:
+                    # ask downloader to delete the torrent, but not the files
+                    if book['DownloadID'] != "unknown":
+                        logger.debug('Removing %s from %s' % (book['NZBtitle'], book['Source'].lower()))
+                        delete_task(book['Source'], book['DownloadID'], False)
+                    else:
+                        logger.warn("Unable to remove %s from %s, no DownloadID" %
+                            (book['NZBtitle'], book['Source'].lower()))
+
+            if to_delete:
+                # only delete the files if not in download root dir and if DESTINATION_COPY not set
+                if not lazylibrarian.DESTINATION_COPY and (pp_path != processpath):
                     if os.path.isdir(pp_path):
                         # calibre might have already deleted it?
                         try:
@@ -454,23 +443,62 @@ def processDir(reset=False):
         logger.info('%s book%s/mag%s processed.' % (ppcount, plural(ppcount), plural(ppcount)))
 
     # Now check for any that are still marked snatched...
-    snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
-    if len(snatched) > 0:
-        for snatch in snatched:
-            # For now just warn if been snatched for over 2 hours and not processed
-            # if its stalled we could mark as failed and delete from the downloader
-            # we could also check percentage downloaded or eta?
-            try:
-                when_snatched = time.strptime(snatch['NZBdate'], '%Y-%m-%d %H:%M:%S')
-                when_snatched = time.mktime(when_snatched)
-                diff = time.time() - when_snatched  # time difference in seconds
-            except:
-                diff = 0
-            hours = int(diff / 3600)
-            if hours > 1:
-                logger.warn('%s was sent to %s %s hours ago' % (snatch['NZBtitle'], snatch['Source'].lower(), hours))
+    if lazylibrarian.TASK_AGE:
+        snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
+        if len(snatched) > 0:
+            for snatch in snatched:
+                # FUTURE: we could check percentage downloaded or eta?
+                # if percentage is increasing, it's just slow
+                try:
+                    when_snatched = time.strptime(snatch['NZBdate'], '%Y-%m-%d %H:%M:%S')
+                    when_snatched = time.mktime(when_snatched)
+                    diff = time.time() - when_snatched  # time difference in seconds
+                except:
+                    diff = 0
+                hours = int(diff / 3600)
+                if hours >= lazylibrarian.TASK_AGE:
+                    logger.warn('%s was sent to %s %s hours ago, deleting failed task' %
+                                (snatch['NZBtitle'], snatch['Source'].lower(), hours))
+                    # change status to "Failed", and ask downloader to delete task and files
+                    if snatch['BookID'] != 'unknown':
+                        myDB.action('UPDATE wanted SET Status="Failed" where BookID=%s' % snatch['BookID'])
+                        myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % snatch['BookID'])
+                        delete_task(snatch['Source'], snatch['DownloadID'], True)
     if reset:
         scheduleJob(action='Restart', target='processDir')
+
+
+def delete_task(Source, DownloadID, remove_data):
+    if Source == "SABNZBD":
+        sabnzbd.SABnzbd(DownloadID, 'delete', remove_data)
+    elif Source == "NZBGET":
+        nzbget.deleteNZB(DownloadID, remove_data)
+    elif Source == "UTORRENT":
+        utorrent.removeTorrent(DownloadID, remove_data)
+    elif Source == "RTORRENT":
+        rtorrent.removeTorrent(DownloadID, remove_data)
+    elif Source == "QBITTORRENT":
+        qbittorrent.removeTorrent(DownloadID, remove_data)
+    elif Source == "TRANSMISSION":
+        transmission.removeTorrent(DownloadID, remove_data)
+    elif  Source == "SYNOLOGY_TOR" or Source == "SYNOLOGY_NZB":
+        synology.removeTorrent(DownloadID, remove_data)
+    elif Source == "DELUGEWEBUI":
+        deluge.removeTorrent(DownloadID, remove_data)
+    elif Source == "DELUGERPC":
+        client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
+                                 int(lazylibrarian.DELUGE_PORT),
+                                 lazylibrarian.DELUGE_USER,
+                                 lazylibrarian.DELUGE_PASS)
+        try:
+            client.connect()
+            client.call('core.remove_torrent', DownloadID, remove_data)
+        except Exception as e:
+            logger.debug('DelugeRPC failed %s' % str(e))
+            return False
+    else:
+        return False
+    return True
 
 
 def import_book(pp_path=None, bookID=None):
@@ -483,6 +511,7 @@ def import_book(pp_path=None, bookID=None):
     if data:
         authorname = data['AuthorName']
         bookname = data['BookName']
+        processpath = lazylibrarian.DIRECTORY('Destination')
 
         if 'windows' in platform.system().lower() and '/' in lazylibrarian.EBOOK_DEST_FOLDER:
             logger.warn('Please check your EBOOK_DEST_FOLDER setting')
@@ -496,7 +525,7 @@ def import_book(pp_path=None, bookID=None):
         dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
                ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
         dest_path = unaccented_str(replace_all(dest_path, dic))
-        dest_path = os.path.join(lazylibrarian.DESTINATION_DIR, dest_path).encode(lazylibrarian.SYS_ENCODING)
+        dest_path = os.path.join(processpath, dest_path).encode(lazylibrarian.SYS_ENCODING)
 
         processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name)
 
@@ -513,7 +542,7 @@ def import_book(pp_path=None, bookID=None):
                     else:
                         processExtras(myDB, dest_path, global_name, data)
 
-                if not lazylibrarian.DESTINATION_COPY and pp_path != lazylibrarian.DOWNLOAD_DIR:
+                if not lazylibrarian.DESTINATION_COPY and pp_path != processpath:
                     if os.path.isdir(pp_path):
                         # calibre might have already deleted it?
                         try:
@@ -607,6 +636,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
     # Do we want calibre to import the book for us
     if bookname and len(lazylibrarian.IMP_CALIBREDB):
+        processpath = lazylibrarian.DIRECTORY('Destination')
         try:
             logger.debug('Importing %s into calibre library' % (global_name))
             # calibre is broken, ignores metadata.opf and book_name.opf
@@ -625,20 +655,20 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                       # '--author="%s"' % unaccented(authorname),
                       '-1',
                       '--with-library',
-                      lazylibrarian.DESTINATION_DIR, pp_path
+                      processpath, pp_path
                       ]
             logger.debug(str(params))
             res = subprocess.check_output(params, stderr=subprocess.STDOUT)
             if res:
                 logger.debug('%s reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
             # calibre does not like quotes in author names
-            calibre_dir = os.path.join(lazylibrarian.DESTINATION_DIR, unaccented_str(authorname.replace('"', '_')), '')
+            calibre_dir = os.path.join(processpath, unaccented_str(authorname.replace('"', '_')), '')
             if os.path.isdir(calibre_dir):
                 imported = LibraryScan(calibre_dir)  # rescan authors directory so we get the new book in our database
             else:
                 logger.error("Failed to locate calibre dir [%s]" % calibre_dir)
                 imported = False
-                # imported = LibraryScan(lazylibrarian.DESTINATION_DIR)  # may have to rescan whole library instead
+                # imported = LibraryScan(processpath)  # may have to rescan whole library instead
             if not imported and 'already exist' not in res:
                 return False
         except subprocess.CalledProcessError as e:

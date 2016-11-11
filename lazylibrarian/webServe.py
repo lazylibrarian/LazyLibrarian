@@ -14,7 +14,7 @@ from operator import itemgetter
 from shutil import copyfile, rmtree
 
 from lazylibrarian import logger, database, notifiers, versioncheck, magazinescan, \
-    qbittorrent, utorrent, rtorrent, transmission, sabnzbd, nzbget, deluge
+    qbittorrent, utorrent, rtorrent, transmission, sabnzbd, nzbget, deluge, synology
 from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
 from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
 from lazylibrarian.searchmag import search_magazines
@@ -117,8 +117,8 @@ class WebInterface(object):
                      logdir='', loglevel=2, loglimit=500, logfiles=10, logsize=204800, git_program='',
                      imp_onlyisbn=0, imp_singlebook=0, imp_preflang='', imp_monthlang='', imp_convert='',
                      imp_calibredb='', imp_autoadd='', match_ratio=80, dload_ratio=90, nzb_downloader_sabnzbd=0,
-                     nzb_downloader_nzbget=0, nzb_downloader_blackhole=0, proxy_host='', proxy_type='',
-                     sab_host='', sab_port=0, sab_subdir='', sab_api='', sab_user='', sab_pass='',
+                     nzb_downloader_nzbget=0, nzb_downloader_synology=0, nzb_downloader_blackhole=0, proxy_host='',
+                     proxy_type='', sab_host='', sab_port=0, sab_subdir='', sab_api='', sab_user='', sab_pass='',
                      destination_copy=0, destination_dir='', download_dir='', sab_cat='', usenet_retention=0,
                      nzb_blackholedir='', alternate_dir='', torrent_dir='', numberofseeders=0, tor_convert_magnet=0,
                      tor_downloader_blackhole=0, tor_downloader_utorrent=0, tor_downloader_qbittorrent=0,
@@ -130,13 +130,14 @@ class WebInterface(object):
                      ebook_dest_folder='', ebook_dest_file='', tor_downloader_rtorrent=0,
                      rtorrent_host='', rtorrent_dir='', rtorrent_user='', rtorrent_pass='', rtorrent_label='',
                      use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
-                     mag_dest_folder='', mag_dest_file='', mag_relative=0, cache_age=30,
+                     mag_dest_folder='', mag_dest_file='', mag_relative=0, cache_age=30, task_age=0,
                      utorrent_host='', utorrent_port=0, utorrent_user='', utorrent_pass='', utorrent_label='',
                      qbittorrent_host='', qbittorrent_port=0, qbittorrent_user='', qbittorrent_pass='',
                      qbittorrent_label='', notfound_status='Skipped', newbook_status='Skipped', full_scan=0,
                      add_author=0, tor_downloader_transmission=0, transmission_host='', transmission_port=0,
                      transmission_user='', transmission_pass='', tor_downloader_deluge=0, deluge_host='',
-                     deluge_user='', deluge_pass='', deluge_port=0, deluge_label='',
+                     deluge_user='', deluge_pass='', deluge_port=0, deluge_label='', use_synology=0, synology_dir='',
+                     tor_downloader_synology=0, synology_host='', synology_port=0, synology_user='', synology_pass='',
                      use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token='',
                      use_pushbullet=0, pushbullet_notify_onsnatch=0,
                      pushbullet_notify_ondownload=0, pushbullet_token='', pushbullet_deviceid='',
@@ -180,6 +181,7 @@ class WebInterface(object):
         lazylibrarian.MATCH_RATIO = check_int(match_ratio, 80)
         lazylibrarian.DLOAD_RATIO = check_int(dload_ratio, 90)
         lazylibrarian.CACHE_AGE = check_int(cache_age, 30)
+        lazylibrarian.TASK_AGE = check_int(task_age, 0)
         lazylibrarian.DISPLAYLENGTH = check_int(displaylength, 10)
 
         lazylibrarian.IMP_ONLYISBN = bool(imp_onlyisbn)
@@ -214,6 +216,7 @@ class WebInterface(object):
         lazylibrarian.NZB_BLACKHOLEDIR = nzb_blackholedir
         lazylibrarian.NZB_DOWNLOADER_SABNZBD = bool(nzb_downloader_sabnzbd)
         lazylibrarian.NZB_DOWNLOADER_NZBGET = bool(nzb_downloader_nzbget)
+        lazylibrarian.NZB_DOWNLOADER_SYNOLOGY = bool(nzb_downloader_synology)
         lazylibrarian.NZB_DOWNLOADER_BLACKHOLE = bool(nzb_downloader_blackhole)
         lazylibrarian.TORRENT_DIR = torrent_dir
         lazylibrarian.NUMBEROFSEEDERS = check_int(numberofseeders, 0)
@@ -223,6 +226,7 @@ class WebInterface(object):
         lazylibrarian.TOR_DOWNLOADER_RTORRENT = bool(tor_downloader_rtorrent)
         lazylibrarian.TOR_DOWNLOADER_QBITTORRENT = bool(tor_downloader_qbittorrent)
         lazylibrarian.TOR_DOWNLOADER_TRANSMISSION = bool(tor_downloader_transmission)
+        lazylibrarian.TOR_DOWNLOADER_SYNOLOGY = bool(tor_downloader_synology)
         lazylibrarian.TOR_DOWNLOADER_DELUGE = bool(tor_downloader_deluge)
 
         lazylibrarian.NEWZBIN = bool(newzbin)
@@ -251,6 +255,13 @@ class WebInterface(object):
         lazylibrarian.TRANSMISSION_PORT = transmission_port
         lazylibrarian.TRANSMISSION_USER = transmission_user
         lazylibrarian.TRANSMISSION_PASS = transmission_pass
+
+        lazylibrarian.SYNOLOGY_HOST = synology_host
+        lazylibrarian.SYNOLOGY_PORT = synology_port
+        lazylibrarian.SYNOLOGY_USER = synology_user
+        lazylibrarian.SYNOLOGY_PASS = synology_pass
+        lazylibrarian.SYNOLOGY_DIR = synology_dir
+        lazylibrarian.USE_SYNOLOGY = bool(use_synology)
 
         lazylibrarian.DELUGE_HOST = deluge_host
         lazylibrarian.DELUGE_PORT = check_int(deluge_port, 0)
@@ -628,7 +639,7 @@ class WebInterface(object):
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         if authorsearch:  # to stop error if try to refresh an author while they are still loading
             AuthorName = authorsearch['AuthorName']
-            authordir = os.path.join(lazylibrarian.DESTINATION_DIR, AuthorName)
+            authordir = os.path.join(lazylibrarian.DIRECTORY('Destination'), AuthorName)
             if os.path.isdir(authordir):
                 try:
                     threading.Thread(target=LibraryScan, name='SCANAUTHOR', args=[authordir]).start()
@@ -1489,7 +1500,7 @@ class WebInterface(object):
     @cherrypy.expose
     def libraryScan(self):
         try:
-            threading.Thread(target=LibraryScan, name='LIBRARYSYNC', args=[lazylibrarian.DESTINATION_DIR]).start()
+            threading.Thread(target=LibraryScan, name='LIBRARYSYNC', args=[]).start()
         except Exception as e:
             logger.error(u'Unable to complete the scan: %s' % str(e))
         raise cherrypy.HTTPRedirect("home")
@@ -1959,3 +1970,8 @@ class WebInterface(object):
     def testrTorrent(self):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         return rtorrent.checkLink()
+
+    @cherrypy.expose
+    def testSynology(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        return synology.checkLink()

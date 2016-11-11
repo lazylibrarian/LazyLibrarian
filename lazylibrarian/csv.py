@@ -12,8 +12,14 @@ from lazylibrarian.librarysync import find_book_in_db
 def export_CSV(search_dir=None, status="Wanted"):
     """ Write a csv file to the search_dir containing all books marked as "Wanted" """
 
-    if not search_dir or os.path.isdir(search_dir) is False:
-        logger.warn("Please check Alternate Directory setting")
+    if not search_dir:
+        logger.warn("Alternate Directory not configured")
+        return False
+    elif not os.path.isdir(search_dir):
+        logger.warn("Alternate Directory [%s] not found" % search_dir)
+        return False
+    elif not os.access(search_dir, os.W_OK | os.X_OK):
+        logger.warn("Alternate Directory [%s] not writable" % search_dir)
         return False
 
     csvFile = os.path.join(search_dir, "%s - %s.csv" % (status, now().replace(':', '-')))
@@ -87,8 +93,11 @@ def import_CSV(search_dir=None):
         and marking the books as "Wanted"
     """
 
-    if not search_dir or os.path.isdir(search_dir) is False:
-        logger.warn(u"Please check Alternate Directory setting")
+    if not search_dir:
+        logger.warn("Alternate Directory not configured")
+        return False
+    elif not os.path.isdir(search_dir):
+        logger.warn("Alternate Directory [%s] not found" % search_dir)
         return False
 
     csvFile = csv_file(search_dir)

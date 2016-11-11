@@ -10,7 +10,7 @@ import threading
 import lazylibrarian
 import unicodedata
 
-from lazylibrarian import logger, database, utorrent, transmission, qbittorrent, deluge, rtorrent
+from lazylibrarian import logger, database, utorrent, transmission, qbittorrent, deluge, rtorrent, synology
 from lib.deluge_client import DelugeRPCClient
 from lib.fuzzywuzzy import fuzz
 
@@ -240,7 +240,7 @@ def DirectDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=Non
             fdata = response.read()
         bookname = '.'.join(bookname.rsplit(' ', 1))  # last word is the extension
         logger.debug("File download got %s bytes for %s/%s" % (len(fdata), tor_title, bookname))
-        destdir = os.path.join(lazylibrarian.DOWNLOAD_DIR, tor_title)
+        destdir = os.path.join(lazylibrarian.DIRECTORY('Download'), tor_title)
         try:
             os.makedirs(destdir)
         except OSError as e:
@@ -277,171 +277,172 @@ def DirectDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=Non
 def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
     myDB = database.DBConnection()
     downloadID = False
-    Source = "No Source"
+    Source = ''
     full_url = tor_url  # keep the url as stored in "wanted" table
-    if (lazylibrarian.TOR_DOWNLOADER_DELUGE or
-        lazylibrarian.TOR_DOWNLOADER_UTORRENT or
-        lazylibrarian.TOR_DOWNLOADER_RTORRENT or
-        lazylibrarian.TOR_DOWNLOADER_QBITTORRENT or
-        lazylibrarian.TOR_DOWNLOADER_BLACKHOLE or
-            lazylibrarian.TOR_DOWNLOADER_TRANSMISSION):
+    if tor_url and tor_url.startswith('magnet'):
+        torrent = tor_url  # allow magnet link to write to blackhole and hash to utorrent/rtorrent
+    else:
+        if '&file=' in tor_url:
+            # torznab results need to be re-encoded
+            # had a problem with torznab utf-8 encoded strings not matching
+            # our utf-8 strings because of long/short form differences
+            url = tor_url.split('&file=')[0]
+            value = tor_url.split('&file=')[1]
+            if isinstance(value, str):
+                value = value.decode('utf-8')  # make unicode
+            value = unicodedata.normalize('NFC', value)  # normalize to short form
+            value = value.encode('unicode-escape')  # then escape the result
+            value = value.replace(' ', '%20')  # and encode any spaces
+            tor_url = url + '&file=' + value
 
+        # strip url back to the .torrent as some sites add parameters
+        if not tor_url.endswith('.torrent'):
+            if '.torrent' in tor_url:
+                tor_url = tor_url.split('.torrent')[0] + '.torrent'
+
+        request = urllib2.Request(ur'%s' % tor_url)
+        if lazylibrarian.PROXY_HOST:
+            request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
+        request.add_header('Accept-encoding', 'gzip')
+        request.add_header('User-Agent', USER_AGENT)
+
+        # PAB removed this, KAT serves us html instead of torrent if this header is sent
+        # if tor_prov == 'KAT':
+        #    host = lazylibrarian.KAT_HOST
+        #    if not str(host)[:4] == "http":
+        #        host = 'http://' + host
+        #    request.add_header('Referer', host)
+
+        try:
+            response = urllib2.urlopen(request, timeout=90)
+            if response.info().get('Content-Encoding') == 'gzip':
+                buf = StringIO(response.read())
+                f = gzip.GzipFile(fileobj=buf)
+                torrent = f.read()
+            else:
+                torrent = response.read()
+
+        except (socket.timeout) as e:
+            logger.warn('Timeout fetching torrent from url: %s' % tor_url)
+            return False
+        except (urllib2.URLError) as e:
+            logger.warn('Error fetching torrent from url: %s, %s' % (tor_url, e.reason))
+            return False
+
+    if lazylibrarian.TOR_DOWNLOADER_BLACKHOLE:
+        Source = "BLACKHOLE"
+        logger.debug("Sending %s to blackhole" % tor_title)
+        tor_name = cleanName(tor_title).replace(' ', '_')
+        tor_title = None
         if tor_url and tor_url.startswith('magnet'):
-            torrent = tor_url  # allow magnet link to write to blackhole and hash to utorrent/rtorrent
-        else:
-            if '&file=' in tor_url:
-                # torznab results need to be re-encoded
-                # had a problem with torznab utf-8 encoded strings not matching
-                # our utf-8 strings because of long/short form differences
-                url = tor_url.split('&file=')[0]
-                value = tor_url.split('&file=')[1]
-                if isinstance(value, str):
-                    value = value.decode('utf-8')  # make unicode
-                value = unicodedata.normalize('NFC', value)  # normalize to short form
-                value = value.encode('unicode-escape')  # then escape the result
-                value = value.replace(' ', '%20')  # and encode any spaces
-                tor_url = url + '&file=' + value
-
-            # strip url back to the .torrent as some sites add parameters
-            if not tor_url.endswith('.torrent'):
-                if '.torrent' in tor_url:
-                    tor_url = tor_url.split('.torrent')[0] + '.torrent'
-
-            request = urllib2.Request(ur'%s' % tor_url)
-            if lazylibrarian.PROXY_HOST:
-                request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-            request.add_header('Accept-encoding', 'gzip')
-            request.add_header('User-Agent', USER_AGENT)
-
-            # PAB removed this, KAT serves us html instead of torrent if this header is sent
-            # if tor_prov == 'KAT':
-            #    host = lazylibrarian.KAT_HOST
-            #    if not str(host)[:4] == "http":
-            #        host = 'http://' + host
-            #    request.add_header('Referer', host)
-
-            try:
-                response = urllib2.urlopen(request, timeout=90)
-                if response.info().get('Content-Encoding') == 'gzip':
-                    buf = StringIO(response.read())
-                    f = gzip.GzipFile(fileobj=buf)
-                    torrent = f.read()
-                else:
-                    torrent = response.read()
-
-            except (socket.timeout) as e:
-                logger.warn('Timeout fetching torrent from url: %s' % tor_url)
-                return False
-            except (urllib2.URLError) as e:
-                logger.warn('Error fetching torrent from url: %s, %s' % (tor_url, e.reason))
-                return False
-
-        if lazylibrarian.TOR_DOWNLOADER_BLACKHOLE:
-            Source = "BLACKHOLE"
-            logger.debug("Sending %s to blackhole" % tor_title)
-            tor_name = cleanName(tor_title).replace(' ', '_')
-            tor_title = None
-            if tor_url and tor_url.startswith('magnet'):
-                if lazylibrarian.TOR_CONVERT_MAGNET:
-                    hashid = CalcTorrentHash(tor_url)
-                    tor_name = 'meta-' + hashid + '.torrent'
-                    tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
-                    result = magnet2torrent(tor_url, tor_path)
-                    if result is not False:
-                        logger.debug('Magnet file saved as: %s' % tor_path)
-                        downloadID = Source
-                else:
-                    tor_name = tor_name + '.magnet'
-                    tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
-                    with open(tor_path, 'wb') as torrent_file:
-                        torrent_file.write(torrent)
-                    logger.debug('Magnet file saved: %s' % tor_path)
+            if lazylibrarian.TOR_CONVERT_MAGNET:
+                hashid = CalcTorrentHash(tor_url)
+                tor_name = 'meta-' + hashid + '.torrent'
+                tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
+                result = magnet2torrent(tor_url, tor_path)
+                if result is not False:
+                    logger.debug('Magnet file saved as: %s' % tor_path)
                     downloadID = Source
             else:
-                tor_name = tor_name + '.torrent'
+                tor_name = tor_name + '.magnet'
                 tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
                 with open(tor_path, 'wb') as torrent_file:
                     torrent_file.write(torrent)
-                logger.debug('Torrent file saved: %s' % tor_name)
+                logger.debug('Magnet file saved: %s' % tor_path)
                 downloadID = Source
+        else:
+            tor_name = tor_name + '.torrent'
+            tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
+            with open(tor_path, 'wb') as torrent_file:
+                torrent_file.write(torrent)
+            logger.debug('Torrent file saved: %s' % tor_name)
+            downloadID = Source
 
-        if (lazylibrarian.TOR_DOWNLOADER_UTORRENT and lazylibrarian.UTORRENT_HOST):
-            logger.debug("Sending %s to Utorrent" % tor_title)
-            Source = "UTORRENT"
-            hashid = CalcTorrentHash(torrent)
-            downloadID = utorrent.addTorrent(tor_url, hashid)  # returns hash or False
+    if (lazylibrarian.TOR_DOWNLOADER_UTORRENT and lazylibrarian.UTORRENT_HOST):
+        logger.debug("Sending %s to Utorrent" % tor_title)
+        Source = "UTORRENT"
+        hashid = CalcTorrentHash(torrent)
+        downloadID = utorrent.addTorrent(tor_url, hashid)  # returns hash or False
+        if downloadID:
+            tor_title = utorrent.nameTorrent(downloadID)
+
+    if (lazylibrarian.TOR_DOWNLOADER_RTORRENT and lazylibrarian.RTORRENT_HOST):
+        logger.debug("Sending %s to rTorrent" % tor_title)
+        Source = "RTORRENT"
+        hashid = CalcTorrentHash(torrent)
+        downloadID = rtorrent.addTorrent(tor_url, hashid)  # returns hash or False
+        if downloadID:
+            tor_title = rtorrent.getName(downloadID)
+
+    if (lazylibrarian.TOR_DOWNLOADER_QBITTORRENT and lazylibrarian.QBITTORRENT_HOST):
+        logger.debug("Sending %s to qbittorrent" % tor_title)
+        Source = "QBITTORRENT"
+        hashid = CalcTorrentHash(torrent)
+        status = qbittorrent.addTorrent(tor_url)  # returns hash or False
+        if status:
+            downloadID = hashid
+            tor_title = qbittorrent.getName(hashid)
+        else:
+            logger.debug("qbittorrent returned: %s" % str(response))
+
+    if (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION and lazylibrarian.TRANSMISSION_HOST):
+        logger.debug("Sending %s to Transmission" % tor_title)
+        Source = "TRANSMISSION"
+        downloadID = transmission.addTorrent(tor_url)  # returns id or False
+        if downloadID:
+            # transmission returns it's own int, but we store hashid instead
+            downloadID = CalcTorrentHash(torrent)
+            tor_title = transmission.getTorrentFolder(downloadID)
+
+    if (lazylibrarian.TOR_DOWNLOADER_SYNOLOGY and lazylibrarian.USE_SYNOLOGY and lazylibrarian.SYNOLOGY_HOST):
+        logger.debug("Sending %s to Synology" % tor_title)
+        Source = "SYNOLOGY_TOR"
+        downloadID = synology.addTorrent(tor_url)  # returns id or False
+        if downloadID:
+            tor_title = synology.getName(downloadID)
+
+    if (lazylibrarian.TOR_DOWNLOADER_DELUGE and lazylibrarian.DELUGE_HOST):
+        logger.debug("Sending %s to Deluge" % tor_title)
+        if not lazylibrarian.DELUGE_USER:
+            # no username, talk to the webui
+            Source = "DELUGEWEBUI"
+            downloadID = deluge.addTorrent(tor_url)  # returns hash or False
             if downloadID:
-                tor_title = utorrent.nameTorrent(downloadID)
-
-        if (lazylibrarian.TOR_DOWNLOADER_RTORRENT and lazylibrarian.RTORRENT_HOST):
-            logger.debug("Sending %s to rTorrent" % tor_title)
-            Source = "RTORRENT"
-            hashid = CalcTorrentHash(torrent)
-            downloadID = rtorrent.addTorrent(tor_url, hashid)  # returns hash or False
-            if downloadID:
-                tor_title = rtorrent.getName(downloadID)
-
-        if (lazylibrarian.TOR_DOWNLOADER_QBITTORRENT and lazylibrarian.QBITTORRENT_HOST):
-            logger.debug("Sending %s to qbittorrent" % tor_title)
-            Source = "QBITTORRENT"
-            hashid = CalcTorrentHash(torrent)
-            status = qbittorrent.addTorrent(tor_url)  # returns hash or False
-            if status:
-                downloadID = hashid
-                tor_title = qbittorrent.getName(hashid)
-            else:
-                logger.debug("qbittorrent returned: %s" % str(response))
-
-        if (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION and lazylibrarian.TRANSMISSION_HOST):
-            logger.debug("Sending %s to Transmission" % tor_title)
-            Source = "TRANSMISSION"
-            downloadID = transmission.addTorrent(tor_url)  # returns id or False
-            if downloadID:
-                downloadID = str(downloadID)  # transmission returns int
-                downloadID = CalcTorrentHash(torrent) # store hashid instead
-                tor_title = transmission.getTorrentFolder(downloadID)
-
-        if (lazylibrarian.TOR_DOWNLOADER_DELUGE and lazylibrarian.DELUGE_HOST):
-            logger.debug("Sending %s to Deluge" % tor_title)
-            if not lazylibrarian.DELUGE_USER:
-                # no username, talk to the webui
-                Source = "DELUGEWEBUI"
-                downloadID = deluge.addTorrent(tor_url)  # returns hash or False
+                tor_title = deluge.getTorrentFolder(downloadID)
+        else:
+            # have username, talk to the daemon
+            Source = "DELUGERPC"
+            client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
+                                     int(lazylibrarian.DELUGE_PORT),
+                                     lazylibrarian.DELUGE_USER,
+                                     lazylibrarian.DELUGE_PASS)
+            try:
+                client.connect()
+                args = {"name": tor_title}
+                if tor_url.startswith('magnet'):
+                    downloadID = client.call('core.add_torrent_magnet', tor_url, args)
+                else:
+                    downloadID = client.call('core.add_torrent_url', tor_url, args)
                 if downloadID:
-                    tor_title = deluge.getTorrentFolder(downloadID)
-            else:
-                # have username, talk to the daemon
-                Source = "DELUGERPC"
-                client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
-                                         int(lazylibrarian.DELUGE_PORT),
-                                         lazylibrarian.DELUGE_USER,
-                                         lazylibrarian.DELUGE_PASS)
-                try:
-                    client.connect()
-                    args = {"name": tor_title}
-                    if tor_url.startswith('magnet'):
-                        downloadID = client.call('core.add_torrent_magnet', tor_url, args)
-                    else:
-                        downloadID = client.call('core.add_torrent_url', tor_url, args)
-                    if downloadID:
-                        if lazylibrarian.DELUGE_LABEL:
-                            labelled = client.call('label.set_torrent', downloadID, lazylibrarian.DELUGE_LABEL)
-                        args = [
-                                    "name",
-                                    "save_path",
-                                    "total_size",
-                                    "num_files",
-                                    "message",
-                                    "tracker",
-                                    "comment"
-                                ]
-                        result = client.call('core.get_torrent_status', downloadID, args)
-                        tor_title = result['name']
+                    if lazylibrarian.DELUGE_LABEL:
+                        labelled = client.call('label.set_torrent', downloadID, lazylibrarian.DELUGE_LABEL)
+                    args = [
+                                "name",
+                                "save_path",
+                                "total_size",
+                                "num_files",
+                                "message",
+                                "tracker",
+                                "comment"
+                            ]
+                    result = client.call('core.get_torrent_status', downloadID, args)
+                    tor_title = result['name']
 
-                except Exception as e:
-                    logger.debug('DelugeRPC failed %s' % str(e))
-                    return False
-    else:
+            except Exception as e:
+                logger.debug('DelugeRPC failed %s' % str(e))
+                return False
+
+    if not Source:
         logger.warn('No torrent download method is enabled, check config.')
         return False
 

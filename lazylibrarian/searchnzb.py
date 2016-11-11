@@ -6,7 +6,7 @@ import threading
 import lazylibrarian
 from . import request
 
-from lazylibrarian import logger, database, providers, nzbget, sabnzbd, notifiers, classes, postprocess
+from lazylibrarian import logger, database, providers, nzbget, sabnzbd, notifiers, classes, postprocess, synology
 from lib.fuzzywuzzy import fuzz
 from lazylibrarian.common import USER_AGENT, scheduleJob
 from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, nzbdate2format, now, check_int
@@ -215,11 +215,12 @@ def processResultList(resultlist, book, searchtype):
 def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
 
     myDB = database.DBConnection()
-    if (lazylibrarian.NZB_DOWNLOADER_SABNZBD and lazylibrarian.SAB_HOST) and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
+    Source = ''
+    if lazylibrarian.NZB_DOWNLOADER_SABNZBD and lazylibrarian.SAB_HOST:
         Source = "SABNZBD"
-        downloadID = sabnzbd.SABnzbd(nzbtitle, nzburl)  # returns nzb_ids or False
+        downloadID = sabnzbd.SABnzbd(nzbtitle, nzburl, False)  # returns nzb_ids or False
 
-    elif (lazylibrarian.NZB_DOWNLOADER_NZBGET and lazylibrarian.NZBGET_HOST) and not lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
+    if lazylibrarian.NZB_DOWNLOADER_NZBGET and lazylibrarian.NZBGET_HOST:
         Source = "NZBGET"
         headers = {'User-Agent': USER_AGENT}
         data = request.request_content(url=nzburl, headers=headers)
@@ -229,7 +230,11 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
         nzb.url = nzburl
         downloadID = nzbget.sendNZB(nzb)
 
-    elif lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
+    if lazylibrarian.NZB_DOWNLOADER_SYNOLOGY and lazylibrarian.USE_SYNOLOGY and lazylibrarian.SYNOLOGY_HOST:
+        Source = "SYNOLOGY_NZB"
+        downloadID = synology.addTorrent(nzburl)  # returns nzb_ids or False
+
+    if lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
         Source = "BLACKHOLE"
         try:
             req = urllib2.Request(nzburl)
@@ -261,7 +266,7 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
                 logger.error('%s not writable, NZB not saved. Error: %s' % (nzbpath, str(e)))
                 downloadID = False
 
-    else:
+    if not Source:
         logger.warn('No NZB download method is enabled, check config.')
         return False
 

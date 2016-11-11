@@ -318,6 +318,63 @@
 
                             <div class="row checkbox">
                                 <%
+                                if lazylibrarian.USE_SYNOLOGY == True:
+                                    checked = 'checked="checked"'
+                                else:
+                                    checked = ''
+                                %>
+                                <input type="checkbox" name="use_synology" id="use_synology" value="1" ${checked} />
+                                <label>Use Synology DownloadStation</label>
+                            </div>
+                            <fieldset id="synology_options">
+                                <div class="row">
+                                    <label>Synology Host:</label>
+                                    <input type="text" name="synology_host" value="${lazylibrarian.SYNOLOGY_HOST}" size="26" align="right">
+                                </div>
+                                <div class="row">
+                                    <label>Synology Port</label>
+                                    <input type="text" name="synology_port" value="${lazylibrarian.SYNOLOGY_PORT}" size="26">
+                                </div>
+                                <div class="row">
+                                    <label>Synology Username</label>
+                                    <input type="text" name="synology_user" value="${lazylibrarian.SYNOLOGY_USER}" size="26">
+                                </div>
+                                <div class="row">
+                                    <label>Synology Password:</label>
+                                    <input type="password" name="synology_pass" value="${lazylibrarian.SYNOLOGY_PASS}" size="26">
+                                </div>
+                                <div class="row">
+                                    <label>Synology Directory:</label>
+                                    <input type="text" name="synology_dir" value="${lazylibrarian.SYNOLOGY_DIR}" size="26">
+                                </div>
+                                <div class="row checkbox">
+                                    <%
+                                    if lazylibrarian.NZB_DOWNLOADER_SYNOLOGY == True:
+                                        checked = 'checked="checked"'
+                                    else:
+                                        checked = ''
+                                    %>
+                                    <input type="checkbox" name="nzb_downloader_synology" id="nzb_downloader_synology" value="1" ${checked} />
+                                    <label>Use DownloadStation for usenet</label>
+                                </div>
+                                <div class="row checkbox">
+                                    <%
+                                    if lazylibrarian.TOR_DOWNLOADER_SYNOLOGY == True:
+                                        checked = 'checked="checked"'
+                                    else:
+                                        checked = ''
+                                    %>
+                                    <input type="checkbox" name="tor_downloader_synology" id="tor_downloader_synology" value="1" ${checked} />
+                                    <label>Use DownloadStation for torrents</label>
+                                </div>
+                                <div class="row">
+                                    <label>Synology Connection:</label>
+                                    <input type="button" value="Test Synology" id="testSynology" style="float:right;">
+                                </div>
+                            </fieldset>
+
+                            <div class="row checkbox">
+                                <%
                                 if lazylibrarian.NZB_DOWNLOADER_BLACKHOLE == True:
                                     checked = 'checked="checked"'
                                 else:
@@ -744,6 +801,10 @@
                     <div>
                     <label>Cache expire after:</label>
                     <input type="text" name="cache_age"  value="${lazylibrarian.CACHE_AGE}" size="8"> (days)
+                    </div>
+                    <div>
+                    <label>Remove failed tasks after:</label>
+                    <input type="text" name="task_age"  value="${lazylibrarian.TASK_AGE}" size="8"> (hours)
                     </div>
                     <div>
                     <label>Search Match Ratio:</label>
@@ -1334,6 +1395,7 @@
         </table>
         </div>
     </div>
+
     <div class="table_wrapper" style="display:none">
         <div class="tabs-7">
         <table class="configtable" summary="Search Categories">
@@ -1427,7 +1489,7 @@
                     Search results with any of these words in the title will be ignored
                     <BR></small>
                     <BR><BR>
-		        </fieldset>
+                </fieldset>
                 <fieldset>
                     <h3>Book Size Limit</h3>Default: 0
                     <br>
@@ -1437,20 +1499,19 @@
                     Search results larger than this will be rejected, set to 0 to disable
                     <BR></small>
                     <BR><BR>
-		        </fieldset>
-		    </td>
-		    <td>
+                </fieldset>
+                </td>
+                <td>
                 <fieldset>
                     <h3>Magazine Reject Lists</h3>Default: None
                     <br>
                     %for mag in config['magazines_list']:
                         <label>${mag['Title']}</label>
- 	    		        <input type="text" placeholder="Reject Word List" name="reject_list[${mag['Title']}]" value="${mag['Regex']}" size="20">
+                        <input type="text" placeholder="Reject Word List" name="reject_list[${mag['Title']}]" value="${mag['Regex']}" size="20">
                         <br>
                     %endfor
-
                     <BR><BR>
-		        </fieldset>
+                </fieldset>
             </td>
         </tr>
         </table>
@@ -1686,6 +1747,25 @@
                     }
             });
 
+            if ($("#use_synology").is(":checked"))
+                {
+                        $("#synology_options").show();
+                }
+            else
+                {
+                        $("#synology_options").hide();
+                }
+            $("#use_synology").click(function(){
+                    if ($("#use_synology").is(":checked"))
+                    {
+                            $("#synology_options").slideDown();
+                    }
+                    else
+                    {
+                            $("#synology_options").slideUp();
+                    }
+            });
+
             if ($("#twitter").is(":checked"))
                     {
                             $("#twitteroptions").show();
@@ -1909,6 +1989,12 @@
 
             $('#testNZBget').click(function () {
                 $.get("testNZBget",
+                    function (data) { alert(data); });
+
+            });
+
+            $('#testSynology').click(function () {
+                $.get("testSynology",
                     function (data) { alert(data); });
 
             });

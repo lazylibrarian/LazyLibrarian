@@ -32,7 +32,11 @@ def checkLink():
     return "SABnzbd connection successful"
 
 
-def SABnzbd(title=None, nzburl=None):
+def SABnzbd(title=None, nzburl=None, remove_data=False):
+
+    if nzburl == 'delete' and title == 'unknown':
+        logger.debug('Delete function unavailable in this version of sabnzbd, no nzb_ids')
+        return False
 
     HOST = "%s:%i" % (lazylibrarian.SAB_HOST, lazylibrarian.SAB_PORT)
     if not HOST.startswith("http"):
@@ -42,14 +46,28 @@ def SABnzbd(title=None, nzburl=None):
         HOST = HOST + "/" + lazylibrarian.SAB_SUBDIR
 
     params = {}
-
     if nzburl == 'auth' or nzburl == 'get_cats':
+        # connection test, check auth mode or get_cats
         params['mode'] = nzburl
         params['output'] = 'json'
         if lazylibrarian.SAB_API:
             params['apikey'] = lazylibrarian.SAB_API
         title = 'Test ' + nzburl
-        # connection test, check auth mode or get_cats
+    elif nzburl == 'delete':
+        # only deletes tasks if still in the queue, ie NOT completed tasks
+        params['mode'] = 'queue'
+        params['output'] = 'json'
+        params['name'] = nzburl
+        params['value'] = title
+        if lazylibrarian.SAB_USER:
+            params['ma_username'] = lazylibrarian.SAB_USER
+        if lazylibrarian.SAB_PASS:
+            params['ma_password'] = lazylibrarian.SAB_PASS
+        if lazylibrarian.SAB_API:
+            params['apikey'] = lazylibrarian.SAB_API
+        if remove_data:
+            params['del_files'] = 1
+        title = 'Delete ' + title
     else:
         params['mode'] = 'addurl'
         params['output'] = 'json'
@@ -105,11 +123,14 @@ def SABnzbd(title=None, nzburl=None):
         return False
 
     logger.debug("Result text from SAB: " + str(result))
-    if title and title.startswith('Test'):
+    if title and (title.startswith('Test') or title.startswith('Delete')):
         return result
     elif result['status'] is True:
         logger.info(title + " sent to SAB successfully.")
-        return result['nzo_ids'][0]
+        # sab versions earlier than 0.8.0 don't return nzo_ids
+        if 'nzo_ids' in result:
+            return result['nzo_ids'][0]
+        return 'unknown'
     elif result['status'] is False:
         logger.error("SAB returned Error: %s" % result['error'])
         return False
