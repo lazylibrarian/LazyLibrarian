@@ -39,8 +39,14 @@ def checkLink():
         return "NZBget connection successful"
     return "NZBget connection FAILED\nCheck debug log"
 
+def deleteNZB(nzbID, remove_data=False):
+    if remove_data:
+        return sendNZB('GroupFinalDelete', nzbID)
+    return sendNZB('GroupDelete', nzbID)
 
-def sendNZB(nzb):
+def sendNZB(nzb, nzbID=None):
+    # we can send commands to act on an existing nzbID, or array of nzbIDs
+    # by setting nzbID, and nzb to the command (we currently only use delete)
     if nzb == "test":
         nzb = None
     addToTop = False
@@ -68,6 +74,8 @@ def sendNZB(nzb):
 
     if nzb is None:
         msg = "lazylibrarian connection test"
+    elif nzbID:
+        msg = "lazylibrarian connected to %s %s" % (nzb, nzbID)
     else:
         msg = "lazylibrarian connected to drop off %s any moment now." % (nzb.name + ".nzb")
 
@@ -78,7 +86,7 @@ def sendNZB(nzb):
                 # should check nzbget category is valid
                 return True
         else:
-            if nzb is None:
+            if nzb is None or nzbId is not None:
                 logger.debug(u"Successfully connected to NZBget, unable to send message")
                 return False
             else:
@@ -94,6 +102,16 @@ def sendNZB(nzb):
             logger.error(u"NZBget password is incorrect.")
         else:
             logger.error(u"Protocol Error: %s" % e.errmsg)
+        return False
+
+    if nzbID is not None:
+        # its a command for an existing task
+        id_array = []
+        id_array.append(int(nzbID))
+        if nzb == 'GroupDelete' or nzb == 'GroupFinalDelete':
+            return nzbGetRPC.editqueue(nzb, 0, "", id_array)
+        else:
+            logger.debug('Unsupported nzbget command %s' % repr(nzb))
         return False
 
     nzbcontent64 = None
