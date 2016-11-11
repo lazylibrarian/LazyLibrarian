@@ -114,10 +114,7 @@ def processDir(reset=False):
     if "Thread-" in threadname:
         threading.currentThread().name = "POSTPROCESS"
 
-    if not lazylibrarian.DIRECTORY('Download') or not os.path.isdir(lazylibrarian.DIRECTORY('Download')):
-        processpath = os.getcwd()
-    else:
-        processpath = lazylibrarian.DIRECTORY('Download')
+    processpath = lazylibrarian.DIRECTORY('Download')
 
     logger.debug(' Checking [%s] for files to post process' % processpath)
 
@@ -292,8 +289,7 @@ def processDir(reset=False):
                 dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
                        ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
                 dest_path = unaccented_str(replace_all(dest_path, dic))
-                dest_path = os.path.join(lazylibrarian.DIRECTORY('Destination'), dest_path).encode(
-                    lazylibrarian.SYS_ENCODING)
+                dest_path = os.path.join(processpath, dest_path).encode(lazylibrarian.SYS_ENCODING)
             else:
                 data = myDB.match('SELECT * from magazines WHERE Title="%s"' % book['BookID'])
                 if data:  # it's a magazine
@@ -314,7 +310,7 @@ def processDir(reset=False):
                     if lazylibrarian.MAG_RELATIVE:
                         if dest_path[0] not in '._':
                             dest_path = '_' + dest_path
-                        dest_path = os.path.join(lazylibrarian.DIRECTORY('Destination'), dest_path).encode(
+                        dest_path = os.path.join(processpath, dest_path).encode(
                             lazylibrarian.SYS_ENCODING)
                     else:
                         dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
@@ -396,7 +392,7 @@ def processDir(reset=False):
 
             if to_delete:
                 # only delete the files if not in download root dir and if DESTINATION_COPY not set
-                if not lazylibrarian.DESTINATION_COPY and pp_path != lazylibrarian.DIRECTORY('Download'):
+                if not lazylibrarian.DESTINATION_COPY and (pp_path != processpath):
                     if os.path.isdir(pp_path):
                         # calibre might have already deleted it?
                         try:
@@ -447,37 +443,36 @@ def processDir(reset=False):
         logger.info('%s book%s/mag%s processed.' % (ppcount, plural(ppcount), plural(ppcount)))
 
     # Now check for any that are still marked snatched...
-    snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
-    if len(snatched) > 0:
-        for snatch in snatched:
-            # For now just warn if been snatched for over 2 hours and not processed
-            # if its stalled we could mark as failed and delete from the downloader
-            # we could also check percentage downloaded or eta?
-            try:
-                when_snatched = time.strptime(snatch['NZBdate'], '%Y-%m-%d %H:%M:%S')
-                when_snatched = time.mktime(when_snatched)
-                diff = time.time() - when_snatched  # time difference in seconds
-            except:
-                diff = 0
-            hours = int(diff / 3600)
-            if hours >= 2:
-                logger.warn('%s was sent to %s %s hours ago, deleting failed task' %
-                            (snatch['NZBtitle'], snatch['Source'].lower(), hours))
-                # change status to "Failed", and ask downloader to delete task and files
-                if snatch['BookID'] != 'unknown':
-                    myDB.action('UPDATE wanted SET Status="Failed" where BookID=%s' % snatch['BookID'])
-                    myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % snatch['BookID'])
-                    delete_task(snatch['Source'], snatch['DownloadID'], True)
+    if lazylibrarian.TASK_AGE:
+        snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
+        if len(snatched) > 0:
+            for snatch in snatched:
+                # FUTURE: we could check percentage downloaded or eta?
+                # if percentage is increasing, it's just slow
+                try:
+                    when_snatched = time.strptime(snatch['NZBdate'], '%Y-%m-%d %H:%M:%S')
+                    when_snatched = time.mktime(when_snatched)
+                    diff = time.time() - when_snatched  # time difference in seconds
+                except:
+                    diff = 0
+                hours = int(diff / 3600)
+                if hours >= lazylibrarian.TASK_AGE:
+                    logger.warn('%s was sent to %s %s hours ago, deleting failed task' %
+                                (snatch['NZBtitle'], snatch['Source'].lower(), hours))
+                    # change status to "Failed", and ask downloader to delete task and files
+                    if snatch['BookID'] != 'unknown':
+                        myDB.action('UPDATE wanted SET Status="Failed" where BookID=%s' % snatch['BookID'])
+                        myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % snatch['BookID'])
+                        delete_task(snatch['Source'], snatch['DownloadID'], True)
     if reset:
         scheduleJob(action='Restart', target='processDir')
 
 
 def delete_task(Source, DownloadID, remove_data):
-    # NOTE - nzbget not included yet
-    if DownloadID == "unknown":
-        return False
     if Source == "SABNZBD":
         sabnzbd.SABnzbd(DownloadID, 'delete', remove_data)
+    elif Source == "NZBGET":
+        nzbget.deleteNZB(DownloadID, remove_data)
     elif Source == "UTORRENT":
         utorrent.removeTorrent(DownloadID, remove_data)
     elif Source == "RTORRENT":
@@ -516,6 +511,7 @@ def import_book(pp_path=None, bookID=None):
     if data:
         authorname = data['AuthorName']
         bookname = data['BookName']
+        processpath = lazylibrarian.DIRECTORY('Destination')
 
         if 'windows' in platform.system().lower() and '/' in lazylibrarian.EBOOK_DEST_FOLDER:
             logger.warn('Please check your EBOOK_DEST_FOLDER setting')
@@ -529,7 +525,7 @@ def import_book(pp_path=None, bookID=None):
         dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
                ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
         dest_path = unaccented_str(replace_all(dest_path, dic))
-        dest_path = os.path.join(lazylibrarian.DIRECTORY('Destination'), dest_path).encode(lazylibrarian.SYS_ENCODING)
+        dest_path = os.path.join(processpath, dest_path).encode(lazylibrarian.SYS_ENCODING)
 
         processBook = processDestination(pp_path, dest_path, authorname, bookname, global_name)
 
@@ -546,7 +542,7 @@ def import_book(pp_path=None, bookID=None):
                     else:
                         processExtras(myDB, dest_path, global_name, data)
 
-                if not lazylibrarian.DESTINATION_COPY and pp_path != lazylibrarian.DIRECTORY('Download'):
+                if not lazylibrarian.DESTINATION_COPY and pp_path != processpath:
                     if os.path.isdir(pp_path):
                         # calibre might have already deleted it?
                         try:
@@ -640,6 +636,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
     # Do we want calibre to import the book for us
     if bookname and len(lazylibrarian.IMP_CALIBREDB):
+        processpath = lazylibrarian.DIRECTORY('Destination')
         try:
             logger.debug('Importing %s into calibre library' % (global_name))
             # calibre is broken, ignores metadata.opf and book_name.opf
@@ -658,20 +655,20 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                       # '--author="%s"' % unaccented(authorname),
                       '-1',
                       '--with-library',
-                      lazylibrarian.DIRECTORY('Destination'), pp_path
+                      processpath, pp_path
                       ]
             logger.debug(str(params))
             res = subprocess.check_output(params, stderr=subprocess.STDOUT)
             if res:
                 logger.debug('%s reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
             # calibre does not like quotes in author names
-            calibre_dir = os.path.join(lazylibrarian.DIRECTORY('Destination'), unaccented_str(authorname.replace('"', '_')), '')
+            calibre_dir = os.path.join(processpath, unaccented_str(authorname.replace('"', '_')), '')
             if os.path.isdir(calibre_dir):
                 imported = LibraryScan(calibre_dir)  # rescan authors directory so we get the new book in our database
             else:
                 logger.error("Failed to locate calibre dir [%s]" % calibre_dir)
                 imported = False
-                # imported = LibraryScan(lazylibrarian.DIRECTORY('Destination'))  # may have to rescan whole library instead
+                # imported = LibraryScan(processpath)  # may have to rescan whole library instead
             if not imported and 'already exist' not in res:
                 return False
         except subprocess.CalledProcessError as e:

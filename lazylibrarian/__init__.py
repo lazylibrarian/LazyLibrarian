@@ -310,6 +310,7 @@ CACHE_MISS = 0
 LAST_GOODREADS = 0
 LAST_LIBRARYTHING = 0
 CACHE_AGE = 30
+TASK_AGE = 0
 
 BOOKSTRAP_THEME = ''
 BOOKSTRAP_THEMELIST = []
@@ -461,7 +462,7 @@ def config_read(reloaded=False):
             LAUNCH_BROWSER, LOGDIR, CACHE_AGE, MATCH_RATIO, DLOAD_RATIO, PROXY_HOST, PROXY_TYPE, GIT_PROGRAM, \
             IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, IMP_CONVERT, IMP_CALIBREDB, \
             MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, \
-            MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, CONFIGFILE, CFG, LOGLIMIT, \
+            MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, CONFIGFILE, CFG, LOGLIMIT, TASK_AGE, \
             SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, SAB_CAT, \
             DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, USENET_RETENTION, NZB_BLACKHOLEDIR, \
             ALTERNATE_DIR, GR_API, GB_API, BOOK_API, MAGICK, \
@@ -541,6 +542,7 @@ def config_read(reloaded=False):
         IMP_CONVERT = check_setting_str(CFG, 'General', 'imp_convert', '')
         GIT_PROGRAM = check_setting_str(CFG, 'General', 'git_program', '')
         CACHE_AGE = check_setting_int(CFG, 'General', 'cache_age', 30)
+        TASK_AGE = check_setting_int(CFG, 'General', 'task_age', 0)
 
         GIT_USER = check_setting_str(CFG, 'Git', 'git_user', 'dobytang')
         GIT_REPO = check_setting_str(CFG, 'Git', 'git_repo', 'lazylibrarian')
@@ -931,6 +933,7 @@ def config_write():
     CFG.set('General', 'alternate_dir', ALTERNATE_DIR.encode(SYS_ENCODING))
     CFG.set('General', 'download_dir', DOWNLOAD_DIR.encode(SYS_ENCODING))
     CFG.set('General', 'cache_age', CACHE_AGE)
+    CFG.set('General', 'task_age', TASK_AGE)
     CFG.set('General', 'destination_copy', DESTINATION_COPY)
 #
     CFG.set('General', 'displaylength', DISPLAYLENGTH)

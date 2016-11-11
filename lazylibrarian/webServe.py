@@ -130,7 +130,7 @@ class WebInterface(object):
                      ebook_dest_folder='', ebook_dest_file='', tor_downloader_rtorrent=0,
                      rtorrent_host='', rtorrent_dir='', rtorrent_user='', rtorrent_pass='', rtorrent_label='',
                      use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
-                     mag_dest_folder='', mag_dest_file='', mag_relative=0, cache_age=30,
+                     mag_dest_folder='', mag_dest_file='', mag_relative=0, cache_age=30, task_age=0,
                      utorrent_host='', utorrent_port=0, utorrent_user='', utorrent_pass='', utorrent_label='',
                      qbittorrent_host='', qbittorrent_port=0, qbittorrent_user='', qbittorrent_pass='',
                      qbittorrent_label='', notfound_status='Skipped', newbook_status='Skipped', full_scan=0,
@@ -181,6 +181,7 @@ class WebInterface(object):
         lazylibrarian.MATCH_RATIO = check_int(match_ratio, 80)
         lazylibrarian.DLOAD_RATIO = check_int(dload_ratio, 90)
         lazylibrarian.CACHE_AGE = check_int(cache_age, 30)
+        lazylibrarian.TASK_AGE = check_int(task_age, 0)
         lazylibrarian.DISPLAYLENGTH = check_int(displaylength, 10)
 
         lazylibrarian.IMP_ONLYISBN = bool(imp_onlyisbn)
