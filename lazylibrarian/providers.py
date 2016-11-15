@@ -69,7 +69,7 @@ def get_capabilities(provider):
             data = ElementTree.fromstring(source_xml)
         else:
             logger.debug(u"Error getting xml from %s, %s" % (URL, source_xml))
-            data = None
+            data = ''
         if len(data):
             logger.debug(u"Parsing xml for capabilities of %s" % URL)
 
