@@ -383,6 +383,7 @@ def processDir(reset=False):
                     to_delete = False
                 else:
                     # ask downloader to delete the torrent, but not the files
+                    # we delete them later, depending on other settings
                     if book['DownloadID'] != "unknown":
                         logger.debug('Removing %s from %s' % (book['NZBtitle'], book['Source'].lower()))
                         delete_task(book['Source'], book['DownloadID'], False)
@@ -461,7 +462,7 @@ def processDir(reset=False):
                                 (snatch['NZBtitle'], snatch['Source'].lower(), hours))
                     # change status to "Failed", and ask downloader to delete task and files
                     if snatch['BookID'] != 'unknown':
-                        myDB.action('UPDATE wanted SET Status="Failed" where BookID=%s' % snatch['BookID'])
+                        myDB.action('UPDATE wanted SET Status="Failed" WHERE BookID="%s"' % snatch['BookID'])
                         myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % snatch['BookID'])
                         delete_task(snatch['Source'], snatch['DownloadID'], True)
     if reset:

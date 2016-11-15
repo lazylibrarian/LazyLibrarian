@@ -4,13 +4,14 @@ import os
 import re
 import threading
 import lazylibrarian
-from . import request
+#from . import request
 
 from lazylibrarian import logger, database, providers, nzbget, sabnzbd, notifiers, classes, postprocess, synology
 from lib.fuzzywuzzy import fuzz
 from lazylibrarian.common import USER_AGENT, scheduleJob
 from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, nzbdate2format, now, check_int
 from lazylibrarian.notifiers import notify_snatch
+from lazylibrarian.cache import fetchURL
 
 # new to support torrents
 from lazylibrarian.searchtorrents import TORDownloadMethod
@@ -85,7 +86,7 @@ def search_nzb_book(books=None, reset=False):
             found = processResultList(resultlist, book, "general")
 
         if not found:
-            logger.debug("NZB Searches for %s returned no results." % book['searchterm'])
+            logger.info("NZB Searches for %s returned no results." % book['searchterm'])
         if found > True:
             nzb_count = nzb_count + 1  # we found it
 
@@ -222,13 +223,18 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
 
     if lazylibrarian.NZB_DOWNLOADER_NZBGET and lazylibrarian.NZBGET_HOST:
         Source = "NZBGET"
-        headers = {'User-Agent': USER_AGENT}
-        data = request.request_content(url=nzburl, headers=headers)
-        nzb = classes.NZBDataSearchResult()
-        nzb.extraInfo.append(data)
-        nzb.name = nzbtitle
-        nzb.url = nzburl
-        downloadID = nzbget.sendNZB(nzb)
+        #headers = {'User-Agent': USER_AGENT}
+        #data = request.request_content(url=nzburl, headers=headers)
+        data, success = fetchURL(nzburl)
+        if not success:
+            logger.debug('Failed to read nzb data for nzbget: %s' % data)
+            downloadID = False
+        else:
+            nzb = classes.NZBDataSearchResult()
+            nzb.extraInfo.append(data)
+            nzb.name = nzbtitle
+            nzb.url = nzburl
+            downloadID = nzbget.sendNZB(nzb)
 
     if lazylibrarian.NZB_DOWNLOADER_SYNOLOGY and lazylibrarian.USE_SYNOLOGY and lazylibrarian.SYNOLOGY_HOST:
         Source = "SYNOLOGY_NZB"
@@ -236,26 +242,14 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
 
     if lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
         Source = "BLACKHOLE"
-        try:
-            req = urllib2.Request(nzburl)
-            if lazylibrarian.PROXY_HOST:
-                req.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-            req.add_header('User-Agent', USER_AGENT)
-            nzbfile = urllib2.urlopen(req, timeout=90).read()
-
-        except (socket.timeout) as e:
-            logger.warn('Timeout fetching nzb from url: %s' % nzburl)
-            nzbfile = False
-
-        except (urllib2.URLError) as e:
-            logger.warn('Error fetching nzb from url: %s, %s' % (nzburl, e.reason))
+        nzbfile, success = fetchURL(nzburl)
+        if not success:
+            logger.warn('Error fetching nzb from url [%s]: %s' % (nzburl, nzbfile))
             nzbfile = False
 
         if nzbfile:
-
             nzbname = str(nzbtitle) + '.nzb'
             nzbpath = os.path.join(lazylibrarian.NZB_BLACKHOLEDIR, nzbname)
-
             try:
                 with open(nzbpath, 'w') as f:
                     f.write(nzbfile)

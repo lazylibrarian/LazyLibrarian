@@ -15,7 +15,6 @@ from lib.deluge_client import DelugeRPCClient
 from lib.fuzzywuzzy import fuzz
 
 from lazylibrarian.common import scheduleJob, USER_AGENT
-from lazylibrarian.cache import fetchURL
 from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, check_int, now, cleanName
 from lazylibrarian.providers import IterateOverTorrentSites
 from lazylibrarian.notifiers import notify_snatch
@@ -305,13 +304,6 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
         request.add_header('Accept-encoding', 'gzip')
         request.add_header('User-Agent', USER_AGENT)
-
-        # PAB removed this, KAT serves us html instead of torrent if this header is sent
-        # if tor_prov == 'KAT':
-        #    host = lazylibrarian.KAT_HOST
-        #    if not str(host)[:4] == "http":
-        #        host = 'http://' + host
-        #    request.add_header('Referer', host)
 
         try:
             response = urllib2.urlopen(request, timeout=90)

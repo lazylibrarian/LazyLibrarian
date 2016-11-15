@@ -12,10 +12,10 @@ from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
 
 
-def fetchURL(URL, headers=None):
+def fetchURL(URL, headers=None, retry=True):
     """ Return the result of fetching a URL and True if success
         Otherwise return error message and False
-        Allow one retry on timeout """
+        Allow one retry on timeout by default"""
     request = urllib2.Request(URL)
     if lazylibrarian.PROXY_HOST:
         request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
@@ -37,6 +37,9 @@ def fetchURL(URL, headers=None):
         else:
             return str(resp), False
     except (socket.timeout) as e:
+        if not retry:
+            logger.error(u"fetchURL: Timeout getting response from %s" % URL)
+            return str(e), False
         logger.warn(u"fetchURL: retrying - got timeout on %s" % URL)
         try:
             resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
@@ -176,7 +179,7 @@ def get_json_request(my_url, useCache=True):
         result, success = fetchURL(my_url)
         if success:
             logger.debug(u"CacheHandler: Storing JSON for %s" % my_url)
-            source_json = json.JSONDecoder().decode(result)
+            source_json = json.loads(result)
             json.dump(source_json, open(hashname, "w"))
         else:
             logger.warn(u"Got error response for %s: %s" % (my_url, result))
