@@ -1,4 +1,5 @@
 import os
+import shutil
 import urllib
 import urllib2
 import socket
@@ -96,12 +97,19 @@ def getBookWork(bookID=None, reason=None):
     item = myDB.match('select BookName,AuthorName,BookISBN from books where bookID="%s"' % bookID)
     if item:
         cacheLocation = "WorkCache"
-        # does the workpage need to expire?
-        # expireafter = lazylibrarian.CACHE_AGE
         cacheLocation = os.path.join(lazylibrarian.CACHEDIR, cacheLocation)
         if not os.path.exists(cacheLocation):
             os.mkdir(cacheLocation)
         workfile = os.path.join(cacheLocation, bookID + '.html')
+
+        # does the workpage need to expire?
+        #if os.path.isfile(workfile):
+        #    cache_modified_time = os.stat(workfile).st_mtime
+        #    time_now = time.time()
+        #    expiry = lazylibrarian.CACHE_AGE * 24 * 60 * 60  # expire cache after this many seconds
+        #    if cache_modified_time < time_now - expiry:
+        #        # Cache entry is too old, delete it
+        #        os.remove(workfile)
 
         if os.path.isfile(workfile):
             # use cached file if possible to speed up refreshactiveauthors and librarysync re-runs
@@ -193,9 +201,10 @@ def getWorkSeries(bookID=None):
 def getBookCover(bookID=None):
     """ Return link to a local file containing a book cover image for a bookid.
         Try 1. Local file cached from goodreads/googlebooks when book was imported
-            2. LibraryThing whatwork
-            3. Goodreads search if book was imported from goodreads
-            4. Google images search
+            2. cover.jpg if we have the book
+            3. LibraryThing whatwork
+            4. Goodreads search if book was imported from goodreads
+            5. Google images search
         Return None if no cover available. """
     if not bookID:
         logger.error("getBookCover- No bookID")
@@ -211,6 +220,21 @@ def getBookCover(bookID=None):
         return coverlink
 
     lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
+
+    myDB = database.DBConnection()
+    item = myDB.match('select BookFile from books where bookID="%s"' % bookID)
+    if item:
+        bookfile = item['BookFile']
+        if bookfile:  # we may have a cover.jpg in the same folder
+            bookdir = os.path.dirname(bookfile)
+            coverimg = os.path.join(bookdir, "cover.jpg")
+            if os.path.isfile(coverimg):
+                logger.debug(u"getBookCover: Copying book cover to %s" % coverfile)
+                shutil.copyfile(coverimg, coverfile)
+                coverlink = 'cache/' + bookID + '.jpg'
+                return coverlink
+
+    # if no cover.jpg, see if librarything workpage has a cover
     work = getBookWork(bookID, "Cover")
     if work:
         try:
@@ -226,8 +250,6 @@ def getBookCover(bookID=None):
             logger.debug('getBookCover: Image not found in work page for %s' % bookID)
 
     # not found in librarything work page, try to get a cover from goodreads or google instead
-
-    myDB = database.DBConnection()
 
     item = myDB.match('select BookName,AuthorName,BookLink from books where bookID="%s"' % bookID)
     if item:
