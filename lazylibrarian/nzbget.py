@@ -46,22 +46,21 @@ def deleteNZB(nzbID, remove_data=False):
 def sendNZB(nzb, cmd=None, nzbID=None):
     # we can send a new nzb, or commands to act on an existing nzbID (or array of nzbIDs)
     # by setting nzbID and cmd (we currently only use test and delete)
-    addToTop = False
-    nzbgetXMLrpc = "%(username)s:%(password)s@%(host)s:%(port)s/xmlrpc"
 
-    if lazylibrarian.NZBGET_HOST is None:
+    host = lazylibrarian.NZBGET_HOST
+    if host is None:
         logger.error(u"No NZBget host found in configuration. Please configure it.")
         return False
 
-    host = lazylibrarian.NZBGET_HOST
-    if host and host.startswith('https://'):
-        nzbgetXMLrpc = 'https://' + nzbgetXMLrpc
-        host.replace('https://', '', 1)
-    else:
-        nzbgetXMLrpc = 'http://' + nzbgetXMLrpc
-        host.replace('http://', '', 1)
+    addToTop = False
+    nzbgetXMLrpc = "%(username)s:%(password)s@%(host)s:%(port)s/xmlrpc"
 
-    url = nzbgetXMLrpc % {"host": host, "username": lazylibrarian.NZBGET_USER,
+    if not host.startswith('http'):
+        host = 'http://' + host
+
+    hostparts = host.split('://')
+
+    url = hostparts[0] + '://' + nzbgetXMLrpc % {"host": hostparts[1], "username": lazylibrarian.NZBGET_USER,
                           "port": lazylibrarian.NZBGET_PORT, "password": lazylibrarian.NZBGET_PASS}
     try:
         nzbGetRPC = xmlrpclib.ServerProxy(url)
