@@ -92,6 +92,7 @@ def sendNZB(nzb, cmd=None, nzbID=None):
     except httplib.socket.error as e:
         logger.error(u"Please check your NZBget host and port (if it is running). \
             NZBget is not responding to this combination: %s" % e)
+        logger.error(u"NZBget url set to [%s]" % url)
         return False
 
     except xmlrpclib.ProtocolError as e:
