@@ -19,9 +19,9 @@ from time import sleep
 import lazylibrarian
 from lazylibrarian import logger
 from magnet2torrent import magnet2torrent
-#import lib.xmlrpclib as xmlrpclib
 import xmlrpclib
 import socket
+import ssl
 
 
 def getServer():

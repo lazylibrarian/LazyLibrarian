@@ -1,7 +1,6 @@
 import urllib
 import urllib2
 import socket
-import ssl
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT

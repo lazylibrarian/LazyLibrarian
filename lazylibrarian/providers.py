@@ -1,7 +1,6 @@
 import urllib
 import urllib2
 import socket
-import ssl
 from xml.etree import ElementTree
 
 import lazylibrarian
