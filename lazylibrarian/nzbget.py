@@ -21,7 +21,6 @@
 
 
 import httplib
-
 import lazylibrarian
 
 from base64 import standard_b64encode
@@ -33,7 +32,7 @@ from lazylibrarian import logger
 
 def checkLink():
     # socket.setdefaulttimeout(2)
-    test = sendNZB("test")
+    test = sendNZB(None, cmd="test")
     # socket.setdefaulttimeout(None)
     if test:
         return "NZBget connection successful"
@@ -41,30 +40,27 @@ def checkLink():
 
 def deleteNZB(nzbID, remove_data=False):
     if remove_data:
-        return sendNZB('GroupFinalDelete', nzbID)
-    return sendNZB('GroupDelete', nzbID)
+        return sendNZB(None, 'GroupFinalDelete', nzbID)
+    return sendNZB(None, 'GroupDelete', nzbID)
 
-def sendNZB(nzb, nzbID=None):
-    # we can send commands to act on an existing nzbID, or array of nzbIDs
-    # by setting nzbID, and nzb to the command (we currently only use delete)
-    if nzb == "test":
-        nzb = None
-    addToTop = False
-    nzbgetXMLrpc = "%(username)s:%(password)s@%(host)s:%(port)s/xmlrpc"
+def sendNZB(nzb, cmd=None, nzbID=None):
+    # we can send a new nzb, or commands to act on an existing nzbID (or array of nzbIDs)
+    # by setting nzbID and cmd (we currently only use test and delete)
 
-    if lazylibrarian.NZBGET_HOST is None:
+    host = lazylibrarian.NZBGET_HOST
+    if host is None:
         logger.error(u"No NZBget host found in configuration. Please configure it.")
         return False
 
-    host = lazylibrarian.NZBGET_HOST
-    if host and host.startswith('https://'):
-        nzbgetXMLrpc = 'https://' + nzbgetXMLrpc
-        host.replace('https://', '', 1)
-    else:
-        nzbgetXMLrpc = 'http://' + nzbgetXMLrpc
-        host.replace('http://', '', 1)
+    addToTop = False
+    nzbgetXMLrpc = "%(username)s:%(password)s@%(host)s:%(port)s/xmlrpc"
 
-    url = nzbgetXMLrpc % {"host": host, "username": lazylibrarian.NZBGET_USER,
+    if not host.startswith('http'):
+        host = 'http://' + host
+
+    hostparts = host.split('://')
+
+    url = hostparts[0] + '://' + nzbgetXMLrpc % {"host": hostparts[1], "username": lazylibrarian.NZBGET_USER,
                           "port": lazylibrarian.NZBGET_PORT, "password": lazylibrarian.NZBGET_PASS}
     try:
         nzbGetRPC = xmlrpclib.ServerProxy(url)
@@ -72,21 +68,21 @@ def sendNZB(nzb, nzbID=None):
         logger.debug("NZBget connection to %s failed: %s" % (url, str(e)))
         return False
 
-    if nzb is None:
+    if cmd == "test":
         msg = "lazylibrarian connection test"
     elif nzbID:
-        msg = "lazylibrarian connected to %s %s" % (nzb, nzbID)
+        msg = "lazylibrarian connected to %s %s" % (cmd, nzbID)
     else:
         msg = "lazylibrarian connected to drop off %s any moment now." % (nzb.name + ".nzb")
 
     try:
         if nzbGetRPC.writelog("INFO", msg):
             logger.debug(u"Successfully connected to NZBget")
-            if nzb is None:
+            if cmd == "test":
                 # should check nzbget category is valid
                 return True
         else:
-            if nzb is None or nzbId is not None:
+            if nzbId is not None:
                 logger.debug(u"Successfully connected to NZBget, unable to send message")
                 return False
             else:
@@ -95,6 +91,7 @@ def sendNZB(nzb, nzbID=None):
     except httplib.socket.error as e:
         logger.error(u"Please check your NZBget host and port (if it is running). \
             NZBget is not responding to this combination: %s" % e)
+        logger.error(u"NZBget url set to [%s]" % url)
         return False
 
     except xmlrpclib.ProtocolError as e:
@@ -108,10 +105,10 @@ def sendNZB(nzb, nzbID=None):
         # its a command for an existing task
         id_array = []
         id_array.append(int(nzbID))
-        if nzb == 'GroupDelete' or nzb == 'GroupFinalDelete':
-            return nzbGetRPC.editqueue(nzb, 0, "", id_array)
+        if cmd == 'GroupDelete' or cmd == 'GroupFinalDelete':
+            return nzbGetRPC.editqueue(cmd, 0, "", id_array)
         else:
-            logger.debug('Unsupported nzbget command %s' % repr(nzb))
+            logger.debug('Unsupported nzbget command %s' % repr(cmd))
         return False
 
     nzbcontent64 = None

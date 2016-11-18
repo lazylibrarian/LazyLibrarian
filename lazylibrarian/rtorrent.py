@@ -1,12 +1,27 @@
-#!/usr/bin/python
+#  This file is part of Lazylibrarian.
+#
+#  Lazylibrarian is free software':'you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Lazylibrarian is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
+
 
 import os
 from time import sleep
 import lazylibrarian
 from lazylibrarian import logger
 from magnet2torrent import magnet2torrent
-import lib.xmlrpclib as xmlrpclib
+import xmlrpclib
 import socket
+import ssl
 
 
 def getServer():
@@ -24,11 +39,16 @@ def getServer():
         password = lazylibrarian.RTORRENT_PASS
         parts = host.split('://')
         host = parts[0] + '://' + user + ':' + password + '@' + parts[1]
+
     try:
+        socket.setdefaulttimeout(20) # so we don't freeze if server is not there
         server = xmlrpclib.ServerProxy(host)
-        result = server.system.listMethods()
+        result = server.system.client_version()
+        socket.setdefaulttimeout(None)  # reset timeout
+        logger.debug("rTorrent client version = %s" % result)
     except Exception as e:
-        logger.debug("xmlrpclib error: %s" % str(e))
+        socket.setdefaulttimeout(None)  # reset timeout if failed
+        logger.debug("xmlrpclib error: %s" % repr(e))
         return False
     if result:
         return server
@@ -43,8 +63,6 @@ def addTorrent(tor_url, hashID):
     if server is False:
         return False
 
-    socket.setdefaulttimeout(10)  # set a timeout
-
     directory = lazylibrarian.RTORRENT_DIR
 
     if tor_url.startswith('magnet') and directory:
@@ -56,6 +74,9 @@ def addTorrent(tor_url, hashID):
         if torrent is False:
             return False
         tor_url = torrent
+
+    #socket.setdefaulttimeout(10)  # shouldn't need timeout again as we already talked to server
+
     try:
         response = server.load(tor_url)  # response isn't anything useful, always 0
         # need a short pause while rtorrent loads it
@@ -78,16 +99,17 @@ def addTorrent(tor_url, hashID):
             server.d.set_directory(hashID, directory)
 
         mainview = server.download_list("", "main")
-    except Exception as e:
-        logger.error("rTorrent Error: %s" % str(e))
-        socket.setdefaulttimeout(None)  # reset timeout if failed
-        return False
+        #socket.setdefaulttimeout(None)  # reset timeout
 
-    socket.setdefaulttimeout(None)  # reset timeout
+    except Exception as e:
+        #socket.setdefaulttimeout(None)  # reset timeout if failed
+        logger.error("rTorrent Error: %s" % str(e))
+        return False
 
     # For each torrent in the main view
     for tor in mainview:
-        if tor.upper() == hashID.upper():  # we are there
+        if tor.upper() == hashID.upper():  # this is us
+            # wait for download to start, that's when rtorrent fills in the name
             RETRIES = 5
             while RETRIES:
                 name = server.d.get_name(tor)
@@ -138,16 +160,7 @@ def removeTorrent(hashID, remove_data=False):
 
 
 def checkLink():
-    msg = ""
     server = getServer()
-    if server is not False:
-        try:
-            socket.setdefaulttimeout(5)  # set the timeout to 5 seconds
-            result = server.system.listMethods()
-            msg = "rTorrent login successful"
-        except Exception as e:
-            logger.debug("rTorrent connection: %s" % str(e))
-    socket.setdefaulttimeout(None)  # set the default back
-    if msg == "":
-        msg = "rTorrent login FAILED\nCheck debug log"
-    return msg
+    if server is False:
+        return "rTorrent login FAILED\nCheck debug log"
+    return "rTorrent login successful"

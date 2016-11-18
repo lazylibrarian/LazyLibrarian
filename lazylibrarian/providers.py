@@ -1,12 +1,12 @@
 import urllib
 import urllib2
 import socket
-import ssl
 from xml.etree import ElementTree
 
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.common import USER_AGENT
+from lazylibrarian.cache import fetchURL
 from lazylibrarian.formatter import age, today, plural, cleanName
 from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL, GEN, EXTRA, LIME
 import lib.feedparser as feedparser
@@ -63,109 +63,87 @@ def get_capabilities(provider):
         URL = host + '/api?t=caps&apikey=' + provider['API']
         logger.debug('Requesting capabilities for %s' % URL)
 
-        request = urllib2.Request(URL)
-        if lazylibrarian.PROXY_HOST:
-            request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-        request.add_header('User-Agent', USER_AGENT)
-        resp = ""
-        try:
-            resp = urllib2.urlopen(request, timeout=30)  # don't get stuck
-        except (socket.timeout) as e:
-            logger.debug("Timeout getting capabilities for %s" % request.get_full_url())
-            resp = ""
-        except (urllib2.HTTPError, urllib2.URLError, ssl.SSLError) as e:
-            if hasattr(e, 'reason'):
-                errmsg = e.reason
-            else:
-                errmsg = str(e)
-            logger.debug("Error getting capabilities: %s" % errmsg)
-            resp = ""
-        if resp:
-            if str(resp.getcode()).startswith("2"):  # (200 OK etc)
-                logger.debug(u"Got capabilities for %s" % request.get_full_url())
-                try:
-                    source_xml = resp.read()  # .decode('utf-8')
-                    data = ElementTree.fromstring(source_xml)
-                except Exception as e:
-                    logger.debug(u"Error getting xml from %s, %s" % (URL, str(e)))
-                    data = None
-                if len(data):
-                    logger.debug(u"Parsing xml for capabilities of %s" % URL)
+        source_xml, success = fetchURL(URL)
+        if success:
+            data = ElementTree.fromstring(source_xml)
+        else:
+            logger.debug(u"Error getting xml from %s, %s" % (URL, source_xml))
+            data = ''
+        if len(data):
+            logger.debug(u"Parsing xml for capabilities of %s" % URL)
 
-                    #
-                    # book search isn't mentioned in the caps xml returned by
-                    # nzbplanet,jackett,oznzb,usenet-crawler, so we can't use it as a test
-                    # but the newznab+ ones usually support t=book and categories in 7000 range
-                    # whereas nZEDb ones don't support t=book and use categories in 8000 range
-                    # also some providers give searchtype but no supportedparams, so we still
-                    # can't tell what queries will be accepted
-                    # also category names can be lowercase or Mixed, magazine subcat name isn't
-                    # consistent, and subcat can be just subcat or category/subcat subcat > lang
-                    # eg "Magazines" "Mags" or "Books/Magazines" "Mags > French"
-                    # Load all languages for now as we don't know which the user might want
-                    #
-                    #
-                    #  set some defaults
-                    #
-                    provider['GENERALSEARCH'] = 'search'
-                    provider['EXTENDED'] = '1'
-                    provider['BOOKCAT'] = ''
-                    provider['MAGCAT'] = ''
-                    provider['BOOKSEARCH'] = ''
-                    provider['MAGSEARCH'] = ''
-                    #
-                    search = data.find('searching/search')
-                    if search is not None:
-                        if 'available' in search.attrib:
-                            if search.attrib['available'] == 'yes':
-                                provider['GENERALSEARCH'] = 'search'
-                    categories = data.getiterator('category')
-                    for cat in categories:
-                        if 'name' in cat.attrib:
-                            if cat.attrib['name'].lower() == 'books':
-                                bookcat = cat.attrib['id']  # keep main bookcat for later
-                                provider['BOOKCAT'] = bookcat
-                                provider['MAGCAT'] = ''
-                                if provider['BOOKCAT'] == '7000':
-                                    # looks like newznab+, should support book-search
-                                    provider['BOOKSEARCH'] = 'book'
-                                    # but check in case
-                                    search = data.find('searching/book-search')
-                                    if search is not None:
-                                        if 'available' in search.attrib:
-                                            if search.attrib['available'] == 'yes':
-                                                provider['BOOKSEARCH'] = 'book'
-                                            else:
-                                                provider['BOOKSEARCH'] = ''
+            #
+            # book search isn't mentioned in the caps xml returned by
+            # nzbplanet,jackett,oznzb,usenet-crawler, so we can't use it as a test
+            # but the newznab+ ones usually support t=book and categories in 7000 range
+            # whereas nZEDb ones don't support t=book and use categories in 8000 range
+            # also some providers give searchtype but no supportedparams, so we still
+            # can't tell what queries will be accepted
+            # also category names can be lowercase or Mixed, magazine subcat name isn't
+            # consistent, and subcat can be just subcat or category/subcat subcat > lang
+            # eg "Magazines" "Mags" or "Books/Magazines" "Mags > French"
+            # Load all languages for now as we don't know which the user might want
+            #
+            #
+            #  set some defaults
+            #
+            provider['GENERALSEARCH'] = 'search'
+            provider['EXTENDED'] = '1'
+            provider['BOOKCAT'] = ''
+            provider['MAGCAT'] = ''
+            provider['BOOKSEARCH'] = ''
+            provider['MAGSEARCH'] = ''
+            #
+            search = data.find('searching/search')
+            if search is not None:
+                if 'available' in search.attrib:
+                    if search.attrib['available'] == 'yes':
+                        provider['GENERALSEARCH'] = 'search'
+            categories = data.getiterator('category')
+            for cat in categories:
+                if 'name' in cat.attrib:
+                    if cat.attrib['name'].lower() == 'books':
+                        bookcat = cat.attrib['id']  # keep main bookcat for later
+                        provider['BOOKCAT'] = bookcat
+                        provider['MAGCAT'] = ''
+                        if provider['BOOKCAT'] == '7000':
+                            # looks like newznab+, should support book-search
+                            provider['BOOKSEARCH'] = 'book'
+                            # but check in case
+                            search = data.find('searching/book-search')
+                            if search is not None:
+                                if 'available' in search.attrib:
+                                    if search.attrib['available'] == 'yes':
+                                        provider['BOOKSEARCH'] = 'book'
+                                    else:
+                                        provider['BOOKSEARCH'] = ''
+                        else:
+                            # looks like nZEDb, probably no book-search
+                            provider['BOOKSEARCH'] = ''
+                            # but check in case
+                            search = data.find('searching/book-search')
+                            if search is not None:
+                                if 'available' in search.attrib:
+                                    if search.attrib['available'] == 'yes':
+                                        provider['BOOKSEARCH'] = 'book'
+                                    else:
+                                        provider['BOOKSEARCH'] = ''
+                        subcats = cat.getiterator('subcat')
+                        for subcat in subcats:
+                            if 'ebook' in subcat.attrib['name'].lower():
+                                provider['BOOKCAT'] = "%s,%s" % (provider['BOOKCAT'], subcat.attrib['id'])
+                            if 'magazines' in subcat.attrib['name'].lower() or 'mags' in subcat.attrib['name'].lower():
+                                if provider['MAGCAT']:
+                                    provider['MAGCAT'] = "%s,%s" % (provider['MAGCAT'], subcat.attrib['id'])
                                 else:
-                                    # looks like nZEDb, probably no book-search
-                                    provider['BOOKSEARCH'] = ''
-                                    # but check in case
-                                    search = data.find('searching/book-search')
-                                    if search is not None:
-                                        if 'available' in search.attrib:
-                                            if search.attrib['available'] == 'yes':
-                                                provider['BOOKSEARCH'] = 'book'
-                                            else:
-                                                provider['BOOKSEARCH'] = ''
-                                subcats = cat.getiterator('subcat')
-                                for subcat in subcats:
-                                    if 'ebook' in subcat.attrib['name'].lower():
-                                        provider['BOOKCAT'] = "%s,%s" % (provider['BOOKCAT'], subcat.attrib['id'])
-                                    if 'magazines' in subcat.attrib['name'].lower() or 'mags' in subcat.attrib['name'].lower():
-                                        if provider['MAGCAT']:
-                                            provider['MAGCAT'] = "%s,%s" % (provider['MAGCAT'], subcat.attrib['id'])
-                                        else:
-                                            provider['MAGCAT'] = subcat.attrib['id']
-                                # if no specific magazine subcategory, use books
-                                if not provider['MAGCAT']:
-                                    provider['MAGCAT'] = bookcat
-                    logger.debug("Categories: Books %s : Mags %s" % (provider['BOOKCAT'], provider['MAGCAT']))
-                    provider['UPDATED'] = today()
-                else:
-                    logger.warn(u"Unable to get capabilities for %s: No data returned" % URL)
-            else:
-                logger.warn(u"Unable to get capabilities for %s: Got %s" % (URL, resp.getcode()))
+                                    provider['MAGCAT'] = subcat.attrib['id']
+                        # if no specific magazine subcategory, use books
+                        if not provider['MAGCAT']:
+                            provider['MAGCAT'] = bookcat
+            logger.debug("Categories: Books %s : Mags %s" % (provider['BOOKCAT'], provider['MAGCAT']))
+            provider['UPDATED'] = today()
+        else:
+            logger.warn(u"Unable to get capabilities for %s: No data returned" % URL)
     return provider
 
 
@@ -263,30 +241,11 @@ def RSS(host=None, feednr=None):
 
     URL = host
 
-    try:
-        request = urllib2.Request(URL)
-        if lazylibrarian.PROXY_HOST:
-            request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-        request.add_header('User-Agent', USER_AGENT)
-        try:
-            resp = urllib2.urlopen(request, timeout=90)
-            data = feedparser.parse(resp)
-        except (socket.timeout) as e:
-            logger.error('Timeout fetching data from %s' % host)
-            data = None
-        except (urllib2.URLError, IOError, EOFError) as e:
-            if hasattr(e, 'reason'):
-                errmsg = e.reason
-            elif hasattr(e, 'strerror'):
-                errmsg = e.strerror
-            else:
-                errmsg = str(e)
-
-            logger.error('Error fetching data from %s: %s' % (host, errmsg))
-            data = None
-
-    except Exception as e:
-        logger.error("Error opening url: %s" % str(e))
+    result, success = fetchURL(URL)
+    if success:
+        data = feedparser.parse(result)
+    else:
+        logger.error('Error fetching data from %s: %s' % (host, result))
         data = None
 
     if data:
@@ -380,33 +339,21 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
         if not str(host)[:4] == "http":
             host = 'http://' + host
         URL = host + '/api?' + urllib.urlencode(params)
-        try:
-            request = urllib2.Request(URL)
-            if lazylibrarian.PROXY_HOST:
-                request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-            request.add_header('User-Agent', USER_AGENT)
-            resp = urllib2.urlopen(request, timeout=90)
+
+        rootxml = None
+        result, success = fetchURL(URL)
+        if success:
             try:
-                data = ElementTree.parse(resp)
+                rootxml = ElementTree.fromstring(result)
             except Exception as e:
                 logger.error('Error parsing data from %s: %s' % (host, str(e)))
-                data = None
-        except (socket.timeout) as e:
-            logger.error('Timeout fetching data from %s' % host)
+                rootxml = None
+        else:
+            logger.error('Error reading data from %s: %s' % (host, result))
 
-        except (urllib2.URLError, IOError, EOFError) as e:
-            if hasattr(e, 'reason'):
-                errmsg = e.reason
-            elif hasattr(e, 'strerror'):
-                errmsg = e.strerror
-            else:
-                errmsg = str(e)
-            logger.error('Error fetching data from %s: %s' % (host, errmsg))
-
-        if data:
+        if rootxml is not None:
             # to debug because of api
             logger.debug(u'Parsing results from <a href="%s">%s</a>' % (URL, host))
-            rootxml = data.getroot()
 
             if rootxml.tag == 'error':
                 errormsg = rootxml.get('description', default='unknown error')

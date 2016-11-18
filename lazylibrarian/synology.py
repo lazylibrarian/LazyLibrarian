@@ -1,18 +1,46 @@
-#!/usr/bin/python
+#  This file is part of Lazylibrarian.
+#
+#  Lazylibrarian is free software':'you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Lazylibrarian is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
+
 
 import urllib
-import urllib2
-import socket
 import json
-import ssl
 import lazylibrarian
+#import urllib2
+#import socket
+#import ssl
+#from lazylibrarian.common import USER_AGENT
 from lazylibrarian import logger
-from lazylibrarian.common import USER_AGENT
+from lazylibrarian.cache import fetchURL
 
 
 def _getJSON(URL, params):
     # Get JSON response from URL
-    # Return True,json or False,error_msg
+    # Return json,True or error_msg,False
+
+    URL = URL + "/?%s" % urllib.urlencode(params)
+    result, success = fetchURL(URL, retry=False)
+    if success:
+        try:
+            result_json = json.loads(result)
+            return result_json, True
+        except (ValueError, AttributeError):
+                return "Could not convert response to json", False
+
+    return "getJSON returned %s" % result, False
+
+    """ old version of code before switched to fetchURL
     data = urllib.urlencode(params)
     request = urllib2.Request(URL, data)
     if lazylibrarian.PROXY_HOST:
@@ -27,21 +55,21 @@ def _getJSON(URL, params):
                 result = resp.read()
                 try:
                     result_json = json.JSONDecoder().decode(result)
-                    return True, result_json
+                    return result_json, True
                 except (ValueError, AttributeError):
-                    return False, "Could not convert response to json"
+                    return "Could not convert response to json", False
             except socket.error as e:
-                return False, "Socket error %s" % str(e)
+                return "Socket error %s" % str(e), False
         else:
-            return False, "Error code %s" % resp.getcode()
+            return "Error code %s" % resp.getcode(), False
     except (socket.timeout) as e:
-        return False, "Timeout"
+        return "Timeout", False
     except (urllib2.HTTPError, urllib2.URLError, ssl.SSLError) as e:
         if hasattr(e, 'reason'):
-            return False, "%s" %  e.reason
+            return "%s" %  e.reason, False
         else:
-            return False, "%s" % str(e)
-
+            return "%s" % str(e), False
+    """
 
 def _errorMsg(errnum, api):
     # Convert DownloadStation errnum to an error message depending on which api call
@@ -92,7 +120,7 @@ def _login(hosturl):
                     "query": "SYNO.API.Auth,SYNO.DownloadStation.Task"
                 }
 
-    success, result = _getJSON(URL, params)
+    result, success = _getJSON(URL, params)
     if success:
         if not result['success']:
             errnum = result['error']['code']
@@ -116,7 +144,7 @@ def _login(hosturl):
                     "format": "sid"
                 }
 
-    success, result = _getJSON(URL, params)
+    result, success = _getJSON(URL, params)
     if success:
         if not result['success']:
             errnum = result['error']['code']
@@ -140,7 +168,7 @@ def _logout(auth_cgi, sid):
                     "_sid": sid
                 }
 
-    success, result = _getJSON(auth_cgi, params)
+    result, success = _getJSON(auth_cgi, params)
     return success
 
 def _listTasks(task_cgi, sid):
@@ -154,7 +182,7 @@ def _listTasks(task_cgi, sid):
                     "_sid": sid
                 }
 
-    success, result = _getJSON(task_cgi, params)
+    result, success = _getJSON(task_cgi, params)
 
     if success:
         if not result['success']:
@@ -182,7 +210,7 @@ def _getInfo(task_cgi, sid, download_id):
                     "_sid": sid
                 }
 
-    success, result = _getJSON(task_cgi, params)
+    result, success = _getJSON(task_cgi, params)
     logger.debug("Result from getInfo = %s" % repr(result))
     if success:
         if not result['success']:
@@ -211,7 +239,7 @@ def _deleteTask(task_cgi, sid, download_id, remove_data):
                     "_sid": sid
                 }
 
-    success, result = _getJSON(task_cgi, params)
+    result, success = _getJSON(task_cgi, params)
     logger.debug("Result from delete: %s" % repr(result))
     if success:
         if not result['success']:
@@ -243,7 +271,7 @@ def _addTorrentURI(task_cgi, sid, torurl):
                     "_sid": sid
                 }
 
-    success, result = _getJSON(task_cgi, params)
+    result, success = _getJSON(task_cgi, params)
     logger.debug("Result from create = %s" % repr(result))
     if success:
         if not result['success']:

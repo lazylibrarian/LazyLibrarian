@@ -1387,7 +1387,7 @@ def build_bookstrap_themes():
     if str(resp.getcode()).startswith("2"):
         # (200 OK etc)
         try:
-            results = json.JSONDecoder().decode(resp.read())
+            results = json.loads(resp.read())
             for theme in results['themes']:
                 themelist.append(theme['name'].lower())
         except Exception as e:
