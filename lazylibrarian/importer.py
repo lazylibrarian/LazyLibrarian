@@ -34,12 +34,6 @@ def addAuthorToDB(authorname=None, refresh=False):
         authorid = author['authorid']
         authorlink = author['authorlink']
         authorimg = author['authorimg']
-        if 'nophoto' in authorimg:
-            authorimg = getAuthorImage(authorid)
-        if authorimg and authorimg.startswith('http'):
-            newimg = cache_cover(authorid, authorimg)
-            if newimg:
-                authorimg = newimg
         controlValueDict = {"AuthorName": authorname}
         newValueDict = {
             "AuthorID": authorid,
@@ -55,14 +49,34 @@ def addAuthorToDB(authorname=None, refresh=False):
         logger.warn(u"Nothing found for %s" % authorname)
         myDB.action('DELETE from authors WHERE AuthorName="%s"' % authorname)
         return
-# process books
+
+    new_img = False
+    if authorimg and 'nophoto' in authorimg:
+        authorimg = getAuthorImage(authorid)
+        new_img = True
+    if authorimg and authorimg.startswith('http'):
+        newimg = cache_cover(authorid, authorimg)
+        if newimg:
+            authorimg = newimg
+            new_img = True
+
+    if new_img:
+        controlValueDict = {"AuthorID": authorid}
+        newValueDict = {"AuthorImg": authorimg}
+        myDB.upsert("authors", newValueDict, controlValueDict)
+
+
+    # process books
     if lazylibrarian.BOOK_API == "GoogleBooks":
         book_api = GoogleBooks()
         book_api.get_author_books(authorid, authorname, refresh=refresh)
     elif lazylibrarian.BOOK_API == "GoodReads":
         GR.get_author_books(authorid, authorname, refresh=refresh)
 
-    update_totals(authorid)
+    # update totals works for existing authors only.
+    # New authors need their totals updating after libraryscan or import of books.
+    if dbauthor:
+        update_totals(authorid)
     logger.debug("[%s] Author update complete" % authorname)
 
 
