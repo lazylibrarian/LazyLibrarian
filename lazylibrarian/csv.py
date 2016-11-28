@@ -1,3 +1,18 @@
+#  This file is part of Lazylibrarian.
+#
+#  Lazylibrarian is free software':'you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Lazylibrarian is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
+
 import os
 import lib.csv as csv
 import lazylibrarian
@@ -122,10 +137,8 @@ def import_CSV(search_dir=None):
                 content[row[0]] = dict(zip(headers, row))
 
         # We can now get to the content by using the resulting dictionary, so to see
-        # the list of lines, we can do:
-        # print content.keys() # to get a list of keys
-        # To see the list of fields available for each book
-        # print headers
+        # the list of lines, we can do: print content.keys()  to get a list of keys
+        # To see the list of fields available for each book:  print headers
 
         if 'Author' not in headers or 'Title' not in headers:
             logger.warn(u'Invalid CSV file found %s' % csvFile)
@@ -156,7 +169,7 @@ def import_CSV(search_dir=None):
 
             # if we didn't find it, maybe author info is stale
             if not bookmatch and not newauthor:
-                addAuthorToDB(authorname, refresh=True)
+                addAuthorToDB(authorname)
                 bookmatch = finditem(content[item], headers)
 
             if bookmatch:

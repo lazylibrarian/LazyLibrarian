@@ -1,3 +1,18 @@
+#  This file is part of Lazylibrarian.
+#
+#  Lazylibrarian is free software':'you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Lazylibrarian is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
+
 import os
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -8,14 +23,21 @@ from lazylibrarian.cache import cache_cover
 from lazylibrarian.bookwork import getAuthorImage
 
 
-def addAuthorToDB(authorname=None, refresh=False):
-
+def addAuthorToDB(authorname=None):
+    """
+    Add an author to the database, and get  list of all their books
+    If author already exists in database, refresh their details and booklist
+    """
     myDB = database.DBConnection()
 
     GR = GoodReads(authorname)
 
     query = "SELECT * from authors WHERE AuthorName='%s'" % authorname.replace("'", "''")
     dbauthor = myDB.match(query)
+    if dbauthor:
+        refresh=True
+    else:
+        refresh=False
     controlValueDict = {"AuthorName": authorname}
 
     if not dbauthor:

@@ -373,7 +373,7 @@ class Api(object):
             self.id = kwargs['name']
 
         try:
-            importer.addAuthorToDB(self.id, refresh=True)
+            importer.addAuthorToDB(self.id)
         except Exception as e:
             self.data = str(e)
 
@@ -577,7 +577,7 @@ class Api(object):
         else:
             self.id = kwargs['name']
         try:
-            importer.addAuthorToDB(self.id, refresh=False)
+            importer.addAuthorToDB(self.id)
         except Exception as e:
             self.data = str(e)
 
