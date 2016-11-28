@@ -1,3 +1,18 @@
+#  This file is part of Lazylibrarian.
+#
+#  Lazylibrarian is free software':'you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Lazylibrarian is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
+
 import datetime
 import re
 import lazylibrarian
@@ -54,6 +69,9 @@ def bookSeries(bookname):
 
 
 def next_run(when_run):
+    """
+    Give a readable approximation of how long until a job will be run
+    """
     now = time.time()
     when_run = time.strptime(when_run, '%Y-%m-%d %H:%M:%S')
     when_run = time.mktime(when_run)
@@ -110,7 +128,6 @@ def nzbdate2format(nzbdate):
     mmname = nzbdate.split()[2].zfill(2)
     day = nzbdate.split()[1]
     # nzbdates are mostly english short month names, but not always
-    # month = str(strptime(mmname, '%b').tm_mon).zfill(2)
     month = month2num(mmname)
     if month == "Invalid":
         month = "01"  # hopefully won't hit this, but return a default value rather than error
@@ -142,6 +159,9 @@ def month2num(month):
 
 
 def datecompare(nzbdate, control_date):
+    """
+    Return how many days between two dates given in yy-mm-dd format
+    """
     y1 = int(nzbdate.split('-')[0])
     m1 = int(nzbdate.split('-')[1])
     d1 = int(nzbdate.split('-')[2])
@@ -166,6 +186,10 @@ def plural(var):
 
 
 def check_int(var, default):
+    """
+    Return an integer representation of var
+    or return default value if var is not integer
+    """
     try:
         return int(var)
     except (ValueError, TypeError):
@@ -173,6 +197,10 @@ def check_int(var, default):
 
 
 def is_valid_isbn(isbn):
+    """
+    Return True if parameter looks like a valid isbn
+    either 13 digits, 10 digits, or 9 digits followed by 'x'
+    """
     isbn = re.sub('[- ]', '', isbn)
     if len(isbn) == 13:
         if isbn.isdigit():
@@ -187,6 +215,9 @@ def is_valid_isbn(isbn):
 
 
 def is_valid_booktype(filename, booktype=None):
+    """
+    Check if filename extension is one we want
+    """
     if booktype == 'mag':  # default is book
         booktype_list = getList(lazylibrarian.MAG_TYPE)
     else:

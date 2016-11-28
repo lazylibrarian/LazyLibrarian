@@ -1,3 +1,18 @@
+#  This file is part of Lazylibrarian.
+#
+#  Lazylibrarian is free software':'you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Lazylibrarian is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
+
 import os
 import cherrypy
 import threading
@@ -625,7 +640,7 @@ class WebInterface(object):
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         if authorsearch:  # to stop error if try to refresh an author while they are still loading
             AuthorName = authorsearch['AuthorName']
-            threading.Thread(target=addAuthorToDB, name='REFRESHAUTHOR', args=[AuthorName, True]).start()
+            threading.Thread(target=addAuthorToDB, name='REFRESHAUTHOR', args=[AuthorName]).start()
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
         else:
             logger.debug('refreshAuthor Invalid authorid [%s]' % AuthorID)
@@ -656,7 +671,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def addAuthor(self, AuthorName):
-        threading.Thread(target=addAuthorToDB, name='ADDAUTHOR', args=[AuthorName, False]).start()
+        threading.Thread(target=addAuthorToDB, name='ADDAUTHOR', args=[AuthorName]).start()
         raise cherrypy.HTTPRedirect("home")
 
 

@@ -14,9 +14,7 @@
 #  along with LazyLibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 from lazylibrarian import logger
-
 from xml.dom import minidom
-
 import lib.requests as requests
 import lib.feedparser as feedparser
 import lazylibrarian
