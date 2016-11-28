@@ -1,3 +1,18 @@
+#  This file is part of Lazylibrarian.
+#
+#  Lazylibrarian is free software':'you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Lazylibrarian is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
+
 import os
 import shutil
 import urllib
@@ -27,9 +42,9 @@ def getAuthorImages():
                 newValueDict = {"AuthorImg": imagelink}
                 myDB.upsert("authors", newValueDict, controlValueDict)
                 counter += 1
-        logger.info('Author Image check completed, updated %s image%s' % (counter, plural(counter)))
+        logger.info('Author Image check complete, updated %s image%s' % (counter, plural(counter)))
     else:
-        logger.debug('No missing images')
+        logger.debug('No missing author images')
 
 
 def getBookCovers():
@@ -48,9 +63,9 @@ def getBookCovers():
                 newValueDict = {"BookImg": coverlink}
                 myDB.upsert("books", newValueDict, controlValueDict)
                 counter += 1
-        logger.info('Cover check completed, updated %s cover%s' % (counter, plural(counter)))
+        logger.info('Cover check complete, updated %s cover%s' % (counter, plural(counter)))
     else:
-        logger.debug('No missing covers')
+        logger.debug('No missing book covers')
 
 
 def setWorkPages():
@@ -61,6 +76,7 @@ def setWorkPages():
     books = myDB.select('select BookID,AuthorName,BookName from books where length(WorkPage) < 4')
     if books:
         logger.debug('Setting WorkPage for %s book%s' % (len(books), plural(len(books))))
+        counter = 0
         for book in books:
             bookid = book['BookID']
             worklink = getWorkPage(bookid)
@@ -68,9 +84,12 @@ def setWorkPages():
                 controlValueDict = {"BookID": bookid}
                 newValueDict = {"WorkPage": worklink}
                 myDB.upsert("books", newValueDict, controlValueDict)
+                counter += 1
             else:
                 logger.debug('No WorkPage found for %s: %s' % (book['AuthorName'], book['BookName']))
-        logger.debug('setWorkPages completed')
+        logger.debug('setWorkPages complete, updated %s page%s' % (counter, plural(counter)))
+    else:
+        logger.debug('No missing WorkPages')
 
 
 def librarything_wait():
@@ -145,12 +164,12 @@ def getBookWork(bookID=None, reason=None):
                         logger.debug(u"getBookWork: Unable to find workpage link for %s" % URL.split('?')[1])
                         return None
                 if success:
-                    logger.debug(u"getBookWork: Caching response for %s" % workfile)
+                    logger.debug(u"getBookWork: Caching workpage for %s" % workfile)
                     with open(workfile, "w") as cachefile:
                         cachefile.write(result)
                     return result
                 else:
-                    logger.debug(u"getBookWork: Unable to cache response for %s, got %s" % (workpage, result))
+                    logger.debug(u"getBookWork: Unable to cache workpage for %s, got %s" % (workpage, result))
                 return None
             else:
                 logger.debug(u"getBookWork: Unable to cache response for %s, got %s" % (URL, result))
