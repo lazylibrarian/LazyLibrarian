@@ -38,8 +38,8 @@ cmd_dict = {'help': 'list available commands. ' +
             'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +
             'otherwise they return OK straight away and run in the background',
             'getIndex': 'list all authors',
-            'getAuthor': '&id= get author and list their books from AuthorID',
-            'getAuthorImage': '&name= get image for this author',
+            'getAuthor': '&id= get author by AuthorID and list their books',
+            'getAuthorImage': '&id= get an image for this author',
             'getAuthorImages': '[&wait] get images for all authors without one',
             'getWanted': 'list wanted books',
             'getSnatched': 'list snatched books',
@@ -47,7 +47,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'getLogs': 'show current log',
             'clearLogs': 'clear current log',
             'getMagazines': 'list magazines',
-            'getIssues': '&name= list issues for named magazine',
+            'getIssues': '&name= list issues of named magazine',
             'forceMagSearch': '[&wait] search for all wanted magazines',
             'forceBookSearch': '[&wait] search for all wanted books',
             'forceProcess': 'process books/mags in download dir',
@@ -57,9 +57,9 @@ cmd_dict = {'help': 'list available commands. ' +
             'unignoreAuthor': '&id= unignore author by AuthorID',
             'refreshAuthor': '&name= refresh author by name',
             'forceActiveAuthorsUpdate': '[&wait] refresh all active authors and reload their books',
-            'forceLibraryScan': '[&wait] refresh whole book library',
-            'forceMagazineScan': '[&wait] refresh whole magazine library',
-            'getVersion': 'show git version',
+            'forceLibraryScan': '[&wait] rescan whole book library',
+            'forceMagazineScan': '[&wait] rescan whole magazine library',
+            'getVersion': 'show lazylibrarian current/git version',
             'shutdown': 'stop lazylibrarian',
             'restart': 'restart lazylibrarian',
             'update': 'update lazylibrarian',
@@ -68,24 +68,24 @@ cmd_dict = {'help': 'list available commands. ' +
             'moveBooks': '&fromname= &toname= move all books from one author to another by AuthorName',
             'moveBook': '&id= &toid= move one book to new author by BookID and AuthorID',
             'addAuthor': '&name= add author to database by name',
-            'removeAuthor': '&id= removee author from database by AuthorID',
+            'removeAuthor': '&id= remove author from database by AuthorID',
             'addMagazine': '&name= add magazine to database by name',
-            'removeMagazine': '&name= remove magazine and issues from database by name',
+            'removeMagazine': '&name= remove magazine and all of its issues from database by name',
             'queueBook': '&id= mark book as Wanted',
             'unqueueBook': '&id= mark book as Skipped',
             'readCFG': '&name=&group= read value of config variable "name" in section "group"',
             'writeCFG': '&name=&group=&value= set config variable "name" in section "group" to value',
             'loadCFG': 'reload config from file',
-            'getBookCover': '&id= fetch a link to a cover from cache/librarything/goodreads/google for a BookID',
+            'getBookCover': '&id= fetch a link to a cover from bookfolder/cache/librarything/goodreads/google for a BookID',
             'getAllBooks': 'list all books in the database',
             'searchBook': '&id= [&wait] search for one book by BookID',
             'showJobs': 'show status of running jobs',
-            'restartJobs': 'reschedule/restart background jobs',
+            'restartJobs': 'restart background jobs',
             'checkRunningJobs': 'ensure all needed jobs are running',
             'getWorkSeries': '&id= Get series & seriesNum from Librarything BookWork using BookID',
             'getWorkPage': '&id= Get url of Librarything BookWork using BookID',
-            'getBookCovers': '[&wait] Check all books for cached cover and download if missing',
-            'cleanCache': '[&wait] Clean unused/old files from the LazyLibrarian caches',
+            'getBookCovers': '[&wait] Check all books for cached cover and download one if missing',
+            'cleanCache': '[&wait] Clean unused and expired files from the LazyLibrarian caches',
             'setWorkPages': '[&wait] Set the WorkPages links in the database',
             'importAlternate': '[&wait] [&dir=] Import books from named or alternate folder and any subfolders',
             'importCSVwishlist': '[&wait] [&dir=] Import a CSV wishlist from named or alternate directory',
@@ -116,7 +116,7 @@ class Api(object):
             self.data = 'API key not generated'
             return
         if len(lazylibrarian.API_KEY) != 32:
-            self.data = 'API key not generated correctly'
+            self.data = 'API key is invalid'
             return
 
         if 'apikey' not in kwargs:
@@ -236,7 +236,7 @@ class Api(object):
     def _getAllBooks(self, **kwargs):
         self.data = self._dic_from_query(
             'SELECT AuthorID,AuthorName,AuthorLink, BookName,BookSub,BookGenre,BookIsbn,BookPub, \
-            BookRate,BookImg,BookPages,BookLink,BookID,BookDate, BookLang,BookAdded,Status,Series,SeriesNum \
+            BookRate,BookImg,BookPages,BookLink,BookID,BookDate,BookLang,BookAdded,Status,Series,SeriesNum \
             from books')
 
     def _getIssues(self, **kwargs):
@@ -251,8 +251,7 @@ class Api(object):
         issues = self._dic_from_query(
             'SELECT * from issues WHERE Title="' + self.id + '" order by IssueDate DESC')
 
-        self.data = {
-            'magazine': magazine, 'issues': issues}
+        self.data = {'magazine': magazine, 'issues': issues}
 
     def _getBook(self, **kwargs):
         if 'id' not in kwargs:
@@ -385,7 +384,7 @@ class Api(object):
             threading.Thread(target=dbUpdate, name='API-DBUPDATE', args=[False]).start()
 
     def _forceMagSearch(self, **kwargs):
-        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
+        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
             if 'wait' in kwargs:
                 search_magazines(None, True)
             else:
@@ -522,8 +521,7 @@ class Api(object):
                 self.data = "No destination author [%s] in the database" % kwargs['toid']
             else:
                 bookdata = myDB.match(
-                    'SELECT AuthorID, BookName from books where BookID="%s"' %
-                    kwargs['id'])
+                    'SELECT AuthorID, BookName from books where BookID="%s"' % kwargs['id'])
                 if not bookdata:
                     self.data = "No bookid [%s] in the database" % kwargs['id']
                 else:
@@ -617,8 +615,7 @@ class Api(object):
             self.id = kwargs['id']
 
         myDB = database.DBConnection()
-        authorsearch = myDB.select(
-            'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
+        authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         if len(authorsearch):  # to stop error if try to remove an author while they are still loading
             AuthorName = authorsearch[0]['AuthorName']
             logger.info(u"Removing all references to author: %s" % AuthorName)
@@ -684,12 +681,12 @@ class Api(object):
         self.data = getBookCover(self.id)
 
     def _getAuthorImage(self, **kwargs):
-        if 'name' not in kwargs:
+        if 'id' not in kwargs:
             self.data = 'Missing parameter: name'
             return
         else:
-            self.id = kwargs['name']
-        self.data = getAuthorImage(self.name)
+            self.id = kwargs['id']
+        self.data = getAuthorImage(self.id)
 
     def _restartJobs(self, **kwargs):
         restartJobs(start='Restart')
