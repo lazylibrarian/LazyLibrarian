@@ -162,14 +162,14 @@ def import_CSV(search_dir=None):
             else:
                 newauthor = True
                 logger.debug(u"CSV: Author %s not found, adding to database" % (authorname))
-                addAuthorToDB(authorname)
+                addAuthorToDB(authorname, refresh=False)
                 authcount = authcount + 1
 
             bookmatch = finditem(content[item], headers)
 
             # if we didn't find it, maybe author info is stale
             if not bookmatch and not newauthor:
-                addAuthorToDB(authorname)
+                addAuthorToDB(authorname, refresh=True)
                 bookmatch = finditem(content[item], headers)
 
             if bookmatch:

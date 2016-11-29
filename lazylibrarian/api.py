@@ -55,8 +55,8 @@ cmd_dict = {'help': 'list available commands. ' +
             'resumeAuthor': '&id= resume author by AuthorID',
             'ignoreAuthor': '&id= ignore author by AuthorID',
             'unignoreAuthor': '&id= unignore author by AuthorID',
-            'refreshAuthor': '&name= refresh author by name',
-            'forceActiveAuthorsUpdate': '[&wait] refresh all active authors and reload their books',
+            'refreshAuthor': '&name= [&refresh] reload author (and their books) by name, optionally refresh cache',
+            'forceActiveAuthorsUpdate': '[&wait] [&refresh] reload all active authors and book data, optionally refresh cache',
             'forceLibraryScan': '[&wait] rescan whole book library',
             'forceMagazineScan': '[&wait] rescan whole magazine library',
             'getVersion': 'show lazylibrarian current/git version',
@@ -366,6 +366,9 @@ class Api(object):
         myDB.upsert("authors", newValueDict, controlValueDict)
 
     def _refreshAuthor(self, **kwargs):
+        refresh=False
+        if 'refresh' in kwargs:
+            refresh=True
         if 'name' not in kwargs:
             self.data = 'Missing parameter: name'
             return
@@ -373,15 +376,18 @@ class Api(object):
             self.id = kwargs['name']
 
         try:
-            importer.addAuthorToDB(self.id)
+            importer.addAuthorToDB(self.id, refresh=refresh)
         except Exception as e:
             self.data = str(e)
 
     def _forceActiveAuthorsUpdate(self, **kwargs):
+        refresh=False
+        if 'refresh' in kwargs:
+            refresh=True
         if 'wait' in kwargs:
-            dbUpdate(False)
+            dbUpdate(refresh=refresh)
         else:
-            threading.Thread(target=dbUpdate, name='API-DBUPDATE', args=[False]).start()
+            threading.Thread(target=dbUpdate, name='API-DBUPDATE', args=[refresh=refresh]).start()
 
     def _forceMagSearch(self, **kwargs):
         if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
@@ -577,7 +583,7 @@ class Api(object):
         else:
             self.id = kwargs['name']
         try:
-            importer.addAuthorToDB(self.id)
+            importer.addAuthorToDB(self.id, refresh=False)
         except Exception as e:
             self.data = str(e)
 

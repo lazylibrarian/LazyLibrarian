@@ -19,17 +19,16 @@ from lazylibrarian import logger, database, importer
 from lazylibrarian.formatter import plural
 
 
-def dbUpdate(forcefull=False):
+def dbUpdate(refresh=False):
 
     myDB = database.DBConnection()
 
-    activeauthors = myDB.select('SELECT AuthorID, AuthorName from authors WHERE Status="Active" \
+    activeauthors = myDB.select('SELECT AuthorName from authors WHERE Status="Active" \
                                 or Status="Loading" order by DateAdded ASC')
     logger.info('Starting update for %i active author%s' % (len(activeauthors), plural(len(activeauthors))))
 
     for author in activeauthors:
-        # authorid = author[0]
-        authorname = author[1]
-        importer.addAuthorToDB(authorname)
+        authorname = author[0]
+        importer.addAuthorToDB(authorname, refresh=refresh)
 
     logger.info('Active author update complete')

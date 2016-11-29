@@ -23,7 +23,7 @@ from lazylibrarian.cache import cache_cover
 from lazylibrarian.bookwork import getAuthorImage
 
 
-def addAuthorToDB(authorname=None):
+def addAuthorToDB(authorname=None, refresh=False):
     """
     Add an author to the database, and get  list of all their books
     If author already exists in database, refresh their details and booklist
@@ -34,10 +34,6 @@ def addAuthorToDB(authorname=None):
 
     query = "SELECT * from authors WHERE AuthorName='%s'" % authorname.replace("'", "''")
     dbauthor = myDB.match(query)
-    if dbauthor:
-        refresh=True
-    else:
-        refresh=False
     controlValueDict = {"AuthorName": authorname}
 
     if not dbauthor:

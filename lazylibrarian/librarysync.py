@@ -494,7 +494,7 @@ def LibraryScan(startdir=None):
                                     if not check_exist_author:
                                         logger.info("Adding new author [%s]" % author)
                                         try:
-                                            addAuthorToDB(author)
+                                            addAuthorToDB(author, refresh=False)
                                             check_exist_author = myDB.match(
                                                 'SELECT * FROM authors where AuthorName="%s"' %
                                                 author.replace('"', '""'))

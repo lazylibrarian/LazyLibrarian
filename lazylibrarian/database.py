@@ -27,7 +27,7 @@ from lazylibrarian import logger
 db_lock = threading.Lock()
 
 
-def dbupdate(db_current_version):
+def dbupgrade(db_current_version):
 
     conn = sqlite3.connect(lazylibrarian.DBFILE)
     c = conn.cursor()
@@ -343,7 +343,7 @@ def dbupdate(db_current_version):
                         try:
                             shutil.move(os.path.join(src, img), os.path.join(dst, img))
                         except Exception as e:
-                            logger.warn("dbupdate: %s" % str(e))
+                            logger.warn("dbupgrade: %s" % str(e))
 
             images = myDB.select('SELECT BookID, BookImg FROM books WHERE BookImg LIKE "images/cache/%"')
             if images:
@@ -362,7 +362,7 @@ def dbupdate(db_current_version):
                         try:
                             shutil.move(srcfile, os.path.join(dst, img))
                         except Exception as e:
-                            logger.warn("dbupdate: %s" % str(e))
+                            logger.warn("dbupgrade: %s" % str(e))
 
             logger.info("Image cache updated")
 

@@ -71,9 +71,9 @@ class WebInterface(object):
 
     @cherrypy.expose
     def index(self):
-        if lazylibrarian.db_needs_update():
-            message = "Updating database, please wait"
-            return serve_template(templatename="dbupdate.html", title="Database Update", message=message, timer=5)
+        if lazylibrarian.db_needs_upgrade():
+            message = "Upgrading database, please wait"
+            return serve_template(templatename="dbupdate.html", title="Database Upgrade", message=message, timer=5)
         else:
             raise cherrypy.HTTPRedirect("home")
 
@@ -636,11 +636,10 @@ class WebInterface(object):
         self.label_thread()
 
         myDB = database.DBConnection()
-        authorsearch = myDB.match(
-            'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
+        authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         if authorsearch:  # to stop error if try to refresh an author while they are still loading
             AuthorName = authorsearch['AuthorName']
-            threading.Thread(target=addAuthorToDB, name='REFRESHAUTHOR', args=[AuthorName]).start()
+            threading.Thread(target=addAuthorToDB, name='REFRESHAUTHOR', args=[AuthorName, True]).start()
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
         else:
             logger.debug('refreshAuthor Invalid authorid [%s]' % AuthorID)
@@ -671,7 +670,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def addAuthor(self, AuthorName):
-        threading.Thread(target=addAuthorToDB, name='ADDAUTHOR', args=[AuthorName]).start()
+        threading.Thread(target=addAuthorToDB, name='ADDAUTHOR', args=[AuthorName, False]).start()
         raise cherrypy.HTTPRedirect("home")
 
 
