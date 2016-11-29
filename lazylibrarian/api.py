@@ -387,7 +387,7 @@ class Api(object):
         if 'wait' in kwargs:
             dbUpdate(refresh=refresh)
         else:
-            threading.Thread(target=dbUpdate, name='API-DBUPDATE', args=[refresh=refresh]).start()
+            threading.Thread(target=dbUpdate, name='API-DBUPDATE', args=[refresh]).start()
 
     def _forceMagSearch(self, **kwargs):
         if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
