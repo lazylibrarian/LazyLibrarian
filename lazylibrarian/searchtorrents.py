@@ -258,7 +258,7 @@ def DirectDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=Non
         try:
             os.makedirs(destdir)
         except OSError as e:
-            if 'File exists' not in e.strerror:  # directory already exists is ok
+            if e.errno is not 17:  # directory already exists is ok. Using errno because of different languages
                 logger.debug("Error creating directory %s, %s" % (destdir, e.strerror))
 
         destfile = os.path.join(destdir, bookname)

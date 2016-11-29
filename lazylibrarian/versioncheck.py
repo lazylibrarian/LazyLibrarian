@@ -236,8 +236,7 @@ def getLatestVersion_FromGit():
             url = 'https://api.github.com/repos/%s/%s/commits/%s' % (
                 lazylibrarian.GIT_USER, lazylibrarian.GIT_REPO, lazylibrarian.GIT_BRANCH)
             logger.debug(
-                '(getLatestVersion_FromGit) Retrieving latest version information from github command=[%s]' %
-                url)
+                '(getLatestVersion_FromGit) Retrieving latest version information from github command=[%s]' % url)
             try:
                 result = urllib2.urlopen(url, timeout=30).read()
                 git = simplejson.JSONDecoder().decode(result)

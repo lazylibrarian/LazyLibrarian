@@ -19,7 +19,6 @@ import os
 import re
 import threading
 import lazylibrarian
-#from . import request
 
 from lazylibrarian import logger, database, providers, nzbget, sabnzbd, notifiers, classes, postprocess, synology
 from lib.fuzzywuzzy import fuzz
@@ -51,7 +50,8 @@ def search_nzb_book(books=None, reset=False):
     if books is None:
         # We are performing a backlog search
         searchbooks = myDB.select(
-            'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books WHERE Status="Wanted" order by BookAdded desc')
+            'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books WHERE Status="Wanted" \
+            order by BookAdded desc')
     else:
         # The user has added a new book
         searchbooks = []

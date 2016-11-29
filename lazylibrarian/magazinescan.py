@@ -21,6 +21,7 @@ from lazylibrarian import database, logger
 from hashlib import sha1
 import re
 from lazylibrarian.formatter import getList, is_valid_booktype, plural
+
 try:
     from wand.image import Image
 except ImportError:

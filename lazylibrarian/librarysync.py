@@ -252,8 +252,7 @@ def LibraryScan(startdir=None):
         startdir = destdir
 
     if not os.path.isdir(startdir):
-        logger.warn(
-            'Cannot find directory: %s. Not scanning' % startdir)
+        logger.warn('Cannot find directory: %s. Not scanning' % startdir)
         return 0
 
     myDB = database.DBConnection()
@@ -275,15 +274,13 @@ def LibraryScan(startdir=None):
         status = lazylibrarian.NOTFOUND_STATUS
         logger.info('Missing books will be marked as %s' % status)
         for book in books:
-            bookName = book['BookName']
-            bookAuthor = book['AuthorName']
             bookID = book['BookID']
             bookfile = book['BookFile']
 
             if not(bookfile and os.path.isfile(bookfile)):
                 myDB.action('update books set Status="%s" where BookID="%s"' % (status, bookID))
                 myDB.action('update books set BookFile="" where BookID="%s"' % bookID)
-                logger.warn('Book %s - %s updated as not found on disk' % (bookAuthor, bookName))
+                logger.warn('Book %s - %s updated as not found on disk' % (book['AuthorName'], book['BookName']))
 
     # to save repeat-scans of the same directory if it contains multiple formats of the same book,
     # keep track of which directories we've already looked at
@@ -336,8 +333,7 @@ def LibraryScan(startdir=None):
                 match = 0
                 if is_valid_booktype(files):
 
-                    logger.debug("[%s] Now scanning subdirectory %s" %
-                                 (startdir, subdirectory))
+                    logger.debug("[%s] Now scanning subdirectory %s" % (startdir, subdirectory))
 
                     language = "Unknown"
                     isbn = ""
@@ -391,9 +387,7 @@ def LibraryScan(startdir=None):
                             language = res['language']
                         if 'identifier' in res:
                             isbn = res['identifier']
-                        logger.debug(
-                            "file meta [%s] [%s] [%s] [%s]" %
-                            (isbn, language, author, book))
+                        logger.debug("file meta [%s] [%s] [%s] [%s]" % (isbn, language, author, book))
                     else:
                         logger.debug("File meta incomplete in %s" % metafile)
 
@@ -411,9 +405,7 @@ def LibraryScan(startdir=None):
 
                         # If we have a valid looking isbn, and language != "Unknown", add it to cache
                         if language != "Unknown" and is_valid_isbn(isbn):
-                            logger.debug(
-                                "Found Language [%s] ISBN [%s]" %
-                                (language, isbn))
+                            logger.debug("Found Language [%s] ISBN [%s]" % (language, isbn))
                             # we need to add it to language cache if not already
                             # there, is_valid_isbn has checked length is 10 or 13
                             if len(isbn) == 10:
@@ -441,8 +433,7 @@ def LibraryScan(startdir=None):
                         check_exist_author = myDB.match(
                             'SELECT * FROM authors where AuthorName="%s"' % author.replace('"', '""'))
                         if not check_exist_author and lazylibrarian.ADD_AUTHOR:
-                            # no match for supplied author, but we're allowed to
-                            # add new ones
+                            # no match for supplied author, but we're allowed to add new ones
 
                             GR = GoodReads(author)
                             try:
@@ -473,15 +464,10 @@ def LibraryScan(startdir=None):
                                 # fuzz.ratio doesn't lowercase for us
                                 match_fuzz = fuzz.ratio(match_auth.lower(), match_name.lower())
                                 if match_fuzz < 90:
-                                    logger.debug(
-                                        "Failed to match author [%s] fuzz [%d]" %
-                                        (author, match_fuzz))
-                                    logger.debug(
-                                        "Failed to match author [%s] to authorname [%s]" %
-                                        (match_auth, match_name))
+                                    logger.debug("Failed to match author [%s] to authorname [%s] fuzz [%d]" %
+                                                (author, match_name, match_fuzz))
 
-                                # To save loading hundreds of books by unknown
-                                # authors at GR or GB, ignore if author "Unknown"
+                                # To save loading hundreds of books by unknown authors at GR or GB, ignore unknown
                                 if (author != "Unknown") and (match_fuzz >= 90):
                                     # use "intact" name for author that we stored in
                                     # GR author_dict, not one of the various mangled versions
@@ -503,9 +489,7 @@ def LibraryScan(startdir=None):
 
                         # check author exists in db, either newly loaded or already there
                         if not check_exist_author:
-                            logger.debug(
-                                "Failed to match author [%s] in database" %
-                                author)
+                            logger.debug("Failed to match author [%s] in database" % author)
                         else:
                             # author exists, check if this book by this author is in our database
                             # metadata might have quotes in book name
@@ -519,8 +503,7 @@ def LibraryScan(startdir=None):
                                     # we found a new book
                                     new_book_count += 1
                                     myDB.action(
-                                        'UPDATE books set Status="Open" where BookID="%s"' %
-                                        bookid)
+                                        'UPDATE books set Status="Open" where BookID="%s"' % bookid)
 
                                 # update book location so we can check if it gets removed
                                 # location may have changed since last scan
@@ -529,8 +512,7 @@ def LibraryScan(startdir=None):
                                     modified_count += 1
                                     logger.debug("Updating book location for %s %s" % (author, book))
                                     myDB.action(
-                                        'UPDATE books set BookFile="%s" where BookID="%s"' %
-                                        (book_filename, bookid))
+                                        'UPDATE books set BookFile="%s" where BookID="%s"' % (book_filename, bookid))
 
                                 # update cover file to cover.jpg in book folder (if exists)
                                 bookdir = os.path.dirname(book_filename)
@@ -541,8 +523,7 @@ def LibraryScan(startdir=None):
                                     copyfile(coverimg, cacheimg)
                             else:
                                 logger.debug(
-                                    "Failed to match book [%s] by [%s] in database" %
-                                    (book, author))
+                                    "Failed to match book [%s] by [%s] in database" % (book, author))
 
     logger.info("%s/%s new/modified book%s found and added to the database" %
                 (new_book_count, modified_count, plural(new_book_count + modified_count)))

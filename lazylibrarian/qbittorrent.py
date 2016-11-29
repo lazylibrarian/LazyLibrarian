@@ -30,7 +30,6 @@ import time
 import lazylibrarian
 
 from lazylibrarian import logger
-# from collections import namedtuple
 from lazylibrarian.common import USER_AGENT
 
 

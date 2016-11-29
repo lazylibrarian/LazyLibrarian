@@ -51,7 +51,8 @@ def search_rss_book(books=None, reset=False):
     if books is None:
         # We are performing a backlog search
         searchbooks = myDB.select(
-            'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books WHERE Status="Wanted" order by BookAdded desc')
+            'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books WHERE Status="Wanted" \
+            order by BookAdded desc')
     else:
         # The user has added a new book
         searchbooks = []
@@ -80,10 +81,9 @@ def search_rss_book(books=None, reset=False):
         found = processResultList(resultlist, authorname, bookname, book, 'book')
 
         # if you can't find the book, try title without any "(extended details, series etc)"
-        if not found:
-            if '(' in bookname:  # anything to shorten?
-                authorname, bookname = get_searchterm(book, "shortbook")
-                found = processResultList(resultlist, authorname, bookname, book, 'shortbook')
+        if not found and '(' in bookname:  # anything to shorten?
+            authorname, bookname = get_searchterm(book, "shortbook")
+            found = processResultList(resultlist, authorname, bookname, book, 'shortbook')
 
         if not found:
             logger.debug("Searches returned no results. Adding book %s - %s to queue." % (authorname, bookname))

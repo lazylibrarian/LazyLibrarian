@@ -67,7 +67,7 @@ def processAlternate(source_dir=None):
         metafile = os.path.splitext(new_book)[0] + '.opf'
         if not os.path.isfile(metafile):
             metafile = opf_file(source_dir)
-        if os.path.isfile(metafile):
+        if metafile and os.path.isfile(metafile):
             try:
                 metadata = get_book_info(metafile)
             except Exception as e:
@@ -148,7 +148,7 @@ def processDir(reset=False):
         return
 
     if len(downloads) == 0:
-        logger.info('No downloads are found. Nothing to process.')
+        logger.info('No downloads are found. Nothing to process yet.')
         return
 
     logger.info("Checking %s download%s for %s snatched file%s" %
@@ -157,7 +157,7 @@ def processDir(reset=False):
     for book in snatched:
         # if torrent, see if we can get current status from the downloader as the name
         # may have been changed once magnet resolved, or download started or completed
-        # depending on torrent downloader. Usenet doesn't change the name
+        # depending on torrent downloader. Usenet doesn't change the name. We like usenet.
 
         torrentname = ''
         if book['Source'] == 'TRANSMISSION':
@@ -208,11 +208,10 @@ def processDir(reset=False):
             if not (fname.endswith('.fail') or \
                     fname.endswith('.part') or \
                     fname.endswith('.!ut')):
-                # this is to get round differences in torrent filenames.
+                # This is to get round differences in torrent filenames.
                 # Usenet is ok, but Torrents aren't always returned with the name we searched for
                 # We ask the torrent downloader for the torrent name, but don't always get an answer
-                # eg if magnet not resolved yet, so we try to do a "best match" on the name,
-                # there might be a better way...
+                # so we try to do a "best match" on the name, there might be a better way...
                 if isinstance(fname, str):
                     matchname = fname.decode(lazylibrarian.SYS_ENCODING)
                 else:
@@ -394,11 +393,11 @@ def processDir(reset=False):
             if book['NZBmode'] in ['torrent', 'magnet']:
                 # Only delete torrents if we don't want to keep seeding
                 if lazylibrarian.KEEP_SEEDING:
-                    logger.warn('Seeding %s %s' % (book['NZBmode'], book['NZBtitle']))
+                    logger.warn('%s is seeding %s %s' % (book['Source'], book['NZBmode'], book['NZBtitle']))
                     to_delete = False
                 else:
                     # ask downloader to delete the torrent, but not the files
-                    # we delete them later, depending on other settings
+                    # we may delete them later, depending on other settings
                     if book['DownloadID'] != "unknown":
                         logger.debug('Removing %s from %s' % (book['NZBtitle'], book['Source'].lower()))
                         delete_task(book['Source'], book['DownloadID'], False)

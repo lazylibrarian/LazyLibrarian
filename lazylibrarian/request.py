@@ -13,6 +13,10 @@
 #  You should have received a copy of the GNU General Public License
 #  along with LazyLibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
+# FUTURE: this file is only used by transmission, might be able to remove later
+# transmission uses request_response and request_json
+# our cache.fetchURL() function is quite similar
+
 from lazylibrarian import logger
 from xml.dom import minidom
 import lib.requests as requests
