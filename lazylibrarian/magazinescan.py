@@ -21,6 +21,7 @@ from lazylibrarian import database, logger
 from hashlib import sha1
 import re
 from lazylibrarian.formatter import getList, is_valid_booktype, plural
+from lazylibrarian.common import setperm
 
 try:
     from wand.image import Image
@@ -79,6 +80,7 @@ def create_cover(issuefile=None):
                         logger.debug(params)
                         logger.debug('ImageMagick "convert" failed %s' % e.output)
 
+                setperm(coverfile)
             except Exception:
                 logger.debug("Unable to create cover for %s using %s" % (issuefile, lazylibrarian.MAGICK))
 

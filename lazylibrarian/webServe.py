@@ -36,7 +36,7 @@ from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.importer import addAuthorToDB, update_totals
 from lazylibrarian.formatter import plural, now, today, check_int, replace_all
-from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs
+from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.librarysync import LibraryScan
@@ -1162,6 +1162,7 @@ class WebInterface(object):
                             os.makedirs(cachedir)
                         hashname = os.path.join(cachedir, myhash + ".jpg")
                         copyfile(magimg, hashname)
+                        setperm(hashname)
                         magimg = 'cache/' + myhash + '.jpg'
                         covercount = covercount + 1
                 else:

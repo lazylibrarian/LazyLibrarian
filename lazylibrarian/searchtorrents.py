@@ -29,7 +29,7 @@ from lazylibrarian import logger, database, utorrent, transmission, qbittorrent,
 from lib.deluge_client import DelugeRPCClient
 from lib.fuzzywuzzy import fuzz
 
-from lazylibrarian.common import scheduleJob, USER_AGENT
+from lazylibrarian.common import scheduleJob, USER_AGENT, setperm
 from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, check_int, now, cleanName
 from lazylibrarian.providers import IterateOverTorrentSites
 from lazylibrarian.notifiers import notify_snatch
@@ -257,6 +257,7 @@ def DirectDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=Non
         destdir = os.path.join(lazylibrarian.DIRECTORY('Download'), tor_title)
         try:
             os.makedirs(destdir)
+            setperm(destdir)
         except OSError as e:
             if e.errno is not 17:  # directory already exists is ok. Using errno because of different languages
                 logger.debug("Error creating directory %s, %s" % (destdir, e.strerror))
@@ -265,6 +266,7 @@ def DirectDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=Non
         try:
             with open(destfile, 'wb') as bookfile:
                 bookfile.write(fdata)
+            setperm(destfile)
             downloadID = True
         except Exception as e:
             logger.debug("Error writing book to %s, %s" % (destfile, str(e)))
@@ -362,6 +364,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
             with open(tor_path, 'wb') as torrent_file:
                 torrent_file.write(torrent)
+            setperm(tor_path)
             logger.debug('Torrent file saved: %s' % tor_name)
             downloadID = Source
 
