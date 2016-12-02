@@ -605,7 +605,7 @@ class WebInterface(object):
         authorsearch = myDB.match(
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         if authorsearch:
-            AuthorName = authorsearch[0]['AuthorName']
+            AuthorName = authorsearch['AuthorName']
             logger.info(u"Ignoring author: %s" % AuthorName)
 
             controlValueDict = {'AuthorID': AuthorID}
@@ -931,9 +931,9 @@ class WebInterface(object):
     def searchForBook(self, bookid=None, action=None, **args):
         myDB = database.DBConnection()
 
-        bookdata = myDB.select('SELECT * from books WHERE BookID="%s"' % bookid)
+        bookdata = myDB.match('SELECT * from books WHERE BookID="%s"' % bookid)
         if bookdata:
-            AuthorID = bookdata[0]["AuthorID"]
+            AuthorID = bookdata["AuthorID"]
 
             # start searchthreads
             books = [{"bookid": bookid}]
