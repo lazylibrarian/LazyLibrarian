@@ -146,7 +146,7 @@ def find_book_in_db(myDB, author, book):
     else:
         # No exact match
         # Try a more complex fuzzy match against each book in the db by this author
-        # Using hard-coded ratios for now, ratio high (>90), partial_ratio lower (>75)
+        # Using hard-coded ratios for now, ratio high (>90), partial_ratio lower (>85)
         # These are results that work well on my library, minimal false matches and no misses
         # on books that should be matched
         # Maybe make ratios configurable in config.ini later
@@ -225,7 +225,7 @@ def find_book_in_db(myDB, author, book):
                 "Fuzz match   ratio [%d] [%s] [%s]" %
                 (best_ratio, book, ratio_name))
             return ratio_id
-        if best_partial > 75:
+        if best_partial > 85:
             logger.debug(
                 "Fuzz match partial [%d] [%s] [%s]" %
                 (best_partial, book, partial_name))
@@ -493,36 +493,54 @@ def LibraryScan(startdir=None):
                         else:
                             # author exists, check if this book by this author is in our database
                             # metadata might have quotes in book name
+                            # some books might be stored under a different author name
+                            # eg books by multiple authors, books where author is "writing as"
+                            # or books we moved to "merge" authors
                             book = book.replace("'", "")
+                            # Try metadata authorname first
                             bookid = find_book_in_db(myDB, author, book)
+                            if not bookid:
+                                # get author name from parent directory of this book directory
+                                newauthor = os.path.basename(os.path.dirname(r))
+                                if author.lower() != newauthor.lower():
+                                    logger.warn("%s not found under %s, trying %s" % (book, author, newauthor))
+                                    bookid = find_book_in_db(myDB, newauthor, book)
 
                             if bookid:
                                 check_status = myDB.match(
-                                    'SELECT Status, BookFile from books where BookID="%s"' % bookid)
-                                if check_status and check_status['Status'] != 'Open':
-                                    # we found a new book
-                                    new_book_count += 1
-                                    myDB.action(
-                                        'UPDATE books set Status="Open" where BookID="%s"' % bookid)
+                                    'SELECT Status, BookFile, AuthorName, BookName from books where BookID="%s"' %
+                                    bookid)
+                                if check_status:
+                                    if check_status['Status'] != 'Open':
+                                        # we found a new book
+                                        new_book_count += 1
+                                        myDB.action(
+                                            'UPDATE books set Status="Open" where BookID="%s"' % bookid)
 
-                                # update book location so we can check if it gets removed
-                                # location may have changed since last scan
-                                book_filename = os.path.join(r, files)
-                                if book_filename != check_status['BookFile']:
-                                    modified_count += 1
-                                    logger.debug("Updating book location for %s %s" % (author, book))
-                                    myDB.action(
-                                        'UPDATE books set BookFile="%s" where BookID="%s"' % (book_filename, bookid))
+                                    # update book location so we can check if it gets removed
+                                    # location may have changed since last scan
+                                    book_filename = os.path.join(r, files)
+                                    if book_filename != check_status['BookFile']:
+                                        modified_count += 1
+                                        logger.warn("Updating book location for %s %s" % (author, book))
+                                        logger.debug("%s %s matched BookID %s, [%s][%s]" % (author, book, bookid,
+                                                    check_status['AuthorName'], check_status['BookName']))
+                                        myDB.action(
+                                            'UPDATE books set BookFile="%s" where BookID="%s"' %
+                                            (book_filename, bookid))
 
-                                # update cover file to cover.jpg in book folder (if exists)
-                                bookdir = os.path.dirname(book_filename)
-                                coverimg = os.path.join(bookdir, 'cover.jpg')
-                                if os.path.isfile(coverimg):
-                                    cachedir = lazylibrarian.CACHEDIR
-                                    cacheimg = os.path.join(cachedir, bookid + '.jpg')
-                                    copyfile(coverimg, cacheimg)
+                                    # update cover file to cover.jpg in book folder (if exists)
+                                    bookdir = os.path.dirname(book_filename)
+                                    coverimg = os.path.join(bookdir, 'cover.jpg')
+                                    if os.path.isfile(coverimg):
+                                        cachedir = lazylibrarian.CACHEDIR
+                                        cacheimg = os.path.join(cachedir, bookid + '.jpg')
+                                        copyfile(coverimg, cacheimg)
+                                else:
+                                    logger.debug('Unable to find bookid %s in database' % bookid)
+
                             else:
-                                logger.debug(
+                                logger.warn(
                                     "Failed to match book [%s] by [%s] in database" % (book, author))
 
     logger.info("%s/%s new/modified book%s found and added to the database" %
