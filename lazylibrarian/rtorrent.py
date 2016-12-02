@@ -109,7 +109,7 @@ def addTorrent(tor_url, hashID):
     # For each torrent in the main view
     for tor in mainview:
         if tor.upper() == hashID.upper():  # this is us
-            # wait for download to start, that's when rtorrent fills in the name
+            # wait a while for download to start, that's when rtorrent fills in the name
             RETRIES = 5
             while RETRIES:
                 name = server.d.get_name(tor)

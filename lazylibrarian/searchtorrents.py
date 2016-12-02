@@ -1,3 +1,18 @@
+#  This file is part of Lazylibrarian.
+#
+#  Lazylibrarian is free software':'you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Lazylibrarian is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
+
 import urllib2
 import socket
 import os
@@ -243,7 +258,7 @@ def DirectDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=Non
         try:
             os.makedirs(destdir)
         except OSError as e:
-            if 'File exists' not in e.strerror:  # directory already exists is ok
+            if e.errno is not 17:  # directory already exists is ok. Using errno because of different languages
                 logger.debug("Error creating directory %s, %s" % (destdir, e.strerror))
 
         destfile = os.path.join(destdir, bookname)

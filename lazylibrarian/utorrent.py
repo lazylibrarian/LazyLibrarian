@@ -22,7 +22,6 @@ import re
 import lazylibrarian
 
 from lazylibrarian import logger
-
 from lazylibrarian.common import USER_AGENT
 
 

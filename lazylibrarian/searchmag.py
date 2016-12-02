@@ -1,3 +1,18 @@
+#  This file is part of Lazylibrarian.
+#
+#  Lazylibrarian is free software':'you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Lazylibrarian is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
+
 import time
 import urllib2
 import re
@@ -163,13 +178,12 @@ def search_magazines(mags=None, reset=False):
                     else:
                         bookid_exploded = [bookid]
 
-                    # check nzb starts with magazine title, and ends with a date
+                    # check nzb starts with magazine title followed by a date
                     # eg The MagPI Issue 22 - July 2015
-                    # do something like check left n words match title
-                    # then check last n words are a date
 
                     rejected = False
-                    if len(nzbtitle_exploded) > len(bookid_exploded):  # needs to be longer as it has to include a date
+                    if len(nzbtitle_exploded) > len(bookid_exploded):
+                        # needs to be longer as it has to include a date
                         # check (nearly) all the words in the mag title are in the nzbtitle - allow some fuzz
                         mag_title_match = fuzz.token_set_ratio(
                             unaccented(bookid),
@@ -203,11 +217,6 @@ def search_magazines(mags=None, reset=False):
                                 rejected = True
                                 logger.debug("Rejecting %s, contains %s" % (nzbtitle_formatted, word))
                                 break
-
-                    # maxsize = formatter.check_int(lazylibrarian.REJECT_MAXSIZE, 0)
-                    # if maxsize and nzbsize > maxsize:
-                    #    rejected = True
-                    #    logger.debug("Rejecting %s, too large" % nzbtitle_formatted)
 
                     if not rejected:
                         # some magazine torrent uploaders add their sig in [] or {}

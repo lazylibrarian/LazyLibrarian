@@ -1,3 +1,18 @@
+#  This file is part of Lazylibrarian.
+#
+#  Lazylibrarian is free software':'you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Lazylibrarian is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
+
 from __future__ import with_statement
 
 import os
@@ -12,7 +27,7 @@ from lazylibrarian import logger
 db_lock = threading.Lock()
 
 
-def dbupdate(db_current_version):
+def dbupgrade(db_current_version):
 
     conn = sqlite3.connect(lazylibrarian.DBFILE)
     c = conn.cursor()
@@ -328,7 +343,7 @@ def dbupdate(db_current_version):
                         try:
                             shutil.move(os.path.join(src, img), os.path.join(dst, img))
                         except Exception as e:
-                            logger.warn("dbupdate: %s" % str(e))
+                            logger.warn("dbupgrade: %s" % str(e))
 
             images = myDB.select('SELECT BookID, BookImg FROM books WHERE BookImg LIKE "images/cache/%"')
             if images:
@@ -347,7 +362,7 @@ def dbupdate(db_current_version):
                         try:
                             shutil.move(srcfile, os.path.join(dst, img))
                         except Exception as e:
-                            logger.warn("dbupdate: %s" % str(e))
+                            logger.warn("dbupgrade: %s" % str(e))
 
             logger.info("Image cache updated")
 

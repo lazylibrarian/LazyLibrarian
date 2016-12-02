@@ -1,3 +1,18 @@
+#  This file is part of Lazylibrarian.
+#
+#  Lazylibrarian is free software':'you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Lazylibrarian is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
+
 import urllib
 import urllib2
 import re
@@ -158,7 +173,7 @@ class GoodReads:
 
         authorlist = []
         try:
-            rootxml, in_cache = get_xml_request(URL)
+            rootxml, in_cache = get_xml_request(URL, useCache=not refresh)
         except Exception as e:
             logger.error("Error finding authorid: %s, %s" % (URL, str(e)))
             return authorlist
@@ -230,15 +245,15 @@ class GoodReads:
         controlValueDict = {"AuthorID": authorid}
         newValueDict = {"Status": "Loading"}
         myDB.upsert("authors", newValueDict, controlValueDict)
-        books_dict = []
+
         try:
             rootxml, in_cache = get_xml_request(URL, useCache=not refresh)
         except Exception as e:
             logger.error("Error fetching author books: %s" % str(e))
-            return books_dict
+            return
         if rootxml is None:
             logger.debug("Error requesting author books")
-            return books_dict
+            return
         if not in_cache:
             api_hits = api_hits + 1
         resultxml = rootxml.getiterator('book')
@@ -611,7 +626,6 @@ class GoodReads:
             logger.info("[%s] Book processing complete: Added %s book%s to the database" %
                         (authorname, added_count, plural(added_count)))
 
-        return books_dict
 
     def find_book(self, bookid=None, queue=None):
         myDB = database.DBConnection()

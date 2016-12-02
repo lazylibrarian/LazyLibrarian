@@ -1,3 +1,18 @@
+#  This file is part of Lazylibrarian.
+#
+#  Lazylibrarian is free software':'you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Lazylibrarian is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
+
 import os
 import cherrypy
 import threading
@@ -56,9 +71,9 @@ class WebInterface(object):
 
     @cherrypy.expose
     def index(self):
-        if lazylibrarian.db_needs_update():
-            message = "Updating database, please wait"
-            return serve_template(templatename="dbupdate.html", title="Database Update", message=message, timer=5)
+        if lazylibrarian.db_needs_upgrade():
+            message = "Upgrading database, please wait"
+            return serve_template(templatename="dbupdate.html", title="Database Upgrade", message=message, timer=5)
         else:
             raise cherrypy.HTTPRedirect("home")
 
@@ -590,7 +605,7 @@ class WebInterface(object):
         authorsearch = myDB.match(
             'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         if authorsearch:
-            AuthorName = authorsearch[0]['AuthorName']
+            AuthorName = authorsearch['AuthorName']
             logger.info(u"Ignoring author: %s" % AuthorName)
 
             controlValueDict = {'AuthorID': AuthorID}
@@ -621,8 +636,7 @@ class WebInterface(object):
         self.label_thread()
 
         myDB = database.DBConnection()
-        authorsearch = myDB.match(
-            'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
+        authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         if authorsearch:  # to stop error if try to refresh an author while they are still loading
             AuthorName = authorsearch['AuthorName']
             threading.Thread(target=addAuthorToDB, name='REFRESHAUTHOR', args=[AuthorName, True]).start()
@@ -917,9 +931,9 @@ class WebInterface(object):
     def searchForBook(self, bookid=None, action=None, **args):
         myDB = database.DBConnection()
 
-        bookdata = myDB.select('SELECT * from books WHERE BookID="%s"' % bookid)
+        bookdata = myDB.match('SELECT * from books WHERE BookID="%s"' % bookid)
         if bookdata:
-            AuthorID = bookdata[0]["AuthorID"]
+            AuthorID = bookdata["AuthorID"]
 
             # start searchthreads
             books = [{"bookid": bookid}]

@@ -1,3 +1,18 @@
+#  This file is part of Lazylibrarian.
+#
+#  Lazylibrarian is free software':'you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Lazylibrarian is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
+
 from __future__ import with_statement
 
 import os
@@ -25,7 +40,8 @@ import shutil
 from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, \
     librarysync, versioncheck, database, searchmag, magazinescan, bookwork
 from lazylibrarian.formatter import getList, bookSeries, plural, unaccented
-from lazylibrarian.common import USER_AGENT, restartJobs
+from lazylibrarian.common import restartJobs
+from lazylibrarian.cache import fetchURL
 
 try:
     from wand.image import Image
@@ -438,9 +454,9 @@ def initialize():
 
         # Initialize the database
         try:
-            update = db_needs_update()
-            if update:
-                threading.Thread(target=database.dbupdate, name="DBUPDATE", args=[update]).start()
+            curr_ver = db_needs_upgrade()
+            if curr_ver:
+                threading.Thread(target=database.dbupgrade, name="DB_UPGRADE", args=[curr_ver]).start()
             else:
                 myDB = database.DBConnection()
                 result = myDB.match('PRAGMA user_version')
@@ -1209,7 +1225,7 @@ def config_write():
     try:
         os.remove(CONFIGFILE + '.bak')
     except OSError as e:
-        if 'No such file' not in e.strerror:  # doesn't exist is ok
+        if e.errno is not 2:  # doesn't exist is ok
             logger.debug("Error deleting backup %s, %s" % (CONFIGFILE + '.bak', e.strerror))
     try:
         os.rename(CONFIGFILE, CONFIGFILE + '.bak')
@@ -1362,39 +1378,19 @@ def build_bookstrap_themes():
         return themelist  # return empty if bookstrap interface not installed
 
     URL = 'http://bootswatch.com/api/3.json'
-    request = urllib2.Request(URL)
+    result, success = fetchURL(URL, None, False)  # use default headers, no retry
 
-    if PROXY_HOST:
-        request.set_proxy(PROXY_HOST, PROXY_TYPE)
-
-    # bootswatch insists on having a user-agent
-    request.add_header('User-Agent', USER_AGENT)
+    if not success:
+        logger.debug("Error getting bookstrap themes : %s" % result)
+        return themelist
 
     try:
-        resp = urllib2.urlopen(request, timeout=30)
-    except (socket.timeout) as e:
-        logger.debug("Timeout getting bookstrap themes")
-        return themelist
-    except (urllib2.HTTPError, urllib2.URLError) as e:
-        if hasattr(e, 'reason'):
-            errmsg = e.reason
-        else:
-            errmsg = str(e)
-
-        logger.debug("Error getting bookstrap themes : %s" % errmsg)
-        return themelist
-
-    if str(resp.getcode()).startswith("2"):
-        # (200 OK etc)
-        try:
-            results = json.loads(resp.read())
-            for theme in results['themes']:
-                themelist.append(theme['name'].lower())
-        except Exception as e:
-            # error reading results
-            logger.debug('JSON Error reading bookstrap themes, %s' % str(e))
-    else:
-        logger.debug('bootswatch returned error %s' % resp.getcode())
+        results = json.loads(result)
+        for theme in results['themes']:
+             themelist.append(theme['name'].lower())
+    except Exception as e:
+        # error reading results
+        logger.debug('JSON Error reading bookstrap themes, %s' % str(e))
 
     logger.debug("Bookstrap found %i themes" % len(themelist))
     return themelist
@@ -1505,11 +1501,11 @@ def launch_browser(host, port, root):
         logger.error('Could not launch browser: %s' % str(e))
 
 
-def db_needs_update():
+def db_needs_upgrade():
     """
-    Check if database needs updating
+    Check if database needs upgrading
     Return zero if up-to-date
-    Return current version if needs update
+    Return current version if needs upgrade
     """
 
     myDB = database.DBConnection()

@@ -1,3 +1,18 @@
+#  This file is part of Lazylibrarian.
+#
+#  Lazylibrarian is free software':'you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Lazylibrarian is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
+
 import os
 import urllib
 import urllib2
@@ -35,7 +50,7 @@ def checkLink():
 def SABnzbd(title=None, nzburl=None, remove_data=False):
 
     if nzburl == 'delete' and title == 'unknown':
-        logger.debug('Delete function unavailable in this version of sabnzbd, no nzb_ids')
+        logger.debug('Delete function unavailable in this version of sabnzbd, no nzo_ids')
         return False
 
     HOST = "%s:%i" % (lazylibrarian.SAB_HOST, lazylibrarian.SAB_PORT)

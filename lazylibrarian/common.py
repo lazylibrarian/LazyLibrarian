@@ -1,19 +1,17 @@
-# Author: Nic Wolfe <nic@wolfeden.ca>
-# URL: http://code.google.com/p/sickbeard/
+#  This file is part of Lazylibrarian.
 #
+#  Lazylibrarian is free software':'you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
 #
-# Sick Beard is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+#  Lazylibrarian is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
 #
-# Sick Beard is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Sick Beard.  If not, see <http://www.gnu.org/licenses/>.
+#  You should have received a copy of the GNU General Public License
+#  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import platform
 import re
@@ -37,24 +35,22 @@ notifyStrings[NOTIFY_SNATCH] = "Started Download"
 notifyStrings[NOTIFY_DOWNLOAD] = "Added to Library"
 
 
-def opf_file(search_dir=None):
-    # find an .opf file in this directory
-    # return full pathname of file, or empty string if no opf found
-    if search_dir and os.path.isdir(search_dir):
+def any_file(search_dir=None, extn=None):
+    # find a file with specified extension in a directory, any will do
+    # return full pathname of file, or empty string if none found
+    if extn and search_dir and os.path.isdir(search_dir):
         for fname in os.listdir(search_dir):
-            if fname.endswith('.opf'):
+            if fname.endswith(extn):
                 return os.path.join(search_dir, fname)
     return ""
+
+
+def opf_file(search_dir=None):
+    return any_file(search_dir, '.opf')
 
 
 def csv_file(search_dir=None):
-    # find a csv file in this directory, any will do
-    # return full pathname of file, or empty string if none found
-    if search_dir and os.path.isdir(search_dir):
-        for fname in os.listdir(search_dir):
-            if fname.endswith('.csv'):
-                return os.path.join(search_dir, fname)
-    return ""
+    return any_file(search_dir, '.csv')
 
 
 def book_file(search_dir=None, booktype=None):
@@ -173,10 +169,8 @@ def checkRunningJobs():
 
 def showJobs():
         result = []
-        result.append("Cache %i hit%s, %i miss" % (
-            int(lazylibrarian.CACHE_HIT),
-            plural(int(lazylibrarian.CACHE_HIT)),
-            int(lazylibrarian.CACHE_MISS)))
+        result.append("Cache %i hit%s, %i miss" % ( int(lazylibrarian.CACHE_HIT),
+                        plural(int(lazylibrarian.CACHE_HIT)), int(lazylibrarian.CACHE_MISS)))
         myDB = database.DBConnection()
         snatched = myDB.match("SELECT count('Status') as counter from wanted WHERE Status = 'Snatched'")
         wanted = myDB.match("SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'")
@@ -229,16 +223,16 @@ def clearLog():
 def cleanCache():
     """ Remove unused files from the cache - delete if expired or unused.
         Check JSONCache  WorkCache  XMLCache cache
-        Check covers and authorimages referenced in the database exist and change if missing """
+        Check covers and authorimages referenced in the database exist and change database entry if missing """
 
     myDB = database.DBConnection()
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "JSONCache")
     cleaned = 0
     kept = 0
-    for r, d, f in os.walk(cache):
-        for cached_file in f:
-            target = os.path.join(r, cached_file)
+    if os.path.isdir(cache):
+        for cached_file in os.listdir(cache):
+            target = os.path.join(cache, cached_file)
             cache_modified_time = os.stat(target).st_mtime
             time_now = time.time()
             if cache_modified_time < time_now - (lazylibrarian.CACHE_AGE * 24 * 60 * 60):  # expire after this many seconds
@@ -247,14 +241,14 @@ def cleanCache():
                 cleaned += 1
             else:
                 kept += 1
-        logger.debug("Cleaned %i file%s from JSONCache, kept %i" % (cleaned, plural(cleaned), kept))
+    logger.debug("Cleaned %i file%s from JSONCache, kept %i" % (cleaned, plural(cleaned), kept))
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "XMLCache")
     cleaned = 0
     kept = 0
-    for r, d, f in os.walk(cache):
-        for cached_file in f:
-            target = os.path.join(r, cached_file)
+    if os.path.isdir(cache):
+        for cached_file in os.listdir(cache):
+            target = os.path.join(cache, cached_file)
             cache_modified_time = os.stat(target).st_mtime
             time_now = time.time()
             if cache_modified_time < time_now - (lazylibrarian.CACHE_AGE * 24 * 60 * 60):  # expire after this many seconds
@@ -263,14 +257,14 @@ def cleanCache():
                 cleaned += 1
             else:
                 kept += 1
-        logger.debug("Cleaned %i file%s from XMLCache, kept %i" % (cleaned, plural(cleaned), kept))
+    logger.debug("Cleaned %i file%s from XMLCache, kept %i" % (cleaned, plural(cleaned), kept))
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "WorkCache")
     cleaned = 0
     kept = 0
-    for r, d, f in os.walk(cache):
-        for cached_file in f:
-            target = os.path.join(r, cached_file)
+    if os.path.isdir(cache):
+        for cached_file in os.listdir(cache):
+            target = os.path.join(cache, cached_file)
             try:
                 bookid = cached_file.split('.')[0]
             except IndexError:
@@ -283,88 +277,89 @@ def cleanCache():
                 cleaned += 1
             else:
                 kept += 1
-        logger.debug("Cleaned %i file%s from WorkCache, kept %i" % (cleaned, plural(cleaned), kept))
+    logger.debug("Cleaned %i file%s from WorkCache, kept %i" % (cleaned, plural(cleaned), kept))
 
     cache = lazylibrarian.CACHEDIR
     cleaned = 0
     kept = 0
-    for r, d, f in os.walk(cache):
-        for cached_file in f:
-            target = os.path.join(r, cached_file)
-            try:
-                imgid = cached_file.split('.')[0].rsplit(os.sep)[-1]
-            except IndexError:
-                logger.error('Clean Cache: Error splitting %s' % cached_file)
-                continue
-            item = myDB.match('select BookID from books where BookID="%s"' % imgid)
-            if not item:
-                item = myDB.match('select AuthorID from authors where AuthorID="%s"' % imgid)
+    if os.path.isdir(cache):
+        for cached_file in os.listdir(cache):
+            target = os.path.join(cache, cached_file)
+            if os.path.isfile(target):
+                try:
+                    imgid = cached_file.split('.')[0].rsplit(os.sep)[-1]
+                except IndexError:
+                    logger.error('Clean Cache: Error splitting %s' % cached_file)
+                    continue
+                item = myDB.match('select BookID from books where BookID="%s"' % imgid)
                 if not item:
-                    # Image no longer referenced in database, delete cached_file
-                    os.remove(target)
-                    cleaned += 1
+                    item = myDB.match('select AuthorID from authors where AuthorID="%s"' % imgid)
+                    if not item:
+                        # Image no longer referenced in database, delete cached_file
+                        os.remove(target)
+                        cleaned += 1
+                    else:
+                        kept += 1
                 else:
                     kept += 1
-            else:
-                kept += 1
-        logger.debug("Cleaned %i file%s from ImageCache, kept %i" % (cleaned, plural(cleaned), kept))
+    logger.debug("Cleaned %i file%s from ImageCache, kept %i" % (cleaned, plural(cleaned), kept))
 
-        # correct any '\' separators in the BookImg links
-        cleaned = 0
-        covers = myDB.select('select BookImg from books where BookImg like "cache\%"')
-        for item in covers:
-            oldname = item['BookImg']
-            newname = oldname.replace('\\', '/')
-            myDB.action('update books set BookImg="%s" where BookImg="%s"' % (newname, oldname))
+    # correct any '\' separators in the BookImg links
+    cleaned = 0
+    covers = myDB.select('select BookImg from books where BookImg like "cache\%"')
+    for item in covers:
+        oldname = item['BookImg']
+        newname = oldname.replace('\\', '/')
+        myDB.action('update books set BookImg="%s" where BookImg="%s"' % (newname, oldname))
+        cleaned += 1
+    logger.debug("Corrected %i filename%s in ImageCache" % (cleaned, plural(cleaned)))
+
+    # verify the cover images referenced in the database are present
+    covers = myDB.action('select BookImg,BookName,BookID from books')
+    cachedir = lazylibrarian.CACHEDIR
+
+    cleaned = 0
+    kept = 0
+    for item in covers:
+        keep = True
+        if item['BookImg'] is None or item['BookImg'] == '':
+            keep = False
+        if keep and not item['BookImg'].startswith('http') and not item['BookImg'] == "images/nocover.png":
+            # html uses '/' as separator, but os might not
+            imgname = item['BookImg'].rsplit('/')[-1]
+            imgfile = os.path.join(cachedir, imgname)
+            if not os.path.isfile(imgfile):
+                keep = False
+        if keep:
+            kept += 1
+        else:
             cleaned += 1
-        logger.debug("Corrected %i filename%s in ImageCache" % (cleaned, plural(cleaned)))
+            logger.debug('Cover missing for %s %s' % (item['BookName'], imgfile))
+            myDB.action('update books set BookImg="images/nocover.png" where Bookid="%s"' % item['BookID'])
 
-        # verify the cover images referenced in the database are present
-        covers = myDB.action('select BookImg,BookName,BookID from books')
-        cachedir = lazylibrarian.CACHEDIR
+    logger.debug("Cleaned %i missing cover file%s, kept %i" % (cleaned, plural(cleaned), kept))
 
-        cleaned = 0
-        kept = 0
-        for item in covers:
-            keep = True
-            if item['BookImg'] is None or item['BookImg'] == '':
+    # verify the author images referenced in the database are present
+    images = myDB.action('select AuthorImg,AuthorName,AuthorID from authors')
+    cachedir = lazylibrarian.CACHEDIR
+
+    cleaned = 0
+    kept = 0
+    for item in images:
+        keep = True
+        if item['AuthorImg'] is None or item['AuthorImg'] == '':
+            keep = False
+        if keep and not item['AuthorImg'].startswith('http') and not item['AuthorImg'] == "images/nophoto.png":
+            # html uses '/' as separator, but os might not
+            imgname = item['AuthorImg'].rsplit('/')[-1]
+            imgfile = os.path.join(cachedir, imgname)
+            if not os.path.isfile(imgfile):
                 keep = False
-            if keep and not item['BookImg'].startswith('http') and not item['BookImg'] == "images/nocover.png":
-                # html uses '/' as separator, but os might not
-                imgname = item['BookImg'].rsplit('/')[-1]
-                imgfile = cachedir + imgname
-                if not os.path.isfile(imgfile):
-                    keep = False
-            if keep:
-                kept += 1
-            else:
-                cleaned += 1
-                logger.debug('Cover missing for %s %s' % (item['BookName'], imgfile))
-                myDB.action('update books set BookImg="images/nocover.png" where Bookid="%s"' % item['BookID'])
+        if keep:
+            kept += 1
+        else:
+            cleaned += 1
+            logger.debug('Image missing for %s %s' % (item['AuthorName'], imgfile))
+            myDB.action('update authors set AuthorImg="images/nophoto.png" where AuthorID="%s"' % item['AuthorID'])
 
-        logger.debug("Cleaned %i missing cover file%s, kept %i" % (cleaned, plural(cleaned), kept))
-
-        # verify the author images referenced in the database are present
-        images = myDB.action('select AuthorImg,AuthorName,AuthorID from authors')
-        cachedir = lazylibrarian.CACHEDIR
-
-        cleaned = 0
-        kept = 0
-        for item in images:
-            keep = True
-            if item['AuthorImg'] is None or item['AuthorImg'] == '':
-                keep = False
-            if keep and not item['AuthorImg'].startswith('http') and not item['AuthorImg'] == "images/nophoto.png":
-                # html uses '/' as separator, but os might not
-                imgname = item['AuthorImg'].rsplit('/')[-1]
-                imgfile = cachedir + imgname
-                if not os.path.isfile(imgfile):
-                    keep = False
-            if keep:
-                kept += 1
-            else:
-                cleaned += 1
-                logger.debug('Image missing for %s %s' % (item['AuthorName'], imgfile))
-                myDB.action('update authors set AuthorImg="images/nophoto.png" where AuthorID="%s"' % item['AuthorID'])
-
-        logger.debug("Cleaned %i missing author image%s, kept %i" % (cleaned, plural(cleaned), kept))
+    logger.debug("Cleaned %i missing author image%s, kept %i" % (cleaned, plural(cleaned), kept))

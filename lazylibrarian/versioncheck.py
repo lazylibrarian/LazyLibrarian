@@ -1,3 +1,18 @@
+#  This file is part of Lazylibrarian.
+#
+#  Lazylibrarian is free software':'you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Lazylibrarian is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
+
 import platform
 import subprocess
 import re
@@ -221,8 +236,7 @@ def getLatestVersion_FromGit():
             url = 'https://api.github.com/repos/%s/%s/commits/%s' % (
                 lazylibrarian.GIT_USER, lazylibrarian.GIT_REPO, lazylibrarian.GIT_BRANCH)
             logger.debug(
-                '(getLatestVersion_FromGit) Retrieving latest version information from github command=[%s]' %
-                url)
+                '(getLatestVersion_FromGit) Retrieving latest version information from github command=[%s]' % url)
             try:
                 result = urllib2.urlopen(url, timeout=30).read()
                 git = simplejson.JSONDecoder().decode(result)
