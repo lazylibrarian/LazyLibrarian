@@ -384,7 +384,7 @@ class WebInterface(object):
         self.label_thread()
 
         myDB = database.DBConnection()
-        magazines = myDB.select('SELECT Title,Reject from magazines ORDER by Title')
+        magazines = myDB.select('SELECT Title,Reject,Regex from magazines ORDER by upper(Title)')
 
         if magazines:
             for mag in magazines:
