@@ -452,7 +452,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "t": provider['MAGSEARCH'],
                 "apikey": api_key,
                 "cat": provider['MAGCAT'],
-                "q": cleanName(book['searchterm']),
+                "q": book['searchterm'],
                 "extended": provider['EXTENDED'],
             }
         elif provider['GENERALSEARCH'] and provider['MAGCAT']:
@@ -460,7 +460,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "t": provider['GENERALSEARCH'],
                 "apikey": api_key,
                 "cat": provider['MAGCAT'],
-                "q": cleanName(book['searchterm']),
+                "q": book['searchterm'],
                 "extended": provider['EXTENDED'],
             }
     else:
@@ -469,7 +469,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "t": provider['GENERALSEARCH'],
                 "apikey": api_key,
                 # this is a general search
-                "q": cleanName(book['searchterm']),
+                "q": book['searchterm'],
                 "extended": provider['EXTENDED'],
             }
     if params:
@@ -575,7 +575,6 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None,
     resultFields = None
 
     nzbtitle = nzbdetails[0].text  # title is currently the same field for all searchtypes
-    # nzbtitle = cleanName(nzbtitle)
 
     if searchMode == "torznab":  # For torznab results, either 8 or 9 contain a magnet link
         if nzbdetails[8].attrib.get('name') == 'magneturl':

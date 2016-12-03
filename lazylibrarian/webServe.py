@@ -103,17 +103,21 @@ class WebInterface(object):
         myDB = database.DBConnection()
         mags_list = []
 
-        magazines = myDB.select('SELECT Title,Reject from magazines ORDER by Title')
+        magazines = myDB.select('SELECT Title,Reject,Regex from magazines ORDER by Title')
 
         if magazines:
             for mag in magazines:
                 title = mag['Title']
+                regex = mag['Regex']
+                if regex is None:
+                    regex = ""
                 reject = mag['Reject']
                 if reject is None:
                     reject = ""
                 mags_list.append({
                     'Title': title,
-                    'Reject': reject
+                    'Reject': reject,
+                    'Regex': regex
                 })
 
         # Don't pass the whole config, no need to pass the

@@ -53,7 +53,7 @@ def search_magazines(mags=None, reset=False):
     else:
         searchmags = []
         for magazine in mags:
-            searchmags_temp = myDB.select('SELECT Title, LastAcquired, IssueDate from magazines \
+            searchmags_temp = myDB.select('SELECT Title, Regex, LastAcquired, IssueDate from magazines \
                                           WHERE Title="%s" AND Status="Active"' % (magazine['bookid']))
             for terms in searchmags_temp:
                 searchmags.append(terms)
@@ -71,9 +71,15 @@ def search_magazines(mags=None, reset=False):
 
     for searchmag in searchmags:
         bookid = searchmag['Title']
-        searchterm = searchmag['Title']
+        regex = searchmag['Regex']
 
-        dic = {'...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': ''}
+        if regex and "$Title" in regex:
+            # allow some wildcard characters in mag search
+            searchterm = regex.replace("$Title", searchmag['Title'])
+            dic = {'...': '', ' & ': ' ', ' = ': ' ', ' + ': ' ', ',': ''}
+        else:
+            searchterm = searchmag['Title']
+            dic = {'...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': ''}
 
         searchterm = unaccented_str(replace_all(searchterm, dic))
         searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode(lazylibrarian.SYS_ENCODING)
