@@ -390,6 +390,7 @@ class WebInterface(object):
             for mag in magazines:
                 title = mag['Title']
                 reject = mag['Reject']
+                regex = mag['Regex']
                 # seems kwargs parameters are passed as latin-1, can't see how to
                 # configure it, so we need to correct it on accented magazine names
                 # eg "Elle Quebec" where we might have e-acute
@@ -398,6 +399,11 @@ class WebInterface(object):
                 if not new_reject == reject:
                     controlValueDict = {'Title': title}
                     newValueDict = {'Reject': new_reject}
+                    myDB.upsert("magazines", newValueDict, controlValueDict)
+                new_regex = kwargs.get('regex[%s]' % title.encode('latin-1'), None)
+                if not new_regex == regex:
+                    controlValueDict = {'Title': title}
+                    newValueDict = {'Regex': new_regex}
                     myDB.upsert("magazines", newValueDict, controlValueDict)
 
         count = 0
