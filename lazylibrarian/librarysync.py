@@ -517,17 +517,19 @@ def LibraryScan(startdir=None):
                                         myDB.action(
                                             'UPDATE books set Status="Open" where BookID="%s"' % bookid)
 
-                                    # update book location so we can check if it gets removed
-                                    # location may have changed since last scan
+                                    # store book location so we can check if it gets removed
                                     book_filename = os.path.join(r, files)
-                                    if book_filename != check_status['BookFile']:
+                                    if not check_status['BookFile']:  # no previous location
+                                        myDB.action('UPDATE books set BookFile="%s" where BookID="%s"' %
+                                                    (book_filename, bookid))
+                                    # location may have changed since last scan
+                                    elif book_filename != check_status['BookFile']:
                                         modified_count += 1
                                         logger.warn("Updating book location for %s %s" % (author, book))
                                         logger.debug("%s %s matched BookID %s, [%s][%s]" % (author, book, bookid,
                                                     check_status['AuthorName'], check_status['BookName']))
-                                        myDB.action(
-                                            'UPDATE books set BookFile="%s" where BookID="%s"' %
-                                            (book_filename, bookid))
+                                        myDB.action('UPDATE books set BookFile="%s" where BookID="%s"' %
+                                                    (book_filename, bookid))
 
                                     # update cover file to cover.jpg in book folder (if exists)
                                     bookdir = os.path.dirname(book_filename)
