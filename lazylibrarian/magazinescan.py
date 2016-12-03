@@ -178,7 +178,7 @@ def magazineScan():
                 mtime = os.path.getmtime(issuefile)
                 iss_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
 
-                # magazines : Title, Frequency, Regex, Status, MagazineAdded, LastAcquired, IssueDate, IssueStatus
+                # magazines : Title, Regex, Status, MagazineAdded, LastAcquired, IssueDate, IssueStatus, Reject
                 # issues    : Title, IssueAcquired, IssueDate, IssueFile
 
                 controlValueDict = {"Title": title}
@@ -188,13 +188,13 @@ def magazineScan():
                 if not mag_entry:
                     # need to add a new magazine to the database
                     newValueDict = {
-                        "Frequency": None,  # unused currently
-                        "Regex": None,
+                        "Reject": None,
                         "Status": "Active",
                         "MagazineAdded": None,
                         "LastAcquired": None,
                         "IssueDate": None,
-                        "IssueStatus": "Skipped"
+                        "IssueStatus": "Skipped",
+                        "Regex": None
                     }
                     logger.debug("Adding magazine %s" % title)
                     myDB.upsert("magazines", newValueDict, controlValueDict)

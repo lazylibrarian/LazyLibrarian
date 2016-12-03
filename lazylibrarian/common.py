@@ -46,6 +46,8 @@ def setperm(file_or_dir):
         perm = 0o755
     elif os.path.isfile(file_or_dir):
         perm = 0o644
+    else:
+        return False
     try:
         os.chmod(file_or_dir, perm)
         return True

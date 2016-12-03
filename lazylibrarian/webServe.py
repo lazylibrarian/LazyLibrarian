@@ -103,17 +103,17 @@ class WebInterface(object):
         myDB = database.DBConnection()
         mags_list = []
 
-        magazines = myDB.select('SELECT Title,Regex from magazines ORDER by Title')
+        magazines = myDB.select('SELECT Title,Reject from magazines ORDER by Title')
 
         if magazines:
             for mag in magazines:
                 title = mag['Title']
-                regex = mag['Regex']
-                if regex is None:
-                    regex = ""
+                reject = mag['Reject']
+                if reject is None:
+                    reject = ""
                 mags_list.append({
                     'Title': title,
-                    'Regex': regex
+                    'Reject': reject
                 })
 
         # Don't pass the whole config, no need to pass the
@@ -380,20 +380,20 @@ class WebInterface(object):
         self.label_thread()
 
         myDB = database.DBConnection()
-        magazines = myDB.select('SELECT Title,Regex from magazines ORDER by Title')
+        magazines = myDB.select('SELECT Title,Reject from magazines ORDER by Title')
 
         if magazines:
             for mag in magazines:
                 title = mag['Title']
-                regex = mag['Regex']
+                reject = mag['Reject']
                 # seems kwargs parameters are passed as latin-1, can't see how to
                 # configure it, so we need to correct it on accented magazine names
                 # eg "Elle Quebec" where we might have e-acute
                 # otherwise the comparison fails
-                new_regex = kwargs.get('reject_list[%s]' % title.encode('latin-1'), None)
-                if not new_regex == regex:
+                new_reject = kwargs.get('reject_list[%s]' % title.encode('latin-1'), None)
+                if not new_reject == reject:
                     controlValueDict = {'Title': title}
-                    newValueDict = {'Regex': new_regex}
+                    newValueDict = {'Reject': new_reject}
                     myDB.upsert("magazines", newValueDict, controlValueDict)
 
         count = 0
@@ -1434,7 +1434,7 @@ class WebInterface(object):
             logger.debug(u"MagazineSearch called with no magazines")
 
     @cherrypy.expose
-    def addMagazine(self, search=None, title=None, frequency=None, **args):
+    def addMagazine(self, search=None, title=None, **args):
         self.label_thread()
         myDB = database.DBConnection()
         # if search == 'magazine':  # we never call this unless search ==
@@ -1442,9 +1442,9 @@ class WebInterface(object):
         if len(title) == 0:
             raise cherrypy.HTTPRedirect("magazines")
         else:
-            regex = None
+            reject = None
             if '~' in title:  # separate out the "reject words" list
-                regex = title.split('~', 1)[1].strip()
+                reject = title.split('~', 1)[1].strip()
                 title = title.split('~', 1)[0].strip()
 
             # replace any non-ascii quotes/apostrophes with ascii ones eg "Collector's"
@@ -1453,8 +1453,7 @@ class WebInterface(object):
 
             controlValueDict = {"Title": title}
             newValueDict = {
-                "Frequency": None,
-                "Regex": regex,
+                "Reject": reject,
                 "Status": "Active",
                 "MagazineAdded": today(),
                 "IssueStatus": "Wanted"

@@ -72,9 +72,6 @@ def search_magazines(mags=None, reset=False):
     for searchmag in searchmags:
         bookid = searchmag['Title']
         searchterm = searchmag['Title']
-        # frequency = searchmag[1]
-        # last_acquired = searchmag[2]
-        # issue_date = searchmag[3]
 
         dic = {'...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': ''}
 
@@ -133,7 +130,7 @@ def search_magazines(mags=None, reset=False):
             logger.debug("Adding magazine %s to queue." % book['searchterm'])
 
         else:
-            bad_regex = 0
+            bad_name = 0
             bad_date = 0
             old_date = 0
             total_nzbs = 0
@@ -159,10 +156,10 @@ def search_magazines(mags=None, reset=False):
                 results = myDB.match('SELECT * from magazines WHERE Title="%s"' % bookid)
                 if not results:
                     logger.debug('Magazine [%s] does not match search term [%s].' % (nzbtitle, bookid))
-                    bad_regex = bad_regex + 1
+                    bad_name = bad_name + 1
                 else:
                     control_date = results['IssueDate']
-                    reject_list = getList(results['Regex'])
+                    reject_list = getList(results['Reject'])
 
                     dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': ''}
                     nzbtitle_formatted = replace_all(nzbtitle, dic).strip()
@@ -320,7 +317,7 @@ def search_magazines(mags=None, reset=False):
                         else:
                             logger.debug('Magazine [%s] does not match the search term [%s].' % (
                                 nzbtitle_formatted, bookid))
-                            bad_regex = bad_regex + 1
+                            bad_name = bad_name + 1
                             continue
 
                         #  wanted issues go into wanted table marked "Wanted"
@@ -405,10 +402,10 @@ def search_magazines(mags=None, reset=False):
 
                     else:
                         # logger.debug('Magazine [%s] was rejected.' % nzbtitle_formatted)
-                        bad_regex = bad_regex + 1
+                        bad_name = bad_name + 1
 
             logger.info('Found %i result%s for %s. %i new, %i old, %i fail date, %i fail name: %i to download' % (
-                        total_nzbs, plural(total_nzbs), bookid, new_date, old_date, bad_date, bad_regex, len(maglist)))
+                        total_nzbs, plural(total_nzbs), bookid, new_date, old_date, bad_date, bad_name, len(maglist)))
 
             for magazine in maglist:
                 if magazine['nzbmode'] in ["torznab", "torrent", "magnet"]:

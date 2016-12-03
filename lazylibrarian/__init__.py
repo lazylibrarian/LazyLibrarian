@@ -1522,7 +1522,9 @@ def db_needs_upgrade():
     # 6 added Manual field to books table for user editing
     # 7 added Source and DownloadID to wanted table for download monitoring
     # 8 move image cache from data/images/cache into datadir
-    db_current_version = 8
+    # 9 add regex to magazine table
+
+    db_current_version = 9
     if db_version < db_current_version:
         return db_current_version
     return 0

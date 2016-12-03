@@ -679,6 +679,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             res = subprocess.check_output(params, stderr=subprocess.STDOUT)
             if res:
                 logger.debug('%s reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
+                if 'already exist' in res:
+                    logger.warn('Calibre failed to import %s %s, reports book already exists' % (authorname, bookname))
+
             # calibre does not like quotes in author names
             calibre_dir = os.path.join(processpath, unaccented_str(authorname.replace('"', '_')), '')
             if os.path.isdir(calibre_dir):
@@ -687,7 +690,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 logger.error("Failed to locate calibre dir [%s]" % calibre_dir)
                 imported = False
                 # imported = LibraryScan(processpath)  # may have to rescan whole library instead
-            if not imported and 'already exist' not in res:
+            if not imported:
                 return False
         except subprocess.CalledProcessError as e:
             logger.debug(params)

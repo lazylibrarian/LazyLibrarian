@@ -1507,7 +1507,7 @@
                     <br>
                     %for mag in config['magazines_list']:
                         <label>${mag['Title']}</label>
-                        <input type="text" placeholder="Reject Word List" name="reject_list[${mag['Title']}]" value="${mag['Regex']}" size="20">
+                        <input type="text" placeholder="Reject Word List" name="reject_list[${mag['Title']}]" value="${mag['Reject']}" size="20">
                         <br>
                     %endfor
                     <BR><BR>

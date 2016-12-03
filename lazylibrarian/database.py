@@ -23,6 +23,7 @@ import shutil
 import lazylibrarian
 
 from lazylibrarian import logger
+from lazylibrarian.formatter import plural
 
 db_lock = threading.Lock()
 
@@ -53,8 +54,8 @@ def dbupgrade(db_current_version):
             c.execute('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, \
                 NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, Source TEXT, DownloadID TEXT)')
             c.execute('CREATE TABLE IF NOT EXISTS pastissues AS SELECT * FROM wanted')  # same columns
-            c.execute('CREATE TABLE IF NOT EXISTS magazines (Title TEXT, Frequency TEXT, Regex TEXT, Status TEXT, \
-                MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT)')
+            c.execute('CREATE TABLE IF NOT EXISTS magazines (Title TEXT, Regex TEXT, Status TEXT, MagazineAdded TEXT, \
+                        LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT, Reject TEXT)')
             c.execute('CREATE TABLE IF NOT EXISTS languages (isbn TEXT, lang TEXT)')
             c.execute('CREATE TABLE IF NOT EXISTS issues (Title TEXT, IssueID TEXT, IssueAcquired TEXT, IssueDate TEXT, \
                 IssueFile TEXT)')
@@ -366,24 +367,46 @@ def dbupgrade(db_current_version):
 
             logger.info("Image cache updated")
 
-        lazylibrarian.UPDATE_MSG = 'Database updated to version %s' % db_current_version
-        logger.info(lazylibrarian.UPDATE_MSG)
-        c.execute('PRAGMA user_version = %s' % db_current_version)
-        conn.commit()
-        conn.close()
+        if db_version < 9:
+            try:
+                c.execute('SELECT reject from magazines')
+            except sqlite3.OperationalError:
+                # remove frequency column, rename regex to reject, add new regex column for searches
+                lazylibrarian.UPDATE_MSG = 'Updating magazines table'
+                logger.info(lazylibrarian.UPDATE_MSG)
+                try:
+                    c.execute('CREATE TABLE IF NOT EXISTS temp_table (Title TEXT, Regex TEXT, Status TEXT, \
+                                MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT, Reject TEXT)')
+
+                    c.execute('INSERT INTO temp_table SELECT Title, Regex, Status, MagazineAdded, LastAcquired, \
+                                IssueDate, IssueStatus, Regex FROM magazines')
+                    c.execute('DROP TABLE magazines')
+                    c.execute('ALTER TABLE temp_table RENAME TO magazines')
+                    conn.commit()
+                    c.execute('UPDATE magazines SET Regex = Null')
+                    conn.commit()
+                except sqlite3.OperationalError:
+                    logger.warn('Failed to rearrange magazines table')
 
 # Now do any non-version-specific tidying
 
         try:
             authors = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL')
             if authors:
-                logger.info('Removing un-named authors from database')
+                logger.info('Removing %s un-named author%s from database' % (len(authors), plural(len(authors))))
                 for author in authors:
                     authorid = author["AuthorID"]
                     myDB.action('DELETE from authors WHERE AuthorID="%s"' % authorid)
                     myDB.action('DELETE from books WHERE AuthorID="%s"' % authorid)
         except Exception as e:
             logger.info('Error: ' + str(e))
+
+        lazylibrarian.UPDATE_MSG = 'Database updated to version %s' % db_current_version
+        logger.info(lazylibrarian.UPDATE_MSG)
+        c.execute('PRAGMA user_version = %s' % db_current_version)
+        conn.commit()
+        conn.close()
+
 
 
 class DBConnection:
