@@ -841,16 +841,6 @@
                                                     <input type="text" placeholder="RSS URL #${loop.index}" id="rss[${loop.index}][host]" name="rss[${loop.index}][host]" value="${provider['HOST']}" class="form-control" />
                                                 </div>
                                             </div>
-                                            <div class="row">
-                                                <div class="form-group col-md-6">
-                                                    <label for="rss[${loop.index}][user]" class="sr-only">RSS Username</label>
-                                                    <input type="text" placeholder="RSS Username #${loop.index}" id="rss[${loop.index}][user]" name="rss[${loop.index}][user]" value="${provider['USER']}" class="form-control" />
-                                                </div>
-                                                <div class="form-group col-md-6">
-                                                    <label for="rss[${loop.index}][pass]" class="sr-only">RSS Password</label>
-                                                    <input type="text" placeholder="RSS Password #${loop.index}" id="rss[${loop.index}][pass]" name="rss[${loop.index}][pass]" value="${provider['PASS']}" class="form-control" />
-                                                </div>
-                                            </div>
                                         %endfor
                                         </div>
                                     </fieldset>

@@ -242,13 +242,11 @@ def IterateOverRSSSites(book=None, searchType=None):
             resultslist += RSS(provider['HOST'], provider['NAME'])
     return resultslist, providers
 
-#
-# Generic RSS query function, just return all the results from all the RSS feeds in a list
-#
-
 
 def RSS(host=None, feednr=None):
-
+    """
+    Generic RSS query function, just return all the results from all the RSS feeds in a list
+    """
     results = []
 
     if not str(host)[:4] == "http":
@@ -331,14 +329,14 @@ def RSS(host=None, feednr=None):
         logger.debug('No data returned from %s' % host)
     return results
 
-#
-# Generic NewzNabplus query function
-# takes in host+key+type and returns the result set regardless of who
-# based on site running NewzNab+
-# ref http://usenetreviewz.com/nzb-sites/
-
 
 def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
+    """
+    Generic NewzNabplus query function
+    takes in host+key+type and returns the result set regardless of who
+    based on site running NewzNab+
+    ref http://usenetreviewz.com/nzb-sites/
+    """
 
     host = provider['HOST']
     api_key = provider['API']
@@ -536,7 +534,7 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None,
     #   <newznab:attr name="usenetdate" value="Fri, 11 Mar 2011 13:45:15 +0100"/>
     #   <newznab:attr name="group" value="alt.binaries.e-book.flood"/>
     # </item>
-    # -------------------------------TORZNAB RETURN DATA-- book ----------------------------------------------------------------------
+    # -------------------------------TORZNAB RETURN DATA-- book ---------------------------------------------
     # <item>
     #  <title>Tom Holt - Blonde Bombshell (Dystop; SFX; Humour) ePUB+MOBI</title>
     #  <guid>https://getstrike.net/torrents/1FDBE6466738EED3C7FD915E1376BA0A63088D4D</guid>

@@ -462,12 +462,9 @@ class WebInterface(object):
         while count < len(lazylibrarian.RSS_PROV):
             lazylibrarian.RSS_PROV[count]['ENABLED'] = bool(
                 kwargs.get('rss[%i][enabled]' % count, False))
-            lazylibrarian.RSS_PROV[count]['HOST'] = kwargs.get(
-                'rss[%i][host]' % count, '')
-            lazylibrarian.RSS_PROV[count]['USER'] = kwargs.get(
-                'rss[%i][user]' % count, '')
-            lazylibrarian.RSS_PROV[count]['PASS'] = kwargs.get(
-                'rss[%i][pass]' % count, '')
+            lazylibrarian.RSS_PROV[count]['HOST'] = kwargs.get('rss[%i][host]' % count, '')
+            #lazylibrarian.RSS_PROV[count]['USER'] = kwargs.get('rss[%i][user]' % count, '')
+            #lazylibrarian.RSS_PROV[count]['PASS'] = kwargs.get('rss[%i][pass]' % count, '')
             count += 1
 
         lazylibrarian.config_write()

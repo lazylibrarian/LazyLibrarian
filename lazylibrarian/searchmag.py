@@ -71,18 +71,14 @@ def search_magazines(mags=None, reset=False):
 
     for searchmag in searchmags:
         bookid = searchmag['Title']
-        regex = searchmag['Regex']
+        searchterm = searchmag['Regex']
 
-        if regex and "$Title" in regex:
-            # allow some wildcard characters in mag search
-            searchterm = regex.replace("$Title", searchmag['Title'])
-            dic = {'...': '', ' & ': ' ', ' = ': ' ', ' + ': ' ', ',': ''}
-        else:
+        if not searchterm:
             searchterm = searchmag['Title']
             dic = {'...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': ''}
+            searchterm = unaccented_str(replace_all(searchterm, dic))
+            searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode(lazylibrarian.SYS_ENCODING)
 
-        searchterm = unaccented_str(replace_all(searchterm, dic))
-        searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode(lazylibrarian.SYS_ENCODING)
         searchlist.append({"bookid": bookid, "searchterm": searchterm})
 
     if searchlist == []:

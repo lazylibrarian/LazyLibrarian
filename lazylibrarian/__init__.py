@@ -691,17 +691,19 @@ def config_read(reloaded=False):
                 CFG.set(rss_name, 'HOST', CFG.get(rss_name, 'rss_host%i' % count))
                 CFG.remove_option(rss_name, 'rss_host%i' % count)
             if CFG.has_option(rss_name, 'rss_user%i' % count):
-                CFG.set(rss_name, 'USER', CFG.get(rss_name, 'rss_user%i' % count))
+                #CFG.set(rss_name, 'USER', CFG.get(rss_name, 'rss_user%i' % count))
                 CFG.remove_option(rss_name, 'rss_user%i' % count)
             if CFG.has_option(rss_name, 'rss_pass%i' % count):
-                CFG.set(rss_name, 'PASS', CFG.get(rss_name, 'rss_pass%i' % count))
+                #CFG.set(rss_name, 'PASS', CFG.get(rss_name, 'rss_pass%i' % count))
                 CFG.remove_option(rss_name, 'rss_pass%i' % count)
+            if CFG.has_option(rss_name, 'PASS'):
+                CFG.remove_option(rss_name, 'PASS')
+            if CFG.has_option(rss_name, 'USER'):
+                CFG.remove_option(rss_name, 'USER')
 
             RSS_PROV.append({"NAME": rss_name,
                              "ENABLED": check_setting_bool(CFG, rss_name, 'ENABLED', 0),
-                             "HOST": check_setting_str(CFG, rss_name, 'HOST', ''),
-                             "USER": check_setting_str(CFG, rss_name, 'USER', ''),
-                             "PASS": check_setting_str(CFG, rss_name, 'PASS', '')
+                             "HOST": check_setting_str(CFG, rss_name, 'HOST', '')
                              })
             count = count + 1
         # if the last slot is full, add an empty one on the end
@@ -1045,8 +1047,8 @@ def config_write():
         check_section(provider['NAME'])
         CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
         CFG.set(provider['NAME'], 'HOST', provider['HOST'])
-        CFG.set(provider['NAME'], 'USER', provider['USER'])
-        CFG.set(provider['NAME'], 'PASS', provider['PASS'])
+        #CFG.set(provider['NAME'], 'USER', provider['USER'])
+        #CFG.set(provider['NAME'], 'PASS', provider['PASS'])
     add_rss_slot()
 #
     check_section('Newzbin')
@@ -1337,13 +1339,11 @@ def add_rss_slot():
         check_section(rss_name)
         CFG.set(rss_name, 'ENABLED', False)
         CFG.set(rss_name, 'HOST', '')
-        CFG.set(rss_name, 'USER', '')
-        CFG.set(rss_name, 'PASS', '')
+        #CFG.set(rss_name, 'USER', '')
+        #CFG.set(rss_name, 'PASS', '')
         RSS_PROV.append({"NAME": rss_name,
                          "ENABLED": 0,
-                         "HOST": '',
-                         "USER": '',
-                         "PASS": ''
+                         "HOST": ''
                          })
 
 
