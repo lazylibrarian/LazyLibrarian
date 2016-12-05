@@ -159,6 +159,7 @@ EBOOK_TYPE = None
 MAG_TYPE = None
 REJECT_WORDS = None
 REJECT_MAXSIZE = 0
+MAG_AGE = 31
 
 TOR_DOWNLOADER_BLACKHOLE = 0
 TOR_CONVERT_MAGNET = 0
@@ -487,7 +488,7 @@ def config_read(reloaded=False):
             NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, EBOOK_TYPE, MAG_TYPE, \
             KAT, KAT_HOST, TPB, TPB_HOST, ZOO, ZOO_HOST, TDL, TDL_HOST, GEN, GEN_HOST, EXTRA, EXTRA_HOST, \
             LIME, LIME_HOST, NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, REJECT_WORDS, REJECT_MAXSIZE, \
-            VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, SEARCHRSS_INTERVAL, \
+            VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, SEARCHRSS_INTERVAL, MAG_AGE, \
             EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, \
             USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, \
             TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, TOR_CONVERT_MAGNET, \
@@ -827,6 +828,7 @@ def config_read(reloaded=False):
         REJECT_WORDS = check_setting_str(CFG, 'General', 'reject_words', 'audiobook, mp3')
         REJECT_WORDS = REJECT_WORDS.lower()
         REJECT_MAXSIZE = check_setting_int(CFG, 'General', 'reject_maxsize', 0)
+        MAG_AGE = check_setting_int(CFG, 'General', 'mag_age', 31)
 
         SEARCH_INTERVAL = check_setting_int(CFG, 'SearchScan', 'search_interval', '360')
         SCAN_INTERVAL = check_setting_int(CFG, 'SearchScan', 'scan_interval', '10')
@@ -947,6 +949,7 @@ def config_write():
     CFG.set('General', 'mag_type', MAG_TYPE.lower())
     CFG.set('General', 'reject_words', REJECT_WORDS.encode(SYS_ENCODING).lower())
     CFG.set('General', 'reject_maxsize', REJECT_MAXSIZE)
+    CFG.set('General', 'mag_age', MAG_AGE)
     CFG.set('General', 'destination_dir', DESTINATION_DIR.encode(SYS_ENCODING))
     CFG.set('General', 'alternate_dir', ALTERNATE_DIR.encode(SYS_ENCODING))
     CFG.set('General', 'download_dir', DOWNLOAD_DIR.encode(SYS_ENCODING))

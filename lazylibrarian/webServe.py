@@ -103,7 +103,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         mags_list = []
 
-        magazines = myDB.select('SELECT Title,Reject,Regex from magazines ORDER by Title')
+        magazines = myDB.select('SELECT Title,Reject,Regex from magazines ORDER by Title COLLATE NOCASE')
 
         if magazines:
             for mag in magazines:
@@ -148,7 +148,7 @@ class WebInterface(object):
                      gb_api='', versioncheck_interval='', search_interval='', scan_interval='', searchrss_interval=20,
                      ebook_dest_folder='', ebook_dest_file='', tor_downloader_rtorrent=0, keep_seeding=0,
                      rtorrent_host='', rtorrent_dir='', rtorrent_user='', rtorrent_pass='', rtorrent_label='',
-                     use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
+                     use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0, mag_age=0,
                      mag_dest_folder='', mag_dest_file='', mag_relative=0, cache_age=30, task_age=0,
                      utorrent_host='', utorrent_port=0, utorrent_user='', utorrent_pass='', utorrent_label='',
                      qbittorrent_host='', qbittorrent_port=0, qbittorrent_user='', qbittorrent_pass='',
@@ -308,6 +308,7 @@ class WebInterface(object):
         lazylibrarian.MAG_TYPE = mag_type
         lazylibrarian.REJECT_WORDS = reject_words
         lazylibrarian.REJECT_MAXSIZE = reject_maxsize
+        lazylibrarian.MAG_AGE = mag_age
         lazylibrarian.BOOK_API = book_api
         lazylibrarian.GR_API = gr_api
         lazylibrarian.GB_API = gb_api
