@@ -157,6 +157,7 @@ def get_capabilities(provider):
                             provider['MAGCAT'] = bookcat
             logger.debug("Categories: Books %s : Mags %s" % (provider['BOOKCAT'], provider['MAGCAT']))
             provider['UPDATED'] = today()
+            lazylibrarian.config_write()
         else:
             logger.warn(u"Unable to get capabilities for %s: No data returned" % URL)
     return provider
@@ -242,13 +243,11 @@ def IterateOverRSSSites(book=None, searchType=None):
             resultslist += RSS(provider['HOST'], provider['NAME'])
     return resultslist, providers
 
-#
-# Generic RSS query function, just return all the results from all the RSS feeds in a list
-#
-
 
 def RSS(host=None, feednr=None):
-
+    """
+    Generic RSS query function, just return all the results from all the RSS feeds in a list
+    """
     results = []
 
     if not str(host)[:4] == "http":
@@ -331,14 +330,14 @@ def RSS(host=None, feednr=None):
         logger.debug('No data returned from %s' % host)
     return results
 
-#
-# Generic NewzNabplus query function
-# takes in host+key+type and returns the result set regardless of who
-# based on site running NewzNab+
-# ref http://usenetreviewz.com/nzb-sites/
-
 
 def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
+    """
+    Generic NewzNabplus query function
+    takes in host+key+type and returns the result set regardless of who
+    based on site running NewzNab+
+    ref http://usenetreviewz.com/nzb-sites/
+    """
 
     host = provider['HOST']
     api_key = provider['API']
@@ -452,7 +451,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "t": provider['MAGSEARCH'],
                 "apikey": api_key,
                 "cat": provider['MAGCAT'],
-                "q": cleanName(book['searchterm']),
+                "q": book['searchterm'],
                 "extended": provider['EXTENDED'],
             }
         elif provider['GENERALSEARCH'] and provider['MAGCAT']:
@@ -460,7 +459,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "t": provider['GENERALSEARCH'],
                 "apikey": api_key,
                 "cat": provider['MAGCAT'],
-                "q": cleanName(book['searchterm']),
+                "q": book['searchterm'],
                 "extended": provider['EXTENDED'],
             }
     else:
@@ -469,7 +468,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "t": provider['GENERALSEARCH'],
                 "apikey": api_key,
                 # this is a general search
-                "q": cleanName(book['searchterm']),
+                "q": book['searchterm'],
                 "extended": provider['EXTENDED'],
             }
     if params:
@@ -536,7 +535,7 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None,
     #   <newznab:attr name="usenetdate" value="Fri, 11 Mar 2011 13:45:15 +0100"/>
     #   <newznab:attr name="group" value="alt.binaries.e-book.flood"/>
     # </item>
-    # -------------------------------TORZNAB RETURN DATA-- book ----------------------------------------------------------------------
+    # -------------------------------TORZNAB RETURN DATA-- book ---------------------------------------------
     # <item>
     #  <title>Tom Holt - Blonde Bombshell (Dystop; SFX; Humour) ePUB+MOBI</title>
     #  <guid>https://getstrike.net/torrents/1FDBE6466738EED3C7FD915E1376BA0A63088D4D</guid>
@@ -575,7 +574,6 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None,
     resultFields = None
 
     nzbtitle = nzbdetails[0].text  # title is currently the same field for all searchtypes
-    # nzbtitle = cleanName(nzbtitle)
 
     if searchMode == "torznab":  # For torznab results, either 8 or 9 contain a magnet link
         if nzbdetails[8].attrib.get('name') == 'magneturl':

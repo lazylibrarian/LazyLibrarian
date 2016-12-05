@@ -686,8 +686,6 @@
                     %>
             		<input type="checkbox" name="rss[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
  	    		    <input type="text" placeholder="Enter URL Here" name="rss[${loop.index}][host]" value="${prov['HOST']}" size="58" class="providers-rss-input"><br>
- 	    		    <input type="text" placeholder="Enter Pass Here" name="rss[${loop.index}][pass]" value="${prov['PASS']}" size="26" class="providers-input">
- 	    		    <input type="text" placeholder="Enter User Here" name="rss[${loop.index}][user]" value="${prov['USER']}" size="26" class="providers-input">
  	    		    <br>
  	    		    %endfor
                 </fieldset>
@@ -801,6 +799,9 @@
                     <div>
                     <label>Cache expire after:</label>
                     <input type="text" name="cache_age"  value="${lazylibrarian.CACHE_AGE}" size="8"> (days)
+                    </div>
+                    <label>Max Magazine Issue Age:</label>
+                    <input type="text" name="mag_age"  value="${lazylibrarian.MAG_AGE}" size="8"> (days)
                     </div>
                     <div>
                     <label>Remove failed tasks after:</label>
@@ -1507,7 +1508,9 @@
                     <br>
                     %for mag in config['magazines_list']:
                         <label>${mag['Title']}</label>
-                        <input type="text" placeholder="Reject Word List" name="reject_list[${mag['Title']}]" value="${mag['Regex']}" size="20">
+                        <input type="text" placeholder="Reject Word List" name="reject_list[${mag['Title']}]" value="${mag['Reject']}" size="20">
+                        <br>
+                        <input type="text" placeholder="Search expression" name="regex[${mag['Title']}]" value="${mag['Regex']}" size="20">
                         <br>
                     %endfor
                     <BR><BR>

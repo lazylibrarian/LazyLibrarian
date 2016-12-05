@@ -36,7 +36,7 @@ from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.importer import addAuthorToDB, update_totals
 from lazylibrarian.formatter import plural, now, today, check_int, replace_all
-from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs
+from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.librarysync import LibraryScan
@@ -103,7 +103,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         mags_list = []
 
-        magazines = myDB.select('SELECT Title,Regex from magazines ORDER by Title')
+        magazines = myDB.select('SELECT Title,Reject,Regex from magazines ORDER by Title COLLATE NOCASE')
 
         if magazines:
             for mag in magazines:
@@ -111,8 +111,12 @@ class WebInterface(object):
                 regex = mag['Regex']
                 if regex is None:
                     regex = ""
+                reject = mag['Reject']
+                if reject is None:
+                    reject = ""
                 mags_list.append({
                     'Title': title,
+                    'Reject': reject,
                     'Regex': regex
                 })
 
@@ -144,7 +148,7 @@ class WebInterface(object):
                      gb_api='', versioncheck_interval='', search_interval='', scan_interval='', searchrss_interval=20,
                      ebook_dest_folder='', ebook_dest_file='', tor_downloader_rtorrent=0, keep_seeding=0,
                      rtorrent_host='', rtorrent_dir='', rtorrent_user='', rtorrent_pass='', rtorrent_label='',
-                     use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
+                     use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0, mag_age=0,
                      mag_dest_folder='', mag_dest_file='', mag_relative=0, cache_age=30, task_age=0,
                      utorrent_host='', utorrent_port=0, utorrent_user='', utorrent_pass='', utorrent_label='',
                      qbittorrent_host='', qbittorrent_port=0, qbittorrent_user='', qbittorrent_pass='',
@@ -304,6 +308,7 @@ class WebInterface(object):
         lazylibrarian.MAG_TYPE = mag_type
         lazylibrarian.REJECT_WORDS = reject_words
         lazylibrarian.REJECT_MAXSIZE = reject_maxsize
+        lazylibrarian.MAG_AGE = mag_age
         lazylibrarian.BOOK_API = book_api
         lazylibrarian.GR_API = gr_api
         lazylibrarian.GB_API = gb_api
@@ -380,17 +385,23 @@ class WebInterface(object):
         self.label_thread()
 
         myDB = database.DBConnection()
-        magazines = myDB.select('SELECT Title,Regex from magazines ORDER by Title')
+        magazines = myDB.select('SELECT Title,Reject,Regex from magazines ORDER by upper(Title)')
 
         if magazines:
             for mag in magazines:
                 title = mag['Title']
+                reject = mag['Reject']
                 regex = mag['Regex']
                 # seems kwargs parameters are passed as latin-1, can't see how to
                 # configure it, so we need to correct it on accented magazine names
                 # eg "Elle Quebec" where we might have e-acute
                 # otherwise the comparison fails
-                new_regex = kwargs.get('reject_list[%s]' % title.encode('latin-1'), None)
+                new_reject = kwargs.get('reject_list[%s]' % title.encode('latin-1'), None)
+                if not new_reject == reject:
+                    controlValueDict = {'Title': title}
+                    newValueDict = {'Reject': new_reject}
+                    myDB.upsert("magazines", newValueDict, controlValueDict)
+                new_regex = kwargs.get('regex[%s]' % title.encode('latin-1'), None)
                 if not new_regex == regex:
                     controlValueDict = {'Title': title}
                     newValueDict = {'Regex': new_regex}
@@ -452,12 +463,9 @@ class WebInterface(object):
         while count < len(lazylibrarian.RSS_PROV):
             lazylibrarian.RSS_PROV[count]['ENABLED'] = bool(
                 kwargs.get('rss[%i][enabled]' % count, False))
-            lazylibrarian.RSS_PROV[count]['HOST'] = kwargs.get(
-                'rss[%i][host]' % count, '')
-            lazylibrarian.RSS_PROV[count]['USER'] = kwargs.get(
-                'rss[%i][user]' % count, '')
-            lazylibrarian.RSS_PROV[count]['PASS'] = kwargs.get(
-                'rss[%i][pass]' % count, '')
+            lazylibrarian.RSS_PROV[count]['HOST'] = kwargs.get('rss[%i][host]' % count, '')
+            #lazylibrarian.RSS_PROV[count]['USER'] = kwargs.get('rss[%i][user]' % count, '')
+            #lazylibrarian.RSS_PROV[count]['PASS'] = kwargs.get('rss[%i][pass]' % count, '')
             count += 1
 
         lazylibrarian.config_write()
@@ -1162,6 +1170,7 @@ class WebInterface(object):
                             os.makedirs(cachedir)
                         hashname = os.path.join(cachedir, myhash + ".jpg")
                         copyfile(magimg, hashname)
+                        setperm(hashname)
                         magimg = 'cache/' + myhash + '.jpg'
                         covercount = covercount + 1
                 else:
@@ -1433,7 +1442,7 @@ class WebInterface(object):
             logger.debug(u"MagazineSearch called with no magazines")
 
     @cherrypy.expose
-    def addMagazine(self, search=None, title=None, frequency=None, **args):
+    def addMagazine(self, search=None, title=None, **args):
         self.label_thread()
         myDB = database.DBConnection()
         # if search == 'magazine':  # we never call this unless search ==
@@ -1441,9 +1450,9 @@ class WebInterface(object):
         if len(title) == 0:
             raise cherrypy.HTTPRedirect("magazines")
         else:
-            regex = None
+            reject = None
             if '~' in title:  # separate out the "reject words" list
-                regex = title.split('~', 1)[1].strip()
+                reject = title.split('~', 1)[1].strip()
                 title = title.split('~', 1)[0].strip()
 
             # replace any non-ascii quotes/apostrophes with ascii ones eg "Collector's"
@@ -1452,8 +1461,7 @@ class WebInterface(object):
 
             controlValueDict = {"Title": title}
             newValueDict = {
-                "Frequency": None,
-                "Regex": regex,
+                "Reject": reject,
                 "Status": "Active",
                 "MagazineAdded": today(),
                 "IssueStatus": "Wanted"

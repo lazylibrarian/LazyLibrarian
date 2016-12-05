@@ -29,7 +29,7 @@ from lazylibrarian import database, logger, gr, utorrent, transmission, qbittorr
 from lib.deluge_client import DelugeRPCClient
 from lazylibrarian.magazinescan import create_id, create_cover
 from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, unaccented
-from lazylibrarian.common import scheduleJob, book_file, opf_file
+from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm
 from lazylibrarian.notifiers import notify_download
 from lazylibrarian.importer import addAuthorToDB
 from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
@@ -239,6 +239,7 @@ def processDir(reset=False):
                             if not os.path.exists(dirname):
                                 try:
                                     os.makedirs(dirname)
+                                    setperm(dirname)
                                 except OSError as why:
                                     logger.debug('Failed to create directory %s, %s' % (dirname, why.strerror))
                             if os.path.exists(dirname):
@@ -257,9 +258,11 @@ def processDir(reset=False):
                                                 if lazylibrarian.DESTINATION_COPY:
                                                     shutil.copyfile(os.path.join(processpath, ourfile),
                                                                     os.path.join(dirname, ourfile))
+                                                    setperm(os.path.join(dirname, ourfile))
                                                 else:
                                                     shutil.move(os.path.join(processpath, ourfile),
                                                                 os.path.join(dirname, ourfile))
+                                                    setperm(os.path.join(dirname, ourfile))
                                             except Exception as why:
                                                 logger.debug("Failed to copy/move file %s to %s, %s" %
                                                             (ourfile, dirname, str(why)))
@@ -676,6 +679,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             res = subprocess.check_output(params, stderr=subprocess.STDOUT)
             if res:
                 logger.debug('%s reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
+                if 'already exist' in res:
+                    logger.warn('Calibre failed to import %s %s, reports book already exists' % (authorname, bookname))
+
             # calibre does not like quotes in author names
             calibre_dir = os.path.join(processpath, unaccented_str(authorname.replace('"', '_')), '')
             if os.path.isdir(calibre_dir):
@@ -684,7 +690,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 logger.error("Failed to locate calibre dir [%s]" % calibre_dir)
                 imported = False
                 # imported = LibraryScan(processpath)  # may have to rescan whole library instead
-            if not imported and 'already exist' not in res:
+            if not imported:
                 return False
         except subprocess.CalledProcessError as e:
             logger.debug(params)
@@ -712,6 +718,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             except OSError as why:
                 logger.debug('Failed to create directory %s, %s' % (dest_path, why.strerror))
                 return False
+            setperm(dest_path)
 
         # ok, we've got a target directory, try to copy only the files we want, renaming them on the fly.
         for fname in os.listdir(pp_path):
@@ -721,6 +728,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 try:
                     shutil.copyfile(os.path.join(pp_path, fname), os.path.join(
                         dest_path, global_name + os.path.splitext(fname)[1]))
+                    setperm(os.path.join(dest_path, global_name + os.path.splitext(fname)[1]))
                 except Exception as why:
                     logger.debug("Failed to copy file %s to %s, %s" % (
                         fname, dest_path, str(why)))

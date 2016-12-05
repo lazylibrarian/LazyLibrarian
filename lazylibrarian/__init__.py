@@ -159,6 +159,7 @@ EBOOK_TYPE = None
 MAG_TYPE = None
 REJECT_WORDS = None
 REJECT_MAXSIZE = 0
+MAG_AGE = 31
 
 TOR_DOWNLOADER_BLACKHOLE = 0
 TOR_CONVERT_MAGNET = 0
@@ -487,7 +488,7 @@ def config_read(reloaded=False):
             NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, EBOOK_TYPE, MAG_TYPE, \
             KAT, KAT_HOST, TPB, TPB_HOST, ZOO, ZOO_HOST, TDL, TDL_HOST, GEN, GEN_HOST, EXTRA, EXTRA_HOST, \
             LIME, LIME_HOST, NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, REJECT_WORDS, REJECT_MAXSIZE, \
-            VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, SEARCHRSS_INTERVAL, \
+            VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, SEARCHRSS_INTERVAL, MAG_AGE, \
             EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, \
             USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, \
             TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, TOR_CONVERT_MAGNET, \
@@ -691,17 +692,19 @@ def config_read(reloaded=False):
                 CFG.set(rss_name, 'HOST', CFG.get(rss_name, 'rss_host%i' % count))
                 CFG.remove_option(rss_name, 'rss_host%i' % count)
             if CFG.has_option(rss_name, 'rss_user%i' % count):
-                CFG.set(rss_name, 'USER', CFG.get(rss_name, 'rss_user%i' % count))
+                #CFG.set(rss_name, 'USER', CFG.get(rss_name, 'rss_user%i' % count))
                 CFG.remove_option(rss_name, 'rss_user%i' % count)
             if CFG.has_option(rss_name, 'rss_pass%i' % count):
-                CFG.set(rss_name, 'PASS', CFG.get(rss_name, 'rss_pass%i' % count))
+                #CFG.set(rss_name, 'PASS', CFG.get(rss_name, 'rss_pass%i' % count))
                 CFG.remove_option(rss_name, 'rss_pass%i' % count)
+            if CFG.has_option(rss_name, 'PASS'):
+                CFG.remove_option(rss_name, 'PASS')
+            if CFG.has_option(rss_name, 'USER'):
+                CFG.remove_option(rss_name, 'USER')
 
             RSS_PROV.append({"NAME": rss_name,
                              "ENABLED": check_setting_bool(CFG, rss_name, 'ENABLED', 0),
-                             "HOST": check_setting_str(CFG, rss_name, 'HOST', ''),
-                             "USER": check_setting_str(CFG, rss_name, 'USER', ''),
-                             "PASS": check_setting_str(CFG, rss_name, 'PASS', '')
+                             "HOST": check_setting_str(CFG, rss_name, 'HOST', '')
                              })
             count = count + 1
         # if the last slot is full, add an empty one on the end
@@ -825,6 +828,7 @@ def config_read(reloaded=False):
         REJECT_WORDS = check_setting_str(CFG, 'General', 'reject_words', 'audiobook, mp3')
         REJECT_WORDS = REJECT_WORDS.lower()
         REJECT_MAXSIZE = check_setting_int(CFG, 'General', 'reject_maxsize', 0)
+        MAG_AGE = check_setting_int(CFG, 'General', 'mag_age', 31)
 
         SEARCH_INTERVAL = check_setting_int(CFG, 'SearchScan', 'search_interval', '360')
         SCAN_INTERVAL = check_setting_int(CFG, 'SearchScan', 'scan_interval', '10')
@@ -945,6 +949,7 @@ def config_write():
     CFG.set('General', 'mag_type', MAG_TYPE.lower())
     CFG.set('General', 'reject_words', REJECT_WORDS.encode(SYS_ENCODING).lower())
     CFG.set('General', 'reject_maxsize', REJECT_MAXSIZE)
+    CFG.set('General', 'mag_age', MAG_AGE)
     CFG.set('General', 'destination_dir', DESTINATION_DIR.encode(SYS_ENCODING))
     CFG.set('General', 'alternate_dir', ALTERNATE_DIR.encode(SYS_ENCODING))
     CFG.set('General', 'download_dir', DOWNLOAD_DIR.encode(SYS_ENCODING))
@@ -1045,8 +1050,8 @@ def config_write():
         check_section(provider['NAME'])
         CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
         CFG.set(provider['NAME'], 'HOST', provider['HOST'])
-        CFG.set(provider['NAME'], 'USER', provider['USER'])
-        CFG.set(provider['NAME'], 'PASS', provider['PASS'])
+        #CFG.set(provider['NAME'], 'USER', provider['USER'])
+        #CFG.set(provider['NAME'], 'PASS', provider['PASS'])
     add_rss_slot()
 #
     check_section('Newzbin')
@@ -1337,13 +1342,11 @@ def add_rss_slot():
         check_section(rss_name)
         CFG.set(rss_name, 'ENABLED', False)
         CFG.set(rss_name, 'HOST', '')
-        CFG.set(rss_name, 'USER', '')
-        CFG.set(rss_name, 'PASS', '')
+        #CFG.set(rss_name, 'USER', '')
+        #CFG.set(rss_name, 'PASS', '')
         RSS_PROV.append({"NAME": rss_name,
                          "ENABLED": 0,
-                         "HOST": '',
-                         "USER": '',
-                         "PASS": ''
+                         "HOST": ''
                          })
 
 
@@ -1522,7 +1525,9 @@ def db_needs_upgrade():
     # 6 added Manual field to books table for user editing
     # 7 added Source and DownloadID to wanted table for download monitoring
     # 8 move image cache from data/images/cache into datadir
-    db_current_version = 8
+    # 9 add regex to magazine table
+
+    db_current_version = 9
     if db_version < db_current_version:
         return db_current_version
     return 0

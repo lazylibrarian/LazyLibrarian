@@ -25,7 +25,6 @@
 from __future__ import unicode_literals
 
 from lazylibrarian import logger
-# from headphones import request
 
 import time
 import re
@@ -35,6 +34,7 @@ import lazylibrarian
 import lib.requests as requests
 from base64 import b64encode
 import traceback
+from lazylibrarian.common import setperm
 
 delugeweb_auth = {}
 delugeweb_url = ''
@@ -435,6 +435,7 @@ def setTorrentPath(result):
         if not os.path.exists(move_to):
             logger.debug('Deluge: %s directory doesn\'t exist, let\'s create it' % move_to)
             os.makedirs(move_to)
+            setperm(move_to)
         post_data = json.dumps({"method": "core.set_torrent_move_completed_path",
                                 "params": [result['hash'], move_to],
                                 "id": 8})

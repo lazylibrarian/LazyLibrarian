@@ -21,6 +21,7 @@ from lazylibrarian import database, logger
 from hashlib import sha1
 import re
 from lazylibrarian.formatter import getList, is_valid_booktype, plural
+from lazylibrarian.common import setperm
 
 try:
     from wand.image import Image
@@ -79,6 +80,7 @@ def create_cover(issuefile=None):
                         logger.debug(params)
                         logger.debug('ImageMagick "convert" failed %s' % e.output)
 
+                setperm(coverfile)
             except Exception:
                 logger.debug("Unable to create cover for %s using %s" % (issuefile, lazylibrarian.MAGICK))
 
@@ -176,7 +178,7 @@ def magazineScan():
                 mtime = os.path.getmtime(issuefile)
                 iss_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
 
-                # magazines : Title, Frequency, Regex, Status, MagazineAdded, LastAcquired, IssueDate, IssueStatus
+                # magazines : Title, Regex, Status, MagazineAdded, LastAcquired, IssueDate, IssueStatus, Reject
                 # issues    : Title, IssueAcquired, IssueDate, IssueFile
 
                 controlValueDict = {"Title": title}
@@ -186,13 +188,13 @@ def magazineScan():
                 if not mag_entry:
                     # need to add a new magazine to the database
                     newValueDict = {
-                        "Frequency": None,  # unused currently
-                        "Regex": None,
+                        "Reject": None,
                         "Status": "Active",
                         "MagazineAdded": None,
                         "LastAcquired": None,
                         "IssueDate": None,
-                        "IssueStatus": "Skipped"
+                        "IssueStatus": "Skipped",
+                        "Regex": None
                     }
                     logger.debug("Adding magazine %s" % title)
                     myDB.upsert("magazines", newValueDict, controlValueDict)

@@ -35,6 +35,26 @@ notifyStrings[NOTIFY_SNATCH] = "Started Download"
 notifyStrings[NOTIFY_DOWNLOAD] = "Added to Library"
 
 
+def setperm(file_or_dir):
+    """
+    Force newly created directories to rwxr-xr-x and files to rw-r--r--
+    """
+    if not file_or_dir:
+        return
+    perm = None
+    if os.path.isdir(file_or_dir):
+        perm = 0o755
+    elif os.path.isfile(file_or_dir):
+        perm = 0o644
+    else:
+        return False
+    try:
+        os.chmod(file_or_dir, perm)
+        return True
+    except:
+        #  logger.debug("Failed to set permission %s for %s" % (perm, file_or_dir))
+        return False
+
 def any_file(search_dir=None, extn=None):
     # find a file with specified extension in a directory, any will do
     # return full pathname of file, or empty string if none found

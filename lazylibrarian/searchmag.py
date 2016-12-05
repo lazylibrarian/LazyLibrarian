@@ -48,12 +48,12 @@ def search_magazines(mags=None, reset=False):
     searchlist = []
 
     if mags is None:  # backlog search
-        searchmags = myDB.select('SELECT Title, LastAcquired, \
+        searchmags = myDB.select('SELECT Title, Regex, LastAcquired, \
                                  IssueDate from magazines WHERE Status="Active"')
     else:
         searchmags = []
         for magazine in mags:
-            searchmags_temp = myDB.select('SELECT Title, LastAcquired, IssueDate from magazines \
+            searchmags_temp = myDB.select('SELECT Title, Regex, LastAcquired, IssueDate from magazines \
                                           WHERE Title="%s" AND Status="Active"' % (magazine['bookid']))
             for terms in searchmags_temp:
                 searchmags.append(terms)
@@ -71,15 +71,14 @@ def search_magazines(mags=None, reset=False):
 
     for searchmag in searchmags:
         bookid = searchmag['Title']
-        searchterm = searchmag['Title']
-        # frequency = searchmag[1]
-        # last_acquired = searchmag[2]
-        # issue_date = searchmag[3]
+        searchterm = searchmag['Regex']
 
-        dic = {'...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': ''}
+        if not searchterm:
+            searchterm = searchmag['Title']
+            dic = {'...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': ''}
+            searchterm = unaccented_str(replace_all(searchterm, dic))
+            searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode(lazylibrarian.SYS_ENCODING)
 
-        searchterm = unaccented_str(replace_all(searchterm, dic))
-        searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode(lazylibrarian.SYS_ENCODING)
         searchlist.append({"bookid": bookid, "searchterm": searchterm})
 
     if searchlist == []:
@@ -133,7 +132,7 @@ def search_magazines(mags=None, reset=False):
             logger.debug("Adding magazine %s to queue." % book['searchterm'])
 
         else:
-            bad_regex = 0
+            bad_name = 0
             bad_date = 0
             old_date = 0
             total_nzbs = 0
@@ -159,10 +158,10 @@ def search_magazines(mags=None, reset=False):
                 results = myDB.match('SELECT * from magazines WHERE Title="%s"' % bookid)
                 if not results:
                     logger.debug('Magazine [%s] does not match search term [%s].' % (nzbtitle, bookid))
-                    bad_regex = bad_regex + 1
+                    bad_name = bad_name + 1
                 else:
                     control_date = results['IssueDate']
-                    reject_list = getList(results['Regex'])
+                    reject_list = getList(results['Reject'])
 
                     dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': ''}
                     nzbtitle_formatted = replace_all(nzbtitle, dic).strip()
@@ -222,17 +221,22 @@ def search_magazines(mags=None, reset=False):
                         # some magazine torrent uploaders add their sig in [] or {}
                         # Fortunately for us, they always seem to add it at the end
                         # also some magazine torrent titles are "magazine_name some_form_of_date pdf"
+                        # or other words we don't want. Should make the word list configurable.
                         # so strip all the trailing junk...
+                        strip_list = ['pdf', 'true', 'truepdf', 'german', 'ebooks']
                         while nzbtitle_exploded[len(nzbtitle_exploded) - 1][0] in '[{' or \
-                                nzbtitle_exploded[len(nzbtitle_exploded) - 1].lower() in ['pdf', 'true', 'truepdf']:
+                                nzbtitle_exploded[len(nzbtitle_exploded) - 1].lower() in strip_list:
                                 nzbtitle_exploded.pop()  # gotta love the function names
 
                         # need at least one word magazine title and two date components
                         if len(nzbtitle_exploded) > 2:
-                            # regexA = DD MonthName YYYY OR MonthName YYYY or Issue nn, MonthName YYYY
+                            # regexA = DD MonthNumOrName YYYY OR MonthNumOrName YYYY or Issue nn, MonthNumOrName YYYY
                             regexA_year = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
                             regexA_month_temp = nzbtitle_exploded[len(nzbtitle_exploded) - 2]
-                            regexA_month = month2num(unaccented(regexA_month_temp))
+                            if regexA_month_temp.isdigit():
+                                regexA_month = regexA_month_temp
+                            else:
+                                regexA_month = month2num(unaccented(regexA_month_temp))
                             if not regexA_year.isdigit() or int(regexA_year) < 1900 or int(regexA_year) > 2100:
                                 regexA_year = 'fail'  # force date failure
 
@@ -248,7 +252,7 @@ def search_magazines(mags=None, reset=False):
                             try:
                                 newdatish = regexA_year + '-' + regexA_month + '-' + regexA_day
                                 # try to make sure the year/month/day are valid, exception if not
-                                # ie don't accept day > 31, or 30 in some months
+                                # ie don't accept day > 31, or 30 in some months, or month <1 or >12
                                 # also handles multiple date format named issues eg Jan 2014, 01 2014
                                 # datetime will give a ValueError if not a good date or a param is not int
                                 date1 = datetime.date(int(regexA_year), int(regexA_month), int(regexA_day))
@@ -286,17 +290,17 @@ def search_magazines(mags=None, reset=False):
                                         # datetime will give a ValueError if not a good date or a param is not int
                                         date1 = datetime.date(int(regexC_year), int(regexC_month), int(regexC_day))
                                     except Exception:
-                                        # regexD Issue/No/Vol nn, YYYY or Issue/No/Vol nn
+                                        # regexD Issue/No/Nr/Vol nn, YYYY or Issue/No/Nr/Vol nn
                                         try:
                                             IssueLabel = nzbtitle_exploded[len(nzbtitle_exploded) - 2]
-                                            if IssueLabel.lower() in ["issue", "no", "vol"]:
+                                            if IssueLabel.lower() in ["issue", "no", "nr", "vol"]:
                                                 # issue nn
                                                 regexD_issue = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
                                                 if regexD_issue.isdigit():
                                                     newdatish = str(int(regexD_issue))  # 4 == 04 == 004
                                             else:
                                                 IssueLabel = nzbtitle_exploded[len(nzbtitle_exploded) - 3]
-                                                if IssueLabel.lower() in ["issue", "no", "vol"]:
+                                                if IssueLabel.lower() in ["issue", "no", "nr", "vol"]:
                                                     # issue nn, YYYY
                                                     regexD_issue = nzbtitle_exploded[len(nzbtitle_exploded) - 2]
                                                     regexD_issue = regexD_issue.strip(',')
@@ -311,16 +315,42 @@ def search_magazines(mags=None, reset=False):
                                                 else:
                                                     raise ValueError
                                         except Exception:
-                                            logger.debug('Magazine %s not in proper date format.' % nzbtitle_formatted)
-                                            bad_date = bad_date + 1
-                                            # allow issues with good name but bad date to be included
-                                            # so user can manually select them, incl those with issue numbers
-                                            newdatish = "1970-01-01"  # provide a fake date for bad-date issues
-                                            # continue
+                                            # regexE nn YYYY issue number without "Nr" before it
+                                            # MM YYYY should have been caught by regexA
+                                            try:
+                                                regexE_year = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
+                                                regexE_issue = nzbtitle_exploded[len(nzbtitle_exploded) - 2]
+                                                if regexE_issue.isdigit():
+                                                    newdatish = int(regexE_issue)
+                                                if int(regexE_year) < int(datetime.date.today().year):
+                                                    newdatish = 0  # it's old
+                                                else:
+                                                    raise ValueError
+                                            except Exception:
+                                                # regexF issue and year as a single 6 digit string eg 222015
+                                                try:
+                                                    regexF = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
+                                                    if regexF.isdigit() and len(regexF) == 6:
+                                                        regexF_issue = regexF[:2]
+                                                        regexF_year = regexF[2:]
+                                                        newdatish = str(int(regexF_issue))  # 4 == 04 == 004
+                                                        if int(regexF_year) < int(datetime.date.today().year):
+                                                            newdatish = 0  # it's old
+                                                    else:
+                                                        raise ValueError
+
+                                                except Exception:
+                                                    logger.debug('Magazine %s not in a recognised date format.' %
+                                                                 nzbtitle_formatted)
+                                                    bad_date = bad_date + 1
+                                                    # allow issues with good name but bad date to be included
+                                                    # so user can manually select them, incl those with issue numbers
+                                                    newdatish = "1970-01-01"  # provide a fake date for bad-date issues
+                                                    # continue
                         else:
                             logger.debug('Magazine [%s] does not match the search term [%s].' % (
                                 nzbtitle_formatted, bookid))
-                            bad_regex = bad_regex + 1
+                            bad_name = bad_name + 1
                             continue
 
                         #  wanted issues go into wanted table marked "Wanted"
@@ -335,7 +365,7 @@ def search_magazines(mags=None, reset=False):
 
                             if '-' in str(newdatish):
                                 start_time = time.time()
-                                start_time -= 31 * 24 * 60 * 60  # number of seconds in 31 days
+                                start_time -= int(lazylibrarian.MAG_AGE) * 24 * 60 * 60  # number of seconds in days
                                 control_date = time.strftime("%Y-%m-%d", time.localtime(start_time))
                             else:
                                 control_date = 0
@@ -405,10 +435,10 @@ def search_magazines(mags=None, reset=False):
 
                     else:
                         # logger.debug('Magazine [%s] was rejected.' % nzbtitle_formatted)
-                        bad_regex = bad_regex + 1
+                        bad_name = bad_name + 1
 
             logger.info('Found %i result%s for %s. %i new, %i old, %i fail date, %i fail name: %i to download' % (
-                        total_nzbs, plural(total_nzbs), bookid, new_date, old_date, bad_date, bad_regex, len(maglist)))
+                        total_nzbs, plural(total_nzbs), bookid, new_date, old_date, bad_date, bad_name, len(maglist)))
 
             for magazine in maglist:
                 if magazine['nzbmode'] in ["torznab", "torrent", "magnet"]:

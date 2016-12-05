@@ -125,15 +125,17 @@ def age(histdate):
 
 
 def nzbdate2format(nzbdate):
-    mmname = nzbdate.split()[2].zfill(2)
-    day = nzbdate.split()[1]
-    # nzbdates are mostly english short month names, but not always
-    month = month2num(mmname)
-    if month == "Invalid":
-        month = "01"  # hopefully won't hit this, but return a default value rather than error
-    year = nzbdate.split()[3]
-    return year + '-' + month + '-' + day
-
+    try:
+        mmname = nzbdate.split()[2].zfill(2)
+        day = nzbdate.split()[1]
+        # nzbdates are mostly english short month names, but not always
+        month = month2num(mmname)
+        if month == "Invalid":
+            month = "01"  # hopefully won't hit this, but return a default value rather than error
+        year = nzbdate.split()[3]
+        return year + '-' + month + '-' + day
+    except Exception:
+        return "1970-01-01"
 
 def month2num(month):
     # return month number given month name (long or short) in requested locales

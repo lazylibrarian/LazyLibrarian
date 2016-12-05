@@ -297,11 +297,11 @@ class Api(object):
 
         controlValueDict = {"Title": self.id}
         newValueDict = {
-            "Frequency": None,
             "Regex": None,
             "Status": "Active",
             "MagazineAdded": today(),
-            "IssueStatus": "Wanted"
+            "IssueStatus": "Wanted",
+            "Reject": None
         }
         myDB.upsert("magazines", newValueDict, controlValueDict)
 
