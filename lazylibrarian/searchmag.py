@@ -230,13 +230,10 @@ def search_magazines(mags=None, reset=False):
 
                         # need at least one word magazine title and two date components
                         if len(nzbtitle_exploded) > 2:
-                            # regexA = DD MonthNumOrName YYYY OR MonthNumOrName YYYY or Issue nn, MonthNumOrName YYYY
+                            # regexA = DD MonthName YYYY OR MonthName YYYY or Issue nn, MonthName YYYY
                             regexA_year = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
                             regexA_month_temp = nzbtitle_exploded[len(nzbtitle_exploded) - 2]
-                            if regexA_month_temp.isdigit():
-                                regexA_month = regexA_month_temp
-                            else:
-                                regexA_month = month2num(unaccented(regexA_month_temp))
+                            regexA_month = month2num(unaccented(regexA_month_temp))
                             if not regexA_year.isdigit() or int(regexA_year) < 1900 or int(regexA_year) > 2100:
                                 regexA_year = 'fail'  # force date failure
 
@@ -316,14 +313,15 @@ def search_magazines(mags=None, reset=False):
                                                     raise ValueError
                                         except Exception:
                                             # regexE nn YYYY issue number without "Nr" before it
-                                            # MM YYYY should have been caught by regexA
+                                            # nn is assumed not to be a month as they are normally names not digits
                                             try:
                                                 regexE_year = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
                                                 regexE_issue = nzbtitle_exploded[len(nzbtitle_exploded) - 2]
+                                                print "[%s][%s]" % (regexE_year, regexE_issue)
                                                 if regexE_issue.isdigit():
                                                     newdatish = int(regexE_issue)
-                                                if int(regexE_year) < int(datetime.date.today().year):
-                                                    newdatish = 0  # it's old
+                                                    if int(regexE_year) < int(datetime.date.today().year):
+                                                        newdatish = 0  # it's old
                                                 else:
                                                     raise ValueError
                                             except Exception:
