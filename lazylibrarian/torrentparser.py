@@ -611,7 +611,8 @@ def TDL(book=None):
 
                     if link and minimumseeders < seeders:
                         # no point requesting the magnet link if not enough seeders
-                        result, success = fetchURL(link)
+                        # TDL gives us a relative link
+                        result, success = fetchURL(providerurl+link)
                         url = None
                         if success:
                             new_soup = BeautifulSoup(result)
