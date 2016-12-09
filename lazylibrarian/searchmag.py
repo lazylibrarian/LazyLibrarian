@@ -364,7 +364,10 @@ def search_magazines(mags=None, reset=False):
                             if '-' in str(newdatish):
                                 start_time = time.time()
                                 start_time -= int(lazylibrarian.MAG_AGE) * 24 * 60 * 60  # number of seconds in days
+                                if start_time < 0:  # limit of unixtime (1st Jan 1970)
+                                    start_time = 0
                                 control_date = time.strftime("%Y-%m-%d", time.localtime(start_time))
+                                logger.debug('Magazine date comparing to %s' % control_date)
                             else:
                                 control_date = 0
 
