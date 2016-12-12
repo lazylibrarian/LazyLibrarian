@@ -942,6 +942,17 @@
                   <br>
                   <small>This will auto add new authors from GoodReads</small>
                   </div>
+                  <div>
+                    <%
+                    if lazylibrarian.IMP_AUTOSEARCH == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <label>Search when Added:</label><input type="checkbox" name="imp_autosearch" value=1 ${checked} />
+                  <br>
+                  <small>This will auto search new books added to database</small>
+                  </div>
                 </td>
             </tr>
    	        <tr>

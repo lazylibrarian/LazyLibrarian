@@ -135,9 +135,10 @@ class WebInterface(object):
                      http_pass='', http_look='', launch_browser=0, api_key='', api_enabled=0, displaylength=0,
                      logdir='', loglevel=2, loglimit=500, logfiles=10, logsize=204800, git_program='',
                      imp_onlyisbn=0, imp_singlebook=0, imp_preflang='', imp_monthlang='', imp_convert='',
-                     imp_calibredb='', imp_autoadd='', match_ratio=80, dload_ratio=90, nzb_downloader_sabnzbd=0,
-                     nzb_downloader_nzbget=0, nzb_downloader_synology=0, nzb_downloader_blackhole=0, proxy_host='',
-                     proxy_type='', sab_host='', sab_port=0, sab_subdir='', sab_api='', sab_user='', sab_pass='',
+                     imp_calibredb='', imp_autoadd='', imp_autosearch=0, match_ratio=80, dload_ratio=90,
+                     nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0, nzb_downloader_synology=0,
+                     nzb_downloader_blackhole=0, proxy_host='', proxy_type='', sab_host='', sab_port=0,
+                     sab_subdir='', sab_api='', sab_user='', sab_pass='',
                      destination_copy=0, destination_dir='', download_dir='', sab_cat='', usenet_retention=0,
                      nzb_blackholedir='', alternate_dir='', torrent_dir='', numberofseeders=0, tor_convert_magnet=0,
                      tor_downloader_blackhole=0, tor_downloader_utorrent=0, tor_downloader_qbittorrent=0,
@@ -208,6 +209,7 @@ class WebInterface(object):
         lazylibrarian.IMP_PREFLANG = imp_preflang
         lazylibrarian.IMP_MONTHLANG = imp_monthlang
         lazylibrarian.IMP_AUTOADD = imp_autoadd
+        lazylibrarian.IMP_AUTOSEARCH = bool(imp_autosearch)
         lazylibrarian.IMP_CALIBREDB = imp_calibredb
         lazylibrarian.IMP_CONVERT = imp_convert
         lazylibrarian.GIT_PROGRAM = git_program
@@ -658,11 +660,17 @@ class WebInterface(object):
         self.label_thread()
 
         myDB = database.DBConnection()
-        authorsearch = myDB.match(
-            'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
+        authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         if authorsearch:  # to stop error if try to refresh an author while they are still loading
             AuthorName = authorsearch['AuthorName']
             authordir = os.path.join(lazylibrarian.DIRECTORY('Destination'), AuthorName)
+            if not os.path.isdir(authordir):
+                # books might not be in exact same authorname folder
+                # eg Calibre puts books into folder "Eric van Lustbader", but
+                # goodreads told lazylibrarian he's "Eric Van Lustbader", note the capital 'V'
+                anybook = myDB.match('SELECT BookFile from books where AuthorName="%s" and BookFile <> ""' % AuthorName)
+                if anybook:
+                    authordir = os.path.dirname(os.path.dirname(anybook['BookFile']))
             if os.path.isdir(authordir):
                 try:
                     threading.Thread(target=LibraryScan, name='SCANAUTHOR', args=[authordir]).start()
@@ -670,7 +678,7 @@ class WebInterface(object):
                     logger.error(u'Unable to complete the scan: %s' % str(e))
             else:
                 # maybe we don't have any of their books
-                logger.debug(u'Unable to find author directory: %s' % authordir)
+                logger.warn(u'Unable to find author directory: %s' % authordir)
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
         else:
             logger.debug('scanAuthor Invalid authorid [%s]' % AuthorID)
@@ -911,8 +919,9 @@ class WebInterface(object):
 
             find_book.join()
 
-        books = [{"bookid": bookid}]
-        self.startBookSearch(books)
+        if lazylibrarian.IMP_AUTOSEARCH:
+            books = [{"bookid": bookid}]
+            self.startBookSearch(books)
 
         if AuthorID:
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)

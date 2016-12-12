@@ -26,7 +26,7 @@ from lib.fuzzywuzzy import fuzz
 from lazylibrarian.searchtorrents import TORDownloadMethod
 from lazylibrarian.searchnzb import NZBDownloadMethod
 from lazylibrarian.formatter import plural, now, unaccented_str, replace_all, unaccented, \
-    nzbdate2format, getList, month2num, datecompare
+    nzbdate2format, getList, month2num, datecompare, check_int
 from lazylibrarian.common import scheduleJob
 from lazylibrarian.notifiers import notify_snatch
 from lazylibrarian.providers import IterateOverNewzNabSites, IterateOverTorrentSites, IterateOverRSSSites
@@ -149,8 +149,7 @@ def search_magazines(mags=None, reset=False):
                 nzbprov = nzb['nzbprov']
                 nzbdate_temp = nzb['nzbdate']
                 nzbsize_temp = nzb['nzbsize']
-                if nzbsize_temp is None:  # not all torrents returned by torznab have a size
-                    nzbsize_temp = 1000
+                nzbsize_temp = check_int(nzbsize_temp, 1000)  # not all torrents returned by torznab have a size
                 nzbsize = round(float(nzbsize_temp) / 1048576, 2)
                 nzbdate = nzbdate2format(nzbdate_temp)
                 nzbmode = nzb['nzbmode']

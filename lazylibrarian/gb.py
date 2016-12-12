@@ -116,9 +116,13 @@ class GoogleBooks:
                         try:
                             Author = item['volumeInfo']['authors'][0]
                         except KeyError:
-                            logger.debug(
-                                'Skipped a result without authorfield.')
+                            logger.debug('Skipped a result without authorfield.')
                             no_author_count = no_author_count + 1
+                            continue
+                        try:
+                            bookname = item['volumeInfo']['title']
+                        except KeyError:
+                            logger.debug('Skipped a result without title.')
                             continue
 
                         valid_langs = ([valid_lang.strip()
@@ -130,14 +134,12 @@ class GoogleBooks:
                                 booklang = item['volumeInfo']['language']
                                 if booklang not in valid_langs:
                                     logger.debug(
-                                        'Skipped a book with language %s' %
-                                        booklang)
+                                        'Skipped %s with language %s' % (bookname, booklang))
                                     ignored = ignored + 1
                                     continue
                             except KeyError:
                                 ignored = ignored + 1
-                                logger.debug(
-                                    'Skipped a result where no language is found')
+                                logger.debug('Skipped %s where no language is found', bookname)
                                 continue
 
                         try:
@@ -196,9 +198,7 @@ class GoogleBooks:
                             bookisbn = 0
 
                         author_fuzz = fuzz.token_set_ratio(Author, authorname)
-                        book_fuzz = fuzz.token_set_ratio(
-                            item['volumeInfo']['title'],
-                            authorname)
+                        book_fuzz = fuzz.token_set_ratio(bookname, authorname)
 
                         isbn_fuzz = 0
                         if is_valid_isbn(authorname):
@@ -206,7 +206,6 @@ class GoogleBooks:
 
                         highest_fuzz = max(author_fuzz, book_fuzz, isbn_fuzz)
 
-                        bookname = item['volumeInfo']['title']
                         dic = {':': '', '"': '', '\'': ''}
                         bookname = replace_all(bookname, dic)
 
@@ -251,11 +250,10 @@ class GoogleBooks:
                 break
 
         logger.debug("Found %s total result%s" % (total_count, plural(total_count)))
-        logger.debug("Removed %s bad language result%s" % (ignored, plural(ignored)))
+        logger.debug("Removed %s unwanted language result%s" % (ignored, plural(ignored)))
         logger.debug("Removed %s book%s with no author" % (no_author_count, plural(no_author_count)))
-        logger.debug(
-            "Showing %s result%s for (%s) with keyword: %s" %
-            (resultcount, plural(resultcount), api_value, authorname))
+        logger.debug("Showing %s result%s for (%s) with keyword: %s" %
+                    (resultcount, plural(resultcount), api_value, authorname))
         logger.debug(
             'The Google Books API was hit %s time%s for keyword %s' %
             (api_hits, plural(api_hits), self.name))
@@ -518,11 +516,16 @@ class GoogleBooks:
                                     duplicates = duplicates + 1
 
                     if not rejected:
-                        find_books = myDB.select('SELECT * FROM books WHERE BookID = "%s"' % bookid)
+                        find_books = myDB.match('SELECT AuthorName,BookName FROM books WHERE BookID = "%s"' % bookid)
                         if find_books:
                             # we have a book with this bookid already
-                            logger.debug('Rejecting bookid %s for [%s][%s] already got this bookid in database' %
-                                         (bookid, authorname, bookname))
+                            if bookname != find_books['BookName'] or authorNameResult != find_books['AuthorName']:
+                                logger.debug('Rejecting bookid %s for [%s][%s] already got bookid for [%s][%s]' %
+                                            (bookid, authorname, bookname,
+                                             find_books['AuthorName'], find_books['BookName']))
+                            else:
+                                logger.debug('Rejecting bookid %s for [%s][%s] already got this book in database' %
+                                             (bookid, authorname, bookname))
                             duplicates = duplicates + 1
                             rejected = True
 
@@ -626,12 +629,12 @@ class GoogleBooks:
         myDB.upsert("authors", newValueDict, controlValueDict)
 
         logger.debug("Found %s total book%s for author" % (total_count, plural(total_count)))
-        logger.debug("Removed %s bad language result%s for author" % (ignored, plural(ignored)))
+        logger.debug("Removed %s unwanted language result%s for author" % (ignored, plural(ignored)))
         logger.debug(
             "Removed %s bad character or no-name result%s for author" %
             (removedResults, plural(removedResults)))
         logger.debug("Removed %s duplicate result%s for author" % (duplicates, plural(duplicates)))
-        logger.debug("Ignored %s book%s by author marked as Ignored" % (book_ignore_count, plural(book_ignore_count)))
+        logger.debug("Found %s book%s by author marked as Ignored" % (book_ignore_count, plural(book_ignore_count)))
         logger.debug("Imported/Updated %s book%s for author" % (resultcount, plural(resultcount)))
 
         myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i, %i)' %

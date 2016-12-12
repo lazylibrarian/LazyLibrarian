@@ -226,7 +226,7 @@ class GoodReads:
                 'authorborn': resultxml.find('born_at').text,
                 'authordeath': resultxml.find('died_at').text,
                 'totalbooks': resultxml.find('works_count').text,
-                'authorname': authorname
+                'authorname': ' '.join(authorname.split())  # remove any extra whitespace
             }
         return author_dict
 
@@ -415,7 +415,7 @@ class GoodReads:
                                 logger.debug(u"An error has occured: %s" % str(e))
 
                         if bookLanguage not in valid_langs:
-                            logger.debug('Skipped a book with language %s' % bookLanguage)
+                            logger.debug('Skipped %s with language %s' % (book.find('title').text, bookLanguage))
                             ignored = ignored + 1
                             continue
                     bookname = book.find('title').text
@@ -481,11 +481,16 @@ class GoodReads:
                                     rejected = True
 
                     if not rejected:
-                        find_books = myDB.select('SELECT * FROM books WHERE BookID = "%s"' % bookid)
+                        find_books = myDB.match('SELECT AuthorName,BookName FROM books WHERE BookID = "%s"' % bookid)
                         if find_books:
                             # we have a book with this bookid already
-                            logger.debug('Rejecting bookid %s for [%s][%s] already got this bookid in database' %
-                                         (bookid, authorNameResult, bookname))
+                            if bookname != find_books['BookName'] or authorNameResult != find_books['AuthorName']:
+                                logger.debug('Rejecting bookid %s for [%s][%s] already got bookid for [%s][%s]' %
+                                            (bookid, authorNameResult, bookname,
+                                             find_books['AuthorName'], find_books['BookName']))
+                            else:
+                                logger.debug('Rejecting bookid %s for [%s][%s] already got this book in database' %
+                                             (bookid, authorNameResult, bookname))
                             duplicates = duplicates + 1
                             rejected = True
 
@@ -607,12 +612,12 @@ class GoodReads:
         modified_count = added_count + updated_count
 
         logger.debug("Found %s total book%s for author" % (total_count, plural(total_count)))
-        logger.debug("Removed %s bad language result%s for author" % (ignored, plural(ignored)))
+        logger.debug("Removed %s unwanted language result%s for author" % (ignored, plural(ignored)))
         logger.debug(
             "Removed %s bad character or no-name result%s for author" %
             (removedResults, plural(removedResults)))
         logger.debug("Removed %s duplicate result%s for author" % (duplicates, plural(duplicates)))
-        logger.debug("Ignored %s book%s by author marked as Ignored" % (book_ignore_count, plural(book_ignore_count)))
+        logger.debug("Found %s book%s by author marked as Ignored" % (book_ignore_count, plural(book_ignore_count)))
         logger.debug("Imported/Updated %s book%s for author" % (modified_count, plural(modified_count)))
 
         myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i, %i)' %

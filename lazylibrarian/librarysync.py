@@ -125,7 +125,8 @@ def get_book_info(fname):
                 res['title'] = txt
             elif 'language' in tag:
                 res['language'] = txt
-            elif 'creator' in tag:
+            elif 'creator' in tag and 'creator' not in res:
+                # take the first author name if multiple authors
                 res['creator'] = txt
             elif 'identifier' in tag and 'isbn' in attrib:
                 if is_valid_isbn(txt):
@@ -144,15 +145,14 @@ def find_book_in_db(myDB, author, book):
         logger.debug('Exact match [%s]' % book)
         return match['BookID']
     else:
-        # No exact match
         # Try a more complex fuzzy match against each book in the db by this author
         # Using hard-coded ratios for now, ratio high (>90), partial_ratio lower (>85)
         # These are results that work well on my library, minimal false matches and no misses
         # on books that should be matched
         # Maybe make ratios configurable in config.ini later
 
-        books = myDB.select('SELECT BookID,BookName FROM books where AuthorName="%s"' % author.replace('"', '""'))
-
+        books = myDB.select('SELECT BookID,BookName,BookISBN FROM books where AuthorName="%s"' %
+                            author.replace('"', '""'))
         best_ratio = 0
         best_partial = 0
         best_partname = 0
@@ -200,7 +200,7 @@ def find_book_in_db(myDB, author, book):
 
             if partial == best_partial:
                 # prefer the match closest to the left, ie prefer starting with a match and ignoring the rest
-                # this eliminates most false matches against omnibuses
+                # this eliminates most false matches against omnibuses when we want a single book
                 # find the position of the shortest string in the longest
                 if len(getList(book_lower)) >= len(getList(a_book_lower)):
                     match1 = book_lower.find(a_book_lower)
@@ -260,6 +260,27 @@ def LibraryScan(startdir=None):
     # keep statistics of full library scans
     if startdir == destdir:
         myDB.action('DELETE from stats')
+        try:  # remove any extra whitespace in authornames
+            authors = myDB.select('SELECT AuthorID,AuthorName FROM authors WHERE AuthorName like "%  %"')
+            if authors:
+                logger.info('Removing extra spaces from %s authorname%s' % (len(authors), plural(len(authors))))
+                for author in authors:
+                    authorid = author["AuthorID"]
+                    authorname = ' '.join(author['AuthorName'].split())
+                    # Have we got author name both with-and-without extra spaces? If so, merge them
+                    duplicate = myDB.match('Select AuthorID,AuthorName FROM authors WHERE AuthorName="%s"' % authorname)
+                    if duplicate:
+                        myDB.action('DELETE from authors where authorname="%s"' % author['AuthorName'])
+                        myDB.action('UPDATE books set AuthorName="%s" WHERE AuthorName="%s"' %
+                                    (duplicate['AuthorName'], author['AuthorName']))
+                        if author['AuthorID'] != duplicate['AuthorID']:
+                            myDB.action('UPDATE books set AuthorID="%s" WHERE AuthorID="%s"' %
+                                        (duplicate['AuthorID'], author['AuthorID']))
+                    else:
+                        myDB.action('UPDATE authors set AuthorName="%s" WHERE AuthorID="%s"' % (authorname, authorid))
+                        myDB.action('UPDATE books set AuthorName="%s" WHERE AuthorID="%s"' % (authorname, authorid))
+        except Exception as e:
+            logger.info('Error: ' + str(e))
 
     logger.info('Scanning ebook directory: %s' % startdir)
 
@@ -268,9 +289,15 @@ def LibraryScan(startdir=None):
     file_count = 0
     author = ""
 
-    if lazylibrarian.FULL_SCAN and startdir == destdir:
-        books = myDB.select(
-            'select AuthorName, BookName, BookFile, BookID from books where Status="Open"')
+    if lazylibrarian.FULL_SCAN:
+        if startdir == destdir:
+            books = myDB.select(
+                'select AuthorName, BookName, BookFile, BookID from books where Status="Open"')
+        else:
+            books = myDB.select(
+                'select AuthorName, BookName, BookFile, BookID from books where Status="Open"' + \
+                ' and BookFile like "' +  startdir + '%"')
+
         status = lazylibrarian.NOTFOUND_STATUS
         logger.info('Missing books will be marked as %s' % status)
         for book in books:
@@ -497,14 +524,21 @@ def LibraryScan(startdir=None):
                             # eg books by multiple authors, books where author is "writing as"
                             # or books we moved to "merge" authors
                             book = book.replace("'", "")
-                            # Try metadata authorname first
-                            bookid = find_book_in_db(myDB, author, book)
-                            if not bookid:
-                                # get author name from parent directory of this book directory
-                                newauthor = os.path.basename(os.path.dirname(r))
-                                if author.lower() != newauthor.lower():
-                                    logger.warn("%s not found under %s, trying %s" % (book, author, newauthor))
-                                    bookid = find_book_in_db(myDB, newauthor, book)
+
+                            # See if the isbn is in our database
+                            match = myDB.match('SELECT BookID FROM books where BookIsbn = "%s"' % isbn)
+                            if match:
+                                bookid = match['BookID']
+                            else:
+                                # Try and find it under metadata authorname
+                                bookid = find_book_in_db(myDB, author, book)
+                                if not bookid:
+                                    # get author name from parent directory of this book directory
+                                    newauthor = os.path.basename(os.path.dirname(r))
+                                    if author.lower() != newauthor.lower():
+                                        bookid = find_book_in_db(myDB, newauthor, book)
+                                        if bookid:
+                                            logger.warn("%s not found under %s, found under %s" % (book, author, newauthor))
 
                             if bookid:
                                 check_status = myDB.match(
@@ -525,7 +559,8 @@ def LibraryScan(startdir=None):
                                     # location may have changed since last scan
                                     elif book_filename != check_status['BookFile']:
                                         modified_count += 1
-                                        logger.warn("Updating book location for %s %s" % (author, book))
+                                        logger.warn("Updating book location for %s %s from %s to %s" %
+                                                    (author, book, check_status['BookFile'], book_filename))
                                         logger.debug("%s %s matched BookID %s, [%s][%s]" % (author, book, bookid,
                                                     check_status['AuthorName'], check_status['BookName']))
                                         myDB.action('UPDATE books set BookFile="%s" where BookID="%s"' %
@@ -540,7 +575,6 @@ def LibraryScan(startdir=None):
                                         copyfile(coverimg, cacheimg)
                                 else:
                                     logger.debug('Unable to find bookid %s in database' % bookid)
-
                             else:
                                 logger.warn(
                                     "Failed to match book [%s] by [%s] in database" % (book, author))
@@ -574,7 +608,7 @@ def LibraryScan(startdir=None):
                          (stats['sum(bad_lang)'], plural(stats['sum(bad_lang)'])))
             logger.debug("Unwanted characters removed %s book%s" %
                          (stats['sum(bad_char)'], plural(stats['sum(bad_char)'])))
-            logger.debug("Unable to cache %s book%s with missing ISBN" %
+            logger.debug("Unable to cache language for %s book%s with missing ISBN" %
                          (stats['sum(uncached)'], plural(stats['sum(uncached)'])))
             logger.debug("Found %s duplicate book%s" %
                          (stats['sum(duplicates)'], plural(stats['sum(duplicates)'])))
@@ -582,13 +616,14 @@ def LibraryScan(startdir=None):
                          (lazylibrarian.CACHE_HIT, plural(lazylibrarian.CACHE_HIT), lazylibrarian.CACHE_MISS))
             cachesize = myDB.match("select count('ISBN') as counter from languages")
             logger.debug("ISBN Language cache holds %s entries" % cachesize['counter'])
-            nolang = len(myDB.select('select BookID from Books where status="Open" and BookLang="Unknown"'))
+            nolang = myDB.match("select count('BookID') as counter from Books where status='Open' and BookLang='Unknown'")
+            nolang = nolang['counter']
             if nolang:
                 logger.warn("Found %s book%s in your library with unknown language" % (nolang, plural(nolang)))
 
         authors = myDB.select('select AuthorID from authors')
         # Update bookcounts for all authors, not just new ones - refresh may have located
-        # new books for existing authors especially if switched provider gb/gr
+        # new books for existing authors especially if switched provider gb/gr or changed wanted languages
     else:
         # single author/book import
         authors = myDB.select('select AuthorID from authors where AuthorName = "%s"' % author.replace('"', '""'))

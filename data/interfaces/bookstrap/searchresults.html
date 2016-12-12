@@ -73,6 +73,10 @@
                             elif value2 == 'Have' or value2 == 'Snatched':
                                 destination2 = "#"
                                 but_class2 = "btn-info"
+                            elif value2 == 'Skipped':
+                                destination2 = "addBook?bookid="+result['bookid']
+                                value2 = "Add Book"
+                                but_class2 = "btn-success"
                             else:
                                 destination2 = "#"
                                 but_class2 = "btn-default"

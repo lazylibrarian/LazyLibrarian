@@ -69,6 +69,10 @@
                             elif value2 == 'Wanted':
                                 destination2 = "searchForBook?bookid="+valid_id
                                 but_class2 = "button red"
+                            elif value2 == 'Skipped':
+                                destination2 = "addBook?bookid="+result['bookid']
+                                value2 = "Add Book"
+                                but_class2 = "button"
                             else:
                                 destination2 = "#"
                                 but_class2 = "button grey"
