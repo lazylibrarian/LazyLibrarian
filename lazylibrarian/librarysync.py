@@ -447,17 +447,21 @@ def LibraryScan(startdir=None):
                                 logger.debug("Already cached Lang [%s] ISBN [%s]" % (language, isbnhead))
 
                         # get authors name in a consistent format
-                        if "," in author:  # guess its "surname, forename" or "surname, initial(s)"
+                        if "," in author:
+                            # guess its "surname, forename" or "surname, initial(s)" so swap them round
                             words = author.split(',')
                             forename = words[1].strip()
                             surname = words[0].strip()
-                        if len(forename) > 1:
-                            if forename[1] == ' ' or forename [1] == '.':
-                                forename = forename.replace(' ', '.')
-                                forename = forename + '.'
-                                forename = forename.replace('..', '.')
-                        author = forename + ' ' + surname
-                        author = ' '.join(author.strip())  # no extra whitespace
+                            author = forename + ' ' + surname
+                        # reformat any initials, we want to end up with A.B. van Smith
+                        if author[1] == ' ' or author[1] == '.':
+                            forename = ''
+                            while author[1] == ' ' or author[1] == '.':
+                                forename = forename + author[0] + '.'
+                                author = author[2:].strip()
+                            author = forename + ' ' + author
+
+                        author = ' '.join(author.split())  # ensure no extra whitespace
 
                         # Check if the author exists, and import the author if not,
                         # before starting any complicated book-name matching to save repeating the search
