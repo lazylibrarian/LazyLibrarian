@@ -447,12 +447,17 @@ def LibraryScan(startdir=None):
                                 logger.debug("Already cached Lang [%s] ISBN [%s]" % (language, isbnhead))
 
                         # get authors name in a consistent format
-                        if "," in author:  # "surname, forename"
+                        if "," in author:  # guess its "surname, forename" or "surname, initial(s)"
                             words = author.split(',')
-                            author = words[1].strip() + ' ' + words[0].strip()  # "forename surname"
-                        if author[1] == ' ':
-                            author = author.replace(' ', '.')
-                            author = author.replace('..', '.')
+                            forename = words[1].strip()
+                            surname = words[0].strip()
+                        if len(forename) > 1:
+                            if forename[1] == ' ' or forename [1] == '.':
+                                forename = forename.replace(' ', '.')
+                                forename = forename + '.'
+                                forename = forename.replace('..', '.')
+                        author = forename + ' ' + surname
+                        author = ' '.join(author.strip())  # no extra whitespace
 
                         # Check if the author exists, and import the author if not,
                         # before starting any complicated book-name matching to save repeating the search
@@ -474,14 +479,15 @@ def LibraryScan(startdir=None):
                                 authorname = author_gr['authorname']
 
                                 # "J.R.R. Tolkien" is the same person as "J. R. R. Tolkien" and "J R R Tolkien"
-                                match_auth = author.replace('.', '_')
-                                match_auth = match_auth.replace(' ', '_')
-                                match_auth = match_auth.replace('__', '_')
-                                match_name = authorname.replace('.', '_')
-                                match_name = match_name.replace(' ', '_')
-                                match_name = match_name.replace('__', '_')
+                                match_auth = author.replace('.', ' ')
+                                match_auth = ' '.join(match_auth.split())
+
+                                match_name = authorname.replace('.', ' ')
+                                match_name = ' '.join(match_name.split())
+
                                 match_name = unaccented(match_name)
                                 match_auth = unaccented(match_auth)
+
                                 # allow a degree of fuzziness to cater for different accented character handling.
                                 # some author names have accents,
                                 # filename may have the accented or un-accented version of the character
