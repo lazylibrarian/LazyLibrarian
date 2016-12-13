@@ -145,12 +145,12 @@ class WebInterface(object):
                      nzbget_host='', nzbget_port=0, nzbget_user='', nzbget_pass='', nzbget_cat='', nzbget_priority=0,
                      newzbin=0, newzbin_uid='', newzbin_pass='', kat=0, kat_host='', tpb=0, tpb_host='', tdl=0,
                      tdl_host='', zoo=0, zoo_host='', ebook_type='', mag_type='', reject_words='', reject_maxsize=0,
-                     extra=0, extra_host='', gen=0, gen_host='', lime=0, lime_host='', book_api='', gr_api='',
-                     gb_api='', versioncheck_interval='', search_interval='', scan_interval='', searchrss_interval=20,
-                     ebook_dest_folder='', ebook_dest_file='', tor_downloader_rtorrent=0, keep_seeding=0,
-                     rtorrent_host='', rtorrent_dir='', rtorrent_user='', rtorrent_pass='', rtorrent_label='',
-                     use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0, mag_age=0,
-                     mag_dest_folder='', mag_dest_file='', mag_relative=0, cache_age=30, task_age=0,
+                     reject_magsize=0, extra=0, extra_host='', gen=0, gen_host='', lime=0, lime_host='', book_api='',
+                     gr_api='', gb_api='', versioncheck_interval='', search_interval='', scan_interval='',
+                     searchrss_interval=20, ebook_dest_folder='', ebook_dest_file='', tor_downloader_rtorrent=0,
+                     keep_seeding=0, rtorrent_host='', rtorrent_dir='', rtorrent_user='', rtorrent_pass='',
+                     rtorrent_label='', use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
+                     mag_age=0, mag_dest_folder='', mag_dest_file='', mag_relative=0, cache_age=30, task_age=0,
                      utorrent_host='', utorrent_port=0, utorrent_user='', utorrent_pass='', utorrent_label='',
                      qbittorrent_host='', qbittorrent_port=0, qbittorrent_user='', qbittorrent_pass='',
                      qbittorrent_label='', notfound_status='Skipped', newbook_status='Skipped', full_scan=0,
@@ -310,6 +310,7 @@ class WebInterface(object):
         lazylibrarian.MAG_TYPE = mag_type
         lazylibrarian.REJECT_WORDS = reject_words
         lazylibrarian.REJECT_MAXSIZE = reject_maxsize
+        lazylibrarian.REJECT_MAGSIZE = reject_magsize
         lazylibrarian.MAG_AGE = mag_age
         lazylibrarian.BOOK_API = book_api
         lazylibrarian.GR_API = gr_api
