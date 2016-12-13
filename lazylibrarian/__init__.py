@@ -140,6 +140,7 @@ IMP_MONTHLANG = None
 IMP_ONLYISBN = 0
 IMP_SINGLEBOOK = 1
 IMP_AUTOADD = None
+IMP_AUTOSEARCH = 1
 IMP_CONVERT = None
 IMP_CALIBREDB = None
 GIT_PROGRAM = None
@@ -159,6 +160,7 @@ EBOOK_TYPE = None
 MAG_TYPE = None
 REJECT_WORDS = None
 REJECT_MAXSIZE = 0
+REJECT_MAGSIZE = 0
 MAG_AGE = 31
 
 TOR_DOWNLOADER_BLACKHOLE = 0
@@ -478,7 +480,7 @@ def config_read(reloaded=False):
             HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_PROXY, HTTP_ROOT, HTTP_LOOK, API_KEY, API_ENABLED, \
             LAUNCH_BROWSER, LOGDIR, CACHE_AGE, MATCH_RATIO, DLOAD_RATIO, PROXY_HOST, PROXY_TYPE, GIT_PROGRAM, \
             IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, IMP_CONVERT, IMP_CALIBREDB, \
-            MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, \
+            IMP_AUTOSEARCH, MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, \
             MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, CONFIGFILE, CFG, LOGLIMIT, TASK_AGE, \
             SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, SAB_CAT, \
             DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, USENET_RETENTION, NZB_BLACKHOLEDIR, \
@@ -487,7 +489,7 @@ def config_read(reloaded=False):
             NZBGET_PORT, NZB_DOWNLOADER_NZBGET, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
             NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, EBOOK_TYPE, MAG_TYPE, \
             KAT, KAT_HOST, TPB, TPB_HOST, ZOO, ZOO_HOST, TDL, TDL_HOST, GEN, GEN_HOST, EXTRA, EXTRA_HOST, \
-            LIME, LIME_HOST, NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, REJECT_WORDS, REJECT_MAXSIZE, \
+            LIME, LIME_HOST, NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, REJECT_WORDS, REJECT_MAXSIZE, REJECT_MAGSIZE, \
             VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, SEARCHRSS_INTERVAL, MAG_AGE, \
             EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, \
             USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, \
@@ -553,6 +555,7 @@ def config_read(reloaded=False):
         IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', 'en, eng, en-US, en-GB')
         IMP_MONTHLANG = check_setting_str(CFG, 'General', 'imp_monthlang', '')
         IMP_AUTOADD = check_setting_str(CFG, 'General', 'imp_autoadd', '')
+        IMP_AUTOSEARCH = check_setting_bool(CFG, 'General', 'imp_autosearch', 0)
         IMP_CALIBREDB = check_setting_str(CFG, 'General', 'imp_calibredb', '')
         IMP_ONLYISBN = check_setting_bool(CFG, 'General', 'imp_onlyisbn', 0)
         IMP_SINGLEBOOK = check_setting_bool(CFG, 'General', 'imp_singlebook', 0)
@@ -828,6 +831,7 @@ def config_read(reloaded=False):
         REJECT_WORDS = check_setting_str(CFG, 'General', 'reject_words', 'audiobook, mp3')
         REJECT_WORDS = REJECT_WORDS.lower()
         REJECT_MAXSIZE = check_setting_int(CFG, 'General', 'reject_maxsize', 0)
+        REJECT_MAGSIZE = check_setting_int(CFG, 'General', 'reject_magsize', 0)
         MAG_AGE = check_setting_int(CFG, 'General', 'mag_age', 31)
 
         SEARCH_INTERVAL = check_setting_int(CFG, 'SearchScan', 'search_interval', '360')
@@ -942,6 +946,7 @@ def config_write():
     CFG.set('General', 'imp_preflang', IMP_PREFLANG)
     CFG.set('General', 'imp_monthlang', IMP_MONTHLANG)
     CFG.set('General', 'imp_autoadd', IMP_AUTOADD)
+    CFG.set('General', 'imp_autosearch', IMP_AUTOSEARCH)
     CFG.set('General', 'imp_calibredb', IMP_CALIBREDB)
     CFG.set('General', 'imp_convert', IMP_CONVERT.strip())
     CFG.set('General', 'git_program', GIT_PROGRAM.strip())
@@ -949,6 +954,7 @@ def config_write():
     CFG.set('General', 'mag_type', MAG_TYPE.lower())
     CFG.set('General', 'reject_words', REJECT_WORDS.encode(SYS_ENCODING).lower())
     CFG.set('General', 'reject_maxsize', REJECT_MAXSIZE)
+    CFG.set('General', 'reject_magsize', REJECT_MAGSIZE)
     CFG.set('General', 'mag_age', MAG_AGE)
     CFG.set('General', 'destination_dir', DESTINATION_DIR.encode(SYS_ENCODING))
     CFG.set('General', 'alternate_dir', ALTERNATE_DIR.encode(SYS_ENCODING))

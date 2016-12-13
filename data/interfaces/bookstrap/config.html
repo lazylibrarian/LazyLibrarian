@@ -1149,6 +1149,18 @@
                                             Add Authors</label>
                                             <span class="help-block">This will auto add new authors from GoodReads</span>
                                         </div>
+                                        <div class="checkbox">
+                                            <%
+                                            if lazylibrarian.IMP_AUTOSEARCH == True:
+                                                checked = 'checked="checked"'
+                                            else:
+                                                checked = ''
+                                            %>
+                                            <label for="imp_autosearch" class="control-label">
+                                            <input type="checkbox" id="imp_autosearch" name="imp_autosearch" value="1" ${checked} />
+                                            Search for books when added</label>
+                                            <span class="help-block">This will auto search new books added to database</span>
+                                        </div>
                                         <div class="form-group">
                                             <label for="notfound_status">Missing Book Status:</label>
                                             <select id="notfound_status" name="notfound_status" class="form-control">
@@ -1781,6 +1793,14 @@
                                 <div class="form-group">
                                     <input type="text" id="reject_maxsize" name="reject_maxsize" value="${lazylibrarian.REJECT_MAXSIZE}" class="form-control" placeholder="Reject size limit">
                                     <span class="help-block">Book size limit (Mb):<br/>
+                                    Search results larger than this will be rejected, set to 0 to disable<br/>
+                                    </span>
+                                </div>
+                                <legend>Magazine Size Limit</legend>
+                                <span class="help-block">Default: 0</span>
+                                <div class="form-group">
+                                    <input type="text" id="reject_magsize" name="reject_magsize" value="${lazylibrarian.REJECT_MAGSIZE}" class="form-control" placeholder="Reject size limit">
+                                    <span class="help-block">Magazine size limit (Mb):<br/>
                                     Search results larger than this will be rejected, set to 0 to disable<br/>
                                     </span>
                                 </div>

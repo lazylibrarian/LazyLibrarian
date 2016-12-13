@@ -25,7 +25,7 @@ from lib.fuzzywuzzy import fuzz
 import lazylibrarian
 
 from lazylibrarian import database, logger, gr, utorrent, transmission, qbittorrent, \
-                            deluge, rtorrent, synology, sabnzbd
+                            deluge, rtorrent, synology, sabnzbd, nzbget
 from lib.deluge_client import DelugeRPCClient
 from lazylibrarian.magazinescan import create_id, create_cover
 from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, unaccented
@@ -160,42 +160,46 @@ def processDir(reset=False):
         # depending on torrent downloader. Usenet doesn't change the name. We like usenet.
 
         torrentname = ''
-        if book['Source'] == 'TRANSMISSION':
-            torrentname = transmission.getTorrentFolder(book['DownloadID'])
-        elif book['Source'] == 'UTORRENT':
-            torrentname = utorrent.nameTorrent(book['DownloadID'])
-        elif book['Source'] == 'RTORRENT':
-            torrentname = rtorrent.getName(book['DownloadID'])
-        elif book['Source'] == 'QBITTORRENT':
-            torrentname = qbittorrent.getName(book['DownloadID'])
-        elif book['Source'] == 'SYNOLOGY_TOR':
-            torrentname = synology.getName(book['DownloadID'])
-        elif book['Source'] == 'DELUGEWEBUI':
-            torrentname = deluge.getTorrentFolder(book['DownloadID'])
-        elif book['Source'] == 'DELUGERPC':
-            client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
-                                     int(lazylibrarian.DELUGE_PORT),
-                                     lazylibrarian.DELUGE_USER,
-                                     lazylibrarian.DELUGE_PASS)
-            try:
-                client.connect()
-                args = [
-                            "name",
-                            "save_path",
-                            "total_size",
-                            "num_files",
-                            "message",
-                            "tracker",
-                            "comment"
-                        ]
-                result = client.call('core.get_torrent_status', book['DownloadID'], args)
-                torrentname = result['name']
-            except Exception as e:
-                logger.debug('DelugeRPC failed %s' % str(e))
+        try:
+            if book['Source'] == 'TRANSMISSION':
+                torrentname = transmission.getTorrentFolder(book['DownloadID'])
+            elif book['Source'] == 'UTORRENT':
+                torrentname = utorrent.nameTorrent(book['DownloadID'])
+            elif book['Source'] == 'RTORRENT':
+                torrentname = rtorrent.getName(book['DownloadID'])
+            elif book['Source'] == 'QBITTORRENT':
+                torrentname = qbittorrent.getName(book['DownloadID'])
+            elif book['Source'] == 'SYNOLOGY_TOR':
+                torrentname = synology.getName(book['DownloadID'])
+            elif book['Source'] == 'DELUGEWEBUI':
+                torrentname = deluge.getTorrentFolder(book['DownloadID'])
+            elif book['Source'] == 'DELUGERPC':
+                client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
+                                         int(lazylibrarian.DELUGE_PORT),
+                                         lazylibrarian.DELUGE_USER,
+                                         lazylibrarian.DELUGE_PASS)
+                try:
+                    client.connect()
+                    args = [
+                                "name",
+                                "save_path",
+                                "total_size",
+                                "num_files",
+                                "message",
+                                "tracker",
+                                "comment"
+                            ]
+                    result = client.call('core.get_torrent_status', book['DownloadID'], args)
+                    torrentname = result['name']
+                except Exception as e:
+                    logger.debug('DelugeRPC failed %s' % str(e))
+        except Exception as e:
+            logger.debug("Failed to get updated torrent name from %s for %s: %s" %
+                        (book['Source'], book['DownloadID'], str(e)))
 
         matchtitle = book['NZBtitle']
-        if torrentname and torrentname != book['NZBtitle']:
-            logger.debug("%s Changing [%s] to [%s]" % (book['Source'], book['NZBtitle'], torrentname))
+        if len(torrentname) and torrentname != matchtitle:
+            logger.debug("%s Changing [%s] to [%s]" % (book['Source'], matchtitle, torrentname))
             myDB.action('UPDATE wanted SET NZBtitle = "%s" WHERE NZBurl = "%s"' % (torrentname, book['NZBurl']))
             matchtitle = torrentname
 
@@ -487,36 +491,42 @@ def processDir(reset=False):
 
 
 def delete_task(Source, DownloadID, remove_data):
-    if Source == "SABNZBD":
-        sabnzbd.SABnzbd(DownloadID, 'delete', remove_data)
-    elif Source == "NZBGET":
-        nzbget.deleteNZB(DownloadID, remove_data)
-    elif Source == "UTORRENT":
-        utorrent.removeTorrent(DownloadID, remove_data)
-    elif Source == "RTORRENT":
-        rtorrent.removeTorrent(DownloadID, remove_data)
-    elif Source == "QBITTORRENT":
-        qbittorrent.removeTorrent(DownloadID, remove_data)
-    elif Source == "TRANSMISSION":
-        transmission.removeTorrent(DownloadID, remove_data)
-    elif  Source == "SYNOLOGY_TOR" or Source == "SYNOLOGY_NZB":
-        synology.removeTorrent(DownloadID, remove_data)
-    elif Source == "DELUGEWEBUI":
-        deluge.removeTorrent(DownloadID, remove_data)
-    elif Source == "DELUGERPC":
-        client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
-                                 int(lazylibrarian.DELUGE_PORT),
-                                 lazylibrarian.DELUGE_USER,
-                                 lazylibrarian.DELUGE_PASS)
-        try:
-            client.connect()
-            client.call('core.remove_torrent', DownloadID, remove_data)
-        except Exception as e:
-            logger.debug('DelugeRPC failed %s' % str(e))
+    try:
+        if Source == "SABNZBD":
+            sabnzbd.SABnzbd(DownloadID, 'delete', remove_data)
+        elif Source == "NZBGET":
+            nzbget.deleteNZB(DownloadID, remove_data)
+        elif Source == "UTORRENT":
+            utorrent.removeTorrent(DownloadID, remove_data)
+        elif Source == "RTORRENT":
+            rtorrent.removeTorrent(DownloadID, remove_data)
+        elif Source == "QBITTORRENT":
+            qbittorrent.removeTorrent(DownloadID, remove_data)
+        elif Source == "TRANSMISSION":
+            transmission.removeTorrent(DownloadID, remove_data)
+        elif  Source == "SYNOLOGY_TOR" or Source == "SYNOLOGY_NZB":
+            synology.removeTorrent(DownloadID, remove_data)
+        elif Source == "DELUGEWEBUI":
+            deluge.removeTorrent(DownloadID, remove_data)
+        elif Source == "DELUGERPC":
+            client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
+                                     int(lazylibrarian.DELUGE_PORT),
+                                     lazylibrarian.DELUGE_USER,
+                                     lazylibrarian.DELUGE_PASS)
+            try:
+                client.connect()
+                client.call('core.remove_torrent', DownloadID, remove_data)
+            except Exception as e:
+                logger.debug('DelugeRPC failed %s' % str(e))
+                return False
+        else:
+            logger.debug("Unknown source [%s] in delete_task" % Source)
             return False
-    else:
+        return True
+
+    except Exception as e:
+        logger.debug("Failed to delete task %s from %s: %s" % (DownloadID, Source, str(e)))
         return False
-    return True
 
 
 def import_book(pp_path=None, bookID=None):

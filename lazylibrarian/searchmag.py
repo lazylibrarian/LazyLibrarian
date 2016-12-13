@@ -26,7 +26,7 @@ from lib.fuzzywuzzy import fuzz
 from lazylibrarian.searchtorrents import TORDownloadMethod
 from lazylibrarian.searchnzb import NZBDownloadMethod
 from lazylibrarian.formatter import plural, now, unaccented_str, replace_all, unaccented, \
-    nzbdate2format, getList, month2num, datecompare
+    nzbdate2format, getList, month2num, datecompare, check_int
 from lazylibrarian.common import scheduleJob
 from lazylibrarian.notifiers import notify_snatch
 from lazylibrarian.providers import IterateOverNewzNabSites, IterateOverTorrentSites, IterateOverRSSSites
@@ -149,8 +149,7 @@ def search_magazines(mags=None, reset=False):
                 nzbprov = nzb['nzbprov']
                 nzbdate_temp = nzb['nzbdate']
                 nzbsize_temp = nzb['nzbsize']
-                if nzbsize_temp is None:  # not all torrents returned by torznab have a size
-                    nzbsize_temp = 1000
+                nzbsize_temp = check_int(nzbsize_temp, 1000)  # not all torrents returned by torznab have a size
                 nzbsize = round(float(nzbsize_temp) / 1048576, 2)
                 nzbdate = nzbdate2format(nzbdate_temp)
                 nzbmode = nzb['nzbmode']
@@ -160,45 +159,51 @@ def search_magazines(mags=None, reset=False):
                     logger.debug('Magazine [%s] does not match search term [%s].' % (nzbtitle, bookid))
                     bad_name = bad_name + 1
                 else:
-                    control_date = results['IssueDate']
-                    reject_list = getList(results['Reject'])
-
-                    dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': ''}
-                    nzbtitle_formatted = replace_all(nzbtitle, dic).strip()
-
-                    # Need to make sure that substrings of magazine titles don't get found
-                    # (e.g. Maxim USA will find Maximum PC USA) - token_set_ratio takes care of this
-                    # remove extra spaces if they're in a row
-                    nzbtitle_exploded_temp = " ".join(nzbtitle_formatted.split())
-                    nzbtitle_exploded = nzbtitle_exploded_temp.split(' ')
-
-                    if ' ' in bookid:
-                        bookid_exploded = bookid.split(' ')
-                    else:
-                        bookid_exploded = [bookid]
-
-                    # check nzb starts with magazine title followed by a date
-                    # eg The MagPI Issue 22 - July 2015
-
                     rejected = False
-                    if len(nzbtitle_exploded) > len(bookid_exploded):
-                        # needs to be longer as it has to include a date
-                        # check (nearly) all the words in the mag title are in the nzbtitle - allow some fuzz
-                        mag_title_match = fuzz.token_set_ratio(
-                            unaccented(bookid),
-                            unaccented(nzbtitle_formatted))
-
-                        if mag_title_match < lazylibrarian.MATCH_RATIO:
-                            logger.debug(
-                                u"Magazine token set Match failed: " + str(
-                                    mag_title_match) + "% for " + nzbtitle_formatted)
-                            rejected = True
-                        else:
-                            logger.debug(
-                                u"Magazine matched: " + str(
-                                    mag_title_match) + "% " + bookid + " for " + nzbtitle_formatted)
-                    else:
+                    maxsize = check_int(lazylibrarian.REJECT_MAGSIZE, 0)
+                    if maxsize and nzbsize > maxsize:
+                        logger.debug("Rejecting %s, too large" % nzbtitle)
                         rejected = True
+
+                    if not rejected:
+                        control_date = results['IssueDate']
+                        reject_list = getList(results['Reject'])
+
+                        dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': ''}
+                        nzbtitle_formatted = replace_all(nzbtitle, dic).strip()
+
+                        # Need to make sure that substrings of magazine titles don't get found
+                        # (e.g. Maxim USA will find Maximum PC USA) - token_set_ratio takes care of this
+                        # remove extra spaces if they're in a row
+                        nzbtitle_exploded_temp = " ".join(nzbtitle_formatted.split())
+                        nzbtitle_exploded = nzbtitle_exploded_temp.split(' ')
+
+                        if ' ' in bookid:
+                            bookid_exploded = bookid.split(' ')
+                        else:
+                            bookid_exploded = [bookid]
+
+                        # check nzb starts with magazine title followed by a date
+                        # eg The MagPI Issue 22 - July 2015
+
+                        if len(nzbtitle_exploded) > len(bookid_exploded):
+                            # needs to be longer as it has to include a date
+                            # check (nearly) all the words in the mag title are in the nzbtitle - allow some fuzz
+                            mag_title_match = fuzz.token_set_ratio(
+                                unaccented(bookid),
+                                unaccented(nzbtitle_formatted))
+
+                            if mag_title_match < lazylibrarian.MATCH_RATIO:
+                                logger.debug(
+                                    u"Magazine token set Match failed: " + str(
+                                        mag_title_match) + "% for " + nzbtitle_formatted)
+                                rejected = True
+                            else:
+                                logger.debug(
+                                    u"Magazine matched: " + str(
+                                        mag_title_match) + "% " + bookid + " for " + nzbtitle_formatted)
+                        else:
+                            rejected = True
 
                     if not rejected:
                         already_failed = myDB.match('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' %
@@ -364,7 +369,10 @@ def search_magazines(mags=None, reset=False):
                             if '-' in str(newdatish):
                                 start_time = time.time()
                                 start_time -= int(lazylibrarian.MAG_AGE) * 24 * 60 * 60  # number of seconds in days
+                                if start_time < 0:  # limit of unixtime (1st Jan 1970)
+                                    start_time = 0
                                 control_date = time.strftime("%Y-%m-%d", time.localtime(start_time))
+                                logger.debug('Magazine date comparing to %s' % control_date)
                             else:
                                 control_date = 0
 

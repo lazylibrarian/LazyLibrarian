@@ -151,8 +151,7 @@ def processResultList(resultlist, book, searchtype):
                     break
 
         nzbsize_temp = nzb['nzbsize']  # Need to cater for when this is NONE (Issue 35)
-        if nzbsize_temp is None:
-            nzbsize_temp = 1000
+        nzbsize_temp = check_int(nzbsize_temp, 1000)
         nzbsize = round(float(nzbsize_temp) / 1048576, 2)
 
         maxsize = check_int(lazylibrarian.REJECT_MAXSIZE, 0)
