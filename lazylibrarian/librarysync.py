@@ -548,7 +548,7 @@ def LibraryScan(startdir=None):
                                     if author.lower() != newauthor.lower():
                                         bookid = find_book_in_db(myDB, newauthor, book)
                                         if bookid:
-                                            logger.warn("%s not found under %s, found under %s" % (book, author, newauthor))
+                                            logger.warn("%s not found under [%s], found under [%s]" % (book, author, newauthor))
 
                             if bookid:
                                 check_status = myDB.match(
