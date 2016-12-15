@@ -68,6 +68,9 @@ def any_file(search_dir=None, extn=None):
 def opf_file(search_dir=None):
     return any_file(search_dir, '.opf')
 
+def bts_file(search_dir=None):
+    return any_file(search_dir, '.bts')
+
 
 def csv_file(search_dir=None):
     return any_file(search_dir, '.csv')

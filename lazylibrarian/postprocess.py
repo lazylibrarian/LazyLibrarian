@@ -29,7 +29,7 @@ from lazylibrarian import database, logger, gr, utorrent, transmission, qbittorr
 from lib.deluge_client import DelugeRPCClient
 from lazylibrarian.magazinescan import create_id, create_cover
 from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, unaccented
-from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm
+from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file
 from lazylibrarian.notifiers import notify_download
 from lazylibrarian.importer import addAuthorToDB
 from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
@@ -238,43 +238,49 @@ def processDir(reset=False):
                         if is_valid_booktype(fname, booktype="book") \
                                 or is_valid_booktype(fname, booktype="mag"):
                             logger.debug('filename [%s] is a valid book/mag' % os.path.join(processpath, fname))
-                            fname = os.path.splitext(fname)[0]
-                            dirname = os.path.join(processpath, fname)
-                            if not os.path.exists(dirname):
-                                try:
-                                    os.makedirs(dirname)
-                                    setperm(dirname)
-                                except OSError as why:
-                                    logger.debug('Failed to create directory %s, %s' % (dirname, why.strerror))
-                            if os.path.exists(dirname):
-                                # move the book and any related files too
-                                # ie other book formats, or opf, jpg with same title
-                                # can't move metadata.opf or cover.jpg or similar
-                                # as can't be sure they are ours
-                                # not sure if we need a new listdir here, or whether we can use the old one
-                                list_dir = os.listdir(processpath)
-                                for ourfile in list_dir:
-                                    if ourfile.startswith(fname):
-                                        if is_valid_booktype(ourfile, booktype="book") \
-                                            or is_valid_booktype(ourfile, booktype="mag") \
-                                                or os.path.splitext(ourfile)[1].lower() in ['.opf', '.jpg']:
-                                            try:
-                                                if lazylibrarian.DESTINATION_COPY:
-                                                    shutil.copyfile(os.path.join(processpath, ourfile),
+                            if bts_file(processpath):
+                                logger.debug("Skipping %s, found a .bts file" % processpath)
+                            else:
+                                fname = os.path.splitext(fname)[0]
+                                dirname = os.path.join(processpath, fname)
+                                if not os.path.exists(dirname):
+                                    try:
+                                        os.makedirs(dirname)
+                                        setperm(dirname)
+                                    except OSError as why:
+                                        logger.debug('Failed to create directory %s, %s' % (dirname, why.strerror))
+                                if os.path.exists(dirname):
+                                    # move the book and any related files too
+                                    # ie other book formats, or opf, jpg with same title
+                                    # can't move metadata.opf or cover.jpg or similar
+                                    # as can't be sure they are ours
+                                    # not sure if we need a new listdir here, or whether we can use the old one
+                                    list_dir = os.listdir(processpath)
+                                    for ourfile in list_dir:
+                                        if ourfile.startswith(fname):
+                                            if is_valid_booktype(ourfile, booktype="book") \
+                                                or is_valid_booktype(ourfile, booktype="mag") \
+                                                    or os.path.splitext(ourfile)[1].lower() in ['.opf', '.jpg']:
+                                                try:
+                                                    if lazylibrarian.DESTINATION_COPY:
+                                                        shutil.copyfile(os.path.join(processpath, ourfile),
+                                                                        os.path.join(dirname, ourfile))
+                                                        setperm(os.path.join(dirname, ourfile))
+                                                    else:
+                                                        shutil.move(os.path.join(processpath, ourfile),
                                                                     os.path.join(dirname, ourfile))
-                                                    setperm(os.path.join(dirname, ourfile))
-                                                else:
-                                                    shutil.move(os.path.join(processpath, ourfile),
-                                                                os.path.join(dirname, ourfile))
-                                                    setperm(os.path.join(dirname, ourfile))
-                                            except Exception as why:
-                                                logger.debug("Failed to copy/move file %s to %s, %s" %
-                                                            (ourfile, dirname, str(why)))
+                                                        setperm(os.path.join(dirname, ourfile))
+                                                except Exception as why:
+                                                    logger.debug("Failed to copy/move file %s to %s, %s" %
+                                                                (ourfile, dirname, str(why)))
 
                     if os.path.isdir(os.path.join(processpath, fname)):
                         pp_path = os.path.join(processpath, fname)
                         logger.debug('Found folder (%s%%) %s for %s' % (match, pp_path, matchtitle))
-                        matches.append([match, pp_path, book])
+                        if bts_file(pp_path):
+                            logger.debug("Skipping %s, found a .bts file" % pp_path)
+                        else:
+                            matches.append([match, pp_path, book])
                 else:
                     pp_path = os.path.join(processpath, fname)
                     matches.append([match, pp_path, book])  # so we can report closest match
