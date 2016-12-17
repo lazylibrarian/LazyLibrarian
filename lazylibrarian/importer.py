@@ -28,74 +28,77 @@ def addAuthorToDB(authorname=None, refresh=False):
     Add an author to the database, and get  list of all their books
     If author already exists in database, refresh their details and booklist
     """
-    myDB = database.DBConnection()
+    try:
+        myDB = database.DBConnection()
 
-    GR = GoodReads(authorname)
+        GR = GoodReads(authorname)
 
-    query = "SELECT * from authors WHERE AuthorName='%s'" % authorname.replace("'", "''")
-    dbauthor = myDB.match(query)
-    controlValueDict = {"AuthorName": authorname}
-
-    if not dbauthor:
-        newValueDict = {
-            "AuthorID": "0: %s" % (authorname),
-            "Status": "Loading"
-        }
-        logger.debug("Now adding new author: %s to database" % authorname)
-    else:
-        newValueDict = {"Status": "Loading"}
-        logger.debug("Now updating author: %s" % authorname)
-    myDB.upsert("authors", newValueDict, controlValueDict)
-
-    author = GR.find_author_id(refresh=refresh)
-    if author:
-        authorid = author['authorid']
-        authorlink = author['authorlink']
-        authorimg = author['authorimg']
+        query = "SELECT * from authors WHERE AuthorName='%s'" % authorname.replace("'", "''")
+        dbauthor = myDB.match(query)
         controlValueDict = {"AuthorName": authorname}
-        newValueDict = {
-            "AuthorID": authorid,
-            "AuthorLink": authorlink,
-            "AuthorImg": authorimg,
-            "AuthorBorn": author['authorborn'],
-            "AuthorDeath": author['authordeath'],
-            "DateAdded": today(),
-            "Status": "Loading"
-        }
-        myDB.upsert("authors", newValueDict, controlValueDict)
-    else:
-        logger.warn(u"Nothing found for %s" % authorname)
-        myDB.action('DELETE from authors WHERE AuthorName="%s"' % authorname)
-        return
 
-    new_img = False
-    if authorimg and 'nophoto' in authorimg:
-        authorimg = getAuthorImage(authorid)
-        new_img = True
-    if authorimg and authorimg.startswith('http'):
-        newimg = cache_cover(authorid, authorimg)
-        if newimg:
-            authorimg = newimg
+        if not dbauthor:
+            newValueDict = {
+                "AuthorID": "0: %s" % (authorname),
+                "Status": "Loading"
+            }
+            logger.debug("Now adding new author: %s to database" % authorname)
+        else:
+            newValueDict = {"Status": "Loading"}
+            logger.debug("Now updating author: %s" % authorname)
+        myDB.upsert("authors", newValueDict, controlValueDict)
+
+        author = GR.find_author_id(refresh=refresh)
+        if author:
+            authorid = author['authorid']
+            authorlink = author['authorlink']
+            authorimg = author['authorimg']
+            controlValueDict = {"AuthorName": authorname}
+            newValueDict = {
+                "AuthorID": authorid,
+                "AuthorLink": authorlink,
+                "AuthorImg": authorimg,
+                "AuthorBorn": author['authorborn'],
+                "AuthorDeath": author['authordeath'],
+                "DateAdded": today(),
+                "Status": "Loading"
+            }
+            myDB.upsert("authors", newValueDict, controlValueDict)
+        else:
+            logger.warn(u"Nothing found for %s" % authorname)
+            myDB.action('DELETE from authors WHERE AuthorName="%s"' % authorname)
+            return
+
+        new_img = False
+        if authorimg and 'nophoto' in authorimg:
+            authorimg = getAuthorImage(authorid)
             new_img = True
+        if authorimg and authorimg.startswith('http'):
+            newimg = cache_cover(authorid, authorimg)
+            if newimg:
+                authorimg = newimg
+                new_img = True
 
-    if new_img:
-        controlValueDict = {"AuthorID": authorid}
-        newValueDict = {"AuthorImg": authorimg}
-        myDB.upsert("authors", newValueDict, controlValueDict)
+        if new_img:
+            controlValueDict = {"AuthorID": authorid}
+            newValueDict = {"AuthorImg": authorimg}
+            myDB.upsert("authors", newValueDict, controlValueDict)
 
 
-    # process books
-    if lazylibrarian.BOOK_API == "GoogleBooks":
-        book_api = GoogleBooks()
-        book_api.get_author_books(authorid, authorname, refresh=refresh)
-    elif lazylibrarian.BOOK_API == "GoodReads":
-        GR.get_author_books(authorid, authorname, refresh=refresh)
+        # process books
+        if lazylibrarian.BOOK_API == "GoogleBooks":
+            book_api = GoogleBooks()
+            book_api.get_author_books(authorid, authorname, refresh=refresh)
+        elif lazylibrarian.BOOK_API == "GoodReads":
+            GR.get_author_books(authorid, authorname, refresh=refresh)
 
-    # update totals works for existing authors only.
-    # New authors need their totals updating after libraryscan or import of books.
-    if dbauthor:
-        update_totals(authorid)
-    logger.debug("[%s] Author update complete" % authorname)
+        # update totals works for existing authors only.
+        # New authors need their totals updating after libraryscan or import of books.
+        if dbauthor:
+            update_totals(authorid)
+        logger.debug("[%s] Author update complete" % authorname)
+    except Exception as e:
+        logger.error('Unhandled exception in addAuthorToDB: %s' % traceback.format_exc())
 
 
 def update_totals(AuthorID):

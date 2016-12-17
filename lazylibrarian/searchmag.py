@@ -18,6 +18,7 @@ import urllib2
 import re
 import datetime
 import os
+import traceback
 import lazylibrarian
 import threading
 from lazylibrarian import logger, database
@@ -39,7 +40,7 @@ def cron_search_magazines():
 
 def search_magazines(mags=None, reset=False):
     # produce a list of magazines to search for, tor, nzb, torznab, rss
-
+  try:
     threadname = threading.currentThread().name
     if "Thread-" in threadname:
         threading.currentThread().name = "SEARCHMAG"
@@ -470,3 +471,6 @@ def search_magazines(mags=None, reset=False):
         scheduleJob(action='Restart', target='search_magazines')
 
     logger.info("Search for magazines complete")
+
+  except Exception as e:
+    logger.error('Unhandled exception in search_magazines: %s' % traceback.format_exc())

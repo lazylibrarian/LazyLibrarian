@@ -15,6 +15,7 @@
 
 import urllib2
 import os
+import traceback
 import re
 import threading
 import lazylibrarian
@@ -36,64 +37,68 @@ def cron_search_rss_book():
 
 
 def search_rss_book(books=None, reset=False):
-    threadname = threading.currentThread().name
-    if "Thread-" in threadname:
-        threading.currentThread().name = "SEARCHRSS"
+    try:
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "SEARCHRSS"
 
-    if not(lazylibrarian.USE_RSS()):
-        logger.warn('RSS search is disabled')
-        scheduleJob(action='Stop', target='search_rss_book')
-        return
+        if not(lazylibrarian.USE_RSS()):
+            logger.warn('RSS search is disabled')
+            scheduleJob(action='Stop', target='search_rss_book')
+            return
 
-    myDB = database.DBConnection()
-    searchlist = []
+        myDB = database.DBConnection()
+        searchlist = []
 
-    if books is None:
-        # We are performing a backlog search
-        searchbooks = myDB.select(
-            'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books WHERE Status="Wanted" \
-            order by BookAdded desc')
-    else:
-        # The user has added a new book
-        searchbooks = []
-        for book in books:
-            searchbook = myDB.select('SELECT BookID, AuthorName, BookName, BookSub from books WHERE BookID="%s" \
-                                     AND Status="Wanted"' % book['bookid'])
-            for terms in searchbook:
-                searchbooks.append(terms)
+        if books is None:
+            # We are performing a backlog search
+            searchbooks = myDB.select(
+                'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books WHERE Status="Wanted" \
+                order by BookAdded desc')
+        else:
+            # The user has added a new book
+            searchbooks = []
+            for book in books:
+                searchbook = myDB.select('SELECT BookID, AuthorName, BookName, BookSub from books WHERE BookID="%s" \
+                                         AND Status="Wanted"' % book['bookid'])
+                for terms in searchbook:
+                    searchbooks.append(terms)
 
-    if len(searchbooks) == 0:
-        return
+        if len(searchbooks) == 0:
+            return
 
-    logger.info('RSS Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
+        logger.info('RSS Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
 
-    resultlist, nproviders = IterateOverRSSSites()
-    if not nproviders:
-        logger.warn('No rss providers are set, check config')
-        return  # No point in continuing
+        resultlist, nproviders = IterateOverRSSSites()
+        if not nproviders:
+            logger.warn('No rss providers are set, check config')
+            return  # No point in continuing
 
-    dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
-           ',': '', '*': '', ':': '', ';': ''}
+        dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
+               ',': '', '*': '', ':': '', ';': ''}
 
-    rss_count = 0
-    for book in searchbooks:
-        authorname, bookname = get_searchterm(book, "book")
-        found = processResultList(resultlist, authorname, bookname, book, 'book')
+        rss_count = 0
+        for book in searchbooks:
+            authorname, bookname = get_searchterm(book, "book")
+            found = processResultList(resultlist, authorname, bookname, book, 'book')
 
-        # if you can't find the book, try title without any "(extended details, series etc)"
-        if not found and '(' in bookname:  # anything to shorten?
-            authorname, bookname = get_searchterm(book, "shortbook")
-            found = processResultList(resultlist, authorname, bookname, book, 'shortbook')
+            # if you can't find the book, try title without any "(extended details, series etc)"
+            if not found and '(' in bookname:  # anything to shorten?
+                authorname, bookname = get_searchterm(book, "shortbook")
+                found = processResultList(resultlist, authorname, bookname, book, 'shortbook')
 
-        if not found:
-            logger.debug("Searches returned no results. Adding book %s - %s to queue." % (authorname, bookname))
-        if found > True:
-            rss_count = rss_count + 1
+            if not found:
+                logger.debug("Searches returned no results. Adding book %s - %s to queue." % (authorname, bookname))
+            if found > True:
+                rss_count = rss_count + 1
 
-    logger.info("RSS Search for Wanted items complete, found %s book%s" % (rss_count, plural(rss_count)))
+        logger.info("RSS Search for Wanted items complete, found %s book%s" % (rss_count, plural(rss_count)))
 
-    if reset:
-        scheduleJob(action='Restart', target='search_rss_book')
+        if reset:
+            scheduleJob(action='Restart', target='search_rss_book')
+
+    except Exception as e:
+        logger.error('Unhandled exception in search_rss_book: %s' % traceback.format_exc())
 
 
 def processResultList(resultlist, authorname, bookname, book, searchtype):

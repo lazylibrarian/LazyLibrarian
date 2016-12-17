@@ -16,6 +16,7 @@
 import urllib2
 import socket
 import os
+import traceback
 import re
 import threading
 import lazylibrarian
@@ -37,78 +38,82 @@ def cron_search_nzb_book():
 
 
 def search_nzb_book(books=None, reset=False):
-    threadname = threading.currentThread().name
-    if "Thread-" in threadname:
-        threading.currentThread().name = "SEARCHNZB"
+    try:
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "SEARCHNZB"
 
-    if not lazylibrarian.USE_NZB():
-        logger.warn('No NEWZNAB/TORZNAB providers set, check config')
-        return
-    myDB = database.DBConnection()
-    searchlist = []
+        if not lazylibrarian.USE_NZB():
+            logger.warn('No NEWZNAB/TORZNAB providers set, check config')
+            return
+        myDB = database.DBConnection()
+        searchlist = []
 
-    if books is None:
-        # We are performing a backlog search
-        searchbooks = myDB.select(
-            'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books WHERE Status="Wanted" \
-            order by BookAdded desc')
-    else:
-        # The user has added a new book
-        searchbooks = []
-        for book in books:
-            searchbook = myDB.select('SELECT BookID, AuthorName, BookName, BookSub from books WHERE BookID="%s" \
-                                     AND Status="Wanted"' % book['bookid'])
-            for terms in searchbook:
-                searchbooks.append(terms)
+        if books is None:
+            # We are performing a backlog search
+            searchbooks = myDB.select(
+                'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books WHERE Status="Wanted" \
+                order by BookAdded desc')
+        else:
+            # The user has added a new book
+            searchbooks = []
+            for book in books:
+                searchbook = myDB.select('SELECT BookID, AuthorName, BookName, BookSub from books WHERE BookID="%s" \
+                                         AND Status="Wanted"' % book['bookid'])
+                for terms in searchbook:
+                    searchbooks.append(terms)
 
-    if len(searchbooks) == 0:
-        return
+        if len(searchbooks) == 0:
+            return
 
-    logger.info('NZB Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
+        logger.info('NZB Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
 
-    for searchbook in searchbooks:
-        # searchterm is only used for display purposes
-        searchterm = searchbook['AuthorName'] + ' ' + searchbook['BookName']
-        if searchbook['BookSub']:
-            searchterm = searchterm + ': ' + searchbook['BookSub']
+        for searchbook in searchbooks:
+            # searchterm is only used for display purposes
+            searchterm = searchbook['AuthorName'] + ' ' + searchbook['BookName']
+            if searchbook['BookSub']:
+                searchterm = searchterm + ': ' + searchbook['BookSub']
 
-        searchlist.append(
-            {"bookid": searchbook['BookID'],
-             "bookName": searchbook['BookName'],
-             "bookSub": searchbook['BookSub'],
-             "authorName": searchbook['AuthorName'],
-             "searchterm": searchterm})
+            searchlist.append(
+                {"bookid": searchbook['BookID'],
+                 "bookName": searchbook['BookName'],
+                 "bookSub": searchbook['BookSub'],
+                 "authorName": searchbook['AuthorName'],
+                 "searchterm": searchterm})
 
-    nzb_count = 0
-    for book in searchlist:
-        # first attempt, try author/title in category "book"
-        resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'book')
+        nzb_count = 0
+        for book in searchlist:
+            # first attempt, try author/title in category "book"
+            resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'book')
 
-        if not nproviders:
-            logger.warn('No NewzNab or TorzNab providers are set, check config')
-            return  # no point in continuing
+            if not nproviders:
+                logger.warn('No NewzNab or TorzNab providers are set, check config')
+                return  # no point in continuing
 
-        found = processResultList(resultlist, book, "book")
+            found = processResultList(resultlist, book, "book")
 
-        # if you can't find the book, try author/title without any "(extended details, series etc)"
-        if not found and '(' in book['bookName']:
-            resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'shortbook')
-            found = processResultList(resultlist, book, "shortbook")
+            # if you can't find the book, try author/title without any "(extended details, series etc)"
+            if not found and '(' in book['bookName']:
+                resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'shortbook')
+                found = processResultList(resultlist, book, "shortbook")
 
-        # if you can't find the book under "books", you might find under general search
-        if not found:
-            resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'general')
-            found = processResultList(resultlist, book, "general")
+            # if you can't find the book under "books", you might find under general search
+            if not found:
+                resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'general')
+                found = processResultList(resultlist, book, "general")
 
-        if not found:
-            logger.info("NZB Searches for %s returned no results." % book['searchterm'])
-        if found > True:
-            nzb_count = nzb_count + 1  # we found it
+            if not found:
+                logger.info("NZB Searches for %s returned no results." % book['searchterm'])
+            if found > True:
+                nzb_count = nzb_count + 1  # we found it
 
-    logger.info("NZBSearch for Wanted items complete, found %s book%s" % (nzb_count, plural(nzb_count)))
+        logger.info("NZBSearch for Wanted items complete, found %s book%s" % (nzb_count, plural(nzb_count)))
 
-    if reset:
-        scheduleJob(action='Restart', target='search_nzb_book')
+        if reset:
+            scheduleJob(action='Restart', target='search_nzb_book')
+
+    except Exception as e:
+        logger.error('Unhandled exception in search_nzb_book: %s' % traceback.format_exc())
 
 
 def processResultList(resultlist, book, searchtype):

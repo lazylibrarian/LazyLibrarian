@@ -16,6 +16,7 @@
 import urllib2
 import socket
 import os
+import traceback
 import re
 from base64 import b16encode, b32decode
 from lib.bencode import bencode as bencode, bdecode
@@ -45,77 +46,81 @@ def cron_search_tor_book():
 
 
 def search_tor_book(books=None, reset=False):
-    threadname = threading.currentThread().name
-    if "Thread-" in threadname:
-        threading.currentThread().name = "SEARCHTOR"
+    try:
+        threadname = threading.currentThread().name
+        if "Thread-" in threadname:
+            threading.currentThread().name = "SEARCHTOR"
 
-    if not lazylibrarian.USE_TOR():
-        logger.warn('No Torrent providers set, check config')
-        return
+        if not lazylibrarian.USE_TOR():
+            logger.warn('No Torrent providers set, check config')
+            return
 
-    myDB = database.DBConnection()
-    searchlist = []
+        myDB = database.DBConnection()
+        searchlist = []
 
-    if books is None:
-        # We are performing a backlog search
-        searchbooks = myDB.select(
-            'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books WHERE Status="Wanted" order by BookAdded desc')
-    else:
-        # The user has added a new book
-        searchbooks = []
-        for book in books:
-            searchbook = myDB.select('SELECT BookID, AuthorName, BookName, BookSub from books WHERE BookID="%s" \
-                                     AND Status="Wanted"' % book['bookid'])
-            for terms in searchbook:
-                searchbooks.append(terms)
+        if books is None:
+            # We are performing a backlog search
+            searchbooks = myDB.select(
+                'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books WHERE Status="Wanted" order by BookAdded desc')
+        else:
+            # The user has added a new book
+            searchbooks = []
+            for book in books:
+                searchbook = myDB.select('SELECT BookID, AuthorName, BookName, BookSub from books WHERE BookID="%s" \
+                                         AND Status="Wanted"' % book['bookid'])
+                for terms in searchbook:
+                    searchbooks.append(terms)
 
-    if len(searchbooks) == 0:
-        return
+        if len(searchbooks) == 0:
+            return
 
-    logger.info('TOR Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
+        logger.info('TOR Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
 
-    for searchbook in searchbooks:
-        # searchterm is only used for display purposes
-        searchterm = searchbook['AuthorName'] + ' ' + searchbook['BookName']
-        if searchbook['BookSub']:
-            searchterm = searchterm + ': ' + searchbook['BookSub']
+        for searchbook in searchbooks:
+            # searchterm is only used for display purposes
+            searchterm = searchbook['AuthorName'] + ' ' + searchbook['BookName']
+            if searchbook['BookSub']:
+                searchterm = searchterm + ': ' + searchbook['BookSub']
 
-        searchlist.append(
-            {"bookid": searchbook['BookID'],
-             "bookName": searchbook['BookName'],
-             "bookSub": searchbook['BookSub'],
-             "authorName": searchbook['AuthorName'],
-             "searchterm": searchterm})
+            searchlist.append(
+                {"bookid": searchbook['BookID'],
+                 "bookName": searchbook['BookName'],
+                 "bookSub": searchbook['BookSub'],
+                 "authorName": searchbook['AuthorName'],
+                 "searchterm": searchterm})
 
-    tor_count = 0
-    for book in searchlist:
+        tor_count = 0
+        for book in searchlist:
 
-        resultlist, nproviders = IterateOverTorrentSites(book, 'book')
-        if not nproviders:
-            logger.warn('No torrent providers are set, check config')
-            return  # No point in continuing
+            resultlist, nproviders = IterateOverTorrentSites(book, 'book')
+            if not nproviders:
+                logger.warn('No torrent providers are set, check config')
+                return  # No point in continuing
 
-        found = processResultList(resultlist, book, "book")
+            found = processResultList(resultlist, book, "book")
 
-        # if you can't find the book, try author/title without any "(extended details, series etc)"
-        if not found and '(' in book['bookName']:
-            resultlist, nproviders = IterateOverTorrentSites(book, 'shortbook')
-            found = processResultList(resultlist, book, "shortbook")
+            # if you can't find the book, try author/title without any "(extended details, series etc)"
+            if not found and '(' in book['bookName']:
+                resultlist, nproviders = IterateOverTorrentSites(book, 'shortbook')
+                found = processResultList(resultlist, book, "shortbook")
 
-        # general search is the same as booksearch for torrents
-        # if not found:
-        #    resultlist, nproviders = IterateOverTorrentSites(book, 'general')
-        #    found = processResultList(resultlist, book, "general")
+            # general search is the same as booksearch for torrents
+            # if not found:
+            #    resultlist, nproviders = IterateOverTorrentSites(book, 'general')
+            #    found = processResultList(resultlist, book, "general")
 
-        if not found:
-            logger.debug("Searches for %s returned no results." % book['searchterm'])
-        if found > True:
-            tor_count = tor_count + 1
+            if not found:
+                logger.debug("Searches for %s returned no results." % book['searchterm'])
+            if found > True:
+                tor_count = tor_count + 1
 
-    logger.info("TORSearch for Wanted items complete, found %s book%s" % (tor_count, plural(tor_count)))
+        logger.info("TORSearch for Wanted items complete, found %s book%s" % (tor_count, plural(tor_count)))
 
-    if reset:
-        scheduleJob(action='Restart', target='search_tor_book')
+        if reset:
+            scheduleJob(action='Restart', target='search_tor_book')
+
+    except Exception as e:
+        logger.error('Unhandled exception in search_tor_book: %s' % traceback.format_exc())
 
 
 def processResultList(resultlist, book, searchtype):
