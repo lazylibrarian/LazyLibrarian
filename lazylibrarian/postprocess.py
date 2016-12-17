@@ -180,17 +180,11 @@ def processDir(reset=False):
                                          lazylibrarian.DELUGE_PASS)
                 try:
                     client.connect()
-                    args = [
-                                "name",
-                                "save_path",
-                                "total_size",
-                                "num_files",
-                                "message",
-                                "tracker",
-                                "comment"
-                            ]
-                    result = client.call('core.get_torrent_status', book['DownloadID'], args)
-                    torrentname = result['name']
+                    result = client.call('core.get_torrent_status', book['DownloadID'], {})
+                    for item in result:
+                        logger.debug ('Deluge RPC result %s: %s' % (item, result[item]))
+                    if 'name' in result:
+                        torrentname = result['name']
                 except Exception as e:
                     logger.debug('DelugeRPC failed %s' % str(e))
         except Exception as e:
@@ -198,7 +192,7 @@ def processDir(reset=False):
                         (book['Source'], book['DownloadID'], str(e)))
 
         matchtitle = book['NZBtitle']
-        if len(torrentname) and torrentname != matchtitle:
+        if torrentname and torrentname != matchtitle:
             logger.debug("%s Changing [%s] to [%s]" % (book['Source'], matchtitle, torrentname))
             myDB.action('UPDATE wanted SET NZBtitle = "%s" WHERE NZBurl = "%s"' % (torrentname, book['NZBurl']))
             matchtitle = torrentname
@@ -208,10 +202,10 @@ def processDir(reset=False):
 
         matches = []
         logger.info('Looking for %s in %s' % (matchtitle, processpath))
-        for fname in downloads:  # skip if failed before or incomplete torrents
-            if not (fname.endswith('.fail') or \
-                    fname.endswith('.part') or \
-                    fname.endswith('.!ut')):
+        for fname in downloads:
+            # skip if failed before or incomplete torrents, or incomplete btsync
+            extn = os.path.splitext(fname)[1]
+            if extn not in ['.fail', '.part', '.bts', '.!ut']:
                 # This is to get round differences in torrent filenames.
                 # Usenet is ok, but Torrents aren't always returned with the name we searched for
                 # We ask the torrent downloader for the torrent name, but don't always get an answer
@@ -228,11 +222,10 @@ def processDir(reset=False):
                     if ' LL.(' in matchtitle:
                         matchtitle = matchtitle.split(' LL.(')[0]
                     match = fuzz.token_set_ratio(matchtitle, matchname)
-
-                if match >= lazylibrarian.DLOAD_RATIO:
+                if match and match >= lazylibrarian.DLOAD_RATIO:
                     fname = matchname
                     if os.path.isfile(os.path.join(processpath, fname)):
-                        # not a directory, handle single file downloads here. Book/mag file in download root.
+                        # handle single file downloads here. Book/mag file in download root.
                         # move the file into it's own subdirectory so we don't move/delete things that aren't ours
                         logger.debug('filename [%s] is a file' % os.path.join(processpath, fname))
                         if is_valid_booktype(fname, booktype="book") \
@@ -274,10 +267,12 @@ def processDir(reset=False):
                                                     logger.debug("Failed to copy/move file %s to %s, %s" %
                                                                 (ourfile, dirname, str(why)))
 
-                    if os.path.isdir(os.path.join(processpath, fname)):
-                        pp_path = os.path.join(processpath, fname)
+                    pp_path = os.path.join(processpath, fname)
+                    if os.path.isdir(pp_path):
                         logger.debug('Found folder (%s%%) %s for %s' % (match, pp_path, matchtitle))
-                        if bts_file(pp_path):
+                        if not os.listdir(pp_path):
+                            logger.debug("Skipping %s, folder is empty" % pp_path)
+                        elif bts_file(pp_path):
                             logger.debug("Skipping %s, found a .bts file" % pp_path)
                         else:
                             matches.append([match, pp_path, book])
@@ -293,7 +288,7 @@ def processDir(reset=False):
             match = highest[0]
             pp_path = highest[1]
             book = highest[2]
-        if match >= lazylibrarian.DLOAD_RATIO:
+        if match and match >= lazylibrarian.DLOAD_RATIO:
             logger.debug(u'Found match (%s%%): %s for %s' % (match, pp_path, book['NZBtitle']))
             data = myDB.match('SELECT * from books WHERE BookID="%s"' % book['BookID'])
             if data:  # it's a book
@@ -366,7 +361,8 @@ def processDir(reset=False):
             newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
             myDB.upsert("wanted", newValueDict, controlValueDict)
 
-            if bookname:  # it's a book, if None it's a magazine
+            if bookname:
+                # it's a book, if None it's a magazine
                 if len(lazylibrarian.IMP_CALIBREDB):
                     logger.debug('Calibre should have created the extras for us')
                 else:
@@ -451,9 +447,8 @@ def processDir(reset=False):
 
     downloads = os.listdir(processpath)  # check in case we processed/deleted some above
     for directory in downloads:
-        if "LL.(" in directory and not (directory.endswith('.fail') or \
-                                        directory.endswith('.part') or \
-                                        directory.endswith('.!ut')):
+        dname, extn = os.path.splitext(directory)
+        if "LL.(" in dname and extn not in ['.fail', '.part', '.bts', '.!ut']:
             bookID = str(directory).split("LL.(")[1].split(")")[0]
             logger.debug("Book with id: " + str(bookID) + " found in download directory")
             pp_path = os.path.join(processpath, directory)

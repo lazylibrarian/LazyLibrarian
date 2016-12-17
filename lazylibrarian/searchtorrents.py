@@ -435,17 +435,11 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                 if downloadID:
                     if lazylibrarian.DELUGE_LABEL:
                         labelled = client.call('label.set_torrent', downloadID, lazylibrarian.DELUGE_LABEL)
-                    args = [
-                                "name",
-                                "save_path",
-                                "total_size",
-                                "num_files",
-                                "message",
-                                "tracker",
-                                "comment"
-                            ]
-                    result = client.call('core.get_torrent_status', downloadID, args)
-                    tor_title = result['name']
+                    result = client.call('core.get_torrent_status', downloadID, {})
+                    #for item in result:
+                    #    logger.debug ('Deluge RPC result %s: %s' % (item, result[item]))
+                    if 'name' in result:
+                        tor_title = result['name']
 
             except Exception as e:
                 logger.debug('DelugeRPC failed %s' % str(e))
