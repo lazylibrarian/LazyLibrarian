@@ -27,6 +27,7 @@ from lib.fuzzywuzzy import fuzz
 import os
 import md5
 import hashlib
+import traceback
 
 
 class GoodReads:
@@ -40,6 +41,7 @@ class GoodReads:
         self.params = {"key": lazylibrarian.GR_API}
 
     def find_results(self, authorname=None, queue=None):
+      try:
         resultlist = []
         api_hits = 0
         # Goodreads doesn't like initials followed by spaces,
@@ -154,6 +156,10 @@ class GoodReads:
 
         queue.put(resultlist)
 
+      except Exception as e:
+        logger.error('Unhandled exception in GR.find_results: %s' % traceback.format_exc())
+
+
     def find_author_id(self, refresh=False):
         author = self.name
         # Goodreads doesn't like initials followed by spaces,
@@ -231,7 +237,7 @@ class GoodReads:
         return author_dict
 
     def get_author_books(self, authorid=None, authorname=None, refresh=False):
-
+      try:
         api_hits = 0
         gr_lang_hits = 0
         lt_lang_hits = 0
@@ -630,6 +636,9 @@ class GoodReads:
         else:
             logger.info("[%s] Book processing complete: Added %s book%s to the database" %
                         (authorname, added_count, plural(added_count)))
+
+      except Exception as e:
+        logger.error('Unhandled exception in GR.get_author_books: %s' % traceback.format_exc())
 
 
     def find_book(self, bookid=None, queue=None):
