@@ -87,7 +87,7 @@ def create_cover(issuefile=None):
 
 def create_id(issuename=None):
     hashID = sha1(issuename).hexdigest()
-    logger.debug('Issue %s Hash: %s' % (issuename, hashID))
+    #logger.debug('Issue %s Hash: %s' % (issuename, hashID))
     return hashID
 
 
