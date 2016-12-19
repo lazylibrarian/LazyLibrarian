@@ -362,6 +362,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                 with open(tor_path, 'wb') as torrent_file:
                     torrent_file.write(torrent)
                 logger.debug('Magnet file saved: %s' % tor_path)
+                setperm(tor_path)
                 downloadID = Source
         else:
             tor_name = tor_name + '.torrent'

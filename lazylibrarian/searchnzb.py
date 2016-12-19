@@ -23,7 +23,7 @@ import lazylibrarian
 
 from lazylibrarian import logger, database, providers, nzbget, sabnzbd, notifiers, classes, postprocess, synology
 from lib.fuzzywuzzy import fuzz
-from lazylibrarian.common import USER_AGENT, scheduleJob
+from lazylibrarian.common import USER_AGENT, scheduleJob, setperm
 from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, nzbdate2format, now, check_int
 from lazylibrarian.notifiers import notify_snatch
 from lazylibrarian.cache import fetchURL
@@ -273,6 +273,7 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
                 with open(nzbpath, 'w') as f:
                     f.write(nzbfile)
                 logger.debug('NZB file saved to: ' + nzbpath)
+                setperm(nzbpath)
                 downloadID = True
 
             except Exception as e:
