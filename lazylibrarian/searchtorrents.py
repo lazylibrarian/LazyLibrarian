@@ -462,6 +462,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             if downloadID.upper() in tor_title.upper():
                 logger.warn('%s: name contains hash, probably unresolved magnet' % Source)
             else:
+                tor_title = unaccented_str(tor_title)
                 logger.debug('%s setting torrent name to [%s]' % (Source, tor_title))
                 myDB.action('UPDATE wanted SET NZBtitle = "%s" WHERE NZBurl="%s"' % (tor_title, full_url))
         return True

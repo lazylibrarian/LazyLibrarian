@@ -14,7 +14,6 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
-import urllib2
 import re
 import datetime
 import os

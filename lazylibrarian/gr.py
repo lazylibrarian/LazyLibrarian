@@ -433,12 +433,33 @@ class GoodReads:
                     bookrate = float(book.find('average_rating').text)
                     bookpages = book.find('num_pages').text
                     bookname = unaccented(bookname)
-                    if ': ' in bookname:
-                        parts = bookname.split(': ', 1)
+                    colon = bookname.find(':')
+                    brace = bookname.find('(')
+                    # split subtitle on whichever comes first, ':' or '('
+                    # .find() returns position in string (0 to len-1) or -1 if not found
+                    # change position to 1 to len, or zero if not found
+                    colon += 1
+                    brace += 1
+                    if colon and brace:
+                        if colon < brace:
+                            parts = bookname.split(':')
+                        else:
+                            parts = bookname.split('(')
+                            parts[1] = '(' + parts[1]
+                    elif colon:
+                        parts = bookname.split(':')
+                    elif brace:
+                        parts = bookname.split('(')
+                        parts[1] = '(' + parts[1]
+                    else:
+                        parts = ''
+
+                    if parts:
                         bookname = parts[0]
                         booksub = parts[1]
                     else:
                         booksub = ''
+
                     dic = {':': '', '"': '', '\'': ''}
                     bookname = replace_all(bookname, dic)
                     bookname = bookname.strip()  # strip whitespace

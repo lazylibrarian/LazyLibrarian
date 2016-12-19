@@ -135,7 +135,7 @@ def processDir(reset=False):
             threading.currentThread().name = "POSTPROCESS"
         processpath = lazylibrarian.DIRECTORY('Download')
 
-        logger.debug(' Checking [%s] for files to post process' % processpath)
+        logger.debug('Checking [%s] for files to post process' % processpath)
 
         try:
             downloads = os.listdir(processpath)
@@ -162,9 +162,9 @@ def processDir(reset=False):
             # if torrent, see if we can get current status from the downloader as the name
             # may have been changed once magnet resolved, or download started or completed
             # depending on torrent downloader. Usenet doesn't change the name. We like usenet.
-
             torrentname = ''
             try:
+                logger.debug("%s was sent to %s" % (book['NZBtitle'], book['Source']))
                 if book['Source'] == 'TRANSMISSION':
                     torrentname = transmission.getTorrentFolder(book['DownloadID'])
                 elif book['Source'] == 'UTORRENT':
@@ -185,17 +185,17 @@ def processDir(reset=False):
                     try:
                         client.connect()
                         result = client.call('core.get_torrent_status', book['DownloadID'], {})
-                        for item in result:
-                            logger.debug ('Deluge RPC result %s: %s' % (item, result[item]))
+                        #    for item in result:
+                        #        logger.debug ('Deluge RPC result %s: %s' % (item, result[item]))
                         if 'name' in result:
-                            torrentname = result['name']
+                            torrentname = unaccented_str(result['name'])
                     except Exception as e:
                         logger.debug('DelugeRPC failed %s' % str(e))
             except Exception as e:
                 logger.debug("Failed to get updated torrent name from %s for %s: %s" %
                             (book['Source'], book['DownloadID'], str(e)))
 
-            matchtitle = book['NZBtitle']
+            matchtitle = unaccented_str(book['NZBtitle'])
             if torrentname and torrentname != matchtitle:
                 logger.debug("%s Changing [%s] to [%s]" % (book['Source'], matchtitle, torrentname))
                 myDB.action('UPDATE wanted SET NZBtitle = "%s" WHERE NZBurl = "%s"' % (torrentname, book['NZBurl']))

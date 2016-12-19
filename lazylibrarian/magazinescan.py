@@ -54,7 +54,7 @@ def create_cover(issuefile=None):
 
                 if len(lazylibrarian.IMP_CONVERT):  # allow external convert to override libraries
                     try:
-                        params = [lazylibrarian.IMP_CONVERT, issuefile + '[0]', coverfile]
+                        params = [lazylibrarian.IMP_CONVERT, '%s[0]' % issuefile, '%s' % coverfile]
                         res = subprocess.check_output(params, stderr=subprocess.STDOUT)
                         if res:
                             logger.debug('%s reports: %s' % (lazylibrarian.IMP_CONVERT, res))

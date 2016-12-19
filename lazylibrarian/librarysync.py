@@ -166,9 +166,24 @@ def find_book_in_db(myDB, author, book):
         partname = 0
 
         book_lower = unaccented(book.lower())
-        book_partname = ''
-        if ':' in book_lower:
+        colon = book_lower.find(':')
+        brace = book_lower.find('(')
+        # split partname on whichever comes first, ':' or '('
+        # .find() returns position in string (0 to len-1) or -1 if not found
+        # change position to 1 to len, or zero if not found
+        colon += 1
+        brace += 1
+        if colon and brace:
+            if colon < brace:
+                book_partname = book_lower.split(':')[0]
+            else:
+                book_partname = book_lower.split('(')[0]
+        elif colon:
             book_partname = book_lower.split(':')[0]
+        elif brace:
+            book_partname = book_lower.split('(')[0]
+        else:
+            book_partname = ''
 
         for a_book in books:
             # tidy up everything to raise fuzziness scores
