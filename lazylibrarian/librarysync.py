@@ -22,7 +22,7 @@ import socket
 import lib.zipfile as zipfile
 from shutil import copyfile
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import setWorkPages
+from lazylibrarian.bookwork import setWorkPages, setWorkLanguages
 from lazylibrarian.cache import cache_cover
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
@@ -644,10 +644,6 @@ def LibraryScan(startdir=None):
                              (lazylibrarian.CACHE_HIT, plural(lazylibrarian.CACHE_HIT), lazylibrarian.CACHE_MISS))
                 cachesize = myDB.match("select count('ISBN') as counter from languages")
                 logger.debug("ISBN Language cache holds %s entries" % cachesize['counter'])
-                nolang = myDB.match("select count('BookID') as counter from Books where status='Open' and BookLang='Unknown'")
-                nolang = nolang['counter']
-                if nolang:
-                    logger.warn("Found %s book%s in your library with unknown language" % (nolang, plural(nolang)))
 
             authors = myDB.select('select AuthorID from authors')
             # Update bookcounts for all authors, not just new ones - refresh may have located
@@ -681,7 +677,10 @@ def LibraryScan(startdir=None):
                 newimg = cache_cover(authorid, authorimg)
                 if newimg:
                     myDB.action('update authors set AuthorImg="%s" where AuthorID="%s"' % (newimg, authorid))
+
         setWorkPages()
+        setWorkLanguages()
+
         logger.info('Library scan complete')
         return new_book_count
 

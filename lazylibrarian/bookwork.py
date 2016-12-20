@@ -92,6 +92,33 @@ def setWorkPages():
         logger.debug('No missing WorkPages')
 
 
+def setWorkLanguages():
+    """ Use the WorkPages to set the language for any books that don't already have one """
+
+    myDB = database.DBConnection()
+
+    select = 'select BookID,BookLang,AuthorName,BookName from books where '
+    select += 'BookLang="Unknown" or BookLang="" or BookLang IS NULL'
+    books = myDB.select(select)
+    if books:
+        logger.debug('Trying to get language for %s book%s' % (len(books), plural(len(books))))
+        counter = 0
+        for book in books:
+            bookid = book['BookID']
+            lang = getWorkLanguage(bookid)
+            if lang:
+                controlValueDict = {"BookID": bookid}
+                newValueDict = {"BookLang": lang}
+                myDB.upsert("books", newValueDict, controlValueDict)
+                logger.debug('%s %s is %s' % (book['AuthorName'], book['BookName'], lang))
+                counter += 1
+            else:
+                logger.debug('No language found in workpage for %s: %s' % (book['AuthorName'], book['BookName']))
+        logger.debug('setWorkLanguages complete, updated %s page%s' % (counter, plural(counter)))
+    else:
+        logger.debug('No missing languages')
+
+
 def librarything_wait():
     """ Wait for a second between librarything api calls """
     time_now = int(time.time())
@@ -215,6 +242,24 @@ def getWorkSeries(bookID=None):
             seriesnum = None
         return series, seriesnum
     return None, None
+
+
+def getWorkLanguage(bookID=None):
+    """ Return the language for the given bookid
+        Returns None if no language found
+        NOTE - the book language (if found) is a full name, not the shortcode """
+    if not bookID:
+        logger.error("getWorkSeries - No bookID")
+        return None
+    work = getBookWork(bookID, "Language")
+    if work:
+        try:
+            lang = work.split("itemprop='inLanguage'>")[1].split('</div>')[0]
+        except IndexError:
+            return None
+        lang = safe_unicode(lang).encode(lazylibrarian.SYS_ENCODING)
+        return lang
+    return None
 
 
 def getBookCover(bookID=None):

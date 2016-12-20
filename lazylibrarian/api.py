@@ -13,7 +13,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-from lazylibrarian import importer, logger, database
+from lazylibrarian import logger, database
 from lazylibrarian.searchnzb import search_nzb_book
 from lazylibrarian.searchtorrents import search_tor_book
 from lazylibrarian.searchmag import search_magazines
@@ -27,7 +27,9 @@ from lazylibrarian.magazinescan import magazineScan
 from lazylibrarian.csv import import_CSV, export_CSV
 from lazylibrarian.postprocess import processDir, processAlternate
 from lazylibrarian.librarysync import LibraryScan
-from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, getBookCover, getAuthorImage, getAuthorImages
+from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, \
+                getBookCover, getAuthorImage, getAuthorImages, getWorkLanguage, setWorkLanguages
+from lazylibrarian.importer import addAuthorToDB, update_totals
 
 import lazylibrarian
 import json
@@ -87,6 +89,8 @@ cmd_dict = {'help': 'list available commands. ' +
             'getBookCovers': '[&wait] Check all books for cached cover and download one if missing',
             'cleanCache': '[&wait] Clean unused and expired files from the LazyLibrarian caches',
             'setWorkPages': '[&wait] Set the WorkPages links in the database',
+            'getWorkLanguage': '&id get the language for a book from the WorkPage',
+            'setWorkLanguages': '[&wait] Set the languages for all books without one using WorkPages',
             'importAlternate': '[&wait] [&dir=] Import books from named or alternate folder and any subfolders',
             'importCSVwishlist': '[&wait] [&dir=] Import a CSV wishlist from named or alternate directory',
             'exportCSVwishlist': '[&wait] [&dir=] Export a CSV wishlist to named or alternate directory'
@@ -376,7 +380,7 @@ class Api(object):
             self.id = kwargs['name']
 
         try:
-            importer.addAuthorToDB(self.id, refresh=refresh)
+            addAuthorToDB(self.id, refresh=refresh)
         except Exception as e:
             self.data = str(e)
 
@@ -443,6 +447,20 @@ class Api(object):
             setWorkPages()
         else:
             threading.Thread(target=setWorkPages, name='API-SETWORKPAGES', args=[]).start()
+
+    def _getWorkLanguage(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+            self.data = getWorkLanguage(self.id)
+
+    def _setWorkLanguages(self, **kwargs):
+        if 'wait' in kwargs:
+            setWorkLanguages()
+        else:
+            threading.Thread(target=setWorkLanguages, name='API-SETWORKLANGUAGES', args=[]).start()
 
     def _getBookCovers(self, **kwargs):
         if 'wait' in kwargs:
@@ -538,8 +556,8 @@ class Api(object):
                         'AuthorLink': authordata[1]
                     }
                     myDB.upsert("books", newValueDict, controlValueDict)
-                    importer.update_totals(bookdata[0])    # we moved from here
-                    importer.update_totals(kwargs['toid'])  # to here
+                    update_totals(bookdata[0])    # we moved from here
+                    update_totals(kwargs['toid'])  # to here
                     self.data = "Moved book [%s] to [%s]" % (bookdata[1], authordata[0])
             logger.debug(self.data)
         except Exception as e:
@@ -569,8 +587,8 @@ class Api(object):
                         'UPDATE books SET authorid="%s", authorname="%s", authorlink="%s" where authorname="%s"' %
                         (tohere[0], kwargs['toname'], tohere[1], kwargs['fromname']))
                     self.data = "Moved %s books from %s to %s" % (len(fromhere), kwargs['fromname'], kwargs['toname'])
-                    importer.update_totals(fromhere[0][1])    # we moved from here
-                    importer.update_totals(tohere[0])  # to here
+                    update_totals(fromhere[0][1])    # we moved from here
+                    update_totals(tohere[0])  # to here
 
             logger.debug(self.data)
         except Exception as e:
@@ -583,7 +601,7 @@ class Api(object):
         else:
             self.id = kwargs['name']
         try:
-            importer.addAuthorToDB(self.id, refresh=False)
+            addAuthorToDB(self.id, refresh=False)
         except Exception as e:
             self.data = str(e)
 
