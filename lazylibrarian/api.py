@@ -28,7 +28,7 @@ from lazylibrarian.csv import import_CSV, export_CSV
 from lazylibrarian.postprocess import processDir, processAlternate
 from lazylibrarian.librarysync import LibraryScan
 from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, \
-                getBookCover, getAuthorImage, getAuthorImages, getWorkLanguage, setWorkLanguages
+                getBookCover, getAuthorImage, getAuthorImages
 from lazylibrarian.importer import addAuthorToDB, update_totals
 
 import lazylibrarian
@@ -89,8 +89,6 @@ cmd_dict = {'help': 'list available commands. ' +
             'getBookCovers': '[&wait] Check all books for cached cover and download one if missing',
             'cleanCache': '[&wait] Clean unused and expired files from the LazyLibrarian caches',
             'setWorkPages': '[&wait] Set the WorkPages links in the database',
-            'getWorkLanguage': '&id get the language for a book from the WorkPage',
-            'setWorkLanguages': '[&wait] Set the languages for all books without one using WorkPages',
             'importAlternate': '[&wait] [&dir=] Import books from named or alternate folder and any subfolders',
             'importCSVwishlist': '[&wait] [&dir=] Import a CSV wishlist from named or alternate directory',
             'exportCSVwishlist': '[&wait] [&dir=] Export a CSV wishlist to named or alternate directory'
@@ -448,19 +446,6 @@ class Api(object):
         else:
             threading.Thread(target=setWorkPages, name='API-SETWORKPAGES', args=[]).start()
 
-    def _getWorkLanguage(self, **kwargs):
-        if 'id' not in kwargs:
-            self.data = 'Missing parameter: id'
-            return
-        else:
-            self.id = kwargs['id']
-            self.data = getWorkLanguage(self.id)
-
-    def _setWorkLanguages(self, **kwargs):
-        if 'wait' in kwargs:
-            setWorkLanguages()
-        else:
-            threading.Thread(target=setWorkLanguages, name='API-SETWORKLANGUAGES', args=[]).start()
 
     def _getBookCovers(self, **kwargs):
         if 'wait' in kwargs:

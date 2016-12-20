@@ -22,7 +22,7 @@ import socket
 import lib.zipfile as zipfile
 from shutil import copyfile
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import setWorkPages, setWorkLanguages
+from lazylibrarian.bookwork import setWorkPages
 from lazylibrarian.cache import cache_cover
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
@@ -613,9 +613,8 @@ def LibraryScan(startdir=None):
 
 
         if startdir == destdir:
-            # On full library scans, check for missing workpages and book languages
+            # On full library scans, check for missing workpages
             setWorkPages()
-            setWorkLanguages()
             # show stats if new books were added
             stats = myDB.match(
                 "SELECT sum(GR_book_hits), sum(GR_lang_hits), sum(LT_lang_hits), sum(GB_lang_change), \
