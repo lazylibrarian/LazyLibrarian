@@ -35,7 +35,7 @@ from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.importer import addAuthorToDB, update_totals
-from lazylibrarian.formatter import plural, now, today, check_int, replace_all
+from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.gb import GoogleBooks
@@ -664,14 +664,14 @@ class WebInterface(object):
         authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         if authorsearch:  # to stop error if try to refresh an author while they are still loading
             AuthorName = authorsearch['AuthorName']
-            authordir = os.path.join(lazylibrarian.DIRECTORY('Destination'), AuthorName)
+            authordir = safe_unicode(os.path.join(lazylibrarian.DIRECTORY('Destination'), AuthorName))
             if not os.path.isdir(authordir):
                 # books might not be in exact same authorname folder
                 # eg Calibre puts books into folder "Eric van Lustbader", but
                 # goodreads told lazylibrarian he's "Eric Van Lustbader", note the capital 'V'
                 anybook = myDB.match('SELECT BookFile from books where AuthorName="%s" and BookFile <> ""' % AuthorName)
                 if anybook:
-                    authordir = os.path.dirname(os.path.dirname(anybook['BookFile']))
+                    authordir = safe_unicode(os.path.dirname(os.path.dirname(anybook['BookFile'])))
             if os.path.isdir(authordir):
                 try:
                     threading.Thread(target=LibraryScan, name='SCANAUTHOR', args=[authordir]).start()
@@ -985,21 +985,19 @@ class WebInterface(object):
 
         authors = myDB.select(
             "SELECT AuthorName from authors WHERE Status !='Ignored' ORDER by AuthorName COLLATE NOCASE")
-        bookdata = myDB.match(
-            'SELECT * from books WHERE BookID="%s"' % bookid)
+        bookdata = myDB.match('SELECT * from books WHERE BookID="%s"' % bookid)
         if bookdata:
             return serve_template(templatename="editbook.html", title="Edit Book", config=bookdata, authors=authors)
         else:
             logger.info(u'Missing book %s' % bookid)
 
     @cherrypy.expose
-    def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre=None,
+    def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre=None, booklang='',
                    series=None, seriesnum=None, manual='0', authorname='', **kwargs):
         myDB = database.DBConnection()
 
         if bookid:
-            bookdata = myDB.match(
-                'SELECT * from books WHERE BookID="%s"' % bookid)
+            bookdata = myDB.match('SELECT * from books WHERE BookID="%s"' % bookid)
             if bookdata:
                 edited = False
                 moved = False
@@ -1017,6 +1015,8 @@ class WebInterface(object):
                     edited = True
                 if not (bookdata["BookGenre"] == bookgenre):
                     edited = True
+                if not (bookdata["BookLang"] == booklang):
+                    edited = True
                 if not (bookdata["Series"] == series):
                     edited = True
                 if not (bookdata["SeriesNum"] == seriesnum):
@@ -1033,6 +1033,7 @@ class WebInterface(object):
                         'BookName': bookname,
                         'BookSub': booksub,
                         'BookGenre': bookgenre,
+                        'BookLang': booklang,
                         'Series': series,
                         'SeriesNum': seriesnum,
                         'Manual': bool(manual)
