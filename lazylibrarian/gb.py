@@ -24,6 +24,7 @@ import json
 import time
 import re
 from urllib2 import HTTPError
+import traceback
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -50,7 +51,7 @@ class GoogleBooks:
         }
 
     def find_results(self, authorname=None, queue=None):
-
+      try:
         myDB = database.DBConnection()
         resultlist = []
         # See if we should check ISBN field, otherwise ignore it
@@ -259,8 +260,12 @@ class GoogleBooks:
             (api_hits, plural(api_hits), self.name))
         queue.put(resultlist)
 
-    def get_author_books(self, authorid=None, authorname=None, refresh=False):
+      except Exception as e:
+        logger.error('Unhandled exception in GB.find_results: %s' % traceback.format_exc())
 
+
+    def get_author_books(self, authorid=None, authorname=None, refresh=False):
+      try:
         logger.debug('[%s] Now processing books with Google Books API' % authorname)
         # google doesnt like accents in author names
         set_url = self.url + urllib.quote('inauthor:"%s"' % unaccented_str(authorname))
@@ -647,6 +652,9 @@ class GoogleBooks:
         else:
             logger.info("[%s] Book processing complete: Added %s book%s to the database" %
                         (authorname, added_count, plural(added_count)))
+
+      except Exception as e:
+        logger.error('Unhandled exception in GB.get_author_books: %s' % traceback.format_exc())
 
 
     def find_book(self, bookid=None, queue=None):

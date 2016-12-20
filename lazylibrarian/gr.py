@@ -27,6 +27,7 @@ from lib.fuzzywuzzy import fuzz
 import os
 import md5
 import hashlib
+import traceback
 
 
 class GoodReads:
@@ -40,6 +41,7 @@ class GoodReads:
         self.params = {"key": lazylibrarian.GR_API}
 
     def find_results(self, authorname=None, queue=None):
+      try:
         resultlist = []
         api_hits = 0
         # Goodreads doesn't like initials followed by spaces,
@@ -154,6 +156,10 @@ class GoodReads:
 
         queue.put(resultlist)
 
+      except Exception as e:
+        logger.error('Unhandled exception in GR.find_results: %s' % traceback.format_exc())
+
+
     def find_author_id(self, refresh=False):
         author = self.name
         # Goodreads doesn't like initials followed by spaces,
@@ -231,7 +237,7 @@ class GoodReads:
         return author_dict
 
     def get_author_books(self, authorid=None, authorname=None, refresh=False):
-
+      try:
         api_hits = 0
         gr_lang_hits = 0
         lt_lang_hits = 0
@@ -427,12 +433,33 @@ class GoodReads:
                     bookrate = float(book.find('average_rating').text)
                     bookpages = book.find('num_pages').text
                     bookname = unaccented(bookname)
-                    if ': ' in bookname:
-                        parts = bookname.split(': ', 1)
+                    colon = bookname.find(':')
+                    brace = bookname.find('(')
+                    # split subtitle on whichever comes first, ':' or '('
+                    # .find() returns position in string (0 to len-1) or -1 if not found
+                    # change position to 1 to len, or zero if not found
+                    colon += 1
+                    brace += 1
+                    if colon and brace:
+                        if colon < brace:
+                            parts = bookname.split(':')
+                        else:
+                            parts = bookname.split('(')
+                            parts[1] = '(' + parts[1]
+                    elif colon:
+                        parts = bookname.split(':')
+                    elif brace:
+                        parts = bookname.split('(')
+                        parts[1] = '(' + parts[1]
+                    else:
+                        parts = ''
+
+                    if parts:
                         bookname = parts[0]
                         booksub = parts[1]
                     else:
                         booksub = ''
+
                     dic = {':': '', '"': '', '\'': ''}
                     bookname = replace_all(bookname, dic)
                     bookname = bookname.strip()  # strip whitespace
@@ -630,6 +657,9 @@ class GoodReads:
         else:
             logger.info("[%s] Book processing complete: Added %s book%s to the database" %
                         (authorname, added_count, plural(added_count)))
+
+      except Exception as e:
+        logger.error('Unhandled exception in GR.get_author_books: %s' % traceback.format_exc())
 
 
     def find_book(self, bookid=None, queue=None):

@@ -20,15 +20,17 @@ from lazylibrarian.formatter import plural
 
 
 def dbUpdate(refresh=False):
+    try:
+        myDB = database.DBConnection()
 
-    myDB = database.DBConnection()
+        activeauthors = myDB.select('SELECT AuthorName from authors WHERE Status="Active" \
+                                    or Status="Loading" order by DateAdded ASC')
+        logger.info('Starting update for %i active author%s' % (len(activeauthors), plural(len(activeauthors))))
 
-    activeauthors = myDB.select('SELECT AuthorName from authors WHERE Status="Active" \
-                                or Status="Loading" order by DateAdded ASC')
-    logger.info('Starting update for %i active author%s' % (len(activeauthors), plural(len(activeauthors))))
+        for author in activeauthors:
+            authorname = author[0]
+            importer.addAuthorToDB(authorname, refresh=refresh)
 
-    for author in activeauthors:
-        authorname = author[0]
-        importer.addAuthorToDB(authorname, refresh=refresh)
-
-    logger.info('Active author update complete')
+        logger.info('Active author update complete')
+    except Exception as e:
+        logger.error('Unhandled exception in dbUpdate: %s' % traceback.format_exc())
