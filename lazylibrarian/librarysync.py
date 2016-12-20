@@ -611,13 +611,16 @@ def LibraryScan(startdir=None):
                     (new_book_count, modified_count, plural(new_book_count + modified_count)))
         logger.info("%s file%s processed" % (file_count, plural(file_count)))
 
-        # show statistics of full library scans
+
         if startdir == destdir:
+            # On full library scans, check for missing workpages and book languages
+            setWorkPages()
+            setWorkLanguages()
+            # show stats if new books were added
             stats = myDB.match(
                 "SELECT sum(GR_book_hits), sum(GR_lang_hits), sum(LT_lang_hits), sum(GB_lang_change), \
                     sum(cache_hits), sum(bad_lang), sum(bad_char), sum(uncached), sum(duplicates) FROM stats")
             if stats and stats['sum(GR_book_hits)']:
-                # only show stats if new books added
                 if lazylibrarian.BOOK_API == "GoogleBooks":
                     logger.debug("GoogleBooks was hit %s time%s for books" %
                                  (stats['sum(GR_book_hits)'], plural(stats['sum(GR_book_hits)'])))
@@ -645,41 +648,39 @@ def LibraryScan(startdir=None):
                 cachesize = myDB.match("select count('ISBN') as counter from languages")
                 logger.debug("ISBN Language cache holds %s entries" % cachesize['counter'])
 
-            authors = myDB.select('select AuthorID from authors')
-            # Update bookcounts for all authors, not just new ones - refresh may have located
+            # Cache any covers and images
+            images = myDB.select('select bookid, bookimg, bookname from books where bookimg like "http%"')
+            if len(images):
+                logger.info("Caching cover%s for %i book%s" % (plural(len(images)), len(images), plural(len(images))))
+                for item in images:
+                    bookid = item['bookid']
+                    bookimg = item['bookimg']
+                    bookname = item['bookname']
+                    newimg = cache_cover(bookid, bookimg)
+                    if newimg:
+                        myDB.action('update books set BookImg="%s" where BookID="%s"' % (newimg, bookid))
+
+            images = myDB.select('select AuthorID, AuthorImg, AuthorName from authors where AuthorImg like "http%"')
+            if len(images):
+                logger.info("Caching image%s for %i author%s" % (plural(len(images)), len(images), plural(len(images))))
+                for item in images:
+                    authorid = item['authorid']
+                    authorimg = item['authorimg']
+                    authorname = item['authorname']
+                    newimg = cache_cover(authorid, authorimg)
+                    if newimg:
+                        myDB.action('update authors set AuthorImg="%s" where AuthorID="%s"' % (newimg, authorid))
+
+            # On full scan, update bookcounts for all authors, not just new ones - refresh may have located
             # new books for existing authors especially if switched provider gb/gr or changed wanted languages
+            authors = myDB.select('select AuthorID from authors')
         else:
-            # single author/book import
+            # On single author/book import, just update bookcount for that author
             authors = myDB.select('select AuthorID from authors where AuthorName = "%s"' % author.replace('"', '""'))
 
         logger.debug('Updating bookcounts for %i author%s' % (len(authors), plural(len(authors))))
         for author in authors:
             update_totals(author['AuthorID'])
-
-        images = myDB.select('select bookid, bookimg, bookname from books where bookimg like "http%"')
-        if len(images):
-            logger.info("Caching cover%s for %i book%s" % (plural(len(images)), len(images), plural(len(images))))
-            for item in images:
-                bookid = item['bookid']
-                bookimg = item['bookimg']
-                bookname = item['bookname']
-                newimg = cache_cover(bookid, bookimg)
-                if newimg:
-                    myDB.action('update books set BookImg="%s" where BookID="%s"' % (newimg, bookid))
-
-        images = myDB.select('select AuthorID, AuthorImg, AuthorName from authors where AuthorImg like "http%"')
-        if len(images):
-            logger.info("Caching image%s for %i author%s" % (plural(len(images)), len(images), plural(len(images))))
-            for item in images:
-                authorid = item['authorid']
-                authorimg = item['authorimg']
-                authorname = item['authorname']
-                newimg = cache_cover(authorid, authorimg)
-                if newimg:
-                    myDB.action('update authors set AuthorImg="%s" where AuthorID="%s"' % (newimg, authorid))
-
-        setWorkPages()
-        setWorkLanguages()
 
         logger.info('Library scan complete')
         return new_book_count
