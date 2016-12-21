@@ -615,7 +615,12 @@ def LibraryScan(startdir=None):
         if startdir == destdir:
             # On full library scans, check for missing workpages
             setWorkPages()
-            # show stats if new books were added
+            # and books with unknown language
+            nolang = myDB.match("select count('BookID') as counter from Books where status='Open' and BookLang='Unknown'")
+            nolang = nolang['counter']
+            if nolang:
+                logger.warn("Found %s book%s in your library with unknown language" % (nolang, plural(nolang)))
+             # show stats if new books were added
             stats = myDB.match(
                 "SELECT sum(GR_book_hits), sum(GR_lang_hits), sum(LT_lang_hits), sum(GB_lang_change), \
                     sum(cache_hits), sum(bad_lang), sum(bad_char), sum(uncached), sum(duplicates) FROM stats")

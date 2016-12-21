@@ -80,6 +80,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'loadCFG': 'reload config from file',
             'getBookCover': '&id= fetch a link to a cover from bookfolder/cache/librarything/goodreads/google for a BookID',
             'getAllBooks': 'list all books in the database',
+            'getNoLang': 'list all books in the database with unknown language',
             'searchBook': '&id= [&wait] search for one book by BookID',
             'showJobs': 'show status of running jobs',
             'restartJobs': 'restart background jobs',
@@ -217,6 +218,10 @@ class Api(object):
     def _getIndex(self, **kwargs):
         self.data = self._dic_from_query(
             'SELECT * from authors order by AuthorName COLLATE NOCASE')
+
+    def _getNoLang(self, **kwargs):
+        self.data = self._dic_from_query(
+            'SELECT BookID,BookName,AuthorName from books where BookName="Unknown" or Bookname="" or BookName is NULL')
 
     def _getAuthor(self, **kwargs):
         if 'id' not in kwargs:
