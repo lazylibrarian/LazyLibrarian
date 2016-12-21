@@ -724,6 +724,7 @@ def config_read(reloaded=False):
         NUMBEROFSEEDERS = check_setting_int(CFG, 'TORRENT', 'numberofseeders', 10)
         TOR_DOWNLOADER_DELUGE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_deluge', 0)
         KEEP_SEEDING = check_setting_bool(CFG, 'TORRENT', 'keep_seeding', 1)
+        TORRENT_DIR = check_setting_str(CFG, 'TORRENT', 'torrent_dir', '')
 
         RTORRENT_HOST = check_setting_str(CFG, 'RTORRENT', 'rtorrent_host', '')
         RTORRENT_USER = check_setting_str(CFG, 'RTORRENT', 'rtorrent_user', '')
