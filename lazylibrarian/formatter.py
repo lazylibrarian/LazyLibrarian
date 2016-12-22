@@ -251,6 +251,38 @@ def safe_unicode(obj, *args):
         return unicode(ascii_text)
 
 
+def split_title(author, book):
+    # Strip title at colon if starts with author, eg Tom Clancy: Ghost Protocol
+    if book.startswith(author + ':'):
+        book = book.split(author + ':')[1].strip()
+    colon = book.find(':')
+    brace = book.find('(')
+    # split subtitle on whichever comes first, ':' or '('
+    # .find() returns position in string (0 to len-1) or -1 if not found
+    # change position to 1 to len, or zero if not found
+    colon += 1
+    brace += 1
+    if colon and brace:
+        if colon < brace:
+            parts = book.split(':')
+        else:
+            parts = book.split('(')
+            parts[1] = '(' + parts[1]
+    elif colon:
+        parts = book.split(':')
+    elif brace:
+        parts = book.split('(')
+        parts[1] = '(' + parts[1]
+    else:
+        bookname = book
+        parts = ''
+    if parts:
+        bookname = parts[0]
+        booksub = parts[1]
+    else:
+        booksub = ''
+    return bookname, booksub
+
 def cleanName(name):
     validNameChars = u"-_.() %s%s" % (string.ascii_letters, string.digits)
     try:
