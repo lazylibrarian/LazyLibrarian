@@ -29,7 +29,8 @@ from lib.fuzzywuzzy import fuzz
 from xml.etree import ElementTree
 from lib.mobi import Mobi
 from lazylibrarian.common import USER_AGENT, opf_file
-from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList, unaccented, replace_all
+from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList, unaccented, \
+                                    replace_all, split_title
 from lazylibrarian.importer import addAuthorToDB, update_totals
 
 
@@ -132,6 +133,8 @@ def get_book_info(fname):
             elif 'identifier' in tag and 'isbn' in attrib:
                 if is_valid_isbn(txt):
                     res['identifier'] = txt
+            elif 'identifier' in tag and 'goodreads' in attrib:
+                res['gr_id'] = txt
         n = n + 1
     return res
 
@@ -166,23 +169,8 @@ def find_book_in_db(myDB, author, book):
         partname = 0
 
         book_lower = unaccented(book.lower())
-        colon = book_lower.find(':')
-        brace = book_lower.find('(')
-        # split partname on whichever comes first, ':' or '('
-        # .find() returns position in string (0 to len-1) or -1 if not found
-        # change position to 1 to len, or zero if not found
-        colon += 1
-        brace += 1
-        if colon and brace:
-            if colon < brace:
-                book_partname = book_lower.split(':')[0]
-            else:
-                book_partname = book_lower.split('(')[0]
-        elif colon:
-            book_partname = book_lower.split(':')[0]
-        elif brace:
-            book_partname = book_lower.split('(')[0]
-        else:
+        book_partname, book_sub = split_title(author, book_lower)
+        if book_partname == book_lower:
             book_partname = ''
 
         for a_book in books:
@@ -238,18 +226,15 @@ def find_book_in_db(myDB, author, book):
 
         if best_ratio > 90:
             logger.debug(
-                "Fuzz match   ratio [%d] [%s] [%s]" %
-                (best_ratio, book, ratio_name))
+                "Fuzz match   ratio [%d] [%s] [%s]" % (best_ratio, book, ratio_name))
             return ratio_id
         if best_partial > 85:
             logger.debug(
-                "Fuzz match partial [%d] [%s] [%s]" %
-                (best_partial, book, partial_name))
+                "Fuzz match partial [%d] [%s] [%s]" % (best_partial, book, partial_name))
             return partial_id
         if best_partname > 95:
             logger.debug(
-                "Fuzz match partname [%d] [%s] [%s]" %
-                (best_partname, book, partname_name))
+                "Fuzz match partname [%d] [%s] [%s]" % (best_partname, book, partname_name))
             return partname_id
 
         logger.debug(
@@ -383,6 +368,8 @@ def LibraryScan(startdir=None):
                         isbn = ""
                         book = ""
                         author = ""
+                        gr_id = ""
+                        gb_id = ""
                         extn = os.path.splitext(files)[1]
 
                         # if it's an epub or a mobi we can try to read metadata from it
@@ -431,7 +418,9 @@ def LibraryScan(startdir=None):
                                 language = res['language']
                             if 'identifier' in res:
                                 isbn = res['identifier']
-                            logger.debug("file meta [%s] [%s] [%s] [%s]" % (isbn, language, author, book))
+                            if 'gr_id' in res:
+                                gr_id = res['gr_id']
+                            logger.debug("file meta [%s] [%s] [%s] [%s] [%s]" % (isbn, language, author, book, gr_id))
                         else:
                             logger.debug("File meta incomplete in %s" % metafile)
 
@@ -551,12 +540,17 @@ def LibraryScan(startdir=None):
                                 # eg books by multiple authors, books where author is "writing as"
                                 # or books we moved to "merge" authors
                                 book = book.replace("'", "")
-
-                                # See if the isbn is in our database
-                                match = myDB.match('SELECT BookID FROM books where BookIsbn = "%s"' % isbn)
-                                if match:
-                                    bookid = match['BookID']
-                                else:
+                                match = False
+                                # See if the gr_id or isbn is in our database
+                                if gr_id:
+                                    match = myDB.match('SELECT BookID FROM books where BookID = "%s"' % gr_id)
+                                    if match:
+                                        bookid = match['BookID']
+                                if not match and isbn:
+                                    match = myDB.match('SELECT BookID FROM books where BookIsbn = "%s"' % isbn)
+                                    if match:
+                                        bookid = match['BookID']
+                                if not match:
                                     # Try and find it under metadata authorname
                                     bookid = find_book_in_db(myDB, author, book)
                                     if not bookid:
@@ -568,11 +562,31 @@ def LibraryScan(startdir=None):
                                                 logger.warn("%s not found under [%s], found under [%s]" %
                                                             (book, author, newauthor))
 
+                                if not bookid:
+                                    logger.debug('Unable to find book %s by %s in database, trying to add it' %
+                                                (book, author))
+                                    if lazylibrarian.BOOK_API == "GoodReads" and gr_id:
+                                        bookid = gr_id
+                                        GR_ID = GoodReads(bookid)
+                                        GR_ID.find_book(bookid, None)
+                                    elif lazylibrarian.BOOK_API == "GoogleBooks" and gb_id:
+                                        bookid = gb_id
+                                        GB_ID = GoogleBooks(bookid)
+                                        GB_ID.find_book(bookid, None)
+                                    check_status = myDB.match(
+                                        'SELECT Status, BookFile, AuthorName, BookName from books where BookID="%s"' %
+                                        bookid)
+                                    if not check_status:
+                                        logger.debug("Unable to add bookid %s to database" % bookid)
+                                        bookid = ""
                                 if bookid:
                                     check_status = myDB.match(
                                         'SELECT Status, BookFile, AuthorName, BookName from books where BookID="%s"' %
                                         bookid)
-                                    if check_status:
+
+                                    if not check_status:
+                                        logger.debug('Unable to find bookid %s in database' % bookid)
+                                    else:
                                         if check_status['Status'] != 'Open':
                                             # we found a new book
                                             new_book_count += 1
@@ -601,8 +615,6 @@ def LibraryScan(startdir=None):
                                             cachedir = lazylibrarian.CACHEDIR
                                             cacheimg = os.path.join(cachedir, bookid + '.jpg')
                                             copyfile(coverimg, cacheimg)
-                                    else:
-                                        logger.debug('Unable to find bookid %s in database' % bookid)
                                 else:
                                     logger.warn(
                                         "Failed to match book [%s] by [%s] in database" % (book, author))
