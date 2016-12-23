@@ -285,6 +285,20 @@ class GoodReads:
             logger.debug(u"author name " + authorNameResult)
             loopCount = 1
 
+            isbn_979_dict = {
+                "10": "fre",
+                "11": "kor",
+                "12": "ita"
+            }
+            isbn_978_dict = {
+                "0": "eng",
+                "1": "eng",
+                "2": "fre",
+                "3": "ger",
+                "4": "jap",
+                "5": "rus"
+            }
+
             while resultxml:
                 for book in resultxml:
                     total_count = total_count + 1
@@ -300,35 +314,6 @@ class GoodReads:
                             bookimg = 'images/nocover.png'
                     except (KeyError, AttributeError):
                         bookimg = 'images/nocover.png'
-
-    # PAB this next section tries to get the book language using the isbn13 to look it up. If no isbn13 we skip the
-    # book entirely, rather than including it with an "Unknown" language. Changed this so we can still include the book
-    # with language set to "Unknown". There is a setting in config.ini to allow or skip books with "Unknown" language
-    # if you really don't want to include them.
-    # Not all GR books have isbn13 filled in, but all have a GR bookid, which we've already got, so use that.
-    # Also, with GR API rules we can only call the API once per second, which slows us down a lot when all we want
-    # is to get the language. We sleep for one second per book that GR knows about for each author you have in your
-    # library. The libraryThing API has the same 1 second restriction, and is limited to 1000 hits per day, but has
-    # fewer books with unknown language. To get around this and speed up the process, see if we already have a book
-    # in the database with a similar start to the ISBN. The way ISBNs work, digits 3-5 of a 13 char ISBN or digits 0-2
-    # of a 10 digit ISBN indicate the region/language so if two books have the same 3 digit isbn code, they _should_
-    # be the same language.
-    # I ran a simple python script on my library of 1500 books, and these codes were 100% correct on matching book
-    # languages, no mis-matches. It did result in a small number of books with "unknown" language being wrongly matched
-    # but most "unknown" were matched to the correct language.
-    # We could look up ISBNs we already know about in the database, but this only holds books in the languages we want
-    # to keep, which reduces the number of cache hits, so we create a new database table, holding ALL results including
-    # the ISBNs for languages we don't want and books we reject.
-    # The new table is created (if not exists) in init.py so by the time we get here there is an existing table.
-    # If we haven't an already matching partial ISBN, look up language code from libraryThing
-    # "http://www.librarything.com/api/thingLang.php?isbn=1234567890"
-    # If you find a matching language, add it to the database.  If "unknown" or "invalid", try GR as maybe GR can
-    # provide a match.
-    # If both LT and GR return unknown, add isbn to db as "unknown". No point in repeatedly asking LT for a code
-    # it's told you it doesn't know.
-    # As an extra option, if language includes "All" in config.ini, we can skip this whole section and process
-    # everything much faster by not querying for language at all.
-    # It does mean we include a lot of unwanted foreign translations in the database, but it's _much_ faster.
 
                     bookLanguage = "Unknown"
                     find_field = "id"
@@ -347,37 +332,24 @@ class GoodReads:
                         if (find_field != 'id'):  # isbn10 or isbn13 found
                             # Try to use shortcut of ISBN identifier codes described here...
                             # https://en.wikipedia.org/wiki/List_of_ISBN_identifier_groups
-                            # This really should be a dict or another database table instead of elif's
-                            #
                             if isbnhead != "":
                                 if find_field == "isbn13" and isbn.startswith('979'):
-                                    if isbnhead.startswith('10'):
-                                        bookLanguage = "fre"
-                                    elif isbnhead.startswith('11'):
-                                        bookLanguage = "kor"
-                                    elif isbnhead.startswith('12'):
-                                        bookLanguage = "ita"
-                                    if bookLanguage:
+                                    for item in isbn_979_dict:
+                                        if isbnhead.startswith(item):
+                                            bookLanguage = isbn_979_dict[item]
+                                            break
+                                    if bookLanguage != "Unknown":
                                         logger.debug("ISBN979 returned %s for %s" % (bookLanguage, isbnhead))
-
                                 elif (find_field == "isbn") or (find_field == "isbn13" and isbn.startswith('978')):
-                                    if isbnhead[0] == '0':
-                                        bookLanguage = "eng"
-                                    elif isbnhead[0] == '1':
-                                        bookLanguage = "eng"
-                                    elif isbnhead[0] == '2':
-                                        bookLanguage = "fre"
-                                    elif isbnhead[0] == '3':
-                                        bookLanguage = "ger"
-                                    elif isbnhead[0] == '4':
-                                        bookLanguage = "jpn"
-                                    elif isbnhead[0] == '5':
-                                        bookLanguage = "rus"
-                                    if bookLanguage:
+                                    for item in isbn_978_dict:
+                                        if isbnhead.startswith(item):
+                                            bookLanguage = isbn_978_dict[item]
+                                            break
+                                    if bookLanguage != "Unknown":
                                         logger.debug("ISBN978 returned %s for %s" % (bookLanguage, isbnhead))
 
                         if bookLanguage == "Unknown":
-                            # No shortcut, try any cached results
+                            # Nothing in the isbn dictionary, try any cached results
                             match = myDB.match('SELECT lang FROM languages where isbn = "%s"' % (isbnhead))
                             if match:
                                 bookLanguage = match['lang']
