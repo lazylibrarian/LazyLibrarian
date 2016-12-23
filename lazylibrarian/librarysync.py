@@ -541,16 +541,35 @@ def LibraryScan(startdir=None):
                                 # or books we moved to "merge" authors
                                 book = book.replace("'", "")
                                 match = False
-                                # See if the gr_id or isbn is in our database
+                                # See if the gr_id, gb_id or isbn is already in our database
                                 if gr_id:
-                                    match = myDB.match('SELECT BookID FROM books where BookID = "%s"' % gr_id)
-                                    if match:
-                                        bookid = match['BookID']
-                                if not match and isbn:
+                                    bookid = gr_id
+                                elif gb_id:
+                                    bookid = gb_id
+                                else:
+                                    bookid = ""
+
+                                if bookid:
+                                    match = myDB.match('SELECT BookID FROM books where BookID = "%s"' % bookid)
+                                    if not match:
+                                        logger.debug('Unable to find book %s by %s in database, trying to add it' %
+                                                    (book, author))
+                                        if lazylibrarian.BOOK_API == "GoodReads" and gr_id:
+                                            GR_ID = GoodReads(gr_id)
+                                            GR_ID.find_book(gr_id, None)
+                                        elif lazylibrarian.BOOK_API == "GoogleBooks" and gb_id:
+                                            GB_ID = GoogleBooks(gb_id)
+                                            GB_ID.find_book(gb_id, None)
+                                        # see if it's there now...
+                                        match = myDB.match('SELECT BookID from books where BookID="%s"' % bookid)
+                                        if not match:
+                                            logger.debug("Unable to add bookid %s to database" % bookid)
+                                            bookid = ""
+                                if not bookid and isbn:
                                     match = myDB.match('SELECT BookID FROM books where BookIsbn = "%s"' % isbn)
                                     if match:
                                         bookid = match['BookID']
-                                if not match:
+                                if not bookid:
                                     # Try and find it under metadata authorname
                                     bookid = find_book_in_db(myDB, author, book)
                                     if not bookid:
@@ -562,23 +581,6 @@ def LibraryScan(startdir=None):
                                                 logger.warn("%s not found under [%s], found under [%s]" %
                                                             (book, author, newauthor))
 
-                                if not bookid:
-                                    logger.debug('Unable to find book %s by %s in database, trying to add it' %
-                                                (book, author))
-                                    if lazylibrarian.BOOK_API == "GoodReads" and gr_id:
-                                        bookid = gr_id
-                                        GR_ID = GoodReads(bookid)
-                                        GR_ID.find_book(bookid, None)
-                                    elif lazylibrarian.BOOK_API == "GoogleBooks" and gb_id:
-                                        bookid = gb_id
-                                        GB_ID = GoogleBooks(bookid)
-                                        GB_ID.find_book(bookid, None)
-                                    check_status = myDB.match(
-                                        'SELECT Status, BookFile, AuthorName, BookName from books where BookID="%s"' %
-                                        bookid)
-                                    if not check_status:
-                                        logger.debug("Unable to add bookid %s to database" % bookid)
-                                        bookid = ""
                                 if bookid:
                                     check_status = myDB.match(
                                         'SELECT Status, BookFile, AuthorName, BookName from books where BookID="%s"' %
