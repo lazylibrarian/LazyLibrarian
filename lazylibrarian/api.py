@@ -221,7 +221,7 @@ class Api(object):
 
     def _getNoLang(self, **kwargs):
         self.data = self._dic_from_query(
-            'SELECT BookID,BookName,AuthorName from books where BookLang="Unknown" or BookLang="" or BookLang is NULL')
+            'SELECT BookID,BookISBN,BookName,AuthorName from books where BookLang="Unknown" or BookLang="" or BookLang is NULL')
 
     def _getAuthor(self, **kwargs):
         if 'id' not in kwargs:

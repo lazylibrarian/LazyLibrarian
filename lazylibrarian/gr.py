@@ -21,7 +21,7 @@ import unicodedata
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage
-from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented
+from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title
 from lazylibrarian.cache import get_xml_request, cache_cover
 from lib.fuzzywuzzy import fuzz
 import os
@@ -285,6 +285,20 @@ class GoodReads:
             logger.debug(u"author name " + authorNameResult)
             loopCount = 1
 
+            isbn_979_dict = {
+                "10": "fre",
+                "11": "kor",
+                "12": "ita"
+            }
+            isbn_978_dict = {
+                "0": "eng",
+                "1": "eng",
+                "2": "fre",
+                "3": "ger",
+                "4": "jap",
+                "5": "rus"
+            }
+
             while resultxml:
                 for book in resultxml:
                     total_count = total_count + 1
@@ -301,35 +315,6 @@ class GoodReads:
                     except (KeyError, AttributeError):
                         bookimg = 'images/nocover.png'
 
-    # PAB this next section tries to get the book language using the isbn13 to look it up. If no isbn13 we skip the
-    # book entirely, rather than including it with an "Unknown" language. Changed this so we can still include the book
-    # with language set to "Unknown". There is a setting in config.ini to allow or skip books with "Unknown" language
-    # if you really don't want to include them.
-    # Not all GR books have isbn13 filled in, but all have a GR bookid, which we've already got, so use that.
-    # Also, with GR API rules we can only call the API once per second, which slows us down a lot when all we want
-    # is to get the language. We sleep for one second per book that GR knows about for each author you have in your
-    # library. The libraryThing API has the same 1 second restriction, and is limited to 1000 hits per day, but has
-    # fewer books with unknown language. To get around this and speed up the process, see if we already have a book
-    # in the database with a similar start to the ISBN. The way ISBNs work, digits 3-5 of a 13 char ISBN or digits 0-2
-    # of a 10 digit ISBN indicate the region/language so if two books have the same 3 digit isbn code, they _should_
-    # be the same language.
-    # I ran a simple python script on my library of 1500 books, and these codes were 100% correct on matching book
-    # languages, no mis-matches. It did result in a small number of books with "unknown" language being wrongly matched
-    # but most "unknown" were matched to the correct language.
-    # We could look up ISBNs we already know about in the database, but this only holds books in the languages we want
-    # to keep, which reduces the number of cache hits, so we create a new database table, holding ALL results including
-    # the ISBNs for languages we don't want and books we reject.
-    # The new table is created (if not exists) in init.py so by the time we get here there is an existing table.
-    # If we haven't an already matching partial ISBN, look up language code from libraryThing
-    # "http://www.librarything.com/api/thingLang.php?isbn=1234567890"
-    # If you find a matching language, add it to the database.  If "unknown" or "invalid", try GR as maybe GR can
-    # provide a match.
-    # If both LT and GR return unknown, add isbn to db as "unknown". No point in repeatedly asking LT for a code
-    # it's told you it doesn't know.
-    # As an extra option, if language includes "All" in config.ini, we can skip this whole section and process
-    # everything much faster by not querying for language at all.
-    # It does mean we include a lot of unwanted foreign translations in the database, but it's _much_ faster.
-
                     bookLanguage = "Unknown"
                     find_field = "id"
                     isbn = ""
@@ -344,8 +329,27 @@ class GoodReads:
                                 find_field = "isbn13"
                                 isbn = book.find('isbn13').text
                                 isbnhead = isbn[3:6]
-                        if (find_field != 'id'):  # isbn or isbn13 found
+                        if (find_field != 'id'):  # isbn10 or isbn13 found
+                            # Try to use shortcut of ISBN identifier codes described here...
+                            # https://en.wikipedia.org/wiki/List_of_ISBN_identifier_groups
+                            if isbnhead != "":
+                                if find_field == "isbn13" and isbn.startswith('979'):
+                                    for item in isbn_979_dict:
+                                        if isbnhead.startswith(item):
+                                            bookLanguage = isbn_979_dict[item]
+                                            break
+                                    if bookLanguage != "Unknown":
+                                        logger.debug("ISBN979 returned %s for %s" % (bookLanguage, isbnhead))
+                                elif (find_field == "isbn") or (find_field == "isbn13" and isbn.startswith('978')):
+                                    for item in isbn_978_dict:
+                                        if isbnhead.startswith(item):
+                                            bookLanguage = isbn_978_dict[item]
+                                            break
+                                    if bookLanguage != "Unknown":
+                                        logger.debug("ISBN978 returned %s for %s" % (bookLanguage, isbnhead))
 
+                        if bookLanguage == "Unknown":
+                            # Nothing in the isbn dictionary, try any cached results
                             match = myDB.match('SELECT lang FROM languages where isbn = "%s"' % (isbnhead))
                             if match:
                                 bookLanguage = match['lang']
@@ -364,7 +368,7 @@ class GoodReads:
                                     logger.debug("LibraryThing reports language [%s] for %s" % (resp, isbnhead))
 
                                     if ('invalid' in resp or 'Unknown' in resp):
-                                        find_field = "id"  # reset the field to force search on goodreads
+                                        bookLanguage = "Unknown"
                                     else:
                                         bookLanguage = resp  # found a language code
                                         myDB.action('insert into languages values ("%s", "%s")' %
@@ -372,10 +376,9 @@ class GoodReads:
                                         logger.debug(u"LT language %s: %s" % (isbnhead, bookLanguage))
                                 except Exception as e:
                                     logger.error("Error finding LT language result for [%s], %s" % (isbn, str(e)))
-                                    find_field = "id"  # reset the field to search on goodreads
 
-                        if (find_field == 'id'):
-                            # [or bookLanguage == "Unknown"] no earlier match, we'll have to search the goodreads api
+                        if bookLanguage == "Unknown":
+                            # still  no earlier match, we'll have to search the goodreads api
                             try:
                                 if book.find(find_field).text:
                                     BOOK_URL = 'http://www.goodreads.com/book/show?id=' + \
@@ -402,9 +405,21 @@ class GoodReads:
                                         gr_lang_hits = gr_lang_hits + 1
                                     if not bookLanguage:
                                         bookLanguage = "Unknown"
+                                        # At this point, give up?
+                                        # WhatWork on author/title doesn't give us a language.
+                                        # It might give us the "original language" of the book (but not always)
+                                        # and our copy might not be in the original language anyway
+                                        # eg "The Girl With the Dragon Tattoo" original language Swedish
+                                        # If we have an isbn, try WhatISBN to get alternatives
+                                        # in case any of them give us a language, but it seems if thinglang doesn't
+                                        # have a language for the first isbn code, it doesn't for any of the
+                                        # alternatives either
+                                        # Goodreads search results don't include the language. Although sometimes
+                                        # it's in the html page, it's not in the xml results
+
 
                                     if (isbnhead != ""):
-                                        # GR didn't give an isbn so we can't cache it, just use language for this book
+                                        # if GR didn't give an isbn we can't cache it, just use language for this book
                                         myDB.action('insert into languages values ("%s", "%s")' %
                                                     (isbnhead, bookLanguage))
                                         logger.debug("GoodReads reports language [%s] for %s" %
@@ -418,7 +433,7 @@ class GoodReads:
                                     # continue
 
                             except Exception as e:
-                                logger.debug(u"An error has occured: %s" % str(e))
+                                logger.debug(u"Goodreads language search failed: %s" % str(e))
 
                         if bookLanguage not in valid_langs:
                             logger.debug('Skipped %s with language %s' % (book.find('title').text, bookLanguage))
@@ -433,32 +448,8 @@ class GoodReads:
                     bookrate = float(book.find('average_rating').text)
                     bookpages = book.find('num_pages').text
                     bookname = unaccented(bookname)
-                    colon = bookname.find(':')
-                    brace = bookname.find('(')
-                    # split subtitle on whichever comes first, ':' or '('
-                    # .find() returns position in string (0 to len-1) or -1 if not found
-                    # change position to 1 to len, or zero if not found
-                    colon += 1
-                    brace += 1
-                    if colon and brace:
-                        if colon < brace:
-                            parts = bookname.split(':')
-                        else:
-                            parts = bookname.split('(')
-                            parts[1] = '(' + parts[1]
-                    elif colon:
-                        parts = bookname.split(':')
-                    elif brace:
-                        parts = bookname.split('(')
-                        parts[1] = '(' + parts[1]
-                    else:
-                        parts = ''
 
-                    if parts:
-                        bookname = parts[0]
-                        booksub = parts[1]
-                    else:
-                        booksub = ''
+                    bookname, booksub = split_title(authorNameResult, bookname)
 
                     dic = {':': '', '"': '', '\'': ''}
                     bookname = replace_all(bookname, dic)
@@ -682,11 +673,11 @@ class GoodReads:
         if not bookLanguage:
             bookLanguage = "Unknown"
 #
-# PAB user has said they want this book, don't block for bad language, just warn
+# PAB user has said they want this book, don't block for unwanted language, just warn
 #
         valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
         if bookLanguage not in valid_langs:
-            logger.debug('Book %s language does not match preference' % bookname)
+            logger.debug('Book %s language does not match preference, %s' % (bookname, bookLanguage))
 
         if (rootxml.find('./book/publication_year').text is None):
             bookdate = "0000"
@@ -714,18 +705,12 @@ class GoodReads:
         if author:
             AuthorID = author['authorid']
 
-        booksub = ''
         bookname = unaccented(bookname)
-        if ': ' in bookname:
-            parts = bookname.split(': ', 1)
-            bookname = parts[0]
-            booksub = parts[1]
+        bookname, booksub = split_title(authorname, bookname)
 
         dic = {':': '', '"': '', '\'': ''}
-        bookname = replace_all(bookname, dic)
-        bookname = bookname.strip()  # strip whitespace
-        booksub = replace_all(booksub, dic)
-        booksub = booksub.strip()  # strip whitespace
+        bookname = replace_all(bookname, dic).strip()
+        booksub = replace_all(booksub, dic).strip()
         if booksub:
             series, seriesNum = bookSeries(booksub)
         else:

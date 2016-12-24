@@ -132,7 +132,7 @@ class WebInterface(object):
     @cherrypy.expose
     def configUpdate(
         self, http_host='0.0.0.0', http_root='', http_user='', http_port=5299, current_tab='0',
-                     http_pass='', http_look='', launch_browser=0, api_key='', api_enabled=0, displaylength=0,
+                     http_pass='', http_look='', launch_browser=0, api_key='', api_enabled=0, displaylength=10,
                      logdir='', loglevel=2, loglimit=500, git_program='',
                      imp_onlyisbn=0, imp_singlebook=0, imp_preflang='', imp_monthlang='', imp_convert='',
                      imp_calibredb='', imp_autoadd='', imp_autosearch=0, match_ratio=80, dload_ratio=90,
@@ -771,6 +771,8 @@ class WebInterface(object):
                             worklink = '<td><a href="' + \
                                 row[11] + '" target="_new"><small><i>LibraryThing</i></small></a></td>'
 
+                    editpage = '<a href="editBook?bookid=' + row[8] + '" target="_new"><small><i>Edit</i></a>'
+
                     sitelink = ''
                     if 'goodreads' in row[10]:
                         sitelink = '<td><a href="' + \
@@ -791,7 +793,7 @@ class WebInterface(object):
                         title = '<td class="bookname">%s<br><small><i>%s</i></small></td>' % (row[2], row[9])
                     else:
                         title = '<td class="bookname">%s</td>' % row[2]
-                    l.append(title + '<br>' + sitelink + '&nbsp;' + worklink)
+                    l.append(title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage)
 
                     if row[3]:  # is the book part of a series
                         l.append('<td class="series">%s</td>' % row[3])
@@ -849,7 +851,7 @@ class WebInterface(object):
                         title = '<td id="bookname">%s<br><i class="smalltext">%s</i></td>' % (row[2], row[9])
                     else:
                         title = '<td id="bookname">%s</td>' % row[2]
-                    l.append(title + '<br>' + sitelink + '&nbsp;' + worklink)
+                    l.append(title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage)
 
                     if row[3]:  # is the book part of a series
                         l.append('<td id="series">%s</td>' % row[3])
@@ -1312,7 +1314,11 @@ class WebInterface(object):
                         myDB.action('DELETE from pastissues WHERE NZBurl="%s"' % nzburl)
                         logger.debug(u'Item %s removed from past issues' % nzburl)
                         maglist.append({'nzburl': nzburl})
-                    else:
+                    elif action in ['Have', 'Ignored', 'Skipped']:
+                        myDB.action('UPDATE pastissues set status=%s WHERE NZBurl="%s"' % (action, nzburl))
+                        logger.debug(u'Item %s removed from past issues' % nzburl)
+                        maglist.append({'nzburl': nzburl})
+                    elif action == 'Wanted':
                         bookid = item['BookID']
                         nzbprov = item['NZBprov']
                         nzbtitle = item['NZBtitle']
@@ -1326,20 +1332,19 @@ class WebInterface(object):
                             'nzburl': nzburl,
                             'nzbmode': nzbmode
                         })
-                        if action == 'Wanted':
-                            # copy into wanted table
-                            controlValueDict = {'NZBurl': nzburl}
-                            newValueDict = {
-                                'BookID': bookid,
-                                'NZBtitle': nzbtitle,
-                                'NZBdate': now(),
-                                'NZBprov': nzbprov,
-                                'Status': action,
-                                'NZBsize': nzbsize,
-                                'AuxInfo': auxinfo,
-                                'NZBmode': nzbmode
-                            }
-                            myDB.upsert("wanted", newValueDict, controlValueDict)
+                        # copy into wanted table
+                        controlValueDict = {'NZBurl': nzburl}
+                        newValueDict = {
+                            'BookID': bookid,
+                            'NZBtitle': nzbtitle,
+                            'NZBdate': now(),
+                            'NZBprov': nzbprov,
+                            'Status': action,
+                            'NZBsize': nzbsize,
+                            'AuxInfo': auxinfo,
+                            'NZBmode': nzbmode
+                        }
+                        myDB.upsert("wanted", newValueDict, controlValueDict)
 
         if action == 'Remove':
             logger.info(u'Removed %s item%s from past issues' % (len(maglist), plural(len(maglist))))

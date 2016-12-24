@@ -14,6 +14,7 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import traceback
 import datetime
 import lazylibrarian
 import subprocess
@@ -60,7 +61,7 @@ def create_cover(issuefile=None):
                             logger.debug('%s reports: %s' % (lazylibrarian.IMP_CONVERT, res))
                     except subprocess.CalledProcessError as e:
                         logger.debug(params)
-                        logger.debug('ImageMagick "convert" failed %s' % e.output)
+                        logger.debug('External "convert" failed %s' % e.output)
 
                 elif lazylibrarian.MAGICK == 'wand':
                     with Image(filename=issuefile + '[0]') as img:
@@ -83,7 +84,7 @@ def create_cover(issuefile=None):
                 setperm(coverfile)
             except Exception:
                 logger.debug("Unable to create cover for %s using %s" % (issuefile, lazylibrarian.MAGICK))
-
+                logger.debug('Exception in magazinescan: %s' % traceback.format_exc())
 
 def create_id(issuename=None):
     hashID = sha1(issuename).hexdigest()
