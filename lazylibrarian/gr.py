@@ -704,10 +704,12 @@ class GoodReads:
         author = GR.find_author_id()
         if author:
             AuthorID = author['authorid']
+        else:
+            logger.warning("No AuthorID for %s, unable to add book %s" % (authorname, bookname))
+            return
 
         bookname = unaccented(bookname)
         bookname, booksub = split_title(authorname, bookname)
-
         dic = {':': '', '"': '', '\'': ''}
         bookname = replace_all(bookname, dic).strip()
         booksub = replace_all(booksub, dic).strip()

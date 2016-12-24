@@ -14,6 +14,8 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import sys
+import platform
 import traceback
 import datetime
 import lazylibrarian
@@ -26,10 +28,10 @@ from lazylibrarian.common import setperm
 
 try:
     from wand.image import Image
-except ImportError:
+except Exception as e:
     try:
         import PythonMagick
-    except ImportError:
+    except Exception as e:
         lazylibrarian.MAGICK = 'convert'  # may have external, don't know yet
 
 
@@ -43,48 +45,80 @@ def create_cover(issuefile=None):
             logger.debug('Unable to create cover for %s, no extension?' % issuefile)
             return
         if not os.path.isfile(coverfile):
-            converter = lazylibrarian.MAGICK
-            if len(lazylibrarian.IMP_CONVERT):
-                converter = lazylibrarian.IMP_CONVERT
-            logger.debug("Creating cover %s for %s using %s" % (coverfile, issuefile, converter))
-            try:
-                # No PythonMagick in python3, hence allow wand, but more complicated
-                # to install - try to use external imagemagick convert?
-                # should work on win/mac/linux as long as imagemagick is installed
-                # and config points to external "convert" program
-
-                if len(lazylibrarian.IMP_CONVERT):  # allow external convert to override libraries
+            GS = ""
+            if platform.system() == "Windows":
+                params = ["where", "gswin64c"]
+                try:
+                    GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+                except Exception as e:
+                    logger.debug("where gswin64c failed: %s" % str(e))
+                if not os.path.isfile(GS):
+                    params = ["where", "gswin32c"]
                     try:
-                        params = [lazylibrarian.IMP_CONVERT, '%s[0]' % issuefile, '%s' % coverfile]
-                        res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                        if res:
-                            logger.debug('%s reports: %s' % (lazylibrarian.IMP_CONVERT, res))
-                    except subprocess.CalledProcessError as e:
-                        logger.debug(params)
-                        logger.debug('External "convert" failed %s' % e.output)
-
-                elif lazylibrarian.MAGICK == 'wand':
-                    with Image(filename=issuefile + '[0]') as img:
-                        img.save(filename=coverfile)
-
-                elif lazylibrarian.MAGICK == 'pythonmagick':
-                    img = PythonMagick.Image()
-                    img.read(issuefile + '[0]')
-                    img.write(coverfile)
+                        GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+                    except Exception as e:
+                        logger.debug("where gswin32c failed: %s" % str(e))
+                if not os.path.isfile(GS):
+                    logger.debug("No gswin found")
                 else:
-                    try:
-                        params = [lazylibrarian.MAGICK, issuefile + '[0]', coverfile]
-                        res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                        if res:
-                            logger.debug('%s reports: %s' % (lazylibrarian.IMP_CONVERT, res))
-                    except subprocess.CalledProcessError as e:
-                        logger.debug(params)
-                        logger.debug('ImageMagick "convert" failed %s' % e.output)
+                    params = [GS, "--version"]
+                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                    logger.debug("Found gs [%s] version %s" % (GS, res))
 
-                setperm(coverfile)
-            except Exception:
-                logger.debug("Unable to create cover for %s using %s" % (issuefile, lazylibrarian.MAGICK))
-                logger.debug('Exception in magazinescan: %s' % traceback.format_exc())
+                    jpeg = coverfile
+                    pdf = issuefile
+                    if '[' in pdf:
+                        pdf = pdf.split('[')[0]
+                    params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1", "-dLastPage=1",
+                              "-sOutputFile=%s" % jpeg, pdf]
+                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                    if not os.path.isfile(jpeg):
+                        logger.debug("Failed to create jpg: %s" % res)
+
+            else:  # not windows
+                converter = lazylibrarian.MAGICK
+                if len(lazylibrarian.IMP_CONVERT):
+                    converter = lazylibrarian.IMP_CONVERT
+                logger.debug("Creating cover %s for %s using %s" % (coverfile, issuefile, converter))
+                try:
+                    # No PythonMagick in python3, hence allow wand, but more complicated
+                    # to install - try to use external imagemagick convert?
+                    # should work on win/mac/linux as long as imagemagick is installed
+                    # and config points to external "convert" program
+
+                    if len(lazylibrarian.IMP_CONVERT):  # allow external convert to override libraries
+                        try:
+                            params = [lazylibrarian.IMP_CONVERT, '%s[0]' % issuefile, '%s' % coverfile]
+                            res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                            if res:
+                                logger.debug('%s reports: %s' % (lazylibrarian.IMP_CONVERT, res))
+                                setperm(coverfile)
+                        except subprocess.CalledProcessError as e:
+                            logger.debug(params)
+                            logger.debug('External "convert" failed %s' % e.output)
+
+                    elif lazylibrarian.MAGICK == 'wand':
+                        with Image(filename=issuefile + '[0]') as img:
+                            img.save(filename=coverfile)
+                            setperm(coverfile)
+                    elif lazylibrarian.MAGICK == 'pythonmagick':
+                        img = PythonMagick.Image()
+                        img.read(issuefile + '[0]')
+                        img.write(coverfile)
+                        setperm(coverfile)
+                    else:
+                        try:
+                            params = [lazylibrarian.MAGICK, issuefile + '[0]', coverfile]
+                            res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                            if res:
+                                logger.debug('%s reports: %s' % (lazylibrarian.IMP_CONVERT, res))
+                                setperm(coverfile)
+                        except Exception as e:
+                            logger.debug(params)
+                            logger.debug('External "convert" failed %s' % e.output)
+                except Exception:
+                    logger.debug("Unable to create cover for %s using %s" % (issuefile, lazylibrarian.MAGICK))
+                    logger.debug('Exception in magazinescan: %s' % traceback.format_exc())
 
 def create_id(issuename=None):
     hashID = sha1(issuename).hexdigest()
@@ -213,7 +247,7 @@ def magazineScan():
                 # is this issue already in the database?
                 controlValueDict = {"Title": title, "IssueDate": issuedate}
                 issue_id = create_id("%s %s" % (title, issuedate))
-                iss_entry = myDB.select('SELECT * from issues WHERE Title="%s" and IssueDate="%s"' % (
+                iss_entry = myDB.match('SELECT Title from issues WHERE Title="%s" and IssueDate="%s"' % (
                     title, issuedate))
                 if not iss_entry:
                     newValueDict = {
@@ -221,11 +255,8 @@ def magazineScan():
                         "IssueID": issue_id,
                         "IssueFile": issuefile
                     }
+                    myDB.upsert("Issues", newValueDict, controlValueDict)
                     logger.debug("Adding issue %s %s" % (title, issuedate))
-                else:
-                    # don't really need to do this each time
-                    newValueDict = {"IssueID": issue_id}
-                myDB.upsert("Issues", newValueDict, controlValueDict)
 
                 create_cover(issuefile)
 
