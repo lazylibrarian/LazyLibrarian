@@ -46,11 +46,11 @@ from lazylibrarian.cache import fetchURL
 try:
     from wand.image import Image
     MAGICK = "wand"
-except ImportError:
+except Exception as e:
     try:
         import PythonMagick
         MAGICK = "pythonmagick"
-    except ImportError:
+    except Exception as e:
         MAGICK = 'convert'  # may have external, don't know yet
 
 FULL_PATH = None
