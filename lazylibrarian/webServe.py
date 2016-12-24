@@ -1314,7 +1314,11 @@ class WebInterface(object):
                         myDB.action('DELETE from pastissues WHERE NZBurl="%s"' % nzburl)
                         logger.debug(u'Item %s removed from past issues' % nzburl)
                         maglist.append({'nzburl': nzburl})
-                    else:
+                    elif action in ['Have', 'Ignored', 'Skipped']:
+                        myDB.action('UPDATE pastissues set status=%s WHERE NZBurl="%s"' % (action, nzburl))
+                        logger.debug(u'Item %s removed from past issues' % nzburl)
+                        maglist.append({'nzburl': nzburl})
+                    elif action == 'Wanted':
                         bookid = item['BookID']
                         nzbprov = item['NZBprov']
                         nzbtitle = item['NZBtitle']
@@ -1328,20 +1332,19 @@ class WebInterface(object):
                             'nzburl': nzburl,
                             'nzbmode': nzbmode
                         })
-                        if action == 'Wanted':
-                            # copy into wanted table
-                            controlValueDict = {'NZBurl': nzburl}
-                            newValueDict = {
-                                'BookID': bookid,
-                                'NZBtitle': nzbtitle,
-                                'NZBdate': now(),
-                                'NZBprov': nzbprov,
-                                'Status': action,
-                                'NZBsize': nzbsize,
-                                'AuxInfo': auxinfo,
-                                'NZBmode': nzbmode
-                            }
-                            myDB.upsert("wanted", newValueDict, controlValueDict)
+                        # copy into wanted table
+                        controlValueDict = {'NZBurl': nzburl}
+                        newValueDict = {
+                            'BookID': bookid,
+                            'NZBtitle': nzbtitle,
+                            'NZBdate': now(),
+                            'NZBprov': nzbprov,
+                            'Status': action,
+                            'NZBsize': nzbsize,
+                            'AuxInfo': auxinfo,
+                            'NZBmode': nzbmode
+                        }
+                        myDB.upsert("wanted", newValueDict, controlValueDict)
 
         if action == 'Remove':
             logger.info(u'Removed %s item%s from past issues' % (len(maglist), plural(len(maglist))))
