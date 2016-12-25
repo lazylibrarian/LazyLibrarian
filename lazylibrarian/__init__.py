@@ -43,16 +43,6 @@ from lazylibrarian.formatter import getList, bookSeries, plural, unaccented
 from lazylibrarian.common import restartJobs
 from lazylibrarian.cache import fetchURL
 
-try:
-    from wand.image import Image
-    MAGICK = "wand"
-except Exception as e:
-    try:
-        import PythonMagick
-        MAGICK = "pythonmagick"
-    except Exception as e:
-        MAGICK = 'convert'  # may have external, don't know yet
-
 FULL_PATH = None
 PROG_DIR = None
 
@@ -484,7 +474,7 @@ def config_read(reloaded=False):
             MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, CONFIGFILE, CFG, LOGLIMIT, TASK_AGE, \
             SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, SAB_CAT, \
             DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, USENET_RETENTION, NZB_BLACKHOLEDIR, \
-            ALTERNATE_DIR, GR_API, GB_API, BOOK_API, MAGICK, \
+            ALTERNATE_DIR, GR_API, GB_API, BOOK_API, \
             NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, \
             NZBGET_PORT, NZB_DOWNLOADER_NZBGET, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
             NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, EBOOK_TYPE, MAG_TYPE, \

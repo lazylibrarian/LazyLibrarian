@@ -10,19 +10,7 @@ if len(sys.argv) != 3:
 else:
     GS = ""
     if platform.system() == "Windows":
-        params = ["where", "gswin64c"]
-        try:
-            GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
-        except Exception as e:
-            print "where gswin64c failed: %s" % str(e)
-        if not os.path.isfile(GS):
-            params = ["where", "gswin32c"]
-            try:
-                GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
-            except Exception as e:
-                print "where gswin32c failed: %s" % str(e)
-        if not os.path.isfile(GS):
-            sys.exit("Cannot find gswin, unable to continue")
+        logger.error("This version of gsconvert does not run under Windows")
     else:
         GS = os.path.join(os.getcwd(), "gs")
         if not os.path.isfile(GS):
