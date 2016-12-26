@@ -568,6 +568,7 @@ def import_book(pp_path=None, bookID=None):
             if processBook:
                 # update nzbs
                 was_snatched = myDB.match('SELECT BookID, NZBprov FROM wanted WHERE BookID="%s"' % bookID)
+                snatched_from = "from" + was_snatched['NZBprov'] if was_snatched else "manually added"
                 if was_snatched:
                     controlValueDict = {"BookID": bookID}
                     newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
@@ -587,7 +588,7 @@ def import_book(pp_path=None, bookID=None):
                                 logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
 
                 logger.info('Successfully processed: %s' % global_name)
-                notify_download("%s from %s at %s" % (global_name, was_snatched['NZBprov'], now()))
+                notify_download("%s %s at %s" % (global_name, snatched_from, now()))
                 return True
             else:
                 logger.error('Postprocessing for %s has failed.' % global_name)
