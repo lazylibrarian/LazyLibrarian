@@ -26,99 +26,131 @@ import re
 from lazylibrarian.formatter import getList, is_valid_booktype, plural
 from lazylibrarian.common import setperm
 
-try:
-    from wand.image import Image
-except Exception as e:
-    try:
-        import PythonMagick
-    except Exception as e:
-        lazylibrarian.MAGICK = 'convert'  # may have external, don't know yet
-
 
 def create_cover(issuefile=None):
-    if not lazylibrarian.IMP_CONVERT == 'None':  # special flag to say "no covers required"
-        # create a thumbnail cover if there isn't one
-        extn = os.path.splitext(issuefile)[1]
-        if extn:
-            coverfile = issuefile.replace(extn, '.jpg')
+    if lazylibrarian.IMP_CONVERT == 'None':  # special flag to say "no covers required"
+        return
+    if issuefile is None or not os.path.isfile(issuefile):
+        return
+
+    # create a thumbnail cover if there isn't one
+    extn = os.path.splitext(issuefile)[1]
+    if extn:
+        coverfile = issuefile.replace(extn, '.jpg')
+    else:
+        logger.debug('Unable to create cover for %s, no extension?' % issuefile)
+        return
+    if os.path.isfile(coverfile):  # quit if cover already exists
+        return
+
+    generator = ""
+    GS = ""
+    if platform.system() == "Windows":
+        params = ["where", "gswin64c"]
+        try:
+            GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+            generator = "gswin64c"
+        except Exception as e:
+            logger.debug("where gswin64c failed: %s" % str(e))
+        if not os.path.isfile(GS):
+            params = ["where", "gswin32c"]
+            try:
+                GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+                generator = "gswin32c"
+            except Exception as e:
+                logger.debug("where gswin32c failed: %s" % str(e))
+        if not os.path.isfile(GS):
+            logger.debug("No gswin found")
+            generator = "(no windows ghostscript found)"
         else:
-            logger.debug('Unable to create cover for %s, no extension?' % issuefile)
-            return
-        if not os.path.isfile(coverfile):
-            GS = ""
-            if platform.system() == "Windows":
-                params = ["where", "gswin64c"]
+            params = [GS, "--version"]
+            res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+            logger.debug("Found %s [%s] version %s" % (generator, GS, res))
+            generator = "%s version %s" % (generator, res)
+            if '[' in issuefile:
+                issuefile = issuefile.split('[')[0]
+            params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1", "-dLastPage=1",
+                      "-sOutputFile=%s" % coverfile, issuefile]
+            res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+            if not os.path.isfile(coverfile):
+                logger.debug("Failed to create jpg: %s" % res)
+
+    else:  # not windows
+        try:
+            from wand.image import Image
+            interface = "wand"
+        except Exception as e:
+            try:
+                # No PythonMagick in python3
+                import PythonMagick
+                interface = "pythonmagick"
+            except Exception as e:
+                interface = ""
+
+        try:
+            if len(lazylibrarian.IMP_CONVERT):  # allow external convert to override libraries
+                generator = "external program: %s" % lazylibrarian.IMP_CONVERT
+                if "gsconvert.py" in lazylibrarian.IMP_CONVERT:
+                    msg = "Use of gsconvert.py is deprecated, equivalent functionality is now built in. "
+                    msg += "Support for gsconvert.py may be removed in a future release. See wiki for details."
+                    logger.warn(msg)
+                converter = lazylibrarian.IMP_CONVERT
+                if not converter.startswith(os.sep):  # full path given, or just program_name?
+                    converter = os.path.join(os.getcwd(), lazylibrarian.IMP_CONVERT)
                 try:
-                    GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+                    params = [converter, '%s' % issuefile, '%s' % coverfile]
+                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                    if res:
+                        logger.debug('%s reports: %s' % (lazylibrarian.IMP_CONVERT, res))
                 except Exception as e:
-                    logger.debug("where gswin64c failed: %s" % str(e))
+                    #logger.debug(params)
+                    logger.debug('External "convert" failed %s' % e)
+
+            elif interface == 'wand':
+                generator = "wand interface"
+                with Image(filename=issuefile + '[0]') as img:
+                    img.save(filename=coverfile)
+
+            elif interface == 'pythonmagick':
+                generator = "pythonmagick interface"
+                img = PythonMagick.Image()
+                img.read(issuefile + '[0]')
+                img.write(coverfile)
+            else:
+                GS = os.path.join(os.getcwd(), "gs")
+                generator = "local gs"
                 if not os.path.isfile(GS):
-                    params = ["where", "gswin32c"]
+                    GS = ""
+                    params = ["which", "gs"]
                     try:
                         GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+                        generator = GS
                     except Exception as e:
-                        logger.debug("where gswin32c failed: %s" % str(e))
-                if not os.path.isfile(GS):
-                    logger.debug("No gswin found")
-                else:
-                    params = [GS, "--version"]
-                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                    logger.debug("Found gs [%s] version %s" % (GS, res))
-
-                    jpeg = coverfile
-                    pdf = issuefile
-                    if '[' in pdf:
-                        pdf = pdf.split('[')[0]
-                    params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1", "-dLastPage=1",
-                              "-sOutputFile=%s" % jpeg, pdf]
-                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                    if not os.path.isfile(jpeg):
-                        logger.debug("Failed to create jpg: %s" % res)
-
-            else:  # not windows
-                converter = lazylibrarian.MAGICK
-                if len(lazylibrarian.IMP_CONVERT):
-                    converter = lazylibrarian.IMP_CONVERT
-                logger.debug("Creating cover %s for %s using %s" % (coverfile, issuefile, converter))
-                try:
-                    # No PythonMagick in python3, hence allow wand, but more complicated
-                    # to install - try to use external imagemagick convert?
-                    # should work on win/mac/linux as long as imagemagick is installed
-                    # and config points to external "convert" program
-
-                    if len(lazylibrarian.IMP_CONVERT):  # allow external convert to override libraries
-                        try:
-                            params = [lazylibrarian.IMP_CONVERT, '%s[0]' % issuefile, '%s' % coverfile]
-                            res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                            if res:
-                                logger.debug('%s reports: %s' % (lazylibrarian.IMP_CONVERT, res))
-                                setperm(coverfile)
-                        except subprocess.CalledProcessError as e:
-                            logger.debug(params)
-                            logger.debug('External "convert" failed %s' % e.output)
-
-                    elif lazylibrarian.MAGICK == 'wand':
-                        with Image(filename=issuefile + '[0]') as img:
-                            img.save(filename=coverfile)
-                            setperm(coverfile)
-                    elif lazylibrarian.MAGICK == 'pythonmagick':
-                        img = PythonMagick.Image()
-                        img.read(issuefile + '[0]')
-                        img.write(coverfile)
-                        setperm(coverfile)
+                        logger.debug("which gs failed: %s" % str(e))
+                    if not os.path.isfile(GS):
+                        logger.debug("Cannot find gs, %s" % str(e))
+                        generator = "(no gs found)"
                     else:
-                        try:
-                            params = [lazylibrarian.MAGICK, issuefile + '[0]', coverfile]
-                            res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                            if res:
-                                logger.debug('%s reports: %s' % (lazylibrarian.IMP_CONVERT, res))
-                                setperm(coverfile)
-                        except Exception as e:
-                            logger.debug(params)
-                            logger.debug('External "convert" failed %s' % e.output)
-                except Exception:
-                    logger.debug("Unable to create cover for %s using %s" % (issuefile, lazylibrarian.MAGICK))
-                    logger.debug('Exception in magazinescan: %s' % traceback.format_exc())
+                        params = [GS, "--version"]
+                        res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                        logger.debug("Found gs [%s] version %s" % (GS, res))
+                        generator = "%s version %s" % (generator, res)
+                        if '[' in issuefile:
+                            issuefile = issuefile.split('[')[0]
+                        params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1", "-dLastPage=1",
+                                  "-sOutputFile=%s" % coverfile, issuefile]
+                        res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                        if not os.path.isfile(coverfile):
+                            logger.debug("Failed to create jpg: %s" % res)
+
+        except Exception:
+            logger.debug("Unable to create cover for %s using %s" % (issuefile, generator))
+            logger.debug('Exception in magazinescan: %s' % traceback.format_exc())
+
+    if os.path.isfile(coverfile):
+        setperm(coverfile)
+        logger.debug("Created cover for %s using %s" % (issuefile, generator))
+
 
 def create_id(issuename=None):
     hashID = sha1(issuename).hexdigest()
