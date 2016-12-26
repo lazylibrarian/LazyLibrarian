@@ -30,7 +30,7 @@ from lazylibrarian.common import setperm
 def create_cover(issuefile=None):
     if lazylibrarian.IMP_CONVERT == 'None':  # special flag to say "no covers required"
         return
-    if not os.path.isfile(issuefile):
+    if issuefile is None or not os.path.isfile(issuefile):
         return
 
     # create a thumbnail cover if there isn't one
@@ -40,7 +40,7 @@ def create_cover(issuefile=None):
     else:
         logger.debug('Unable to create cover for %s, no extension?' % issuefile)
         return
-    if os.path.isfile(coverfile):
+    if os.path.isfile(coverfile):  # quit if cover already exists
         return
 
     generator = ""
@@ -91,11 +91,11 @@ def create_cover(issuefile=None):
             if len(lazylibrarian.IMP_CONVERT):  # allow external convert to override libraries
                 generator = "external program: %s" % lazylibrarian.IMP_CONVERT
                 if "gsconvert.py" in lazylibrarian.IMP_CONVERT:
-                    msg = "Use of gsconvert.py is deprecated, equivalent functionality is now built in."
+                    msg = "Use of gsconvert.py is deprecated, equivalent functionality is now built in. "
                     msg += "Support for gsconvert.py may be removed in a future release. See wiki for details."
                     logger.warn(msg)
                 converter = lazylibrarian.IMP_CONVERT
-                if not converter.startswith(os.sep):  # full path or just program_name?
+                if not converter.startswith(os.sep):  # full path given, or just program_name?
                     converter = os.path.join(os.getcwd(), lazylibrarian.IMP_CONVERT)
                 try:
                     params = [converter, '%s' % issuefile, '%s' % coverfile]
@@ -103,7 +103,7 @@ def create_cover(issuefile=None):
                     if res:
                         logger.debug('%s reports: %s' % (lazylibrarian.IMP_CONVERT, res))
                 except Exception as e:
-                    logger.debug(params)
+                    #logger.debug(params)
                     logger.debug('External "convert" failed %s' % e)
 
             elif interface == 'wand':
@@ -118,8 +118,9 @@ def create_cover(issuefile=None):
                 img.write(coverfile)
             else:
                 GS = os.path.join(os.getcwd(), "gs")
-                generator = "local gs version"
+                generator = "local gs"
                 if not os.path.isfile(GS):
+                    GS = ""
                     params = ["which", "gs"]
                     try:
                         GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
@@ -128,11 +129,12 @@ def create_cover(issuefile=None):
                         logger.debug("which gs failed: %s" % str(e))
                     if not os.path.isfile(GS):
                         logger.debug("Cannot find gs, %s" % str(e))
+                        generator = "(no gs found)"
                     else:
                         params = [GS, "--version"]
                         res = subprocess.check_output(params, stderr=subprocess.STDOUT)
                         logger.debug("Found gs [%s] version %s" % (GS, res))
-                        generator = "gs version %s" % res
+                        generator = "%s version %s" % (generator, res)
                         if '[' in issuefile:
                             issuefile = issuefile.split('[')[0]
                         params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1", "-dLastPage=1",

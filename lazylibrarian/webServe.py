@@ -832,6 +832,8 @@ class WebInterface(object):
                             worklink = '<td><a href="' + \
                                 row[11] + '" target="_new"><i class="smalltext">LibraryThing</i></a></td>'
 
+                    editpage = '<a href="editBook?bookid=' + row[8] + '" target="_new"><i class="smalltext">Edit</i></a>'
+
                     sitelink = ''
                     if 'goodreads' in row[10]:
                         sitelink = '<td><a href="' + \
@@ -1492,7 +1494,6 @@ class WebInterface(object):
     @cherrypy.expose
     def checkForUpdates(self):
         self.label_thread()
-
         versioncheck.checkForUpdates()
         if lazylibrarian.COMMITS_BEHIND == 0:
             if lazylibrarian.COMMIT_LIST:
