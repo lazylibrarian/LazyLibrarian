@@ -28,15 +28,13 @@ import lib.feedparser as feedparser
 
 
 def get_searchterm(book, searchType):
-    authorname = book['authorName']
-    bookname = book['bookName']
+    authorname = cleanName(book['authorName'])
+    bookname = cleanName(book['bookName'])
     if searchType == "book" or searchType == "shortbook":
         while authorname[1] in '. ':  # strip any leading initials
             authorname = authorname[2:].strip()  # and leading whitespace
         # middle initials can't have a dot
         authorname = authorname.replace('. ', ' ')
-        authorname = cleanName(authorname)
-        bookname = cleanName(bookname)
         if bookname == authorname and book['bookSub']:
             # books like "Spike Milligan: Man of Letters"
             # where we split the title/subtitle on ':'
