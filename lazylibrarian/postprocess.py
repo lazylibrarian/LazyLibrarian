@@ -214,10 +214,8 @@ def processDir(reset=False):
                     # Usenet is ok, but Torrents aren't always returned with the name we searched for
                     # We ask the torrent downloader for the torrent name, but don't always get an answer
                     # so we try to do a "best match" on the name, there might be a better way...
-                    if isinstance(fname, str):
-                        matchname = fname.decode(lazylibrarian.SYS_ENCODING)
-                    else:
-                        matchname = fname
+
+                    matchname = fname
                     if ' LL.(' in matchname:
                         matchname = matchname.split(' LL.(')[0]
 
@@ -227,7 +225,6 @@ def processDir(reset=False):
                             matchtitle = matchtitle.split(' LL.(')[0]
                         match = fuzz.token_set_ratio(matchtitle, matchname)
                     if match and match >= lazylibrarian.DLOAD_RATIO:
-                        fname = matchname
                         if os.path.isfile(os.path.join(processpath, fname)):
                             # handle single file downloads here. Book/mag file in download root.
                             # move the file into it's own subdirectory so we don't move/delete things that aren't ours

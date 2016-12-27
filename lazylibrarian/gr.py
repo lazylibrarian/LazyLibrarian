@@ -464,7 +464,7 @@ class GoodReads:
                     # GoodReads sometimes has multiple bookids for the same book (same author/title, different editions)
                     # and sometimes uses the same bookid if the book is the same but the title is slightly different
                     # We use bookid, then reject if another author/title has a different bookid so we just keep one...
-                    find_book_status = myDB.select('SELECT * FROM books WHERE BookID = "%s"' % bookid)
+                    find_book_status = myDB.match('SELECT * FROM books WHERE BookID = "%s"' % bookid)
                     if find_book_status:
                         book_status = find_book_status['Status']
                         locked = find_book_status['Manual']
