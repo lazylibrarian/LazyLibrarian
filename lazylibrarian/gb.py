@@ -264,7 +264,7 @@ class GoogleBooks:
         logger.error('Unhandled exception in GB.find_results: %s' % traceback.format_exc())
 
 
-    def get_author_books(self, authorid=None, authorname=None, refresh=False):
+    def get_author_books(self, authorid=None, authorname=None, bookstatus="Skipped", refresh=False):
       try:
         logger.debug('[%s] Now processing books with Google Books API' % authorname)
         # google doesnt like accents in author names
@@ -487,13 +487,12 @@ class GoogleBooks:
                     # and sometimes uses the same bookid if the book is the same but the title is slightly different
                     #
                     # Not sure if googlebooks does too, but we only want one...
-                    find_book_status = myDB.select('SELECT * FROM books WHERE BookID = "%s"' % bookid)
+                    find_book_status = myDB.match('SELECT * FROM books WHERE BookID = "%s"' % bookid)
                     if find_book_status:
-                        for resulted in find_book_status:
-                            book_status = resulted['Status']
-                            locked = resulted['Manual']
+                        book_status = find_book_status['Status']
+                        locked = find_book_status['Manual']
                     else:
-                        book_status = lazylibrarian.NEWBOOK_STATUS
+                        book_status = bookstatus
                         locked = False
 
                     rejected = False
