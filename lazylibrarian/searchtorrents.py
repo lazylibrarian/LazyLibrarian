@@ -346,7 +346,6 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         Source = "BLACKHOLE"
         logger.debug("Sending %s to blackhole" % tor_title)
         tor_name = cleanName(tor_title).replace(' ', '_')
-        tor_title = None
         if tor_url and tor_url.startswith('magnet'):
             if lazylibrarian.TOR_CONVERT_MAGNET:
                 hashid = CalcTorrentHash(tor_url)
@@ -359,19 +358,27 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             else:
                 tor_name = tor_name + '.magnet'
                 tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
-                with open(tor_path, 'wb') as torrent_file:
-                    torrent_file.write(torrent)
-                logger.debug('Magnet file saved: %s' % tor_path)
-                setperm(tor_path)
-                downloadID = Source
+                try:
+                    with open(tor_path, 'wb') as torrent_file:
+                        torrent_file.write(torrent)
+                    logger.debug('Magnet file saved: %s' % tor_path)
+                    setperm(tor_path)
+                    downloadID = Source
+                except Exception as e:
+                    logger.debug("Failed to write magnet to file %s, %s" % (tor_path, str(e)))
+                    return False
         else:
             tor_name = tor_name + '.torrent'
             tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
-            with open(tor_path, 'wb') as torrent_file:
-                torrent_file.write(torrent)
-            setperm(tor_path)
-            logger.debug('Torrent file saved: %s' % tor_name)
-            downloadID = Source
+            try:
+                with open(tor_path, 'wb') as torrent_file:
+                    torrent_file.write(torrent)
+                setperm(tor_path)
+                logger.debug('Torrent file saved: %s' % tor_name)
+                downloadID = Source
+            except Exception as e:
+                logger.debug("Failed to write torrent to file %s, %s" % (tor_path, str(e)))
+                return False
 
     if (lazylibrarian.TOR_DOWNLOADER_UTORRENT and lazylibrarian.UTORRENT_HOST):
         logger.debug("Sending %s to Utorrent" % tor_title)
