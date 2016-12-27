@@ -231,7 +231,9 @@ FULL_SCAN = 0  # full scan would remove books from db
 ADD_AUTHOR = 1  # auto add authors not found in db from goodreads
 # value to mark missing books (deleted/removed) in db, can be 'Open', 'Ignored', 'Wanted','Skipped'
 NOTFOUND_STATUS = 'Skipped'
-# value to mark new books (when importing a new author), can be 'Open', 'Ignored', 'Wanted','Skipped'
+# value to mark new books when importing a new author, can be 'Open', 'Ignored', 'Wanted','Skipped'
+NEWAUTHOR_STATUS = 'Skipped'
+# value to mark new books when rescanning existing author, can be 'Open', 'Ignored', 'Wanted','Skipped'
 NEWBOOK_STATUS = 'Skipped'
 EBOOK_DEST_FOLDER = None
 EBOOK_DEST_FILE = None
@@ -500,7 +502,7 @@ def config_read(reloaded=False):
             EMAIL_SSL, EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT, EMAIL_TLS, EMAIL_SMTP_USER, EMAIL_SMTP_PASSWORD, \
             TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PORT, TRANSMISSION_PASS, TRANSMISSION_USER, \
             TOR_DOWNLOADER_SYNOLOGY, TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, \
-            DELUGE_LABEL, FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, \
+            DELUGE_LABEL, FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, NEWAUTHOR_STATUS, \
             USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
             GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, COMMIT_LIST, \
             LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, KEEP_SEEDING, SCHED, CACHE_HIT, CACHE_MISS, \
@@ -834,6 +836,7 @@ def config_read(reloaded=False):
         ADD_AUTHOR = check_setting_bool(CFG, 'LibraryScan', 'add_author', 1)
         NOTFOUND_STATUS = check_setting_str(CFG, 'LibraryScan', 'notfound_status', 'Skipped')
         NEWBOOK_STATUS = check_setting_str(CFG, 'LibraryScan', 'newbook_status', 'Skipped')
+        NEWAUTHOR_STATUS = check_setting_str(CFG, 'LibraryScan', 'newauthor_status', 'Skipped')
 
         EBOOK_DEST_FOLDER = check_setting_str(CFG, 'PostProcess', 'ebook_dest_folder', '$Author/$Title')
         EBOOK_DEST_FILE = check_setting_str(CFG, 'PostProcess', 'ebook_dest_file', '$Title - $Author')
@@ -1150,6 +1153,7 @@ def config_write():
     CFG.set('LibraryScan', 'add_author', ADD_AUTHOR)
     CFG.set('LibraryScan', 'notfound_status', NOTFOUND_STATUS)
     CFG.set('LibraryScan', 'newbook_status', NEWBOOK_STATUS)
+    CFG.set('LibraryScan', 'newauthor_status', NEWAUTHOR_STATUS)
 #
     check_section('PostProcess')
     CFG.set('PostProcess', 'ebook_dest_folder', EBOOK_DEST_FOLDER.encode(SYS_ENCODING))

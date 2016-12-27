@@ -159,7 +159,7 @@ class WebInterface(object):
                      deluge_user='', deluge_pass='', deluge_port=0, deluge_label='', use_synology=0, synology_dir='',
                      tor_downloader_synology=0, synology_host='', synology_port=0, synology_user='', synology_pass='',
                      use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token='',
-                     use_pushbullet=0, pushbullet_notify_onsnatch=0,
+                     use_pushbullet=0, pushbullet_notify_onsnatch=0, newauthor_status='Skipped',
                      pushbullet_notify_ondownload=0, pushbullet_token='', pushbullet_deviceid='',
                      use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys='',
                      pushover_apitoken='', pushover_ondownload=0, pushover_device='',
@@ -323,6 +323,7 @@ class WebInterface(object):
         lazylibrarian.FULL_SCAN = bool(full_scan)
         lazylibrarian.NOTFOUND_STATUS = notfound_status
         lazylibrarian.NEWBOOK_STATUS = newbook_status
+        lazylibrarian.NEWAUTHOR_STATUS = newauthor_status
         lazylibrarian.ADD_AUTHOR = bool(add_author)
 
         lazylibrarian.EBOOK_DEST_FOLDER = ebook_dest_folder

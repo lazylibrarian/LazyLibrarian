@@ -1187,7 +1187,21 @@
                                                 <option value="${nb_status}" ${selected}>${nb_status}</option>
                                             %endfor
                                             </select>
-                                            <span class="help-block">Status for new ebooks</span>
+                                            <span class="help-block">Status for new ebooks by existing authors</span>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="newauthor_status">New Authors Book Status:</label>
+                                            <select id="newauthor_status" name="newauthor_status" class="form-control">
+                                            %for na_status in config['status_list']:
+                                            <%
+                                                selected = ''
+                                                if na_status == lazylibrarian.NEWAUTHOR_STATUS:
+                                                        selected = 'selected="selected"'
+                                            %>
+                                                <option value="${na_status}" ${selected}>${na_status}</option>
+                                            %endfor
+                                            </select>
+                                            <span class="help-block">Status for ebooks by new authors</span>
                                         </div>
                                     </fieldset>
                                 </div>

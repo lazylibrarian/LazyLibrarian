@@ -84,13 +84,17 @@ def addAuthorToDB(authorname=None, refresh=False):
             newValueDict = {"AuthorImg": authorimg}
             myDB.upsert("authors", newValueDict, controlValueDict)
 
+        if dbauthor:
+            bookstatus = lazylibrarian.NEWBOOK_STATUS
+        else:
+            bookstatus = lazylibrarian.NEWAUTHOR_STATUS
 
         # process books
         if lazylibrarian.BOOK_API == "GoogleBooks":
             book_api = GoogleBooks()
-            book_api.get_author_books(authorid, authorname, refresh=refresh)
+            book_api.get_author_books(authorid, authorname, bookstatus, refresh=refresh)
         elif lazylibrarian.BOOK_API == "GoodReads":
-            GR.get_author_books(authorid, authorname, refresh=refresh)
+            GR.get_author_books(authorid, authorname, bookstatus, refresh=refresh)
 
         # update totals works for existing authors only.
         # New authors need their totals updating after libraryscan or import of books.
