@@ -58,6 +58,8 @@ def sendNZB(nzb, cmd=None, nzbID=None):
     if not host.startswith('http'):
         host = 'http://' + host
 
+    if host.endswith('/'):
+        host = host[:-1]
     hostparts = host.split('://')
 
     url = hostparts[0] + '://' + nzbgetXMLrpc % {"host": hostparts[1], "username": lazylibrarian.NZBGET_USER,
