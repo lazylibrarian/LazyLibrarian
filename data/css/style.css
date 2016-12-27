@@ -651,11 +651,11 @@ DIV#log_table_wrapper
 {
 	padding-top: 17px;
 }
-DIV#main 
+DIV#main
 {
     position: relative;
     float: bottom;
-    width: 100%; 
+    width: 100%;
     margin: 0;
 	padding: 86px 0 0 0px;
 }
@@ -863,7 +863,7 @@ TABLE#book_table TH#series
 	text-align: center;
 	width: 90px !important;
 }
-TABLE#book_table TH#seriesOrder
+TABLE#book_table TH#seriesNum
 {
 	text-align: center;
 	width: 40px;
@@ -935,7 +935,7 @@ TABLE#book_table TD#series
 	vertical-align: middle;
 	text-align: center;
 }
-TABLE#book_table TD#seriesOrder
+TABLE#book_table TD#seriesNum
 {
 	vertical-align: middle;
 	text-align: center;
