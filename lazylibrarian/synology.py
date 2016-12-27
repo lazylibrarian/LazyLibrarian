@@ -40,36 +40,6 @@ def _getJSON(URL, params):
 
     return "getJSON returned %s" % result, False
 
-    """ old version of code before switched to fetchURL
-    data = urllib.urlencode(params)
-    request = urllib2.Request(URL, data)
-    if lazylibrarian.PROXY_HOST:
-        request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
-    request.add_header('User-Agent', USER_AGENT)
-
-    try:
-        resp = urllib2.urlopen(request, timeout=30)
-        if str(resp.getcode()).startswith("2"):
-            # (200 OK etc)
-            try:
-                result = resp.read()
-                try:
-                    result_json = json.JSONDecoder().decode(result)
-                    return result_json, True
-                except (ValueError, AttributeError):
-                    return "Could not convert response to json", False
-            except socket.error as e:
-                return "Socket error %s" % str(e), False
-        else:
-            return "Error code %s" % resp.getcode(), False
-    except (socket.timeout) as e:
-        return "Timeout", False
-    except (urllib2.HTTPError, urllib2.URLError, ssl.SSLError) as e:
-        if hasattr(e, 'reason'):
-            return "%s" %  e.reason, False
-        else:
-            return "%s" % str(e), False
-    """
 
 def _errorMsg(errnum, api):
     # Convert DownloadStation errnum to an error message depending on which api call

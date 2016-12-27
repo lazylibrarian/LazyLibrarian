@@ -53,9 +53,13 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
         logger.debug('Delete function unavailable in this version of sabnzbd, no nzo_ids')
         return False
 
-    HOST = "%s:%i" % (lazylibrarian.SAB_HOST, lazylibrarian.SAB_PORT)
-    if not HOST.startswith("http"):
-        HOST = 'http://' + HOST
+    hostname = lazylibrarian.SAB_HOST
+    if hostname.endswith('/'):
+        hostname = hostname[:-1]
+    if not hostname.startswith("http"):
+        hostname = 'http://' + hostname
+
+    HOST = "%s:%i" % (hostname, lazylibrarian.SAB_PORT)
 
     if lazylibrarian.SAB_SUBDIR:
         HOST = HOST + "/" + lazylibrarian.SAB_SUBDIR
