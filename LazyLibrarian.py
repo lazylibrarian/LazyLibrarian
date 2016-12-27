@@ -8,6 +8,7 @@ import threading
 import locale
 import ConfigParser
 import platform
+import stat
 
 import lazylibrarian
 from lazylibrarian import webStart, logger, versioncheck
@@ -138,9 +139,24 @@ def main():
     # check the version when the application starts
     logger.debug('(LazyLibrarian) Setup install,versions and commit status')
     versioncheck.getInstallType()
-    lazylibrarian.CURRENT_VERSION = versioncheck.getCurrentVersion()
-    lazylibrarian.LATEST_VERSION = versioncheck.getLatestVersion()
-    lazylibrarian.COMMITS_BEHIND, lazylibrarian.COMMIT_LIST = versioncheck.getCommitDifferenceFromGit()
+    version_file = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
+    # if version file is less than "old" hours old, don't check github at startup
+    old = 6
+    if os.path.isfile(version_file):
+        age = time.time() - os.stat(version_file)[stat.ST_MTIME]
+        old = int(age / (60 * 60 * old))
+        if not old: # don't call git, read the version file
+            fp = open(version_file, 'r')
+            lazylibrarian.CURRENT_VERSION = fp.read().strip(' \n\r')
+            fp.close()
+            lazylibrarian.LATEST_VERSION = "not checked"
+            lazylibrarian.COMMITS_BEHIND = 0
+            lazylibrarian.COMMIT_LIST = ""
+    if old:
+        lazylibrarian.CURRENT_VERSION = versioncheck.getCurrentVersion()
+        lazylibrarian.LATEST_VERSION = versioncheck.getLatestVersion()
+        lazylibrarian.COMMITS_BEHIND, lazylibrarian.COMMIT_LIST = versioncheck.getCommitDifferenceFromGit()
+
     logger.debug('Current Version [%s] - Latest remote version [%s] - Install type [%s]' % (
         lazylibrarian.CURRENT_VERSION, lazylibrarian.LATEST_VERSION, lazylibrarian.INSTALL_TYPE))
 
