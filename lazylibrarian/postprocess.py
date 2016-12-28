@@ -449,7 +449,7 @@ def processDir(reset=False):
         downloads = os.listdir(processpath)  # check in case we processed/deleted some above
         for directory in downloads:
             dname, extn = os.path.splitext(directory)
-            if "LL.(" in dname and extn not in ['.fail', '.part', '.bts', '.!ut']:
+            if "LL.(" in directory and extn not in ['.fail', '.part', '.bts', '.!ut']:
                 bookID = str(directory).split("LL.(")[1].split(")")[0]
                 logger.debug("Book with id: " + str(bookID) + " found in download directory")
                 pp_path = os.path.join(processpath, directory)

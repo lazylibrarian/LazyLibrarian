@@ -353,6 +353,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
         URL = host + '/api?' + urllib.urlencode(params)
 
         rootxml = None
+        logger.debug("[NewzNabPlus] URL = %s" % URL)
         result, success = fetchURL(URL)
         if success:
             try:
