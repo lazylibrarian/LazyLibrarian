@@ -57,7 +57,7 @@ def fetchURL(URL, headers=None, retry=True):
         logger.warn(u"fetchURL: retrying - got timeout on %s" % URL)
         result, success = fetchURL(URL, headers=headers, retry=False)
         return result, success
-    except (urllib2.HTTPError, urllib2.URLError, ssl.SSLError) as e:
+    except Exception as e:
         if hasattr(e, 'reason'):
             return e.reason, False
         return str(e), False
