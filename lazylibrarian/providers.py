@@ -22,7 +22,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.common import USER_AGENT
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.formatter import age, today, plural, cleanName
+from lazylibrarian.formatter import age, today, plural, cleanName, unaccented
 from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL, GEN, EXTRA, LIME
 import lib.feedparser as feedparser
 
@@ -362,6 +362,8 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
                 logger.error('Error parsing data from %s: %s' % (host, str(e)))
                 rootxml = None
         else:
+            if not result or result == "''":
+                result = "No data returned, maybe check your APIKEY ?"
             logger.error('Error reading data from %s: %s' % (host, result))
 
         if rootxml is not None:
@@ -450,7 +452,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "t": provider['MAGSEARCH'],
                 "apikey": api_key,
                 "cat": provider['MAGCAT'],
-                "q": book['searchterm'],
+                "q": unaccented(book['searchterm']),
                 "extended": provider['EXTENDED'],
             }
         elif provider['GENERALSEARCH'] and provider['MAGCAT']:
@@ -458,7 +460,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "t": provider['GENERALSEARCH'],
                 "apikey": api_key,
                 "cat": provider['MAGCAT'],
-                "q": book['searchterm'],
+                "q": unaccented(book['searchterm']),
                 "extended": provider['EXTENDED'],
             }
     else:
@@ -467,7 +469,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "t": provider['GENERALSEARCH'],
                 "apikey": api_key,
                 # this is a general search
-                "q": book['searchterm'],
+                "q": unaccented(book['searchterm']),
                 "extended": provider['EXTENDED'],
             }
     if params:
