@@ -147,7 +147,7 @@ def processDir(reset=False):
 
         myDB = database.DBConnection()
         snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
-        logger.debug('Looking for %s file%s marked "Snatched"' % (len(snatched), plural(len(snatched))))
+        logger.debug('There are %s file%s marked "Snatched"' % (len(snatched), plural(len(snatched))))
 
         if len(snatched) > 0 and len(downloads) > 0:
             for book in snatched:
@@ -200,9 +200,13 @@ def processDir(reset=False):
                 matches = []
                 logger.info('Looking for %s in %s' % (matchtitle, processpath))
                 for fname in downloads:
+                    if hasattr(fname, 'decode'):
+                        fname = fname.decode(lazylibrarian.SYS_ENCODING)
                     # skip if failed before or incomplete torrents, or incomplete btsync
+                    if int(lazylibrarian.LOGLEVEL) > 2:
+                        logger.debug("Checking extn on %s" % fname)
                     extn = os.path.splitext(fname)[1]
-                    if extn and extn not in ['.fail', '.part', '.bts', '.!ut']:
+                    if not extn or extn not in ['.fail', '.part', '.bts', '.!ut']:
                         # This is to get round differences in torrent filenames.
                         # Usenet is ok, but Torrents aren't always returned with the name we searched for
                         # We ask the torrent downloader for the torrent name, but don't always get an answer
@@ -251,6 +255,10 @@ def processDir(reset=False):
                                             # as can't be sure they are ours
                                             list_dir = os.listdir(processpath)
                                             for ourfile in list_dir:
+                                                if hasattr(ourfile, 'decode'):
+                                                    ourfile = ourfile.decode(lazylibrarian.SYS_ENCODING)
+                                                if int(lazylibrarian.LOGLEVEL) > 2:
+                                                    logger.debug("Checking %s for %s" % (ourfile, fname))
                                                 if ourfile.startswith(fname):
                                                     if is_valid_booktype(ourfile, booktype="book") \
                                                         or is_valid_booktype(ourfile, booktype="mag") \
@@ -453,7 +461,7 @@ def processDir(reset=False):
         for entry in downloads:
             dname, extn = os.path.splitext(entry)
             if "LL.(" in entry:
-                if extn not in ['.fail', '.part', '.bts', '.!ut']:
+                if not extn or extn not in ['.fail', '.part', '.bts', '.!ut']:
                     bookID = entry.split("LL.(")[1].split(")")[0]
                     logger.debug("Book with id: %s found in download directory" % bookID)
                     pp_path = os.path.join(processpath, entry)
