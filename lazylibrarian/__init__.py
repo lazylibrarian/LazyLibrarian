@@ -409,9 +409,9 @@ def initialize():
                     print '%s : Unable to create folder for logs: %s. Only logging to console.' % (LOGDIR, str(e))
 
         # Start the logger, silence console logging if we need to
-        CFGLOGLEVEL = check_setting_int(CFG, 'General', 'loglevel', 3)
-        if LOGLEVEL == 3:  # default if no debug or quiet on cmdline
-            if CFGLOGLEVEL == 3:  # default value if none in config
+        CFGLOGLEVEL = check_setting_int(CFG, 'General', 'loglevel', 9)
+        if LOGLEVEL == 9:  # default if no debug or quiet on cmdline
+            if CFGLOGLEVEL == 9:  # default value if none in config
                 LOGLEVEL = 2  # If not set in Config, then lets set to DEBUG
             else:
                 LOGLEVEL = CFGLOGLEVEL  # Config setting picked up
