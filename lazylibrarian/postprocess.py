@@ -797,8 +797,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                         processpath,
                         calibre_id
                         ]
-                        logger.debug(str(metaparams))
-                        metares = subprocess.check_output(metaparams, stderr=subprocess.STDOUT)
+                    logger.debug(str(metaparams))
+                    metares = subprocess.check_output(metaparams, stderr=subprocess.STDOUT)
             # calibre does not like quotes in author names
             calibre_dir = os.path.join(processpath, unaccented_str(authorname.replace('"', '_')), '')
             if os.path.isdir(calibre_dir):
