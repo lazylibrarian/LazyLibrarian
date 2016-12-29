@@ -40,11 +40,8 @@ from lazylibrarian.gr import GoodReads
 def processAlternate(source_dir=None):
     # import a book from an alternate directory
     try:
-        if not source_dir:
+        if not source_dir or not os.path.isdir(source_dir):
             logger.warn("Alternate Directory not configured")
-            return False
-        elif not os.path.isdir(source_dir):
-            logger.warn("Alternate Directory [%s] not found" % source_dir)
             return False
         if source_dir == lazylibrarian.DIRECTORY('Destination'):
             logger.warn('Alternate directory must not be the same as Destination')
@@ -52,6 +49,9 @@ def processAlternate(source_dir=None):
 
         logger.debug('Processing alternate directory %s' % source_dir)
         # first, recursively process any books in subdirectories
+        # ensure directory is unicode so we get unicode results from listdir
+        if isinstance(source_dir, str):
+            source_dir = source_dir.decode(lazylibrarian.SYS_ENCODING)
         for fname in os.listdir(source_dir):
             subdir = os.path.join(source_dir, fname)
             if os.path.isdir(subdir):
@@ -136,7 +136,7 @@ def processDir(reset=False):
 
         processpath = lazylibrarian.DIRECTORY('Download')
         ppcount = 0
-
+        # processpath is set to unicode so we get unicode results from listdir
         try:
             downloads = os.listdir(processpath)
         except OSError as why:
@@ -148,6 +148,8 @@ def processDir(reset=False):
         myDB = database.DBConnection()
         snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
         logger.debug('There are %s file%s marked "Snatched"' % (len(snatched), plural(len(snatched))))
+
+        skipped_extensions = ['.fail', '.part', '.bts', '.!ut', '.torrent', '.magnet', '.nzb']
 
         if len(snatched) > 0 and len(downloads) > 0:
             for book in snatched:
@@ -200,13 +202,19 @@ def processDir(reset=False):
                 matches = []
                 logger.info('Looking for %s in %s' % (matchtitle, processpath))
                 for fname in downloads:
-                    if hasattr(fname, 'decode'):
-                        fname = fname.decode(lazylibrarian.SYS_ENCODING)
-                    # skip if failed before or incomplete torrents, or incomplete btsync
+                    if isinstance(fname, str):  # shouldn't be necessary as downloads is unicode??
+                        if int(lazylibrarian.LOGLEVEL) > 2:
+                            logger.warn("unexpected unicode conversion in fname, %s" % repr(fname))
+                        try:
+                            fname = fname.decode(lazylibrarian.SYS_ENCODING)
+                        except:
+                            logger.error("Unable to convert %s to sys encoding" % repr(fname))
+                            fname = "Failed fname"
+                    # skip if failed before or incomplete torrents, or incomplete btsync etc
                     if int(lazylibrarian.LOGLEVEL) > 2:
                         logger.debug("Checking extn on %s" % fname)
                     extn = os.path.splitext(fname)[1]
-                    if not extn or extn not in ['.fail', '.part', '.bts', '.!ut']:
+                    if not extn or extn not in skipped_extensions:
                         # This is to get round differences in torrent filenames.
                         # Usenet is ok, but Torrents aren't always returned with the name we searched for
                         # We ask the torrent downloader for the torrent name, but don't always get an answer
@@ -224,6 +232,13 @@ def processDir(reset=False):
                             logger.debug("%s%% match %s : %s" % (match, matchtitle, matchname))
                         if match >= lazylibrarian.DLOAD_RATIO:
                             pp_path = os.path.join(processpath, fname)
+                            if isinstance(pp_path, str):
+                                try:
+                                    pp_path = pp_path.decode(lazylibrarian.SYS_ENCODING)
+                                except:
+                                    logger.error("Unable to convert %s to sys encoding" % repr(pp_path))
+                                    pp_path = "Failed pp_path"
+
                             if os.path.isfile(pp_path):
                                 # handle single file downloads here. Book/mag file in download root.
                                 # move the file into it's own subdirectory so we don't move/delete
@@ -255,7 +270,9 @@ def processDir(reset=False):
                                             # as can't be sure they are ours
                                             list_dir = os.listdir(processpath)
                                             for ourfile in list_dir:
-                                                if hasattr(ourfile, 'decode'):
+                                                if isinstance(ourfile, str):
+                                                    if int(lazylibrarian.LOGLEVEL) > 2:
+                                                        logger.warn("unexpected unicode conversion in ourfile")
                                                     ourfile = ourfile.decode(lazylibrarian.SYS_ENCODING)
                                                 if int(lazylibrarian.LOGLEVEL) > 2:
                                                     logger.debug("Checking %s for %s" % (ourfile, fname))
@@ -459,9 +476,13 @@ def processDir(reset=False):
         if int(lazylibrarian.LOGLEVEL) > 2:
             logger.debug("Scanning %s entries in %s for LL.(num)" % (len(downloads), processpath))
         for entry in downloads:
+            if isinstance(entry, str):
+                if int(lazylibrarian.LOGLEVEL) > 2:
+                    logger.warn("unexpected unicode conversion in entry")
+                entry = entry.decode(lazylibrarian.SYS_ENCODING)
             dname, extn = os.path.splitext(entry)
             if "LL.(" in entry:
-                if not extn or extn not in ['.fail', '.part', '.bts', '.!ut']:
+                if not extn or extn not in skipped_extensions:
                     bookID = entry.split("LL.(")[1].split(")")[0]
                     logger.debug("Book with id: %s found in download directory" % bookID)
                     pp_path = os.path.join(processpath, entry)
@@ -690,6 +711,10 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     else:
         booktype = 'mag'
 
+    # ensure directory is unicode so we get unicode results from listdir
+    if isinstance(pp_path, str):
+        pp_path = pp_path.decode(lazylibrarian.SYS_ENCODING)
+
     got_book = False
     for bookfile in os.listdir(pp_path):
         if is_valid_booktype(bookfile, booktype=booktype):
@@ -789,6 +814,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
 def processAutoAdd(src_path=None):
     # Called to copy the book files to an auto add directory for the likes of Calibre which can't do nested dirs
+    # ensure directory is unicode so we get unicode results from listdir
+    if isinstance(src_path, str):
+        src_path = src_path.decode(lazylibrarian.SYS_ENCODING)
     autoadddir = lazylibrarian.IMP_AUTOADD
     logger.debug('AutoAdd - Attempt to copy from [%s] to [%s]' % (src_path, autoadddir))
 
@@ -797,7 +825,6 @@ def processAutoAdd(src_path=None):
         return False
     else:
         # Now try and copy all the book files into a single dir.
-
         try:
             names = os.listdir(src_path)
             # TODO : n files jpg, opf & book(s) should have same name
