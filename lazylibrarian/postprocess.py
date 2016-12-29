@@ -756,11 +756,11 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
             params = [lazylibrarian.IMP_CALIBREDB,
                       'add',
-                      '--title', '%s' % unaccented(bookname),
-                      '--author', '%s' % unaccented(authorname),
-                      '--identifier', '%s' % identifier,
+                      '--title=%s' % unaccented(bookname),
+                      '--authors=%s' % unaccented(authorname),
+                      '--identifier=%s' % identifier,
                       '-1',
-                      '--with-library', processpath,
+                      '--with-library=%s' % processpath,
                       pp_path
                       ]
             logger.debug(str(params))
