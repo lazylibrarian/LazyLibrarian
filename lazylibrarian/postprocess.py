@@ -756,9 +756,6 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
             params = [lazylibrarian.IMP_CALIBREDB,
                       'add',
-                      '--title=%s' % unaccented(bookname),
-                      '--authors=%s' % unaccented(authorname),
-                      '--identifier=%s' % identifier,
                       '-1',
                       '--with-library=%s' % processpath,
                       pp_path
@@ -769,7 +766,39 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 logger.debug('%s reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
                 if 'already exist' in res:
                     logger.warn('Calibre failed to import %s %s, reports book already exists' % (authorname, bookname))
-
+                if 'Added book ids' in res:
+                    calibre_id = res.split("book ids: ",1)[1].split("\n",1)[0]
+                    logger.debug('Calibre ID: %s' % calibre_id)
+                    authorparams = [lazylibrarian.IMP_CALIBREDB,
+                        'set_metadata',
+                        '--field',
+                        'authors:%s' % unaccented(authorname),
+                        '--with-library',
+                        processpath,
+                        calibre_id
+                        ]
+                    logger.debug(str(authorparams))
+                    authorres = subprocess.check_output(authorparams, stderr=subprocess.STDOUT)
+                    titleparams = [lazylibrarian.IMP_CALIBREDB,
+                        'set_metadata',
+                        '--field',
+                        'title:%s' % unaccented(bookname),
+                        '--with-library',
+                        processpath,
+                        calibre_id
+                        ]
+                    logger.debug(str(titleparams))
+                    titleres = subprocess.check_output(titleparams, stderr=subprocess.STDOUT)
+                    metaparams = [lazylibrarian.IMP_CALIBREDB,
+                        'set_metadata',
+                        '--field',
+                        'identifiers:%s' % identifier,
+                        '--with-library',
+                        processpath,
+                        calibre_id
+                        ]
+                        logger.debug(str(metaparams))
+                        metares = subprocess.check_output(metaparams, stderr=subprocess.STDOUT)
             # calibre does not like quotes in author names
             calibre_dir = os.path.join(processpath, unaccented_str(authorname.replace('"', '_')), '')
             if os.path.isdir(calibre_dir):
