@@ -58,6 +58,11 @@ def setperm(file_or_dir):
 def any_file(search_dir=None, extn=None):
     # find a file with specified extension in a directory, any will do
     # return full pathname of file, or empty string if none found
+    if search_dir is None or extn is None:
+        return ""
+    # ensure directory is unicode so we get unicode results from listdir
+    if hasattr(search_dir, 'decode'):
+        search_dir = search_dir.decode(lazylibrarian.SYS_ENCODING)
     if extn and search_dir and os.path.isdir(search_dir):
         for fname in os.listdir(search_dir):
             if fname.endswith(extn):
@@ -79,6 +84,11 @@ def csv_file(search_dir=None):
 def book_file(search_dir=None, booktype=None):
     # find a book/mag file in this directory, any book will do
     # return full pathname of book/mag, or empty string if none found
+    if search_dir is None or booktype is None:
+        return ""
+    # ensure directory is unicode so we get unicode results from listdir
+    if hasattr(search_dir, 'decode'):
+        search_dir = search_dir.decode(lazylibrarian.SYS_ENCODING)
     if search_dir and os.path.isdir(search_dir):
         for fname in os.listdir(search_dir):
             if is_valid_booktype(fname, booktype=booktype):
@@ -251,6 +261,9 @@ def cleanCache():
     myDB = database.DBConnection()
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "JSONCache")
+    # ensure directory is unicode so we get unicode results from listdir
+    if hasattr(cache, 'decode'):
+        cache = cache.decode(lazylibrarian.SYS_ENCODING)
     cleaned = 0
     kept = 0
     if os.path.isdir(cache):
@@ -267,6 +280,9 @@ def cleanCache():
     logger.debug("Cleaned %i file%s from JSONCache, kept %i" % (cleaned, plural(cleaned), kept))
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "XMLCache")
+    # ensure directory is unicode so we get unicode results from listdir
+    if hasattr(cache, 'decode'):
+        cache = cache.decode(lazylibrarian.SYS_ENCODING)
     cleaned = 0
     kept = 0
     if os.path.isdir(cache):
@@ -283,6 +299,9 @@ def cleanCache():
     logger.debug("Cleaned %i file%s from XMLCache, kept %i" % (cleaned, plural(cleaned), kept))
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "WorkCache")
+    # ensure directory is unicode so we get unicode results from listdir
+    if hasattr(cache, 'decode'):
+        cache = cache.decode(lazylibrarian.SYS_ENCODING)
     cleaned = 0
     kept = 0
     if os.path.isdir(cache):
@@ -303,6 +322,9 @@ def cleanCache():
     logger.debug("Cleaned %i file%s from WorkCache, kept %i" % (cleaned, plural(cleaned), kept))
 
     cache = lazylibrarian.CACHEDIR
+    # ensure directory is unicode so we get unicode results from listdir
+    if hasattr(cache, 'decode'):
+        cache = cache.decode(lazylibrarian.SYS_ENCODING)
     cleaned = 0
     kept = 0
     if os.path.isdir(cache):
