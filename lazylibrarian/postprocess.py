@@ -123,6 +123,42 @@ def processAlternate(source_dir=None):
         logger.error('Unhandled exception in processAlternate: %s' % traceback.format_exc())
 
 
+def move_into_subdir(processpath, targetdir, fname):
+    # move the book and any related files too, other book formats, or opf, jpg with same title
+    # (files begin with fname) from processpath to new targetdir
+    # can't move metadata.opf or cover.jpg or similar as can't be sure they are ours
+    list_dir = os.listdir(processpath)
+    for ourfile in list_dir:
+        if isinstance(ourfile, str):
+            if int(lazylibrarian.LOGLEVEL) > 2:
+                logger.warn("unexpected unicode conversion moving to subdir")
+            try:
+                ourfile = ourfile.decode(lazylibrarian.SYS_ENCODING)
+            except:
+                logger.error("Unable to convert %s to sys encoding" % repr(ourfile))
+                newfname = ''.join([c for c in ourfile if ord(c) < 128 and ord(c) > 31])
+                try:
+                    os.rename(os.path.join(processpath, ourfile), os.path.join(processpath, newfname))
+                    ourfile = newfname
+                except:
+                    ourfile = "failed ourfile"
+        if int(lazylibrarian.LOGLEVEL) > 2:
+            logger.debug("Checking %s for %s" % (ourfile, fname))
+        if ourfile.startswith(fname):
+            if is_valid_booktype(ourfile, booktype="book") \
+                or is_valid_booktype(ourfile, booktype="mag") \
+                or os.path.splitext(ourfile)[1].lower() in ['.opf', '.jpg']:
+                try:
+                    if lazylibrarian.DESTINATION_COPY:
+                        shutil.copyfile(os.path.join(processpath, ourfile), os.path.join(targetdir, ourfile))
+                        setperm(os.path.join(targetdir, ourfile))
+                    else:
+                        shutil.move(os.path.join(processpath, ourfile), os.path.join(targetdir, ourfile))
+                        setperm(os.path.join(targetdir, ourfile))
+                except Exception as why:
+                    logger.debug("Failed to copy/move file %s to %s, %s" % (ourfile, targetdir, str(why)))
+
+
 def cron_processDir():
     threading.currentThread().name = "CRON-POSTPROCESS"
     processDir()
@@ -204,12 +240,17 @@ def processDir(reset=False):
                 for fname in downloads:
                     if isinstance(fname, str):
                         if int(lazylibrarian.LOGLEVEL) > 2:
-                            logger.warn("unexpected unicode conversion in fname, %s" % repr(fname))
+                            logger.warn("unexpected unicode conversion in downloads")
                         try:
                             fname = fname.decode(lazylibrarian.SYS_ENCODING)
                         except:
                             logger.error("Unable to convert %s to sys encoding" % repr(fname))
-                            fname = "failed fname"
+                            newfname = ''.join([c for c in fname if ord(c) < 128 and ord(c) > 31])
+                            try:
+                                os.rename(os.path.join(processpath, fname), os.path.join(processpath, newfname))
+                                fname = newfname
+                            except:
+                                fname = "failed fname"
                     # skip if failed before or incomplete torrents, or incomplete btsync etc
                     if int(lazylibrarian.LOGLEVEL) > 2:
                         logger.debug("Checking extn on %s" % fname)
@@ -264,39 +305,7 @@ def processDir(reset=False):
                                         if not os.path.exists(targetdir):
                                             logger.debug('Unable to find directory %s' % targetdir)
                                         else:
-                                            # move the book and any related files too
-                                            # ie other book formats, or opf, jpg with same title
-                                            # can't move metadata.opf or cover.jpg or similar
-                                            # as can't be sure they are ours
-                                            list_dir = os.listdir(processpath)
-                                            for ourfile in list_dir:
-                                                if isinstance(ourfile, str):
-                                                    if int(lazylibrarian.LOGLEVEL) > 2:
-                                                        logger.warn("unexpected unicode conversion in ourfile")
-                                                    try:
-                                                        ourfile = ourfile.decode(lazylibrarian.SYS_ENCODING)
-                                                    except:
-                                                        logger.error("Unable to convert %s to sys encoding" % repr(ourfile))
-                                                        ourfile = "failed ourfile"
-                                                if int(lazylibrarian.LOGLEVEL) > 2:
-                                                    logger.debug("Checking %s for %s" % (ourfile, fname))
-                                                if ourfile.startswith(fname):
-                                                    if is_valid_booktype(ourfile, booktype="book") \
-                                                        or is_valid_booktype(ourfile, booktype="mag") \
-                                                        or os.path.splitext(ourfile)[1].lower() in ['.opf', '.jpg']:
-                                                        try:
-                                                            if lazylibrarian.DESTINATION_COPY:
-                                                                shutil.copyfile(os.path.join(processpath, ourfile),
-                                                                                os.path.join(targetdir, ourfile))
-                                                                setperm(os.path.join(targetdir, ourfile))
-                                                            else:
-                                                                shutil.move(os.path.join(processpath, ourfile),
-                                                                            os.path.join(targetdir, ourfile))
-                                                                setperm(os.path.join(targetdir, ourfile))
-                                                        except Exception as why:
-                                                            logger.debug("Failed to copy/move file %s to %s, %s" %
-                                                                        (ourfile, targetdir, str(why)))
-                                            pp_path = targetdir
+                                            pp_path = move_into_subdir(processpath, targetdir, fname)
 
                             if os.path.isdir(pp_path):
                                 logger.debug('Found folder (%s%%) %s for %s' % (match, pp_path, matchtitle))
@@ -482,12 +491,17 @@ def processDir(reset=False):
         for entry in downloads:
             if isinstance(entry, str):
                 if int(lazylibrarian.LOGLEVEL) > 2:
-                    logger.warn("unexpected unicode conversion in entry")
+                    logger.warn("unexpected unicode conversion in LL scanner")
                 try:
                     entry = entry.decode(lazylibrarian.SYS_ENCODING)
                 except:
                     logger.error("Unable to convert %s to sys encoding" % repr(entry))
-                    entry = "failed entry"
+                    newfname = ''.join([c for c in entry if ord(c) < 128 and ord(c) > 31])
+                    try:
+                        os.rename(os.path.join(processpath, entry), os.path.join(processpath, newfname))
+                        entry = newfname
+                    except:
+                        entry = "failed entry"
             dname, extn = os.path.splitext(entry)
             if "LL.(" in entry:
                 if not extn or extn not in skipped_extensions:
@@ -739,10 +753,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         processpath = lazylibrarian.DIRECTORY('Destination')
         try:
             logger.debug('Importing %s into calibre library' % (global_name))
-            # calibre is broken, ignores metadata.opf and book_name.opf
-            # also ignores --title and --author as parameters
-            # so we have to configure calibre to parse the filename for author/title
-            # and rename the book to the format we want calibre to use
+            # calibre ignores metadata.opf and book_name.opf
             for bookfile in os.listdir(pp_path):
                 filename, extn = os.path.splitext(bookfile)
                 # calibre does not like quotes in author names
@@ -752,7 +763,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             if bookid.isdigit():
                 identifier = "goodreads:%s" % bookid
             else:
-                identifier = "googlebooks:%s" % bookid
+                identifier = "google:%s" % bookid
 
             params = [lazylibrarian.IMP_CALIBREDB,
                       'add',
