@@ -202,14 +202,14 @@ def processDir(reset=False):
                 matches = []
                 logger.info('Looking for %s in %s' % (matchtitle, processpath))
                 for fname in downloads:
-                    if isinstance(fname, str):  # shouldn't be necessary as downloads is unicode??
+                    if isinstance(fname, str):
                         if int(lazylibrarian.LOGLEVEL) > 2:
                             logger.warn("unexpected unicode conversion in fname, %s" % repr(fname))
                         try:
                             fname = fname.decode(lazylibrarian.SYS_ENCODING)
                         except:
                             logger.error("Unable to convert %s to sys encoding" % repr(fname))
-                            fname = "Failed fname"
+                            fname = "failed fname"
                     # skip if failed before or incomplete torrents, or incomplete btsync etc
                     if int(lazylibrarian.LOGLEVEL) > 2:
                         logger.debug("Checking extn on %s" % fname)
@@ -273,7 +273,11 @@ def processDir(reset=False):
                                                 if isinstance(ourfile, str):
                                                     if int(lazylibrarian.LOGLEVEL) > 2:
                                                         logger.warn("unexpected unicode conversion in ourfile")
-                                                    ourfile = ourfile.decode(lazylibrarian.SYS_ENCODING)
+                                                    try:
+                                                        ourfile = ourfile.decode(lazylibrarian.SYS_ENCODING)
+                                                    except:
+                                                        logger.error("Unable to convert %s to sys encoding" % repr(ourfile))
+                                                        ourfile = "failed ourfile"
                                                 if int(lazylibrarian.LOGLEVEL) > 2:
                                                     logger.debug("Checking %s for %s" % (ourfile, fname))
                                                 if ourfile.startswith(fname):
@@ -379,7 +383,7 @@ def processDir(reset=False):
                                 logger.debug('Match: %s%%  %s' % (match[0], match[1]))
                     continue
 
-                if processDestination(pp_path, dest_path, authorname, bookname, global_name):
+                if processDestination(pp_path, dest_path, authorname, bookname, global_name, book['BookID']):
                     logger.debug("Processing %s, %s" % (global_name, book['NZBurl']))
                     # update nzbs, only update the snatched ones in case multiple matches for same book/magazine issue
                     controlValueDict = {"BookID": book['BookID'], "NZBurl": book['NZBurl'], "Status": "Snatched"}
@@ -479,7 +483,11 @@ def processDir(reset=False):
             if isinstance(entry, str):
                 if int(lazylibrarian.LOGLEVEL) > 2:
                     logger.warn("unexpected unicode conversion in entry")
-                entry = entry.decode(lazylibrarian.SYS_ENCODING)
+                try:
+                    entry = entry.decode(lazylibrarian.SYS_ENCODING)
+                except:
+                    logger.error("Unable to convert %s to sys encoding" % repr(entry))
+                    entry = "failed entry"
             dname, extn = os.path.splitext(entry)
             if "LL.(" in entry:
                 if not extn or extn not in skipped_extensions:
@@ -614,7 +622,7 @@ def import_book(pp_path=None, bookID=None):
             dest_path = unaccented_str(replace_all(dest_path, dic))
             dest_path = os.path.join(processpath, dest_path).encode(lazylibrarian.SYS_ENCODING)
 
-            if processDestination(pp_path, dest_path, authorname, bookname, global_name):
+            if processDestination(pp_path, dest_path, authorname, bookname, global_name, bookID):
                 # update nzbs
                 was_snatched = myDB.match('SELECT BookID, NZBprov FROM wanted WHERE BookID="%s"' % bookID)
                 snatched_from = "from " + was_snatched['NZBprov'] if was_snatched else "manually added"
@@ -703,7 +711,7 @@ def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
         myDB.upsert("authors", newValueDict, controlValueDict)
 
 
-def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None):
+def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, bookid=None):
 
     # check we got a book/magazine in the downloaded files, if not, return
     if bookname:
@@ -741,13 +749,19 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 os.rename(os.path.join(pp_path, filename + extn), os.path.join(
                     pp_path, global_name.replace('"', '_') + extn))
 
+            if bookid.isdigit():
+                identifier = "goodreads:%s" % bookid
+            else:
+                identifier = "googlebooks:%s" % bookid
+
             params = [lazylibrarian.IMP_CALIBREDB,
                       'add',
-                      # '--title="%s"' % bookname,
-                      # '--author="%s"' % unaccented(authorname),
+                      '--title', '%s' % unaccented(bookname),
+                      '--author', '%s' % unaccented(authorname),
+                      '--identifier', '%s' % identifier,
                       '-1',
-                      '--with-library',
-                      processpath, pp_path
+                      '--with-library', processpath,
+                      pp_path
                       ]
             logger.debug(str(params))
             res = subprocess.check_output(params, stderr=subprocess.STDOUT)
