@@ -410,9 +410,9 @@ def initialize():
 
         # Start the logger, silence console logging if we need to
         CFGLOGLEVEL = check_setting_int(CFG, 'General', 'loglevel', 9)
-        if LOGLEVEL == 9:  # default if no debug or quiet on cmdline
+        if LOGLEVEL == 1:  # default if no debug or quiet on cmdline
             if CFGLOGLEVEL == 9:  # default value if none in config
-                LOGLEVEL = 2  # If not set in Config, then lets set to DEBUG
+                LOGLEVEL = 2  # If not set in Config or cmdline, then lets set to DEBUG
             else:
                 LOGLEVEL = CFGLOGLEVEL  # Config setting picked up
 
@@ -1323,17 +1323,13 @@ def DIRECTORY(dirname):
     else:
         return ""
 
-    if not usedir:
-        logger.warn("%s dir not configured, using %s" % (dirname, os.getcwd()))
-    elif not os.path.isdir(usedir):
-        logger.warn("%s dir [%s] not found, using %s" %
-            (dirname, repr(usedir), os.getcwd()))
-    elif not os.access(usedir, os.W_OK | os.X_OK):
-        logger.warn("%s dir [%s] not writeable, using %s" %
-            (dirname, repr(usedir), os.getcwd()))
-    else:
-        return usedir
-    return os.getcwd()
+    if not usedir or not os.path.isdir(usedir) or not os.access(usedir, os.W_OK | os.X_OK):
+        usedir = os.getcwd()
+        logger.warn("%s dir not usable, using %s" % (dirname, usedir))
+    # return directory as unicode so we get unicode results from listdir
+    if isinstance(usedir, str):
+        usedir = usedir.decode(SYS_ENCODING)
+    return usedir
 
 
 def add_rss_slot():

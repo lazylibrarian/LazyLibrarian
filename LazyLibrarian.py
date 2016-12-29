@@ -81,7 +81,7 @@ def main():
 
     options, args = p.parse_args()
 
-    lazylibrarian.LOGLEVEL = 3
+    lazylibrarian.LOGLEVEL = 1
     if options.debug:
         lazylibrarian.LOGLEVEL = 2
 
