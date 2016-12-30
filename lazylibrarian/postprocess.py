@@ -123,6 +123,28 @@ def processAlternate(source_dir=None):
         logger.error('Unhandled exception in processAlternate: %s' % traceback.format_exc())
 
 
+def try_rename(directory, filename):
+    # Shouldn't really need to do this, there must be a better way...
+    # When we call listdir with unicode it returns unicode when it can,
+    # or 8bit ascii str if it can't convert the filename to unicode
+    # eg 'Stephen Hawking - A Brief History of Time (PDF&EPUB&MOB\xc4\xb0)\xb0\x06'
+    # Return the new filename or empty string if failed
+    try:
+        # try decode first in case we called listdir with str instead of unicode
+        filename = filename.decode(lazylibrarian.SYS_ENCODING)
+        return filename
+    except Exception as e:
+        logger.error("Unable to convert %s to sys encoding" % repr(filename))
+        # strip out any non-ascii characters and try to rename
+        newfname = ''.join([c for c in filename if ord(c) < 128 and ord(c) > 31])
+        try:
+            os.rename(os.path.join(directory, filename), os.path.join(directory, newfname))
+            return newfname
+        except Exception as e:
+            logger.error("Unable to rename %s" % repr(filename))
+            return ""
+
+
 def move_into_subdir(processpath, targetdir, fname):
     # move the book and any related files too, other book formats, or opf, jpg with same title
     # (files begin with fname) from processpath to new targetdir
@@ -131,17 +153,10 @@ def move_into_subdir(processpath, targetdir, fname):
     for ourfile in list_dir:
         if isinstance(ourfile, str):
             if int(lazylibrarian.LOGLEVEL) > 2:
-                logger.warn("unexpected unicode conversion moving to subdir")
-            try:
-                ourfile = ourfile.decode(lazylibrarian.SYS_ENCODING)
-            except:
-                logger.error("Unable to convert %s to sys encoding" % repr(ourfile))
-                newfname = ''.join([c for c in ourfile if ord(c) < 128 and ord(c) > 31])
-                try:
-                    os.rename(os.path.join(processpath, ourfile), os.path.join(processpath, newfname))
-                    ourfile = newfname
-                except:
-                    ourfile = "failed ourfile"
+                logger.warn("unexpected unicode conversion moving file into subdir")
+            ourfile = try_rename(processpath, ourfile)
+            if not ourfile:
+                ourfile = "failed rename"
         if int(lazylibrarian.LOGLEVEL) > 2:
             logger.debug("Checking %s for %s" % (ourfile, fname))
         if ourfile.startswith(fname):
@@ -241,16 +256,9 @@ def processDir(reset=False):
                     if isinstance(fname, str):
                         if int(lazylibrarian.LOGLEVEL) > 2:
                             logger.warn("unexpected unicode conversion in downloads")
-                        try:
-                            fname = fname.decode(lazylibrarian.SYS_ENCODING)
-                        except:
-                            logger.error("Unable to convert %s to sys encoding" % repr(fname))
-                            newfname = ''.join([c for c in fname if ord(c) < 128 and ord(c) > 31])
-                            try:
-                                os.rename(os.path.join(processpath, fname), os.path.join(processpath, newfname))
-                                fname = newfname
-                            except:
-                                fname = "failed fname"
+                        fname = try_rename(processpath, fname)
+                    if not fname:
+                        fname = "failed rename"
                     # skip if failed before or incomplete torrents, or incomplete btsync etc
                     if int(lazylibrarian.LOGLEVEL) > 2:
                         logger.debug("Checking extn on %s" % fname)
@@ -492,16 +500,9 @@ def processDir(reset=False):
             if isinstance(entry, str):
                 if int(lazylibrarian.LOGLEVEL) > 2:
                     logger.warn("unexpected unicode conversion in LL scanner")
-                try:
-                    entry = entry.decode(lazylibrarian.SYS_ENCODING)
-                except:
-                    logger.error("Unable to convert %s to sys encoding" % repr(entry))
-                    newfname = ''.join([c for c in entry if ord(c) < 128 and ord(c) > 31])
-                    try:
-                        os.rename(os.path.join(processpath, entry), os.path.join(processpath, newfname))
-                        entry = newfname
-                    except:
-                        entry = "failed entry"
+                entry = try_rename(processpath, entry)
+                if not entry:
+                    entry = "failed rename"
             dname, extn = os.path.splitext(entry)
             if "LL.(" in entry:
                 if not extn or extn not in skipped_extensions:
