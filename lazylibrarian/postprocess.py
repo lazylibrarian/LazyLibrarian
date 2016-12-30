@@ -313,7 +313,8 @@ def processDir(reset=False):
                                         if not os.path.exists(targetdir):
                                             logger.debug('Unable to find directory %s' % targetdir)
                                         else:
-                                            pp_path = move_into_subdir(processpath, targetdir, fname)
+                                            move_into_subdir(processpath, targetdir, fname)
+                                            pp_path = targetdir
 
                             if os.path.isdir(pp_path):
                                 logger.debug('Found folder (%s%%) %s for %s' % (match, pp_path, matchtitle))
