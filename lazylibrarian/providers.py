@@ -363,7 +363,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
                 rootxml = None
         else:
             if not result or result == "''":
-                result = "No data returned, maybe check your APIKEY ?"
+                result = "Got an empty response"
             logger.error('Error reading data from %s: %s' % (host, result))
 
         if rootxml is not None:

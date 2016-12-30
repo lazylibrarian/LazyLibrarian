@@ -123,6 +123,57 @@ def processAlternate(source_dir=None):
         logger.error('Unhandled exception in processAlternate: %s' % traceback.format_exc())
 
 
+def try_rename(directory, filename):
+    # Shouldn't really need to do this, there must be a better way...
+    # When we call listdir with unicode it returns unicode when it can,
+    # or 8bit ascii str if it can't convert the filename to unicode
+    # eg 'Stephen Hawking - A Brief History of Time (PDF&EPUB&MOB\xc4\xb0)\xb0\x06'
+    # Return the new filename or empty string if failed
+    try:
+        # try decode first in case we called listdir with str instead of unicode
+        filename = filename.decode(lazylibrarian.SYS_ENCODING)
+        return filename
+    except Exception as e:
+        logger.error("Unable to convert %s to sys encoding" % repr(filename))
+        # strip out any non-ascii characters and try to rename
+        newfname = ''.join([c for c in filename if ord(c) < 128 and ord(c) > 31])
+        try:
+            os.rename(os.path.join(directory, filename), os.path.join(directory, newfname))
+            return newfname
+        except Exception as e:
+            logger.error("Unable to rename %s" % repr(filename))
+            return ""
+
+
+def move_into_subdir(processpath, targetdir, fname):
+    # move the book and any related files too, other book formats, or opf, jpg with same title
+    # (files begin with fname) from processpath to new targetdir
+    # can't move metadata.opf or cover.jpg or similar as can't be sure they are ours
+    list_dir = os.listdir(processpath)
+    for ourfile in list_dir:
+        if isinstance(ourfile, str):
+            if int(lazylibrarian.LOGLEVEL) > 2:
+                logger.warn("unexpected unicode conversion moving file into subdir")
+            ourfile = try_rename(processpath, ourfile)
+            if not ourfile:
+                ourfile = "failed rename"
+        if int(lazylibrarian.LOGLEVEL) > 2:
+            logger.debug("Checking %s for %s" % (ourfile, fname))
+        if ourfile.startswith(fname):
+            if is_valid_booktype(ourfile, booktype="book") \
+                or is_valid_booktype(ourfile, booktype="mag") \
+                or os.path.splitext(ourfile)[1].lower() in ['.opf', '.jpg']:
+                try:
+                    if lazylibrarian.DESTINATION_COPY:
+                        shutil.copyfile(os.path.join(processpath, ourfile), os.path.join(targetdir, ourfile))
+                        setperm(os.path.join(targetdir, ourfile))
+                    else:
+                        shutil.move(os.path.join(processpath, ourfile), os.path.join(targetdir, ourfile))
+                        setperm(os.path.join(targetdir, ourfile))
+                except Exception as why:
+                    logger.debug("Failed to copy/move file %s to %s, %s" % (ourfile, targetdir, str(why)))
+
+
 def cron_processDir():
     threading.currentThread().name = "CRON-POSTPROCESS"
     processDir()
@@ -202,14 +253,12 @@ def processDir(reset=False):
                 matches = []
                 logger.info('Looking for %s in %s' % (matchtitle, processpath))
                 for fname in downloads:
-                    if isinstance(fname, str):  # shouldn't be necessary as downloads is unicode??
+                    if isinstance(fname, str):
                         if int(lazylibrarian.LOGLEVEL) > 2:
-                            logger.warn("unexpected unicode conversion in fname, %s" % repr(fname))
-                        try:
-                            fname = fname.decode(lazylibrarian.SYS_ENCODING)
-                        except:
-                            logger.error("Unable to convert %s to sys encoding" % repr(fname))
-                            fname = "Failed fname"
+                            logger.warn("unexpected unicode conversion in downloads")
+                        fname = try_rename(processpath, fname)
+                    if not fname:
+                        fname = "failed rename"
                     # skip if failed before or incomplete torrents, or incomplete btsync etc
                     if int(lazylibrarian.LOGLEVEL) > 2:
                         logger.debug("Checking extn on %s" % fname)
@@ -264,35 +313,7 @@ def processDir(reset=False):
                                         if not os.path.exists(targetdir):
                                             logger.debug('Unable to find directory %s' % targetdir)
                                         else:
-                                            # move the book and any related files too
-                                            # ie other book formats, or opf, jpg with same title
-                                            # can't move metadata.opf or cover.jpg or similar
-                                            # as can't be sure they are ours
-                                            list_dir = os.listdir(processpath)
-                                            for ourfile in list_dir:
-                                                if isinstance(ourfile, str):
-                                                    if int(lazylibrarian.LOGLEVEL) > 2:
-                                                        logger.warn("unexpected unicode conversion in ourfile")
-                                                    ourfile = ourfile.decode(lazylibrarian.SYS_ENCODING)
-                                                if int(lazylibrarian.LOGLEVEL) > 2:
-                                                    logger.debug("Checking %s for %s" % (ourfile, fname))
-                                                if ourfile.startswith(fname):
-                                                    if is_valid_booktype(ourfile, booktype="book") \
-                                                        or is_valid_booktype(ourfile, booktype="mag") \
-                                                        or os.path.splitext(ourfile)[1].lower() in ['.opf', '.jpg']:
-                                                        try:
-                                                            if lazylibrarian.DESTINATION_COPY:
-                                                                shutil.copyfile(os.path.join(processpath, ourfile),
-                                                                                os.path.join(targetdir, ourfile))
-                                                                setperm(os.path.join(targetdir, ourfile))
-                                                            else:
-                                                                shutil.move(os.path.join(processpath, ourfile),
-                                                                            os.path.join(targetdir, ourfile))
-                                                                setperm(os.path.join(targetdir, ourfile))
-                                                        except Exception as why:
-                                                            logger.debug("Failed to copy/move file %s to %s, %s" %
-                                                                        (ourfile, targetdir, str(why)))
-                                            pp_path = targetdir
+                                            pp_path = move_into_subdir(processpath, targetdir, fname)
 
                             if os.path.isdir(pp_path):
                                 logger.debug('Found folder (%s%%) %s for %s' % (match, pp_path, matchtitle))
@@ -379,7 +400,7 @@ def processDir(reset=False):
                                 logger.debug('Match: %s%%  %s' % (match[0], match[1]))
                     continue
 
-                if processDestination(pp_path, dest_path, authorname, bookname, global_name):
+                if processDestination(pp_path, dest_path, authorname, bookname, global_name, book['BookID']):
                     logger.debug("Processing %s, %s" % (global_name, book['NZBurl']))
                     # update nzbs, only update the snatched ones in case multiple matches for same book/magazine issue
                     controlValueDict = {"BookID": book['BookID'], "NZBurl": book['NZBurl'], "Status": "Snatched"}
@@ -478,8 +499,10 @@ def processDir(reset=False):
         for entry in downloads:
             if isinstance(entry, str):
                 if int(lazylibrarian.LOGLEVEL) > 2:
-                    logger.warn("unexpected unicode conversion in entry")
-                entry = entry.decode(lazylibrarian.SYS_ENCODING)
+                    logger.warn("unexpected unicode conversion in LL scanner")
+                entry = try_rename(processpath, entry)
+                if not entry:
+                    entry = "failed rename"
             dname, extn = os.path.splitext(entry)
             if "LL.(" in entry:
                 if not extn or extn not in skipped_extensions:
@@ -614,7 +637,7 @@ def import_book(pp_path=None, bookID=None):
             dest_path = unaccented_str(replace_all(dest_path, dic))
             dest_path = os.path.join(processpath, dest_path).encode(lazylibrarian.SYS_ENCODING)
 
-            if processDestination(pp_path, dest_path, authorname, bookname, global_name):
+            if processDestination(pp_path, dest_path, authorname, bookname, global_name, bookID):
                 # update nzbs
                 was_snatched = myDB.match('SELECT BookID, NZBprov FROM wanted WHERE BookID="%s"' % bookID)
                 snatched_from = "from " + was_snatched['NZBprov'] if was_snatched else "manually added"
@@ -703,7 +726,7 @@ def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
         myDB.upsert("authors", newValueDict, controlValueDict)
 
 
-def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None):
+def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, bookid=None):
 
     # check we got a book/magazine in the downloaded files, if not, return
     if bookname:
@@ -731,23 +754,23 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         processpath = lazylibrarian.DIRECTORY('Destination')
         try:
             logger.debug('Importing %s into calibre library' % (global_name))
-            # calibre is broken, ignores metadata.opf and book_name.opf
-            # also ignores --title and --author as parameters
-            # so we have to configure calibre to parse the filename for author/title
-            # and rename the book to the format we want calibre to use
+            # calibre ignores metadata.opf and book_name.opf
             for bookfile in os.listdir(pp_path):
                 filename, extn = os.path.splitext(bookfile)
                 # calibre does not like quotes in author names
                 os.rename(os.path.join(pp_path, filename + extn), os.path.join(
                     pp_path, global_name.replace('"', '_') + extn))
 
+            if bookid.isdigit():
+                identifier = "goodreads:%s" % bookid
+            else:
+                identifier = "google:%s" % bookid
+
             params = [lazylibrarian.IMP_CALIBREDB,
                       'add',
-                      # '--title="%s"' % bookname,
-                      # '--author="%s"' % unaccented(authorname),
                       '-1',
-                      '--with-library',
-                      processpath, pp_path
+                      '--with-library=%s' % processpath,
+                      pp_path
                       ]
             logger.debug(str(params))
             res = subprocess.check_output(params, stderr=subprocess.STDOUT)
@@ -755,7 +778,39 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 logger.debug('%s reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
                 if 'already exist' in res:
                     logger.warn('Calibre failed to import %s %s, reports book already exists' % (authorname, bookname))
-
+                if 'Added book ids' in res:
+                    calibre_id = res.split("book ids: ",1)[1].split("\n",1)[0]
+                    logger.debug('Calibre ID: %s' % calibre_id)
+                    authorparams = [lazylibrarian.IMP_CALIBREDB,
+                        'set_metadata',
+                        '--field',
+                        'authors:%s' % unaccented(authorname),
+                        '--with-library',
+                        processpath,
+                        calibre_id
+                        ]
+                    logger.debug(str(authorparams))
+                    authorres = subprocess.check_output(authorparams, stderr=subprocess.STDOUT)
+                    titleparams = [lazylibrarian.IMP_CALIBREDB,
+                        'set_metadata',
+                        '--field',
+                        'title:%s' % unaccented(bookname),
+                        '--with-library',
+                        processpath,
+                        calibre_id
+                        ]
+                    logger.debug(str(titleparams))
+                    titleres = subprocess.check_output(titleparams, stderr=subprocess.STDOUT)
+                    metaparams = [lazylibrarian.IMP_CALIBREDB,
+                        'set_metadata',
+                        '--field',
+                        'identifiers:%s' % identifier,
+                        '--with-library',
+                        processpath,
+                        calibre_id
+                        ]
+                    logger.debug(str(metaparams))
+                    metares = subprocess.check_output(metaparams, stderr=subprocess.STDOUT)
             # calibre does not like quotes in author names
             calibre_dir = os.path.join(processpath, unaccented_str(authorname.replace('"', '_')), '')
             if os.path.isdir(calibre_dir):

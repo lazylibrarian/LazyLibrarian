@@ -16,7 +16,6 @@
 import platform
 import re
 import lazylibrarian
-import unicodedata
 import os
 import shutil
 import time
@@ -61,7 +60,7 @@ def any_file(search_dir=None, extn=None):
     if search_dir is None or extn is None:
         return ""
     # ensure directory is unicode so we get unicode results from listdir
-    if hasattr(search_dir, 'decode'):
+    if isinstance(search_dir, str):
         search_dir = search_dir.decode(lazylibrarian.SYS_ENCODING)
     if extn and search_dir and os.path.isdir(search_dir):
         for fname in os.listdir(search_dir):
@@ -87,7 +86,7 @@ def book_file(search_dir=None, booktype=None):
     if search_dir is None or booktype is None:
         return ""
     # ensure directory is unicode so we get unicode results from listdir
-    if hasattr(search_dir, 'decode'):
+    if isinstance(search_dir, str):
         search_dir = search_dir.decode(lazylibrarian.SYS_ENCODING)
     if search_dir and os.path.isdir(search_dir):
         for fname in os.listdir(search_dir):
@@ -262,7 +261,7 @@ def cleanCache():
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "JSONCache")
     # ensure directory is unicode so we get unicode results from listdir
-    if hasattr(cache, 'decode'):
+    if isinstance(cache, str):
         cache = cache.decode(lazylibrarian.SYS_ENCODING)
     cleaned = 0
     kept = 0
@@ -281,7 +280,7 @@ def cleanCache():
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "XMLCache")
     # ensure directory is unicode so we get unicode results from listdir
-    if hasattr(cache, 'decode'):
+    if isinstance(cache, str):
         cache = cache.decode(lazylibrarian.SYS_ENCODING)
     cleaned = 0
     kept = 0
@@ -300,7 +299,7 @@ def cleanCache():
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "WorkCache")
     # ensure directory is unicode so we get unicode results from listdir
-    if hasattr(cache, 'decode'):
+    if isinstance(cache, str):
         cache = cache.decode(lazylibrarian.SYS_ENCODING)
     cleaned = 0
     kept = 0
@@ -323,7 +322,7 @@ def cleanCache():
 
     cache = lazylibrarian.CACHEDIR
     # ensure directory is unicode so we get unicode results from listdir
-    if hasattr(cache, 'decode'):
+    if isinstance(cache, str):
         cache = cache.decode(lazylibrarian.SYS_ENCODING)
     cleaned = 0
     kept = 0
