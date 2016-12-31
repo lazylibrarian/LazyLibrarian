@@ -14,17 +14,14 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import urllib
-import urllib2
-import socket
 from xml.etree import ElementTree
 
 import lazylibrarian
+import lib.feedparser as feedparser
 from lazylibrarian import logger, database
-from lazylibrarian.common import USER_AGENT
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.formatter import age, today, plural, cleanName, unaccented
 from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL, GEN, EXTRA, LIME
-import lib.feedparser as feedparser
 
 
 def get_searchterm(book, searchType):
@@ -135,7 +132,7 @@ def get_capabilities(provider):
                             provider['BOOKSEARCH'] = ''
                             # but check in case
                             search = data.find('searching/book-search')
-                            if search is not None:
+                            if search:
                                 if 'available' in search.attrib:
                                     if search.attrib['available'] == 'yes':
                                         provider['BOOKSEARCH'] = 'book'
@@ -170,23 +167,21 @@ def IterateOverNewzNabSites(book=None, searchType=None):
 
     resultslist = []
     providers = 0
-    myDB = database.DBConnection()
 
     for provider in lazylibrarian.NEWZNAB_PROV:
-        if (provider['ENABLED']):
+        if provider['ENABLED']:
             provider = get_capabilities(provider)
             providers += 1
             logger.debug('[IterateOverNewzNabSites] - %s' % provider['HOST'])
             resultslist += NewzNabPlus(book, provider, searchType, "nzb")
 
     for provider in lazylibrarian.TORZNAB_PROV:
-        if (provider['ENABLED']):
+        if provider['ENABLED']:
             provider = get_capabilities(provider)
             providers += 1
             logger.debug('[IterateOverTorzNabSites] - %s' % provider['HOST'])
             resultslist += NewzNabPlus(book, provider,
                                        searchType, "torznab")
-
     return resultslist, providers
 
 
@@ -198,31 +193,31 @@ def IterateOverTorrentSites(book=None, searchType=None):
         authorname, bookname = get_searchterm(book, searchType)
         book['searchterm'] = authorname + ' ' + bookname
 
-    if (lazylibrarian.KAT):
+    if lazylibrarian.KAT:
         providers += 1
         logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.KAT_HOST)
         resultslist += KAT(book)
-    if (lazylibrarian.TPB):
+    if lazylibrarian.TPB:
         providers += 1
         logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.TPB_HOST)
         resultslist += TPB(book)
-    if (lazylibrarian.ZOO):
+    if lazylibrarian.ZOO:
         providers += 1
         logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.ZOO_HOST)
         resultslist += ZOO(book)
-    if (lazylibrarian.EXTRA):
+    if lazylibrarian.EXTRA:
         providers += 1
         logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.EXTRA_HOST)
         resultslist += EXTRA(book)
-    if (lazylibrarian.TDL):
+    if lazylibrarian.TDL:
         providers += 1
         logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.TDL_HOST)
         resultslist += TDL(book)
-    if (lazylibrarian.GEN):
+    if lazylibrarian.GEN:
         providers += 1
         logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.GEN_HOST)
         resultslist += GEN(book)
-    if (lazylibrarian.LIME):
+    if lazylibrarian.LIME:
         providers += 1
         logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.LIME_HOST)
         resultslist += LIME(book)
@@ -235,7 +230,7 @@ def IterateOverRSSSites(book=None, searchType=None):
     resultslist = []
     providers = 0
     for provider in lazylibrarian.RSS_PROV:
-        if (provider['ENABLED']):
+        if provider['ENABLED']:
             providers += 1
             logger.debug('[IterateOverRSSSites] - %s' % provider['HOST'])
             resultslist += RSS(provider['HOST'], provider['NAME'])
@@ -262,7 +257,7 @@ def RSS(host=None, feednr=None):
 
     if data:
         # to debug because of api
-        logger.debug(u'Parsing results from %s' % (URL))
+        logger.debug(u'Parsing results from %s' % URL)
         provider = data['feed']['link']
         logger.debug("RSS %s returned %i result%s" % (provider, len(data.entries), plural(len(data.entries))))
         for post in data.entries:
@@ -343,7 +338,6 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
                  searchType, host, searchMode, api_key, str(book)))
 
     results = []
-    data = None
 
     params = ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode)
 
@@ -399,7 +393,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
                 nzbcount = 0
                 for nzb in resultxml:
                     try:
-                        nzbcount = nzbcount + 1
+                        nzbcount += 1
                         results.append(ReturnResultsFieldsBySearchType(book, nzb, searchType, host, searchMode))
                     except IndexError:
                         logger.debug('No results from %s for %s' % (host, book['searchterm']))
@@ -572,7 +566,6 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None,
     # <torznab:attr name="minimumseedtime" value="172800" />
     # </item>
     """
-    resultFields = None
 
     nzbtitle = nzbdetails[0].text  # title is currently the same field for all searchtypes
 

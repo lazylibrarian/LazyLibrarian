@@ -17,14 +17,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Sick Beard.  If not, see <http://www.gnu.org/licenses/>.
 
-import base64
-import urllib
-import urllib2
-import time
-import lazylibrarian
-
-from httplib import HTTPSConnection, HTTPException
+from httplib import HTTPSConnection
 from urllib import urlencode
+
+import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
 from lazylibrarian.formatter import unaccented
@@ -92,7 +88,7 @@ class PushoverNotifier:
                     return request_body
             else:
                 return True
-        elif request_status >= 400 and request_status < 500:
+        elif 400 <= request_status < 500:
             logger.error("Pushover request failed: %s" % response.reason)
             return False
         else:

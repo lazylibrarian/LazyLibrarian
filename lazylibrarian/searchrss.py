@@ -13,22 +13,19 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import urllib2
-import os
-import traceback
 import re
 import threading
+import traceback
+
 import lazylibrarian
-
 from lazylibrarian import logger, database
-
-from lib.fuzzywuzzy import fuzz
-from lazylibrarian.providers import IterateOverRSSSites, get_searchterm
 from lazylibrarian.common import scheduleJob
 from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, check_int, now
-from lazylibrarian.searchtorrents import TORDownloadMethod
-from lazylibrarian.searchnzb import NZBDownloadMethod
 from lazylibrarian.notifiers import notify_snatch
+from lazylibrarian.providers import IterateOverRSSSites, get_searchterm
+from lazylibrarian.searchnzb import NZBDownloadMethod
+from lazylibrarian.searchtorrents import TORDownloadMethod
+from lib.fuzzywuzzy import fuzz
 
 
 def cron_search_rss_book():
@@ -48,7 +45,6 @@ def search_rss_book(books=None, reset=False):
             return
 
         myDB = database.DBConnection()
-        searchlist = []
 
         if books is None:
             # We are performing a backlog search
@@ -74,9 +70,6 @@ def search_rss_book(books=None, reset=False):
             logger.warn('No rss providers are set, check config')
             return  # No point in continuing
 
-        dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
-               ',': '', '*': '', ':': '', ';': ''}
-
         rss_count = 0
         for book in searchbooks:
             authorname, bookname = get_searchterm(book, "book")
@@ -90,14 +83,14 @@ def search_rss_book(books=None, reset=False):
             if not found:
                 logger.debug("Searches returned no results. Adding book %s - %s to queue." % (authorname, bookname))
             if found > True:
-                rss_count = rss_count + 1
+                rss_count += 1
 
         logger.info("RSS Search for Wanted items complete, found %s book%s" % (rss_count, plural(rss_count)))
 
         if reset:
             scheduleJob(action='Restart', target='search_rss_book')
 
-    except Exception as e:
+    except Exception:
         logger.error('Unhandled exception in search_rss_book: %s' % traceback.format_exc())
 
 
@@ -152,7 +145,6 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
             tor_Title = (book["authorName"] + ' - ' + book['bookName'] +
                          ' LL.(' + book['bookid'] + ')').strip()
             tor_prov = tor['tor_prov']
-            tor_feed = tor['tor_feed']
 
             controlValueDict = {"NZBurl": tor_url}
             newValueDict = {

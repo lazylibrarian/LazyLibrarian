@@ -14,13 +14,10 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import urllib
 import json
+import urllib
+
 import lazylibrarian
-#import urllib2
-#import socket
-#import ssl
-#from lazylibrarian.common import USER_AGENT
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
 
@@ -29,14 +26,14 @@ def _getJSON(URL, params):
     # Get JSON response from URL
     # Return json,True or error_msg,False
 
-    URL = URL + "/?%s" % urllib.urlencode(params)
+    URL += "/?%s" % urllib.urlencode(params)
     result, success = fetchURL(URL, retry=False)
     if success:
         try:
             result_json = json.loads(result)
             return result_json, True
         except (ValueError, AttributeError):
-                return "Could not convert response to json", False
+            return "Could not convert response to json", False
 
     return "getJSON returned %s" % result, False
 
@@ -54,22 +51,22 @@ def _errorMsg(errnum, api):
         107: 'Session interrupted by duplicate login',
     }
     create_errors = {
-            400: 'File upload failed',
-            401: 'Max number of tasks reached',
-            402: 'Destination denied',
-            403: 'Destination does not exist',
-            404: 'Invalid task id',
-            405: 'Invalid task action',
-            406: 'No default destination',
-            407: 'Set destination failed',
-            408: 'File does not exist'
+        400: 'File upload failed',
+        401: 'Max number of tasks reached',
+        402: 'Destination denied',
+        403: 'Destination does not exist',
+        404: 'Invalid task id',
+        405: 'Invalid task action',
+        406: 'No default destination',
+        407: 'Set destination failed',
+        408: 'File does not exist'
     }
     login_errors = {
-            400: 'No such account or incorrect password',
-            401: 'Account disabled',
-            402: 'Permission denied',
-            403: '2-step verification code required',
-            404: 'Failed to authenticate 2-step verification code'
+        400: 'No such account or incorrect password',
+        401: 'Account disabled',
+        402: 'Permission denied',
+        403: '2-step verification code required',
+        404: 'Failed to authenticate 2-step verification code'
     }
     if errnum in generic_errors:
         return generic_errors[errnum]
@@ -79,85 +76,87 @@ def _errorMsg(errnum, api):
         return create_errors[errnum]
     return "Unknown error code in %s: %s" % (api, str(errnum))
 
+
 def _login(hosturl):
     # Query the DownloadStation for api info and then log user in
     # return auth_cgi,task_cgi,sid or "","",""
     URL = hosturl + 'query.cgi'
-    params =    {
-                    "api": "SYNO.API.Info",
-                    "version": "1",
-                    "method": "query",
-                    "query": "SYNO.API.Auth,SYNO.DownloadStation.Task"
-                }
+    params = {
+        "api": "SYNO.API.Info",
+        "version": "1",
+        "method": "query",
+        "query": "SYNO.API.Auth,SYNO.DownloadStation.Task"
+    }
 
     result, success = _getJSON(URL, params)
     if success:
         if not result['success']:
             errnum = result['error']['code']
             logger.debug("Synology API Error: %s" % _errorMsg(errnum, "query"))
-            return "","",""
+            return "", "", ""
         else:
             auth_cgi = result['data']['SYNO.API.Auth']['path']
             task_cgi = result['data']['SYNO.DownloadStation.Task']['path']
     else:
         logger.debug("Synology Failed to get API info: %s" % result)
-        return "","",""
+        return "", "", ""
 
     URL = hosturl + auth_cgi
-    params =    {
-                    "api": "SYNO.API.Auth",
-                    "version": "2",
-                    "method": "login",
-                    "account": lazylibrarian.SYNOLOGY_USER,
-                    "passwd": lazylibrarian.SYNOLOGY_PASS,
-                    "session": "LazyLibrarian",
-                    "format": "sid"
-                }
+    params = {
+        "api": "SYNO.API.Auth",
+        "version": "2",
+        "method": "login",
+        "account": lazylibrarian.SYNOLOGY_USER,
+        "passwd": lazylibrarian.SYNOLOGY_PASS,
+        "session": "LazyLibrarian",
+        "format": "sid"
+    }
 
     result, success = _getJSON(URL, params)
     if success:
         if not result['success']:
             errnum = result['error']['code']
             logger.debug("Synology Login Error: %s" % _errorMsg(errnum, "login"))
-            return "","",""
+            return "", "", ""
         else:
             return hosturl + auth_cgi, hosturl + task_cgi, result['data']['sid']
     else:
         logger.debug("Synology Failed to login: %s" % result)
-        return "","",""
+        return "", "", ""
 
 
 def _logout(auth_cgi, sid):
     # Logout from session, return True or False
 
-    params =    {
-                    "api": "SYNO.API.Auth",
-                    "version": "1",
-                    "method": "logout",
-                    "session": "LazyLibrarian",
-                    "_sid": sid
-                }
+    params = {
+        "api": "SYNO.API.Auth",
+        "version": "1",
+        "method": "logout",
+        "session": "LazyLibrarian",
+        "_sid": sid
+    }
 
     result, success = _getJSON(auth_cgi, params)
     return success
 
+
 def _listTasks(task_cgi, sid):
     # Get a list of running downloads and return as json, or "" if fail
 
-    params =    {
-                    "api": "SYNO.DownloadStation.Task",
-                    "version": "1",
-                    "method": "list",
-                    "session": "LazyLibrarian",
-                    "_sid": sid
-                }
+    params = {
+        "api": "SYNO.DownloadStation.Task",
+        "version": "1",
+        "method": "list",
+        "session": "LazyLibrarian",
+        "_sid": sid
+    }
 
     result, success = _getJSON(task_cgi, params)
 
     if success:
         if not result['success']:
             errnum = result['error']['code']
-            logger.debug("Synology Task Error: %s"  % _errorMsg(errnum, "list"))
+            logger.debug("Synology Task Error: %s" % _errorMsg(errnum, "list"))
         else:
             items = result['data']
             logger.debug("Synology Nr. Tasks = %s" % items['total'])
@@ -170,15 +169,15 @@ def _listTasks(task_cgi, sid):
 def _getInfo(task_cgi, sid, download_id):
     # Get additional info on a download_id, return json or "" if fail
 
-    params =    {
-                    "api": "SYNO.DownloadStation.Task",
-                    "version": "1",
-                    "method": "getinfo",
-                    "id": download_id,
-                    "additional": "detail",
-                    "session": "LazyLibrarian",
-                    "_sid": sid
-                }
+    params = {
+        "api": "SYNO.DownloadStation.Task",
+        "version": "1",
+        "method": "getinfo",
+        "id": download_id,
+        "additional": "detail",
+        "session": "LazyLibrarian",
+        "_sid": sid
+    }
 
     result, success = _getJSON(task_cgi, params)
     logger.debug("Result from getInfo = %s" % repr(result))
@@ -199,15 +198,15 @@ def _getInfo(task_cgi, sid, download_id):
 def _deleteTask(task_cgi, sid, download_id, remove_data):
     # Delete a download task, return True or False
 
-    params =    {
-                    "api": "SYNO.DownloadStation.Task",
-                    "version": "1",
-                    "method": "delete",
-                    "id": download_id,
-                    "force_complete": remove_data,
-                    "session": "LazyLibrarian",
-                    "_sid": sid
-                }
+    params = {
+        "api": "SYNO.DownloadStation.Task",
+        "version": "1",
+        "method": "delete",
+        "id": download_id,
+        "force_complete": remove_data,
+        "session": "LazyLibrarian",
+        "_sid": sid
+    }
 
     result, success = _getJSON(task_cgi, params)
     logger.debug("Result from delete: %s" % repr(result))
@@ -218,7 +217,7 @@ def _deleteTask(task_cgi, sid, download_id, remove_data):
         else:
             try:
                 errnum = result['data']['error']
-            except KeyError, TypeError:
+            except KeyError:
                 errnum = 0
             if errnum:
                 logger.debug("Synology Delete exited: %s" % _errorMsg(errnum, "delete"))
@@ -231,15 +230,15 @@ def _addTorrentURI(task_cgi, sid, torurl):
     # Sends a magnet, Torrent url or NZB url to DownloadStation
     # Return task ID, or False if failed
 
-    params =    {
-                    "api": "SYNO.DownloadStation.Task",
-                    "version": "1",
-                    "method": "create",
-                    "session": "LazyLibrarian",
-                    "uri": torurl,
-                    "destination": lazylibrarian.SYNOLOGY_DIR,
-                    "_sid": sid
-                }
+    params = {
+        "api": "SYNO.DownloadStation.Task",
+        "version": "1",
+        "method": "create",
+        "session": "LazyLibrarian",
+        "uri": torurl,
+        "destination": lazylibrarian.SYNOLOGY_DIR,
+        "_sid": sid
+    }
 
     result, success = _getJSON(task_cgi, params)
     logger.debug("Result from create = %s" % repr(result))
@@ -255,7 +254,7 @@ def _addTorrentURI(task_cgi, sid, torurl):
                 if task['status'] == 'error':
                     try:
                         errmsg = task['status_extra']['error_detail']
-                    except KeyError, TypeError:
+                    except KeyError:
                         errmsg = "No error details"
                     logger.warn("Synology task [%s] failed: %s" % (task['title'], errmsg))
                 else:
@@ -265,7 +264,7 @@ def _addTorrentURI(task_cgi, sid, torurl):
                         if uri == torurl:
                             logger.debug('Synology task %s for %s' % (task['id'], task['title']))
                             return task['id']
-                    except KeyError, TypeError:
+                    except KeyError:
                         logger.debug("Unable to get uri for [%s] from getInfo" % task['title'])
             logger.debug("Synology URL [%s] was not found in tasklist" % torurl)
             return False

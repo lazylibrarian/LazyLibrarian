@@ -15,15 +15,17 @@
 
 import os
 import sys
+
 import cherrypy
 import lazylibrarian
-
 from lazylibrarian import logger
 from lazylibrarian.webServe import WebInterface
 
 
-def initialize(options={}):
+def initialize(options=None):
 
+    if options is None:
+        options = {}
     https_enabled = options['https_enabled']
     https_cert = options['https_cert']
     https_key = options['https_key']

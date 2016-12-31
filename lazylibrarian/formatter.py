@@ -14,13 +14,14 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
-import re
-import lazylibrarian
-import shlex
-import time
 import os
+import re
+import shlex
 import string
+import time
 import unicodedata
+
+import lazylibrarian
 
 
 def bookSeries(bookname):
@@ -136,6 +137,7 @@ def nzbdate2format(nzbdate):
         return year + '-' + month + '-' + day
     except Exception:
         return "1970-01-01"
+
 
 def month2num(month):
     # return month number given month name (long or short) in requested locales
@@ -262,6 +264,9 @@ def split_title(author, book):
     # change position to 1 to len, or zero if not found
     colon += 1
     brace += 1
+    bookname = book
+    booksub = ''
+    parts = ''
     if colon and brace:
         if colon < brace:
             parts = book.split(':')
@@ -273,15 +278,11 @@ def split_title(author, book):
     elif brace:
         parts = book.split('(')
         parts[1] = '(' + parts[1]
-    else:
-        bookname = book
-        parts = ''
     if parts:
         bookname = parts[0]
         booksub = parts[1]
-    else:
-        booksub = ''
     return bookname, booksub
+
 
 def cleanName(name):
     validNameChars = u"-_.() %s%s" % (string.ascii_letters, string.digits)

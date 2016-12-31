@@ -13,32 +13,27 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import urllib
-import urllib2
-import urlparse
 import cookielib
 import json
-import re
+import mimetypes
 import os
 import platform
-import time
-import mimetypes
 import random
 import string
 import time
+import urllib
+import urllib2
 
 import lazylibrarian
-
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
 
 
 class qbittorrentclient(object):
-
     # TOKEN_REGEX = "<div id='token' style='display:none;'>([^<>]+)</div>"
     # UTSetting = namedtuple("UTSetting", ["name", "int", "str", "access"])
 
-    def __init__(self, base_url=None, username=None, password=None,):
+    def __init__(self, base_url=None, username=None, password=None, ):
 
         host = lazylibrarian.QBITTORRENT_HOST
         if not host.startswith('http'):
@@ -172,7 +167,7 @@ def removeTorrent(hash, remove_data=False):
 
     qbclient = qbittorrentclient()
     torrentList = qbclient._get_list()
-    if torrentlist:
+    if torrentList:
         for torrent in torrentList:
             if torrent['hash'].upper() == hash.upper():
                 if torrent['state'] == 'uploading' or torrent['state'] == 'stalledUP':
@@ -217,7 +212,7 @@ def addFile(data):
 
     qbclient = qbittorrentclient()
     files = {'torrents': {'filename': '', 'content': data}}
-    return qbclient._command('command/upload', filelist=files)
+    return qbclient._command('command/upload', files=files)
 
 
 def getName(hash):
@@ -225,10 +220,11 @@ def getName(hash):
 
     qbclient = qbittorrentclient()
     RETRIES = 5
+    torrents = ''
     while RETRIES:
         torrents = qbclient._get_list()
         if torrents:
-            if hash.upper() in str(torrents).upper() :
+            if hash.upper() in str(torrents).upper():
                 break
         time.sleep(2)
         RETRIES -= 1
@@ -247,7 +243,7 @@ def getFolder(hash):
     # Get Active Directory from settings
     settings = qbclient._get_settings()
     active_dir = settings['temp_path']
-    completed_dir = settings['save_path']
+    # completed_dir = settings['save_path']
 
     if not active_dir:
         logger.error(
@@ -272,6 +268,7 @@ def getFolder(hash):
         if 'windows' not in platform.system().lower():
             torrent_folder = torrent_folder.replace('\\', '/')
         return os.path.basename(os.path.normpath(torrent_folder))
+
 
 _BOUNDARY_CHARS = string.digits + string.ascii_letters
 
@@ -302,6 +299,7 @@ def encode_multipart(fields, files, boundary=None):
     >>> len(body)
     193
     """
+
     def escape_quote(s):
         return s.replace('"', '\\"')
 
@@ -343,4 +341,4 @@ def encode_multipart(fields, files, boundary=None):
         'Content-Length': str(len(body)),
     }
 
-    return (body, headers)
+    return body, headers

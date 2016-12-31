@@ -17,12 +17,12 @@
 # transmission uses request_response and request_json
 # our cache.fetchURL() function is quite similar
 
-from lazylibrarian import logger
-from xml.dom import minidom
-import lib.requests as requests
-import lib.feedparser as feedparser
-import lazylibrarian
 import collections
+from xml.dom import minidom
+
+import lib.feedparser as feedparser
+import lib.requests as requests
+from lazylibrarian import logger
 
 # Dictionary with last request times, for rate limiting.
 last_requests = collections.defaultdict(int)

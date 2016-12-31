@@ -24,16 +24,16 @@
 
 from __future__ import unicode_literals
 
-from lazylibrarian import logger
-
-import time
-import re
-import os
 import json
+import os
+import re
+import time
+import traceback
+from base64 import b64encode
+
 import lazylibrarian
 import lib.requests as requests
-from base64 import b64encode
-import traceback
+from lazylibrarian import logger
 from lazylibrarian.common import setperm
 
 delugeweb_auth = {}
@@ -183,7 +183,7 @@ def getTorrentFolder(torrentid):
 
         response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
 
-        save_path = json.loads(response.text)['result']['save_path']
+        # save_path = json.loads(response.text)['result']['save_path']
         name = json.loads(response.text)['result']['name']
 
         return name
@@ -196,9 +196,7 @@ def removeTorrent(torrentid, remove_data=False):
     if not any(delugeweb_auth):
         _get_auth()
 
-    result = False
-    post_data = json.dumps({"method": "core.remove_torrent",
-                            "params": [torrentid, remove_data], "id": 25})
+    post_data = json.dumps({"method": "core.remove_torrent", "params": [torrentid, remove_data], "id": 25})
     response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
     result = json.loads(response.text)['result']
 
@@ -388,11 +386,14 @@ def setTorrentLabel(result):
                                     "id": 5})
             response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
             logger.debug('Deluge: %s label added to torrent' % label)
+            return not json.loads(response.text)['error']
         else:
             logger.debug('Deluge: Label plugin not detected')
             return False
+    else:
+        logger.debug('Deluge: No Label set')
+        return True
 
-    return not json.loads(response.text)['error']
 
 
 def setSeedRatio(result):

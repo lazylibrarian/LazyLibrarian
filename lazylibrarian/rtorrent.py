@@ -15,13 +15,13 @@
 
 
 import os
+import socket
+import xmlrpclib
 from time import sleep
+
 import lazylibrarian
 from lazylibrarian import logger
 from magnet2torrent import magnet2torrent
-import xmlrpclib
-import socket
-import ssl
 
 
 def getServer():
@@ -41,7 +41,7 @@ def getServer():
         host = parts[0] + '://' + user + ':' + password + '@' + parts[1]
 
     try:
-        socket.setdefaulttimeout(20) # so we don't freeze if server is not there
+        socket.setdefaulttimeout(20)  # so we don't freeze if server is not there
         server = xmlrpclib.ServerProxy(host)
         result = server.system.client_version()
         socket.setdefaulttimeout(None)  # reset timeout
@@ -58,7 +58,6 @@ def getServer():
 
 
 def addTorrent(tor_url, hashID):
-
     server = getServer()
     if server is False:
         return False
@@ -75,7 +74,7 @@ def addTorrent(tor_url, hashID):
             return False
         tor_url = torrent
 
-    #socket.setdefaulttimeout(10)  # shouldn't need timeout again as we already talked to server
+    # socket.setdefaulttimeout(10)  # shouldn't need timeout again as we already talked to server
 
     try:
         response = server.load(tor_url)  # response isn't anything useful, always 0
@@ -99,10 +98,10 @@ def addTorrent(tor_url, hashID):
             server.d.set_directory(hashID, directory)
 
         mainview = server.download_list("", "main")
-        #socket.setdefaulttimeout(None)  # reset timeout
+        # socket.setdefaulttimeout(None)  # reset timeout
 
     except Exception as e:
-        #socket.setdefaulttimeout(None)  # reset timeout if failed
+        # socket.setdefaulttimeout(None)  # reset timeout if failed
         logger.error("rTorrent Error: %s" % str(e))
         return False
 
@@ -111,6 +110,7 @@ def addTorrent(tor_url, hashID):
         if tor.upper() == hashID.upper():  # this is us
             # wait a while for download to start, that's when rtorrent fills in the name
             RETRIES = 5
+            name = ''
             while RETRIES:
                 name = server.d.get_name(tor)
                 if tor.upper() not in name:
@@ -137,6 +137,7 @@ def getName(hashID):
     for tor in mainview:
         if tor.upper() == hashID.upper():
             RETRIES = 5
+            name = ''
             while RETRIES:
                 name = server.d.get_name(tor)
                 if tor.upper() not in name:

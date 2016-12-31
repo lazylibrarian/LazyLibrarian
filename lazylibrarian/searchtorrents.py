@@ -13,31 +13,28 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import urllib2
-import socket
+import gzip
 import os
-import traceback
 import re
-from base64 import b16encode, b32decode
-from lib.bencode import bencode as bencode, bdecode
-from hashlib import sha1
-from magnet2torrent import magnet2torrent
+import socket
 import threading
-import lazylibrarian
+import traceback
 import unicodedata
+import urllib2
+from StringIO import StringIO
+from base64 import b16encode, b32decode
+from hashlib import sha1
 
+import lazylibrarian
 from lazylibrarian import logger, database, utorrent, transmission, qbittorrent, deluge, rtorrent, synology
-from lib.deluge_client import DelugeRPCClient
-from lib.fuzzywuzzy import fuzz
-
 from lazylibrarian.common import scheduleJob, USER_AGENT, setperm
 from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, check_int, now, cleanName
-from lazylibrarian.providers import IterateOverTorrentSites
 from lazylibrarian.notifiers import notify_snatch
-
-# new to support torrents
-from StringIO import StringIO
-import gzip
+from lazylibrarian.providers import IterateOverTorrentSites
+from lib.bencode import bencode as bencode, bdecode
+from lib.deluge_client import DelugeRPCClient
+from lib.fuzzywuzzy import fuzz
+from magnet2torrent import magnet2torrent
 
 
 def cron_search_tor_book():
@@ -112,14 +109,14 @@ def search_tor_book(books=None, reset=False):
             if not found:
                 logger.debug("Searches for %s returned no results." % book['searchterm'])
             if found > True:
-                tor_count = tor_count + 1
+                tor_count += 1
 
         logger.info("TORSearch for Wanted items complete, found %s book%s" % (tor_count, plural(tor_count)))
 
         if reset:
             scheduleJob(action='Restart', target='search_tor_book')
 
-    except Exception as e:
+    except Exception:
         logger.error('Unhandled exception in search_tor_book: %s' % traceback.format_exc())
 
 
@@ -275,10 +272,10 @@ def DirectDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=Non
         except Exception as e:
             logger.debug("Error writing book to %s, %s" % (destfile, str(e)))
 
-    except (socket.timeout) as e:
+    except socket.timeout:
         logger.warn('Timeout fetching file from url: %s' % tor_url)
         return False
-    except (urllib2.URLError) as e:
+    except urllib2.URLError as e:
         logger.warn('Error fetching file from url: %s, %s' % (tor_url, e.reason))
         return False
 
@@ -335,10 +332,10 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             else:
                 torrent = response.read()
 
-        except (socket.timeout) as e:
+        except socket.timeout:
             logger.warn('Timeout fetching torrent from url: %s' % tor_url)
             return False
-        except (urllib2.URLError) as e:
+        except urllib2.URLError as e:
             logger.warn('Error fetching torrent from url: %s, %s' % (tor_url, e.reason))
             return False
 
@@ -356,7 +353,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                     logger.debug('Magnet file saved as: %s' % tor_path)
                     downloadID = Source
             else:
-                tor_name = tor_name + '.magnet'
+                tor_name += '.magnet'
                 tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
                 try:
                     with open(tor_path, 'wb') as torrent_file:
@@ -368,7 +365,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                     logger.debug("Failed to write magnet to file %s, %s" % (tor_path, str(e)))
                     return False
         else:
-            tor_name = tor_name + '.torrent'
+            tor_name += '.torrent'
             tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
             try:
                 with open(tor_path, 'wb') as torrent_file:
@@ -380,7 +377,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                 logger.debug("Failed to write torrent to file %s, %s" % (tor_path, str(e)))
                 return False
 
-    if (lazylibrarian.TOR_DOWNLOADER_UTORRENT and lazylibrarian.UTORRENT_HOST):
+    if lazylibrarian.TOR_DOWNLOADER_UTORRENT and lazylibrarian.UTORRENT_HOST:
         logger.debug("Sending %s to Utorrent" % tor_title)
         Source = "UTORRENT"
         hashid = CalcTorrentHash(torrent)
@@ -388,7 +385,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         if downloadID:
             tor_title = utorrent.nameTorrent(downloadID)
 
-    if (lazylibrarian.TOR_DOWNLOADER_RTORRENT and lazylibrarian.RTORRENT_HOST):
+    if lazylibrarian.TOR_DOWNLOADER_RTORRENT and lazylibrarian.RTORRENT_HOST:
         logger.debug("Sending %s to rTorrent" % tor_title)
         Source = "RTORRENT"
         hashid = CalcTorrentHash(torrent)
@@ -396,7 +393,7 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         if downloadID:
             tor_title = rtorrent.getName(downloadID)
 
-    if (lazylibrarian.TOR_DOWNLOADER_QBITTORRENT and lazylibrarian.QBITTORRENT_HOST):
+    if lazylibrarian.TOR_DOWNLOADER_QBITTORRENT and lazylibrarian.QBITTORRENT_HOST:
         logger.debug("Sending %s to qbittorrent" % tor_title)
         Source = "QBITTORRENT"
         hashid = CalcTorrentHash(torrent)
@@ -404,10 +401,8 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
         if status:
             downloadID = hashid
             tor_title = qbittorrent.getName(hashid)
-        else:
-            logger.debug("qbittorrent returned: %s" % str(response))
 
-    if (lazylibrarian.TOR_DOWNLOADER_TRANSMISSION and lazylibrarian.TRANSMISSION_HOST):
+    if lazylibrarian.TOR_DOWNLOADER_TRANSMISSION and lazylibrarian.TRANSMISSION_HOST:
         logger.debug("Sending %s to Transmission" % tor_title)
         Source = "TRANSMISSION"
         downloadID = transmission.addTorrent(tor_url)  # returns id or False
@@ -416,14 +411,14 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
             downloadID = CalcTorrentHash(torrent)
             tor_title = transmission.getTorrentFolder(downloadID)
 
-    if (lazylibrarian.TOR_DOWNLOADER_SYNOLOGY and lazylibrarian.USE_SYNOLOGY and lazylibrarian.SYNOLOGY_HOST):
+    if lazylibrarian.TOR_DOWNLOADER_SYNOLOGY and lazylibrarian.USE_SYNOLOGY and lazylibrarian.SYNOLOGY_HOST:
         logger.debug("Sending %s to Synology" % tor_title)
         Source = "SYNOLOGY_TOR"
         downloadID = synology.addTorrent(tor_url)  # returns id or False
         if downloadID:
             tor_title = synology.getName(downloadID)
 
-    if (lazylibrarian.TOR_DOWNLOADER_DELUGE and lazylibrarian.DELUGE_HOST):
+    if lazylibrarian.TOR_DOWNLOADER_DELUGE and lazylibrarian.DELUGE_HOST:
         logger.debug("Sending %s to Deluge" % tor_title)
         if not lazylibrarian.DELUGE_USER:
             # no username, talk to the webui
@@ -447,9 +442,9 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
                     downloadID = client.call('core.add_torrent_url', tor_url, args)
                 if downloadID:
                     if lazylibrarian.DELUGE_LABEL:
-                        labelled = client.call('label.set_torrent', downloadID, lazylibrarian.DELUGE_LABEL)
+                        result = client.call('label.set_torrent', downloadID, lazylibrarian.DELUGE_LABEL)
                     result = client.call('core.get_torrent_status', downloadID, {})
-                    #for item in result:
+                    # for item in result:
                     #    logger.debug ('Deluge RPC result %s: %s' % (item, result[item]))
                     if 'name' in result:
                         tor_title = result['name']
@@ -481,7 +476,6 @@ def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
 
 
 def CalcTorrentHash(torrent):
-
     if torrent and torrent.startswith('magnet'):
         hashid = re.findall('urn:btih:([\w]{32,40})', torrent)[0]
         if len(hashid) == 32:

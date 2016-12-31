@@ -13,32 +13,32 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-from lazylibrarian import logger, database
-from lazylibrarian.searchnzb import search_nzb_book
-from lazylibrarian.searchtorrents import search_tor_book
-from lazylibrarian.searchmag import search_magazines
-from lazylibrarian.searchrss import search_rss_book
-from lazylibrarian.gr import GoodReads
-from lazylibrarian.gb import GoogleBooks
-from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs
-from lazylibrarian.formatter import today
-from lazylibrarian.updater import dbUpdate
-from lazylibrarian.magazinescan import magazineScan
-from lazylibrarian.csv import import_CSV, export_CSV
-from lazylibrarian.postprocess import processDir, processAlternate
-from lazylibrarian.librarysync import LibraryScan
-from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, \
-                getBookCover, getAuthorImage, getAuthorImages
-from lazylibrarian.importer import addAuthorToDB, update_totals
-
-import lazylibrarian
+import Queue
 import json
 import threading
-import Queue
+
+import lazylibrarian
+from lazylibrarian import logger, database
+from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, \
+    getBookCover, getAuthorImage, getAuthorImages
+from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs
+from lazylibrarian.csv import import_CSV, export_CSV
+from lazylibrarian.formatter import today
+from lazylibrarian.gb import GoogleBooks
+from lazylibrarian.gr import GoodReads
+from lazylibrarian.importer import addAuthorToDB, update_totals
+from lazylibrarian.librarysync import LibraryScan
+from lazylibrarian.magazinescan import magazineScan
+from lazylibrarian.postprocess import processDir, processAlternate
+from lazylibrarian.searchmag import search_magazines
+from lazylibrarian.searchnzb import search_nzb_book
+from lazylibrarian.searchrss import search_rss_book
+from lazylibrarian.searchtorrents import search_tor_book
+from lazylibrarian.updater import dbUpdate
 
 cmd_dict = {'help': 'list available commands. ' +
-            'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +
-            'otherwise they return OK straight away and run in the background',
+                    'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +
+                    'otherwise they return OK straight away and run in the background',
             'getIndex': 'list all authors',
             'getAuthor': '&id= get author by AuthorID and list their books',
             'getAuthorImage': '&id= get an image for this author',
@@ -97,7 +97,6 @@ cmd_dict = {'help': 'list available commands. ' +
 
 
 class Api(object):
-
     def __init__(self):
 
         self.apikey = None
@@ -163,7 +162,7 @@ class Api(object):
                 args.append({"value": self.kwargs['value']})
             if 'wait' in self.kwargs:
                 args.append({"wait": "True"})
-            if args == []:
+            if not args:
                 args = ''
             logger.info('Received API command: %s %s' % (self.cmd, args))
             methodToCall = getattr(self, "_" + self.cmd)
@@ -302,6 +301,7 @@ class Api(object):
         else:
             self.id = kwargs['name']
 
+        myDB = database.DBConnection()
         controlValueDict = {"Title": self.id}
         newValueDict = {
             "Regex": None,
@@ -373,9 +373,9 @@ class Api(object):
         myDB.upsert("authors", newValueDict, controlValueDict)
 
     def _refreshAuthor(self, **kwargs):
-        refresh=False
+        refresh = False
         if 'refresh' in kwargs:
-            refresh=True
+            refresh = True
         if 'name' not in kwargs:
             self.data = 'Missing parameter: name'
             return
@@ -388,9 +388,9 @@ class Api(object):
             self.data = str(e)
 
     def _forceActiveAuthorsUpdate(self, **kwargs):
-        refresh=False
+        refresh = False
         if 'refresh' in kwargs:
-            refresh=True
+            refresh = True
         if 'wait' in kwargs:
             dbUpdate(refresh=refresh)
         else:
@@ -451,7 +451,6 @@ class Api(object):
         else:
             threading.Thread(target=setWorkPages, name='API-SETWORKPAGES', args=[]).start()
 
-
     def _getBookCovers(self, **kwargs):
         if 'wait' in kwargs:
             getBookCovers()
@@ -486,13 +485,12 @@ class Api(object):
             self.data = 'Missing parameter: name'
             return
 
-        myDB = database.DBConnection()
         if lazylibrarian.BOOK_API == "GoogleBooks":
             GB = GoogleBooks(kwargs['name'])
             queue = Queue.Queue()
             search_api = threading.Thread(target=GB.find_results, name='API-GBRESULTS', args=[kwargs['name'], queue])
             search_api.start()
-        elif lazylibrarian.BOOK_API == "GoodReads":
+        else:  # lazylibrarian.BOOK_API == "GoodReads":
             queue = Queue.Queue()
             GR = GoodReads(kwargs['name'])
             search_api = threading.Thread(target=GR.find_results, name='API-GRRESULTS', args=[kwargs['name'], queue])
@@ -505,13 +503,13 @@ class Api(object):
         if 'name' not in kwargs:
             self.data = 'Missing parameter: name'
             return
-        myDB = database.DBConnection()
+
         if lazylibrarian.BOOK_API == "GoogleBooks":
             GB = GoogleBooks(kwargs['name'])
             queue = Queue.Queue()
             search_api = threading.Thread(target=GB.find_results, name='API-GBRESULTS', args=[kwargs['name'], queue])
             search_api.start()
-        elif lazylibrarian.BOOK_API == "GoodReads":
+        else:  # lazylibrarian.BOOK_API == "GoodReads":
             queue = Queue.Queue()
             GR = GoodReads(kwargs['name'])
             search_api = threading.Thread(target=GR.find_results, name='API-GRRESULTS', args=[kwargs['name'], queue])
@@ -546,7 +544,7 @@ class Api(object):
                         'AuthorLink': authordata[1]
                     }
                     myDB.upsert("books", newValueDict, controlValueDict)
-                    update_totals(bookdata[0])    # we moved from here
+                    update_totals(bookdata[0])  # we moved from here
                     update_totals(kwargs['toid'])  # to here
                     self.data = "Moved book [%s] to [%s]" % (bookdata[1], authordata[0])
             logger.debug(self.data)
@@ -577,7 +575,7 @@ class Api(object):
                         'UPDATE books SET authorid="%s", authorname="%s", authorlink="%s" where authorname="%s"' %
                         (tohere[0], kwargs['toname'], tohere[1], kwargs['fromname']))
                     self.data = "Moved %s books from %s to %s" % (len(fromhere), kwargs['fromname'], kwargs['toname'])
-                    update_totals(fromhere[0][1])    # we moved from here
+                    update_totals(fromhere[0][1])  # we moved from here
                     update_totals(tohere[0])  # to here
 
             logger.debug(self.data)
@@ -629,12 +627,12 @@ class Api(object):
             self.id = kwargs['id']
 
         myDB = database.DBConnection()
-        authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
+        authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID="%s"' % id)
         if len(authorsearch):  # to stop error if try to remove an author while they are still loading
             AuthorName = authorsearch[0]['AuthorName']
             logger.info(u"Removing all references to author: %s" % AuthorName)
-            myDB.action('DELETE from authors WHERE AuthorID="%s"' % AuthorID)
-            myDB.action('DELETE from books WHERE AuthorID="%s"' % AuthorID)
+            myDB.action('DELETE from authors WHERE AuthorID="%s"' % id)
+            myDB.action('DELETE from books WHERE AuthorID="%s"' % id)
 
     def _writeCFG(self, **kwargs):
         if 'name' not in kwargs:

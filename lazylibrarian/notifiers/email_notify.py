@@ -13,15 +13,16 @@
 # You should have received a copy of the GNU General Public License
 # along with LazyLibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
+import email.utils
+import smtplib
+from email.mime.text import MIMEText
+
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
-from email.mime.text import MIMEText
-import smtplib
-import email.utils
+
 
 class EmailNotifier:
-
     def _notify(self, message, event, force=False):
 
         # suppress notifications if the notifier is disabled but the notify options are checked
@@ -62,9 +63,9 @@ class EmailNotifier:
             logger.warn('Error sending Email: %s' % e)
             return False
 
-#
-# Public functions
-#
+        #
+        # Public functions
+        #
 
     def notify_snatch(self, title):
         if lazylibrarian.EMAIL_NOTIFY_ONSNATCH:
@@ -76,5 +77,6 @@ class EmailNotifier:
 
     def test_notify(self, title="Test"):
         return self._notify(message="This is a test notification from LazyLibrarian", event=title, force=True)
+
 
 notifier = EmailNotifier

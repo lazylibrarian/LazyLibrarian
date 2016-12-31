@@ -1,8 +1,7 @@
 import unittest
+from xml.etree import ElementTree
 
 from lazylibrarian import providers
-
-from xml.etree import ElementTree
 
 
 class ProvidersTest(unittest.TestCase):

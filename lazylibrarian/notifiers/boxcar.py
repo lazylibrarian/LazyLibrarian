@@ -19,12 +19,11 @@
 
 import urllib
 import urllib2
-import time
 
 import lazylibrarian
-
 from lazylibrarian import logger
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
+
 # from lazylibrarian.exceptions import ex
 
 # API_URL = "https://boxcar.io/devices/providers/MH0S7xOFSwVLNvNhTpiC/notifications"
@@ -33,7 +32,6 @@ API_URL = 'https://new.boxcar.io/api/notifications'
 
 
 class BoxcarNotifier:
-
     def _sendBoxcar(self, msg, title, token, subscribe=False):
         """
         Sends a boxcar notification to the address provided
@@ -53,7 +51,7 @@ class BoxcarNotifier:
         # if this is a subscription notification then act accordingly
         if subscribe:
             data = urllib.urlencode({'email': token})
-            curUrl = curUrl + "/subscribe"
+            curUrl += "/subscribe"
 
         # for normal requests we need all these parameters
         else:
@@ -65,9 +63,9 @@ class BoxcarNotifier:
             #    })
             data = urllib.urlencode({
                 'user_credentials': token,
-                 'notification[title]': title.encode('utf-8'),
-                 'notification[long_message]': msg.encode('utf-8'),
-                 'notification[sound]': "done"
+                'notification[title]': title.encode('utf-8'),
+                'notification[long_message]': msg.encode('utf-8'),
+                'notification[sound]': "done"
             })
 
         # send the request to boxcar
@@ -143,9 +141,9 @@ class BoxcarNotifier:
         self._sendBoxcar(message, title, username)
         return True
 
-#
-# Public functions
-#
+    #
+    # Public functions
+    #
 
     def notify_snatch(self, title):
         if lazylibrarian.BOXCAR_NOTIFY_ONSNATCH:
@@ -160,5 +158,6 @@ class BoxcarNotifier:
 
     def update_library(self, showName=None):
         pass
+
 
 notifier = BoxcarNotifier

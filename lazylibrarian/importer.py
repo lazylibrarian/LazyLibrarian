@@ -13,14 +13,15 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
+import traceback
+
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.gr import GoodReads
-from lazylibrarian.gb import GoogleBooks
-from lazylibrarian.formatter import today
-from lazylibrarian.cache import cache_cover
 from lazylibrarian.bookwork import getAuthorImage
+from lazylibrarian.cache import cache_cover
+from lazylibrarian.formatter import today
+from lazylibrarian.gb import GoogleBooks
+from lazylibrarian.gr import GoodReads
 
 
 def addAuthorToDB(authorname=None, refresh=False):
@@ -39,7 +40,7 @@ def addAuthorToDB(authorname=None, refresh=False):
 
         if not dbauthor:
             newValueDict = {
-                "AuthorID": "0: %s" % (authorname),
+                "AuthorID": "0: %s" % authorname,
                 "Status": "Loading"
             }
             logger.debug("Now adding new author: %s to database" % authorname)
@@ -101,7 +102,7 @@ def addAuthorToDB(authorname=None, refresh=False):
         if dbauthor:
             update_totals(authorid)
         logger.debug("[%s] Author update complete" % authorname)
-    except Exception as e:
+    except Exception:
         logger.error('Unhandled exception in addAuthorToDB: %s' % traceback.format_exc())
 
 

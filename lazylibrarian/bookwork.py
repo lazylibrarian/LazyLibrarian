@@ -15,15 +15,13 @@
 
 import os
 import shutil
-import urllib
-import urllib2
-import socket
 import time
+import urllib
+
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.common import USER_AGENT
-from lazylibrarian.formatter import safe_unicode, plural
 from lazylibrarian.cache import cache_cover, fetchURL
+from lazylibrarian.formatter import safe_unicode, plural
 
 
 def getAuthorImages():
@@ -122,7 +120,7 @@ def getBookWork(bookID=None, reason=None):
         workfile = os.path.join(cacheLocation, bookID + '.html')
 
         # does the workpage need to expire?
-        #if os.path.isfile(workfile):
+        # if os.path.isfile(workfile):
         #    cache_modified_time = os.stat(workfile).st_mtime
         #    time_now = time.time()
         #    expiry = lazylibrarian.CACHE_AGE * 24 * 60 * 60  # expire cache after this many seconds
@@ -169,7 +167,7 @@ def getBookWork(bookID=None, reason=None):
                         cachefile.write(result)
                     return result
                 else:
-                    logger.debug(u"getBookWork: Unable to cache workpage for %s, got %s" % (workpage, result))
+                    logger.debug(u"getBookWork: Unable to cache workpage, got %s" % result)
                 return None
             else:
                 logger.debug(u"getBookWork: Unable to cache response for %s, got %s" % (URL, result))

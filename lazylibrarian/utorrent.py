@@ -13,14 +13,14 @@
 #  You should have received a copy of the GNU General Public License
 #  along with LazyLibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import urllib
-import urllib2
-import urlparse
 import cookielib
 import json
 import re
-import lazylibrarian
+import urllib
+import urllib2
+import urlparse
 
+import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
 
@@ -180,9 +180,8 @@ def labelTorrent(hash):
     while settinglabel:
         torrentList = uTorrentClient.list()
         for torrent in torrentList[1].get('torrents'):
-            if (torrent[0].lower() == hash):
+            if torrent[0].lower() == hash:
                 uTorrentClient.setprops(hash, 'label', label)
-                settinglabel = False
                 return True
 
 
@@ -190,7 +189,7 @@ def dirTorrent(hash):
     uTorrentClient = utorrentclient()
     torrentList = uTorrentClient.list()
     for torrent in torrentList[1].get('torrents'):
-        if (torrent[0].lower() == hash):
+        if torrent[0].lower() == hash:
             return torrent[26]
     return False
 
@@ -199,7 +198,7 @@ def nameTorrent(hash):
     uTorrentClient = utorrentclient()
     torrentList = uTorrentClient.list()
     for torrent in torrentList[1].get('torrents'):
-        if (torrent[0].lower() == hash):
+        if torrent[0].lower() == hash:
             return torrent[2]
     return False
 
@@ -208,7 +207,7 @@ def removeTorrent(hash, remove_data=False):
     uTorrentClient = utorrentclient()
     torrentList = uTorrentClient.list()
     for torrent in torrentList[1].get('torrents'):
-        if (torrent[0].lower() == hash):
+        if torrent[0].lower() == hash:
             if remove_data:
                 uTorrentClient.removedata(hash)
             else:

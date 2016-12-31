@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
-import os
-import sys
-import time
-import cherrypy
-import threading
-import locale
 import ConfigParser
+import locale
+import os
 import platform
 import stat
+import sys
+import threading
+import time
 
 import lazylibrarian
 from lazylibrarian import webStart, logger, versioncheck
@@ -19,9 +18,12 @@ opt_out_of_certificate_verification = True
 if opt_out_of_certificate_verification:
     try:
         import ssl
+
         ssl._create_default_https_context = ssl._create_unverified_context
     except:
         pass
+
+
 # ==== end block (should be configurable at settings level)
 
 
@@ -49,7 +51,8 @@ def main():
     # for OSes that are poorly configured I'll just force UTF-8
     # windows cp1252 can't handle some accented author names,
     # eg "Marie Kondō" U+014D: LATIN SMALL LETTER O WITH MACRON, but utf-8 does
-    if not lazylibrarian.SYS_ENCODING or lazylibrarian.SYS_ENCODING in ('ANSI_X3.4-1968', 'US-ASCII', 'ASCII') or '1252' in lazylibrarian.SYS_ENCODING:
+    if not lazylibrarian.SYS_ENCODING or lazylibrarian.SYS_ENCODING in (
+            'ANSI_X3.4-1968', 'US-ASCII', 'ASCII') or '1252' in lazylibrarian.SYS_ENCODING:
         lazylibrarian.SYS_ENCODING = 'UTF-8'
 
     # Set arguments
@@ -89,9 +92,9 @@ def main():
         lazylibrarian.LOGLEVEL = 0
 
     if options.daemon:
-        if not 'windows' in platform.system().lower():
+        if 'windows' not in platform.system().lower():
             lazylibrarian.DAEMON = True
-            #lazylibrarian.LOGLEVEL = 0
+            # lazylibrarian.LOGLEVEL = 0
             lazylibrarian.daemonize()
         else:
             print "Daemonize not supported under Windows, starting normally"
@@ -145,7 +148,7 @@ def main():
     if os.path.isfile(version_file):
         age = time.time() - os.stat(version_file)[stat.ST_MTIME]
         old = int(age / (60 * 60 * old))
-        if not old: # don't call git, read the version file
+        if not old:  # don't call git, read the version file
             fp = open(version_file, 'r')
             lazylibrarian.CURRENT_VERSION = fp.read().strip(' \n\r')
             fp.close()
@@ -168,7 +171,7 @@ def main():
             logger.debug('Not updating, LazyLibrarian has local changes')
 
     if lazylibrarian.SIGNAL == 'update':
-        if lazylibrarian.INSTALL_TYPE not in  ['git', 'source']:
+        if lazylibrarian.INSTALL_TYPE not in ['git', 'source']:
             lazylibrarian.SIGNAL = None
             logger.debug('Not updating, not a git or source installation')
 
@@ -217,7 +220,7 @@ def main():
             else:
                 lazylibrarian.shutdown(restart=True, update=True)
             lazylibrarian.SIGNAL = None
-    return
+
 
 if __name__ == "__main__":
     main()
