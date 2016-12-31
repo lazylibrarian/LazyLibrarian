@@ -283,7 +283,18 @@ class GoodReads:
                 "2": "fre",
                 "3": "ger",
                 "4": "jap",
-                "5": "rus"
+                "5": "rus",
+                "7": "chi",
+                "80": "cze",
+                "82": "pol",
+                "83": "nor",
+                "84": "spa",
+                "85": "bra",
+                "87": "den",
+                "88": "ita",
+                "89": "kor",
+                "91": "swe",
+                "93": "ind"
             }
 
             if not len(resultxml):
@@ -382,22 +393,26 @@ class GoodReads:
                                                    book.find(find_field).text + '&' + urllib.urlencode(self.params)
                                         logger.debug(u"Book URL: " + BOOK_URL)
 
-                                        try:
-                                            time_now = int(time.time())
-                                            if time_now <= lazylibrarian.LAST_GOODREADS:
-                                                time.sleep(1)
+                                        time_now = int(time.time())
+                                        if time_now <= lazylibrarian.LAST_GOODREADS:
+                                            time.sleep(1)
 
+                                        bookLanguage = ""
+                                        try:
                                             BOOK_rootxml, in_cache = get_xml_request(BOOK_URL)
                                             if BOOK_rootxml is None:
                                                 logger.debug('Error requesting book language code')
-                                                bookLanguage = ""
                                             else:
                                                 if not in_cache:
                                                     # only update last_goodreads if the result wasn't found in the cache
                                                     lazylibrarian.LAST_GOODREADS = time_now
-                                                bookLanguage = BOOK_rootxml.find('./book/language_code').text
+                                                try:
+                                                    bookLanguage = BOOK_rootxml.find('./book/language_code').text
+                                                except Exception as e:
+                                                    logger.debug("Error finding language_code in book xml: %s" % str(e))
                                         except Exception as e:
-                                            logger.error("Error finding book results: %s" % str(e))
+                                            logger.debug("Error getting book xml: %s" % str(e))
+
                                         if not in_cache:
                                             gr_lang_hits += 1
                                         if not bookLanguage:

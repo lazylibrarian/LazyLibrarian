@@ -190,19 +190,18 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
             myDB.upsert("wanted", newValueDict, controlValueDict)
             tor_url = controlValueDict["NZBurl"]
             if '.nzb' in tor_url:
-                snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
-                                           newValueDict["NZBtitle"], controlValueDict["NZBurl"])
+                snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             else:
                 """
-                #  http://baconbits.org/torrents.php?action=download&authkey=<authkey>&torrent_pass=<password.hashed>&id=185398
+                #  http://baconbits.org/torrents.php?action=download&authkey=<authkey>
+                    &torrent_pass=<password.hashed>&id=185398
                 if not tor_url.startswith('magnet'):  # magnets don't use auth
                     pwd = lazylibrarian.RSS_PROV[tor_feed]['PASS']
                     auth = lazylibrarian.RSS_PROV[tor_feed]['AUTH']
                     # don't know what form of password hash is required, try sha1
                     tor_url = tor_url.replace('<authkey>', auth).replace('<password.hashed>', sha1(pwd))
                 """
-                snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
-                                           newValueDict["NZBtitle"], tor_url)
+                snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], tor_url)
 
             if snatch:
                 logger.info('Downloading %s from %s' % (newValueDict["NZBtitle"], newValueDict["NZBprov"]))

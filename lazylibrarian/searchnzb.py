@@ -22,7 +22,7 @@ import lazylibrarian
 from lazylibrarian import logger, database, providers, nzbget, sabnzbd, classes, synology
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import scheduleJob, setperm
-from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, nzbdate2format, now, check_int
+from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, now, check_int
 from lazylibrarian.notifiers import notify_snatch
 from lazylibrarian.searchtorrents import TORDownloadMethod
 from lib.fuzzywuzzy import fuzz
@@ -210,11 +210,9 @@ def processResultList(resultlist, book, searchtype):
             logger.debug('%s adding to wanted' % nzb_Title)
             myDB.upsert("wanted", newValueDict, controlValueDict)
             if newValueDict['nzbmode'] == "torznab":
-                snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
-                                           newValueDict["NZBtitle"], controlValueDict["NZBurl"])
+                snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             else:
-                snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
-                                           newValueDict["NZBtitle"], controlValueDict["NZBurl"])
+                snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             if snatch:
                 logger.info('Downloading %s from %s' % (newValueDict["NZBtitle"], newValueDict["NZBprov"]))
                 notify_snatch("%s from %s at %s" %
@@ -285,6 +283,6 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
                     (Source, downloadID, nzburl))
         return True
     else:
-        logger.error(u'Failed to download nzb @ <a href="%s">%s</a>' % (nzburl, nzbprov))
+        logger.error(u'Failed to download nzb @ <a href="%s">%s</a>' % (nzburl, Source))
         myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl="%s"' % nzburl)
         return False

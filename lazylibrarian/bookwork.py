@@ -278,7 +278,8 @@ def getBookCover(bookID=None):
         if 'goodreads' in booklink:
             # if the bookID is a goodreads one, we can call https://www.goodreads.com/book/show/{bookID}
             # and scrape the page for og:image
-            # <meta property="og:image" content="https://i.gr-assets.com/images/S/photo.goodreads.com/books/1388267702i/16304._UY475_SS475_.jpg"/>
+            # <meta property="og:image" content="https://i.gr-assets.com/images/S/photo.goodreads.com/books/
+            # 1388267702i/16304._UY475_SS475_.jpg"/>
             # to get the cover
 
             time_now = int(time.time())

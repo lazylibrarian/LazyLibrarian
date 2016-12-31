@@ -73,10 +73,10 @@ def next_run(when_run):
     """
     Give a readable approximation of how long until a job will be run
     """
-    now = time.time()
+    timenow = time.time()
     when_run = time.strptime(when_run, '%Y-%m-%d %H:%M:%S')
     when_run = time.mktime(when_run)
-    diff = when_run - now  # time difference in seconds
+    diff = when_run - timenow  # time difference in seconds
     # calculate whole units, plus round up by adding 1(true) if remainder >= half
     days = int(diff / 86400) + (diff % 86400 >= 43200)
     hours = int(diff / 3600) + (diff % 3600 >= 1800)

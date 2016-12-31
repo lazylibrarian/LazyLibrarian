@@ -110,7 +110,7 @@ def search_magazines(mags=None, reset=False):
                         })
 
             if lazylibrarian.USE_RSS():
-                rss_resultlist, nproviders = IterateOverRSSSites(book, 'mag')
+                rss_resultlist, nproviders = IterateOverRSSSites()
                 if not nproviders:
                     logger.warn('No rss providers are set. Check config for RSS providers')
 
@@ -449,13 +449,11 @@ def search_magazines(mags=None, reset=False):
                     if magazine['nzbmode'] in ["torznab", "torrent", "magnet"]:
                         snatch = TORDownloadMethod(
                             magazine['bookid'],
-                            magazine['nzbprov'],
                             magazine['nzbtitle'],
                             magazine['nzburl'])
                     else:
                         snatch = NZBDownloadMethod(
                             magazine['bookid'],
-                            magazine['nzbprov'],
                             magazine['nzbtitle'],
                             magazine['nzburl'])
                     if snatch:

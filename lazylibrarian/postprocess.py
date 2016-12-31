@@ -95,7 +95,7 @@ def processAlternate(source_dir=None):
                     try:
                         author_gr = GR.find_author_id()
                     except Exception:
-                        author_gr = ''
+                        author_gr = []
                         logger.debug("No author id for [%s]" % authorname)
                     if author_gr:
                         grauthorname = author_gr['authorname']
@@ -792,6 +792,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                                     ]
                     logger.debug(str(authorparams))
                     res = subprocess.check_output(authorparams, stderr=subprocess.STDOUT)
+                    if res:
+                        logger.debug('%s author reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
+
                     titleparams = [lazylibrarian.IMP_CALIBREDB,
                                    'set_metadata',
                                    '--field',
@@ -802,6 +805,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                                    ]
                     logger.debug(str(titleparams))
                     res = subprocess.check_output(titleparams, stderr=subprocess.STDOUT)
+                    if res:
+                        logger.debug('%s book reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
+
                     metaparams = [lazylibrarian.IMP_CALIBREDB,
                                   'set_metadata',
                                   '--field',
@@ -812,6 +818,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                                   ]
                     logger.debug(str(metaparams))
                     res = subprocess.check_output(metaparams, stderr=subprocess.STDOUT)
+                    if res:
+                        logger.debug('%s identifier reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
+
             # calibre does not like quotes in author names
             calibre_dir = os.path.join(processpath, unaccented_str(authorname.replace('"', '_')), '')
             if os.path.isdir(calibre_dir):

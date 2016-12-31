@@ -18,7 +18,7 @@ from xml.etree import ElementTree
 
 import lazylibrarian
 import lib.feedparser as feedparser
-from lazylibrarian import logger, database
+from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.formatter import age, today, plural, cleanName, unaccented
 from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL, GEN, EXTRA, LIME
@@ -225,7 +225,7 @@ def IterateOverTorrentSites(book=None, searchType=None):
     return resultslist, providers
 
 
-def IterateOverRSSSites(book=None, searchType=None):
+def IterateOverRSSSites():
 
     resultslist = []
     providers = 0

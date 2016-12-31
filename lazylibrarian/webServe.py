@@ -80,7 +80,8 @@ class WebInterface(object):
             'SELECT * from authors where Status != "Ignored" order by AuthorName COLLATE NOCASE')
         return serve_template(templatename="index.html", title="Home", authors=authors)
 
-    def label_thread(self):
+    @staticmethod
+    def label_thread():
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
@@ -1354,13 +1355,11 @@ class WebInterface(object):
                 if items['nzbmode'] in ['torznab', 'torrent', 'magnet']:
                     snatch = TORDownloadMethod(
                         items['bookid'],
-                        items['nzbprov'],
                         items['nzbtitle'],
                         items['nzburl'])
                 else:
                     snatch = NZBDownloadMethod(
                         items['bookid'],
-                        items['nzbprov'],
                         items['nzbtitle'],
                         items['nzburl'])
                 if snatch:  # if snatch fails, downloadmethods already report it
@@ -1457,8 +1456,7 @@ class WebInterface(object):
     def addMagazine(self, search=None, title=None, **args):
         self.label_thread()
         myDB = database.DBConnection()
-        # if search == 'magazine':  # we never call this unless search ==
-        # 'magazine'
+        # if search == 'magazine':  # we never call this unless search == 'magazine'
         if len(title) == 0:
             raise cherrypy.HTTPRedirect("magazines")
         else:
@@ -1626,16 +1624,12 @@ class WebInterface(object):
             lazylibrarian.LOGFULL = False
             if lazylibrarian.LOGLEVEL < 3:
                 lazylibrarian.LOGLEVEL = 1
-            logger.info(
-                u'Debug log display OFF, loglevel is %s' %
-                lazylibrarian.LOGLEVEL)
+            logger.info(u'Debug log display OFF, loglevel is %s' % lazylibrarian.LOGLEVEL)
         else:
             lazylibrarian.LOGFULL = True
             if lazylibrarian.LOGLEVEL < 2:
                 lazylibrarian.LOGLEVEL = 2  # Make sure debug ON
-            logger.info(
-                u'Debug log display ON, loglevel is %s' %
-                lazylibrarian.LOGLEVEL)
+            logger.info(u'Debug log display ON, loglevel is %s' % lazylibrarian.LOGLEVEL)
         raise cherrypy.HTTPRedirect("logs")
 
     @cherrypy.expose

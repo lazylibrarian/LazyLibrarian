@@ -86,7 +86,8 @@ class DBConnection:
 
         return sqlResults
 
-    def genParams(self, myDict):
+    @staticmethod
+    def genParams(myDict):
         return [x + " = ?" for x in myDict.keys()]
 
     def upsert(self, tableName, valueDict, keyDict):

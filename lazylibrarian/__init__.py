@@ -27,7 +27,7 @@ import webbrowser
 
 import cherrypy
 from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, \
-    librarysync, versioncheck, database, searchmag, magazinescan, bookwork
+    librarysync, versioncheck, database, searchmag, magazinescan, bookwork, dbupgrade
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import restartJobs
 from lazylibrarian.formatter import getList, bookSeries, plural, unaccented
@@ -909,6 +909,7 @@ def config_read(reloaded=False):
         logger.info('Config file loaded')
 
 
+# noinspection PyUnresolvedReferences
 def config_write():
     check_section('General')
     CFG.set('General', 'http_port', HTTP_PORT)
@@ -1313,7 +1314,6 @@ def USE_NZB():
 
 
 def DIRECTORY(dirname):
-    usedir = ''
     if dirname == "Destination":
         usedir = DESTINATION_DIR
     elif dirname == "Download":
@@ -1321,7 +1321,7 @@ def DIRECTORY(dirname):
     # elif dirname == "Alternate":
     #    usedir = ALTERNATE_DIR
     else:
-        return ""
+        return u""
 
     if not usedir or not os.path.isdir(usedir) or not os.access(usedir, os.W_OK | os.X_OK):
         usedir = os.getcwd()

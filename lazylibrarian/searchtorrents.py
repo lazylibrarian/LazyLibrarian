@@ -217,11 +217,9 @@ def processResultList(resultlist, book, searchtype):
             myDB.upsert("wanted", newValueDict, controlValueDict)
             if newValueDict["NZBprov"] == 'libgen':
                 # for libgen we use direct download links
-                snatch = DirectDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
-                                              newValueDict["NZBtitle"], controlValueDict["NZBurl"], nzb_Title)
+                snatch = DirectDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], controlValueDict["NZBurl"], nzb_Title)
             else:
-                snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
-                                           newValueDict["NZBtitle"], controlValueDict["NZBurl"])
+                snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             if snatch:
                 logger.info('Downloading %s from %s' % (newValueDict["NZBtitle"], newValueDict["NZBprov"]))
                 notify_snatch("%s from %s at %s" %
@@ -233,7 +231,7 @@ def processResultList(resultlist, book, searchtype):
     return False
 
 
-def DirectDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None, bookname=None):
+def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=None):
     myDB = database.DBConnection()
     downloadID = False
     Source = "DIRECT"
@@ -291,7 +289,7 @@ def DirectDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=Non
         return False
 
 
-def TORDownloadMethod(bookid=None, tor_prov=None, tor_title=None, tor_url=None):
+def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None):
     myDB = database.DBConnection()
     downloadID = False
     Source = ''

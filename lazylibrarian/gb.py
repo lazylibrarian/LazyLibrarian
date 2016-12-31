@@ -646,7 +646,8 @@ class GoogleBooks:
         except Exception:
             logger.error('Unhandled exception in GB.get_author_books: %s' % traceback.format_exc())
 
-    def find_book(self, bookid=None, queue=None):
+    @staticmethod
+    def find_book(bookid=None, queue=None):
         myDB = database.DBConnection()
         if not lazylibrarian.GB_API:
             logger.warn('No GoogleBooks API key, check config')

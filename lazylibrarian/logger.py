@@ -67,7 +67,8 @@ class RotatingLogger(object):
             l.addHandler(consolehandler)
             self.consolehandler = consolehandler
 
-    def log(self, message, level):
+    @staticmethod
+    def log(message, level):
 
         logger = logging.getLogger('lazylibrarian')
 

@@ -30,7 +30,7 @@ from lazylibrarian import logger
 
 def checkLink():
     # socket.setdefaulttimeout(2)
-    test = sendNZB(None, cmd="test")
+    test = sendNZB('', cmd="test")
     # socket.setdefaulttimeout(None)
     if test:
         return "NZBget connection successful"
@@ -39,8 +39,8 @@ def checkLink():
 
 def deleteNZB(nzbID, remove_data=False):
     if remove_data:
-        return sendNZB(None, 'GroupFinalDelete', nzbID)
-    return sendNZB(None, 'GroupDelete', nzbID)
+        return sendNZB('', 'GroupFinalDelete', nzbID)
+    return sendNZB('', 'GroupDelete', nzbID)
 
 
 def sendNZB(nzb, cmd=None, nzbID=None):

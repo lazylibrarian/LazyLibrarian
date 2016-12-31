@@ -120,41 +120,41 @@ class qbittorrentclient(object):
         logger.debug('get_settings() returned %d items' % len(value))
         return value
 
-    def get_savepath(self, hash):
-        logger.debug('qb.get_savepath(%s)' % hash)
+    def get_savepath(self, hashid):
+        logger.debug('qb.get_savepath(%s)' % hashid)
         torrentList = self._get_list()
         for torrent in torrentList:
             if torrent['hash']:
-                if torrent['hash'].upper() == hash.upper():
+                if torrent['hash'].upper() == hashid.upper():
                     return torrent['save_path']
         return None
 
-    def start(self, hash):
-        logger.debug('qb.start(%s)' % hash)
-        args = {'hash': hash}
+    def start(self, hashid):
+        logger.debug('qb.start(%s)' % hashid)
+        args = {'hash': hashid}
         return self._command('command/resume', args, 'application/x-www-form-urlencoded')
 
-    def pause(self, hash):
-        logger.debug('qb.pause(%s)' % hash)
-        args = {'hash': hash}
+    def pause(self, hashid):
+        logger.debug('qb.pause(%s)' % hashid)
+        args = {'hash': hashid}
         return self._command('command/pause', args, 'application/x-www-form-urlencoded')
 
-    def getfiles(self, hash):
-        logger.debug('qb.getfiles(%s)' % hash)
-        return self._command('query/propertiesFiles/' + hash)
+    def getfiles(self, hashid):
+        logger.debug('qb.getfiles(%s)' % hashid)
+        return self._command('query/propertiesFiles/' + hashid)
 
-    def getprops(self, hash):
-        logger.debug('qb.getprops(%s)' % hash)
-        return self._command('query/propertiesGeneral/' + hash)
+    def getprops(self, hashid):
+        logger.debug('qb.getprops(%s)' % hashid)
+        return self._command('query/propertiesGeneral/' + hashid)
 
-    def setprio(self, hash, priority):
-        logger.debug('qb.setprio(%s,%d)' % (hash, priority))
-        args = {'hash': hash, 'priority': priority}
+    def setprio(self, hashid, priority):
+        logger.debug('qb.setprio(%s,%d)' % (hashid, priority))
+        args = {'hash': hashid, 'priority': priority}
         return self._command('command/setFilePrio', args, 'application/x-www-form-urlencoded')
 
-    def remove(self, hash, remove_data=False):
-        logger.debug('qb.remove(%s,%s)' % (hash, remove_data))
-        args = {'hashes': hash}
+    def remove(self, hashid, remove_data=False):
+        logger.debug('qb.remove(%s,%s)' % (hashid, remove_data))
+        args = {'hashes': hashid}
         if remove_data:
             command = 'command/deletePerm'
         else:
@@ -162,17 +162,17 @@ class qbittorrentclient(object):
         return self._command(command, args, 'application/x-www-form-urlencoded')
 
 
-def removeTorrent(hash, remove_data=False):
-    logger.debug('removeTorrent(%s,%s)' % (hash, remove_data))
+def removeTorrent(hashid, remove_data=False):
+    logger.debug('removeTorrent(%s,%s)' % (hashid, remove_data))
 
     qbclient = qbittorrentclient()
     torrentList = qbclient._get_list()
     if torrentList:
         for torrent in torrentList:
-            if torrent['hash'].upper() == hash.upper():
+            if torrent['hash'].upper() == hashid.upper():
                 if torrent['state'] == 'uploading' or torrent['state'] == 'stalledUP':
                     logger.info('%s has finished seeding, removing torrent and data' % torrent['name'])
-                    qbclient.remove(hash, remove_data)
+                    qbclient.remove(hashid, remove_data)
                     return True
                 else:
                     logger.info(
@@ -215,28 +215,28 @@ def addFile(data):
     return qbclient._command('command/upload', files=files)
 
 
-def getName(hash):
-    logger.debug('getName(%s)' % hash)
+def getName(hashid):
+    logger.debug('getName(%s)' % hashid)
 
     qbclient = qbittorrentclient()
     RETRIES = 5
-    torrents = ''
+    torrents = []
     while RETRIES:
         torrents = qbclient._get_list()
         if torrents:
-            if hash.upper() in str(torrents).upper():
+            if hashid.upper() in str(torrents).upper():
                 break
         time.sleep(2)
         RETRIES -= 1
 
     for tor in torrents:
-        if tor['hash'].upper() == hash.upper():
+        if tor['hash'].upper() == hashid.upper():
             return tor['name']
     return ''
 
 
-def getFolder(hash):
-    logger.debug('getFolder(%s)' % hash)
+def getFolder(hashid):
+    logger.debug('getFolder(%s)' % hashid)
 
     qbclient = qbittorrentclient()
 
@@ -251,7 +251,7 @@ def getFolder(hash):
         return None
 
     # Get Torrent Folder Name
-    torrent_folder = qbclient.get_savepath(hash)
+    torrent_folder = qbclient.get_savepath(hashid)
 
     # If there's no folder yet then it's probably a magnet, try until folder is populated
     if torrent_folder == active_dir or not torrent_folder:
@@ -259,10 +259,10 @@ def getFolder(hash):
         while (torrent_folder == active_dir or torrent_folder is None) and tries <= 10:
             tries += 1
             time.sleep(6)
-            torrent_folder = qbclient.get_savepath(hash)
+            torrent_folder = qbclient.get_savepath(hashid)
 
     if torrent_folder == active_dir or not torrent_folder:
-        torrent_folder = qbclient.get_savepath(hash)
+        torrent_folder = qbclient.get_savepath(hashid)
         return torrent_folder
     else:
         if 'windows' not in platform.system().lower():
