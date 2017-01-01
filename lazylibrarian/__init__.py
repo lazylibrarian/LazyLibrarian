@@ -909,7 +909,7 @@ def config_read(reloaded=False):
         logger.info('Config file loaded')
 
 
-# noinspection PyUnresolvedReferences
+# noinspection PyUnresolvedReferences,PyTypeChecker,PyTypeChecker
 def config_write():
     check_section('General')
     CFG.set('General', 'http_port', HTTP_PORT)
@@ -1314,6 +1314,7 @@ def USE_NZB():
 
 
 def DIRECTORY(dirname):
+    usedir = ''
     if dirname == "Destination":
         usedir = DESTINATION_DIR
     elif dirname == "Download":
@@ -1321,7 +1322,7 @@ def DIRECTORY(dirname):
     # elif dirname == "Alternate":
     #    usedir = ALTERNATE_DIR
     else:
-        return u""
+        return usedir
 
     if not usedir or not os.path.isdir(usedir) or not os.access(usedir, os.W_OK | os.X_OK):
         usedir = os.getcwd()

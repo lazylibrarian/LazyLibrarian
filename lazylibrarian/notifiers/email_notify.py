@@ -23,7 +23,8 @@ from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
 
 
 class EmailNotifier:
-    def _notify(self, message, event, force=False):
+    @staticmethod
+    def _notify(message, event, force=False):
 
         # suppress notifications if the notifier is disabled but the notify options are checked
         if not lazylibrarian.USE_EMAIL and not force:

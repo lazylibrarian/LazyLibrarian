@@ -33,9 +33,8 @@ from lib.fuzzywuzzy import fuzz
 
 
 class GoogleBooks:
-    def __init__(self, name=None, type=None):
+    def __init__(self, name=None):
         self.name = name
-        self.type = type
         if not lazylibrarian.GB_API:
             logger.warn('No GoogleBooks API key, check config')
         self.url = 'https://www.googleapis.com/books/v1/volumes?q='
@@ -58,6 +57,12 @@ class GoogleBooks:
             logger.debug(
                 'Now searching Google Books API with keyword: ' +
                 self.name)
+
+            resultcount = 0
+            ignored = 0
+            total_count = 0
+            no_author_count = 0
+            api_value = ''
 
             for api_value in api_strings:
                 if api_value == "isbn:":

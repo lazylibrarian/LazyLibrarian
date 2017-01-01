@@ -946,7 +946,7 @@ class WebInterface(object):
             logger.debug(u"BookSearch called with no books")
 
     @cherrypy.expose
-    def searchForBook(self, bookid=None, action=None, **args):
+    def searchForBook(self, bookid=None):
         myDB = database.DBConnection()
         AuthorID = ''
         bookdata = myDB.match('SELECT * from books WHERE BookID="%s"' % bookid)
@@ -963,7 +963,7 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("books")
 
     @cherrypy.expose
-    def openBook(self, bookid=None, **args):
+    def openBook(self, bookid=None):
         self.label_thread()
 
         myDB = database.DBConnection()
@@ -981,7 +981,7 @@ class WebInterface(object):
                 logger.info(u'Missing book %s,%s' % (authorName, bookName))
 
     @cherrypy.expose
-    def editBook(self, bookid=None, **args):
+    def editBook(self, bookid=None):
 
         myDB = database.DBConnection()
 
@@ -995,7 +995,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre=None, booklang='',
-                   series=None, seriesnum=None, manual='0', authorname='', **kwargs):
+                   series=None, seriesnum=None, manual='0', authorname=''):
         myDB = database.DBConnection()
 
         if bookid:
@@ -1258,7 +1258,7 @@ class WebInterface(object):
         return s
 
     @cherrypy.expose
-    def openMag(self, bookid=None, **args):
+    def openMag(self, bookid=None):
         self.label_thread()
 
         bookid = urllib.unquote_plus(bookid)
@@ -1287,7 +1287,7 @@ class WebInterface(object):
                 urllib.quote_plus(bookid.encode(lazylibrarian.SYS_ENCODING)))
 
     @cherrypy.expose
-    def markPastIssues(self, action=None, redirect=None, **args):
+    def markPastIssues(self, action=None, **args):
         self.label_thread()
 
         myDB = database.DBConnection()
@@ -1431,7 +1431,7 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("magazines")
 
     @cherrypy.expose
-    def searchForMag(self, bookid=None, action=None, **args):
+    def searchForMag(self, bookid=None):
         myDB = database.DBConnection()
         bookid = urllib.unquote_plus(bookid)
         bookdata = myDB.match('SELECT * from magazines WHERE Title="%s"' % bookid)
@@ -1457,7 +1457,7 @@ class WebInterface(object):
         self.label_thread()
         myDB = database.DBConnection()
         # if search == 'magazine':  # we never call this unless search == 'magazine'
-        if len(title) == 0:
+        if title is None or not title:
             raise cherrypy.HTTPRedirect("magazines")
         else:
             reject = None
@@ -1787,10 +1787,10 @@ class WebInterface(object):
         # API ###############################################################
 
     @cherrypy.expose
-    def api(self, *args, **kwargs):
+    def api(self, **kwargs):
         from lazylibrarian.api import Api
         a = Api()
-        a.checkParams(*args, **kwargs)
+        a.checkParams(**kwargs)
         return a.fetchData()
 
     @cherrypy.expose
@@ -1824,7 +1824,7 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect(source)
 
     @cherrypy.expose
-    def manage(self, action=None, whichStatus=None, source=None, **args):
+    def manage(self, whichStatus=None):
         if whichStatus is None:
             whichStatus = "Wanted"
         lazylibrarian.MANAGEFILTER = whichStatus

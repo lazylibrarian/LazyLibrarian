@@ -72,15 +72,15 @@ def finditem(item, headers):
     Return database entry, or False if not found
     """
     myDB = database.DBConnection()
-    bookmatch = False
+    bookmatch = ""
     isbn10 = ""
     isbn13 = ""
     bookid = ""
     bookname = item['Title']
     authorname = item['Author']
-    if hasattr(authorname, 'decode'):
+    if isinstance(authorname, str):
         authorname = authorname.decode(lazylibrarian.SYS_ENCODING)
-    if hasattr(bookname, 'decode'):
+    if isinstance(bookname, str):
         bookname = bookname.decode(lazylibrarian.SYS_ENCODING)
     if 'ISBN' in headers:
         isbn10 = item['ISBN']
@@ -105,6 +105,7 @@ def finditem(item, headers):
     return bookmatch
 
 
+# noinspection PyTypeChecker
 def import_CSV(search_dir=None):
     """ Find a csv file in the search_dir and process all the books in it,
         adding authors to the database if not found
@@ -154,7 +155,7 @@ def import_CSV(search_dir=None):
             logger.debug(u"CSV: Found %s book%s in csv file" % (len(content.keys()), plural(len(content.keys()))))
             for item in content.keys():
                 authorname = content[item]['Author']
-                if hasattr(authorname, 'decode'):
+                if isinstance(authorname, str):
                     authorname = authorname.decode(lazylibrarian.SYS_ENCODING)
 
                 authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % authorname)
@@ -178,8 +179,11 @@ def import_CSV(search_dir=None):
                 bookname = ''
                 if bookmatch:
                     authorname = bookmatch['AuthorName']
+                    # noinspection PyTypeChecker
                     bookname = bookmatch['BookName']
+                    # noinspection PyTypeChecker
                     bookid = bookmatch['BookID']
+                    # noinspection PyTypeChecker
                     bookstatus = bookmatch['Status']
                     if bookstatus == 'Open' or bookstatus == 'Wanted' or bookstatus == 'Have':
                         logger.info(u'Found book %s by %s, already marked as "%s"' % (bookname, authorname, bookstatus))

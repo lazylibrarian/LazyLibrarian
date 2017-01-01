@@ -41,6 +41,7 @@ def get_book_info(fname):
     extn = os.path.splitext(fname)[1]
     if not extn:
         return res
+    # noinspection PyUnreachableCode,PyUnreachableCode
     if extn == ".mobi" or extn == ".azw3":
         res['type'] = extn[1:]
         try:

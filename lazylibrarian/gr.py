@@ -197,10 +197,10 @@ class GoodReads:
             for author in resultxml:
                 authorid = author.attrib.get("id")
                 authorname = author[0].text
-                authorlist = self.get_author_info(authorid, authorname, refresh)
+                authorlist = self.get_author_info(authorid, authorname)
         return authorlist
 
-    def get_author_info(self, authorid=None, authorname=None, refresh=False):
+    def get_author_info(self, authorid=None, authorname=None):
 
         URL = 'http://www.goodreads.com/author/show/' + authorid + '.xml?' + urllib.urlencode(self.params)
         author_dict = {}

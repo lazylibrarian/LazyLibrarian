@@ -28,7 +28,8 @@ from lazylibrarian.formatter import unaccented
 
 class PushoverNotifier:
 
-    def _sendPushover(self, message=None, event=None, pushover_apitoken=None, pushover_keys=None,
+    @staticmethod
+    def _sendPushover(message=None, event=None, pushover_apitoken=None, pushover_keys=None,
                       pushover_device=None, notificationType=None, method=None, force=False):
 
         if not lazylibrarian.USE_PUSHOVER and not force:
@@ -65,7 +66,7 @@ class PushoverNotifier:
                     'message': message.encode("utf-8"),
                     'device': pushover_device,
                     'priority': lazylibrarian.PUSHOVER_PRIORITY}
-            http_handler.request("POST",
+            http_handler.request(method,
                                  uri,
                                  headers={'Content-type': "application/x-www-form-urlencoded"},
                                  body=urlencode(data))

@@ -6,7 +6,8 @@ from lib.pynma import pynma
 
 class NMA_Notifier:
 
-    def _sendNMA(self, nma_api=None, nma_priority=None, event=None, message=None, force=False):
+    @staticmethod
+    def _sendNMA(nma_api=None, nma_priority=None, event=None, message=None, force=False):
 
         title = "LazyLibrarian"
 

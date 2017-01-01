@@ -109,7 +109,7 @@ class Api(object):
 
         self.callback = None
 
-    def checkParams(self, *args, **kwargs):
+    def checkParams(self, **kwargs):
 
         if not lazylibrarian.API_ENABLED:
             self.data = 'API not enabled'
@@ -180,7 +180,8 @@ class Api(object):
         else:
             return self.data
 
-    def _dic_from_query(self, query):
+    @staticmethod
+    def _dic_from_query(query):
 
         myDB = database.DBConnection()
         rows = myDB.select(query)
@@ -193,32 +194,32 @@ class Api(object):
 
         return rows_as_dic
 
-    def _help(self, **kwargs):
+    def _help(self):
         self.data = dict(cmd_dict)
 
-    def _getHistory(self, **kwargs):
+    def _getHistory(self):
         self.data = self._dic_from_query(
             "SELECT * from wanted WHERE Status != 'Skipped' and Status != 'Ignored'")
 
-    def _getWanted(self, **kwargs):
+    def _getWanted(self):
         self.data = self._dic_from_query(
             "SELECT * from books WHERE Status='Wanted'")
 
-    def _getSnatched(self, **kwargs):
+    def _getSnatched(self):
         self.data = self._dic_from_query(
             "SELECT * from books WHERE Status='Snatched'")
 
-    def _getLogs(self, **kwargs):
+    def _getLogs(self):
         self.data = lazylibrarian.LOGLIST
 
-    def _clearLogs(self, **kwargs):
+    def _clearLogs(self):
         self.data = clearLog()
 
-    def _getIndex(self, **kwargs):
+    def _getIndex(self):
         self.data = self._dic_from_query(
             'SELECT * from authors order by AuthorName COLLATE NOCASE')
 
-    def _getNoLang(self, **kwargs):
+    def _getNoLang(self):
         self.data = self._dic_from_query(
             'SELECT BookID,BookISBN,BookName,AuthorName from books where BookLang="Unknown" or BookLang="" or BookLang is NULL')
 
@@ -236,10 +237,10 @@ class Api(object):
 
         self.data = {'author': author, 'books': books}
 
-    def _getMagazines(self, **kwargs):
+    def _getMagazines(self):
         self.data = self._dic_from_query('SELECT * from magazines order by Title COLLATE NOCASE')
 
-    def _getAllBooks(self, **kwargs):
+    def _getAllBooks(self):
         self.data = self._dic_from_query(
             'SELECT AuthorID,AuthorName,AuthorLink, BookName,BookSub,BookGenre,BookIsbn,BookPub, \
             BookRate,BookImg,BookPages,BookLink,BookID,BookDate,BookLang,BookAdded,Status,Series,SeriesNum \
@@ -387,7 +388,8 @@ class Api(object):
         except Exception as e:
             self.data = str(e)
 
-    def _forceActiveAuthorsUpdate(self, **kwargs):
+    @staticmethod
+    def _forceActiveAuthorsUpdate(**kwargs):
         refresh = False
         if 'refresh' in kwargs:
             refresh = True
@@ -424,46 +426,53 @@ class Api(object):
         if not lazylibrarian.USE_RSS() and not lazylibrarian.USE_NZB() and not lazylibrarian.USE_TOR():
             self.data = "No search methods set, check config"
 
-    def _forceProcess(self, **kwargs):
+    @staticmethod
+    def _forceProcess():
         processDir()
 
-    def _forceLibraryScan(self, **kwargs):
+    @staticmethod
+    def _forceLibraryScan(**kwargs):
         if 'wait' in kwargs:
             LibraryScan()
         else:
             threading.Thread(target=LibraryScan, name='API-LIBRARYSCAN', args=[]).start()
 
-    def _forceMagazineScan(self, **kwargs):
+    @staticmethod
+    def _forceMagazineScan(**kwargs):
         if 'wait' in kwargs:
             magazineScan()
         else:
             threading.Thread(target=magazineScan, name='API-MAGSCAN', args=[]).start()
 
-    def _cleanCache(self, **kwargs):
+    @staticmethod
+    def _cleanCache(**kwargs):
         if 'wait' in kwargs:
             cleanCache()
         else:
             threading.Thread(target=cleanCache, name='API-CLEANCACHE', args=[]).start()
 
-    def _setWorkPages(self, **kwargs):
+    @staticmethod
+    def _setWorkPages(**kwargs):
         if 'wait' in kwargs:
             setWorkPages()
         else:
             threading.Thread(target=setWorkPages, name='API-SETWORKPAGES', args=[]).start()
 
-    def _getBookCovers(self, **kwargs):
+    @staticmethod
+    def _getBookCovers(**kwargs):
         if 'wait' in kwargs:
             getBookCovers()
         else:
             threading.Thread(target=getBookCovers, name='API-GETBOOKCOVERS', args=[]).start()
 
-    def _getAuthorImages(self, **kwargs):
+    @staticmethod
+    def _getAuthorImages(**kwargs):
         if 'wait' in kwargs:
             getAuthorImages()
         else:
             threading.Thread(target=getAuthorImages, name='API-GETAUTHORIMAGES', args=[]).start()
 
-    def _getVersion(self, **kwargs):
+    def _getVersion(self):
         self.data = {
             'install_type': lazylibrarian.INSTALL_TYPE,
             'current_version': lazylibrarian.CURRENT_VERSION,
@@ -471,13 +480,16 @@ class Api(object):
             'commits_behind': lazylibrarian.COMMITS_BEHIND,
         }
 
-    def _shutdown(self, **kwargs):
+    @staticmethod
+    def _shutdown():
         lazylibrarian.SIGNAL = 'shutdown'
 
-    def _restart(self, **kwargs):
+    @staticmethod
+    def _restart():
         lazylibrarian.SIGNAL = 'restart'
 
-    def _update(self, **kwargs):
+    @staticmethod
+    def _update():
         lazylibrarian.SIGNAL = 'update'
 
     def _findAuthor(self, **kwargs):
@@ -665,7 +677,8 @@ class Api(object):
         except Exception:
             self.data = 'No CFG entry for %s: %s' % (kwargs['group'], kwargs['name'])
 
-    def _loadCFG(self, **kwargs):
+    @staticmethod
+    def _loadCFG():
         lazylibrarian.config_read(reloaded=True)
 
     def _getWorkSeries(self, **kwargs):
@@ -700,16 +713,19 @@ class Api(object):
             self.id = kwargs['id']
         self.data = getAuthorImage(self.id)
 
-    def _restartJobs(self, **kwargs):
+    @staticmethod
+    def _restartJobs():
         restartJobs(start='Restart')
 
-    def _checkRunningJobs(self, **kwargs):
+    @staticmethod
+    def _checkRunningJobs():
         checkRunningJobs()
 
-    def _showJobs(self, **kwargs):
+    def _showJobs(self):
         self.data = showJobs()
 
-    def _importAlternate(self, **kwargs):
+    @staticmethod
+    def _importAlternate(**kwargs):
         if 'dir' in kwargs:
             usedir = kwargs['dir']
         else:
@@ -719,7 +735,8 @@ class Api(object):
         else:
             threading.Thread(target=processAlternate, name='API-IMPORTALT', args=[usedir]).start()
 
-    def _importCSVwishlist(self, **kwargs):
+    @staticmethod
+    def _importCSVwishlist(**kwargs):
         if 'dir' in kwargs:
             usedir = kwargs['dir']
         else:
@@ -729,7 +746,8 @@ class Api(object):
         else:
             threading.Thread(target=import_CSV, name='API-IMPORTCSV', args=[usedir]).start()
 
-    def _exportCSVwishlist(self, **kwargs):
+    @staticmethod
+    def _exportCSVwishlist(**kwargs):
         if 'dir' in kwargs:
             usedir = kwargs['dir']
         else:

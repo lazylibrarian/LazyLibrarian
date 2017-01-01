@@ -33,7 +33,7 @@ class qbittorrentclient(object):
     # TOKEN_REGEX = "<div id='token' style='display:none;'>([^<>]+)</div>"
     # UTSetting = namedtuple("UTSetting", ["name", "int", "str", "access"])
 
-    def __init__(self, base_url=None, username=None, password=None, ):
+    def __init__(self):
 
         host = lazylibrarian.QBITTORRENT_HOST
         if not host.startswith('http'):

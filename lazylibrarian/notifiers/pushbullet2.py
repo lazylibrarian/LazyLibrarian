@@ -130,22 +130,22 @@ class PushBullet:
 
         return self._request("POST", HOST + "/pushes", data)
 
-    def pushFile(self, recipient, file_name, body, file, file_type=None, recipient_type="device_iden"):
+    def pushFile(self, recipient, file_name, body, fobj, file_type=None, recipient_type="device_iden"):
         """ Push a file
             https://docs.pushbullet.com/v2/pushes
             https://docs.pushbullet.com/v2/upload-request
             Arguments:
             recipient -- a recipient
             file_name -- name of the file
-            file -- a file object
+            fobj -- a file object
             file_type -- file mimetype, if not set, python-magic will be used
             recipient_type -- a type of recipient (device, email, channel or client)
         """
 
         if not file_type:
             import magic
-            file_type = magic.from_buffer(file.read(1024))
-            file.seek(0)
+            file_type = magic.from_buffer(fobj.read(1024))
+            fobj.seek(0)
 
         data = {"file_name": file_name,
                 "file_type": file_type}
@@ -157,7 +157,7 @@ class PushBullet:
 
         upload = requests.post(upload_request["upload_url"],
                                data=upload_request["data"],
-                               files={"file": file},
+                               files={"file": fobj},
                                headers={"User-Agent": "pyPushBullet"})
 
         upload.raise_for_status()

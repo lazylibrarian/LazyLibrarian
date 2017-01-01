@@ -27,7 +27,8 @@ from pushbullet2 import PushBullet
 
 class PushbulletNotifier:
 
-    def _sendPushbullet(self, message=None, event=None, pushbullet_token=None, pushbullet_deviceid=None, force=False):
+    @staticmethod
+    def _sendPushbullet(message=None, event=None, pushbullet_token=None, pushbullet_deviceid=None, force=False):
 
         if not lazylibrarian.USE_PUSHBULLET and not force:
             return False
