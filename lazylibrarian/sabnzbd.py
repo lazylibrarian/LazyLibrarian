@@ -135,6 +135,7 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
         return False
 
     result = json.loads(request.read())
+
     if not result:
         logger.error("SABnzbd didn't return any json")
         return False
@@ -146,7 +147,8 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
         logger.info(title + " sent to SAB successfully.")
         # sab versions earlier than 0.8.0 don't return nzo_ids
         if 'nzo_ids' in result:
-            return result['nzo_ids'][0]
+            if result['nzo_ids']:  # check its not empty
+                return result['nzo_ids'][0]
         return 'unknown'
     elif result['status'] is False:
         logger.error("SAB returned Error: %s" % result['error'])

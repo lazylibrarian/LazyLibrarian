@@ -224,7 +224,7 @@ def processResultList(resultlist, book, searchtype):
     return False
 
 
-def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
+def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None):
     myDB = database.DBConnection()
     Source = ''
     downloadID = ''
