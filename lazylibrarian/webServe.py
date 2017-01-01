@@ -725,7 +725,7 @@ class WebInterface(object):
                     l.append(column)
                 d.append(l)  # add the rowlist to the masterlist
 
-            if sSearch != "":
+            if sSearch:
                 filtered = filter(lambda x: sSearch in str(x), d)
             else:
                 filtered = d
@@ -1228,7 +1228,7 @@ class WebInterface(object):
                     l.append(column)
                 d.append(l)  # add the rowlist to the masterlist
 
-            if sSearch != "":
+            if sSearch:
                 filtered = filter(lambda x: sSearch in str(x), d)
             else:
                 filtered = d
@@ -1453,10 +1453,9 @@ class WebInterface(object):
             logger.debug(u"MagazineSearch called with no magazines")
 
     @cherrypy.expose
-    def addMagazine(self, search=None, title=None, **args):
+    def addMagazine(self, title=None):
         self.label_thread()
         myDB = database.DBConnection()
-        # if search == 'magazine':  # we never call this unless search == 'magazine'
         if title is None or not title:
             raise cherrypy.HTTPRedirect("magazines")
         else:
@@ -1471,6 +1470,7 @@ class WebInterface(object):
 
             controlValueDict = {"Title": title}
             newValueDict = {
+                "Regex": None,
                 "Reject": reject,
                 "Status": "Active",
                 "MagazineAdded": today(),
@@ -1642,10 +1642,10 @@ class WebInterface(object):
         iDisplayLength = int(iDisplayLength)
         lazylibrarian.DISPLAYLENGTH = iDisplayLength
 
-        if sSearch == "":
-            filtered = lazylibrarian.LOGLIST[::]
-        else:
+        if sSearch:
             filtered = filter(lambda x: sSearch in str(x), lazylibrarian.LOGLIST[::])
+        else:
+            filtered = lazylibrarian.LOGLIST[::]
 
         sortcolumn = int(iSortCol_0)
         filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
@@ -1855,7 +1855,7 @@ class WebInterface(object):
                     l.append(column)
                 d.append(l)  # add the rowlist to the masterlist
 
-            if sSearch != "":
+            if sSearch:
                 filtered = filter(lambda x: sSearch in str(x), d)
             else:
                 filtered = d
