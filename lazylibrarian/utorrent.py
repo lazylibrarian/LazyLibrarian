@@ -13,14 +13,14 @@
 #  You should have received a copy of the GNU General Public License
 #  along with LazyLibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import urllib
-import urllib2
-import urlparse
 import cookielib
 import json
 import re
-import lazylibrarian
+import urllib
+import urllib2
+import urlparse
 
+import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
 
@@ -50,7 +50,8 @@ class utorrentclient(object):
         self.token = self._get_token()
         # TODO refresh token, when necessary
 
-    def _make_opener(self, realm, base_url, username, password):
+    @staticmethod
+    def _make_opener(realm, base_url, username, password):
         """uTorrent API need HTTP Basic Auth and cookie support for token verify."""
         auth = urllib2.HTTPBasicAuthHandler()
         auth.add_password(realm=realm, uri=base_url, user=username, passwd=password)
@@ -87,50 +88,50 @@ class utorrentclient(object):
 
     def start(self, *hashes):
         params = [('action', 'start'), ]
-        for hash in hashes:
-            params.append(('hash', hash))
+        for hashid in hashes:
+            params.append(('hash', hashid))
         return self._action(params)
 
     def stop(self, *hashes):
         params = [('action', 'stop'), ]
-        for hash in hashes:
-            params.append(('hash', hash))
+        for hashid in hashes:
+            params.append(('hash', hashid))
         return self._action(params)
 
     def pause(self, *hashes):
         params = [('action', 'pause'), ]
-        for hash in hashes:
-            params.append(('hash', hash))
+        for hashid in hashes:
+            params.append(('hash', hashid))
         return self._action(params)
 
     def forcestart(self, *hashes):
         params = [('action', 'forcestart'), ]
-        for hash in hashes:
-            params.append(('hash', hash))
+        for hashid in hashes:
+            params.append(('hash', hashid))
         return self._action(params)
 
-    def getfiles(self, hash):
-        params = [('action', 'getfiles'), ('hash', hash)]
+    def getfiles(self, hashid):
+        params = [('action', 'getfiles'), ('hash', hashid)]
         return self._action(params)
 
-    def getprops(self, hash):
-        params = [('action', 'getprops'), ('hash', hash)]
+    def getprops(self, hashid):
+        params = [('action', 'getprops'), ('hash', hashid)]
         return self._action(params)
 
-    def removedata(self, hash):
-        params = [('action', 'removedata'), ('hash', hash)]
+    def removedata(self, hashid):
+        params = [('action', 'removedata'), ('hash', hashid)]
         return self._action(params)
 
-    def remove(self, hash):
-        params = [('action', 'remove'), ('hash', hash)]
+    def remove(self, hashid):
+        params = [('action', 'remove'), ('hash', hashid)]
         return self._action(params)
 
-    def setprops(self, hash, s, v):
-        params = [('action', 'setprops'), ('hash', hash), ("s", s), ("v", v)]
+    def setprops(self, hashid, s, v):
+        params = [('action', 'setprops'), ('hash', hashid), ("s", s), ("v", v)]
         return self._action(params)
 
-    def setprio(self, hash, priority, *files):
-        params = [('action', 'setprio'), ('hash', hash), ('p', str(priority))]
+    def setprio(self, hashid, priority, *files):
+        params = [('action', 'setprio'), ('hash', hashid), ('p', str(priority))]
         for file_index in files:
             params.append(('f', str(file_index)))
 
@@ -173,54 +174,53 @@ def checkLink():
         return "uTorrent login FAILED: %s" % str(err)
 
 
-def labelTorrent(hash):
+def labelTorrent(hashid):
     label = lazylibrarian.UTORRENT_LABEL
     uTorrentClient = utorrentclient()
     settinglabel = True
     while settinglabel:
         torrentList = uTorrentClient.list()
         for torrent in torrentList[1].get('torrents'):
-            if (torrent[0].lower() == hash):
-                uTorrentClient.setprops(hash, 'label', label)
-                settinglabel = False
+            if torrent[0].lower() == hashid:
+                uTorrentClient.setprops(hashid, 'label', label)
                 return True
 
 
-def dirTorrent(hash):
+def dirTorrent(hashid):
     uTorrentClient = utorrentclient()
     torrentList = uTorrentClient.list()
     for torrent in torrentList[1].get('torrents'):
-        if (torrent[0].lower() == hash):
+        if torrent[0].lower() == hashid:
             return torrent[26]
     return False
 
 
-def nameTorrent(hash):
+def nameTorrent(hashid):
     uTorrentClient = utorrentclient()
     torrentList = uTorrentClient.list()
     for torrent in torrentList[1].get('torrents'):
-        if (torrent[0].lower() == hash):
+        if torrent[0].lower() == hashid:
             return torrent[2]
     return False
 
 
-def removeTorrent(hash, remove_data=False):
+def removeTorrent(hashid, remove_data=False):
     uTorrentClient = utorrentclient()
     torrentList = uTorrentClient.list()
     for torrent in torrentList[1].get('torrents'):
-        if (torrent[0].lower() == hash):
+        if torrent[0].lower() == hashid:
             if remove_data:
-                uTorrentClient.removedata(hash)
+                uTorrentClient.removedata(hashid)
             else:
-                uTorrentClient.remove(hash)
+                uTorrentClient.remove(hashid)
             return True
     return False
 
 
-def addTorrent(link, hash):
+def addTorrent(link, hashid):
     uTorrentClient = utorrentclient()
     uTorrentClient.add_url(link)
-    labelTorrent(hash)
-    if dirTorrent(hash):
-        return hash
+    labelTorrent(hashid)
+    if dirTorrent(hashid):
+        return hashid
     return False

@@ -13,12 +13,12 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import platform
-import re
-import lazylibrarian
 import os
+import platform
 import shutil
 import time
+
+import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.formatter import plural, next_run, is_valid_booktype
 
@@ -29,9 +29,7 @@ USER_AGENT = 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release
 NOTIFY_SNATCH = 1
 NOTIFY_DOWNLOAD = 2
 
-notifyStrings = {}
-notifyStrings[NOTIFY_SNATCH] = "Started Download"
-notifyStrings[NOTIFY_DOWNLOAD] = "Added to Library"
+notifyStrings = {NOTIFY_SNATCH: "Started Download", NOTIFY_DOWNLOAD: "Added to Library"}
 
 
 def setperm(file_or_dir):
@@ -40,7 +38,7 @@ def setperm(file_or_dir):
     """
     if not file_or_dir:
         return
-    perm = None
+
     if os.path.isdir(file_or_dir):
         perm = 0o755
     elif os.path.isfile(file_or_dir):
@@ -53,6 +51,7 @@ def setperm(file_or_dir):
     except:
         #  logger.debug("Failed to set permission %s for %s" % (perm, file_or_dir))
         return False
+
 
 def any_file(search_dir=None, extn=None):
     # find a file with specified extension in a directory, any will do
@@ -71,6 +70,7 @@ def any_file(search_dir=None, extn=None):
 
 def opf_file(search_dir=None):
     return any_file(search_dir, '.opf')
+
 
 def bts_file(search_dir=None):
     return any_file(search_dir, '.bts')
@@ -105,7 +105,7 @@ def scheduleJob(action='Start', target=None):
         for job in lazylibrarian.SCHED.get_jobs():
             if target in str(job):
                 lazylibrarian.SCHED.unschedule_job(job)
-                logger.debug("Stop %s job" % (target))
+                logger.debug("Stop %s job" % target)
 
     if action == 'Start' or action == 'Restart':
         for job in lazylibrarian.SCHED.get_jobs():
@@ -200,56 +200,55 @@ def checkRunningJobs():
 
 
 def showJobs():
-        result = []
-        result.append("Cache %i hit%s, %i miss" % ( int(lazylibrarian.CACHE_HIT),
-                        plural(int(lazylibrarian.CACHE_HIT)), int(lazylibrarian.CACHE_MISS)))
-        myDB = database.DBConnection()
-        snatched = myDB.match("SELECT count('Status') as counter from wanted WHERE Status = 'Snatched'")
-        wanted = myDB.match("SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'")
-        result.append("%i item%s marked as Snatched" % (snatched['counter'], plural(snatched['counter'])))
-        result.append("%i item%s marked as Wanted" % (wanted['counter'], plural(wanted['counter'])))
-        for job in lazylibrarian.SCHED.get_jobs():
-            job = str(job)
-            if "search_magazines" in job:
-                jobname = "Magazine search"
-            elif "checkForUpdates" in job:
-                jobname = "Check LazyLibrarian version"
-            elif "search_tor_book" in job:
-                jobname = "TOR book search"
-            elif "search_nzb_book" in job:
-                jobname = "NZB book search"
-            elif "search_rss_book" in job:
-                jobname = "RSS book search"
-            elif "processDir" in job:
-                jobname = "Process downloads"
-            else:
-                jobname = job.split(' ')[0].split('.')[2]
+    result = ["Cache %i hit%s, %i miss" % (int(lazylibrarian.CACHE_HIT),
+                                           plural(int(lazylibrarian.CACHE_HIT)), int(lazylibrarian.CACHE_MISS))]
+    myDB = database.DBConnection()
+    snatched = myDB.match("SELECT count('Status') as counter from wanted WHERE Status = 'Snatched'")
+    wanted = myDB.match("SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'")
+    result.append("%i item%s marked as Snatched" % (snatched['counter'], plural(snatched['counter'])))
+    result.append("%i item%s marked as Wanted" % (wanted['counter'], plural(wanted['counter'])))
+    for job in lazylibrarian.SCHED.get_jobs():
+        job = str(job)
+        if "search_magazines" in job:
+            jobname = "Magazine search"
+        elif "checkForUpdates" in job:
+            jobname = "Check LazyLibrarian version"
+        elif "search_tor_book" in job:
+            jobname = "TOR book search"
+        elif "search_nzb_book" in job:
+            jobname = "NZB book search"
+        elif "search_rss_book" in job:
+            jobname = "RSS book search"
+        elif "processDir" in job:
+            jobname = "Process downloads"
+        else:
+            jobname = job.split(' ')[0].split('.')[2]
 
-            jobinterval = job.split('[')[1].split(']')[0]
-            jobtime = job.split('at: ')[1].split('.')[0]
-            jobtime = next_run(jobtime)
-            jobinfo = "%s: Next run in %s" % (jobname, jobtime)
-            result.append(jobinfo)
-        return result
+        # jobinterval = job.split('[')[1].split(']')[0]
+        jobtime = job.split('at: ')[1].split('.')[0]
+        jobtime = next_run(jobtime)
+        jobinfo = "%s: Next run in %s" % (jobname, jobtime)
+        result.append(jobinfo)
+    return result
 
 
 def clearLog():
-        logger.lazylibrarian_log.stopLogger()
-        error = False
-        if os.path.exists(lazylibrarian.LOGDIR):
-            try:
-                shutil.rmtree(lazylibrarian.LOGDIR)
-                os.mkdir(lazylibrarian.LOGDIR)
-            except OSError as e:
-                error = e.strerror
-        logger.lazylibrarian_log.initLogger(loglevel=lazylibrarian.LOGLEVEL)
+    logger.lazylibrarian_log.stopLogger()
+    error = False
+    if os.path.exists(lazylibrarian.LOGDIR):
+        try:
+            shutil.rmtree(lazylibrarian.LOGDIR)
+            os.mkdir(lazylibrarian.LOGDIR)
+        except OSError as e:
+            error = e.strerror
+    logger.lazylibrarian_log.initLogger(loglevel=lazylibrarian.LOGLEVEL)
 
-        if error:
-            return 'Failed to clear log: %s' % error
-        else:
-            lazylibrarian.LOGLIST = []
-            return "Log cleared, level set to [%s]- Log Directory is [%s]" % (
-                lazylibrarian.LOGLEVEL, lazylibrarian.LOGDIR)
+    if error:
+        return 'Failed to clear log: %s' % error
+    else:
+        lazylibrarian.LOGLIST = []
+        return "Log cleared, level set to [%s]- Log Directory is [%s]" % (
+            lazylibrarian.LOGLEVEL, lazylibrarian.LOGDIR)
 
 
 def cleanCache():
@@ -270,7 +269,8 @@ def cleanCache():
             target = os.path.join(cache, cached_file)
             cache_modified_time = os.stat(target).st_mtime
             time_now = time.time()
-            if cache_modified_time < time_now - (lazylibrarian.CACHE_AGE * 24 * 60 * 60):  # expire after this many seconds
+            if cache_modified_time < time_now - (
+                        lazylibrarian.CACHE_AGE * 24 * 60 * 60):  # expire after this many seconds
                 # Cache is old, delete entry
                 os.remove(target)
                 cleaned += 1
@@ -289,7 +289,8 @@ def cleanCache():
             target = os.path.join(cache, cached_file)
             cache_modified_time = os.stat(target).st_mtime
             time_now = time.time()
-            if cache_modified_time < time_now - (lazylibrarian.CACHE_AGE * 24 * 60 * 60):  # expire after this many seconds
+            if cache_modified_time < time_now - (
+                        lazylibrarian.CACHE_AGE * 24 * 60 * 60):  # expire after this many seconds
                 # Cache is old, delete entry
                 os.remove(target)
                 cleaned += 1
@@ -368,6 +369,7 @@ def cleanCache():
         keep = True
         if item['BookImg'] is None or item['BookImg'] == '':
             keep = False
+        imgfile = ''
         if keep and not item['BookImg'].startswith('http') and not item['BookImg'] == "images/nocover.png":
             # html uses '/' as separator, but os might not
             imgname = item['BookImg'].rsplit('/')[-1]
@@ -391,6 +393,7 @@ def cleanCache():
     kept = 0
     for item in images:
         keep = True
+        imgfile = ''
         if item['AuthorImg'] is None or item['AuthorImg'] == '':
             keep = False
         if keep and not item['AuthorImg'].startswith('http') and not item['AuthorImg'] == "images/nophoto.png":

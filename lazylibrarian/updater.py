@@ -13,7 +13,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import lazylibrarian
+import traceback
 
 from lazylibrarian import logger, database, importer
 from lazylibrarian.formatter import plural
@@ -32,5 +32,5 @@ def dbUpdate(refresh=False):
             importer.addAuthorToDB(authorname, refresh=refresh)
 
         logger.info('Active author update complete')
-    except Exception as e:
+    except Exception:
         logger.error('Unhandled exception in dbUpdate: %s' % traceback.format_exc())

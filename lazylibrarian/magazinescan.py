@@ -13,18 +13,18 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import sys
-import platform
-import traceback
 import datetime
-import lazylibrarian
-import subprocess
-from lazylibrarian import database, logger
-from hashlib import sha1
+import os
+import platform
 import re
-from lazylibrarian.formatter import getList, is_valid_booktype, plural
+import subprocess
+import traceback
+from hashlib import sha1
+
+import lazylibrarian
+from lazylibrarian import database, logger
 from lazylibrarian.common import setperm
+from lazylibrarian.formatter import getList, is_valid_booktype, plural
 
 
 def create_cover(issuefile=None):
@@ -79,12 +79,12 @@ def create_cover(issuefile=None):
         try:
             from wand.image import Image
             interface = "wand"
-        except Exception as e:
+        except Exception:
             try:
                 # No PythonMagick in python3
                 import PythonMagick
                 interface = "pythonmagick"
-            except Exception as e:
+            except Exception:
                 interface = ""
 
         try:
@@ -103,7 +103,7 @@ def create_cover(issuefile=None):
                     if res:
                         logger.debug('%s reports: %s' % (lazylibrarian.IMP_CONVERT, res))
                 except Exception as e:
-                    #logger.debug(params)
+                    # logger.debug(params)
                     logger.debug('External "convert" failed %s' % e)
 
             elif interface == 'wand':
@@ -128,7 +128,7 @@ def create_cover(issuefile=None):
                     except Exception as e:
                         logger.debug("which gs failed: %s" % str(e))
                     if not os.path.isfile(GS):
-                        logger.debug("Cannot find gs, %s" % str(e))
+                        logger.debug("Cannot find gs")
                         generator = "(no gs found)"
                     else:
                         params = [GS, "--version"]
@@ -137,7 +137,8 @@ def create_cover(issuefile=None):
                         generator = "%s version %s" % (generator, res)
                         if '[' in issuefile:
                             issuefile = issuefile.split('[')[0]
-                        params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1", "-dLastPage=1",
+                        params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1",
+                                  "-dLastPage=1",
                                   "-sOutputFile=%s" % coverfile, issuefile]
                         res = subprocess.check_output(params, stderr=subprocess.STDOUT)
                         if not os.path.isfile(coverfile):
@@ -154,12 +155,11 @@ def create_cover(issuefile=None):
 
 def create_id(issuename=None):
     hashID = sha1(issuename).hexdigest()
-    #logger.debug('Issue %s Hash: %s' % (issuename, hashID))
+    # logger.debug('Issue %s Hash: %s' % (issuename, hashID))
     return hashID
 
 
 def magazineScan():
-
     myDB = database.DBConnection()
 
     mag_path = lazylibrarian.MAG_DEST_FOLDER
@@ -186,9 +186,9 @@ def magazineScan():
                 logger.info('Issue %s - %s deleted as not found on disk' % (title, issuedate))
                 controlValueDict = {"Title": title}
                 newValueDict = {
-                    "LastAcquired": None,       # clear magazine dates
-                    "IssueDate": None,       # we will fill them in again later
-                    "IssueStatus": "Skipped"    # assume there are no issues now
+                    "LastAcquired": None,  # clear magazine dates
+                    "IssueDate": None,  # we will fill them in again later
+                    "IssueStatus": "Skipped"  # assume there are no issues now
                 }
                 myDB.upsert("magazines", newValueDict, controlValueDict)
                 logger.debug('Magazine %s details reset' % title)
@@ -265,7 +265,6 @@ def magazineScan():
                     }
                     logger.debug("Adding magazine %s" % title)
                     myDB.upsert("magazines", newValueDict, controlValueDict)
-                    lastacquired = None
                     magissuedate = None
                     magazineadded = None
                 else:

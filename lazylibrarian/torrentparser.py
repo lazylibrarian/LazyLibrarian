@@ -14,15 +14,13 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import urllib
-import urllib2
-import socket
-import lazylibrarian
-from lazylibrarian import logger
-from lazylibrarian.common import USER_AGENT
-from lazylibrarian.formatter import plural, unaccented
-from lazylibrarian.cache import fetchURL
-import lib.feedparser as feedparser
 import urlparse
+
+import lazylibrarian
+import lib.feedparser as feedparser
+from lazylibrarian import logger
+from lazylibrarian.cache import fetchURL
+from lazylibrarian.formatter import plural, unaccented
 from lib.BeautifulSoup import BeautifulSoup
 
 
@@ -56,7 +54,6 @@ def TPB(book=None):
         # may return 404 if no results, not really an error
         if '404' in result:
             logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
-            result = False
         else:
             logger.debug(searchURL)
             logger.debug('Error fetching data from %s: %s' % (provider, result))
@@ -163,7 +160,6 @@ def KAT(book=None):
         # seems KAT returns 404 if no results, not really an error
         if '404' in result:
             logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
-            result = False
         else:
             logger.debug(searchURL)
             logger.debug('Error fetching data from %s: %s' % (provider, result))
@@ -336,7 +332,7 @@ def ZOO(book=None):
         else:
             logger.debug(searchURL)
             logger.debug('Error fetching data from %s: %s' % (provider, data))
-        result = False
+        data = False
 
     results = []
 
@@ -402,7 +398,7 @@ def LIME(book=None):
         else:
             logger.debug(searchURL)
             logger.debug('Error fetching data from %s: %s' % (provider, data))
-        result = False
+        data = False
 
     results = []
 
@@ -417,7 +413,7 @@ def LIME(book=None):
                     try:
                         seeders = item['description']
                         seeders = int(seeders.split('Seeds:')[1].split(',')[0].strip())
-                    except (IndexError, ValueError) as e:
+                    except (IndexError, ValueError):
                         seeders = 0
 
                     size = item['size']
@@ -521,7 +517,7 @@ def GEN(book=None):
                         size = size.split('M')[0]
                         mult = 1024 * 1024
                     size = int(float(size) * mult)
-                except (ValueError, IndexError) as e:
+                except (ValueError, IndexError):
                     size = 0
 
                 if link and title:
@@ -592,7 +588,7 @@ def TDL(book=None):
         else:
             logger.debug(searchURL)
             logger.debug('Error fetching data from %s: %s' % (provider, data))
-        result = False
+        data = False
 
     results = []
 

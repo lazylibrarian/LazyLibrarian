@@ -17,12 +17,12 @@
 # transmission uses request_response and request_json
 # our cache.fetchURL() function is quite similar
 
-from lazylibrarian import logger
-from xml.dom import minidom
-import lib.requests as requests
-import lib.feedparser as feedparser
-import lazylibrarian
 import collections
+from xml.dom import minidom
+
+import lib.feedparser as feedparser
+import lib.requests as requests
+from lazylibrarian import logger
 
 # Dictionary with last request times, for rate limiting.
 last_requests = collections.defaultdict(int)
@@ -148,6 +148,7 @@ def request_json(url, **kwargs):
         try:
             result = response.json()
 
+            # noinspection PyCallingNonCallable
             if validator and not validator(result):
                 logger.error("JSON validation result failed")
             else:
@@ -196,21 +197,19 @@ def server_message(response):
     if "text/html" in response.headers.get("content-type"):
         try:
             soup = response.content
+            # Find body and cleanup common tags to grab content, which probably
+            # contains the message.
+            message = soup.find("body")
+            elements = ("header", "script", "footer", "nav", "input", "textarea")
+
+            for element in elements:
+                for tag in soup.find_all(element):
+                    tag.replaceWith("")
+
+            message = message.text if message else soup.text
+            message = message.strip()
         except Exception:
             pass
-
-        # Find body and cleanup common tags to grab content, which probably
-        # contains the message.
-        message = soup.find("body")
-        elements = ("header", "script", "footer", "nav", "input", "textarea")
-
-        for element in elements:
-
-            for tag in soup.find_all(element):
-                tag.replaceWith("")
-
-        message = message.text if message else soup.text
-        message = message.strip()
 
     # Second attempt is to just take the response
     if message is None:

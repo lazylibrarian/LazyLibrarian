@@ -13,23 +13,19 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import urllib2
-import socket
 import os
-import traceback
 import re
 import threading
+import traceback
+
 import lazylibrarian
-
-from lazylibrarian import logger, database, providers, nzbget, sabnzbd, notifiers, classes, postprocess, synology
-from lib.fuzzywuzzy import fuzz
-from lazylibrarian.common import USER_AGENT, scheduleJob, setperm
-from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, nzbdate2format, now, check_int
-from lazylibrarian.notifiers import notify_snatch
+from lazylibrarian import logger, database, providers, nzbget, sabnzbd, classes, synology
 from lazylibrarian.cache import fetchURL
-
-# new to support torrents
+from lazylibrarian.common import scheduleJob, setperm
+from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, now, check_int
+from lazylibrarian.notifiers import notify_snatch
 from lazylibrarian.searchtorrents import TORDownloadMethod
+from lib.fuzzywuzzy import fuzz
 
 
 def cron_search_nzb_book():
@@ -105,14 +101,14 @@ def search_nzb_book(books=None, reset=False):
             if not found:
                 logger.info("NZB Searches for %s returned no results." % book['searchterm'])
             if found > True:
-                nzb_count = nzb_count + 1  # we found it
+                nzb_count += 1  # we found it
 
         logger.info("NZBSearch for Wanted items complete, found %s book%s" % (nzb_count, plural(nzb_count)))
 
         if reset:
             scheduleJob(action='Restart', target='search_nzb_book')
 
-    except Exception as e:
+    except Exception:
         logger.error('Unhandled exception in search_nzb_book: %s' % traceback.format_exc())
 
 
@@ -170,8 +166,6 @@ def processResultList(resultlist, book, searchtype):
             bookid = book['bookid']
             nzbTitle = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
             nzbprov = nzb['nzbprov']
-            nzbdate_temp = nzb['nzbdate']
-            nzbdate = nzbdate2format(nzbdate_temp)
             nzbmode = nzb['nzbmode']
             controlValueDict = {"NZBurl": nzburl}
             newValueDict = {
@@ -215,12 +209,10 @@ def processResultList(resultlist, book, searchtype):
         else:
             logger.debug('%s adding to wanted' % nzb_Title)
             myDB.upsert("wanted", newValueDict, controlValueDict)
-            if nzbmode == "torznab":
-                snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
-                                           newValueDict["NZBtitle"], controlValueDict["NZBurl"])
+            if newValueDict['nzbmode'] == "torznab":
+                snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             else:
-                snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBprov"],
-                                           newValueDict["NZBtitle"], controlValueDict["NZBurl"])
+                snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             if snatch:
                 logger.info('Downloading %s from %s' % (newValueDict["NZBtitle"], newValueDict["NZBprov"]))
                 notify_snatch("%s from %s at %s" %
@@ -232,22 +224,22 @@ def processResultList(resultlist, book, searchtype):
     return False
 
 
-def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
-
+def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None):
     myDB = database.DBConnection()
     Source = ''
+    downloadID = ''
     if lazylibrarian.NZB_DOWNLOADER_SABNZBD and lazylibrarian.SAB_HOST:
         Source = "SABNZBD"
         downloadID = sabnzbd.SABnzbd(nzbtitle, nzburl, False)  # returns nzb_ids or False
 
     if lazylibrarian.NZB_DOWNLOADER_NZBGET and lazylibrarian.NZBGET_HOST:
         Source = "NZBGET"
-        #headers = {'User-Agent': USER_AGENT}
-        #data = request.request_content(url=nzburl, headers=headers)
+        # headers = {'User-Agent': USER_AGENT}
+        # data = request.request_content(url=nzburl, headers=headers)
         data, success = fetchURL(nzburl)
         if not success:
             logger.debug('Failed to read nzb data for nzbget: %s' % data)
-            downloadID = False
+            downloadID = ''
         else:
             nzb = classes.NZBDataSearchResult()
             nzb.extraInfo.append(data)
@@ -264,7 +256,7 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
         nzbfile, success = fetchURL(nzburl)
         if not success:
             logger.warn('Error fetching nzb from url [%s]: %s' % (nzburl, nzbfile))
-            nzbfile = False
+            nzbfile = ''
 
         if nzbfile:
             nzbname = str(nzbtitle) + '.nzb'
@@ -274,11 +266,11 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
                     f.write(nzbfile)
                 logger.debug('NZB file saved to: ' + nzbpath)
                 setperm(nzbpath)
-                downloadID = True
+                downloadID = nzbname
 
             except Exception as e:
                 logger.error('%s not writable, NZB not saved. Error: %s' % (nzbpath, str(e)))
-                downloadID = False
+                downloadID = ''
 
     if not Source:
         logger.warn('No NZB download method is enabled, check config.')
@@ -291,6 +283,6 @@ def NZBDownloadMethod(bookid=None, nzbprov=None, nzbtitle=None, nzburl=None):
                     (Source, downloadID, nzburl))
         return True
     else:
-        logger.error(u'Failed to download nzb @ <a href="%s">%s</a>' % (nzburl, nzbprov))
+        logger.error(u'Failed to download nzb @ <a href="%s">%s</a>' % (nzburl, Source))
         myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl="%s"' % nzburl)
         return False

@@ -17,14 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Sick Beard.  If not, see <http://www.gnu.org/licenses/>.
 
-import base64
-import urllib
-import urllib2
-import time
 import lazylibrarian
 
-from httplib import HTTPSConnection, HTTPException
-from urllib import urlencode
 from lazylibrarian import logger
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
 from lazylibrarian.formatter import unaccented
@@ -33,7 +27,8 @@ from pushbullet2 import PushBullet
 
 class PushbulletNotifier:
 
-    def _sendPushbullet(self, message=None, event=None, pushbullet_token=None, pushbullet_deviceid=None, force=False):
+    @staticmethod
+    def _sendPushbullet(message=None, event=None, pushbullet_token=None, pushbullet_deviceid=None, force=False):
 
         if not lazylibrarian.USE_PUSHBULLET and not force:
             return False
@@ -78,7 +73,7 @@ class PushbulletNotifier:
             logger.warn("Pushbullet: could not convert  message: %s" % e)
 
         # suppress notifications if the notifier is disabled but the notify options are checked
-        if not lazylibrarian.USE_PUSHBULLET and not force:
+        if not lazylibrarian.USE_PUSHBULLET:
             return False
 
         logger.debug("Pushbullet: Sending notification " + str(message))

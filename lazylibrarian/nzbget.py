@@ -21,27 +21,27 @@
 
 
 import httplib
-import lazylibrarian
-
-from base64 import standard_b64encode
 import xmlrpclib
-import socket
+from base64 import standard_b64encode
 
+import lazylibrarian
 from lazylibrarian import logger
 
 
 def checkLink():
     # socket.setdefaulttimeout(2)
-    test = sendNZB(None, cmd="test")
+    test = sendNZB('', cmd="test")
     # socket.setdefaulttimeout(None)
     if test:
         return "NZBget connection successful"
     return "NZBget connection FAILED\nCheck debug log"
 
+
 def deleteNZB(nzbID, remove_data=False):
     if remove_data:
-        return sendNZB(None, 'GroupFinalDelete', nzbID)
-    return sendNZB(None, 'GroupDelete', nzbID)
+        return sendNZB('', 'GroupFinalDelete', nzbID)
+    return sendNZB('', 'GroupDelete', nzbID)
+
 
 def sendNZB(nzb, cmd=None, nzbID=None):
     # we can send a new nzb, or commands to act on an existing nzbID (or array of nzbIDs)
@@ -63,7 +63,8 @@ def sendNZB(nzb, cmd=None, nzbID=None):
     hostparts = host.split('://')
 
     url = hostparts[0] + '://' + nzbgetXMLrpc % {"host": hostparts[1], "username": lazylibrarian.NZBGET_USER,
-                          "port": lazylibrarian.NZBGET_PORT, "password": lazylibrarian.NZBGET_PASS}
+                                                 "port": lazylibrarian.NZBGET_PORT,
+                                                 "password": lazylibrarian.NZBGET_PASS}
     try:
         nzbGetRPC = xmlrpclib.ServerProxy(url)
     except Exception as e:
@@ -84,7 +85,7 @@ def sendNZB(nzb, cmd=None, nzbID=None):
                 # should check nzbget category is valid
                 return True
         else:
-            if nzbId is not None:
+            if nzbID is not None:
                 logger.debug(u"Successfully connected to NZBget, unable to send message")
                 return False
             else:
@@ -105,8 +106,7 @@ def sendNZB(nzb, cmd=None, nzbID=None):
 
     if nzbID is not None:
         # its a command for an existing task
-        id_array = []
-        id_array.append(int(nzbID))
+        id_array = [int(nzbID)]
         if cmd == 'GroupDelete' or cmd == 'GroupFinalDelete':
             return nzbGetRPC.editqueue(cmd, 0, "", id_array)
         else:
@@ -134,8 +134,8 @@ def sendNZB(nzb, cmd=None, nzbID=None):
         # PAB think its fixed now, code had autoAdd param as "False", it's not a string, it's bool so False
         if nzbget_version == 0:  # or nzbget_version == 14:
             if nzbcontent64:
-                    nzbget_result = nzbGetRPC.append(nzb.name + ".nzb",
-                                                     lazylibrarian.NZBGET_CATEGORY, addToTop, nzbcontent64)
+                nzbget_result = nzbGetRPC.append(nzb.name + ".nzb",
+                                                 lazylibrarian.NZBGET_CATEGORY, addToTop, nzbcontent64)
             else:
                 # from lazylibrarian.common.providers.generic import GenericProvider
                 # if nzb.resultType == "nzb":
@@ -161,7 +161,7 @@ def sendNZB(nzb, cmd=None, nzbID=None):
         # (Positive number representing NZBID of the queue item. 0 and negative numbers represent error codes.)
         elif nzbget_version >= 13:
             nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", nzbcontent64 if nzbcontent64 is not None
-                                             else nzb.url, lazylibrarian.NZBGET_CATEGORY,
+            else nzb.url, lazylibrarian.NZBGET_CATEGORY,
                                              lazylibrarian.NZBGET_PRIORITY, False, False, dupekey,
                                              dupescore, "score")
             if nzbget_result <= 0:

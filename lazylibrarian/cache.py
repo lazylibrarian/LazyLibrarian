@@ -13,16 +13,15 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import lazylibrarian
-import os
-import md5
 import hashlib
 import json
-import urllib2
+import os
 import socket
-import ssl
 import time
+import urllib2
 from xml.etree import ElementTree
+
+import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
 
@@ -89,12 +88,12 @@ def cache_cover(bookID, img_url):
 
 
 def get_xml_request(my_url, useCache=True):
-    result, in_cache = get_cached_request(url=my_url, useCache=True, cache="XML")
+    result, in_cache = get_cached_request(url=my_url, useCache=useCache, cache="XML")
     return result, in_cache
 
 
 def get_json_request(my_url, useCache=True):
-    result, in_cache = get_cached_request(url=my_url, useCache=True, cache="JSON")
+    result, in_cache = get_cached_request(url=my_url, useCache=useCache, cache="JSON")
     return result, in_cache
 
 
@@ -108,7 +107,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
     cacheLocation = os.path.join(lazylibrarian.CACHEDIR, cacheLocation)
     if not os.path.exists(cacheLocation):
         os.mkdir(cacheLocation)
-    myhash = md5.new(url).hexdigest()
+    myhash = hashlib.md5(url).hexdigest()
     valid_cache = False
     source = None
     hashfilename = cacheLocation + os.sep + myhash + "." + cache.lower()

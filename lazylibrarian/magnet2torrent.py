@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-'''
+"""
 Created on Apr 19, 2012
 @author: dan, Faless
 
@@ -23,14 +23,13 @@ Created on Apr 19, 2012
     modified by PAB for lazylibrarian...
     Added timeout to metadata download, warn about shutl.rmtree errors
     check if libtorrent available (it's architecture specific)
-'''
+"""
 
+import os.path as pt
 import shutil
 import tempfile
-import os.path as pt
-import sys
 from time import sleep
-from argparse import ArgumentParser
+
 import lazylibrarian
 from lazylibrarian import logger
 
@@ -38,10 +37,10 @@ from lazylibrarian import logger
 def magnet2torrent(magnet, output_name=None):
     try:
         import libtorrent as lt
-    except ImportError:
+    except Exception:
         try:
             from lib.libtorrent import libtorrent as lt
-        except ImportError:
+        except Exception:
             logger.error("Unable to import libtorrent, disabling magnet conversion")
             lazylibrarian.TOR_CONVERT_MAGNET = False
             return False

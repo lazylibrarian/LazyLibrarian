@@ -13,10 +13,9 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import os
 import threading
-import logging
-
 from logging import handlers
 
 import lazylibrarian
@@ -68,7 +67,8 @@ class RotatingLogger(object):
             l.addHandler(consolehandler)
             self.consolehandler = consolehandler
 
-    def log(self, message, level):
+    @staticmethod
+    def log(message, level):
 
         logger = logging.getLogger('lazylibrarian')
 

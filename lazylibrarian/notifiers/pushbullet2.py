@@ -11,16 +11,16 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import lib.simplejson as json
 import lib.requests as requests
-# import websocket
+import lib.simplejson as json
 from lib.requests.auth import HTTPBasicAuth
+
 # from websocket import create_connection
 
 HOST = "https://api.pushbullet.com/v2"
 
 
-class PushBullet():
+class PushBullet:
 
     def __init__(self, apiKey):
         self.apiKey = apiKey
@@ -84,11 +84,7 @@ class PushBullet():
             recipient_type -- a type of recipient (device, email, channel or client)
         """
 
-        data = {"type": "note",
-                "title": title,
-                "body": body}
-
-        data[recipient_type] = recipient
+        data = {"type": "note", "title": title, "body": body, recipient_type: recipient}
 
         return self._request("POST", HOST + "/pushes", data)
 
@@ -102,11 +98,7 @@ class PushBullet():
             recipient_type -- a type of recipient (device, email, channel or client)
         """
 
-        data = {"type": "address",
-                "name": name,
-                "address": address}
-
-        data[recipient_type] = recipient
+        data = {"type": "address", "name": name, "address": address, recipient_type: recipient}
 
         return self._request("POST", HOST + "/pushes", data)
 
@@ -120,11 +112,7 @@ class PushBullet():
             recipient_type -- a type of recipient (device, email, channel or client)
         """
 
-        data = {"type": "list",
-                "title": title,
-                "items": items}
-
-        data[recipient_type] = recipient
+        data = {"type": "list", "title": title, "items": items, recipient_type: recipient}
 
         return self._request("POST", HOST + "/pushes", data)
 
@@ -138,30 +126,26 @@ class PushBullet():
             recipient_type -- a type of recipient (device, email, channel or client)
         """
 
-        data = {"type": "link",
-                "title": title,
-                "url": url}
-
-        data[recipient_type] = recipient
+        data = {"type": "link", "title": title, "url": url, recipient_type: recipient}
 
         return self._request("POST", HOST + "/pushes", data)
 
-    def pushFile(self, recipient, file_name, body, file, file_type=None, recipient_type="device_iden"):
+    def pushFile(self, recipient, file_name, body, fobj, file_type=None, recipient_type="device_iden"):
         """ Push a file
             https://docs.pushbullet.com/v2/pushes
             https://docs.pushbullet.com/v2/upload-request
             Arguments:
             recipient -- a recipient
             file_name -- name of the file
-            file -- a file object
+            fobj -- a file object
             file_type -- file mimetype, if not set, python-magic will be used
             recipient_type -- a type of recipient (device, email, channel or client)
         """
 
         if not file_type:
             import magic
-            file_type = magic.from_buffer(file.read(1024))
-            file.seek(0)
+            file_type = magic.from_buffer(fobj.read(1024))
+            fobj.seek(0)
 
         data = {"file_name": file_name,
                 "file_type": file_type}
@@ -173,18 +157,13 @@ class PushBullet():
 
         upload = requests.post(upload_request["upload_url"],
                                data=upload_request["data"],
-                               files={"file": file},
+                               files={"file": fobj},
                                headers={"User-Agent": "pyPushBullet"})
 
         upload.raise_for_status()
 
-        data = {"type": "file",
-                "file_name": file_name,
-                "file_type": file_type,
-                "file_url": upload_request["file_url"],
-                "body": body}
-
-        data[recipient_type] = recipient
+        data = {"type": "file", "file_name": file_name, "file_type": file_type, "file_url": upload_request["file_url"],
+                "body": body, recipient_type: recipient}
 
         return self._request("POST", HOST + "/pushes", data)
 

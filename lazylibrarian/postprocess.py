@@ -13,28 +13,27 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import shutil
 import os
-import traceback
+import platform
+import shutil
 import subprocess
 import threading
-import platform
-import hashlib
 import time
+import traceback
 from urllib import FancyURLopener
-from lib.fuzzywuzzy import fuzz
-import lazylibrarian
 
-from lazylibrarian import database, logger, gr, utorrent, transmission, qbittorrent, \
-                            deluge, rtorrent, synology, sabnzbd, nzbget
-from lib.deluge_client import DelugeRPCClient
-from lazylibrarian.magazinescan import create_id, create_cover
-from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, unaccented
+import lazylibrarian
+from lazylibrarian import database, logger, utorrent, transmission, qbittorrent, \
+    deluge, rtorrent, synology, sabnzbd, nzbget
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file
-from lazylibrarian.notifiers import notify_download
+from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, unaccented
+from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB
 from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
-from lazylibrarian.gr import GoodReads
+from lazylibrarian.magazinescan import create_id, create_cover
+from lazylibrarian.notifiers import notify_download
+from lib.deluge_client import DelugeRPCClient
+from lib.fuzzywuzzy import fuzz
 
 
 def processAlternate(source_dir=None):
@@ -87,7 +86,7 @@ def processAlternate(source_dir=None):
                 bookname = metadata['title']
                 myDB = database.DBConnection()
 
-                authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % (authorname))
+                authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % authorname)
 
                 if not authmatch:
                     # try goodreads preferred authorname
@@ -96,17 +95,18 @@ def processAlternate(source_dir=None):
                     try:
                         author_gr = GR.find_author_id()
                     except Exception:
+                        author_gr = []
                         logger.debug("No author id for [%s]" % authorname)
                     if author_gr:
                         grauthorname = author_gr['authorname']
                         logger.debug("GoodReads reports [%s] for [%s]" % (grauthorname, authorname))
                         authorname = grauthorname
-                        authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % (authorname))
+                        authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % authorname)
 
                 if authmatch:
-                    logger.debug("ALT: Author %s found in database" % (authorname))
+                    logger.debug("ALT: Author %s found in database" % authorname)
                 else:
-                    logger.debug("ALT: Author %s not found, adding to database" % (authorname))
+                    logger.debug("ALT: Author %s not found, adding to database" % authorname)
                     addAuthorToDB(authorname)
 
                 bookid = find_book_in_db(myDB, authorname, bookname)
@@ -119,7 +119,7 @@ def processAlternate(source_dir=None):
         else:
             logger.warn("No book file found in %s" % source_dir)
         return False
-    except Exception as e:
+    except Exception:
         logger.error('Unhandled exception in processAlternate: %s' % traceback.format_exc())
 
 
@@ -133,14 +133,14 @@ def try_rename(directory, filename):
         # try decode first in case we called listdir with str instead of unicode
         filename = filename.decode(lazylibrarian.SYS_ENCODING)
         return filename
-    except Exception as e:
+    except Exception:
         logger.error("Unable to convert %s to sys encoding" % repr(filename))
         # strip out any non-ascii characters and try to rename
-        newfname = ''.join([c for c in filename if ord(c) < 128 and ord(c) > 31])
+        newfname = ''.join([c for c in filename if 128 > ord(c) > 31])
         try:
             os.rename(os.path.join(directory, filename), os.path.join(directory, newfname))
             return newfname
-        except Exception as e:
+        except Exception:
             logger.error("Unable to rename %s" % repr(filename))
             return ""
 
@@ -161,8 +161,8 @@ def move_into_subdir(processpath, targetdir, fname):
             logger.debug("Checking %s for %s" % (ourfile, fname))
         if ourfile.startswith(fname):
             if is_valid_booktype(ourfile, booktype="book") \
-                or is_valid_booktype(ourfile, booktype="mag") \
-                or os.path.splitext(ourfile)[1].lower() in ['.opf', '.jpg']:
+                    or is_valid_booktype(ourfile, booktype="mag") \
+                    or os.path.splitext(ourfile)[1].lower() in ['.opf', '.jpg']:
                 try:
                     if lazylibrarian.DESTINATION_COPY:
                         shutil.copyfile(os.path.join(processpath, ourfile), os.path.join(targetdir, ourfile))
@@ -238,7 +238,7 @@ def processDir(reset=False):
                             logger.debug('DelugeRPC failed %s' % str(e))
                 except Exception as e:
                     logger.debug("Failed to get updated torrent name from %s for %s: %s" %
-                                (book['Source'], book['DownloadID'], str(e)))
+                                 (book['Source'], book['DownloadID'], str(e)))
 
                 matchtitle = unaccented_str(book['NZBtitle'])
                 if torrentname and torrentname != matchtitle:
@@ -273,7 +273,6 @@ def processDir(reset=False):
                         if ' LL.(' in matchname:
                             matchname = matchname.split(' LL.(')[0]
 
-                        match = 0
                         if ' LL.(' in matchtitle:
                             matchtitle = matchtitle.split(' LL.(')[0]
                         match = fuzz.token_set_ratio(matchtitle, matchname)
@@ -309,11 +308,12 @@ def processDir(reset=False):
                                                 setperm(targetdir)
                                             except OSError as why:
                                                 logger.debug('Failed to create directory %s, %s' %
-                                                            (targetdir, why.strerror))
+                                                             (targetdir, why.strerror))
                                         if not os.path.exists(targetdir):
                                             logger.debug('Unable to find directory %s' % targetdir)
                                         else:
-                                            pp_path = move_into_subdir(processpath, targetdir, fname)
+                                            move_into_subdir(processpath, targetdir, fname)
+                                            pp_path = targetdir
 
                             if os.path.isdir(pp_path):
                                 logger.debug('Found folder (%s%%) %s for %s' % (match, pp_path, matchtitle))
@@ -338,6 +338,7 @@ def processDir(reset=False):
                     pp_path = highest[1]
                     book = highest[2]
                 if match and match >= lazylibrarian.DLOAD_RATIO:
+                    mostrecentissue = ''
                     logger.debug(u'Found match (%s%%): %s for %s' % (match, pp_path, book['NZBtitle']))
                     data = myDB.match('SELECT * from books WHERE BookID="%s"' % book['BookID'])
                     if data:  # it's a book
@@ -458,7 +459,7 @@ def processDir(reset=False):
                                 delete_task(book['Source'], book['DownloadID'], False)
                             else:
                                 logger.warn("Unable to remove %s from %s, no DownloadID" %
-                                    (book['NZBtitle'], book['Source'].lower()))
+                                            (book['NZBtitle'], book['Source'].lower()))
 
                     if to_delete:
                         # only delete the files if not in download root dir and if DESTINATION_COPY not set
@@ -471,7 +472,7 @@ def processDir(reset=False):
                                     logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
 
                     logger.info('Successfully processed: %s' % global_name)
-                    ppcount = ppcount + 1
+                    ppcount += 1
                     notify_download("%s from %s at %s" % (global_name, book['NZBprov'], now()))
                 else:
                     logger.error('Postprocessing for %s has failed.' % global_name)
@@ -521,7 +522,7 @@ def processDir(reset=False):
                         if import_book(pp_path, bookID):
                             if int(lazylibrarian.LOGLEVEL) > 2:
                                 logger.debug("Imported %s" % pp_path)
-                            ppcount = ppcount + 1
+                            ppcount += 1
                 else:
                     if int(lazylibrarian.LOGLEVEL) > 2:
                         logger.debug("Skipping extn %s" % entry)
@@ -566,7 +567,7 @@ def processDir(reset=False):
         if reset:
             scheduleJob(action='Restart', target='processDir')
 
-    except Exception as e:
+    except Exception:
         logger.error('Unhandled exception in processDir: %s' % traceback.format_exc())
 
 
@@ -586,7 +587,7 @@ def delete_task(Source, DownloadID, remove_data):
             qbittorrent.removeTorrent(DownloadID, remove_data)
         elif Source == "TRANSMISSION":
             transmission.removeTorrent(DownloadID, remove_data)
-        elif  Source == "SYNOLOGY_TOR" or Source == "SYNOLOGY_NZB":
+        elif Source == "SYNOLOGY_TOR" or Source == "SYNOLOGY_NZB":
             synology.removeTorrent(DownloadID, remove_data)
         elif Source == "DELUGEWEBUI":
             deluge.removeTorrent(DownloadID, remove_data)
@@ -677,7 +678,7 @@ def import_book(pp_path=None, bookID=None):
                 except Exception as e:
                     logger.debug("Unable to rename %s, %s" % (pp_path, str(e)))
         return False
-    except Exception as e:
+    except Exception:
         logger.error('Unhandled exception in importBook: %s' % traceback.format_exc())
 
 
@@ -727,7 +728,6 @@ def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
 
 
 def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, bookid=None):
-
     # check we got a book/magazine in the downloaded files, if not, return
     if bookname:
         booktype = 'book'
@@ -752,8 +752,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     # Do we want calibre to import the book for us
     if bookname and len(lazylibrarian.IMP_CALIBREDB):
         processpath = lazylibrarian.DIRECTORY('Destination')
+        params = []
         try:
-            logger.debug('Importing %s into calibre library' % (global_name))
+            logger.debug('Importing %s into calibre library' % global_name)
             # calibre ignores metadata.opf and book_name.opf
             for bookfile in os.listdir(pp_path):
                 filename, extn = os.path.splitext(bookfile)
@@ -779,38 +780,47 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 if 'already exist' in res:
                     logger.warn('Calibre failed to import %s %s, reports book already exists' % (authorname, bookname))
                 if 'Added book ids' in res:
-                    calibre_id = res.split("book ids: ",1)[1].split("\n",1)[0]
+                    calibre_id = res.split("book ids: ", 1)[1].split("\n", 1)[0]
                     logger.debug('Calibre ID: %s' % calibre_id)
                     authorparams = [lazylibrarian.IMP_CALIBREDB,
-                        'set_metadata',
-                        '--field',
-                        'authors:%s' % unaccented(authorname),
-                        '--with-library',
-                        processpath,
-                        calibre_id
-                        ]
+                                    'set_metadata',
+                                    '--field',
+                                    'authors:%s' % unaccented(authorname),
+                                    '--with-library',
+                                    processpath,
+                                    calibre_id
+                                    ]
                     logger.debug(str(authorparams))
-                    authorres = subprocess.check_output(authorparams, stderr=subprocess.STDOUT)
+                    res = subprocess.check_output(authorparams, stderr=subprocess.STDOUT)
+                    if res:
+                        logger.debug('%s author reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
+
                     titleparams = [lazylibrarian.IMP_CALIBREDB,
-                        'set_metadata',
-                        '--field',
-                        'title:%s' % unaccented(bookname),
-                        '--with-library',
-                        processpath,
-                        calibre_id
-                        ]
+                                   'set_metadata',
+                                   '--field',
+                                   'title:%s' % unaccented(bookname),
+                                   '--with-library',
+                                   processpath,
+                                   calibre_id
+                                   ]
                     logger.debug(str(titleparams))
-                    titleres = subprocess.check_output(titleparams, stderr=subprocess.STDOUT)
+                    res = subprocess.check_output(titleparams, stderr=subprocess.STDOUT)
+                    if res:
+                        logger.debug('%s book reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
+
                     metaparams = [lazylibrarian.IMP_CALIBREDB,
-                        'set_metadata',
-                        '--field',
-                        'identifiers:%s' % identifier,
-                        '--with-library',
-                        processpath,
-                        calibre_id
-                        ]
+                                  'set_metadata',
+                                  '--field',
+                                  'identifiers:%s' % identifier,
+                                  '--with-library',
+                                  processpath,
+                                  calibre_id
+                                  ]
                     logger.debug(str(metaparams))
-                    metares = subprocess.check_output(metaparams, stderr=subprocess.STDOUT)
+                    res = subprocess.check_output(metaparams, stderr=subprocess.STDOUT)
+                    if res:
+                        logger.debug('%s identifier reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
+
             # calibre does not like quotes in author names
             calibre_dir = os.path.join(processpath, unaccented_str(authorname.replace('"', '_')), '')
             if os.path.isdir(calibre_dir):
@@ -878,38 +888,37 @@ def processAutoAdd(src_path=None):
     if not os.path.exists(autoadddir):
         logger.error('AutoAdd directory [%s] is missing or not set - cannot perform autoadd copy' % autoadddir)
         return False
-    else:
-        # Now try and copy all the book files into a single dir.
-        try:
-            names = os.listdir(src_path)
-            # TODO : n files jpg, opf & book(s) should have same name
-            # Caution - book may be pdf, mobi, epub or all 3.
-            # for now simply copy all files, and let the autoadder sort it out
-            #
-            # Update - seems Calibre only uses the ebook, not the jpeg or opf files
-            # and only imports one format of each ebook, treats the others as duplicates
-            # Maybe need to rewrite this so we only copy the first ebook we find and ignore everything else
-            #
-            for name in names:
-                srcname = os.path.join(src_path, name)
-                dstname = os.path.join(autoadddir, name)
-                logger.debug('AutoAdd Copying file [%s] as copy [%s] to [%s]' % (name, srcname, dstname))
-                try:
-                    shutil.copyfile(srcname, dstname)
-                except Exception as why:
-                    logger.error('AutoAdd - Failed to copy file [%s] because [%s] ' % (name, str(why)))
-                    return False
-                try:
-                    os.chmod(dstname, 0o666)  # make rw for calibre
-                except OSError as why:
-                    logger.warn("Could not set permission of %s because [%s]" % (dstname, why.strerror))
-                    # permissions might not be fatal, continue
+    # Now try and copy all the book files into a single dir.
+    try:
+        names = os.listdir(src_path)
+        # TODO : n files jpg, opf & book(s) should have same name
+        # Caution - book may be pdf, mobi, epub or all 3.
+        # for now simply copy all files, and let the autoadder sort it out
+        #
+        # Update - seems Calibre only uses the ebook, not the jpeg or opf files
+        # and only imports one format of each ebook, treats the others as duplicates
+        # Maybe need to rewrite this so we only copy the first ebook we find and ignore everything else
+        #
+        for name in names:
+            srcname = os.path.join(src_path, name)
+            dstname = os.path.join(autoadddir, name)
+            logger.debug('AutoAdd Copying file [%s] as copy [%s] to [%s]' % (name, srcname, dstname))
+            try:
+                shutil.copyfile(srcname, dstname)
+            except Exception as why:
+                logger.error('AutoAdd - Failed to copy file [%s] because [%s] ' % (name, str(why)))
+                return False
+            try:
+                os.chmod(dstname, 0o666)  # make rw for calibre
+            except OSError as why:
+                logger.warn("Could not set permission of %s because [%s]" % (dstname, why.strerror))
+                # permissions might not be fatal, continue
 
-        except OSError as why:
-            logger.error('AutoAdd - Failed because [%s]' % why.strerror)
-            return False
+    except OSError as why:
+        logger.error('AutoAdd - Failed because [%s]' % why.strerror)
+        return False
 
-    logger.info('Auto Add completed for [%s]' % dstname)
+    logger.info('Auto Add completed for [%s]' % src_path)
     return True
 
 
@@ -922,10 +931,10 @@ def processIMG(dest_path=None, bookimg=None, global_name=None):
             with open(coverpath, 'wb') as img:
                 imggoogle = imgGoogle()
                 img.write(imggoogle.open(bookimg).read())
-            # try:
-            #    os.chmod(coverpath, 0777)
-            # except Exception, e:
-            #    logger.error("Could not chmod path: " + str(coverpath))
+                # try:
+                #    os.chmod(coverpath, 0777)
+                # except Exception, e:
+                #    logger.error("Could not chmod path: " + str(coverpath))
 
     except (IOError, EOFError) as e:
         if hasattr(e, 'strerror'):

@@ -13,13 +13,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with LazyLibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
+import json
+import time
+import urlparse
+
+import lazylibrarian
 from lazylibrarian import logger, request
 
-import time
-import json
-import urlparse
-import lazylibrarian
-import os
 
 # This is just a simple script to send torrents to transmission. The
 # intention is to turn this into a class where we can check the state
@@ -203,20 +203,20 @@ def torrentAction(method, arguments):
         return
 
     # Parse response
+    session_id = ''
     if response.status_code == 401:
         if auth:
             logger.error("Username and/or password not accepted by "
                          "Transmission")
         else:
             logger.error("Transmission authorization required")
-
         return
     elif response.status_code == 409:
         session_id = response.headers['x-transmission-session-id']
 
-        if not session_id:
-            logger.error("Expected a Session ID from Transmission")
-            return
+    if not session_id:
+        logger.error("Expected a Session ID from Transmission")
+        return
 
     # Prepare next request
     headers = {'x-transmission-session-id': session_id}

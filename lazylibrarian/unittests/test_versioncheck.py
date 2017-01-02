@@ -1,10 +1,9 @@
-import unittest
 import os
-import sys
+import unittest
 
-# from lazylibrarian import  versioncheck
 import lazylibrarian
 from lazylibrarian import versioncheck, version
+
 
 #
 # These tests MUST be executed in the root PROG_DIR directory. Otherwise

@@ -13,19 +13,19 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import platform
-import subprocess
-import re
 import os
-import urllib2
+import platform
+import re
 import socket
+import subprocess
 import tarfile
 import threading
+import urllib2
 
 import lazylibrarian
+import lib.simplejson as simplejson
 from lazylibrarian import logger
 
-import lib.simplejson as simplejson
 
 #
 # Function to execute GIT commands taking care of error logging etc
@@ -68,7 +68,7 @@ def runGit(args):
         elif output:
             break
 
-    return (output, err)
+    return output, err
 
 #
 # function to determine what type of install we are on & sets current Branch value
@@ -80,27 +80,27 @@ def runGit(args):
 def getInstallType():
 
     try:
-        if version.LAZYLIBRARIAN_VERSION.startswith('win32build'):
+        if platform.system().lower() == 'windows':
             lazylibrarian.INSTALL_TYPE = 'win'
-            lazylibrarian.CURRENT_BRANCH = 'Windows'
+            lazylibrarian.GIT_BRANCH = 'Windows'
             logger.debug('(getInstallType) [Windows] install detected. Setting Branch to [%s]' %
-                         lazylibrarian.CURRENT_BRANCH)
+                         lazylibrarian.GIT_BRANCH)
     except Exception:
         if os.path.isdir(os.path.join(lazylibrarian.PROG_DIR, '.git')):
             lazylibrarian.INSTALL_TYPE = 'git'
-            lazylibrarian.CURRENT_BRANCH = getCurrentGitBranch()
+            lazylibrarian.GIT_BRANCH = getCurrentGitBranch()
             logger.debug('(getInstallType) [GIT] install detected. Setting Branch to [%s] ' %
-                         lazylibrarian.CURRENT_BRANCH)
+                         lazylibrarian.GIT_BRANCH)
         elif os.path.exists(os.path.join(lazylibrarian.PROG_DIR, '.package')):
             lazylibrarian.INSTALL_TYPE = 'package'
-            lazylibrarian.CURRENT_BRANCH = 'Package'
+            lazylibrarian.GIT_BRANCH = 'Package'
             logger.debug('(getInstallType) [Package] install detected. Setting Branch to [%s] ' %
-                         lazylibrarian.CURRENT_BRANCH)
+                         lazylibrarian.GIT_BRANCH)
         else:
             lazylibrarian.INSTALL_TYPE = 'source'
-            lazylibrarian.CURRENT_BRANCH = 'master'
+            lazylibrarian.GIT_BRANCH = 'master'
             logger.debug('(getInstallType) [Source]install detected. Setting Branch to [%s]' %
-                         lazylibrarian.CURRENT_BRANCH)
+                         lazylibrarian.GIT_BRANCH)
 
 #
 # Establish the version of the installed app for Source or GIT only
@@ -108,7 +108,6 @@ def getInstallType():
 
 
 def getCurrentVersion():
-    version = ''
 
     if lazylibrarian.INSTALL_TYPE == 'win':
         logger.debug('(getCurrentVersion) Windows install - no update available')
@@ -127,7 +126,7 @@ def getCurrentVersion():
 
             if not re.match('^[a-z0-9]+$', cur_commit_hash):
                 logger.error('(getCurrentVersion) Output doesn\'t look like a hash, not using it')
-                version = 'GIT invalid hash return'
+                cur_commit_hash = 'GIT invalid hash return'
 
         version = cur_commit_hash
 
@@ -200,7 +199,6 @@ def checkForUpdates():
 
 def getLatestVersion():
     # Can only work for GIT driven installs, so check install type
-    latest_version = 'Unknown'
     lazylibrarian.COMMITS_BEHIND = 'Unknown'
 
     if lazylibrarian.INSTALL_TYPE in ['git', 'source', 'package']:
@@ -226,9 +224,9 @@ def getLatestVersion_FromGit():
         latest_version = 'WINDOWS INSTALL'
     else:
         # check current branch value of the local git repo as folks may pull from a branch not master
-        branch = lazylibrarian.CURRENT_BRANCH
+        branch = lazylibrarian.GIT_BRANCH
 
-        if (branch == 'InvalidBranch'):
+        if branch == 'InvalidBranch':
             logger.debug('(getLatestVersion_FromGit) - Failed to get a valid branch name from local repo')
         else:
 
@@ -365,7 +363,6 @@ def update():
 
         # As this is a non GIT install, we assume that the comparison is
         # always to master.
-        branch = lazylibrarian.CURRENT_BRANCH
 
         tar_download_url = 'https://github.com/%s/%s/tarball/%s' % (
             lazylibrarian.GIT_USER, lazylibrarian.GIT_REPO, lazylibrarian.GIT_BRANCH)
@@ -375,9 +372,8 @@ def update():
         try:
             logger.info('(update) Downloading update from: ' + tar_download_url)
             data = urllib2.urlopen(tar_download_url, timeout=30)
-        except (socket.timeout) as e:
-            logger.error(
-                "(update) Timeout retrieving new version from " + tar_download_url)
+        except socket.timeout:
+            logger.error("(update) Timeout retrieving new version from " + tar_download_url)
             return
         except (urllib2.HTTPError, urllib2.URLError) as e:
             if hasattr(e, 'reason'):

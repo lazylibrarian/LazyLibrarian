@@ -20,9 +20,8 @@
 
 import urllib
 import urllib2
-import time
-import lazylibrarian
 
+import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
 
@@ -50,6 +49,7 @@ class AndroidPNNotifier:
             handle.close()
 
         except urllib2.URLError as e:
+            # URLError only returns a reason, not a code. HTTPError gives a code
             # FIXME: Python 2.5 hack, it wrongly reports 201 as an error
             if hasattr(e, 'code') and e.code == 201:
                 logger.debug(u"ANDROIDPN: Notification successful.")
@@ -64,7 +64,7 @@ class AndroidPNNotifier:
 
             # HTTP status 404 if the provided email address isn't a AndroidPN user.
             if e.code == 404:
-                logger.warning(
+                logger.warn(
                     u"ANDROIDPN: Username is wrong/not a AndroidPN email. AndroidPN will send an email to it")
                 return False
 
@@ -73,7 +73,7 @@ class AndroidPNNotifier:
             elif e.code == 401:
 
                 # HTTP status 401 if the user doesn't have the service added
-                subscribeNote = self._sendAndroidPN(title, msg, username)
+                subscribeNote = self._sendAndroidPN(title, msg, url, username, broadcast)
                 if subscribeNote:
                     logger.debug(u"ANDROIDPN: Subscription sent")
                     return True
