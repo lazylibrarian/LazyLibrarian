@@ -209,7 +209,7 @@ def processResultList(resultlist, book, searchtype):
         else:
             logger.debug('%s adding to wanted' % nzb_Title)
             myDB.upsert("wanted", newValueDict, controlValueDict)
-            if newValueDict['nzbmode'] == "torznab":
+            if newValueDict['NZBmode'] == "torznab":
                 snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             else:
                 snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], controlValueDict["NZBurl"])
