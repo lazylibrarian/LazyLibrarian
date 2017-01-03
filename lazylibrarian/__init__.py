@@ -117,10 +117,6 @@ DESTINATION_DIR = None
 ALTERNATE_DIR = None
 DOWNLOAD_DIR = None
 
-BOOKLANGFILTER = None
-MANAGEFILTER = None
-ISSUEFILTER = None
-
 IMP_PREFLANG = None
 IMP_MONTHLANG = None
 IMP_ONLYISBN = 0
@@ -384,8 +380,8 @@ def check_setting_str(config, cfg_name, item_name, def_val, log=True):
 def initialize():
     with INIT_LOCK:
         global __INITIALIZED__, LOGDIR, LOGLIMIT, LOGFILES, LOGSIZE, CFG, CFGLOGLEVEL, LOGLEVEL, \
-            LOGFULL, CACHEDIR, DATADIR, LAST_LIBRARYTHING, LAST_GOODREADS, BOOKLANGFILTER, MANAGEFILTER, \
-            ISSUEFILTER, IMP_MONTHLANG, BOOKSTRAP_THEMELIST, CURRENT_TAB, UPDATE_MSG
+            LOGFULL, CACHEDIR, DATADIR, LAST_LIBRARYTHING, LAST_GOODREADS, \
+            IMP_MONTHLANG, BOOKSTRAP_THEMELIST, CURRENT_TAB, UPDATE_MSG
 
         if __INITIALIZED__:
             return False
@@ -441,10 +437,6 @@ def initialize():
         time_now = int(time.time())
         LAST_LIBRARYTHING = time_now
         LAST_GOODREADS = time_now
-
-        MANAGEFILTER = "Skipped"
-        ISSUEFILTER = "Skipped"
-        BOOKLANGFILTER = "eng"
 
         # Initialize the database
         try:
