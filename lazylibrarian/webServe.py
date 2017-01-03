@@ -687,24 +687,26 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("home")
 
     # BOOKS #############################################################
-
+    LANGFILTER = ''
     @cherrypy.expose
     def books(self, BookLang=None):
+        global LANGFILTER
         myDB = database.DBConnection()
         languages = myDB.select('SELECT DISTINCT BookLang from books WHERE \
                                 STATUS !="Skipped" AND STATUS !="Ignored"')
-        lazylibrarian.BOOKLANGFILTER = BookLang
+        LANGFILTER = BookLang
         return serve_template(templatename="books.html", title='Books', books=[], languages=languages)
 
     @cherrypy.expose
     def getBooks(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
+        global LANGFILTER
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
         lazylibrarian.DISPLAYLENGTH = iDisplayLength
 
         #   need to check and filter on BookLang if set
-        if lazylibrarian.BOOKLANGFILTER is None or not len(lazylibrarian.BOOKLANGFILTER):
+        if LANGFILTER is None or not len(LANGFILTER):
             cmd = 'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid,'
             cmd += ' booksub, booklink, workpage, authorid from books WHERE STATUS !="Skipped"'
             cmd += ' AND STATUS !="Ignored"'
@@ -712,7 +714,7 @@ class WebInterface(object):
         else:
             cmd = 'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid,'
             cmd += ' booksub, booklink, workpage, authorid from books WHERE STATUS !="Skipped"'
-            cmd = cmd + ' AND STATUS !="Ignored" and BOOKLANG="' + lazylibrarian.BOOKLANGFILTER + '"'
+            cmd = cmd + ' AND STATUS !="Ignored" and BOOKLANG="' + LANGFILTER + '"'
             rowlist = myDB.select(cmd)
         # turn the sqlite rowlist into a list of lists
         d = []
@@ -1198,16 +1200,19 @@ class WebInterface(object):
             logger.debug("Found %s cover%s" % (covercount, plural(covercount)))
         return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
 
+    ISSUEFILTER = ''
     @cherrypy.expose
     def pastIssues(self, whichStatus=None):
+        global ISSUEFILTER
         if whichStatus is None:
             whichStatus = "Skipped"
-        lazylibrarian.ISSUEFILTER = whichStatus
+        ISSUEFILTER = whichStatus
         return serve_template(
             templatename="manageissues.html", title="Magazine Status Management", issues=[], whichStatus=whichStatus)
 
     @cherrypy.expose
     def getPastIssues(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
+        global ISSUEFILTER
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
@@ -1215,8 +1220,7 @@ class WebInterface(object):
 
         # need to filter on whichStatus
         rowlist = myDB.select(
-            'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov from pastissues WHERE Status="%s"' %
-            lazylibrarian.ISSUEFILTER)
+            'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov from pastissues WHERE Status="%s"' % ISSUEFILTER)
 
         d = []
         filtered = []
@@ -1478,7 +1482,8 @@ class WebInterface(object):
             }
             myDB.upsert("magazines", newValueDict, controlValueDict)
             mags = [{"bookid": title}]
-            self.startMagazineSearch(mags)
+            if lazylibrarian.IMP_AUTOSEARCH:
+                self.startMagazineSearch(mags)
             raise cherrypy.HTTPRedirect("magazines")
 
 
@@ -1823,17 +1828,19 @@ class WebInterface(object):
             logger.debug(u"forceSearch called with bad source")
         raise cherrypy.HTTPRedirect(source)
 
+    MANAGEFILTER = ''
     @cherrypy.expose
     def manage(self, whichStatus=None):
+        global MANAGEFILTER
         if whichStatus is None:
             whichStatus = "Wanted"
-        lazylibrarian.MANAGEFILTER = whichStatus
+        MANAGEFILTER = whichStatus
         return serve_template(templatename="managebooks.html", title="Book Status Management",
                               books=[], whichStatus=whichStatus)
 
     @cherrypy.expose
     def getManage(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
-
+        global MANAGEFILTER
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
@@ -1842,7 +1849,7 @@ class WebInterface(object):
         # print "getManage %s" % iDisplayStart
         #   need to filter on whichStatus
         cmd = 'SELECT authorname, bookname, series, seriesnum, bookdate, bookid, booklink, booksub, authorid '
-        cmd = cmd + 'from books WHERE STATUS="' + lazylibrarian.MANAGEFILTER + '"'
+        cmd = cmd + 'from books WHERE STATUS="' + MANAGEFILTER + '"'
         rowlist = myDB.select(cmd)
 
         d = []
