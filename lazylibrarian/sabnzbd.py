@@ -34,7 +34,7 @@ def checkLink():
         return "Unable to talk to SABnzbd, check APIKEY"
     # check category exists
     if lazylibrarian.SAB_CAT:
-        if lazylibrarian.SAB_CAT not in cats['categories']:
+        if cats.has_key('categories') and lazylibrarian.SAB_CAT not in cats['categories']:
             msg = "SABnzbd: Unknown category [%s]\n" % lazylibrarian.SAB_CAT
             if cats['categories']:
                 msg += "Valid categories:\n"
