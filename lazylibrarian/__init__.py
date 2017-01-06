@@ -1220,16 +1220,23 @@ def config_write():
 
     with open(CONFIGFILE + '.new', 'wb') as configfile:
         CFG.write(configfile)
+
     try:
         os.remove(CONFIGFILE + '.bak')
     except OSError as e:
         if e.errno is not 2:  # doesn't exist is ok
-            logger.debug("Error deleting backup %s, %s" % (CONFIGFILE + '.bak', e.strerror))
+            logger.debug('{} {}{} {}'.format('Error deleting backup file:', CONFIGFILE, '.bak', e.strerror))
+
     try:
         os.rename(CONFIGFILE, CONFIGFILE + '.bak')
+    except OSError as e:
+        if e.errno is not 2:  # doesn't exist is ok as wouldn't exist until first save
+            logger.debug('{} {} {}'.format('Unable to backup config file:', CONFIGFILE, e.strerror))
+
+    try:
         os.rename(CONFIGFILE + '.new', CONFIGFILE)
     except OSError as e:
-        logger.debug("Unable to backup config file: %s" % str(e))
+        logger.debug('{} {} {}'.format('Unable to create new config file:', CONFIGFILE, e.strerror))
 
 
 def add_newz_slot():
