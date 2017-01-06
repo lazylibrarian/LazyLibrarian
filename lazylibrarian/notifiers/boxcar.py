@@ -75,7 +75,7 @@ class BoxcarNotifier:
             handle = urllib2.urlopen(req, data)
             handle.close()
 
-        except urllib2.URLError as e:
+        except (urllib2.URLError, urllib2.HTTPError) as e:
             # if we get an error back that doesn't have an error code then who knows what's really happening
             # URLError doesn't return a code, just a reason. HTTPError gives a code
             if not hasattr(e, 'code'):

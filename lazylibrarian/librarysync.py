@@ -299,9 +299,8 @@ def LibraryScan(startdir=None):
                 books = myDB.select(
                     'select AuthorName, BookName, BookFile, BookID from books where Status="Open"')
             else:
-                books = myDB.select(
-                    'select AuthorName, BookName, BookFile, BookID from books where Status="Open"' + \
-                    ' and BookFile like "' + startdir + '%"')
+                books = myDB.select('select AuthorName, BookName, BookFile, BookID from books where Status="Open"' +
+                                    ' and BookFile like "' + startdir + '%"')
 
             status = lazylibrarian.NOTFOUND_STATUS
             logger.info('Missing books will be marked as %s' % status)

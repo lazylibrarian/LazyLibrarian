@@ -95,7 +95,7 @@ def processAlternate(source_dir=None):
                     try:
                         author_gr = GR.find_author_id()
                     except Exception:
-                        author_gr = []
+                        author_gr = {}
                         logger.debug("No author id for [%s]" % authorname)
                     if author_gr:
                         grauthorname = author_gr['authorname']

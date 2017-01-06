@@ -35,7 +35,7 @@ def dbupgrade(db_current_version):
 
     if db_version < db_current_version:
         lazylibrarian.UPDATE_MSG = 'Updating database to version %s, current version is %s' % (
-        db_current_version, db_version)
+            db_current_version, db_version)
         logger.info(lazylibrarian.UPDATE_MSG)
         myDB = database.DBConnection()
 
@@ -385,7 +385,7 @@ def dbupgrade(db_current_version):
                 except sqlite3.OperationalError:
                     logger.warn('Failed to rearrange magazines table')
 
-                # Now do any non-version-specific tidying
+                    # Now do any non-version-specific tidying
 
         try:
             authors = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL')

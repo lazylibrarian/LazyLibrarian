@@ -192,7 +192,6 @@ def getTorrentFolder(torrentid):
 
 
 def removeTorrent(torrentid, remove_data=False):
-
     if not any(delugeweb_auth):
         _get_auth()
 
@@ -393,7 +392,6 @@ def setTorrentLabel(result):
     else:
         logger.debug('Deluge: No Label set')
         return True
-
 
 
 def setSeedRatio(result):

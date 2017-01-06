@@ -86,7 +86,7 @@ class WebInterface(object):
         if "Thread-" in threadname:
             threading.currentThread().name = "WEBSERVER"
 
-        # CONFIG ############################################################
+    # CONFIG ############################################################
 
     @cherrypy.expose
     def config(self):
@@ -688,6 +688,7 @@ class WebInterface(object):
 
     # BOOKS #############################################################
     LANGFILTER = ''
+
     @cherrypy.expose
     def books(self, BookLang=None):
         global LANGFILTER
@@ -699,6 +700,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def getBooks(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
+        # kwargs is used by datatables to pass params
         global LANGFILTER
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
@@ -1138,7 +1140,7 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("manage")
 
 
-        # MAGAZINES #########################################################
+    # MAGAZINES #########################################################
 
     @cherrypy.expose
     def magazines(self):
@@ -1201,6 +1203,7 @@ class WebInterface(object):
         return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
 
     ISSUEFILTER = ''
+
     @cherrypy.expose
     def pastIssues(self, whichStatus=None):
         global ISSUEFILTER
@@ -1212,6 +1215,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def getPastIssues(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
+        # kwargs is used by datatables to pass params
         global ISSUEFILTER
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
@@ -1303,7 +1307,7 @@ class WebInterface(object):
             if not nzburl == 'book_table_length':
                 title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s"' % nzburl)
                 if len(title) == 0:
-                    if '&' in nzburl and not '&amp;' in nzburl:
+                    if '&' in nzburl and '&amp;' not in nzburl:
                         nzburl = nzburl.replace('&', '&amp;')
                         title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s"' % nzburl)
                     elif '&amp;' in nzburl:
@@ -1487,7 +1491,7 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("magazines")
 
 
-        # UPDATES ###########################################################
+    # UPDATES ###########################################################
 
     @cherrypy.expose
     def checkForUpdates(self):
@@ -1643,6 +1647,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def getLog(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
+        # kwargs is used by datatables to pass params
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
         lazylibrarian.DISPLAYLENGTH = iDisplayLength
@@ -1789,7 +1794,7 @@ class WebInterface(object):
         else:
             return "Email notification successful, check your email"
 
-        # API ###############################################################
+    # API ###############################################################
 
     @cherrypy.expose
     def api(self, **kwargs):
@@ -1829,6 +1834,7 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect(source)
 
     MANAGEFILTER = ''
+
     @cherrypy.expose
     def manage(self, whichStatus=None):
         global MANAGEFILTER
@@ -1840,6 +1846,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def getManage(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
+        # kwargs is used by datatables to pass params
         global MANAGEFILTER
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)

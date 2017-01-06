@@ -637,9 +637,8 @@ class GoogleBooks:
             logger.debug("Imported/Updated %s book%s for author" % (resultcount, plural(resultcount)))
 
             myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i, %i)' %
-                        (
-                        authorname.replace('"', '""'), api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change, cache_hits,
-                        ignored, removedResults, not_cached, duplicates))
+                        (authorname.replace('"', '""'), api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change,
+                         cache_hits, ignored, removedResults, not_cached, duplicates))
 
             if refresh:
                 logger.info("[%s] Book processing complete: Added %s book%s / Updated %s book%s" %
