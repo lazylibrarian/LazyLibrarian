@@ -27,7 +27,7 @@ import calendar
 import datetime
 import httplib
 import os
-import rfc822
+import email
 import sys
 import tempfile
 import textwrap
@@ -246,7 +246,7 @@ class Status(object):
     Returns:
       The time this status message was posted, in seconds since the epoch.
     '''
-    return calendar.timegm(rfc822.parsedate(self.created_at))
+    return calendar.timegm(email.utils.parsedate(self.created_at))
 
   created_at_in_seconds = property(GetCreatedAtInSeconds,
                                    doc="The time this status message was "
@@ -1968,7 +1968,7 @@ class DirectMessage(object):
     Returns:
       The time this direct message was posted, in seconds since the epoch.
     '''
-    return calendar.timegm(rfc822.parsedate(self.created_at))
+    return calendar.timegm(email.utils.parsedate(self.created_at))
 
   created_at_in_seconds = property(GetCreatedAtInSeconds,
                                    doc="The time this direct message was "
@@ -4297,7 +4297,7 @@ class Api(object):
 
     if reset_time:
       # put the reset time into a datetime object
-      reset = datetime.datetime(*rfc822.parsedate(reset_time)[:7])
+      reset = datetime.datetime(*email.utils.parsedate(reset_time)[:7])
 
       # find the difference in time between now and the reset time + 1 hour
       delta = reset + datetime.timedelta(hours=1) - datetime.datetime.utcnow()
