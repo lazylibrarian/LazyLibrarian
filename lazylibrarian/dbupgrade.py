@@ -388,8 +388,12 @@ def dbupgrade(db_current_version):
         if db_version < 10:
             # make sure columns in pastissues match those in wanted table
             # needed when upgrading from old 3rd party packages (eg freenas)
-            c.execute('DROP TABLE pastissues')
-            c.execute('CREATE TABLE pastissues AS SELECT * FROM wanted WHERE 0')  # same columns, but empty table
+            try:
+                c.execute('DROP TABLE pastissues')
+                c.execute('CREATE TABLE pastissues AS SELECT * FROM wanted WHERE 0')  # same columns, but empty table
+                conn.commit()
+            except sqlite3.OperationalError:
+                logger.warn('Failed to rebuild pastissues table')
 
         # Now do any non-version-specific tidying
         try:
