@@ -50,7 +50,7 @@ def dbupgrade(db_current_version):
                 WorkPage TEXT, Manual TEXT)')
             c.execute('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, \
                 NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, Source TEXT, DownloadID TEXT)')
-            c.execute('CREATE TABLE IF NOT EXISTS pastissues AS SELECT * FROM wanted')  # same columns
+            c.execute('CREATE TABLE IF NOT EXISTS pastissues AS SELECT * FROM wanted WHERE 0')  # same columns
             c.execute('CREATE TABLE IF NOT EXISTS magazines (Title TEXT, Regex TEXT, Status TEXT, MagazineAdded TEXT, \
                         LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT, Reject TEXT)')
             c.execute('CREATE TABLE IF NOT EXISTS languages (isbn TEXT, lang TEXT)')
@@ -60,7 +60,7 @@ def dbupgrade(db_current_version):
                 LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int, duplicates int)')
 
             # These are the incremental changes before database versioning was introduced.
-            # New database tables already have these incorporated so we need to check first...
+            # New database tables should already have these incorporated so we need to check first...
             try:
                 c.execute('SELECT BookSub from books')
             except sqlite3.OperationalError:
@@ -385,8 +385,13 @@ def dbupgrade(db_current_version):
                 except sqlite3.OperationalError:
                     logger.warn('Failed to rearrange magazines table')
 
-                    # Now do any non-version-specific tidying
+        if db_version < 10:
+            # make sure columns in pastissues match those in wanted table
+            # needed when upgrading from old 3rd party packages (eg freenas)
+            c.execute('DROP TABLE pastissues')
+            c.execute('CREATE TABLE pastissues AS SELECT * FROM wanted WHERE 0')  # same columns, but empty table
 
+        # Now do any non-version-specific tidying
         try:
             authors = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL')
             if authors:
