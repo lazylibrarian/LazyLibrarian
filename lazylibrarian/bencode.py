@@ -12,6 +12,8 @@ and encode data. """
 # Note: Bencoding specification:
 # http://www.bittorrent.org/beps/bep_0003.html
 
+# Phil Borman added encode for datatypes set tuple basestring unicode long
+
 def collapse(data):
 	""" Given an homogenous list, returns the items of that list
 	concatenated together. """
@@ -112,12 +114,12 @@ def ben_type(exp):
 	elif exp[0] == "d":
 		return dict
 
-def check_type(exp, datatype):
+def check_type(exp, datatypes):
 	""" Given an expression, and a datatype, checks the two against
 	each other. """
 
 	try:
-		assert type(exp) == datatype
+		assert type(exp) in datatypes
 	except AssertionError:
 		raise BencodeError("Encode", "Malformed expression", exp)
 
@@ -150,7 +152,7 @@ class BencodeError(Exception):
 def encode_int(data):
 	""" Given an integer, returns a bencoded string of that integer. """
 
-	check_type(data, int)
+	check_type(data, [int, long])
 
 	return "i" + str(data) + "e"
 
@@ -177,7 +179,7 @@ def decode_int(data):
 def encode_str(data):
 	""" Given a string, returns a bencoded string of that string. """
 
-	check_type(data, str)
+	check_type(data, [str, basestring, unicode])
 
 	# Return the length of the string, the colon, and the string itself.
 	return str(len(data)) + ":" + data
@@ -201,7 +203,7 @@ def decode_str(data):
 def encode_list(data):
 	""" Given a list, returns a bencoded list. """
 
-	check_type(data, list)
+	check_type(data, [list, set, tuple])
 
 	# Special case of an empty list.
 	if data == []:
@@ -229,7 +231,7 @@ def decode_list(data):
 def encode_dict(data):
 	""" Given a dictionary, return the bencoded dictionary. """
 
-	check_type(data, dict)
+	check_type(data, [dict])
 
 	# Special case of an empty dictionary.
 	if data == {}:
@@ -266,12 +268,17 @@ def decode_dict(data):
 
 # Dictionaries of the data type, and the function to use
 encode_functions = { int  : encode_int  ,
+                     long : encode_int  ,
 					 str  : encode_str  ,
+					 basestring: encode_str  ,
+					 unicode : encode_str  ,
 					 list : encode_list ,
+					 set  : encode_list ,
+					 tuple : encode_list ,
 					 dict : encode_dict }
 
 decode_functions = { int  : decode_int  ,
-					 str  : decode_str  ,
+                     str  : decode_str  ,
 					 list : decode_list ,
 					 dict : decode_dict }
 
