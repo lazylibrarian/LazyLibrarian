@@ -48,7 +48,7 @@ class AndroidPNNotifier:
             handle = urllib2.urlopen(req, data)
             handle.close()
 
-        except urllib2.URLError as e:
+        except (urllib2.URLError, urllib2.HTTPError) as e:
             # URLError only returns a reason, not a code. HTTPError gives a code
             # FIXME: Python 2.5 hack, it wrongly reports 201 as an error
             if hasattr(e, 'code') and e.code == 201:

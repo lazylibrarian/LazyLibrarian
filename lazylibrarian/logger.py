@@ -83,7 +83,7 @@ class RotatingLogger(object):
             if len(lazylibrarian.LOGLIST) > lazylibrarian.LOGLIMIT:
                 del lazylibrarian.LOGLIST[-1]
 
-        message = threadname + ' : ' + message
+        message = "%s : %s" % (threadname, message)
 
         if level == 'DEBUG':
             logger.debug(message)

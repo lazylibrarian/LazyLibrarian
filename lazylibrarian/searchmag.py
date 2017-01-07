@@ -321,7 +321,6 @@ def search_magazines(mags=None, reset=False):
                                                 try:
                                                     regexE_year = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
                                                     regexE_issue = nzbtitle_exploded[len(nzbtitle_exploded) - 2]
-                                                    print "[%s][%s]" % (regexE_year, regexE_issue)
                                                     if regexE_issue.isdigit():
                                                         newdatish = int(regexE_issue)
                                                         if int(regexE_year) < int(datetime.date.today().year):
@@ -420,7 +419,7 @@ def search_magazines(mags=None, reset=False):
                             #  and status has been user-set ( we only delete the "Skipped" ones )
                             #  In "wanted" table it might be already snatched/downloading/processing
 
-                            mag_entry = myDB.select('SELECT * from %s WHERE NZBtitle="%s" and NZBprov="%s"' % (
+                            mag_entry = myDB.match('SELECT * from %s WHERE NZBtitle="%s" and NZBprov="%s"' % (
                                 insert_table, nzbtitle, nzbprov))
                             if not mag_entry:
                                 controlValueDict = {
@@ -461,7 +460,6 @@ def search_magazines(mags=None, reset=False):
                         notify_snatch("%s from %s at %s" %
                                       (unaccented(magazine['nzbtitle']), magazine["nzbprov"], now()))
                         scheduleJob(action='Start', target='processDir')
-
 
         if reset:
             scheduleJob(action='Restart', target='search_magazines')

@@ -143,9 +143,12 @@ class PushBullet:
         """
 
         if not file_type:
-            import magic
-            file_type = magic.from_buffer(fobj.read(1024))
-            fobj.seek(0)
+            try:
+                import magic
+                file_type = magic.from_buffer(fobj.read(1024))
+                fobj.seek(0)
+            except:
+                file_type = ""
 
         data = {"file_name": file_name,
                 "file_type": file_type}

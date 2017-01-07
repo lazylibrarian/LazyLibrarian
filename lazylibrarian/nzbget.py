@@ -161,8 +161,7 @@ def sendNZB(nzb, cmd=None, nzbID=None):
         # (Positive number representing NZBID of the queue item. 0 and negative numbers represent error codes.)
         elif nzbget_version >= 13:
             nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", nzbcontent64 if nzbcontent64 is not None
-            else nzb.url, lazylibrarian.NZBGET_CATEGORY,
-                                             lazylibrarian.NZBGET_PRIORITY, False, False, dupekey,
+                else nzb.url, lazylibrarian.NZBGET_CATEGORY, lazylibrarian.NZBGET_PRIORITY, False, False, dupekey,
                                              dupescore, "score")
             if nzbget_result <= 0:
                 nzbget_result = False

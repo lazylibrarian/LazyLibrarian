@@ -1523,8 +1523,9 @@ def db_needs_upgrade():
     # 7 added Source and DownloadID to wanted table for download monitoring
     # 8 move image cache from data/images/cache into datadir
     # 9 add regex to magazine table
+    # 10 check for missing columns in pastissues table
 
-    db_current_version = 9
+    db_current_version = 10
     if db_version < db_current_version:
         return db_current_version
     return 0
