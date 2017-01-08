@@ -26,12 +26,11 @@ from base64 import b16encode, b32decode
 from hashlib import sha1
 
 import lazylibrarian
-from lazylibrarian import logger, database, utorrent, transmission, qbittorrent, deluge, rtorrent, synology
+from lazylibrarian import logger, database, utorrent, transmission, qbittorrent, deluge, rtorrent, synology, bencode
 from lazylibrarian.common import scheduleJob, USER_AGENT, setperm
 from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, check_int, now, cleanName
 from lazylibrarian.notifiers import notify_snatch
 from lazylibrarian.providers import IterateOverTorrentSites
-from lib.bencode import bencode as bencode, bdecode
 from lib.deluge_client import DelugeRPCClient
 from lib.fuzzywuzzy import fuzz
 from magnet2torrent import magnet2torrent
@@ -479,7 +478,7 @@ def CalcTorrentHash(torrent):
         if len(hashid) == 32:
             hashid = b16encode(b32decode(hashid)).lower()
     else:
-        info = bdecode(torrent)["info"]
-        hashid = sha1(bencode(info)).hexdigest()
+        info = bencode.decode(torrent)["info"]
+        hashid = sha1(bencode.encode(info)).hexdigest()
     logger.debug('Torrent Hash: ' + hashid)
     return hashid
