@@ -79,28 +79,26 @@ def runGit(args):
 
 def getInstallType():
 
-    try:
-        if platform.system().lower() == 'windows':
-            lazylibrarian.INSTALL_TYPE = 'win'
-            lazylibrarian.GIT_BRANCH = 'Windows'
-            logger.debug('(getInstallType) [Windows] install detected. Setting Branch to [%s]' %
-                         lazylibrarian.GIT_BRANCH)
-    except Exception:
-        if os.path.isdir(os.path.join(lazylibrarian.PROG_DIR, '.git')):
-            lazylibrarian.INSTALL_TYPE = 'git'
-            lazylibrarian.GIT_BRANCH = getCurrentGitBranch()
-            logger.debug('(getInstallType) [GIT] install detected. Setting Branch to [%s] ' %
-                         lazylibrarian.GIT_BRANCH)
-        elif os.path.exists(os.path.join(lazylibrarian.PROG_DIR, '.package')):
-            lazylibrarian.INSTALL_TYPE = 'package'
-            lazylibrarian.GIT_BRANCH = 'Package'
-            logger.debug('(getInstallType) [Package] install detected. Setting Branch to [%s] ' %
-                         lazylibrarian.GIT_BRANCH)
-        else:
-            lazylibrarian.INSTALL_TYPE = 'source'
-            lazylibrarian.GIT_BRANCH = 'master'
-            logger.debug('(getInstallType) [Source]install detected. Setting Branch to [%s]' %
-                         lazylibrarian.GIT_BRANCH)
+    if platform.system().lower() == 'windows':
+        lazylibrarian.INSTALL_TYPE = 'win'
+        lazylibrarian.GIT_BRANCH = 'Windows'
+        logger.debug('(getInstallType) [Windows] install detected. Setting Branch to [%s]' %
+                     lazylibrarian.GIT_BRANCH)
+    elif os.path.isdir(os.path.join(lazylibrarian.PROG_DIR, '.git')):
+        lazylibrarian.INSTALL_TYPE = 'git'
+        lazylibrarian.GIT_BRANCH = getCurrentGitBranch()
+        logger.debug('(getInstallType) [GIT] install detected. Setting Branch to [%s] ' %
+                     lazylibrarian.GIT_BRANCH)
+    elif os.path.exists(os.path.join(lazylibrarian.PROG_DIR, '.package')):
+        lazylibrarian.INSTALL_TYPE = 'package'
+        lazylibrarian.GIT_BRANCH = 'Package'
+        logger.debug('(getInstallType) [Package] install detected. Setting Branch to [%s] ' %
+                     lazylibrarian.GIT_BRANCH)
+    else:
+        lazylibrarian.INSTALL_TYPE = 'source'
+        lazylibrarian.GIT_BRANCH = 'master'
+        logger.debug('(getInstallType) [Source]install detected. Setting Branch to [%s]' %
+                     lazylibrarian.GIT_BRANCH)
 
 #
 # Establish the version of the installed app for Source or GIT only
