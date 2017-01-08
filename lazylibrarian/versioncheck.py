@@ -79,15 +79,15 @@ def runGit(args):
 
 def getInstallType():
 
-    if platform.system().lower() == 'windows':
-        lazylibrarian.INSTALL_TYPE = 'win'
-        lazylibrarian.GIT_BRANCH = 'Windows'
-        logger.debug('(getInstallType) [Windows] install detected. Setting Branch to [%s]' %
-                     lazylibrarian.GIT_BRANCH)
-    elif os.path.isdir(os.path.join(lazylibrarian.PROG_DIR, '.git')):
+    if os.path.isdir(os.path.join(lazylibrarian.PROG_DIR, '.git')):
         lazylibrarian.INSTALL_TYPE = 'git'
         lazylibrarian.GIT_BRANCH = getCurrentGitBranch()
         logger.debug('(getInstallType) [GIT] install detected. Setting Branch to [%s] ' %
+                     lazylibrarian.GIT_BRANCH)
+    elif platform.system().lower() == 'windows':
+        lazylibrarian.INSTALL_TYPE = 'win'
+        lazylibrarian.GIT_BRANCH = 'Windows'
+        logger.debug('(getInstallType) [Windows] install detected. Setting Branch to [%s]' %
                      lazylibrarian.GIT_BRANCH)
     elif os.path.exists(os.path.join(lazylibrarian.PROG_DIR, '.package')):
         lazylibrarian.INSTALL_TYPE = 'package'
