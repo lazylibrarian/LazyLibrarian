@@ -24,7 +24,7 @@ import urllib2
 
 import lazylibrarian
 import lib.simplejson as simplejson
-from lazylibrarian import logger
+from lazylibrarian import logger, version
 
 
 #
@@ -78,29 +78,32 @@ def runGit(args):
 
 
 def getInstallType():
-
-    if os.path.isdir(os.path.join(lazylibrarian.PROG_DIR, '.git')):
-        lazylibrarian.INSTALL_TYPE = 'git'
-        lazylibrarian.GIT_BRANCH = getCurrentGitBranch()
-        logger.debug('(getInstallType) [GIT] install detected. Setting Branch to [%s] ' %
-                     lazylibrarian.GIT_BRANCH)
-    elif os.path.exists(os.path.join(lazylibrarian.PROG_DIR, '.package')):
-        lazylibrarian.INSTALL_TYPE = 'package'
-        lazylibrarian.GIT_BRANCH = 'Package'
-        logger.debug('(getInstallType) [Package] install detected. Setting Branch to [%s] ' %
-                     lazylibrarian.GIT_BRANCH)
     # need a way of detecting if we are running a windows .exe file
     # (which we can't upgrade)  rather than just running git or source on windows
-    # headphones uses a custom version string, sickbeard uses the branch
-    elif lazylibrarian.GIT_BRANCH == 'windows':
+    # We use a string in the version.py file for this
+    # FUTURE:   Add a version number string in this file too?
+    try:
+        install = version.LAZYLIBRARIAN_VERSION.lower()
+    except:
+        install = 'unknown'
+
+    if install in ['windows', 'win32build']:
         lazylibrarian.INSTALL_TYPE = 'win'
-        logger.debug('(getInstallType) [Windows] install detected. Branch is [%s]' %
-                     lazylibrarian.GIT_BRANCH)
+        lazylibrarian.CURRENT_BRANCH = 'Windows'
+
+    elif install == 'package':  # deb, rpm, other non-upgradeable
+        lazylibrarian.INSTALL_TYPE = 'package'
+        lazylibrarian.GIT_BRANCH = 'Package'
+
+    elif os.path.isdir(os.path.join(lazylibrarian.PROG_DIR, '.git')):
+        lazylibrarian.INSTALL_TYPE = 'git'
+        lazylibrarian.GIT_BRANCH = getCurrentGitBranch()
     else:
         lazylibrarian.INSTALL_TYPE = 'source'
         lazylibrarian.GIT_BRANCH = 'master'
-        logger.debug('(getInstallType) [Source]install detected. Setting Branch to [%s]' %
-                     lazylibrarian.GIT_BRANCH)
+
+    logger.debug('(getInstallType) [%s] install detected. Setting Branch to [%s]' %
+                 (lazylibrarian.INSTALL_TYPE, lazylibrarian.GIT_BRANCH))
 
 #
 # Establish the version of the installed app for Source or GIT only
