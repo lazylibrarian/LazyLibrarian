@@ -84,15 +84,17 @@ def getInstallType():
         lazylibrarian.GIT_BRANCH = getCurrentGitBranch()
         logger.debug('(getInstallType) [GIT] install detected. Setting Branch to [%s] ' %
                      lazylibrarian.GIT_BRANCH)
-    elif platform.system().lower() == 'windows':
-        lazylibrarian.INSTALL_TYPE = 'win'
-        lazylibrarian.GIT_BRANCH = 'Windows'
-        logger.debug('(getInstallType) [Windows] install detected. Setting Branch to [%s]' %
-                     lazylibrarian.GIT_BRANCH)
     elif os.path.exists(os.path.join(lazylibrarian.PROG_DIR, '.package')):
         lazylibrarian.INSTALL_TYPE = 'package'
         lazylibrarian.GIT_BRANCH = 'Package'
         logger.debug('(getInstallType) [Package] install detected. Setting Branch to [%s] ' %
+                     lazylibrarian.GIT_BRANCH)
+    # need a way of detecting if we are running a windows .exe file
+    # (which we can't upgrade)  rather than just running git or source on windows
+    # headphones uses a custom version string, sickbeard uses the branch
+    elif lazylibrarian.GIT_BRANCH == 'windows':
+        lazylibrarian.INSTALL_TYPE = 'win'
+        logger.debug('(getInstallType) [Windows] install detected. Branch is [%s]' %
                      lazylibrarian.GIT_BRANCH)
     else:
         lazylibrarian.INSTALL_TYPE = 'source'
