@@ -24,6 +24,7 @@ import urllib2
 from StringIO import StringIO
 from base64 import b16encode, b32decode
 from hashlib import sha1
+from HTMLParser import HTMLParser
 
 import lazylibrarian
 from lazylibrarian import logger, database, utorrent, transmission, qbittorrent, deluge, rtorrent, synology, bencode
@@ -296,6 +297,9 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None):
     if tor_url and tor_url.startswith('magnet'):
         torrent = tor_url  # allow magnet link to write to blackhole and hash to utorrent/rtorrent
     else:
+        h = HTMLParser()
+        tor_url = h.unescape(tor_url)
+
         if '&file=' in tor_url:
             # torznab results need to be re-encoded
             # had a problem with torznab utf-8 encoded strings not matching
