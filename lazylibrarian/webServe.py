@@ -1305,14 +1305,19 @@ class WebInterface(object):
                 nzburl = nzburl.decode(lazylibrarian.SYS_ENCODING)
             # ouch dirty workaround...
             if not nzburl == 'book_table_length':
-                title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s"' % nzburl)
-                if len(title) == 0:
-                    if '&' in nzburl and '&amp;' not in nzburl:
-                        nzburl = nzburl.replace('&', '&amp;')
-                        title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s"' % nzburl)
-                    elif '&amp;' in nzburl:
-                        nzburl = nzburl.replace('&amp;', '&')
-                        title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s"' % nzburl)
+                # some NZBurl have &amp;  some have just & so need to try both forms
+                if '&' in nzburl and '&amp;' not in nzburl:
+                    nzburl2 = nzburl.replace('&', '&amp;')
+                elif '&amp;' in nzburl:
+                    nzburl2 = nzburl.replace('&amp;', '&')
+                else:
+                    nzburl2 = ''
+
+                if not nzburl2:
+                    title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s"' % nzburl)
+                else:
+                    title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s" OR NZBurl="%s"' %
+                                        (nzburl, nzburl2))
 
                 for item in title:
                     nzburl = item['NZBurl']
