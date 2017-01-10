@@ -446,7 +446,11 @@ def initialize():
             else:
                 myDB = database.DBConnection()
                 result = myDB.match('PRAGMA user_version')
-                logger.info("Database is version %s" % result[0])
+                if result:
+                    version = result[0]
+                else:
+                    version = 0
+                logger.info("Database is version %s" % version)
 
         except Exception as e:
             logger.error("Can't connect to the database: %s" % str(e))
@@ -1510,7 +1514,13 @@ def db_needs_upgrade():
 
     myDB = database.DBConnection()
     result = myDB.match('PRAGMA user_version')
-    db_version = result[0]
+    # Had a report of "index out of range", can't replicate it.
+    # Maybe on some versions of sqlite an unset user_version
+    # or unsupported pragma gives an empty result?
+    if result:
+        db_version = result[0]
+    else:
+        db_version = 0
 
     # database version history:
     # 0 original version or new empty database
