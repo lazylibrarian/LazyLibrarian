@@ -686,8 +686,8 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
-    def addAuthorID(self, AuthorID):
-        threading.Thread(target=addAuthorToDB, name='ADDAUTHOR', args=[None, False, AuthorID]).start()
+    def addAuthorID(self, AuthorID, AuthorName):
+        threading.Thread(target=addAuthorToDB, name='ADDAUTHOR', args=[AuthorName, False, AuthorID]).start()
         raise cherrypy.HTTPRedirect("home")
 
     # BOOKS #############################################################

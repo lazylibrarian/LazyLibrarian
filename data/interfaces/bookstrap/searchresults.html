@@ -47,12 +47,12 @@
                             value = "Have Author"
                             but_class = "btn-info"
                         else:
-                            destination = "addAuthorID?AuthorID="+result['authorid']
+                            destination = "addAuthorID?AuthorID="+result['authorid']+'&AuthorName='+result['safeauthorname']
                             value = "Add Author"
                             but_class = "btn-success"
 
                     else:
-                        destination = "addAuthorID?AuthorID="+result['authorid']
+                        destination = "addAuthorID?AuthorID="+result['authorid']+'&AuthorName='+result['safeauthorname']
                         value = "Add Author"
                         but_class = "btn-success"
 

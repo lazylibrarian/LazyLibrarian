@@ -31,8 +31,44 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
     """
     try:
         myDB = database.DBConnection()
+        match = False
+        if authorid:
+            GR = GoodReads('unknown author')
 
-        if authorname:
+            query = "SELECT * from authors WHERE AuthorID='%s'" % authorid
+            dbauthor = myDB.match(query)
+            controlValueDict = {"AuthorID": authorid}
+            newValueDict = {"Status": "Loading"}
+
+            if not dbauthor:
+                logger.debug("Now adding new author id: %s to database" % authorid)
+            else:
+                logger.debug("Now updating author id: %s" % authorid)
+            myDB.upsert("authors", newValueDict, controlValueDict)
+
+            author = GR.get_author_info(authorid=authorid, authorname='unknown author')
+            if author:
+                authorname = author['authorname']
+                authorlink = author['authorlink']
+                authorimg = author['authorimg']
+                controlValueDict = {"AuthorID": authorid}
+                newValueDict = {
+                    "AuthorName": authorname,
+                    "AuthorLink": authorlink,
+                    "AuthorImg": authorimg,
+                    "AuthorBorn": author['authorborn'],
+                    "AuthorDeath": author['authordeath'],
+                    "DateAdded": today(),
+                }
+                myDB.upsert("authors", newValueDict, controlValueDict)
+                GR = GoodReads(authorname)
+                match = True
+            else:
+                logger.warn(u"Nothing found for %s" % authorid)
+                if not dbauthor:
+                    myDB.action('DELETE from authors WHERE AuthorID="%s"' % authorid)
+
+        if authorname and not match:
             authorname = ' '.join(authorname.split())  # ensure no extra whitespace
             GR = GoodReads(authorname)
 
@@ -67,47 +103,14 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
                     "Status": "Loading"
                 }
                 myDB.upsert("authors", newValueDict, controlValueDict)
+                match = True
             else:
                 logger.warn(u"Nothing found for %s" % authorname)
-                myDB.action('DELETE from authors WHERE AuthorName="%s"' % authorname)
+                if not dbauthor:
+                    myDB.action('DELETE from authors WHERE AuthorName="%s"' % authorname)
                 return
-
-        elif authorid:
-            GR = GoodReads('unknown author')
-
-            query = "SELECT * from authors WHERE AuthorID='%s'" % authorid
-            dbauthor = myDB.match(query)
-            controlValueDict = {"AuthorID": authorid}
-            newValueDict = {"Status": "Loading"}
-
-            if not dbauthor:
-                logger.debug("Now adding new author id: %s to database" % authorid)
-            else:
-                logger.debug("Now updating author id: %s" % authorid)
-            myDB.upsert("authors", newValueDict, controlValueDict)
-
-            author = GR.get_author_info(authorid=authorid, authorname='unknown author')
-            if author:
-                authorname = author['authorname']
-                authorlink = author['authorlink']
-                authorimg = author['authorimg']
-                controlValueDict = {"AuthorID": authorid}
-                newValueDict = {
-                    "AuthorName": authorname,
-                    "AuthorLink": authorlink,
-                    "AuthorImg": authorimg,
-                    "AuthorBorn": author['authorborn'],
-                    "AuthorDeath": author['authordeath'],
-                    "DateAdded": today(),
-                }
-                myDB.upsert("authors", newValueDict, controlValueDict)
-                GR = GoodReads(authorname)
-            else:
-                logger.warn(u"Nothing found for %s" % authorid)
-                myDB.action('DELETE from authors WHERE AuthorID="%s"' % authorid)
-                return
-        else:
-            logger.error("AddAuthorToDB: No authorname or authorid supplied")
+        if not match:
+            logger.error("AddAuthorToDB: No matching result for authorname or authorid")
             return
 
         new_img = False

@@ -47,12 +47,12 @@
                             value = "Have Author"
                             but_class = "button green"
                         else:
-                            destination = "addAuthorID?AuthorID="+result['authorid']
+                            destination = "addAuthorID?AuthorID="+result['authorid']+'&AuthorName='+result['safeauthorname']
                             value = "Add Author"
                             but_class = "button"
 
                     else:
-                        destination = "addAuthorID?AuthorID="+result['authorid']
+                        destination = "addAuthorID?AuthorID="+result['authorid']+'&AuthorName='+result['safeauthorname']
                         value = "Add Author"
                         but_class = "button"
 
