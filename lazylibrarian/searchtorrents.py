@@ -342,6 +342,9 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None):
         except urllib2.URLError as e:
             logger.warn('Error fetching torrent from url: %s, %s' % (tor_url, e.reason))
             return False
+        except ValueError as e:
+            logger.warn('Error, invalid url: [%s] %s' % (full_url, str(e)))
+            return False
 
     if lazylibrarian.TOR_DOWNLOADER_BLACKHOLE:
         Source = "BLACKHOLE"
