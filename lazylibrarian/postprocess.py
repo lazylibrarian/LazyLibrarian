@@ -129,20 +129,22 @@ def try_rename(directory, filename):
     # or 8bit ascii str if it can't convert the filename to unicode
     # eg 'Stephen Hawking - A Brief History of Time (PDF&EPUB&MOB\xc4\xb0)\xb0\x06'
     # Return the new filename or empty string if failed
-    try:
-        # try decode first in case we called listdir with str instead of unicode
-        filename = filename.decode(lazylibrarian.SYS_ENCODING)
-        return filename
-    except Exception:
-        logger.error("Unable to convert %s to sys encoding" % repr(filename))
-        # strip out any non-ascii characters and try to rename
-        newfname = ''.join([c for c in filename if 128 > ord(c) > 31])
+    if isinstance(filename, str):
         try:
-            os.rename(os.path.join(directory, filename), os.path.join(directory, newfname))
-            return newfname
+            # try decode first in case we called listdir with str instead of unicode
+            filename = filename.decode(lazylibrarian.SYS_ENCODING)
+            return filename
         except Exception:
-            logger.error("Unable to rename %s" % repr(filename))
-            return ""
+            logger.error("Unable to convert %s to sys encoding" % repr(filename))
+
+    # strip out any non-ascii characters and try to rename
+    newfname = ''.join([c for c in filename if 128 > ord(c) > 31])
+    try:
+        os.rename(os.path.join(directory, filename), os.path.join(directory, newfname))
+        return newfname
+    except Exception:
+        logger.error("Unable to rename %s" % repr(filename))
+        return ""
 
 
 def move_into_subdir(processpath, targetdir, fname):
@@ -344,6 +346,7 @@ def processDir(reset=False):
                     if data:  # it's a book
                         logger.debug(u'Processing book %s' % book['BookID'])
                         authorname = data['AuthorName']
+                        authorname = ' '.join(authorname.split())  # ensure no extra whitespace
                         bookname = data['BookName']
                         if 'windows' in platform.system().lower() and '/' in lazylibrarian.EBOOK_DEST_FOLDER:
                             logger.warn('Please check your EBOOK_DEST_FOLDER setting')
@@ -621,6 +624,7 @@ def import_book(pp_path=None, bookID=None):
         data = myDB.match('SELECT * from books WHERE BookID="%s"' % bookID)
         if data:
             authorname = data['AuthorName']
+            authorname = ' '.join(authorname.split())  # ensure no extra whitespace
             bookname = data['BookName']
             processpath = lazylibrarian.DIRECTORY('Destination')
 
