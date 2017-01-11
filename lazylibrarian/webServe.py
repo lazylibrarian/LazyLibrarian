@@ -645,8 +645,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         if authorsearch:  # to stop error if try to refresh an author while they are still loading
-            AuthorName = authorsearch['AuthorName']
-            threading.Thread(target=addAuthorToDB, name='REFRESHAUTHOR', args=[AuthorName, True]).start()
+            threading.Thread(target=addAuthorToDB, name='REFRESHAUTHOR', args=[None, True, AuthorID]).start()
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
         else:
             logger.debug('refreshAuthor Invalid authorid [%s]' % AuthorID)
@@ -684,6 +683,11 @@ class WebInterface(object):
     @cherrypy.expose
     def addAuthor(self, AuthorName):
         threading.Thread(target=addAuthorToDB, name='ADDAUTHOR', args=[AuthorName, False]).start()
+        raise cherrypy.HTTPRedirect("home")
+
+    @cherrypy.expose
+    def addAuthorID(self, AuthorID):
+        threading.Thread(target=addAuthorToDB, name='ADDAUTHOR', args=[None, False, AuthorID]).start()
         raise cherrypy.HTTPRedirect("home")
 
     # BOOKS #############################################################
@@ -1301,7 +1305,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         maglist = []
         for nzburl in args:
-            if hasattr(nzburl, 'decode'):
+            if isinstance(nzburl, str):
                 nzburl = nzburl.decode(lazylibrarian.SYS_ENCODING)
             # ouch dirty workaround...
             if not nzburl == 'book_table_length':
@@ -1408,7 +1412,7 @@ class WebInterface(object):
 
         myDB = database.DBConnection()
         for item in args:
-            if hasattr(item, 'decode'):
+            if isinstance(item, str):
                 item = item.decode(lazylibrarian.SYS_ENCODING)
             # ouch dirty workaround...
             if not item == 'book_table_length':

@@ -24,50 +24,90 @@ from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 
 
-def addAuthorToDB(authorname=None, refresh=False):
+def addAuthorToDB(authorname=None, refresh=False, authorid=None):
     """
-    Add an author to the database, and get  list of all their books
+    Add an author to the database by name or id, and get a list of all their books
     If author already exists in database, refresh their details and booklist
     """
     try:
         myDB = database.DBConnection()
 
-        GR = GoodReads(authorname)
+        if authorname:
+            authorname = ' '.join(authorname.split())  # ensure no extra whitespace
+            GR = GoodReads(authorname)
 
-        query = "SELECT * from authors WHERE AuthorName='%s'" % authorname.replace("'", "''")
-        dbauthor = myDB.match(query)
-        controlValueDict = {"AuthorName": authorname}
-
-        if not dbauthor:
-            newValueDict = {
-                "AuthorID": "0: %s" % authorname,
-                "Status": "Loading"
-            }
-            logger.debug("Now adding new author: %s to database" % authorname)
-        else:
-            newValueDict = {"Status": "Loading"}
-            logger.debug("Now updating author: %s" % authorname)
-        myDB.upsert("authors", newValueDict, controlValueDict)
-
-        author = GR.find_author_id(refresh=refresh)
-        if author:
-            authorid = author['authorid']
-            authorlink = author['authorlink']
-            authorimg = author['authorimg']
+            query = "SELECT * from authors WHERE AuthorName='%s'" % authorname.replace("'", "''")
+            dbauthor = myDB.match(query)
             controlValueDict = {"AuthorName": authorname}
-            newValueDict = {
-                "AuthorID": authorid,
-                "AuthorLink": authorlink,
-                "AuthorImg": authorimg,
-                "AuthorBorn": author['authorborn'],
-                "AuthorDeath": author['authordeath'],
-                "DateAdded": today(),
-                "Status": "Loading"
-            }
+
+            if not dbauthor:
+                newValueDict = {
+                    "AuthorID": "0: %s" % authorname,
+                    "Status": "Loading"
+                }
+                logger.debug("Now adding new author: %s to database" % authorname)
+            else:
+                newValueDict = {"Status": "Loading"}
+                logger.debug("Now updating author: %s" % authorname)
             myDB.upsert("authors", newValueDict, controlValueDict)
+
+            author = GR.find_author_id(refresh=refresh)
+            if author:
+                authorid = author['authorid']
+                authorlink = author['authorlink']
+                authorimg = author['authorimg']
+                controlValueDict = {"AuthorName": authorname}
+                newValueDict = {
+                    "AuthorID": authorid,
+                    "AuthorLink": authorlink,
+                    "AuthorImg": authorimg,
+                    "AuthorBorn": author['authorborn'],
+                    "AuthorDeath": author['authordeath'],
+                    "DateAdded": today(),
+                    "Status": "Loading"
+                }
+                myDB.upsert("authors", newValueDict, controlValueDict)
+            else:
+                logger.warn(u"Nothing found for %s" % authorname)
+                myDB.action('DELETE from authors WHERE AuthorName="%s"' % authorname)
+                return
+
+        elif authorid:
+            GR = GoodReads('unknown author')
+
+            query = "SELECT * from authors WHERE AuthorID='%s'" % authorid
+            dbauthor = myDB.match(query)
+            controlValueDict = {"AuthorID": authorid}
+            newValueDict = {"Status": "Loading"}
+
+            if not dbauthor:
+                logger.debug("Now adding new author id: %s to database" % authorid)
+            else:
+                logger.debug("Now updating author id: %s" % authorid)
+            myDB.upsert("authors", newValueDict, controlValueDict)
+
+            author = GR.get_author_info(authorid=authorid, authorname='unknown author')
+            if author:
+                authorname = author['authorname']
+                authorlink = author['authorlink']
+                authorimg = author['authorimg']
+                controlValueDict = {"AuthorID": authorid}
+                newValueDict = {
+                    "AuthorName": authorname,
+                    "AuthorLink": authorlink,
+                    "AuthorImg": authorimg,
+                    "AuthorBorn": author['authorborn'],
+                    "AuthorDeath": author['authordeath'],
+                    "DateAdded": today(),
+                }
+                myDB.upsert("authors", newValueDict, controlValueDict)
+                GR = GoodReads(authorname)
+            else:
+                logger.warn(u"Nothing found for %s" % authorid)
+                myDB.action('DELETE from authors WHERE AuthorID="%s"' % authorid)
+                return
         else:
-            logger.warn(u"Nothing found for %s" % authorname)
-            myDB.action('DELETE from authors WHERE AuthorName="%s"' % authorname)
+            logger.error("AddAuthorToDB: No authorname or authorid supplied")
             return
 
         new_img = False
