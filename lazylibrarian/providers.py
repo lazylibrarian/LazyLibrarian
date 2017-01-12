@@ -289,9 +289,10 @@ def RSS(host=None, feednr=None):
                 url = torrent
                 tortype = 'torrent'
 
-            if magnet:  # prefer magnet over torrent
-                url = magnet
-                tortype = 'magnet'
+            if magnet:
+                if not url or (url and lazylibrarian.PREFER_MAGNET):
+                    url = magnet
+                    tortype = 'magnet'
 
             if nzb:     # prefer nzb over torrent/magnet
                 url = nzb
@@ -583,7 +584,8 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, host=None, searc
         elif tag == 'pubdate':
             nzbdate = nzbdetails[n].text
         elif tag == 'link':
-            nzburl = nzbdetails[n].text
+            if not nzburl or (nzburl and not lazylibrarian.PREFER_MAGNET):
+                nzburl = nzbdetails[n].text
         elif nzbdetails[n].attrib.get('name') == 'magneturl':
             nzburl = nzbdetails[n].attrib.get('value')
         elif nzbdetails[n].attrib.get('name') == 'size':

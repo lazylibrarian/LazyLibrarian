@@ -156,6 +156,7 @@ TOR_DOWNLOADER_DELUGE = 0
 NUMBEROFSEEDERS = 10
 KEEP_SEEDING = 0
 TORRENT_DIR = None
+PREFER_MAGNET = 0
 
 RTORRENT_HOST = None
 RTORRENT_USER = None
@@ -499,7 +500,7 @@ def config_read(reloaded=False):
         TOR_DOWNLOADER_SYNOLOGY, TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, \
         DELUGE_LABEL, FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, NEWAUTHOR_STATUS, \
         USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
-        GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, COMMIT_LIST, \
+        GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, COMMIT_LIST, PREFER_MAGNET, \
         LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, KEEP_SEEDING, SCHED, CACHE_HIT, CACHE_MISS, \
         BOOKSTRAP_THEME, LOGFILES, LOGSIZE, HTTPS_ENABLED, HTTPS_CERT, HTTPS_KEY
 
@@ -711,6 +712,7 @@ def config_read(reloaded=False):
     NUMBEROFSEEDERS = check_setting_int(CFG, 'TORRENT', 'numberofseeders', 10)
     TOR_DOWNLOADER_DELUGE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_deluge', 0)
     KEEP_SEEDING = check_setting_bool(CFG, 'TORRENT', 'keep_seeding', 1)
+    PREFER_MAGNET = check_setting_bool(CFG, 'TORRENT', 'prefer_magnet', 1)
     TORRENT_DIR = check_setting_str(CFG, 'TORRENT', 'torrent_dir', '')
 
     RTORRENT_HOST = check_setting_str(CFG, 'RTORRENT', 'rtorrent_host', '')
@@ -1067,6 +1069,7 @@ def config_write():
     CFG.set('TORRENT', 'numberofseeders', NUMBEROFSEEDERS)
     CFG.set('TORRENT', 'torrent_dir', TORRENT_DIR)
     CFG.set('TORRENT', 'keep_seeding', KEEP_SEEDING)
+    CFG.set('TORRENT', 'prefer_magnet', PREFER_MAGNET)
     #
     check_section('RTORRENT')
     CFG.set('RTORRENT', 'rtorrent_host', RTORRENT_HOST)

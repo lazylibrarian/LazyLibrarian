@@ -145,7 +145,7 @@ class WebInterface(object):
             reject_magsize=0, extra=0, extra_host='', gen=0, gen_host='', lime=0, lime_host='', book_api='',
             gr_api='', gb_api='', versioncheck_interval='', search_interval='', scan_interval='',
             searchrss_interval=20, ebook_dest_folder='', ebook_dest_file='', tor_downloader_rtorrent=0,
-            keep_seeding=0, rtorrent_host='', rtorrent_dir='', rtorrent_user='', rtorrent_pass='',
+            keep_seeding=0, prefer_magnet=0, rtorrent_host='', rtorrent_dir='', rtorrent_user='', rtorrent_pass='',
             rtorrent_label='', use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
             mag_age=0, mag_dest_folder='', mag_dest_file='', mag_relative=0, cache_age=30, task_age=0,
             utorrent_host='', utorrent_port=0, utorrent_user='', utorrent_pass='', utorrent_label='',
@@ -238,6 +238,7 @@ class WebInterface(object):
         lazylibrarian.TORRENT_DIR = torrent_dir
         lazylibrarian.NUMBEROFSEEDERS = check_int(numberofseeders, 0)
         lazylibrarian.KEEP_SEEDING = bool(keep_seeding)
+        lazylibrarian.PREFER_MAGNET = bool(prefer_magnet)
         lazylibrarian.TOR_DOWNLOADER_BLACKHOLE = bool(tor_downloader_blackhole)
         lazylibrarian.TOR_CONVERT_MAGNET = bool(tor_convert_magnet)
         lazylibrarian.TOR_DOWNLOADER_UTORRENT = bool(tor_downloader_utorrent)
