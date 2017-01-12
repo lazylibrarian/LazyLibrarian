@@ -24,7 +24,7 @@ import urllib2
 from StringIO import StringIO
 from base64 import b16encode, b32decode
 from hashlib import sha1
-from HTMLParser import HTMLParser
+#from HTMLParser import HTMLParser
 
 import lazylibrarian
 from lazylibrarian import logger, database, utorrent, transmission, qbittorrent, deluge, rtorrent, synology, bencode
@@ -297,8 +297,11 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None):
     if tor_url and tor_url.startswith('magnet'):
         torrent = tor_url  # allow magnet link to write to blackhole and hash to utorrent/rtorrent
     else:
-        h = HTMLParser()
-        tor_url = h.unescape(tor_url)
+        # h = HTMLParser()
+        # tor_url = h.unescape(tor_url)
+        # HTMLParser is probably overkill, we only seem to get &amp;
+        #
+        tor_url = tor_url.replace('&amp;', '&')
 
         if '&file=' in tor_url:
             # torznab results need to be re-encoded
@@ -338,6 +341,9 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None):
             return False
         except urllib2.URLError as e:
             logger.warn('Error fetching torrent from url: %s, %s' % (tor_url, e.reason))
+            return False
+        except ValueError as e:
+            logger.warn('Error, invalid url: [%s] %s' % (full_url, str(e)))
             return False
 
     if lazylibrarian.TOR_DOWNLOADER_BLACKHOLE:

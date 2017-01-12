@@ -145,7 +145,7 @@ class WebInterface(object):
             reject_magsize=0, extra=0, extra_host='', gen=0, gen_host='', lime=0, lime_host='', book_api='',
             gr_api='', gb_api='', versioncheck_interval='', search_interval='', scan_interval='',
             searchrss_interval=20, ebook_dest_folder='', ebook_dest_file='', tor_downloader_rtorrent=0,
-            keep_seeding=0, rtorrent_host='', rtorrent_dir='', rtorrent_user='', rtorrent_pass='',
+            keep_seeding=0, prefer_magnet=0, rtorrent_host='', rtorrent_dir='', rtorrent_user='', rtorrent_pass='',
             rtorrent_label='', use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
             mag_age=0, mag_dest_folder='', mag_dest_file='', mag_relative=0, cache_age=30, task_age=0,
             utorrent_host='', utorrent_port=0, utorrent_user='', utorrent_pass='', utorrent_label='',
@@ -238,6 +238,7 @@ class WebInterface(object):
         lazylibrarian.TORRENT_DIR = torrent_dir
         lazylibrarian.NUMBEROFSEEDERS = check_int(numberofseeders, 0)
         lazylibrarian.KEEP_SEEDING = bool(keep_seeding)
+        lazylibrarian.PREFER_MAGNET = bool(prefer_magnet)
         lazylibrarian.TOR_DOWNLOADER_BLACKHOLE = bool(tor_downloader_blackhole)
         lazylibrarian.TOR_CONVERT_MAGNET = bool(tor_convert_magnet)
         lazylibrarian.TOR_DOWNLOADER_UTORRENT = bool(tor_downloader_utorrent)
@@ -645,8 +646,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         if authorsearch:  # to stop error if try to refresh an author while they are still loading
-            AuthorName = authorsearch['AuthorName']
-            threading.Thread(target=addAuthorToDB, name='REFRESHAUTHOR', args=[AuthorName, True]).start()
+            threading.Thread(target=addAuthorToDB, name='REFRESHAUTHOR', args=[None, True, AuthorID]).start()
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
         else:
             logger.debug('refreshAuthor Invalid authorid [%s]' % AuthorID)
@@ -684,6 +684,11 @@ class WebInterface(object):
     @cherrypy.expose
     def addAuthor(self, AuthorName):
         threading.Thread(target=addAuthorToDB, name='ADDAUTHOR', args=[AuthorName, False]).start()
+        raise cherrypy.HTTPRedirect("home")
+
+    @cherrypy.expose
+    def addAuthorID(self, AuthorID, AuthorName):
+        threading.Thread(target=addAuthorToDB, name='ADDAUTHOR', args=[AuthorName, False, AuthorID]).start()
         raise cherrypy.HTTPRedirect("home")
 
     # BOOKS #############################################################
@@ -1301,18 +1306,23 @@ class WebInterface(object):
         myDB = database.DBConnection()
         maglist = []
         for nzburl in args:
-            if hasattr(nzburl, 'decode'):
+            if isinstance(nzburl, str):
                 nzburl = nzburl.decode(lazylibrarian.SYS_ENCODING)
             # ouch dirty workaround...
             if not nzburl == 'book_table_length':
-                title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s"' % nzburl)
-                if len(title) == 0:
-                    if '&' in nzburl and '&amp;' not in nzburl:
-                        nzburl = nzburl.replace('&', '&amp;')
-                        title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s"' % nzburl)
-                    elif '&amp;' in nzburl:
-                        nzburl = nzburl.replace('&amp;', '&')
-                        title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s"' % nzburl)
+                # some NZBurl have &amp;  some have just & so need to try both forms
+                if '&' in nzburl and '&amp;' not in nzburl:
+                    nzburl2 = nzburl.replace('&', '&amp;')
+                elif '&amp;' in nzburl:
+                    nzburl2 = nzburl.replace('&amp;', '&')
+                else:
+                    nzburl2 = ''
+
+                if not nzburl2:
+                    title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s"' % nzburl)
+                else:
+                    title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s" OR NZBurl="%s"' %
+                                        (nzburl, nzburl2))
 
                 for item in title:
                     nzburl = item['NZBurl']
@@ -1403,7 +1413,7 @@ class WebInterface(object):
 
         myDB = database.DBConnection()
         for item in args:
-            if hasattr(item, 'decode'):
+            if isinstance(item, str):
                 item = item.decode(lazylibrarian.SYS_ENCODING)
             # ouch dirty workaround...
             if not item == 'book_table_length':

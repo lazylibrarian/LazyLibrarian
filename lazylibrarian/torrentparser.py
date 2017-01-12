@@ -192,11 +192,20 @@ def KAT(book=None):
         for col0, col1, col3 in zip(c0, c1, c3):
             try:
                 title = unaccented(str(col0).split('cellMainLink">')[1].split('<')[0])
-                # kat can return magnet or torrent or both. If both, prefer magnet...
+                # kat can return magnet or torrent or both.
+                magnet = ''
+                url = ''
                 try:
-                    url = 'magnet' + str(col0).split('href="magnet')[1].split('"')[0]
+                    magnet = 'magnet' + str(col0).split('href="magnet')[1].split('"')[0]
                 except IndexError:
+                    pass
+                try:
                     url = 'http' + str(col0).split('href="http')[1].split('.torrent?')[0] + '.torrent'
+                except IndexError:
+                    pass
+
+                if not url or (magnet and url and lazylibrarian.PREFER_MAGNET):
+                    url = magnet
 
                 try:
                     size = str(col1.text).replace('&nbsp;', '').upper()
@@ -352,8 +361,9 @@ def ZOO(book=None):
                     url = None
                     if link:
                         url = link
-                    if magnet:  # if both, prefer magnet over torrent
-                        url = magnet
+                    if magnet:
+                        if not url or (url and lazylibrarian.PREFER_MAGNET):
+                            url = magnet
 
                     if not url or not title:
                         logger.debug('No url or title found')

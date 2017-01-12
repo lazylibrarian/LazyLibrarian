@@ -200,6 +200,7 @@ class GoodReads:
                 authorlist = self.get_author_info(authorid, authorname)
         return authorlist
 
+
     def get_author_info(self, authorid=None, authorname=None):
 
         URL = 'http://www.goodreads.com/author/show/' + authorid + '.xml?' + urllib.urlencode(self.params)
@@ -220,8 +221,8 @@ class GoodReads:
             logger.warn('No author found with ID: ' + authorid)
         else:
             logger.debug("[%s] Processing info for authorID: %s" % (authorname, authorid))
-
             # PAB added authorname to author_dict - this holds the intact name preferred by GR
+            authorname = resultxml[1].text
             author_dict = {
                 'authorid': resultxml[0].text,
                 'authorlink': resultxml.find('link').text,
