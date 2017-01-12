@@ -67,5 +67,5 @@ Open localhost:5299/home or click the LazyLibrarian icon in the top left. Type a
 Auto update available via interface from master
 
 ## Docker packages
-x64 version here  : https://github.com/linuxserver/docker-lazylibrarian
-armhf version here: https://github.com/linuxserver/docker-lazylibrarian-armhf 
+x64 version here  : https://github.com/linuxserver/docker-lazylibrarian  
+armhf version here: https://github.com/linuxserver/docker-lazylibrarian-armhf   
