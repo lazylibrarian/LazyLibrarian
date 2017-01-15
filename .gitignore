@@ -26,6 +26,12 @@ version.txt
 ######################
 *.py[co]
 
+#  Prebuilt packages #
+######################
+packages
+*.deb
+*.rpm
+
 #  IDE specific      #
 ######################
 *.bak
