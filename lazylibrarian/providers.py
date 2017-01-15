@@ -289,9 +289,10 @@ def RSS(host=None, feednr=None):
                 url = torrent
                 tortype = 'torrent'
 
-            if magnet:  # prefer magnet over torrent
-                url = magnet
-                tortype = 'magnet'
+            if magnet:
+                if not url or (url and lazylibrarian.PREFER_MAGNET):
+                    url = magnet
+                    tortype = 'magnet'
 
             if nzb:     # prefer nzb over torrent/magnet
                 url = nzb
@@ -394,7 +395,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
                 for nzb in resultxml:
                     try:
                         nzbcount += 1
-                        results.append(ReturnResultsFieldsBySearchType(book, nzb, searchType, host, searchMode))
+                        results.append(ReturnResultsFieldsBySearchType(book, nzb, host, searchMode))
                     except IndexError:
                         logger.debug('No results from %s for %s' % (host, book['searchterm']))
                 logger.debug(u'Found %s nzb at %s for: %s' % (nzbcount, host, book['searchterm']))
@@ -474,7 +475,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
     return params
 
 
-def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None, host=None, searchMode=None):
+def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, host=None, searchMode=None):
     """
     # searchType has multiple query params for t=, which return different results sets.
     # books have a dedicated check, so will use that.
@@ -567,84 +568,39 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, searchType=None,
     # </item>
     """
 
-    nzbtitle = nzbdetails[0].text  # title is currently the same field for all searchtypes
+    nzbtitle = ''
+    nzbdate = ''
+    nzburl = ''
+    nzbsize = 0
 
-    if searchMode == "torznab":  # For torznab results, either 8 or 9 contain a magnet link
-        if nzbdetails[8].attrib.get('name') == 'magneturl':
-            nzburl = nzbdetails[8].attrib.get('value')
-        elif nzbdetails[9].attrib.get('name') == 'magneturl':
-            nzburl = nzbdetails[9].attrib.get('value')
-        else:
-            nzburl = nzbdetails[6].text
+    n = 0
+    while n < len(nzbdetails):
+        tag = str(nzbdetails[n].tag).lower()
 
-        if searchType == "book":
-            resultFields = {
-                'bookid': book['bookid'],
-                'nzbprov': host,
-                'nzbtitle': nzbtitle,
-                'nzburl': nzburl,
-                'nzbdate': nzbdetails[3].text,
-                'nzbsize': nzbdetails[4].text,
-                'nzbmode': searchMode
-            }
-        elif searchType == "mag":
-            resultFields = {
-                'bookid': book['bookid'],
-                'nzbprov': host,
-                'nzbtitle': nzbtitle,
-                'nzburl': nzburl,
-                'nzbdate': nzbdetails[3].text,
-                'nzbsize': nzbdetails[4].text,
-                'nzbmode': searchMode
-            }
-        else:
-            resultFields = {
-                'bookid': book['bookid'],
-                'nzbprov': host,
-                'nzbtitle': nzbtitle,
-                'nzburl': nzburl,
-                'nzbdate': nzbdetails[3].text,
-                'nzbsize': nzbdetails[4].text,
-                'nzbmode': searchMode
-            }
-    else:
-        if searchType == "book":
-            # for nzb books, 9 or 10 contain size
-            if nzbdetails[10].attrib.get('name') == 'size':
-                nzbsize = nzbdetails[10].attrib.get('value')
-            elif nzbdetails[9].attrib.get('name') == 'size':
-                nzbsize = nzbdetails[9].attrib.get('value')
-            else:
-                nzbsize = 0
-            resultFields = {
-                'bookid': book['bookid'],
-                'nzbprov': host,
-                'nzbtitle': nzbtitle,
-                'nzburl': nzbdetails[2].text,
-                'nzbdate': nzbdetails[4].text,
-                'nzbsize': nzbsize,
-                'nzbmode': searchMode
-            }
-        elif searchType == "mag":
-            resultFields = {
-                'bookid': book['bookid'],
-                'nzbprov': host,
-                'nzbtitle': nzbtitle,
-                'nzburl': nzbdetails[2].text,
-                'nzbdate': nzbdetails[4].text,
-                'nzbsize': nzbdetails[7].attrib.get('length'),
-                'nzbmode': searchMode
-            }
-        else:
-            resultFields = {
-                'bookid': book['bookid'],
-                'nzbprov': host,
-                'nzbtitle': nzbtitle,
-                'nzburl': nzbdetails[2].text,
-                'nzbdate': nzbdetails[4].text,
-                'nzbsize': nzbdetails[7].attrib.get('length'),
-                'nzbmode': searchMode
-            }
+        if tag == 'title':
+            nzbtitle = nzbdetails[n].text
+        elif tag == 'size':
+            nzbsize = nzbdetails[n].text
+        elif tag == 'pubdate':
+            nzbdate = nzbdetails[n].text
+        elif tag == 'link':
+            if not nzburl or (nzburl and not lazylibrarian.PREFER_MAGNET):
+                nzburl = nzbdetails[n].text
+        elif nzbdetails[n].attrib.get('name') == 'magneturl':
+            nzburl = nzbdetails[n].attrib.get('value')
+        elif nzbdetails[n].attrib.get('name') == 'size':
+            nzbsize = nzbdetails[n].attrib.get('value')
+        n += 1
+
+    resultFields = {
+        'bookid': book['bookid'],
+        'nzbprov': host,
+        'nzbtitle': nzbtitle,
+        'nzburl': nzburl,
+        'nzbdate': nzbdate,
+        'nzbsize': nzbsize,
+        'nzbmode': searchMode
+        }
 
     logger.debug('[NewzNabPlus] - result fields from NZB are ' + str(resultFields))
     return resultFields

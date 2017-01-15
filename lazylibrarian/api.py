@@ -70,6 +70,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'moveBooks': '&fromname= &toname= move all books from one author to another by AuthorName',
             'moveBook': '&id= &toid= move one book to new author by BookID and AuthorID',
             'addAuthor': '&name= add author to database by name',
+            'addAuthorID': '&id= add author to database by AuthorID',
             'removeAuthor': '&id= remove author from database by AuthorID',
             'addMagazine': '&name= add magazine to database by name',
             'removeMagazine': '&name= remove magazine and all of its issues from database by name',
@@ -602,6 +603,17 @@ class Api(object):
             self.id = kwargs['name']
         try:
             addAuthorToDB(self.id, refresh=False)
+        except Exception as e:
+            self.data = str(e)
+
+    def _addAuthorID(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+        try:
+            addAuthorToDB('', refresh=False, self.id)
         except Exception as e:
             self.data = str(e)
 

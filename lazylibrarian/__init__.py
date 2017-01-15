@@ -156,6 +156,7 @@ TOR_DOWNLOADER_DELUGE = 0
 NUMBEROFSEEDERS = 10
 KEEP_SEEDING = 0
 TORRENT_DIR = None
+PREFER_MAGNET = 0
 
 RTORRENT_HOST = None
 RTORRENT_USER = None
@@ -446,7 +447,11 @@ def initialize():
             else:
                 myDB = database.DBConnection()
                 result = myDB.match('PRAGMA user_version')
-                logger.info("Database is version %s" % result[0])
+                if result:
+                    version = result[0]
+                else:
+                    version = 0
+                logger.info("Database is version %s" % version)
 
         except Exception as e:
             logger.error("Can't connect to the database: %s" % str(e))
@@ -495,7 +500,7 @@ def config_read(reloaded=False):
         TOR_DOWNLOADER_SYNOLOGY, TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, \
         DELUGE_LABEL, FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, NEWAUTHOR_STATUS, \
         USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
-        GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, COMMIT_LIST, \
+        GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, COMMIT_LIST, PREFER_MAGNET, \
         LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, KEEP_SEEDING, SCHED, CACHE_HIT, CACHE_MISS, \
         BOOKSTRAP_THEME, LOGFILES, LOGSIZE, HTTPS_ENABLED, HTTPS_CERT, HTTPS_KEY
 
@@ -707,6 +712,7 @@ def config_read(reloaded=False):
     NUMBEROFSEEDERS = check_setting_int(CFG, 'TORRENT', 'numberofseeders', 10)
     TOR_DOWNLOADER_DELUGE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_deluge', 0)
     KEEP_SEEDING = check_setting_bool(CFG, 'TORRENT', 'keep_seeding', 1)
+    PREFER_MAGNET = check_setting_bool(CFG, 'TORRENT', 'prefer_magnet', 1)
     TORRENT_DIR = check_setting_str(CFG, 'TORRENT', 'torrent_dir', '')
 
     RTORRENT_HOST = check_setting_str(CFG, 'RTORRENT', 'rtorrent_host', '')
@@ -1063,6 +1069,7 @@ def config_write():
     CFG.set('TORRENT', 'numberofseeders', NUMBEROFSEEDERS)
     CFG.set('TORRENT', 'torrent_dir', TORRENT_DIR)
     CFG.set('TORRENT', 'keep_seeding', KEEP_SEEDING)
+    CFG.set('TORRENT', 'prefer_magnet', PREFER_MAGNET)
     #
     check_section('RTORRENT')
     CFG.set('RTORRENT', 'rtorrent_host', RTORRENT_HOST)
@@ -1510,7 +1517,13 @@ def db_needs_upgrade():
 
     myDB = database.DBConnection()
     result = myDB.match('PRAGMA user_version')
-    db_version = result[0]
+    # Had a report of "index out of range", can't replicate it.
+    # Maybe on some versions of sqlite an unset user_version
+    # or unsupported pragma gives an empty result?
+    if result:
+        db_version = result[0]
+    else:
+        db_version = 0
 
     # database version history:
     # 0 original version or new empty database

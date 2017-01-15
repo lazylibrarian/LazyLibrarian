@@ -599,6 +599,16 @@
                                      <input type="checkbox" name="tor_convert_magnet" id="tor_convert_magnet" value="1" ${checked} />
                                      <label>Convert magnet links into torrent files</label>
                                 </div>
+                                <div class="row checkbox">
+                                    <%
+                                    if lazylibrarian.PREFER_MAGNET == True:
+                                        checked = 'checked="checked"'
+                                    else:
+                                        checked = ''
+                                    %>
+                                     <input type="checkbox" name="prefer_magnet" id="prefer_magnet" value="1" ${checked} />
+                                     <label>Prefer magnet links to torrent files</label>
+                                </div>
                             </fieldset>
                             <div>
                                 <label>Minimum seeders:</label>
