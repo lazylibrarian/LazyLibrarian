@@ -1750,6 +1750,17 @@ class WebInterface(object):
             return "Test AndroidPN notice failed"
 
     @cherrypy.expose
+    def testBoxcar(self):
+        cherrypy.response.headers[
+            'Cache-Control'] = "max-age=0,no-cache,no-store"
+        print "qqqqqqqqqqqq"
+        result = notifiers.boxcar_notifier.test_notify()
+        if result:
+            return "Boxcar notification successful,\n%s" % result
+        else:
+            return "Boxcar notification failed"
+
+    @cherrypy.expose
     def testPushbullet(self):
         cherrypy.response.headers[
             'Cache-Control'] = "max-age=0,no-cache,no-store"

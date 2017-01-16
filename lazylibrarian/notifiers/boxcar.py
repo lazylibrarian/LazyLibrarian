@@ -43,6 +43,10 @@ class BoxcarNotifier:
 
         returns: True if the message succeeded, False otherwise
         """
+        logger.debug('Boxcar notification: %s' % msg)
+        logger.debug('Title: %s' % title)
+        logger.debug('Token: %s' % token)
+        logger.debug('Subscribe: %s' % subscribe)
 
         # build up the URL and parameters
         msg = msg.strip()
@@ -93,7 +97,6 @@ class BoxcarNotifier:
             # For HTTP status code 401's, it is because you are passing in either an
             # invalid token, or the user has not added your service.
             elif e.code == 401:
-
                 # If the user has already added your service, we'll return an HTTP status code of 401.
                 if subscribe:
                     logger.error(u"BOXCAR: Already subscribed to service")
@@ -139,8 +142,7 @@ class BoxcarNotifier:
 
         logger.debug(u"BOXCAR: Sending notification for " + message)
 
-        self._sendBoxcar(message, title, username)
-        return True
+        return self._sendBoxcar(message, title, username)
 
     #
     # Public functions
@@ -154,8 +156,8 @@ class BoxcarNotifier:
         if lazylibrarian.BOXCAR_NOTIFY_ONDOWNLOAD:
             self._notify(notifyStrings[NOTIFY_DOWNLOAD], title)
 
-    def test_notify(self, token, title="Test"):
-        return self._sendBoxcar("This is a test notification from LazyLibrarian", title, token)
+    def test_notify(self, title="Test"):
+        return self._notify("This is a test notification from LazyLibrarian", title, force=True)
 
     def update_library(self, showName=None):
         pass

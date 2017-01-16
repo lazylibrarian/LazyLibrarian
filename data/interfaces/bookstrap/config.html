@@ -1326,6 +1326,10 @@
                                             <label for="boxcar_token" class="control-label">Boxcar Token</label>
                                             <input type="text" id="boxcar_token" name="boxcar_token" value="${lazylibrarian.BOXCAR_TOKEN}" placeholder="Boxcar token" class="form-control">
                                         </div>
+                                        <div class="form-group">
+                                            <input type="button" value="Test Boxcar" id="testBoxcar" class="btn btn-default">
+                                            <span class="help-block">Save settings before testing</span>
+                                        </div>
                                     </fieldset>
                                 </div>
 
@@ -2487,6 +2491,12 @@
             $('#testTwitter').click(function () {
                 $.get("testTwitter",
                     function (data) { $('#testTwitter-result').html(data); });
+            });
+
+            $('#testBoxcar').click(function () {
+                $.get("testBoxcar",
+                    function (data) { window.alert(data) });
+
             });
 
             $('#testPushbullet').click(function () {
