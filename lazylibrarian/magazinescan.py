@@ -251,7 +251,7 @@ def magazineScan():
                 controlValueDict = {"Title": title}
 
                 # is this magazine already in the database?
-                mag_entry = myDB.select('SELECT * from magazines WHERE Title="%s"' % title)
+                mag_entry = myDB.select('SELECT * from magazines WHERE Title="%s" COLLATE NOCASE' % title)
                 if not mag_entry:
                     # need to add a new magazine to the database
                     newValueDict = {
@@ -278,7 +278,7 @@ def magazineScan():
                 # is this issue already in the database?
                 controlValueDict = {"Title": title, "IssueDate": issuedate}
                 issue_id = create_id("%s %s" % (title, issuedate))
-                iss_entry = myDB.match('SELECT Title from issues WHERE Title="%s" and IssueDate="%s"' % (
+                iss_entry = myDB.match('SELECT Title from issues WHERE Title="%s" COLLATE NOCASE and IssueDate="%s"' % (
                     title, issuedate))
                 if not iss_entry:
                     newValueDict = {

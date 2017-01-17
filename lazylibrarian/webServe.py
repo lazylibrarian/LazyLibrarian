@@ -1499,19 +1499,22 @@ class WebInterface(object):
             # replace any non-ascii quotes/apostrophes with ascii ones eg "Collector's"
             dic = {u'\u2018': u"'", u'\u2019': u"'", u'\u201c': u'"', u'\u201d': u'"'}
             title = replace_all(title, dic)
-
-            controlValueDict = {"Title": title}
-            newValueDict = {
-                "Regex": None,
-                "Reject": reject,
-                "Status": "Active",
-                "MagazineAdded": today(),
-                "IssueStatus": "Wanted"
-            }
-            myDB.upsert("magazines", newValueDict, controlValueDict)
-            mags = [{"bookid": title}]
-            if lazylibrarian.IMP_AUTOSEARCH:
-                self.startMagazineSearch(mags)
+            exists = myDB.match('SELECT Title from magazines WHERE Title="%s" COLLATE NOCASE' % title)
+            if exists:
+                logger.debug("Magazine %s already exists (%s)" % (title, exists['Title']))
+            else:
+                controlValueDict = {"Title": title}
+                newValueDict = {
+                    "Regex": None,
+                    "Reject": reject,
+                    "Status": "Active",
+                    "MagazineAdded": today(),
+                    "IssueStatus": "Wanted"
+                }
+                myDB.upsert("magazines", newValueDict, controlValueDict)
+                mags = [{"bookid": title}]
+                if lazylibrarian.IMP_AUTOSEARCH:
+                    self.startMagazineSearch(mags)
             raise cherrypy.HTTPRedirect("magazines")
 
 
