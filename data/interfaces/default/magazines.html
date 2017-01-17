@@ -72,10 +72,10 @@
                     <td id="issuedate">${result['IssueDate']}</td>
                     <td id="status">${result['Status']}</td>
                     %if result['IssueStatus'] == 'Open':
-                            %if result['Count'] > 1:
-                                <td id="issue"><a class="button orange" href="openMag?bookid=${result['safetitle']}" target="_self">Show</a></td>
-                            %else:
+                            %if result['Count'] == 1 and lazylibrarian.MAG_SINGLE:
                                 <td id="issue"><a class="button green" href="openMag?bookid=${result['safetitle']}" target="_self">Open</a></td>
+                            %else:
+                                <td id="issue"><a class="button orange" href="openMag?bookid=${result['safetitle']}" target="_self">Show</a></td>
                             %endif
                     %else:
                         %if result['IssueStatus'] == 'Wanted':

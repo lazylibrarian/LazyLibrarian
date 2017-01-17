@@ -147,7 +147,7 @@ class WebInterface(object):
             searchrss_interval=20, ebook_dest_folder='', ebook_dest_file='', tor_downloader_rtorrent=0,
             keep_seeding=0, prefer_magnet=0, rtorrent_host='', rtorrent_dir='', rtorrent_user='', rtorrent_pass='',
             rtorrent_label='', use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
-            mag_age=0, mag_dest_folder='', mag_dest_file='', mag_relative=0, cache_age=30, task_age=0,
+            mag_age=0, mag_dest_folder='', mag_dest_file='', mag_relative=0, mag_single=0, cache_age=30, task_age=0,
             utorrent_host='', utorrent_port=0, utorrent_user='', utorrent_pass='', utorrent_label='',
             qbittorrent_host='', qbittorrent_port=0, qbittorrent_user='', qbittorrent_pass='',
             qbittorrent_label='', notfound_status='Skipped', newbook_status='Skipped', full_scan=0,
@@ -329,6 +329,7 @@ class WebInterface(object):
         lazylibrarian.MAG_DEST_FOLDER = mag_dest_folder
         lazylibrarian.MAG_DEST_FILE = mag_dest_file
         lazylibrarian.MAG_RELATIVE = bool(mag_relative)
+        lazylibrarian.MAG_SINGLE = bool(mag_single)
 
         lazylibrarian.USE_TWITTER = bool(use_twitter)
         lazylibrarian.TWITTER_NOTIFY_ONSNATCH = bool(twitter_notify_onsnatch)
@@ -1286,15 +1287,15 @@ class WebInterface(object):
 
         # or we may just have a title to find magazine in issues table
         mag_data = myDB.select('SELECT * from issues WHERE Title="%s"' % bookid)
-        if len(mag_data) == 0:  # no issues!
+        if len(mag_data) <= 0:  # no issues!
             raise cherrypy.HTTPRedirect("magazines")
-        elif len(mag_data) == 1:  # we only have one issue, get it
+        elif len(mag_data) == 1 and lazylibrarian.MAG_SINGLE:  # we only have one issue, get it
             IssueDate = mag_data[0]["IssueDate"]
             IssueFile = mag_data[0]["IssueFile"]
             logger.info(u'Opening %s - %s' % (bookid, IssueDate))
             return serve_file(IssueFile, "application/x-download", "attachment")
-        elif len(mag_data) > 1:  # multiple issues, show a list
-            logger.debug(u"%s has %s issues" % (bookid, len(mag_data)))
+        else:  # multiple issues, show a list
+            logger.debug(u"%s has %s issue%s" % (bookid, len(mag_data), plural(len(mag_data))))
             raise cherrypy.HTTPRedirect(
                 "issuePage?title=%s" %
                 urllib.quote_plus(bookid.encode(lazylibrarian.SYS_ENCODING)))
@@ -1423,14 +1424,27 @@ class WebInterface(object):
                     myDB.upsert("magazines", newValueDict, controlValueDict)
                     logger.info(u'Status of magazine %s changed to %s' % (item, action))
                 if action == "Delete":
-                    issue = myDB.match('SELECT IssueFile from issues WHERE Title="%s"' % item)
-                    if issue:
+                    issues = myDB.select('SELECT IssueFile from issues WHERE Title="%s"' % item)
+                    logger.debug(u'Deleting magazine %s from disc' % item)
+                    issuedir = ''
+                    for issue in issues:  # delete all issues of this magazine
                         try:
                             issuedir = os.path.dirname(issue['IssueFile'])
-                            rmtree(os.path.dirname(issuedir), ignore_errors=True)
-                            logger.info(u'Magazine %s deleted from disc' % item)
+                            rmtree(issuedir, ignore_errors=True)
+                            logger.debug(u'Issue directory %s deleted from disc' % issuedir)
                         except Exception as e:
-                            logger.debug('rmtree failed on %s, %s' % (issue['IssueFile'], str(e)))
+                            logger.debug('rmtree failed on %s, %s' % (issuedir, str(e)))
+                    if issuedir:
+                        magdir = os.path.dirname(issuedir)
+                        if not os.listdir(magdir):  # this magazines directory is now empty
+                            try:
+                                rmtree(magdir, ignore_errors=True)
+                                logger.debug(u'Magazine directory %s deleted from disc' % magdir)
+                            except Exception as e:
+                                logger.debug('rmtree failed on %s, %s' % (magdir, str(e)))
+                        else:
+                            logger.debug(u'Magazine directory %s is not empty' % magdir)
+                    logger.info(u'Magazine %s deleted from disc' % item)
                 if action == "Remove" or action == "Delete":
                     myDB.action('DELETE from magazines WHERE Title="%s"' % item)
                     myDB.action('DELETE from pastissues WHERE BookID="%s"' % item)

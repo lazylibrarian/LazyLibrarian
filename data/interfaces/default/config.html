@@ -145,6 +145,15 @@
                     %endfor
                     </select>
                     <br>
+                    <%
+                        if lazylibrarian.MAG_SINGLE == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <input type="checkbox" name="mag_single" value=1 ${checked} />
+                    <label>  Quick open single issues of magazines</label>
+                    <br>
                     <div class="row">
                         <input type="button" value="Show Jobs" id="show_Jobs" />
                         <input type="button" value="Restart Jobs" id="restart_Jobs" />
