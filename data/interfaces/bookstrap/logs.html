@@ -46,7 +46,18 @@
             </tbody>
 -->
         </table>
-    </div>
+    	<div align="center">Refresh rate:
+	    <select id="refreshrate" onchange="setRefresh()">
+	    <option value="0" selected="selected">No Refresh</option>
+	    <option value="5">5 Seconds</option>
+	    <option value="15">15 Seconds</option>
+	    <option value="30">30 Seconds</option>
+	    <option value="60">60 Seconds</option>
+	    <option value="300">5 Minutes</option>
+	    <option value="600">10 Minutes</option>
+	    </select></div>
+	    <br>
+        </div>
 </%def>
 
 <%def name="headIncludes()">
@@ -97,8 +108,24 @@
             $('.dataTables_filter input').attr("placeholder", "Search filter");
             $(window).resize(function() {oTable.fnDraw(false)});
         });
-
-
-
     </script>
+	<script>
+		var timer;
+		function setRefresh()
+		{
+			refreshrate = document.getElementById('refreshrate');
+			if(refreshrate != null)
+			{
+				if(timer)
+				{
+					clearInterval(timer);
+				}
+				if(refreshrate.value != 0)
+				{
+					timer = setInterval("$('#log_table').dataTable().fnDraw()",1000*refreshrate.value);
+				}
+			}
+		}
+	</script>
+
 </%def>

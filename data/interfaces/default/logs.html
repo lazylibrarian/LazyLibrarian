@@ -45,6 +45,19 @@
         </tbody>
 -->
     </table>
+        </table>
+    	<div align="center">Refresh rate:
+	    <select id="refreshrate" onchange="setRefresh()">
+	    <option value="0" selected="selected">No Refresh</option>
+	    <option value="5">5 Seconds</option>
+	    <option value="15">15 Seconds</option>
+	    <option value="30">30 Seconds</option>
+	    <option value="60">60 Seconds</option>
+	    <option value="300">5 Minutes</option>
+	    <option value="600">10 Minutes</option>
+	    </select></div>
+	    <br>
+        </div>
 </%def>
 
 <%def name="headIncludes()">
@@ -99,17 +112,25 @@
         $('.dataTables_filter input').attr("placeholder", "Search table here");
         $(window).resize(function() {oTable.fnDraw(false)});
 
-        // dont keep refreshing the log table on mobile devices
-        var isiPad = navigator.userAgent.match(/iPad/i) != null;
-        // Why is the log page auto-refreshing in the first place?
-
-        // if (!isiPad && !((navigator.userAgent.match(/iPhone/i)) || (navigator.userAgent.match(/iPod/i))))
-        // {
-        //     // Refresh the log table
-        //     setInterval(function() {
-        //         $('#log_table').dataTable().fnDraw();
-        //     }, 10000);
-        // }
     });
     </script>
+	<script>
+		var timer;
+		function setRefresh()
+		{
+			refreshrate = document.getElementById('refreshrate');
+			if(refreshrate != null)
+			{
+				if(timer)
+				{
+					clearInterval(timer);
+				}
+				if(refreshrate.value != 0)
+				{
+					timer = setInterval("$('#log_table').dataTable().fnDraw()",1000*refreshrate.value);
+				}
+			}
+		}
+	</script>
+
 </%def>
