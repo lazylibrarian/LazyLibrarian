@@ -133,6 +133,7 @@ def search_magazines(mags=None, reset=False):
                 bad_name = 0
                 bad_date = 0
                 old_date = 0
+                rejects = 0
                 total_nzbs = 0
                 new_date = 0
                 maglist = []
@@ -350,7 +351,9 @@ def search_magazines(mags=None, reset=False):
                                 newdatish = "1970-01-01"  # provide a fake date for bad-date issues
                                 regex_pass = 99
 
-                        if not rejected:
+                        if rejected:
+                            rejects += 1
+                        else:
                             if lazylibrarian.LOGLEVEL > 3:
                                 logger.debug("regex %s [%s] %s" % (regex_pass, nzbtitle_formatted, newdatish))
                             # wanted issues go into wanted table marked "Wanted"
@@ -437,8 +440,9 @@ def search_magazines(mags=None, reset=False):
                                 myDB.upsert(insert_table, newValueDict, controlValueDict)
 
 
-            logger.info('Found %i result%s for %s. %i new, %i old, %i fail date, %i fail name: %i to download' % (
-                total_nzbs, plural(total_nzbs), bookid, new_date, old_date, bad_date, bad_name, len(maglist)))
+            logger.info(
+                'Found %i result%s for %s. %i new, %i old, %i fail date, %i fail name, %i rejected: %i to download' % (
+                total_nzbs, plural(total_nzbs), bookid, new_date, old_date, bad_date, bad_name, rejects, len(maglist)))
 
             for magazine in maglist:
                 if magazine['nzbmode'] in ["torznab", "torrent", "magnet"]:
