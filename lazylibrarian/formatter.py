@@ -129,9 +129,8 @@ def check_year(num):
     # See if num looks like a valid year for a magazine
     # Allow forward dated by a year, eg Jan 2017 issues available in Dec 2016
     n = check_int(num, 0)
-    if n > 1900:
-        if n < int(datetime.date.today().strftime("%Y")) + 2
-            return n
+    if n > 1900 and n < int(datetime.date.today().strftime("%Y")) + 2:
+        return n
     return 0
 
 
