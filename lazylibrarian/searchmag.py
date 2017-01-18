@@ -23,7 +23,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.common import scheduleJob
 from lazylibrarian.formatter import plural, now, unaccented_str, replace_all, unaccented, \
-    nzbdate2format, getList, month2num, datecompare, check_int
+    nzbdate2format, getList, month2num, datecompare, check_int, check_year
 from lazylibrarian.notifiers import notify_snatch
 from lazylibrarian.providers import IterateOverNewzNabSites, IterateOverTorrentSites, IterateOverRSSSites
 from lazylibrarian.searchnzb import NZBDownloadMethod
@@ -34,13 +34,6 @@ from lib.fuzzywuzzy import fuzz
 def cron_search_magazines():
     threading.currentThread().name = "CRON-SEARCHMAG"
     search_magazines()
-
-def isyear(num):
-    n = check_int(num, 0)
-    if n < 2100 and n > 1900:
-        return n
-    return 0
-
 
 def search_magazines(mags=None, reset=False):
     # produce a list of magazines to search for, tor, nzb, torznab, rss
@@ -242,9 +235,9 @@ def search_magazines(mags=None, reset=False):
                             # DD MonthName YYYY OR MonthName YYYY or Issue nn, MonthName YYYY
                             pos = 0
                             while pos < len(nzbtitle_exploded):
-                                year = isyear(nzbtitle_exploded[pos])
+                                year = check_year(nzbtitle_exploded[pos])
                                 if year and pos:
-                                    month = int(month2num(nzbtitle_exploded[pos - 1]))
+                                    month = month2num(nzbtitle_exploded[pos - 1])
                                     if month:
                                         if (pos - 1):
                                             day = check_int(nzbtitle_exploded[pos - 2], 1)
@@ -265,9 +258,9 @@ def search_magazines(mags=None, reset=False):
                             if not regex_pass:
                                 pos = 0
                                 while pos < len(nzbtitle_exploded):
-                                    year = isyear(nzbtitle_exploded[pos])
+                                    year = check_year(nzbtitle_exploded[pos])
                                     if year and (pos - 1):
-                                        month = int(month2num(nzbtitle_exploded[pos - 2]))
+                                        month = month2num(nzbtitle_exploded[pos - 2])
                                         if month:
                                             day = check_int(nzbtitle_exploded[pos - 1].rstrip(','), 1)
                                             try:
@@ -283,7 +276,7 @@ def search_magazines(mags=None, reset=False):
                             if not regex_pass:
                                 pos = 0
                                 while pos < len(nzbtitle_exploded):
-                                    year = isyear(nzbtitle_exploded[pos])
+                                    year = check_year(nzbtitle_exploded[pos])
                                     if year and pos + 1 < len(nzbtitle_exploded):
                                         month = check_int(nzbtitle_exploded[pos + 1], 0)
                                         if month:
@@ -310,7 +303,7 @@ def search_magazines(mags=None, reset=False):
                                             if issue:
                                                 newdatish = str(issue)  # 4 == 04 == 004
                                                 if pos + 2 < len(nzbtitle_exploded):
-                                                    year = isyear(nzbtitle_exploded[pos + 2])
+                                                    year = check_year(nzbtitle_exploded[pos + 2])
                                                     if year and year < int(datetime.date.today().year):
                                                         newdatish = '0'  # it's old
                                                     regex_pass = 4  # Issue/No/Nr/Vol nn, YYYY
@@ -323,7 +316,7 @@ def search_magazines(mags=None, reset=False):
                             if not regex_pass:
                                 pos = 1
                                 while pos < len(nzbtitle_exploded):
-                                    year = isyear(nzbtitle_exploded[pos])
+                                    year = check_year(nzbtitle_exploded[pos])
                                     if year:
                                         issue = check_int(nzbtitle_exploded[pos - 1], 0)
                                         if issue:
@@ -358,7 +351,8 @@ def search_magazines(mags=None, reset=False):
                                 regex_pass = 99
 
                         if not rejected:
-                            logger.debug("regex %s [%s] %s" % (regex_pass, nzbtitle_formatted, newdatish))
+                            if lazylibrarian.LOGLEVEL > 3:
+                                logger.debug("regex %s [%s] %s" % (regex_pass, nzbtitle_formatted, newdatish))
                             # wanted issues go into wanted table marked "Wanted"
                             #  the rest into pastissues table marked "Skipped"
                             insert_table = "pastissues"
