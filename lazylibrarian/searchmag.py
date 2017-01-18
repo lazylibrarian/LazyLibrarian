@@ -35,6 +35,12 @@ def cron_search_magazines():
     threading.currentThread().name = "CRON-SEARCHMAG"
     search_magazines()
 
+def isyear(num):
+    n = check_int(num, 0)
+    if n < 2100 and n > 1900:
+        return n
+    return 0
+
 
 def search_magazines(mags=None, reset=False):
     # produce a list of magazines to search for, tor, nzb, torznab, rss
@@ -169,11 +175,11 @@ def search_magazines(mags=None, reset=False):
 
                             dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': ''}
                             nzbtitle_formatted = replace_all(nzbtitle, dic).strip()
-                            if nzbtitle_formatted[0] == '[' and nzbtitle_formatted[-1] == ']':
-                                nzbtitle_formatted = nzbtitle_formatted[1:-1]
                             # Need to make sure that substrings of magazine titles don't get found
                             # (e.g. Maxim USA will find Maximum PC USA) - token_set_ratio takes care of this
                             # remove extra spaces if they're in a row
+                            if nzbtitle_formatted[0] == '[' and nzbtitle_formatted[-1] == ']':
+                                nzbtitle_formatted = nzbtitle_formatted[1:-1]
                             nzbtitle_exploded_temp = " ".join(nzbtitle_formatted.split())
                             nzbtitle_exploded = nzbtitle_exploded_temp.split(' ')
 
@@ -182,8 +188,8 @@ def search_magazines(mags=None, reset=False):
                             else:
                                 bookid_exploded = [bookid]
 
-                            # check nzb starts with magazine title followed by a date
-                            # eg The MagPI Issue 22 - July 2015
+                            # check nzb has magazine title and a date/issue nr
+                            # eg The MagPI July 2015
 
                             if len(nzbtitle_exploded) > len(bookid_exploded):
                                 # needs to be longer as it has to include a date
@@ -202,6 +208,7 @@ def search_magazines(mags=None, reset=False):
                                         u"Magazine matched: " + str(
                                             mag_title_match) + "% " + bookid + " for " + nzbtitle_formatted)
                             else:
+                                logger.debug("Magazine name too short (%s)" % len(nzbtitle_exploded))
                                 rejected = True
 
                         if not rejected:
@@ -223,149 +230,134 @@ def search_magazines(mags=None, reset=False):
                                     break
 
                         if not rejected:
-                            # some magazine torrent uploaders add their sig in [] or {}
-                            # Fortunately for us, they always seem to add it at the end
-                            # also some magazine torrent titles are "magazine_name some_form_of_date pdf"
-                            # or other words we don't want. Should make the word list configurable.
-                            # so strip all the trailing junk...
-                            strip_list = ['pdf', 'true', 'truepdf', 'german', 'ebooks']
-                            while nzbtitle_exploded[len(nzbtitle_exploded) - 1][0] in '[{' or \
-                                            nzbtitle_exploded[len(nzbtitle_exploded) - 1].lower() in strip_list:
-                                nzbtitle_exploded.pop()  # gotta love the function names
-
-                            regex_pass = '0'
-                            # need at least one word magazine title and two date components
-                            if len(nzbtitle_exploded) > 2:
-                                # regexA = DD MonthName YYYY OR MonthName YYYY or Issue nn, MonthName YYYY
-                                regexA_year = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
-                                regexA_month_temp = nzbtitle_exploded[len(nzbtitle_exploded) - 2]
-                                regexA_month = month2num(unaccented(regexA_month_temp))
-                                if not regexA_year.isdigit() or int(regexA_year) < 1900 or int(regexA_year) > 2100:
-                                    regexA_year = 'fail'  # force date failure
-
-                                # if frequency == "Weekly" or frequency == "BiWeekly":
-                                regexA_day = nzbtitle_exploded[len(nzbtitle_exploded) - 3].rstrip(',').zfill(2)
-                                if regexA_day.isdigit():
-                                    if int(regexA_day) > 31:  # probably issue number nn
-                                        regexA_day = '01'
-                                else:
-                                    regexA_day = '01'  # just MonthName YYYY
-                                # else:
-                                # regexA_day = '01'  # monthly, or less frequent
-                                try:
-                                    newdatish = regexA_year + '-' + regexA_month + '-' + regexA_day
-                                    # try to make sure the year/month/day are valid, exception if not
-                                    # ie don't accept day > 31, or 30 in some months, or month <1 or >12
-                                    # also handles multiple date format named issues eg Jan 2014, 01 2014
-                                    # datetime will give a ValueError if not a good date or a param is not int
-                                    date1 = datetime.date(int(regexA_year), int(regexA_month), int(regexA_day))
-                                    regex_pass = 'A'
-                                except ValueError:
-                                    # regexB = MonthName DD YYYY or MonthName DD, YYYY
-                                    regexB_year = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
-                                    regexB_month_temp = nzbtitle_exploded[len(nzbtitle_exploded) - 3]
-                                    regexB_month = month2num(unaccented(regexB_month_temp))
-                                    regexB_day = nzbtitle_exploded[len(nzbtitle_exploded) - 2].rstrip(',').zfill(2)
-                                    if not regexB_year.isdigit() or int(regexB_year) < 1900 or int(regexB_year) > 2100:
-                                        regexB_year = 'fail'
-                                    try:
-                                        newdatish = regexB_year + '-' + regexB_month + '-' + regexB_day
-                                        # datetime will give a ValueError if not a good date or a param is not int
-                                        date1 = datetime.date(int(regexB_year), int(regexB_month), int(regexB_day))
-                                        regex_pass = 'B'
-                                    except ValueError:
-                                        # regexC = YYYY MM or YYYY MM DD
-                                        # (can't get MM/DD if named YYYY Issue nn)
-                                        # First try  YYYY MM
-                                        regexC_year = nzbtitle_exploded[len(nzbtitle_exploded) - 2]
-                                        if regexC_year.isdigit() and 1900 < int(regexC_year) < 2100:
-                                            regexC_month = nzbtitle_exploded[len(nzbtitle_exploded) - 1].zfill(2)
-                                            regexC_day = '01'
-                                        else:  # try YYYY MM DD
-                                            regexC_year = nzbtitle_exploded[len(nzbtitle_exploded) - 3]
-                                            regexC_month = 0
-                                            regexC_day = 0
-                                            if regexC_year.isdigit() and 1900 < int(regexC_year) < 2100:
-                                                regexC_month = nzbtitle_exploded[len(nzbtitle_exploded) - 2].zfill(2)
-                                                regexC_day = nzbtitle_exploded[len(nzbtitle_exploded) - 1].zfill(2)
-                                            else:
-                                                regexC_year = 'fail'
+                            # Magazine names have many different styles of date
+                            # DD MonthName YYYY OR MonthName YYYY or Issue nn, MonthName YYYY
+                            # MonthName DD YYYY or MonthName DD, YYYY
+                            # YYYY MM or YYYY MM DD
+                            # Issue/No/Nr/Vol nn, YYYY or Issue/No/Nr/Vol nn
+                            # nn YYYY issue number without "Nr" before it
+                            # issue and year as a single 6 digit string eg 222015
+                            regex_pass = 0
+                            newdatish = "none"
+                            # DD MonthName YYYY OR MonthName YYYY or Issue nn, MonthName YYYY
+                            pos = 0
+                            while pos < len(nzbtitle_exploded):
+                                year = isyear(nzbtitle_exploded[pos])
+                                if year and pos:
+                                    month = int(month2num(nzbtitle_exploded[pos - 1]))
+                                    if month:
+                                        if (pos - 1):
+                                            day = check_int(nzbtitle_exploded[pos - 2], 1)
+                                            if day > 31:  # probably issue number nn
+                                                day = 1
+                                        else:
+                                            day = 1
+                                        newdatish = "%04d-%02d-%02d" % (year, month, day)
                                         try:
-                                            newdatish = regexC_year + '-' + regexC_month + '-' + regexC_day
-                                            # datetime will give a ValueError if not a good date or a param is not int
-                                            date1 = datetime.date(int(regexC_year), int(regexC_month), int(regexC_day))
-                                            regex_pass = 'C'
-                                        except Exception:
-                                            # regexD Issue/No/Nr/Vol nn, YYYY or Issue/No/Nr/Vol nn
+                                            check = datetime.date(year, month, day)
+                                            regex_pass = 1
+                                            break
+                                        except ValueError:
+                                            regex_pass = 0
+                                pos += 1
+
+                            # MonthName DD YYYY or MonthName DD, YYYY
+                            if not regex_pass:
+                                pos = 0
+                                while pos < len(nzbtitle_exploded):
+                                    year = isyear(nzbtitle_exploded[pos])
+                                    if year and (pos - 1):
+                                        month = int(month2num(nzbtitle_exploded[pos - 2]))
+                                        if month:
+                                            day = check_int(nzbtitle_exploded[pos - 1].rstrip(','), 1)
                                             try:
-                                                IssueLabel = nzbtitle_exploded[len(nzbtitle_exploded) - 2]
-                                                if IssueLabel.lower() in ["issue", "no", "nr", "vol"]:
-                                                    # issue nn
-                                                    regexD_issue = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
-                                                    if regexD_issue.isdigit():
-                                                        newdatish = str(int(regexD_issue))  # 4 == 04 == 004
-                                                        regex_pass = 'D1'
+                                                check = datetime.date(year, month, day)
+                                                newdatish = "%04d-%02d-%02d" % (year, month, day)
+                                                regex_pass = 2
+                                                break
+                                            except ValueError:
+                                                regex_pass = 0
+                                    pos += 1
+
+                            # YYYY MM or YYYY MM DD
+                            if not regex_pass:
+                                pos = 0
+                                while pos < len(nzbtitle_exploded):
+                                    year = isyear(nzbtitle_exploded[pos])
+                                    if year and pos + 1 < len(nzbtitle_exploded):
+                                        month = check_int(nzbtitle_exploded[pos + 1], 0)
+                                        if month:
+                                            if pos + 2 < len(nzbtitle_exploded):
+                                                day = check_int(nzbtitle_exploded[pos + 2], 1)
+                                            else:
+                                                day = 1
+                                            try:
+                                                check = datetime.date(year, month, day)
+                                                newdatish = "%04d-%02d-%02d" % (year, month, day)
+                                                regex_pass = 3
+                                                break
+                                            except ValueError:
+                                                regex_pass = 0
+                                    pos += 1
+
+                            # Issue/No/Nr/Vol nn, YYYY or Issue/No/Nr/Vol nn
+                            if not regex_pass:
+                                pos = 0
+                                while pos < len(nzbtitle_exploded):
+                                    if nzbtitle_exploded[pos].lower() in ["issue", "no", "nr", "vol"]:
+                                        if pos + 1 < len(nzbtitle_exploded):
+                                            issue = check_int(nzbtitle_exploded[pos + 1], 0)
+                                            if issue:
+                                                newdatish = str(issue)  # 4 == 04 == 004
+                                                if pos + 2 < len(nzbtitle_exploded):
+                                                    year = isyear(nzbtitle_exploded[pos + 2])
+                                                    if year and year < int(datetime.date.today().year):
+                                                        newdatish = '0'  # it's old
+                                                    regex_pass = 4  # Issue/No/Nr/Vol nn, YYYY
                                                 else:
-                                                    IssueLabel = nzbtitle_exploded[len(nzbtitle_exploded) - 3]
-                                                    if IssueLabel.lower() in ["issue", "no", "nr", "vol"]:
-                                                        # issue nn, YYYY
-                                                        regexD_issue = nzbtitle_exploded[len(nzbtitle_exploded) - 2]
-                                                        regexD_issue = regexD_issue.strip(',')
-                                                        if regexD_issue.isdigit():
-                                                            newdatish = str(int(regexD_issue))  # 4 == 04 == 004
-                                                            regex_pass = 'D2'
-                                                        else:
-                                                            raise ValueError
-                                                        regexD_year = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
-                                                        if regexD_year.isdigit():
-                                                            if int(regexD_year) < int(datetime.date.today().year):
-                                                                newdatish = 0  # it's old
-                                                                regex_pass = 'D3'
-                                                    else:
-                                                        raise ValueError
-                                            except Exception:
-                                                # regexE nn YYYY issue number without "Nr" before it
-                                                # nn is assumed not to be a month as they are normally names not digits
-                                                try:
-                                                    regexE_year = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
-                                                    regexE_issue = nzbtitle_exploded[len(nzbtitle_exploded) - 2]
-                                                    if regexE_issue.isdigit():
-                                                        newdatish = int(regexE_issue)
-                                                        regex_pass = 'E1'
-                                                        if int(regexE_year) < int(datetime.date.today().year):
-                                                            newdatish = 0  # it's old
-                                                            regex_pass = 'E2'
-                                                    else:
-                                                        raise ValueError
-                                                except Exception:
-                                                    # regexF issue and year as a single 6 digit string eg 222015
-                                                    try:
-                                                        regexF = nzbtitle_exploded[len(nzbtitle_exploded) - 1]
-                                                        if regexF.isdigit() and len(regexF) == 6:
-                                                            regexF_issue = regexF[:2]
-                                                            regexF_year = regexF[2:]
-                                                            newdatish = str(int(regexF_issue))  # 4 == 04 == 004
-                                                            regex_pass = 'F1'
-                                                            if int(regexF_year) < int(datetime.date.today().year):
-                                                                newdatish = 0  # it's old
-                                                                regex_pass = 'F2'
-                                                        else:
-                                                            raise ValueError
+                                                    regex_pass = 5  # Issue/No/Nr/Vol nn
+                                                break
+                                    pos += 1
 
-                                                    except Exception:
-                                                        logger.debug('Magazine %s not in a recognised date format.' %
-                                                                     nzbtitle_formatted)
-                                                        bad_date += 1
-                                                        # allow issues with good name but bad date to be included
-                                                        # so user can manually select them, incl those with issue numbers
-                                                        newdatish = "1970-01-01"  # provide a fake date for bad-date issues
-                                                        regex_pass = 'Fail'
-                            else:
-                                logger.debug('Magazine [%s] does not match the search term [%s].' % (
-                                    nzbtitle_formatted, bookid))
-                                bad_name += 1
-                                continue
+                            # nn YYYY issue number without "Nr" before it
+                            if not regex_pass:
+                                pos = 1
+                                while pos < len(nzbtitle_exploded):
+                                    year = isyear(nzbtitle_exploded[pos])
+                                    if year:
+                                        issue = check_int(nzbtitle_exploded[pos - 1], 0)
+                                        if issue:
+                                            newdatish = str(issue)  # 4 == 04 == 004
+                                            regex_pass = 6
+                                            if year < int(datetime.date.today().year):
+                                                newdatish = '0'  # it's old
+                                            break
+                                    pos += 1
 
+                            # issue and year as a single 6 digit string eg 222015
+                            if not regex_pass:
+                                pos = 0
+                                while pos < len(nzbtitle_exploded):
+                                    issue = nzbtitle_exploded[pos]
+                                    if issue.isdigit() and len(issue) == 6:
+                                        year = int(issue[2:])
+                                        issue = int(issue[:2])
+                                        newdatish = str(issue)  # 4 == 04 == 004
+                                        regex_pass = 7
+                                        if year < int(datetime.date.today().year):
+                                            newdatish = '0'  # it's old
+                                        break
+                                    pos += 1
+
+                            if not regex_pass:
+                                logger.debug('Magazine %s not in a recognised date format.' % nzbtitle_formatted)
+                                bad_date += 1
+                                # allow issues with good name but bad date to be included
+                                # so user can manually select them, incl those with issue numbers
+                                newdatish = "1970-01-01"  # provide a fake date for bad-date issues
+                                regex_pass = 99
+
+                        if not rejected:
                             logger.debug("regex %s [%s] %s" % (regex_pass, nzbtitle_formatted, newdatish))
                             # wanted issues go into wanted table marked "Wanted"
                             #  the rest into pastissues table marked "Skipped"
@@ -450,29 +442,26 @@ def search_magazines(mags=None, reset=False):
                                 }
                                 myDB.upsert(insert_table, newValueDict, controlValueDict)
 
-                        else:
-                            # logger.debug('Magazine [%s] was rejected.' % nzbtitle_formatted)
-                            bad_name += 1
 
-                logger.info('Found %i result%s for %s. %i new, %i old, %i fail date, %i fail name: %i to download' % (
-                    total_nzbs, plural(total_nzbs), bookid, new_date, old_date, bad_date, bad_name, len(maglist)))
+            logger.info('Found %i result%s for %s. %i new, %i old, %i fail date, %i fail name: %i to download' % (
+                total_nzbs, plural(total_nzbs), bookid, new_date, old_date, bad_date, bad_name, len(maglist)))
 
-                for magazine in maglist:
-                    if magazine['nzbmode'] in ["torznab", "torrent", "magnet"]:
-                        snatch = TORDownloadMethod(
-                            magazine['bookid'],
-                            magazine['nzbtitle'],
-                            magazine['nzburl'])
-                    else:
-                        snatch = NZBDownloadMethod(
-                            magazine['bookid'],
-                            magazine['nzbtitle'],
-                            magazine['nzburl'])
-                    if snatch:
-                        logger.info('Downloading %s from %s' % (magazine['nzbtitle'], magazine["nzbprov"]))
-                        notify_snatch("%s from %s at %s" %
-                                      (unaccented(magazine['nzbtitle']), magazine["nzbprov"], now()))
-                        scheduleJob(action='Start', target='processDir')
+            for magazine in maglist:
+                if magazine['nzbmode'] in ["torznab", "torrent", "magnet"]:
+                    snatch = TORDownloadMethod(
+                        magazine['bookid'],
+                        magazine['nzbtitle'],
+                        magazine['nzburl'])
+                else:
+                    snatch = NZBDownloadMethod(
+                        magazine['bookid'],
+                        magazine['nzbtitle'],
+                        magazine['nzburl'])
+                if snatch:
+                    logger.info('Downloading %s from %s' % (magazine['nzbtitle'], magazine["nzbprov"]))
+                    notify_snatch("%s from %s at %s" %
+                                  (unaccented(magazine['nzbtitle']), magazine["nzbprov"], now()))
+                    scheduleJob(action='Start', target='processDir')
 
         if reset:
             scheduleJob(action='Restart', target='search_magazines')
