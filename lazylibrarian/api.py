@@ -22,7 +22,7 @@ from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, \
     getBookCover, getAuthorImage, getAuthorImages
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs
-from lazylibrarian.csv import import_CSV, export_CSV
+from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.formatter import today
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
@@ -602,7 +602,7 @@ class Api(object):
         else:
             self.id = kwargs['name']
         try:
-            addAuthorToDB(self.id, refresh=False)
+            addAuthorToDB(authorname=self.id, refresh=False)
         except Exception as e:
             self.data = str(e)
 
@@ -613,7 +613,7 @@ class Api(object):
         else:
             self.id = kwargs['id']
         try:
-            addAuthorToDB('', refresh=False, self.id)
+            addAuthorToDB(authorname='', refresh=False, authorid=self.id)
         except Exception as e:
             self.data = str(e)
 
