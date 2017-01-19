@@ -262,8 +262,11 @@ class Api(object):
 
         self.data = {'magazine': magazine, 'issues': issues}
 
-    def _recreateMagCovers(self):
-        threading.Thread(target=self._newcovers, name='API-MAGCOVERS', args=[]).start()
+    def _recreateMagCovers(self, **kwargs):
+        if 'wait' in kwargs:
+            self._newcovers()
+        else:
+            threading.Thread(target=self._newcovers, name='API-MAGCOVERS', args=[]).start()
 
     def _newcovers(self):
         issues = self._dic_from_query('SELECT IssueFile from issues')
