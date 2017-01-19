@@ -73,7 +73,7 @@ def create_cover(issuefile=None, refresh=False):
             if '[' in issuefile:
                 issuefile = issuefile.split('[')[0]
             params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1", "-dLastPage=1",
-                      "-sOutputFile=%s" % coverfile, issuefile]
+                      "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
             res = subprocess.check_output(params, stderr=subprocess.STDOUT)
             if not os.path.isfile(coverfile):
                 logger.debug("Failed to create jpg: %s" % res)
@@ -141,8 +141,7 @@ def create_cover(issuefile=None, refresh=False):
                         if '[' in issuefile:
                             issuefile = issuefile.split('[')[0]
                         params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1",
-                                  "-dLastPage=1",
-                                  "-sOutputFile=%s" % coverfile, issuefile]
+                                  "-dLastPage=1", "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
                         res = subprocess.check_output(params, stderr=subprocess.STDOUT)
                         if not os.path.isfile(coverfile):
                             logger.debug("Failed to create jpg: %s" % res)
