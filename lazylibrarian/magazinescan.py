@@ -27,7 +27,7 @@ from lazylibrarian.common import setperm
 from lazylibrarian.formatter import getList, is_valid_booktype, plural
 
 
-def create_cover(issuefile=None):
+def create_cover(issuefile=None, refresh=False):
     if lazylibrarian.IMP_CONVERT == 'None':  # special flag to say "no covers required"
         return
     if issuefile is None or not os.path.isfile(issuefile):
@@ -40,8 +40,11 @@ def create_cover(issuefile=None):
     else:
         logger.debug('Unable to create cover for %s, no extension?' % issuefile)
         return
-    if os.path.isfile(coverfile):  # quit if cover already exists
-        return
+    if os.path.isfile(coverfile):
+        if refresh:
+            os.remove(coverfile)
+        else:
+            return  # quit if cover already exists
 
     generator = ""
     GS = ""
@@ -146,7 +149,7 @@ def create_cover(issuefile=None):
 
         except Exception:
             logger.debug("Unable to create cover for %s using %s" % (issuefile, generator))
-            logger.debug('Exception in magazinescan: %s' % traceback.format_exc())
+            logger.debug('Exception in create_cover: %s' % traceback.format_exc())
 
     if os.path.isfile(coverfile):
         setperm(coverfile)
@@ -160,6 +163,7 @@ def create_id(issuename=None):
 
 
 def magazineScan():
+  try:
     myDB = database.DBConnection()
 
     mag_path = lazylibrarian.MAG_DEST_FOLDER
@@ -328,3 +332,6 @@ def magazineScan():
     logger.info("Magazine scan complete, found %s magazine%s, %s issue%s" %
                 (magcount['count(*)'], plural(magcount['count(*)']),
                  isscount['count(*)'], plural(isscount['count(*)'])))
+
+  except Exception:
+    logger.error('Unhandled exception in magazineScan: %s' % traceback.format_exc())

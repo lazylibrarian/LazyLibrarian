@@ -28,7 +28,7 @@ from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, update_totals
 from lazylibrarian.librarysync import LibraryScan
-from lazylibrarian.magazinescan import magazineScan
+from lazylibrarian.magazinescan import magazineScan, create_cover
 from lazylibrarian.postprocess import processDir, processAlternate
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchnzb import search_nzb_book
@@ -50,6 +50,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'clearLogs': 'clear current log',
             'getMagazines': 'list magazines',
             'getIssues': '&name= list issues of named magazine',
+            'recreateMagCovers': 'recreate covers for all magazines',
             'forceMagSearch': '[&wait] search for all wanted magazines',
             'forceBookSearch': '[&wait] search for all wanted books',
             'forceProcess': 'process books/mags in download dir',
@@ -261,6 +262,18 @@ class Api(object):
 
         self.data = {'magazine': magazine, 'issues': issues}
 
+    def _recreateMagCovers(self, **kwargs):
+        if 'wait' in kwargs:
+            self._newcovers()
+        else:
+            threading.Thread(target=self._newcovers, name='API-MAGCOVERS', args=[]).start()
+
+    def _newcovers(self):
+        issues = self._dic_from_query('SELECT IssueFile from issues')
+        for item in issues:
+            create_cover(item['IssueFile'], refresh=True)
+
+
     def _getBook(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
@@ -268,8 +281,7 @@ class Api(object):
         else:
             self.id = kwargs['id']
 
-        book = self._dic_from_query(
-            'SELECT * from books WHERE BookID="' + self.id + '"')
+        book = self._dic_from_query('SELECT * from books WHERE BookID="' + self.id + '"')
         self.data = {'book': book}
 
     def _queueBook(self, **kwargs):
