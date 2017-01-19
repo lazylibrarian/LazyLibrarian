@@ -25,6 +25,7 @@ import urllib2
 import lazylibrarian
 import lib.simplejson as simplejson
 from lazylibrarian import logger, version
+from lazylibrarian.common import USER_AGENT
 
 
 #
@@ -239,7 +240,10 @@ def getLatestVersion_FromGit():
             logger.debug(
                 '(getLatestVersion_FromGit) Retrieving latest version information from github command=[%s]' % url)
             try:
-                result = urllib2.urlopen(url, timeout=30).read()
+                request = urllib2.Request(url)
+                request.add_header('User-Agent', USER_AGENT)
+                resp = urllib2.urlopen(request, timeout=30)
+                result = resp.read()
                 git = simplejson.JSONDecoder().decode(result)
                 latest_version = git['sha']
                 logger.debug('(getLatestVersion_FromGit) Branch [%s] Latest Version has been set to [%s]' % (
@@ -273,8 +277,10 @@ def getCommitDifferenceFromGit():
         logger.debug('(getCommitDifferenceFromGit) -  Check for differences between local & repo by [%s]' % url)
 
         try:
-            result = urllib2.urlopen(url, timeout=30).read()
-
+            request = urllib2.Request(url)
+            request.add_header('User-Agent', USER_AGENT)
+            resp = urllib2.urlopen(request, timeout=30)
+            result = resp.read()
             try:
                 logger.debug('JSONDecode url')
                 git = simplejson.JSONDecoder().decode(result)
@@ -374,7 +380,10 @@ def update():
 
         try:
             logger.info('(update) Downloading update from: ' + tar_download_url)
-            data = urllib2.urlopen(tar_download_url, timeout=30)
+            request = urllib2.Request(tar_download_url)
+            request.add_header('User-Agent', USER_AGENT)
+            resp = urllib2.urlopen(request, timeout=30)
+            data = resp.read()
         except socket.timeout:
             logger.error("(update) Timeout retrieving new version from " + tar_download_url)
             return
