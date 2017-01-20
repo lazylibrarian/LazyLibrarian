@@ -400,7 +400,7 @@ def dbupgrade(db_current_version):
             try:
                 c.execute('SELECT LastBookImg from Authors')
             except sqlite3.OperationalError:
-                lazylibrarian.UPDATE_MSG = 'Updating authors table to hold last book image'
+                lazylibrarian.UPDATE_MSG = 'Updating author table to hold last book image'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 c.execute('ALTER TABLE authors ADD COLUMN LastBookImg TEXT')
                 conn.commit()
@@ -410,9 +410,8 @@ def dbupgrade(db_current_version):
                         match = myDB.match('SELECT BookImg from books WHERE AuthorID="%s" AND BookName="%s"' %
                                             (book['AuthorID'], book['LastBook']))
                         if match:
-                            c.execute('UPDATE authors SET LastBookImg="%s" WHERE AuthorID="%s"' %
+                            myDB.action('UPDATE authors SET LastBookImg="%s" WHERE AuthorID="%s"' %
                                         (match['BookImg'], book['AuthorID']))
-                            conn.commit()
 
         # Now do any non-version-specific tidying
         try:
