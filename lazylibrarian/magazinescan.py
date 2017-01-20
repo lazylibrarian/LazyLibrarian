@@ -27,6 +27,18 @@ from lazylibrarian.common import setperm
 from lazylibrarian.formatter import getList, is_valid_booktype, plural
 
 
+def create_covers(refresh=False):
+    myDB = database.DBConnection()
+    issues = myDB.select('SELECT IssueFile from issues')
+    if refresh:
+        logger.info("Creating covers for %s issue%s" % (len(issues), plural(len(issues))))
+    else:
+        logger.info("Checking covers for %s issue%s" % (len(issues), plural(len(issues))))
+    for item in issues:
+        create_cover(item['IssueFile'], refresh=refresh)
+    logger.info("Cover creation completed")
+
+
 def create_cover(issuefile=None, refresh=False):
     if lazylibrarian.IMP_CONVERT == 'None':  # special flag to say "no covers required"
         return
