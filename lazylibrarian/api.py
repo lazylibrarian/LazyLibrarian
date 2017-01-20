@@ -28,7 +28,7 @@ from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, update_totals
 from lazylibrarian.librarysync import LibraryScan
-from lazylibrarian.magazinescan import magazineScan, create_cover
+from lazylibrarian.magazinescan import magazineScan, create_covers
 from lazylibrarian.postprocess import processDir, processAlternate
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchnzb import search_nzb_book
@@ -50,7 +50,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'clearLogs': 'clear current log',
             'getMagazines': 'list magazines',
             'getIssues': '&name= list issues of named magazine',
-            'recreateMagCovers': 'recreate covers for all magazines',
+            'createMagCovers': '[&wait] [&refresh] create covers for magazines, optionally refresh existing ones',
             'forceMagSearch': '[&wait] search for all wanted magazines',
             'forceBookSearch': '[&wait] search for all wanted books',
             'forceProcess': 'process books/mags in download dir',
@@ -262,16 +262,15 @@ class Api(object):
 
         self.data = {'magazine': magazine, 'issues': issues}
 
-    def _recreateMagCovers(self, **kwargs):
-        if 'wait' in kwargs:
-            self._newcovers()
+    def _createMagCovers(self, **kwargs):
+        if 'refresh' in kwargs:
+            refresh=True
         else:
-            threading.Thread(target=self._newcovers, name='API-MAGCOVERS', args=[]).start()
-
-    def _newcovers(self):
-        issues = self._dic_from_query('SELECT IssueFile from issues')
-        for item in issues:
-            create_cover(item['IssueFile'], refresh=True)
+            refresh=False
+        if 'wait' in kwargs:
+            create_covers(refresh=refresh)
+        else:
+            threading.Thread(target=create_covers, name='API-MAGCOVERS', args=[refresh]).start()
 
 
     def _getBook(self, **kwargs):
