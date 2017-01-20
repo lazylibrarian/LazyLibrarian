@@ -395,6 +395,25 @@ def dbupgrade(db_current_version):
             except sqlite3.OperationalError:
                 logger.warn('Failed to rebuild pastissues table')
 
+        if db_version < 11:
+            # keep last book image
+            try:
+                c.execute('SELECT LastBookImg from Authors')
+            except sqlite3.OperationalError:
+                lazylibrarian.UPDATE_MSG = 'Updating authors table to hold last book image'
+                logger.info(lazylibrarian.UPDATE_MSG)
+                c.execute('ALTER TABLE authors ADD COLUMN LastBookImg TEXT')
+                conn.commit()
+                books = myDB.select('SELECT AuthorID, LastBook from authors')
+                for book in books:
+                    if book['LastBook']:
+                        match = myDB.match('SELECT BookImg from books WHERE AuthorID="%s" AND BookName="%s"' %
+                                            (book['AuthorID'], book['LastBook']))
+                        if match:
+                            c.execute('UPDATE authors SET LastBookImg="%s" WHERE AuthorID="%s"' %
+                                        (match['BookImg'], book['AuthorID']))
+                            conn.commit()
+
         # Now do any non-version-specific tidying
         try:
             authors = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL')

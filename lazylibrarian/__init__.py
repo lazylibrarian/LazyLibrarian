@@ -1541,7 +1541,7 @@ def db_needs_upgrade():
     # 9 add regex to magazine table
     # 10 check for missing columns in pastissues table
 
-    db_current_version = 10
+    db_current_version = 11
     if db_version < db_current_version:
         return db_current_version
     return 0
