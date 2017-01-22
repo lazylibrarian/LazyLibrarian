@@ -1540,8 +1540,10 @@ def db_needs_upgrade():
     # 8 move image cache from data/images/cache into datadir
     # 9 add regex to magazine table
     # 10 check for missing columns in pastissues table
+    # 11 Keep most recent book image in author table
+    # 12 Keep latest issue cover in magazine table
 
-    db_current_version = 11
+    db_current_version = 12
     if db_version < db_current_version:
         return db_current_version
     return 0

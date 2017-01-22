@@ -18,6 +18,7 @@
     <table class="display" id="author_table">
         <thead>
             <tr>
+                <th id="status">Image</th>
                 <th id="authorname">Author</th>
                 <th id="bookname">Latest Book</th>
                 <th id="date">Released</th>
@@ -54,8 +55,11 @@
 
             %>
             <tr class="gradeZ">
-                <td id="name"><span title="${author['AuthorName']}"></span><a href="authorPage?AuthorID=${author['AuthorID']}">${author['AuthorName']}</a></td>
-                <td id="bookname"><span title="${author['LastBook']}"></span><a href="${author['LastLink']}">${author['LastBook']}</a></td>
+                <td id="status"><a href="${author['AuthorImg']}" target="_blank" rel="noreferrer"><img src="${author['AuthorImg']}" width="60" alt="Cover" class="bookcover-sm"></a></td>
+                <td id=authorname><a href="authorPage?AuthorID=${author['AuthorID']|u}">${author['AuthorName']}</a></td>
+
+                <td id="bookname"><span title="${author['LastBook']}"></span><a href="${author['LastLink']}" target="_blank" rel="noreferrer">${author['LastBook']}</a></td>
+
                 <td id="date">${author['LastDate']}</td>
                 <td id="have"><span title="${percent}"></span>${css}
 				<div style="width:${percent}%"><span class="progressbar-front-text">${havebooks}/${totalbooks}</span></div></td>
@@ -78,13 +82,14 @@
     {
         $('#author_table').dataTable(
             {
-                "aoColumns": [
+            "aoColumns": [
+                    {"bSortable": false},
                     null,
                     null,
                     null,
                     null,
                     null
-                ],
+                    ],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ authors per page",
                     "sEmptyTable": "No authors found",

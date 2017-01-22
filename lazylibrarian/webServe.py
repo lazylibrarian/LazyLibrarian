@@ -1163,8 +1163,16 @@ class WebInterface(object):
                     issues = count['counter']
                 else:
                     issues = 0
+                magimg = mag['LatestCover']
+                if not os.path.isfile(magimg):
+                    magimg = 'images/nocover.png'
+                else:
+                    myhash = hashlib.md5(magimg).hexdigest()
+                    magimg = 'cache/' + myhash + '.jpg'
+
                 this_mag = dict(mag)
                 this_mag['Count'] = issues
+                this_mag['Cover'] = magimg
                 this_mag['safetitle'] = urllib.quote_plus(mag['Title'].encode(lazylibrarian.SYS_ENCODING))
                 mags.append(this_mag)
 
@@ -1455,6 +1463,7 @@ class WebInterface(object):
                     newValueDict = {
                         "LastAcquired": None,
                         "IssueDate": None,
+                        "LatestCover": None,
                         "IssueStatus": "Wanted"
                     }
                     myDB.upsert("magazines", newValueDict, controlValueDict)

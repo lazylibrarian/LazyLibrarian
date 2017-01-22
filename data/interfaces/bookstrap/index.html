@@ -16,6 +16,7 @@
     <table class="display table table-striped table-hover table-bordered" id="author_table">
         <thead>
             <tr>
+                <th class="authorimg col-xs-1">Image</th>
                 <th class="authorname col-xs-3">Author</th>
                 <th class="bookname col-xs-4">Latest Book</th>
                 <th class="date col-xs-1 text-center">Released</th>
@@ -52,7 +53,8 @@
 
             %>
             <tr>
-                <td class="name"><span title="${author['AuthorName']}"></span><a href="authorPage?AuthorID=${author['AuthorID']|u}">${author['AuthorName']}</a></td>
+                <td class="name"><a href="${author['AuthorImg']}" target="_blank" rel="noreferrer"><img src="${author['AuthorImg']}" alt="Cover" class="bookcover-sm"></a></td>
+                <td class="name"><a href="authorPage?AuthorID=${author['AuthorID']|u}">${author['AuthorName']}</a></td>
                 <td class="bookname"><span title="${author['LastBook']}"></span><a href="${author['LastLink']}" target="_blank" rel="noreferrer">${author['LastBook']}</a></td>
                 <td class="date text-center">${author['LastDate']}</td>
                 <td class="have "><span title="${percent}" class="sr-only">${percent}% Complete</span>
@@ -83,6 +85,14 @@
     {
         $('#author_table').dataTable(
             {
+                "aoColumns": [
+                    {"bSortable": false},
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                    ],
                 "responsive": true,
                 "oLanguage": {
                     "sLengthMenu":"_MENU_ rows per page",
@@ -93,7 +103,7 @@
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.DISPLAYLENGTH},
                 "sPaginationType": "full_numbers",
-                "aaSorting": [[0, 'asc']],
+                "aaSorting": [[1, 'asc']],
             });
 			$('.dataTables_filter input').attr("placeholder", "Search filter");
     });

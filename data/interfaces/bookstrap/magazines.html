@@ -57,6 +57,7 @@
             <thead>
                 <tr>
                     <th class="select no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
+                    <th class="bookart">Cover</th>
                     <th class="magtitle">Title</th>
                     <th class="seriesOrder">Num</th>
                     <th class="lastacquired">Acquired</th>
@@ -70,18 +71,8 @@
             %for result in magazines:
                     <tr>
                         <td class="select"><input type="checkbox" name="${result['Title']}" id="${result['safetitle']}" class="checkbox" /></td>
+                        <td class="name"><a href="${result['Cover']}" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="cover" class="bookcover-sm"></a></td>
                         <td class="magtitle">${result['Title']}</td>
-                        <!-- <td id="regex"> -->
-                            <!-- <form action="updateRegex" method="get"><input type="hidden" name="title" value="${result['Title']}">-->
-                                <!-- <select name="regex">-->
-                                    <!-- <option selected="selected">${result['Regex']}</option>-->
-                                    <!-- <option value="RegexA">(DD) MonthName YYYY</option>-->
-                                    <!-- <option value="RegexB">YYYY-MM</option>-->
-                                    <!-- <option value="RegexC">MonthName DD YYYY</option>-->
-                                <!-- </select>-->
-                                <!-- <input type="submit" value="Go">-->
-                            <!-- </form>-->
-                        <!-- </td>-->
                         <td class="seriesNum">${result['Count']}</td>
                         <td class="lastacquired">${result['LastAcquired']}</td>
                         <td class="issuedate">${result['IssueDate']}</td>
@@ -142,7 +133,7 @@
         $('#book_table').dataTable(
             {
                 "responsive": true,
-                "order": [[ 1, 'asc']],
+                "order": [[ 2, 'asc']],
                 "columnDefs":
                     [{ targets: 'no-sort', orderable: false }]
                 ,
