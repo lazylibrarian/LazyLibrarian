@@ -1165,7 +1165,7 @@ class WebInterface(object):
                 else:
                     issues = 0
                 magimg = mag['LatestCover']
-                if not os.path.isfile(magimg):
+                if not magimg or not os.path.isfile(magimg):
                     magimg = 'images/nocover.png'
                 else:
                     myhash = hashlib.md5(magimg).hexdigest()
@@ -1205,7 +1205,7 @@ class WebInterface(object):
                 extn = os.path.splitext(magfile)[1]
                 if extn:
                     magimg = magfile.replace(extn, '.jpg')
-                    if not os.path.isfile(magimg):
+                    if not magimg or not os.path.isfile(magimg):
                         magimg = 'images/nocover.png'
                     else:
                         myhash = hashlib.md5(magimg).hexdigest()
