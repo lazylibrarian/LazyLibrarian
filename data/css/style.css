@@ -767,6 +767,11 @@ TABLE#author_table TH#select
 {
 	text-align: left;
 }
+TABLE#author_table TH#authorimg
+{
+	text-align: left;
+	width: 50px;
+}
 TABLE#author_table TH#authorname
 {
 	text-align: left;
@@ -794,6 +799,11 @@ TABLE#author_table TH#have
 }
 TABLE#author_table TD#select
 {
+	text-align: left;
+}
+TABLE#author_table TD#authorimg
+{
+	vertical-align: middle;
 	text-align: left;
 }
 TABLE#author_table TD#authorname

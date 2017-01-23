@@ -41,8 +41,9 @@ def dbupgrade(db_current_version):
 
         if db_version < 1:
             c.execute('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT, AuthorName TEXT UNIQUE, AuthorImg TEXT, \
-                 AuthorLink TEXT, DateAdded TEXT, Status TEXT, LastBook TEXT, LastLink Text, LastDate TEXT, \
-                 HaveBooks INTEGER, TotalBooks INTEGER, AuthorBorn TEXT, AuthorDeath TEXT, UnignoredBooks INTEGER)')
+                 AuthorLink TEXT, DateAdded TEXT, Status TEXT, LastBook TEXT, LastBookImg TEXT, LastLink Text, \
+                 LastDate TEXT,  HaveBooks INTEGER, TotalBooks INTEGER, AuthorBorn TEXT, AuthorDeath TEXT, \
+                 UnignoredBooks INTEGER)')
             c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
                 BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
                 BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, \
@@ -52,7 +53,7 @@ def dbupgrade(db_current_version):
                 NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, Source TEXT, DownloadID TEXT)')
             c.execute('CREATE TABLE IF NOT EXISTS pastissues AS SELECT * FROM wanted WHERE 0')  # same columns
             c.execute('CREATE TABLE IF NOT EXISTS magazines (Title TEXT, Regex TEXT, Status TEXT, MagazineAdded TEXT, \
-                        LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT, Reject TEXT)')
+                        LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT, Reject TEXT, LatestCover TEXT)')
             c.execute('CREATE TABLE IF NOT EXISTS languages (isbn TEXT, lang TEXT)')
             c.execute('CREATE TABLE IF NOT EXISTS issues (Title TEXT, IssueID TEXT, IssueAcquired TEXT, IssueDate TEXT, \
                 IssueFile TEXT)')
@@ -394,6 +395,43 @@ def dbupgrade(db_current_version):
                 conn.commit()
             except sqlite3.OperationalError:
                 logger.warn('Failed to rebuild pastissues table')
+
+        if db_version < 11:
+            # keep last book image
+            try:
+                c.execute('SELECT LastBookImg from Authors')
+            except sqlite3.OperationalError:
+                lazylibrarian.UPDATE_MSG = 'Updating author table to hold last book image'
+                logger.info(lazylibrarian.UPDATE_MSG)
+                myDB.action('ALTER TABLE authors ADD COLUMN LastBookImg TEXT')
+            books = myDB.select('SELECT AuthorID, LastBook from authors')
+
+            for book in books:
+                if book['LastBook']:
+                    match = myDB.select('SELECT BookImg from books WHERE AuthorID="%s" AND BookName="%s"' %
+                                        (book['AuthorID'], book['LastBook']))
+                    if match:
+                        c.execute('UPDATE authors SET LastBookImg="%s" WHERE AuthorID=%s' % (match[0]['BookImg'], book['AuthorID']))
+                        conn.commit()
+
+        if db_version < 12:
+            # keep last magazine issue image
+            try:
+                c.execute('SELECT LatestCover from Magazines')
+            except sqlite3.OperationalError:
+                lazylibrarian.UPDATE_MSG = 'Updating magazine table to hold last issue image'
+                logger.info(lazylibrarian.UPDATE_MSG)
+                myDB.action('ALTER TABLE magazines ADD COLUMN LatestCover TEXT')
+            mags = myDB.select('SELECT Title, LastAcquired from magazines')
+
+            for mag in mags:
+                match = myDB.match('SELECT IssueFile from issues WHERE IssueAcquired="%s" AND Title="%s"' %
+                                        (mag['LastAcquired'], mag['Title']))
+                if match:
+                    coverfile = os.path.splitext(match['IssueFile'])[0] + '.jpg'
+                    if os.path.exists(coverfile):
+                        c.execute('UPDATE magazines SET LatestCover="%s" WHERE Title="%s"' % (coverfile, mag['Title']))
+                        conn.commit()
 
         # Now do any non-version-specific tidying
         try:

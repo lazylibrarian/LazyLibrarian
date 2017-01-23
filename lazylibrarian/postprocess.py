@@ -431,6 +431,7 @@ def processDir(reset=False):
                             newValueDict = {"LastAcquired": today(), "IssueStatus": "Open"}
                         else:
                             newValueDict = {"IssueDate": book['AuxInfo'], "LastAcquired": today(),
+                                            "LatestCover": os.path.splitext(dest_file)[0] + '.jpg',
                                             "IssueStatus": "Open"}
                         myDB.upsert("magazines", newValueDict, controlValueDict)
                         # dest_path is where we put the magazine after processing, but we don't have the full filename

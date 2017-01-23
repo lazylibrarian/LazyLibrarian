@@ -1154,6 +1154,7 @@ class WebInterface(object):
 
         magazines = myDB.select('SELECT * from magazines ORDER by Title')
         mags = []
+        covercount = 0
         if magazines:
             for mag in magazines:
                 title = mag['Title']
@@ -1163,12 +1164,30 @@ class WebInterface(object):
                     issues = count['counter']
                 else:
                     issues = 0
+                magimg = mag['LatestCover']
+                if not os.path.isfile(magimg):
+                    magimg = 'images/nocover.png'
+                else:
+                    myhash = hashlib.md5(magimg).hexdigest()
+                    cachedir = lazylibrarian.CACHEDIR
+                    if not os.path.isdir(cachedir):
+                        os.makedirs(cachedir)
+                    hashname = os.path.join(cachedir, myhash + ".jpg")
+                    copyfile(magimg, hashname)
+                    setperm(hashname)
+                    magimg = 'cache/' + myhash + '.jpg'
+                    covercount += 1
+
                 this_mag = dict(mag)
                 this_mag['Count'] = issues
+                this_mag['Cover'] = magimg
                 this_mag['safetitle'] = urllib.quote_plus(mag['Title'].encode(lazylibrarian.SYS_ENCODING))
                 mags.append(this_mag)
 
-        return serve_template(templatename="magazines.html", title="Magazines", magazines=mags)
+        if lazylibrarian.IMP_CONVERT == 'None':  # special flag to say "no covers required"
+            covercount = 0
+
+        return serve_template(templatename="magazines.html", title="Magazines", magazines=mags, covercount=covercount)
 
     @cherrypy.expose
     def issuePage(self, title):
@@ -1206,6 +1225,10 @@ class WebInterface(object):
                 this_issue['Cover'] = magimg
                 mod_issues.append(this_issue)
             logger.debug("Found %s cover%s" % (covercount, plural(covercount)))
+
+        if lazylibrarian.IMP_CONVERT == 'None':  # special flag to say "no covers required"
+            covercount = 0
+
         return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
 
     ISSUEFILTER = ''
@@ -1455,6 +1478,7 @@ class WebInterface(object):
                     newValueDict = {
                         "LastAcquired": None,
                         "IssueDate": None,
+                        "LatestCover": None,
                         "IssueStatus": "Wanted"
                     }
                     myDB.upsert("magazines", newValueDict, controlValueDict)
@@ -1768,9 +1792,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def testBoxcar(self):
-        cherrypy.response.headers[
-            'Cache-Control'] = "max-age=0,no-cache,no-store"
-        print "qqqqqqqqqqqq"
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         result = notifiers.boxcar_notifier.test_notify()
         if result:
             return "Boxcar notification successful,\n%s" % result
@@ -1779,8 +1801,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def testPushbullet(self):
-        cherrypy.response.headers[
-            'Cache-Control'] = "max-age=0,no-cache,no-store"
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
 
         result = notifiers.pushbullet_notifier.test_notify()
         if result:
@@ -1790,8 +1811,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def testPushover(self):
-        cherrypy.response.headers[
-            'Cache-Control'] = "max-age=0,no-cache,no-store"
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
 
         result = notifiers.pushover_notifier.test_notify()
         if result:
@@ -1801,8 +1821,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def testNMA(self):
-        cherrypy.response.headers[
-            'Cache-Control'] = "max-age=0,no-cache,no-store"
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
 
         result = notifiers.nma_notifier.test_notify()
         if result:
@@ -1812,8 +1831,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def testSlack(self):
-        cherrypy.response.headers[
-            'Cache-Control'] = "max-age=0,no-cache,no-store"
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
 
         result = notifiers.slack_notifier.test_notify()
         if result != "ok":
@@ -1823,8 +1841,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def testEmail(self):
-        cherrypy.response.headers[
-            'Cache-Control'] = "max-age=0,no-cache,no-store"
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
 
         result = notifiers.email_notifier.test_notify()
         if not result:

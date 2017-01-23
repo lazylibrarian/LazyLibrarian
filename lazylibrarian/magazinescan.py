@@ -203,6 +203,7 @@ def magazineScan():
                 newValueDict = {
                     "LastAcquired": None,  # clear magazine dates
                     "IssueDate": None,  # we will fill them in again later
+                    "LatestCover": None,
                     "IssueStatus": "Skipped"  # assume there are no issues now
                 }
                 myDB.upsert("magazines", newValueDict, controlValueDict)
@@ -260,9 +261,6 @@ def magazineScan():
                 mtime = os.path.getmtime(issuefile)
                 iss_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
 
-                # magazines : Title, Regex, Status, MagazineAdded, LastAcquired, IssueDate, IssueStatus, Reject
-                # issues    : Title, IssueAcquired, IssueDate, IssueFile
-
                 controlValueDict = {"Title": title}
 
                 # is this magazine already in the database?
@@ -274,6 +272,7 @@ def magazineScan():
                         "Status": "Active",
                         "MagazineAdded": None,
                         "LastAcquired": None,
+                        "LatestCover": None,
                         "IssueDate": None,
                         "IssueStatus": "Skipped",
                         "Regex": None
@@ -319,6 +318,7 @@ def magazineScan():
                     newValueDict = {
                         "MagazineAdded": iss_acquired,
                         "LastAcquired": iss_acquired,
+                        "LatestCover": os.path.splitext(issuefile)[0] + '.jpg',
                         "IssueDate": issuedate,
                         "IssueStatus": "Open"
                     }
@@ -330,7 +330,8 @@ def magazineScan():
                         myDB.upsert("magazines", newValueDict, controlValueDict)
                     if maglastacquired is None or iss_acquired > maglastacquired:
                         controlValueDict = {"Title": title}
-                        newValueDict = {"LastAcquired": iss_acquired}
+                        newValueDict = {"LastAcquired": iss_acquired,
+                                        "LatestCover": os.path.splitext(issuefile)[0] + '.jpg'}
                         myDB.upsert("magazines", newValueDict, controlValueDict)
                     if magissuedate is None or issuedate > magissuedate:
                         controlValueDict = {"Title": title}

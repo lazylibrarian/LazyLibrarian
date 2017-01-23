@@ -618,23 +618,26 @@ class GoodReads:
                         if all(False for book in resultxml):  # returns True if iterator is empty
                             resultxml = None
 
-            lastbook = myDB.match('SELECT BookName, BookLink, BookDate from books WHERE AuthorID="%s" \
+            lastbook = myDB.match('SELECT BookName, BookLink, BookDate, BookImg from books WHERE AuthorID="%s" \
                                 AND Status != "Ignored" order by BookDate DESC' % authorid)
             if lastbook:
                 lastbookname = lastbook['BookName']
                 lastbooklink = lastbook['BookLink']
                 lastbookdate = lastbook['BookDate']
+                lastbookimg = lastbook['BookImg']
             else:
                 lastbookname = None
                 lastbooklink = None
                 lastbookdate = None
+                lastbookimg = None
 
             controlValueDict = {"AuthorID": authorid}
             newValueDict = {
                 "Status": "Active",
                 "LastBook": lastbookname,
                 "LastLink": lastbooklink,
-                "LastDate": lastbookdate
+                "LastDate": lastbookdate,
+                "LastBookImg": lastbookimg
             }
             myDB.upsert("authors", newValueDict, controlValueDict)
 
