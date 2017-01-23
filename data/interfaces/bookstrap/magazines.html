@@ -57,7 +57,11 @@
             <thead>
                 <tr>
                     <th class="select no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
-                    <th class="bookart no-sort">Cover</th>
+                    % if covercount > 0:
+                        <th class="bookart no-sort">Cover</th>
+                    % else:
+                        <th class="bookart hidden">Cover</th>
+                    % endif
                     <th class="magtitle">Title</th>
                     <th class="seriesNum">Num</th>
                     <th class="lastacquired">Acquired</th>
@@ -71,7 +75,11 @@
             %for result in magazines:
                     <tr>
                         <td class="select"><input type="checkbox" name="${result['Title']}" id="${result['safetitle']}" class="checkbox" /></td>
-                        <td class="bookart"><a href="${result['Cover']}" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="cover" class="bookcover-sm"></a></td>
+                        % if covercount > 0:
+                            <td class="bookart"><a href="${result['Cover']}" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="cover" class="bookcover-sm"></a></td>
+                        % else:
+                            <td class="bookart hidden"><a href="${result['Cover']}" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="cover" class="bookcover-sm"></a></td>
+                        % endif
                         <td class="magtitle">${result['Title']}</td>
                         <td class="seriesNum">${result['Count']}</td>
                         <td class="lastacquired">${result['LastAcquired']}</td>

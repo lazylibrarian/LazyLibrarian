@@ -1154,6 +1154,7 @@ class WebInterface(object):
 
         magazines = myDB.select('SELECT * from magazines ORDER by Title')
         mags = []
+        covercount = 0
         if magazines:
             for mag in magazines:
                 title = mag['Title']
@@ -1175,6 +1176,7 @@ class WebInterface(object):
                     copyfile(magimg, hashname)
                     setperm(hashname)
                     magimg = 'cache/' + myhash + '.jpg'
+                    covercount += 1
 
                 this_mag = dict(mag)
                 this_mag['Count'] = issues
@@ -1182,7 +1184,10 @@ class WebInterface(object):
                 this_mag['safetitle'] = urllib.quote_plus(mag['Title'].encode(lazylibrarian.SYS_ENCODING))
                 mags.append(this_mag)
 
-        return serve_template(templatename="magazines.html", title="Magazines", magazines=mags)
+        if lazylibrarian.IMP_CONVERT == 'None':  # special flag to say "no covers required"
+            covercount = 0
+
+        return serve_template(templatename="magazines.html", title="Magazines", magazines=mags, covercount=covercount)
 
     @cherrypy.expose
     def issuePage(self, title):
@@ -1220,6 +1225,10 @@ class WebInterface(object):
                 this_issue['Cover'] = magimg
                 mod_issues.append(this_issue)
             logger.debug("Found %s cover%s" % (covercount, plural(covercount)))
+
+        if lazylibrarian.IMP_CONVERT == 'None':  # special flag to say "no covers required"
+            covercount = 0
+
         return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
 
     ISSUEFILTER = ''

@@ -605,7 +605,7 @@ class GoogleBooks:
             logger.debug('[%s] The Google Books API was hit %s time%s to populate book list' %
                          (authorname, api_hits, plural(api_hits)))
 
-            lastbook = myDB.match('SELECT BookName, BookLink, BookDate from books WHERE AuthorID="%s" \
+            lastbook = myDB.match('SELECT BookName, BookLink, BookDate, BookImg from books WHERE AuthorID="%s" \
                                AND Status != "Ignored" order by BookDate DESC' % authorid)
 
             if lastbook:  # maybe there are no books [remaining] for this author
