@@ -42,6 +42,11 @@
         <thead>
             <tr>
                 <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
+                % if covercount > 0:
+                <th id="bookart">Cover</th>
+                % else:
+                <th id="bookart" hidden="true">Cover</th>
+                % endif
                 <th id="magtitle">Title</th>
                 <th id="seriesNum">Num</th>
                 <th id="lastacquired">Acquired</th>
@@ -55,27 +60,21 @@
         %for result in magazines:
                 <tr class="gradeZ">
                     <td id="select"><input type="checkbox" name="${result['Title']}" class="checkbox" /></td>
+                    % if covercount > 0:
+                    <td id="bookart"><a href="${result['Cover']}" target="_blank"><img src="${result['Cover']}" alt="cover" height="75" width="50"></a></td>
+                    % else:
+                    <td id="bookart" hidden="true"><a href="${result['Cover']}" target="_blank"><img src="${result['Cover']}" alt="cover" height="75" width="50"></a></td>
+                    % endif
                     <td id="magtitle">${result['Title']}</td>
-                    <!-- <td id="regex"> -->
-                        <!-- <form action="updateRegex" method="get"><input type="hidden" name="title" value="${result['Title']}">-->
-                            <!-- <select name="regex">-->
-                                <!-- <option selected="selected">${result['Regex']}</option>-->
-                                <!-- <option value="RegexA">(DD) MonthName YYYY</option>-->
-                                <!-- <option value="RegexB">YYYY-MM</option>-->
-                                <!-- <option value="RegexC">MonthName DD YYYY</option>-->
-                            <!-- </select>-->
-                            <!-- <input type="submit" value="Go">-->
-                        <!-- </form>-->
-                    <!-- </td>-->
                     <td id="seriesNum">${result['Count']}</td>
                     <td id="lastacquired">${result['LastAcquired']}</td>
                     <td id="issuedate">${result['IssueDate']}</td>
                     <td id="status">${result['Status']}</td>
                     %if result['IssueStatus'] == 'Open':
-                            %if result['Count'] > 1:
-                                <td id="issue"><a class="button orange" href="openMag?bookid=${result['safetitle']}" target="_self">Show</a></td>
-                            %else:
+                            %if result['Count'] == 1 and lazylibrarian.MAG_SINGLE:
                                 <td id="issue"><a class="button green" href="openMag?bookid=${result['safetitle']}" target="_self">Open</a></td>
+                            %else:
+                                <td id="issue"><a class="button orange" href="openMag?bookid=${result['safetitle']}" target="_self">Show</a></td>
                             %endif
                     %else:
                         %if result['IssueStatus'] == 'Wanted':
@@ -122,7 +121,8 @@
         $('#book_table').dataTable(
             {
                 "aoColumns": [
-                    null,
+                    {"bSortable": false},
+                    {"bSortable": false},
                     null,
                     null,
                     null,
@@ -130,6 +130,7 @@
                     null,
                     null
                     ],
+                "order": [[ 2, 'asc']],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ magazines per page",
                     "sEmptyTable": "No magazines found",

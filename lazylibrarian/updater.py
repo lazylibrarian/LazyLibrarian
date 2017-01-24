@@ -23,13 +23,13 @@ def dbUpdate(refresh=False):
     try:
         myDB = database.DBConnection()
 
-        activeauthors = myDB.select('SELECT AuthorName from authors WHERE Status="Active" \
+        activeauthors = myDB.select('SELECT AuthorID from authors WHERE Status="Active" \
                                     or Status="Loading" order by DateAdded ASC')
         logger.info('Starting update for %i active author%s' % (len(activeauthors), plural(len(activeauthors))))
 
         for author in activeauthors:
-            authorname = author[0]
-            importer.addAuthorToDB(authorname, refresh=refresh)
+            authorid = author[0]
+            importer.addAuthorToDB(authorname='', refresh=refresh, authorid=authorid)
 
         logger.info('Active author update complete')
     except Exception:

@@ -145,6 +145,15 @@
                     %endfor
                     </select>
                     <br>
+                    <%
+                        if lazylibrarian.MAG_SINGLE == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <input type="checkbox" name="mag_single" value=1 ${checked} />
+                    <label>  Quick open single issues of magazines</label>
+                    <br>
                     <div class="row">
                         <input type="button" value="Show Jobs" id="show_Jobs" />
                         <input type="button" value="Restart Jobs" id="restart_Jobs" />
@@ -272,6 +281,7 @@
                                 <div class="row">
                                     <label>SABnzb Connection:</label>
                                     <input type="button" value="Test SABnzbd" id="testSABnzbd" style="float:right;">
+                                    <small>Save settings before testing</small>
                                 </div>
                             </fieldset>
 
@@ -313,6 +323,7 @@
                                 <div class="row">
                                     <label>NZBget Connection:</label>
                                     <input type="button" value="Test NZBget" id="testNZBget" style="float:right;">
+                                    <small>Save settings before testing</small>
                                 </div>
                             </fieldset>
 
@@ -370,6 +381,7 @@
                                 <div class="row">
                                     <label>Synology Connection:</label>
                                     <input type="button" value="Test Synology" id="testSynology" style="float:right;">
+                                    <small>Save settings before testing</small>
                                 </div>
                             </fieldset>
 
@@ -429,6 +441,7 @@
                                 </div>
                                 <div class="row">
                                     <input type="button" value="Test Deluge" id="testDeluge" style="float:right;">
+                                    <small>Save settings before testing</small>
                                 </div>
                             </fieldset>
 
@@ -461,6 +474,7 @@
                                 </div>
                                 <div class="row">
                                     <input type="button" value="Test Transmission" id="testTransmission" style="float:right;">
+                                    <small>Save settings before testing</small>
                                 </div>
                             </fieldset>
 
@@ -500,6 +514,7 @@
                                 </div>
                                 <div class="row">
                                     <input type="button" value="Test rTorrent" id="testrTorrent" style="float:right;">
+                                    <small>Save settings before testing</small>
                                 </div>
                             </fieldset>
 
@@ -537,6 +552,7 @@
                                 </div>
                                 <div class="row">
                                     <input type="button" value="Test uTorrent" id="testuTorrent" style="float:right;">
+                                    <small>Save settings before testing</small>
                                 </div>
                             </fieldset>
                              <div class="row checkbox">
@@ -572,6 +588,7 @@
                                 </div>
                                 <div class="row">
                                     <input type="button" value="Test qBittorrent" id="testqBittorrent" style="float:right;">
+                                    <small>Save settings before testing</small>
                                 </div>
                             </fieldset>
                             <div class="row checkbox">
@@ -1065,6 +1082,7 @@
                         </div>
                         <div class="row">
                             <input type="button" value="Test Twitter" id="testTwitter" />
+                            <br><small>Save settings before testing</small>
                         </div>
                     </div>
                 </fieldset>
@@ -1102,6 +1120,10 @@
                         </div>
                         <div class="row">
                             <input type="text" name="boxcar_token" value="${lazylibrarian.BOXCAR_TOKEN}" size="26" placeholder="Boxcar token">
+                        </div>
+                        <div class="row">
+                            <input type="button" value="Test Boxcar" id="testBoxcar">
+                            <br><small>Save settings before testing</small>
                         </div>
                     </div>
                 </fieldset>
@@ -1145,6 +1167,7 @@
                         </div>
                         <div class="row">
                             <input type="button" value="Test Pushbullet" id="testPushbullet">
+                            <br><small>Save settings before testing</small>
                         </div>
                      </div>
                 </fieldset>
@@ -1195,6 +1218,7 @@
                         </div>
                         <div class="row">
                             <input type="button" value="Test Pushover" id="testPushover">
+                            <br><small>Save settings before testing</small>
                         </div>
                     </div>
                 </fieldset>
@@ -1247,6 +1271,7 @@
                         </div>
                         <div class="row">
                             <input type="button" value="Test AndroidPN" id="testAndroidPN">
+                            <br><small>Save settings before testing</small>
                         </div>
                     </div>
                 </fieldset>
@@ -1313,6 +1338,7 @@
                                     </div>
                                     <div class="row">
                                         <input type="button" value="Test NMA" id="testNMA">
+                                        <br><small>Save settings before testing</small>
                                     </div>
                                 </div>
 		        </fieldset>
@@ -1353,6 +1379,7 @@
                         </div>
                         <div class="row">
                             <input type="button" value="Test Slack" id="testSlack">
+                            <br><small>Save settings before testing</small>
                         </div>
                      </div>
                 </fieldset>
@@ -1426,6 +1453,7 @@
                         </div>
                         <div class="row">
                             <input type="button" value="Test Email" id="testEmail">
+                            <br><small>Save settings before testing</small>
                         </div>
                      </div>
                 </fieldset>
@@ -2095,6 +2123,11 @@
             $('#testTwitter').click(function () {
                 $.get("testTwitter",
                     function (data) { $('#testTwitter-result').html(data); });
+            });
+
+            $('#testBoxcar').click(function () {
+                $.get("testBoxcar",
+                    function (data) { alert(data); });
             });
 
             $('#testPushbullet').click(function () {

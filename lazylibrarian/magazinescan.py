@@ -27,7 +27,19 @@ from lazylibrarian.common import setperm
 from lazylibrarian.formatter import getList, is_valid_booktype, plural
 
 
-def create_cover(issuefile=None):
+def create_covers(refresh=False):
+    myDB = database.DBConnection()
+    issues = myDB.select('SELECT IssueFile from issues')
+    if refresh:
+        logger.info("Creating covers for %s issue%s" % (len(issues), plural(len(issues))))
+    else:
+        logger.info("Checking covers for %s issue%s" % (len(issues), plural(len(issues))))
+    for item in issues:
+        create_cover(item['IssueFile'], refresh=refresh)
+    logger.info("Cover creation completed")
+
+
+def create_cover(issuefile=None, refresh=False):
     if lazylibrarian.IMP_CONVERT == 'None':  # special flag to say "no covers required"
         return
     if issuefile is None or not os.path.isfile(issuefile):
@@ -40,8 +52,11 @@ def create_cover(issuefile=None):
     else:
         logger.debug('Unable to create cover for %s, no extension?' % issuefile)
         return
-    if os.path.isfile(coverfile):  # quit if cover already exists
-        return
+    if os.path.isfile(coverfile):
+        if refresh:
+            os.remove(coverfile)
+        else:
+            return  # quit if cover already exists
 
     generator = ""
     GS = ""
@@ -70,7 +85,7 @@ def create_cover(issuefile=None):
             if '[' in issuefile:
                 issuefile = issuefile.split('[')[0]
             params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1", "-dLastPage=1",
-                      "-sOutputFile=%s" % coverfile, issuefile]
+                      "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
             res = subprocess.check_output(params, stderr=subprocess.STDOUT)
             if not os.path.isfile(coverfile):
                 logger.debug("Failed to create jpg: %s" % res)
@@ -138,15 +153,14 @@ def create_cover(issuefile=None):
                         if '[' in issuefile:
                             issuefile = issuefile.split('[')[0]
                         params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1",
-                                  "-dLastPage=1",
-                                  "-sOutputFile=%s" % coverfile, issuefile]
+                                  "-dLastPage=1", "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
                         res = subprocess.check_output(params, stderr=subprocess.STDOUT)
                         if not os.path.isfile(coverfile):
                             logger.debug("Failed to create jpg: %s" % res)
 
         except Exception:
             logger.debug("Unable to create cover for %s using %s" % (issuefile, generator))
-            logger.debug('Exception in magazinescan: %s' % traceback.format_exc())
+            logger.debug('Exception in create_cover: %s' % traceback.format_exc())
 
     if os.path.isfile(coverfile):
         setperm(coverfile)
@@ -160,6 +174,7 @@ def create_id(issuename=None):
 
 
 def magazineScan():
+  try:
     myDB = database.DBConnection()
 
     mag_path = lazylibrarian.MAG_DEST_FOLDER
@@ -188,6 +203,7 @@ def magazineScan():
                 newValueDict = {
                     "LastAcquired": None,  # clear magazine dates
                     "IssueDate": None,  # we will fill them in again later
+                    "LatestCover": None,
                     "IssueStatus": "Skipped"  # assume there are no issues now
                 }
                 myDB.upsert("magazines", newValueDict, controlValueDict)
@@ -245,13 +261,10 @@ def magazineScan():
                 mtime = os.path.getmtime(issuefile)
                 iss_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
 
-                # magazines : Title, Regex, Status, MagazineAdded, LastAcquired, IssueDate, IssueStatus, Reject
-                # issues    : Title, IssueAcquired, IssueDate, IssueFile
-
                 controlValueDict = {"Title": title}
 
                 # is this magazine already in the database?
-                mag_entry = myDB.select('SELECT * from magazines WHERE Title="%s"' % title)
+                mag_entry = myDB.select('SELECT * from magazines WHERE Title="%s" COLLATE NOCASE' % title)
                 if not mag_entry:
                     # need to add a new magazine to the database
                     newValueDict = {
@@ -259,6 +272,7 @@ def magazineScan():
                         "Status": "Active",
                         "MagazineAdded": None,
                         "LastAcquired": None,
+                        "LatestCover": None,
                         "IssueDate": None,
                         "IssueStatus": "Skipped",
                         "Regex": None
@@ -278,7 +292,7 @@ def magazineScan():
                 # is this issue already in the database?
                 controlValueDict = {"Title": title, "IssueDate": issuedate}
                 issue_id = create_id("%s %s" % (title, issuedate))
-                iss_entry = myDB.match('SELECT Title from issues WHERE Title="%s" and IssueDate="%s"' % (
+                iss_entry = myDB.match('SELECT Title from issues WHERE Title="%s" COLLATE NOCASE and IssueDate="%s"' % (
                     title, issuedate))
                 if not iss_entry:
                     newValueDict = {
@@ -304,6 +318,7 @@ def magazineScan():
                     newValueDict = {
                         "MagazineAdded": iss_acquired,
                         "LastAcquired": iss_acquired,
+                        "LatestCover": os.path.splitext(issuefile)[0] + '.jpg',
                         "IssueDate": issuedate,
                         "IssueStatus": "Open"
                     }
@@ -315,7 +330,8 @@ def magazineScan():
                         myDB.upsert("magazines", newValueDict, controlValueDict)
                     if maglastacquired is None or iss_acquired > maglastacquired:
                         controlValueDict = {"Title": title}
-                        newValueDict = {"LastAcquired": iss_acquired}
+                        newValueDict = {"LastAcquired": iss_acquired,
+                                        "LatestCover": os.path.splitext(issuefile)[0] + '.jpg'}
                         myDB.upsert("magazines", newValueDict, controlValueDict)
                     if magissuedate is None or issuedate > magissuedate:
                         controlValueDict = {"Title": title}
@@ -328,3 +344,6 @@ def magazineScan():
     logger.info("Magazine scan complete, found %s magazine%s, %s issue%s" %
                 (magcount['count(*)'], plural(magcount['count(*)']),
                  isscount['count(*)'], plural(isscount['count(*)'])))
+
+  except Exception:
+    logger.error('Unhandled exception in magazineScan: %s' % traceback.format_exc())

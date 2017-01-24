@@ -529,7 +529,7 @@ def LibraryScan(startdir=None):
                                         if not check_exist_author:
                                             logger.info("Adding new author [%s]" % author)
                                             try:
-                                                addAuthorToDB(author, refresh=False)
+                                                addAuthorToDB(author, False)
                                                 check_exist_author = myDB.match(
                                                     'SELECT * FROM authors where AuthorName="%s"' %
                                                     author.replace('"', '""'))
@@ -539,6 +539,8 @@ def LibraryScan(startdir=None):
                             # check author exists in db, either newly loaded or already there
                             if not check_exist_author:
                                 logger.debug("Failed to match author [%s] in database" % author)
+                                if not lazylibrarian.ADD_AUTHOR:
+                                    logger.debug("Add authors to database is disabled")
                             else:
                                 # author exists, check if this book by this author is in our database
                                 # metadata might have quotes in book name

@@ -61,7 +61,7 @@ COMMIT_LIST = None
 
 DATADIR = None
 DBFILE = None
-UPDATE_MSG = None
+UPDATE_MSG = ''
 CONFIGFILE = ''
 CFG = ''
 CURRENT_TAB = '1'
@@ -233,6 +233,7 @@ EBOOK_DEST_FILE = None
 MAG_DEST_FOLDER = None
 MAG_DEST_FILE = None
 MAG_RELATIVE = 1
+MAG_SINGLE = 1
 
 USE_TWITTER = 0
 TWITTER_NOTIFY_ONSNATCH = 0
@@ -479,7 +480,7 @@ def config_read(reloaded=False):
         KAT, KAT_HOST, TPB, TPB_HOST, ZOO, ZOO_HOST, TDL, TDL_HOST, GEN, GEN_HOST, EXTRA, EXTRA_HOST, \
         LIME, LIME_HOST, NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, REJECT_WORDS, REJECT_MAXSIZE, REJECT_MAGSIZE, \
         VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, SEARCHRSS_INTERVAL, MAG_AGE, \
-        EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, \
+        EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, MAG_SINGLE, \
         USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, \
         TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, TOR_CONVERT_MAGNET, \
         USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, \
@@ -532,6 +533,7 @@ def config_read(reloaded=False):
     HTTPS_CERT = check_setting_str(CFG, 'General', 'https_cert', '')
     HTTPS_KEY = check_setting_str(CFG, 'General', 'https_key', '')
     BOOKSTRAP_THEME = check_setting_str(CFG, 'General', 'bookstrap_theme', 'slate')
+    MAG_SINGLE = check_setting_bool(CFG, 'General', 'mag_single', 1)
 
     LAUNCH_BROWSER = check_setting_bool(CFG, 'General', 'launch_browser', 1)
     API_ENABLED = check_setting_bool(CFG, 'General', 'api_enabled', 0)
@@ -954,6 +956,7 @@ def config_write():
     CFG.set('General', 'cache_age', CACHE_AGE)
     CFG.set('General', 'task_age', TASK_AGE)
     CFG.set('General', 'destination_copy', DESTINATION_COPY)
+    CFG.set('General', 'mag_single', MAG_SINGLE)
     #
     CFG.set('General', 'displaylength', DISPLAYLENGTH)
     #
@@ -1537,8 +1540,10 @@ def db_needs_upgrade():
     # 8 move image cache from data/images/cache into datadir
     # 9 add regex to magazine table
     # 10 check for missing columns in pastissues table
+    # 11 Keep most recent book image in author table
+    # 12 Keep latest issue cover in magazine table
 
-    db_current_version = 10
+    db_current_version = 12
     if db_version < db_current_version:
         return db_current_version
     return 0

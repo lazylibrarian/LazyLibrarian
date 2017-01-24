@@ -125,16 +125,25 @@ def age(histdate):
         return 0
 
 
+def check_year(num):
+    # See if num looks like a valid year for a magazine
+    # Allow forward dated by a year, eg Jan 2017 issues available in Dec 2016
+    n = check_int(num, 0)
+    if n > 1900 and n < int(datetime.date.today().strftime("%Y")) + 2:
+        return n
+    return 0
+
+
 def nzbdate2format(nzbdate):
     try:
         mmname = nzbdate.split()[2].zfill(2)
         day = nzbdate.split()[1]
         # nzbdates are mostly english short month names, but not always
         month = month2num(mmname)
-        if month == "Invalid":
-            month = "01"  # hopefully won't hit this, but return a default value rather than error
+        if month == 0:
+            month = 1  # hopefully won't hit this, but return a default value rather than error
         year = nzbdate.split()[3]
-        return year + '-' + month + '-' + day
+        return "%s-%02d-%s" % (year, month, day)
     except Exception:
         return "1970-01-01"
 
@@ -146,20 +155,18 @@ def month2num(month):
     month = month.lower()
     for f in range(1, 13):
         if month in lazylibrarian.MONTHNAMES[f]:
-            return str(f).zfill(2)
+            return f
 
     if month == "winter":
-        return "01"
+        return 1
     elif month == "spring":
-        return "04"
+        return 4
     elif month == "summer":
-        return "07"
-    elif month == "fall":
-        return "10"
-    elif month == "autumn":
-        return "10"
+        return 7
+    elif month == "fall" or month == "autumn":
+        return 10
     else:
-        return "00"
+        return 0
 
 
 def datecompare(nzbdate, control_date):
