@@ -61,7 +61,7 @@ COMMIT_LIST = None
 
 DATADIR = None
 DBFILE = None
-UPDATE_MSG = None
+UPDATE_MSG = ''
 CONFIGFILE = ''
 CFG = ''
 CURRENT_TAB = '1'
