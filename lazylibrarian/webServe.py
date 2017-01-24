@@ -67,18 +67,27 @@ def serve_template(templatename, **kwargs):
 class WebInterface(object):
     @cherrypy.expose
     def index(self):
-        if lazylibrarian.db_needs_upgrade():
+        if lazylibrarian.UPDATE_MSG:
             message = "Upgrading database, please wait"
             return serve_template(templatename="dbupdate.html", title="Database Upgrade", message=message, timer=5)
         else:
-            raise cherrypy.HTTPRedirect("home")
+            myDB = database.DBConnection()
+            authors = myDB.select(
+                'SELECT * from authors where Status != "Ignored" order by AuthorName COLLATE NOCASE')
+            return serve_template(templatename="index.html", title="Index", authors=authors)
+
 
     @cherrypy.expose
     def home(self):
-        myDB = database.DBConnection()
-        authors = myDB.select(
-            'SELECT * from authors where Status != "Ignored" order by AuthorName COLLATE NOCASE')
-        return serve_template(templatename="index.html", title="Home", authors=authors)
+        if lazylibrarian.UPDATE_MSG:
+            message = "Upgrading database, please wait"
+            return serve_template(templatename="dbupdate.html", title="Database Upgrade", message=message, timer=5)
+        else:
+            myDB = database.DBConnection()
+            authors = myDB.select(
+                'SELECT * from authors where Status != "Ignored" order by AuthorName COLLATE NOCASE')
+            return serve_template(templatename="index.html", title="Home", authors=authors)
+
 
     @staticmethod
     def label_thread():
@@ -1169,10 +1178,7 @@ class WebInterface(object):
                     magimg = 'images/nocover.png'
                 else:
                     myhash = hashlib.md5(magimg).hexdigest()
-                    cachedir = lazylibrarian.CACHEDIR
-                    if not os.path.isdir(cachedir):
-                        os.makedirs(cachedir)
-                    hashname = os.path.join(cachedir, myhash + ".jpg")
+                    hashname = os.path.join(lazylibrarian.CACHEDIR, myhash + ".jpg")
                     copyfile(magimg, hashname)
                     setperm(hashname)
                     magimg = 'cache/' + myhash + '.jpg'
@@ -1209,10 +1215,7 @@ class WebInterface(object):
                         magimg = 'images/nocover.png'
                     else:
                         myhash = hashlib.md5(magimg).hexdigest()
-                        cachedir = lazylibrarian.CACHEDIR
-                        if not os.path.isdir(cachedir):
-                            os.makedirs(cachedir)
-                        hashname = os.path.join(cachedir, myhash + ".jpg")
+                        hashname = os.path.join(lazylibrarian.CACHEDIR, myhash + ".jpg")
                         copyfile(magimg, hashname)
                         setperm(hashname)
                         magimg = 'cache/' + myhash + '.jpg'

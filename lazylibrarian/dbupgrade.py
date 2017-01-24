@@ -404,9 +404,10 @@ def dbupgrade(db_current_version):
                 lazylibrarian.UPDATE_MSG = 'Updating author table to hold last book image'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE authors ADD COLUMN LastBookImg TEXT')
-            books = myDB.select('SELECT AuthorID, LastBook from authors')
+            books = myDB.select('SELECT AuthorID, AuthorName, LastBook from authors')
 
             for book in books:
+                lazylibrarian.UPDATE_MSG = 'Updating last book image for %s' % book['AuthorName']
                 if book['LastBook']:
                     match = myDB.select('SELECT BookImg from books WHERE AuthorID="%s" AND BookName="%s"' %
                                         (book['AuthorID'], book['LastBook']))
@@ -425,6 +426,7 @@ def dbupgrade(db_current_version):
             mags = myDB.select('SELECT Title, LastAcquired from magazines')
 
             for mag in mags:
+                lazylibrarian.UPDATE_MSG = 'Updating last issue image for %s' % mag['Title']
                 match = myDB.match('SELECT IssueFile from issues WHERE IssueAcquired="%s" AND Title="%s"' %
                                         (mag['LastAcquired'], mag['Title']))
                 if match:
@@ -450,3 +452,4 @@ def dbupgrade(db_current_version):
         c.execute('PRAGMA user_version = %s' % db_current_version)
         conn.commit()
         conn.close()
+        lazylibrarian.UPDATE_MSG = ''

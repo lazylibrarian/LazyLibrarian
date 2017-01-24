@@ -68,8 +68,6 @@ def cache_cover(bookID, img_url):
         or None if failed to cache """
 
     cachedir = lazylibrarian.CACHEDIR
-    if not os.path.isdir(cachedir):
-        os.makedirs(cachedir)
     coverfile = os.path.join(cachedir, bookID + '.jpg')
     link = 'cache/' + bookID + '.jpg'
     # if os.path.isfile(coverfile):  # overwrite any cached image
