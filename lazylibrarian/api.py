@@ -21,7 +21,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, \
     getBookCover, getAuthorImage, getAuthorImages
-from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs
+from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, dbUpdate
 from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.formatter import today
 from lazylibrarian.gb import GoogleBooks
@@ -34,7 +34,6 @@ from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchnzb import search_nzb_book
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.searchtorrents import search_tor_book
-from lazylibrarian.updater import dbUpdate
 
 cmd_dict = {'help': 'list available commands. ' +
                     'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +

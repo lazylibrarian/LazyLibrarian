@@ -28,7 +28,7 @@ import lib.simplejson as simplejson
 from cherrypy.lib.static import serve_file
 from lazylibrarian import logger, database, notifiers, versioncheck, magazinescan, \
     qbittorrent, utorrent, rtorrent, transmission, sabnzbd, nzbget, deluge, synology
-from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm
+from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, dbUpdate
 from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode
 from lazylibrarian.gb import GoogleBooks
@@ -1572,8 +1572,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def forceUpdate(self):
-        from lazylibrarian import updater
-        threading.Thread(target=updater.dbUpdate, name='DBUPDATE', args=[False]).start()
+        threading.Thread(target=dbUpdate, name='DBUPDATE', args=[False]).start()
         raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose

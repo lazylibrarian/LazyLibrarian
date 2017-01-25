@@ -17,6 +17,7 @@ import os
 import platform
 import shutil
 import time
+import traceback
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -146,7 +147,23 @@ def scheduleJob(action='Start', target=None):
                 lazylibrarian.versioncheck.checkForUpdates,
                 hours=int(lazylibrarian.VERSIONCHECK_INTERVAL))
             logger.debug("%s %s job" % (action, target))
+        elif 'dbUpdate' in target:
+            lazylibrarian.SCHED.add_interval_job(dbUpdate, args=[True],
+                hours=int(lazylibrarian.CACHE_AGE) * 24)
+            logger.debug("%s %s job" % (action, target))
 
+def dbUpdate(refresh=False):
+    try:
+        myDB = database.DBConnection()
+        activeauthors = myDB.select('SELECT AuthorID from authors WHERE Status="Active" \
+                                    or Status="Loading" order by DateAdded ASC')
+        logger.info('Starting update for %i active author%s' % (len(activeauthors), plural(len(activeauthors))))
+        for author in activeauthors:
+            authorid = author['AuthorID']
+            lazylibrarian.importer.addAuthorToDB(authorname='', refresh=refresh, authorid=authorid)
+        logger.info('Active author update complete')
+    except Exception:
+        logger.error('Unhandled exception in dbUpdate: %s' % traceback.format_exc())
 
 def restartJobs(start='Restart'):
     scheduleJob(start, 'processDir')
@@ -155,7 +172,7 @@ def restartJobs(start='Restart'):
     scheduleJob(start, 'search_rss_book')
     scheduleJob(start, 'search_magazines')
     scheduleJob(start, 'checkForUpdates')
-
+    scheduleJob(start, 'dbUpdate')
 
 def ensureRunning(jobname):
     found = False
@@ -198,6 +215,7 @@ def checkRunningJobs():
     else:
         scheduleJob('Stop', 'search_magazines')
 
+    ensureRunning('dbUpdate')
 
 def showJobs():
     result = ["Cache %i hit%s, %i miss" % (int(lazylibrarian.CACHE_HIT),
@@ -221,6 +239,8 @@ def showJobs():
             jobname = "RSS book search"
         elif "processDir" in job:
             jobname = "Process downloads"
+        elif "dbUpdate" in job:
+            jobname = "Update authors"
         else:
             jobname = job.split(' ')[0].split('.')[2]
 
