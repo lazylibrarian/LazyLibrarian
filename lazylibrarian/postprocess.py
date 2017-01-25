@@ -427,6 +427,9 @@ def processDir(reset=False):
                                 older = mostrecentissue > book['AuxInfo']  # YYYY-MM-DD
                         else:
                             older = False
+                        # dest_path is where we put the magazine after processing, but we don't have the full filename
+                        # so look for any "book" in that directory
+                        dest_file = book_file(dest_path, booktype='mag')
                         if older:  # check this in case processing issues arriving out of order
                             newValueDict = {"LastAcquired": today(), "IssueStatus": "Open"}
                         else:
@@ -434,9 +437,6 @@ def processDir(reset=False):
                                             "LatestCover": os.path.splitext(dest_file)[0] + '.jpg',
                                             "IssueStatus": "Open"}
                         myDB.upsert("magazines", newValueDict, controlValueDict)
-                        # dest_path is where we put the magazine after processing, but we don't have the full filename
-                        # so look for any "book" in that directory
-                        dest_file = book_file(dest_path, booktype='mag')
                         controlValueDict = {"Title": book['BookID'], "IssueDate": book['AuxInfo']}
                         newValueDict = {"IssueAcquired": today(),
                                         "IssueFile": dest_file,
