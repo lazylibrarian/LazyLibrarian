@@ -65,16 +65,10 @@ def serve_template(templatename, **kwargs):
 
 
 class WebInterface(object):
+
     @cherrypy.expose
     def index(self):
-        if lazylibrarian.UPDATE_MSG:
-            message = "Upgrading database, please wait"
-            return serve_template(templatename="dbupdate.html", title="Database Upgrade", message=message, timer=5)
-        else:
-            myDB = database.DBConnection()
-            authors = myDB.select(
-                'SELECT * from authors where Status != "Ignored" order by AuthorName COLLATE NOCASE')
-            return serve_template(templatename="index.html", title="Index", authors=authors)
+        raise cherrypy.HTTPRedirect("home")
 
 
     @cherrypy.expose
