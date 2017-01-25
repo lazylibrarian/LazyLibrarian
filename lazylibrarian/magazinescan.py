@@ -20,6 +20,7 @@ import re
 import subprocess
 import traceback
 from hashlib import sha1
+import shutil
 
 import lazylibrarian
 from lazylibrarian import database, logger
@@ -52,11 +53,20 @@ def create_cover(issuefile=None, refresh=False):
     else:
         logger.debug('Unable to create cover for %s, no extension?' % issuefile)
         return
+
     if os.path.isfile(coverfile):
         if refresh:
             os.remove(coverfile)
         else:
             return  # quit if cover already exists
+
+    if not extn.lower() == '.pdf':
+        try:
+            shutil.copyfile(os.path.join(lazylibrarian.PROG_DIR, 'data/images/nocover.png'), coverfile)
+            setperm(coverfile)
+        except Exception as why:
+            logger.debug("Failed to copy nocover file, %s" %  str(why))
+        return
 
     generator = ""
     GS = ""
