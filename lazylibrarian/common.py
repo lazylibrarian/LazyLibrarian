@@ -17,11 +17,12 @@ import os
 import platform
 import shutil
 import time
+import datetime
 import traceback
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.formatter import plural, next_run, is_valid_booktype
+from lazylibrarian.formatter import plural, next_run, is_valid_booktype, datecompare
 
 USER_AGENT = 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
 # Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36
@@ -147,10 +148,26 @@ def scheduleJob(action='Start', target=None):
                 lazylibrarian.versioncheck.checkForUpdates,
                 hours=int(lazylibrarian.VERSIONCHECK_INTERVAL))
             logger.debug("%s %s job" % (action, target))
-        elif 'dbUpdate' in target:
-            lazylibrarian.SCHED.add_interval_job(dbUpdate, args=[True],
-                hours=int(lazylibrarian.CACHE_AGE) * 24)
+        elif 'authorUpdate' in target:
+            lazylibrarian.SCHED.add_interval_job(authorUpdate, hours=1)
             logger.debug("%s %s job" % (action, target))
+
+
+def authorUpdate():
+    try:
+        myDB = database.DBConnection()
+        author = myDB.match('SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" \
+                                    or Status="Loading" order by DateAdded ASC')
+        if lazylibrarian.CACHE_AGE:
+            dtnow = datetime.datetime.now()
+            if datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded']) > lazylibrarian.CACHE_AGE:
+                logger.info('Starting update for %s' % author['AuthorName'])
+                authorid = author['AuthorID']
+                lazylibrarian.importer.addAuthorToDB(authorname='', refresh=True, authorid=authorid)
+                logger.info('Author %s update complete' % author['AuthorName'])
+    except Exception:
+        logger.error('Unhandled exception in AuthorUpdate: %s' % traceback.format_exc())
+
 
 def dbUpdate(refresh=False):
     try:
@@ -172,7 +189,7 @@ def restartJobs(start='Restart'):
     scheduleJob(start, 'search_rss_book')
     scheduleJob(start, 'search_magazines')
     scheduleJob(start, 'checkForUpdates')
-    scheduleJob(start, 'dbUpdate')
+    scheduleJob(start, 'authorUpdate')
 
 def ensureRunning(jobname):
     found = False
@@ -215,7 +232,7 @@ def checkRunningJobs():
     else:
         scheduleJob('Stop', 'search_magazines')
 
-    ensureRunning('dbUpdate')
+    ensureRunning('authorUpdate')
 
 def showJobs():
     result = ["Cache %i hit%s, %i miss" % (int(lazylibrarian.CACHE_HIT),
@@ -239,7 +256,7 @@ def showJobs():
             jobname = "RSS book search"
         elif "processDir" in job:
             jobname = "Process downloads"
-        elif "dbUpdate" in job:
+        elif "authorUpdate" in job:
             jobname = "Update authors"
         else:
             jobname = job.split(' ')[0].split('.')[2]
