@@ -142,7 +142,7 @@ def scheduleJob(action='Start', target=None):
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchrss.search_rss_book,
                     minutes=int(lazylibrarian.SEARCHRSS_INTERVAL))
-                logger.debug("%s %s job in %s minutes" % (action, target. lazylibrarian.SEARCHRSS_INTERVAL))
+                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.SEARCHRSS_INTERVAL))
         elif 'checkForUpdates' in target and int(lazylibrarian.VERSIONCHECK_INTERVAL):
             lazylibrarian.SCHED.add_interval_job(
                 lazylibrarian.versioncheck.checkForUpdates,
@@ -175,11 +175,12 @@ def authorUpdate():
         if lazylibrarian.CACHE_AGE:
             dtnow = datetime.datetime.now()
             diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
-            logger.debug('Author info for %s is %s days old' % (author['AuthorName'], diff))
             if diff > lazylibrarian.CACHE_AGE:
                 logger.info('Starting update for %s' % author['AuthorName'])
                 authorid = author['AuthorID']
                 lazylibrarian.importer.addAuthorToDB(authorname='', refresh=True, authorid=authorid)
+            else:
+                logger.debug('Oldest author info is only %s days old' % diff)
     except Exception:
         logger.error('Unhandled exception in AuthorUpdate: %s' % traceback.format_exc())
 
