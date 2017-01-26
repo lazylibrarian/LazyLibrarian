@@ -118,39 +118,53 @@ def scheduleJob(action='Start', target=None):
             lazylibrarian.SCHED.add_interval_job(
                 lazylibrarian.postprocess.cron_processDir,
                 minutes=int(lazylibrarian.SCAN_INTERVAL))
-            logger.debug("%s %s job" % (action, target))
+            logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.SCAN_INTERVAL))
         elif 'search_magazines' in target and int(lazylibrarian.SEARCH_INTERVAL):
             if lazylibrarian.USE_TOR() or lazylibrarian.USE_NZB() or lazylibrarian.USE_RSS():
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchmag.cron_search_magazines,
                     minutes=int(lazylibrarian.SEARCH_INTERVAL))
-                logger.debug("%s %s job" % (action, target))
+                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.SEARCH_INTERVAL))
         elif 'search_nzb_book' in target and int(lazylibrarian.SEARCH_INTERVAL):
             if lazylibrarian.USE_NZB():
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchnzb.cron_search_nzb_book,
                     minutes=int(lazylibrarian.SEARCH_INTERVAL))
-                logger.debug("%s %s job" % (action, target))
+                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.SEARCH_INTERVAL))
         elif 'search_tor_book' in target and int(lazylibrarian.SEARCH_INTERVAL):
             if lazylibrarian.USE_TOR():
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchtorrents.cron_search_tor_book,
                     minutes=int(lazylibrarian.SEARCH_INTERVAL))
-                logger.debug("%s %s job" % (action, target))
+                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.SEARCH_INTERVAL))
         elif 'search_rss_book' in target and int(lazylibrarian.SEARCHRSS_INTERVAL):
             if lazylibrarian.USE_RSS():
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchrss.search_rss_book,
                     minutes=int(lazylibrarian.SEARCHRSS_INTERVAL))
-                logger.debug("%s %s job" % (action, target))
+                logger.debug("%s %s job in %s minutes" % (action, target. lazylibrarian.SEARCHRSS_INTERVAL))
         elif 'checkForUpdates' in target and int(lazylibrarian.VERSIONCHECK_INTERVAL):
             lazylibrarian.SCHED.add_interval_job(
                 lazylibrarian.versioncheck.checkForUpdates,
                 hours=int(lazylibrarian.VERSIONCHECK_INTERVAL))
-            logger.debug("%s %s job" % (action, target))
-        elif 'authorUpdate' in target:
-            lazylibrarian.SCHED.add_interval_job(authorUpdate, hours=1)
-            logger.debug("%s %s job" % (action, target))
+            logger.debug("%s %s job in %s hours" % (action, target, lazylibrarian.VERSIONCHECK_INTERVAL))
+        elif 'authorUpdate' in target and int(lazylibrarian.CACHE_AGE):
+            # Try to get all authors scanned evenly inside the cache age
+            minutes = lazylibrarian.CACHE_AGE * 24 * 60
+            myDB = database.DBConnection()
+            authors = myDB.match(
+                "select count('AuthorID') as counter from Authors where Status='Active' or Status='Loading'")
+            authcount = authors['counter']
+            minutes = int(minutes / authcount)
+            if minutes < 10:  # set a minimum interval of 10 minutes so we don't upset goodreads/librarything api
+                minutes = 10
+            if minutes <= 600:  # for bigger intervals switch to hours
+                lazylibrarian.SCHED.add_interval_job(authorUpdate, minutes=minutes)
+                logger.debug("%s %s job in %s minutes" % (action, target, minutes))
+            else:
+                hours = int(minutes / 60)
+                lazylibrarian.SCHED.add_interval_job(authorUpdate, hours=hours)
+                logger.debug("%s %s job in %s hours" % (action, target, hours))
 
 
 def authorUpdate():
@@ -160,11 +174,12 @@ def authorUpdate():
                                     or Status="Loading" order by DateAdded ASC')
         if lazylibrarian.CACHE_AGE:
             dtnow = datetime.datetime.now()
-            if datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded']) > lazylibrarian.CACHE_AGE:
+            diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
+            logger.debug('Author info for %s is %s days old' % (author['AuthorName'], diff))
+            if diff > lazylibrarian.CACHE_AGE:
                 logger.info('Starting update for %s' % author['AuthorName'])
                 authorid = author['AuthorID']
                 lazylibrarian.importer.addAuthorToDB(authorname='', refresh=True, authorid=authorid)
-                logger.info('Author %s update complete' % author['AuthorName'])
     except Exception:
         logger.error('Unhandled exception in AuthorUpdate: %s' % traceback.format_exc())
 

@@ -14,7 +14,7 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import traceback
-
+import threading
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import getAuthorImage
@@ -29,6 +29,9 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
     Add an author to the database by name or id, and get a list of all their books
     If author already exists in database, refresh their details and booklist
     """
+    threadname = threading.currentThread().name
+    if "Thread-" in threadname:
+        threading.currentThread().name = "AddAuthorToDB"
     try:
         myDB = database.DBConnection()
         match = False
