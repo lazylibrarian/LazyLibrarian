@@ -21,6 +21,7 @@ import subprocess
 import traceback
 from hashlib import sha1
 import shutil
+import lib.zipfile as zipfile
 
 import lazylibrarian
 from lazylibrarian import database, logger
@@ -59,6 +60,25 @@ def create_cover(issuefile=None, refresh=False):
             os.remove(coverfile)
         else:
             return  # quit if cover already exists
+
+    if extn.lower() in ['.cbz', '.epub']:
+        try:
+            zipdata = zipfile.ZipFile(issuefile)
+            img = ''
+            for member in zipdata.namelist():
+                if '001.' in member or 'cover.' in member:
+                    if member.endswith('.jpg') or member.endswith('.jpeg'):
+                        img = zipdata.read(member)
+                        break
+            if img:
+                with open(coverfile, "wb") as f:
+                    f.write(img)
+                return
+            else:
+                logger.debug("Failed to find image in %s" % issuefile)
+
+        except Exception as why:
+            logger.debug("Failed to read zip file %s, %s" %  (issuefile, str(why)))
 
     if not extn.lower() == '.pdf':
         try:
