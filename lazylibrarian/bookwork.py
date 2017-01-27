@@ -354,7 +354,7 @@ def getAuthorImage(authorid=None):
     authors = myDB.select('select AuthorName from authors where AuthorID = "%s"' % authorid)
     if authors:
         authorname = safe_unicode(authors[0][0]).encode(lazylibrarian.SYS_ENCODING)
-        safeparams = urllib.quote_plus("%s" % authorname)
+        safeparams = urllib.quote_plus("author %s" % authorname)
         URL = "https://www.google.com/search?tbm=isch&tbs=ift:jpg&as_q=" + safeparams
         result, success = fetchURL(URL)
         if success:
