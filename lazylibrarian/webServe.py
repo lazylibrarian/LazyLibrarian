@@ -19,6 +19,7 @@ import os
 import random
 import threading
 import urllib
+import datetime
 from operator import itemgetter
 from shutil import copyfile, rmtree
 
@@ -992,6 +993,106 @@ class WebInterface(object):
                 authorName = bookdata["AuthorName"]
                 bookName = bookdata["BookName"]
                 logger.info(u'Missing book %s,%s' % (authorName, bookName))
+
+    @cherrypy.expose
+    def editAuthor(self, authorid=None):
+
+        myDB = database.DBConnection()
+
+        data = myDB.match('SELECT * from authors WHERE AuthorID="%s"' % authorid)
+        if data:
+            return serve_template(templatename="editauthor.html", title="Edit Author", config=data)
+        else:
+            logger.info(u'Missing author %s' % authorid)
+
+
+    @cherrypy.expose
+    def authorUpdate(self, authorid='', authorname='', authorborn='', authordeath='', authorimg='', manual='0'):
+        myDB = database.DBConnection()
+
+        if authorid:
+            authdata = myDB.match('SELECT * from authors WHERE AuthorID="%s"' % authorid)
+            if authdata:
+                edited = False
+                moved = False
+                if authorborn == 'None' or not len(authorborn):
+                    authorborn = None
+                if authordeath == 'None' or not len(authordeath):
+                    authordeath = None
+                if authorimg == 'None' or not len(authorimg):
+                    authorimg = None
+                manual = bool(check_int(manual, 0))
+
+                if not (authdata["AuthorName"] == authorname):
+                    edited = True
+                if not (authdata["AuthorBorn"] == authorborn):
+                    edited = True
+                if not (authdata["AuthorDeath"] == authordeath):
+                    edited = True
+                if not (authdata["AuthorImg"] == authorimg):
+                    edited = True
+                if not (bool(check_int(authdata["Manual"], 0)) == manual):
+                    edited = True
+
+                if not (authdata["AuthorName"] == authorname):
+                    moved = True
+
+                if edited:
+                    # Check dates in format yyyy/mm/dd, or unchanged if fails datecheck
+                    ab = authorborn
+                    authorborn = authdata["AuthorBorn"]  # assume fail, leave unchanged
+                    if ab and len(ab) == 10:
+                        if ab[4] == '/' and ab[7] == '/':
+                            try:
+                                check = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
+                                authorborn = ab
+                            except ValueError:
+                                authorborn = authdata["AuthorBorn"]
+                    ab = authordeath
+                    authordeath = authdata["AuthorDeath"]  # assume fail, leave unchanged
+                    if ab and len(ab) == 10:
+                        if ab[4] == '/' and ab[7] == '/':
+                            try:
+                                check = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
+                                authordeath = ab
+                            except ValueError:
+                                authordeath = authdata["AuthorDeath"]
+
+                    # Cache image
+                    if os.path.isfile(authorimg) and authorimg.endswith('.jpg'):
+                        destfile = os.path.join(lazylibrarian.CACHEDIR, authorid + '.jpg')
+                        try:
+                            copyfile(authorimg, destfile)
+                            setperm(destfile)
+                            authorimg = 'cache' + os.sep + authorid + '.jpg'
+                        except Exception as why:
+                            logger.debug("Failed to copy file %s, %s" %  (authorimg, str(why)))
+                            authorimg = authdata["AuthorImg"]
+                    else:
+                        authorimg = authdata["AuthorImg"]
+                    print authorimg
+                    controlValueDict = {'AuthorID': authorid}
+                    newValueDict = {
+                        'AuthorName': authorname,
+                        'AuthorBorn': authorborn,
+                        'AuthorDeath': authordeath,
+                        'AuthorImg': authorimg,
+                        'Manual': bool(manual)
+                    }
+                    myDB.upsert("authors", newValueDict, controlValueDict)
+                    logger.info('Author [%s] has been updated' % authorname)
+
+                    if moved:
+                        # move all books by this author to new name
+                        myDB.action('UPDATE books SET AuthorName="%s", Manual="%s" where AuthorID=%s' %
+                                    (authorname, bool(manual), authorid))
+                else:
+                    logger.debug('Author [%s] has not been changed' % authorname)
+
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % authorid)
+        else:
+            raise cherrypy.HTTPRedirect("authors")
+
 
     @cherrypy.expose
     def editBook(self, bookid=None):

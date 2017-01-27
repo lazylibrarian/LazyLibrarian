@@ -43,7 +43,7 @@ def dbupgrade(db_current_version):
             c.execute('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT, AuthorName TEXT UNIQUE, AuthorImg TEXT, \
                  AuthorLink TEXT, DateAdded TEXT, Status TEXT, LastBook TEXT, LastBookImg TEXT, LastLink Text, \
                  LastDate TEXT,  HaveBooks INTEGER, TotalBooks INTEGER, AuthorBorn TEXT, AuthorDeath TEXT, \
-                 UnignoredBooks INTEGER)')
+                 UnignoredBooks INTEGER, Manual TEXT)')
             c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
                 BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
                 BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, \
@@ -434,6 +434,14 @@ def dbupgrade(db_current_version):
                     if os.path.exists(coverfile):
                         c.execute('UPDATE magazines SET LatestCover="%s" WHERE Title="%s"' % (coverfile, mag['Title']))
                         conn.commit()
+
+        if db_version < 13:
+            try:
+                c.execute('SELECT Manual from authors')
+            except sqlite3.OperationalError:
+                lazylibrarian.UPDATE_MSG = 'Updating authorss table to hold Manual'
+                logger.info(lazylibrarian.UPDATE_MSG)
+                c.execute('ALTER TABLE authors ADD COLUMN Manual TEXT')
 
         # Now do any non-version-specific tidying
         try:
