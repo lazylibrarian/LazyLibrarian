@@ -1169,7 +1169,7 @@ class WebInterface(object):
                     issues = 0
                 magimg = mag['LatestCover']
                 if not magimg or not os.path.isfile(magimg):
-                    magimg = 'images/nocover.png'
+                    magimg = 'images/nocover.jpg'
                 else:
                     myhash = hashlib.md5(magimg).hexdigest()
                     hashname = os.path.join(lazylibrarian.CACHEDIR, myhash + ".jpg")
@@ -1206,7 +1206,7 @@ class WebInterface(object):
                 if extn:
                     magimg = magfile.replace(extn, '.jpg')
                     if not magimg or not os.path.isfile(magimg):
-                        magimg = 'images/nocover.png'
+                        magimg = 'images/nocover.jpg'
                     else:
                         myhash = hashlib.md5(magimg).hexdigest()
                         hashname = os.path.join(lazylibrarian.CACHEDIR, myhash + ".jpg")
@@ -1216,7 +1216,7 @@ class WebInterface(object):
                         covercount += 1
                 else:
                     logger.debug('No extension found on %s' % magfile)
-                    magimg = 'images/nocover.png'
+                    magimg = 'images/nocover.jpg'
 
                 this_issue = dict(issue)
                 this_issue['Cover'] = magimg
