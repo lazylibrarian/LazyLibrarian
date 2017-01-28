@@ -59,7 +59,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
                     "AuthorLink": author['authorlink'],
                     "DateAdded": today()
                 }
-                if not dbauthor or (dbauthor and not author['manual']):
+                if not dbauthor or (dbauthor and not dbauthor['manual']):
                     newValueDict["AuthorName"] = author['authorname']
                     newValueDict["AuthorImg"] = author['authorimg']
                     newValueDict["AuthorBorn"] = author['authorborn']
@@ -103,7 +103,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
                     "DateAdded": today(),
                     "Status": "Loading"
                 }
-                if not dbauthor or (dbauthor and not author['manual']):
+                if not dbauthor or (dbauthor and not dbauthor['manual']):
                     newValueDict["AuthorImg"] = author['authorimg']
                     newValueDict["AuthorBorn"] = author['authorborn']
                     newValueDict["AuthorDeath"] = author['authordeath']
