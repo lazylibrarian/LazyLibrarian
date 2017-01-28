@@ -11,7 +11,7 @@
 ################################################
 
 ### BEGIN INIT INFO
-# Provides:          LazyLibrarian application instance
+# Provides:          LazyLibrarian
 # Required-Start:    $all
 # Required-Stop:     $all
 # Default-Start:     2 3 4 5

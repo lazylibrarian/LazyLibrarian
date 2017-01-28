@@ -39,7 +39,6 @@ def checkLink():
         if lazylibrarian.SAB_CAT not in cats['categories']:
             return "SABnzbd: Unknown category [%s]\nValid categories:\n%s" % (
                     lazylibrarian.SAB_CAT, str(cats['categories']))
-            return msg
     return "SABnzbd connection successful"
 
 
