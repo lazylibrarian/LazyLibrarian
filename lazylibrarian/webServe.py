@@ -41,6 +41,7 @@ from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
+from lazylibrarian.cache import cache_cover
 from lib.deluge_client import DelugeRPCClient
 from mako import exceptions
 from mako.lookup import TemplateLookup
@@ -1008,8 +1009,9 @@ class WebInterface(object):
 
     @cherrypy.expose
     def authorUpdate(self, authorid='', authorname='', authorborn='', authordeath='', authorimg='', manual='0'):
-        myDB = database.DBConnection()
+        self.label_thread()
 
+        myDB = database.DBConnection()
         if authorid:
             authdata = myDB.match('SELECT * from authors WHERE AuthorID="%s"' % authorid)
             if authdata:
@@ -1041,35 +1043,62 @@ class WebInterface(object):
                     # Check dates in format yyyy/mm/dd, or unchanged if fails datecheck
                     ab = authorborn
                     authorborn = authdata["AuthorBorn"]  # assume fail, leave unchanged
-                    if ab and len(ab) == 10:
-                        if ab[4] == '/' and ab[7] == '/':
-                            try:
-                                check = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
-                                authorborn = ab
-                            except ValueError:
-                                authorborn = authdata["AuthorBorn"]
+                    if ab:
+                        rejected = True
+                        if len(ab) == 10:
+                            if ab[4] == '/' and ab[7] == '/':
+                                try:
+                                    check = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
+                                    authorborn = ab
+                                    rejected = False
+                                except ValueError:
+                                    authorborn = authdata["AuthorBorn"]
+                        if rejected:
+                            logger.debug("Author Born date [%s] rejected" % ab)
+
                     ab = authordeath
                     authordeath = authdata["AuthorDeath"]  # assume fail, leave unchanged
-                    if ab and len(ab) == 10:
-                        if ab[4] == '/' and ab[7] == '/':
-                            try:
-                                check = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
-                                authordeath = ab
-                            except ValueError:
-                                authordeath = authdata["AuthorDeath"]
+                    if ab:
+                        rejected = True
+                        if len(ab) == 10:
+                            if ab[4] == '/' and ab[7] == '/':
+                                try:
+                                    check = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
+                                    authordeath = ab
+                                    rejected = False
+                                except ValueError:
+                                    authordeath = authdata["AuthorDeath"]
+                        if rejected:
+                            logger.debug("Author Died date [%s] rejected" % ab)
 
-                    # Cache image
-                    if os.path.isfile(authorimg) and authorimg.endswith('.jpg'):
-                        destfile = os.path.join(lazylibrarian.CACHEDIR, authorid + '.jpg')
-                        try:
-                            copyfile(authorimg, destfile)
-                            setperm(destfile)
-                            authorimg = 'cache' + os.sep + authorid + '.jpg'
-                        except Exception as why:
-                            logger.debug("Failed to copy file %s, %s" %  (authorimg, str(why)))
-                            authorimg = authdata["AuthorImg"]
-                    else:
+                    if not authorimg:
                         authorimg = authdata["AuthorImg"]
+                    else:
+                        rejected = True
+                        # Cache file image
+                        if os.path.isfile(authorimg):
+                            extn = os.path.splitext(authorimg)[1].lower()
+                            if extn and extn in ['.jpg','.jpeg','.png']:
+                                destfile = os.path.join(lazylibrarian.CACHEDIR, authorid + '.jpg')
+                                try:
+                                    copyfile(authorimg, destfile)
+                                    setperm(destfile)
+                                    authorimg = 'cache' + os.sep + authorid + '.jpg'
+                                    rejected = False
+                                except Exception as why:
+                                    logger.debug("Failed to copy file %s, %s" %  (authorimg, str(why)))
+
+                        if authorimg.startswith('http'):
+                            # cache image from url
+                            extn = os.path.splitext(authorimg)[1].lower()
+                            if extn and extn in ['.jpg','.jpeg','.png']:
+                                cachedimg = cache_cover(authorid, authorimg)
+                                if cachedimg:
+                                    rejected = False
+
+                        if rejected:
+                            logger.debug("Author Image [%s] rejected" % authorimg)
+                            authorimg = authdata["AuthorImg"]
 
                     controlValueDict = {'AuthorID': authorid}
                     newValueDict = {
