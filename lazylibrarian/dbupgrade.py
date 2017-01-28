@@ -343,6 +343,7 @@ def dbupgrade(db_current_version):
                             shutil.move(os.path.join(src, img), os.path.join(dst, img))
                         except Exception as e:
                             logger.warn("dbupgrade: %s" % str(e))
+                logger.info("Author Image cache updated")
 
             images = myDB.select('SELECT BookID, BookImg FROM books WHERE BookImg LIKE "images/cache/%"')
             if images:
@@ -362,8 +363,7 @@ def dbupgrade(db_current_version):
                             shutil.move(srcfile, os.path.join(dst, img))
                         except Exception as e:
                             logger.warn("dbupgrade: %s" % str(e))
-
-            logger.info("Image cache updated")
+                logger.info("Book Image cache updated")
 
         if db_version < 9:
             try:
@@ -404,16 +404,17 @@ def dbupgrade(db_current_version):
                 lazylibrarian.UPDATE_MSG = 'Updating author table to hold last book image'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE authors ADD COLUMN LastBookImg TEXT')
-            books = myDB.select('SELECT AuthorID, AuthorName, LastBook from authors')
+                books = myDB.select('SELECT AuthorID, AuthorName, LastBook from authors')
 
-            for book in books:
-                lazylibrarian.UPDATE_MSG = 'Updating last book image for %s' % book['AuthorName']
-                if book['LastBook']:
-                    match = myDB.select('SELECT BookImg from books WHERE AuthorID="%s" AND BookName="%s"' %
-                                        (book['AuthorID'], book['LastBook']))
-                    if match:
-                        c.execute('UPDATE authors SET LastBookImg="%s" WHERE AuthorID=%s' % (match[0]['BookImg'], book['AuthorID']))
-                        conn.commit()
+                if books:
+                    for book in books:
+                        lazylibrarian.UPDATE_MSG = 'Updating last book image for %s' % book['AuthorName']
+                        if book['LastBook']:
+                            match = myDB.select('SELECT BookImg from books WHERE AuthorID="%s" AND BookName="%s"' %
+                                                (book['AuthorID'], book['LastBook']))
+                            if match:
+                                c.execute('UPDATE authors SET LastBookImg="%s" WHERE AuthorID=%s' % (match[0]['BookImg'], book['AuthorID']))
+                                conn.commit()
 
         if db_version < 12:
             # keep last magazine issue image
@@ -423,17 +424,18 @@ def dbupgrade(db_current_version):
                 lazylibrarian.UPDATE_MSG = 'Updating magazine table to hold last issue image'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE magazines ADD COLUMN LatestCover TEXT')
-            mags = myDB.select('SELECT Title, LastAcquired from magazines')
+                mags = myDB.select('SELECT Title, LastAcquired from magazines')
 
-            for mag in mags:
-                lazylibrarian.UPDATE_MSG = 'Updating last issue image for %s' % mag['Title']
-                match = myDB.match('SELECT IssueFile from issues WHERE IssueAcquired="%s" AND Title="%s"' %
-                                        (mag['LastAcquired'], mag['Title']))
-                if match:
-                    coverfile = os.path.splitext(match['IssueFile'])[0] + '.jpg'
-                    if os.path.exists(coverfile):
-                        c.execute('UPDATE magazines SET LatestCover="%s" WHERE Title="%s"' % (coverfile, mag['Title']))
-                        conn.commit()
+                if mags:
+                    for mag in mags:
+                        lazylibrarian.UPDATE_MSG = 'Updating last issue image for %s' % mag['Title']
+                        match = myDB.match('SELECT IssueFile from issues WHERE IssueAcquired="%s" AND Title="%s"' %
+                                                (mag['LastAcquired'], mag['Title']))
+                        if match:
+                            coverfile = os.path.splitext(match['IssueFile'])[0] + '.jpg'
+                            if os.path.exists(coverfile):
+                                c.execute('UPDATE magazines SET LatestCover="%s" WHERE Title="%s"' % (coverfile, mag['Title']))
+                                conn.commit()
 
         if db_version < 13:
             try:
