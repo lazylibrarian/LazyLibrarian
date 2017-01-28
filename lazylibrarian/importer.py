@@ -60,12 +60,11 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
                     "DateAdded": today()
                 }
                 if not dbauthor or (dbauthor and not author['manual']):
-                    controlValueDict += {
-                        "AuthorName": author['authorname'],
-                        "AuthorImg": author['authorimg'],
-                        "AuthorBorn": author['authorborn'],
-                        "AuthorDeath": author['authordeath']
-                    }
+                    newValueDict["AuthorName"] = author['authorname']
+                    newValueDict["AuthorImg"] = author['authorimg']
+                    newValueDict["AuthorBorn"] = author['authorborn']
+                    newValueDict["AuthorDeath"] = author['authordeath']
+
                 myDB.upsert("authors", newValueDict, controlValueDict)
                 GR = GoodReads(authorname)
                 match = True
@@ -105,11 +104,10 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
                     "Status": "Loading"
                 }
                 if not dbauthor or (dbauthor and not author['manual']):
-                    controlValueDict += {
-                        "AuthorImg": author['authorimg'],
-                        "AuthorBorn": author['authorborn'],
-                        "AuthorDeath": author['authordeath']
-                    }
+                    newValueDict["AuthorImg"] = author['authorimg']
+                    newValueDict["AuthorBorn"] = author['authorborn']
+                    newValueDict["AuthorDeath"] = author['authordeath']
+
                 myDB.upsert("authors", newValueDict, controlValueDict)
                 match = True
             else:

@@ -155,7 +155,10 @@ def scheduleJob(action='Start', target=None):
             authors = myDB.match(
                 "select count('AuthorID') as counter from Authors where Status='Active' or Status='Loading'")
             authcount = authors['counter']
-            minutes = int(minutes / authcount)
+            if not authcount:
+                minutes = 60
+            else:
+                minutes = int(minutes / authcount)
             if minutes < 10:  # set a minimum interval of 10 minutes so we don't upset goodreads/librarything api
                 minutes = 10
             if minutes <= 600:  # for bigger intervals switch to hours
