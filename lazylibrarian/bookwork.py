@@ -27,7 +27,7 @@ from lazylibrarian.formatter import safe_unicode, plural
 def getAuthorImages():
     """ Try to get an author image for all authors without one"""
     myDB = database.DBConnection()
-    authors = myDB.select('select AuthorID, AuthorName from authors where AuthorImg like "%nophoto%"')
+    authors = myDB.select('select AuthorID, AuthorName from authors where AuthorImg like "%nophoto%" and Manual is not "1"')
     if authors:
         logger.info('Checking images for %s author%s' % (len(authors), plural(len(authors))))
         counter = 0
@@ -49,7 +49,7 @@ def getBookCovers():
     """ Try to get a cover image for all books """
 
     myDB = database.DBConnection()
-    books = myDB.select('select BookID,BookImg from books where BookImg like "%nocover%"')
+    books = myDB.select('select BookID,BookImg from books where BookImg like "%nocover%" and Manual is not "1"')
     if books:
         logger.info('Checking covers for %s book%s' % (len(books), plural(len(books))))
         counter = 0

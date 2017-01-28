@@ -36,33 +36,36 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
         myDB = database.DBConnection()
         match = False
         if authorid:
-            GR = GoodReads('unknown author')
-
-            query = "SELECT * from authors WHERE AuthorID='%s'" % authorid
-            dbauthor = myDB.match(query)
             controlValueDict = {"AuthorID": authorid}
             newValueDict = {"Status": "Loading"}
 
+            dbauthor = myDB.match("SELECT * from authors WHERE AuthorID='%s'" % authorid)
             if not dbauthor:
+                authorname = 'unknown author'
                 logger.debug("Now adding new author id: %s to database" % authorid)
             else:
-                logger.debug("Now updating author id: %s" % authorid)
+                authorname = dbauthor['authorname']
+                logger.debug("Now updating author %s " % authorname)
+
             myDB.upsert("authors", newValueDict, controlValueDict)
 
-            author = GR.get_author_info(authorid=authorid, authorname='unknown author')
+            GR = GoodReads(authorname)
+            author = GR.get_author_info(authorid=authorid, authorname=authorname)
             if author:
                 authorname = author['authorname']
-                authorlink = author['authorlink']
                 authorimg = author['authorimg']
                 controlValueDict = {"AuthorID": authorid}
                 newValueDict = {
-                    "AuthorName": authorname,
-                    "AuthorLink": authorlink,
-                    "AuthorImg": authorimg,
-                    "AuthorBorn": author['authorborn'],
-                    "AuthorDeath": author['authordeath'],
-                    "DateAdded": today(),
+                    "AuthorLink": author['authorlink'],
+                    "DateAdded": today()
                 }
+                if not dbauthor or (dbauthor and not author['manual']):
+                    controlValueDict += {
+                        "AuthorName": author['authorname'],
+                        "AuthorImg": author['authorimg'],
+                        "AuthorBorn": author['authorborn'],
+                        "AuthorDeath": author['authordeath']
+                    }
                 myDB.upsert("authors", newValueDict, controlValueDict)
                 GR = GoodReads(authorname)
                 match = True
@@ -93,18 +96,20 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
             author = GR.find_author_id(refresh=refresh)
             if author:
                 authorid = author['authorid']
-                authorlink = author['authorlink']
                 authorimg = author['authorimg']
                 controlValueDict = {"AuthorName": authorname}
                 newValueDict = {
-                    "AuthorID": authorid,
-                    "AuthorLink": authorlink,
-                    "AuthorImg": authorimg,
-                    "AuthorBorn": author['authorborn'],
-                    "AuthorDeath": author['authordeath'],
+                    "AuthorID": author['authorid'],
+                    "AuthorLink": author['authorlink'],
                     "DateAdded": today(),
                     "Status": "Loading"
                 }
+                if not dbauthor or (dbauthor and not author['manual']):
+                    controlValueDict += {
+                        "AuthorImg": author['authorimg'],
+                        "AuthorBorn": author['authorborn'],
+                        "AuthorDeath": author['authordeath']
+                    }
                 myDB.upsert("authors", newValueDict, controlValueDict)
                 match = True
             else:
@@ -116,10 +121,15 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
             logger.error("AddAuthorToDB: No matching result for authorname or authorid")
             return
 
+        # if author is set to manual, should we allow replacing 'nophoto' ?
         new_img = False
-        if authorimg and 'nophoto' in authorimg:
-            authorimg = getAuthorImage(authorid)
-            new_img = True
+        dbauthor = myDB.match("SELECT Manual from authors WHERE AuthorID='%s'" % authorid)
+        if not dbauthor['Manual']:
+            if authorimg and 'nophoto' in authorimg:
+                authorimg = getAuthorImage(authorid)
+                new_img = True
+
+        # allow caching
         if authorimg and authorimg.startswith('http'):
             newimg = cache_cover(authorid, authorimg)
             if newimg:

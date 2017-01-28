@@ -1070,7 +1070,7 @@ class WebInterface(object):
                             authorimg = authdata["AuthorImg"]
                     else:
                         authorimg = authdata["AuthorImg"]
-                    print authorimg
+
                     controlValueDict = {'AuthorID': authorid}
                     newValueDict = {
                         'AuthorName': authorname,
@@ -1083,9 +1083,9 @@ class WebInterface(object):
                     logger.info('Author [%s] has been updated' % authorname)
 
                     if moved:
-                        # move all books by this author to new name
-                        myDB.action('UPDATE books SET AuthorName="%s", Manual="%s" where AuthorID=%s' %
-                                    (authorname, bool(manual), authorid))
+                        # move all books by this author to new name unless book is set to manual
+                        myDB.action('UPDATE books SET AuthorName="%s" where AuthorID=%s and Manual is not "1"' %
+                                    (authorname, authorid))
                 else:
                     logger.debug('Author [%s] has not been changed' % authorname)
 
