@@ -17,6 +17,7 @@ import Queue
 import os
 import json
 import threading
+import shutil
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -35,7 +36,6 @@ from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchnzb import search_nzb_book
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.searchtorrents import search_tor_book
-from shutil import copyfile
 from lazylibrarian.cache import cache_cover
 
 
@@ -162,22 +162,7 @@ class Api(object):
             threading.currentThread().name = "API"
 
         if self.data == 'OK':
-            args = []
-            if 'name' in self.kwargs:
-                args.append({"name": self.kwargs['name']})
-            if 'id' in self.kwargs:
-                args.append({"id": self.kwargs['id']})
-            if 'group' in self.kwargs:
-                args.append({"group": self.kwargs['group']})
-            if 'value' in self.kwargs:
-                args.append({"value": self.kwargs['value']})
-            if 'img' in self.kwargs:
-                args.append({"img": self.kwargs['img']})
-            if 'wait' in self.kwargs:
-                args.append({"wait": "True"})
-            if not args:
-                args = ''
-            logger.info('Received API command: %s %s' % (self.cmd, args))
+            logger.info('Received API command: %s %s' % (self.cmd, self.kwargs))
             methodToCall = getattr(self, "_" + self.cmd)
             methodToCall(**self.kwargs)
             if 'callback' not in self.kwargs:
@@ -808,7 +793,7 @@ class Api(object):
             if extn and extn in ['.jpg','.jpeg','.png']:
                 destfile = os.path.join(lazylibrarian.CACHEDIR, itemid + '.jpg')
                 try:
-                    copyfile(img, destfile)
+                    shutil.copy(img, destfile)
                     setperm(destfile)
                     msg = ''
                 except Exception as why:
