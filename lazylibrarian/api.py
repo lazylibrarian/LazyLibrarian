@@ -48,6 +48,9 @@ cmd_dict = {'help': 'list available commands. ' +
             'setAuthorImage': '&id= &img= set a new image for this author',
             'setAuthorLock': '&id= lock author name/image/dates',
             'setAuthorUnlock': '&id= unlock author name/image/dates',
+            'setBookLock': '&id= lock book details',
+            'setBookUnlock': '&id= unlock book details',
+            'setBookImage': '&id= &img= set a new image for this book',
             'getAuthorImages': '[&wait] get images for all authors without one',
             'getWanted': 'list wanted books',
             'getSnatched': 'list snatched books',
@@ -270,7 +273,8 @@ class Api(object):
 
         self.data = {'magazine': magazine, 'issues': issues}
 
-    def _createMagCovers(self, **kwargs):
+    @staticmethod
+    def _createMagCovers(**kwargs):
         if 'refresh' in kwargs:
             refresh=True
         else:
@@ -744,18 +748,22 @@ class Api(object):
             self.id = kwargs['id']
         self.data = getAuthorImage(self.id)
 
+
+    def _lock(self, table, itemid, state):
+        myDB = database.DBConnection()
+        dbentry = myDB.match('SELECT %sID from %ss WHERE %sID=%s' % (table, table, table, itemid))
+        if dbentry:
+            myDB.action('UPDATE %ss SET Manual="%s" WHERE %sID=%s' % (table, state, table, itemid))
+        else:
+            self.data = "%sID %s not found" % (table, itemid)
+
+
     def _setAuthorLock(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
             return
         else:
-            self.id = kwargs['id']
-            myDB = database.DBConnection()
-            dbauthor = myDB.match('SELECT AuthorID from authors WHERE AuthorID=%s' % self.id)
-            if dbauthor:
-                myDB.action('UPDATE authors SET Manual="1" WHERE AuthorID=%s' % self.id)
-            else:
-                self.data = "AuthorID %s not found" % self.id
+            self._lock("author", kwargs['id'], "1")
 
 
     def _setAuthorUnlock(self, **kwargs):
@@ -763,13 +771,7 @@ class Api(object):
             self.data = 'Missing parameter: id'
             return
         else:
-            self.id = kwargs['id']
-            myDB = database.DBConnection()
-            dbauthor = myDB.match('SELECT AuthorID from authors WHERE AuthorID=%s' % self.id)
-            if dbauthor:
-                myDB.action('UPDATE authors SET Manual="0" WHERE AuthorID=%s' % self.id)
-            else:
-                self.data = "AuthorID %s not found" % self.id
+            self._lock("author", kwargs['id'], "0")
 
 
     def _setAuthorImage(self, **kwargs):
@@ -782,14 +784,29 @@ class Api(object):
             self.data = 'Missing parameter: img'
             return
         else:
-            img = kwargs['img']
+            self._setimage("author", kwargs['id'], kwargs['img'])
 
-        msg = "Author Image [%s] rejected" % img
+
+    def _setBookImage(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+        if 'img' not in kwargs:
+            self.data = 'Missing parameter: img'
+            return
+        else:
+            self._setimage("book", kwargs['id'], kwargs['img'])
+
+
+    def _setimage(self, table, itemid, img):
+        msg = "%s Image [%s] rejected" % (table, img)
         # Cache file image
         if os.path.isfile(img):
             extn = os.path.splitext(img)[1].lower()
             if extn and extn in ['.jpg','.jpeg','.png']:
-                destfile = os.path.join(lazylibrarian.CACHEDIR, self.id + '.jpg')
+                destfile = os.path.join(lazylibrarian.CACHEDIR, itemid + '.jpg')
                 try:
                     copyfile(img, destfile)
                     setperm(destfile)
@@ -803,7 +820,7 @@ class Api(object):
             # cache image from url
             extn = os.path.splitext(img)[1].lower()
             if extn and extn in ['.jpg','.jpeg','.png']:
-                cachedimg = cache_cover(self.id, img)
+                cachedimg = cache_cover(itemid, img)
                 if cachedimg:
                     msg = ''
                 else:
@@ -818,12 +835,28 @@ class Api(object):
             return
 
         myDB = database.DBConnection()
-        dbauthor = myDB.match('SELECT AuthorID from authors WHERE AuthorID=%s' % self.id)
-        if dbauthor:
-            myDB.action('UPDATE authors SET AuthorImg="%s" WHERE AuthorID=%s' %
-                        ('cache' + os.sep + self.id + '.jpg', self.id))
+        dbentry = myDB.match('SELECT %sID from %ss WHERE %sID=%s' % (table, table, table, itemid))
+        if dbentry:
+            myDB.action('UPDATE %ss SET %sImg="%s" WHERE %sID=%s' %
+                        (table, table, 'cache' + os.sep + self.id + '.jpg', table, itemid))
         else:
-            self.data = "AuthorID %s not found" % self.id
+            self.data = "%sID %s not found" % (table, itemid)
+
+
+    def _setBookLock(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self._lock("book", kwargs['id'], "1")
+
+
+    def _setBookUnlock(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self._lock("book", kwargs['id'], "0")
 
 
     @staticmethod
