@@ -53,7 +53,10 @@ class DBConnection:
                     if "unable to open database file" in e.message or "database is locked" in e.message:
                         logger.warn('Database Error: %s' % e)
                         attempt += 1
-                        time.sleep(1)
+                        if attempt == 5:
+                            logger.debug("Failed query: %s" % query)
+                        else:
+                            time.sleep(1)
                     else:
                         logger.error('Database error: %s' % e)
                         raise
