@@ -1037,7 +1037,12 @@ class WebInterface(object):
                     edited = True
 
                 if not (authdata["AuthorName"] == authorname):
-                    moved = True
+                    match = myDB.match('SELECT AuthorName from authors where AuthorName="%s"' % authorname)
+                    if match:
+                        logger.debug("Unable to rename, new author name %s already exists" % authorname)
+                        authorname = authdata["AuthorName"]
+                    else:
+                        moved = True
 
                 if edited:
                     # Check dates in format yyyy/mm/dd, or unchanged if fails datecheck

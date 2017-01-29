@@ -796,8 +796,8 @@ class Api(object):
         myDB = database.DBConnection()
         dbauthor = myDB.match('SELECT AuthorID from authors WHERE AuthorID=%s' % self.id)
         if dbauthor:
-            myDB.action('UPDATE authors SET AuthorImg="%s" WHERE AuthorID=%s' %
-                        ('cache' + os.sep + self.id + '.jpg', self.id))
+            myDB.action('UPDATE authors SET AuthorImg="%s", Manual=%s WHERE AuthorID=%s' %
+                        ('cache' + os.sep + self.id + '.jpg', manual, self.id))
         else:
             self.data = "AuthorID %s not found" % self.id
 
