@@ -35,6 +35,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
     try:
         myDB = database.DBConnection()
         match = False
+        authorimg = ''
         if authorid:
             controlValueDict = {"AuthorID": authorid}
             newValueDict = {"Status": "Loading"}
@@ -149,6 +150,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
             book_api = GoogleBooks()
             book_api.get_author_books(authorid, authorname, bookstatus, refresh=refresh)
         elif lazylibrarian.BOOK_API == "GoodReads":
+            GR = GoodReads(authorname)
             GR.get_author_books(authorid, authorname, bookstatus, refresh=refresh)
 
         # update totals works for existing authors only.

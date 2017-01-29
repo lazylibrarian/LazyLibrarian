@@ -117,7 +117,7 @@ def getCurrentVersion():
         logger.debug('(getCurrentVersion) Windows install - no update available')
 
         # Don't have a way to update exe yet, but don't want to set VERSION to None
-        version = 'Windows Install'
+        VERSION = 'Windows Install'
 
     elif lazylibrarian.INSTALL_TYPE == 'git':
         output, err = runGit('rev-parse HEAD')
@@ -132,14 +132,14 @@ def getCurrentVersion():
                 logger.error('(getCurrentVersion) Output doesn\'t look like a hash, not using it')
                 cur_commit_hash = 'GIT invalid hash return'
 
-        version = cur_commit_hash
+        VERSION = cur_commit_hash
 
     elif lazylibrarian.INSTALL_TYPE in ['source', 'package']:
 
         version_file = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
 
         if not os.path.isfile(version_file):
-            version = 'No Version File'
+            VERSION = 'No Version File'
             logger.debug('(getCurrentVersion) [%s] missing.' % version_file)
         else:
             fp = open(version_file, 'r')
@@ -147,18 +147,18 @@ def getCurrentVersion():
             fp.close()
 
             if current_version:
-                version = current_version
+                VERSION = current_version
             else:
-                version = 'No Version set in file'
+                VERSION = 'No Version set in file'
 
     else:
         logger.error('(getCurrentVersion) Install Type not set - cannot get version value')
-        version = 'Install type not set'
+        VERSION = 'Install type not set'
 
-    updateVersionFile(version)
+    updateVersionFile(VERSION)
     logger.debug('(getCurrentVersion) - Install type [%s] Local Version is set to [%s] ' % (
-                 lazylibrarian.INSTALL_TYPE, version))
-    return version
+                 lazylibrarian.INSTALL_TYPE, VERSION))
+    return VERSION
 
 #
 # Returns current branch name of installed version from GIT

@@ -206,7 +206,7 @@ def encode_list(data):
 	check_type(data, [list, set, tuple])
 
 	# Special case of an empty list.
-	if data == []:
+	if not data:
 		return "le"
 
 	# Encode each item in the list.
