@@ -45,7 +45,9 @@ cmd_dict = {'help': 'list available commands. ' +
             'getIndex': 'list all authors',
             'getAuthor': '&id= get author by AuthorID and list their books',
             'getAuthorImage': '&id= get an image for this author',
-            'setAuthorImage': '&id= &img= [&lock] set a new image for this author',
+            'setAuthorImage': '&id= &img= set a new image for this author',
+            'setAuthorLock': '&id= lock author name/image/dates',
+            'setAuthorUnlock': '&id= unlock author name/image/dates',
             'getAuthorImages': '[&wait] get images for all authors without one',
             'getWanted': 'list wanted books',
             'getSnatched': 'list snatched books',
@@ -168,8 +170,6 @@ class Api(object):
                 args.append({"value": self.kwargs['value']})
             if 'img' in self.kwargs:
                 args.append({"img": self.kwargs['img']})
-            if 'lock' in self.kwargs:
-                args.append({"lock": self.kwargs['lock']})
             if 'wait' in self.kwargs:
                 args.append({"wait": "True"})
             if not args:
@@ -744,6 +744,34 @@ class Api(object):
             self.id = kwargs['id']
         self.data = getAuthorImage(self.id)
 
+    def _setAuthorLock(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+            myDB = database.DBConnection()
+            dbauthor = myDB.match('SELECT AuthorID from authors WHERE AuthorID=%s' % self.id)
+            if dbauthor:
+                myDB.action('UPDATE authors SET Manual="1" WHERE AuthorID=%s' % self.id)
+            else:
+                self.data = "AuthorID %s not found" % self.id
+
+
+    def _setAuthorUnlock(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+            myDB = database.DBConnection()
+            dbauthor = myDB.match('SELECT AuthorID from authors WHERE AuthorID=%s' % self.id)
+            if dbauthor:
+                myDB.action('UPDATE authors SET Manual="0" WHERE AuthorID=%s' % self.id)
+            else:
+                self.data = "AuthorID %s not found" % self.id
+
+
     def _setAuthorImage(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
@@ -755,10 +783,6 @@ class Api(object):
             return
         else:
             img = kwargs['img']
-        if 'lock' in kwargs:
-            manual = '1'
-        else:
-            manual = '0'
 
         msg = "Author Image [%s] rejected" % img
         # Cache file image
@@ -796,8 +820,8 @@ class Api(object):
         myDB = database.DBConnection()
         dbauthor = myDB.match('SELECT AuthorID from authors WHERE AuthorID=%s' % self.id)
         if dbauthor:
-            myDB.action('UPDATE authors SET AuthorImg="%s", Manual=%s WHERE AuthorID=%s' %
-                        ('cache' + os.sep + self.id + '.jpg', manual, self.id))
+            myDB.action('UPDATE authors SET AuthorImg="%s" WHERE AuthorID=%s' %
+                        ('cache' + os.sep + self.id + '.jpg', self.id))
         else:
             self.data = "AuthorID %s not found" % self.id
 
