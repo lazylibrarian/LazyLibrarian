@@ -313,7 +313,7 @@ def dbupgrade(db_current_version):
             try:
                 c.execute('SELECT Manual from books')
             except sqlite3.OperationalError:
-                lazylibrarian.UPDATE_MSG = 'Updating books table to hold Manual'
+                lazylibrarian.UPDATE_MSG = 'Updating books table to hold Manual setting'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 c.execute('ALTER TABLE books ADD COLUMN Manual TEXT')
 
@@ -445,7 +445,7 @@ def dbupgrade(db_current_version):
             try:
                 c.execute('SELECT Manual from authors')
             except sqlite3.OperationalError:
-                lazylibrarian.UPDATE_MSG = 'Updating authorss table to hold Manual'
+                lazylibrarian.UPDATE_MSG = 'Updating authors table to hold Manual setting'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 c.execute('ALTER TABLE authors ADD COLUMN Manual TEXT')
 
