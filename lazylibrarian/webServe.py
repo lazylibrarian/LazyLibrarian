@@ -19,6 +19,7 @@ import os
 import random
 import threading
 import urllib
+import datetime
 from operator import itemgetter
 from shutil import copyfile, rmtree
 
@@ -28,7 +29,7 @@ import lib.simplejson as simplejson
 from cherrypy.lib.static import serve_file
 from lazylibrarian import logger, database, notifiers, versioncheck, magazinescan, \
     qbittorrent, utorrent, rtorrent, transmission, sabnzbd, nzbget, deluge, synology
-from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm
+from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, dbUpdate
 from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode
 from lazylibrarian.gb import GoogleBooks
@@ -40,6 +41,7 @@ from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
+from lazylibrarian.cache import cache_cover
 from lib.deluge_client import DelugeRPCClient
 from mako import exceptions
 from mako.lookup import TemplateLookup
@@ -994,6 +996,137 @@ class WebInterface(object):
                 logger.info(u'Missing book %s,%s' % (authorName, bookName))
 
     @cherrypy.expose
+    def editAuthor(self, authorid=None):
+
+        myDB = database.DBConnection()
+
+        data = myDB.match('SELECT * from authors WHERE AuthorID="%s"' % authorid)
+        if data:
+            return serve_template(templatename="editauthor.html", title="Edit Author", config=data)
+        else:
+            logger.info(u'Missing author %s' % authorid)
+
+
+    @cherrypy.expose
+    def authorUpdate(self, authorid='', authorname='', authorborn='', authordeath='', authorimg='', manual='0'):
+        self.label_thread()
+
+        myDB = database.DBConnection()
+        if authorid:
+            authdata = myDB.match('SELECT * from authors WHERE AuthorID="%s"' % authorid)
+            if authdata:
+                edited = False
+                moved = False
+                if authorborn == 'None' or not len(authorborn):
+                    authorborn = None
+                if authordeath == 'None' or not len(authordeath):
+                    authordeath = None
+                if authorimg == 'None' or not len(authorimg):
+                    authorimg = None
+                manual = bool(check_int(manual, 0))
+
+                if not (authdata["AuthorName"] == authorname):
+                    edited = True
+                if not (authdata["AuthorBorn"] == authorborn):
+                    edited = True
+                if not (authdata["AuthorDeath"] == authordeath):
+                    edited = True
+                if not (authdata["AuthorImg"] == authorimg):
+                    edited = True
+                if not (bool(check_int(authdata["Manual"], 0)) == manual):
+                    edited = True
+
+                if not (authdata["AuthorName"] == authorname):
+                    match = myDB.match('SELECT AuthorName from authors where AuthorName="%s"' % authorname)
+                    if match:
+                        logger.debug("Unable to rename, new author name %s already exists" % authorname)
+                        authorname = authdata["AuthorName"]
+                    else:
+                        moved = True
+
+                if edited:
+                    # Check dates in format yyyy/mm/dd, or unchanged if fails datecheck
+                    ab = authorborn
+                    authorborn = authdata["AuthorBorn"]  # assume fail, leave unchanged
+                    if ab:
+                        rejected = True
+                        if len(ab) == 10:
+                            try:
+                                check = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
+                                authorborn = ab
+                                rejected = False
+                            except ValueError:
+                                authorborn = authdata["AuthorBorn"]
+                        if rejected:
+                            logger.debug("Author Born date [%s] rejected" % ab)
+
+                    ab = authordeath
+                    authordeath = authdata["AuthorDeath"]  # assume fail, leave unchanged
+                    if ab:
+                        rejected = True
+                        if len(ab) == 10:
+                            try:
+                                check = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
+                                authordeath = ab
+                                rejected = False
+                            except ValueError:
+                                authordeath = authdata["AuthorDeath"]
+                        if rejected:
+                            logger.debug("Author Died date [%s] rejected" % ab)
+
+                    if not authorimg:
+                        authorimg = authdata["AuthorImg"]
+                    else:
+                        rejected = True
+                        # Cache file image
+                        if os.path.isfile(authorimg):
+                            extn = os.path.splitext(authorimg)[1].lower()
+                            if extn and extn in ['.jpg','.jpeg','.png']:
+                                destfile = os.path.join(lazylibrarian.CACHEDIR, authorid + '.jpg')
+                                try:
+                                    copyfile(authorimg, destfile)
+                                    setperm(destfile)
+                                    authorimg = 'cache' + os.sep + authorid + '.jpg'
+                                    rejected = False
+                                except Exception as why:
+                                    logger.debug("Failed to copy file %s, %s" %  (authorimg, str(why)))
+
+                        if authorimg.startswith('http'):
+                            # cache image from url
+                            extn = os.path.splitext(authorimg)[1].lower()
+                            if extn and extn in ['.jpg','.jpeg','.png']:
+                                cachedimg = cache_cover(authorid, authorimg)
+                                if cachedimg:
+                                    rejected = False
+
+                        if rejected:
+                            logger.debug("Author Image [%s] rejected" % authorimg)
+                            authorimg = authdata["AuthorImg"]
+
+                    controlValueDict = {'AuthorID': authorid}
+                    newValueDict = {
+                        'AuthorName': authorname,
+                        'AuthorBorn': authorborn,
+                        'AuthorDeath': authordeath,
+                        'AuthorImg': authorimg,
+                        'Manual': bool(manual)
+                    }
+                    myDB.upsert("authors", newValueDict, controlValueDict)
+                    logger.info('Author [%s] has been updated' % authorname)
+
+                    if moved:
+                        # move all books by this author to new name unless book is set to manual
+                        myDB.action('UPDATE books SET AuthorName="%s" where AuthorID=%s and Manual is not "1"' %
+                                    (authorname, authorid))
+                else:
+                    logger.debug('Author [%s] has not been changed' % authorname)
+
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % authorid)
+        else:
+            raise cherrypy.HTTPRedirect("authors")
+
+
+    @cherrypy.expose
     def editBook(self, bookid=None):
 
         myDB = database.DBConnection()
@@ -1169,7 +1302,7 @@ class WebInterface(object):
                     issues = 0
                 magimg = mag['LatestCover']
                 if not magimg or not os.path.isfile(magimg):
-                    magimg = 'images/nocover.png'
+                    magimg = 'images/nocover.jpg'
                 else:
                     myhash = hashlib.md5(magimg).hexdigest()
                     hashname = os.path.join(lazylibrarian.CACHEDIR, myhash + ".jpg")
@@ -1206,7 +1339,7 @@ class WebInterface(object):
                 if extn:
                     magimg = magfile.replace(extn, '.jpg')
                     if not magimg or not os.path.isfile(magimg):
-                        magimg = 'images/nocover.png'
+                        magimg = 'images/nocover.jpg'
                     else:
                         myhash = hashlib.md5(magimg).hexdigest()
                         hashname = os.path.join(lazylibrarian.CACHEDIR, myhash + ".jpg")
@@ -1216,7 +1349,7 @@ class WebInterface(object):
                         covercount += 1
                 else:
                     logger.debug('No extension found on %s' % magfile)
-                    magimg = 'images/nocover.png'
+                    magimg = 'images/nocover.jpg'
 
                 this_issue = dict(issue)
                 this_issue['Cover'] = magimg
@@ -1572,8 +1705,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def forceUpdate(self):
-        from lazylibrarian import updater
-        threading.Thread(target=updater.dbUpdate, name='DBUPDATE', args=[False]).start()
+        threading.Thread(target=dbUpdate, name='DBUPDATE', args=[False]).start()
         raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose

@@ -1,0 +1,72 @@
+<%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
+
+<%def name="headerIncludes()">
+    <div id="subhead_container">
+        <div id="subhead_menu">
+        </div>
+    </div>
+</%def>
+<%def name="body()">
+    <form action="authorUpdate" method="post">
+        <div class="configtable">
+        <fieldset>
+            <legend>${config['authorName']}</legend>
+            <div class="form-group">
+                <input type="text" id="authorid" name="authorid" value="${config['AuthorID']}" class="hidden">
+            </div>
+            <div class="form-group">
+                <label for="authorname" class="control-label">Author Name:</label>
+                <input type="text" id="authorname" name="authorname" value="${config['AuthorName']}" class="form-control" placeholder="Author Name">
+            </div>
+            <div class="form-group">
+                <label for="authorborn" class="control-label">Born:</label>
+                <input type="text" id="authorborn" name="authorborn" value="${config['AuthorBorn']}" class="form-control" placeholder="Born (yyyy/mm/dd)">
+            </div>
+            <div class="form-group">
+                <label for="authordeath" class="control-label">Died:</label>
+                <input type="text" id="authordeath" name="authordeath" value="${config['AuthorDeath']}" class="form-control" placeholder="Died (yyyy/mm/dd)">
+            </div>
+            <div class="form-group">
+                <label for="authorimg" class="control-label">Current Image:</label>
+                <img src="${config['AuthorImg']}" class="box-shadow img-responsive" alt="${config['AuthorName']}" title="${config['AuthorName']}">
+                <input type="text" id="authorimg" name="authorimg" value="" class="form-control" placeholder="New Image file or URL">
+                <span class="help-block">Filenames must be full path to file<br>Filename and URL need to end with .jpg/.jpeg/.png</span>
+            </div>
+            <div class="checkbox">
+                <%
+                    if config['Manual'] == "1":
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                %>
+                <label for="manual" class="control-label">
+                <input type="checkbox" id="manual" name="manual" value="1" ${checked} />
+                Lock settings</label>
+            </div>
+
+        </fieldset>
+
+        <div class="table_wrapper_button">
+            <input type="submit" value="Save changes" id="add" class="btn btn-primary">
+        </div>
+
+    </div> <!-- form -->
+
+</%def>
+
+<%def name="javascriptIncludes()">
+    <script type="text/javascript">
+        function initThisPage()
+
+        {
+            "use strict";
+        }
+        $(document).ready(function() {
+            initThisPage();
+        });
+    </script>
+</%def>
+<html><head></head><body></body></html>

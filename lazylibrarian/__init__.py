@@ -1542,8 +1542,9 @@ def db_needs_upgrade():
     # 10 check for missing columns in pastissues table
     # 11 Keep most recent book image in author table
     # 12 Keep latest issue cover in magazine table
+    # 13 add Manual column to author table for user editing
 
-    db_current_version = 12
+    db_current_version = 13
     if db_version < db_current_version:
         return db_current_version
     return 0

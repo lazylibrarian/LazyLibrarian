@@ -128,7 +128,6 @@ def search_magazines(mags=None, reset=False):
 
             if not resultlist:
                 logger.debug("Adding magazine %s to queue." % book['searchterm'])
-
             else:
                 bad_name = 0
                 bad_date = 0
@@ -223,6 +222,7 @@ def search_magazines(mags=None, reset=False):
                                     logger.debug("Rejecting %s, contains %s" % (nzbtitle_formatted, word))
                                     break
 
+                        regex_pass = 0
                         if not rejected:
                             # Magazine names have many different styles of date
                             # DD MonthName YYYY OR MonthName YYYY or Issue nn, MonthName YYYY
@@ -231,7 +231,6 @@ def search_magazines(mags=None, reset=False):
                             # Issue/No/Nr/Vol nn, YYYY or Issue/No/Nr/Vol nn
                             # nn YYYY issue number without "Nr" before it
                             # issue and year as a single 6 digit string eg 222015
-                            regex_pass = 0
                             newdatish = "none"
                             # DD MonthName YYYY OR MonthName YYYY or Issue nn, MonthName YYYY
                             pos = 0
@@ -240,7 +239,7 @@ def search_magazines(mags=None, reset=False):
                                 if year and pos:
                                     month = month2num(nzbtitle_exploded[pos - 1])
                                     if month:
-                                        if (pos - 1):
+                                        if pos - 1:
                                             day = check_int(nzbtitle_exploded[pos - 2], 1)
                                             if day > 31:  # probably issue number nn
                                                 day = 1
@@ -439,27 +438,26 @@ def search_magazines(mags=None, reset=False):
                                 }
                                 myDB.upsert(insert_table, newValueDict, controlValueDict)
 
+                logger.info(
+                    'Found %i result%s for %s. %i new, %i old, %i fail date, %i fail name, %i rejected: %i to download' % (
+                    total_nzbs, plural(total_nzbs), bookid, new_date, old_date, bad_date, bad_name, rejects, len(maglist)))
 
-            logger.info(
-                'Found %i result%s for %s. %i new, %i old, %i fail date, %i fail name, %i rejected: %i to download' % (
-                total_nzbs, plural(total_nzbs), bookid, new_date, old_date, bad_date, bad_name, rejects, len(maglist)))
-
-            for magazine in maglist:
-                if magazine['nzbmode'] in ["torznab", "torrent", "magnet"]:
-                    snatch = TORDownloadMethod(
-                        magazine['bookid'],
-                        magazine['nzbtitle'],
-                        magazine['nzburl'])
-                else:
-                    snatch = NZBDownloadMethod(
-                        magazine['bookid'],
-                        magazine['nzbtitle'],
-                        magazine['nzburl'])
-                if snatch:
-                    logger.info('Downloading %s from %s' % (magazine['nzbtitle'], magazine["nzbprov"]))
-                    notify_snatch("%s from %s at %s" %
-                                  (unaccented(magazine['nzbtitle']), magazine["nzbprov"], now()))
-                    scheduleJob(action='Start', target='processDir')
+                for magazine in maglist:
+                    if magazine['nzbmode'] in ["torznab", "torrent", "magnet"]:
+                        snatch = TORDownloadMethod(
+                            magazine['bookid'],
+                            magazine['nzbtitle'],
+                            magazine['nzburl'])
+                    else:
+                        snatch = NZBDownloadMethod(
+                            magazine['bookid'],
+                            magazine['nzbtitle'],
+                            magazine['nzburl'])
+                    if snatch:
+                        logger.info('Downloading %s from %s' % (magazine['nzbtitle'], magazine["nzbprov"]))
+                        notify_snatch("%s from %s at %s" %
+                                      (unaccented(magazine['nzbtitle']), magazine["nzbprov"], now()))
+                        scheduleJob(action='Start', target='processDir')
 
         if reset:
             scheduleJob(action='Restart', target='search_magazines')

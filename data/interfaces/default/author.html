@@ -45,7 +45,9 @@
 
     <div id="authorhead_container">
         <ul id="authorhead_menu">
-            <li><a href="${author['AuthorLink']}" target="_new">${author['AuthorName']}</a></li></br>
+            <li><a href="${author['AuthorLink']}" target="_new">${author['AuthorName']}</a></li>
+            <li><p align="right"><a href="editAuthor?authorid=${author['AuthorID']}"&amp;target="_new">
+                <i class="smalltext">Edit</i></a></li></br>
             %if author['AuthorDeath']:
                 <li><b>Born:</b> ${author['AuthorBorn']}, <b>Died:</b>  ${author['AuthorDeath']}</li><br>
             %else:

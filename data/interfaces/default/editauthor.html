@@ -1,0 +1,75 @@
+<%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
+
+<%def name="headerIncludes()">
+    <div id="subhead_container">
+    </div>
+</%def>
+<%def name="body()">
+<BR><br>
+<h1>&nbsp&nbsp${config['authorName']}</h1>
+<br><br>
+    <form action="authorUpdate" method="post">
+    <div class="table_wrapper">
+        <table class="configtable">
+            <tr>
+            <td>
+            <div>
+                <input type="text" name="authorid" value="${config['AuthorID']}" class="hidden">
+            </div>
+
+            <div class="row">
+                <label>Author Name:</label>
+                <input type="text" name="authorname" value="${config['AuthorName']}" class="form-control" placeholder="Author Name" size="36">
+                <br><br>
+            </div>
+            <div class="row">
+                <label>Born:</label>
+                <input type="text" name="authorborn" value="${config['AuthorBorn']}" class="form-control" placeholder="Born (yyyy/mm/dd)" size="36">
+                <br><br>
+            </div>
+            <div class="row">
+                <label>Died:</label>
+                <input type="text" name="authordeath" value="${config['AuthorDeath']}" class="form-control" placeholder="Died (yyyy/mm/dd)" size="36">
+                <br><br>
+            </div>
+            <div class="row">
+                <label>Current Image:</label>
+                <img src="${config['AuthorImg']}" class="box-shadow img-responsive" alt="${config['AuthorName']}" title="${config['AuthorName']}">
+                <input type="text" name="authorimg" value="" class="form-control" placeholder="New Image File or URL" size="36">
+                <small>Filenames must be full path to file<br>Filename and URL need to end with .jpg/.jpeg/.png</small>
+                <br><br>
+            </div>
+            <%
+                if config['Manual'] == "1":
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+            %>
+            <BR>
+            <input type="checkbox" id="manual" name="manual" value=1 ${checked} />
+            <label>  Lock settings</label>
+            </td></tr></table>
+        </div>
+
+    <div class="table_wrapper_button">
+        <p><input type="submit" value="Save changes" id="add"></p>
+    </div>
+
+</form>
+</%def>
+
+<%def name="javascriptIncludes()">
+    <script>
+        function initThisPage()
+        {
+
+        }
+
+        $(document).ready(function() {
+            initThisPage();
+        });
+    </script>
+</%def>

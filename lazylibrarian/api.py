@@ -14,14 +14,16 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import Queue
+import os
 import json
 import threading
+import shutil
 
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, \
     getBookCover, getAuthorImage, getAuthorImages
-from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs
+from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, dbUpdate, setperm
 from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.formatter import today
 from lazylibrarian.gb import GoogleBooks
@@ -34,7 +36,8 @@ from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchnzb import search_nzb_book
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.searchtorrents import search_tor_book
-from lazylibrarian.updater import dbUpdate
+from lazylibrarian.cache import cache_cover
+
 
 cmd_dict = {'help': 'list available commands. ' +
                     'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +
@@ -42,6 +45,12 @@ cmd_dict = {'help': 'list available commands. ' +
             'getIndex': 'list all authors',
             'getAuthor': '&id= get author by AuthorID and list their books',
             'getAuthorImage': '&id= get an image for this author',
+            'setAuthorImage': '&id= &img= set a new image for this author',
+            'setAuthorLock': '&id= lock author name/image/dates',
+            'setAuthorUnlock': '&id= unlock author name/image/dates',
+            'setBookLock': '&id= lock book details',
+            'setBookUnlock': '&id= unlock book details',
+            'setBookImage': '&id= &img= set a new image for this book',
             'getAuthorImages': '[&wait] get images for all authors without one',
             'getWanted': 'list wanted books',
             'getSnatched': 'list snatched books',
@@ -153,20 +162,7 @@ class Api(object):
             threading.currentThread().name = "API"
 
         if self.data == 'OK':
-            args = []
-            if 'name' in self.kwargs:
-                args.append({"name": self.kwargs['name']})
-            if 'id' in self.kwargs:
-                args.append({"id": self.kwargs['id']})
-            if 'group' in self.kwargs:
-                args.append({"group": self.kwargs['group']})
-            if 'value' in self.kwargs:
-                args.append({"value": self.kwargs['value']})
-            if 'wait' in self.kwargs:
-                args.append({"wait": "True"})
-            if not args:
-                args = ''
-            logger.info('Received API command: %s %s' % (self.cmd, args))
+            logger.info('Received API command: %s %s' % (self.cmd, self.kwargs))
             methodToCall = getattr(self, "_" + self.cmd)
             methodToCall(**self.kwargs)
             if 'callback' not in self.kwargs:
@@ -262,7 +258,8 @@ class Api(object):
 
         self.data = {'magazine': magazine, 'issues': issues}
 
-    def _createMagCovers(self, **kwargs):
+    @staticmethod
+    def _createMagCovers(**kwargs):
         if 'refresh' in kwargs:
             refresh=True
         else:
@@ -730,11 +727,122 @@ class Api(object):
 
     def _getAuthorImage(self, **kwargs):
         if 'id' not in kwargs:
-            self.data = 'Missing parameter: name'
+            self.data = 'Missing parameter: id'
             return
         else:
             self.id = kwargs['id']
         self.data = getAuthorImage(self.id)
+
+
+    def _lock(self, table, itemid, state):
+        myDB = database.DBConnection()
+        dbentry = myDB.match('SELECT %sID from %ss WHERE %sID=%s' % (table, table, table, itemid))
+        if dbentry:
+            myDB.action('UPDATE %ss SET Manual="%s" WHERE %sID=%s' % (table, state, table, itemid))
+        else:
+            self.data = "%sID %s not found" % (table, itemid)
+
+
+    def _setAuthorLock(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self._lock("author", kwargs['id'], "1")
+
+
+    def _setAuthorUnlock(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self._lock("author", kwargs['id'], "0")
+
+
+    def _setAuthorImage(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+        if 'img' not in kwargs:
+            self.data = 'Missing parameter: img'
+            return
+        else:
+            self._setimage("author", kwargs['id'], kwargs['img'])
+
+
+    def _setBookImage(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+        if 'img' not in kwargs:
+            self.data = 'Missing parameter: img'
+            return
+        else:
+            self._setimage("book", kwargs['id'], kwargs['img'])
+
+
+    def _setimage(self, table, itemid, img):
+        msg = "%s Image [%s] rejected" % (table, img)
+        # Cache file image
+        if os.path.isfile(img):
+            extn = os.path.splitext(img)[1].lower()
+            if extn and extn in ['.jpg','.jpeg','.png']:
+                destfile = os.path.join(lazylibrarian.CACHEDIR, itemid + '.jpg')
+                try:
+                    shutil.copy(img, destfile)
+                    setperm(destfile)
+                    msg = ''
+                except Exception as why:
+                    msg += " Failed to copy file: %s" %  str(why)
+            else:
+                msg += " invalid extension"
+
+        if msg and img.startswith('http'):
+            # cache image from url
+            extn = os.path.splitext(img)[1].lower()
+            if extn and extn in ['.jpg','.jpeg','.png']:
+                cachedimg = cache_cover(itemid, img)
+                if cachedimg:
+                    msg = ''
+                else:
+                    msg += " Failed to cache file"
+            else:
+                msg += " invalid extension"
+        elif msg:
+            msg += " Not found"
+
+        if msg:
+            self.data = msg
+            return
+
+        myDB = database.DBConnection()
+        dbentry = myDB.match('SELECT %sID from %ss WHERE %sID=%s' % (table, table, table, itemid))
+        if dbentry:
+            myDB.action('UPDATE %ss SET %sImg="%s" WHERE %sID=%s' %
+                        (table, table, 'cache' + os.sep + self.id + '.jpg', table, itemid))
+        else:
+            self.data = "%sID %s not found" % (table, itemid)
+
+
+    def _setBookLock(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self._lock("book", kwargs['id'], "1")
+
+
+    def _setBookUnlock(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self._lock("book", kwargs['id'], "0")
+
 
     @staticmethod
     def _restartJobs():

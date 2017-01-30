@@ -14,7 +14,7 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import traceback
-
+import threading
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import getAuthorImage
@@ -29,37 +29,43 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
     Add an author to the database by name or id, and get a list of all their books
     If author already exists in database, refresh their details and booklist
     """
+    threadname = threading.currentThread().name
+    if "Thread-" in threadname:
+        threading.currentThread().name = "AddAuthorToDB"
     try:
         myDB = database.DBConnection()
         match = False
+        authorimg = ''
         if authorid:
-            GR = GoodReads('unknown author')
-
-            query = "SELECT * from authors WHERE AuthorID='%s'" % authorid
-            dbauthor = myDB.match(query)
             controlValueDict = {"AuthorID": authorid}
             newValueDict = {"Status": "Loading"}
 
+            dbauthor = myDB.match("SELECT * from authors WHERE AuthorID='%s'" % authorid)
             if not dbauthor:
+                authorname = 'unknown author'
                 logger.debug("Now adding new author id: %s to database" % authorid)
             else:
-                logger.debug("Now updating author id: %s" % authorid)
+                authorname = dbauthor['authorname']
+                logger.debug("Now updating author %s " % authorname)
+
             myDB.upsert("authors", newValueDict, controlValueDict)
 
-            author = GR.get_author_info(authorid=authorid, authorname='unknown author')
+            GR = GoodReads(authorname)
+            author = GR.get_author_info(authorid=authorid, authorname=authorname)
             if author:
                 authorname = author['authorname']
-                authorlink = author['authorlink']
                 authorimg = author['authorimg']
                 controlValueDict = {"AuthorID": authorid}
                 newValueDict = {
-                    "AuthorName": authorname,
-                    "AuthorLink": authorlink,
-                    "AuthorImg": authorimg,
-                    "AuthorBorn": author['authorborn'],
-                    "AuthorDeath": author['authordeath'],
-                    "DateAdded": today(),
+                    "AuthorLink": author['authorlink'],
+                    "DateAdded": today()
                 }
+                if not dbauthor or (dbauthor and not dbauthor['manual']):
+                    newValueDict["AuthorName"] = author['authorname']
+                    newValueDict["AuthorImg"] = author['authorimg']
+                    newValueDict["AuthorBorn"] = author['authorborn']
+                    newValueDict["AuthorDeath"] = author['authordeath']
+
                 myDB.upsert("authors", newValueDict, controlValueDict)
                 GR = GoodReads(authorname)
                 match = True
@@ -90,18 +96,19 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
             author = GR.find_author_id(refresh=refresh)
             if author:
                 authorid = author['authorid']
-                authorlink = author['authorlink']
                 authorimg = author['authorimg']
                 controlValueDict = {"AuthorName": authorname}
                 newValueDict = {
-                    "AuthorID": authorid,
-                    "AuthorLink": authorlink,
-                    "AuthorImg": authorimg,
-                    "AuthorBorn": author['authorborn'],
-                    "AuthorDeath": author['authordeath'],
+                    "AuthorID": author['authorid'],
+                    "AuthorLink": author['authorlink'],
                     "DateAdded": today(),
                     "Status": "Loading"
                 }
+                if not dbauthor or (dbauthor and not dbauthor['manual']):
+                    newValueDict["AuthorImg"] = author['authorimg']
+                    newValueDict["AuthorBorn"] = author['authorborn']
+                    newValueDict["AuthorDeath"] = author['authordeath']
+
                 myDB.upsert("authors", newValueDict, controlValueDict)
                 match = True
             else:
@@ -113,10 +120,15 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
             logger.error("AddAuthorToDB: No matching result for authorname or authorid")
             return
 
+        # if author is set to manual, should we allow replacing 'nophoto' ?
         new_img = False
-        if authorimg and 'nophoto' in authorimg:
-            authorimg = getAuthorImage(authorid)
-            new_img = True
+        dbauthor = myDB.match("SELECT Manual from authors WHERE AuthorID='%s'" % authorid)
+        if not dbauthor['Manual']:
+            if authorimg and 'nophoto' in authorimg:
+                authorimg = getAuthorImage(authorid)
+                new_img = True
+
+        # allow caching
         if authorimg and authorimg.startswith('http'):
             newimg = cache_cover(authorid, authorimg)
             if newimg:
@@ -138,6 +150,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
             book_api = GoogleBooks()
             book_api.get_author_books(authorid, authorname, bookstatus, refresh=refresh)
         elif lazylibrarian.BOOK_API == "GoodReads":
+            GR = GoodReads(authorname)
             GR.get_author_books(authorid, authorname, bookstatus, refresh=refresh)
 
         # update totals works for existing authors only.
