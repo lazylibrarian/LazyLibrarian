@@ -28,10 +28,14 @@ from lazylibrarian.formatter import plural, bookSeries
 def dbupgrade(db_current_version):
     conn = sqlite3.connect(lazylibrarian.DBFILE)
     c = conn.cursor()
-
     c.execute('PRAGMA user_version')
     result = c.fetchone()
     db_version = result[0]
+    c.execute('PRAGMA integrity_check')
+    check = c.fetchone()
+    if check[0] != "ok":
+        logger.error('Database integrity check: %s' % check[0])
+        # should probably abort now
 
     if db_version < db_current_version:
         lazylibrarian.UPDATE_MSG = 'Updating database to version %s, current version is %s' % (
@@ -40,7 +44,7 @@ def dbupgrade(db_current_version):
         myDB = database.DBConnection()
 
         if db_version < 1:
-            c.execute('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT, AuthorName TEXT UNIQUE, AuthorImg TEXT, \
+            c.execute('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT UNIQUE, AuthorName TEXT UNIQUE, AuthorImg TEXT, \
                  AuthorLink TEXT, DateAdded TEXT, Status TEXT, LastBook TEXT, LastBookImg TEXT, LastLink Text, \
                  LastDate TEXT,  HaveBooks INTEGER, TotalBooks INTEGER, AuthorBorn TEXT, AuthorDeath TEXT, \
                  UnignoredBooks INTEGER, Manual TEXT)')
@@ -52,10 +56,10 @@ def dbupgrade(db_current_version):
             c.execute('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, \
                 NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, Source TEXT, DownloadID TEXT)')
             c.execute('CREATE TABLE IF NOT EXISTS pastissues AS SELECT * FROM wanted WHERE 0')  # same columns
-            c.execute('CREATE TABLE IF NOT EXISTS magazines (Title TEXT, Regex TEXT, Status TEXT, MagazineAdded TEXT, \
+            c.execute('CREATE TABLE IF NOT EXISTS magazines (Title TEXT UNIQUE, Regex TEXT, Status TEXT, MagazineAdded TEXT, \
                         LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT, Reject TEXT, LatestCover TEXT)')
             c.execute('CREATE TABLE IF NOT EXISTS languages (isbn TEXT, lang TEXT)')
-            c.execute('CREATE TABLE IF NOT EXISTS issues (Title TEXT, IssueID TEXT, IssueAcquired TEXT, IssueDate TEXT, \
+            c.execute('CREATE TABLE IF NOT EXISTS issues (Title TEXT, IssueID TEXT UNIQUE, IssueAcquired TEXT, IssueDate TEXT, \
                 IssueFile TEXT)')
             c.execute('CREATE TABLE IF NOT EXISTS stats (authorname text, GR_book_hits int, GR_lang_hits int, \
                 LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int, duplicates int)')
@@ -460,6 +464,7 @@ def dbupgrade(db_current_version):
         lazylibrarian.UPDATE_MSG = 'Database updated to version %s' % db_current_version
         logger.info(lazylibrarian.UPDATE_MSG)
         c.execute('PRAGMA user_version = %s' % db_current_version)
-        conn.commit()
-        conn.close()
-        lazylibrarian.UPDATE_MSG = ''
+
+    conn.commit()
+    conn.close()
+    lazylibrarian.UPDATE_MSG = ''

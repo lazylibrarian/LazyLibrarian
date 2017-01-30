@@ -448,11 +448,12 @@ def initialize():
             else:
                 myDB = database.DBConnection()
                 result = myDB.match('PRAGMA user_version')
+                check = myDB.match('PRAGMA integrity_check')
                 if result:
                     version = result[0]
                 else:
                     version = 0
-                logger.info("Database is version %s" % version)
+                logger.info("Database is version %s, integrity check: %s" % (version, check[0]))
 
         except Exception as e:
             logger.error("Can't connect to the database: %s" % str(e))
