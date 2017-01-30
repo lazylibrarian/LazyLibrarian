@@ -1051,13 +1051,12 @@ class WebInterface(object):
                     if ab:
                         rejected = True
                         if len(ab) == 10:
-                            if ab[4] == '/' and ab[7] == '/':
-                                try:
-                                    check = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
-                                    authorborn = ab
-                                    rejected = False
-                                except ValueError:
-                                    authorborn = authdata["AuthorBorn"]
+                            try:
+                                check = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
+                                authorborn = ab
+                                rejected = False
+                            except ValueError:
+                                authorborn = authdata["AuthorBorn"]
                         if rejected:
                             logger.debug("Author Born date [%s] rejected" % ab)
 
@@ -1066,13 +1065,12 @@ class WebInterface(object):
                     if ab:
                         rejected = True
                         if len(ab) == 10:
-                            if ab[4] == '/' and ab[7] == '/':
-                                try:
-                                    check = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
-                                    authordeath = ab
-                                    rejected = False
-                                except ValueError:
-                                    authordeath = authdata["AuthorDeath"]
+                            try:
+                                check = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
+                                authordeath = ab
+                                rejected = False
+                            except ValueError:
+                                authordeath = authdata["AuthorDeath"]
                         if rejected:
                             logger.debug("Author Died date [%s] rejected" % ab)
 
