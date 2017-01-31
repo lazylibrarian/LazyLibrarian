@@ -141,6 +141,7 @@ def getCurrentVersion():
         if not os.path.isfile(version_file):
             VERSION = 'No Version File'
             logger.debug('(getCurrentVersion) [%s] missing.' % version_file)
+            return
         else:
             fp = open(version_file, 'r')
             current_version = fp.read().strip(' \n\r')
@@ -150,10 +151,11 @@ def getCurrentVersion():
                 VERSION = current_version
             else:
                 VERSION = 'No Version set in file'
-
+                return
     else:
         logger.error('(getCurrentVersion) Install Type not set - cannot get version value')
         VERSION = 'Install type not set'
+        return
 
     updateVersionFile(VERSION)
     logger.debug('(getCurrentVersion) - Install type [%s] Local Version is set to [%s] ' % (
@@ -382,8 +384,7 @@ def update():
             logger.info('(update) Downloading update from: ' + tar_download_url)
             request = urllib2.Request(tar_download_url)
             request.add_header('User-Agent', USER_AGENT)
-            resp = urllib2.urlopen(request, timeout=30)
-            data = resp.read()
+            data = urllib2.urlopen(request, timeout=30)
         except socket.timeout:
             logger.error("(update) Timeout retrieving new version from " + tar_download_url)
             return
