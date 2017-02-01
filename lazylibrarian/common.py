@@ -19,6 +19,7 @@ import shutil
 import time
 import datetime
 import traceback
+import threading
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -171,6 +172,9 @@ def scheduleJob(action='Start', target=None):
 
 
 def authorUpdate():
+    threadname = threading.currentThread().name
+    if "Thread-" in threadname:
+        threading.currentThread().name = "AUTHORUPDATE"
     try:
         myDB = database.DBConnection()
         author = myDB.match('SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" \
@@ -183,7 +187,7 @@ def authorUpdate():
                 authorid = author['AuthorID']
                 lazylibrarian.importer.addAuthorToDB(authorname='', refresh=True, authorid=authorid)
             else:
-                logger.debug('Oldest author info is only %s days old' % diff)
+                logger.debug('Oldest author info is %s day%s old' % (diff, plural(diff)))
     except Exception:
         logger.error('Unhandled exception in AuthorUpdate: %s' % traceback.format_exc())
 

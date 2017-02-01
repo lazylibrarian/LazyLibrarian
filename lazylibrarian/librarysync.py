@@ -108,7 +108,6 @@ def get_book_info(fname):
         dic = {'<br>': '', '</br>': ''}
         txt = replace_all(txt, dic)
     else:
-        txt = ''
         logger.error('Unhandled extension in get_book_info: %s' % extn)
         return res
 
@@ -649,7 +648,7 @@ def LibraryScan(startdir=None):
             stats = myDB.match(
                 "SELECT sum(GR_book_hits), sum(GR_lang_hits), sum(LT_lang_hits), sum(GB_lang_change), \
                     sum(cache_hits), sum(bad_lang), sum(bad_char), sum(uncached), sum(duplicates) FROM stats")
-            if stats and stats['sum(GR_book_hits)']:
+            if stats:  # and stats['sum(GR_book_hits)']:
                 if lazylibrarian.BOOK_API == "GoogleBooks":
                     logger.debug("GoogleBooks was hit %s time%s for books" %
                                  (stats['sum(GR_book_hits)'], plural(stats['sum(GR_book_hits)'])))

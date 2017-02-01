@@ -141,6 +141,7 @@ def getCurrentVersion():
         if not os.path.isfile(version_file):
             VERSION = 'No Version File'
             logger.debug('(getCurrentVersion) [%s] missing.' % version_file)
+            return
         else:
             fp = open(version_file, 'r')
             current_version = fp.read().strip(' \n\r')
@@ -150,10 +151,11 @@ def getCurrentVersion():
                 VERSION = current_version
             else:
                 VERSION = 'No Version set in file'
-
+                return
     else:
         logger.error('(getCurrentVersion) Install Type not set - cannot get version value')
         VERSION = 'Install type not set'
+        return
 
     updateVersionFile(VERSION)
     logger.debug('(getCurrentVersion) - Install type [%s] Local Version is set to [%s] ' % (
@@ -233,10 +235,11 @@ def getLatestVersion_FromGit():
         if branch == 'InvalidBranch':
             logger.debug('(getLatestVersion_FromGit) - Failed to get a valid branch name from local repo')
         else:
-
+            if branch == 'Package':  # check packages against master
+                branch = 'master'
             # Get the latest commit available from github
             url = 'https://api.github.com/repos/%s/%s/commits/%s' % (
-                lazylibrarian.GIT_USER, lazylibrarian.GIT_REPO, lazylibrarian.GIT_BRANCH)
+                lazylibrarian.GIT_USER, lazylibrarian.GIT_REPO, branch)
             logger.debug(
                 '(getLatestVersion_FromGit) Retrieving latest version information from github command=[%s]' % url)
             try:
@@ -260,10 +263,9 @@ def getLatestVersion_FromGit():
 
     return latest_version
 
-# See how many commits behind we are
-
 
 def getCommitDifferenceFromGit():
+    # See how many commits behind we are
     commits = -1
     # Takes current latest version value and trys to diff it with the latest
     # version in the current branch.
@@ -382,8 +384,7 @@ def update():
             logger.info('(update) Downloading update from: ' + tar_download_url)
             request = urllib2.Request(tar_download_url)
             request.add_header('User-Agent', USER_AGENT)
-            resp = urllib2.urlopen(request, timeout=30)
-            data = resp.read()
+            data = urllib2.urlopen(request, timeout=30)
         except socket.timeout:
             logger.error("(update) Timeout retrieving new version from " + tar_download_url)
             return

@@ -155,6 +155,7 @@ def main():
             lazylibrarian.LATEST_VERSION = "not checked"
             lazylibrarian.COMMITS_BEHIND = 0
             lazylibrarian.COMMIT_LIST = ""
+
     if old:
         lazylibrarian.CURRENT_VERSION = versioncheck.getCurrentVersion()
         lazylibrarian.LATEST_VERSION = versioncheck.getLatestVersion()
@@ -162,6 +163,11 @@ def main():
 
     logger.debug('Current Version [%s] - Latest remote version [%s] - Install type [%s]' % (
         lazylibrarian.CURRENT_VERSION, lazylibrarian.LATEST_VERSION, lazylibrarian.INSTALL_TYPE))
+
+    if not os.path.isfile(version_file) and lazylibrarian.INSTALL_TYPE == 'source':
+        # User may be running an old source zip, so force update
+        lazylibrarian.COMMITS_BEHIND = 1
+        lazylibrarian.SIGNAL == 'update'
 
     if lazylibrarian.COMMITS_BEHIND <= 0 and lazylibrarian.SIGNAL == 'update':
         lazylibrarian.SIGNAL = None
