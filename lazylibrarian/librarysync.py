@@ -108,7 +108,6 @@ def get_book_info(fname):
         dic = {'<br>': '', '</br>': ''}
         txt = replace_all(txt, dic)
     else:
-        txt = ''
         logger.error('Unhandled extension in get_book_info: %s' % extn)
         return res
 

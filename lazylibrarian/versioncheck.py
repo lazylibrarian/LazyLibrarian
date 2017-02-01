@@ -235,10 +235,11 @@ def getLatestVersion_FromGit():
         if branch == 'InvalidBranch':
             logger.debug('(getLatestVersion_FromGit) - Failed to get a valid branch name from local repo')
         else:
-
+            if branch == 'Package':  # check packages against master
+                branch = 'master'
             # Get the latest commit available from github
             url = 'https://api.github.com/repos/%s/%s/commits/%s' % (
-                lazylibrarian.GIT_USER, lazylibrarian.GIT_REPO, lazylibrarian.GIT_BRANCH)
+                lazylibrarian.GIT_USER, lazylibrarian.GIT_REPO, branch)
             logger.debug(
                 '(getLatestVersion_FromGit) Retrieving latest version information from github command=[%s]' % url)
             try:
@@ -262,10 +263,9 @@ def getLatestVersion_FromGit():
 
     return latest_version
 
-# See how many commits behind we are
-
 
 def getCommitDifferenceFromGit():
+    # See how many commits behind we are
     commits = -1
     # Takes current latest version value and trys to diff it with the latest
     # version in the current branch.
