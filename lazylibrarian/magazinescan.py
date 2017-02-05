@@ -85,7 +85,7 @@ def create_cover(issuefile=None, refresh=False):
             # note we need LIBRARY SOURCE not a binary package
             # make lib; sudo make install-lib; sudo ldconfig
             # lib.unrar should then be able to find libunrar.so
-            from lib.unrar import unrarlib
+            from lib.unrar import rarfile
             data = rarfile.RarFile(issuefile)
         except Exception as why:
             logger.debug("Failed to read rar file %s, %s" %  (issuefile, str(why)))
@@ -110,14 +110,19 @@ def create_cover(issuefile=None, refresh=False):
 
     elif extn == '.pdf':
         generator = ""
-        GS = ""
         if platform.system() == "Windows":
-            params = ["where", "gswin64c"]
-            try:
-                GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
-                generator = "gswin64c"
-            except Exception as e:
-                logger.debug("where gswin64c failed: %s" % str(e))
+            GS = os.path.join(os.getcwd(), "gswin64c.exe")
+            generator = "local gswin64c"
+            if not os.path.isfile(GS):
+                GS = os.path.join(os.getcwd(), "gswin32c.exe")
+                generator = "local gswin32c"
+            if not os.path.isfile(GS):
+                params = ["where", "gswin64c"]
+                try:
+                    GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+                    generator = "gswin64c"
+                except Exception as e:
+                    logger.debug("where gswin64c failed: %s" % str(e))
             if not os.path.isfile(GS):
                 params = ["where", "gswin32c"]
                 try:
