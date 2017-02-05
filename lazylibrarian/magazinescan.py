@@ -29,14 +29,21 @@ from lazylibrarian.common import setperm
 from lazylibrarian.formatter import getList, is_valid_booktype, plural
 
 def create_covers(refresh=False):
+    if lazylibrarian.IMP_CONVERT == 'None':  # special flag to say "no covers required"
+        logger.info('Cover creation is disabled in config')
+        return
     myDB = database.DBConnection()
-    issues = myDB.select('SELECT IssueFile from issues')
+    #  <> '' ignores empty string or NULL
+    issues = myDB.select("SELECT IssueFile from issues WHERE IssueFile <> ''")
     if refresh:
         logger.info("Creating covers for %s issue%s" % (len(issues), plural(len(issues))))
     else:
         logger.info("Checking covers for %s issue%s" % (len(issues), plural(len(issues))))
     for item in issues:
-        create_cover(item['IssueFile'], refresh=refresh)
+        try:
+            create_cover(item['IssueFile'], refresh=refresh)
+        except Exception as why:
+            logger.debug('Unable to create cover for %s, %s' % (item['IssueFile'], str(why)))
     logger.info("Cover creation completed")
 
 
@@ -44,9 +51,9 @@ def create_cover(issuefile=None, refresh=False):
     if lazylibrarian.IMP_CONVERT == 'None':  # special flag to say "no covers required"
         return
     if issuefile is None or not os.path.isfile(issuefile):
+        logger.debug('No issuefile %s' % issuefile)
         return
 
-    # create a thumbnail cover if there isn't one
     extn = os.path.splitext(issuefile)[1]
     if extn:
         coverfile = issuefile.replace(extn, '.jpg')
@@ -58,8 +65,10 @@ def create_cover(issuefile=None, refresh=False):
         if refresh:
             os.remove(coverfile)
         else:
+            logger.debug('Cover for %s exists' % issuefile)
             return  # quit if cover already exists and we didn't want to refresh
 
+    logger.debug('Creating cover for %s' % issuefile)
     data = ''  # result from unzip or unrar
     extn = extn.lower()
     if extn in ['.cbz', '.epub']:
@@ -67,6 +76,7 @@ def create_cover(issuefile=None, refresh=False):
             data = zipfile.ZipFile(issuefile)
         except Exception as why:
             logger.debug("Failed to read zip file %s, %s" %  (issuefile, str(why)))
+            data = ''
     elif extn in ['.cbr']:
         try:
             # unrar will complain if the library isn't installed, needs to be compiled separately
@@ -75,36 +85,44 @@ def create_cover(issuefile=None, refresh=False):
             # note we need LIBRARY SOURCE not a binary package
             # make lib; sudo make install-lib; sudo ldconfig
             # lib.unrar should then be able to find libunrar.so
-            from lib.unrar import unrarlib
+            from lib.unrar import rarfile
             data = rarfile.RarFile(issuefile)
         except Exception as why:
             logger.debug("Failed to read rar file %s, %s" %  (issuefile, str(why)))
-
+            data = ''
     if data:
         img = ''
-        for member in data.namelist():
-            memlow = member.lower()
-            if '-00.' in memlow or '000.' in memlow or 'cover.' in memlow:
-                if memlow.endswith('.jpg') or memlow.endswith('.jpeg'):
-                    img = data.read(member)
-                    break
-        if img:
-            with open(coverfile, "wb") as f:
-                f.write(img)
-            return
-        else:
-            logger.debug("Failed to find image in %s" % issuefile)
+        try:
+            for member in data.namelist():
+                memlow = member.lower()
+                if '-00.' in memlow or '000.' in memlow or 'cover.' in memlow:
+                    if memlow.endswith('.jpg') or memlow.endswith('.jpeg'):
+                        img = data.read(member)
+                        break
+            if img:
+                with open(coverfile, "wb") as f:
+                    f.write(img)
+                return
+            else:
+                logger.debug("Failed to find image in %s" % issuefile)
+        except Exception as why:
+            logger.debug("Failed to extract image from %s, %s" % (issuefile, str(why)))
 
     elif extn == '.pdf':
         generator = ""
-        GS = ""
         if platform.system() == "Windows":
-            params = ["where", "gswin64c"]
-            try:
-                GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
-                generator = "gswin64c"
-            except Exception as e:
-                logger.debug("where gswin64c failed: %s" % str(e))
+            GS = os.path.join(os.getcwd(), "gswin64c.exe")
+            generator = "local gswin64c"
+            if not os.path.isfile(GS):
+                GS = os.path.join(os.getcwd(), "gswin32c.exe")
+                generator = "local gswin32c"
+            if not os.path.isfile(GS):
+                params = ["where", "gswin64c"]
+                try:
+                    GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+                    generator = "gswin64c"
+                except Exception as e:
+                    logger.debug("where gswin64c failed: %s" % str(e))
             if not os.path.isfile(GS):
                 params = ["where", "gswin32c"]
                 try:
@@ -116,18 +134,21 @@ def create_cover(issuefile=None, refresh=False):
                 logger.debug("No gswin found")
                 generator = "(no windows ghostscript found)"
             else:
-                params = [GS, "--version"]
-                res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                logger.debug("Found %s [%s] version %s" % (generator, GS, res))
-                generator = "%s version %s" % (generator, res)
-                if '[' in issuefile:
-                    issuefile = issuefile.split('[')[0]
-                params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1", "-dLastPage=1",
-                          "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
-                res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                if not os.path.isfile(coverfile):
-                    logger.debug("Failed to create jpg: %s" % res)
-
+                try:
+                    params = [GS, "--version"]
+                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                    logger.debug("Found %s [%s] version %s" % (generator, GS, res))
+                    generator = "%s version %s" % (generator, res)
+                    if '[' in issuefile:
+                        issuefile = issuefile.split('[')[0]
+                    params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1", "-dLastPage=1",
+                              "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
+                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                    if not os.path.isfile(coverfile):
+                        logger.debug("Failed to create jpg: %s" % res)
+                except Exception as why:
+                    logger.debug("Failed to create jpg for %s" % issuefile)
+                    logger.debug('Exception in gswin create_cover: %s' % traceback.format_exc())
         else:  # not windows
             try:
                 from wand.image import Image
@@ -197,7 +218,7 @@ def create_cover(issuefile=None, refresh=False):
                                 logger.debug("Failed to create jpg: %s" % res)
             except Exception:
                 logger.debug("Unable to create cover for %s using %s" % (issuefile, generator))
-                logger.debug('Exception in create_cover: %s' % traceback.format_exc())
+                logger.debug('Exception in gs create_cover: %s' % traceback.format_exc())
 
         if os.path.isfile(coverfile):
             setperm(coverfile)
