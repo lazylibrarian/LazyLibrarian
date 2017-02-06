@@ -405,7 +405,8 @@ def processDir(reset=False):
                                 logger.debug('Match: %s%%  %s' % (match[0], match[1]))
                     continue
 
-                if processDestination(pp_path, dest_path, authorname, bookname, global_name, book['BookID']):
+                success, err = processDestination(pp_path, dest_path, authorname, bookname, global_name, book['BookID'])
+                if success:
                     logger.debug("Processing %s, %s" % (global_name, book['NZBurl']))
                     # update nzbs, only update the snatched ones in case multiple matches for same book/magazine issue
                     controlValueDict = {"BookID": book['BookID'], "NZBurl": book['NZBurl'], "Status": "Snatched"}
@@ -485,7 +486,7 @@ def processDir(reset=False):
                     ppcount += 1
                     notify_download("%s from %s at %s" % (global_name, book['NZBprov'], now()))
                 else:
-                    logger.error('Postprocessing for %s has failed.' % global_name)
+                    logger.error('Postprocessing for %s has failed: %s' % (global_name, err))
                     logger.error('Warning - Residual files remain in %s.fail' % pp_path)
                     controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
                     newValueDict = {"Status": "Failed", "NZBDate": now()}
@@ -500,7 +501,7 @@ def processDir(reset=False):
                     try:
                         os.rename(pp_path, pp_path + '.fail')
                     except Exception as e:
-                        logger.debug("Unable to rename %s, %s" % (pp_path, str(e)))
+                        logger.error("Unable to rename %s, %s" % (pp_path, str(e)))
 
         # Check for any books in download that weren't marked as snatched, but have a LL.(bookid)
         # do a fresh listdir in case we processed and deleted any earlier
@@ -649,7 +650,8 @@ def import_book(pp_path=None, bookID=None):
             dest_path = unaccented_str(replace_all(dest_path, dic))
             dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
 
-            if processDestination(pp_path, dest_path, authorname, bookname, global_name, bookID):
+            success, err = processDestination(pp_path, dest_path, authorname, bookname, global_name, bookID)
+            if success:
                 # update nzbs
                 was_snatched = myDB.match('SELECT BookID, NZBprov FROM wanted WHERE BookID="%s"' % bookID)
                 snatched_from = "from " + was_snatched['NZBprov'] if was_snatched else "manually added"
@@ -680,7 +682,7 @@ def import_book(pp_path=None, bookID=None):
                 notify_download("%s %s at %s" % (global_name, snatched_from, now()))
                 return True
             else:
-                logger.error('Postprocessing for %s has failed.' % global_name)
+                logger.error('Postprocessing for %s has failed: %s' % (global_name, err))
                 logger.error('Warning - Residual files remain in %s.fail' % pp_path)
                 was_snatched = myDB.match('SELECT BookID FROM wanted WHERE BookID="%s"' % bookID)
                 if was_snatched:
@@ -762,8 +764,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
     if got_book is False:
         # no book/mag found in a format we wanted. Leave for the user to delete or convert manually
-        logger.warn('Failed to locate a book/magazine in %s, leaving for manual processing' % pp_path)
-        return False
+        return False, 'Unable to locate a book/magazine in %s, leaving for manual processing' % pp_path
 
     # Do we want calibre to import the book for us
     if bookname and len(lazylibrarian.IMP_CALIBREDB):
@@ -846,14 +847,13 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 imported = False
                 # imported = LibraryScan(dest_dir)  # may have to rescan whole library instead
             if not imported:
-                return False
+                return False, "Unable to import book to %s" % calibre_dir
         except subprocess.CalledProcessError as e:
             logger.debug(params)
-            logger.debug('calibredb import failed: %s' % e.output)
-            return False
+            return False, 'calibredb import failed: %s' % e.output
+
         except OSError as e:
-            logger.debug('calibredb failed, %s' % e.strerror)
-            return False
+            return False, 'calibredb failed, %s' % e.strerror
 
     else:
         # we are copying the files ourselves, either it's a magazine or we don't want to use calibre
@@ -864,15 +864,13 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             try:
                 os.remove(dest_path)
             except OSError as why:
-                logger.debug('Failed to delete %s, %s' % (dest_path, why.strerror))
-                return False
+                return False, 'Unable to delete %s: %s' % (dest_path, why.strerror)
 
         if not os.path.exists(dest_path):
             try:
                 os.makedirs(dest_path)
             except OSError as why:
-                logger.debug('Failed to create directory %s, %s' % (dest_path, why.strerror))
-                return False
+                return False, 'Unable to create directory %s: %s' % (dest_path, why.strerror)
             setperm(dest_path)
 
         # ok, we've got a target directory, try to copy only the files we want, renaming them on the fly.
@@ -885,12 +883,10 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                         dest_path, global_name + os.path.splitext(fname)[1]))
                     setperm(os.path.join(dest_path, global_name + os.path.splitext(fname)[1]))
                 except Exception as why:
-                    logger.debug("Failed to copy file %s to %s, %s" % (
-                        fname, dest_path, str(why)))
-                    return False
+                    return False, "Unable to copy file %s to %s: %s" % (fname, dest_path, str(why))
             else:
                 logger.debug('Ignoring unwanted file: %s' % fname)
-    return True
+    return True, ""
 
 
 def processAutoAdd(src_path=None):
