@@ -1334,9 +1334,18 @@ def DIRECTORY(dirname):
     else:
         return usedir
 
-    if not usedir or not os.path.isdir(usedir) or not os.access(usedir, os.W_OK | os.X_OK):
+    if usedir and os.path.isdir(usedir):
+        try:
+            with open(os.path.join(usedir, 'll_temp'), 'w') as f:
+                f.write('test')
+            os.remove(os.path.join(usedir, 'll_temp'))
+        except Exception as why:
+            logger.warn("%s dir [%s] not usable, using %s: %s" % (dirname, usedir, os.getcwd(), str(why)))
+            usedir = os.getcwd()
+    else:
+        logger.warn("%s dir [%s] not found, using %s" % (dirname, usedir, os.getcwd()))
         usedir = os.getcwd()
-        logger.warn("%s dir not usable, using %s" % (dirname, usedir))
+
     # return directory as unicode so we get unicode results from listdir
     if isinstance(usedir, str):
         usedir = usedir.decode(SYS_ENCODING)
