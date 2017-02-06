@@ -20,6 +20,7 @@ import time
 import datetime
 import traceback
 import threading
+import socket
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -33,6 +34,23 @@ NOTIFY_SNATCH = 1
 NOTIFY_DOWNLOAD = 2
 
 notifyStrings = {NOTIFY_SNATCH: "Started Download", NOTIFY_DOWNLOAD: "Added to Library"}
+
+
+def internet(host="8.8.8.8", port=53, timeout=3):
+  """
+  Check for an active internet connection
+  Host: 8.8.8.8 (google-public-dns-a.google.com)
+  OpenPort: 53/tcp
+  Service: domain (DNS/TCP)
+  Return True or False
+  """
+  try:
+      socket.setdefaulttimeout(timeout)
+      socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+      return True
+  except Exception as ex:
+      logger.debug(str(ex))
+      return False
 
 
 def setperm(file_or_dir):
@@ -175,7 +193,12 @@ def authorUpdate():
     threadname = threading.currentThread().name
     if "Thread-" in threadname:
         threading.currentThread().name = "AUTHORUPDATE"
+
     try:
+        if not internet():
+            logger.warn('No internet connection')
+            return
+
         myDB = database.DBConnection()
         author = myDB.match('SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" \
                                     or Status="Loading" order by DateAdded ASC')

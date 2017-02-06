@@ -19,7 +19,7 @@ import traceback
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.common import scheduleJob
+from lazylibrarian.common import scheduleJob, internet
 from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, check_int, now
 from lazylibrarian.notifiers import notify_snatch
 from lazylibrarian.providers import IterateOverRSSSites, get_searchterm
@@ -42,6 +42,10 @@ def search_rss_book(books=None, reset=False):
         if not(lazylibrarian.USE_RSS()):
             logger.warn('RSS search is disabled')
             scheduleJob(action='Stop', target='search_rss_book')
+            return
+
+        if not internet():
+            logger.warn('No internet connection')
             return
 
         myDB = database.DBConnection()

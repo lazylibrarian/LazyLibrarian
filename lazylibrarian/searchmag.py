@@ -21,7 +21,7 @@ import traceback
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.common import scheduleJob
+from lazylibrarian.common import scheduleJob, internet
 from lazylibrarian.formatter import plural, now, unaccented_str, replace_all, unaccented, \
     nzbdate2format, getList, month2num, datecompare, check_int, check_year
 from lazylibrarian.notifiers import notify_snatch
@@ -41,6 +41,10 @@ def search_magazines(mags=None, reset=False):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "SEARCHMAG"
+
+        if not internet():
+            logger.warn('No internet connection')
+            return
 
         myDB = database.DBConnection()
         searchlist = []

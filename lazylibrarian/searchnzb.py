@@ -21,7 +21,7 @@ import traceback
 import lazylibrarian
 from lazylibrarian import logger, database, providers, nzbget, sabnzbd, classes, synology
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.common import scheduleJob, setperm
+from lazylibrarian.common import scheduleJob, setperm, internet
 from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, now, check_int
 from lazylibrarian.notifiers import notify_snatch
 from lazylibrarian.searchtorrents import TORDownloadMethod
@@ -42,6 +42,11 @@ def search_nzb_book(books=None, reset=False):
         if not lazylibrarian.USE_NZB():
             logger.warn('No NEWZNAB/TORZNAB providers set, check config')
             return
+
+        if not internet():
+            logger.warn('No internet connection')
+            return
+
         myDB = database.DBConnection()
         searchlist = []
 
