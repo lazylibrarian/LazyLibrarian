@@ -20,7 +20,7 @@ import time
 import datetime
 import traceback
 import threading
-import socket
+import urllib2
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -36,20 +36,16 @@ NOTIFY_DOWNLOAD = 2
 notifyStrings = {NOTIFY_SNATCH: "Started Download", NOTIFY_DOWNLOAD: "Added to Library"}
 
 
-def internet(host="8.8.8.8", port=53, timeout=3):
+def internet():
   """
   Check for an active internet connection
-  Host: 8.8.8.8 (google-public-dns-a.google.com)
-  OpenPort: 53/tcp
-  Service: domain (DNS/TCP)
   Return True or False
   """
   try:
-      socket.setdefaulttimeout(timeout)
-      socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+      e = urllib2.urlopen("http://www.google.com", timeout=5)
       return True
-  except Exception as ex:
-      logger.debug(str(ex))
+  except Exception as e:
+      logger.debug(str(e))
       return False
 
 
