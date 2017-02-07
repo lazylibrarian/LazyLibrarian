@@ -44,7 +44,7 @@ def search_nzb_book(books=None, reset=False):
             return
 
         if not internet():
-            logger.warn('No internet connection')
+            logger.warn('Search NZB Book: No internet connection')
             return
 
         myDB = database.DBConnection()

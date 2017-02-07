@@ -25,7 +25,7 @@ from urllib import FancyURLopener
 import lazylibrarian
 from lazylibrarian import database, logger, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology, sabnzbd, nzbget
-from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file
+from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, internet
 from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, unaccented
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB
@@ -89,25 +89,29 @@ def processAlternate(source_dir=None):
                 authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % authorname)
 
                 if not authmatch:
-                    # try goodreads preferred authorname
-                    logger.debug("Checking GoodReads for [%s]" % authorname)
-                    GR = GoodReads(authorname)
-                    try:
-                        author_gr = GR.find_author_id()
-                    except Exception:
-                        author_gr = {}
-                        logger.debug("No author id for [%s]" % authorname)
-                    if author_gr:
-                        grauthorname = author_gr['authorname']
-                        logger.debug("GoodReads reports [%s] for [%s]" % (grauthorname, authorname))
-                        authorname = grauthorname
-                        authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % authorname)
+                    if internet():
+                        # try goodreads preferred authorname
+                        logger.debug("Checking GoodReads for [%s]" % authorname)
+                        GR = GoodReads(authorname)
+                        try:
+                            author_gr = GR.find_author_id()
+                        except Exception:
+                            author_gr = {}
+                            logger.debug("No author id for [%s]" % authorname)
+                        if author_gr:
+                            grauthorname = author_gr['authorname']
+                            logger.debug("GoodReads reports [%s] for [%s]" % (grauthorname, authorname))
+                            authorname = grauthorname
+                            authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % authorname)
 
                 if authmatch:
                     logger.debug("ALT: Author %s found in database" % authorname)
-                else:
+                elif internet():
                     logger.debug("ALT: Author %s not found, adding to database" % authorname)
                     addAuthorToDB(authorname)
+                else:
+                    logger.debug("ALT: Author %s not found" % authorname)
+                    return False
 
                 bookid = find_book_in_db(myDB, authorname, bookname)
                 if bookid:
@@ -484,7 +488,8 @@ def processDir(reset=False):
 
                     logger.info('Successfully processed: %s' % global_name)
                     ppcount += 1
-                    notify_download("%s from %s at %s" % (global_name, book['NZBprov'], now()))
+                    if internet():
+                        notify_download("%s from %s at %s" % (global_name, book['NZBprov'], now()))
                 else:
                     logger.error('Postprocessing for %s has failed: %s' % (global_name, err))
                     logger.error('Warning - Residual files remain in %s.fail' % pp_path)
@@ -679,7 +684,8 @@ def import_book(pp_path=None, bookID=None):
                             logger.debug("Not removing original files as in download root")
 
                 logger.info('Successfully processed: %s' % global_name)
-                notify_download("%s %s at %s" % (global_name, snatched_from, now()))
+                if internet():
+                    notify_download("%s %s at %s" % (global_name, snatched_from, now()))
                 return True
             else:
                 logger.error('Postprocessing for %s has failed: %s' % (global_name, err))
@@ -937,7 +943,7 @@ def processAutoAdd(src_path=None):
 def processIMG(dest_path=None, bookimg=None, global_name=None):
     # handle pictures
     try:
-        if bookimg and bookimg.startswith('http'):
+        if bookimg and bookimg.startswith('http') and internet():
             logger.debug('Downloading cover from ' + bookimg)
             coverpath = os.path.join(dest_path, global_name + '.jpg')
             with open(coverpath, 'wb') as img:

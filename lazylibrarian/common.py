@@ -45,7 +45,7 @@ def internet():
       e = urllib2.urlopen("http://www.google.com", timeout=5)
       return True
   except Exception as e:
-      logger.debug(str(e))
+      #logger.debug(str(e))
       return False
 
 

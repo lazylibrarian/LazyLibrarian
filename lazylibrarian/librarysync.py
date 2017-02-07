@@ -262,7 +262,7 @@ def LibraryScan(startdir=None):
             return 0
 
         if not internet():
-            logger.warn('No internet connection')
+            logger.warn('Libraryscan: No internet connection')
             return 0
 
         myDB = database.DBConnection()

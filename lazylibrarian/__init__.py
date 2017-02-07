@@ -1398,7 +1398,7 @@ def build_bookstrap_themes():
         return themelist  # return empty if bookstrap interface not installed
 
     if not internet():
-        logger.warn('No internet connection')
+        logger.warn('Build Bookstrap Themes: No internet connection')
         return themelist
 
     URL = 'http://bootswatch.com/api/3.json'

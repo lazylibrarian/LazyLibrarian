@@ -43,7 +43,7 @@ def search_magazines(mags=None, reset=False):
             threading.currentThread().name = "SEARCHMAG"
 
         if not internet():
-            logger.warn('No internet connection')
+            logger.warn('Search Magazines: No internet connection')
             return
 
         myDB = database.DBConnection()
