@@ -24,7 +24,7 @@ import lib.zipfile as zipfile
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages
 from lazylibrarian.cache import cache_cover
-from lazylibrarian.common import opf_file
+from lazylibrarian.common import opf_file, internet
 from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList, unaccented, \
     replace_all, split_title
 from lazylibrarian.gb import GoogleBooks
@@ -259,6 +259,10 @@ def LibraryScan(startdir=None):
 
         if not os.path.isdir(startdir):
             logger.warn('Cannot find directory: %s. Not scanning' % startdir)
+            return 0
+
+        if not internet():
+            logger.warn('Libraryscan: No internet connection')
             return 0
 
         myDB = database.DBConnection()

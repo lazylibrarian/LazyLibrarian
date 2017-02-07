@@ -20,6 +20,7 @@ import time
 import datetime
 import traceback
 import threading
+import urllib2
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -33,6 +34,19 @@ NOTIFY_SNATCH = 1
 NOTIFY_DOWNLOAD = 2
 
 notifyStrings = {NOTIFY_SNATCH: "Started Download", NOTIFY_DOWNLOAD: "Added to Library"}
+
+
+def internet():
+  """
+  Check for an active internet connection
+  Return True or False
+  """
+  try:
+      e = urllib2.urlopen("http://www.google.com", timeout=5)
+      return True
+  except Exception as e:
+      #logger.debug(str(e))
+      return False
 
 
 def setperm(file_or_dir):
@@ -175,7 +189,12 @@ def authorUpdate():
     threadname = threading.currentThread().name
     if "Thread-" in threadname:
         threading.currentThread().name = "AUTHORUPDATE"
+
     try:
+        if not internet():
+            logger.warn('No internet connection')
+            return
+
         myDB = database.DBConnection()
         author = myDB.match('SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" \
                                     or Status="Loading" order by DateAdded ASC')

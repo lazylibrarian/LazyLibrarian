@@ -29,7 +29,7 @@ import cherrypy
 from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, \
     librarysync, versioncheck, database, searchmag, magazinescan, bookwork, dbupgrade
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.common import restartJobs
+from lazylibrarian.common import restartJobs, internet
 from lazylibrarian.formatter import getList, bookSeries, plural, unaccented
 from lib.apscheduler.scheduler import Scheduler
 
@@ -1396,6 +1396,10 @@ def build_bookstrap_themes():
     themelist = []
     if not os.path.isdir(os.path.join(PROG_DIR, 'data/interfaces/bookstrap/')):
         return themelist  # return empty if bookstrap interface not installed
+
+    if not internet():
+        logger.warn('Build Bookstrap Themes: No internet connection')
+        return themelist
 
     URL = 'http://bootswatch.com/api/3.json'
     result, success = fetchURL(URL, None, False)  # use default headers, no retry

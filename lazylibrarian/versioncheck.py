@@ -25,7 +25,7 @@ import urllib2
 import lazylibrarian
 import lib.simplejson as simplejson
 from lazylibrarian import logger, version
-from lazylibrarian.common import USER_AGENT
+from lazylibrarian.common import USER_AGENT, internet
 
 
 #
@@ -192,11 +192,14 @@ def checkForUpdates():
     if 'Thread-' in threading.currentThread().name:
         threading.currentThread().name = "CRON-VERSIONCHECK"
     logger.debug('Set Install Type, Current & Latest Version and Commit status')
-    getInstallType()
-    lazylibrarian.CURRENT_VERSION = getCurrentVersion()
-    lazylibrarian.LATEST_VERSION = getLatestVersion()
-    lazylibrarian.COMMITS_BEHIND, lazylibrarian.COMMIT_LIST = getCommitDifferenceFromGit()
-    logger.debug('Update check complete')
+    if internet():
+        getInstallType()
+        lazylibrarian.CURRENT_VERSION = getCurrentVersion()
+        lazylibrarian.LATEST_VERSION = getLatestVersion()
+        lazylibrarian.COMMITS_BEHIND, lazylibrarian.COMMIT_LIST = getCommitDifferenceFromGit()
+        logger.debug('Update check complete')
+    else:
+        logger.warn('No internet connection')
 
 # Return latest version from GITHUB
 # if GIT install return latest on current branch
