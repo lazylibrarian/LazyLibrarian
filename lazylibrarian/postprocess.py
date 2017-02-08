@@ -510,35 +510,40 @@ def processDir(reset=False):
 
         # Check for any books in download that weren't marked as snatched, but have a LL.(bookid)
         # do a fresh listdir in case we processed and deleted any earlier
+        # and don't process any we've already done as we might not want to delete originals
         downloads = os.listdir(download_dir)
         if int(lazylibrarian.LOGLEVEL) > 2:
             logger.debug("Scanning %s entries in %s for LL.(num)" % (len(downloads), download_dir))
         for entry in downloads:
-            if isinstance(entry, str):
-                if int(lazylibrarian.LOGLEVEL) > 2:
-                    logger.warn("unexpected unicode conversion in LL scanner")
-                entry = try_rename(download_dir, entry)
-                if not entry:
-                    entry = "failed rename"
-            dname, extn = os.path.splitext(entry)
             if "LL.(" in entry:
+                if isinstance(entry, str):
+                    if int(lazylibrarian.LOGLEVEL) > 2:
+                        logger.warn("unexpected unicode conversion in LL scanner")
+                    entry = try_rename(download_dir, entry)
+                    if not entry:
+                        entry = "failed rename"
+                dname, extn = os.path.splitext(entry)
                 if not extn or extn not in skipped_extensions:
                     bookID = entry.split("LL.(")[1].split(")")[0]
                     logger.debug("Book with id: %s found in download directory" % bookID)
-                    pp_path = os.path.join(download_dir, entry)
+                    data = myDB.match('SELECT BookFile from books WHERE BookID="%s"' % bookID)
+                    if data['BookFile'] and os.path.isfile(data['BookFile']):
+                        logger.debug('Skipping BookID %s, already exists' % bookID)
+                    else:
+                        pp_path = os.path.join(download_dir, entry)
 
-                    if os.path.isfile(pp_path):
-                        if int(lazylibrarian.LOGLEVEL) > 2:
-                            logger.debug("%s is a file" % pp_path)
-                        pp_path = os.path.join(download_dir)
-
-                    if os.path.isdir(pp_path):
-                        if int(lazylibrarian.LOGLEVEL) > 2:
-                            logger.debug("%s is a dir" % pp_path)
-                        if import_book(pp_path, bookID):
+                        if os.path.isfile(pp_path):
                             if int(lazylibrarian.LOGLEVEL) > 2:
-                                logger.debug("Imported %s" % pp_path)
-                            ppcount += 1
+                                logger.debug("%s is a file" % pp_path)
+                            pp_path = os.path.join(download_dir)
+
+                        if os.path.isdir(pp_path):
+                            if int(lazylibrarian.LOGLEVEL) > 2:
+                                logger.debug("%s is a dir" % pp_path)
+                            if import_book(pp_path, bookID):
+                                if int(lazylibrarian.LOGLEVEL) > 2:
+                                    logger.debug("Imported %s" % pp_path)
+                                ppcount += 1
                 else:
                     if int(lazylibrarian.LOGLEVEL) > 2:
                         logger.debug("Skipping extn %s" % entry)
