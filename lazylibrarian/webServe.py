@@ -1095,8 +1095,8 @@ class WebInterface(object):
                             # cache image from url
                             extn = os.path.splitext(authorimg)[1].lower()
                             if extn and extn in ['.jpg','.jpeg','.png']:
-                                cachedimg = cache_cover(authorid, authorimg)
-                                if cachedimg:
+                                authorimg = cache_cover(authorid, authorimg)
+                                if authorimg:
                                     rejected = False
 
                         if rejected:
@@ -1695,9 +1695,8 @@ class WebInterface(object):
 
         else:
             message = "unknown version"
-            messages = "%s is not recognised at<br>https://github.com/%s/%s  Branch: %s" % (
-                lazylibrarian.CURRENT_VERSION, lazylibrarian.GIT_USER,
-                lazylibrarian.GIT_REPO, lazylibrarian.GIT_BRANCH)
+            messages = "Your version is not recognised at<br>https://github.com/%s/%s  Branch: %s" % (
+                lazylibrarian.GIT_USER, lazylibrarian.GIT_REPO, lazylibrarian.GIT_BRANCH)
             message = message + '<br><small>' + messages
             return serve_template(templatename="shutdown.html", title="Commits", message=message, timer=15)
 
