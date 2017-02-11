@@ -295,25 +295,6 @@ NEWZNAB_PROV = []
 TORZNAB_PROV = []
 RSS_PROV = []
 
-# Month names table to hold long/short month names for multiple languages
-# which we can match against magazine issues
-# Defined as global and initialised early, because locale changes are not thread safe
-# This means changes to languages require a restart
-MONTH0 = ['en_GB.UTF-8', 'en_GB.UTF-8']  # This holds the language code
-MONTH1 = [u'january', u'jan']  # multiple names for first month
-MONTH2 = [u'february', u'feb']  # etc...
-MONTH3 = [u'march', u'mar']
-MONTH4 = [u'april', u'apr']
-MONTH5 = [u'may', u'may']
-MONTH6 = [u'june', u'jun']
-MONTH7 = [u'july', u'jul']
-MONTH8 = [u'august', u'aug']
-MONTH9 = [u'september', u'sep']
-MONTH10 = [u'october', u'oct']
-MONTH11 = [u'november', u'nov']
-MONTH12 = [u'december', u'dec']
-MONTHNAMES = [MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6,
-              MONTH7, MONTH8, MONTH9, MONTH10, MONTH11, MONTH12]
 CACHE_HIT = 0
 CACHE_MISS = 0
 LAST_GOODREADS = 0
@@ -1394,7 +1375,7 @@ def USE_TOR():
 
 def build_bookstrap_themes():
     themelist = []
-    if not os.path.isdir(os.path.join(PROG_DIR, 'data/interfaces/bookstrap/')):
+    if not os.path.isdir(os.path.join(PROG_DIR, 'data', 'interfaces', 'bookstrap')):
         return themelist  # return empty if bookstrap interface not installed
 
     if not internet():
@@ -1421,30 +1402,70 @@ def build_bookstrap_themes():
 
 
 def build_monthtable():
+    MONTHNAMES = []
+    json_file = os.path.join(PROG_DIR, 'monthnames.json')
+    if os.path.isfile(json_file):
+        try:
+            with open(json_file) as json_data:
+                MONTHNAMES = json.load(json_data)
+            mlist = ''
+            for item in MONTHNAMES[0][::2]:
+                mlist += item + ' '
+            logger.debug('Loaded monthnames.json %s' % mlist)
+        except Exception as e:
+            logger.error('Failed to load monthnames.json, %s' % str(e))
+
+    if not MONTHNAMES:
+        # Default Month names table to hold long/short month names for multiple languages
+        # which we can match against magazine issues
+        MONTH0 = ['en_GB.UTF-8', 'en_GB.UTF-8']  # This holds the language code
+        MONTH1 = [u'january', u'jan']  # multiple names for first month
+        MONTH2 = [u'february', u'feb']  # etc...
+        MONTH3 = [u'march', u'mar']
+        MONTH4 = [u'april', u'apr']
+        MONTH5 = [u'may', u'may']
+        MONTH6 = [u'june', u'jun']
+        MONTH7 = [u'july', u'jul']
+        MONTH8 = [u'august', u'aug']
+        MONTH9 = [u'september', u'sep']
+        MONTH10 = [u'october', u'oct']
+        MONTH11 = [u'november', u'nov']
+        MONTH12 = [u'december', u'dec']
+        MONTHNAMES = [MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6,
+                      MONTH7, MONTH8, MONTH9, MONTH10, MONTH11, MONTH12]
+
     if len(getList(IMP_MONTHLANG)) == 0:  # any extra languages wanted?
         return
     try:
         current_locale = locale.setlocale(locale.LC_ALL, '')  # read current state.
         # getdefaultlocale() doesnt seem to work as expected on windows, returns 'None'
+        logger.debug('Current locale is %s' % current_locale)
     except locale.Error as e:
         logger.debug("Error getting current locale : %s" % str(e))
         return
 
     lang = str(current_locale)
-    if not lang.startswith('en_'):  # en_ is preloaded
+    # check not already loaded, and all english variants use the same month names
+    if lang in MONTHNAMES[0] or (lang.startswith('en_') and 'en_' in str(MONTHNAMES[0])):
+        logger.debug('Month names for %s already loaded' % lang)
+    else:
+        logger.debug('Loading month names for %s' % lang)
         MONTHNAMES[0].append(lang)
         for f in range(1, 13):
             MONTHNAMES[f].append(unaccented(calendar.month_name[f]).lower())
         MONTHNAMES[0].append(lang)
         for f in range(1, 13):
             MONTHNAMES[f].append(unaccented(calendar.month_abbr[f]).lower().strip('.'))
-            logger.info("Added month names for locale [%s], %s, %s ..." % (
-                lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
+        logger.info("Added month names for locale [%s], %s, %s ..." % (
+            lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
 
     for lang in getList(IMP_MONTHLANG):
         try:
-            if len(lang) > 1:
+            if lang in MONTHNAMES[0] or (lang.startswith('en_') and 'en_' in str(MONTHNAMES[0])):
+                logger.debug('Month names for %s already loaded' % lang)
+            else:
                 locale.setlocale(locale.LC_ALL, lang)
+                logger.debug('Loading month names for %s' % lang)
                 MONTHNAMES[0].append(lang)
                 for f in range(1, 13):
                     MONTHNAMES[f].append(unaccented(calendar.month_name[f]).lower())
@@ -1475,6 +1496,9 @@ def build_monthtable():
             except Exception as e:
                 logger.warn("Unable to get a list of alternatives, %s" % str(e))
             logger.info("Set locale back to entry state %s" % current_locale)
+
+    #with open(json_file, 'w') as f:
+    #    json.dump(MONTHNAMES, f)
 
 
 def daemonize():
