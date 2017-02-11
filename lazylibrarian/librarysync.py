@@ -463,10 +463,16 @@ def LibraryScan(startdir=None):
 
                             # get authors name in a consistent format
                             if "," in author:
-                                # guess its "surname, forename" or "surname, initial(s)" so swap them round
                                 words = author.split(',')
-                                forename = words[1].strip()
-                                surname = words[0].strip()
+                                # Need to handle names like "L. E. Modesitt, Jr." or "J. Springmann, Phd"
+                                # use an exceptions list for now, there might be a better way...
+                                if words[1].strip().strip('.').lower in ['snr', 'jnr', 'jr', 'sr', 'phd']:
+                                    surname = words[1].strip()
+                                    forname = words[0].strip()
+                                else:
+                                    # guess its "surname, forename" or "surname, initial(s)" so swap them round
+                                    forename = words[1].strip()
+                                    surname = words[0].strip()
                                 author = forename + ' ' + surname
                             # reformat any initials, we want to end up with A.B. van Smith
                             if author[1] == ' ' or author[1] == '.':
@@ -586,6 +592,9 @@ def LibraryScan(startdir=None):
                                     if not bookid:
                                         # get author name from parent directory of this book directory
                                         newauthor = os.path.basename(os.path.dirname(r))
+                                        # calibre replaces trailing periods with _ eg Smith Jr. -> Smith Jr_
+                                        if newauthor.endswith('_'):
+                                            newauthor = newauthor[:-1] + '.'
                                         if author.lower() != newauthor.lower():
                                             bookid = find_book_in_db(myDB, newauthor, book)
                                             if bookid:
