@@ -1403,7 +1403,7 @@ def build_bookstrap_themes():
 
 def build_monthtable():
     MONTHNAMES = []
-    json_file = os.path.join(PROG_DIR, 'monthnames.json')
+    json_file = os.path.join(DATADIR, 'monthnames.json')
     if os.path.isfile(json_file):
         try:
             with open(json_file) as json_data:
@@ -1446,7 +1446,7 @@ def build_monthtable():
         return
 
     lang = str(current_locale)
-    # check not already loaded, and all english variants use the same month names
+    # check not already loaded, also all english variants use the same month names
     if lang in MONTHNAMES[0] or (lang.startswith('en_') and 'en_' in str(MONTHNAMES[0])):
         logger.debug('Month names for %s already loaded' % lang)
     else:
