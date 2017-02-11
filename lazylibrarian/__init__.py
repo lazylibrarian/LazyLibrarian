@@ -1409,30 +1409,31 @@ def build_monthtable():
             with open(json_file) as json_data:
                 MONTHNAMES = json.load(json_data)
             mlist = ''
+            # list alternate entries as each language is in twice (long and short month names)
             for item in MONTHNAMES[0][::2]:
                 mlist += item + ' '
-            logger.debug('Loaded monthnames.json %s' % mlist)
+            logger.debug('Loaded monthnames.json : %s' % mlist)
         except Exception as e:
             logger.error('Failed to load monthnames.json, %s' % str(e))
 
     if not MONTHNAMES:
         # Default Month names table to hold long/short month names for multiple languages
         # which we can match against magazine issues
-        MONTH0 = ['en_GB.UTF-8', 'en_GB.UTF-8']  # This holds the language code
-        MONTH1 = [u'january', u'jan']  # multiple names for first month
-        MONTH2 = [u'february', u'feb']  # etc...
-        MONTH3 = [u'march', u'mar']
-        MONTH4 = [u'april', u'apr']
-        MONTH5 = [u'may', u'may']
-        MONTH6 = [u'june', u'jun']
-        MONTH7 = [u'july', u'jul']
-        MONTH8 = [u'august', u'aug']
-        MONTH9 = [u'september', u'sep']
-        MONTH10 = [u'october', u'oct']
-        MONTH11 = [u'november', u'nov']
-        MONTH12 = [u'december', u'dec']
-        MONTHNAMES = [MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6,
-                      MONTH7, MONTH8, MONTH9, MONTH10, MONTH11, MONTH12]
+        MONTHNAMES = [
+                        ['en_GB.UTF-8', 'en_GB.UTF-8'],
+                        ['january', 'jan'],
+                        ['february', 'feb'],
+                        ['march', 'mar'],
+                        ['april', 'apr'],
+                        ['may', 'may'],
+                        ['june', 'jun'],
+                        ['july', 'jul'],
+                        ['august', 'aug'],
+                        ['september', 'sep'],
+                        ['october', 'oct'],
+                        ['november', 'nov'],
+                        ['december', 'dec']
+                    ]
 
     if len(getList(IMP_MONTHLANG)) == 0:  # any extra languages wanted?
         return
