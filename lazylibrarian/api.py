@@ -823,7 +823,7 @@ class Api(object):
         dbentry = myDB.match('SELECT %sID from %ss WHERE %sID=%s' % (table, table, table, itemid))
         if dbentry:
             myDB.action('UPDATE %ss SET %sImg="%s" WHERE %sID=%s' %
-                        (table, table, 'cache' + os.sep + self.id + '.jpg', table, itemid))
+                        (table, table, 'cache' + os.sep + itemid + '.jpg', table, itemid))
         else:
             self.data = "%sID %s not found" % (table, itemid)
 
