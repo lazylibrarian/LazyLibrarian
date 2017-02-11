@@ -42,6 +42,7 @@ from lazylibrarian.cache import cache_cover
 cmd_dict = {'help': 'list available commands. ' +
                     'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +
                     'otherwise they return OK straight away and run in the background',
+            'showMonths': 'List installed monthnames',
             'getIndex': 'list all authors',
             'getAuthor': '&id= get author by AuthorID and list their books',
             'getAuthorImage': '&id= get an image for this author',
@@ -198,6 +199,9 @@ class Api(object):
     def _getHistory(self):
         self.data = self._dic_from_query(
             "SELECT * from wanted WHERE Status != 'Skipped' and Status != 'Ignored'")
+
+    def _showMonths(self):
+        self.data = lazylibrarian.MONTHNAMES
 
     def _getWanted(self):
         self.data = self._dic_from_query(

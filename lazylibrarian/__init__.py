@@ -364,7 +364,7 @@ def initialize():
     with INIT_LOCK:
         global __INITIALIZED__, LOGDIR, LOGLIMIT, LOGFILES, LOGSIZE, CFG, CFGLOGLEVEL, LOGLEVEL, \
             LOGFULL, CACHEDIR, DATADIR, LAST_LIBRARYTHING, LAST_GOODREADS, \
-            IMP_MONTHLANG, BOOKSTRAP_THEMELIST, CURRENT_TAB, UPDATE_MSG
+            IMP_MONTHLANG, BOOKSTRAP_THEMELIST, MONTHNAMES, CURRENT_TAB, UPDATE_MSG
 
         if __INITIALIZED__:
             return False
@@ -439,7 +439,7 @@ def initialize():
         except Exception as e:
             logger.error("Can't connect to the database: %s" % str(e))
 
-        build_monthtable()
+        MONTHNAMES = build_monthtable()
         BOOKSTRAP_THEMELIST = build_bookstrap_themes()
 
         __INITIALIZED__ = True
@@ -1402,80 +1402,80 @@ def build_bookstrap_themes():
 
 
 def build_monthtable():
-    MONTHNAMES = []
+    table = []
     json_file = os.path.join(DATADIR, 'monthnames.json')
     if os.path.isfile(json_file):
         try:
             with open(json_file) as json_data:
-                MONTHNAMES = json.load(json_data)
+                table = json.load(json_data)
             mlist = ''
             # list alternate entries as each language is in twice (long and short month names)
-            for item in MONTHNAMES[0][::2]:
+            for item in table[0][::2]:
                 mlist += item + ' '
             logger.debug('Loaded monthnames.json : %s' % mlist)
         except Exception as e:
             logger.error('Failed to load monthnames.json, %s' % str(e))
 
-    if not MONTHNAMES:
+    if not table:
         # Default Month names table to hold long/short month names for multiple languages
         # which we can match against magazine issues
-        MONTHNAMES = [
-                        ['en_GB.UTF-8', 'en_GB.UTF-8'],
-                        ['january', 'jan'],
-                        ['february', 'feb'],
-                        ['march', 'mar'],
-                        ['april', 'apr'],
-                        ['may', 'may'],
-                        ['june', 'jun'],
-                        ['july', 'jul'],
-                        ['august', 'aug'],
-                        ['september', 'sep'],
-                        ['october', 'oct'],
-                        ['november', 'nov'],
-                        ['december', 'dec']
-                    ]
+        table = [
+                ['en_GB.UTF-8', 'en_GB.UTF-8'],
+                ['january', 'jan'],
+                ['february', 'feb'],
+                ['march', 'mar'],
+                ['april', 'apr'],
+                ['may', 'may'],
+                ['june', 'jun'],
+                ['july', 'jul'],
+                ['august', 'aug'],
+                ['september', 'sep'],
+                ['october', 'oct'],
+                ['november', 'nov'],
+                ['december', 'dec']
+                ]
 
     if len(getList(IMP_MONTHLANG)) == 0:  # any extra languages wanted?
-        return
+        return table
     try:
         current_locale = locale.setlocale(locale.LC_ALL, '')  # read current state.
         # getdefaultlocale() doesnt seem to work as expected on windows, returns 'None'
         logger.debug('Current locale is %s' % current_locale)
     except locale.Error as e:
         logger.debug("Error getting current locale : %s" % str(e))
-        return
+        return table
 
     lang = str(current_locale)
     # check not already loaded, also all english variants use the same month names
-    if lang in MONTHNAMES[0] or (lang.startswith('en_') and 'en_' in str(MONTHNAMES[0])):
+    if lang in table[0] or (lang.startswith('en_') and 'en_' in str(table[0])):
         logger.debug('Month names for %s already loaded' % lang)
     else:
         logger.debug('Loading month names for %s' % lang)
-        MONTHNAMES[0].append(lang)
+        table[0].append(lang)
         for f in range(1, 13):
-            MONTHNAMES[f].append(unaccented(calendar.month_name[f]).lower())
-        MONTHNAMES[0].append(lang)
+            table[f].append(unaccented(calendar.month_name[f]).lower())
+        table[0].append(lang)
         for f in range(1, 13):
-            MONTHNAMES[f].append(unaccented(calendar.month_abbr[f]).lower().strip('.'))
+            table[f].append(unaccented(calendar.month_abbr[f]).lower().strip('.'))
         logger.info("Added month names for locale [%s], %s, %s ..." % (
-            lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
+            lang, table[1][len(table[1]) - 2], table[1][len(table[1]) - 1]))
 
     for lang in getList(IMP_MONTHLANG):
         try:
-            if lang in MONTHNAMES[0] or (lang.startswith('en_') and 'en_' in str(MONTHNAMES[0])):
+            if lang in table[0] or (lang.startswith('en_') and 'en_' in str(table[0])):
                 logger.debug('Month names for %s already loaded' % lang)
             else:
                 locale.setlocale(locale.LC_ALL, lang)
                 logger.debug('Loading month names for %s' % lang)
-                MONTHNAMES[0].append(lang)
+                table[0].append(lang)
                 for f in range(1, 13):
-                    MONTHNAMES[f].append(unaccented(calendar.month_name[f]).lower())
-                MONTHNAMES[0].append(lang)
+                    table[f].append(unaccented(calendar.month_name[f]).lower())
+                table[0].append(lang)
                 for f in range(1, 13):
-                    MONTHNAMES[f].append(unaccented(calendar.month_abbr[f]).lower().strip('.'))
+                    table[f].append(unaccented(calendar.month_abbr[f]).lower().strip('.'))
                 locale.setlocale(locale.LC_ALL, current_locale)  # restore entry state
                 logger.info("Added month names for locale [%s], %s, %s ..." % (
-                    lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
+                    lang, table[1][len(table[1]) - 2], table[1][len(table[1]) - 1]))
         except Exception as e:
             locale.setlocale(locale.LC_ALL, current_locale)  # restore entry state
             logger.warn("Unable to load requested locale [%s] %s" % (lang, str(e)))
@@ -1499,7 +1499,8 @@ def build_monthtable():
             logger.info("Set locale back to entry state %s" % current_locale)
 
     #with open(json_file, 'w') as f:
-    #    json.dump(MONTHNAMES, f)
+    #    json.dump(table, f)
+    return table
 
 
 def daemonize():
