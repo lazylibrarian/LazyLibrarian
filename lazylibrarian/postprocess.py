@@ -411,7 +411,7 @@ def processDir(reset=False):
 
                 success, err = processDestination(pp_path, dest_path, authorname, bookname, global_name, book['BookID'])
                 if success:
-                    logger.debug("Processing %s, %s" % (global_name, book['NZBurl']))
+                    logger.debug("Processing %s: %s, %s" % (book['NZBmode'], global_name, book['NZBurl']))
                     # update nzbs, only update the snatched ones in case multiple matches for same book/magazine issue
                     controlValueDict = {"BookID": book['BookID'], "NZBurl": book['NZBurl'], "Status": "Snatched"}
                     newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
@@ -478,6 +478,8 @@ def processDir(reset=False):
                                 # calibre might have already deleted it?
                                 try:
                                     shutil.rmtree(pp_path)
+                                    logger.debug('Deleted %s, %s from %s' %
+                                                (book['NZBtitle'], book['NZBmode'], book['Source'].lower()))
                                 except Exception as why:
                                     logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
                         else:
