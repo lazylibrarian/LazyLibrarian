@@ -31,8 +31,7 @@ def get_searchterm(book, searchType):
         while authorname[1] in '. ':  # strip any leading initials
             authorname = authorname[2:].strip()  # and leading whitespace
         # middle initials can't have a dot and name can't end with a dot eg Modesitt Jr.
-        # and no commas in search string
-        authorname = authorname.replace('. ', ' ').replace(', ', ' ').strip('.')
+        authorname = authorname.replace('. ', ' ').strip('.')
         if bookname == authorname and book['bookSub']:
             # books like "Spike Milligan: Man of Letters"
             # where we split the title/subtitle on ':'

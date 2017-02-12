@@ -527,7 +527,7 @@ def processDir(reset=False):
                     bookID = entry.split("LL.(")[1].split(")")[0]
                     logger.debug("Book with id: %s found in download directory" % bookID)
                     data = myDB.match('SELECT BookFile from books WHERE BookID="%s"' % bookID)
-                    if data['BookFile'] and os.path.isfile(data['BookFile']):
+                    if data and data['BookFile'] and os.path.isfile(data['BookFile']):
                         logger.debug('Skipping BookID %s, already exists' % bookID)
                     else:
                         pp_path = os.path.join(download_dir, entry)
@@ -803,7 +803,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                       ]
             logger.debug(str(params))
             res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-            if res:
+            if not res:
+                logger.debug('No response from %s' % lazylibrarian.IMP_CALIBREDB)
+            else:
                 logger.debug('%s reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
                 if 'already exist' in res:
                     logger.warn('Calibre failed to import %s %s, reports book already exists' % (authorname, bookname))

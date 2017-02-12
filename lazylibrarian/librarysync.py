@@ -241,9 +241,12 @@ def find_book_in_db(myDB, author, book):
                 "Fuzz match partname [%d] [%s] [%s]" % (best_partname, book, partname_name))
             return partname_id
 
-        logger.debug(
-            'Fuzz failed [%s - %s] ratio [%d,%s], partial [%d,%s], partname [%d,%s]' %
-            (author, book, best_ratio, ratio_name, best_partial, partial_name, best_partname, partname_name))
+        if books:
+            logger.debug(
+                'Fuzz failed [%s - %s] ratio [%d,%s], partial [%d,%s], partname [%d,%s]' %
+                (author, book, best_ratio, ratio_name, best_partial, partial_name, best_partname, partname_name))
+        else:
+            logger.debug('No books found in database for %s' % author)
         return 0
 
 
@@ -466,6 +469,7 @@ def LibraryScan(startdir=None):
                                 words = author.split(',')
                                 # Need to handle names like "L. E. Modesitt, Jr." or "J. Springmann, Phd"
                                 # use an exceptions list for now, there might be a better way...
+                                # Exclusion list is also in gr.py
                                 if words[1].strip().strip('.').lower in ['snr', 'jnr', 'jr', 'sr', 'phd']:
                                     surname = words[1].strip()
                                     forname = words[0].strip()
@@ -473,13 +477,16 @@ def LibraryScan(startdir=None):
                                     # guess its "surname, forename" or "surname, initial(s)" so swap them round
                                     forename = words[1].strip()
                                     surname = words[0].strip()
+                                logger.debug('Formatted authorname [%s] to [%s %s]' % (author, forename, surname))
                                 author = forename + ' ' + surname
                             # reformat any initials, we want to end up with A.B. van Smith
-                            if author[1] == ' ' or author[1] == '.':
+                            if author[1] in '. ':
+                                surname = author
                                 forename = ''
-                                while author[1] == ' ' or author[1] == '.':
-                                    forename = forename + author[0] + '.'
-                                    author = author[2:].strip()
+                                while surname[1] in '. ':
+                                    forename = forename + surname[0] + '.'
+                                    surname = surname[2:].strip()
+                                logger.debug('Stripped authorname [%s] to [%s %s]' % (author, forename, surname))
                                 author = forename + ' ' + author
 
                             author = ' '.join(author.split())  # ensure no extra whitespace
@@ -489,9 +496,10 @@ def LibraryScan(startdir=None):
                             #
                             check_exist_author = myDB.match(
                                 'SELECT * FROM authors where AuthorName="%s"' % author.replace('"', '""'))
-                            if not check_exist_author and lazylibrarian.ADD_AUTHOR:
-                                # no match for supplied author, but we're allowed to add new ones
 
+                            if not check_exist_author and lazylibrarian.ADD_AUTHOR:
+                                logger.debug('Author %s not found in database, trying to add' % author)
+                                # no match for supplied author, but we're allowed to add new ones
                                 GR = GoodReads(author)
                                 try:
                                     author_gr = GR.find_author_id()
@@ -535,7 +543,9 @@ def LibraryScan(startdir=None):
                                         # database, so check again
                                         check_exist_author = myDB.match(
                                             'SELECT * FROM authors where AuthorName="%s"' % author.replace('"', '""'))
-                                        if not check_exist_author:
+                                        if check_exist_author:
+                                            logger.debug('Found goodreads authorname %s in database' % author)
+                                        else:
                                             logger.info("Adding new author [%s]" % author)
                                             try:
                                                 addAuthorToDB(author, False)
