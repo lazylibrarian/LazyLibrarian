@@ -1446,8 +1446,8 @@ def build_monthtable():
         return table
 
     lang = str(current_locale)
-    # check not already loaded, also all english variants use the same month names
-    if lang in table[0] or (lang.startswith('en_') and 'en_' in str(table[0])):
+    # check not already loaded, also all english variants and 'C' use the same month names
+    if lang in table[0] or ((lang.startswith('en_') or lang == 'C') and 'en_' in str(table[0])):
         logger.debug('Month names for %s already loaded' % lang)
     else:
         logger.debug('Loading month names for %s' % lang)
@@ -1462,7 +1462,7 @@ def build_monthtable():
 
     for lang in getList(IMP_MONTHLANG):
         try:
-            if lang in table[0] or (lang.startswith('en_') and 'en_' in str(table[0])):
+            if lang in table[0] or ((lang.startswith('en_') or lang == 'C') and 'en_' in str(table[0])):
                 logger.debug('Month names for %s already loaded' % lang)
             else:
                 locale.setlocale(locale.LC_ALL, lang)
