@@ -220,9 +220,16 @@ class GoodReads:
         if not len(resultxml):
             logger.warn('No author found with ID: ' + authorid)
         else:
-            logger.debug("[%s] Processing info for authorID: %s" % (authorname, authorid))
-            # PAB added authorname to author_dict - this holds the intact name preferred by GR
+            # added authorname to author_dict - this holds the intact name preferred by GR
+            # except GR messes up names like "L. E. Modesitt, Jr." where it returns <name>Jr., L. E. Modesitt</name>
             authorname = resultxml[1].text
+            if "," in authorname:
+                words = authorname.split(',')
+                # exclusion list is also in librarysync.py
+                if words[0].strip().strip('.').lower in ['snr', 'jnr', 'jr', 'sr', 'phd']:
+                    authorname = words[1].strip() + ' ' + words[0].strip()
+
+            logger.debug("[%s] Processing info for authorID: %s" % (authorname, authorid))
             author_dict = {
                 'authorid': resultxml[0].text,
                 'authorlink': resultxml.find('link').text,
