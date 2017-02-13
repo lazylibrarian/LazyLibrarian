@@ -331,7 +331,7 @@ def magazineScan():
                 controlValueDict = {"Title": title}
 
                 # is this magazine already in the database?
-                mag_entry = myDB.select('SELECT * from magazines WHERE Title="%s" COLLATE NOCASE' % title)
+                mag_entry = myDB.match('SELECT * from magazines WHERE Title="%s" COLLATE NOCASE' % title)
                 if not mag_entry:
                     # need to add a new magazine to the database
                     newValueDict = {
@@ -349,9 +349,9 @@ def magazineScan():
                     magissuedate = None
                     magazineadded = None
                 else:
-                    maglastacquired = mag_entry[0]['LastAcquired']
-                    magissuedate = mag_entry[0]['IssueDate']
-                    magazineadded = mag_entry[0]['MagazineAdded']
+                    maglastacquired = mag_entry['LastAcquired']
+                    magissuedate = mag_entry['IssueDate']
+                    magazineadded = mag_entry['MagazineAdded']
                     magissuedate = str(magissuedate).zfill(4)
 
                 issuedate = str(issuedate).zfill(4)  # for sorting issue numbers
@@ -380,7 +380,7 @@ def magazineScan():
                 # Set magazine_added to acquired date of earliest issue we have
                 # Set magazine_lastacquired to acquired date of most recent issue we have
                 # acquired dates are read from magazine file timestamps
-                if magazineadded is None:  # new magazine, this might be the only issue
+                if not magazineadded:  # new magazine, this might be the only issue
                     controlValueDict = {"Title": title}
                     newValueDict = {
                         "MagazineAdded": iss_acquired,
@@ -395,12 +395,12 @@ def magazineScan():
                         controlValueDict = {"Title": title}
                         newValueDict = {"MagazineAdded": iss_acquired}
                         myDB.upsert("magazines", newValueDict, controlValueDict)
-                    if maglastacquired is None or iss_acquired > maglastacquired:
+                    if not maglastacquired or iss_acquired > maglastacquired:
                         controlValueDict = {"Title": title}
                         newValueDict = {"LastAcquired": iss_acquired,
                                         "LatestCover": os.path.splitext(issuefile)[0] + '.jpg'}
                         myDB.upsert("magazines", newValueDict, controlValueDict)
-                    if magissuedate is None or issuedate > magissuedate:
+                    if not magissuedate or issuedate > magissuedate:
                         controlValueDict = {"Title": title}
                         newValueDict = {"IssueDate": issuedate}
                         myDB.upsert("magazines", newValueDict, controlValueDict)

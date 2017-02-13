@@ -1076,8 +1076,9 @@
                                         </div>
                                         <div class="form-group">
                                             <label for="mag_dest_file">Magazine Destination File:</label>
-                                            <input type="text" id="mag_dest_file" name="mag_dest_file" value="${lazylibrarian.MAG_DEST_FILE}" class="form-control" placeholder="Magazine Destination File">
-                                            <span class="help-block">Options include $Title, $IssueDate, any string</span>
+                                            <input type="text" id="mag_dest_file" name="mag_dest_file" value="${lazylibrarian.MAG_DEST_FILE}" class="form-control" placeholder="Magazine Issue Filename">
+                                            <span class="help-block">Options include $Title, $IssueDate, any string
+                                            <BR>Current limitation: Issue Filename must contain Title and Date</span>
                                         </div>
                                         <div class="checkbox">
                                             <%
@@ -1089,7 +1090,7 @@
                                             <label for="mag_relative" class="control-label">
                                             <input type="checkbox" id="mag_relative" name="mag_relative" value="1" ${checked} />
                                             Magazines inside book folder</label>
-                                            <span class="help-block">Current limitation: each magazine has to be in unique subfolder<br/>If inside book folder, magazine folder must start with _</span>
+                                            <span class="help-block">Current limitation: If inside book folder, magazine folder must start with _</span>
                                         </div>
 
                                     </fieldset>
