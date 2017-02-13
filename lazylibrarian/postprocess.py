@@ -456,7 +456,7 @@ def processDir(reset=False):
                     # calibre or ll copied/moved the files we want, now delete source files
 
                     to_delete = True
-                    if book['NZBmode'] in ['torrent', 'magnet']:
+                    if book['NZBmode'] in ['torrent', 'magnet', 'torznab']:
                         # Only delete torrents if we don't want to keep seeding
                         if lazylibrarian.KEEP_SEEDING:
                             logger.warn('%s is seeding %s %s' % (book['Source'], book['NZBmode'], book['NZBtitle']))

@@ -893,10 +893,11 @@
                 <td>
 		            <label>Magazine Destination Folder:</label>
 		            <input type="text" name="mag_dest_folder" value="${lazylibrarian.MAG_DEST_FOLDER}" size="26">
-                    <br><label>Magazine Destination File:</label>
+                    <br><label>Magazine Issue Filename:</label>
                     <input type="text" name="mag_dest_file" value="${lazylibrarian.MAG_DEST_FILE}" size="26">
                     <BR>
                     <small>Options include $Title, $IssueDate, any string</small>
+                    <small>Current limitation: Issue Filename must contain Title and Date </small>
                     <BR>
                     <%
                     if lazylibrarian.MAG_RELATIVE == True:
@@ -906,10 +907,7 @@
                     %>
                     <input type="checkbox" name="mag_relative" value=1 ${checked} /><label>Magazines inside book folder</label>
 		            <BR>
-                    <small>Current limitation: each magazine has to be in unique subfolder
-		            <BR>
-		            If inside book folder, magazine folder must start with _
-                    </small>
+                    <small>Current limitation: If inside book folder, magazine folder must start with _ </small>
                 </td>
             </tr>
             <tr>
