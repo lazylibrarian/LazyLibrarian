@@ -26,7 +26,8 @@ import lazylibrarian
 from lazylibrarian import database, logger, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology, sabnzbd, nzbget
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, internet
-from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, unaccented
+from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, \
+    unaccented, getList
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB
 from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
@@ -34,6 +35,11 @@ from lazylibrarian.magazinescan import create_id, create_cover
 from lazylibrarian.notifiers import notify_download
 from lib.deluge_client import DelugeRPCClient
 from lib.fuzzywuzzy import fuzz
+
+# Need to remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
+# as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
+__dic__ = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
+           ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
 
 
 def processAlternate(source_dir=None):
@@ -361,11 +367,7 @@ def processDir(reset=False):
                         global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace(
                             '$Title', bookname)
                         global_name = unaccented(global_name)
-                        # Remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
-                        # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
-                        dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
-                               ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
-                        dest_path = unaccented_str(replace_all(dest_path, dic))
+                        dest_path = unaccented_str(replace_all(dest_path, __dic__))
                         dest_dir = lazylibrarian.DIRECTORY('Destination')
                         dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
                     else:
@@ -376,11 +378,7 @@ def processDir(reset=False):
                             # but if multiple files are downloading, there will be an error in post-processing
                             # trying to go to the same directory.
                             mostrecentissue = data['IssueDate']  # keep for processing issues arriving out of order
-                            # Remove characters we don't want in the filename before (maybe) adding to DESTINATION_DIR
-                            # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
-                            dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
-                                   ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
-                            mag_name = unaccented_str(replace_all(book['BookID'], dic))
+                            mag_name = unaccented_str(replace_all(book['BookID'], __dic__))
                             # book auxinfo is a cleaned date, eg 2015-01-01
                             dest_path = lazylibrarian.MAG_DEST_FOLDER.replace(
                                 '$IssueDate', book['AuxInfo']).replace('$Title', mag_name)
@@ -479,7 +477,7 @@ def processDir(reset=False):
                                 try:
                                     shutil.rmtree(pp_path)
                                     logger.debug('Deleted %s, %s from %s' %
-                                                (book['NZBtitle'], book['NZBmode'], book['Source'].lower()))
+                                                 (book['NZBtitle'], book['NZBmode'], book['Source'].lower()))
                                 except Exception as why:
                                     logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
                         else:
@@ -655,11 +653,7 @@ def import_book(pp_path=None, bookID=None):
             dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace('$Title', bookname)
             global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace('$Title', bookname)
             global_name = unaccented(global_name)
-            # Remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
-            # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
-            dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
-                   ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
-            dest_path = unaccented_str(replace_all(dest_path, dic))
+            dest_path = unaccented_str(replace_all(dest_path, __dic__))
             dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
 
             success, err = processDestination(pp_path, dest_path, authorname, bookname, global_name, bookID)
@@ -769,13 +763,33 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     if isinstance(pp_path, str):
         pp_path = pp_path.decode(lazylibrarian.SYS_ENCODING)
 
-    got_book = False
-    for bookfile in os.listdir(pp_path):
-        if is_valid_booktype(bookfile, booktype=booktype):
-            got_book = bookfile
-            break
+    match = False
+    if bookname and lazylibrarian.ONE_FORMAT:
+        booktype_list = getList(lazylibrarian.EBOOK_TYPE)
+        for booktype in booktype_list:
+            while not match:
+                for bookfile in os.listdir(pp_path):
+                    extn = os.path.splitext(bookfile)[1].lstrip('.')
+                    if extn and extn.lower() == booktype:
+                        match = booktype
+                        break
+        if match:
+            logger.debug('One format import best match: %s' % match)
+            for bookfile in os.listdir(pp_path):
+                if is_valid_booktype(bookfile, booktype=booktype) and not bookfile.endswith(match):
+                    logger.debug('Deleting %s' % os.path.splitext(bookfile)[1])
+                    try:
+                        os.remove(bookfile)
+                    except OSError as why:
+                        logger.debug('Unable to delete %s: %s' % (bookfile, why.strerror))
 
-    if got_book is False:
+    else:  # mag or multi-format book
+        for bookfile in os.listdir(pp_path):
+            if is_valid_booktype(bookfile, booktype=booktype):
+                match = True
+                break
+
+    if not match:
         # no book/mag found in a format we wanted. Leave for the user to delete or convert manually
         return False, 'Unable to locate a book/magazine in %s, leaving for manual processing' % pp_path
 

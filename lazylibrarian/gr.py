@@ -225,8 +225,7 @@ class GoodReads:
             authorname = resultxml[1].text
             if "," in authorname:
                 words = authorname.split(',')
-                # exclusion list is also in librarysync.py
-                if words[0].strip().strip('.').lower in ['snr', 'jnr', 'jr', 'sr', 'phd']:
+                if words[0].strip().strip('.').lower in lazylibrarian.NAME_POSTFIX:
                     authorname = words[1].strip() + ' ' + words[0].strip()
 
             logger.debug("[%s] Processing info for authorID: %s" % (authorname, authorid))

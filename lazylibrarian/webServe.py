@@ -67,11 +67,9 @@ def serve_template(templatename, **kwargs):
 
 
 class WebInterface(object):
-
     @cherrypy.expose
     def index(self):
         raise cherrypy.HTTPRedirect("home")
-
 
     @cherrypy.expose
     def home(self):
@@ -83,7 +81,6 @@ class WebInterface(object):
             authors = myDB.select(
                 'SELECT * from authors where Status != "Ignored" order by AuthorName COLLATE NOCASE')
             return serve_template(templatename="index.html", title="Home", authors=authors)
-
 
     @staticmethod
     def label_thread():
@@ -149,7 +146,7 @@ class WebInterface(object):
             tdl_host='', zoo=0, zoo_host='', ebook_type='', mag_type='', reject_words='', reject_maxsize=0,
             reject_magsize=0, extra=0, extra_host='', gen=0, gen_host='', lime=0, lime_host='', book_api='',
             gr_api='', gb_api='', versioncheck_interval='', search_interval='', scan_interval='',
-            searchrss_interval=20, ebook_dest_folder='', ebook_dest_file='', tor_downloader_rtorrent=0,
+            searchrss_interval=20, ebook_dest_folder='', ebook_dest_file='', one_format=0, tor_downloader_rtorrent=0,
             keep_seeding=0, prefer_magnet=0, rtorrent_host='', rtorrent_dir='', rtorrent_user='', rtorrent_pass='',
             rtorrent_label='', use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
             mag_age=0, mag_dest_folder='', mag_dest_file='', mag_relative=0, mag_single=0, cache_age=30, task_age=0,
@@ -331,6 +328,7 @@ class WebInterface(object):
 
         lazylibrarian.EBOOK_DEST_FOLDER = ebook_dest_folder
         lazylibrarian.EBOOK_DEST_FILE = ebook_dest_file
+        lazylibrarian.ONE_FORMAT = bool(one_format)
         lazylibrarian.MAG_DEST_FOLDER = mag_dest_folder
         lazylibrarian.MAG_DEST_FILE = mag_dest_file
         lazylibrarian.MAG_RELATIVE = bool(mag_relative)
@@ -1006,7 +1004,6 @@ class WebInterface(object):
         else:
             logger.info(u'Missing author %s' % authorid)
 
-
     @cherrypy.expose
     def authorUpdate(self, authorid='', authorname='', authorborn='', authordeath='', authorimg='', manual='0'):
         self.label_thread()
@@ -1081,7 +1078,7 @@ class WebInterface(object):
                         # Cache file image
                         if os.path.isfile(authorimg):
                             extn = os.path.splitext(authorimg)[1].lower()
-                            if extn and extn in ['.jpg','.jpeg','.png']:
+                            if extn and extn in ['.jpg', '.jpeg', '.png']:
                                 destfile = os.path.join(lazylibrarian.CACHEDIR, authorid + '.jpg')
                                 try:
                                     copyfile(authorimg, destfile)
@@ -1089,12 +1086,12 @@ class WebInterface(object):
                                     authorimg = 'cache' + os.sep + authorid + '.jpg'
                                     rejected = False
                                 except Exception as why:
-                                    logger.debug("Failed to copy file %s, %s" %  (authorimg, str(why)))
+                                    logger.debug("Failed to copy file %s, %s" % (authorimg, str(why)))
 
                         if authorimg.startswith('http'):
                             # cache image from url
                             extn = os.path.splitext(authorimg)[1].lower()
-                            if extn and extn in ['.jpg','.jpeg','.png']:
+                            if extn and extn in ['.jpg', '.jpeg', '.png']:
                                 authorimg = cache_cover(authorid, authorimg)
                                 if authorimg:
                                     rejected = False
@@ -1124,7 +1121,6 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % authorid)
         else:
             raise cherrypy.HTTPRedirect("authors")
-
 
     @cherrypy.expose
     def editBook(self, bookid=None):
@@ -1280,7 +1276,6 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("books")
         else:
             raise cherrypy.HTTPRedirect("manage")
-
 
     # MAGAZINES #########################################################
 
@@ -1670,7 +1665,6 @@ class WebInterface(object):
                 if lazylibrarian.IMP_AUTOSEARCH:
                     self.startMagazineSearch(mags)
             raise cherrypy.HTTPRedirect("magazines")
-
 
     # UPDATES ###########################################################
 

@@ -1060,6 +1060,17 @@
                                             <input type="checkbox" id="destination_copy" name="destination_copy" value="1" ${checked} />
                                             Keep original files</label>
                                         </div>
+                                        <div class="checkbox">
+                                            <%
+                                            if lazylibrarian.ONE_FORMAT == True:
+                                                checked = 'checked="checked"'
+                                            else:
+                                                checked = ''
+                                            %>
+                                            <label for="one_format">
+                                            <input type="checkbox" id="one_format" name="one_format" value="1" ${checked} />
+                                            Only import one format of an ebook if multiple formats downloaded</label>
+                                        </div>
                                         <div class="form-group">
                                             <label for="imp_calibredb">Calibredb import program:</label>
                                             <input type="text" id="imp_calibredb" name="imp_calibredb" value="${lazylibrarian.IMP_CALIBREDB}" class="form-control">
@@ -1075,7 +1086,7 @@
                                             <input type="text" id="mag_dest_folder" name="mag_dest_folder" value="${lazylibrarian.MAG_DEST_FOLDER}" class="form-control" placeholder="Magazines Destination Folder">
                                         </div>
                                         <div class="form-group">
-                                            <label for="mag_dest_file">Magazine Destination File:</label>
+                                            <label for="mag_dest_file">Magazine Issue Filename:</label>
                                             <input type="text" id="mag_dest_file" name="mag_dest_file" value="${lazylibrarian.MAG_DEST_FILE}" class="form-control" placeholder="Magazine Issue Filename">
                                             <span class="help-block">Options include $Title, $IssueDate, any string
                                             <BR>Current limitation: Issue Filename must contain Title and Date</span>

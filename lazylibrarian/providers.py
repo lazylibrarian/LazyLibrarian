@@ -27,11 +27,7 @@ from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL, GEN, EXTRA, LIME
 def get_searchterm(book, searchType):
     authorname = cleanName(book['authorName'])
     bookname = cleanName(book['bookName'])
-    if searchType == "book" or searchType == "shortbook":
-        while authorname[1] in '. ':  # strip any leading initials
-            authorname = authorname[2:].strip()  # and leading whitespace
-        # middle initials can't have a dot and name can't end with a dot eg Modesitt Jr.
-        authorname = authorname.replace('. ', ' ').strip('.')
+    if searchType in ['book', 'shortbook', 'shortgeneral']:
         if bookname == authorname and book['bookSub']:
             # books like "Spike Milligan: Man of Letters"
             # where we split the title/subtitle on ':'
@@ -42,10 +38,21 @@ def get_searchterm(book, searchType):
             bookname = bookname[len(authorname) + 1:]
         bookname = bookname.strip()
 
+        # no initials or extensions after surname eg L. E. Modesitt Jr. -> Modesitt
+        if ' ' in authorname:
+            authorname_exploded = authorname.split(' ')
+            authorname = ''
+            for word in authorname_exploded:
+                word = word.strip('.')
+                if len(word) > 1 and word.lower() not in lazylibrarian.NAME_POSTFIX:
+                    if authorname:
+                        authorname += ' '
+                    authorname += word
+
         if searchType == "book":
             return authorname, bookname
 
-        if searchType == "shortbook" and '(' in bookname:
+        if 'short' in searchType and '(' in bookname:
             bookname = bookname.split('(')[0].strip()
             return authorname, bookname
 
@@ -407,7 +414,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
 def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
 
     params = None
-    if searchType == "book":
+    if searchType in ["book", "shortbook"]:
         authorname, bookname = get_searchterm(book, searchType)
         if provider['BOOKSEARCH'] and provider['BOOKCAT']:  # if specific booksearch, use it
             params = {
@@ -418,23 +425,6 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "cat": provider['BOOKCAT']
             }
         elif provider['GENERALSEARCH'] and provider['BOOKCAT']:  # if not, try general search
-            params = {
-                "t": provider['GENERALSEARCH'],
-                "apikey": api_key,
-                "q": authorname + ' ' + bookname,
-                "cat": provider['BOOKCAT']
-            }
-    elif searchType == "shortbook":
-        authorname, bookname = get_searchterm(book, searchType)
-        if provider['BOOKSEARCH'] and provider['BOOKCAT']:  # if specific booksearch, use it
-            params = {
-                "t": provider['BOOKSEARCH'],
-                "apikey": api_key,
-                "title": bookname,
-                "author": authorname,
-                "cat": provider['BOOKCAT']
-            }
-        elif provider['GENERALSEARCH'] and provider['BOOKCAT']:
             params = {
                 "t": provider['GENERALSEARCH'],
                 "apikey": api_key,
@@ -460,11 +450,15 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
             }
     else:
         if provider['GENERALSEARCH']:
+            if searchType == "shortgeneral":
+                authorname, bookname = get_searchterm(book, searchType)
+                searchterm = authorname + ' ' + bookname
+            else:
+                searchterm = unaccented(book['searchterm'])
             params = {
                 "t": provider['GENERALSEARCH'],
                 "apikey": api_key,
-                # this is a general search
-                "q": unaccented(book['searchterm']),
+                "q": searchterm,
                 "extended": provider['EXTENDED'],
             }
     if params:

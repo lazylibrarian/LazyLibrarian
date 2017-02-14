@@ -65,6 +65,8 @@ UPDATE_MSG = ''
 CONFIGFILE = ''
 CFG = ''
 CURRENT_TAB = '1'
+# Bits after surname that we need to keep at the end...
+NAME_POSTFIX = ['snr', 'jnr', 'jr', 'sr', 'phd']
 LOGDIR = None
 CACHEDIR = None
 LOGLIST = []
@@ -230,6 +232,7 @@ NEWAUTHOR_STATUS = 'Skipped'
 NEWBOOK_STATUS = 'Skipped'
 EBOOK_DEST_FOLDER = None
 EBOOK_DEST_FILE = None
+ONE_FORMAT = 0
 MAG_DEST_FOLDER = None
 MAG_DEST_FILE = None
 MAG_RELATIVE = 1
@@ -364,7 +367,7 @@ def initialize():
     with INIT_LOCK:
         global __INITIALIZED__, LOGDIR, LOGLIMIT, LOGFILES, LOGSIZE, CFG, CFGLOGLEVEL, LOGLEVEL, \
             LOGFULL, CACHEDIR, DATADIR, LAST_LIBRARYTHING, LAST_GOODREADS, \
-            IMP_MONTHLANG, BOOKSTRAP_THEMELIST, MONTHNAMES, CURRENT_TAB, UPDATE_MSG
+            IMP_MONTHLANG, BOOKSTRAP_THEMELIST, MONTHNAMES, CURRENT_TAB, UPDATE_MSG, NAME_POSTFIX
 
         if __INITIALIZED__:
             return False
@@ -462,7 +465,7 @@ def config_read(reloaded=False):
         KAT, KAT_HOST, TPB, TPB_HOST, ZOO, ZOO_HOST, TDL, TDL_HOST, GEN, GEN_HOST, EXTRA, EXTRA_HOST, \
         LIME, LIME_HOST, NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, REJECT_WORDS, REJECT_MAXSIZE, REJECT_MAGSIZE, \
         VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, SEARCHRSS_INTERVAL, MAG_AGE, \
-        EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, MAG_SINGLE, \
+        EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, ONE_FORMAT, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, MAG_SINGLE, \
         USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, \
         TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, TOR_CONVERT_MAGNET, \
         USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, \
@@ -821,6 +824,7 @@ def config_read(reloaded=False):
 
     EBOOK_DEST_FOLDER = check_setting_str(CFG, 'PostProcess', 'ebook_dest_folder', '$Author/$Title')
     EBOOK_DEST_FILE = check_setting_str(CFG, 'PostProcess', 'ebook_dest_file', '$Title - $Author')
+    ONE_FORMAT = check_setting_bool(CFG, 'PostProcess', 'one_format', 0)
     MAG_DEST_FOLDER = check_setting_str(CFG, 'PostProcess', 'mag_dest_folder', '_Magazines/$Title/$IssueDate')
     MAG_DEST_FILE = check_setting_str(CFG, 'PostProcess', 'mag_dest_file', '$IssueDate - $Title')
     MAG_RELATIVE = check_setting_bool(CFG, 'PostProcess', 'mag_relative', 1)
@@ -1142,6 +1146,7 @@ def config_write():
     check_section('PostProcess')
     CFG.set('PostProcess', 'ebook_dest_folder', EBOOK_DEST_FOLDER.encode(SYS_ENCODING))
     CFG.set('PostProcess', 'ebook_dest_file', EBOOK_DEST_FILE.encode(SYS_ENCODING))
+    CFG.set('PostProcess', 'one_format', ONE_FORMAT)
     CFG.set('PostProcess', 'mag_dest_folder', MAG_DEST_FOLDER.encode(SYS_ENCODING))
     CFG.set('PostProcess', 'mag_dest_file', MAG_DEST_FILE.encode(SYS_ENCODING))
     CFG.set('PostProcess', 'mag_relative', MAG_RELATIVE)
