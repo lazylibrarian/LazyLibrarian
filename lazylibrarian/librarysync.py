@@ -386,8 +386,7 @@ def LibraryScan(startdir=None):
 
                         # if it's an epub or a mobi we can try to read metadata from it
                         if (extn == ".epub") or (extn == ".mobi"):
-                            book_filename = os.path.join(
-                                r.encode(lazylibrarian.SYS_ENCODING), files.encode(lazylibrarian.SYS_ENCODING))
+                            book_filename = os.path.join(r, files).encode(lazylibrarian.SYS_ENCODING)
 
                             try:
                                 res = get_book_info(book_filename)
@@ -469,8 +468,7 @@ def LibraryScan(startdir=None):
                                 words = author.split(',')
                                 # Need to handle names like "L. E. Modesitt, Jr." or "J. Springmann, Phd"
                                 # use an exceptions list for now, there might be a better way...
-                                # Exclusion list is also in gr.py
-                                if words[1].strip().strip('.').lower in ['snr', 'jnr', 'jr', 'sr', 'phd']:
+                                if words[1].strip().strip('.').lower in lazylibrarian.NAME_POSTFIX:
                                     surname = words[1].strip()
                                     forname = words[0].strip()
                                 else:

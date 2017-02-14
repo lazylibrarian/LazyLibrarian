@@ -35,6 +35,10 @@ from lazylibrarian.notifiers import notify_download
 from lib.deluge_client import DelugeRPCClient
 from lib.fuzzywuzzy import fuzz
 
+# Need to remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
+# as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
+__dic__ = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
+           ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
 
 def processAlternate(source_dir=None):
     # import a book from an alternate directory
@@ -361,11 +365,7 @@ def processDir(reset=False):
                         global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace(
                             '$Title', bookname)
                         global_name = unaccented(global_name)
-                        # Remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
-                        # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
-                        dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
-                               ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
-                        dest_path = unaccented_str(replace_all(dest_path, dic))
+                        dest_path = unaccented_str(replace_all(dest_path, __dic__))
                         dest_dir = lazylibrarian.DIRECTORY('Destination')
                         dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
                     else:
@@ -376,11 +376,7 @@ def processDir(reset=False):
                             # but if multiple files are downloading, there will be an error in post-processing
                             # trying to go to the same directory.
                             mostrecentissue = data['IssueDate']  # keep for processing issues arriving out of order
-                            # Remove characters we don't want in the filename before (maybe) adding to DESTINATION_DIR
-                            # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
-                            dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
-                                   ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
-                            mag_name = unaccented_str(replace_all(book['BookID'], dic))
+                            mag_name = unaccented_str(replace_all(book['BookID'], __dic__))
                             # book auxinfo is a cleaned date, eg 2015-01-01
                             dest_path = lazylibrarian.MAG_DEST_FOLDER.replace(
                                 '$IssueDate', book['AuxInfo']).replace('$Title', mag_name)
@@ -655,11 +651,7 @@ def import_book(pp_path=None, bookID=None):
             dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace('$Title', bookname)
             global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace('$Title', bookname)
             global_name = unaccented(global_name)
-            # Remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
-            # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
-            dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
-                   ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
-            dest_path = unaccented_str(replace_all(dest_path, dic))
+            dest_path = unaccented_str(replace_all(dest_path, __dic__))
             dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
 
             success, err = processDestination(pp_path, dest_path, authorname, bookname, global_name, bookID)

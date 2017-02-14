@@ -103,6 +103,11 @@ def search_nzb_book(books=None, reset=False):
                 resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'general')
                 found = processResultList(resultlist, book, "general")
 
+             # if still not found, try general search again without any "(extended details, series etc)"
+            if not found and '(' in book['bookName']:
+                resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'shortgeneral')
+                found = processResultList(resultlist, book, "shortgeneral")
+
             if not found:
                 logger.info("NZB Searches for %s returned no results." % book['searchterm'])
             if found > True:

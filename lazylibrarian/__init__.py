@@ -65,6 +65,8 @@ UPDATE_MSG = ''
 CONFIGFILE = ''
 CFG = ''
 CURRENT_TAB = '1'
+# Bits after surname that we need to keep at the end...
+NAME_POSTFIX = ['snr', 'jnr', 'jr', 'sr', 'phd']
 LOGDIR = None
 CACHEDIR = None
 LOGLIST = []
@@ -364,7 +366,7 @@ def initialize():
     with INIT_LOCK:
         global __INITIALIZED__, LOGDIR, LOGLIMIT, LOGFILES, LOGSIZE, CFG, CFGLOGLEVEL, LOGLEVEL, \
             LOGFULL, CACHEDIR, DATADIR, LAST_LIBRARYTHING, LAST_GOODREADS, \
-            IMP_MONTHLANG, BOOKSTRAP_THEMELIST, MONTHNAMES, CURRENT_TAB, UPDATE_MSG
+            IMP_MONTHLANG, BOOKSTRAP_THEMELIST, MONTHNAMES, CURRENT_TAB, UPDATE_MSG, NAME_POSTFIX
 
         if __INITIALIZED__:
             return False
