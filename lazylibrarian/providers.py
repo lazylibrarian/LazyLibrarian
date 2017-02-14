@@ -28,19 +28,6 @@ def get_searchterm(book, searchType):
     authorname = cleanName(book['authorName'])
     bookname = cleanName(book['bookName'])
     if searchType in ['book', 'shortbook', 'shortgeneral']:
-        #while authorname[1] in '. ':  # strip any leading initials
-        #    authorname = authorname[2:].strip()  # and leading whitespace
-        # no initials or extensions after surname eg L. E. Modesitt Jr. -> Modesitt
-        if ' ' in authorname:
-            authorname_exploded = authorname.split(' ')
-            authorname = ''
-            for word in authorname_exploded:
-                word = word.strip('.')
-                if len(word) > 1 and word.lower() not in lazylibrarian.NAME_POSTFIX:
-                    if authorname:
-                        authorname += ' '
-                    authorname += word
-            authorname.strip()
         if bookname == authorname and book['bookSub']:
             # books like "Spike Milligan: Man of Letters"
             # where we split the title/subtitle on ':'
@@ -51,10 +38,21 @@ def get_searchterm(book, searchType):
             bookname = bookname[len(authorname) + 1:]
         bookname = bookname.strip()
 
+        # no initials or extensions after surname eg L. E. Modesitt Jr. -> Modesitt
+        if ' ' in authorname:
+            authorname_exploded = authorname.split(' ')
+            authorname = ''
+            for word in authorname_exploded:
+                word = word.strip('.')
+                if len(word) > 1 and word.lower() not in lazylibrarian.NAME_POSTFIX:
+                    if authorname:
+                        authorname += ' '
+                    authorname += word
+
         if searchType == "book":
             return authorname, bookname
 
-        if searchType in ['shortbook', 'shortgeneral'] and '(' in bookname:
+        if 'short' in searchType and '(' in bookname:
             bookname = bookname.split('(')[0].strip()
             return authorname, bookname
 
