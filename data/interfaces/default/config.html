@@ -889,6 +889,18 @@
                     %>
                     <input type="checkbox" name="destination_copy" value=1 ${checked} /><label>Keep original files</label>
                     </div>
+                    <div>
+                    <%
+                    if lazylibrarian.ONE_FORMAT == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                    <input type="checkbox" name="one_format" value=1 ${checked} /><label>Import one format</label>
+                    <BR>
+                    <small>Only import one format of an ebook if multiple formats downloaded
+                    </small>
+                    </div>
                 </td>
                 <td>
 		            <label>Magazine Destination Folder:</label>

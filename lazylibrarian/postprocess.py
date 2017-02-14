@@ -26,7 +26,8 @@ import lazylibrarian
 from lazylibrarian import database, logger, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology, sabnzbd, nzbget
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, internet
-from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, unaccented
+from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, \
+    unaccented, getList
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB
 from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
@@ -39,6 +40,7 @@ from lib.fuzzywuzzy import fuzz
 # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
 __dic__ = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
            ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
+
 
 def processAlternate(source_dir=None):
     # import a book from an alternate directory
@@ -475,7 +477,7 @@ def processDir(reset=False):
                                 try:
                                     shutil.rmtree(pp_path)
                                     logger.debug('Deleted %s, %s from %s' %
-                                                (book['NZBtitle'], book['NZBmode'], book['Source'].lower()))
+                                                 (book['NZBtitle'], book['NZBmode'], book['Source'].lower()))
                                 except Exception as why:
                                     logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
                         else:
@@ -761,13 +763,33 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     if isinstance(pp_path, str):
         pp_path = pp_path.decode(lazylibrarian.SYS_ENCODING)
 
-    got_book = False
-    for bookfile in os.listdir(pp_path):
-        if is_valid_booktype(bookfile, booktype=booktype):
-            got_book = bookfile
-            break
+    match = False
+    if bookname and lazylibrarian.ONE_FORMAT:
+        booktype_list = getList(lazylibrarian.EBOOK_TYPE)
+        for booktype in booktype_list:
+            while not match:
+                for bookfile in os.listdir(pp_path):
+                    extn = os.path.splitext(bookfile)[1].lstrip('.')
+                    if extn and extn.lower() == booktype:
+                        match = booktype
+                        break
+        if match:
+            logger.debug('One format import best match: %s' % match)
+            for bookfile in os.listdir(pp_path):
+                if is_valid_booktype(bookfile, booktype=booktype) and not bookfile.endswith(match):
+                    logger.debug('Deleting %s' % os.path.splitext(bookfile)[1])
+                    try:
+                        os.remove(bookfile)
+                    except OSError as why:
+                        logger.debug('Unable to delete %s: %s' % (bookfile, why.strerror))
 
-    if got_book is False:
+    else:  # mag or multi-format book
+        for bookfile in os.listdir(pp_path):
+            if is_valid_booktype(bookfile, booktype=booktype):
+                match = True
+                break
+
+    if not match:
         # no book/mag found in a format we wanted. Leave for the user to delete or convert manually
         return False, 'Unable to locate a book/magazine in %s, leaving for manual processing' % pp_path
 
