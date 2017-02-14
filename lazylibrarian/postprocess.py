@@ -940,20 +940,43 @@ def processAutoAdd(src_path=None):
         # and only imports one format of each ebook, treats the others as duplicates
         # Maybe need to rewrite this so we only copy the first ebook we find and ignore everything else
         #
+        match = False
+        if lazylibrarian.ONE_FORMAT:
+            booktype_list = getList(lazylibrarian.EBOOK_TYPE)
+            for booktype in booktype_list:
+                while not match:
+                    for bookfile in names:
+                        extn = os.path.splitext(bookfile)[1].lstrip('.')
+                        if extn and extn.lower() == booktype:
+                            match = booktype
+                            break
+            if match:
+                logger.debug('One format import best match: %s' % match)
+
+                    if is_valid_booktype(bookfile, booktype=booktype) and not bookfile.endswith(match):
+                        logger.debug('Deleting %s' % os.path.splitext(bookfile)[1])
+                        try:
+                            os.remove(bookfile)
+                        except OSError as why:
+                            logger.debug('Unable to delete %s: %s' % (bookfile, why.strerror))
+
         for name in names:
             srcname = os.path.join(src_path, name)
             dstname = os.path.join(autoadddir, name)
-            logger.debug('AutoAdd Copying file [%s] as copy [%s] to [%s]' % (name, srcname, dstname))
-            try:
-                shutil.copyfile(srcname, dstname)
-            except Exception as why:
-                logger.error('AutoAdd - Failed to copy file [%s] because [%s] ' % (name, str(why)))
-                return False
-            try:
-                os.chmod(dstname, 0o666)  # make rw for calibre
-            except OSError as why:
-                logger.warn("Could not set permission of %s because [%s]" % (dstname, why.strerror))
-                # permissions might not be fatal, continue
+            if is_valid_booktype(srcname, booktype="book") and match and not srcname.endswith(match):
+                        logger.debug('Skipping %s' % os.path.splitext(srcname)[1])
+            else:
+                logger.debug('AutoAdd Copying file [%s] as copy [%s] to [%s]' % (name, srcname, dstname))
+                try:
+                    shutil.copyfile(srcname, dstname)
+                except Exception as why:
+                    logger.error('AutoAdd - Failed to copy file [%s] because [%s] ' % (name, str(why)))
+                    return False
+                try:
+                    os.chmod(dstname, 0o666)  # make rw for calibre
+                except OSError as why:
+                    logger.warn("Could not set permission of %s because [%s]" % (dstname, why.strerror))
+                    # permissions might not be fatal, continue
 
     except OSError as why:
         logger.error('AutoAdd - Failed because [%s]' % why.strerror)
