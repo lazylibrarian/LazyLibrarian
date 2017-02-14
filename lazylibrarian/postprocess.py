@@ -409,7 +409,7 @@ def processDir(reset=False):
 
                 success, err = processDestination(pp_path, dest_path, authorname, bookname, global_name, book['BookID'])
                 if success:
-                    logger.debug("Processing %s: %s, %s" % (book['NZBmode'], global_name, book['NZBurl']))
+                    logger.debug("Processed %s: %s, %s" % (book['NZBmode'], global_name, book['NZBurl']))
                     # update nzbs, only update the snatched ones in case multiple matches for same book/magazine issue
                     controlValueDict = {"BookID": book['BookID'], "NZBurl": book['NZBurl'], "Status": "Snatched"}
                     newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
@@ -774,12 +774,12 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                         match = booktype
                         break
         if match:
-            logger.debug('One format import best match: %s' % match)
+            logger.debug('One format import, best match = %s' % match)
             for bookfile in os.listdir(pp_path):
                 if is_valid_booktype(bookfile, booktype=booktype) and not bookfile.endswith(match):
-                    logger.debug('Deleting %s' % os.path.splitext(bookfile)[1])
                     try:
-                        os.remove(bookfile)
+                        logger.debug('Deleting %s' % os.path.splitext(bookfile)[1])
+                        os.remove(os.path.join(pp_path, bookfile))
                     except OSError as why:
                         logger.debug('Unable to delete %s: %s' % (bookfile, why.strerror))
 
@@ -950,22 +950,13 @@ def processAutoAdd(src_path=None):
                         if extn and extn.lower() == booktype:
                             match = booktype
                             break
-            if match:
-                logger.debug('One format import best match: %s' % match)
-
-                    if is_valid_booktype(bookfile, booktype=booktype) and not bookfile.endswith(match):
-                        logger.debug('Deleting %s' % os.path.splitext(bookfile)[1])
-                        try:
-                            os.remove(bookfile)
-                        except OSError as why:
-                            logger.debug('Unable to delete %s: %s' % (bookfile, why.strerror))
 
         for name in names:
-            srcname = os.path.join(src_path, name)
-            dstname = os.path.join(autoadddir, name)
-            if is_valid_booktype(srcname, booktype="book") and match and not srcname.endswith(match):
-                        logger.debug('Skipping %s' % os.path.splitext(srcname)[1])
+            if match and is_valid_booktype(name, booktype="book") and not name.endswith(match):
+                logger.debug('Skipping %s' % os.path.splitext(name)[1])
             else:
+                srcname = os.path.join(src_path, name)
+                dstname = os.path.join(autoadddir, name)
                 logger.debug('AutoAdd Copying file [%s] as copy [%s] to [%s]' % (name, srcname, dstname))
                 try:
                     shutil.copyfile(srcname, dstname)
