@@ -23,6 +23,7 @@ import threading
 import lazylibrarian
 from lazylibrarian import logger, database, magazinescan, bookwork
 from lazylibrarian.formatter import plural, bookSeries
+from lazylibrarian.common import restartJobs
 
 
 def dbupgrade(db_current_version):
@@ -63,6 +64,7 @@ def dbupgrade(db_current_version):
                 IssueFile TEXT)')
             c.execute('CREATE TABLE IF NOT EXISTS stats (authorname text, GR_book_hits int, GR_lang_hits int, \
                 LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int, duplicates int)')
+            conn.commit()
 
             # These are the incremental changes before database versioning was introduced.
             # New database tables should already have these incorporated so we need to check first...
@@ -72,62 +74,63 @@ def dbupgrade(db_current_version):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold book subtitles.'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 c.execute('ALTER TABLE books ADD COLUMN BookSub TEXT')
-
+                conn.commit()
             try:
                 c.execute('SELECT BookPub from books')
             except sqlite3.OperationalError:
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold book publisher'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 c.execute('ALTER TABLE books ADD COLUMN BookPub TEXT')
-
+                conn.commit()
             try:
                 c.execute('SELECT BookGenre from books')
             except sqlite3.OperationalError:
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold bookgenre'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 c.execute('ALTER TABLE books ADD COLUMN BookGenre TEXT')
-
+                conn.commit()
             try:
                 c.execute('SELECT BookFile from books')
             except sqlite3.OperationalError:
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold book filename'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 c.execute('ALTER TABLE books ADD COLUMN BookFile TEXT')
-
+                conn.commit()
             try:
                 c.execute('SELECT AuxInfo from wanted')
             except sqlite3.OperationalError:
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold AuxInfo'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 c.execute('ALTER TABLE wanted ADD COLUMN AuxInfo TEXT')
-
+                conn.commit()
             try:
                 c.execute('SELECT NZBsize from wanted')
             except sqlite3.OperationalError:
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold NZBsize'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 c.execute('ALTER TABLE wanted ADD COLUMN NZBsize TEXT')
-
+                conn.commit()
             try:
                 c.execute('SELECT NZBmode from wanted')
             except sqlite3.OperationalError:
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold NZBmode'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 c.execute('ALTER TABLE wanted ADD COLUMN NZBmode TEXT')
-
+                conn.commit()
             try:
                 c.execute('SELECT UnignoredBooks from authors')
             except sqlite3.OperationalError:
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold UnignoredBooks'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 c.execute('ALTER TABLE authors ADD COLUMN UnignoredBooks INTEGER')
-
+                conn.commit()
             try:
                 c.execute('SELECT IssueStatus from magazines')
             except sqlite3.OperationalError:
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold IssueStatus'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 c.execute('ALTER TABLE magazines ADD COLUMN IssueStatus TEXT')
+                conn.commit()
 
             addedWorkPage = False
             try:
@@ -136,6 +139,7 @@ def dbupgrade(db_current_version):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold WorkPage'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 c.execute('ALTER TABLE books ADD COLUMN WorkPage TEXT')
+                conn.commit()
                 addedWorkPage = True
 
             addedSeries = False
@@ -145,6 +149,7 @@ def dbupgrade(db_current_version):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold Series'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 c.execute('ALTER TABLE books ADD COLUMN Series TEXT')
+                conn.commit()
                 addedSeries = True
 
             # SeriesOrder shouldn't be an integer, some later written books
@@ -162,6 +167,7 @@ def dbupgrade(db_current_version):
                 c.execute('ALTER TABLE books ADD COLUMN SeriesNum TEXT')
                 c.execute('UPDATE books SET SeriesNum = SeriesOrder')
                 c.execute('UPDATE books SET SeriesOrder = Null')
+                conn.commit()
 
             addedIssues = False
             try:
@@ -171,6 +177,7 @@ def dbupgrade(db_current_version):
                 logger.info(lazylibrarian.UPDATE_MSG)
                 c.execute(
                     'CREATE TABLE issues (Title TEXT, IssueID TEXT, IssueAcquired TEXT, IssueDate TEXT, IssueFile TEXT)')
+                conn.commit()
                 addedIssues = True
             try:
                 c.execute('SELECT IssueID from issues')
@@ -178,10 +185,10 @@ def dbupgrade(db_current_version):
                 lazylibrarian.UPDATE_MSG = 'Updating Issues table to hold IssueID'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 c.execute('ALTER TABLE issues ADD COLUMN IssueID TEXT')
+                conn.commit()
                 addedIssues = True
 
             c.execute('DROP TABLE if exists capabilities')
-
             conn.commit()
 
             if addedIssues:
@@ -269,6 +276,7 @@ def dbupgrade(db_current_version):
                 c.execute(
                     'CREATE TABLE pastissues AS SELECT * FROM wanted WHERE Status="Skipped" AND length(AuxInfo) > 0')
                 c.execute('DELETE FROM wanted WHERE Status="Skipped" AND length(AuxInfo) > 0')
+                conn.commit()
 
         if db_version < 4:
             try:
@@ -277,6 +285,7 @@ def dbupgrade(db_current_version):
                 lazylibrarian.UPDATE_MSG = 'Updating stats table to hold duplicates'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 c.execute('ALTER TABLE stats ADD COLUMN duplicates INT')
+                conn.commit()
 
         if db_version < 5:
             issues = myDB.select(
@@ -316,6 +325,7 @@ def dbupgrade(db_current_version):
                 lazylibrarian.UPDATE_MSG = 'Updating books table to hold Manual setting'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 c.execute('ALTER TABLE books ADD COLUMN Manual TEXT')
+                conn.commit()
 
         if db_version < 7:
             try:
@@ -325,6 +335,7 @@ def dbupgrade(db_current_version):
                 logger.info(lazylibrarian.UPDATE_MSG)
                 c.execute('ALTER TABLE wanted ADD COLUMN Source TEXT')
                 c.execute('ALTER TABLE wanted ADD COLUMN DownloadID TEXT')
+                conn.commit()
 
         if db_version < 8:
             src = os.path.join(lazylibrarian.PROG_DIR, 'data/images/cache/')
@@ -448,6 +459,7 @@ def dbupgrade(db_current_version):
                 lazylibrarian.UPDATE_MSG = 'Updating authors table to hold Manual setting'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 c.execute('ALTER TABLE authors ADD COLUMN Manual TEXT')
+                conn.commit()
 
         # Now do any non-version-specific tidying
         try:
@@ -461,10 +473,13 @@ def dbupgrade(db_current_version):
         except Exception as e:
             logger.info('Error: ' + str(e))
 
+        c.execute('PRAGMA user_version = %s' % db_current_version)
         lazylibrarian.UPDATE_MSG = 'Database updated to version %s' % db_current_version
         logger.info(lazylibrarian.UPDATE_MSG)
-        c.execute('PRAGMA user_version = %s' % db_current_version)
 
     conn.commit()
     conn.close()
+    if not lazylibrarian.started:
+        restartJobs(start='Start')
+        lazylibrarian.started = True
     lazylibrarian.UPDATE_MSG = ''
