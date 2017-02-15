@@ -23,6 +23,7 @@ import threading
 import lazylibrarian
 from lazylibrarian import logger, database, magazinescan, bookwork
 from lazylibrarian.formatter import plural, bookSeries
+from lazylibrarian.common import restartJobs
 
 
 def dbupgrade(db_current_version):
@@ -478,4 +479,7 @@ def dbupgrade(db_current_version):
 
     conn.commit()
     conn.close()
+    if not lazylibrarian.started:
+        restartJobs(start='Start')
+        lazylibrarian.started = True
     lazylibrarian.UPDATE_MSG = ''

@@ -1601,8 +1601,9 @@ def start():
     if __INITIALIZED__:
         # Crons and scheduled jobs started here
         SCHED.start()
-        restartJobs(start='Start')
-        started = True
+        if not UPDATE_MSG:
+            restartJobs(start='Start')
+            started = True
 
 
 def shutdown(restart=False, update=False):
