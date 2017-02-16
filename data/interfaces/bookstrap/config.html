@@ -211,18 +211,6 @@
                                             </div>
                                         </fieldset>
                                         <br>
-                                        <div class="checkbox">
-                                            <%
-                                                if lazylibrarian.MAG_SINGLE == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                            %>
-                                            <label for="mag_single" class="control-label">
-                                            <input type="checkbox" id="mag_single" name="mag_single" value="1" ${checked} />
-                                            Quick open single issues of magazines</label>
-                                        </div>
-                                        <br>
                                         <div class="row">
                                             <div class="col-xs-12">
                                                 <button class="button btn btn-sm btn-primary" type="button" value="Show Jobs" id="show_Jobs"><i class="fa fa-list-ul"></i> Show Jobs</button>
@@ -1103,7 +1091,17 @@
                                             Magazines inside book folder</label>
                                             <span class="help-block">Current limitation: If inside book folder, magazine folder must start with _</span>
                                         </div>
-
+                                        <div class="checkbox">
+                                            <%
+                                                if lazylibrarian.MAG_SINGLE == True:
+                                                    checked = 'checked="checked"'
+                                                else:
+                                                    checked = ''
+                                            %>
+                                            <label for="mag_single" class="control-label">
+                                            <input type="checkbox" id="mag_single" name="mag_single" value="1" ${checked} />
+                                            Quick open single issues of magazines</label>
+                                        </div>
                                     </fieldset>
                                 </div>
                                 <div class="col-md-6">

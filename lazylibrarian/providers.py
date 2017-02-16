@@ -39,6 +39,8 @@ def get_searchterm(book, searchType):
         bookname = bookname.strip()
 
         # no initials or extensions after surname eg L. E. Modesitt Jr. -> Modesitt
+        # and Charles H. Elliott, Phd -> Charles Elliott
+        # but Tom Holt -> Tom Holt
         if ' ' in authorname:
             authorname_exploded = authorname.split(' ')
             authorname = ''
@@ -49,14 +51,9 @@ def get_searchterm(book, searchType):
                         authorname += ' '
                     authorname += word
 
-        if searchType == "book":
-            return authorname, bookname
-
         if 'short' in searchType and '(' in bookname:
             bookname = bookname.split('(')[0].strip()
-            return authorname, bookname
 
-    # any other searchType
     return authorname, bookname
 
 
