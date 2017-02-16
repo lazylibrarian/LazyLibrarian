@@ -39,24 +39,22 @@ def get_searchterm(book, searchType):
         bookname = bookname.strip()
 
         # no initials or extensions after surname eg L. E. Modesitt Jr. -> Modesitt
+        # and Charles H. Elliott, Phd -> Charles Elliott
+        # but Tom Holt -> Tom Holt
+        # Calibre directories may have trailing '.' replaced by '_'  eg Jr_
         if ' ' in authorname:
             authorname_exploded = authorname.split(' ')
             authorname = ''
             for word in authorname_exploded:
-                word = word.strip('.')
+                word = word.strip('.').strip('_')
                 if len(word) > 1 and word.lower() not in lazylibrarian.NAME_POSTFIX:
                     if authorname:
                         authorname += ' '
                     authorname += word
 
-        if searchType == "book":
-            return authorname, bookname
-
         if 'short' in searchType and '(' in bookname:
             bookname = bookname.split('(')[0].strip()
-            return authorname, bookname
 
-    # any other searchType
     return authorname, bookname
 
 
