@@ -468,7 +468,7 @@ def LibraryScan(startdir=None):
                                 words = author.split(',')
                                 # Need to handle names like "L. E. Modesitt, Jr." or "J. Springmann, Phd"
                                 # use an exceptions list for now, there might be a better way...
-                                if words[1].strip().strip('.').lower() in lazylibrarian.NAME_POSTFIX:
+                                if words[1].strip().strip('.').strip('_').lower() in lazylibrarian.NAME_POSTFIX:
                                     surname = words[1].strip()
                                     forname = words[0].strip()
                                 else:
