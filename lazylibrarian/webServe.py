@@ -163,7 +163,7 @@ class WebInterface(object):
             use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys='',
             pushover_apitoken='', pushover_ondownload=0, pushover_device='',
             use_androidpn=0, androidpn_notify_onsnatch=0, androidpn_notify_ondownload=0,
-            androidpn_url='', androidpn_username='', androidpn_broadcast=0, bookstrap_theme='',
+            androidpn_url='', androidpn_username='', androidpn_broadcast=0, bookstrap_theme='slate',
             use_nma=0, nma_apikey='', nma_priority=0, nma_onsnatch=0, nma_ondownload=0,
             use_slack=0, slack_notify_onsnatch=0, slack_notify_ondownload=0, slack_token='',
             use_email=0, email_notify_onsnatch=0, email_notify_ondownload=0, email_from='',

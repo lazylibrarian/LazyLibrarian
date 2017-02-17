@@ -24,7 +24,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage
 from lazylibrarian.cache import get_xml_request, cache_cover
-from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title
+from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList
 from lib.fuzzywuzzy import fuzz
 
 
@@ -224,8 +224,9 @@ class GoodReads:
             # except GR messes up names like "L. E. Modesitt, Jr." where it returns <name>Jr., L. E. Modesitt</name>
             authorname = resultxml[1].text
             if "," in authorname:
+                postfix = getList(lazylibrarian.NAME_POSTFIX)
                 words = authorname.split(',')
-                if words[0].strip().strip('.').lower in lazylibrarian.NAME_POSTFIX:
+                if words[0].strip().strip('.').lower in postfix:
                     authorname = words[1].strip() + ' ' + words[0].strip()
 
             logger.debug("[%s] Processing info for authorID: %s" % (authorname, authorid))

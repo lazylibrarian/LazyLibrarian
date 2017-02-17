@@ -20,7 +20,7 @@ import lazylibrarian
 import lib.feedparser as feedparser
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.formatter import age, today, plural, cleanName, unaccented
+from lazylibrarian.formatter import age, today, plural, cleanName, unaccented, getList
 from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL, GEN, EXTRA, LIME
 
 
@@ -45,9 +45,10 @@ def get_searchterm(book, searchType):
         if ' ' in authorname:
             authorname_exploded = authorname.split(' ')
             authorname = ''
+            postfix = getList(lazylibrarian.NAME_POSTFIX)
             for word in authorname_exploded:
                 word = word.strip('.').strip('_')
-                if len(word) > 1 and word.lower() not in lazylibrarian.NAME_POSTFIX:
+                if len(word) > 1 and word.lower() not in postfix:
                     if authorname:
                         authorname += ' '
                     authorname += word
