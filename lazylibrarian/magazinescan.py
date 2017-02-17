@@ -29,7 +29,7 @@ from lazylibrarian.common import setperm
 from lazylibrarian.formatter import getList, is_valid_booktype, plural
 
 def create_covers(refresh=False):
-    if lazylibrarian.IMP_CONVERT == 'None':  # special flag to say "no covers required"
+    if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':  # special flag to say "no covers required"
         logger.info('Cover creation is disabled in config')
         return
     myDB = database.DBConnection()
@@ -48,7 +48,7 @@ def create_covers(refresh=False):
 
 
 def create_cover(issuefile=None, refresh=False):
-    if lazylibrarian.IMP_CONVERT == 'None':  # special flag to say "no covers required"
+    if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':  # special flag to say "no covers required"
         return
     if issuefile is None or not os.path.isfile(issuefile):
         logger.debug('No issuefile %s' % issuefile)
@@ -161,20 +161,20 @@ def create_cover(issuefile=None, refresh=False):
                 except Exception:
                     interface = ""
             try:
-                if len(lazylibrarian.IMP_CONVERT):  # allow external convert to override libraries
-                    generator = "external program: %s" % lazylibrarian.IMP_CONVERT
-                    if "gsconvert.py" in lazylibrarian.IMP_CONVERT:
+                if len(lazylibrarian.CONFIG['IMP_CONVERT']):  # allow external convert to override libraries
+                    generator = "external program: %s" % lazylibrarian.CONFIG['IMP_CONVERT']
+                    if "gsconvert.py" in lazylibrarian.CONFIG['IMP_CONVERT']:
                         msg = "Use of gsconvert.py is deprecated, equivalent functionality is now built in. "
                         msg += "Support for gsconvert.py may be removed in a future release. See wiki for details."
                         logger.warn(msg)
-                    converter = lazylibrarian.IMP_CONVERT
+                    converter = lazylibrarian.CONFIG['IMP_CONVERT']
                     if not converter.startswith(os.sep):  # full path given, or just program_name?
-                        converter = os.path.join(os.getcwd(), lazylibrarian.IMP_CONVERT)
+                        converter = os.path.join(os.getcwd(), lazylibrarian.CONFIG['IMP_CONVERT'])
                     try:
                         params = [converter, '%s' % issuefile, '%s' % coverfile]
                         res = subprocess.check_output(params, stderr=subprocess.STDOUT)
                         if res:
-                            logger.debug('%s reports: %s' % (lazylibrarian.IMP_CONVERT, res))
+                            logger.debug('%s reports: %s' % (lazylibrarian.CONFIG['IMP_CONVERT'], res))
                     except Exception as e:
                         # logger.debug(params)
                         logger.debug('External "convert" failed %s' % e)
@@ -244,18 +244,18 @@ def magazineScan():
   try:
     myDB = database.DBConnection()
 
-    mag_path = lazylibrarian.MAG_DEST_FOLDER
+    mag_path = lazylibrarian.CONFIG['MAG_DEST_FOLDER']
     if '$' in mag_path:
         mag_path = mag_path.split('$')[0]
 
-    if lazylibrarian.MAG_RELATIVE:
+    if lazylibrarian.CONFIG['MAG_RELATIVE']:
         if mag_path[0] not in '._':
             mag_path = '_' + mag_path
         mag_path = os.path.join(lazylibrarian.DIRECTORY('Destination'), mag_path).encode(lazylibrarian.SYS_ENCODING)
     else:
         mag_path = mag_path.encode(lazylibrarian.SYS_ENCODING)
 
-    if lazylibrarian.FULL_SCAN:
+    if lazylibrarian.CONFIG['FULL_SCAN']:
         mags = myDB.select('select * from Issues')
         # check all the issues are still there, delete entry if not
         for mag in mags:
@@ -289,13 +289,13 @@ def magazineScan():
     logger.info(' Checking [%s] for magazines' % mag_path)
 
     matchString = ''
-    for char in lazylibrarian.MAG_DEST_FILE:
+    for char in lazylibrarian.CONFIG['MAG_DEST_FILE']:
         matchString = matchString + '\\' + char
     # massage the MAG_DEST_FILE config parameter into something we can use
     # with regular expression matching
     booktypes = ''
     count = -1
-    booktype_list = getList(lazylibrarian.MAG_TYPE)
+    booktype_list = getList(lazylibrarian.CONFIG['MAG_TYPE'])
     for book_type in booktype_list:
         count += 1
         if count == 0:

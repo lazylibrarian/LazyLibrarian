@@ -63,7 +63,7 @@ def processAlternate(source_dir=None):
                 processAlternate(subdir)
         # only import one book from each alternate (sub)directory, this is because
         # the importer may delete the directory after importing a book,
-        # depending on lazylibrarian.DESTINATION_COPY setting
+        # depending on lazylibrarian.CONFIG['DESTINATION_COPY'] setting
         # also if multiple books in a folder and only a "metadata.opf"
         # which book is it for?
         new_book = book_file(source_dir, booktype='book')
@@ -176,7 +176,7 @@ def move_into_subdir(sourcedir, targetdir, fname):
                     or is_valid_booktype(ourfile, booktype="mag") \
                     or os.path.splitext(ourfile)[1].lower() in ['.opf', '.jpg']:
                 try:
-                    if lazylibrarian.DESTINATION_COPY:
+                    if lazylibrarian.CONFIG['DESTINATION_COPY']:
                         shutil.copyfile(os.path.join(sourcedir, ourfile), os.path.join(targetdir, ourfile))
                         setperm(os.path.join(targetdir, ourfile))
                     else:
@@ -235,10 +235,10 @@ def processDir(reset=False):
                     elif book['Source'] == 'DELUGEWEBUI':
                         torrentname = deluge.getTorrentFolder(book['DownloadID'])
                     elif book['Source'] == 'DELUGERPC':
-                        client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
-                                                 int(lazylibrarian.DELUGE_PORT),
-                                                 lazylibrarian.DELUGE_USER,
-                                                 lazylibrarian.DELUGE_PASS)
+                        client = DelugeRPCClient(lazylibrarian.CONFIG['DELUGE_HOST'],
+                                                 int(lazylibrarian.CONFIG['DELUGE_PORT']),
+                                                 lazylibrarian.CONFIG['DELUGE_USER'],
+                                                 lazylibrarian.CONFIG['DELUGE_PASS'])
                         try:
                             client.connect()
                             result = client.call('core.get_torrent_status', book['DownloadID'], {})
@@ -290,7 +290,7 @@ def processDir(reset=False):
                         match = fuzz.token_set_ratio(matchtitle, matchname)
                         if int(lazylibrarian.LOGLEVEL) > 2:
                             logger.debug("%s%% match %s : %s" % (match, matchtitle, matchname))
-                        if match >= lazylibrarian.DLOAD_RATIO:
+                        if match >= lazylibrarian.CONFIG['DLOAD_RATIO']:
                             pp_path = os.path.join(download_dir, fname)
                             if isinstance(pp_path, str):
                                 try:
@@ -349,7 +349,7 @@ def processDir(reset=False):
                     match = highest[0]
                     pp_path = highest[1]
                     book = highest[2]
-                if match and match >= lazylibrarian.DLOAD_RATIO:
+                if match and match >= lazylibrarian.CONFIG['DLOAD_RATIO']:
                     mostrecentissue = ''
                     logger.debug(u'Found match (%s%%): %s for %s' % (match, pp_path, book['NZBtitle']))
                     data = myDB.match('SELECT * from books WHERE BookID="%s"' % book['BookID'])
@@ -358,13 +358,13 @@ def processDir(reset=False):
                         authorname = data['AuthorName']
                         authorname = ' '.join(authorname.split())  # ensure no extra whitespace
                         bookname = data['BookName']
-                        if 'windows' in platform.system().lower() and '/' in lazylibrarian.EBOOK_DEST_FOLDER:
+                        if 'windows' in platform.system().lower() and '/' in lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']:
                             logger.warn('Please check your EBOOK_DEST_FOLDER setting')
-                            lazylibrarian.EBOOK_DEST_FOLDER = lazylibrarian.EBOOK_DEST_FOLDER.replace('/', '\\')
+                            lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'] = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('/', '\\')
                         # Default destination path, should be allowed change per config file.
-                        dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace(
+                        dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('$Author', authorname).replace(
                             '$Title', bookname)
-                        global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace(
+                        global_name = lazylibrarian.CONFIG['EBOOK_DEST_FILE'].replace('$Author', authorname).replace(
                             '$Title', bookname)
                         global_name = unaccented(global_name)
                         dest_path = unaccented_str(replace_all(dest_path, __dic__))
@@ -380,10 +380,10 @@ def processDir(reset=False):
                             mostrecentissue = data['IssueDate']  # keep for processing issues arriving out of order
                             mag_name = unaccented_str(replace_all(book['BookID'], __dic__))
                             # book auxinfo is a cleaned date, eg 2015-01-01
-                            dest_path = lazylibrarian.MAG_DEST_FOLDER.replace(
+                            dest_path = lazylibrarian.CONFIG['MAG_DEST_FOLDER'].replace(
                                 '$IssueDate', book['AuxInfo']).replace('$Title', mag_name)
 
-                            if lazylibrarian.MAG_RELATIVE:
+                            if lazylibrarian.CONFIG['MAG_RELATIVE']:
                                 if dest_path[0] not in '._':
                                     dest_path = '_' + dest_path
                                 dest_dir = lazylibrarian.DIRECTORY('Destination')
@@ -392,7 +392,7 @@ def processDir(reset=False):
                                 dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
                             authorname = None
                             bookname = None
-                            global_name = lazylibrarian.MAG_DEST_FILE.replace('$IssueDate', book['AuxInfo']).replace(
+                            global_name = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace('$IssueDate', book['AuxInfo']).replace(
                                 '$Title', mag_name)
                             global_name = unaccented(global_name)
                         else:  # not recognised
@@ -417,7 +417,7 @@ def processDir(reset=False):
 
                     if bookname:
                         # it's a book, if None it's a magazine
-                        if len(lazylibrarian.IMP_CALIBREDB):
+                        if len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
                             logger.debug('Calibre should have created the extras for us')
                         else:
                             processExtras(myDB, dest_path, global_name, data)
@@ -456,7 +456,7 @@ def processDir(reset=False):
                     to_delete = True
                     if book['NZBmode'] in ['torrent', 'magnet', 'torznab']:
                         # Only delete torrents if we don't want to keep seeding
-                        if lazylibrarian.KEEP_SEEDING:
+                        if lazylibrarian.CONFIG['KEEP_SEEDING']:
                             logger.warn('%s is seeding %s %s' % (book['Source'], book['NZBmode'], book['NZBtitle']))
                             to_delete = False
                         else:
@@ -471,7 +471,7 @@ def processDir(reset=False):
 
                     if to_delete:
                         # only delete the files if not in download root dir and if DESTINATION_COPY not set
-                        if not lazylibrarian.DESTINATION_COPY and (pp_path != download_dir):
+                        if not lazylibrarian.CONFIG['DESTINATION_COPY'] and (pp_path != download_dir):
                             if os.path.isdir(pp_path):
                                 # calibre might have already deleted it?
                                 try:
@@ -481,7 +481,7 @@ def processDir(reset=False):
                                 except Exception as why:
                                     logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
                         else:
-                            if lazylibrarian.DESTINATION_COPY:
+                            if lazylibrarian.CONFIG['DESTINATION_COPY']:
                                 logger.debug("Not removing original files as Keep Files is set")
                             else:
                                 logger.debug("Not removing original files as in download root")
@@ -558,7 +558,7 @@ def processDir(reset=False):
 
         # Now check for any that are still marked snatched...
         snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
-        if lazylibrarian.TASK_AGE and len(snatched) > 0:
+        if lazylibrarian.CONFIG['TASK_AGE'] and len(snatched) > 0:
             for snatch in snatched:
                 # FUTURE: we could check percentage downloaded or eta?
                 # if percentage is increasing, it's just slow
@@ -569,7 +569,7 @@ def processDir(reset=False):
                 except:
                     diff = 0
                 hours = int(diff / 3600)
-                if hours >= lazylibrarian.TASK_AGE:
+                if hours >= lazylibrarian.CONFIG['TASK_AGE']:
                     logger.warn('%s was sent to %s %s hours ago, deleting failed task' %
                                 (snatch['NZBtitle'], snatch['Source'].lower(), hours))
                     # change status to "Failed", and ask downloader to delete task and files
@@ -613,10 +613,10 @@ def delete_task(Source, DownloadID, remove_data):
         elif Source == "DELUGEWEBUI":
             deluge.removeTorrent(DownloadID, remove_data)
         elif Source == "DELUGERPC":
-            client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
-                                     int(lazylibrarian.DELUGE_PORT),
-                                     lazylibrarian.DELUGE_USER,
-                                     lazylibrarian.DELUGE_PASS)
+            client = DelugeRPCClient(lazylibrarian.CONFIG['DELUGE_HOST'],
+                                     int(lazylibrarian.CONFIG['DELUGE_PORT']),
+                                     lazylibrarian.CONFIG['DELUGE_USER'],
+                                     lazylibrarian.CONFIG['DELUGE_PASS'])
             try:
                 client.connect()
                 client.call('core.remove_torrent', DownloadID, remove_data)
@@ -646,12 +646,12 @@ def import_book(pp_path=None, bookID=None):
             bookname = data['BookName']
             dest_dir = lazylibrarian.DIRECTORY('Destination')
 
-            if 'windows' in platform.system().lower() and '/' in lazylibrarian.EBOOK_DEST_FOLDER:
+            if 'windows' in platform.system().lower() and '/' in lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']:
                 logger.warn('Please check your EBOOK_DEST_FOLDER setting')
-                lazylibrarian.EBOOK_DEST_FOLDER = lazylibrarian.EBOOK_DEST_FOLDER.replace('/', '\\')
+                lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'] = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('/', '\\')
 
-            dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace('$Title', bookname)
-            global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace('$Title', bookname)
+            dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('$Author', authorname).replace('$Title', bookname)
+            global_name = lazylibrarian.CONFIG['EBOOK_DEST_FILE'].replace('$Author', authorname).replace('$Title', bookname)
             global_name = unaccented(global_name)
             dest_path = unaccented_str(replace_all(dest_path, __dic__))
             dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
@@ -666,12 +666,12 @@ def import_book(pp_path=None, bookID=None):
                     newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
                     myDB.upsert("wanted", newValueDict, controlValueDict)
                     if bookname:
-                        if len(lazylibrarian.IMP_CALIBREDB):
+                        if len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
                             logger.debug('Calibre should have created the extras')
                         else:
                             processExtras(myDB, dest_path, global_name, data)
 
-                    if not lazylibrarian.DESTINATION_COPY and pp_path != dest_dir:
+                    if not lazylibrarian.CONFIG['DESTINATION_COPY'] and pp_path != dest_dir:
                         if os.path.isdir(pp_path):
                             # calibre might have already deleted it?
                             try:
@@ -679,7 +679,7 @@ def import_book(pp_path=None, bookID=None):
                             except Exception as why:
                                 logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
                     else:
-                        if lazylibrarian.DESTINATION_COPY:
+                        if lazylibrarian.CONFIG['DESTINATION_COPY']:
                             logger.debug("Not removing original files as Keep Files is set")
                         else:
                             logger.debug("Not removing original files as in download root")
@@ -722,7 +722,7 @@ def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
 
     # If you use auto add by Calibre you need the book in a single directory, not nested
     # So take the file you Copied/Moved to Dest_path and copy it to a Calibre auto add folder.
-    if lazylibrarian.IMP_AUTOADD:
+    if lazylibrarian.CONFIG['IMP_AUTOADD']:
         processAutoAdd(dest_path)
 
     # try image
@@ -764,8 +764,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         pp_path = pp_path.decode(lazylibrarian.SYS_ENCODING)
 
     match = False
-    if bookname and lazylibrarian.ONE_FORMAT:
-        booktype_list = getList(lazylibrarian.EBOOK_TYPE)
+    if bookname and lazylibrarian.CONFIG['ONE_FORMAT']:
+        booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
         for booktype in booktype_list:
             while not match:
                 for bookfile in os.listdir(pp_path):
@@ -794,7 +794,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         return False, 'Unable to locate a book/magazine in %s, leaving for manual processing' % pp_path
 
     # Do we want calibre to import the book for us
-    if bookname and len(lazylibrarian.IMP_CALIBREDB):
+    if bookname and len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
         dest_dir = lazylibrarian.DIRECTORY('Destination')
         params = []
         try:
@@ -811,7 +811,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             else:
                 identifier = "google:%s" % bookid
 
-            params = [lazylibrarian.IMP_CALIBREDB,
+            params = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
                       'add',
                       '-1',
                       '--with-library=%s' % dest_dir,
@@ -820,15 +820,15 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             logger.debug(str(params))
             res = subprocess.check_output(params, stderr=subprocess.STDOUT)
             if not res:
-                logger.debug('No response from %s' % lazylibrarian.IMP_CALIBREDB)
+                logger.debug('No response from %s' % lazylibrarian.CONFIG['IMP_CALIBREDB'])
             else:
-                logger.debug('%s reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
+                logger.debug('%s reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
                 if 'already exist' in res:
                     logger.warn('Calibre failed to import %s %s, reports book already exists' % (authorname, bookname))
                 if 'Added book ids' in res:
                     calibre_id = res.split("book ids: ", 1)[1].split("\n", 1)[0]
                     logger.debug('Calibre ID: %s' % calibre_id)
-                    authorparams = [lazylibrarian.IMP_CALIBREDB,
+                    authorparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
                                     'set_metadata',
                                     '--field',
                                     'authors:%s' % unaccented(authorname),
@@ -839,9 +839,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     logger.debug(str(authorparams))
                     res = subprocess.check_output(authorparams, stderr=subprocess.STDOUT)
                     if res:
-                        logger.debug('%s author reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
+                        logger.debug('%s author reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
-                    titleparams = [lazylibrarian.IMP_CALIBREDB,
+                    titleparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
                                    'set_metadata',
                                    '--field',
                                    'title:%s' % unaccented(bookname),
@@ -852,9 +852,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     logger.debug(str(titleparams))
                     res = subprocess.check_output(titleparams, stderr=subprocess.STDOUT)
                     if res:
-                        logger.debug('%s book reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
+                        logger.debug('%s book reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
-                    metaparams = [lazylibrarian.IMP_CALIBREDB,
+                    metaparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
                                   'set_metadata',
                                   '--field',
                                   'identifiers:%s' % identifier,
@@ -865,7 +865,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     logger.debug(str(metaparams))
                     res = subprocess.check_output(metaparams, stderr=subprocess.STDOUT)
                     if res:
-                        logger.debug('%s identifier reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
+                        logger.debug('%s identifier reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
             # calibre does not like quotes in author names
             calibre_dir = os.path.join(dest_dir, unaccented_str(authorname.replace('"', '_')), '')
@@ -923,7 +923,7 @@ def processAutoAdd(src_path=None):
     # ensure directory is unicode so we get unicode results from listdir
     if isinstance(src_path, str):
         src_path = src_path.decode(lazylibrarian.SYS_ENCODING)
-    autoadddir = lazylibrarian.IMP_AUTOADD
+    autoadddir = lazylibrarian.CONFIG['IMP_AUTOADD']
     logger.debug('AutoAdd - Attempt to copy from [%s] to [%s]' % (src_path, autoadddir))
 
     if not os.path.exists(autoadddir):
@@ -941,8 +941,8 @@ def processAutoAdd(src_path=None):
         # Maybe need to rewrite this so we only copy the first ebook we find and ignore everything else
         #
         match = False
-        if lazylibrarian.ONE_FORMAT:
-            booktype_list = getList(lazylibrarian.EBOOK_TYPE)
+        if lazylibrarian.CONFIG['ONE_FORMAT']:
+            booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
             for booktype in booktype_list:
                 while not match:
                     for bookfile in names:

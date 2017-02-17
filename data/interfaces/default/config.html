@@ -37,14 +37,14 @@
                 <td>
                   <div>
                   <input type="text" id="current_tab" name="current_tab" value="${lazylibrarian.CURRENT_TAB}" class="hidden">
-                  <label>Hostname:</label><input type="text" name="http_host" value="${lazylibrarian.HTTP_HOST}" size="20">
+                  <label>Hostname:</label><input type="text" name="http_host" value="${lazylibrarian.CONFIG['HTTP_HOST']}" size="20">
                   </div>
                   <div>
-                  <label>Port:</label><input type="text" name="http_port" value="${lazylibrarian.HTTP_PORT}" size="10">
+                  <label>Port:</label><input type="text" name="http_port" value="${lazylibrarian.CONFIG['HTTP_PORT']}" size="10">
                   </div>
-                  <label>Web Root:</label><input type="text" name="http_root" value="${lazylibrarian.HTTP_ROOT}" size="20">
+                  <label>Web Root:</label><input type="text" name="http_root" value="${lazylibrarian.CONFIG['HTTP_ROOT']}" size="20">
                     <%
-                        if lazylibrarian.HTTP_PROXY == True:
+                        if lazylibrarian.CONFIG['HTTP_PROXY'] == True:
                             checked = 'checked="checked"'
                         else:
                             checked = ''
@@ -53,7 +53,7 @@
                     <input type="checkbox" id="http_proxy" name="http_proxy" value=1 ${checked} />
                     <label>  Enable http proxy</label>
                     <%
-                        if lazylibrarian.HTTPS_ENABLED == True:
+                        if lazylibrarian.CONFIG['HTTPS_ENABLED'] == True:
                             checked = 'checked="checked"'
                         else:
                             checked = ''
@@ -62,14 +62,14 @@
                     <input type="checkbox" id="https_enabled" name="https_enabled" value=1 ${checked} />
                     <label>  Enable https</label>
                   <fieldset id="https_options">
-                  <label>Https Certificate:</label><input type="text" name="https_cert" value="${lazylibrarian.HTTPS_CERT}" size="20">
+                  <label>Https Certificate:</label><input type="text" name="https_cert" value="${lazylibrarian.CONFIG['HTTPS_CERT']}" size="20">
 		          <br>
-                  <label>Https Key:</label><input type="text" name="https_key" value="${lazylibrarian.HTTPS_KEY}" size="20">
+                  <label>Https Key:</label><input type="text" name="https_key" value="${lazylibrarian.CONFIG['HTTPS_KEY']}" size="20">
 		          </fieldset>
 		          <br>
                   <br>
-                  <label>Logdir:</label><input type="text" name="logdir" value="${lazylibrarian.LOGDIR}" size="26"><br>
-                  <label>Log Limit:</label><input type="text" name="loglimit" value="${lazylibrarian.LOGLIMIT}" size="4"><br>
+                  <label>Logdir:</label><input type="text" name="logdir" value="${lazylibrarian.CONFIG['LOGDIR']}" size="26"><br>
+                  <label>Log Limit:</label><input type="text" name="loglimit" value="${lazylibrarian.CONFIG['LOGLIMIT']}" size="4"><br>
                   <i class="smalltext">Size of on-screen log, smaller is faster and uses less memory</i><br>
                   <label>Log Level:</label><input type="text" name="loglevel" value="${lazylibrarian.LOGLEVEL}" size="4"><br>
                   <i class="smalltext">0=Quiet, 1=Normal, 2=Debug, >2=file/console log always set to debug (ignores toggle)</i>
@@ -78,7 +78,7 @@
                   <select name="displaylength">
                     %for displaylength in [5, 10, 15, 25, 50, 100, -1]:
                         <%
-                            if displaylength == lazylibrarian.DISPLAYLENGTH:
+                            if displaylength == lazylibrarian.CONFIG['DISPLAYLENGTH']:
                                 selected = 'selected="selected"'
                             else:
                                 selected = ''
@@ -89,24 +89,24 @@
                     <i class="smalltext">Use -1 to display all rows</i>
                   <br>
 		  <div>
-		  <label>Proxy Host:</label><input type="text" name="proxy_host" value="${lazylibrarian.PROXY_HOST}" size="20"><br>
+		  <label>Proxy Host:</label><input type="text" name="proxy_host" value="${lazylibrarian.CONFIG['PROXY_HOST']}" size="20"><br>
 		  <i class="smalltext">Set this value if you are behind a proxy</i>
 		  </div>
 		  <br>
 		  <div>
-		  <label>Proxy Type:</label><input type="text" name="proxy_type" value="${lazylibrarian.PROXY_TYPE}" size="10"><br>
+		  <label>Proxy Type:</label><input type="text" name="proxy_type" value="${lazylibrarian.CONFIG['PROXY_TYPE']}" size="10"><br>
                   <i class="smalltext">http, https, etc</i>
 		  </div>
                 </td>
                 <td>
                     <div>
-                  <label>Username:</label><input type="text" name="http_user" value="${lazylibrarian.HTTP_USER}" size="20">
+                  <label>Username:</label><input type="text" name="http_user" value="${lazylibrarian.CONFIG['HTTP_USER']}" size="20">
                   </div>
                   <div>
-                  <label>Password:</label><input type="password" name="http_pass" value="${lazylibrarian.HTTP_PASS}" size="20">
+                  <label>Password:</label><input type="password" name="http_pass" value="${lazylibrarian.CONFIG['HTTP_PASS']}" size="20">
                   </div>
                     <%
-                        if lazylibrarian.LAUNCH_BROWSER == True:
+                        if lazylibrarian.CONFIG['LAUNCH_BROWSER'] == True:
                             checked = 'checked="checked"'
                         else:
                             checked = ''
@@ -114,7 +114,7 @@
                     <input type="checkbox" name="launch_browser" value=1 ${checked} />
                     <label>  Launch browser</label>
                         <%
-                        if lazylibrarian.API_ENABLED == True:
+                        if lazylibrarian.CONFIG['API_ENABLED'] == True:
                             checked = 'checked="checked"'
                         else:
                             checked = ''
@@ -128,15 +128,15 @@
                      <fieldset id="api_options">
                         <div id="api_options" class="row">
                             <label>API key</label>
-                            <input type="text" name="api_key" id="api_key" value="${lazylibrarian.API_KEY}" size="36">
+                            <input type="text" name="api_key" id="api_key" value="${lazylibrarian.CONFIG['API_KEY']}" size="36">
                             <input type="button" value="Generate" id="generateAPI" onClick="document.location.reload(true)">
-                            <br><small>Current API key: <strong>${lazylibrarian.API_KEY}</strong></small>
+                            <br><small>Current API key: <strong>${lazylibrarian.CONFIG['API_KEY']}</strong></small>
                         </div>
                     </fieldset>
                     <h5>Interface: <select name="http_look" style="float:right;"></h5>
                     %for http_look in config['http_look_list']:
                         <%
-                            if http_look == lazylibrarian.HTTP_LOOK:
+                            if http_look == lazylibrarian.CONFIG['HTTP_LOOK']:
                                 selected = 'selected="selected"'
                             else:
                                 selected = ''
@@ -164,12 +164,12 @@
                     <h3>Book API</h3>
                     <BR>
                     <%
-                        if lazylibrarian.BOOK_API == "GoodReads":
+                        if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
                             gr_selected = 'selected="selected"'
                         else:
                             gr_selected = ''
 
-                        if lazylibrarian.BOOK_API == "GoogleBooks":
+                        if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
                             gb_selected = 'selected="selected"'
                         else:
                             gb_selected = ''
@@ -179,19 +179,19 @@
                     <option value = "GoogleBooks" ${gb_selected}>GoogleBooks</option>
                     </select>
                     <BR>
-                    <label>Goodreads API:</label><input type="text" name="gr_api" value="${lazylibrarian.GR_API}" size="30">
+                    <label>Goodreads API:</label><input type="text" name="gr_api" value="${lazylibrarian.CONFIG['GR_API']}" size="30">
                     <BR>
-                    <label>GoogleBooks API:</label><input type="text" name="gb_api" value="${lazylibrarian.GB_API}" size="30">
+                    <label>GoogleBooks API:</label><input type="text" name="gb_api" value="${lazylibrarian.CONFIG['GB_API']}" size="30">
                     <BR><br><br>
                     <h3>File Formats</h3>
                     <BR>
-                    <label>Ebooks:</label><input type="text" name="ebook_type" value="${lazylibrarian.EBOOK_TYPE}" size="0">
+                    <label>Ebooks:</label><input type="text" name="ebook_type" value="${lazylibrarian.CONFIG['EBOOK_TYPE']}" size="0">
                     <br>
                     <small>Comma separated file extensions:
                     <BR>Default: epub, mobi, pdf </small>
                     <BR>
                     <label>Magazines:</label>
-                    <input type="text" name="mag_type" value="${lazylibrarian.MAG_TYPE}" size="20">
+                    <input type="text" name="mag_type" value="${lazylibrarian.CONFIG['MAG_TYPE']}" size="20">
                     <br>
                     <small>Comma separated file extensions:
                     <BR>Default: pdf </small>
@@ -199,7 +199,7 @@
                 <td>
                     <h3>Language</h3>
                     <BR>
-                    <label>Import languages:</label><input type="text" name="imp_preflang" value="${lazylibrarian.IMP_PREFLANG}" size="20">
+                    <label>Import languages:</label><input type="text" name="imp_preflang" value="${lazylibrarian.CONFIG['IMP_PREFLANG']}" size="20">
                     <br>
                     <i class="smalltext">Comma separated country shortcodes:
                     <br> GoodReads e.g: eng, en-US, spa, ita
@@ -207,7 +207,7 @@
                     <BR> Default: en, eng, en-US, en-GB
                     <BR> Try adding "Unknown" to list if GoodReads is missing results, or "All" if you don't want to check for language</i>
 		            <BR><BR>
-                    <label>Languages for month names:</label><input type="text" name="imp_monthlang" value="${lazylibrarian.IMP_MONTHLANG}" size="20">
+                    <label>Languages for month names:</label><input type="text" name="imp_monthlang" value="${lazylibrarian.CONFIG['IMP_MONTHLANG']}" size="20">
                     <br><i class="smalltext">Comma separated language codes for magazine issues:
                     <br> e.g: fr_FR.utf8, es_ES.utf8
                     <BR>Default: blank, English month names are preloaded   Changes to this setting require a restart</i>
@@ -228,7 +228,7 @@
                         <fieldset id="usenet_options">
                             <div class="row checkbox">
                             <%
-                            if lazylibrarian.NZB_DOWNLOADER_SABNZBD == True:
+                            if lazylibrarian.CONFIG['NZB_DOWNLOADER_SABNZBD'] == True:
                                 checked = 'checked="checked"'
                             else:
                                 checked = ''
@@ -239,35 +239,35 @@
                             <fieldset id="sabnzbd_options">
                                 <div class="row">
                                     <label>SABnzbd Host:</label>
-                                    <input type="text" name="sab_host" value="${lazylibrarian.SAB_HOST}" size="26" align="right">
+                                    <input type="text" name="sab_host" value="${lazylibrarian.CONFIG['SAB_HOST']}" size="26" align="right">
                                 </div>
                                 <div class="row">
                                     <label>SABnzbd Port:</label>
-                                    <input type="text" name="sab_port" value="${lazylibrarian.SAB_PORT}" size="26">
+                                    <input type="text" name="sab_port" value="${lazylibrarian.CONFIG['SAB_PORT']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>SABnzbd Username</label>
-                                    <input type="text" name="sab_user" value="${lazylibrarian.SAB_USER}" size="26">
+                                    <input type="text" name="sab_user" value="${lazylibrarian.CONFIG['SAB_USER']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>SABnzbd Password:</label>
-                                    <input type="password" name="sab_pass" value="${lazylibrarian.SAB_PASS}" size="26">
+                                    <input type="password" name="sab_pass" value="${lazylibrarian.CONFIG['SAB_PASS']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>SABnzbd API:</label>
-                                    <input type="text" name="sab_api" value="${lazylibrarian.SAB_API}" size="26">
+                                    <input type="text" name="sab_api" value="${lazylibrarian.CONFIG['SAB_API']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>SABnzbd Category:</label>
-                                    <input type="text" name="sab_cat" value="${lazylibrarian.SAB_CAT}" size="26">
+                                    <input type="text" name="sab_cat" value="${lazylibrarian.CONFIG['SAB_CAT']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>SABnzbd SubDir:</label>
-                                    <input type="text" name="sab_subdir" value="${lazylibrarian.SAB_SUBDIR}" size="26">
+                                    <input type="text" name="sab_subdir" value="${lazylibrarian.CONFIG['SAB_SUBDIR']}" size="26">
                                 </div>
                 				<div class="row">
                 				    <label>Retention Max Age:</label>
-                				    <input type="text" name="usenet_retention" value="${lazylibrarian.USENET_RETENTION}" size="26">
+                				    <input type="text" name="usenet_retention" value="${lazylibrarian.CONFIG['USENET_RETENTION']}" size="26">
                 				</div>
                                 <div class="row">
                                     <label>SABnzb Connection:</label>
@@ -278,7 +278,7 @@
 
                             <div class="row checkbox">
                                 <%
-                                if lazylibrarian.NZB_DOWNLOADER_NZBGET == True:
+                                if lazylibrarian.CONFIG['NZB_DOWNLOADER_NZBGET'] == True:
                                     checked = 'checked="checked"'
                                 else:
                                     checked = ''
@@ -289,27 +289,27 @@
                             <fieldset id="nzbget_options">
                                 <div class="row">
                                     <label>NZBGet Host:</label>
-                                    <input type="text" name="nzbget_host" value="${lazylibrarian.NZBGET_HOST}" size="26" align="right">
+                                    <input type="text" name="nzbget_host" value="${lazylibrarian.CONFIG['NZBGET_HOST']}" size="26" align="right">
                                 </div>
                                 <div class="row">
                                     <label>NZBGet Port</label>
-                                    <input type="text" name="nzbget_port" value="${lazylibrarian.NZBGET_PORT}" size="26">
+                                    <input type="text" name="nzbget_port" value="${lazylibrarian.CONFIG['NZBGET_PORT']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>NZBGet Username</label>
-                                    <input type="text" name="nzbget_user" value="${lazylibrarian.NZBGET_USER}" size="26">
+                                    <input type="text" name="nzbget_user" value="${lazylibrarian.CONFIG['NZBGET_USER']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>NZBGet Password:</label>
-                                    <input type="password" name="nzbget_pass" value="${lazylibrarian.NZBGET_PASS}" size="26">
+                                    <input type="password" name="nzbget_pass" value="${lazylibrarian.CONFIG['NZBGET_PASS']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>NZBGet Category:</label>
-                                    <input type="text" name="nzbget_cat" value="${lazylibrarian.NZBGET_CATEGORY}" size="26">
+                                    <input type="text" name="nzbget_cat" value="${lazylibrarian.CONFIG['NZBGET_CATEGORY']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>NZBGet Priority:</label>
-                                    <input type="text" name="nzbget_priority" value="${lazylibrarian.NZBGET_PRIORITY}" size="26">
+                                    <input type="text" name="nzbget_priority" value="${lazylibrarian.CONFIG['NZBGET_PRIORITY']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>NZBget Connection:</label>
@@ -320,7 +320,7 @@
 
                             <div class="row checkbox">
                                 <%
-                                if lazylibrarian.USE_SYNOLOGY == True:
+                                if lazylibrarian.CONFIG['USE_SYNOLOGY'] == True:
                                     checked = 'checked="checked"'
                                 else:
                                     checked = ''
@@ -331,27 +331,27 @@
                             <fieldset id="synology_options">
                                 <div class="row">
                                     <label>Synology Host:</label>
-                                    <input type="text" name="synology_host" value="${lazylibrarian.SYNOLOGY_HOST}" size="26" align="right">
+                                    <input type="text" name="synology_host" value="${lazylibrarian.CONFIG['SYNOLOGY_HOST']}" size="26" align="right">
                                 </div>
                                 <div class="row">
                                     <label>Synology Port</label>
-                                    <input type="text" name="synology_port" value="${lazylibrarian.SYNOLOGY_PORT}" size="26">
+                                    <input type="text" name="synology_port" value="${lazylibrarian.CONFIG['SYNOLOGY_PORT']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>Synology Username</label>
-                                    <input type="text" name="synology_user" value="${lazylibrarian.SYNOLOGY_USER}" size="26">
+                                    <input type="text" name="synology_user" value="${lazylibrarian.CONFIG['SYNOLOGY_USER']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>Synology Password:</label>
-                                    <input type="password" name="synology_pass" value="${lazylibrarian.SYNOLOGY_PASS}" size="26">
+                                    <input type="password" name="synology_pass" value="${lazylibrarian.CONFIG['SYNOLOGY_PASS']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>Synology Directory:</label>
-                                    <input type="text" name="synology_dir" value="${lazylibrarian.SYNOLOGY_DIR}" size="26">
+                                    <input type="text" name="synology_dir" value="${lazylibrarian.CONFIG['SYNOLOGY_DIR']}" size="26">
                                 </div>
                                 <div class="row checkbox">
                                     <%
-                                    if lazylibrarian.NZB_DOWNLOADER_SYNOLOGY == True:
+                                    if lazylibrarian.CONFIG['NZB_DOWNLOADER_SYNOLOGY'] == True:
                                         checked = 'checked="checked"'
                                     else:
                                         checked = ''
@@ -361,7 +361,7 @@
                                 </div>
                                 <div class="row checkbox">
                                     <%
-                                    if lazylibrarian.TOR_DOWNLOADER_SYNOLOGY == True:
+                                    if lazylibrarian.CONFIG['TOR_DOWNLOADER_SYNOLOGY'] == True:
                                         checked = 'checked="checked"'
                                     else:
                                         checked = ''
@@ -378,7 +378,7 @@
 
                             <div class="row checkbox">
                                 <%
-                                if lazylibrarian.NZB_DOWNLOADER_BLACKHOLE == True:
+                                if lazylibrarian.CONFIG['NZB_DOWNLOADER_BLACKHOLE'] == True:
                                     checked = 'checked="checked"'
                                 else:
                                     checked = ''
@@ -389,7 +389,7 @@
                             <fieldset id="nzb_blackhole_options">
                                 <div class="row">
                                     <label>NZB Blackhole Directory:</label>
-                                    <input type="text" name="nzb_blackholedir" value="${lazylibrarian.NZB_BLACKHOLEDIR}" size="26">
+                                    <input type="text" name="nzb_blackholedir" value="${lazylibrarian.CONFIG['NZB_BLACKHOLEDIR']}" size="26">
                             </fieldset>
                         </fieldset>
                     </fieldset>
@@ -401,7 +401,7 @@
 
                              <div class="row checkbox">
                                 <%
-                                if lazylibrarian.TOR_DOWNLOADER_DELUGE == True:
+                                if lazylibrarian.CONFIG['TOR_DOWNLOADER_DELUGE'] == True:
                                     checked = 'checked="checked"'
                                 else:
                                     checked = ''
@@ -412,23 +412,23 @@
                             <fieldset id="deluge_options">
                                 <div class="row">
                                     <label>Deluge Host:</label>
-                                    <input type="text" name="deluge_host" value="${lazylibrarian.DELUGE_HOST}" size="26">
+                                    <input type="text" name="deluge_host" value="${lazylibrarian.CONFIG['DELUGE_HOST']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>Deluge Port:</label>
-                                    <input type="text" name="deluge_port" value="${lazylibrarian.DELUGE_PORT}" size="26">
+                                    <input type="text" name="deluge_port" value="${lazylibrarian.CONFIG['DELUGE_PORT']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>Username:</label>
-                                    <input type="text" name="deluge_user" value="${lazylibrarian.DELUGE_USER}" size="26">
+                                    <input type="text" name="deluge_user" value="${lazylibrarian.CONFIG['DELUGE_USER']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>Password:</label>
-                                    <input type="password" name="deluge_pass" value="${lazylibrarian.DELUGE_PASS}" size="26">
+                                    <input type="password" name="deluge_pass" value="${lazylibrarian.CONFIG['DELUGE_PASS']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>Deluge Label:</label>
-                                    <input type="text" name="deluge_label" value="${lazylibrarian.DELUGE_LABEL}" size="26">
+                                    <input type="text" name="deluge_label" value="${lazylibrarian.CONFIG['DELUGE_LABEL']}" size="26">
                                 </div>
                                 <div class="row">
                                     <input type="button" value="Test Deluge" id="testDeluge" style="float:right;">
@@ -438,7 +438,7 @@
 
                              <div class="row checkbox">
                                 <%
-                                if lazylibrarian.TOR_DOWNLOADER_TRANSMISSION == True:
+                                if lazylibrarian.CONFIG['TOR_DOWNLOADER_TRANSMISSION'] == True:
                                     checked = 'checked="checked"'
                                 else:
                                     checked = ''
@@ -449,19 +449,19 @@
                             <fieldset id="transmission_options">
                                 <div class="row">
                                     <label>Transmission Host:</label>
-                                    <input type="text" name="transmission_host" value="${lazylibrarian.TRANSMISSION_HOST}" size="26">
+                                    <input type="text" name="transmission_host" value="${lazylibrarian.CONFIG['TRANSMISSION_HOST']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>Transmission Port :</label>
-                                    <input type="text" name="transmission_port" value="${lazylibrarian.TRANSMISSION_PORT}" size="26">
+                                    <input type="text" name="transmission_port" value="${lazylibrarian.CONFIG['TRANSMISSION_PORT']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>Username :</label>
-                                    <input type="text" name="transmission_user" value="${lazylibrarian.TRANSMISSION_USER}" size="26">
+                                    <input type="text" name="transmission_user" value="${lazylibrarian.CONFIG['TRANSMISSION_USER']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>Password :</label>
-                                    <input type="password" name="transmission_pass" value="${lazylibrarian.TRANSMISSION_PASS}" size="26">
+                                    <input type="password" name="transmission_pass" value="${lazylibrarian.CONFIG['TRANSMISSION_PASS']}" size="26">
                                 </div>
                                 <div class="row">
                                     <input type="button" value="Test Transmission" id="testTransmission" style="float:right;">
@@ -471,7 +471,7 @@
 
                              <div class="row checkbox">
                                 <%
-                                if lazylibrarian.TOR_DOWNLOADER_RTORRENT == True:
+                                if lazylibrarian.CONFIG['TOR_DOWNLOADER_RTORRENT'] == True:
                                     checked = 'checked="checked"'
                                 else:
                                     checked = ''
@@ -482,23 +482,23 @@
                             <fieldset id="rtorrent_options">
                                 <div class="row">
                                     <label>rTorrent Host:</label>
-                                    <input type="text" name="rtorrent_host" value="${lazylibrarian.RTORRENT_HOST}" size="26">
+                                    <input type="text" name="rtorrent_host" value="${lazylibrarian.CONFIG['RTORRENT_HOST']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>rTorrent User:</label>
-                                    <input type="text" name="rtorrent_user" value="${lazylibrarian.RTORRENT_USER}" size="26">
+                                    <input type="text" name="rtorrent_user" value="${lazylibrarian.CONFIG['RTORRENT_USER']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>rTorrent Password:</label>
-                                    <input type="text" name="rtorrent_pass" value="${lazylibrarian.RTORRENT_PASS}" size="26">
+                                    <input type="text" name="rtorrent_pass" value="${lazylibrarian.CONFIG['RTORRENT_PASS']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>rTorrent Label:</label>
-                                    <input type="text" name="rtorrent_label" value="${lazylibrarian.RTORRENT_LABEL}" size="26">
+                                    <input type="text" name="rtorrent_label" value="${lazylibrarian.CONFIG['RTORRENT_LABEL']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>rTorrent Directory:</label>
-                                    <input type="text" name="rtorrent_dir" value="${lazylibrarian.RTORRENT_DIR}" size="26">
+                                    <input type="text" name="rtorrent_dir" value="${lazylibrarian.CONFIG['RTORRENT_DIR']}" size="26">
                                     <br><small>
                                     Leave rTorrent directory blank to use rtorrent defaults
                                     </small>
@@ -512,7 +512,7 @@
 
                              <div class="row checkbox">
                                 <%
-                                if lazylibrarian.TOR_DOWNLOADER_UTORRENT == True:
+                                if lazylibrarian.CONFIG['TOR_DOWNLOADER_UTORRENT'] == True:
                                     checked = 'checked="checked"'
                                 else:
                                     checked = ''
@@ -523,23 +523,23 @@
                             <fieldset id="utorrent_options">
                                 <div class="row">
                                     <label>uTorrent Host:</label>
-                                    <input type="text" name="utorrent_host" value="${lazylibrarian.UTORRENT_HOST}" size="26">
+                                    <input type="text" name="utorrent_host" value="${lazylibrarian.CONFIG['UTORRENT_HOST']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>uTorrent Port:</label>
-                                    <input type="text" name="utorrent_port" value="${lazylibrarian.UTORRENT_PORT}" size="26">
+                                    <input type="text" name="utorrent_port" value="${lazylibrarian.CONFIG['UTORRENT_PORT']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>Username:</label>
-                                    <input type="text" name="utorrent_user" value="${lazylibrarian.UTORRENT_USER}" size="26">
+                                    <input type="text" name="utorrent_user" value="${lazylibrarian.CONFIG['UTORRENT_USER']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>Password:</label>
-                                    <input type="password" name="utorrent_pass" value="${lazylibrarian.UTORRENT_PASS}" size="26">
+                                    <input type="password" name="utorrent_pass" value="${lazylibrarian.CONFIG['UTORRENT_PASS']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>uTorrent Label:</label>
-                                    <input type="text" name="utorrent_label" value="${lazylibrarian.UTORRENT_LABEL}" size="26">
+                                    <input type="text" name="utorrent_label" value="${lazylibrarian.CONFIG['UTORRENT_LABEL']}" size="26">
                                 </div>
                                 <div class="row">
                                     <input type="button" value="Test uTorrent" id="testuTorrent" style="float:right;">
@@ -548,7 +548,7 @@
                             </fieldset>
                              <div class="row checkbox">
                                 <%
-                                if lazylibrarian.TOR_DOWNLOADER_QBITTORRENT == True:
+                                if lazylibrarian.CONFIG['TOR_DOWNLOADER_QBITTORRENT'] == True:
                                     checked = 'checked="checked"'
                                 else:
                                     checked = ''
@@ -559,23 +559,23 @@
                             <fieldset id="qbittorrent_options">
                                 <div class="row">
                                     <label>qBittorrent Host:</label>
-                                    <input type="text" name="qbittorrent_host" value="${lazylibrarian.QBITTORRENT_HOST}" size="26">
+                                    <input type="text" name="qbittorrent_host" value="${lazylibrarian.CONFIG['QBITTORRENT_HOST']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>qBittorrent Port:</label>
-                                    <input type="text" name="qbittorrent_port" value="${lazylibrarian.QBITTORRENT_PORT}" size="26">
+                                    <input type="text" name="qbittorrent_port" value="${lazylibrarian.CONFIG['QBITTORRENT_PORT']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>Username:</label>
-                                    <input type="text" name="qbittorrent_user" value="${lazylibrarian.QBITTORRENT_USER}" size="26">
+                                    <input type="text" name="qbittorrent_user" value="${lazylibrarian.CONFIG['QBITTORRENT_USER']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>Password:</label>
-                                    <input type="password" name="qbittorrent_pass" value="${lazylibrarian.QBITTORRENT_PASS}" size="26">
+                                    <input type="password" name="qbittorrent_pass" value="${lazylibrarian.CONFIG['QBITTORRENT_PASS']}" size="26">
                                 </div>
                                 <div class="row">
                                     <label>qBittorrent Label:</label>
-                                    <input type="text" name="qbittorrent_label" value="${lazylibrarian.QBITTORRENT_LABEL}" size="26">
+                                    <input type="text" name="qbittorrent_label" value="${lazylibrarian.CONFIG['QBITTORRENT_LABEL']}" size="26">
                                 </div>
                                 <div class="row">
                                     <input type="button" value="Test qBittorrent" id="testqBittorrent" style="float:right;">
@@ -584,7 +584,7 @@
                             </fieldset>
                             <div class="row checkbox">
                                 <%
-                                if lazylibrarian.TOR_DOWNLOADER_BLACKHOLE == True:
+                                if lazylibrarian.CONFIG['TOR_DOWNLOADER_BLACKHOLE'] == True:
                                     checked = 'checked="checked"'
                                 else:
                                     checked = ''
@@ -595,11 +595,11 @@
                             <fieldset id="tor_blackhole_options">
                                 <div class="row">
                                     <label>Torrent Blackhole Directory:</label>
-                                    <input type="text" name="torrent_dir" value="${lazylibrarian.TORRENT_DIR}" size="26">
+                                    <input type="text" name="torrent_dir" value="${lazylibrarian.CONFIG['TORRENT_DIR']}" size="26">
                                 </div>
                                 <div class="row checkbox">
                                     <%
-                                    if lazylibrarian.TOR_CONVERT_MAGNET == True:
+                                    if lazylibrarian.CONFIG['TOR_CONVERT_MAGNET'] == True:
                                         checked = 'checked="checked"'
                                     else:
                                         checked = ''
@@ -609,7 +609,7 @@
                                 </div>
                                 <div class="row checkbox">
                                     <%
-                                    if lazylibrarian.PREFER_MAGNET == True:
+                                    if lazylibrarian.CONFIG['PREFER_MAGNET'] == True:
                                         checked = 'checked="checked"'
                                     else:
                                         checked = ''
@@ -620,13 +620,13 @@
                             </fieldset>
                             <div>
                                 <label>Minimum seeders:</label>
-                                <input type="text" name="numberofseeders" value="${lazylibrarian.NUMBEROFSEEDERS}" size="5">
+                                <input type="text" name="numberofseeders" value="${lazylibrarian.CONFIG['NUMBEROFSEEDERS']}" size="5">
                                 <BR>
                                 <small>Number of minimum seeders a torrent must have to be accepted</small>
                             </div>
                             <div class="row checkbox">
                                 <%
-                                if lazylibrarian.KEEP_SEEDING == True:
+                                if lazylibrarian.CONFIG['KEEP_SEEDING'] == True:
                                     checked = 'checked="checked"'
                                 else:
                                     checked = ''
@@ -639,7 +639,7 @@
                         <br>
                         <h3>Download Settings</h3>
                         <div class="row">
-                            <label>Directory:</label><input type="text" name="download_dir" value="${lazylibrarian.DOWNLOAD_DIR}" size="26">
+                            <label>Directory:</label><input type="text" name="download_dir" value="${lazylibrarian.CONFIG['DOWNLOAD_DIR']}" size="26">
                             <BR>
                             <small>Full path to the folder where books are downloaded</small>
                         </div>
@@ -711,68 +711,68 @@
                 <td>
                     <h3>Torrent Providers</h3><br>
                     <%
-                    if lazylibrarian.KAT == True:
+                    if lazylibrarian.CONFIG['KAT'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
             		<input type="checkbox" name="kat" value=1 ${checked} style="margin-bottom:4px;" /> kickass
- 	    		    <input type="text" placeholder="Enter URL Here" name="kat_host" value="${lazylibrarian.KAT_HOST}" size="26">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="kat_host" value="${lazylibrarian.CONFIG['KAT_HOST']}" size="26">
  	  		        <br>
  	  		        <%
-                    if lazylibrarian.TPB == True:
+                    if lazylibrarian.CONFIG['TPB'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
             		<input type="checkbox" name="tpb" value=1 ${checked} style="margin-bottom:4px;" /> piratebay
- 	    		    <input type="text" placeholder="Enter URL Here" name="tpb_host" value="${lazylibrarian.TPB_HOST}" size="26">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="tpb_host" value="${lazylibrarian.CONFIG['TPB_HOST']}" size="26">
  	  		        <br>
  	  		        <%
-                    if lazylibrarian.ZOO == True:
+                    if lazylibrarian.CONFIG['ZOO'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
             		<input type="checkbox" name="zoo" value=1 ${checked} style="margin-bottom:4px;" /> zooqle
- 	    		    <input type="text" placeholder="Enter URL Here" name="zoo_host" value="${lazylibrarian.ZOO_HOST}" size="26">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="zoo_host" value="${lazylibrarian.CONFIG['ZOO_HOST']}" size="26">
  	  		        <br>
  	  		        <%
-                    if lazylibrarian.TDL == True:
+                    if lazylibrarian.CONFIG['TDL'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
             		<input type="checkbox" name="tdl" value=1 ${checked} style="margin-bottom:4px;" /> torrentdownload
- 	    		    <input type="text" placeholder="Enter URL Here" name="tdl_host" value="${lazylibrarian.TDL_HOST}" size="26">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="tdl_host" value="${lazylibrarian.CONFIG['TDL_HOST']}" size="26">
  	  		        <br>
  	  		        <%
-                    if lazylibrarian.EXTRA == True:
+                    if lazylibrarian.CONFIG['EXTRA'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
             		<input type="checkbox" name="extra" value=1 ${checked} style="margin-bottom:4px;" /> extratorrent
- 	    		    <input type="text" placeholder="Enter URL Here" name="extra_host" value="${lazylibrarian.EXTRA_HOST}" size="26">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="extra_host" value="${lazylibrarian.CONFIG['EXTRA_HOST']}" size="26">
  	  		        <br>
  	  		        <%
-                    if lazylibrarian.LIME == True:
+                    if lazylibrarian.CONFIG['LIME'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
             		<input type="checkbox" name="lime" value=1 ${checked} style="margin-bottom:4px;" /> limetorrent
- 	    		    <input type="text" placeholder="Enter URL Here" name="lime_host" value="${lazylibrarian.LIME_HOST}" size="26">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="lime_host" value="${lazylibrarian.CONFIG['LIME_HOST']}" size="26">
  	  		        <br>
                    <br><h3>Direct Download Providers</h3><br>
  	  		        <%
-                    if lazylibrarian.GEN == True:
+                    if lazylibrarian.CONFIG['GEN'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
             		<input type="checkbox" name="gen" value=1 ${checked} style="margin-bottom:4px;" /> libgen
- 	    		    <input type="text" placeholder="Enter URL Here" name="gen_host" value="${lazylibrarian.GEN_HOST}" size="26">
+ 	    		    <input type="text" placeholder="Enter URL Here" name="gen_host" value="${lazylibrarian.CONFIG['GEN_HOST']}" size="26">
  	    		</td>
             </tr>
         </table>
@@ -794,19 +794,19 @@
                 <td>
                     <div>
                     <label>NZB/Tor Search Interval:</label>
-                    <input type="text" name="search_interval" value="${lazylibrarian.SEARCH_INTERVAL}" size="8"> (mins)
+                    <input type="text" name="search_interval" value="${lazylibrarian.CONFIG['SEARCH_INTERVAL']}" size="8"> (mins)
                     </div>
                     <div>
                     <label>RSS Search Interval:</label>
-                    <input type="text" name="searchrss_interval" value="${lazylibrarian.SEARCHRSS_INTERVAL}" size="8"> (mins)
+                    <input type="text" name="searchrss_interval" value="${lazylibrarian.CONFIG['SEARCHRSS_INTERVAL']}" size="8"> (mins)
                     </div>
                     <div>
                     <label>Post-Processing Interval:</label>
-                    <input type="text" name="scan_interval" value="${lazylibrarian.SCAN_INTERVAL}" size="8"> (mins)
+                    <input type="text" name="scan_interval" value="${lazylibrarian.CONFIG['SCAN_INTERVAL']}" size="8"> (mins)
                     </div>
                     <div>
                     <label>Version Check Interval:</label>
-                    <input type="text" name="versioncheck_interval" value="${lazylibrarian.VERSIONCHECK_INTERVAL}" size="8"> (hours)
+                    <input type="text" name="versioncheck_interval" value="${lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL']}" size="8"> (hours)
                     </div>
                     <small>
                     <BR>
@@ -816,25 +816,25 @@
                 <td>
                     <div>
                     <label>Cache expire after:</label>
-                    <input type="text" name="cache_age"  value="${lazylibrarian.CACHE_AGE}" size="8"> (days)
+                    <input type="text" name="cache_age"  value="${lazylibrarian.CONFIG['CACHE_AGE']}" size="8"> (days)
                     </div>
                     <label>Max Magazine Issue Age:</label>
-                    <input type="text" name="mag_age"  value="${lazylibrarian.MAG_AGE}" size="8"> (days)
+                    <input type="text" name="mag_age"  value="${lazylibrarian.CONFIG['MAG_AGE']}" size="8"> (days)
                     </div>
                     <div>
                     <label>Remove failed tasks after:</label>
-                    <input type="text" name="task_age"  value="${lazylibrarian.TASK_AGE}" size="8"> (hours)
+                    <input type="text" name="task_age"  value="${lazylibrarian.CONFIG['TASK_AGE']}" size="8"> (hours)
                     </div>
                     <div>
                     <label>Search Match Ratio:</label>
-                    <input type="text" name="match_ratio"  value="${lazylibrarian.MATCH_RATIO}" size="8"> (percent)
+                    <input type="text" name="match_ratio"  value="${lazylibrarian.CONFIG['MATCH_RATIO']}" size="8"> (percent)
                     </div>
                     <div>
                     <label>Download Match Ratio:</label>
-                    <input type="text" name="dload_ratio"  value="${lazylibrarian.DLOAD_RATIO}" size="8"> (percent)
+                    <input type="text" name="dload_ratio"  value="${lazylibrarian.CONFIG['DLOAD_RATIO']}" size="8"> (percent)
                     </div>
                     <label>git program:</label>
-                    <input type="text" placeholder="git program" name="git_program" value="${lazylibrarian.GIT_PROGRAM}" size="26">
+                    <input type="text" placeholder="git program" name="git_program" value="${lazylibrarian.CONFIG['GIT_PROGRAM']}" size="26">
                     <BR>
                     <small>Path to git program unless already in your path.
                     <BR>You can usually leave this blank</small>
@@ -849,13 +849,13 @@
                 <td>
                     <div>
                     <label>Base Destination Folder:</label>
-                    <input type="text" name="destination_dir" value="${lazylibrarian.DESTINATION_DIR}" size="26">
+                    <input type="text" name="destination_dir" value="${lazylibrarian.CONFIG['DESTINATION_DIR']}" size="26">
                     </div>
                     <BR>
                 </td>
                 <td>
                 <label>Alternate Import/Export Folder:</label>
-                <input type="text" name="alternate_dir" value="${lazylibrarian.ALTERNATE_DIR}" size="26">
+                <input type="text" name="alternate_dir" value="${lazylibrarian.CONFIG['ALTERNATE_DIR']}" size="26">
                 <BR>
                 <small>Directory for wishlists and manually importing books</small>
                 </td>
@@ -863,9 +863,9 @@
             <tr>
                 <td>
                     <label>eBook Destination Folder:</label>
-                    <input type="text" name="ebook_dest_folder" value="${lazylibrarian.EBOOK_DEST_FOLDER}" size="26">
+                    <input type="text" name="ebook_dest_folder" value="${lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']}" size="26">
                     <br><label>eBook Destination File:</label>
-                    <input type="text" name="ebook_dest_file" value="${lazylibrarian.EBOOK_DEST_FILE}" size="26">
+                    <input type="text" name="ebook_dest_file" value="${lazylibrarian.CONFIG['EBOOK_DEST_FILE']}" size="26">
                     <BR>
                     <small>Options include $Author, $Title, any string
                     <BR>
@@ -873,7 +873,7 @@
                     </small>
                     <div>
                     <%
-                    if lazylibrarian.DESTINATION_COPY == True:
+                    if lazylibrarian.CONFIG['DESTINATION_COPY'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -882,7 +882,7 @@
                     </div>
                     <div>
                     <%
-                    if lazylibrarian.ONE_FORMAT == True:
+                    if lazylibrarian.CONFIG['ONE_FORMAT'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -895,15 +895,15 @@
                 </td>
                 <td>
 		            <label>Magazine Destination Folder:</label>
-		            <input type="text" name="mag_dest_folder" value="${lazylibrarian.MAG_DEST_FOLDER}" size="26">
+		            <input type="text" name="mag_dest_folder" value="${lazylibrarian.CONFIG['MAG_DEST_FOLDER']}" size="26">
                     <br><label>Magazine Issue Filename:</label>
-                    <input type="text" name="mag_dest_file" value="${lazylibrarian.MAG_DEST_FILE}" size="26">
+                    <input type="text" name="mag_dest_file" value="${lazylibrarian.CONFIG['MAG_DEST_FILE']}" size="26">
                     <BR>
                     <small>Options include $Title, $IssueDate, any string</small>
                     <small>Current limitation: Issue Filename must contain Title and Date </small>
                     <BR>
                     <%
-                    if lazylibrarian.MAG_RELATIVE == True:
+                    if lazylibrarian.CONFIG['MAG_RELATIVE'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -913,7 +913,7 @@
                     <small>Current limitation: If inside book folder, magazine folder must start with _ </small>
                     <br>
                     <%
-                        if lazylibrarian.MAG_SINGLE == True:
+                        if lazylibrarian.CONFIG['MAG_SINGLE'] == True:
                             checked = 'checked="checked"'
                         else:
                             checked = ''
@@ -925,16 +925,16 @@
             <tr>
                 <td>
                     <label>Calibredb import program:</label>
-                    <input type="text" name="imp_calibredb" value="${lazylibrarian.IMP_CALIBREDB}" size="26">
+                    <input type="text" name="imp_calibredb" value="${lazylibrarian.CONFIG['IMP_CALIBREDB']}" size="26">
                     <BR>
                     <small>Path to "calibredb" to import books into the library</small>
                     <label>Calibre Auto Add:</label>
-                    <input type="text" name="imp_autoadd" value="${lazylibrarian.IMP_AUTOADD}" size="26">
+                    <input type="text" name="imp_autoadd" value="${lazylibrarian.CONFIG['IMP_AUTOADD']}" size="26">
                     <BR>
                     <small>Directory for a copy to be placed for auto add process</small>
                   <div>
                     <%
-                    if lazylibrarian.FULL_SCAN == True:
+                    if lazylibrarian.CONFIG['FULL_SCAN'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -946,7 +946,7 @@
                </td>
                 <td>
                     <label>Cover creation program:</label>
-                    <input type="text" placeholder="cover creation program" name="imp_convert" value="${lazylibrarian.IMP_CONVERT}" size="26">
+                    <input type="text" placeholder="cover creation program" name="imp_convert" value="${lazylibrarian.CONFIG['IMP_CONVERT']}" size="26">
                     <BR>
                     <small>Program for creating magazine covers (example: ImageMagick "convert")
                     <BR>Leave blank to use PythonMagick or Wand interfaces to ImageMagick, put
@@ -957,7 +957,7 @@
                 <td>
                 <div>
                     <%
-                    if lazylibrarian.IMP_SINGLEBOOK == True:
+                    if lazylibrarian.CONFIG['IMP_SINGLEBOOK'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -970,7 +970,7 @@
                 <td>
                   <div>
                     <%
-                    if lazylibrarian.ADD_AUTHOR == True:
+                    if lazylibrarian.CONFIG['ADD_AUTHOR'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -981,7 +981,7 @@
                   </div>
                   <div>
                     <%
-                    if lazylibrarian.IMP_AUTOSEARCH == True:
+                    if lazylibrarian.CONFIG['IMP_AUTOSEARCH'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1000,7 +1000,7 @@
                   %for nf_status in config['status_list']:
                   <%
                         selected = ''
-                        if nf_status == lazylibrarian.NOTFOUND_STATUS:
+                        if nf_status == lazylibrarian.CONFIG['NOTFOUND_STATUS']:
                                 selected = 'selected="selected"'
                   %>
                   <option value="${nf_status}" ${selected}>${nf_status}</option>
@@ -1015,7 +1015,7 @@
                   %for nb_status in config['status_list']:
                   <%
                         selected = ''
-                        if nb_status == lazylibrarian.NEWBOOK_STATUS:
+                        if nb_status == lazylibrarian.CONFIG['NEWBOOK_STATUS']:
                                 selected = 'selected="selected"'
                   %>
                   <option value="${nb_status}" ${selected}>${nb_status}</option>
@@ -1030,7 +1030,7 @@
                   %for na_status in config['status_list']:
                   <%
                         selected = ''
-                        if na_status == lazylibrarian.NEWAUTHOR_STATUS:
+                        if na_status == lazylibrarian.CONFIG['NEWAUTHOR_STATUS']:
                                 selected = 'selected="selected"'
                   %>
                   <option value="${na_status}" ${selected}>${na_status}</option>
@@ -1054,7 +1054,7 @@
                     <h3>Twitter</h3>
                     <div class="row checkbox">
                     <%
-                    if lazylibrarian.USE_TWITTER == True:
+                    if lazylibrarian.CONFIG['USE_TWITTER'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1065,7 +1065,7 @@
                     <div id="twitteroptions">
                         <div class="row">
                     <%
-                    if lazylibrarian.TWITTER_NOTIFY_ONSNATCH == True:
+                    if lazylibrarian.CONFIG['TWITTER_NOTIFY_ONSNATCH'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1074,7 +1074,7 @@
                         </div>
                         <div class="row">
                     <%
-                    if lazylibrarian.TWITTER_NOTIFY_ONDOWNLOAD == True:
+                    if lazylibrarian.CONFIG['TWITTER_NOTIFY_ONDOWNLOAD'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1101,7 +1101,7 @@
                     <h3>Boxcar2</h3>
                     <div class="row checkbox">
                     <%
-                    if lazylibrarian.USE_BOXCAR == True:
+                    if lazylibrarian.CONFIG['USE_BOXCAR'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1112,7 +1112,7 @@
                     <div id="boxcaroptions">
                         <div class="row">
                     <%
-                    if lazylibrarian.BOXCAR_NOTIFY_ONSNATCH == True:
+                    if lazylibrarian.CONFIG['BOXCAR_NOTIFY_ONSNATCH'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1121,7 +1121,7 @@
                         </div>
                         <div class="row">
                     <%
-                    if lazylibrarian.BOXCAR_NOTIFY_ONDOWNLOAD == True:
+                    if lazylibrarian.CONFIG['BOXCAR_NOTIFY_ONDOWNLOAD'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1129,7 +1129,7 @@
                             <input type="checkbox" name="boxcar_notify_ondownload" value="1" ${checked} />Notify on download
                         </div>
                         <div class="row">
-                            <input type="text" name="boxcar_token" value="${lazylibrarian.BOXCAR_TOKEN}" size="26" placeholder="Boxcar token">
+                            <input type="text" name="boxcar_token" value="${lazylibrarian.CONFIG['BOXCAR_TOKEN']}" size="26" placeholder="Boxcar token">
                         </div>
                         <div class="row">
                             <input type="button" value="Test Boxcar" id="testBoxcar">
@@ -1142,7 +1142,7 @@
                     <h3>Pushbullet</h3>
                     <div class="row checkbox">
                     <%
-                    if lazylibrarian.USE_PUSHBULLET == True:
+                    if lazylibrarian.CONFIG['USE_PUSHBULLET'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1153,7 +1153,7 @@
                     <div id="pushbulletoptions">
                         <div class="row">
                     <%
-                    if lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH == True:
+                    if lazylibrarian.CONFIG['PUSHBULLET_NOTIFY_ONSNATCH'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1162,7 +1162,7 @@
                         </div>
                         <div class="row">
                     <%
-                    if lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD == True:
+                    if lazylibrarian.CONFIG['PUSHBULLET_NOTIFY_ONDOWNLOAD'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1170,10 +1170,10 @@
                             <input type="checkbox" name="pushbullet_notify_ondownload" value="1" ${checked} />Notify on download
                         </div>
                         <div class="row">
-                            <input type="text" name="pushbullet_token" value="${lazylibrarian.PUSHBULLET_TOKEN}" size="26" placeholder="Pushbullet API">
+                            <input type="text" name="pushbullet_token" value="${lazylibrarian.CONFIG['PUSHBULLET_TOKEN']}" size="26" placeholder="Pushbullet API">
                         </div>
                         <div class="row">
-                            <input type="text" name="pushbullet_deviceid" value="${lazylibrarian.PUSHBULLET_DEVICEID}" size="26" placeholder="Pushbullet DeviceID">
+                            <input type="text" name="pushbullet_deviceid" value="${lazylibrarian.CONFIG['PUSHBULLET_DEVICEID']}" size="26" placeholder="Pushbullet DeviceID">
                         </div>
                         <div class="row">
                             <input type="button" value="Test Pushbullet" id="testPushbullet">
@@ -1187,7 +1187,7 @@
                     <h3>Pushover</h3>
                     <div class="row checkbox">
                     <%
-                    if lazylibrarian.USE_PUSHOVER == True:
+                    if lazylibrarian.CONFIG['USE_PUSHOVER'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1198,7 +1198,7 @@
                     <div id="pushoveroptions">
                         <div class="row">
                     <%
-                    if lazylibrarian.PUSHOVER_ONSNATCH == True:
+                    if lazylibrarian.CONFIG['PUSHOVER_ONSNATCH'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1207,7 +1207,7 @@
                         </div>
 			            <div class="row">
                     <%
-                    if lazylibrarian.PUSHOVER_ONDOWNLOAD == True:
+                    if lazylibrarian.CONFIG['PUSHOVER_ONDOWNLOAD'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1215,16 +1215,16 @@
 			                <input type="checkbox" name="pushover_ondownload" value="1" ${checked} />Notify on download
 			            </div>
                         <div class="row">
-                            <input type="text" name="pushover_apitoken" value="${lazylibrarian.PUSHOVER_APITOKEN}" size="26" placeholder="Pushover API Token">
+                            <input type="text" name="pushover_apitoken" value="${lazylibrarian.CONFIG['PUSHOVER_APITOKEN']}" size="26" placeholder="Pushover API Token">
                         </div>
                         <div class="row">
-                            <input type="text" name="pushover_keys" value="${lazylibrarian.PUSHOVER_KEYS}" size="26" placeholder="Pushover Keys">
+                            <input type="text" name="pushover_keys" value="${lazylibrarian.CONFIG['PUSHOVER_KEYS']}" size="26" placeholder="Pushover Keys">
                         </div>
                         <div class="row">
-                            <input type="text" name="pushover_device" value="${lazylibrarian.PUSHOVER_DEVICE}" size="26" placeholder="Pushover Device">
+                            <input type="text" name="pushover_device" value="${lazylibrarian.CONFIG['PUSHOVER_DEVICE']}" size="26" placeholder="Pushover Device">
                         </div>
                         <div class="row">
-                            <input type="text" name="pushover_priority" value="${lazylibrarian.PUSHOVER_PRIORITY}" size="26" placeholder="Pushover Priority">
+                            <input type="text" name="pushover_priority" value="${lazylibrarian.CONFIG['PUSHOVER_PRIORITY']}" size="26" placeholder="Pushover Priority">
                         </div>
                         <div class="row">
                             <input type="button" value="Test Pushover" id="testPushover">
@@ -1237,7 +1237,7 @@
                     <h3>AndroidPN</h3>
                     <div class="row checkbox">
                     <%
-                    if lazylibrarian.USE_ANDROIDPN == True:
+                    if lazylibrarian.CONFIG['USE_ANDROIDPN'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1248,7 +1248,7 @@
                     <div id="androidpnoptions">
                         <div class="row">
                     <%
-                    if lazylibrarian.ANDROIDPN_NOTIFY_ONSNATCH == True:
+                    if lazylibrarian.CONFIG['ANDROIDPN_NOTIFY_ONSNATCH'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1257,7 +1257,7 @@
                         </div>
                         <div class="row">
                     <%
-                    if lazylibrarian.ANDROIDPN_NOTIFY_ONDOWNLOAD == True:
+                    if lazylibrarian.CONFIG['ANDROIDPN_NOTIFY_ONDOWNLOAD'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1266,7 +1266,7 @@
                         </div>
                         <div class="row">
                     <%
-                    if lazylibrarian.ANDROIDPN_BROADCAST == True:
+                    if lazylibrarian.CONFIG['ANDROIDPN_BROADCAST'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1274,10 +1274,10 @@
                             <input type="checkbox" name="androidpn_broadcast" id="androidpn_broadcast" value="1" ${checked} />Broadcast notification
                         </div>
                         <div class="row">
-                            <input type="text" name="androidpn_url" value="${lazylibrarian.ANDROIDPN_URL}" size="26" placeholder="AndroidPN notification url" />
+                            <input type="text" name="androidpn_url" value="${lazylibrarian.CONFIG['ANDROIDPN_URL']}" size="26" placeholder="AndroidPN notification url" />
                         </div>
                         <div class="row" id="androidpn_username">
-                           <input type="text" name="androidpn_username"  value="${lazylibrarian.ANDROIDPN_USERNAME}" size="26" placeholder="AndroidPN username" />
+                           <input type="text" name="androidpn_username"  value="${lazylibrarian.CONFIG['ANDROIDPN_USERNAME']}" size="26" placeholder="AndroidPN username" />
                         </div>
                         <div class="row">
                             <input type="button" value="Test AndroidPN" id="testAndroidPN">
@@ -1290,7 +1290,7 @@
                     <h3>NotifyMyAndroid</h3>
                     <div class="checkbox row">
                     <%
-                    if lazylibrarian.USE_NMA == True:
+                    if lazylibrarian.CONFIG['USE_NMA'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1300,7 +1300,7 @@
                                 <div id="nmaoptions">
                                     <div class="row checkbox">
                     <%
-                    if lazylibrarian.NMA_ONSNATCH == True:
+                    if lazylibrarian.CONFIG['NMA_ONSNATCH'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1309,7 +1309,7 @@
                                     </div>
                                     <div class="row checkbox">
                     <%
-                    if lazylibrarian.NMA_ONDOWNLOAD == True:
+                    if lazylibrarian.CONFIG['NMA_ONDOWNLOAD'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1318,7 +1318,7 @@
                                     </div>
                                     <div class="row">
                                         <label>NotifyMyAndroid API Key</label>
-                                        <input type="text" name="nma_apikey" value="${lazylibrarian.NMA_APIKEY}" size="26">
+                                        <input type="text" name="nma_apikey" value="${lazylibrarian.CONFIG['NMA_APIKEY']}" size="26">
                                         <br><small>Separate multiple api keys with commas</small>
                                     </div>
                                     <div class="row">
@@ -1326,7 +1326,7 @@
                                         <select name="nma_priority">
                                         %for x in [-2,-1,0,1,2]:
                                         <%
-                                            if lazylibrarian.NMA_PRIORITY == x:
+                                            if lazylibrarian.CONFIG['NMA_PRIORITY'] == x:
                                                 nma_priority_selected = 'selected'
                                             else:
                                                 nma_priority_selected = ''
@@ -1357,7 +1357,7 @@
                     <h3>Slack</h3>
                     <div class="row checkbox">
                     <%
-                    if lazylibrarian.USE_SLACK == True:
+                    if lazylibrarian.CONFIG['USE_SLACK'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1368,7 +1368,7 @@
                     <div id="slackoptions">
                         <div class="row">
                     <%
-                    if lazylibrarian.SLACK_NOTIFY_ONSNATCH == True:
+                    if lazylibrarian.CONFIG['SLACK_NOTIFY_ONSNATCH'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1377,7 +1377,7 @@
                         </div>
                         <div class="row">
                     <%
-                    if lazylibrarian.SLACK_NOTIFY_ONDOWNLOAD == True:
+                    if lazylibrarian.CONFIG['SLACK_NOTIFY_ONDOWNLOAD'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1385,7 +1385,7 @@
                             <input type="checkbox" name="slack_notify_ondownload" value="1" ${checked} />Notify on download
                         </div>
                         <div class="row">
-                            <input type="text" name="slack_token" value="${lazylibrarian.SLACK_TOKEN}" size="26" placeholder="Slack Webhook Token(everything after https://hooks.slack.com/services/)">
+                            <input type="text" name="slack_token" value="${lazylibrarian.CONFIG['SLACK_TOKEN']}" size="26" placeholder="Slack Webhook Token(everything after https://hooks.slack.com/services/)">
                         </div>
                         <div class="row">
                             <input type="button" value="Test Slack" id="testSlack">
@@ -1398,7 +1398,7 @@
                     <h3>Email</h3>
                     <div class="row checkbox">
                     <%
-                    if lazylibrarian.USE_EMAIL == True:
+                    if lazylibrarian.CONFIG['USE_EMAIL'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1409,7 +1409,7 @@
                     <div id="emailoptions">
                         <div class="row">
                     <%
-                    if lazylibrarian.EMAIL_NOTIFY_ONSNATCH == True:
+                    if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONSNATCH'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1418,7 +1418,7 @@
                         </div>
                         <div class="row">
                     <%
-                    if lazylibrarian.EMAIL_NOTIFY_ONDOWNLOAD == True:
+                    if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONDOWNLOAD'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
@@ -1426,26 +1426,26 @@
                             <input type="checkbox" name="email_notify_ondownload" value="1" ${checked} />Notify on download
                         </div>
                         <div class="row">
-                            <input type="text" name="email_from" value="${lazylibrarian.EMAIL_FROM}" size="26" placeholder="Email From">
+                            <input type="text" name="email_from" value="${lazylibrarian.CONFIG['EMAIL_FROM']}" size="26" placeholder="Email From">
                         </div>
                         <div class="row">
-                            <input type="text" name="email_to" value="${lazylibrarian.EMAIL_TO}" size="26" placeholder="Email To">
+                            <input type="text" name="email_to" value="${lazylibrarian.CONFIG['EMAIL_TO']}" size="26" placeholder="Email To">
                         </div>
                         <div class="row">
-                            <input type="text" name="email_smtp_server" value="${lazylibrarian.EMAIL_SMTP_SERVER}" size="26" placeholder="SMTP Server">
+                            <input type="text" name="email_smtp_server" value="${lazylibrarian.CONFIG['EMAIL_SMTP_SERVER']}" size="26" placeholder="SMTP Server">
                         </div>
                         <div class="row">
-                            <input type="text" name="email_smtp_user" value="${lazylibrarian.EMAIL_SMTP_USER}" size="26" placeholder="SMTP User">
+                            <input type="text" name="email_smtp_user" value="${lazylibrarian.CONFIG['EMAIL_SMTP_USER']}" size="26" placeholder="SMTP User">
                         </div>
                         <div class="row">
-                            <input type="text" name="email_smtp_password" value="${lazylibrarian.EMAIL_SMTP_PASSWORD}" size="26" placeholder="SMTP Password">
+                            <input type="text" name="email_smtp_password" value="${lazylibrarian.CONFIG['EMAIL_SMTP_PASSWORD']}" size="26" placeholder="SMTP Password">
                         </div>
                         <div class="row">
-                            <input type="text" name="email_smtp_port" value="${lazylibrarian.EMAIL_SMTP_PORT}" size="26" placeholder="SMTP Port">
+                            <input type="text" name="email_smtp_port" value="${lazylibrarian.CONFIG['EMAIL_SMTP_PORT']}" size="26" placeholder="SMTP Port">
                         </div>
                         <div class="row">
                             <%
-                            if lazylibrarian.EMAIL_SSL == True:
+                            if lazylibrarian.CONFIG['EMAIL_SSL'] == True:
                                 checked = 'checked="checked"'
                             else:
                                 checked = ''
@@ -1454,7 +1454,7 @@
                         </div>
                         <div class="row">
                             <%
-                            if lazylibrarian.EMAIL_TLS == True:
+                            if lazylibrarian.CONFIG['EMAIL_TLS'] == True:
                                 checked = 'checked="checked"'
                             else:
                                 checked = ''
@@ -1559,7 +1559,7 @@
                 <fieldset>
                     <h3>Book Reject List</h3>Default: audiobook, mp3
                     <br>
-                    <input type="text" name="reject_words" placeholder="Reject Word List" value="${lazylibrarian.REJECT_WORDS}" size="20">
+                    <input type="text" name="reject_words" placeholder="Reject Word List" value="${lazylibrarian.CONFIG['REJECT_WORDS']}" size="20">
                     <br>
                     <small>Comma separated list of words to reject:<br>
                     Search results with any of these words in the title will be ignored
@@ -1569,7 +1569,7 @@
                 <fieldset>
                     <h3>Book Size Limit</h3>Default: 0
                     <br>
-                    <input type="text" name="reject_maxsize" placeholder="Reject Size Limit" value="${lazylibrarian.REJECT_MAXSIZE}" size="20">
+                    <input type="text" name="reject_maxsize" placeholder="Reject Size Limit" value="${lazylibrarian.CONFIG['REJECT_MAXSIZE']}" size="20">
                     <br>
                     <small>Book size limit (Mb):<br>
                     Search results larger than this will be rejected, set to 0 to disable
@@ -1579,7 +1579,7 @@
                 <fieldset>
                     <h3>Magazine Size Limit</h3>Default: 0
                     <br>
-                    <input type="text" name="reject_magsize" placeholder="Reject Size Limit" value="${lazylibrarian.REJECT_MAGSIZE}" size="20">
+                    <input type="text" name="reject_magsize" placeholder="Reject Size Limit" value="${lazylibrarian.CONFIG['REJECT_MAGSIZE']}" size="20">
                     <br>
                     <small>Magazine size limit (Mb):<br>
                     Search results larger than this will be rejected, set to 0 to disable
@@ -1610,7 +1610,7 @@
     </div>
 
     <p>&nbsp;</p>
-    <p style="text-align:center;color:grey">Repo: https://github.com/${lazylibrarian.GIT_USER}/${lazylibrarian.GIT_REPO}  : Branch: ${lazylibrarian.GIT_BRANCH}<br>Current Version: ${lazylibrarian.CURRENT_VERSION}  : Latest  Version: ${lazylibrarian.LATEST_VERSION}</p>
+    <p style="text-align:center;color:grey">Repo: https://github.com/${lazylibrarian.CONFIG['GIT_USER']}/${lazylibrarian.CONFIG['GIT_REPO']}  : Branch: ${lazylibrarian.CONFIG['GIT_BRANCH']}<br>Current Version: ${lazylibrarian.CONFIG['CURRENT_VERSION']}  : Latest  Version: ${lazylibrarian.CONFIG['LATEST_VERSION']}</p>
     </div>
 </form>
 </%def>

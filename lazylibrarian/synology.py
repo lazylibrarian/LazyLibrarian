@@ -106,8 +106,8 @@ def _login(hosturl):
         "api": "SYNO.API.Auth",
         "version": "2",
         "method": "login",
-        "account": lazylibrarian.SYNOLOGY_USER,
-        "passwd": lazylibrarian.SYNOLOGY_PASS,
+        "account": lazylibrarian.CONFIG['SYNOLOGY_USER'],
+        "passwd": lazylibrarian.CONFIG['SYNOLOGY_PASS'],
         "session": "LazyLibrarian",
         "format": "sid"
     }
@@ -236,7 +236,7 @@ def _addTorrentURI(task_cgi, sid, torurl):
         "method": "create",
         "session": "LazyLibrarian",
         "uri": torurl,
-        "destination": lazylibrarian.SYNOLOGY_DIR,
+        "destination": lazylibrarian.CONFIG['SYNOLOGY_DIR'],
         "_sid": sid
     }
 
@@ -275,8 +275,8 @@ def _addTorrentURI(task_cgi, sid, torurl):
 
 def _hostURL():
     # Build webapi_url from config settings
-    host = lazylibrarian.SYNOLOGY_HOST
-    port = lazylibrarian.SYNOLOGY_PORT
+    host = lazylibrarian.CONFIG['SYNOLOGY_HOST']
+    port = lazylibrarian.CONFIG['SYNOLOGY_PORT']
     if not host:
         logger.debug("Synology host not defined, check config")
         return False

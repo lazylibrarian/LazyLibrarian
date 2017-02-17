@@ -130,7 +130,7 @@ def addTorrent(link, data=None):
 
         if retid:
             logger.info('Deluge: Torrent sent to Deluge successfully  (%s)' % retid)
-            if lazylibrarian.DELUGE_LABEL:
+            if lazylibrarian.CONFIG['DELUGE_LABEL']:
                 labelled = setTorrentLabel(result)
                 logger.debug('Deluge label returned: %s' % labelled)
             return retid
@@ -207,8 +207,8 @@ def _get_auth():
     global delugeweb_auth, delugeweb_url
     delugeweb_auth = {}
 
-    delugeweb_host = lazylibrarian.DELUGE_HOST
-    delugeweb_password = lazylibrarian.DELUGE_PASS
+    delugeweb_host = lazylibrarian.CONFIG['DELUGE_HOST']
+    delugeweb_password = lazylibrarian.CONFIG['DELUGE_PASS']
 
     if not delugeweb_host.startswith('http'):
         delugeweb_host = 'http://%s' % delugeweb_host
@@ -216,7 +216,7 @@ def _get_auth():
     if delugeweb_host.endswith('/'):
         delugeweb_host = delugeweb_host[:-1]
 
-    delugeweb_host = "%s:%s" % (delugeweb_host, lazylibrarian.DELUGE_PORT)
+    delugeweb_host = "%s:%s" % (delugeweb_host, lazylibrarian.CONFIG['DELUGE_PORT'])
 
     delugeweb_url = delugeweb_host + '/json'
 
@@ -349,7 +349,7 @@ def _add_torrent_file(result):
 
 def setTorrentLabel(result):
     logger.debug('Deluge: Setting label')
-    label = lazylibrarian.DELUGE_LABEL
+    label = lazylibrarian.CONFIG['DELUGE_LABEL']
 
     if not any(delugeweb_auth):
         _get_auth()

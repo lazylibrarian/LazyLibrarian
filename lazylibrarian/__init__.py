@@ -33,38 +33,243 @@ from lazylibrarian.common import restartJobs, internet
 from lazylibrarian.formatter import getList, bookSeries, plural, unaccented
 from lib.apscheduler.scheduler import Scheduler
 
+# Transient globals NOT stored in config
+#These are used/modified by LazyLibrarian.py
 FULL_PATH = None
 PROG_DIR = None
-
 ARGS = None
-SIGNAL = None
 DAEMON = False
+SIGNAL = None
 PIDFILE = ''
-
+DATADIR = ''
+CONFIGFILE = ''
 SYS_ENCODING = ''
+LOGLEVEL = 1
+CONFIG = {}
+CFG = ''
+DBFILE = None
+COMMIT_LIST = None
+
+# These are used in startup
 SCHED = Scheduler()
 INIT_LOCK = threading.Lock()
 __INITIALIZED__ = False
-CFG = ''
 started = False
 
-COMMIT_LIST = None
-DATADIR = None
-DBFILE = None
-UPDATE_MSG = ''
-CONFIGFILE = ''
-CURRENT_TAB = '1'
-# Bits after surname that we need to keep at the end...
-NAME_POSTFIX = 'snr, jnr, jr, sr, phd'
-CACHEDIR = None
+# Transients used by logger process
 LOGLIST = []
-# Info 1, Debug 2, >2 don't toggle console/file
-LOGLEVEL = 2
-LOGFULL = False  # include debug on screen if true
+LOGFULL = True
+
+UPDATE_MSG = ''
+CURRENT_TAB = '1'
 CACHE_HIT = 0
 CACHE_MISS = 0
 LAST_GOODREADS = 0
 LAST_LIBRARYTHING = 0
+
+CONFIG_DEFINITIONS = {
+    'LOGDIR': ('str', 'General', ''),
+    'LOGLIMIT': ('int', 'General', 500),
+    'LOGFILES': ('int', 'General', 10),
+    'LOGSIZE': ('int', 'General', 204800),
+    'LOGLEVEL': ('int', 'General', 1),
+    'HTTP_PORT': ('int', 'General', 5299),
+    'MATCH_RATIO': ('int', 'General', 80),
+    'DLOAD_RATIO': ('int', 'General', 90),
+    'DISPLAYLENGTH': ('int', 'General', 10),
+    'HTTP_HOST': ('str', 'General', '0.0.0.0'),
+    'HTTP_USER': ('str', 'General', ''),
+    'HTTP_PASS': ('str', 'General', ''),
+    'HTTP_PROXY': ('bool', 'General', 0),
+    'HTTP_ROOT': ('str', 'General', ''),
+    'HTTP_LOOK': ('str', 'General', 'default'),
+    'HTTPS_ENABLED': ('bool', 'General', 0),
+    'HTTPS_CERT': ('str', 'General', ''),
+    'HTTPS_KEY': ('str', 'General', ''),
+    'BOOKSTRAP_THEME': ('str', 'General', 'slate'),
+    'MAG_SINGLE': ('bool', 'General', 1),
+    'LAUNCH_BROWSER': ('bool', 'General', 1),
+    'API_ENABLED': ('bool', 'General', 0),
+    'API_KEY': ('str', 'General', ''),
+    'PROXY_HOST': ('str', 'General', ''),
+    'PROXY_TYPE': ('str', 'General', ''),
+    'NAME_POSTFIX':('str', 'General', 'snr, jnr, jr, sr, phd'),
+    'IMP_PREFLANG': ('str', 'General', 'en, eng, en-US, en-GB'),
+    'IMP_MONTHLANG': ('str', 'General', ''),
+    'IMP_AUTOADD': ('str', 'General', ''),
+    'IMP_AUTOSEARCH': ('bool', 'General', 0),
+    'IMP_CALIBREDB': ('str', 'General', ''),
+    'IMP_ONLYISBN': ('bool', 'General', 0),
+    'IMP_SINGLEBOOK': ('bool', 'General', 0),
+    'IMP_CONVERT': ('str', 'General', ''),
+    'GIT_PROGRAM': ('str', 'General', ''),
+    'CACHE_AGE': ('int', 'General', 30),
+    'TASK_AGE': ('int', 'General', 0),
+    'GIT_USER': ('str', 'Git', 'dobytang'),
+    'GIT_REPO': ('str', 'Git', 'lazylibrarian'),
+    'GIT_BRANCH': ('str', 'Git', 'master'),
+    'INSTALL_TYPE': ('str', 'Git', ''),
+    'CURRENT_VERSION': ('str', 'Git', ''),
+    'LATEST_VERSION': ('str', 'Git', ''),
+    'COMMITS_BEHIND': ('str', 'Git', ''),
+    'SAB_HOST': ('str', 'SABnzbd', ''),
+    'SAB_PORT': ('int', 'SABnzbd', 0),
+    'SAB_SUBDIR': ('str', 'SABnzbd', ''),
+    'SAB_USER': ('str', 'SABnzbd', ''),
+    'SAB_PASS': ('str', 'SABnzbd', ''),
+    'SAB_API': ('str', 'SABnzbd', ''),
+    'SAB_CAT': ('str', 'SABnzbd', ''),
+    'NZBGET_HOST': ('str', 'NZBGet', ''),
+    'NZBGET_PORT': ('int', 'NZBGet', '0'),
+    'NZBGET_USER': ('str', 'NZBGet', ''),
+    'NZBGET_PASS': ('str', 'NZBGet', ''),
+    'NZBGET_CATEGORY': ('str', 'NZBGet', ''),
+    'NZBGET_PRIORITY': ('int', 'NZBGet', '0'),
+    'DESTINATION_COPY': ('bool', 'General', 0),
+    'DESTINATION_DIR': ('str', 'General', ''),
+    'ALTERNATE_DIR': ('str', 'General', ''),
+    'DOWNLOAD_DIR': ('str', 'General', ''),
+    'NZB_DOWNLOADER_SABNZBD': ('bool', 'USENET', 0),
+    'NZB_DOWNLOADER_NZBGET': ('bool', 'USENET', 0),
+    'NZB_DOWNLOADER_SYNOLOGY': ('bool', 'USENET', 0),
+    'NZB_DOWNLOADER_BLACKHOLE': ('bool', 'USENET', 0),
+    'NZB_BLACKHOLEDIR': ('str', 'USENET', ''),
+    'USENET_RETENTION': ('int', 'USENET', 0),
+    'NZBMATRIX': ('bool', 'NZBMatrix', 0),
+    'NZBMATRIX_USER': ('str', 'NZBMatrix', ''),
+    'NZBMATRIX_API': ('str', 'NZBMatrix', ''),
+    'TOR_DOWNLOADER_BLACKHOLE': ('bool', 'TORRENT', 0),
+    'TOR_CONVERT_MAGNET': ('bool', 'TORRENT', 0),
+    'TOR_DOWNLOADER_UTORRENT': ('bool', 'TORRENT', 0),
+    'TOR_DOWNLOADER_RTORRENT': ('bool', 'TORRENT', 0),
+    'TOR_DOWNLOADER_QBITTORRENT': ('bool', 'TORRENT', 0),
+    'TOR_DOWNLOADER_TRANSMISSION': ('bool', 'TORRENT', 0),
+    'TOR_DOWNLOADER_SYNOLOGY': ('bool', 'TORRENT', 0),
+    'TOR_DOWNLOADER_DELUGE': ('bool', 'TORRENT', 0),
+    'NUMBEROFSEEDERS': ('int', 'TORRENT', 10),
+    'KEEP_SEEDING': ('bool', 'TORRENT', 1),
+    'PREFER_MAGNET': ('bool', 'TORRENT', 1),
+    'TORRENT_DIR': ('str', 'TORRENT', ''),
+    'RTORRENT_HOST': ('str', 'RTORRENT', ''),
+    'RTORRENT_USER': ('str', 'RTORRENT', ''),
+    'RTORRENT_PASS': ('str', 'RTORRENT', ''),
+    'RTORRENT_LABEL': ('str', 'RTORRENT', ''),
+    'RTORRENT_DIR': ('str', 'RTORRENT', ''),
+    'UTORRENT_HOST': ('str', 'UTORRENT', ''),
+    'UTORRENT_PORT': ('int', 'UTORRENT', 0),
+    'UTORRENT_USER': ('str', 'UTORRENT', ''),
+    'UTORRENT_PASS': ('str', 'UTORRENT', ''),
+    'UTORRENT_LABEL': ('str', 'UTORRENT', ''),
+    'QBITTORRENT_HOST': ('str', 'QBITTORRENT', ''),
+    'QBITTORRENT_PORT': ('int', 'QBITTORRENT', 0),
+    'QBITTORRENT_USER': ('str', 'QBITTORRENT', ''),
+    'QBITTORRENT_PASS': ('str', 'QBITTORRENT', ''),
+    'QBITTORRENT_LABEL': ('str', 'QBITTORRENT', ''),
+    'TRANSMISSION_HOST': ('str', 'TRANSMISSION', ''),
+    'TRANSMISSION_PORT': ('int', 'TRANSMISSION', 0),
+    'TRANSMISSION_USER': ('str', 'TRANSMISSION', ''),
+    'TRANSMISSION_PASS': ('str', 'TRANSMISSION', ''),
+    'DELUGE_HOST': ('str', 'DELUGE', ''),
+    'DELUGE_PORT': ('int', 'DELUGE', 0),
+    'DELUGE_USER': ('str', 'DELUGE', ''),
+    'DELUGE_PASS': ('str', 'DELUGE', ''),
+    'DELUGE_LABEL': ('str', 'DELUGE', ''),
+    'SYNOLOGY_HOST': ('str', 'SYNOLOGY', ''),
+    'SYNOLOGY_PORT': ('int', 'SYNOLOGY', 0),
+    'SYNOLOGY_USER': ('str', 'SYNOLOGY', ''),
+    'SYNOLOGY_PASS': ('str', 'SYNOLOGY', ''),
+    'SYNOLOGY_DIR': ('str', 'SYNOLOGY', 'Multimedia/Download'),
+    'USE_SYNOLOGY': ('bool', 'SYNOLOGY', 0),
+    'KAT': ('bool', 'KAT', 0),
+    'KAT_HOST': ('str', 'KAT', 'kickass.cd'),
+    'TPB': ('bool', 'TPB', 0),
+    'TPB_HOST': ('str', 'TPB', 'https://piratebays.co'),
+    'ZOO': ('bool', 'ZOO', 0),
+    'ZOO_HOST': ('str', 'ZOO', 'https://zooqle.com'),
+    'EXTRA': ('bool', 'EXTRA', 0),
+    'EXTRA_HOST': ('str', 'EXTRA', 'extratorrent.cc'),
+    'TDL': ('bool', 'TDL', 0),
+    'TDL_HOST': ('str', 'TDL', 'torrentdownloads.me'),
+    'GEN': ('bool', 'GEN', 0),
+    'GEN_HOST': ('str', 'GEN', 'libgen.io'),
+    'LIME': ('bool', 'LIME', 0),
+    'LIME_HOST': ('str', 'LIME', 'https://www.limetorrents.cc'),
+    'NEWZBIN': ('bool', 'Newzbin', 0),
+    'NEWZBIN_UID': ('str', 'Newzbin', ''),
+    'NEWZBIN_PASS': ('str', 'Newzbin', ''),
+    'EBOOK_TYPE': ('str', 'General', 'epub, mobi, pdf'),
+    'MAG_TYPE': ('str', 'General', 'pdf'),
+    'REJECT_WORDS': ('str', 'General', 'audiobook, mp3'),
+    'REJECT_MAXSIZE': ('int', 'General', 0),
+    'REJECT_MAGSIZE': ('int', 'General', 0),
+    'MAG_AGE': ('int', 'General', 31),
+    'SEARCH_INTERVAL': ('int', 'SearchScan', '360'),
+    'SCAN_INTERVAL': ('int', 'SearchScan', '10'),
+    'SEARCHRSS_INTERVAL': ('int', 'SearchScan', '20'),
+    'VERSIONCHECK_INTERVAL': ('int', 'SearchScan', '24'),
+    'FULL_SCAN': ('bool', 'LibraryScan', 0),
+    'ADD_AUTHOR': ('bool', 'LibraryScan', 1),
+    'NOTFOUND_STATUS': ('str', 'LibraryScan', 'Skipped'),
+    'NEWBOOK_STATUS': ('str', 'LibraryScan', 'Skipped'),
+    'NEWAUTHOR_STATUS': ('str', 'LibraryScan', 'Skipped'),
+    'EBOOK_DEST_FOLDER': ('str', 'PostProcess', '$Author/$Title'),
+    'EBOOK_DEST_FILE': ('str', 'PostProcess', '$Title - $Author'),
+    'ONE_FORMAT': ('bool', 'PostProcess', 0),
+    'MAG_DEST_FOLDER': ('str', 'PostProcess', '_Magazines/$Title/$IssueDate'),
+    'MAG_DEST_FILE': ('str', 'PostProcess', '$IssueDate - $Title'),
+    'MAG_RELATIVE': ('bool', 'PostProcess', 1),
+    'USE_TWITTER': ('bool', 'Twitter', 0),
+    'TWITTER_NOTIFY_ONSNATCH': ('bool', 'Twitter', 0),
+    'TWITTER_NOTIFY_ONDOWNLOAD': ('bool', 'Twitter', 0),
+    'TWITTER_USERNAME': ('str', 'Twitter', ''),
+    'TWITTER_PASSWORD': ('str', 'Twitter', ''),
+    'TWITTER_PREFIX': ('str', 'Twitter', 'LazyLibrarian'),
+    'USE_BOXCAR': ('bool', 'Boxcar', 0),
+    'BOXCAR_NOTIFY_ONSNATCH': ('bool', 'Boxcar', 0),
+    'BOXCAR_NOTIFY_ONDOWNLOAD': ('bool', 'Boxcar', 0),
+    'BOXCAR_TOKEN': ('str', 'Boxcar', ''),
+    'USE_PUSHBULLET': ('bool', 'Pushbullet', 0),
+    'PUSHBULLET_NOTIFY_ONSNATCH': ('bool', 'Pushbullet', 0),
+    'PUSHBULLET_NOTIFY_ONDOWNLOAD': ('bool', 'Pushbullet', 0),
+    'PUSHBULLET_TOKEN': ('str', 'Pushbullet', ''),
+    'PUSHBULLET_DEVICEID': ('str', 'Pushbullet', ''),
+    'USE_PUSHOVER': ('bool', 'Pushover', 0),
+    'PUSHOVER_ONSNATCH': ('bool', 'Pushover', 0),
+    'PUSHOVER_ONDOWNLOAD': ('bool', 'Pushover', 0),
+    'PUSHOVER_KEYS': ('str', 'Pushover', ''),
+    'PUSHOVER_APITOKEN': ('str', 'Pushover', ''),
+    'PUSHOVER_PRIORITY': ('int', 'Pushover', 0),
+    'PUSHOVER_DEVICE': ('str', 'Pushover', ''),
+    'USE_ANDROIDPN': ('bool', 'AndroidPN', 0),
+    'ANDROIDPN_NOTIFY_ONSNATCH': ('bool', 'AndroidPN', 0),
+    'ANDROIDPN_NOTIFY_ONDOWNLOAD': ('bool', 'AndroidPN', 0),
+    'ANDROIDPN_URL': ('str', 'AndroidPN', ''),
+    'ANDROIDPN_USERNAME': ('str', 'AndroidPN', ''),
+    'ANDROIDPN_BROADCAST': ('bool', 'AndroidPN', 0),
+    'USE_NMA': ('bool', 'NMA', 0),
+    'NMA_APIKEY': ('str', 'NMA', ''),
+    'NMA_PRIORITY': ('int', 'NMA', 0),
+    'NMA_ONSNATCH': ('bool', 'NMA', 0),
+    'NMA_ONDOWNLOAD': ('bool', 'NMA', 0),
+    'USE_SLACK': ('bool', 'Slack', 0),
+    'SLACK_NOTIFY_ONSNATCH': ('bool', 'Slack', 0),
+    'SLACK_NOTIFY_ONDOWNLOAD': ('bool', 'Slack', 0),
+    'SLACK_TOKEN': ('str', 'Slack', ''),
+    'USE_EMAIL': ('bool', 'Email', 0),
+    'EMAIL_NOTIFY_ONSNATCH': ('bool', 'Email', 0),
+    'EMAIL_NOTIFY_ONDOWNLOAD': ('bool', 'Email', 0),
+    'EMAIL_FROM': ('str', 'Email', ''),
+    'EMAIL_TO': ('str', 'Email',''),
+    'EMAIL_SSL': ('bool', 'Email', 0),
+    'EMAIL_SMTP_SERVER': ('str', 'Email', ''),
+    'EMAIL_SMTP_PORT': ('int', 'Email', 25),
+    'EMAIL_TLS': ('bool', 'Email', 0),
+    'EMAIL_SMTP_USER': ('str', 'Email', ''),
+    'EMAIL_SMTP_PASSWORD': ('str', 'Email', ''),
+    'BOOK_API': ('str', 'API', 'GoodReads'),
+    'GR_API': ('str', 'API', 'ckvsiSDsuqh7omh74ZZ6Q'),
+    'GB_API': ('str', 'API', '')
+}
 
 
 def check_section(sec):
@@ -111,30 +316,34 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
 
 
 def initialize():
+    global FULL_PATH, PROG_DIR, ARGS, DAEMON, SIGNAL, PIDFILE, DATADIR, CONFIG_FILE, SYS_ENCODING, LOGLEVEL, \
+            CONFIG, CFG, DBFILE, COMMIT_LIST, SCHED, INIT_LOCK, __INITIALIZED__, started, LOGLIST, LOGFULL, \
+            UPDATE_MSG, CURRENT_TAB, CACHE_HIT, CACHE_MISS, LAST_LIBRARYTHING, LAST_GOODREADS, \
+            CACHEDIR, BOOKSTRAP_THEMELIST, MONTHNAMES, CONFIG_DEFINITIONS
+
     with INIT_LOCK:
-        global __INITIALIZED__, LOGDIR, LOGLIMIT, LOGFILES, LOGSIZE, CFG, CFGLOGLEVEL, LOGLEVEL, \
-            LOGFULL, CACHEDIR, DATADIR, LAST_LIBRARYTHING, LAST_GOODREADS, \
-            BOOKSTRAP_THEMELIST, MONTHNAMES, CURRENT_TAB, UPDATE_MSG, NAME_POSTFIX
 
         if __INITIALIZED__:
             return False
 
         check_section('General')
+        CONFIG = {}
+        # False to silence logging until logger initialised
+        CONFIG['LOGDIR'] = check_setting('str', 'General', 'logdir', '', False)
+        CONFIG['LOGLIMIT'] = check_setting('int', 'General', 'loglimit', 500, False)
+        CONFIG['LOGFILES'] = check_setting('int', 'General', 'logfiles', 10, False)
+        CONFIG['LOGSIZE'] = check_setting('int', 'General', 'logsize', 204800, False)
 
-        LOGDIR = check_setting('str', 'General', 'logdir', '')
-        LOGLIMIT = check_setting('int', 'General', 'loglimit', 500)
-        LOGFILES = check_setting('int', 'General', 'logfiles', 10)
-        LOGSIZE = check_setting('int', 'General', 'logsize', 204800)
-
-        if not LOGDIR:
-            LOGDIR = os.path.join(DATADIR, 'Logs')
+        CONFIG['DATADIR'] = DATADIR
+        if not CONFIG['LOGDIR']:
+            CONFIG['LOGDIR'] = os.path.join(CONFIG['DATADIR'], 'Logs')
         # Create logdir
-        if not os.path.exists(LOGDIR):
+        if not os.path.exists(CONFIG['LOGDIR']):
             try:
-                os.makedirs(LOGDIR)
+                os.makedirs(CONFIG['LOGDIR'])
             except OSError as e:
                 if LOGLEVEL:
-                    print '%s : Unable to create folder for logs: %s. Only logging to console.' % (LOGDIR, str(e))
+                    print '%s : Unable to create folder for logs: %s. Only logging to console.' % (CONFIG['LOGDIR'], str(e))
 
         # Start the logger, silence console logging if we need to
         CFGLOGLEVEL = check_setting('int', 'General', 'loglevel', 9)
@@ -144,10 +353,11 @@ def initialize():
             else:
                 LOGLEVEL = CFGLOGLEVEL  # Config setting picked up
 
-        logger.lazylibrarian_log.initLogger(loglevel=LOGLEVEL)
+        CONFIG['LOGLEVEL'] = LOGLEVEL
+        logger.lazylibrarian_log.initLogger(loglevel=CONFIG['LOGLEVEL'])
         logger.info("Log level set to [%s]- Log Directory is [%s] - Config level is [%s]" % (
-            LOGLEVEL, LOGDIR, CFGLOGLEVEL))
-        if LOGLEVEL > 2:
+            CONFIG['LOGLEVEL'], CONFIG['LOGDIR'], CFGLOGLEVEL))
+        if CONFIG['LOGLEVEL'] > 2:
             LOGFULL = True
             logger.info("Screen Log set to DEBUG")
         else:
@@ -158,12 +368,12 @@ def initialize():
         logger.info('SYS_ENCODING is %s' % SYS_ENCODING)
 
         # Put the cache dir in the data dir for now
-        CACHEDIR = os.path.join(DATADIR, 'cache')
+        CACHEDIR = os.path.join(CONFIG['DATADIR'], 'cache')
         if not os.path.exists(CACHEDIR):
             try:
                 os.makedirs(CACHEDIR)
             except OSError:
-                logger.error('Could not create cachedir. Check permissions of: ' + DATADIR)
+                logger.error('Could not create cachedir. Check permissions of: ' + CONFIG['DATADIR'])
 
         # keep track of last api calls so we don't call more than once per second
         # to respect api terms, but don't wait un-necessarily either
@@ -197,45 +407,7 @@ def initialize():
 
 
 def config_read(reloaded=False):
-    global FULL_PATH, PROG_DIR, DAEMON, DISPLAYLENGTH, \
-        HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_PROXY, HTTP_ROOT, HTTP_LOOK, API_KEY, API_ENABLED, \
-        LAUNCH_BROWSER, LOGDIR, CACHE_AGE, MATCH_RATIO, DLOAD_RATIO, PROXY_HOST, PROXY_TYPE, GIT_PROGRAM, \
-        IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, IMP_CONVERT, IMP_CALIBREDB, \
-        IMP_AUTOSEARCH, MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, \
-        MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, CONFIGFILE, CFG, LOGLIMIT, TASK_AGE, \
-        SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, SAB_CAT, \
-        DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, USENET_RETENTION, NZB_BLACKHOLEDIR, \
-        ALTERNATE_DIR, GR_API, GB_API, BOOK_API, \
-        NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, \
-        NZBGET_PORT, NZB_DOWNLOADER_NZBGET, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
-        NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, EBOOK_TYPE, MAG_TYPE, \
-        KAT, KAT_HOST, TPB, TPB_HOST, ZOO, ZOO_HOST, TDL, TDL_HOST, GEN, GEN_HOST, EXTRA, EXTRA_HOST, \
-        LIME, LIME_HOST, NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, REJECT_WORDS, REJECT_MAXSIZE, REJECT_MAGSIZE, \
-        VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, SEARCHRSS_INTERVAL, MAG_AGE, \
-        EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, ONE_FORMAT, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, MAG_SINGLE, \
-        USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, \
-        TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, TOR_CONVERT_MAGNET, \
-        USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, \
-        TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, TOR_DOWNLOADER_RTORRENT, \
-        TOR_DOWNLOADER_QBITTORRENT, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_SYNOLOGY, NZB_DOWNLOADER_BLACKHOLE, \
-        SYNOLOGY_DIR, USE_SYNOLOGY, USE_PUSHBULLET, PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, \
-        PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, RTORRENT_HOST, RTORRENT_USER, RTORRENT_PASS, RTORRENT_DIR, \
-        RTORRENT_LABEL, UTORRENT_HOST, UTORRENT_PORT, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
-        QBITTORRENT_HOST, QBITTORRENT_PORT, QBITTORRENT_USER, QBITTORRENT_PASS, QBITTORRENT_LABEL, \
-        SYNOLOGY_PORT, SYNOLOGY_HOST, SYNOLOGY_USER, SYNOLOGY_PASS, USE_PUSHOVER, PUSHOVER_ONSNATCH, \
-        PUSHOVER_KEYS, PUSHOVER_APITOKEN, PUSHOVER_PRIORITY, PUSHOVER_ONDOWNLOAD, PUSHOVER_DEVICE, \
-        USE_ANDROIDPN, ANDROIDPN_NOTIFY_ONSNATCH, ANDROIDPN_NOTIFY_ONDOWNLOAD, \
-        ANDROIDPN_URL, ANDROIDPN_USERNAME, ANDROIDPN_BROADCAST, \
-        USE_SLACK, SLACK_NOTIFY_ONSNATCH, SLACK_NOTIFY_ONDOWNLOAD, SLACK_TOKEN, \
-        USE_EMAIL, EMAIL_NOTIFY_ONSNATCH, EMAIL_NOTIFY_ONDOWNLOAD, EMAIL_FROM, EMAIL_TO, \
-        EMAIL_SSL, EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT, EMAIL_TLS, EMAIL_SMTP_USER, EMAIL_SMTP_PASSWORD, \
-        TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PORT, TRANSMISSION_PASS, TRANSMISSION_USER, \
-        TOR_DOWNLOADER_SYNOLOGY, TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, \
-        DELUGE_LABEL, FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, NEWAUTHOR_STATUS, \
-        USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
-        GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, COMMIT_LIST, PREFER_MAGNET, \
-        LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, KEEP_SEEDING, SCHED, CACHE_HIT, CACHE_MISS, \
-        BOOKSTRAP_THEME, LOGFILES, LOGSIZE, HTTPS_ENABLED, HTTPS_CERT, HTTPS_KEY
+    global CONFIG, CONFIG_DEFINITIONS, NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV
 
     # legacy name conversions, separate out host/port
     for provider in ['NZBGet', 'UTORRENT', 'QBITTORRENT', 'TRANSMISSION']:
@@ -252,241 +424,6 @@ def config_read(reloaded=False):
                 port = ':'.join(words[hostpart:])
             CFG.set(provider, '%s_port' % provider.lower(), port)
             CFG.set(provider, '%s_host' % provider.lower(), host)
-
-
-    # we read the log details earlier for starting the logger process,
-    # but read them again here so they get listed in the debug log
-    LOGDIR = check_setting('str', 'General', 'logdir', '')
-    LOGLIMIT = check_setting('int', 'General', 'loglimit', 500)
-    LOGFILES = check_setting('int', 'General', 'logfiles', 10)
-    LOGSIZE = check_setting('int', 'General', 'logsize', 204800)
-    HTTP_PORT = check_setting('int', 'General', 'http_port', 5299)
-
-    MATCH_RATIO = check_setting('int', 'General', 'match_ratio', 80)
-    DLOAD_RATIO = check_setting('int', 'General', 'dload_ratio', 90)
-    DISPLAYLENGTH = check_setting('int', 'General', 'displaylength', 10)
-    HTTP_HOST = check_setting('str', 'General', 'http_host', '0.0.0.0')
-    HTTP_USER = check_setting('str', 'General', 'http_user', '')
-    HTTP_PASS = check_setting('str', 'General', 'http_pass', '')
-    HTTP_PROXY = check_setting('bool', 'General', 'http_proxy', 0)
-    HTTP_ROOT = check_setting('str', 'General', 'http_root', '')
-    HTTP_LOOK = check_setting('str', 'General', 'http_look', 'default')
-    HTTPS_ENABLED = check_setting('bool', 'General', 'https_enabled', 0)
-    HTTPS_CERT = check_setting('str', 'General', 'https_cert', '')
-    HTTPS_KEY = check_setting('str', 'General', 'https_key', '')
-    BOOKSTRAP_THEME = check_setting('str', 'General', 'bookstrap_theme', 'slate')
-    MAG_SINGLE = check_setting('bool', 'General', 'mag_single', 1)
-
-    LAUNCH_BROWSER = check_setting('bool', 'General', 'launch_browser', 1)
-    API_ENABLED = check_setting('bool', 'General', 'api_enabled', 0)
-    API_KEY = check_setting('str', 'General', 'api_key', '')
-
-    PROXY_HOST = check_setting('str', 'General', 'proxy_host', '')
-    PROXY_TYPE = check_setting('str', 'General', 'proxy_type', '')
-
-    IMP_PREFLANG = check_setting('str', 'General', 'imp_preflang', 'en, eng, en-US, en-GB')
-    IMP_MONTHLANG = check_setting('str', 'General', 'imp_monthlang', '')
-    IMP_AUTOADD = check_setting('str', 'General', 'imp_autoadd', '')
-    IMP_AUTOSEARCH = check_setting('bool', 'General', 'imp_autosearch', 0)
-    IMP_CALIBREDB = check_setting('str', 'General', 'imp_calibredb', '')
-    IMP_ONLYISBN = check_setting('bool', 'General', 'imp_onlyisbn', 0)
-    IMP_SINGLEBOOK = check_setting('bool', 'General', 'imp_singlebook', 0)
-    IMP_CONVERT = check_setting('str', 'General', 'imp_convert', '')
-    GIT_PROGRAM = check_setting('str', 'General', 'git_program', '')
-    CACHE_AGE = check_setting('int', 'General', 'cache_age', 30)
-    TASK_AGE = check_setting('int', 'General', 'task_age', 0)
-
-    GIT_USER = check_setting('str', 'Git', 'git_user', 'dobytang')
-    GIT_REPO = check_setting('str', 'Git', 'git_repo', 'lazylibrarian')
-    GIT_BRANCH = check_setting('str', 'Git', 'git_branch', 'master')
-    INSTALL_TYPE = check_setting('str', 'Git', 'install_type', '')
-    CURRENT_VERSION = check_setting('str', 'Git', 'current_version', '')
-    LATEST_VERSION = check_setting('str', 'Git', 'latest_version', '')
-    COMMITS_BEHIND = check_setting('str', 'Git', 'commits_behind', '')
-
-    SAB_HOST = check_setting('str', 'SABnzbd', 'sab_host', '')
-    SAB_PORT = check_setting('int', 'SABnzbd', 'sab_port', 0)
-    SAB_SUBDIR = check_setting('str', 'SABnzbd', 'sab_subdir', '')
-    SAB_USER = check_setting('str', 'SABnzbd', 'sab_user', '')
-    SAB_PASS = check_setting('str', 'SABnzbd', 'sab_pass', '')
-    SAB_API = check_setting('str', 'SABnzbd', 'sab_api', '')
-    SAB_CAT = check_setting('str', 'SABnzbd', 'sab_cat', '')
-
-    NZBGET_HOST = check_setting('str', 'NZBGet', 'nzbget_host', '')
-    NZBGET_PORT = check_setting('int', 'NZBGet', 'nzbget_port', '0')
-    NZBGET_USER = check_setting('str', 'NZBGet', 'nzbget_user', '')
-    NZBGET_PASS = check_setting('str', 'NZBGet', 'nzbget_pass', '')
-    NZBGET_CATEGORY = check_setting('str', 'NZBGet', 'nzbget_cat', '')
-    NZBGET_PRIORITY = check_setting('int', 'NZBGet', 'nzbget_priority', '0')
-
-    DESTINATION_COPY = check_setting('bool', 'General', 'destination_copy', 0)
-    DESTINATION_DIR = check_setting('str', 'General', 'destination_dir', '')
-    ALTERNATE_DIR = check_setting('str', 'General', 'alternate_dir', '')
-    DOWNLOAD_DIR = check_setting('str', 'General', 'download_dir', '')
-
-    NZB_DOWNLOADER_SABNZBD = check_setting('bool', 'USENET', 'nzb_downloader_sabnzbd', 0)
-    NZB_DOWNLOADER_NZBGET = check_setting('bool', 'USENET', 'nzb_downloader_nzbget', 0)
-    NZB_DOWNLOADER_SYNOLOGY = check_setting('bool', 'USENET', 'nzb_downloader_synology', 0)
-    NZB_DOWNLOADER_BLACKHOLE = check_setting('bool', 'USENET', 'nzb_downloader_blackhole', 0)
-    NZB_BLACKHOLEDIR = check_setting('str', 'USENET', 'nzb_blackholedir', '')
-    USENET_RETENTION = check_setting('int', 'USENET', 'usenet_retention', 0)
-
-    NZBMATRIX = check_setting('bool', 'NZBMatrix', 'nzbmatrix', 0)
-    NZBMATRIX_USER = check_setting('str', 'NZBMatrix', 'nzbmatrix_user', '')
-    NZBMATRIX_API = check_setting('str', 'NZBMatrix', 'nzbmatrix_api', '')
-
-    TOR_DOWNLOADER_BLACKHOLE = check_setting('bool', 'TORRENT', 'tor_downloader_blackhole', 0)
-    TOR_CONVERT_MAGNET = check_setting('bool', 'TORRENT', 'tor_convert_magnet', 0)
-    TOR_DOWNLOADER_UTORRENT = check_setting('bool', 'TORRENT', 'tor_downloader_utorrent', 0)
-    TOR_DOWNLOADER_RTORRENT = check_setting('bool', 'TORRENT', 'tor_downloader_rtorrent', 0)
-    TOR_DOWNLOADER_QBITTORRENT = check_setting('bool', 'TORRENT', 'tor_downloader_qbittorrent', 0)
-    TOR_DOWNLOADER_TRANSMISSION = check_setting('bool', 'TORRENT', 'tor_downloader_transmission', 0)
-    TOR_DOWNLOADER_SYNOLOGY = check_setting('bool', 'TORRENT', 'tor_downloader_synology', 0)
-    TOR_DOWNLOADER_DELUGE = check_setting('bool', 'TORRENT', 'tor_downloader_deluge', 0)
-    NUMBEROFSEEDERS = check_setting('int', 'TORRENT', 'numberofseeders', 10)
-    KEEP_SEEDING = check_setting('bool', 'TORRENT', 'keep_seeding', 1)
-    PREFER_MAGNET = check_setting('bool', 'TORRENT', 'prefer_magnet', 1)
-    TORRENT_DIR = check_setting('str', 'TORRENT', 'torrent_dir', '')
-
-    RTORRENT_HOST = check_setting('str', 'RTORRENT', 'rtorrent_host', '')
-    RTORRENT_USER = check_setting('str', 'RTORRENT', 'rtorrent_user', '')
-    RTORRENT_PASS = check_setting('str', 'RTORRENT', 'rtorrent_pass', '')
-    RTORRENT_LABEL = check_setting('str', 'RTORRENT', 'rtorrent_label', '')
-    RTORRENT_DIR = check_setting('str', 'RTORRENT', 'rtorrent_dir', '')
-
-    UTORRENT_HOST = check_setting('str', 'UTORRENT', 'utorrent_host', '')
-    UTORRENT_PORT = check_setting('int', 'UTORRENT', 'utorrent_port', 0)
-    UTORRENT_USER = check_setting('str', 'UTORRENT', 'utorrent_user', '')
-    UTORRENT_PASS = check_setting('str', 'UTORRENT', 'utorrent_pass', '')
-    UTORRENT_LABEL = check_setting('str', 'UTORRENT', 'utorrent_label', '')
-
-    QBITTORRENT_HOST = check_setting('str', 'QBITTORRENT', 'qbittorrent_host', '')
-    QBITTORRENT_PORT = check_setting('int', 'QBITTORRENT', 'qbittorrent_port', 0)
-    QBITTORRENT_USER = check_setting('str', 'QBITTORRENT', 'qbittorrent_user', '')
-    QBITTORRENT_PASS = check_setting('str', 'QBITTORRENT', 'qbittorrent_pass', '')
-    QBITTORRENT_LABEL = check_setting('str', 'QBITTORRENT', 'qbittorrent_label', '')
-
-    TRANSMISSION_HOST = check_setting('str', 'TRANSMISSION', 'transmission_host', '')
-    TRANSMISSION_PORT = check_setting('int', 'TRANSMISSION', 'transmission_port', 0)
-    TRANSMISSION_USER = check_setting('str', 'TRANSMISSION', 'transmission_user', '')
-    TRANSMISSION_PASS = check_setting('str', 'TRANSMISSION', 'transmission_pass', '')
-
-    DELUGE_HOST = check_setting('str', 'DELUGE', 'deluge_host', '')
-    DELUGE_PORT = check_setting('int', 'DELUGE', 'deluge_port', 0)
-    DELUGE_USER = check_setting('str', 'DELUGE', 'deluge_user', '')
-    DELUGE_PASS = check_setting('str', 'DELUGE', 'deluge_pass', '')
-    DELUGE_LABEL = check_setting('str', 'DELUGE', 'deluge_label', '')
-
-    SYNOLOGY_HOST = check_setting('str', 'SYNOLOGY', 'synology_host', '')
-    SYNOLOGY_PORT = check_setting('int', 'SYNOLOGY', 'synology_port', 0)
-    SYNOLOGY_USER = check_setting('str', 'SYNOLOGY', 'synology_user', '')
-    SYNOLOGY_PASS = check_setting('str', 'SYNOLOGY', 'synology_pass', '')
-    SYNOLOGY_DIR = check_setting('str', 'SYNOLOGY', 'synology_dir', 'Multimedia/Download')
-    USE_SYNOLOGY = check_setting('bool', 'SYNOLOGY', 'use_synology', 0)
-
-    KAT = check_setting('bool', 'KAT', 'kat', 0)
-    KAT_HOST = check_setting('str', 'KAT', 'kat_host', 'kickass.cd')
-    TPB = check_setting('bool', 'TPB', 'tpb', 0)
-    TPB_HOST = check_setting('str', 'TPB', 'tpb_host', 'https://piratebays.co')
-    ZOO = check_setting('bool', 'ZOO', 'zoo', 0)
-    ZOO_HOST = check_setting('str', 'ZOO', 'zoo_host', 'https://zooqle.com')
-    EXTRA = check_setting('bool', 'EXTRA', 'extra', 0)
-    EXTRA_HOST = check_setting('str', 'EXTRA', 'extra_host', 'extratorrent.cc')
-    TDL = check_setting('bool', 'TDL', 'tdl', 0)
-    TDL_HOST = check_setting('str', 'TDL', 'tdl_host', 'torrentdownloads.me')
-    GEN = check_setting('bool', 'GEN', 'gen', 0)
-    GEN_HOST = check_setting('str', 'GEN', 'gen_host', 'libgen.io')
-    LIME = check_setting('bool', 'LIME', 'lime', 0)
-    LIME_HOST = check_setting('str', 'LIME', 'lime_host', 'https://www.limetorrents.cc')
-
-    NEWZBIN = check_setting('bool', 'Newzbin', 'newzbin', 0)
-    NEWZBIN_UID = check_setting('str', 'Newzbin', 'newzbin_uid', '')
-    NEWZBIN_PASS = check_setting('str', 'Newzbin', 'newzbin_pass', '')
-    EBOOK_TYPE = check_setting('str', 'General', 'ebook_type', 'epub, mobi, pdf')
-    MAG_TYPE = check_setting('str', 'General', 'mag_type', 'pdf')
-    REJECT_WORDS = check_setting('str', 'General', 'reject_words', 'audiobook, mp3')
-    REJECT_MAXSIZE = check_setting('int', 'General', 'reject_maxsize', 0)
-    REJECT_MAGSIZE = check_setting('int', 'General', 'reject_magsize', 0)
-    MAG_AGE = check_setting('int', 'General', 'mag_age', 31)
-
-    SEARCH_INTERVAL = check_setting('int', 'SearchScan', 'search_interval', '360')
-    SCAN_INTERVAL = check_setting('int', 'SearchScan', 'scan_interval', '10')
-    SEARCHRSS_INTERVAL = check_setting('int', 'SearchScan', 'searchrss_interval', '20')
-    VERSIONCHECK_INTERVAL = check_setting('int', 'SearchScan', 'versioncheck_interval', '24')
-
-    FULL_SCAN = check_setting('bool', 'LibraryScan', 'full_scan', 0)
-    ADD_AUTHOR = check_setting('bool', 'LibraryScan', 'add_author', 1)
-    NOTFOUND_STATUS = check_setting('str', 'LibraryScan', 'notfound_status', 'Skipped')
-    NEWBOOK_STATUS = check_setting('str', 'LibraryScan', 'newbook_status', 'Skipped')
-    NEWAUTHOR_STATUS = check_setting('str', 'LibraryScan', 'newauthor_status', 'Skipped')
-
-    EBOOK_DEST_FOLDER = check_setting('str', 'PostProcess', 'ebook_dest_folder', '$Author/$Title')
-    EBOOK_DEST_FILE = check_setting('str', 'PostProcess', 'ebook_dest_file', '$Title - $Author')
-    ONE_FORMAT = check_setting('bool', 'PostProcess', 'one_format', 0)
-    MAG_DEST_FOLDER = check_setting('str', 'PostProcess', 'mag_dest_folder', '_Magazines/$Title/$IssueDate')
-    MAG_DEST_FILE = check_setting('str', 'PostProcess', 'mag_dest_file', '$IssueDate - $Title')
-    MAG_RELATIVE = check_setting('bool', 'PostProcess', 'mag_relative', 1)
-
-    USE_TWITTER = check_setting('bool', 'Twitter', 'use_twitter', 0)
-    TWITTER_NOTIFY_ONSNATCH = check_setting('bool', 'Twitter', 'twitter_notify_onsnatch', 0)
-    TWITTER_NOTIFY_ONDOWNLOAD = check_setting('bool', 'Twitter', 'twitter_notify_ondownload', 0)
-    TWITTER_USERNAME = check_setting('str', 'Twitter', 'twitter_username', '')
-    TWITTER_PASSWORD = check_setting('str', 'Twitter', 'twitter_password', '')
-    TWITTER_PREFIX = check_setting('str', 'Twitter', 'twitter_prefix', 'LazyLibrarian')
-
-    USE_BOXCAR = check_setting('bool', 'Boxcar', 'use_boxcar', 0)
-    BOXCAR_NOTIFY_ONSNATCH = check_setting('bool', 'Boxcar', 'boxcar_notify_onsnatch', 0)
-    BOXCAR_NOTIFY_ONDOWNLOAD = check_setting('bool', 'Boxcar', 'boxcar_notify_ondownload', 0)
-    BOXCAR_TOKEN = check_setting('str', 'Boxcar', 'boxcar_token', '')
-
-    USE_PUSHBULLET = check_setting('bool', 'Pushbullet', 'use_pushbullet', 0)
-    PUSHBULLET_NOTIFY_ONSNATCH = check_setting('bool', 'Pushbullet', 'pushbullet_notify_onsnatch', 0)
-    PUSHBULLET_NOTIFY_ONDOWNLOAD = check_setting('bool', 'Pushbullet', 'pushbullet_notify_ondownload', 0)
-    PUSHBULLET_TOKEN = check_setting('str', 'Pushbullet', 'pushbullet_token', '')
-    PUSHBULLET_DEVICEID = check_setting('str', 'Pushbullet', 'pushbullet_deviceid', '')
-
-    USE_PUSHOVER = check_setting('bool', 'Pushover', 'use_pushover', 0)
-    PUSHOVER_ONSNATCH = check_setting('bool', 'Pushover', 'pushover_onsnatch', 0)
-    PUSHOVER_ONDOWNLOAD = check_setting('bool', 'Pushover', 'pushover_ondownload', 0)
-    PUSHOVER_KEYS = check_setting('str', 'Pushover', 'pushover_keys', '')
-    PUSHOVER_APITOKEN = check_setting('str', 'Pushover', 'pushover_apitoken', '')
-    PUSHOVER_PRIORITY = check_setting('int', 'Pushover', 'pushover_priority', 0)
-    PUSHOVER_DEVICE = check_setting('str', 'Pushover', 'pushover_device', '')
-
-    USE_ANDROIDPN = check_setting('bool', 'AndroidPN', 'use_androidpn', 0)
-    ANDROIDPN_NOTIFY_ONSNATCH = check_setting('bool', 'AndroidPN', 'androidpn_notify_onsnatch', 0)
-    ANDROIDPN_NOTIFY_ONDOWNLOAD = check_setting('bool', 'AndroidPN', 'androidpn_notify_ondownload', 0)
-    ANDROIDPN_URL = check_setting('str', 'AndroidPN', 'androidpn_url', '')
-    ANDROIDPN_USERNAME = check_setting('str', 'AndroidPN', 'androidpn_username', '')
-    ANDROIDPN_BROADCAST = check_setting('bool', 'AndroidPN', 'androidpn_broadcast', 0)
-
-    USE_NMA = check_setting('bool', 'NMA', 'use_nma', 0)
-    NMA_APIKEY = check_setting('str', 'NMA', 'nma_apikey', '')
-    NMA_PRIORITY = check_setting('int', 'NMA', 'nma_priority', 0)
-    NMA_ONSNATCH = check_setting('bool', 'NMA', 'nma_onsnatch', 0)
-    NMA_ONDOWNLOAD = check_setting('bool', 'NMA', 'nma_ondownload', 0)
-
-    USE_SLACK = check_setting('bool', 'Slack', 'use_slack', 0)
-    SLACK_NOTIFY_ONSNATCH = check_setting('bool', 'Slack', 'slack_notify_onsnatch', 0)
-    SLACK_NOTIFY_ONDOWNLOAD = check_setting('bool', 'Slack', 'slack_notify_ondownload', 0)
-    SLACK_TOKEN = check_setting('str', 'Slack', 'slack_token', '')
-
-    USE_EMAIL = check_setting('bool', 'Email', 'use_email', 0)
-    EMAIL_NOTIFY_ONSNATCH = check_setting('bool', 'Email', 'email_notify_onsnatch', 0)
-    EMAIL_NOTIFY_ONDOWNLOAD = check_setting('bool', 'Email', 'email_notify_ondownload', 0)
-    EMAIL_FROM = check_setting('str', 'Email', 'email_from', '')
-    EMAIL_TO = check_setting('str', 'Email', 'email_to', '')
-    EMAIL_SSL = check_setting('bool', 'Email', 'email_ssl', 0)
-    EMAIL_SMTP_SERVER = check_setting('str', 'Email', 'email_smtp_server', '')
-    EMAIL_SMTP_PORT = check_setting('int', 'Email', 'email_smtp_port', 25)
-    EMAIL_TLS = check_setting('bool', 'Email', 'email_tls', 0)
-    EMAIL_SMTP_USER = check_setting('str', 'Email', 'email_smtp_user', '')
-    EMAIL_SMTP_PASSWORD = check_setting('str', 'Email', 'email_smtp_password', '')
-
-    BOOK_API = check_setting('str', 'API', 'book_api', 'GoodReads')
-    GR_API = check_setting('str', 'API', 'gr_api', 'ckvsiSDsuqh7omh74ZZ6Q')
-    GB_API = check_setting('str', 'API', 'gb_api', '')
-
 
     NEWZNAB_PROV = []
     count = 0
@@ -586,13 +523,17 @@ def config_read(reloaded=False):
     # if the last slot is full, add an empty one on the end
     add_rss_slot()
 
-    if HTTP_PORT < 21 or HTTP_PORT > 65535:
-        HTTP_PORT = 5299
+    for key in CONFIG_DEFINITIONS.keys():
+        item_type, section, default = CONFIG_DEFINITIONS[key]
+        CONFIG[key.upper()] = check_setting(item_type, section, key.lower(), default)
+
+    if CONFIG['HTTP_PORT'] < 21 or CONFIG ['HTTP_PORT'] > 65535:
+        CONFIG['HTTP_PORT'] = 5299
 
     # to make extension matching easier
-    EBOOK_TYPE = EBOOK_TYPE.lower()
-    MAG_TYPE = MAG_TYPE.lower()
-    REJECT_WORDS = REJECT_WORDS.lower()
+    CONFIG['EBOOK_TYPE'] = CONFIG['EBOOK_TYPE'].lower()
+    CONFIG['MAG_TYPE'] = CONFIG['MAG_TYPE'].lower()
+    CONFIG['REJECT_WORDS'] = CONFIG['REJECT_WORDS'].lower()
 
     if reloaded:
         logger.info('Config file reloaded')
@@ -600,275 +541,20 @@ def config_read(reloaded=False):
         logger.info('Config file loaded')
 
 
-# noinspection PyUnresolvedReferences,PyTypeChecker,PyTypeChecker
 def config_write():
-    check_section('General')
-    CFG.set('General', 'http_port', HTTP_PORT)
-    CFG.set('General', 'http_host', HTTP_HOST)
-    CFG.set('General', 'http_user', HTTP_USER)
-    CFG.set('General', 'http_pass', HTTP_PASS)
-    CFG.set('General', 'http_proxy', HTTP_PROXY)
-    CFG.set('General', 'http_root', HTTP_ROOT)
-    CFG.set('General', 'http_look', HTTP_LOOK)
-    CFG.set('General', 'https_enabled', HTTPS_ENABLED)
-    CFG.set('General', 'https_cert', HTTPS_CERT)
-    CFG.set('General', 'https_key', HTTPS_KEY)
-    CFG.set('General', 'bookstrap_theme', BOOKSTRAP_THEME)
-    CFG.set('General', 'launch_browser', LAUNCH_BROWSER)
-    CFG.set('General', 'api_enabled', API_ENABLED)
-    CFG.set('General', 'api_key', API_KEY)
-    CFG.set('General', 'proxy_host', PROXY_HOST)
-    CFG.set('General', 'proxy_type', PROXY_TYPE)
-    CFG.set('General', 'logdir', LOGDIR.encode(SYS_ENCODING))
-    CFG.set('General', 'loglimit', LOGLIMIT)
-    CFG.set('General', 'loglevel', LOGLEVEL)
-    CFG.set('General', 'logsize', LOGSIZE)
-    CFG.set('General', 'logfiles', LOGFILES)
-    CFG.set('General', 'match_ratio', MATCH_RATIO)
-    CFG.set('General', 'dload_ratio', DLOAD_RATIO)
-    CFG.set('General', 'imp_onlyisbn', IMP_ONLYISBN)
-    CFG.set('General', 'imp_singlebook', IMP_SINGLEBOOK)
-    CFG.set('General', 'imp_preflang', IMP_PREFLANG)
-    CFG.set('General', 'imp_monthlang', IMP_MONTHLANG)
-    CFG.set('General', 'imp_autoadd', IMP_AUTOADD)
-    CFG.set('General', 'imp_autosearch', IMP_AUTOSEARCH)
-    CFG.set('General', 'imp_calibredb', IMP_CALIBREDB)
-    CFG.set('General', 'imp_convert', IMP_CONVERT.strip())
-    CFG.set('General', 'git_program', GIT_PROGRAM.strip())
-    CFG.set('General', 'ebook_type', EBOOK_TYPE.lower())
-    CFG.set('General', 'mag_type', MAG_TYPE.lower())
-    CFG.set('General', 'reject_words', REJECT_WORDS.encode(SYS_ENCODING).lower())
-    CFG.set('General', 'reject_maxsize', REJECT_MAXSIZE)
-    CFG.set('General', 'reject_magsize', REJECT_MAGSIZE)
-    CFG.set('General', 'mag_age', MAG_AGE)
-    CFG.set('General', 'destination_dir', DESTINATION_DIR.encode(SYS_ENCODING))
-    CFG.set('General', 'alternate_dir', ALTERNATE_DIR.encode(SYS_ENCODING))
-    CFG.set('General', 'download_dir', DOWNLOAD_DIR.encode(SYS_ENCODING))
-    CFG.set('General', 'cache_age', CACHE_AGE)
-    CFG.set('General', 'task_age', TASK_AGE)
-    CFG.set('General', 'destination_copy', DESTINATION_COPY)
-    CFG.set('General', 'mag_single', MAG_SINGLE)
-    #
-    CFG.set('General', 'displaylength', DISPLAYLENGTH)
-    #
-    check_section('Git')
-    CFG.set('Git', 'git_user', GIT_USER)
-    CFG.set('Git', 'git_repo', GIT_REPO)
-    CFG.set('Git', 'git_branch', GIT_BRANCH)
-    CFG.set('Git', 'install_type', INSTALL_TYPE)
-    CFG.set('Git', 'current_version', CURRENT_VERSION)
-    CFG.set('Git', 'latest_version', LATEST_VERSION)
-    CFG.set('Git', 'commits_behind', COMMITS_BEHIND)
-    #
-    check_section('USENET')
-    CFG.set('USENET', 'nzb_downloader_sabnzbd', NZB_DOWNLOADER_SABNZBD)
-    CFG.set('USENET', 'nzb_downloader_nzbget', NZB_DOWNLOADER_NZBGET)
-    CFG.set('USENET', 'nzb_downloader_synology', NZB_DOWNLOADER_SYNOLOGY)
-    CFG.set('USENET', 'nzb_downloader_blackhole', NZB_DOWNLOADER_BLACKHOLE)
-    CFG.set('USENET', 'nzb_blackholedir', NZB_BLACKHOLEDIR)
-    CFG.set('USENET', 'usenet_retention', USENET_RETENTION)
-    #
-    check_section('SABnzbd')
-    CFG.set('SABnzbd', 'sab_host', SAB_HOST)
-    CFG.set('SABnzbd', 'sab_port', SAB_PORT)
-    CFG.set('SABnzbd', 'sab_subdir', SAB_SUBDIR)
-    CFG.set('SABnzbd', 'sab_user', SAB_USER)
-    CFG.set('SABnzbd', 'sab_pass', SAB_PASS)
-    CFG.set('SABnzbd', 'sab_api', SAB_API)
-    CFG.set('SABnzbd', 'sab_cat', SAB_CAT)
-    #
-    check_section('NZBGet')
-    CFG.set('NZBGet', 'nzbget_host', NZBGET_HOST)
-    CFG.set('NZBGet', 'nzbget_port', NZBGET_PORT)
-    CFG.set('NZBGet', 'nzbget_user', NZBGET_USER)
-    CFG.set('NZBGet', 'nzbget_pass', NZBGET_PASS)
-    CFG.set('NZBGet', 'nzbget_cat', NZBGET_CATEGORY)
-    CFG.set('NZBGet', 'nzbget_priority', NZBGET_PRIORITY)
-    #
-    check_section('API')
-    CFG.set('API', 'book_api', BOOK_API)
-    CFG.set('API', 'gr_api', GR_API)
-    CFG.set('API', 'gb_api', GB_API)
-    #
-    check_section('NZBMatrix')
-    CFG.set('NZBMatrix', 'nzbmatrix', NZBMATRIX)
-    CFG.set('NZBMatrix', 'nzbmatrix_user', NZBMATRIX_USER)
-    CFG.set('NZBMatrix', 'nzbmatrix_api', NZBMATRIX_API)
-    #
-    check_section('Newzbin')
-    CFG.set('Newzbin', 'newzbin', NEWZBIN)
-    CFG.set('Newzbin', 'newzbin_uid', NEWZBIN_UID)
-    CFG.set('Newzbin', 'newzbin_pass', NEWZBIN_PASS)
-    #
-    check_section('TORRENT')
-    CFG.set('TORRENT', 'tor_downloader_blackhole', TOR_DOWNLOADER_BLACKHOLE)
-    CFG.set('TORRENT', 'tor_convert_magnet', TOR_CONVERT_MAGNET)
-    CFG.set('TORRENT', 'tor_downloader_utorrent', TOR_DOWNLOADER_UTORRENT)
-    CFG.set('TORRENT', 'tor_downloader_rtorrent', TOR_DOWNLOADER_RTORRENT)
-    CFG.set('TORRENT', 'tor_downloader_qbittorrent', TOR_DOWNLOADER_QBITTORRENT)
-    CFG.set('TORRENT', 'tor_downloader_transmission', TOR_DOWNLOADER_TRANSMISSION)
-    CFG.set('TORRENT', 'tor_downloader_synology', TOR_DOWNLOADER_SYNOLOGY)
-    CFG.set('TORRENT', 'tor_downloader_deluge', TOR_DOWNLOADER_DELUGE)
-    CFG.set('TORRENT', 'numberofseeders', NUMBEROFSEEDERS)
-    CFG.set('TORRENT', 'torrent_dir', TORRENT_DIR)
-    CFG.set('TORRENT', 'keep_seeding', KEEP_SEEDING)
-    CFG.set('TORRENT', 'prefer_magnet', PREFER_MAGNET)
-    #
-    check_section('RTORRENT')
-    CFG.set('RTORRENT', 'rtorrent_host', RTORRENT_HOST)
-    CFG.set('RTORRENT', 'rtorrent_user', RTORRENT_USER)
-    CFG.set('RTORRENT', 'rtorrent_pass', RTORRENT_PASS)
-    CFG.set('RTORRENT', 'rtorrent_label', RTORRENT_LABEL)
-    CFG.set('RTORRENT', 'rtorrent_dir', RTORRENT_DIR)
-    #
-    check_section('UTORRENT')
-    CFG.set('UTORRENT', 'utorrent_host', UTORRENT_HOST)
-    CFG.set('UTORRENT', 'utorrent_port', UTORRENT_PORT)
-    CFG.set('UTORRENT', 'utorrent_user', UTORRENT_USER)
-    CFG.set('UTORRENT', 'utorrent_pass', UTORRENT_PASS)
-    CFG.set('UTORRENT', 'utorrent_label', UTORRENT_LABEL)
-    #
-    check_section('SYNOLOGY')
-    CFG.set('SYNOLOGY', 'synology_host', SYNOLOGY_HOST)
-    CFG.set('SYNOLOGY', 'synology_port', SYNOLOGY_PORT)
-    CFG.set('SYNOLOGY', 'synology_user', SYNOLOGY_USER)
-    CFG.set('SYNOLOGY', 'synology_pass', SYNOLOGY_PASS)
-    CFG.set('SYNOLOGY', 'synology_dir', SYNOLOGY_DIR)
-    CFG.set('SYNOLOGY', 'use_synology', USE_SYNOLOGY)
-    #
-    check_section('QBITTORRENT')
-    CFG.set('QBITTORRENT', 'qbittorrent_host', QBITTORRENT_HOST)
-    CFG.set('QBITTORRENT', 'qbittorrent_port', QBITTORRENT_PORT)
-    CFG.set('QBITTORRENT', 'qbittorrent_user', QBITTORRENT_USER)
-    CFG.set('QBITTORRENT', 'qbittorrent_pass', QBITTORRENT_PASS)
-    CFG.set('QBITTORRENT', 'qbittorrent_label', QBITTORRENT_LABEL)
-    #
-    check_section('TRANSMISSION')
-    CFG.set('TRANSMISSION', 'transmission_host', TRANSMISSION_HOST)
-    CFG.set('TRANSMISSION', 'transmission_port', TRANSMISSION_PORT)
-    CFG.set('TRANSMISSION', 'transmission_user', TRANSMISSION_USER)
-    CFG.set('TRANSMISSION', 'transmission_pass', TRANSMISSION_PASS)
-    #
-    check_section('DELUGE')
-    CFG.set('DELUGE', 'deluge_host', DELUGE_HOST)
-    CFG.set('DELUGE', 'deluge_port', DELUGE_PORT)
-    CFG.set('DELUGE', 'deluge_user', DELUGE_USER)
-    CFG.set('DELUGE', 'deluge_pass', DELUGE_PASS)
-    CFG.set('DELUGE', 'deluge_label', DELUGE_LABEL)
-    #
-    check_section('KAT')
-    CFG.set('KAT', 'kat', KAT)
-    CFG.set('KAT', 'kat_host', KAT_HOST)
-    #
-    check_section('TPB')
-    CFG.set('TPB', 'tpb', TPB)
-    CFG.set('TPB', 'tpb_host', TPB_HOST)
-    #
-    check_section('ZOO')
-    CFG.set('ZOO', 'zoo', ZOO)
-    CFG.set('ZOO', 'zoo_host', ZOO_HOST)
-    #
-    check_section('EXTRA')
-    CFG.set('EXTRA', 'extra', EXTRA)
-    CFG.set('EXTRA', 'extra_host', EXTRA_HOST)
-    #
-    check_section('LIME')
-    CFG.set('LIME', 'lime', LIME)
-    CFG.set('LIME', 'lime_host', LIME_HOST)
-    #
-    check_section('GEN')
-    CFG.set('GEN', 'gen', GEN)
-    CFG.set('GEN', 'gen_host', GEN_HOST)
-    #
-    check_section('TDL')
-    CFG.set('TDL', 'tdl', TDL)
-    CFG.set('TDL', 'tdl_host', TDL_HOST)
-    #
-    check_section('SearchScan')
-    CFG.set('SearchScan', 'search_interval', SEARCH_INTERVAL)
-    CFG.set('SearchScan', 'scan_interval', SCAN_INTERVAL)
-    CFG.set('SearchScan', 'searchrss_interval', SEARCHRSS_INTERVAL)
-    CFG.set('SearchScan', 'versioncheck_interval', VERSIONCHECK_INTERVAL)
-    #
-    check_section('LibraryScan')
-    CFG.set('LibraryScan', 'full_scan', FULL_SCAN)
-    CFG.set('LibraryScan', 'add_author', ADD_AUTHOR)
-    CFG.set('LibraryScan', 'notfound_status', NOTFOUND_STATUS)
-    CFG.set('LibraryScan', 'newbook_status', NEWBOOK_STATUS)
-    CFG.set('LibraryScan', 'newauthor_status', NEWAUTHOR_STATUS)
-    #
-    check_section('PostProcess')
-    CFG.set('PostProcess', 'ebook_dest_folder', EBOOK_DEST_FOLDER.encode(SYS_ENCODING))
-    CFG.set('PostProcess', 'ebook_dest_file', EBOOK_DEST_FILE.encode(SYS_ENCODING))
-    CFG.set('PostProcess', 'one_format', ONE_FORMAT)
-    CFG.set('PostProcess', 'mag_dest_folder', MAG_DEST_FOLDER.encode(SYS_ENCODING))
-    CFG.set('PostProcess', 'mag_dest_file', MAG_DEST_FILE.encode(SYS_ENCODING))
-    CFG.set('PostProcess', 'mag_relative', MAG_RELATIVE)
-    #
-    check_section('Twitter')
-    CFG.set('Twitter', 'use_twitter', USE_TWITTER)
-    CFG.set('Twitter', 'twitter_notify_onsnatch', TWITTER_NOTIFY_ONSNATCH)
-    CFG.set('Twitter', 'twitter_notify_ondownload', TWITTER_NOTIFY_ONDOWNLOAD)
-    CFG.set('Twitter', 'twitter_username', TWITTER_USERNAME)
-    CFG.set('Twitter', 'twitter_password', TWITTER_PASSWORD)
-    CFG.set('Twitter', 'twitter_prefix', TWITTER_PREFIX)
-    #
-    check_section('Boxcar')
-    CFG.set('Boxcar', 'use_boxcar', USE_BOXCAR)
-    CFG.set('Boxcar', 'boxcar_notify_onsnatch', BOXCAR_NOTIFY_ONSNATCH)
-    CFG.set('Boxcar', 'boxcar_notify_ondownload', BOXCAR_NOTIFY_ONDOWNLOAD)
-    CFG.set('Boxcar', 'boxcar_token', BOXCAR_TOKEN)
-    #
-    check_section('Pushbullet')
-    CFG.set('Pushbullet', 'use_pushbullet', USE_PUSHBULLET)
-    CFG.set('Pushbullet', 'pushbullet_notify_onsnatch', PUSHBULLET_NOTIFY_ONSNATCH)
-    CFG.set('Pushbullet', 'pushbullet_notify_ondownload', PUSHBULLET_NOTIFY_ONDOWNLOAD)
-    CFG.set('Pushbullet', 'pushbullet_token', PUSHBULLET_TOKEN)
-    CFG.set('Pushbullet', 'pushbullet_deviceid', PUSHBULLET_DEVICEID)
-    #
-    check_section('Pushover')
-    CFG.set('Pushover', 'use_pushover', USE_PUSHOVER)
-    CFG.set('Pushover', 'pushover_onsnatch', PUSHOVER_ONSNATCH)
-    CFG.set('Pushover', 'pushover_ondownload', PUSHOVER_ONDOWNLOAD)
-    CFG.set('Pushover', 'pushover_priority', PUSHOVER_PRIORITY)
-    CFG.set('Pushover', 'pushover_keys', PUSHOVER_KEYS)
-    CFG.set('Pushover', 'pushover_apitoken', PUSHOVER_APITOKEN)
-    CFG.set('Pushover', 'pushover_device', PUSHOVER_DEVICE)
-    #
-    check_section('AndroidPN')
-    CFG.set('AndroidPN', 'use_androidpn', USE_ANDROIDPN)
-    CFG.set('AndroidPN', 'androidpn_notify_onsnatch', ANDROIDPN_NOTIFY_ONSNATCH)
-    CFG.set('AndroidPN', 'androidpn_notify_ondownload', ANDROIDPN_NOTIFY_ONDOWNLOAD)
-    CFG.set('AndroidPN', 'androidpn_url', ANDROIDPN_URL)
-    CFG.set('AndroidPN', 'androidpn_username', ANDROIDPN_USERNAME)
-    CFG.set('AndroidPN', 'androidpn_broadcast', ANDROIDPN_BROADCAST)
-    #
-    check_section('NMA')
-    CFG.set('NMA', 'use_nma', USE_NMA)
-    CFG.set('NMA', 'nma_apikey', NMA_APIKEY)
-    CFG.set('NMA', 'nma_priority', NMA_PRIORITY)
-    CFG.set('NMA', 'nma_onsnatch', NMA_ONSNATCH)
-    CFG.set('NMA', 'nma_ondownload', NMA_ONDOWNLOAD)
-    #
-    check_section('Slack')
-    CFG.set('Slack', 'use_slack', USE_SLACK)
-    CFG.set('Slack', 'slack_notify_onsnatch', SLACK_NOTIFY_ONSNATCH)
-    CFG.set('Slack', 'slack_notify_ondownload', SLACK_NOTIFY_ONDOWNLOAD)
-    CFG.set('Slack', 'slack_token', SLACK_TOKEN)
-    #
-    check_section('Email')
-    CFG.set('Email', 'use_email', USE_EMAIL)
-    CFG.set('Email', 'email_notify_onsnatch', EMAIL_NOTIFY_ONSNATCH)
-    CFG.set('Email', 'email_notify_ondownload', EMAIL_NOTIFY_ONDOWNLOAD)
-    CFG.set('Email', 'email_from', EMAIL_FROM)
-    CFG.set('Email', 'email_to', EMAIL_TO)
-    CFG.set('Email', 'email_ssl', EMAIL_SSL)
-    CFG.set('Email', 'email_smtp_server', EMAIL_SMTP_SERVER)
-    CFG.set('Email', 'email_smtp_port', EMAIL_SMTP_PORT)
-    CFG.set('Email', 'email_tls', EMAIL_TLS)
-    CFG.set('Email', 'email_smtp_user', EMAIL_SMTP_USER)
-    CFG.set('Email', 'email_smtp_password', EMAIL_SMTP_PASSWORD)
-    #
+
+    for key in CONFIG_DEFINITIONS.keys():
+        item_type, section, default = CONFIG_DEFINITIONS[key]
+        check_section(section)
+        value =  CONFIG[key]
+        if key in ['LOGDIR', 'DESTINATION_DIR', 'ALTERNATE_DIR', 'DOWLOAD_DIR',
+                    'EBOOK_DEST_FILE', 'EBOOK_DEST_FOLDER', 'MAG_DEST_FILE', 'MAG_DEST_FOLDER']:
+            value = value.encode(SYS_ENCODING)
+        if key == 'REJECT_WORDS':
+            value = value.encode(SYS_ENCODING).lower()
+
+        CFG.set(section, key.lower(), value)
+
     for provider in NEWZNAB_PROV:
         check_section(provider['NAME'])
         CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
@@ -909,6 +595,7 @@ def config_write():
             logger.debug('Reset %s as provider changed' % provider['NAME'])
             CFG.set(provider['NAME'], 'UPDATED', '')
             CFG.set(provider['NAME'], 'MANUAL', False)
+
     add_torz_slot()
     #
     for provider in RSS_PROV:
@@ -1014,11 +701,11 @@ def USE_NZB():
 def DIRECTORY(dirname):
     usedir = ''
     if dirname == "Destination":
-        usedir = DESTINATION_DIR
+        usedir = CONFIG['DESTINATION_DIR']
     elif dirname == "Download":
-        usedir = DOWNLOAD_DIR
-    # elif dirname == "Alternate":
-    #    usedir = ALTERNATE_DIR
+        usedir = CONFIG['DOWNLOAD_DIR']
+    elif dirname == "Alternate":
+        usedir = CONFIG['ALTERNATE_DIR']
     else:
         return usedir
 
@@ -1063,7 +750,8 @@ def USE_RSS():
 
 
 def USE_TOR():
-    for provider in [KAT, TPB, ZOO, EXTRA, LIME, TDL, GEN]:
+    for provider in [CONFIG['KAT'], CONFIG['TPB'], CONFIG['ZOO'], CONFIG['EXTRA'], CONFIG['LIME'],
+                    CONFIG['TDL'], CONFIG['GEN']]:
         if bool(provider):
             return True
     return False
@@ -1099,7 +787,7 @@ def build_bookstrap_themes():
 
 def build_monthtable():
     table = []
-    json_file = os.path.join(DATADIR, 'monthnames.json')
+    json_file = os.path.join(CONFIG['DATADIR'], 'monthnames.json')
     if os.path.isfile(json_file):
         try:
             with open(json_file) as json_data:
@@ -1131,7 +819,7 @@ def build_monthtable():
                 ['december', 'dec']
                 ]
 
-    if len(getList(IMP_MONTHLANG)) == 0:  # any extra languages wanted?
+    if len(getList(CONFIG['IMP_MONTHLANG'])) == 0:  # any extra languages wanted?
         return table
     try:
         current_locale = locale.setlocale(locale.LC_ALL, '')  # read current state.
@@ -1156,7 +844,7 @@ def build_monthtable():
         logger.info("Added month names for locale [%s], %s, %s ..." % (
             lang, table[1][len(table[1]) - 2], table[1][len(table[1]) - 1]))
 
-    for lang in getList(IMP_MONTHLANG):
+    for lang in getList(CONFIG['IMP_MONTHLANG']):
         try:
             if lang in table[0] or ((lang.startswith('en_') or lang == 'C') and 'en_' in str(table[0])):
                 logger.debug('Month names for %s already loaded' % lang)

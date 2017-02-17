@@ -25,7 +25,7 @@ from magnet2torrent import magnet2torrent
 
 
 def getServer():
-    host = lazylibrarian.RTORRENT_HOST
+    host = lazylibrarian.CONFIG['RTORRENT_HOST']
     if not host:
         logger.debug("rtorrent error: No host found")
         return False
@@ -34,9 +34,9 @@ def getServer():
     if host.endswith('/'):
         host = host[:-1]
 
-    if lazylibrarian.RTORRENT_USER:
-        user = lazylibrarian.RTORRENT_USER
-        password = lazylibrarian.RTORRENT_PASS
+    if lazylibrarian.CONFIG['RTORRENT_USER']:
+        user = lazylibrarian.CONFIG['RTORRENT_USER']
+        password = lazylibrarian.CONFIG['RTORRENT_PASS']
         parts = host.split('://')
         host = parts[0] + '://' + user + ':' + password + '@' + parts[1]
 
@@ -62,13 +62,13 @@ def addTorrent(tor_url, hashID):
     if server is False:
         return False
 
-    directory = lazylibrarian.RTORRENT_DIR
+    directory = lazylibrarian.CONFIG['RTORRENT_DIR']
 
     if tor_url.startswith('magnet') and directory:
         # can't send magnets to rtorrent with a directory - not working correctly
         # convert magnet to torrent instead
         tor_name = 'meta-' + hashID + '.torrent'
-        tor_file = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
+        tor_file = os.path.join(lazylibrarian.CONFIG['TORRENT_DIR'], tor_name)
         torrent = magnet2torrent(tor_url, tor_file)
         if torrent is False:
             return False
@@ -90,7 +90,7 @@ def addTorrent(tor_url, hashID):
 
         server.d.start(hashID)
 
-        label = lazylibrarian.RTORRENT_LABEL
+        label = lazylibrarian.CONFIG['RTORRENT_LABEL']
         if label:
             server.d.set_custom1(hashID, label)
 

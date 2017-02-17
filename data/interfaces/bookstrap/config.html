@@ -41,19 +41,19 @@
                                         <div class="form-group">
                                             <input type="text" id="current_tab" name="current_tab" value="${lazylibrarian.CURRENT_TAB}" class="hidden">
                                             <label for="http_host" class="control-label">Hostname:</label>
-                                            <input type="text" id="http_host" name="http_host" value="${lazylibrarian.HTTP_HOST}" class="form-control" placeholder="Hostname">
+                                            <input type="text" id="http_host" name="http_host" value="${lazylibrarian.CONFIG['HTTP_HOST']}" class="form-control" placeholder="Hostname">
                                         </div>
                                         <div class="form-group">
                                             <label for="http_port" class="control-label">Port:</label>
-                                            <input type="text" id="http_port" name="http_port" value="${lazylibrarian.HTTP_PORT}" class="form-control" placeholder="Port Number (Default 5299)">
+                                            <input type="text" id="http_port" name="http_port" value="${lazylibrarian.CONFIG['HTTP_PORT']}" class="form-control" placeholder="Port Number (Default 5299)">
                                         </div>
                                         <div class="form-group">
                                             <label for="http_root" class="control-label">Web Root:</label>
-                                            <input type="text" id="http_root" name="http_root" value="${lazylibrarian.HTTP_ROOT}" class="form-control" placeholder="Web Root">
+                                            <input type="text" id="http_root" name="http_root" value="${lazylibrarian.CONFIG['HTTP_ROOT']}" class="form-control" placeholder="Web Root">
                                         </div>
                                         <div class="checkbox">
                                             <%
-                                                if lazylibrarian.HTTP_PROXY == True:
+                                                if lazylibrarian.CONFIG['HTTP_PROXY'] == True:
                                                     checked = 'checked="checked"'
                                                 else:
                                                     checked = ''
@@ -64,7 +64,7 @@
                                         </div>
                                         <div class="checkbox">
                                             <%
-                                                if lazylibrarian.HTTPS_ENABLED == True:
+                                                if lazylibrarian.CONFIG['HTTPS_ENABLED'] == True:
                                                     checked = 'checked="checked"'
                                                 else:
                                                     checked = ''
@@ -76,20 +76,20 @@
                                         <fieldset id="https_options">
                                         <div class="form-group">
                                             <label for="https_cert" class="control-label">Https Certificate:</label>
-                                            <input type="text" id="https_cert" name="https_cert" value="${lazylibrarian.HTTPS_CERT}" class="form-control" placeholder="https certificate">
+                                            <input type="text" id="https_cert" name="https_cert" value="${lazylibrarian.CONFIG['HTTPS_CERT']}" class="form-control" placeholder="https certificate">
                                         </div>
                                         <div class="form-group">
                                             <label for="https_key" class="control-label">Https Key:</label>
-                                            <input type="text" id="https_key" name="https_key" value="${lazylibrarian.HTTPS_KEY}" class="form-control" placeholder="https key">
+                                            <input type="text" id="https_key" name="https_key" value="${lazylibrarian.CONFIG['HTTPS_KEY']}" class="form-control" placeholder="https key">
                                         </div>
                                         </fieldset>
                                         <div class="form-group">
                                             <label for="logdir" class="control-label">Logdir:</label>
-                                            <input type="text" id="logdir" name="logdir" value="${lazylibrarian.LOGDIR}" class="form-control" placeholder="Log Dir">
+                                            <input type="text" id="logdir" name="logdir" value="${lazylibrarian.CONFIG['LOGDIR']}" class="form-control" placeholder="Log Dir">
                                         </div>
                                         <div class="form-group">
                                             <label for="loglimit" class="control-label">Log Limit:</label>
-                                            <input type="text" id="loglimit" name="loglimit" value="${lazylibrarian.LOGLIMIT}" class="form-control" placeholder="Log Limit">
+                                            <input type="text" id="loglimit" name="loglimit" value="${lazylibrarian.CONFIG['LOGLIMIT']}" class="form-control" placeholder="Log Limit">
                                             <span class="help-block">Size of on-screen log, smaller is faster and uses less memory</span>
                                         </div>
                                         <div class="form-group">
@@ -102,7 +102,7 @@
                                                 <select name="displaylength" id="displaylength" class="form-control">
                                                 %for displaylength in [5, 10, 15, 25, 50, 100, -1]:
                                                     <%
-                                                        if displaylength == lazylibrarian.DISPLAYLENGTH:
+                                                        if displaylength == lazylibrarian.CONFIG['DISPLAYLENGTH']:
                                                             selected = 'selected="selected"'
                                                         else:
                                                             selected = ''
@@ -117,12 +117,12 @@
                                         <legend>Proxy Details</legend>
                                         <div class="form-group">
                                             <label for="proxy_host" class="control-label">Proxy Host:</label>
-                                            <input type="text" id="proxy_host" name="proxy_host" value="${lazylibrarian.PROXY_HOST}" class="form-control" placeholder="Proxy Host">
+                                            <input type="text" id="proxy_host" name="proxy_host" value="${lazylibrarian.CONFIG['PROXY_HOST']}" class="form-control" placeholder="Proxy Host">
                                             <span class="help-block">Set this value if you are behind a proxy</span>
                                         </div>
                                         <div class="form-group">
                                             <label for="proxy_type" class="control-label">Proxy Type:</label>
-                                            <input type="text" id="proxy_type" name="proxy_type" value="${lazylibrarian.PROXY_TYPE}" class="form-control" placeholder="Proxy Type">
+                                            <input type="text" id="proxy_type" name="proxy_type" value="${lazylibrarian.CONFIG['PROXY_TYPE']}" class="form-control" placeholder="Proxy Type">
                                             <span class="help-block">http, https, etc</span>
                                         </div>
                                     </fieldset>
@@ -133,18 +133,18 @@
                                         <legend>Access Control</legend>
                                         <div class="form-group">
                                             <label for="http_user">Username:</label>
-                                            <input type="text" id="http_user" name="http_user" value="${lazylibrarian.HTTP_USER}" class="form-control" placeholder="Username">
+                                            <input type="text" id="http_user" name="http_user" value="${lazylibrarian.CONFIG['HTTP_USER']}" class="form-control" placeholder="Username">
                                         </div>
                                         <div class="form-group">
                                             <label for="http_pass" class="control-label">Password:</label>
-                                            <input type="password" id="http_pass" name="http_pass" value="${lazylibrarian.HTTP_PASS}" class="form-control" placeholder="Password">
+                                            <input type="password" id="http_pass" name="http_pass" value="${lazylibrarian.CONFIG['HTTP_PASS']}" class="form-control" placeholder="Password">
                                         </div>
                                     </fieldset>
                                     <fieldset>
                                         <legend>Startup</legend>
                                         <div class="checkbox">
                                             <%
-                                                if lazylibrarian.LAUNCH_BROWSER == True:
+                                                if lazylibrarian.CONFIG['LAUNCH_BROWSER'] == True:
                                                     checked = 'checked="checked"'
                                                 else:
                                                     checked = ''
@@ -155,7 +155,7 @@
                                         </div>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.API_ENABLED == True:
+                                            if lazylibrarian.CONFIG['API_ENABLED'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -167,9 +167,9 @@
                                         <fieldset id="api_options">
                                         <div id="api_options" class="form-group">
                                             <label>API key</label>
-                                            <input type="text" name="api_key" id="api_key" value="${lazylibrarian.API_KEY}" size="36">
+                                            <input type="text" name="api_key" id="api_key" value="${lazylibrarian.CONFIG['API_KEY']}" size="36">
                                             <input class="button btn btn-sm btn-primary" type="button" value="Generate" id="generateAPI" onClick="document.location.reload(true)">
-                                            <br><small>Current API key: <strong>${lazylibrarian.API_KEY}</strong></small>
+                                            <br><small>Current API key: <strong>${lazylibrarian.CONFIG['API_KEY']}</strong></small>
                                         </div>
                                         </fieldset>
                                     </fieldset>
@@ -180,7 +180,7 @@
                                             <select id="http_look" name="http_look" class="form-control">
                                         %for http_look in config['http_look_list']:
                                             <%
-                                                if http_look == lazylibrarian.HTTP_LOOK:
+                                                if http_look == lazylibrarian.CONFIG['HTTP_LOOK']:
                                                     selected = 'selected="selected"'
                                                 else:
                                                     selected = ''
@@ -200,7 +200,7 @@
                                                 <select name="bookstrap_theme" id="bookstrap_theme" class="form-control">
                                                 %for bookstrap_theme in lazylibrarian.BOOKSTRAP_THEMELIST:
                                                     <%
-                                                        if bookstrap_theme == lazylibrarian.BOOKSTRAP_THEME:
+                                                        if bookstrap_theme == lazylibrarian.CONFIG['BOOKSTRAP_THEME']:
                                                             selected = 'selected="selected"'
                                                         else:
                                                             selected = ''
@@ -234,12 +234,12 @@
                                         <legend>Book API</legend>
                                         <div class="form-group">
                                             <%
-                                                if lazylibrarian.BOOK_API == "GoodReads":
+                                                if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
                                                     gr_selected = 'selected="selected"'
                                                 else:
                                                     gr_selected = ''
 
-                                                if lazylibrarian.BOOK_API == "GoogleBooks":
+                                                if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
                                                     gb_selected = 'selected="selected"'
                                                 else:
                                                     gb_selected = ''
@@ -252,23 +252,23 @@
                                         </div>
                                         <div class="form-group">
                                             <label for="gr_api">Goodreads API:</label>
-                                            <input type="text" id="gr_api" name="gr_api" value="${lazylibrarian.GR_API}" class="form-control" placeholder="Goodreads API">
+                                            <input type="text" id="gr_api" name="gr_api" value="${lazylibrarian.CONFIG['GR_API']}" class="form-control" placeholder="Goodreads API">
                                         </div>
                                     <div class="form-group">
                                         <label for="gb_api" class="control-label">GoogleBooks API:</label>
-                                        <input type="text" id="gb_api" name="gb_api" value="${lazylibrarian.GB_API}" class="form-control">
+                                        <input type="text" id="gb_api" name="gb_api" value="${lazylibrarian.CONFIG['GB_API']}" class="form-control">
                                     </div>
                                     </fieldset>
                                     <fieldset>
                                     <legend>File Formats</legend>
                                     <div class="form-group">
                                         <label for="ebook_type" class="control-label">eBooks:</label>
-                                        <input type="text" id="ebook_type" name="ebook_type" value="${lazylibrarian.EBOOK_TYPE}" class="form-control" placeholder="eBook file formats">
+                                        <input type="text" id="ebook_type" name="ebook_type" value="${lazylibrarian.CONFIG['EBOOK_TYPE']}" class="form-control" placeholder="eBook file formats">
                                         <span class="help-block">Comma separated file extensions. Default: epub, mobi, pdf</span>
                                     </div>
                                     <div class="form-group">
                                         <label for="mag_type" class="control-label">Magazines:</label>
-                                        <input type="text" id="mag_type" name="mag_type" value="${lazylibrarian.MAG_TYPE}" class="form-control" placeholder="Magazine file formats">
+                                        <input type="text" id="mag_type" name="mag_type" value="${lazylibrarian.CONFIG['MAG_TYPE']}" class="form-control" placeholder="Magazine file formats">
                                         <span class="help-block">Comma separated file extensions. Default: pdf</span>
                                     </div>
                                     </fieldset>
@@ -278,7 +278,7 @@
                                         <legend>Language</legend>
                                         <div class="form-group">
                                             <label for="imp_preflang" class="control-label">Import languages:</label>
-                                            <input type="text" id="imp_preflang" name="imp_preflang" value="${lazylibrarian.IMP_PREFLANG}" class="form-control" placeholder="Import Languages">
+                                            <input type="text" id="imp_preflang" name="imp_preflang" value="${lazylibrarian.CONFIG['IMP_PREFLANG']}" class="form-control" placeholder="Import Languages">
 
                                         <span class="help-block">Comma separated country shortcodes:<br/>
                                         GoodReads e.g: eng, en-US, spa, ita<br/>
@@ -288,7 +288,7 @@
                                         </div>
                                         <div class="form-group">
                                             <label for="imp_monthlang" class="control=label">Languages for month names:</label>
-                                            <input type="text" id="imp_monthlang" name="imp_monthlang" value="${lazylibrarian.IMP_MONTHLANG}" class="form-control" placeholder="Languages for month names">
+                                            <input type="text" id="imp_monthlang" name="imp_monthlang" value="${lazylibrarian.CONFIG['IMP_MONTHLANG']}" class="form-control" placeholder="Languages for month names">
                                             <span class="help-block">Comma separated language codes for magazine issues:<br/>
                                             e.g: fr_FR.utf8, es_ES.utf8<br/>
                                                 Default: blank, English month names are preloaded   Changes to this setting require a restart</span>
@@ -308,7 +308,7 @@
                                         <fieldset class="usenet_options">
                                             <div class="checkbox">
                                                 <%
-                                                if lazylibrarian.NZB_DOWNLOADER_SABNZBD == True:
+                                                if lazylibrarian.CONFIG['NZB_DOWNLOADER_SABNZBD'] == True:
                                                     checked = 'checked="checked"'
                                                 else:
                                                     checked = ''
@@ -322,38 +322,38 @@
                                                 <div class="row">
                                                     <div class="form-group col-md-8">
                                                         <label for="sab_host" class="control-label">SABnzbd Host:</label>
-                                                        <input type="text" id="sab_host" name="sab_host" value="${lazylibrarian.SAB_HOST}" class="form-control" placeholder="SABnzbd Host">
+                                                        <input type="text" id="sab_host" name="sab_host" value="${lazylibrarian.CONFIG['SAB_HOST']}" class="form-control" placeholder="SABnzbd Host">
                                                     </div>
                                                     <div class="form-group col-md-4">
                                                         <label for="sab_port" class="control-label">SABnzbd Port:</label>
-                                                        <input type="text" id="sab_port" name="sab_port" value="${lazylibrarian.SAB_PORT}" class="form-control" placeholder="SABnzbd Port">
+                                                        <input type="text" id="sab_port" name="sab_port" value="${lazylibrarian.CONFIG['SAB_PORT']}" class="form-control" placeholder="SABnzbd Port">
                                                     </div>
                                                 </div>
                                                 <div class="row">
                                                     <div class="form-group col-md-6">
                                                         <label for="sab_user">SABnzbd Username</label>
-                                                        <input type="text" id="sab_user" name="sab_user" value="${lazylibrarian.SAB_USER}" class="form-control" placeholder="SABnzbd Username">
+                                                        <input type="text" id="sab_user" name="sab_user" value="${lazylibrarian.CONFIG['SAB_USER']}" class="form-control" placeholder="SABnzbd Username">
                                                     </div>
                                                     <div class="form-group col-md-6">
                                                         <label for="sab_api" class="control-label">SABnzbd Password:</label>
-                                                        <input type="password" id="sab_pass" name="sab_pass" value="${lazylibrarian.SAB_PASS}" class="form-control" placeholder="SABnzbd Password">
+                                                        <input type="password" id="sab_pass" name="sab_pass" value="${lazylibrarian.CONFIG['SAB_PASS']}" class="form-control" placeholder="SABnzbd Password">
                                                     </div>
                                                 </div>
                                                 <div class="form-group">
                                                     <label for="sab_api" class="control-label">SABnzbd API Key:</label>
-                                                    <input type="text" id="sab_api" name="sab_api" value="${lazylibrarian.SAB_API}" class="form-control" placeholder="SABnzbd API Key">
+                                                    <input type="text" id="sab_api" name="sab_api" value="${lazylibrarian.CONFIG['SAB_API']}" class="form-control" placeholder="SABnzbd API Key">
                                                 </div>
                                                 <div class="form-group">
                                                     <label for="sab_cat">SABnzbd Category:</label>
-                                                    <input type="text" id="sab_cat" name="sab_cat" value="${lazylibrarian.SAB_CAT}" class="form-control" placeholder="SABnzbd Category">
+                                                    <input type="text" id="sab_cat" name="sab_cat" value="${lazylibrarian.CONFIG['SAB_CAT']}" class="form-control" placeholder="SABnzbd Category">
                                                 </div>
                                                 <div class="form-group">
                                                     <label for="sab_subdir" class="control-label">SABnzbd SubDir:</label>
-                                                    <input type="text" id="sab_subdir" name="sab_subdir" value="${lazylibrarian.SAB_SUBDIR}" class="form-control" placeholder="SABnzbd Sub Dir">
+                                                    <input type="text" id="sab_subdir" name="sab_subdir" value="${lazylibrarian.CONFIG['SAB_SUBDIR']}" class="form-control" placeholder="SABnzbd Sub Dir">
                                                 </div>
                                                 <div class="form-group">
                                                     <label for="usenet_retention" class="control-label">Retention Max Age:</label>
-                                                    <input type="text" id="usenet_retention" name="usenet_retention" value="${lazylibrarian.USENET_RETENTION}" class="form-control" placeholder="Retention MAximum Age">
+                                                    <input type="text" id="usenet_retention" name="usenet_retention" value="${lazylibrarian.CONFIG['USENET_RETENTION']}" class="form-control" placeholder="Retention MAximum Age">
                                                 </div>
                                                     <div class="form-group col-md-6">
                                                         <label for="testSABnzbd" class="control-label">SABnzbd Connection:</label><br>
@@ -365,7 +365,7 @@
 
                                             <div class="checkbox">
                                                 <%
-                                                if lazylibrarian.NZB_DOWNLOADER_NZBGET == True:
+                                                if lazylibrarian.CONFIG['NZB_DOWNLOADER_NZBGET'] == True:
                                                     checked = 'checked="checked"'
                                                 else:
                                                     checked = ''
@@ -380,28 +380,28 @@
                                                 <div class="row">
                                                     <div class="form-group col-md-8">
                                                         <label for="nzbget_host" class="control-label">NZBGet Host:</label>
-                                                        <input type="text" id="nzbget_host" name="nzbget_host" value="${lazylibrarian.NZBGET_HOST}" class="form-control" placeholder="NZBGet Host">
+                                                        <input type="text" id="nzbget_host" name="nzbget_host" value="${lazylibrarian.CONFIG['NZBGET_HOST']}" class="form-control" placeholder="NZBGet Host">
                                                     </div>
                                                     <div class="form-group col-md-4">
                                                         <label for="nzbget_port" class="control-label">Port</label>
-                                                        <input type="text" id="nzbget_port" name="nzbget_port" value="${lazylibrarian.NZBGET_PORT}" class="form-control" placeholder="NZBGet Port">
+                                                        <input type="text" id="nzbget_port" name="nzbget_port" value="${lazylibrarian.CONFIG['NZBGET_PORT']}" class="form-control" placeholder="NZBGet Port">
                                                     </div>
                                                     <div class="form-group col-md-6">
                                                         <label for="nzbget_user" class="control-label">Username</label>
-                                                        <input type="text" id="nzbget_user" name="nzbget_user" value="${lazylibrarian.NZBGET_USER}" class="form-control" placeholder="NZBGet Username">
+                                                        <input type="text" id="nzbget_user" name="nzbget_user" value="${lazylibrarian.CONFIG['NZBGET_USER']}" class="form-control" placeholder="NZBGet Username">
                                                     </div>
                                                     <div class="form-group col-md-6">
                                                         <label for="nzbget_pass">Password:</label>
-                                                        <input type="password" id="nzbget_pass" name="nzbget_pass" value="${lazylibrarian.NZBGET_PASS}" class="form-control" placeholder="NZBGet Password">
+                                                        <input type="password" id="nzbget_pass" name="nzbget_pass" value="${lazylibrarian.CONFIG['NZBGET_PASS']}" class="form-control" placeholder="NZBGet Password">
                                                     </div>
                                                 </div>
                                                 <div class="form-group">
                                                     <label for="nzbget_cat" class="control-label">Category:</label>
-                                                    <input type="text" id="nzbget_cat" name="nzbget_cat" value="${lazylibrarian.NZBGET_CATEGORY}" class="form-control" placeholder="NZBGet Category">
+                                                    <input type="text" id="nzbget_cat" name="nzbget_cat" value="${lazylibrarian.CONFIG['NZBGET_CATEGORY']}" class="form-control" placeholder="NZBGet Category">
                                                 </div>
                                                 <div class="form-group">
                                                     <label for="nzbget_priority">Priority:</label>
-                                                    <input type="text" id="nzbget_priority" name="nzbget_priority" value="${lazylibrarian.NZBGET_PRIORITY}" class="form-control" placeholder="NZBGet Priority">
+                                                    <input type="text" id="nzbget_priority" name="nzbget_priority" value="${lazylibrarian.CONFIG['NZBGET_PRIORITY']}" class="form-control" placeholder="NZBGet Priority">
                                                 </div>
                                                     <div class="form-group col-md-6">
                                                         <label for="testNZBget" class="control-label">NZBget Connection:</label><br>
@@ -413,7 +413,7 @@
 
                                             <div class="checkbox">
                                                 <%
-                                                if lazylibrarian.USE_SYNOLOGY == True:
+                                                if lazylibrarian.CONFIG['USE_SYNOLOGY'] == True:
                                                     checked = 'checked="checked"'
                                                 else:
                                                     checked = ''
@@ -428,28 +428,28 @@
                                                 <div class="row">
                                                     <div class="form-group col-md-8">
                                                         <label for="synology_host" class="control-label">Synology Host:</label>
-                                                        <input type="text" id="synology_host" name="synology_host" value="${lazylibrarian.SYNOLOGY_HOST}" class="form-control" placeholder="Synology Host">
+                                                        <input type="text" id="synology_host" name="synology_host" value="${lazylibrarian.CONFIG['SYNOLOGY_HOST']}" class="form-control" placeholder="Synology Host">
                                                     </div>
                                                     <div class="form-group col-md-4">
                                                         <label for="synology_port" class="control-label">Port</label>
-                                                        <input type="text" id="synology_port" name="synology_port" value="${lazylibrarian.SYNOLOGY_PORT}" class="form-control" placeholder="Synology Port">
+                                                        <input type="text" id="synology_port" name="synology_port" value="${lazylibrarian.CONFIG['SYNOLOGY_PORT']}" class="form-control" placeholder="Synology Port">
                                                     </div>
                                                     <div class="form-group col-md-6">
                                                         <label for="synology_user" class="control-label">Username</label>
-                                                        <input type="text" id="synology_user" name="synology_user" value="${lazylibrarian.SYNOLOGY_USER}" class="form-control" placeholder="Synology Username">
+                                                        <input type="text" id="synology_user" name="synology_user" value="${lazylibrarian.CONFIG['SYNOLOGY_USER']}" class="form-control" placeholder="Synology Username">
                                                     </div>
                                                     <div class="form-group col-md-6">
                                                         <label for="synology_pass">Password:</label>
-                                                        <input type="password" id="synology_pass" name="synology_pass" value="${lazylibrarian.SYNOLOGY_PASS}" class="form-control" placeholder="Synology Password">
+                                                        <input type="password" id="synology_pass" name="synology_pass" value="${lazylibrarian.CONFIG['SYNOLOGY_PASS']}" class="form-control" placeholder="Synology Password">
                                                     </div>
                                                     <div class="form-group col-md-6">
                                                         <label for="synology_dir">Directory:</label>
-                                                        <input type="text" id="synology_dir" name="synology_dir" value="${lazylibrarian.SYNOLOGY_DIR}" class="form-control" placeholder="Synology Directory">
+                                                        <input type="text" id="synology_dir" name="synology_dir" value="${lazylibrarian.CONFIG['SYNOLOGY_DIR']}" class="form-control" placeholder="Synology Directory">
                                                     </div>
                                                 </div>
                                             <div class="checkbox">
                                                 <%
-                                                if lazylibrarian.NZB_DOWNLOADER_SYNOLOGY == True:
+                                                if lazylibrarian.CONFIG['NZB_DOWNLOADER_SYNOLOGY'] == True:
                                                     checked = 'checked="checked"'
                                                 else:
                                                     checked = ''
@@ -461,7 +461,7 @@
 
                                             <div class="checkbox">
                                                 <%
-                                                if lazylibrarian.TOR_DOWNLOADER_SYNOLOGY == True:
+                                                if lazylibrarian.CONFIG['TOR_DOWNLOADER_SYNOLOGY'] == True:
                                                     checked = 'checked="checked"'
                                                 else:
                                                     checked = ''
@@ -481,7 +481,7 @@
 
                                             <div class="checkbox">
                                                 <%
-                                                if lazylibrarian.NZB_DOWNLOADER_BLACKHOLE == True:
+                                                if lazylibrarian.CONFIG['NZB_DOWNLOADER_BLACKHOLE'] == True:
                                                     checked = 'checked="checked"'
                                                 else:
                                                     checked = ''
@@ -494,7 +494,7 @@
                                                 <legend>NZB Blackhole</legend>
                                                 <div class="form-group">
                                                     <label for="nzb_blackholedir" class="control-label">NZB Blackhole Directory:</label>
-                                                    <input type="text" id="nzb_blackholedir" name="nzb_blackholedir" value="${lazylibrarian.NZB_BLACKHOLEDIR}" class="form-control" placeholder="NZB Blackhole Directory">
+                                                    <input type="text" id="nzb_blackholedir" name="nzb_blackholedir" value="${lazylibrarian.CONFIG['NZB_BLACKHOLEDIR']}" class="form-control" placeholder="NZB Blackhole Directory">
                                                 </div>
                                             </fieldset>
                                         </fieldset>
@@ -506,7 +506,7 @@
                                         <fieldset id="torrent_options">
                                             <div class="checkbox">
                                                 <%
-                                                if lazylibrarian.TOR_DOWNLOADER_DELUGE == True:
+                                                if lazylibrarian.CONFIG['TOR_DOWNLOADER_DELUGE'] == True:
                                                     checked = 'checked="checked"'
                                                 else:
                                                     checked = ''
@@ -520,25 +520,25 @@
                                                 <div class="row">
                                                     <div class="form-group col-md-8">
                                                         <label for="deluge_host">Deluge Host:</label>
-                                                        <input type="text" id="deluge_host" name="deluge_host" value="${lazylibrarian.DELUGE_HOST}" class="form-control" placeholder="Deluge Host">
+                                                        <input type="text" id="deluge_host" name="deluge_host" value="${lazylibrarian.CONFIG['DELUGE_HOST']}" class="form-control" placeholder="Deluge Host">
                                                     </div>
                                                     <div class="form-group col-md-4">
                                                         <label for="deluge_port" class="control-label">Deluge Port:</label>
-                                                        <input type="text" id="deluge_port" name="deluge_port" value="${lazylibrarian.DELUGE_PORT}" class="form-control" placeholder="Deluge Port">
+                                                        <input type="text" id="deluge_port" name="deluge_port" value="${lazylibrarian.CONFIG['DELUGE_PORT']}" class="form-control" placeholder="Deluge Port">
                                                     </div>
                                                 </div>
                                                 <div class="row">
                                                     <div class="form-group col-md-6">
                                                         <label for="deluge_user" class="controllabel">Username:</label>
-                                                        <input type="text" id="deluge_user" name="deluge_user" value="${lazylibrarian.DELUGE_USER}" class="form-control" placeholder="Deluge Username">
+                                                        <input type="text" id="deluge_user" name="deluge_user" value="${lazylibrarian.CONFIG['DELUGE_USER']}" class="form-control" placeholder="Deluge Username">
                                                     </div>
                                                     <div class="form-group col-md-6">
                                                         <label for="deluge_pass" class="control-label">Password:</label>
-                                                        <input type="password" id="deluge_pass" name="deluge_pass" value="${lazylibrarian.DELUGE_PASS}" class="form-control" placeholder="Deluge Password">
+                                                        <input type="password" id="deluge_pass" name="deluge_pass" value="${lazylibrarian.CONFIG['DELUGE_PASS']}" class="form-control" placeholder="Deluge Password">
                                                     </div>
                                                     <div class="form-group col-md-6">
                                                         <label for="deluge_label" class="control-label">Deluge Label:</label>
-                                                        <input type="text" id="deluge_label" name="deluge_label" value="${lazylibrarian.DELUGE_LABEL}" class="form-control" placeholder="Deluge Label">
+                                                        <input type="text" id="deluge_label" name="deluge_label" value="${lazylibrarian.CONFIG['DELUGE_LABEL']}" class="form-control" placeholder="Deluge Label">
                                                     </div>
                                                     <div class="form-group col-md-6">
                                                         <label for="testDeluge" class="control-label">Deluge Connection:</label><br>
@@ -551,7 +551,7 @@
 
                                              <div class="checkbox">
                                                 <%
-                                                if lazylibrarian.TOR_DOWNLOADER_TRANSMISSION == True:
+                                                if lazylibrarian.CONFIG['TOR_DOWNLOADER_TRANSMISSION'] == True:
                                                     checked = 'checked="checked"'
                                                 else:
                                                     checked = ''
@@ -565,19 +565,19 @@
                                                 <div class="row">
                                                     <div class="form-group col-md-8">
                                                         <label for="transmission_host" class="control-label">Transmission Host:</label>
-                                                        <input type="text" id="transmission_host" name="transmission_host" value="${lazylibrarian.TRANSMISSION_HOST}" class="form-control" placeholder="Transmission host">
+                                                        <input type="text" id="transmission_host" name="transmission_host" value="${lazylibrarian.CONFIG['TRANSMISSION_HOST']}" class="form-control" placeholder="Transmission host">
                                                     </div>
                                                     <div class="form-group col-md-4">
                                                         <label for="transmission_port" class="control-label">Transmission Port :</label>
-                                                        <input type="text" id="transmission_port" name="transmission_port" value="${lazylibrarian.TRANSMISSION_PORT}" class="form-control" placeholder="Transmission port">
+                                                        <input type="text" id="transmission_port" name="transmission_port" value="${lazylibrarian.CONFIG['TRANSMISSION_PORT']}" class="form-control" placeholder="Transmission port">
                                                     </div>
                                                     <div class="form-group col-md-6">
                                                         <label for="transmission_user" class="control-label">Username :</label>
-                                                        <input type="text" id="transmission_user" name="transmission_user" value="${lazylibrarian.TRANSMISSION_USER}" class="form-control" placeholder="Transmission Username">
+                                                        <input type="text" id="transmission_user" name="transmission_user" value="${lazylibrarian.CONFIG['TRANSMISSION_USER']}" class="form-control" placeholder="Transmission Username">
                                                     </div>
                                                     <div class="form-group col-md-6">
                                                         <label for="transmission_pass" class="control-label">Password :</label>
-                                                        <input type="password" id="transmission_pass" name="transmission_pass" value="${lazylibrarian.TRANSMISSION_PASS}" class="form-control" placeholder="Transmission Password">
+                                                        <input type="password" id="transmission_pass" name="transmission_pass" value="${lazylibrarian.CONFIG['TRANSMISSION_PASS']}" class="form-control" placeholder="Transmission Password">
                                                     </div>
                                                 </div>
                                                     <div class="form-group col-md-6">
@@ -590,7 +590,7 @@
 
                                              <div class="checkbox">
                                                 <%
-                                                if lazylibrarian.TOR_DOWNLOADER_RTORRENT == True:
+                                                if lazylibrarian.CONFIG['TOR_DOWNLOADER_RTORRENT'] == True:
                                                     checked = 'checked="checked"'
                                                 else:
                                                     checked = ''
@@ -604,23 +604,23 @@
                                                 <div class="row">
                                                     <div class="form-group col-md-8">
                                                         <label for="rtorrent_host" class="control-label">rTorrent Host:</label>
-                                                        <input type="text" id="rtorrent_host" name="rtorrent_host" value="${lazylibrarian.RTORRENT_HOST}" class="form-control" placeholder="rTorrent Host">
+                                                        <input type="text" id="rtorrent_host" name="rtorrent_host" value="${lazylibrarian.CONFIG['RTORRENT_HOST']}" class="form-control" placeholder="rTorrent Host">
                                                     </div>
                                                 <div class="form-group col-md-6">
                                                     <label for="rtorrent_user" class="control-label">rTorrent User:</label>
-                                                    <input type="text" id="rtorrent_user" name="rtorrent_user" value="${lazylibrarian.RTORRENT_USER}" class="form-control" placeholder="rTorrent User">
+                                                    <input type="text" id="rtorrent_user" name="rtorrent_user" value="${lazylibrarian.CONFIG['RTORRENT_USER']}" class="form-control" placeholder="rTorrent User">
                                                 </div>
                                                 <div class="form-group col-md-6">
                                                     <label for="rtorrent_pass" class="control-label">rTorrent Password:</label>
-                                                    <input type="text" id="rtorrent_pass" name="rtorrent_pass" value="${lazylibrarian.RTORRENT_PASS}" class="form-control" placeholder="rTorrent Password">
+                                                    <input type="text" id="rtorrent_pass" name="rtorrent_pass" value="${lazylibrarian.CONFIG['RTORRENT_PASS']}" class="form-control" placeholder="rTorrent Password">
                                                 </div>
                                                 <div class="form-group col-md-6">
                                                     <label for="rtorrent_label" class="control-label">rTorrent Label:</label>
-                                                    <input type="text" id="rtorrent_label" name="rtorrent_label" value="${lazylibrarian.RTORRENT_LABEL}" class="form-control" placeholder="rTorrent Label">
+                                                    <input type="text" id="rtorrent_label" name="rtorrent_label" value="${lazylibrarian.CONFIG['RTORRENT_LABEL']}" class="form-control" placeholder="rTorrent Label">
                                                 </div>
                                                 <div class="form-group col-md-6">
                                                     <label for="rtorrent_dir" class="control-label">rTorrent Directory:</label>
-                                                    <input type="text" id="rtorrent_dir" name="rtorrent_dir" value="${lazylibrarian.RTORRENT_DIR}" class="form-control" placeholder="rTorrent Directory">
+                                                    <input type="text" id="rtorrent_dir" name="rtorrent_dir" value="${lazylibrarian.CONFIG['RTORRENT_DIR']}" class="form-control" placeholder="rTorrent Directory">
                                                 </div>
                                                 <div class="form-group col-md-6">
                                                 <span class="help-block">Leave rTorrent directory blank to use rtorrent defaults
@@ -636,7 +636,7 @@
 
                                              <div class="checkbox">
                                                 <%
-                                                if lazylibrarian.TOR_DOWNLOADER_UTORRENT == True:
+                                                if lazylibrarian.CONFIG['TOR_DOWNLOADER_UTORRENT'] == True:
                                                     checked = 'checked="checked"'
                                                 else:
                                                     checked = ''
@@ -650,24 +650,24 @@
                                                 <div class="row">
                                                     <div class="form-group col-md-8">
                                                         <label for="utorrent_host" class="control-label">uTorrent Host:</label>
-                                                        <input type="text" id="utorrent_host" name="utorrent_host" value="${lazylibrarian.UTORRENT_HOST}" class="form-control" placeholder="uTorrent Host">
+                                                        <input type="text" id="utorrent_host" name="utorrent_host" value="${lazylibrarian.CONFIG['UTORRENT_HOST']}" class="form-control" placeholder="uTorrent Host">
                                                     </div>
                                                     <div class="form-group col-md-4">
                                                         <label for="utorrent_port" class="control-label">uTorrent Port:</label>
-                                                        <input type="text" id="utorrent_port" name="utorrent_port" value="${lazylibrarian.UTORRENT_PORT}" class="form-control" placeholder="uTorrent Port">
+                                                        <input type="text" id="utorrent_port" name="utorrent_port" value="${lazylibrarian.CONFIG['UTORRENT_PORT']}" class="form-control" placeholder="uTorrent Port">
                                                     </div>
                                                     <div class="form-group col-md-6">
                                                         <label for="utorrent_user" class="control-label">Username:</label>
-                                                        <input type="text" id="utorrent_user" name="utorrent_user" value="${lazylibrarian.UTORRENT_USER}" class="form-control" placeholder="uTorrent Username">
+                                                        <input type="text" id="utorrent_user" name="utorrent_user" value="${lazylibrarian.CONFIG['UTORRENT_USER']}" class="form-control" placeholder="uTorrent Username">
                                                     </div>
                                                     <div class="form-group col-md-6">
                                                         <label>Password:</label>
-                                                        <input type="password" id="utorrent_pass" name="utorrent_pass" value="${lazylibrarian.UTORRENT_PASS}" class="form-control" placeholder="uTorrent Password">
+                                                        <input type="password" id="utorrent_pass" name="utorrent_pass" value="${lazylibrarian.CONFIG['UTORRENT_PASS']}" class="form-control" placeholder="uTorrent Password">
                                                     </div>
                                                 </div>
                                                 <div class="form-group col-md-6">
                                                     <label for="utorrent_label" class="control-label">uTorrent Label:</label>
-                                                    <input type="text" id="utorrent_label" name="utorrent_label" value="${lazylibrarian.UTORRENT_LABEL}" class="form-control" placeholder="uTorrent Label">
+                                                    <input type="text" id="utorrent_label" name="utorrent_label" value="${lazylibrarian.CONFIG['UTORRENT_LABEL']}" class="form-control" placeholder="uTorrent Label">
                                                 </div>
                                                     <div class="form-group col-md-6">
                                                         <label for="testuTorrent" class="control-label">uTorrent Connection:</label><br>
@@ -678,7 +678,7 @@
                                             </fieldset>
                                              <div class="checkbox">
                                                 <%
-                                                if lazylibrarian.TOR_DOWNLOADER_QBITTORRENT == True:
+                                                if lazylibrarian.CONFIG['TOR_DOWNLOADER_QBITTORRENT'] == True:
                                                     checked = 'checked="checked"'
                                                 else:
                                                     checked = ''
@@ -692,24 +692,24 @@
                                                 <div class="row">
                                                     <div class="form-group col-md-8">
                                                         <label for="qbittorrent_host" class="control-label">qBitTorrent Host:</label>
-                                                        <input type="text" id="qbittorrent_host" name="qbittorrent_host" value="${lazylibrarian.QBITTORRENT_HOST}" class="form-control" placeholder="qBitTorrent Host">
+                                                        <input type="text" id="qbittorrent_host" name="qbittorrent_host" value="${lazylibrarian.CONFIG['QBITTORRENT_HOST']}" class="form-control" placeholder="qBitTorrent Host">
                                                     </div>
                                                     <div class="form-group col-md-4">
                                                         <label for="qbittorrent_port" class="control-label">qBitTorrent Port:</label>
-                                                        <input type="text" id="qbittorrent_port" name="qbittorrent_port" value="${lazylibrarian.QBITTORRENT_PORT}" class="form-control" placeholder="qBitTorrent Port">
+                                                        <input type="text" id="qbittorrent_port" name="qbittorrent_port" value="${lazylibrarian.CONFIG['QBITTORRENT_PORT']}" class="form-control" placeholder="qBitTorrent Port">
                                                     </div>
                                                     <div class="form-group col-md-6">
                                                         <label for="qbittorrent_user" class="control-label">Username:</label>
-                                                        <input type="text" id="qbittorrent_user" name="qbittorrent_user" value="${lazylibrarian.QBITTORRENT_USER}" class="form-control" placeholder="qBitTorrent Username">
+                                                        <input type="text" id="qbittorrent_user" name="qbittorrent_user" value="${lazylibrarian.CONFIG['QBITTORRENT_USER']}" class="form-control" placeholder="qBitTorrent Username">
                                                     </div>
                                                     <div class="form-group col-md-6">
                                                         <label>Password:</label>
-                                                        <input type="password" id="qbittorrent_pass" name="qbittorrent_pass" value="${lazylibrarian.QBITTORRENT_PASS}" class="form-control" placeholder="qBitTorrent Password">
+                                                        <input type="password" id="qbittorrent_pass" name="qbittorrent_pass" value="${lazylibrarian.CONFIG['QBITTORRENT_PASS']}" class="form-control" placeholder="qBitTorrent Password">
                                                     </div>
                                                 </div>
                                                 <div class="form-group col-md-6">
                                                     <label for="qbittorrent_label" class="control-label">qBitTorrent Label:</label>
-                                                    <input type="text" id="qbittorrent_label" name="qbittorrent_label" value="${lazylibrarian.QBITTORRENT_LABEL}" class="form-control" placeholder="qBitTorrent Label">
+                                                    <input type="text" id="qbittorrent_label" name="qbittorrent_label" value="${lazylibrarian.CONFIG['QBITTORRENT_LABEL']}" class="form-control" placeholder="qBitTorrent Label">
                                                 </div>
                                                     <div class="form-group col-md-6">
                                                         <label for="testqBittorrent" class="control-label">qBittorrent Connection:</label><br>
@@ -720,7 +720,7 @@
                                             </fieldset>
                                             <div class="checkbox">
                                                 <%
-                                                if lazylibrarian.TOR_DOWNLOADER_BLACKHOLE == True:
+                                                if lazylibrarian.CONFIG['TOR_DOWNLOADER_BLACKHOLE'] == True:
                                                     checked = 'checked="checked"'
                                                 else:
                                                     checked = ''
@@ -733,11 +733,11 @@
                                                 <legend>Torrent Blackhole</legend>
                                                 <div class="form-group">
                                                     <label for="torrent_dir" class="control-label">Torrent Blackhole Directory:</label>
-                                                    <input type="text" id="torrent_dir" name="torrent_dir" value="${lazylibrarian.TORRENT_DIR}" class="form-control" placeholder="Torrent Blackhole Directory">
+                                                    <input type="text" id="torrent_dir" name="torrent_dir" value="${lazylibrarian.CONFIG['TORRENT_DIR']}" class="form-control" placeholder="Torrent Blackhole Directory">
                                                 </div>
                                                 <div class="checkbox">
                                                     <%
-                                                    if lazylibrarian.TOR_CONVERT_MAGNET == True:
+                                                    if lazylibrarian.CONFIG['TOR_CONVERT_MAGNET'] == True:
                                                         checked = 'checked="checked"'
                                                     else:
                                                         checked = ''
@@ -748,7 +748,7 @@
                                                 </div>
                                                 <div class="checkbox">
                                                     <%
-                                                    if lazylibrarian.PREFER_MAGNET == True:
+                                                    if lazylibrarian.CONFIG['PREFER_MAGNET'] == True:
                                                         checked = 'checked="checked"'
                                                     else:
                                                         checked = ''
@@ -760,12 +760,12 @@
                                             </fieldset>
                                             <div class="form-group">
                                                 <label for="numberofseeders" class="control-label">Minimum seeders:</label>
-                                                <input type="text" id="numberofseeders" name="numberofseeders" value="${lazylibrarian.NUMBEROFSEEDERS}" class="form-control" placeholder="Number of Seeders">
+                                                <input type="text" id="numberofseeders" name="numberofseeders" value="${lazylibrarian.CONFIG['NUMBEROFSEEDERS']}" class="form-control" placeholder="Number of Seeders">
                                                 <span class="help-block">Number of minimum seeders a torrent must have to be accepted</span>
                                             </div>
                                                 <div class="checkbox">
                                                     <%
-                                                    if lazylibrarian.KEEP_SEEDING == True:
+                                                    if lazylibrarian.CONFIG['KEEP_SEEDING'] == True:
                                                         checked = 'checked="checked"'
                                                     else:
                                                         checked = ''
@@ -776,7 +776,7 @@
                                                 </div>
                                             <div class="form-group">
                                                 <label for="download_dir" class="control-label">Directory:</label>
-                                                <input type="text" id="download_dir" name="download_dir" value="${lazylibrarian.DOWNLOAD_DIR}" class="form-control" placeholder="Download Directory">
+                                                <input type="text" id="download_dir" name="download_dir" value="${lazylibrarian.CONFIG['DOWNLOAD_DIR']}" class="form-control" placeholder="Download Directory">
                                                 <span class="help-block">Full path to the folder where books are downloaded</span>
                                             </div>
                                         </fieldset>
@@ -866,7 +866,7 @@
                                     <fieldset>
                                         <legend>Torrent Providers</legend>
                                         <%
-                                        if lazylibrarian.KAT == True:
+                                        if lazylibrarian.CONFIG['KAT'] == True:
                                             checked = 'checked="checked"'
                                         else:
                                             checked = ''
@@ -877,11 +877,11 @@
                                                 <span class="input-group-addon">
                                                     <input type="checkbox" id="kat" name="kat" value="1" ${checked} />
                                                 </span>
-                                                <input type="text" placeholder="KAT Host" id="kat_host" name="kat_host" value="${lazylibrarian.KAT_HOST}" class="form-control">
+                                                <input type="text" placeholder="KAT Host" id="kat_host" name="kat_host" value="${lazylibrarian.CONFIG['KAT_HOST']}" class="form-control">
                                             </div>
                                         </div>
                                         <%
-                                        if lazylibrarian.TPB == True:
+                                        if lazylibrarian.CONFIG['TPB'] == True:
                                             checked = 'checked="checked"'
                                         else:
                                             checked = ''
@@ -892,11 +892,11 @@
                                                 <span class="input-group-addon">
                                                     <input type="checkbox" id="tpb" name="tpb" value="1" ${checked} />
                                                 </span>
-                                                <input type="text" placeholder="TPB Host" id="tpb_host" name="tpb_host" value="${lazylibrarian.TPB_HOST}" class="form-control">
+                                                <input type="text" placeholder="TPB Host" id="tpb_host" name="tpb_host" value="${lazylibrarian.CONFIG['TPB_HOST']}" class="form-control">
                                             </div>
                                         </div>
                                         <%
-                                        if lazylibrarian.ZOO == True:
+                                        if lazylibrarian.CONFIG['ZOO'] == True:
                                             checked = 'checked="checked"'
                                         else:
                                             checked = ''
@@ -907,11 +907,11 @@
                                                 <span class="input-group-addon">
                                                     <input type="checkbox" id="zoo" name="zoo" value="1" ${checked} />
                                                 </span>
-                                                <input type="text" placeholder="zooqle host" id="zoo_host" name="zoo_host" value="${lazylibrarian.ZOO_HOST}" class="form-control">
+                                                <input type="text" placeholder="zooqle host" id="zoo_host" name="zoo_host" value="${lazylibrarian.CONFIG['ZOO_HOST']}" class="form-control">
                                             </div>
                                         </div>
                                         <%
-                                        if lazylibrarian.TDL == True:
+                                        if lazylibrarian.CONFIG['TDL'] == True:
                                             checked = 'checked="checked"'
                                         else:
                                             checked = ''
@@ -922,11 +922,11 @@
                                                 <span class="input-group-addon">
                                                     <input type="checkbox" id="tdl" name="tdl" value="1" ${checked} />
                                                 </span>
-                                                <input type="text" placeholder="torrentdownload host" id="tdl_host" name="tdl_host" value="${lazylibrarian.TDL_HOST}" class="form-control">
+                                                <input type="text" placeholder="torrentdownload host" id="tdl_host" name="tdl_host" value="${lazylibrarian.CONFIG['TDL_HOST']}" class="form-control">
                                             </div>
                                         </div>
                                         <%
-                                        if lazylibrarian.EXTRA == True:
+                                        if lazylibrarian.CONFIG['EXTRA'] == True:
                                             checked = 'checked="checked"'
                                         else:
                                             checked = ''
@@ -937,11 +937,11 @@
                                                 <span class="input-group-addon">
                                                     <input type="checkbox" id="extra" name="extra" value="1" ${checked} />
                                                 </span>
-                                                <input type="text" placeholder="extratorrent host" id="extra_host" name="extra_host" value="${lazylibrarian.EXTRA_HOST}" class="form-control">
+                                                <input type="text" placeholder="extratorrent host" id="extra_host" name="extra_host" value="${lazylibrarian.CONFIG['EXTRA_HOST']}" class="form-control">
                                             </div>
                                         </div>
                                         <%
-                                        if lazylibrarian.LIME == True:
+                                        if lazylibrarian.CONFIG['LIME'] == True:
                                             checked = 'checked="checked"'
                                         else:
                                             checked = ''
@@ -952,14 +952,14 @@
                                                 <span class="input-group-addon">
                                                     <input type="checkbox" id="lime" name="lime" value="1" ${checked} />
                                                 </span>
-                                                <input type="text" placeholder="limetorrent host" id="lime_host" name="lime_host" value="${lazylibrarian.LIME_HOST}" class="form-control">
+                                                <input type="text" placeholder="limetorrent host" id="lime_host" name="lime_host" value="${lazylibrarian.CONFIG['LIME_HOST']}" class="form-control">
                                             </div>
                                         </div>
                                     </fieldset>
                                     <fieldset>
                                         <legend>Direct Download Providers</legend>
                                         <%
-                                        if lazylibrarian.GEN == True:
+                                        if lazylibrarian.CONFIG['GEN'] == True:
                                             checked = 'checked="checked"'
                                         else:
                                             checked = ''
@@ -970,7 +970,7 @@
                                                 <span class="input-group-addon">
                                                     <input type="checkbox" id="gen" name="gen" value="1" ${checked} />
                                                 </span>
-                                                <input type="text" placeholder="libgen host" id="gen_host" name="gen_host" value="${lazylibrarian.GEN_HOST}" class="form-control">
+                                                <input type="text" placeholder="libgen host" id="gen_host" name="gen_host" value="${lazylibrarian.CONFIG['GEN_HOST']}" class="form-control">
                                             </div>
                                         </div>
                                     </fieldset>
@@ -989,28 +989,28 @@
                                         <div class="form-group">
                                             <label for="search_interval" class="control-label">NZB/Tor Search Interval:</label>
                                             <div class="input-group">
-                                                <input type="text" id="search_interval" name="search_interval" value="${lazylibrarian.SEARCH_INTERVAL}" class="form-control" placeholder="NZB search interval (mins)">
+                                                <input type="text" id="search_interval" name="search_interval" value="${lazylibrarian.CONFIG['SEARCH_INTERVAL']}" class="form-control" placeholder="NZB search interval (mins)">
                                                 <span class="input-group-addon">Minutes</span>
                                             </div>
                                         </div>
                                         <div class="form-group">
                                             <label for="searchrss_interval" class="control-label">RSS Search Interval:</label>
                                             <div class="input-group">
-                                                <input type="text" id="searchrss_interval" name="searchrss_interval" value="${lazylibrarian.SEARCHRSS_INTERVAL}" class="form-control" placeholder="RSS search interval (mins)">
+                                                <input type="text" id="searchrss_interval" name="searchrss_interval" value="${lazylibrarian.CONFIG['SEARCHRSS_INTERVAL']}" class="form-control" placeholder="RSS search interval (mins)">
                                                 <span class="input-group-addon">Minutes</span>
                                             </div>
                                         </div>
                                         <div class="form-group">
                                             <label class="control-label">Post-Processing Interval:</label>
                                             <div class="input-group">
-                                                <input type="text" id="scan_interval" name="scan_interval" value="${lazylibrarian.SCAN_INTERVAL}" class="form-control" placeholder="Post processing interval (mins)">
+                                                <input type="text" id="scan_interval" name="scan_interval" value="${lazylibrarian.CONFIG['SCAN_INTERVAL']}" class="form-control" placeholder="Post processing interval (mins)">
                                                 <span class="input-group-addon">Minutes</span>
                                             </div>
                                         </div>
                                         <div class="form-group">
                                             <label for="versioncheck_interval" class="control-label">Version Check Interval:</label>
                                             <div class="input-group">
-                                                <input type="text" id="versioncheck_interval" name="versioncheck_interval" value="${lazylibrarian.VERSIONCHECK_INTERVAL}" class="form-control" placeholder="Version check interval (hours)" >
+                                                <input type="text" id="versioncheck_interval" name="versioncheck_interval" value="${lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL']}" class="form-control" placeholder="Version check interval (hours)" >
                                                 <span class="input-group-addon">Hours</span>
                                             </div>
                                         </div>
@@ -1021,25 +1021,25 @@
                                         <legend>Folders</legend>
                                         <div class="form-group">
                                             <label for="destination_dir" class="control-label">Base Destination Folder:</label>
-                                            <input type="text" id="destination_dir" name="destination_dir" value="${lazylibrarian.DESTINATION_DIR}" class="form-control" placeholder="Destination Directory">
+                                            <input type="text" id="destination_dir" name="destination_dir" value="${lazylibrarian.CONFIG['DESTINATION_DIR']}" class="form-control" placeholder="Destination Directory">
                                         </div>
                                         <div class="form-group">
                                             <label for="alternate_dir" class="control-label">Alternate Import/Export Folder:</label>
-                                            <input type="text" id="alternate_dir" name="alternate_dir" value="${lazylibrarian.ALTERNATE_DIR}" class="form-control" placeholder="Alternate Directory">
+                                            <input type="text" id="alternate_dir" name="alternate_dir" value="${lazylibrarian.CONFIG['ALTERNATE_DIR']}" class="form-control" placeholder="Alternate Directory">
                                             <span class="help-block">Directory for wishlists and manually importing books</span>
                                         </div>
                                         <div class="form-group">
                                             <label for="ebook_dest_folder">eBook Destination Folder:</label>
-                                            <input type="text" id="ebook_dest_folder" name="ebook_dest_folder" value="${lazylibrarian.EBOOK_DEST_FOLDER}" class="form-control" placeholder="eBook Destination Folder">
+                                            <input type="text" id="ebook_dest_folder" name="ebook_dest_folder" value="${lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']}" class="form-control" placeholder="eBook Destination Folder">
                                         </div>
                                         <div class="fomr-group">
                                             <label for="ebook_dest_file">eBook Destination File:</label>
-                                            <input type="text" id="ebook_dest_file" name="ebook_dest_file" value="${lazylibrarian.EBOOK_DEST_FILE}" class="form-control" placeholder="eBook Destination File">
+                                            <input type="text" id="ebook_dest_file" name="ebook_dest_file" value="${lazylibrarian.CONFIG['EBOOK_DEST_FILE']}" class="form-control" placeholder="eBook Destination File">
                                             <span class="help-block">Options include $Author, $Title, any string.<br/>Current limitation: each file has to be in unique subfolder</span>
                                         </div>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.DESTINATION_COPY == True:
+                                            if lazylibrarian.CONFIG['DESTINATION_COPY'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1050,7 +1050,7 @@
                                         </div>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.ONE_FORMAT == True:
+                                            if lazylibrarian.CONFIG['ONE_FORMAT'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1061,27 +1061,27 @@
                                         </div>
                                         <div class="form-group">
                                             <label for="imp_calibredb">Calibredb import program:</label>
-                                            <input type="text" id="imp_calibredb" name="imp_calibredb" value="${lazylibrarian.IMP_CALIBREDB}" class="form-control">
+                                            <input type="text" id="imp_calibredb" name="imp_calibredb" value="${lazylibrarian.CONFIG['IMP_CALIBREDB']}" class="form-control">
                                             <span class="help-block">Path to "calibredb" to import books into the library</span>
                                         </div>
                                         <div class="form-group">
                                             <label for="imp_autoadd">Calibre Auto Add:</label>
-                                            <input type="text" id="imp_autoadd" name="imp_autoadd" value="${lazylibrarian.IMP_AUTOADD}" class="form-control">
+                                            <input type="text" id="imp_autoadd" name="imp_autoadd" value="${lazylibrarian.CONFIG['IMP_AUTOADD']}" class="form-control">
                                             <span class="help-block">Directory for a copy to be placed for auto add process</span>
                                         </div>
                                         <div class="form-group">
                                             <label for="mag_dest_folder">Magazine Destination Folder:</label>
-                                            <input type="text" id="mag_dest_folder" name="mag_dest_folder" value="${lazylibrarian.MAG_DEST_FOLDER}" class="form-control" placeholder="Magazines Destination Folder">
+                                            <input type="text" id="mag_dest_folder" name="mag_dest_folder" value="${lazylibrarian.CONFIG['MAG_DEST_FOLDER']}" class="form-control" placeholder="Magazines Destination Folder">
                                         </div>
                                         <div class="form-group">
                                             <label for="mag_dest_file">Magazine Issue Filename:</label>
-                                            <input type="text" id="mag_dest_file" name="mag_dest_file" value="${lazylibrarian.MAG_DEST_FILE}" class="form-control" placeholder="Magazine Issue Filename">
+                                            <input type="text" id="mag_dest_file" name="mag_dest_file" value="${lazylibrarian.CONFIG['MAG_DEST_FILE']}" class="form-control" placeholder="Magazine Issue Filename">
                                             <span class="help-block">Options include $Title, $IssueDate, any string
                                             <BR>Current limitation: Issue Filename must contain Title and Date</span>
                                         </div>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.MAG_RELATIVE == True:
+                                            if lazylibrarian.CONFIG['MAG_RELATIVE'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1093,7 +1093,7 @@
                                         </div>
                                         <div class="checkbox">
                                             <%
-                                                if lazylibrarian.MAG_SINGLE == True:
+                                                if lazylibrarian.CONFIG['MAG_SINGLE'] == True:
                                                     checked = 'checked="checked"'
                                                 else:
                                                     checked = ''
@@ -1110,35 +1110,35 @@
                                         <div class="form-group">
                                             <label for="cache_age" class="control-label">Cache expire after:</label>
                                             <div class="input-group">
-                                                <input type="text" id="cache_age" name="cache_age" value="${lazylibrarian.CACHE_AGE}" class="form-control" placeholder="Max. Cache Age (days)">
+                                                <input type="text" id="cache_age" name="cache_age" value="${lazylibrarian.CONFIG['CACHE_AGE']}" class="form-control" placeholder="Max. Cache Age (days)">
                                                 <span class="input-group-addon">Days</span>
                                             </div>
                                         </div>
                                         <div class="form-group">
                                             <label for="mag_age" class="control-label">Max Magazine Issue Age:</label>
                                             <div class="input-group">
-                                                <input type="text" id="mag_age" name="mag_age" value="${lazylibrarian.MAG_AGE}" class="form-control" placeholder="Max. Magazine Age (days)">
+                                                <input type="text" id="mag_age" name="mag_age" value="${lazylibrarian.CONFIG['MAG_AGE']}" class="form-control" placeholder="Max. Magazine Age (days)">
                                                 <span class="input-group-addon">Days</span>
                                             </div>
                                         </div>
                                         <div class="form-group">
                                             <label for="task_age" class="control-label">Remove failed tasks after:</label>
                                             <div class="input-group">
-                                                <input type="text" id="task_age" name="task_age" value="${lazylibrarian.TASK_AGE}" class="form-control" placeholder="Cancel after (hours)">
+                                                <input type="text" id="task_age" name="task_age" value="${lazylibrarian.CONFIG['TASK_AGE']}" class="form-control" placeholder="Cancel after (hours)">
                                                 <span class="input-group-addon">Hours</span>
                                             </div>
                                         </div>
                                         <div class="form-group">
                                             <label for="match_ratio">Search Match Ratio:</label>
                                             <div class="input-group">
-                                                <input type="text" id="match_ratio" name="match_ratio" value="${lazylibrarian.MATCH_RATIO}" class="form-control" placeholder="Search Match Ratio (percent)">
+                                                <input type="text" id="match_ratio" name="match_ratio" value="${lazylibrarian.CONFIG['MATCH_RATIO']}" class="form-control" placeholder="Search Match Ratio (percent)">
                                                 <span class="input-group-addon">%</span>
                                             </div>
                                         </div>
                                         <div class="form-group">
                                             <label for="dload_ratio">Download Match Ratio:</label>
                                             <div class="input-group">
-                                                <input type="text" id="dload_ratio" name="dload_ratio" value="${lazylibrarian.DLOAD_RATIO}" class="form-control" placeholder="Download Match Ratio (percent)">
+                                                <input type="text" id="dload_ratio" name="dload_ratio" value="${lazylibrarian.CONFIG['DLOAD_RATIO']}" class="form-control" placeholder="Download Match Ratio (percent)">
                                                 <span class="input-group-addon">%</span>
                                             </div>
                                         </div>
@@ -1146,17 +1146,17 @@
                                     <fieldset>
                                         <div class="form-group">
                                             <label for="git_program">git program:</label>
-                                            <input type="text" placeholder="git program" id="git_program" name="git_program" value="${lazylibrarian.GIT_PROGRAM}" class="form-control">
+                                            <input type="text" placeholder="git program" id="git_program" name="git_program" value="${lazylibrarian.CONFIG['GIT_PROGRAM']}" class="form-control">
                                             <span class="help-block">Git program, unless already in your path. Usually leave this blank</span>
                                         </div>
                                         <div class="form-group">
                                             <label for="imp_convert">Cover creation program:</label>
-                                            <input type="text" placeholder="Cover creation program" id="imp_convert" name="imp_convert" value="${lazylibrarian.IMP_CONVERT}" class="form-control">
+                                            <input type="text" placeholder="Cover creation program" id="imp_convert" name="imp_convert" value="${lazylibrarian.CONFIG['IMP_CONVERT']}" class="form-control">
                                             <span class="help-block">Program for creating magazine covers (example: ImageMagick "convert")<br/>Leave blank to use PythonMagick or Wand interfaces to ImageMagick, put None to disable cover creation</span>
                                         </div>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.FULL_SCAN == True:
+                                            if lazylibrarian.CONFIG['FULL_SCAN'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1168,7 +1168,7 @@
                                         </div>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.IMP_SINGLEBOOK == True:
+                                            if lazylibrarian.CONFIG['IMP_SINGLEBOOK'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1180,7 +1180,7 @@
                                         </div>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.ADD_AUTHOR == True:
+                                            if lazylibrarian.CONFIG['ADD_AUTHOR'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1192,7 +1192,7 @@
                                         </div>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.IMP_AUTOSEARCH == True:
+                                            if lazylibrarian.CONFIG['IMP_AUTOSEARCH'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1208,7 +1208,7 @@
                                             %for nf_status in config['status_list']:
                                             <%
                                                 selected = ''
-                                                if nf_status == lazylibrarian.NOTFOUND_STATUS:
+                                                if nf_status == lazylibrarian.CONFIG['NOTFOUND_STATUS']:
                                                         selected = 'selected="selected"'
                                             %>
                                                 <option value="${nf_status}" ${selected}>${nf_status}</option>
@@ -1222,7 +1222,7 @@
                                             %for nb_status in config['status_list']:
                                             <%
                                                 selected = ''
-                                                if nb_status == lazylibrarian.NEWBOOK_STATUS:
+                                                if nb_status == lazylibrarian.CONFIG['NEWBOOK_STATUS']:
                                                         selected = 'selected="selected"'
                                             %>
                                                 <option value="${nb_status}" ${selected}>${nb_status}</option>
@@ -1236,7 +1236,7 @@
                                             %for na_status in config['status_list']:
                                             <%
                                                 selected = ''
-                                                if na_status == lazylibrarian.NEWAUTHOR_STATUS:
+                                                if na_status == lazylibrarian.CONFIG['NEWAUTHOR_STATUS']:
                                                         selected = 'selected="selected"'
                                             %>
                                                 <option value="${na_status}" ${selected}>${na_status}</option>
@@ -1257,7 +1257,7 @@
                             <div class="col-md-6">
                                 <div class="checkbox">
                                 <%
-                                if lazylibrarian.USE_TWITTER == True:
+                                if lazylibrarian.CONFIG['USE_TWITTER'] == True:
                                     checked = 'checked="checked"'
                                 else:
                                     checked = ''
@@ -1271,7 +1271,7 @@
                                         <legend>Twitter</legend>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.TWITTER_NOTIFY_ONSNATCH == True:
+                                            if lazylibrarian.CONFIG['TWITTER_NOTIFY_ONSNATCH'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1282,7 +1282,7 @@
                                         </div>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.TWITTER_NOTIFY_ONDOWNLOAD == True:
+                                            if lazylibrarian.CONFIG['TWITTER_NOTIFY_ONDOWNLOAD'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1310,7 +1310,7 @@
 
                                 <div class="checkbox">
                                 <%
-                                if lazylibrarian.USE_BOXCAR == True:
+                                if lazylibrarian.CONFIG['USE_BOXCAR'] == True:
                                     checked = 'checked="checked"'
                                 else:
                                     checked = ''
@@ -1324,7 +1324,7 @@
                                         <legend>Boxcar2</legend>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.BOXCAR_NOTIFY_ONSNATCH == True:
+                                            if lazylibrarian.CONFIG['BOXCAR_NOTIFY_ONSNATCH'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1335,7 +1335,7 @@
                                         </div>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.BOXCAR_NOTIFY_ONDOWNLOAD == True:
+                                            if lazylibrarian.CONFIG['BOXCAR_NOTIFY_ONDOWNLOAD'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1346,7 +1346,7 @@
                                         </div>
                                         <div class="form-group">
                                             <label for="boxcar_token" class="control-label">Boxcar Token</label>
-                                            <input type="text" id="boxcar_token" name="boxcar_token" value="${lazylibrarian.BOXCAR_TOKEN}" placeholder="Boxcar token" class="form-control">
+                                            <input type="text" id="boxcar_token" name="boxcar_token" value="${lazylibrarian.CONFIG['BOXCAR_TOKEN']}" placeholder="Boxcar token" class="form-control">
                                         </div>
                                         <div class="form-group">
                                             <input type="button" value="Test Boxcar" id="testBoxcar" class="btn btn-default">
@@ -1357,7 +1357,7 @@
 
                                 <div class="checkbox">
                                     <%
-                                    if lazylibrarian.USE_PUSHBULLET == True:
+                                    if lazylibrarian.CONFIG['USE_PUSHBULLET'] == True:
                                         checked = 'checked="checked"'
                                     else:
                                         checked = ''
@@ -1371,7 +1371,7 @@
                                         <legend>Pushbullet</legend>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH == True:
+                                            if lazylibrarian.CONFIG['PUSHBULLET_NOTIFY_ONSNATCH'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1382,7 +1382,7 @@
                                         </div>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD == True:
+                                            if lazylibrarian.CONFIG['PUSHBULLET_NOTIFY_ONDOWNLOAD'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1393,11 +1393,11 @@
                                         </div>
                                         <div class="form-group">
                                             <label for="pushbullet_token">Pushbullet API</label>
-                                            <input type="text" id="pushbullet_token" name="pushbullet_token" value="${lazylibrarian.PUSHBULLET_TOKEN}" class="form-control" placeholder="Pushbullet API">
+                                            <input type="text" id="pushbullet_token" name="pushbullet_token" value="${lazylibrarian.CONFIG['PUSHBULLET_TOKEN']}" class="form-control" placeholder="Pushbullet API">
                                         </div>
                                         <div class="form-group">
                                             <label for="pushbullet_deviceid" class="control-label">Device ID</label>
-                                            <input type="text" id="pushbullet_deviceid" name="pushbullet_deviceid" value="${lazylibrarian.PUSHBULLET_DEVICEID}" class="form-control" placeholder="Pushbullet DeviceID">
+                                            <input type="text" id="pushbullet_deviceid" name="pushbullet_deviceid" value="${lazylibrarian.CONFIG['PUSHBULLET_DEVICEID']}" class="form-control" placeholder="Pushbullet DeviceID">
                                         </div>
                                         <div class="form-group">
                                             <input type="button" value="Test Pushbullet" id="testPushbullet" class="btn btn-default">
@@ -1410,7 +1410,7 @@
                             <div class="col-md-6">
                                 <div class="checkbox">
                                     <%
-                                    if lazylibrarian.USE_PUSHOVER == True:
+                                    if lazylibrarian.CONFIG['USE_PUSHOVER'] == True:
                                         checked = 'checked="checked"'
                                     else:
                                         checked = ''
@@ -1424,7 +1424,7 @@
                                         <legend>Pushover</legend>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.PUSHOVER_ONSNATCH == True:
+                                            if lazylibrarian.CONFIG['PUSHOVER_ONSNATCH'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1435,7 +1435,7 @@
                                         </div>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.PUSHOVER_ONDOWNLOAD == True:
+                                            if lazylibrarian.CONFIG['PUSHOVER_ONDOWNLOAD'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1446,19 +1446,19 @@
                                         </div>
                                         <div class="form-group">
                                             <label for="pushover_apitoken">Pushover API</label>
-                                            <input type="text" id="pushover_apitoken" name="pushover_apitoken" value="${lazylibrarian.PUSHOVER_APITOKEN}" class="form-control" placeholder="Pushover API Token">
+                                            <input type="text" id="pushover_apitoken" name="pushover_apitoken" value="${lazylibrarian.CONFIG['PUSHOVER_APITOKEN']}" class="form-control" placeholder="Pushover API Token">
                                         </div>
                                         <div class="form-group">
                                             <label for="pushover_keys" class="control-label">Pushover Keys</label>
-                                            <input type="text" id="pushover_keys" name="pushover_keys" value="${lazylibrarian.PUSHOVER_KEYS}" class="form-control" placeholder="Pushover Keys">
+                                            <input type="text" id="pushover_keys" name="pushover_keys" value="${lazylibrarian.CONFIG['PUSHOVER_KEYS']}" class="form-control" placeholder="Pushover Keys">
                                         </div>
                                         <div class="form-group">
                                             <label for="pushover_device" class="control-label">Pushover Device</label>
-                                            <input type="text" id="pushover_device" value="${lazylibrarian.PUSHOVER_DEVICE}" class="form-control" placeholder="Pushover Device">
+                                            <input type="text" id="pushover_device" value="${lazylibrarian.CONFIG['PUSHOVER_DEVICE']}" class="form-control" placeholder="Pushover Device">
                                         </div>
                                         <div class="form-group">
                                             <label for="pushover_priority" class="control-label">Pushover Priority</label>
-                                            <input type="text" id="pushover_priority" name="pushover_priority" value="${lazylibrarian.PUSHOVER_PRIORITY}" class="form-control" placeholder="Pushover Priority">
+                                            <input type="text" id="pushover_priority" name="pushover_priority" value="${lazylibrarian.CONFIG['PUSHOVER_PRIORITY']}" class="form-control" placeholder="Pushover Priority">
                                         </div>
                                         <div class="form-group">
                                             <input type="button" value="Test Pushover" id="testPushover" class="btn btn-default">
@@ -1469,7 +1469,7 @@
 
                                 <div class="checkbox">
                                     <%
-                                    if lazylibrarian.USE_ANDROIDPN == True:
+                                    if lazylibrarian.CONFIG['USE_ANDROIDPN'] == True:
                                         checked = 'checked="checked"'
                                     else:
                                         checked = ''
@@ -1483,7 +1483,7 @@
                                         <legend>AndroidPN</legend>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.ANDROIDPN_NOTIFY_ONSNATCH == True:
+                                            if lazylibrarian.CONFIG['ANDROIDPN_NOTIFY_ONSNATCH'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1494,7 +1494,7 @@
                                         </div>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.ANDROIDPN_NOTIFY_ONDOWNLOAD == True:
+                                            if lazylibrarian.CONFIG['ANDROIDPN_NOTIFY_ONDOWNLOAD'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1505,7 +1505,7 @@
                                         </div>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.ANDROIDPN_BROADCAST == True:
+                                            if lazylibrarian.CONFIG['ANDROIDPN_BROADCAST'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1516,11 +1516,11 @@
                                         </div>
                                         <div class="form-group">
                                             <label for="androidpn_url" class="control-label">AndroidPN Notification URL</label>
-                                            <input type="text" id="androidpn_url" name="androidpn_url" value="${lazylibrarian.ANDROIDPN_URL}" class="form-control" placeholder="AndroidPN Notification URL" />
+                                            <input type="text" id="androidpn_url" name="androidpn_url" value="${lazylibrarian.CONFIG['ANDROIDPN_URL']}" class="form-control" placeholder="AndroidPN Notification URL" />
                                         </div>
                                         <div class="form-group">
                                             <label for="androidpn_username" class="control-label">Username</label>
-                                            <input type="text" id="androidpn_username" name="androidpn_username"  value="${lazylibrarian.ANDROIDPN_USERNAME}" class="form-control" placeholder="AndroidPN Username" />
+                                            <input type="text" id="androidpn_username" name="androidpn_username"  value="${lazylibrarian.CONFIG['ANDROIDPN_USERNAME']}" class="form-control" placeholder="AndroidPN Username" />
                                         </div>
                                         <div class="form-group">
                                             <input type="button" value="Test AndroidPN" id="testAndroidPN" class="btn btn-default" />
@@ -1531,7 +1531,7 @@
 
                                 <div class="checkbox">
                                     <%
-                                    if lazylibrarian.USE_NMA == True:
+                                    if lazylibrarian.CONFIG['USE_NMA'] == True:
                                         checked = 'checked="checked"'
                                     else:
                                         checked = ''
@@ -1545,7 +1545,7 @@
                                         <legend>NotifyMyAndroid</legend>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.NMA_ONSNATCH == True:
+                                            if lazylibrarian.CONFIG['NMA_ONSNATCH'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1556,7 +1556,7 @@
                                         </div>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.NMA_ONDOWNLOAD == True:
+                                            if lazylibrarian.CONFIG['NMA_ONDOWNLOAD'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1567,7 +1567,7 @@
                                         </div>
                                         <div class="form-group">
                                             <label for="nma_apikey" class="control-label">NotifyMyAndroid API Key</label>
-                                            <input type="text" id="nma_apikey" name="nma_apikey" value="${lazylibrarian.NMA_APIKEY}" class="form-control" placeholder="NotifyMyAndroid API Key">
+                                            <input type="text" id="nma_apikey" name="nma_apikey" value="${lazylibrarian.CONFIG['NMA_APIKEY']}" class="form-control" placeholder="NotifyMyAndroid API Key">
                                             <span class="help-block">Separate multiple api keys with commas</span>
                                         </div>
                                         <div class="form-group">
@@ -1575,7 +1575,7 @@
                                             <select id="nma_priority" name="nma_priority" class="form-control">
                                                 %for x in [-2,-1,0,1,2]:
                                                 <%
-                                                    if lazylibrarian.NMA_PRIORITY == x:
+                                                    if lazylibrarian.CONFIG['NMA_PRIORITY'] == x:
                                                         nma_priority_selected = 'selected'
                                                     else:
                                                         nma_priority_selected = ''
@@ -1604,7 +1604,7 @@
 
                                 <div class="checkbox">
                                     <%
-                                    if lazylibrarian.USE_SLACK == True:
+                                    if lazylibrarian.CONFIG['USE_SLACK'] == True:
                                         checked = 'checked="checked"'
                                     else:
                                         checked = ''
@@ -1618,7 +1618,7 @@
                                         <legend>Slack</legend>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.SLACK_NOTIFY_ONSNATCH == True:
+                                            if lazylibrarian.CONFIG['SLACK_NOTIFY_ONSNATCH'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1629,7 +1629,7 @@
                                         </div>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.SLACK_NOTIFY_ONDOWNLOAD == True:
+                                            if lazylibrarian.CONFIG['SLACK_NOTIFY_ONDOWNLOAD'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1640,7 +1640,7 @@
                                         </div>
                                         <div class="form-group">
                                             <label for="slack_token">Slack Webhook Token(everything after https://hooks.slack.com/services/)</label>
-                                            <input type="text" id="slack_token" name="slack_token" value="${lazylibrarian.SLACK_TOKEN}" class="form-control" placeholder="Slack Webhook Token">
+                                            <input type="text" id="slack_token" name="slack_token" value="${lazylibrarian.CONFIG['SLACK_TOKEN']}" class="form-control" placeholder="Slack Webhook Token">
                                         </div>
                                         <div class="form-group">
                                             <input type="button" value="Test Slack" id="testSlack" class="btn btn-default">
@@ -1650,7 +1650,7 @@
                                 </div>
                                 <div class="checkbox">
                                     <%
-                                    if lazylibrarian.USE_EMAIL == True:
+                                    if lazylibrarian.CONFIG['USE_EMAIL'] == True:
                                         checked = 'checked="checked"'
                                     else:
                                         checked = ''
@@ -1664,7 +1664,7 @@
                                         <legend>Email</legend>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.EMAIL_NOTIFY_ONSNATCH == True:
+                                            if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONSNATCH'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1675,7 +1675,7 @@
                                         </div>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.EMAIL_NOTIFY_ONDOWNLOAD == True:
+                                            if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONDOWNLOAD'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1686,31 +1686,31 @@
                                         </div>
                                         <div class="form-group">
                                             <label for="email_from">Email From</label>
-                                            <input type="text" id="email_from" name="email_from" value="${lazylibrarian.EMAIL_FROM}" class="form-control" placeholder="Email From Address">
+                                            <input type="text" id="email_from" name="email_from" value="${lazylibrarian.CONFIG['EMAIL_FROM']}" class="form-control" placeholder="Email From Address">
                                         </div>
                                         <div class="form-group">
                                             <label for="email_to">Email To</label>
-                                            <input type="text" id="email_to" name="email_to" value="${lazylibrarian.EMAIL_TO}" class="form-control" placeholder="Email To Address">
+                                            <input type="text" id="email_to" name="email_to" value="${lazylibrarian.CONFIG['EMAIL_TO']}" class="form-control" placeholder="Email To Address">
                                         </div>
                                         <div class="form-group">
                                             <label for="email_smtp_server">SMTP Server</label>
-                                            <input type="text" id="email_smtp_server" name="email_smtp_server" value="${lazylibrarian.EMAIL_SMTP_SERVER}" class="form-control" placeholder="SMTP Server">
+                                            <input type="text" id="email_smtp_server" name="email_smtp_server" value="${lazylibrarian.CONFIG['EMAIL_SMTP_SERVER']}" class="form-control" placeholder="SMTP Server">
                                         </div>
                                         <div class="form-group">
                                             <label for="email_smtp_user">SMTP User</label>
-                                            <input type="text" id="email_smtp_user" name="email_smtp_user" value="${lazylibrarian.EMAIL_SMTP_USER}" class="form-control" placeholder="SMTP User">
+                                            <input type="text" id="email_smtp_user" name="email_smtp_user" value="${lazylibrarian.CONFIG['EMAIL_SMTP_USER']}" class="form-control" placeholder="SMTP User">
                                         </div>
                                         <div class="form-group">
                                             <label for="email_smtp_password">SMTP Password</label>
-                                            <input type="text" id="email_smtp_password" name="email_smtp_password" value="${lazylibrarian.EMAIL_SMTP_PASSWORD}" class="form-control" placeholder="SMTP Password">
+                                            <input type="text" id="email_smtp_password" name="email_smtp_password" value="${lazylibrarian.CONFIG['EMAIL_SMTP_PASSWORD']}" class="form-control" placeholder="SMTP Password">
                                         </div>
                                         <div class="form-group">
                                             <label for="email_smtp_port">SMTP Port</label>
-                                            <input type="text" id="email_smtp_port" name="email_smtp_port" value="${lazylibrarian.EMAIL_SMTP_PORT}" class="form-control" placeholder="SMTP Port">
+                                            <input type="text" id="email_smtp_port" name="email_smtp_port" value="${lazylibrarian.CONFIG['EMAIL_SMTP_PORT']}" class="form-control" placeholder="SMTP Port">
                                         </div>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.EMAIL_SSL == True:
+                                            if lazylibrarian.CONFIG['EMAIL_SSL'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1721,7 +1721,7 @@
                                         </div>
                                         <div class="checkbox">
                                             <%
-                                            if lazylibrarian.EMAIL_TLS == True:
+                                            if lazylibrarian.CONFIG['EMAIL_TLS'] == True:
                                                 checked = 'checked="checked"'
                                             else:
                                                 checked = ''
@@ -1849,7 +1849,7 @@
                                 <legend>Book Reject List</legend>
                                 <span class="help-block">Default: audiobook, mp3</span>
                                 <div class="form-group">
-                                    <input type="text" id="reject_words" name="reject_words" value="${lazylibrarian.REJECT_WORDS}" class="form-control" placeholder="Reject word list">
+                                    <input type="text" id="reject_words" name="reject_words" value="${lazylibrarian.CONFIG['REJECT_WORDS']}" class="form-control" placeholder="Reject word list">
                                     <span class="help-block">Comma separated list of words to reject:<br/>
                                     Search results with any of these words in the title will be ignored<br/>
                                     </span>
@@ -1857,7 +1857,7 @@
                                 <legend>Book Size Limit</legend>
                                 <span class="help-block">Default: 0</span>
                                 <div class="form-group">
-                                    <input type="text" id="reject_maxsize" name="reject_maxsize" value="${lazylibrarian.REJECT_MAXSIZE}" class="form-control" placeholder="Reject size limit">
+                                    <input type="text" id="reject_maxsize" name="reject_maxsize" value="${lazylibrarian.CONFIG['REJECT_MAXSIZE']}" class="form-control" placeholder="Reject size limit">
                                     <span class="help-block">Book size limit (Mb):<br/>
                                     Search results larger than this will be rejected, set to 0 to disable<br/>
                                     </span>
@@ -1865,7 +1865,7 @@
                                 <legend>Magazine Size Limit</legend>
                                 <span class="help-block">Default: 0</span>
                                 <div class="form-group">
-                                    <input type="text" id="reject_magsize" name="reject_magsize" value="${lazylibrarian.REJECT_MAGSIZE}" class="form-control" placeholder="Reject size limit">
+                                    <input type="text" id="reject_magsize" name="reject_magsize" value="${lazylibrarian.CONFIG['REJECT_MAGSIZE']}" class="form-control" placeholder="Reject size limit">
                                     <span class="help-block">Magazine size limit (Mb):<br/>
                                     Search results larger than this will be rejected, set to 0 to disable<br/>
                                     </span>
@@ -1893,7 +1893,7 @@
             </div>
 
             <p>&nbsp;</p>
-            <p style="text-align:center;color:grey">Repo: https://github.com/${lazylibrarian.GIT_USER}/${lazylibrarian.GIT_REPO}  : Branch: ${lazylibrarian.GIT_BRANCH}<br>Current Version: ${lazylibrarian.CURRENT_VERSION}  : Latest  Version:    ${lazylibrarian.LATEST_VERSION}</p>
+            <p style="text-align:center;color:grey">Repo: https://github.com/${lazylibrarian.CONFIG['GIT_USER']}/${lazylibrarian.CONFIG['GIT_REPO']}  : Branch: ${lazylibrarian.CONFIG['GIT_BRANCH']}<br>Current Version: ${lazylibrarian.CONFIG['CURRENT_VERSION']}  : Latest  Version:    ${lazylibrarian.CONFIG['LATEST_VERSION']}</p>
         </div> <!-- form -->
 
     </form>

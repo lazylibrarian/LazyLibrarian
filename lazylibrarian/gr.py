@@ -34,9 +34,9 @@ class GoodReads:
     def __init__(self, name=None):
         self.name = name.encode(lazylibrarian.SYS_ENCODING)
         # self.type = type
-        if not lazylibrarian.GR_API:
+        if not lazylibrarian.CONFIG['GR_API']:
             logger.warn('No Goodreads API key, check config')
-        self.params = {"key": lazylibrarian.GR_API}
+        self.params = {"key": lazylibrarian.CONFIG['GR_API']}
 
     def find_results(self, authorname=None, queue=None):
         try:
@@ -224,10 +224,11 @@ class GoodReads:
             # except GR messes up names like "L. E. Modesitt, Jr." where it returns <name>Jr., L. E. Modesitt</name>
             authorname = resultxml[1].text
             if "," in authorname:
-                postfix = getList(lazylibrarian.NAME_POSTFIX)
+                postfix = getList(lazylibrarian.CONFIG['NAME_POSTFIX'])
                 words = authorname.split(',')
-                if words[0].strip().strip('.').lower in postfix:
-                    authorname = words[1].strip() + ' ' + words[0].strip()
+                if len(words) == 2:
+                    if words[0].strip().strip('.').lower in postfix:
+                        authorname = words[1].strip() + ' ' + words[0].strip()
 
             logger.debug("[%s] Processing info for authorID: %s" % (authorname, authorid))
             author_dict = {
@@ -269,7 +270,7 @@ class GoodReads:
                 api_hits += 1
             resultxml = rootxml.getiterator('book')
 
-            valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
+            valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.CONFIG['IMP_PREFLANG'].split(',')])
 
             resultsCount = 0
             removedResults = 0
@@ -696,7 +697,7 @@ class GoodReads:
         #
         # PAB user has said they want this book, don't block for unwanted language, just warn
         #
-        valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
+        valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.CONFIG['IMP_PREFLANG'].split(',')])
         if bookLanguage not in valid_langs:
             logger.debug('Book %s language does not match preference, %s' % (bookname, bookLanguage))
 

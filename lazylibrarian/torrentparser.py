@@ -36,7 +36,7 @@ def url_fix(s, charset='utf-8'):
 def TPB(book=None):
 
     provider = "TPB"
-    host = lazylibrarian.TPB_HOST
+    host = lazylibrarian.CONFIG['TPB_HOST']
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
@@ -63,7 +63,7 @@ def TPB(book=None):
 
     if result:
         logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
-        minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
+        minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
         soup = BeautifulSoup(result)
         try:
             table = soup.findAll('table')[0]
@@ -142,7 +142,7 @@ def TPB(book=None):
 def KAT(book=None):
 
     provider = "KAT"
-    host = lazylibrarian.KAT_HOST
+    host = lazylibrarian.CONFIG['KAT_HOST']
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
@@ -169,7 +169,7 @@ def KAT(book=None):
 
     if result:
         logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
-        minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
+        minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
         soup = BeautifulSoup(result)
 
         try:
@@ -204,7 +204,7 @@ def KAT(book=None):
                 except IndexError:
                     pass
 
-                if not url or (magnet and url and lazylibrarian.PREFER_MAGNET):
+                if not url or (magnet and url and lazylibrarian.CONFIG['PREFER_MAGNET']):
                     url = magnet
 
                 try:
@@ -248,7 +248,7 @@ def KAT(book=None):
 def EXTRA(book=None):
 
     provider = "Extratorrent"
-    host = lazylibrarian.EXTRA_HOST
+    host = lazylibrarian.CONFIG['EXTRA_HOST']
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
@@ -272,7 +272,7 @@ def EXTRA(book=None):
 
     results = []
 
-    minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
+    minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
     if data:
         logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
         d = feedparser.parse(data)
@@ -321,7 +321,7 @@ def EXTRA(book=None):
 def ZOO(book=None):
 
     provider = "zooqle"
-    host = lazylibrarian.ZOO_HOST
+    host = lazylibrarian.CONFIG['ZOO_HOST']
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
@@ -345,7 +345,7 @@ def ZOO(book=None):
 
     results = []
 
-    minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
+    minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
     if data:
         logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
         d = feedparser.parse(data)
@@ -362,7 +362,7 @@ def ZOO(book=None):
                     if link:
                         url = link
                     if magnet:
-                        if not url or (url and lazylibrarian.PREFER_MAGNET):
+                        if not url or (url and lazylibrarian.CONFIG['PREFER_MAGNET']):
                             url = magnet
 
                     if not url or not title:
@@ -394,7 +394,7 @@ def ZOO(book=None):
 def LIME(book=None):
 
     provider = "Limetorrent"
-    host = lazylibrarian.LIME_HOST
+    host = lazylibrarian.CONFIG['LIME_HOST']
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
@@ -412,7 +412,7 @@ def LIME(book=None):
 
     results = []
 
-    minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
+    minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
     if data:
         logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
         d = feedparser.parse(data)
@@ -466,7 +466,7 @@ def LIME(book=None):
 def GEN(book=None):
 
     provider = "libgen"
-    host = lazylibrarian.GEN_HOST
+    host = lazylibrarian.CONFIG['GEN_HOST']
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
@@ -577,7 +577,7 @@ def GEN(book=None):
 def TDL(book=None):
 
     provider = "torrentdownloads"
-    host = lazylibrarian.TDL_HOST
+    host = lazylibrarian.CONFIG['TDL_HOST']
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
@@ -602,7 +602,7 @@ def TDL(book=None):
 
     results = []
 
-    minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
+    minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
     if data:
         logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
         d = feedparser.parse(data)

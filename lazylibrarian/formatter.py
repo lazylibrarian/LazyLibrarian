@@ -230,9 +230,9 @@ def is_valid_booktype(filename, booktype=None):
     Check if filename extension is one we want
     """
     if booktype == 'mag':  # default is book
-        booktype_list = getList(lazylibrarian.MAG_TYPE)
+        booktype_list = getList(lazylibrarian.CONFIG['MAG_TYPE'])
     else:
-        booktype_list = getList(lazylibrarian.EBOOK_TYPE)
+        booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
     extn = os.path.splitext(filename)[1].lstrip('.')
     if extn and extn.lower() in booktype_list:
         return True

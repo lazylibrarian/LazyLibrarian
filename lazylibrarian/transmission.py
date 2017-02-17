@@ -167,10 +167,10 @@ def checkLink():
 
 def torrentAction(method, arguments):
 
-    host = lazylibrarian.TRANSMISSION_HOST
-    port = lazylibrarian.TRANSMISSION_PORT
-    username = lazylibrarian.TRANSMISSION_USER
-    password = lazylibrarian.TRANSMISSION_PASS
+    host = lazylibrarian.CONFIG['TRANSMISSION_HOST']
+    port = lazylibrarian.CONFIG['TRANSMISSION_PORT']
+    username = lazylibrarian.CONFIG['TRANSMISSION_USER']
+    password = lazylibrarian.CONFIG['TRANSMISSION_PASS']
 
     if not host.startswith('http'):
         host = 'http://' + host
