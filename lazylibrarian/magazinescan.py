@@ -146,11 +146,12 @@ def create_cover(issuefile=None, refresh=False):
                     res = subprocess.check_output(params, stderr=subprocess.STDOUT)
                     if not os.path.isfile(coverfile):
                         logger.debug("Failed to create jpg: %s" % res)
-                except Exception as why:
+                except Exception:  #  as why:
                     logger.debug("Failed to create jpg for %s" % issuefile)
                     logger.debug('Exception in gswin create_cover: %s' % traceback.format_exc())
         else:  # not windows
             try:
+                # noinspection PyUnresolvedReferences,PyUnresolvedReferences,PyUnresolvedReferences
                 from wand.image import Image
                 interface = "wand"
             except Exception:

@@ -28,6 +28,7 @@ from lazylibrarian.common import USER_AGENT
 class utorrentclient(object):
     TOKEN_REGEX = "<div id='token' style='display:none;'>([^<>]+)</div>"
 
+    # noinspection PyUnusedLocal,PyUnusedLocal,PyUnusedLocal
     def __init__(self, base_url='',  # lazylibrarian.CONFIG['UTORRENT_HOST'],
                  username='',  # lazylibrarian.CONFIG['UTORRENT_USER'],
                  password='',):  # lazylibrarian.CONFIG['UTORRENT_PASS']):

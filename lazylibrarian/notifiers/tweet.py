@@ -53,7 +53,7 @@ class TwitterNotifier:
 
     def _get_authorization(self):
 
-        signature_method_hmac_sha1 = oauth.SignatureMethod_HMAC_SHA1()  # @UnusedVariable
+        _ = oauth.SignatureMethod_HMAC_SHA1()
         oauth_consumer = oauth.Consumer(key=self.consumer_key, secret=self.consumer_secret)
         oauth_client = oauth.Client(oauth_consumer)
 
@@ -80,7 +80,7 @@ class TwitterNotifier:
 
         logger.info('Generating and signing request for an access token using key ' + key)
 
-        signature_method_hmac_sha1 = oauth.SignatureMethod_HMAC_SHA1()  # @UnusedVariable
+        _ = oauth.SignatureMethod_HMAC_SHA1()
         oauth_consumer = oauth.Consumer(key=self.consumer_key, secret=self.consumer_secret)
         logger.info('oauth_consumer: ' + str(oauth_consumer))
         oauth_client = oauth.Client(oauth_consumer, token)

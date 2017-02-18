@@ -326,7 +326,7 @@ class GoogleBooks:
 
                         # skip if no author, no author is no book.
                         try:
-                            author = item['volumeInfo']['authors'][0]
+                            _ = item['volumeInfo']['authors'][0]
                         except KeyError:
                             logger.debug('Skipped a result without authorfield.')
                             continue
@@ -653,6 +653,7 @@ class GoogleBooks:
         except Exception:
             logger.error('Unhandled exception in GB.get_author_books: %s' % traceback.format_exc())
 
+    # noinspection PyUnusedLocal
     @staticmethod
     def find_book(bookid=None, queue=None):
         myDB = database.DBConnection()

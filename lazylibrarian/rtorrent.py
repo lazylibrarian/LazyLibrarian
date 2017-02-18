@@ -77,7 +77,7 @@ def addTorrent(tor_url, hashID):
     # socket.setdefaulttimeout(10)  # shouldn't need timeout again as we already talked to server
 
     try:
-        response = server.load(tor_url)  # response isn't anything useful, always 0
+        _ = server.load(tor_url)  # response isn't anything useful, always 0
         # need a short pause while rtorrent loads it
         RETRIES = 5
         while RETRIES:
@@ -148,6 +148,7 @@ def getName(hashID):
     return False  # not found
 
 
+# noinspection PyUnusedLocal
 def removeTorrent(hashID, remove_data=False):
     server = getServer()
     if server is False:

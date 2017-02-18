@@ -79,7 +79,7 @@ def search_magazines(mags=None, reset=False):
                 searchterm = searchmag['Title']
                 dic = {'...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': ''}
                 searchterm = unaccented_str(replace_all(searchterm, dic))
-                searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode(lazylibrarian.SYS_ENCODING)
+                searchterm = re.sub('[.\-/]', ' ', searchterm).encode(lazylibrarian.SYS_ENCODING)
 
             searchlist.append({"bookid": bookid, "searchterm": searchterm})
 
@@ -251,7 +251,7 @@ def search_magazines(mags=None, reset=False):
                                             day = 1
                                         newdatish = "%04d-%02d-%02d" % (year, month, day)
                                         try:
-                                            check = datetime.date(year, month, day)
+                                            _ = datetime.date(year, month, day)
                                             regex_pass = 1
                                             break
                                         except ValueError:
@@ -268,7 +268,7 @@ def search_magazines(mags=None, reset=False):
                                         if month:
                                             day = check_int(nzbtitle_exploded[pos - 1].rstrip(','), 1)
                                             try:
-                                                check = datetime.date(year, month, day)
+                                                _ = datetime.date(year, month, day)
                                                 newdatish = "%04d-%02d-%02d" % (year, month, day)
                                                 regex_pass = 2
                                                 break
@@ -289,7 +289,7 @@ def search_magazines(mags=None, reset=False):
                                             else:
                                                 day = 1
                                             try:
-                                                check = datetime.date(year, month, day)
+                                                _ = datetime.date(year, month, day)
                                                 newdatish = "%04d-%02d-%02d" % (year, month, day)
                                                 regex_pass = 3
                                                 break

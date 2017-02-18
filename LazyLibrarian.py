@@ -222,7 +222,7 @@ def main():
                 lazylibrarian.shutdown()
             elif lazylibrarian.SIGNAL == 'restart':
                 lazylibrarian.shutdown(restart=True)
-            else:
+            elif lazylibrarian.SIGNAL == 'update':
                 lazylibrarian.shutdown(restart=True, update=True)
             lazylibrarian.SIGNAL = None
 

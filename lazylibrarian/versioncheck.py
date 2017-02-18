@@ -141,7 +141,7 @@ def getCurrentVersion():
         if not os.path.isfile(version_file):
             VERSION = 'No Version File'
             logger.debug('(getCurrentVersion) [%s] missing.' % version_file)
-            return
+            return VERSION
         else:
             fp = open(version_file, 'r')
             current_version = fp.read().strip(' \n\r')
@@ -151,11 +151,11 @@ def getCurrentVersion():
                 VERSION = current_version
             else:
                 VERSION = 'No Version set in file'
-                return
+                return VERSION
     else:
         logger.error('(getCurrentVersion) Install Type not set - cannot get version value')
         VERSION = 'Install type not set'
-        return
+        return VERSION
 
     updateVersionFile(VERSION)
     logger.debug('(getCurrentVersion) - Install type [%s] Local Version is set to [%s] ' % (
@@ -358,7 +358,7 @@ def update():
     elif lazylibrarian.CONFIG['INSTALL_TYPE'] == 'git':
         branch = getCurrentGitBranch()
 
-        output, err = runGit('stash clear')
+        _, _ = runGit('stash clear')
         output, err = runGit('pull origin ' + branch)
 
         if not output:

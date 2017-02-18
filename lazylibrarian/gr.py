@@ -196,12 +196,11 @@ class GoodReads:
             # For now we'll have to let the user handle this by selecting/adding the author manually
             for author in resultxml:
                 authorid = author.attrib.get("id")
-                authorname = author[0].text
-                authorlist = self.get_author_info(authorid, authorname)
+                authorlist = self.get_author_info(authorid)
         return authorlist
 
 
-    def get_author_info(self, authorid=None, authorname=None):
+    def get_author_info(self, authorid=None):
 
         URL = 'http://www.goodreads.com/author/show/' + authorid + '.xml?' + urllib.urlencode(self.params)
         author_dict = {}
@@ -623,7 +622,7 @@ class GoodReads:
                         logger.error("Error finding next page of results: %s" % str(e))
 
                     if resultxml:
-                        if all(False for book in resultxml):  # returns True if iterator is empty
+                        if all(False for _ in resultxml):  # returns True if iterator is empty
                             resultxml = None
 
             lastbook = myDB.match('SELECT BookName, BookLink, BookDate, BookImg from books WHERE AuthorID="%s" \
@@ -675,6 +674,7 @@ class GoodReads:
         except Exception:
             logger.error('Unhandled exception in GR.get_author_books: %s' % traceback.format_exc())
 
+    # noinspection PyUnusedLocal
     def find_book(self, bookid=None, queue=None):
         myDB = database.DBConnection()
 

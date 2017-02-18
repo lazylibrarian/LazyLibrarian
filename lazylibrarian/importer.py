@@ -51,7 +51,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
             myDB.upsert("authors", newValueDict, controlValueDict)
 
             GR = GoodReads(authorname)
-            author = GR.get_author_info(authorid=authorid, authorname=authorname)
+            author = GR.get_author_info(authorid=authorid)
             if author:
                 authorname = author['authorname']
                 authorimg = author['authorimg']
@@ -67,6 +67,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
                     newValueDict["AuthorDeath"] = author['authordeath']
 
                 myDB.upsert("authors", newValueDict, controlValueDict)
+                # noinspection PyPep8Naming,PyUnusedLocal
                 GR = GoodReads(authorname)
                 match = True
             else:

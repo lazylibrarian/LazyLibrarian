@@ -56,23 +56,24 @@ def get_book_info(fname):
         res['identifier'] = book.isbn()
         return res
 
+        # noinspection PyUnreachableCode
         """
-        # none of the pdfs in my library had language,isbn
-        # most didn't have author, or had the wrong author
-        # (author set to publisher, or software used)
-        # so probably not much point in looking at pdfs
-        #
-        if (extn == ".pdf"):
-            pdf = PdfFileReader(open(fname, "rb"))
-            txt = pdf.getDocumentInfo()
-            # repackage the data here to get components we need
-            res = {}
-            for s in ['title','language','creator']:
-                res[s] = txt[s]
-            res['identifier'] = txt['isbn']
-            res['type'] = "pdf"
-            return res
-        """
+                # none of the pdfs in my library had language,isbn
+                # most didn't have author, or had the wrong author
+                # (author set to publisher, or software used)
+                # so probably not much point in looking at pdfs
+                #
+                if (extn == ".pdf"):
+                    pdf = PdfFileReader(open(fname, "rb"))
+                    txt = pdf.getDocumentInfo()
+                    # repackage the data here to get components we need
+                    res = {}
+                    for s in ['title','language','creator']:
+                        res[s] = txt[s]
+                    res['identifier'] = txt['isbn']
+                    res['type'] = "pdf"
+                    return res
+                """
     elif extn == ".epub":
         res['type'] = "epub"
 
@@ -472,7 +473,7 @@ def LibraryScan(startdir=None):
                                     # use an exceptions list for now, there might be a better way...
                                     if words[1].strip().strip('.').strip('_').lower() in postfix:
                                         surname = words[1].strip()
-                                        forname = words[0].strip()
+                                        forename = words[0].strip()
                                     else:
                                         # guess its "surname, forename" or "surname, initial(s)" so swap them round
                                         forename = words[1].strip()

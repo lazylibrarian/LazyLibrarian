@@ -42,10 +42,10 @@ def internet():
   Return True or False
   """
   try:
-      e = urllib2.urlopen("http://www.google.com", timeout=5)
+      _ = urllib2.urlopen("http://www.google.com", timeout=5)
       return True
-  except Exception as e:
-      #logger.debug(str(e))
+  except Exception:  # as e:
+      #logger.debug(str(e)
       return False
 
 
@@ -204,6 +204,7 @@ def authorUpdate():
             if diff > lazylibrarian.CONFIG['CACHE_AGE']:
                 logger.info('Starting update for %s' % author['AuthorName'])
                 authorid = author['AuthorID']
+                # noinspection PyUnresolvedReferences
                 lazylibrarian.importer.addAuthorToDB(authorname='', refresh=True, authorid=authorid)
             else:
                 logger.debug('Oldest author info is %s day%s old' % (diff, plural(diff)))
@@ -219,6 +220,7 @@ def dbUpdate(refresh=False):
         logger.info('Starting update for %i active author%s' % (len(activeauthors), plural(len(activeauthors))))
         for author in activeauthors:
             authorid = author['AuthorID']
+            # noinspection PyUnresolvedReferences
             lazylibrarian.importer.addAuthorToDB(authorname='', refresh=refresh, authorid=authorid)
         logger.info('Active author update complete')
     except Exception:

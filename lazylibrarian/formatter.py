@@ -45,7 +45,7 @@ def bookSeries(bookname):
     series = None
     seriesNum = None
 
-    result = re.search(r"\(([\S\s]+),? #?(\d+\.?-?\d{0,}[;,])", bookname)
+    result = re.search(r"\(([\S\s]+),? #?(\d+\.?-?\d*[;,])", bookname)
     if result:
         series = result.group(1)
         if series[-1] == ',':
@@ -54,7 +54,7 @@ def bookSeries(bookname):
         if seriesNum[-1] in ';,':
             seriesNum = seriesNum[:-1]
     else:
-        result = re.search(r"\(([\S\s]+),? #?(\d+\.?-?\d{0,})", bookname)
+        result = re.search(r"\(([\S\s]+),? #?(\d+\.?-?\d*)", bookname)
         if result:
             series = result.group(1)
             if series[-1] == ',':

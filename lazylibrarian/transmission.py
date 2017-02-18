@@ -140,7 +140,7 @@ def removeTorrent(torrentid, remove_data=False):
                 arguments = {'delete-local-data': True, 'ids': [torrentid]}
             else:
                 arguments = {'ids': [torrentid]}
-            response = torrentAction(method, arguments)
+            _ = torrentAction(method, arguments)
             return True
         else:
             logger.debug('%s has not finished seeding yet, torrent will not be removed, \

@@ -63,7 +63,7 @@ class qbittorrentclient(object):
         # login so we can capture SID cookie
         login_data = urllib.urlencode({'username': username, 'password': password})
         try:
-            response = self.opener.open(base_url + '/login', login_data)
+            _ = self.opener.open(base_url + '/login', login_data)
         except Exception as err:
             logger.debug('Error getting SID. qBittorrent responded with error: %s' % str(err))
             logger.debug('Unable to log in to %s/login' % base_url)
@@ -304,7 +304,7 @@ def encode_multipart(fields, files, boundary=None):
         return s.replace('"', '\\"')
 
     if boundary is None:
-        boundary = ''.join(random.choice(_BOUNDARY_CHARS) for i in range(30))
+        boundary = ''.join(random.choice(_BOUNDARY_CHARS) for _ in range(30))
     lines = []
 
     for name, value in fields.items():

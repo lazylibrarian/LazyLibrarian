@@ -34,7 +34,7 @@ from lazylibrarian.formatter import getList, bookSeries, plural, unaccented
 from lib.apscheduler.scheduler import Scheduler
 
 # Transient globals NOT stored in config
-#These are used/modified by LazyLibrarian.py
+# These are used/modified by LazyLibrarian.py before config.ini is read
 FULL_PATH = None
 PROG_DIR = None
 ARGS = None
@@ -50,7 +50,7 @@ CFG = ''
 DBFILE = None
 COMMIT_LIST = None
 
-# These are used in startup
+# These are only used in startup
 SCHED = Scheduler()
 INIT_LOCK = threading.Lock()
 __INITIALIZED__ = False
@@ -60,6 +60,7 @@ started = False
 LOGLIST = []
 LOGFULL = True
 
+# These are "session specific" globals
 UPDATE_MSG = ''
 CURRENT_TAB = '1'
 CACHE_HIT = 0
@@ -67,16 +68,28 @@ CACHE_MISS = 0
 LAST_GOODREADS = 0
 LAST_LIBRARYTHING = 0
 
+# These are transient globals
+MONTHNAMES = []
+CACHEDIR = ''
+NEWZNAB_PROV = []
+TORZNAB_PROV = []
+RSS_PROV = []
+BOOKSTRAP_THEMELIST = []
+# These are the items in config.ini
+# Not all are accessible from the web ui
+# Any undefined on startup will be set to the default value
+# Any _NOT_ in the web ui will remain unchanged on config save
 CONFIG_DEFINITIONS = {
+    # Name      Type   Section   Default
     'LOGDIR': ('str', 'General', ''),
     'LOGLIMIT': ('int', 'General', 500),
     'LOGFILES': ('int', 'General', 10),
     'LOGSIZE': ('int', 'General', 204800),
     'LOGLEVEL': ('int', 'General', 1),
-    'HTTP_PORT': ('int', 'General', 5299),
     'MATCH_RATIO': ('int', 'General', 80),
     'DLOAD_RATIO': ('int', 'General', 90),
     'DISPLAYLENGTH': ('int', 'General', 10),
+    'HTTP_PORT': ('int', 'General', 5299),
     'HTTP_HOST': ('str', 'General', '0.0.0.0'),
     'HTTP_USER': ('str', 'General', ''),
     'HTTP_PASS': ('str', 'General', ''),
@@ -135,9 +148,9 @@ CONFIG_DEFINITIONS = {
     'NZB_DOWNLOADER_BLACKHOLE': ('bool', 'USENET', 0),
     'NZB_BLACKHOLEDIR': ('str', 'USENET', ''),
     'USENET_RETENTION': ('int', 'USENET', 0),
-    'NZBMATRIX': ('bool', 'NZBMatrix', 0),
     'NZBMATRIX_USER': ('str', 'NZBMatrix', ''),
     'NZBMATRIX_API': ('str', 'NZBMatrix', ''),
+    'NZBMATRIX': ('bool', 'NZBMatrix', 0),
     'TOR_DOWNLOADER_BLACKHOLE': ('bool', 'TORRENT', 0),
     'TOR_CONVERT_MAGNET': ('bool', 'TORRENT', 0),
     'TOR_DOWNLOADER_UTORRENT': ('bool', 'TORRENT', 0),
@@ -180,23 +193,23 @@ CONFIG_DEFINITIONS = {
     'SYNOLOGY_PASS': ('str', 'SYNOLOGY', ''),
     'SYNOLOGY_DIR': ('str', 'SYNOLOGY', 'Multimedia/Download'),
     'USE_SYNOLOGY': ('bool', 'SYNOLOGY', 0),
-    'KAT': ('bool', 'KAT', 0),
     'KAT_HOST': ('str', 'KAT', 'kickass.cd'),
-    'TPB': ('bool', 'TPB', 0),
+    'KAT': ('bool', 'KAT', 0),
     'TPB_HOST': ('str', 'TPB', 'https://piratebays.co'),
-    'ZOO': ('bool', 'ZOO', 0),
+    'TPB': ('bool', 'TPB', 0),
     'ZOO_HOST': ('str', 'ZOO', 'https://zooqle.com'),
-    'EXTRA': ('bool', 'EXTRA', 0),
+    'ZOO': ('bool', 'ZOO', 0),
     'EXTRA_HOST': ('str', 'EXTRA', 'extratorrent.cc'),
-    'TDL': ('bool', 'TDL', 0),
+    'EXTRA': ('bool', 'EXTRA', 0),
     'TDL_HOST': ('str', 'TDL', 'torrentdownloads.me'),
-    'GEN': ('bool', 'GEN', 0),
+    'TDL': ('bool', 'TDL', 0),
     'GEN_HOST': ('str', 'GEN', 'libgen.io'),
-    'LIME': ('bool', 'LIME', 0),
+    'GEN': ('bool', 'GEN', 0),
     'LIME_HOST': ('str', 'LIME', 'https://www.limetorrents.cc'),
-    'NEWZBIN': ('bool', 'Newzbin', 0),
+    'LIME': ('bool', 'LIME', 0),
     'NEWZBIN_UID': ('str', 'Newzbin', ''),
     'NEWZBIN_PASS': ('str', 'Newzbin', ''),
+    'NEWZBIN': ('bool', 'Newzbin', 0),
     'EBOOK_TYPE': ('str', 'General', 'epub, mobi, pdf'),
     'MAG_TYPE': ('str', 'General', 'pdf'),
     'REJECT_WORDS': ('str', 'General', 'audiobook, mp3'),
@@ -316,7 +329,7 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
 
 
 def initialize():
-    global FULL_PATH, PROG_DIR, ARGS, DAEMON, SIGNAL, PIDFILE, DATADIR, CONFIG_FILE, SYS_ENCODING, LOGLEVEL, \
+    global FULL_PATH, PROG_DIR, ARGS, DAEMON, SIGNAL, PIDFILE, DATADIR, CONFIGFILE, SYS_ENCODING, LOGLEVEL, \
             CONFIG, CFG, DBFILE, COMMIT_LIST, SCHED, INIT_LOCK, __INITIALIZED__, started, LOGLIST, LOGFULL, \
             UPDATE_MSG, CURRENT_TAB, CACHE_HIT, CACHE_MISS, LAST_LIBRARYTHING, LAST_GOODREADS, \
             CACHEDIR, BOOKSTRAP_THEMELIST, MONTHNAMES, CONFIG_DEFINITIONS
@@ -327,14 +340,12 @@ def initialize():
             return False
 
         check_section('General')
-        CONFIG = {}
         # False to silence logging until logger initialised
-        CONFIG['LOGDIR'] = check_setting('str', 'General', 'logdir', '', False)
-        CONFIG['LOGLIMIT'] = check_setting('int', 'General', 'loglimit', 500, False)
-        CONFIG['LOGFILES'] = check_setting('int', 'General', 'logfiles', 10, False)
-        CONFIG['LOGSIZE'] = check_setting('int', 'General', 'logsize', 204800, False)
+        CONFIG = {'LOGDIR': check_setting('str', 'General', 'logdir', '', False),
+                  'LOGLIMIT': check_setting('int', 'General', 'loglimit', 500, False),
+                  'LOGFILES': check_setting('int', 'General', 'logfiles', 10, False),
+                  'LOGSIZE': check_setting('int', 'General', 'logsize', 204800, False), 'DATADIR': DATADIR}
 
-        CONFIG['DATADIR'] = DATADIR
         if not CONFIG['LOGDIR']:
             CONFIG['LOGDIR'] = os.path.join(CONFIG['DATADIR'], 'Logs')
         # Create logdir
@@ -425,7 +436,6 @@ def config_read(reloaded=False):
             CFG.set(provider, '%s_port' % provider.lower(), port)
             CFG.set(provider, '%s_host' % provider.lower(), host)
 
-    NEWZNAB_PROV = []
     count = 0
     while CFG.has_section('Newznab%i' % count):
         newz_name = 'Newznab%i' % count
@@ -459,7 +469,6 @@ def config_read(reloaded=False):
     # if the last slot is full, add an empty one on the end
     add_newz_slot()
 
-    TORZNAB_PROV = []
     count = 0
     while CFG.has_section('Torznab%i' % count):
         torz_name = 'Torznab%i' % count
@@ -493,7 +502,6 @@ def config_read(reloaded=False):
     # if the last slot is full, add an empty one on the end
     add_torz_slot()
 
-    RSS_PROV = []
     count = 0
     while CFG.has_section('RSS_%i' % count):
         rss_name = 'RSS_%i' % count

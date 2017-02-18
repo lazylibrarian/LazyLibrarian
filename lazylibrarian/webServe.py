@@ -468,6 +468,7 @@ class WebInterface(object):
         LANGFILTER = BookLang
         return serve_template(templatename="books.html", title='Books', books=[], languages=languages)
 
+    # noinspection PyUnusedLocal
     @cherrypy.expose
     def getBooks(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
@@ -810,7 +811,7 @@ class WebInterface(object):
                         rejected = True
                         if len(ab) == 10:
                             try:
-                                check = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
+                                _ = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
                                 authorborn = ab
                                 rejected = False
                             except ValueError:
@@ -824,7 +825,7 @@ class WebInterface(object):
                         rejected = True
                         if len(ab) == 10:
                             try:
-                                check = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
+                                _ = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
                                 authordeath = ab
                                 rejected = False
                             except ValueError:
@@ -1128,6 +1129,7 @@ class WebInterface(object):
         return serve_template(
             templatename="manageissues.html", title="Magazine Status Management", issues=[], whichStatus=whichStatus)
 
+    # noinspection PyUnusedLocal
     @cherrypy.expose
     def getPastIssues(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
@@ -1579,6 +1581,7 @@ class WebInterface(object):
     def logs(self):
         return serve_template(templatename="logs.html", title="Log", lineList=[])  # lazylibrarian.LOGLIST)
 
+    # noinspection PyUnusedLocal
     @cherrypy.expose
     def getLog(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
@@ -1782,6 +1785,7 @@ class WebInterface(object):
         return serve_template(templatename="managebooks.html", title="Book Status Management",
                               books=[], whichStatus=whichStatus)
 
+    # noinspection PyUnusedLocal
     @cherrypy.expose
     def getManage(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
