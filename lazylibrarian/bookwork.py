@@ -131,8 +131,11 @@ def getBookWork(bookID=None, reason=None):
         if os.path.isfile(workfile):
             # use cached file if possible to speed up refreshactiveauthors and librarysync re-runs
             lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
+            if reason:
+                logger.debug(u"getBookWork: Returning Cached entry for %s %s" % (bookID, reason))
+            else:
+                logger.debug(u"getBookWork: Returning Cached workpage for %s" % bookID)
 
-            logger.debug(u"getBookWork: Returning Cached WorkPage for %s %s" % (bookID, reason))
             with open(workfile, "r") as cachefile:
                 source = cachefile.read()
             return source
