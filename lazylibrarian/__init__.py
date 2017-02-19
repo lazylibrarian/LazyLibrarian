@@ -60,21 +60,44 @@ started = False
 LOGLIST = []
 LOGFULL = True
 
-# These are "session specific" globals
+# These are transient globals
 UPDATE_MSG = ''
 CURRENT_TAB = '1'
 CACHE_HIT = 0
 CACHE_MISS = 0
 LAST_GOODREADS = 0
 LAST_LIBRARYTHING = 0
-
-# These are transient globals
 MONTHNAMES = []
 CACHEDIR = ''
 NEWZNAB_PROV = []
 TORZNAB_PROV = []
 RSS_PROV = []
 BOOKSTRAP_THEMELIST = []
+# Shared dictionaries
+isbn_979_dict = {
+    "10": "fre",
+    "11": "kor",
+    "12": "ita"
+}
+isbn_978_dict = {
+    "0": "eng",
+    "1": "eng",
+    "2": "fre",
+    "3": "ger",
+    "4": "jap",
+    "5": "rus",
+    "7": "chi",
+    "80": "cze",
+    "82": "pol",
+    "83": "nor",
+    "84": "spa",
+    "85": "bra",
+    "87": "den",
+    "88": "ita",
+    "89": "kor",
+    "91": "swe",
+    "93": "ind"
+}
 # These are the items in config.ini
 # Not all are accessible from the web ui
 # Any undefined on startup will be set to the default value
@@ -332,7 +355,7 @@ def initialize():
     global FULL_PATH, PROG_DIR, ARGS, DAEMON, SIGNAL, PIDFILE, DATADIR, CONFIGFILE, SYS_ENCODING, LOGLEVEL, \
             CONFIG, CFG, DBFILE, COMMIT_LIST, SCHED, INIT_LOCK, __INITIALIZED__, started, LOGLIST, LOGFULL, \
             UPDATE_MSG, CURRENT_TAB, CACHE_HIT, CACHE_MISS, LAST_LIBRARYTHING, LAST_GOODREADS, \
-            CACHEDIR, BOOKSTRAP_THEMELIST, MONTHNAMES, CONFIG_DEFINITIONS
+            CACHEDIR, BOOKSTRAP_THEMELIST, MONTHNAMES, CONFIG_DEFINITIONS, isbn_979_dict, isbn_978_dict
 
     with INIT_LOCK:
 

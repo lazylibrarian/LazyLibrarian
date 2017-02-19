@@ -280,31 +280,6 @@ class GoodReads:
             book_ignore_count = 0
             total_count = 0
 
-            isbn_979_dict = {
-                "10": "fre",
-                "11": "kor",
-                "12": "ita"
-            }
-            isbn_978_dict = {
-                "0": "eng",
-                "1": "eng",
-                "2": "fre",
-                "3": "ger",
-                "4": "jap",
-                "5": "rus",
-                "7": "chi",
-                "80": "cze",
-                "82": "pol",
-                "83": "nor",
-                "84": "spa",
-                "85": "bra",
-                "87": "den",
-                "88": "ita",
-                "89": "kor",
-                "91": "swe",
-                "93": "ind"
-            }
-
             if not len(resultxml):
                 logger.warn('[%s] No books found for author with ID: %s' % (authorname, authorid))
             else:
@@ -350,16 +325,16 @@ class GoodReads:
                                 # https://en.wikipedia.org/wiki/List_of_ISBN_identifier_groups
                                 if isbnhead != "":
                                     if find_field == "isbn13" and isbn.startswith('979'):
-                                        for item in isbn_979_dict:
+                                        for item in lazylibrarian.isbn_979_dict:
                                             if isbnhead.startswith(item):
-                                                bookLanguage = isbn_979_dict[item]
+                                                bookLanguage = lazylibrarian.isbn_979_dict[item]
                                                 break
                                         if bookLanguage != "Unknown":
                                             logger.debug("ISBN979 returned %s for %s" % (bookLanguage, isbnhead))
                                     elif (find_field == "isbn") or (find_field == "isbn13" and isbn.startswith('978')):
-                                        for item in isbn_978_dict:
+                                        for item in lazylibrarian.isbn_978_dict:
                                             if isbnhead.startswith(item):
-                                                bookLanguage = isbn_978_dict[item]
+                                                bookLanguage = lazylibrarian.isbn_978_dict[item]
                                                 break
                                         if bookLanguage != "Unknown":
                                             logger.debug("ISBN978 returned %s for %s" % (bookLanguage, isbnhead))
