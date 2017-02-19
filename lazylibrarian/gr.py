@@ -269,7 +269,7 @@ class GoodReads:
                 api_hits += 1
             resultxml = rootxml.getiterator('book')
 
-            valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.CONFIG['IMP_PREFLANG'].split(',')])
+            valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
 
             resultsCount = 0
             removedResults = 0
@@ -697,7 +697,7 @@ class GoodReads:
         #
         # PAB user has said they want this book, don't block for unwanted language, just warn
         #
-        valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.CONFIG['IMP_PREFLANG'].split(',')])
+        valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
         if bookLanguage not in valid_langs:
             logger.debug('Book %s language does not match preference, %s' % (bookname, bookLanguage))
 

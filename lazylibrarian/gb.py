@@ -27,7 +27,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage
 from lazylibrarian.cache import get_json_request, cache_cover
-from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn
+from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn, getList
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 
@@ -124,8 +124,7 @@ class GoogleBooks:
                                 logger.debug('Skipped a result without title.')
                                 continue
 
-                            valid_langs = ([valid_lang.strip()
-                                            for valid_lang in lazylibrarian.CONFIG['IMP_PREFLANG'].split(',')])
+                            valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
                             booklang = ''
                             if "All" not in valid_langs:  # don't care about languages, accept all
                                 try:
@@ -284,8 +283,7 @@ class GoogleBooks:
             total_count = 0
             number_results = 1
 
-            valid_langs = ([valid_lang.strip()
-                            for valid_lang in lazylibrarian.CONFIG['IMP_PREFLANG'].split(',')])
+            valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
             # Artist is loading
             myDB = database.DBConnection()
             controlValueDict = {"AuthorID": authorid}
@@ -682,8 +680,7 @@ class GoogleBooks:
         try:
             # warn if language is in ignore list, but user said they wanted this book
             booklang = jsonresults['volumeInfo']['language']
-            valid_langs = ([valid_lang.strip()
-                            for valid_lang in lazylibrarian.CONFIG['IMP_PREFLANG'].split(',')])
+            valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
             if booklang not in valid_langs and 'All' not in valid_langs:
                 logger.debug('Book %s language does not match preference' % bookname)
         except KeyError:
