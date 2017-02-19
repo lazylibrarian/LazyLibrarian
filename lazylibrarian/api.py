@@ -123,13 +123,13 @@ class Api(object):
 
     def checkParams(self, **kwargs):
 
-        if not lazylibrarian.API_ENABLED:
+        if not lazylibrarian.CONFIG['API_ENABLED']:
             self.data = 'API not enabled'
             return
-        if not lazylibrarian.API_KEY:
+        if not lazylibrarian.CONFIG['API_KEY']:
             self.data = 'API key not generated'
             return
-        if len(lazylibrarian.API_KEY) != 32:
+        if len(lazylibrarian.CONFIG['API_KEY']) != 32:
             self.data = 'API key is invalid'
             return
 
@@ -137,7 +137,7 @@ class Api(object):
             self.data = 'Missing api key'
             return
 
-        if kwargs['apikey'] != lazylibrarian.API_KEY:
+        if kwargs['apikey'] != lazylibrarian.CONFIG['API_KEY']:
             self.data = 'Incorrect API key'
             return
         else:
@@ -487,10 +487,10 @@ class Api(object):
 
     def _getVersion(self):
         self.data = {
-            'install_type': lazylibrarian.INSTALL_TYPE,
-            'current_version': lazylibrarian.CURRENT_VERSION,
-            'latest_version': lazylibrarian.LATEST_VERSION,
-            'commits_behind': lazylibrarian.COMMITS_BEHIND,
+            'install_type': lazylibrarian.CONFIG['INSTALL_TYPE'],
+            'current_version': lazylibrarian.CONFIG['CURRENT_VERSION'],
+            'latest_version': lazylibrarian.CONFIG['LATEST_VERSION'],
+            'commits_behind': lazylibrarian.CONFIG['COMMITS_BEHIND'],
         }
 
     @staticmethod
@@ -510,12 +510,12 @@ class Api(object):
             self.data = 'Missing parameter: name'
             return
 
-        if lazylibrarian.BOOK_API == "GoogleBooks":
+        if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
             GB = GoogleBooks(kwargs['name'])
             queue = Queue.Queue()
             search_api = threading.Thread(target=GB.find_results, name='API-GBRESULTS', args=[kwargs['name'], queue])
             search_api.start()
-        else:  # lazylibrarian.BOOK_API == "GoodReads":
+        else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
             queue = Queue.Queue()
             GR = GoodReads(kwargs['name'])
             search_api = threading.Thread(target=GR.find_results, name='API-GRRESULTS', args=[kwargs['name'], queue])
@@ -529,12 +529,12 @@ class Api(object):
             self.data = 'Missing parameter: name'
             return
 
-        if lazylibrarian.BOOK_API == "GoogleBooks":
+        if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
             GB = GoogleBooks(kwargs['name'])
             queue = Queue.Queue()
             search_api = threading.Thread(target=GB.find_results, name='API-GBRESULTS', args=[kwargs['name'], queue])
             search_api.start()
-        else:  # lazylibrarian.BOOK_API == "GoodReads":
+        else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
             queue = Queue.Queue()
             GR = GoodReads(kwargs['name'])
             search_api = threading.Thread(target=GR.find_results, name='API-GRRESULTS', args=[kwargs['name'], queue])
@@ -864,7 +864,7 @@ class Api(object):
         if 'dir' in kwargs:
             usedir = kwargs['dir']
         else:
-            usedir = lazylibrarian.ALTERNATE_DIR
+            usedir = lazylibrarian.CONFIG['ALTERNATE_DIR']
         if 'wait' in kwargs:
             processAlternate(usedir)
         else:
@@ -875,7 +875,7 @@ class Api(object):
         if 'dir' in kwargs:
             usedir = kwargs['dir']
         else:
-            usedir = lazylibrarian.ALTERNATE_DIR
+            usedir = lazylibrarian.CONFIG['ALTERNATE_DIR']
         if 'wait' in kwargs:
             import_CSV(usedir)
         else:
@@ -886,7 +886,7 @@ class Api(object):
         if 'dir' in kwargs:
             usedir = kwargs['dir']
         else:
-            usedir = lazylibrarian.ALTERNATE_DIR
+            usedir = lazylibrarian.CONFIG['ALTERNATE_DIR']
         if 'wait' in kwargs:
             export_CSV(usedir)
         else:

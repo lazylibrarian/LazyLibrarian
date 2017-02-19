@@ -42,10 +42,10 @@ def internet():
   Return True or False
   """
   try:
-      e = urllib2.urlopen("http://www.google.com", timeout=5)
+      _ = urllib2.urlopen("http://www.google.com", timeout=5)
       return True
-  except Exception as e:
-      #logger.debug(str(e))
+  except Exception:  # as e:
+      #logger.debug(str(e)
       return False
 
 
@@ -129,43 +129,43 @@ def scheduleJob(action='Start', target=None):
             if target in str(job):
                 logger.debug("%s %s job, already scheduled" % (action, target))
                 return  # return if already running, if not, start a new one
-        if 'processDir' in target and int(lazylibrarian.SCAN_INTERVAL):
+        if 'processDir' in target and int(lazylibrarian.CONFIG['SCAN_INTERVAL']):
             lazylibrarian.SCHED.add_interval_job(
                 lazylibrarian.postprocess.cron_processDir,
-                minutes=int(lazylibrarian.SCAN_INTERVAL))
-            logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.SCAN_INTERVAL))
-        elif 'search_magazines' in target and int(lazylibrarian.SEARCH_INTERVAL):
+                minutes=int(lazylibrarian.CONFIG['SCAN_INTERVAL']))
+            logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SCAN_INTERVAL']))
+        elif 'search_magazines' in target and int(lazylibrarian.CONFIG['SEARCH_INTERVAL']):
             if lazylibrarian.USE_TOR() or lazylibrarian.USE_NZB() or lazylibrarian.USE_RSS():
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchmag.cron_search_magazines,
-                    minutes=int(lazylibrarian.SEARCH_INTERVAL))
-                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.SEARCH_INTERVAL))
-        elif 'search_nzb_book' in target and int(lazylibrarian.SEARCH_INTERVAL):
+                    minutes=int(lazylibrarian.CONFIG['SEARCH_INTERVAL']))
+                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SEARCH_INTERVAL']))
+        elif 'search_nzb_book' in target and int(lazylibrarian.CONFIG['SEARCH_INTERVAL']):
             if lazylibrarian.USE_NZB():
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchnzb.cron_search_nzb_book,
-                    minutes=int(lazylibrarian.SEARCH_INTERVAL))
-                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.SEARCH_INTERVAL))
-        elif 'search_tor_book' in target and int(lazylibrarian.SEARCH_INTERVAL):
+                    minutes=int(lazylibrarian.CONFIG['SEARCH_INTERVAL']))
+                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SEARCH_INTERVAL']))
+        elif 'search_tor_book' in target and int(lazylibrarian.CONFIG['SEARCH_INTERVAL']):
             if lazylibrarian.USE_TOR():
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchtorrents.cron_search_tor_book,
-                    minutes=int(lazylibrarian.SEARCH_INTERVAL))
-                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.SEARCH_INTERVAL))
-        elif 'search_rss_book' in target and int(lazylibrarian.SEARCHRSS_INTERVAL):
+                    minutes=int(lazylibrarian.CONFIG['SEARCH_INTERVAL']))
+                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SEARCH_INTERVAL']))
+        elif 'search_rss_book' in target and int(lazylibrarian.CONFIG['SEARCHRSS_INTERVAL']):
             if lazylibrarian.USE_RSS():
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchrss.search_rss_book,
-                    minutes=int(lazylibrarian.SEARCHRSS_INTERVAL))
-                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.SEARCHRSS_INTERVAL))
-        elif 'checkForUpdates' in target and int(lazylibrarian.VERSIONCHECK_INTERVAL):
+                    minutes=int(lazylibrarian.CONFIG['SEARCHRSS_INTERVAL']))
+                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SEARCHRSS_INTERVAL']))
+        elif 'checkForUpdates' in target and int(lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL']):
             lazylibrarian.SCHED.add_interval_job(
                 lazylibrarian.versioncheck.checkForUpdates,
-                hours=int(lazylibrarian.VERSIONCHECK_INTERVAL))
-            logger.debug("%s %s job in %s hours" % (action, target, lazylibrarian.VERSIONCHECK_INTERVAL))
-        elif 'authorUpdate' in target and int(lazylibrarian.CACHE_AGE):
+                hours=int(lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL']))
+            logger.debug("%s %s job in %s hours" % (action, target, lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL']))
+        elif 'authorUpdate' in target and int(lazylibrarian.CONFIG['CACHE_AGE']):
             # Try to get all authors scanned evenly inside the cache age
-            minutes = lazylibrarian.CACHE_AGE * 24 * 60
+            minutes = lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60
             myDB = database.DBConnection()
             authors = myDB.match(
                 "select count('AuthorID') as counter from Authors where Status='Active' or Status='Loading'")
@@ -198,12 +198,13 @@ def authorUpdate():
         myDB = database.DBConnection()
         author = myDB.match('SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" \
                                     or Status="Loading" order by DateAdded ASC')
-        if lazylibrarian.CACHE_AGE:
+        if lazylibrarian.CONFIG['CACHE_AGE']:
             dtnow = datetime.datetime.now()
             diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
-            if diff > lazylibrarian.CACHE_AGE:
+            if diff > lazylibrarian.CONFIG['CACHE_AGE']:
                 logger.info('Starting update for %s' % author['AuthorName'])
                 authorid = author['AuthorID']
+                # noinspection PyUnresolvedReferences
                 lazylibrarian.importer.addAuthorToDB(authorname='', refresh=True, authorid=authorid)
             else:
                 logger.debug('Oldest author info is %s day%s old' % (diff, plural(diff)))
@@ -219,6 +220,7 @@ def dbUpdate(refresh=False):
         logger.info('Starting update for %i active author%s' % (len(activeauthors), plural(len(activeauthors))))
         for author in activeauthors:
             authorid = author['AuthorID']
+            # noinspection PyUnresolvedReferences
             lazylibrarian.importer.addAuthorToDB(authorname='', refresh=refresh, authorid=authorid)
         logger.info('Active author update complete')
     except Exception:
@@ -314,10 +316,10 @@ def showJobs():
 def clearLog():
     logger.lazylibrarian_log.stopLogger()
     error = False
-    if os.path.exists(lazylibrarian.LOGDIR):
+    if os.path.exists(lazylibrarian.CONFIG['LOGDIR']):
         try:
-            shutil.rmtree(lazylibrarian.LOGDIR)
-            os.mkdir(lazylibrarian.LOGDIR)
+            shutil.rmtree(lazylibrarian.CONFIG['LOGDIR'])
+            os.mkdir(lazylibrarian.CONFIG['LOGDIR'])
         except OSError as e:
             error = e.strerror
     logger.lazylibrarian_log.initLogger(loglevel=lazylibrarian.LOGLEVEL)
@@ -327,7 +329,7 @@ def clearLog():
     else:
         lazylibrarian.LOGLIST = []
         return "Log cleared, level set to [%s]- Log Directory is [%s]" % (
-            lazylibrarian.LOGLEVEL, lazylibrarian.LOGDIR)
+            lazylibrarian.LOGLEVEL, lazylibrarian.CONFIG['LOGDIR'])
 
 
 def cleanCache():
@@ -349,7 +351,7 @@ def cleanCache():
             cache_modified_time = os.stat(target).st_mtime
             time_now = time.time()
             if cache_modified_time < time_now - (
-                        lazylibrarian.CACHE_AGE * 24 * 60 * 60):  # expire after this many seconds
+                        lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60):  # expire after this many seconds
                 # Cache is old, delete entry
                 os.remove(target)
                 cleaned += 1
@@ -369,7 +371,7 @@ def cleanCache():
             cache_modified_time = os.stat(target).st_mtime
             time_now = time.time()
             if cache_modified_time < time_now - (
-                        lazylibrarian.CACHE_AGE * 24 * 60 * 60):  # expire after this many seconds
+                        lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60):  # expire after this many seconds
                 # Cache is old, delete entry
                 os.remove(target)
                 cleaned += 1

@@ -28,11 +28,12 @@ from lazylibrarian.common import USER_AGENT
 class utorrentclient(object):
     TOKEN_REGEX = "<div id='token' style='display:none;'>([^<>]+)</div>"
 
-    def __init__(self, base_url='',  # lazylibrarian.UTORRENT_HOST,
-                 username='',  # lazylibrarian.UTORRENT_USER,
-                 password='',):  # lazylibrarian.UTORRENT_PASS):
+    # noinspection PyUnusedLocal,PyUnusedLocal,PyUnusedLocal
+    def __init__(self, base_url='',  # lazylibrarian.CONFIG['UTORRENT_HOST'],
+                 username='',  # lazylibrarian.CONFIG['UTORRENT_USER'],
+                 password='',):  # lazylibrarian.CONFIG['UTORRENT_PASS']):
 
-        host = lazylibrarian.UTORRENT_HOST
+        host = lazylibrarian.CONFIG['UTORRENT_HOST']
         if not host.startswith('http'):
             host = 'http://' + host
 
@@ -42,10 +43,10 @@ class utorrentclient(object):
         if host.endswith('/gui'):
             host = host[:-4]
 
-        host = "%s:%s" % (host, lazylibrarian.UTORRENT_PORT)
+        host = "%s:%s" % (host, lazylibrarian.CONFIG['UTORRENT_PORT'])
         self.base_url = host
-        self.username = lazylibrarian.UTORRENT_USER
-        self.password = lazylibrarian.UTORRENT_PASS
+        self.username = lazylibrarian.CONFIG['UTORRENT_USER']
+        self.password = lazylibrarian.CONFIG['UTORRENT_PASS']
         self.opener = self._make_opener('uTorrent', self.base_url, self.username, self.password)
         self.token = self._get_token()
         # TODO refresh token, when necessary
@@ -140,8 +141,8 @@ class utorrentclient(object):
     def _action(self, params, body=None, content_type=None):
         url = self.base_url + '/gui/' + '?token=' + self.token + '&' + urllib.urlencode(params)
         request = urllib2.Request(url)
-        if lazylibrarian.PROXY_HOST:
-            request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
+        if lazylibrarian.CONFIG['PROXY_HOST']:
+            request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])
         request.add_header('User-Agent', USER_AGENT)
 
         if body:
@@ -166,7 +167,7 @@ def checkLink():
             # we would also like to check lazylibrarian.utorrent_label
             # but uTorrent only sends us a list of labels that have active torrents
             # so we can't tell if our label is known, or does it get created anyway?
-            if lazylibrarian.UTORRENT_LABEL:
+            if lazylibrarian.CONFIG['UTORRENT_LABEL']:
                 return "uTorrent login successful, label not checked"
             return "uTorrent login successful"
         return "uTorrent login FAILED\nCheck debug log"
@@ -175,7 +176,7 @@ def checkLink():
 
 
 def labelTorrent(hashid):
-    label = lazylibrarian.UTORRENT_LABEL
+    label = lazylibrarian.CONFIG['UTORRENT_LABEL']
     uTorrentClient = utorrentclient()
     settinglabel = True
     while settinglabel:

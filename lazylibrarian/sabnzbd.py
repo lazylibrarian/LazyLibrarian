@@ -33,12 +33,12 @@ def checkLink():
     if not cats:
         return "Unable to talk to SABnzbd, check APIKEY"
     # check category exists
-    if lazylibrarian.SAB_CAT:
+    if lazylibrarian.CONFIG['SAB_CAT']:
         if not cats.has_key('categories') or not len(cats['categories']):
             return "SABnzbd seems to have no categories set"
-        if lazylibrarian.SAB_CAT not in cats['categories']:
+        if lazylibrarian.CONFIG['SAB_CAT'] not in cats['categories']:
             return "SABnzbd: Unknown category [%s]\nValid categories:\n%s" % (
-                    lazylibrarian.SAB_CAT, str(cats['categories']))
+                    lazylibrarian.CONFIG['SAB_CAT'], str(cats['categories']))
     return "SABnzbd connection successful"
 
 
@@ -48,24 +48,24 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
         logger.debug('Delete function unavailable in this version of sabnzbd, no nzo_ids')
         return False
 
-    hostname = lazylibrarian.SAB_HOST
+    hostname = lazylibrarian.CONFIG['SAB_HOST']
     if hostname.endswith('/'):
         hostname = hostname[:-1]
     if not hostname.startswith("http"):
         hostname = 'http://' + hostname
 
-    HOST = "%s:%i" % (hostname, lazylibrarian.SAB_PORT)
+    HOST = "%s:%i" % (hostname, lazylibrarian.CONFIG['SAB_PORT'])
 
-    if lazylibrarian.SAB_SUBDIR:
-        HOST = HOST + "/" + lazylibrarian.SAB_SUBDIR
+    if lazylibrarian.CONFIG['SAB_SUBDIR']:
+        HOST = HOST + "/" + lazylibrarian.CONFIG['SAB_SUBDIR']
 
     params = {}
     if nzburl == 'auth' or nzburl == 'get_cats':
         # connection test, check auth mode or get_cats
         params['mode'] = nzburl
         params['output'] = 'json'
-        if lazylibrarian.SAB_API:
-            params['apikey'] = lazylibrarian.SAB_API
+        if lazylibrarian.CONFIG['SAB_API']:
+            params['apikey'] = lazylibrarian.CONFIG['SAB_API']
         title = 'Test ' + nzburl
     elif nzburl == 'delete':
         # only deletes tasks if still in the queue, ie NOT completed tasks
@@ -73,12 +73,12 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
         params['output'] = 'json'
         params['name'] = nzburl
         params['value'] = title
-        if lazylibrarian.SAB_USER:
-            params['ma_username'] = lazylibrarian.SAB_USER
-        if lazylibrarian.SAB_PASS:
-            params['ma_password'] = lazylibrarian.SAB_PASS
-        if lazylibrarian.SAB_API:
-            params['apikey'] = lazylibrarian.SAB_API
+        if lazylibrarian.CONFIG['SAB_USER']:
+            params['ma_username'] = lazylibrarian.CONFIG['SAB_USER']
+        if lazylibrarian.CONFIG['SAB_PASS']:
+            params['ma_password'] = lazylibrarian.CONFIG['SAB_PASS']
+        if lazylibrarian.CONFIG['SAB_API']:
+            params['apikey'] = lazylibrarian.CONFIG['SAB_API']
         if remove_data:
             params['del_files'] = 1
         title = 'Delete ' + title
@@ -89,16 +89,16 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
             params['name'] = nzburl
         if title:
             params['nzbname'] = title
-        if lazylibrarian.SAB_USER:
-            params['ma_username'] = lazylibrarian.SAB_USER
-        if lazylibrarian.SAB_PASS:
-            params['ma_password'] = lazylibrarian.SAB_PASS
-        if lazylibrarian.SAB_API:
-            params['apikey'] = lazylibrarian.SAB_API
-        if lazylibrarian.SAB_CAT:
-            params['cat'] = lazylibrarian.SAB_CAT
-        if lazylibrarian.USENET_RETENTION:
-            params["maxage"] = lazylibrarian.USENET_RETENTION
+        if lazylibrarian.CONFIG['SAB_USER']:
+            params['ma_username'] = lazylibrarian.CONFIG['SAB_USER']
+        if lazylibrarian.CONFIG['SAB_PASS']:
+            params['ma_password'] = lazylibrarian.CONFIG['SAB_PASS']
+        if lazylibrarian.CONFIG['SAB_API']:
+            params['apikey'] = lazylibrarian.CONFIG['SAB_API']
+        if lazylibrarian.CONFIG['SAB_CAT']:
+            params['cat'] = lazylibrarian.CONFIG['SAB_CAT']
+        if lazylibrarian.CONFIG['USENET_RETENTION']:
+            params["maxage"] = lazylibrarian.CONFIG['USENET_RETENTION']
 
 # FUTURE-CODE
 #    if lazylibrarian.SAB_PRIO:

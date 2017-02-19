@@ -105,8 +105,8 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
                 '3': '', '4': '', '5': '', '6': '', '7': '', '8': '', '9': '', '\'': '', ':': '', '!': '',
                 '-': ' ', '\s\s': ' '}
 
-    match_ratio = int(lazylibrarian.MATCH_RATIO)
-    reject_list = getList(lazylibrarian.REJECT_WORDS)
+    match_ratio = int(lazylibrarian.CONFIG['MATCH_RATIO'])
+    reject_list = getList(lazylibrarian.CONFIG['REJECT_WORDS'])
 
     matches = []
 
@@ -137,7 +137,7 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
         tor_size_temp = tor['tor_size']  # Need to cater for when this is NONE (Issue 35)
         tor_size_temp = check_int(tor_size_temp, 1000)
         tor_size = round(float(tor_size_temp) / 1048576, 2)
-        maxsize = check_int(lazylibrarian.REJECT_MAXSIZE, 0)
+        maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXSIZE'], 0)
 
         if not rejected:
             if maxsize and tor_size > maxsize:

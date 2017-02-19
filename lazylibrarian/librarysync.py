@@ -56,23 +56,24 @@ def get_book_info(fname):
         res['identifier'] = book.isbn()
         return res
 
+        # noinspection PyUnreachableCode
         """
-        # none of the pdfs in my library had language,isbn
-        # most didn't have author, or had the wrong author
-        # (author set to publisher, or software used)
-        # so probably not much point in looking at pdfs
-        #
-        if (extn == ".pdf"):
-            pdf = PdfFileReader(open(fname, "rb"))
-            txt = pdf.getDocumentInfo()
-            # repackage the data here to get components we need
-            res = {}
-            for s in ['title','language','creator']:
-                res[s] = txt[s]
-            res['identifier'] = txt['isbn']
-            res['type'] = "pdf"
-            return res
-        """
+                # none of the pdfs in my library had language,isbn
+                # most didn't have author, or had the wrong author
+                # (author set to publisher, or software used)
+                # so probably not much point in looking at pdfs
+                #
+                if (extn == ".pdf"):
+                    pdf = PdfFileReader(open(fname, "rb"))
+                    txt = pdf.getDocumentInfo()
+                    # repackage the data here to get components we need
+                    res = {}
+                    for s in ['title','language','creator']:
+                        res[s] = txt[s]
+                    res['identifier'] = txt['isbn']
+                    res['type'] = "pdf"
+                    return res
+                """
     elif extn == ".epub":
         res['type'] = "epub"
 
@@ -304,7 +305,7 @@ def LibraryScan(startdir=None):
         file_count = 0
         author = ""
 
-        if lazylibrarian.FULL_SCAN:
+        if lazylibrarian.CONFIG['FULL_SCAN']:
             if startdir == destdir:
                 books = myDB.select(
                     'select AuthorName, BookName, BookFile, BookID from books where Status="Open"')
@@ -312,7 +313,7 @@ def LibraryScan(startdir=None):
                 books = myDB.select('select AuthorName, BookName, BookFile, BookID from books where Status="Open"' +
                                     ' and BookFile like "' + startdir + '%"')
 
-            status = lazylibrarian.NOTFOUND_STATUS
+            status = lazylibrarian.CONFIG['NOTFOUND_STATUS']
             logger.info('Missing books will be marked as %s' % status)
             for book in books:
                 bookID = book['BookID']
@@ -328,13 +329,13 @@ def LibraryScan(startdir=None):
         processed_subdirectories = []
 
         matchString = ''
-        for char in lazylibrarian.EBOOK_DEST_FILE:
+        for char in lazylibrarian.CONFIG['EBOOK_DEST_FILE']:
             matchString = matchString + '\\' + char
         # massage the EBOOK_DEST_FILE config parameter into something we can use
         # with regular expression matching
         booktypes = ''
         count = -1
-        booktype_list = getList(lazylibrarian.EBOOK_TYPE)
+        booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
         for book_type in booktype_list:
             count += 1
             if count == 0:
@@ -361,7 +362,7 @@ def LibraryScan(startdir=None):
                 # Added new code to skip if we've done this directory before.
                 # Made this conditional with a switch in config.ini
                 # in case user keeps multiple different books in the same subdirectory
-                if lazylibrarian.IMP_SINGLEBOOK and (subdirectory in processed_subdirectories):
+                if lazylibrarian.CONFIG['IMP_SINGLEBOOK'] and (subdirectory in processed_subdirectories):
                     logger.debug("[%s] already scanned" % subdirectory)
                 else:
                     # If this is a book, try to get author/title/isbn/language
@@ -465,18 +466,20 @@ def LibraryScan(startdir=None):
 
                             # get authors name in a consistent format
                             if "," in author:
+                                postfix = getList(lazylibrarian.CONFIG['NAME_POSTFIX'])
                                 words = author.split(',')
-                                # Need to handle names like "L. E. Modesitt, Jr." or "J. Springmann, Phd"
-                                # use an exceptions list for now, there might be a better way...
-                                if words[1].strip().strip('.').strip('_').lower() in lazylibrarian.NAME_POSTFIX:
-                                    surname = words[1].strip()
-                                    forname = words[0].strip()
-                                else:
-                                    # guess its "surname, forename" or "surname, initial(s)" so swap them round
-                                    forename = words[1].strip()
-                                    surname = words[0].strip()
-                                logger.debug('Formatted authorname [%s] to [%s %s]' % (author, forename, surname))
-                                author = forename + ' ' + surname
+                                if len(words) == 2:
+                                    # Need to handle names like "L. E. Modesitt, Jr." or "J. Springmann, Phd"
+                                    # use an exceptions list for now, there might be a better way...
+                                    if words[1].strip().strip('.').strip('_').lower() in postfix:
+                                        surname = words[1].strip()
+                                        forename = words[0].strip()
+                                    else:
+                                        # guess its "surname, forename" or "surname, initial(s)" so swap them round
+                                        forename = words[1].strip()
+                                        surname = words[0].strip()
+                                    logger.debug('Formatted authorname [%s] to [%s %s]' % (author, forename, surname))
+                                    author = forename + ' ' + surname
                             # reformat any initials, we want to end up with A.B. van Smith
                             if author[1] in '. ':
                                 surname = author
@@ -495,7 +498,7 @@ def LibraryScan(startdir=None):
                             check_exist_author = myDB.match(
                                 'SELECT * FROM authors where AuthorName="%s"' % author.replace('"', '""'))
 
-                            if not check_exist_author and lazylibrarian.ADD_AUTHOR:
+                            if not check_exist_author and lazylibrarian.CONFIG['ADD_AUTHOR']:
                                 logger.debug('Author %s not found in database, trying to add' % author)
                                 # no match for supplied author, but we're allowed to add new ones
                                 GR = GoodReads(author)
@@ -556,7 +559,7 @@ def LibraryScan(startdir=None):
                             # check author exists in db, either newly loaded or already there
                             if not check_exist_author:
                                 logger.debug("Failed to match author [%s] in database" % author)
-                                if not lazylibrarian.ADD_AUTHOR:
+                                if not lazylibrarian.CONFIG['ADD_AUTHOR']:
                                     logger.debug("Add authors to database is disabled")
                             else:
                                 # author exists, check if this book by this author is in our database
@@ -579,10 +582,10 @@ def LibraryScan(startdir=None):
                                     if not match:
                                         logger.debug('Unable to find book %s by %s in database, trying to add it' %
                                                      (book, author))
-                                        if lazylibrarian.BOOK_API == "GoodReads" and gr_id:
+                                        if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads" and gr_id:
                                             GR_ID = GoodReads(gr_id)
                                             GR_ID.find_book(gr_id, None)
-                                        elif lazylibrarian.BOOK_API == "GoogleBooks" and gb_id:
+                                        elif lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks" and gb_id:
                                             GB_ID = GoogleBooks(gb_id)
                                             GB_ID.find_book(gb_id, None)
                                         # see if it's there now...
@@ -670,12 +673,12 @@ def LibraryScan(startdir=None):
                 "SELECT sum(GR_book_hits), sum(GR_lang_hits), sum(LT_lang_hits), sum(GB_lang_change), \
                     sum(cache_hits), sum(bad_lang), sum(bad_char), sum(uncached), sum(duplicates) FROM stats")
             if stats:  # and stats['sum(GR_book_hits)']:
-                if lazylibrarian.BOOK_API == "GoogleBooks":
+                if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
                     logger.debug("GoogleBooks was hit %s time%s for books" %
                                  (stats['sum(GR_book_hits)'], plural(stats['sum(GR_book_hits)'])))
                     logger.debug("GoogleBooks language was changed %s time%s" %
                                  (stats['sum(GB_lang_change)'], plural(stats['sum(GB_lang_change)'])))
-                if lazylibrarian.BOOK_API == "GoodReads":
+                if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
                     logger.debug("GoodReads was hit %s time%s for books" %
                                  (stats['sum(GR_book_hits)'], plural(stats['sum(GR_book_hits)'])))
                     logger.debug("GoodReads was hit %s time%s for languages" %

@@ -95,16 +95,16 @@ class AndroidPNNotifier:
         """
 
         # suppress notifications if the notifier is disabled but the notify options are checked
-        if not lazylibrarian.USE_ANDROIDPN and not force:
+        if not lazylibrarian.CONFIG['USE_ANDROIDPN'] and not force:
             return False
 
         # fill in omitted parameters
         if not username:
-            username = lazylibrarian.ANDROIDPN_USERNAME
+            username = lazylibrarian.CONFIG['ANDROIDPN_USERNAME']
         if not url:
-            url = lazylibrarian.ANDROIDPN_URL
+            url = lazylibrarian.CONFIG['ANDROIDPN_URL']
         if not broadcast:
-            broadcast = lazylibrarian.ANDROIDPN_BROADCAST
+            broadcast = lazylibrarian.CONFIG['ANDROIDPN_BROADCAST']
             if broadcast:
                 broadcast = 'Y'
             else:
@@ -120,11 +120,11 @@ class AndroidPNNotifier:
 #
 
     def notify_snatch(self, ep_name):
-        if lazylibrarian.ANDROIDPN_NOTIFY_ONSNATCH:
+        if lazylibrarian.CONFIG['ANDROIDPN_NOTIFY_ONSNATCH']:
             self._notify(notifyStrings[NOTIFY_SNATCH], ep_name)
 
     def notify_download(self, ep_name):
-        if lazylibrarian.ANDROIDPN_NOTIFY_ONDOWNLOAD:
+        if lazylibrarian.CONFIG['ANDROIDPN_NOTIFY_ONDOWNLOAD']:
             self._notify(notifyStrings[NOTIFY_DOWNLOAD], ep_name)
 
     def test_notify(self, url, username, broadcast):

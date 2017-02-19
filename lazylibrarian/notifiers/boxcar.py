@@ -133,12 +133,12 @@ class BoxcarNotifier:
         """
 
         # suppress notifications if the notifier is disabled but the notify options are checked
-        if not lazylibrarian.USE_BOXCAR and not force:
+        if not lazylibrarian.CONFIG['USE_BOXCAR'] and not force:
             return False
 
         # if no username was given then use the one from the config
         if not username:
-            username = lazylibrarian.BOXCAR_TOKEN
+            username = lazylibrarian.CONFIG['BOXCAR_TOKEN']
 
         logger.debug(u"BOXCAR: Sending notification for " + message)
 
@@ -149,11 +149,11 @@ class BoxcarNotifier:
     #
 
     def notify_snatch(self, title):
-        if lazylibrarian.BOXCAR_NOTIFY_ONSNATCH:
+        if lazylibrarian.CONFIG['BOXCAR_NOTIFY_ONSNATCH']:
             self._notify(notifyStrings[NOTIFY_SNATCH], title)
 
     def notify_download(self, title):
-        if lazylibrarian.BOXCAR_NOTIFY_ONDOWNLOAD:
+        if lazylibrarian.CONFIG['BOXCAR_NOTIFY_ONDOWNLOAD']:
             self._notify(notifyStrings[NOTIFY_DOWNLOAD], title)
 
     def test_notify(self, title="Test"):

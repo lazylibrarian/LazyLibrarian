@@ -24,7 +24,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage
 from lazylibrarian.cache import get_xml_request, cache_cover
-from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title
+from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList
 from lib.fuzzywuzzy import fuzz
 
 
@@ -34,9 +34,9 @@ class GoodReads:
     def __init__(self, name=None):
         self.name = name.encode(lazylibrarian.SYS_ENCODING)
         # self.type = type
-        if not lazylibrarian.GR_API:
+        if not lazylibrarian.CONFIG['GR_API']:
             logger.warn('No Goodreads API key, check config')
-        self.params = {"key": lazylibrarian.GR_API}
+        self.params = {"key": lazylibrarian.CONFIG['GR_API']}
 
     def find_results(self, authorname=None, queue=None):
         try:
@@ -196,12 +196,11 @@ class GoodReads:
             # For now we'll have to let the user handle this by selecting/adding the author manually
             for author in resultxml:
                 authorid = author.attrib.get("id")
-                authorname = author[0].text
-                authorlist = self.get_author_info(authorid, authorname)
+                authorlist = self.get_author_info(authorid)
         return authorlist
 
 
-    def get_author_info(self, authorid=None, authorname=None):
+    def get_author_info(self, authorid=None):
 
         URL = 'http://www.goodreads.com/author/show/' + authorid + '.xml?' + urllib.urlencode(self.params)
         author_dict = {}
@@ -224,9 +223,11 @@ class GoodReads:
             # except GR messes up names like "L. E. Modesitt, Jr." where it returns <name>Jr., L. E. Modesitt</name>
             authorname = resultxml[1].text
             if "," in authorname:
+                postfix = getList(lazylibrarian.CONFIG['NAME_POSTFIX'])
                 words = authorname.split(',')
-                if words[0].strip().strip('.').lower in lazylibrarian.NAME_POSTFIX:
-                    authorname = words[1].strip() + ' ' + words[0].strip()
+                if len(words) == 2:
+                    if words[0].strip().strip('.').lower in postfix:
+                        authorname = words[1].strip() + ' ' + words[0].strip()
 
             logger.debug("[%s] Processing info for authorID: %s" % (authorname, authorid))
             author_dict = {
@@ -268,7 +269,7 @@ class GoodReads:
                 api_hits += 1
             resultxml = rootxml.getiterator('book')
 
-            valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
+            valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.CONFIG['IMP_PREFLANG'].split(',')])
 
             resultsCount = 0
             removedResults = 0
@@ -621,7 +622,7 @@ class GoodReads:
                         logger.error("Error finding next page of results: %s" % str(e))
 
                     if resultxml:
-                        if all(False for book in resultxml):  # returns True if iterator is empty
+                        if all(False for _ in resultxml):  # returns True if iterator is empty
                             resultxml = None
 
             lastbook = myDB.match('SELECT BookName, BookLink, BookDate, BookImg from books WHERE AuthorID="%s" \
@@ -673,6 +674,7 @@ class GoodReads:
         except Exception:
             logger.error('Unhandled exception in GR.get_author_books: %s' % traceback.format_exc())
 
+    # noinspection PyUnusedLocal
     def find_book(self, bookid=None, queue=None):
         myDB = database.DBConnection()
 
@@ -695,7 +697,7 @@ class GoodReads:
         #
         # PAB user has said they want this book, don't block for unwanted language, just warn
         #
-        valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
+        valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.CONFIG['IMP_PREFLANG'].split(',')])
         if bookLanguage not in valid_langs:
             logger.debug('Book %s language does not match preference, %s' % (bookname, bookLanguage))
 

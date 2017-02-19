@@ -140,7 +140,7 @@ def removeTorrent(torrentid, remove_data=False):
                 arguments = {'delete-local-data': True, 'ids': [torrentid]}
             else:
                 arguments = {'ids': [torrentid]}
-            response = torrentAction(method, arguments)
+            _ = torrentAction(method, arguments)
             return True
         else:
             logger.debug('%s has not finished seeding yet, torrent will not be removed, \
@@ -167,10 +167,10 @@ def checkLink():
 
 def torrentAction(method, arguments):
 
-    host = lazylibrarian.TRANSMISSION_HOST
-    port = lazylibrarian.TRANSMISSION_PORT
-    username = lazylibrarian.TRANSMISSION_USER
-    password = lazylibrarian.TRANSMISSION_PASS
+    host = lazylibrarian.CONFIG['TRANSMISSION_HOST']
+    port = lazylibrarian.CONFIG['TRANSMISSION_PORT']
+    username = lazylibrarian.CONFIG['TRANSMISSION_USER']
+    password = lazylibrarian.CONFIG['TRANSMISSION_PASS']
 
     if not host.startswith('http'):
         host = 'http://' + host

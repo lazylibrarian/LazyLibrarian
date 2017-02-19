@@ -31,8 +31,8 @@ def fetchURL(URL, headers=None, retry=True):
         Otherwise return error message and False
         Allow one retry on timeout by default"""
     request = urllib2.Request(URL)
-    if lazylibrarian.PROXY_HOST:
-        request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
+    if lazylibrarian.CONFIG['PROXY_HOST']:
+        request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])
     if headers is None:
         # some sites insist on having a user-agent, default is to add one
         # if you don't want any headers, send headers=[]
@@ -113,7 +113,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
     if useCache and os.path.isfile(hashfilename):
         cache_modified_time = os.stat(hashfilename).st_mtime
         time_now = time.time()
-        expiry = lazylibrarian.CACHE_AGE * 24 * 60 * 60  # expire cache after this many seconds
+        expiry = lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60  # expire cache after this many seconds
         if cache_modified_time < time_now - expiry:
             # Cache entry is too old, delete it
             os.remove(hashfilename)

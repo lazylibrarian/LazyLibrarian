@@ -51,11 +51,11 @@ def serve_template(templatename, **kwargs):
     interface_dir = os.path.join(
         str(lazylibrarian.PROG_DIR),
         'data/interfaces/')
-    template_dir = os.path.join(str(interface_dir), lazylibrarian.HTTP_LOOK)
+    template_dir = os.path.join(str(interface_dir), lazylibrarian.CONFIG['HTTP_LOOK'])
     if not os.path.isdir(template_dir):
         logger.error("Unable to locate template [%s], reverting to default" % template_dir)
-        lazylibrarian.HTTP_LOOK = 'default'
-        template_dir = os.path.join(str(interface_dir), lazylibrarian.HTTP_LOOK)
+        lazylibrarian.CONFIG['HTTP_LOOK'] = 'default'
+        template_dir = os.path.join(str(interface_dir), lazylibrarian.CONFIG['HTTP_LOOK'])
 
     _hplookup = TemplateLookup(directories=[template_dir])
 
@@ -129,265 +129,26 @@ class WebInterface(object):
         return serve_template(templatename="config.html", title="Settings", config=config)
 
     @cherrypy.expose
-    def configUpdate(
-            self, http_host='0.0.0.0', http_root='', http_user='', http_port=5299, current_tab='0',
-            http_pass='', http_look='', launch_browser=0, api_key='', api_enabled=0, displaylength=10,
-            logdir='', loglevel=2, loglimit=500, git_program='',
-            imp_onlyisbn=0, imp_singlebook=0, imp_preflang='', imp_monthlang='', imp_convert='',
-            imp_calibredb='', imp_autoadd='', imp_autosearch=0, match_ratio=80, dload_ratio=90,
-            nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0, nzb_downloader_synology=0,
-            nzb_downloader_blackhole=0, proxy_host='', proxy_type='', sab_host='', sab_port=0,
-            sab_subdir='', sab_api='', sab_user='', sab_pass='',
-            destination_copy=0, destination_dir='', download_dir='', sab_cat='', usenet_retention=0,
-            nzb_blackholedir='', alternate_dir='', torrent_dir='', numberofseeders=0, tor_convert_magnet=0,
-            tor_downloader_blackhole=0, tor_downloader_utorrent=0, tor_downloader_qbittorrent=0,
-            nzbget_host='', nzbget_port=0, nzbget_user='', nzbget_pass='', nzbget_cat='', nzbget_priority=0,
-            newzbin=0, newzbin_uid='', newzbin_pass='', kat=0, kat_host='', tpb=0, tpb_host='', tdl=0,
-            tdl_host='', zoo=0, zoo_host='', ebook_type='', mag_type='', reject_words='', reject_maxsize=0,
-            reject_magsize=0, extra=0, extra_host='', gen=0, gen_host='', lime=0, lime_host='', book_api='',
-            gr_api='', gb_api='', versioncheck_interval='', search_interval='', scan_interval='',
-            searchrss_interval=20, ebook_dest_folder='', ebook_dest_file='', one_format=0, tor_downloader_rtorrent=0,
-            keep_seeding=0, prefer_magnet=0, rtorrent_host='', rtorrent_dir='', rtorrent_user='', rtorrent_pass='',
-            rtorrent_label='', use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
-            mag_age=0, mag_dest_folder='', mag_dest_file='', mag_relative=0, mag_single=0, cache_age=30, task_age=0,
-            utorrent_host='', utorrent_port=0, utorrent_user='', utorrent_pass='', utorrent_label='',
-            qbittorrent_host='', qbittorrent_port=0, qbittorrent_user='', qbittorrent_pass='',
-            qbittorrent_label='', notfound_status='Skipped', newbook_status='Skipped', full_scan=0,
-            add_author=0, tor_downloader_transmission=0, transmission_host='', transmission_port=0,
-            transmission_user='', transmission_pass='', tor_downloader_deluge=0, deluge_host='',
-            deluge_user='', deluge_pass='', deluge_port=0, deluge_label='', use_synology=0, synology_dir='',
-            tor_downloader_synology=0, synology_host='', synology_port=0, synology_user='', synology_pass='',
-            use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token='',
-            use_pushbullet=0, pushbullet_notify_onsnatch=0, newauthor_status='Skipped',
-            pushbullet_notify_ondownload=0, pushbullet_token='', pushbullet_deviceid='',
-            use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys='',
-            pushover_apitoken='', pushover_ondownload=0, pushover_device='',
-            use_androidpn=0, androidpn_notify_onsnatch=0, androidpn_notify_ondownload=0,
-            androidpn_url='', androidpn_username='', androidpn_broadcast=0, bookstrap_theme='',
-            use_nma=0, nma_apikey='', nma_priority=0, nma_onsnatch=0, nma_ondownload=0,
-            use_slack=0, slack_notify_onsnatch=0, slack_notify_ondownload=0, slack_token='',
-            use_email=0, email_notify_onsnatch=0, email_notify_ondownload=0, email_from='',
-            email_to='', email_ssl=0, email_smtp_server='', email_smtp_port=0, email_tls=0,
-            email_smtp_user='', email_smtp_password='',
-            https_enabled=0, https_cert='', https_key='', **kwargs):
+    def configUpdate(self, **kwargs):
         # print len(kwargs)
         # for arg in kwargs:
-        #    if "reject" in arg:
-        #        print arg
-        #        print str(arg)
-        # print current_tab
-        lazylibrarian.CURRENT_TAB = current_tab
-        lazylibrarian.HTTP_HOST = http_host
-        lazylibrarian.HTTP_ROOT = http_root
-        lazylibrarian.HTTP_PORT = check_int(http_port, 5299)
-        lazylibrarian.HTTP_USER = http_user
-        lazylibrarian.HTTP_PASS = http_pass
-        lazylibrarian.HTTP_LOOK = http_look
-        lazylibrarian.HTTPS_ENABLED = bool(https_enabled)
-        lazylibrarian.HTTPS_CERT = https_cert
-        lazylibrarian.HTTPS_KEY = https_key
-        lazylibrarian.BOOKSTRAP_THEME = bookstrap_theme
-        lazylibrarian.LAUNCH_BROWSER = bool(launch_browser)
-        lazylibrarian.API_ENABLED = bool(api_enabled)
-        lazylibrarian.API_KEY = api_key
-        lazylibrarian.PROXY_HOST = proxy_host
-        lazylibrarian.PROXY_TYPE = proxy_type
-        lazylibrarian.LOGDIR = logdir
-        lazylibrarian.LOGLIMIT = check_int(loglimit, 500)
-        lazylibrarian.LOGLEVEL = check_int(loglevel, 2)
-
-        lazylibrarian.MATCH_RATIO = check_int(match_ratio, 80)
-        lazylibrarian.DLOAD_RATIO = check_int(dload_ratio, 90)
-        lazylibrarian.CACHE_AGE = check_int(cache_age, 30)
-        lazylibrarian.TASK_AGE = check_int(task_age, 0)
-        lazylibrarian.DISPLAYLENGTH = check_int(displaylength, 10)
-
-        lazylibrarian.IMP_ONLYISBN = bool(imp_onlyisbn)
-        lazylibrarian.IMP_SINGLEBOOK = bool(imp_singlebook)
-        lazylibrarian.IMP_PREFLANG = imp_preflang
-        lazylibrarian.IMP_MONTHLANG = imp_monthlang
-        lazylibrarian.IMP_AUTOADD = imp_autoadd
-        lazylibrarian.IMP_AUTOSEARCH = bool(imp_autosearch)
-        lazylibrarian.IMP_CALIBREDB = imp_calibredb
-        lazylibrarian.IMP_CONVERT = imp_convert
-        lazylibrarian.GIT_PROGRAM = git_program
-
-        lazylibrarian.SAB_HOST = sab_host
-        lazylibrarian.SAB_PORT = check_int(sab_port, 0)
-        lazylibrarian.SAB_SUBDIR = sab_subdir
-        lazylibrarian.SAB_API = sab_api
-        lazylibrarian.SAB_USER = sab_user
-        lazylibrarian.SAB_PASS = sab_pass
-        lazylibrarian.SAB_CAT = sab_cat
-
-        lazylibrarian.NZBGET_HOST = nzbget_host
-        lazylibrarian.NZBGET_PORT = check_int(nzbget_port, 0)
-        lazylibrarian.NZBGET_USER = nzbget_user
-        lazylibrarian.NZBGET_PASS = nzbget_pass
-        lazylibrarian.NZBGET_CATEGORY = nzbget_cat
-        lazylibrarian.NZBGET_PRIORITY = check_int(nzbget_priority, 0)
-
-        lazylibrarian.DESTINATION_COPY = bool(destination_copy)
-        lazylibrarian.DESTINATION_DIR = destination_dir
-        lazylibrarian.ALTERNATE_DIR = alternate_dir
-        lazylibrarian.DOWNLOAD_DIR = download_dir
-        lazylibrarian.USENET_RETENTION = check_int(usenet_retention, 0)
-        lazylibrarian.NZB_BLACKHOLEDIR = nzb_blackholedir
-        lazylibrarian.NZB_DOWNLOADER_SABNZBD = bool(nzb_downloader_sabnzbd)
-        lazylibrarian.NZB_DOWNLOADER_NZBGET = bool(nzb_downloader_nzbget)
-        lazylibrarian.NZB_DOWNLOADER_SYNOLOGY = bool(nzb_downloader_synology)
-        lazylibrarian.NZB_DOWNLOADER_BLACKHOLE = bool(nzb_downloader_blackhole)
-        lazylibrarian.TORRENT_DIR = torrent_dir
-        lazylibrarian.NUMBEROFSEEDERS = check_int(numberofseeders, 0)
-        lazylibrarian.KEEP_SEEDING = bool(keep_seeding)
-        lazylibrarian.PREFER_MAGNET = bool(prefer_magnet)
-        lazylibrarian.TOR_DOWNLOADER_BLACKHOLE = bool(tor_downloader_blackhole)
-        lazylibrarian.TOR_CONVERT_MAGNET = bool(tor_convert_magnet)
-        lazylibrarian.TOR_DOWNLOADER_UTORRENT = bool(tor_downloader_utorrent)
-        lazylibrarian.TOR_DOWNLOADER_RTORRENT = bool(tor_downloader_rtorrent)
-        lazylibrarian.TOR_DOWNLOADER_QBITTORRENT = bool(tor_downloader_qbittorrent)
-        lazylibrarian.TOR_DOWNLOADER_TRANSMISSION = bool(tor_downloader_transmission)
-        lazylibrarian.TOR_DOWNLOADER_SYNOLOGY = bool(tor_downloader_synology)
-        lazylibrarian.TOR_DOWNLOADER_DELUGE = bool(tor_downloader_deluge)
-
-        lazylibrarian.NEWZBIN = bool(newzbin)
-        lazylibrarian.NEWZBIN_UID = newzbin_uid
-        lazylibrarian.NEWZBIN_PASS = newzbin_pass
-
-        lazylibrarian.RTORRENT_HOST = rtorrent_host
-        lazylibrarian.RTORRENT_USER = rtorrent_user
-        lazylibrarian.RTORRENT_PASS = rtorrent_pass
-        lazylibrarian.RTORRENT_LABEL = rtorrent_label
-        lazylibrarian.RTORRENT_DIR = rtorrent_dir
-
-        lazylibrarian.UTORRENT_HOST = utorrent_host
-        lazylibrarian.UTORRENT_PORT = utorrent_port
-        lazylibrarian.UTORRENT_USER = utorrent_user
-        lazylibrarian.UTORRENT_PASS = utorrent_pass
-        lazylibrarian.UTORRENT_LABEL = utorrent_label
-
-        lazylibrarian.QBITTORRENT_HOST = qbittorrent_host
-        lazylibrarian.QBITTORRENT_PORT = check_int(qbittorrent_port, 0)
-        lazylibrarian.QBITTORRENT_USER = qbittorrent_user
-        lazylibrarian.QBITTORRENT_PASS = qbittorrent_pass
-        lazylibrarian.QBITTORRENT_LABEL = qbittorrent_label
-
-        lazylibrarian.TRANSMISSION_HOST = transmission_host
-        lazylibrarian.TRANSMISSION_PORT = transmission_port
-        lazylibrarian.TRANSMISSION_USER = transmission_user
-        lazylibrarian.TRANSMISSION_PASS = transmission_pass
-
-        lazylibrarian.SYNOLOGY_HOST = synology_host
-        lazylibrarian.SYNOLOGY_PORT = synology_port
-        lazylibrarian.SYNOLOGY_USER = synology_user
-        lazylibrarian.SYNOLOGY_PASS = synology_pass
-        lazylibrarian.SYNOLOGY_DIR = synology_dir
-        lazylibrarian.USE_SYNOLOGY = bool(use_synology)
-
-        lazylibrarian.DELUGE_HOST = deluge_host
-        lazylibrarian.DELUGE_PORT = check_int(deluge_port, 0)
-        lazylibrarian.DELUGE_USER = deluge_user
-        lazylibrarian.DELUGE_PASS = deluge_pass
-        lazylibrarian.DELUGE_LABEL = deluge_label
-
-        lazylibrarian.KAT = bool(kat)
-        lazylibrarian.KAT_HOST = kat_host
-        lazylibrarian.TPB = bool(tpb)
-        lazylibrarian.TPB_HOST = tpb_host
-        lazylibrarian.ZOO = bool(zoo)
-        lazylibrarian.ZOO_HOST = zoo_host
-        lazylibrarian.EXTRA = bool(extra)
-        lazylibrarian.EXTRA_HOST = extra_host
-        lazylibrarian.TDL = bool(tdl)
-        lazylibrarian.TDL_HOST = tdl_host
-        lazylibrarian.GEN = bool(gen)
-        lazylibrarian.GEN_HOST = gen_host
-        lazylibrarian.LIME = bool(lime)
-        lazylibrarian.LIME_HOST = lime_host
-
-        lazylibrarian.EBOOK_TYPE = ebook_type
-        lazylibrarian.MAG_TYPE = mag_type
-        lazylibrarian.REJECT_WORDS = reject_words
-        lazylibrarian.REJECT_MAXSIZE = reject_maxsize
-        lazylibrarian.REJECT_MAGSIZE = reject_magsize
-        lazylibrarian.MAG_AGE = mag_age
-        lazylibrarian.BOOK_API = book_api
-        lazylibrarian.GR_API = gr_api
-        lazylibrarian.GB_API = gb_api
-
-        lazylibrarian.SEARCH_INTERVAL = check_int(search_interval, 360)
-        lazylibrarian.SCAN_INTERVAL = check_int(scan_interval, 10)
-        lazylibrarian.SEARCHRSS_INTERVAL = check_int(searchrss_interval, 20)
-        lazylibrarian.VERSIONCHECK_INTERVAL = check_int(versioncheck_interval, 24)
-
-        lazylibrarian.FULL_SCAN = bool(full_scan)
-        lazylibrarian.NOTFOUND_STATUS = notfound_status
-        lazylibrarian.NEWBOOK_STATUS = newbook_status
-        lazylibrarian.NEWAUTHOR_STATUS = newauthor_status
-        lazylibrarian.ADD_AUTHOR = bool(add_author)
-
-        lazylibrarian.EBOOK_DEST_FOLDER = ebook_dest_folder
-        lazylibrarian.EBOOK_DEST_FILE = ebook_dest_file
-        lazylibrarian.ONE_FORMAT = bool(one_format)
-        lazylibrarian.MAG_DEST_FOLDER = mag_dest_folder
-        lazylibrarian.MAG_DEST_FILE = mag_dest_file
-        lazylibrarian.MAG_RELATIVE = bool(mag_relative)
-        lazylibrarian.MAG_SINGLE = bool(mag_single)
-
-        lazylibrarian.USE_TWITTER = bool(use_twitter)
-        lazylibrarian.TWITTER_NOTIFY_ONSNATCH = bool(twitter_notify_onsnatch)
-        lazylibrarian.TWITTER_NOTIFY_ONDOWNLOAD = bool(twitter_notify_ondownload)
-
-        lazylibrarian.USE_BOXCAR = bool(use_boxcar)
-        lazylibrarian.BOXCAR_NOTIFY_ONSNATCH = bool(boxcar_notify_onsnatch)
-        lazylibrarian.BOXCAR_NOTIFY_ONDOWNLOAD = bool(boxcar_notify_ondownload)
-        lazylibrarian.BOXCAR_TOKEN = boxcar_token
-
-        lazylibrarian.USE_PUSHBULLET = bool(use_pushbullet)
-        lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH = bool(pushbullet_notify_onsnatch)
-        lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD = bool(pushbullet_notify_ondownload)
-        lazylibrarian.PUSHBULLET_TOKEN = pushbullet_token
-        lazylibrarian.PUSHBULLET_DEVICEID = pushbullet_deviceid
-
-        lazylibrarian.USE_PUSHOVER = bool(use_pushover)
-        lazylibrarian.PUSHOVER_ONSNATCH = bool(pushover_onsnatch)
-        lazylibrarian.PUSHOVER_ONDOWNLOAD = bool(pushover_ondownload)
-        lazylibrarian.PUSHOVER_KEYS = pushover_keys
-        lazylibrarian.PUSHOVER_APITOKEN = pushover_apitoken
-        lazylibrarian.PUSHOVER_PRIORITY = check_int(pushover_priority, 0)
-        lazylibrarian.PUSHOVER_DEVICE = pushover_device
-
-        lazylibrarian.USE_ANDROIDPN = bool(use_androidpn)
-        lazylibrarian.ANDROIDPN_NOTIFY_ONSNATCH = bool(androidpn_notify_onsnatch)
-        lazylibrarian.ANDROIDPN_NOTIFY_ONDOWNLOAD = bool(androidpn_notify_ondownload)
-        lazylibrarian.ANDROIDPN_URL = androidpn_url
-        lazylibrarian.ANDROIDPN_USERNAME = androidpn_username
-        lazylibrarian.ANDROIDPN_BROADCAST = bool(androidpn_broadcast)
-
-        lazylibrarian.USE_NMA = bool(use_nma)
-        lazylibrarian.NMA_APIKEY = nma_apikey
-        lazylibrarian.NMA_PRIORITY = check_int(nma_priority, 0)
-        lazylibrarian.NMA_ONSNATCH = bool(nma_onsnatch)
-        lazylibrarian.NMA_ONDOWNLOAD = bool(nma_ondownload)
-
-        lazylibrarian.USE_SLACK = bool(use_slack)
-        lazylibrarian.SLACK_NOTIFY_ONSNATCH = bool(slack_notify_onsnatch)
-        lazylibrarian.SLACK_NOTIFY_ONDOWNLOAD = bool(slack_notify_ondownload)
-        lazylibrarian.SLACK_TOKEN = slack_token
-
-        lazylibrarian.USE_EMAIL = bool(use_email)
-        lazylibrarian.EMAIL_NOTIFY_ONSNATCH = bool(email_notify_onsnatch)
-        lazylibrarian.EMAIL_NOTIFY_ONDOWNLOAD = bool(email_notify_ondownload)
-        lazylibrarian.EMAIL_FROM = email_from
-        lazylibrarian.EMAIL_TO = email_to
-        lazylibrarian.EMAIL_SSL = bool(email_ssl)
-        lazylibrarian.EMAIL_SMTP_SERVER = email_smtp_server
-        lazylibrarian.EMAIL_SMTP_PORT = check_int(email_smtp_port, 25)
-        lazylibrarian.EMAIL_TLS = bool(email_tls)
-        lazylibrarian.EMAIL_SMTP_USER = email_smtp_user
-        lazylibrarian.EMAIL_SMTP_PASSWORD = email_smtp_password
-
+        #    print arg
         self.label_thread()
+
+        # first the non-config options
+        if 'current_tab' in kwargs:
+            lazylibrarian.CURRENT_TAB = kwargs['current_tab']
+
+        # now the config file entries
+        for key in lazylibrarian.CONFIG_DEFINITIONS.keys():
+            item_type, section, default = lazylibrarian.CONFIG_DEFINITIONS[key]
+            if key.lower() in kwargs:
+                value = kwargs[key.lower()]
+                if item_type == 'bool':
+                    value = bool(value)
+                elif item_type == 'int':
+                    value = check_int(value, default)
+                lazylibrarian.CONFIG[key] = value
 
         myDB = database.DBConnection()
         magazines = myDB.select('SELECT Title,Reject,Regex from magazines ORDER by upper(Title)')
@@ -488,13 +249,13 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("home")
 
         myDB = database.DBConnection()
-        if lazylibrarian.BOOK_API == "GoogleBooks":
+        if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
             GB = GoogleBooks(name)
             queue = Queue.Queue()
             search_api = threading.Thread(
                 target=GB.find_results, name='GB-RESULTS', args=[name, queue])
             search_api.start()
-        else:  # lazylibrarian.BOOK_API == "GoodReads":
+        else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
             queue = Queue.Queue()
             GR = GoodReads(name)
             search_api = threading.Thread(
@@ -707,6 +468,7 @@ class WebInterface(object):
         LANGFILTER = BookLang
         return serve_template(templatename="books.html", title='Books', books=[], languages=languages)
 
+    # noinspection PyUnusedLocal
     @cherrypy.expose
     def getBooks(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
@@ -714,7 +476,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
-        lazylibrarian.DISPLAYLENGTH = iDisplayLength
+        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
         #   need to check and filter on BookLang if set
         if LANGFILTER is None or not len(LANGFILTER):
@@ -774,7 +536,7 @@ class WebInterface(object):
 
                 worklink = ''
 
-                if lazylibrarian.HTTP_LOOK == 'bookstrap':
+                if lazylibrarian.CONFIG['HTTP_LOOK'] == 'bookstrap':
                     if row[11]:  # is there a workpage link
                         if len(row[11]) > 4:
                             worklink = '<td><a href="' + \
@@ -835,7 +597,7 @@ class WebInterface(object):
                         btn += '</a></td>'
                     l.append(btn)
 
-                else:  # lazylibrarian.HTTP_LOOK == 'default':
+                else:  # lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
                     if row[11]:  # is there a workpage link
                         if len(row[11]) > 4:
                             worklink = '<td><a href="' + \
@@ -916,13 +678,13 @@ class WebInterface(object):
                 AuthorID = book['AuthorID']
                 update_totals(AuthorID)
         else:
-            if lazylibrarian.BOOK_API == "GoogleBooks":
+            if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
                 GB = GoogleBooks(bookid)
                 queue = Queue.Queue()
                 find_book = threading.Thread(
                     target=GB.find_book, name='GB-BOOK', args=[bookid, queue])
                 find_book.start()
-            else:  # lazylibrarian.BOOK_API == "GoodReads":
+            else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
                 queue = Queue.Queue()
                 GR = GoodReads(bookid)
                 find_book = threading.Thread(
@@ -933,7 +695,7 @@ class WebInterface(object):
 
             find_book.join()
 
-        if lazylibrarian.IMP_AUTOSEARCH:
+        if lazylibrarian.CONFIG['IMP_AUTOSEARCH']:
             books = [{"bookid": bookid}]
             self.startBookSearch(books)
 
@@ -1049,7 +811,7 @@ class WebInterface(object):
                         rejected = True
                         if len(ab) == 10:
                             try:
-                                check = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
+                                _ = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
                                 authorborn = ab
                                 rejected = False
                             except ValueError:
@@ -1063,7 +825,7 @@ class WebInterface(object):
                         rejected = True
                         if len(ab) == 10:
                             try:
-                                check = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
+                                _ = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
                                 authordeath = ab
                                 rejected = False
                             except ValueError:
@@ -1312,7 +1074,7 @@ class WebInterface(object):
                 this_mag['safetitle'] = urllib.quote_plus(mag['Title'].encode(lazylibrarian.SYS_ENCODING))
                 mags.append(this_mag)
 
-        if lazylibrarian.IMP_CONVERT == 'None':  # special flag to say "no covers required"
+        if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':  # special flag to say "no covers required"
             covercount = 0
 
         return serve_template(templatename="magazines.html", title="Magazines", magazines=mags, covercount=covercount)
@@ -1351,7 +1113,7 @@ class WebInterface(object):
                 mod_issues.append(this_issue)
             logger.debug("Found %s cover%s" % (covercount, plural(covercount)))
 
-        if lazylibrarian.IMP_CONVERT == 'None':  # special flag to say "no covers required"
+        if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':  # special flag to say "no covers required"
             covercount = 0
 
         return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
@@ -1367,6 +1129,7 @@ class WebInterface(object):
         return serve_template(
             templatename="manageissues.html", title="Magazine Status Management", issues=[], whichStatus=whichStatus)
 
+    # noinspection PyUnusedLocal
     @cherrypy.expose
     def getPastIssues(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
@@ -1374,7 +1137,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
-        lazylibrarian.DISPLAYLENGTH = iDisplayLength
+        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
         # need to filter on whichStatus
         rowlist = myDB.select(
@@ -1437,7 +1200,7 @@ class WebInterface(object):
         mag_data = myDB.select('SELECT * from issues WHERE Title="%s"' % bookid)
         if len(mag_data) <= 0:  # no issues!
             raise cherrypy.HTTPRedirect("magazines")
-        elif len(mag_data) == 1 and lazylibrarian.MAG_SINGLE:  # we only have one issue, get it
+        elif len(mag_data) == 1 and lazylibrarian.CONFIG['MAG_SINGLE']:  # we only have one issue, get it
             IssueDate = mag_data[0]["IssueDate"]
             IssueFile = mag_data[0]["IssueFile"]
             logger.info(u'Opening %s - %s' % (bookid, IssueDate))
@@ -1662,7 +1425,7 @@ class WebInterface(object):
                 }
                 myDB.upsert("magazines", newValueDict, controlValueDict)
                 mags = [{"bookid": title}]
-                if lazylibrarian.IMP_AUTOSEARCH:
+                if lazylibrarian.CONFIG['IMP_AUTOSEARCH']:
                     self.startMagazineSearch(mags)
             raise cherrypy.HTTPRedirect("magazines")
 
@@ -1672,7 +1435,7 @@ class WebInterface(object):
     def checkForUpdates(self):
         self.label_thread()
         versioncheck.checkForUpdates()
-        if lazylibrarian.COMMITS_BEHIND == 0:
+        if lazylibrarian.CONFIG['COMMITS_BEHIND'] == 0:
             if lazylibrarian.COMMIT_LIST:
                 message = "unknown status"
                 messages = lazylibrarian.COMMIT_LIST.replace('\n', '<br>')
@@ -1681,8 +1444,8 @@ class WebInterface(object):
                 message = "up to date"
             return serve_template(templatename="shutdown.html", title="Version Check", message=message, timer=5)
 
-        elif lazylibrarian.COMMITS_BEHIND > 0:
-            message = "behind by %s commit%s" % (lazylibrarian.COMMITS_BEHIND, plural(lazylibrarian.COMMITS_BEHIND))
+        elif lazylibrarian.CONFIG['COMMITS_BEHIND'] > 0:
+            message = "behind by %s commit%s" % (lazylibrarian.CONFIG['COMMITS_BEHIND'], plural(lazylibrarian.CONFIG['COMMITS_BEHIND']))
             messages = lazylibrarian.COMMIT_LIST.replace('\n', '<br>')
             message = message + '<br><small>' + messages
             return serve_template(templatename="shutdown.html", title="Commits", message=message, timer=15)
@@ -1690,7 +1453,7 @@ class WebInterface(object):
         else:
             message = "unknown version"
             messages = "Your version is not recognised at<br>https://github.com/%s/%s  Branch: %s" % (
-                lazylibrarian.GIT_USER, lazylibrarian.GIT_REPO, lazylibrarian.GIT_BRANCH)
+                lazylibrarian.CONFIG['GIT_USER'], lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['GIT_BRANCH'])
             message = message + '<br><small>' + messages
             return serve_template(templatename="shutdown.html", title="Commits", message=message, timer=15)
 
@@ -1729,7 +1492,7 @@ class WebInterface(object):
     @cherrypy.expose
     def importAlternate(self):
         try:
-            threading.Thread(target=processAlternate, name='IMPORTALT', args=[lazylibrarian.ALTERNATE_DIR]).start()
+            threading.Thread(target=processAlternate, name='IMPORTALT', args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
         except Exception as e:
             logger.error(u'Unable to complete the import: %s' % str(e))
         raise cherrypy.HTTPRedirect("manage")
@@ -1737,7 +1500,7 @@ class WebInterface(object):
     @cherrypy.expose
     def importCSV(self):
         try:
-            threading.Thread(target=import_CSV, name='IMPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
+            threading.Thread(target=import_CSV, name='IMPORTCSV', args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
         except Exception as e:
             logger.error(u'Unable to complete the import: %s' % str(e))
         raise cherrypy.HTTPRedirect("manage")
@@ -1745,7 +1508,7 @@ class WebInterface(object):
     @cherrypy.expose
     def exportCSV(self):
         try:
-            threading.Thread(target=export_CSV, name='EXPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
+            threading.Thread(target=export_CSV, name='EXPORTCSV', args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
         except Exception as e:
             logger.error(u'Unable to complete the export: %s' % str(e))
         raise cherrypy.HTTPRedirect("manage")
@@ -1818,12 +1581,13 @@ class WebInterface(object):
     def logs(self):
         return serve_template(templatename="logs.html", title="Log", lineList=[])  # lazylibrarian.LOGLIST)
 
+    # noinspection PyUnusedLocal
     @cherrypy.expose
     def getLog(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
-        lazylibrarian.DISPLAYLENGTH = iDisplayLength
+        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
         if sSearch:
             filtered = filter(lambda x: sSearch in str(x), lazylibrarian.LOGLIST[::])
@@ -1983,7 +1747,7 @@ class WebInterface(object):
     @cherrypy.expose
     def generateAPI(self):
         api_key = hashlib.sha224(str(random.getrandbits(256))).hexdigest()[0:32]
-        lazylibrarian.API_KEY = api_key
+        lazylibrarian.CONFIG['API_KEY'] = api_key
         logger.info("New API generated")
         raise cherrypy.HTTPRedirect("config")
 
@@ -2021,6 +1785,7 @@ class WebInterface(object):
         return serve_template(templatename="managebooks.html", title="Book Status Management",
                               books=[], whichStatus=whichStatus)
 
+    # noinspection PyUnusedLocal
     @cherrypy.expose
     def getManage(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
@@ -2028,7 +1793,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
-        lazylibrarian.DISPLAYLENGTH = iDisplayLength
+        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
         # print "getManage %s" % iDisplayStart
         #   need to filter on whichStatus
@@ -2067,7 +1832,7 @@ class WebInterface(object):
                      '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (
                          row[8], row[0])]  # for each Row use a separate list
 
-                if lazylibrarian.HTTP_LOOK == 'bookstrap':
+                if lazylibrarian.CONFIG['HTTP_LOOK'] == 'bookstrap':
                     sitelink = ''
                     if 'goodreads' in row[6]:
                         sitelink = '<a href="%s" target="_new"><small><i>GoodReads</i></small></a>' % row[6]
@@ -2081,7 +1846,7 @@ class WebInterface(object):
                     else:
                         l.append('<td id="bookname">%s<br>%s</td>' % (row[1], sitelink))
 
-                else:  # lazylibrarian.HTTP_LOOK == 'default':
+                else:  # lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
                     sitelink = ''
                     if 'goodreads' in row[6]:
                         sitelink = '<a href="%s" target="_new"><i class="smalltext">GoodReads</i></a>' % row[6]
@@ -2122,20 +1887,20 @@ class WebInterface(object):
     def testDeluge(self):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         try:
-            if not lazylibrarian.DELUGE_USER:
+            if not lazylibrarian.CONFIG['DELUGE_USER']:
                 # no username, talk to the webui
                 return deluge.checkLink()
 
             # if there's a username, talk to the daemon directly
-            client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
-                                     int(lazylibrarian.DELUGE_PORT),
-                                     lazylibrarian.DELUGE_USER,
-                                     lazylibrarian.DELUGE_PASS)
+            client = DelugeRPCClient(lazylibrarian.CONFIG['DELUGE_HOST'],
+                                     int(lazylibrarian.CONFIG['DELUGE_PORT']),
+                                     lazylibrarian.CONFIG['DELUGE_USER'],
+                                     lazylibrarian.CONFIG['DELUGE_PASS'])
             client.connect()
-            if lazylibrarian.DELUGE_LABEL:
+            if lazylibrarian.CONFIG['DELUGE_LABEL']:
                 labels = client.call('label.get_labels')
-                if lazylibrarian.DELUGE_LABEL not in labels:
-                    msg = "Deluge: Unknown label [%s]\n" % lazylibrarian.DELUGE_LABEL
+                if lazylibrarian.CONFIG['DELUGE_LABEL'] not in labels:
+                    msg = "Deluge: Unknown label [%s]\n" % lazylibrarian.CONFIG['DELUGE_LABEL']
                     if labels:
                         msg += "Valid labels:\n"
                         for label in labels:

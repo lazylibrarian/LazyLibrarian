@@ -28,7 +28,6 @@ if opt_out_of_certificate_verification:
 
 
 def main():
-    # DIFFEREMT
     # rename this thread
     threading.currentThread().name = "MAIN"
     # Set paths
@@ -100,7 +99,7 @@ def main():
             print "Daemonize not supported under Windows, starting normally"
 
     if options.nolaunch:
-        lazylibrarian.LAUNCH_BROWSER = False
+        lazylibrarian.CONFIG['LAUNCH_BROWSER'] = False
 
     if options.update:
         lazylibrarian.SIGNAL = 'update'
@@ -150,64 +149,64 @@ def main():
         old = int(age / (60 * 60 * old))
         if not old:  # don't call git, read the version file
             fp = open(version_file, 'r')
-            lazylibrarian.CURRENT_VERSION = fp.read().strip(' \n\r')
+            lazylibrarian.CONFIG['CURRENT_VERSION'] = fp.read().strip(' \n\r')
             fp.close()
-            lazylibrarian.LATEST_VERSION = "not checked"
-            lazylibrarian.COMMITS_BEHIND = 0
+            lazylibrarian.CONFIG['LATEST_VERSION'] = "not checked"
+            lazylibrarian.CONFIG['COMMITS_BEHIND'] = 0
             lazylibrarian.COMMIT_LIST = ""
 
     if old:
-        lazylibrarian.CURRENT_VERSION = versioncheck.getCurrentVersion()
-        lazylibrarian.LATEST_VERSION = versioncheck.getLatestVersion()
-        lazylibrarian.COMMITS_BEHIND, lazylibrarian.COMMIT_LIST = versioncheck.getCommitDifferenceFromGit()
+        lazylibrarian.CONFIG['CURRENT_VERSION'] = versioncheck.getCurrentVersion()
+        lazylibrarian.CONFIG['LATEST_VERSION'] = versioncheck.getLatestVersion()
+        lazylibrarian.CONFIG['COMMITS_BEHIND'], lazylibrarian.COMMIT_LIST = versioncheck.getCommitDifferenceFromGit()
 
     logger.debug('Current Version [%s] - Latest remote version [%s] - Install type [%s]' % (
-        lazylibrarian.CURRENT_VERSION, lazylibrarian.LATEST_VERSION, lazylibrarian.INSTALL_TYPE))
+        lazylibrarian.CONFIG['CURRENT_VERSION'], lazylibrarian.CONFIG['LATEST_VERSION'], lazylibrarian.CONFIG['INSTALL_TYPE']))
 
-    if not os.path.isfile(version_file) and lazylibrarian.INSTALL_TYPE == 'source':
+    if not os.path.isfile(version_file) and lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
         # User may be running an old source zip, so force update
-        lazylibrarian.COMMITS_BEHIND = 1
+        lazylibrarian.CONFIG['COMMITS_BEHIND'] = 1
         lazylibrarian.SIGNAL == 'update'
 
-    if lazylibrarian.COMMITS_BEHIND <= 0 and lazylibrarian.SIGNAL == 'update':
+    if lazylibrarian.CONFIG['COMMITS_BEHIND'] <= 0 and lazylibrarian.SIGNAL == 'update':
         lazylibrarian.SIGNAL = None
-        if lazylibrarian.COMMITS_BEHIND == 0:
+        if lazylibrarian.CONFIG['COMMITS_BEHIND'] == 0:
             logger.debug('Not updating, LazyLibrarian is already up to date')
         else:
             logger.debug('Not updating, LazyLibrarian has local changes')
 
     if lazylibrarian.SIGNAL == 'update':
-        if lazylibrarian.INSTALL_TYPE not in ['git', 'source']:
+        if lazylibrarian.CONFIG['INSTALL_TYPE'] not in ['git', 'source']:
             lazylibrarian.SIGNAL = None
             logger.debug('Not updating, not a git or source installation')
 
     if options.port:
-        lazylibrarian.HTTP_PORT = int(options.port)
+        lazylibrarian.CONFIG['HTTP_PORT'] = int(options.port)
         logger.info('Starting LazyLibrarian on forced port: %s, webroot "%s"' %
-                    (lazylibrarian.HTTP_PORT, lazylibrarian.HTTP_ROOT))
+                    (lazylibrarian.CONFIG['HTTP_PORT'], lazylibrarian.CONFIG['HTTP_ROOT']))
     else:
-        lazylibrarian.HTTP_PORT = int(lazylibrarian.HTTP_PORT)
+        lazylibrarian.CONFIG['HTTP_PORT'] = int(lazylibrarian.CONFIG['HTTP_PORT'])
         logger.info('Starting LazyLibrarian on port: %s, webroot "%s"' %
-                    (lazylibrarian.HTTP_PORT, lazylibrarian.HTTP_ROOT))
+                    (lazylibrarian.CONFIG['HTTP_PORT'], lazylibrarian.CONFIG['HTTP_ROOT']))
 
     if lazylibrarian.DAEMON:
         lazylibrarian.daemonize()
 
     # Try to start the server.
     webStart.initialize({
-        'http_port': lazylibrarian.HTTP_PORT,
-        'http_host': lazylibrarian.HTTP_HOST,
-        'http_root': lazylibrarian.HTTP_ROOT,
-        'http_user': lazylibrarian.HTTP_USER,
-        'http_pass': lazylibrarian.HTTP_PASS,
-        'http_proxy': lazylibrarian.HTTP_PROXY,
-        'https_enabled': lazylibrarian.HTTPS_ENABLED,
-        'https_cert': lazylibrarian.HTTPS_CERT,
-        'https_key': lazylibrarian.HTTPS_KEY,
+        'http_port': lazylibrarian.CONFIG['HTTP_PORT'],
+        'http_host': lazylibrarian.CONFIG['HTTP_HOST'],
+        'http_root': lazylibrarian.CONFIG['HTTP_ROOT'],
+        'http_user': lazylibrarian.CONFIG['HTTP_USER'],
+        'http_pass': lazylibrarian.CONFIG['HTTP_PASS'],
+        'http_proxy': lazylibrarian.CONFIG['HTTP_PROXY'],
+        'https_enabled': lazylibrarian.CONFIG['HTTPS_ENABLED'],
+        'https_cert': lazylibrarian.CONFIG['HTTPS_CERT'],
+        'https_key': lazylibrarian.CONFIG['HTTPS_KEY'],
     })
 
-    if lazylibrarian.LAUNCH_BROWSER and not options.nolaunch:
-        lazylibrarian.launch_browser(lazylibrarian.HTTP_HOST, lazylibrarian.HTTP_PORT, lazylibrarian.HTTP_ROOT)
+    if lazylibrarian.CONFIG['LAUNCH_BROWSER'] and not options.nolaunch:
+        lazylibrarian.launch_browser(lazylibrarian.CONFIG['HTTP_HOST'], lazylibrarian.CONFIG['HTTP_PORT'], lazylibrarian.CONFIG['HTTP_ROOT'])
 
     lazylibrarian.start()
 
@@ -223,7 +222,7 @@ def main():
                 lazylibrarian.shutdown()
             elif lazylibrarian.SIGNAL == 'restart':
                 lazylibrarian.shutdown(restart=True)
-            else:
+            elif lazylibrarian.SIGNAL == 'update':
                 lazylibrarian.shutdown(restart=True, update=True)
             lazylibrarian.SIGNAL = None
 

@@ -132,8 +132,8 @@ def processResultList(resultlist, book, searchtype):
     dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
            ',': '', '*': '', ':': '', ';': '', '\'': ''}
 
-    match_ratio = int(lazylibrarian.MATCH_RATIO)
-    reject_list = getList(lazylibrarian.REJECT_WORDS)
+    match_ratio = int(lazylibrarian.CONFIG['MATCH_RATIO'])
+    reject_list = getList(lazylibrarian.CONFIG['REJECT_WORDS'])
     author = unaccented_str(replace_all(book['authorName'], dic))
     title = unaccented_str(replace_all(book['bookName'], dic))
 
@@ -165,7 +165,7 @@ def processResultList(resultlist, book, searchtype):
         nzbsize_temp = check_int(nzbsize_temp, 1000)
         nzbsize = round(float(nzbsize_temp) / 1048576, 2)
 
-        maxsize = check_int(lazylibrarian.REJECT_MAXSIZE, 0)
+        maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXSIZE'], 0)
         if not rejected:
             if maxsize and nzbsize > maxsize:
                 rejected = True
@@ -238,11 +238,11 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None):
     myDB = database.DBConnection()
     Source = ''
     downloadID = ''
-    if lazylibrarian.NZB_DOWNLOADER_SABNZBD and lazylibrarian.SAB_HOST:
+    if lazylibrarian.CONFIG['NZB_DOWNLOADER_SABNZBD'] and lazylibrarian.CONFIG['SAB_HOST']:
         Source = "SABNZBD"
         downloadID = sabnzbd.SABnzbd(nzbtitle, nzburl, False)  # returns nzb_ids or False
 
-    if lazylibrarian.NZB_DOWNLOADER_NZBGET and lazylibrarian.NZBGET_HOST:
+    if lazylibrarian.CONFIG['NZB_DOWNLOADER_NZBGET'] and lazylibrarian.CONFIG['NZBGET_HOST']:
         Source = "NZBGET"
         # headers = {'User-Agent': USER_AGENT}
         # data = request.request_content(url=nzburl, headers=headers)
@@ -257,11 +257,11 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None):
             nzb.url = nzburl
             downloadID = nzbget.sendNZB(nzb)
 
-    if lazylibrarian.NZB_DOWNLOADER_SYNOLOGY and lazylibrarian.USE_SYNOLOGY and lazylibrarian.SYNOLOGY_HOST:
+    if lazylibrarian.CONFIG['NZB_DOWNLOADER_SYNOLOGY'] and lazylibrarian.CONFIG['USE_SYNOLOGY'] and lazylibrarian.CONFIG['SYNOLOGY_HOST']:
         Source = "SYNOLOGY_NZB"
         downloadID = synology.addTorrent(nzburl)  # returns nzb_ids or False
 
-    if lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
+    if lazylibrarian.CONFIG['NZB_DOWNLOADER_BLACKHOLE']:
         Source = "BLACKHOLE"
         nzbfile, success = fetchURL(nzburl)
         if not success:
@@ -270,7 +270,7 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None):
 
         if nzbfile:
             nzbname = str(nzbtitle) + '.nzb'
-            nzbpath = os.path.join(lazylibrarian.NZB_BLACKHOLEDIR, nzbname)
+            nzbpath = os.path.join(lazylibrarian.CONFIG['NZB_BLACKHOLEDIR'], nzbname)
             try:
                 with open(nzbpath, 'w') as f:
                     f.write(nzbfile)

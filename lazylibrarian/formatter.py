@@ -45,7 +45,7 @@ def bookSeries(bookname):
     series = None
     seriesNum = None
 
-    result = re.search(r"\(([\S\s]+),? #?(\d+\.?-?\d{0,}[;,])", bookname)
+    result = re.search(r"\(([\S\s]+),? #?(\d+\.?-?\d*[;,])", bookname)
     if result:
         series = result.group(1)
         if series[-1] == ',':
@@ -54,7 +54,7 @@ def bookSeries(bookname):
         if seriesNum[-1] in ';,':
             seriesNum = seriesNum[:-1]
     else:
-        result = re.search(r"\(([\S\s]+),? #?(\d+\.?-?\d{0,})", bookname)
+        result = re.search(r"\(([\S\s]+),? #?(\d+\.?-?\d*)", bookname)
         if result:
             series = result.group(1)
             if series[-1] == ',':
@@ -230,9 +230,9 @@ def is_valid_booktype(filename, booktype=None):
     Check if filename extension is one we want
     """
     if booktype == 'mag':  # default is book
-        booktype_list = getList(lazylibrarian.MAG_TYPE)
+        booktype_list = getList(lazylibrarian.CONFIG['MAG_TYPE'])
     else:
-        booktype_list = getList(lazylibrarian.EBOOK_TYPE)
+        booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
     extn = os.path.splitext(filename)[1].lstrip('.')
     if extn and extn.lower() in booktype_list:
         return True

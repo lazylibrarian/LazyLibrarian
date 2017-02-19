@@ -51,7 +51,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
             myDB.upsert("authors", newValueDict, controlValueDict)
 
             GR = GoodReads(authorname)
-            author = GR.get_author_info(authorid=authorid, authorname=authorname)
+            author = GR.get_author_info(authorid=authorid)
             if author:
                 authorname = author['authorname']
                 authorimg = author['authorimg']
@@ -67,6 +67,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
                     newValueDict["AuthorDeath"] = author['authordeath']
 
                 myDB.upsert("authors", newValueDict, controlValueDict)
+                # noinspection PyPep8Naming,PyUnusedLocal
                 GR = GoodReads(authorname)
                 match = True
             else:
@@ -141,15 +142,15 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
             myDB.upsert("authors", newValueDict, controlValueDict)
 
         if dbauthor:
-            bookstatus = lazylibrarian.NEWBOOK_STATUS
+            bookstatus = lazylibrarian.CONFIG['NEWBOOK_STATUS']
         else:
-            bookstatus = lazylibrarian.NEWAUTHOR_STATUS
+            bookstatus = lazylibrarian.CONFIG['NEWAUTHOR_STATUS']
 
         # process books
-        if lazylibrarian.BOOK_API == "GoogleBooks":
+        if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
             book_api = GoogleBooks()
             book_api.get_author_books(authorid, authorname, bookstatus, refresh=refresh)
-        elif lazylibrarian.BOOK_API == "GoodReads":
+        elif lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
             GR = GoodReads(authorname)
             GR.get_author_books(authorid, authorname, bookstatus, refresh=refresh)
 

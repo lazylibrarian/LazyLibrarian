@@ -109,9 +109,9 @@ def addTorrent(link, data=None):
             # Extract torrent name from .torrent
             try:
                 logger.debug('Deluge: Getting torrent name length')
-                name_length = int(re.findall('name([0-9]*)\:.*?\:', torrentfile)[0])
+                name_length = int(re.findall('name([0-9]*):.*?:', torrentfile)[0])
                 logger.debug('Deluge: Getting torrent name')
-                name = re.findall('name[0-9]*\:(.*?)\:', torrentfile)[0][:name_length]
+                name = re.findall('name[0-9]*:(.*?):', torrentfile)[0][:name_length]
             except Exception:
                 logger.debug('Deluge: Could not get torrent name, getting file name')
                 # get last part of link/path (name only)
@@ -130,7 +130,7 @@ def addTorrent(link, data=None):
 
         if retid:
             logger.info('Deluge: Torrent sent to Deluge successfully  (%s)' % retid)
-            if lazylibrarian.DELUGE_LABEL:
+            if lazylibrarian.CONFIG['DELUGE_LABEL']:
                 labelled = setTorrentLabel(result)
                 logger.debug('Deluge label returned: %s' % labelled)
             return retid
@@ -207,8 +207,8 @@ def _get_auth():
     global delugeweb_auth, delugeweb_url
     delugeweb_auth = {}
 
-    delugeweb_host = lazylibrarian.DELUGE_HOST
-    delugeweb_password = lazylibrarian.DELUGE_PASS
+    delugeweb_host = lazylibrarian.CONFIG['DELUGE_HOST']
+    delugeweb_password = lazylibrarian.CONFIG['DELUGE_PASS']
 
     if not delugeweb_host.startswith('http'):
         delugeweb_host = 'http://%s' % delugeweb_host
@@ -216,7 +216,7 @@ def _get_auth():
     if delugeweb_host.endswith('/'):
         delugeweb_host = delugeweb_host[:-1]
 
-    delugeweb_host = "%s:%s" % (delugeweb_host, lazylibrarian.DELUGE_PORT)
+    delugeweb_host = "%s:%s" % (delugeweb_host, lazylibrarian.CONFIG['DELUGE_PORT'])
 
     delugeweb_url = delugeweb_host + '/json'
 
@@ -266,7 +266,7 @@ def _get_auth():
                                 "id": 11})
 
         try:
-            response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+            _ = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
             #                                  , verify=TORRENT_VERIFY_CERT)
         except Exception as err:
             logger.debug('Deluge: web.connect returned %s' % str(err))
@@ -349,7 +349,7 @@ def _add_torrent_file(result):
 
 def setTorrentLabel(result):
     logger.debug('Deluge: Setting label')
-    label = lazylibrarian.DELUGE_LABEL
+    label = lazylibrarian.CONFIG['DELUGE_LABEL']
 
     if not any(delugeweb_auth):
         _get_auth()
@@ -372,7 +372,7 @@ def setTorrentLabel(result):
                     post_data = json.dumps({"method": 'label.add',
                                             "params": [label],
                                             "id": 4})
-                    response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+                    _ = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
                     logger.debug('Deluge: %s label added to Deluge' % label)
                 except Exception as err:
                     logger.error('Deluge: Setting label failed: %s' % str(err))
@@ -407,7 +407,7 @@ def setSeedRatio(result):
         post_data = json.dumps({"method": "core.set_torrent_stop_at_ratio",
                                 "params": [result['hash'], True],
                                 "id": 5})
-        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+        _ = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
         post_data = json.dumps({"method": "core.set_torrent_stop_ratio",
                                 "params": [result['hash'], float(ratio)],
                                 "id": 6})
@@ -427,7 +427,7 @@ def setTorrentPath(result):
         post_data = json.dumps({"method": "core.set_torrent_move_completed",
                                 "params": [result['hash'], True],
                                 "id": 7})
-        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+        _ = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
 
         move_to = lazylibrarian.DIRECTORY('Download')
 

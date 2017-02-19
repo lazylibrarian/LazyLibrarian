@@ -79,7 +79,7 @@ def search_magazines(mags=None, reset=False):
                 searchterm = searchmag['Title']
                 dic = {'...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': ''}
                 searchterm = unaccented_str(replace_all(searchterm, dic))
-                searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode(lazylibrarian.SYS_ENCODING)
+                searchterm = re.sub('[.\-/]', ' ', searchterm).encode(lazylibrarian.SYS_ENCODING)
 
             searchlist.append({"bookid": bookid, "searchterm": searchterm})
 
@@ -162,7 +162,7 @@ def search_magazines(mags=None, reset=False):
                         bad_name += 1
                     else:
                         rejected = False
-                        maxsize = check_int(lazylibrarian.REJECT_MAGSIZE, 0)
+                        maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAGSIZE'], 0)
                         if maxsize and nzbsize > maxsize:
                             logger.debug("Rejecting %s, too large" % nzbtitle)
                             rejected = True
@@ -195,7 +195,7 @@ def search_magazines(mags=None, reset=False):
                                     unaccented(bookid),
                                     unaccented(nzbtitle_formatted))
 
-                                if mag_title_match < lazylibrarian.MATCH_RATIO:
+                                if mag_title_match < lazylibrarian.CONFIG['MATCH_RATIO']:
                                     logger.debug(
                                         u"Magazine token set Match failed: " + str(
                                             mag_title_match) + "% for " + nzbtitle_formatted)
@@ -251,7 +251,7 @@ def search_magazines(mags=None, reset=False):
                                             day = 1
                                         newdatish = "%04d-%02d-%02d" % (year, month, day)
                                         try:
-                                            check = datetime.date(year, month, day)
+                                            _ = datetime.date(year, month, day)
                                             regex_pass = 1
                                             break
                                         except ValueError:
@@ -268,7 +268,7 @@ def search_magazines(mags=None, reset=False):
                                         if month:
                                             day = check_int(nzbtitle_exploded[pos - 1].rstrip(','), 1)
                                             try:
-                                                check = datetime.date(year, month, day)
+                                                _ = datetime.date(year, month, day)
                                                 newdatish = "%04d-%02d-%02d" % (year, month, day)
                                                 regex_pass = 2
                                                 break
@@ -289,7 +289,7 @@ def search_magazines(mags=None, reset=False):
                                             else:
                                                 day = 1
                                             try:
-                                                check = datetime.date(year, month, day)
+                                                _ = datetime.date(year, month, day)
                                                 newdatish = "%04d-%02d-%02d" % (year, month, day)
                                                 regex_pass = 3
                                                 break
@@ -371,7 +371,7 @@ def search_magazines(mags=None, reset=False):
 
                                 if '-' in str(newdatish):
                                     start_time = time.time()
-                                    start_time -= int(lazylibrarian.MAG_AGE) * 24 * 60 * 60  # number of seconds in days
+                                    start_time -= int(lazylibrarian.CONFIG['MAG_AGE']) * 24 * 60 * 60  # number of seconds in days
                                     if start_time < 0:  # limit of unixtime (1st Jan 1970)
                                         start_time = 0
                                     control_date = time.strftime("%Y-%m-%d", time.localtime(start_time))

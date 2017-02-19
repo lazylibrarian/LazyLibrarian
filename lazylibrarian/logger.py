@@ -41,12 +41,12 @@ class RotatingLogger(object):
         l = logging.getLogger('lazylibrarian')
         l.setLevel(logging.DEBUG)
 
-        self.filename = os.path.join(lazylibrarian.LOGDIR, self.filename)
+        self.filename = os.path.join(lazylibrarian.CONFIG['LOGDIR'], self.filename)
 
         filehandler = handlers.RotatingFileHandler(
             self.filename,
-            maxBytes=lazylibrarian.LOGSIZE,
-            backupCount=lazylibrarian.LOGFILES)
+            maxBytes=lazylibrarian.CONFIG['LOGSIZE'],
+            backupCount=lazylibrarian.CONFIG['LOGFILES'])
 
         filehandler.setLevel(logging.DEBUG)
 
@@ -80,7 +80,7 @@ class RotatingLogger(object):
         if level != 'DEBUG' or lazylibrarian.LOGFULL is True:
             # Limit the size of the "in-memory" log, as gets slow if too long
             lazylibrarian.LOGLIST.insert(0, (formatter.now(), level, message))
-            if len(lazylibrarian.LOGLIST) > lazylibrarian.LOGLIMIT:
+            if len(lazylibrarian.LOGLIST) > lazylibrarian.CONFIG['LOGLIMIT']:
                 del lazylibrarian.LOGLIST[-1]
 
         message = "%s : %s" % (threadname, message)

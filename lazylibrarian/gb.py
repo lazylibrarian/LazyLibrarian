@@ -35,13 +35,13 @@ from lib.fuzzywuzzy import fuzz
 class GoogleBooks:
     def __init__(self, name=None):
         self.name = name
-        if not lazylibrarian.GB_API:
+        if not lazylibrarian.CONFIG['GB_API']:
             logger.warn('No GoogleBooks API key, check config')
         self.url = 'https://www.googleapis.com/books/v1/volumes?q='
         self.params = {
             'maxResults': 40,
             'printType': 'books',
-            'key': lazylibrarian.GB_API
+            'key': lazylibrarian.CONFIG['GB_API']
         }
 
     def find_results(self, authorname=None, queue=None):
@@ -125,7 +125,7 @@ class GoogleBooks:
                                 continue
 
                             valid_langs = ([valid_lang.strip()
-                                            for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
+                                            for valid_lang in lazylibrarian.CONFIG['IMP_PREFLANG'].split(',')])
                             booklang = ''
                             if "All" not in valid_langs:  # don't care about languages, accept all
                                 try:
@@ -285,7 +285,7 @@ class GoogleBooks:
             number_results = 1
 
             valid_langs = ([valid_lang.strip()
-                            for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
+                            for valid_lang in lazylibrarian.CONFIG['IMP_PREFLANG'].split(',')])
             # Artist is loading
             myDB = database.DBConnection()
             controlValueDict = {"AuthorID": authorid}
@@ -326,7 +326,7 @@ class GoogleBooks:
 
                         # skip if no author, no author is no book.
                         try:
-                            author = item['volumeInfo']['authors'][0]
+                            _ = item['volumeInfo']['authors'][0]
                         except KeyError:
                             logger.debug('Skipped a result without authorfield.')
                             continue
@@ -653,13 +653,14 @@ class GoogleBooks:
         except Exception:
             logger.error('Unhandled exception in GB.get_author_books: %s' % traceback.format_exc())
 
+    # noinspection PyUnusedLocal
     @staticmethod
     def find_book(bookid=None, queue=None):
         myDB = database.DBConnection()
-        if not lazylibrarian.GB_API:
+        if not lazylibrarian.CONFIG['GB_API']:
             logger.warn('No GoogleBooks API key, check config')
         URL = 'https://www.googleapis.com/books/v1/volumes/' + \
-              str(bookid) + "?key=" + lazylibrarian.GB_API
+              str(bookid) + "?key=" + lazylibrarian.CONFIG['GB_API']
         jsonresults, in_cache = get_json_request(URL)
 
         if jsonresults is None:
@@ -682,7 +683,7 @@ class GoogleBooks:
             # warn if language is in ignore list, but user said they wanted this book
             booklang = jsonresults['volumeInfo']['language']
             valid_langs = ([valid_lang.strip()
-                            for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
+                            for valid_lang in lazylibrarian.CONFIG['IMP_PREFLANG'].split(',')])
             if booklang not in valid_langs and 'All' not in valid_langs:
                 logger.debug('Book %s language does not match preference' % bookname)
         except KeyError:

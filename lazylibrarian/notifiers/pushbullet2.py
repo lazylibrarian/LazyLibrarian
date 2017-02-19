@@ -144,6 +144,7 @@ class PushBullet:
 
         if not file_type:
             try:
+                # noinspection PyUnresolvedReferences
                 import magic
                 file_type = magic.from_buffer(fobj.read(1024))
                 fobj.seek(0)

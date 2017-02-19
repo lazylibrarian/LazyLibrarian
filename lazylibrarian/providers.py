@@ -20,7 +20,7 @@ import lazylibrarian
 import lib.feedparser as feedparser
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.formatter import age, today, plural, cleanName, unaccented
+from lazylibrarian.formatter import age, today, plural, cleanName, unaccented, getList
 from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL, GEN, EXTRA, LIME
 
 
@@ -45,9 +45,10 @@ def get_searchterm(book, searchType):
         if ' ' in authorname:
             authorname_exploded = authorname.split(' ')
             authorname = ''
+            postfix = getList(lazylibrarian.CONFIG['NAME_POSTFIX'])
             for word in authorname_exploded:
                 word = word.strip('.').strip('_')
-                if len(word) > 1 and word.lower() not in lazylibrarian.NAME_POSTFIX:
+                if len(word) > 1 and word.lower() not in postfix:
                     if authorname:
                         authorname += ' '
                     authorname += word
@@ -65,7 +66,7 @@ def get_capabilities(provider):
     match = False
     if len(provider['UPDATED']) == 10:  # any stored values?
         match = True
-        if (age(provider['UPDATED']) > lazylibrarian.CACHE_AGE) and not provider['MANUAL']:
+        if (age(provider['UPDATED']) > lazylibrarian.CONFIG['CACHE_AGE']) and not provider['MANUAL']:
             logger.debug('Stored capabilities for %s are too old' % provider['HOST'])
             match = False
 
@@ -198,33 +199,33 @@ def IterateOverTorrentSites(book=None, searchType=None):
         authorname, bookname = get_searchterm(book, searchType)
         book['searchterm'] = authorname + ' ' + bookname
 
-    if lazylibrarian.KAT:
+    if lazylibrarian.CONFIG['KAT']:
         providers += 1
-        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.KAT_HOST)
+        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG['KAT_HOST'])
         resultslist += KAT(book)
-    if lazylibrarian.TPB:
+    if lazylibrarian.CONFIG['TPB']:
         providers += 1
-        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.TPB_HOST)
+        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG['TPB_HOST'])
         resultslist += TPB(book)
-    if lazylibrarian.ZOO:
+    if lazylibrarian.CONFIG['ZOO']:
         providers += 1
-        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.ZOO_HOST)
+        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG['ZOO_HOST'])
         resultslist += ZOO(book)
-    if lazylibrarian.EXTRA:
+    if lazylibrarian.CONFIG['EXTRA']:
         providers += 1
-        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.EXTRA_HOST)
+        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG['EXTRA_HOST'])
         resultslist += EXTRA(book)
-    if lazylibrarian.TDL:
+    if lazylibrarian.CONFIG['TDL']:
         providers += 1
-        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.TDL_HOST)
+        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG['TDL_HOST'])
         resultslist += TDL(book)
-    if lazylibrarian.GEN:
+    if lazylibrarian.CONFIG['GEN']:
         providers += 1
-        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.GEN_HOST)
+        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG['GEN_HOST'])
         resultslist += GEN(book)
-    if lazylibrarian.LIME:
+    if lazylibrarian.CONFIG['LIME']:
         providers += 1
-        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.LIME_HOST)
+        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG['LIME_HOST'])
         resultslist += LIME(book)
 
     return resultslist, providers
@@ -295,7 +296,7 @@ def RSS(host=None, feednr=None):
                 tortype = 'torrent'
 
             if magnet:
-                if not url or (url and lazylibrarian.PREFER_MAGNET):
+                if not url or (url and lazylibrarian.CONFIG['PREFER_MAGNET']):
                     url = magnet
                     tortype = 'magnet'
 
@@ -576,7 +577,7 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, host=None, searc
         elif tag == 'pubdate':
             nzbdate = nzbdetails[n].text
         elif tag == 'link':
-            if not nzburl or (nzburl and not lazylibrarian.PREFER_MAGNET):
+            if not nzburl or (nzburl and not lazylibrarian.CONFIG['PREFER_MAGNET']):
                 nzburl = nzbdetails[n].text
         elif nzbdetails[n].attrib.get('name') == 'magneturl':
             nzburl = nzbdetails[n].attrib.get('value')

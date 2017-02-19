@@ -71,7 +71,7 @@
                     <td id="issuedate">${result['IssueDate']}</td>
                     <td id="status">${result['Status']}</td>
                     %if result['IssueStatus'] == 'Open':
-                            %if result['Count'] == 1 and lazylibrarian.MAG_SINGLE:
+                            %if result['Count'] == 1 and lazylibrarian.CONFIG['MAG_SINGLE']:
                                 <td id="issue"><a class="button green" href="openMag?bookid=${result['safetitle']}" target="_self">Open</a></td>
                             %else:
                                 <td id="issue"><a class="button orange" href="openMag?bookid=${result['safetitle']}" target="_self">Show</a></td>
@@ -139,7 +139,7 @@
                     "sInfoFiltered":"(filtered from _MAX_ total magazines)"},
                 "sPaginationType": "full_numbers",
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
-                "iDisplayLength": ${lazylibrarian.DISPLAYLENGTH},
+                "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
             });
             $('.dataTables_filter input').attr("placeholder", "Search table here");
     });
