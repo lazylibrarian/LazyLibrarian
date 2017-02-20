@@ -16,6 +16,7 @@
 import os
 import re
 import traceback
+import urllib
 from shutil import copyfile
 from xml.etree import ElementTree
 
@@ -23,7 +24,7 @@ import lazylibrarian
 import lib.zipfile as zipfile
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages
-from lazylibrarian.cache import cache_cover
+from lazylibrarian.cache import cache_cover, get_xml_request
 from lazylibrarian.common import opf_file, internet
 from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList, unaccented, \
     replace_all, split_title
@@ -612,6 +613,47 @@ def LibraryScan(startdir=None):
                                                 logger.warn("%s not found under [%s], found under [%s]" %
                                                             (book, author, newauthor))
 
+                                # at this point if we still have no bookid
+                                # we have author and book but no database entry for it
+                                # try to add the book again ignoring language filter
+                                if not bookid:
+                                    if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
+                                        base_url = 'http://www.goodreads.com/search.xml?q='
+                                        params = {"key": lazylibrarian.CONFIG['GR_API']}
+                                        searchname = author + ' ' + book
+                                        if searchname[1] == ' ':
+                                            searchname = searchname.replace(' ', '.')
+                                            searchname = searchname.replace('..', '.')
+
+                                        searchterm = urllib.quote_plus(searchname.encode(lazylibrarian.SYS_ENCODING))
+                                        set_url = base_url + searchterm + '&' + urllib.urlencode(params)
+                                        try:
+                                            rootxml, in_cache = get_xml_request(set_url)
+                                            if not len(rootxml):
+                                                logger.debug("Error requesting results from GoodReads")
+                                            else:
+                                                resultxml = rootxml.getiterator('work')
+                                                for item in resultxml:
+                                                    booktitle = item.find('./best_book/title').text
+                                                    book_fuzz = fuzz.token_set_ratio(booktitle, book)
+                                                    if book_fuzz >= 98:
+                                                        logger.debug("Rescan found %s : %s" % (booktitle, language))
+                                                        bookid = item.find('./best_book/id').text
+                                                        GR_ID = GoodReads(bookid)
+                                                        GR_ID.find_book(bookid, None)
+                                                        if language and language != "Unknown":
+                                                            # set language from book metadata
+                                                            myDB.action('UPDATE books SET BookLang=%s WHERE BookID=%s' %
+                                                                        (language, bookid))
+                                                        break
+                                        except Exception as e:
+                                            logger.error("Error finding results: %s" % str(e))
+
+                                    elif lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
+                                        GB_ID = GoogleBooks(bookid)
+                                        GB_ID.find_book(bookid, None)
+
+                                # see if it's there now...
                                 if bookid:
                                     check_status = myDB.match(
                                         'SELECT Status, BookFile, AuthorName, BookName from books where BookID="%s"' %
