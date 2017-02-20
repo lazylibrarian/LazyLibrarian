@@ -25,6 +25,44 @@ from lazylibrarian import logger, database, magazinescan, bookwork
 from lazylibrarian.formatter import plural, bookSeries
 from lazylibrarian.common import restartJobs
 
+def upgrade_needed():
+    """
+    Check if database needs upgrading
+    Return zero if up-to-date
+    Return current version if needs upgrade
+    """
+
+    myDB = database.DBConnection()
+    result = myDB.match('PRAGMA user_version')
+    # Had a report of "index out of range", can't replicate it.
+    # Maybe on some versions of sqlite an unset user_version
+    # or unsupported pragma gives an empty result?
+    if result:
+        db_version = result[0]
+    else:
+        db_version = 0
+
+    # database version history:
+    # 0 original version or new empty database
+    # 1 changes up to June 2016
+    # 2 removed " MB" from nzbsize field in wanted table
+    # 3 removed SeriesOrder column from books table as redundant
+    # 4 added duplicates column to stats table
+    # 5 issue numbers padded to 4 digits with leading zeros
+    # 6 added Manual field to books table for user editing
+    # 7 added Source and DownloadID to wanted table for download monitoring
+    # 8 move image cache from data/images/cache into datadir
+    # 9 add regex to magazine table
+    # 10 check for missing columns in pastissues table
+    # 11 Keep most recent book image in author table
+    # 12 Keep latest issue cover in magazine table
+    # 13 add Manual column to author table for user editing
+
+    db_current_version = 13
+    if db_version < db_current_version:
+        return db_current_version
+    return 0
+
 
 def dbupgrade(db_current_version):
     conn = sqlite3.connect(lazylibrarian.DBFILE)
