@@ -613,11 +613,12 @@ def LibraryScan(startdir=None):
                                                 logger.warn("%s not found under [%s], found under [%s]" %
                                                             (book, author, newauthor))
 
-                                # at this point if we still have no bookid
-                                # we have author and book but no database entry for it
-                                # try to add the book again ignoring language filter
+                                # at this point if we still have no bookid, we have author and book
+                                # but no database entry for it
                                 if not bookid:
                                     if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
+                                        # Either goodreads doesn't have the book or it didn't match language prefs
+                                        # Since we have the book anyway, try and reload it ignoring language prefs
                                         base_url = 'http://www.goodreads.com/search.xml?q='
                                         params = {"key": lazylibrarian.CONFIG['GR_API']}
                                         searchname = author + ' ' + book
@@ -643,15 +644,18 @@ def LibraryScan(startdir=None):
                                                         GR_ID.find_book(bookid, None)
                                                         if language and language != "Unknown":
                                                             # set language from book metadata
-                                                            myDB.action('UPDATE books SET BookLang=%s WHERE BookID=%s' %
+                                                            myDB.action('UPDATE books SET BookLang="%s" WHERE BookID="%s"' %
                                                                         (language, bookid))
                                                         break
+                                                if not bookid:
+                                                    logger.warn("GoodReads doesn't know about %s" % book)
                                         except Exception as e:
                                             logger.error("Error finding results: %s" % str(e))
 
                                     elif lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
-                                        GB_ID = GoogleBooks(bookid)
-                                        GB_ID.find_book(bookid, None)
+                                        # if we get here using googlebooks it's because googlebooks
+                                        # doesn't have the book. No point in looking for it again.
+                                        logger.warn("GoogleBooks doesn't know about %s" % book)
 
                                 # see if it's there now...
                                 if bookid:
@@ -712,31 +716,28 @@ def LibraryScan(startdir=None):
                 logger.warn("Found %s book%s in your library with unknown language" % (nolang, plural(nolang)))
                 # show stats if new books were added
             stats = myDB.match(
-                "SELECT sum(GR_book_hits), sum(GR_lang_hits), sum(LT_lang_hits), sum(GB_lang_change), \
-                    sum(cache_hits), sum(bad_lang), sum(bad_char), sum(uncached), sum(duplicates) FROM stats")
-            if stats:  # and stats['sum(GR_book_hits)']:
+                "SELECT COALESCE(sum(GR_book_hits), 0), \
+                        COALESCE(sum(GR_lang_hits), 0), \
+                        COALESCE(sum(LT_lang_hits), 0), \
+                        COALESCE(sum(GB_lang_change), 0), \
+                        COALESCE(sum(cache_hits), 0), \
+                        COALESCE(sum(bad_lang), 0), \
+                        COALESCE(sum(bad_char), 0), \
+                        COALESCE(sum(uncached), 0), \
+                        COALESCE(sum(duplicates), 0) FROM stats")
+            if stats:
                 if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
-                    logger.debug("GoogleBooks was hit %s time%s for books" %
-                                 (stats['sum(GR_book_hits)'], plural(stats['sum(GR_book_hits)'])))
-                    logger.debug("GoogleBooks language was changed %s time%s" %
-                                 (stats['sum(GB_lang_change)'], plural(stats['sum(GB_lang_change)'])))
+                    logger.debug("GoogleBooks was hit %s time%s for books" % (stats[0], plural(stats[0])))
+                    logger.debug("GoogleBooks language changed %s time%s" % (stats[3], plural(stats[3])))
                 if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
-                    logger.debug("GoodReads was hit %s time%s for books" %
-                                 (stats['sum(GR_book_hits)'], plural(stats['sum(GR_book_hits)'])))
-                    logger.debug("GoodReads was hit %s time%s for languages" %
-                                 (stats['sum(GR_lang_hits)'], plural(stats['sum(GR_lang_hits)'])))
-                logger.debug("LibraryThing was hit %s time%s for languages" %
-                             (stats['sum(LT_lang_hits)'], plural(stats['sum(LT_lang_hits)'])))
-                logger.debug("Language cache was hit %s time%s" %
-                             (stats['sum(cache_hits)'], plural(stats['sum(cache_hits)'])))
-                logger.debug("Unwanted language removed %s book%s" %
-                             (stats['sum(bad_lang)'], plural(stats['sum(bad_lang)'])))
-                logger.debug("Unwanted characters removed %s book%s" %
-                             (stats['sum(bad_char)'], plural(stats['sum(bad_char)'])))
-                logger.debug("Unable to cache language for %s book%s with missing ISBN" %
-                             (stats['sum(uncached)'], plural(stats['sum(uncached)'])))
-                logger.debug("Found %s duplicate book%s" %
-                             (stats['sum(duplicates)'], plural(stats['sum(duplicates)'])))
+                    logger.debug("GoodReads was hit %s time%s for books" % (stats[0], plural(stats[0])))
+                    logger.debug("GoodReads was hit %s time%s for languages" % (stats[1], plural(stats[1])))
+                logger.debug("LibraryThing was hit %s time%s for languages" % (stats[2], plural(stats[2])))
+                logger.debug("Language cache was hit %s time%s" % (stats[4], plural(stats[4])))
+                logger.debug("Unwanted language removed %s book%s" % (stats[5], plural(stats[5])))
+                logger.debug("Unwanted characters removed %s book%s" % (stats[6], plural(stats[6])))
+                logger.debug("Unable to cache language for %s book%s with missing ISBN" % (stats[7], plural(stats[7])))
+                logger.debug("Found %s duplicate book%s" % (stats[8], plural(stats[8])))
                 logger.debug("Cache %s hit%s, %s miss" %
                              (lazylibrarian.CACHE_HIT, plural(lazylibrarian.CACHE_HIT), lazylibrarian.CACHE_MISS))
                 cachesize = myDB.match("select count('ISBN') as counter from languages")
