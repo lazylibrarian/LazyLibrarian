@@ -303,6 +303,8 @@ def LibraryScan(startdir=None):
 
         new_book_count = 0
         modified_count = 0
+        rescan_count = 0
+        rescan_hits = 0
         file_count = 0
         author = ""
 
@@ -621,6 +623,7 @@ def LibraryScan(startdir=None):
                                     if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
                                         # Either goodreads doesn't have the book or it didn't match language prefs
                                         # Since we have the book anyway, try and reload it ignoring language prefs
+                                        rescan_count += 1
                                         base_url = 'http://www.goodreads.com/search.xml?q='
                                         params = {"key": lazylibrarian.CONFIG['GR_API']}
                                         searchname = author + ' ' + book
@@ -641,6 +644,7 @@ def LibraryScan(startdir=None):
                                                     book_fuzz = fuzz.token_set_ratio(booktitle, book)
                                                     if book_fuzz >= 98:
                                                         logger.debug("Rescan found %s : %s" % (booktitle, language))
+                                                        rescan_hits += 1
                                                         bookid = item.find('./best_book/id').text
                                                         GR_ID = GoodReads(bookid)
                                                         GR_ID.find_book(bookid, None)
@@ -751,6 +755,8 @@ def LibraryScan(startdir=None):
             logger.debug("Unwanted characters removed %s book%s" % (bad_char, plural(bad_char)))
             logger.debug("Unable to cache language for %s book%s with missing ISBN" % (uncached, plural(uncached)))
             logger.debug("Found %s duplicate book%s" % (duplicates, plural(duplicates)))
+            logger.debug("Rescan %s hit%s, %s miss" %
+                         (rescan_hits, plural(rescan_hits), rescan_count - rescan_hits))
             logger.debug("Cache %s hit%s, %s miss" %
                          (lazylibrarian.CACHE_HIT, plural(lazylibrarian.CACHE_HIT), lazylibrarian.CACHE_MISS))
             cachesize = myDB.match("select count('ISBN') as counter from languages")
