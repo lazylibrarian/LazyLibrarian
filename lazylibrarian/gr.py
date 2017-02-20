@@ -74,6 +74,8 @@ class GoodReads:
                         bookdate = author.find('original_publication_year').text
 
                     authorNameResult = author.find('./best_book/author/name').text
+                    # Goodreads sometimes puts extra whitepase in the author names!
+                    authorNameResult =  ' '.join(authorNameResult.split())
                     booksub = ""
                     bookpub = ""
                     booklang = "Unknown"
@@ -287,7 +289,9 @@ class GoodReads:
                 logger.debug(u"url " + URL)
 
                 authorNameResult = rootxml.find('./author/name').text
-                logger.debug(u"author name " + authorNameResult)
+                # Goodreads sometimes puts extra whitepase in the author names!
+                authorNameResult =  ' '.join(authorNameResult.split())
+                logger.debug(u"GoodReads author name [%s]" % authorNameResult)
                 loopCount = 1
 
                 while resultxml:
