@@ -324,26 +324,25 @@ class GoodReads:
                                     find_field = "isbn13"
                                     isbn = book.find('isbn13').text
                                     isbnhead = isbn[3:6]
-                            if find_field != 'id':  # isbn10 or isbn13 found
-                                # Try to use shortcut of ISBN identifier codes described here...
-                                # https://en.wikipedia.org/wiki/List_of_ISBN_identifier_groups
-                                if isbnhead != "":
-                                    if find_field == "isbn13" and isbn.startswith('979'):
-                                        for item in lazylibrarian.isbn_979_dict:
-                                            if isbnhead.startswith(item):
-                                                bookLanguage = lazylibrarian.isbn_979_dict[item]
-                                                break
-                                        if bookLanguage != "Unknown":
-                                            logger.debug("ISBN979 returned %s for %s" % (bookLanguage, isbnhead))
-                                    elif (find_field == "isbn") or (find_field == "isbn13" and isbn.startswith('978')):
-                                        for item in lazylibrarian.isbn_978_dict:
-                                            if isbnhead.startswith(item):
-                                                bookLanguage = lazylibrarian.isbn_978_dict[item]
-                                                break
-                                        if bookLanguage != "Unknown":
-                                            logger.debug("ISBN978 returned %s for %s" % (bookLanguage, isbnhead))
+                            # Try to use shortcut of ISBN identifier codes described here...
+                            # https://en.wikipedia.org/wiki/List_of_ISBN_identifier_groups
+                            if isbnhead:
+                                if find_field == "isbn13" and isbn.startswith('979'):
+                                    for item in lazylibrarian.isbn_979_dict:
+                                        if isbnhead.startswith(item):
+                                            bookLanguage = lazylibrarian.isbn_979_dict[item]
+                                            break
+                                    if bookLanguage != "Unknown":
+                                        logger.debug("ISBN979 returned %s for %s" % (bookLanguage, isbnhead))
+                                elif (find_field == "isbn") or (find_field == "isbn13" and isbn.startswith('978')):
+                                    for item in lazylibrarian.isbn_978_dict:
+                                        if isbnhead.startswith(item):
+                                            bookLanguage = lazylibrarian.isbn_978_dict[item]
+                                            break
+                                    if bookLanguage != "Unknown":
+                                        logger.debug("ISBN978 returned %s for %s" % (bookLanguage, isbnhead))
 
-                            if bookLanguage == "Unknown":
+                            if bookLanguage == "Unknown" and isbnhead:
                                 # Nothing in the isbn dictionary, try any cached results
                                 match = myDB.match('SELECT lang FROM languages where isbn = "%s"' % isbnhead)
                                 if match:
