@@ -479,8 +479,9 @@ def LibraryScan(startdir=None):
                                         # guess its "surname, forename" or "surname, initial(s)" so swap them round
                                         forename = words[1].strip()
                                         surname = words[0].strip()
-                                    logger.debug('Formatted authorname [%s] to [%s %s]' % (author, forename, surname))
-                                    author = forename + ' ' + surname
+                                    if author != forename + ' ' + surname:
+                                        logger.debug('Formatted authorname [%s] to [%s %s]' % (author, forename, surname))
+                                        author = forename + ' ' + surname
                             # reformat any initials, we want to end up with A.B. van Smith
                             if author[1] in '. ':
                                 surname = author
@@ -488,8 +489,9 @@ def LibraryScan(startdir=None):
                                 while surname[1] in '. ':
                                     forename = forename + surname[0] + '.'
                                     surname = surname[2:].strip()
-                                logger.debug('Stripped authorname [%s] to [%s %s]' % (author, forename, surname))
-                                author = forename + ' ' + surname
+                                if author != forename + ' ' + surname:
+                                    logger.debug('Stripped authorname [%s] to [%s %s]' % (author, forename, surname))
+                                    author = forename + ' ' + surname
 
                             author = ' '.join(author.split())  # ensure no extra whitespace
 
@@ -716,32 +718,43 @@ def LibraryScan(startdir=None):
                 logger.warn("Found %s book%s in your library with unknown language" % (nolang, plural(nolang)))
                 # show stats if new books were added
             stats = myDB.match(
-                "SELECT COALESCE(sum(GR_book_hits), 0), \
-                        COALESCE(sum(GR_lang_hits), 0), \
-                        COALESCE(sum(LT_lang_hits), 0), \
-                        COALESCE(sum(GB_lang_change), 0), \
-                        COALESCE(sum(cache_hits), 0), \
-                        COALESCE(sum(bad_lang), 0), \
-                        COALESCE(sum(bad_char), 0), \
-                        COALESCE(sum(uncached), 0), \
-                        COALESCE(sum(duplicates), 0) FROM stats")
-            if stats:
-                if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
-                    logger.debug("GoogleBooks was hit %s time%s for books" % (stats[0], plural(stats[0])))
-                    logger.debug("GoogleBooks language changed %s time%s" % (stats[3], plural(stats[3])))
-                if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
-                    logger.debug("GoodReads was hit %s time%s for books" % (stats[0], plural(stats[0])))
-                    logger.debug("GoodReads was hit %s time%s for languages" % (stats[1], plural(stats[1])))
-                logger.debug("LibraryThing was hit %s time%s for languages" % (stats[2], plural(stats[2])))
-                logger.debug("Language cache was hit %s time%s" % (stats[4], plural(stats[4])))
-                logger.debug("Unwanted language removed %s book%s" % (stats[5], plural(stats[5])))
-                logger.debug("Unwanted characters removed %s book%s" % (stats[6], plural(stats[6])))
-                logger.debug("Unable to cache language for %s book%s with missing ISBN" % (stats[7], plural(stats[7])))
-                logger.debug("Found %s duplicate book%s" % (stats[8], plural(stats[8])))
-                logger.debug("Cache %s hit%s, %s miss" %
-                             (lazylibrarian.CACHE_HIT, plural(lazylibrarian.CACHE_HIT), lazylibrarian.CACHE_MISS))
-                cachesize = myDB.match("select count('ISBN') as counter from languages")
-                logger.debug("ISBN Language cache holds %s entries" % cachesize['counter'])
+                "SELECT sum(GR_book_hits), \
+                        sum(GR_lang_hits), \
+                        sum(LT_lang_hits), \
+                        sum(GB_lang_change), \
+                        sum(cache_hits), \
+                        sum(bad_lang), \
+                        sum(bad_char), \
+                        sum(uncached), \
+                        sum(duplicates) FROM stats")
+
+            GR_book_hits = stats[0]
+            GB_book_hits = stats[0]
+            GR_lang_hits = stats[1]
+            LT_lang_hits = stats[2]
+            GB_lang_change = stats[3]
+            cache_hits = stats[4]
+            bad_lang = stats[5]
+            bad_char = stats[6]
+            uncached = stats[7]
+            duplicates = stats[8]
+
+            if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
+                logger.debug("GoogleBooks was hit %s time%s for books" % (GB_book_hits, plural(GB_book_hits)))
+                logger.debug("GoogleBooks language changed %s time%s" % (GB_lang_change, plural(GB_lang_change)))
+            if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
+                logger.debug("GoodReads was hit %s time%s for books" % (GR_book_hits, plural(GR_book_hits)))
+                logger.debug("GoodReads was hit %s time%s for languages" % (GR_lang_hits, plural(GR_lang_hits)))
+            logger.debug("LibraryThing was hit %s time%s for languages" % (LT_lang_hits, plural(LT_lang_hits)))
+            logger.debug("Language cache was hit %s time%s" % (cache_hits, plural(cache_hits)))
+            logger.debug("Unwanted language removed %s book%s" % (bad_lang, plural(bad_lang)))
+            logger.debug("Unwanted characters removed %s book%s" % (bad_char, plural(bad_char)))
+            logger.debug("Unable to cache language for %s book%s with missing ISBN" % (uncached, plural(uncached)))
+            logger.debug("Found %s duplicate book%s" % (duplicates, plural(duplicates)))
+            logger.debug("Cache %s hit%s, %s miss" %
+                         (lazylibrarian.CACHE_HIT, plural(lazylibrarian.CACHE_HIT), lazylibrarian.CACHE_MISS))
+            cachesize = myDB.match("select count('ISBN') as counter from languages")
+            logger.debug("ISBN Language cache holds %s entries" % cachesize['counter'])
 
             # Cache any covers and images
             images = myDB.select('select bookid, bookimg, bookname from books where bookimg like "http%"')
