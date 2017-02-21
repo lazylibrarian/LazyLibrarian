@@ -574,51 +574,63 @@ def LibraryScan(startdir=None):
                                 # or books we moved to "merge" authors
                                 book = book.replace("'", "")
 
-                                # See if the gr_id, gb_id or isbn is already in our database
-                                if gr_id:
-                                    bookid = gr_id
-                                elif gb_id:
-                                    bookid = gb_id
-                                else:
-                                    bookid = ""
+                                # First try and find it under author and bookname
+                                # as we may have it under a different bookid or isbn to goodreads/googlebooks
+                                # which might have several bookid/isbn for the same book
+                                bookid = find_book_in_db(myDB, author, book)
 
-                                if bookid:
-                                    match = myDB.match('SELECT BookID FROM books where BookID = "%s"' % bookid)
-                                    if not match:
-                                        logger.debug('Unable to find book %s by %s in database, trying to add it' %
-                                                     (book, author))
-                                        if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads" and gr_id:
-                                            GR_ID = GoodReads(gr_id)
-                                            GR_ID.find_book(gr_id, None)
-                                        elif lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks" and gb_id:
-                                            GB_ID = GoogleBooks(gb_id)
-                                            GB_ID.find_book(gb_id, None)
-                                        # see if it's there now...
-                                        match = myDB.match('SELECT BookID from books where BookID="%s"' % bookid)
+                                if not bookid:
+                                    # Title or author name might not match or multiple authors
+                                    # See if the gr_id, gb_id is already in our database
+                                    if gr_id:
+                                        bookid = gr_id
+                                    elif gb_id:
+                                        bookid = gb_id
+                                    else:
+                                        bookid = ""
+
+                                    if bookid:
+                                        match = myDB.match('SELECT BookID FROM books where BookID = "%s"' % bookid)
                                         if not match:
-                                            logger.debug("Unable to add bookid %s to database" % bookid)
-                                            bookid = ""
+                                            msg = 'Unable to find book %s by %s in database, trying to add it using '
+                                            if bookid == gr_id:
+                                                msg += "GoodReads ID " + gr_id
+                                            if bookid == gb_id:
+                                                msg += "GoogleBooks ID " + gb_id
+                                            logger.debug(msg % (book, author))
+                                            if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads" and gr_id:
+                                                GR_ID = GoodReads(gr_id)
+                                                GR_ID.find_book(gr_id, None)
+                                            elif lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks" and gb_id:
+                                                GB_ID = GoogleBooks(gb_id)
+                                                GB_ID.find_book(gb_id, None)
+                                            # see if it's there now...
+                                            match = myDB.match('SELECT BookID from books where BookID="%s"' % bookid)
+                                            if not match:
+                                                logger.debug("Unable to add bookid %s to database" % bookid)
+                                                bookid = ""
+
                                 if not bookid and isbn:
+                                    # See if the isbn is in our database
                                     match = myDB.match('SELECT BookID FROM books where BookIsbn = "%s"' % isbn)
                                     if match:
                                         bookid = match['BookID']
-                                if not bookid:
-                                    # Try and find it under metadata authorname
-                                    bookid = find_book_in_db(myDB, author, book)
-                                    if not bookid:
-                                        # get author name from parent directory of this book directory
-                                        newauthor = os.path.basename(os.path.dirname(r))
-                                        # calibre replaces trailing periods with _ eg Smith Jr. -> Smith Jr_
-                                        if newauthor.endswith('_'):
-                                            newauthor = newauthor[:-1] + '.'
-                                        if author.lower() != newauthor.lower():
-                                            bookid = find_book_in_db(myDB, newauthor, book)
-                                            if bookid:
-                                                logger.warn("%s not found under [%s], found under [%s]" %
-                                                            (book, author, newauthor))
 
-                                # at this point if we still have no bookid, we have author and book
-                                # but no database entry for it
+                                if not bookid:
+                                    # get author name from parent directory of this book directory
+                                    newauthor = os.path.basename(os.path.dirname(r))
+                                    # calibre replaces trailing periods with _ eg Smith Jr. -> Smith Jr_
+                                    if newauthor.endswith('_'):
+                                        newauthor = newauthor[:-1] + '.'
+                                    if author.lower() != newauthor.lower():
+                                        logger.debug("Trying authorname [%s]" % newauthor)
+                                        bookid = find_book_in_db(myDB, newauthor, book)
+                                        if bookid:
+                                            logger.warn("%s not found under [%s], found under [%s]" %
+                                                        (book, author, newauthor))
+
+                                # at this point if we still have no bookid, it looks like we
+                                # have author and book title but no database entry for it
                                 if not bookid:
                                     if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
                                         # Either goodreads doesn't have the book or it didn't match language prefs
