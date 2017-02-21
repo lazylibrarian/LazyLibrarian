@@ -137,12 +137,18 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
         tor_size_temp = tor['tor_size']  # Need to cater for when this is NONE (Issue 35)
         tor_size_temp = check_int(tor_size_temp, 1000)
         tor_size = round(float(tor_size_temp) / 1048576, 2)
-        maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXSIZE'], 0)
 
+        maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXSIZE'], 0)
         if not rejected:
             if maxsize and tor_size > maxsize:
                 rejected = True
                 logger.debug("Rejecting %s, too large" % torTitle)
+
+        minsize = check_int(lazylibrarian.CONFIG['REJECT_MINSIZE'], 0)
+        if not rejected:
+            if minsize and tor_size < minsize:
+                rejected = True
+                logger.debug("Rejecting %s, too small" % torTitle)
 
         if not rejected:
             bookid = book['bookid']

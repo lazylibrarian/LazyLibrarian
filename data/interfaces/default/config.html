@@ -1567,22 +1567,34 @@
                     <BR><BR>
                 </fieldset>
                 <fieldset>
-                    <h3>Book Size Limit</h3>Default: 0
+                    <h3>Book Size Limits</h3>Default: 0
                     <br>
-                    <input type="text" name="reject_maxsize" placeholder="Reject Size Limit" value="${lazylibrarian.CONFIG['REJECT_MAXSIZE']}" size="20">
+                    <input type="text" name="reject_maxsize" placeholder="Reject Maximim Size" value="${lazylibrarian.CONFIG['REJECT_MAXSIZE']}" size="20">
                     <br>
-                    <small>Book size limit (Mb):<br>
+                    <small>Book maximum size (Mb):<br>
                     Search results larger than this will be rejected, set to 0 to disable
+                    <BR></small>
+                    <br>
+                    <input type="text" name="reject_minsize" placeholder="Reject Minimum Size" value="${lazylibrarian.CONFIG['REJECT_MINSIZE']}" size="20">
+                    <br>
+                    <small>Book minimum size (Mb):<br>
+                    Search results smaller than this will be rejected, set to 0 to disable
                     <BR></small>
                     <BR><BR>
                 </fieldset>
                 <fieldset>
-                    <h3>Magazine Size Limit</h3>Default: 0
+                    <h3>Magazine Size Limits</h3>Default: 0
                     <br>
-                    <input type="text" name="reject_magsize" placeholder="Reject Size Limit" value="${lazylibrarian.CONFIG['REJECT_MAGSIZE']}" size="20">
+                    <input type="text" name="reject_magsize" placeholder="Reject Maximum Size" value="${lazylibrarian.CONFIG['REJECT_MAGSIZE']}" size="20">
                     <br>
-                    <small>Magazine size limit (Mb):<br>
+                    <small>Magazine maximum size (Mb):<br>
                     Search results larger than this will be rejected, set to 0 to disable
+                    <BR></small>
+                    <br>
+                    <input type="text" name="reject_magmin" placeholder="Reject Minimum Size" value="${lazylibrarian.CONFIG['REJECT_MAGMIN']}" size="20">
+                    <br>
+                    <small>Magazine minimum size (Mb):<br>
+                    Search results smaller than this will be rejected, set to 0 to disable
                     <BR></small>
                     <BR><BR>
                 </fieldset>
