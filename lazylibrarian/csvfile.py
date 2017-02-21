@@ -157,7 +157,7 @@ def import_CSV(search_dir=None):
                 authorname = content[item]['Author']
                 if isinstance(authorname, str):
                     authorname = authorname.decode(lazylibrarian.SYS_ENCODING)
-
+                authorname = ' '.join(authorname.split())  # strip extra whitespace
                 authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % authorname)
 
                 if authmatch:
