@@ -353,7 +353,7 @@
                                                 </div>
                                                 <div class="form-group">
                                                     <label for="usenet_retention" class="control-label">Retention Max Age:</label>
-                                                    <input type="text" id="usenet_retention" name="usenet_retention" value="${lazylibrarian.CONFIG['USENET_RETENTION']}" class="form-control" placeholder="Retention MAximum Age">
+                                                    <input type="text" id="usenet_retention" name="usenet_retention" value="${lazylibrarian.CONFIG['USENET_RETENTION']}" class="form-control" placeholder="Retention Maximum Age">
                                                 </div>
                                                     <div class="form-group col-md-6">
                                                         <label for="testSABnzbd" class="control-label">SABnzbd Connection:</label><br>
@@ -1854,20 +1854,32 @@
                                     Search results with any of these words in the title will be ignored<br/>
                                     </span>
                                 </div>
-                                <legend>Book Size Limit</legend>
+                                <legend>Book Size Limits</legend>
                                 <span class="help-block">Default: 0</span>
                                 <div class="form-group">
-                                    <input type="text" id="reject_maxsize" name="reject_maxsize" value="${lazylibrarian.CONFIG['REJECT_MAXSIZE']}" class="form-control" placeholder="Reject size limit">
-                                    <span class="help-block">Book size limit (Mb):<br/>
+                                    <input type="text" id="reject_maxsize" name="reject_maxsize" value="${lazylibrarian.CONFIG['REJECT_MAXSIZE']}" class="form-control" placeholder="Reject maximum size">
+                                    <span class="help-block">Book maximum size (Mb):<br/>
                                     Search results larger than this will be rejected, set to 0 to disable<br/>
                                     </span>
                                 </div>
-                                <legend>Magazine Size Limit</legend>
+                                <div class="form-group">
+                                    <input type="text" id="reject_minsize" name="reject_minsize" value="${lazylibrarian.CONFIG['REJECT_MINSIZE']}" class="form-control" placeholder="Reject minimum size">
+                                    <span class="help-block">Book minimum size (Mb):<br/>
+                                    Search results smaller than this will be rejected, set to 0 to disable<br/>
+                                    </span>
+                                </div>
+                                <legend>Magazine Size Limits</legend>
                                 <span class="help-block">Default: 0</span>
                                 <div class="form-group">
-                                    <input type="text" id="reject_magsize" name="reject_magsize" value="${lazylibrarian.CONFIG['REJECT_MAGSIZE']}" class="form-control" placeholder="Reject size limit">
-                                    <span class="help-block">Magazine size limit (Mb):<br/>
+                                    <input type="text" id="reject_magsize" name="reject_magsize" value="${lazylibrarian.CONFIG['REJECT_MAGSIZE']}" class="form-control" placeholder="Reject maximum size">
+                                    <span class="help-block">Magazine maximum size (Mb):<br/>
                                     Search results larger than this will be rejected, set to 0 to disable<br/>
+                                    </span>
+                                </div>
+                                <div class="form-group">
+                                    <input type="text" id="reject_magmin" name="reject_magmin" value="${lazylibrarian.CONFIG['REJECT_MAGMIN']}" class="form-control" placeholder="Reject minimum size">
+                                    <span class="help-block">Magazine minimum size (Mb):<br/>
+                                    Search results smaller than this will be rejected, set to 0 to disable<br/>
                                     </span>
                                 </div>
                             </div>

@@ -168,6 +168,12 @@ def search_magazines(mags=None, reset=False):
                             rejected = True
 
                         if not rejected:
+                            minsize = check_int(lazylibrarian.CONFIG['REJECT_MAGMIN'], 0)
+                            if minsize and nzbsize < minsize:
+                                logger.debug("Rejecting %s, too small" % nzbtitle)
+                                rejected = True
+
+                        if not rejected:
                             control_date = results['IssueDate']
 
                             dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': ''}

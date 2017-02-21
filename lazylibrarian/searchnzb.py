@@ -171,6 +171,12 @@ def processResultList(resultlist, book, searchtype):
                 rejected = True
                 logger.debug("Rejecting %s, too large" % nzb_Title)
 
+        minsize = check_int(lazylibrarian.CONFIG['REJECT_MINSIZE'], 0)
+        if not rejected:
+            if minsize and nzbsize < minsize:
+                rejected = True
+                logger.debug("Rejecting %s, too small" % nzb_Title)
+
         if not rejected:
             # if nzbAuthor_match >= match_ratio and nzbBook_match >= match_ratio:
             bookid = book['bookid']

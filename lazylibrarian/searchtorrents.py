@@ -174,6 +174,12 @@ def processResultList(resultlist, book, searchtype):
                 rejected = True
                 logger.debug("Rejecting %s, too large" % torTitle)
 
+        minsize = check_int(lazylibrarian.CONFIG['REJECT_MINSIZE'], 0)
+        if not rejected:
+            if minsize and tor_size < minsize:
+                rejected = True
+                logger.debug("Rejecting %s, too small" % torTitle)
+
         if not rejected:
             bookid = book['bookid']
             tor_Title = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
