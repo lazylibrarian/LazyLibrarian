@@ -1411,7 +1411,7 @@ class WebInterface(object):
             # replace any non-ascii quotes/apostrophes with ascii ones eg "Collector's"
             dic = {u'\u2018': u"'", u'\u2019': u"'", u'\u201c': u'"', u'\u201d': u'"'}
             title = replace_all(title, dic)
-            exists = myDB.match('SELECT Title from magazines WHERE Title="%s" COLLATE NOCASE' % title)
+            exists = myDB.match('SELECT Title from magazines WHERE Title="%s"' % title)
             if exists:
                 logger.debug("Magazine %s already exists (%s)" % (title, exists['Title']))
             else:
