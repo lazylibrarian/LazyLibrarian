@@ -60,21 +60,44 @@ started = False
 LOGLIST = []
 LOGFULL = True
 
-# These are "session specific" globals
+# These are transient globals
 UPDATE_MSG = ''
 CURRENT_TAB = '1'
 CACHE_HIT = 0
 CACHE_MISS = 0
 LAST_GOODREADS = 0
 LAST_LIBRARYTHING = 0
-
-# These are transient globals
 MONTHNAMES = []
 CACHEDIR = ''
 NEWZNAB_PROV = []
 TORZNAB_PROV = []
 RSS_PROV = []
 BOOKSTRAP_THEMELIST = []
+# Shared dictionaries
+isbn_979_dict = {
+    "10": "fre",
+    "11": "kor",
+    "12": "ita"
+}
+isbn_978_dict = {
+    "0": "eng",
+    "1": "eng",
+    "2": "fre",
+    "3": "ger",
+    "4": "jap",
+    "5": "rus",
+    "7": "chi",
+    "80": "cze",
+    "82": "pol",
+    "83": "nor",
+    "84": "spa",
+    "85": "bra",
+    "87": "den",
+    "88": "ita",
+    "89": "kor",
+    "91": "swe",
+    "93": "ind"
+}
 # These are the items in config.ini
 # Not all are accessible from the web ui
 # Any undefined on startup will be set to the default value
@@ -332,7 +355,7 @@ def initialize():
     global FULL_PATH, PROG_DIR, ARGS, DAEMON, SIGNAL, PIDFILE, DATADIR, CONFIGFILE, SYS_ENCODING, LOGLEVEL, \
             CONFIG, CFG, DBFILE, COMMIT_LIST, SCHED, INIT_LOCK, __INITIALIZED__, started, LOGLIST, LOGFULL, \
             UPDATE_MSG, CURRENT_TAB, CACHE_HIT, CACHE_MISS, LAST_LIBRARYTHING, LAST_GOODREADS, \
-            CACHEDIR, BOOKSTRAP_THEMELIST, MONTHNAMES, CONFIG_DEFINITIONS
+            CACHEDIR, BOOKSTRAP_THEMELIST, MONTHNAMES, CONFIG_DEFINITIONS, isbn_979_dict, isbn_978_dict
 
     with INIT_LOCK:
 
@@ -394,7 +417,7 @@ def initialize():
 
         # Initialize the database
         try:
-            curr_ver = db_needs_upgrade()
+            curr_ver = dbupgrade.upgrade_needed()
             if curr_ver:
                 threading.Thread(target=dbupgrade.dbupgrade, name="DB_UPGRADE", args=[curr_ver]).start()
             else:
@@ -941,46 +964,6 @@ def launch_browser(host, port, root):
         webbrowser.open('http://%s:%i%s' % (host, port, root))
     except Exception as e:
         logger.error('Could not launch browser: %s' % str(e))
-
-
-def db_needs_upgrade():
-    """
-    Check if database needs upgrading
-    Return zero if up-to-date
-    Return current version if needs upgrade
-    """
-
-    myDB = database.DBConnection()
-    result = myDB.match('PRAGMA user_version')
-    # Had a report of "index out of range", can't replicate it.
-    # Maybe on some versions of sqlite an unset user_version
-    # or unsupported pragma gives an empty result?
-    if result:
-        db_version = result[0]
-    else:
-        db_version = 0
-
-    # database version history:
-    # 0 original version or new empty database
-    # 1 changes up to June 2016
-    # 2 removed " MB" from nzbsize field in wanted table
-    # 3 removed SeriesOrder column from books table as redundant
-    # 4 added duplicates column to stats table
-    # 5 issue numbers padded to 4 digits with leading zeros
-    # 6 added Manual field to books table for user editing
-    # 7 added Source and DownloadID to wanted table for download monitoring
-    # 8 move image cache from data/images/cache into datadir
-    # 9 add regex to magazine table
-    # 10 check for missing columns in pastissues table
-    # 11 Keep most recent book image in author table
-    # 12 Keep latest issue cover in magazine table
-    # 13 add Manual column to author table for user editing
-
-    db_current_version = 13
-    if db_version < db_current_version:
-        return db_current_version
-    return 0
-
 
 def start():
     global __INITIALIZED__, started

@@ -43,6 +43,7 @@ cmd_dict = {'help': 'list available commands. ' +
                     'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +
                     'otherwise they return OK straight away and run in the background',
             'showMonths': 'List installed monthnames',
+            'dumpMonths': 'Save installed monthnames to file',
             'getIndex': 'list all authors',
             'getAuthor': '&id= get author by AuthorID and list their books',
             'getAuthorImage': '&id= get an image for this author',
@@ -203,6 +204,11 @@ class Api(object):
     def _showMonths(self):
         self.data = lazylibrarian.MONTHNAMES
 
+    def _dumpMonths(self):
+        json_file = os.path.join(lazylibrarian.CONFIG['DATADIR'], 'monthnames.json')
+        with open(json_file, 'w') as f:
+            json.dump(lazylibrarian.MONTHNAMES, f)
+
     def _getWanted(self):
         self.data = self._dic_from_query(
             "SELECT * from books WHERE Status='Wanted'")
@@ -272,7 +278,6 @@ class Api(object):
             create_covers(refresh=refresh)
         else:
             threading.Thread(target=create_covers, name='API-MAGCOVERS', args=[refresh]).start()
-
 
     def _getBook(self, **kwargs):
         if 'id' not in kwargs:

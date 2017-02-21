@@ -74,6 +74,8 @@ class GoodReads:
                         bookdate = author.find('original_publication_year').text
 
                     authorNameResult = author.find('./best_book/author/name').text
+                    # Goodreads sometimes puts extra whitepase in the author names!
+                    authorNameResult =  ' '.join(authorNameResult.split())
                     booksub = ""
                     bookpub = ""
                     booklang = "Unknown"
@@ -269,7 +271,7 @@ class GoodReads:
                 api_hits += 1
             resultxml = rootxml.getiterator('book')
 
-            valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.CONFIG['IMP_PREFLANG'].split(',')])
+            valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
 
             resultsCount = 0
             removedResults = 0
@@ -280,31 +282,6 @@ class GoodReads:
             book_ignore_count = 0
             total_count = 0
 
-            isbn_979_dict = {
-                "10": "fre",
-                "11": "kor",
-                "12": "ita"
-            }
-            isbn_978_dict = {
-                "0": "eng",
-                "1": "eng",
-                "2": "fre",
-                "3": "ger",
-                "4": "jap",
-                "5": "rus",
-                "7": "chi",
-                "80": "cze",
-                "82": "pol",
-                "83": "nor",
-                "84": "spa",
-                "85": "bra",
-                "87": "den",
-                "88": "ita",
-                "89": "kor",
-                "91": "swe",
-                "93": "ind"
-            }
-
             if not len(resultxml):
                 logger.warn('[%s] No books found for author with ID: %s' % (authorname, authorid))
             else:
@@ -312,7 +289,9 @@ class GoodReads:
                 logger.debug(u"url " + URL)
 
                 authorNameResult = rootxml.find('./author/name').text
-                logger.debug(u"author name " + authorNameResult)
+                # Goodreads sometimes puts extra whitepase in the author names!
+                authorNameResult =  ' '.join(authorNameResult.split())
+                logger.debug(u"GoodReads author name [%s]" % authorNameResult)
                 loopCount = 1
 
                 while resultxml:
@@ -345,26 +324,25 @@ class GoodReads:
                                     find_field = "isbn13"
                                     isbn = book.find('isbn13').text
                                     isbnhead = isbn[3:6]
-                            if find_field != 'id':  # isbn10 or isbn13 found
-                                # Try to use shortcut of ISBN identifier codes described here...
-                                # https://en.wikipedia.org/wiki/List_of_ISBN_identifier_groups
-                                if isbnhead != "":
-                                    if find_field == "isbn13" and isbn.startswith('979'):
-                                        for item in isbn_979_dict:
-                                            if isbnhead.startswith(item):
-                                                bookLanguage = isbn_979_dict[item]
-                                                break
-                                        if bookLanguage != "Unknown":
-                                            logger.debug("ISBN979 returned %s for %s" % (bookLanguage, isbnhead))
-                                    elif (find_field == "isbn") or (find_field == "isbn13" and isbn.startswith('978')):
-                                        for item in isbn_978_dict:
-                                            if isbnhead.startswith(item):
-                                                bookLanguage = isbn_978_dict[item]
-                                                break
-                                        if bookLanguage != "Unknown":
-                                            logger.debug("ISBN978 returned %s for %s" % (bookLanguage, isbnhead))
+                            # Try to use shortcut of ISBN identifier codes described here...
+                            # https://en.wikipedia.org/wiki/List_of_ISBN_identifier_groups
+                            if isbnhead:
+                                if find_field == "isbn13" and isbn.startswith('979'):
+                                    for item in lazylibrarian.isbn_979_dict:
+                                        if isbnhead.startswith(item):
+                                            bookLanguage = lazylibrarian.isbn_979_dict[item]
+                                            break
+                                    if bookLanguage != "Unknown":
+                                        logger.debug("ISBN979 returned %s for %s" % (bookLanguage, isbnhead))
+                                elif (find_field == "isbn") or (find_field == "isbn13" and isbn.startswith('978')):
+                                    for item in lazylibrarian.isbn_978_dict:
+                                        if isbnhead.startswith(item):
+                                            bookLanguage = lazylibrarian.isbn_978_dict[item]
+                                            break
+                                    if bookLanguage != "Unknown":
+                                        logger.debug("ISBN978 returned %s for %s" % (bookLanguage, isbnhead))
 
-                            if bookLanguage == "Unknown":
+                            if bookLanguage == "Unknown" and isbnhead:
                                 # Nothing in the isbn dictionary, try any cached results
                                 match = myDB.match('SELECT lang FROM languages where isbn = "%s"' % isbnhead)
                                 if match:
@@ -697,7 +675,7 @@ class GoodReads:
         #
         # PAB user has said they want this book, don't block for unwanted language, just warn
         #
-        valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.CONFIG['IMP_PREFLANG'].split(',')])
+        valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
         if bookLanguage not in valid_langs:
             logger.debug('Book %s language does not match preference, %s' % (bookname, bookLanguage))
 
@@ -764,7 +742,7 @@ class GoodReads:
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
-        logger.debug("%s added to the books database" % bookname)
+        logger.debug("Bookid %s: %s added to the books database" % (bookid, bookname))
 
         if 'nocover' in bookimg or 'nophoto' in bookimg:
             # try to get a cover from librarything

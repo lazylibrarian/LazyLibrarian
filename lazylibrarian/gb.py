@@ -27,7 +27,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage
 from lazylibrarian.cache import get_json_request, cache_cover
-from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn
+from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn, getList
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 
@@ -124,8 +124,7 @@ class GoogleBooks:
                                 logger.debug('Skipped a result without title.')
                                 continue
 
-                            valid_langs = ([valid_lang.strip()
-                                            for valid_lang in lazylibrarian.CONFIG['IMP_PREFLANG'].split(',')])
+                            valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
                             booklang = ''
                             if "All" not in valid_langs:  # don't care about languages, accept all
                                 try:
@@ -284,8 +283,7 @@ class GoogleBooks:
             total_count = 0
             number_results = 1
 
-            valid_langs = ([valid_lang.strip()
-                            for valid_lang in lazylibrarian.CONFIG['IMP_PREFLANG'].split(',')])
+            valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
             # Artist is loading
             myDB = database.DBConnection()
             controlValueDict = {"AuthorID": authorid}
@@ -343,6 +341,8 @@ class GoogleBooks:
                         isbnhead = ""
                         if len(bookisbn) == 10:
                             isbnhead = bookisbn[0:3]
+                        elif len(bookisbn) == 13:
+                            isbnhead = bookisbn[3:6]
 
                         try:
                             booklang = item['volumeInfo']['language']
@@ -356,21 +356,45 @@ class GoogleBooks:
                                 # are in english when they are not
                                 if booklang == "Unknown" or booklang == "en":
                                     googlelang = booklang
-                                    match = myDB.match('SELECT lang FROM languages where isbn = "%s"' %
-                                                       isbnhead)
-                                    if match:
-                                        booklang = match['lang']
+                                    match = False
+                                    lang = myDB.match('SELECT lang FROM languages where isbn = "%s"' % isbnhead)
+                                    if lang:
+                                        booklang = lang['lang']
                                         cache_hits += 1
-                                        logger.debug(
-                                            "Found cached language [%s] for [%s]" %
-                                            (booklang, isbnhead))
+                                        logger.debug("Found cached language [%s] for [%s]" % (booklang, isbnhead))
+                                        match = True
+                                    if not match:
+                                        # no match in cache, try lookup dict
+                                        if isbnhead:
+                                            if len(bookisbn) == 13 and bookisbn.startswith('979'):
+                                                for lang in lazylibrarian.isbn_979_dict:
+                                                    if isbnhead.startswith(lang):
+                                                        booklang = lazylibrarian.isbn_979_dict[lang]
+                                                        logger.debug("ISBN979 returned %s for %s" %
+                                                                    (booklang, isbnhead))
+                                                        match = True
+                                                        break
 
-                                    else:
-                                        # no match in cache, try searching librarything for a language code using the isbn
+                                            elif (len(bookisbn) == 10) or \
+                                                    (len(bookisbn) == 13 and bookisbn.startswith('978')):
+                                                for lang in lazylibrarian.isbn_978_dict:
+                                                    if isbnhead.startswith(lang):
+                                                        booklang = lazylibrarian.isbn_978_dict[lang]
+                                                        logger.debug("ISBN979 returned %s for %s" %
+                                                                    (booklang, isbnhead))
+                                                        match = True
+                                                        break
+
+                                            if match:
+                                                myDB.action('insert into languages values ("%s", "%s")' %
+                                                            (isbnhead, booklang))
+                                                logger.debug(u"GB language: " + booklang)
+
+                                    if not match:
+                                        # try searching librarything for a language code using the isbn
                                         # if no language found, librarything return value is "invalid" or "unknown"
                                         # librarything returns plain text, not xml
-                                        BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + \
-                                                   bookisbn
+                                        BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + bookisbn
                                         try:
                                             librarything_wait()
                                             resp = urllib2.urlopen(BOOK_URL, timeout=30).read()
@@ -380,6 +404,7 @@ class GoogleBooks:
 
                                             if resp != 'invalid' and resp != 'unknown':
                                                 booklang = resp  # found a language code
+                                                match = True
                                                 myDB.action('insert into languages values ("%s", "%s")' %
                                                             (isbnhead, booklang))
                                                 logger.debug(u"LT language: " + booklang)
@@ -387,21 +412,16 @@ class GoogleBooks:
                                             booklang = ""
                                             logger.error("Error finding language: %s" % str(e))
 
-                                    if googlelang == "en" and booklang not in ["en-US", "en-GB", "eng"]:
-                                        # these are all english, may need to expand
-                                        # this list
-                                        booknamealt = item['volumeInfo']['title']
-                                        logger.debug("%s Google thinks [%s], we think [%s]" %
+                                    if match:
+                                        # We found a better language match
+                                        if googlelang == "en" and booklang not in ["en-US", "en-GB", "eng"]:
+                                            # these are all english, may need to expand this list
+                                            booknamealt = item['volumeInfo']['title']
+                                            logger.debug("%s Google thinks [%s], we think [%s]" %
                                                      (booknamealt, googlelang, booklang))
-                                        gb_lang_change += 1
-                                else:
-                                    match = myDB.match('SELECT lang FROM languages where isbn = "%s"' %
-                                                       isbnhead)
-                                    if not match:
-                                        myDB.action(
-                                            'insert into languages values ("%s", "%s")' %
-                                            (isbnhead, booklang))
-                                        logger.debug(u"GB language: " + booklang)
+                                            gb_lang_change += 1
+                                    else:  # No match anywhere, accept google language
+                                        booklang = googlelang
 
                             # skip if language is in ignore list
                             if booklang not in valid_langs:
@@ -682,8 +702,7 @@ class GoogleBooks:
         try:
             # warn if language is in ignore list, but user said they wanted this book
             booklang = jsonresults['volumeInfo']['language']
-            valid_langs = ([valid_lang.strip()
-                            for valid_lang in lazylibrarian.CONFIG['IMP_PREFLANG'].split(',')])
+            valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
             if booklang not in valid_langs and 'All' not in valid_langs:
                 logger.debug('Book %s language does not match preference' % bookname)
         except KeyError:

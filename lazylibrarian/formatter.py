@@ -240,7 +240,7 @@ def is_valid_booktype(filename, booktype=None):
 
 
 def getList(st):
-    # split a string into a list
+    # split a string into a list on whitespace or commas
     # changed posix to "false" to not baulk at apostrophes
     if st:
         my_splitter = shlex.shlex(st, posix=False)
@@ -248,7 +248,6 @@ def getList(st):
         my_splitter.whitespace_split = True
         return list(my_splitter)
     return []
-
 
 def safe_unicode(obj, *args):
     """ return the unicode representation of obj """
