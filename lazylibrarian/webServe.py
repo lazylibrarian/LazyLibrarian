@@ -83,15 +83,19 @@ class WebInterface(object):
             return serve_template(templatename="index.html", title="Home", authors=authors)
 
     @staticmethod
-    def label_thread():
+    def label_thread(name=None):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
-            threading.currentThread().name = "WEBSERVER"
+            if name:
+                threading.currentThread().name = name
+            else:
+                threading.currentThread().name = "WEBSERVER"
 
     # CONFIG ############################################################
 
     @cherrypy.expose
     def config(self):
+        self.label_thread()
         http_look_dir = os.path.join(
             str(lazylibrarian.PROG_DIR),
             'data' + os.sep + 'interfaces')
@@ -1612,6 +1616,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def history(self, source=None):
+        self.label_thread()
         myDB = database.DBConnection()
         if not source:
             # wanted status holds snatched processed for all, plus skipped and
@@ -1622,7 +1627,6 @@ class WebInterface(object):
     @cherrypy.expose
     def clearhistory(self, status=None):
         self.label_thread()
-
         myDB = database.DBConnection()
         if status == 'all':
             logger.info(u"Clearing all history")
