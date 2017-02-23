@@ -19,7 +19,7 @@ import os
 import shutil
 import sqlite3
 import threading
-
+import traceback
 import lazylibrarian
 from lazylibrarian import logger, database, magazinescan, bookwork
 from lazylibrarian.formatter import plural, bookSeries
@@ -78,6 +78,7 @@ def has_column(myDB, table, column):
 
 
 def dbupgrade(db_current_version):
+  try:
     myDB = database.DBConnection()
     db_version = 0
     result = myDB.match('PRAGMA user_version')
@@ -509,11 +510,11 @@ def dbupgrade(db_current_version):
                         logger.warn('Failed to update book image for %s: %s' % (image['BookName'], str(e)))
                 logger.info("Book Image cache updated")
 
-        # at this point there should be no more .jpg files in the root of the cachedir
-        # any that are still there are for books/authors deleted from database
-        for image in os.listdir(src):
-            if image.endswith('.jpg'):
-                os.remove(os.path.join(src, image))
+            # at this point there should be no more .jpg files in the root of the cachedir
+            # any that are still there are for books/authors deleted from database
+            for image in os.listdir(src):
+                if image.endswith('.jpg'):
+                    os.remove(os.path.join(src, image))
 
         # Now do any non-version-specific tidying
         try:
@@ -534,4 +535,8 @@ def dbupgrade(db_current_version):
     if not lazylibrarian.started:
         restartJobs(start='Start')
         lazylibrarian.started = True
+
     lazylibrarian.UPDATE_MSG = ''
+
+  except Exception:
+    logger.error('Unhandled exception in database update: %s' % traceback.format_exc())
