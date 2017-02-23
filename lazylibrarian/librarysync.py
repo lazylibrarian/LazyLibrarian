@@ -24,7 +24,7 @@ import lazylibrarian
 import lib.zipfile as zipfile
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages
-from lazylibrarian.cache import cache_cover, get_xml_request
+from lazylibrarian.cache import cache_img, get_xml_request
 from lazylibrarian.common import opf_file, internet
 from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList, unaccented, \
     replace_all, split_title
@@ -790,7 +790,7 @@ def LibraryScan(startdir=None):
                     bookid = item['bookid']
                     bookimg = item['bookimg']
                     # bookname = item['bookname']
-                    newimg = cache_cover(bookid, bookimg)
+                    newimg = cache_img("book", bookid, bookimg)
                     if newimg:
                         myDB.action('update books set BookImg="%s" where BookID="%s"' % (newimg, bookid))
 
@@ -801,7 +801,7 @@ def LibraryScan(startdir=None):
                     authorid = item['authorid']
                     authorimg = item['authorimg']
                     # authorname = item['authorname']
-                    newimg = cache_cover(authorid, authorimg)
+                    newimg = cache_img("author", authorid, authorimg)
                     if newimg:
                         myDB.action('update authors set AuthorImg="%s" where AuthorID="%s"' % (newimg, authorid))
 

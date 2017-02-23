@@ -37,9 +37,9 @@ def upgrade_needed():
     # Maybe on some versions of sqlite an unset user_version
     # or unsupported pragma gives an empty result?
     db_version = 0
-    result = myDB.match('PRAGMA user_version')[0]
-    if result:
-        value = str(result)
+    result = myDB.match('PRAGMA user_version')
+    if result and result[0]:
+        value = str(result[0])
         if value.isdigit():
             db_version = int(value)
 
@@ -58,8 +58,9 @@ def upgrade_needed():
     # 11 Keep most recent book image in author table
     # 12 Keep latest issue cover in magazine table
     # 13 add Manual column to author table for user editing
+    # 14 separate book and author images in case id numbers collide
 
-    db_current_version = 13
+    db_current_version = 14
     if db_version < db_current_version:
         return db_current_version
     return 0
@@ -78,10 +79,17 @@ def has_column(myDB, table, column):
 
 def dbupgrade(db_current_version):
     myDB = database.DBConnection()
-    db_version = myDB.match('PRAGMA user_version')[0]
+    db_version = 0
+    result = myDB.match('PRAGMA user_version')
+    if result and result[0]:
+        value = str(result[0])
+        if value.isdigit():
+            db_version = int(value)
 
-    check = myDB.match('PRAGMA integrity_check')[0]
-    if check != "ok":
+    check = myDB.match('PRAGMA integrity_check')
+    if check and check[0] == "ok":
+        logger.debug('Database integrity check: %s' % check)
+    else:
         logger.error('Database integrity check: %s' % check)
         # should probably abort now
 
@@ -432,6 +440,46 @@ def dbupgrade(db_current_version):
                 lazylibrarian.UPDATE_MSG = 'Updating authors table to hold Manual setting'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE authors ADD COLUMN Manual TEXT')
+
+        if db_version < 14:
+            src = lazylibrarian.CACHEDIR
+            images = myDB.select('SELECT AuthorID, AuthorImg FROM authors WHERE AuthorImg LIKE "cache/%"')
+            if images:
+                logger.info('Moving author images to new location')
+                tot = len(images)
+                cnt = 0
+                for image in images:
+                    cnt += 1
+                    lazylibrarian.UPDATE_MSG = "Moving author images to new location: %s of %s" % (cnt, tot)
+                    img = image['AuthorImg']
+                    img = img.rsplit('/', 1)[1]
+                    myDB.action('UPDATE authors SET AuthorImg="cache/author/%s" WHERE AuthorID="%s"' % (img, image['AuthorID']))
+                    srcfile = os.path.join(src, img)
+                    if os.path.isfile(srcfile):
+                        try:
+                            shutil.move(srcfile, os.path.join(src, "author", img))
+                        except Exception as e:
+                            logger.warn("dbupgrade: %s" % str(e))
+                logger.info("Author Image cache updated")
+
+            images = myDB.select('SELECT BookID, BookImg FROM books WHERE BookImg LIKE "cache/%"')
+            if images:
+                logger.info('Moving book images to new location')
+                tot = len(images)
+                cnt = 0
+                for image in images:
+                    cnt += 1
+                    lazylibrarian.UPDATE_MSG = "Moving book images to new location: %s of %s" % (cnt, tot)
+                    img = image['BookImg']
+                    img = img.rsplit('/', 1)[1]
+                    myDB.action('UPDATE books SET BookImg="cache/book/%s" WHERE BookID="%s"' % (img, image['BookID']))
+                    srcfile = os.path.join(src, img)
+                    if os.path.isfile(srcfile):
+                        try:
+                            shutil.move(srcfile, os.path.join(src, "book", img))
+                        except Exception as e:
+                            logger.warn("dbupgrade: %s" % str(e))
+                logger.info("Book Image cache updated")
 
         # Now do any non-version-specific tidying
         try:

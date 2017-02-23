@@ -41,7 +41,7 @@ from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
-from lazylibrarian.cache import cache_cover
+from lazylibrarian.cache import cache_img
 from lib.deluge_client import DelugeRPCClient
 from mako import exceptions
 from mako.lookup import TemplateLookup
@@ -858,7 +858,7 @@ class WebInterface(object):
                             # cache image from url
                             extn = os.path.splitext(authorimg)[1].lower()
                             if extn and extn in ['.jpg', '.jpeg', '.png']:
-                                authorimg = cache_cover(authorid, authorimg)
+                                authorimg = cache_img("author", authorid, authorimg)
                                 if authorimg:
                                     rejected = False
 

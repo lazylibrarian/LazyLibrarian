@@ -334,7 +334,7 @@ def clearLog():
 
 def cleanCache():
     """ Remove unused files from the cache - delete if expired or unused.
-        Check JSONCache  WorkCache  XMLCache cache
+        Check JSONCache  WorkCache  XMLCache  Author  Book
         Check covers and authorimages referenced in the database exist and change database entry if missing """
 
     myDB = database.DBConnection()
@@ -403,14 +403,29 @@ def cleanCache():
     logger.debug("Cleaned %i file%s from WorkCache, kept %i" % (cleaned, plural(cleaned), kept))
 
     cache = lazylibrarian.CACHEDIR
-    # ensure directory is unicode so we get unicode results from listdir
-    if isinstance(cache, str):
-        cache = cache.decode(lazylibrarian.SYS_ENCODING)
     cleaned = 0
     kept = 0
-    if os.path.isdir(cache):
-        for cached_file in os.listdir(cache):
-            target = os.path.join(cache, cached_file)
+    cachedir = os.path.join(cache, 'author')
+    if os.path.isdir(cachedir):
+        for cached_file in os.listdir(cachedir):
+            target = os.path.join(cachedir, cached_file)
+            if os.path.isfile(target):
+                try:
+                    imgid = cached_file.split('.')[0].rsplit(os.sep)[-1]
+                except IndexError:
+                    logger.error('Clean Cache: Error splitting %s' % cached_file)
+                    continue
+                item = myDB.match('select AuthorID from authors where AuthorID="%s"' % imgid)
+                if not item:
+                    # Author Image no longer referenced in database, delete cached_file
+                    os.remove(target)
+                    cleaned += 1
+                else:
+                    kept += 1
+    cachedir = os.path.join(cache, 'book')
+    if os.path.isdir(cachedir):
+        for cached_file in os.listdir(cachedir):
+            target = os.path.join(cachedir, cached_file)
             if os.path.isfile(target):
                 try:
                     imgid = cached_file.split('.')[0].rsplit(os.sep)[-1]
@@ -419,38 +434,23 @@ def cleanCache():
                     continue
                 item = myDB.match('select BookID from books where BookID="%s"' % imgid)
                 if not item:
-                    item = myDB.match('select AuthorID from authors where AuthorID="%s"' % imgid)
-                    if not item:
-                        # Image no longer referenced in database, delete cached_file
-                        os.remove(target)
-                        cleaned += 1
-                    else:
-                        kept += 1
+                    # Book Image no longer referenced in database, delete cached_file
+                    os.remove(target)
+                    cleaned += 1
                 else:
                     kept += 1
     logger.debug("Cleaned %i file%s from ImageCache, kept %i" % (cleaned, plural(cleaned), kept))
 
-    # correct any '\' separators in the BookImg links
-    cleaned = 0
-    covers = myDB.select('select BookImg from books where BookImg like "cache\%"')
-    for item in covers:
-        oldname = item['BookImg']
-        newname = oldname.replace('\\', '/')
-        myDB.action('update books set BookImg="%s" where BookImg="%s"' % (newname, oldname))
-        cleaned += 1
-    logger.debug("Corrected %i filename%s in ImageCache" % (cleaned, plural(cleaned)))
-
     # verify the cover images referenced in the database are present
-    covers = myDB.action('select BookImg,BookName,BookID from books')
-    cachedir = lazylibrarian.CACHEDIR
-
+    images = myDB.action('select BookImg,BookName,BookID from books')
+    cachedir = os.path.loin(lazylibrarian.CACHEDIR, 'book')
     cleaned = 0
     kept = 0
-    for item in covers:
+    for item in images:
         keep = True
+        imgfile = ''
         if item['BookImg'] is None or item['BookImg'] == '':
             keep = False
-        imgfile = ''
         if keep and not item['BookImg'].startswith('http') and not item['BookImg'] == "images/nocover.png":
             # html uses '/' as separator, but os might not
             imgname = item['BookImg'].rsplit('/')[-1]
@@ -468,8 +468,7 @@ def cleanCache():
 
     # verify the author images referenced in the database are present
     images = myDB.action('select AuthorImg,AuthorName,AuthorID from authors')
-    cachedir = lazylibrarian.CACHEDIR
-
+    cachedir = os.path.join(lazylibrarian.CACHEDIR, 'author')
     cleaned = 0
     kept = 0
     for item in images:

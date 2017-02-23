@@ -18,7 +18,7 @@ import threading
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import getAuthorImage
-from lazylibrarian.cache import cache_cover
+from lazylibrarian.cache import cache_img
 from lazylibrarian.formatter import today
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
@@ -131,7 +131,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
 
         # allow caching
         if authorimg and authorimg.startswith('http'):
-            newimg = cache_cover(authorid, authorimg)
+            newimg = cache_img("author", authorid, authorimg)
             if newimg:
                 authorimg = newimg
                 new_img = True

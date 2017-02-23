@@ -23,7 +23,7 @@ import urllib2
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage
-from lazylibrarian.cache import get_xml_request, cache_cover
+from lazylibrarian.cache import get_xml_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList
 from lib.fuzzywuzzy import fuzz
 
@@ -550,7 +550,7 @@ class GoodReads:
                                         myDB.upsert("books", newValueDict, controlValueDict)
 
                                 elif bookimg and bookimg.startswith('http'):
-                                    link = cache_cover(bookid, bookimg)
+                                    link = cache_img("book", bookid, bookimg)
                                     if link:
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": link}
@@ -754,7 +754,7 @@ class GoodReads:
                 myDB.upsert("books", newValueDict, controlValueDict)
 
         elif bookimg and bookimg.startswith('http'):
-            link = cache_cover(bookid, bookimg)
+            link = cache_img("book", bookid, bookimg)
             if link:
                 controlValueDict = {"BookID": bookid}
                 newValueDict = {"BookImg": link}

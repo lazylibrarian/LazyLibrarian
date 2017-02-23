@@ -36,7 +36,7 @@ from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchnzb import search_nzb_book
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.searchtorrents import search_tor_book
-from lazylibrarian.cache import cache_cover
+from lazylibrarian.cache import cache_img
 
 
 cmd_dict = {'help': 'list available commands. ' +
@@ -810,11 +810,11 @@ class Api(object):
             else:
                 msg += " invalid extension"
 
-        if msg and img.startswith('http'):
+        if img.startswith('http'):
             # cache image from url
             extn = os.path.splitext(img)[1].lower()
             if extn and extn in ['.jpg','.jpeg','.png']:
-                cachedimg = cache_cover(itemid, img)
+                cachedimg = cache_img(table, itemid, img)
                 if cachedimg:
                     msg = ''
                 else:
