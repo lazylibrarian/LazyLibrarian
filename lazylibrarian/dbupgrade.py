@@ -489,6 +489,12 @@ def dbupgrade(db_current_version):
                             logger.warn("dbupgrade: %s" % str(e))
                 logger.info("Book Image cache updated")
 
+        # at this point there should be no more .jpg files in the root of the cachedir
+        # any that are still there are for books/authors deleted from database
+        for image in os.listdir(src):
+            if image.endswith('.jpg'):
+                os.remove(os.path.join(src, image))
+
         # Now do any non-version-specific tidying
         try:
             authors = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL')
