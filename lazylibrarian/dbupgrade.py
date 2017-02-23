@@ -87,11 +87,13 @@ def dbupgrade(db_current_version):
             db_version = int(value)
 
     check = myDB.match('PRAGMA integrity_check')
-    if check and check[0] == "ok":
-        logger.debug('Database integrity check: %s' % check)
-    else:
-        logger.error('Database integrity check: %s' % check)
-        # should probably abort now
+    if check and check[0]:
+        result = check[0]
+        if result == 'ok':
+            logger.debug('Database integrity check: %s' % result)
+        else:
+            logger.error('Database integrity check: %s' % result)
+            # should probably abort now
 
     if db_version < db_current_version:
         lazylibrarian.UPDATE_MSG = 'Updating database to version %s, current version is %s' % (
@@ -448,7 +450,12 @@ def dbupgrade(db_current_version):
             except OSError as e:
                 if e.errno is not 17:  # already exists is ok
                     logger.debug('mkdir author cache reports: %s' % str(e))
-            images = myDB.select('SELECT AuthorID, AuthorImg FROM authors WHERE AuthorImg LIKE "cache/%"')
+
+            query = 'SELECT AuthorName, AuthorID, AuthorImg FROM authors '
+            query += 'WHERE AuthorImg LIKE "cache/%" '
+            query += 'AND AuthorImg NOT LIKE "cache/author/%"'
+
+            images = myDB.select(query)
             if images:
                 logger.info('Moving author images to new location')
                 tot = len(images)
@@ -456,15 +463,18 @@ def dbupgrade(db_current_version):
                 for image in images:
                     cnt += 1
                     lazylibrarian.UPDATE_MSG = "Moving author images to new location: %s of %s" % (cnt, tot)
-                    img = image['AuthorImg']
-                    img = img.rsplit('/', 1)[1]
-                    myDB.action('UPDATE authors SET AuthorImg="cache/author/%s" WHERE AuthorID="%s"' % (img, image['AuthorID']))
-                    srcfile = os.path.join(src, img)
-                    if os.path.isfile(srcfile):
-                        try:
-                            shutil.move(srcfile, os.path.join(src, "author", img))
-                        except Exception as e:
-                            logger.warn("dbupgrade: %s" % str(e))
+                    try:
+                        img = image['AuthorImg']
+                        img = img.rsplit('/', 1)[1]
+                        myDB.action('UPDATE authors SET AuthorImg="cache/author/%s" WHERE AuthorID="%s"' % (img, image['AuthorID']))
+                        srcfile = os.path.join(src, img)
+                        if os.path.isfile(srcfile):
+                            try:
+                                shutil.move(srcfile, os.path.join(src, "author", img))
+                            except Exception as e:
+                                logger.warn("dbupgrade: %s" % str(e))
+                    except Exception as e:
+                        logger.warn('Failed to update author image for %s: %s' % (image['AuthorName'], str(e)))
                 logger.info("Author Image cache updated")
 
             try:
@@ -472,7 +482,12 @@ def dbupgrade(db_current_version):
             except OSError as e:
                 if e.errno is not 17:  # already exists is ok
                     logger.debug('mkdir book cache reports: %s' % str(e))
-            images = myDB.select('SELECT BookID, BookImg FROM books WHERE BookImg LIKE "cache/%"')
+
+            query = 'SELECT BookName, BookID, BookImg FROM books '
+            query += 'WHERE BookImg LIKE "cache/%" '
+            query += 'AND BookImg NOT LIKE "cache/book/%"'
+            images = myDB.select(query)
+
             if images:
                 logger.info('Moving book images to new location')
                 tot = len(images)
@@ -480,15 +495,18 @@ def dbupgrade(db_current_version):
                 for image in images:
                     cnt += 1
                     lazylibrarian.UPDATE_MSG = "Moving book images to new location: %s of %s" % (cnt, tot)
-                    img = image['BookImg']
-                    img = img.rsplit('/', 1)[1]
-                    myDB.action('UPDATE books SET BookImg="cache/book/%s" WHERE BookID="%s"' % (img, image['BookID']))
-                    srcfile = os.path.join(src, img)
-                    if os.path.isfile(srcfile):
-                        try:
-                            shutil.move(srcfile, os.path.join(src, "book", img))
-                        except Exception as e:
-                            logger.warn("dbupgrade: %s" % str(e))
+                    try:
+                        img = image['BookImg']
+                        img = img.rsplit('/', 1)[1]
+                        myDB.action('UPDATE books SET BookImg="cache/book/%s" WHERE BookID="%s"' % (img, image['BookID']))
+                        srcfile = os.path.join(src, img)
+                        if os.path.isfile(srcfile):
+                            try:
+                                shutil.move(srcfile, os.path.join(src, "book", img))
+                            except Exception as e:
+                                logger.warn("dbupgrade: %s" % str(e))
+                    except Exception as e:
+                        logger.warn('Failed to update book image for %s: %s' % (image['BookName'], str(e)))
                 logger.info("Book Image cache updated")
 
         # at this point there should be no more .jpg files in the root of the cachedir
