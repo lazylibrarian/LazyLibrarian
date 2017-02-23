@@ -443,6 +443,10 @@ def dbupgrade(db_current_version):
 
         if db_version < 14:
             src = lazylibrarian.CACHEDIR
+            try:
+                os.mkdir(os.path.join(src, 'author'))
+            except Exception as e:
+                logger.debug('mkdir author cache reports: %s' % str(e))
             images = myDB.select('SELECT AuthorID, AuthorImg FROM authors WHERE AuthorImg LIKE "cache/%"')
             if images:
                 logger.info('Moving author images to new location')
@@ -462,6 +466,10 @@ def dbupgrade(db_current_version):
                             logger.warn("dbupgrade: %s" % str(e))
                 logger.info("Author Image cache updated")
 
+            try:
+                os.mkdir(os.path.join(src, 'book'))
+            except Exception as e:
+                logger.debug('mkdir book cache reports: %s' % str(e))
             images = myDB.select('SELECT BookID, BookImg FROM books WHERE BookImg LIKE "cache/%"')
             if images:
                 logger.info('Moving book images to new location')
