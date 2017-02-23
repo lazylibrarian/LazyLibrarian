@@ -713,7 +713,7 @@ def LibraryScan(startdir=None):
                                         coverimg = os.path.join(bookdir, 'cover.jpg')
                                         if os.path.isfile(coverimg):
                                             cachedir = lazylibrarian.CACHEDIR
-                                            cacheimg = os.path.join(cachedir, bookid + '.jpg')
+                                            cacheimg = os.path.join(cachedir, 'book', bookid + '.jpg')
                                             copyfile(coverimg, cacheimg)
                                 else:
                                     logger.warn(
