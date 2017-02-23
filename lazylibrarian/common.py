@@ -439,11 +439,19 @@ def cleanCache():
                     cleaned += 1
                 else:
                     kept += 1
+
+    # at this point there should be no more .jpg files in the root of the cachedir
+    # any that are still there are for books/authors deleted from database
+    for cached_file in os.listdir(cache):
+        if cached_file.endswith('.jpg'):
+            os.remove(os.path.join(cache, cached_file))
+            cleaned += 1
+
     logger.debug("Cleaned %i file%s from ImageCache, kept %i" % (cleaned, plural(cleaned), kept))
 
     # verify the cover images referenced in the database are present
     images = myDB.action('select BookImg,BookName,BookID from books')
-    cachedir = os.path.loin(lazylibrarian.CACHEDIR, 'book')
+    cachedir = os.path.join(lazylibrarian.CACHEDIR, 'book')
     cleaned = 0
     kept = 0
     for item in images:
