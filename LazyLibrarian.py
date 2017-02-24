@@ -10,7 +10,7 @@ import threading
 import time
 
 import lazylibrarian
-from lazylibrarian import webStart, logger, versioncheck
+from lazylibrarian import webStart, logger, versioncheck, dbupgrade
 
 # The following should probably be made configurable at the settings level
 # This fix is put in place for systems with broken SSL (like QNAP)
@@ -193,6 +193,10 @@ def main():
         lazylibrarian.daemonize()
 
     # Try to start the server.
+    curr_ver = dbupgrade.upgrade_needed()
+    if curr_ver:
+        lazylibrarian.UPDATE_MSG = 'Updating database to version %s' % curr_ver
+
     webStart.initialize({
         'http_port': lazylibrarian.CONFIG['HTTP_PORT'],
         'http_host': lazylibrarian.CONFIG['HTTP_HOST'],
@@ -207,6 +211,9 @@ def main():
 
     if lazylibrarian.CONFIG['LAUNCH_BROWSER'] and not options.nolaunch:
         lazylibrarian.launch_browser(lazylibrarian.CONFIG['HTTP_HOST'], lazylibrarian.CONFIG['HTTP_PORT'], lazylibrarian.CONFIG['HTTP_ROOT'])
+
+    if curr_ver:
+        threading.Thread(target=dbupgrade.dbupgrade, name="DB_UPGRADE", args=[curr_ver]).start()
 
     lazylibrarian.start()
 

@@ -458,8 +458,8 @@ def dbupgrade(db_current_version):
 
             images = myDB.select(query)
             if images:
-                logger.info('Moving author images to new location')
                 tot = len(images)
+                logger.info('Moving %s author images to new location' % tot)
                 cnt = 0
                 for image in images:
                     cnt += 1
@@ -467,11 +467,12 @@ def dbupgrade(db_current_version):
                     try:
                         img = image['AuthorImg']
                         img = img.rsplit('/', 1)[1]
-                        myDB.action('UPDATE authors SET AuthorImg="cache/author/%s" WHERE AuthorID="%s"' % (img, image['AuthorID']))
                         srcfile = os.path.join(src, img)
                         if os.path.isfile(srcfile):
                             try:
                                 shutil.move(srcfile, os.path.join(src, "author", img))
+                                myDB.action('UPDATE authors SET AuthorImg="cache/author/%s" WHERE AuthorID="%s"' %
+                                            (img, image['AuthorID']))
                             except Exception as e:
                                 logger.warn("dbupgrade: %s" % str(e))
                     except Exception as e:
@@ -490,8 +491,8 @@ def dbupgrade(db_current_version):
             images = myDB.select(query)
 
             if images:
-                logger.info('Moving book images to new location')
                 tot = len(images)
+                logger.info('Moving %s book images to new location' % tot)
                 cnt = 0
                 for image in images:
                     cnt += 1
@@ -499,11 +500,12 @@ def dbupgrade(db_current_version):
                     try:
                         img = image['BookImg']
                         img = img.rsplit('/', 1)[1]
-                        myDB.action('UPDATE books SET BookImg="cache/book/%s" WHERE BookID="%s"' % (img, image['BookID']))
                         srcfile = os.path.join(src, img)
                         if os.path.isfile(srcfile):
                             try:
                                 shutil.move(srcfile, os.path.join(src, "book", img))
+                                myDB.action('UPDATE books SET BookImg="cache/book/%s" WHERE BookID="%s"' %
+                                            (img, image['BookID']))
                             except Exception as e:
                                 logger.warn("dbupgrade: %s" % str(e))
                     except Exception as e:
@@ -532,11 +534,10 @@ def dbupgrade(db_current_version):
         lazylibrarian.UPDATE_MSG = 'Database updated to version %s' % db_current_version
         logger.info(lazylibrarian.UPDATE_MSG)
 
-    if not lazylibrarian.started:
         restartJobs(start='Start')
-        lazylibrarian.started = True
 
     lazylibrarian.UPDATE_MSG = ''
 
   except Exception:
     logger.error('Unhandled exception in database update: %s' % traceback.format_exc())
+    lazylibrarian.UPDATE_MSG = ''
