@@ -14,7 +14,8 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import lazylibrarian
-from lazylibrarian.formatter import getList
+import urllib
+from lazylibrarian.formatter import getList, unaccented_str
 from lazylibrarian.common import internet
 from lazylibrarian import logger
 from lazylibrarian.providers import IterateOverRSSSites, IterateOverTorrentSites, IterateOverNewzNabSites
@@ -36,7 +37,7 @@ def searchItem(item=None, bookid=None):
         return results
 
     book = {}
-    searchterm = item
+    searchterm = unaccented_str(item)
 
     book['searchterm'] = searchterm
     if bookid:
@@ -107,18 +108,21 @@ def searchItem(item=None, bookid=None):
             words -= len(getList(title))
             score -= abs(words)
             if score >= 40:  # ignore wildly wrong results?
+                if '?' in url:
+                    url = url.split('?')[0]
                 result = {}
                 result['score'] = score
                 result['title'] = title
                 result['provider'] = provider
                 result['size'] = size
                 result['date'] = date
-                result['url'] = url
+                result['url'] = urllib.quote_plus(url)
                 result['mode'] = mode
 
                 searchresults.append(result)
-                #from operator import itemgetter
-                #sortedlist = sorted(searchresults, key=itemgetter('score'), reverse=True)
-                #return sortedlist
+
+            # from operator import itemgetter
+            # searchresults = sorted(searchresults, key=itemgetter('score'), reverse=True)
+
     logger.debug('Found %s results for %s' % (len(searchresults), searchterm))
     return searchresults

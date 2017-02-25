@@ -18,7 +18,7 @@
         <table class="display" id="book_table">
             <thead>
                 <tr>
-                    <th id="select">Match</th>
+                    <th id="number">Match</th>
                     <th id="bookname">Title</th>
                     <th id="provider">Provider</th>
                     <th id="size">Size</th>
@@ -28,8 +28,8 @@
             </thead>
             <tbody>
             %for item in results:
-                <tr>
-                    <td id="select">${item['score']} %</td>
+                <tr class="gradeZ">
+                    <td id="number">${item['score']} %</td>
                     <td id="bookname">${item['title']}</td>
                     <td id="provider"><a href="${item['url']}">${item['provider']}</a></td>
                     <td id="size">${item['size']}</td>
@@ -54,6 +54,8 @@
 
         $('#book_table').dataTable(
             {
+                "bAutoWidth": false,
+                "order": [[ 0, 'desc' ]],
                 "aoColumns": [
                     null,
                     null,
@@ -62,7 +64,6 @@
                     null,
                     null
                     ],
-                "order": [[ 0, 'desc' ]],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ rows per page",
                     "sEmptyTable": "No results found",

@@ -482,6 +482,7 @@ class WebInterface(object):
         bookdata = myDB.match('SELECT AuthorID, BookName from books WHERE BookID="%s"' % bookid)
         if bookdata:
             AuthorID = bookdata["AuthorID"]
+            url = urllib.unquote_plus(url)
             url = url.replace(' ', '+')
             bookname = '%s LL.(%s)' % (bookdata["BookName"], bookid)
             if mode in ["torznab", "torrent", "magnet"]:
