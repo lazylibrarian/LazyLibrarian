@@ -101,7 +101,7 @@ def TPB(book=None):
                 except ValueError:
                     seeders = 0
 
-                if magnet and minimumseeders < seeders:
+                if minimumseeders < seeders:
                     # no point in asking for magnet link if not enough seeders
                     magurl = '%s/%s' % (host, magnet)
                     result, success = fetchURL(magurl)
@@ -125,6 +125,7 @@ def TPB(book=None):
                                 'tor_title': title,
                                 'tor_url': magnet,
                                 'tor_size': str(size),
+                                'tor_type': 'magnet'
                             })
                             logger.debug('Found %s. Size: %s' % (title, size))
                         else:
@@ -195,17 +196,21 @@ def KAT(book=None):
                 # kat can return magnet or torrent or both.
                 magnet = ''
                 url = ''
+                mode = 'torrent'
                 try:
                     magnet = 'magnet' + str(col0).split('href="magnet')[1].split('"')[0]
+                    mode = 'magnet'
                 except IndexError:
                     pass
                 try:
                     url = 'http' + str(col0).split('href="http')[1].split('.torrent?')[0] + '.torrent'
+                    mode = 'torrent'
                 except IndexError:
                     pass
 
                 if not url or (magnet and url and lazylibrarian.CONFIG['PREFER_MAGNET']):
                     url = magnet
+                    mode = 'magnet'
 
                 try:
                     size = str(col1.text).replace('&nbsp;', '').upper()
@@ -233,6 +238,7 @@ def KAT(book=None):
                         'tor_title': title,
                         'tor_url': url,
                         'tor_size': str(size),
+                        'tor_type': mode
                     })
                     logger.debug('Found %s. Size: %s' % (title, size))
                 else:
@@ -305,6 +311,7 @@ def EXTRA(book=None):
                             'tor_title': title,
                             'tor_url': url,
                             'tor_size': str(size),
+                            'tor_type': 'torrent'
                         })
                         logger.debug('Found %s. Size: %s' % (title, size))
                     else:
@@ -359,11 +366,14 @@ def ZOO(book=None):
                     magnet = item['torrent_magneturi']
 
                     url = None
+                    mode = 'torrent'
                     if link:
                         url = link
+                        mode = 'torrent'
                     if magnet:
                         if not url or (url and lazylibrarian.CONFIG['PREFER_MAGNET']):
                             url = magnet
+                            mode = 'magnet'
 
                     if not url or not title:
                         logger.debug('No url or title found')
@@ -374,6 +384,7 @@ def ZOO(book=None):
                             'tor_title': title,
                             'tor_url': url,
                             'tor_size': str(size),
+                            'tor_type': mode
                         })
                         logger.debug('Found %s. Size: %s' % (title, size))
                     else:
@@ -446,6 +457,7 @@ def LIME(book=None):
                             'tor_title': title,
                             'tor_url': url,
                             'tor_size': str(size),
+                            'tor_type': 'torrent'
                         })
                         logger.debug('Found %s. Size: %s' % (title, size))
                     else:
@@ -563,6 +575,7 @@ def GEN(book=None):
                                 'tor_title': title,
                                 'tor_url': url,
                                 'tor_size': str(size),
+                                'tor_type': 'direct'
                             })
                             logger.debug('Found %s, Size %s' % (title, size))
 
@@ -638,6 +651,7 @@ def TDL(book=None):
                                 'tor_title': title,
                                 'tor_url': url,
                                 'tor_size': str(size),
+                                'tor_type': 'magnet'
                             })
                             logger.debug('Found %s. Size: %s' % (title, size))
                     else:

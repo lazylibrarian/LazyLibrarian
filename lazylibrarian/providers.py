@@ -195,7 +195,7 @@ def IterateOverTorrentSites(book=None, searchType=None):
 
     resultslist = []
     providers = 0
-    if searchType != 'mag':
+    if searchType != 'mag' and searchType != 'general':
         authorname, bookname = get_searchterm(book, searchType)
         book['searchterm'] = authorname + ' ' + bookname
 

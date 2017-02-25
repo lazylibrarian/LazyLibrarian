@@ -31,7 +31,7 @@ from lazylibrarian import logger, database, notifiers, versioncheck, magazinesca
     qbittorrent, utorrent, rtorrent, transmission, sabnzbd, nzbget, deluge, synology
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, dbUpdate
 from lazylibrarian.csvfile import import_CSV, export_CSV
-from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode
+from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode, unaccented
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, update_totals
@@ -42,6 +42,8 @@ from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
 from lazylibrarian.cache import cache_img
+from lazylibrarian.notifiers import notify_snatch
+from lazylibrarian.manualbook import searchItem
 from lib.deluge_client import DelugeRPCClient
 from mako import exceptions
 from mako.lookup import TemplateLookup
@@ -464,6 +466,38 @@ class WebInterface(object):
     LANGFILTER = ''
 
     @cherrypy.expose
+    def booksearch(self, bookid=None, title="", author=""):
+        self.label_thread()
+        searchterm = '%s %s' % (author, title)
+        searchterm.strip()
+        logger.debug('Starting Manual Search for %s'% searchterm)
+        results = searchItem(searchterm, bookid)
+        return serve_template(templatename="manualsearch.html", title=searchterm, bookid=bookid, results=results)
+
+    @cherrypy.expose
+    def snatchBook(self, bookid=None, mode=None, provider=None, url=None):
+        self.label_thread()
+        logger.debug("snatch bookid %s mode=%s from %s url=[%s]" % (bookid, mode, provider, url))
+        myDB = database.DBConnection()
+        bookdata = myDB.match('SELECT AuthorID, BookName from books WHERE BookID="%s"' % bookid)
+        if bookdata:
+            AuthorID = bookdata["AuthorID"]
+            url = url.replace(' ', '+')
+            bookname = '%s LL.(%s)' % (bookdata["BookName"], bookid)
+            if mode in ["torznab", "torrent", "magnet"]:
+                snatch = TORDownloadMethod(bookid, bookname, url)
+            else:
+                snatch = NZBDownloadMethod(bookid, bookname, url)
+            if snatch:
+                logger.info('Downloading %s from %s' % (bookdata["BookName"], provider))
+                notify_snatch("%s from %s at %s" % (unaccented(bookdata["BookName"]), provider, now()))
+                scheduleJob(action='Start', target='processDir')
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+        else:
+            logger.debug('snatchBook Invalid bookid [%s]' % bookid)
+            raise cherrypy.HTTPRedirect("home")
+
+    @cherrypy.expose
     def books(self, BookLang=None):
         global LANGFILTER
         myDB = database.DBConnection()
@@ -546,7 +580,7 @@ class WebInterface(object):
                             worklink = '<td><a href="' + \
                                        row[11] + '" target="_new"><small><i>LibraryThing</i></small></a></td>'
 
-                    editpage = '<a href="editBook?bookid=' + row[8] + '" target="_new"><small><i>Edit</i></a>'
+                    editpage = '<a href="editBook?bookid=' + row[8] + '" target="_new"><small><i>Manual</i></a>'
 
                     sitelink = ''
                     if 'goodreads' in row[10]:
@@ -608,7 +642,7 @@ class WebInterface(object):
                                        row[11] + '" target="_new"><i class="smalltext">LibraryThing</i></a></td>'
 
                     editpage = '<a href="editBook?bookid=' + row[
-                        8] + '" target="_new"><i class="smalltext">Edit</i></a>'
+                        8] + '" target="_new"><i class="smalltext">Manual</i></a>'
 
                     sitelink = ''
                     if 'goodreads' in row[10]:
@@ -674,8 +708,7 @@ class WebInterface(object):
     def addBook(self, bookid=None):
         myDB = database.DBConnection()
         AuthorID = ""
-        booksearch = myDB.select(
-            'SELECT * from books WHERE BookID="%s"' % bookid)
+        booksearch = myDB.select('SELECT * from books WHERE BookID="%s"' % bookid)
         if len(booksearch):
             myDB.upsert("books", {'Status': 'Wanted'}, {'BookID': bookid})
             for book in booksearch:
