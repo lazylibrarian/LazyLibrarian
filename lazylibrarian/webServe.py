@@ -151,10 +151,24 @@ class WebInterface(object):
             if key.lower() in kwargs:
                 value = kwargs[key.lower()]
                 if item_type == 'bool':
-                    value = bool(value)
+                    if not value or value == 'False' or value == '0':
+                        value = 0
+                    else:
+                        value = 1
                 elif item_type == 'int':
                     value = check_int(value, default)
                 lazylibrarian.CONFIG[key] = value
+            else:
+                # no key returned for empty tickboxes...
+                if item_type == 'bool':
+                    lazylibrarian.CONFIG[key] = 0
+                else:
+                    # or for strings not available in config html page
+                    if key not in ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'GIT_REPO', 'GIT_USER', 'GIT_BRANCH',
+                                    'LATEST_VERSION', 'CURRENT_VERSION', 'COMMITS_BEHIND', 'INSTALL_TYPE']:
+                        # or for an empty string
+                        lazylibrarian.CONFIG[key] = ''
+
 
         myDB = database.DBConnection()
         magazines = myDB.select('SELECT Title,Reject,Regex from magazines ORDER by upper(Title)')
