@@ -5,6 +5,11 @@
 
 <%def name="headerIncludes()">
     <div id="subhead_container">
+        <ul id="subhead_menu">
+            <li><a href="booksearch?bookid=${config['bookID']}&title=${config['bookName']}&author=${config['AuthorName']}" id="button"> Author/Title Search </a></li>
+            <li><a href="booksearch?bookid=${config['bookID']}&title=${config['bookName']}" id="button"> Title Search </a></li>
+            <li><a href="booksearch?bookid=${config['bookID']}&author=${config['AuthorName']}" id="button"> Author Search </a></li>
+        </ul>
     </div>
 </%def>
 <%def name="body()">

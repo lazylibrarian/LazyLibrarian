@@ -4,8 +4,13 @@
 %>
 
 <%def name="headerIncludes()">
-    <div id="subhead_container">
-        <div id="subhead_menu">
+    <div id="subhead_container" class="row">
+        <div id="subhead_menu" class="form-inline">
+            <div class="col-xs-10">
+                <a id="manualbook" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['bookID']}&title=${config['bookName']}&author=${config['AuthorName']}">Author/Title Search</a>
+                <a id="manualtitle" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['bookID']}&title=${config['bookName']}">Title Search</a>
+                <a id="manualbook" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['bookID']}&author=${config['AuthorName']}">Author Search</a>
+            </div>
         </div>
     </div>
 </%def>

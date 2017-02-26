@@ -26,7 +26,7 @@ from urllib2 import HTTPError
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage
-from lazylibrarian.cache import get_json_request, cache_cover
+from lazylibrarian.cache import get_json_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn, getList
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
@@ -587,7 +587,7 @@ class GoogleBooks:
                                         myDB.upsert("books", newValueDict, controlValueDict)
 
                                 elif bookimg and bookimg.startswith('http'):
-                                    link = cache_cover(bookid, bookimg)
+                                    link = cache_img("book", bookid, bookimg)
                                     if link:
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": link}
@@ -816,7 +816,7 @@ class GoogleBooks:
                 myDB.upsert("books", newValueDict, controlValueDict)
 
             elif bookimg and bookimg.startswith('http'):
-                link = cache_cover(bookid, bookimg)
+                link = cache_img("book", bookid, bookimg)
                 if link:
                     controlValueDict = {"BookID": bookid}
                     newValueDict = {"BookImg": link}

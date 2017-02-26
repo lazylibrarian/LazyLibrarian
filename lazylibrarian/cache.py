@@ -62,14 +62,14 @@ def fetchURL(URL, headers=None, retry=True):
         return str(e), False
 
 
-def cache_cover(bookID, img_url):
+def cache_img(img_type,img_ID, img_url):
     """ Cache the image from the given URL in the local images cache
-        linked to the bookid, return the link to the cached file
+        linked to the id, return the link to the cached file
         or None if failed to cache """
 
     cachedir = lazylibrarian.CACHEDIR
-    coverfile = os.path.join(cachedir, bookID + '.jpg')
-    link = 'cache/' + bookID + '.jpg'
+    coverfile = os.path.join(cachedir, img_type, img_ID + '.jpg')
+    link = 'cache/%s/%s.jpg' % (img_type, img_ID)
     # if os.path.isfile(coverfile):  # overwrite any cached image
     #    return link
 

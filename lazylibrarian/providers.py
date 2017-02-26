@@ -195,7 +195,7 @@ def IterateOverTorrentSites(book=None, searchType=None):
 
     resultslist = []
     providers = 0
-    if searchType != 'mag':
+    if searchType != 'mag' and searchType != 'general':
         authorname, bookname = get_searchterm(book, searchType)
         book['searchterm'] = authorname + ' ' + bookname
 
@@ -374,11 +374,11 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
             if rootxml.tag == 'error':
                 errormsg = rootxml.get('description', default='unknown error')
                 logger.error(u"%s - %s" % (host, errormsg))
-                if provider['BOOKSEARCH']:  # maybe the host doesn't support it
+                if provider['BOOKSEARCH'] and searchType == "book":  # maybe the host doesn't support it
                     errorlist = ['no such function', 'unknown parameter', 'unknown function', 'incorrect parameter']
                     match = False
                     for item in errorlist:
-                        if item in errormsg.lower() and provider['BOOKSEARCH'].lower() in errormsg.lower():
+                        if item in errormsg.lower():
                             match = True
                     if match:
                         count = 0
@@ -463,7 +463,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
     if params:
         logger.debug('[NewzNabPlus] - %s Search parameters set to %s' % (searchMode, str(params)))
     else:
-        logger.debug('[NewzNabPlus] - %s No matching search parameters' % searchMode)
+        logger.debug('[NewzNabPlus] - %s No matching search parameters for %s' % (searchMode, searchType))
 
     return params
 

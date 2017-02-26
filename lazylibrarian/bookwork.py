@@ -20,7 +20,7 @@ import urllib
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.cache import cache_cover, fetchURL
+from lazylibrarian.cache import cache_img, fetchURL
 from lazylibrarian.formatter import safe_unicode, plural
 
 
@@ -260,7 +260,7 @@ def getBookCover(bookID=None):
         try:
             img = work.split('og:image')[1].split('="')[1].split('"')[0]
             if img and img.startswith('http'):
-                coverlink = cache_cover(bookID, img)
+                coverlink = cache_img("book", bookID, img)
                 if coverlink:
                     logger.debug(u"getBookCover: Caching librarything cover for %s" % bookID)
                     return coverlink
@@ -300,7 +300,7 @@ def getBookCover(bookID=None):
                     if time_now <= lazylibrarian.LAST_GOODREADS:
                         time.sleep(1)
                         lazylibrarian.LAST_GOODREADS = time_now
-                    coverlink = cache_cover(bookID, img)
+                    coverlink = cache_img("book", bookID, img)
                     if coverlink:
                         logger.debug("getBookCover: Caching goodreads cover for %s %s" % (author, title))
                         return coverlink
@@ -323,7 +323,7 @@ def getBookCover(bookID=None):
             except IndexError:
                 img = None
             if img and img.startswith('http'):
-                coverlink = cache_cover(bookID, img)
+                coverlink = cache_img("book", bookID, img)
                 if coverlink:
                     logger.debug("getBookCover: Caching google cover for %s %s" % (author, title))
                     return coverlink
@@ -366,7 +366,7 @@ def getAuthorImage(authorid=None):
             except IndexError:
                 img = None
             if img and img.startswith('http'):
-                coverlink = cache_cover(authorid, img)
+                coverlink = cache_img("author", authorid, img)
                 if coverlink:
                     logger.debug("Cached google image for %s" % authorname)
                     return coverlink

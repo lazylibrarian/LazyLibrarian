@@ -27,7 +27,7 @@ import webbrowser
 
 import cherrypy
 from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, \
-    librarysync, versioncheck, database, searchmag, magazinescan, bookwork, dbupgrade
+    librarysync, versioncheck, database, searchmag, magazinescan, bookwork
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import restartJobs, internet
 from lazylibrarian.formatter import getList, bookSeries, plural, unaccented
@@ -419,18 +419,14 @@ def initialize():
 
         # Initialize the database
         try:
-            curr_ver = dbupgrade.upgrade_needed()
-            if curr_ver:
-                threading.Thread(target=dbupgrade.dbupgrade, name="DB_UPGRADE", args=[curr_ver]).start()
+            myDB = database.DBConnection()
+            result = myDB.match('PRAGMA user_version')
+            check = myDB.match('PRAGMA integrity_check')
+            if result:
+                version = result[0]
             else:
-                myDB = database.DBConnection()
-                result = myDB.match('PRAGMA user_version')
-                check = myDB.match('PRAGMA integrity_check')
-                if result:
-                    version = result[0]
-                else:
-                    version = 0
-                logger.info("Database is version %s, integrity check: %s" % (version, check[0]))
+                version = 0
+            logger.info("Database is version %s, integrity check: %s" % (version, check[0]))
 
         except Exception as e:
             logger.error("Can't connect to the database: %s" % str(e))
@@ -973,9 +969,9 @@ def start():
     if __INITIALIZED__:
         # Crons and scheduled jobs started here
         SCHED.start()
+        started = True
         if not UPDATE_MSG:
             restartJobs(start='Start')
-            started = True
 
 
 def shutdown(restart=False, update=False):

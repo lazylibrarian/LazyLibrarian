@@ -240,13 +240,16 @@ def is_valid_booktype(filename, booktype=None):
 
 
 def getList(st):
-    # split a string into a list on whitespace or commas
-    # changed posix to "false" to not baulk at apostrophes
+    # split a string into a list on whitespace or plus or comma
+    # quotes treated as part of word in case unpaired
+    # could maybe strip them out?
+
     if st:
-        my_splitter = shlex.shlex(st, posix=False)
-        my_splitter.whitespace += ','
-        my_splitter.whitespace_split = True
-        return list(my_splitter)
+        lex = shlex.shlex(st)
+        lex.whitespace += ',+'
+        lex.quotes = ''
+        lex.whitespace_split = True
+        return list(lex)
     return []
 
 def safe_unicode(obj, *args):

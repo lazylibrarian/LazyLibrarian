@@ -19,7 +19,7 @@ import os
 import shutil
 import sqlite3
 import threading
-
+import traceback
 import lazylibrarian
 from lazylibrarian import logger, database, magazinescan, bookwork
 from lazylibrarian.formatter import plural, bookSeries
@@ -33,14 +33,15 @@ def upgrade_needed():
     """
 
     myDB = database.DBConnection()
-    result = myDB.match('PRAGMA user_version')
     # Had a report of "index out of range", can't replicate it.
     # Maybe on some versions of sqlite an unset user_version
     # or unsupported pragma gives an empty result?
-    if result:
-        db_version = result[0]
-    else:
-        db_version = 0
+    db_version = 0
+    result = myDB.match('PRAGMA user_version')
+    if result and result[0]:
+        value = str(result[0])
+        if value.isdigit():
+            db_version = int(value)
 
     # database version history:
     # 0 original version or new empty database
@@ -57,24 +58,43 @@ def upgrade_needed():
     # 11 Keep most recent book image in author table
     # 12 Keep latest issue cover in magazine table
     # 13 add Manual column to author table for user editing
+    # 14 separate book and author images in case id numbers collide
 
-    db_current_version = 13
+    db_current_version = 14
     if db_version < db_current_version:
         return db_current_version
     return 0
 
 
+def has_column(myDB, table, column):
+    columns = myDB.select('PRAGMA table_info(%s)' % table)
+    if not columns:  # no such table
+        return False
+    for item in columns:
+        if item[1] == column:
+            return True
+    # no such column
+    return False
+
+
 def dbupgrade(db_current_version):
-    conn = sqlite3.connect(lazylibrarian.DBFILE)
-    c = conn.cursor()
-    c.execute('PRAGMA user_version')
-    result = c.fetchone()
-    db_version = result[0]
-    c.execute('PRAGMA integrity_check')
-    check = c.fetchone()
-    if check[0] != "ok":
-        logger.error('Database integrity check: %s' % check[0])
-        # should probably abort now
+  try:
+    myDB = database.DBConnection()
+    db_version = 0
+    result = myDB.match('PRAGMA user_version')
+    if result and result[0]:
+        value = str(result[0])
+        if value.isdigit():
+            db_version = int(value)
+
+    check = myDB.match('PRAGMA integrity_check')
+    if check and check[0]:
+        result = check[0]
+        if result == 'ok':
+            logger.debug('Database integrity check: %s' % result)
+        else:
+            logger.error('Database integrity check: %s' % result)
+            # should probably abort now
 
     if db_version < db_current_version:
         lazylibrarian.UPDATE_MSG = 'Updating database to version %s, current version is %s' % (
@@ -83,111 +103,86 @@ def dbupgrade(db_current_version):
         myDB = database.DBConnection()
 
         if db_version < 1:
-            c.execute('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT UNIQUE, AuthorName TEXT UNIQUE, AuthorImg TEXT, \
+            myDB.action('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT UNIQUE, AuthorName TEXT UNIQUE, AuthorImg TEXT, \
                  AuthorLink TEXT, DateAdded TEXT, Status TEXT, LastBook TEXT, LastBookImg TEXT, LastLink Text, \
                  LastDate TEXT,  HaveBooks INTEGER, TotalBooks INTEGER, AuthorBorn TEXT, AuthorDeath TEXT, \
                  UnignoredBooks INTEGER, Manual TEXT)')
-            c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
+            myDB.action('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
                 BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
                 BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, \
                 BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesNum TEXT, \
                 WorkPage TEXT, Manual TEXT)')
-            c.execute('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, \
+            myDB.action('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, \
                 NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, Source TEXT, DownloadID TEXT)')
-            c.execute('CREATE TABLE IF NOT EXISTS pastissues AS SELECT * FROM wanted WHERE 0')  # same columns
-            c.execute('CREATE TABLE IF NOT EXISTS magazines (Title TEXT UNIQUE, Regex TEXT, Status TEXT, MagazineAdded TEXT, \
+            myDB.action('CREATE TABLE IF NOT EXISTS pastissues AS SELECT * FROM wanted WHERE 0')  # same columns
+            myDB.action('CREATE TABLE IF NOT EXISTS magazines (Title TEXT UNIQUE, Regex TEXT, Status TEXT, MagazineAdded TEXT, \
                         LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT, Reject TEXT, LatestCover TEXT)')
-            c.execute('CREATE TABLE IF NOT EXISTS languages (isbn TEXT, lang TEXT)')
-            c.execute('CREATE TABLE IF NOT EXISTS issues (Title TEXT, IssueID TEXT UNIQUE, IssueAcquired TEXT, IssueDate TEXT, \
+            myDB.action('CREATE TABLE IF NOT EXISTS languages (isbn TEXT, lang TEXT)')
+            myDB.action('CREATE TABLE IF NOT EXISTS issues (Title TEXT, IssueID TEXT UNIQUE, IssueAcquired TEXT, IssueDate TEXT, \
                 IssueFile TEXT)')
-            c.execute('CREATE TABLE IF NOT EXISTS stats (authorname text, GR_book_hits int, GR_lang_hits int, \
+            myDB.action('CREATE TABLE IF NOT EXISTS stats (authorname text, GR_book_hits int, GR_lang_hits int, \
                 LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int, duplicates int)')
-            conn.commit()
 
             # These are the incremental changes before database versioning was introduced.
             # New database tables should already have these incorporated so we need to check first...
-            try:
-                c.execute('SELECT BookSub from books')
-            except sqlite3.OperationalError:
+
+            if not has_column(myDB, "books", "BookSub"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold book subtitles.'
                 logger.info(lazylibrarian.UPDATE_MSG)
-                c.execute('ALTER TABLE books ADD COLUMN BookSub TEXT')
-                conn.commit()
-            try:
-                c.execute('SELECT BookPub from books')
-            except sqlite3.OperationalError:
+                myDB.action('ALTER TABLE books ADD COLUMN BookSub TEXT')
+
+            if not has_column(myDB, "books", "BookSub"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold book publisher'
                 logger.info(lazylibrarian.UPDATE_MSG)
-                c.execute('ALTER TABLE books ADD COLUMN BookPub TEXT')
-                conn.commit()
-            try:
-                c.execute('SELECT BookGenre from books')
-            except sqlite3.OperationalError:
+                myDB.action('ALTER TABLE books ADD COLUMN BookPub TEXT')
+
+            if not has_column(myDB, "books", "BookGenre"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold bookgenre'
                 logger.info(lazylibrarian.UPDATE_MSG)
-                c.execute('ALTER TABLE books ADD COLUMN BookGenre TEXT')
-                conn.commit()
-            try:
-                c.execute('SELECT BookFile from books')
-            except sqlite3.OperationalError:
+                myDB.action('ALTER TABLE books ADD COLUMN BookGenre TEXT')
+
+            if not has_column(myDB, "books", "BookFile"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold book filename'
                 logger.info(lazylibrarian.UPDATE_MSG)
-                c.execute('ALTER TABLE books ADD COLUMN BookFile TEXT')
-                conn.commit()
-            try:
-                c.execute('SELECT AuxInfo from wanted')
-            except sqlite3.OperationalError:
+                myDB.action('ALTER TABLE books ADD COLUMN BookFile TEXT')
+
+            if not has_column(myDB, "wanted", "AuxInfo"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold AuxInfo'
                 logger.info(lazylibrarian.UPDATE_MSG)
-                c.execute('ALTER TABLE wanted ADD COLUMN AuxInfo TEXT')
-                conn.commit()
-            try:
-                c.execute('SELECT NZBsize from wanted')
-            except sqlite3.OperationalError:
+                myDB.action('ALTER TABLE wanted ADD COLUMN AuxInfo TEXT')
+
+            if not has_column(myDB, "wanted", "NZBsize"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold NZBsize'
                 logger.info(lazylibrarian.UPDATE_MSG)
-                c.execute('ALTER TABLE wanted ADD COLUMN NZBsize TEXT')
-                conn.commit()
-            try:
-                c.execute('SELECT NZBmode from wanted')
-            except sqlite3.OperationalError:
+                myDB.action('ALTER TABLE wanted ADD COLUMN NZBsize TEXT')
+
+            if not has_column(myDB, "wanted", "NZBmode"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold NZBmode'
                 logger.info(lazylibrarian.UPDATE_MSG)
-                c.execute('ALTER TABLE wanted ADD COLUMN NZBmode TEXT')
-                conn.commit()
-            try:
-                c.execute('SELECT UnignoredBooks from authors')
-            except sqlite3.OperationalError:
+                myDB.action('ALTER TABLE wanted ADD COLUMN NZBmode TEXT')
+
+            if not has_column(myDB, "authors", "UnignoredBooks"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold UnignoredBooks'
                 logger.info(lazylibrarian.UPDATE_MSG)
-                c.execute('ALTER TABLE authors ADD COLUMN UnignoredBooks INTEGER')
-                conn.commit()
-            try:
-                c.execute('SELECT IssueStatus from magazines')
-            except sqlite3.OperationalError:
+                myDB.action('ALTER TABLE authors ADD COLUMN UnignoredBooks INTEGER')
+
+            if not has_column(myDB, "magazines", "IssueStatus"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold IssueStatus'
                 logger.info(lazylibrarian.UPDATE_MSG)
-                c.execute('ALTER TABLE magazines ADD COLUMN IssueStatus TEXT')
-                conn.commit()
+                myDB.action('ALTER TABLE magazines ADD COLUMN IssueStatus TEXT')
 
             addedWorkPage = False
-            try:
-                c.execute('SELECT WorkPage from books')
-            except sqlite3.OperationalError:
+            if not has_column(myDB, "books", "WorkPage"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold WorkPage'
                 logger.info(lazylibrarian.UPDATE_MSG)
-                c.execute('ALTER TABLE books ADD COLUMN WorkPage TEXT')
-                conn.commit()
+                myDB.action('ALTER TABLE books ADD COLUMN WorkPage TEXT')
                 addedWorkPage = True
 
             addedSeries = False
-            try:
-                c.execute('SELECT Series from books')
-            except sqlite3.OperationalError:
+            if not has_column(myDB, "books", "Series"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold Series'
                 logger.info(lazylibrarian.UPDATE_MSG)
-                c.execute('ALTER TABLE books ADD COLUMN Series TEXT')
-                conn.commit()
+                myDB.action('ALTER TABLE books ADD COLUMN Series TEXT')
                 addedSeries = True
 
             # SeriesOrder shouldn't be an integer, some later written books
@@ -196,38 +191,29 @@ def dbupgrade(db_current_version):
             # so we need to update SeriesOrder to store as text.
             # Because sqlite can't drop columns we create a new column SeriesNum,
             # inherit the old column values, and use SeriesNum instead
-            try:
-                c.execute('SELECT SeriesNum from books')
-            except sqlite3.OperationalError:
+            if not has_column(myDB, "books", "SeriesNum"):
                 # no SeriesNum column, so create one
                 lazylibrarian.UPDATE_MSG = 'Updating books to hold SeriesNum'
                 logger.info(lazylibrarian.UPDATE_MSG)
-                c.execute('ALTER TABLE books ADD COLUMN SeriesNum TEXT')
-                c.execute('UPDATE books SET SeriesNum = SeriesOrder')
-                c.execute('UPDATE books SET SeriesOrder = Null')
-                conn.commit()
+                myDB.action('ALTER TABLE books ADD COLUMN SeriesNum TEXT')
+                myDB.action('UPDATE books SET SeriesNum = SeriesOrder')
+                myDB.action('UPDATE books SET SeriesOrder = Null')
 
             addedIssues = False
-            try:
-                c.execute('SELECT Title from issues')
-            except sqlite3.OperationalError:
+            if not has_column(myDB, "issues", "Title"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold Issues table'
                 logger.info(lazylibrarian.UPDATE_MSG)
-                c.execute(
+                myDB.action(
                     'CREATE TABLE issues (Title TEXT, IssueID TEXT, IssueAcquired TEXT, IssueDate TEXT, IssueFile TEXT)')
-                conn.commit()
-                addedIssues = True
-            try:
-                c.execute('SELECT IssueID from issues')
-            except sqlite3.OperationalError:
-                lazylibrarian.UPDATE_MSG = 'Updating Issues table to hold IssueID'
-                logger.info(lazylibrarian.UPDATE_MSG)
-                c.execute('ALTER TABLE issues ADD COLUMN IssueID TEXT')
-                conn.commit()
                 addedIssues = True
 
-            c.execute('DROP TABLE if exists capabilities')
-            conn.commit()
+            if not has_column(myDB, "issues", "IssueID"):
+                lazylibrarian.UPDATE_MSG = 'Updating Issues table to hold IssueID'
+                logger.info(lazylibrarian.UPDATE_MSG)
+                myDB.action('ALTER TABLE issues ADD COLUMN IssueID TEXT')
+                addedIssues = True
+
+            myDB.action('DROP TABLE if exists capabilities')
 
             if addedIssues:
                 try:
@@ -284,46 +270,32 @@ def dbupgrade(db_current_version):
                 logger.info('Error: ' + str(e))
 
         if db_version < 3:
-            try:
-                c.execute('SELECT SeriesOrder from books')
+            if has_column(myDB, "books", "SeriesOrder"):
                 lazylibrarian.UPDATE_MSG = 'Removing SeriesOrder from books table'
                 logger.info(lazylibrarian.UPDATE_MSG)
-                try:
-                    c.execute('CREATE TABLE IF NOT EXISTS temp_books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
-                        BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
-                        BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, \
-                        BookFile TEXT, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, \
-                        SeriesNum TEXT, WorkPage TEXT)')
-                    c.execute('INSERT INTO temp_books SELECT AuthorID,AuthorName,AuthorLink,BookName,BookSub, \
-                        BookDesc,BookGenre,BookIsbn,BookPub,BookRate,BookImg,BookPages,BookLink,BookID, \
-                        BookFile,BookDate,BookLang,BookAdded,Status,Series,SeriesNum,WorkPage FROM books')
-                    c.execute('DROP TABLE books')
-                    c.execute('ALTER TABLE temp_books RENAME TO books')
-                    conn.commit()
-                except sqlite3.OperationalError:
-                    logger.warn('Failed to remove SeriesOrder from books table')
-            except sqlite3.OperationalError:
-                # if it's a new install there is no SeriesOrder column, so nothing to remove
-                pass
+                myDB.action('CREATE TABLE IF NOT EXISTS temp_books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
+                    BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
+                    BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, \
+                    BookFile TEXT, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, \
+                    SeriesNum TEXT, WorkPage TEXT)')
+                myDB.action('INSERT INTO temp_books SELECT AuthorID,AuthorName,AuthorLink,BookName,BookSub, \
+                    BookDesc,BookGenre,BookIsbn,BookPub,BookRate,BookImg,BookPages,BookLink,BookID, \
+                    BookFile,BookDate,BookLang,BookAdded,Status,Series,SeriesNum,WorkPage FROM books')
+                myDB.action('DROP TABLE books')
+                myDB.action('ALTER TABLE temp_books RENAME TO books')
 
-            try:
-                c.execute('SELECT BookID from pastissues')
-            except sqlite3.OperationalError:
+            if not has_column(myDB, "pastissues", "BookID"):
                 lazylibrarian.UPDATE_MSG = 'Moving magazine past issues into new table'
                 logger.info(lazylibrarian.UPDATE_MSG)
-                c.execute(
+                myDB.action(
                     'CREATE TABLE pastissues AS SELECT * FROM wanted WHERE Status="Skipped" AND length(AuxInfo) > 0')
-                c.execute('DELETE FROM wanted WHERE Status="Skipped" AND length(AuxInfo) > 0')
-                conn.commit()
+                myDB.action('DELETE FROM wanted WHERE Status="Skipped" AND length(AuxInfo) > 0')
 
         if db_version < 4:
-            try:
-                c.execute('SELECT duplicates from stats')
-            except sqlite3.OperationalError:
+            if not has_column(myDB, "stats", "duplicates"):
                 lazylibrarian.UPDATE_MSG = 'Updating stats table to hold duplicates'
                 logger.info(lazylibrarian.UPDATE_MSG)
-                c.execute('ALTER TABLE stats ADD COLUMN duplicates INT')
-                conn.commit()
+                myDB.action('ALTER TABLE stats ADD COLUMN duplicates INT')
 
         if db_version < 5:
             issues = myDB.select(
@@ -357,23 +329,17 @@ def dbupgrade(db_current_version):
                     myDB.action('UPDATE magazines SET IssueDate="%s" WHERE Title="%s"' % (issuedate, title))
 
         if db_version < 6:
-            try:
-                c.execute('SELECT Manual from books')
-            except sqlite3.OperationalError:
+            if not has_column(myDB, "books", "Manual"):
                 lazylibrarian.UPDATE_MSG = 'Updating books table to hold Manual setting'
                 logger.info(lazylibrarian.UPDATE_MSG)
-                c.execute('ALTER TABLE books ADD COLUMN Manual TEXT')
-                conn.commit()
+                myDB.action('ALTER TABLE books ADD COLUMN Manual TEXT')
 
         if db_version < 7:
-            try:
-                c.execute('SELECT Source from wanted')
-            except sqlite3.OperationalError:
+            if not has_column(myDB, "wanted", "Source"):
                 lazylibrarian.UPDATE_MSG = 'Updating wanted table to hold Source and DownloadID'
                 logger.info(lazylibrarian.UPDATE_MSG)
-                c.execute('ALTER TABLE wanted ADD COLUMN Source TEXT')
-                c.execute('ALTER TABLE wanted ADD COLUMN DownloadID TEXT')
-                conn.commit()
+                myDB.action('ALTER TABLE wanted ADD COLUMN Source TEXT')
+                myDB.action('ALTER TABLE wanted ADD COLUMN DownloadID TEXT')
 
         if db_version < 8:
             src = os.path.join(lazylibrarian.PROG_DIR, 'data/images/cache/')
@@ -419,41 +385,27 @@ def dbupgrade(db_current_version):
                 logger.info("Book Image cache updated")
 
         if db_version < 9:
-            try:
-                c.execute('SELECT reject from magazines')
-            except sqlite3.OperationalError:
+            if not has_column(myDB, "magazines", "Reject"):
                 # remove frequency column, rename regex to reject, add new regex column for searches
                 lazylibrarian.UPDATE_MSG = 'Updating magazines table'
                 logger.info(lazylibrarian.UPDATE_MSG)
-                try:
-                    c.execute('CREATE TABLE IF NOT EXISTS temp_table (Title TEXT, Regex TEXT, Status TEXT, \
-                                MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT, Reject TEXT)')
-
-                    c.execute('INSERT INTO temp_table SELECT Title, Regex, Status, MagazineAdded, LastAcquired, \
-                                IssueDate, IssueStatus, Regex FROM magazines')
-                    c.execute('DROP TABLE magazines')
-                    c.execute('ALTER TABLE temp_table RENAME TO magazines')
-                    conn.commit()
-                    c.execute('UPDATE magazines SET Regex = Null')
-                    conn.commit()
-                except sqlite3.OperationalError:
-                    logger.warn('Failed to rearrange magazines table')
+                myDB.action('CREATE TABLE IF NOT EXISTS temp_table (Title TEXT, Regex TEXT, Status TEXT, \
+                            MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT, Reject TEXT)')
+                myDB.action('INSERT INTO temp_table SELECT Title, Regex, Status, MagazineAdded, LastAcquired, \
+                            IssueDate, IssueStatus, Regex FROM magazines')
+                myDB.action('DROP TABLE magazines')
+                myDB.action('ALTER TABLE temp_table RENAME TO magazines')
+                myDB.action('UPDATE magazines SET Regex = Null')
 
         if db_version < 10:
             # make sure columns in pastissues match those in wanted table
             # needed when upgrading from old 3rd party packages (eg freenas)
-            try:
-                c.execute('DROP TABLE pastissues')
-                c.execute('CREATE TABLE pastissues AS SELECT * FROM wanted WHERE 0')  # same columns, but empty table
-                conn.commit()
-            except sqlite3.OperationalError:
-                logger.warn('Failed to rebuild pastissues table')
+            myDB.action('DROP TABLE pastissues')
+            myDB.action('CREATE TABLE pastissues AS SELECT * FROM wanted WHERE 0')  # same columns, but empty table
 
         if db_version < 11:
             # keep last book image
-            try:
-                c.execute('SELECT LastBookImg from Authors')
-            except sqlite3.OperationalError:
+            if not has_column(myDB, "authors", "LastBookImg"):
                 lazylibrarian.UPDATE_MSG = 'Updating author table to hold last book image'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE authors ADD COLUMN LastBookImg TEXT')
@@ -463,17 +415,14 @@ def dbupgrade(db_current_version):
                     for book in books:
                         lazylibrarian.UPDATE_MSG = 'Updating last book image for %s' % book['AuthorName']
                         if book['LastBook']:
-                            match = myDB.select('SELECT BookImg from books WHERE AuthorID="%s" AND BookName="%s"' %
+                            match = myDB.match('SELECT BookImg from books WHERE AuthorID="%s" AND BookName="%s"' %
                                                 (book['AuthorID'], book['LastBook']))
                             if match:
-                                c.execute('UPDATE authors SET LastBookImg="%s" WHERE AuthorID=%s' % (match[0]['BookImg'], book['AuthorID']))
-                                conn.commit()
+                                myDB.action('UPDATE authors SET LastBookImg="%s" WHERE AuthorID=%s' % (match['BookImg'], book['AuthorID']))
 
         if db_version < 12:
             # keep last magazine issue image
-            try:
-                c.execute('SELECT LatestCover from Magazines')
-            except sqlite3.OperationalError:
+            if not has_column(myDB, "Magazines", "LatestCover"):
                 lazylibrarian.UPDATE_MSG = 'Updating magazine table to hold last issue image'
                 logger.info(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE magazines ADD COLUMN LatestCover TEXT')
@@ -487,17 +436,87 @@ def dbupgrade(db_current_version):
                         if match:
                             coverfile = os.path.splitext(match['IssueFile'])[0] + '.jpg'
                             if os.path.exists(coverfile):
-                                c.execute('UPDATE magazines SET LatestCover="%s" WHERE Title="%s"' % (coverfile, mag['Title']))
-                                conn.commit()
+                                myDB.action('UPDATE magazines SET LatestCover="%s" WHERE Title="%s"' % (coverfile, mag['Title']))
 
         if db_version < 13:
-            try:
-                c.execute('SELECT Manual from authors')
-            except sqlite3.OperationalError:
+            if not has_column(myDB, "authors", "Manual"):
                 lazylibrarian.UPDATE_MSG = 'Updating authors table to hold Manual setting'
                 logger.info(lazylibrarian.UPDATE_MSG)
-                c.execute('ALTER TABLE authors ADD COLUMN Manual TEXT')
-                conn.commit()
+                myDB.action('ALTER TABLE authors ADD COLUMN Manual TEXT')
+
+        if db_version < 14:
+            src = lazylibrarian.CACHEDIR
+            try:
+                os.mkdir(os.path.join(src, 'author'))
+            except OSError as e:
+                if e.errno is not 17:  # already exists is ok
+                    logger.debug('mkdir author cache reports: %s' % str(e))
+
+            query = 'SELECT AuthorName, AuthorID, AuthorImg FROM authors '
+            query += 'WHERE AuthorImg LIKE "cache/%" '
+            query += 'AND AuthorImg NOT LIKE "cache/author/%"'
+
+            images = myDB.select(query)
+            if images:
+                tot = len(images)
+                logger.info('Moving %s author images to new location' % tot)
+                cnt = 0
+                for image in images:
+                    cnt += 1
+                    lazylibrarian.UPDATE_MSG = "Moving author images to new location: %s of %s" % (cnt, tot)
+                    try:
+                        img = image['AuthorImg']
+                        img = img.rsplit('/', 1)[1]
+                        srcfile = os.path.join(src, img)
+                        if os.path.isfile(srcfile):
+                            try:
+                                shutil.move(srcfile, os.path.join(src, "author", img))
+                                myDB.action('UPDATE authors SET AuthorImg="cache/author/%s" WHERE AuthorID="%s"' %
+                                            (img, image['AuthorID']))
+                            except Exception as e:
+                                logger.warn("dbupgrade: %s" % str(e))
+                    except Exception as e:
+                        logger.warn('Failed to update author image for %s: %s' % (image['AuthorName'], str(e)))
+                logger.info("Author Image cache updated")
+
+            try:
+                os.mkdir(os.path.join(src, 'book'))
+            except OSError as e:
+                if e.errno is not 17:  # already exists is ok
+                    logger.debug('mkdir book cache reports: %s' % str(e))
+
+            query = 'SELECT BookName, BookID, BookImg FROM books '
+            query += 'WHERE BookImg LIKE "cache/%" '
+            query += 'AND BookImg NOT LIKE "cache/book/%"'
+            images = myDB.select(query)
+
+            if images:
+                tot = len(images)
+                logger.info('Moving %s book images to new location' % tot)
+                cnt = 0
+                for image in images:
+                    cnt += 1
+                    lazylibrarian.UPDATE_MSG = "Moving book images to new location: %s of %s" % (cnt, tot)
+                    try:
+                        img = image['BookImg']
+                        img = img.rsplit('/', 1)[1]
+                        srcfile = os.path.join(src, img)
+                        if os.path.isfile(srcfile):
+                            try:
+                                shutil.move(srcfile, os.path.join(src, "book", img))
+                                myDB.action('UPDATE books SET BookImg="cache/book/%s" WHERE BookID="%s"' %
+                                            (img, image['BookID']))
+                            except Exception as e:
+                                logger.warn("dbupgrade: %s" % str(e))
+                    except Exception as e:
+                        logger.warn('Failed to update book image for %s: %s' % (image['BookName'], str(e)))
+                logger.info("Book Image cache updated")
+
+            # at this point there should be no more .jpg files in the root of the cachedir
+            # any that are still there are for books/authors deleted from database
+            for image in os.listdir(src):
+                if image.endswith('.jpg'):
+                    os.remove(os.path.join(src, image))
 
         # Now do any non-version-specific tidying
         try:
@@ -511,13 +530,14 @@ def dbupgrade(db_current_version):
         except Exception as e:
             logger.info('Error: ' + str(e))
 
-        c.execute('PRAGMA user_version = %s' % db_current_version)
+        myDB.action('PRAGMA user_version = %s' % db_current_version)
         lazylibrarian.UPDATE_MSG = 'Database updated to version %s' % db_current_version
         logger.info(lazylibrarian.UPDATE_MSG)
 
-    conn.commit()
-    conn.close()
-    if not lazylibrarian.started:
         restartJobs(start='Start')
-        lazylibrarian.started = True
+
+    lazylibrarian.UPDATE_MSG = ''
+
+  except Exception:
+    logger.error('Unhandled exception in database update: %s' % traceback.format_exc())
     lazylibrarian.UPDATE_MSG = ''

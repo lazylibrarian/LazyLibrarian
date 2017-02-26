@@ -25,7 +25,7 @@ from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, g
     getBookCover, getAuthorImage, getAuthorImages
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, dbUpdate, setperm
 from lazylibrarian.csvfile import import_CSV, export_CSV
-from lazylibrarian.formatter import today
+from lazylibrarian.formatter import today, getList
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, update_totals
@@ -36,8 +36,8 @@ from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchnzb import search_nzb_book
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.searchtorrents import search_tor_book
-from lazylibrarian.cache import cache_cover
-
+from lazylibrarian.cache import cache_img
+from lazylibrarian.searchitem import searchItem
 
 cmd_dict = {'help': 'list available commands. ' +
                     'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +
@@ -95,6 +95,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'getAllBooks': 'list all books in the database',
             'getNoLang': 'list all books in the database with unknown language',
             'searchBook': '&id= [&wait] search for one book by BookID',
+            'searchItem': '&item= get search results for an item (author, title, isbn)',
             'showJobs': 'show status of running jobs',
             'restartJobs': 'restart background jobs',
             'checkRunningJobs': 'ensure all needed jobs are running',
@@ -634,6 +635,13 @@ class Api(object):
         except Exception as e:
             self.data = str(e)
 
+    def _searchItem(self, **kwargs):
+        if 'item' not in kwargs:
+            self.data = 'Missing parameter: item'
+            return
+        else:
+            self.data = searchItem(kwargs['item'])
+
     def _searchBook(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
@@ -810,11 +818,11 @@ class Api(object):
             else:
                 msg += " invalid extension"
 
-        if msg and img.startswith('http'):
+        if img.startswith('http'):
             # cache image from url
             extn = os.path.splitext(img)[1].lower()
             if extn and extn in ['.jpg','.jpeg','.png']:
-                cachedimg = cache_cover(itemid, img)
+                cachedimg = cache_img(table, itemid, img)
                 if cachedimg:
                     msg = ''
                 else:
