@@ -369,7 +369,8 @@ def initialize():
         CONFIG = {'LOGDIR': check_setting('str', 'General', 'logdir', '', False),
                   'LOGLIMIT': check_setting('int', 'General', 'loglimit', 500, False),
                   'LOGFILES': check_setting('int', 'General', 'logfiles', 10, False),
-                  'LOGSIZE': check_setting('int', 'General', 'logsize', 204800, False), 'DATADIR': DATADIR}
+                  'LOGSIZE': check_setting('int', 'General', 'logsize', 204800, False),
+                  'DATADIR': DATADIR}
 
         if not CONFIG['LOGDIR']:
             CONFIG['LOGDIR'] = os.path.join(CONFIG['DATADIR'], 'Logs')
