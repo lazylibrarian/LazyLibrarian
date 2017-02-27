@@ -370,10 +370,10 @@ def initialize():
                   'LOGLIMIT': check_setting('int', 'General', 'loglimit', 500, False),
                   'LOGFILES': check_setting('int', 'General', 'logfiles', 10, False),
                   'LOGSIZE': check_setting('int', 'General', 'logsize', 204800, False),
-                  'DATADIR': DATADIR}
+                 }
 
         if not CONFIG['LOGDIR']:
-            CONFIG['LOGDIR'] = os.path.join(CONFIG['DATADIR'], 'Logs')
+            CONFIG['LOGDIR'] = os.path.join(DATADIR, 'Logs')
         # Create logdir
         if not os.path.exists(CONFIG['LOGDIR']):
             try:
@@ -405,12 +405,12 @@ def initialize():
         logger.info('SYS_ENCODING is %s' % SYS_ENCODING)
 
         # Put the cache dir in the data dir for now
-        CACHEDIR = os.path.join(CONFIG['DATADIR'], 'cache')
+        CACHEDIR = os.path.join(DATADIR, 'cache')
         if not os.path.exists(CACHEDIR):
             try:
                 os.makedirs(CACHEDIR)
             except OSError:
-                logger.error('Could not create cachedir. Check permissions of: ' + CONFIG['DATADIR'])
+                logger.error('Could not create cachedir. Check permissions of: ' + DATADIR)
 
         # keep track of last api calls so we don't call more than once per second
         # to respect api terms, but don't wait un-necessarily either
@@ -572,7 +572,6 @@ def config_read(reloaded=False):
 
 
 def config_write():
-
     for key in CONFIG_DEFINITIONS.keys():
         item_type, section, default = CONFIG_DEFINITIONS[key]
         check_section(section)
@@ -584,6 +583,11 @@ def config_write():
             value = value.encode(SYS_ENCODING).lower()
 
         CFG.set(section, key.lower(), value)
+
+    # sanity check for typos...
+    for key in CONFIG.keys():
+        if key not in CONFIG_DEFINITIONS.keys():
+            logger.warn('Unsaved config key: %s' % key)
 
     for provider in NEWZNAB_PROV:
         check_section(provider['NAME'])
@@ -817,7 +821,7 @@ def build_bookstrap_themes():
 
 def build_monthtable():
     table = []
-    json_file = os.path.join(CONFIG['DATADIR'], 'monthnames.json')
+    json_file = os.path.join(DATADIR, 'monthnames.json')
     if os.path.isfile(json_file):
         try:
             with open(json_file) as json_data:
