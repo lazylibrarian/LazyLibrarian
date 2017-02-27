@@ -206,7 +206,7 @@ class Api(object):
         self.data = lazylibrarian.MONTHNAMES
 
     def _dumpMonths(self):
-        json_file = os.path.join(lazylibrarian.CONFIG['DATADIR'], 'monthnames.json')
+        json_file = os.path.join(lazylibrarian.DATADIR, 'monthnames.json')
         with open(json_file, 'w') as f:
             json.dump(lazylibrarian.MONTHNAMES, f)
 
