@@ -484,9 +484,16 @@ class WebInterface(object):
         self.label_thread()
         searchterm = '%s %s' % (author, title)
         searchterm.strip()
-        logger.debug('Starting Manual Search for %s'% searchterm)
         results = searchItem(searchterm, bookid)
         return serve_template(templatename="manualsearch.html", title=searchterm, bookid=bookid, results=results)
+
+
+    @cherrypy.expose
+    def countProviders(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        count = lazylibrarian.USE_NZB() + lazylibrarian.USE_TOR() + lazylibrarian.USE_RSS()
+        return "Searching %s providers, please wait..." % count
+
 
     @cherrypy.expose
     def snatchBook(self, bookid=None, mode=None, provider=None, url=None):

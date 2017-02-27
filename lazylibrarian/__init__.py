@@ -722,16 +722,6 @@ def add_torz_slot():
                              })
 
 
-def USE_NZB():
-    for provider in NEWZNAB_PROV:
-        if bool(provider['ENABLED']):
-            return True
-    for provider in TORZNAB_PROV:
-        if bool(provider['ENABLED']):
-            return True
-    return False
-
-
 def DIRECTORY(dirname):
     usedir = ''
     if dirname == "Destination":
@@ -776,19 +766,33 @@ def add_rss_slot():
                          })
 
 
+def USE_NZB():
+    # Count how many nzb providers are active
+    count = 0
+    for provider in NEWZNAB_PROV:
+        if bool(provider['ENABLED']):
+            count += 1
+    for provider in TORZNAB_PROV:
+        if bool(provider['ENABLED']):
+            count += 1
+    return count
+
+
 def USE_RSS():
+    count = 0
     for provider in RSS_PROV:
         if bool(provider['ENABLED']):
-            return True
-    return False
+            count += 1
+    return count
 
 
 def USE_TOR():
+    count = 0
     for provider in [CONFIG['KAT'], CONFIG['TPB'], CONFIG['ZOO'], CONFIG['EXTRA'], CONFIG['LIME'],
                     CONFIG['TDL'], CONFIG['GEN']]:
         if bool(provider):
-            return True
-    return False
+            count += 1
+    return count
 
 
 def build_bookstrap_themes():
