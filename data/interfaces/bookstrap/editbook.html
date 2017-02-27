@@ -7,9 +7,9 @@
     <div id="subhead_container" class="row">
         <div id="subhead_menu" class="form-inline">
             <div class="col-xs-10">
-                <a id="manualbook" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['bookID']}&title=${config['bookName']}&author=${config['AuthorName']}">Author/Title Search</a>
-                <a id="manualtitle" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['bookID']}&title=${config['bookName']}">Title Search</a>
-                <a id="manualauthor" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['bookID']}&author=${config['AuthorName']}">Author Search</a>
+                <a id="manualbook" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['bookID']}&title=${config['bookName']}&author=${config['AuthorName']}"><i id="mb_icon" class="fa fa-refresh"></i> Author/Title Search</a>
+                <a id="manualtitle" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['bookID']}&title=${config['bookName']}"><i id="mt_icon" class="fa fa-refresh"></i> Title Search</a>
+                <a id="manualauthor" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['bookID']}&author=${config['AuthorName']}"><i id="ma_icon" class="fa fa-refresh"></i> Author Search</a>
             </div>
         </div>
     </div>
@@ -86,14 +86,31 @@
 
 <%def name="javascriptIncludes()">
     <script type="text/javascript">
-        function initThisPage()
+    function initThisPage()
+    {
+        "use strict";
 
-        {
-            "use strict";
-        }
-        $(document).ready(function() {
-            initThisPage();
+        $('#manualbook').click(function () {
+        //    $.get("countProviders",
+        //        function (data) { window.alert(data) });
+            $('#mb_icon').addClass("fa-spin");
         });
+        $('#manualtitle').click(function () {
+        //    $.get("countProviders",
+        //        function (data) { window.alert(data) });
+            $('#mt_icon').addClass("fa-spin");
+        });
+        $('#manualauthor').click(function () {
+        //    $.get("countProviders",
+        //        function (data) { window.alert(data) });
+            $('#ma_icon').addClass("fa-spin");
+        });
+
+    }
+
+    $(document).ready(function() {
+        initThisPage();
+    });
     </script>
 </%def>
 <html><head></head><body></body></html>
