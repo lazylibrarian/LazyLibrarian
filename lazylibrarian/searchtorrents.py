@@ -38,15 +38,18 @@ from magnet2torrent import magnet2torrent
 
 
 def cron_search_tor_book():
-    threading.currentThread().name = "CRON-SEARCHTOR"
-    search_tor_book()
+    if 'SEARCHALLTOR' not in [n.name for n in [t for t in threading.enumerate()]]:
+        search_tor_book()
 
 
 def search_tor_book(books=None, reset=False):
     try:
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
-            threading.currentThread().name = "SEARCHTOR"
+            if books is None:
+                threading.currentThread().name = "SEARCHALLTOR"
+            else:
+                threading.currentThread().name = "SEARCHTOR"
 
         if not lazylibrarian.USE_TOR():
             logger.warn('No Torrent providers set, check config')

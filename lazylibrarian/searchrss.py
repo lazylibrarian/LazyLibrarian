@@ -29,15 +29,18 @@ from lib.fuzzywuzzy import fuzz
 
 
 def cron_search_rss_book():
-    threading.currentThread().name = "CRON-SEARCHRSS"
-    search_rss_book()
+    if 'SEARCHALLRSS' not in [n.name for n in [t for t in threading.enumerate()]]:
+        search_rss_book()
 
 
 def search_rss_book(books=None, reset=False):
     try:
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
-            threading.currentThread().name = "SEARCHRSS"
+            if books is None:
+                threading.currentThread().name = "SEARCHALLRSS"
+            else:
+                threading.currentThread().name = "SEARCHRSS"
 
         if not(lazylibrarian.USE_RSS()):
             logger.warn('RSS search is disabled')

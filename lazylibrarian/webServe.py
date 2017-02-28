@@ -1520,7 +1520,10 @@ class WebInterface(object):
 
     @cherrypy.expose
     def forceUpdate(self):
-        threading.Thread(target=dbUpdate, name='DBUPDATE', args=[False]).start()
+        if 'DBUPDATE' not in [n.name for n in [t for t in threading.enumerate()]]:
+            threading.Thread(target=dbUpdate, name='DBUPDATE', args=[False]).start()
+        else:
+            logger.debug('DBUPDATE already running')
         raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
@@ -1534,42 +1537,57 @@ class WebInterface(object):
 
     @cherrypy.expose
     def libraryScan(self):
-        try:
-            threading.Thread(target=LibraryScan, name='LIBRARYSYNC', args=[]).start()
-        except Exception as e:
-            logger.error(u'Unable to complete the scan: %s' % str(e))
+        if 'LIBRARYSYNC' not in [n.name for n in [t for t in threading.enumerate()]]:
+            try:
+                threading.Thread(target=LibraryScan, name='LIBRARYSYNC', args=[]).start()
+            except Exception as e:
+                logger.error(u'Unable to complete the scan: %s' % str(e))
+        else:
+            logger.debug('LIBRARYSYNC already running')
         raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
     def magazineScan(self):
-        try:
-            threading.Thread(target=magazinescan.magazineScan, name='MAGAZINESCAN', args=[]).start()
-        except Exception as e:
-            logger.error(u'Unable to complete the scan: %s' % str(e))
+        if 'LIBRARYSYNC' not in [n.name for n in [t for t in threading.enumerate()]]:
+            try:
+                threading.Thread(target=magazinescan.magazineScan, name='MAGAZINESCAN', args=[]).start()
+            except Exception as e:
+                logger.error(u'Unable to complete the scan: %s' % str(e))
+        else:
+            logger.debug('MAGAZINESCAN already running')
         raise cherrypy.HTTPRedirect("magazines")
 
     @cherrypy.expose
     def importAlternate(self):
-        try:
-            threading.Thread(target=processAlternate, name='IMPORTALT', args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
-        except Exception as e:
-            logger.error(u'Unable to complete the import: %s' % str(e))
+        if 'IMPORTALT' not in [n.name for n in [t for t in threading.enumerate()]]:
+            try:
+                threading.Thread(target=processAlternate, name='IMPORTALT', args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
+            except Exception as e:
+                logger.error(u'Unable to complete the import: %s' % str(e))
+        else:
+            logger.debug('IMPORTALT already running')
         raise cherrypy.HTTPRedirect("manage")
 
     @cherrypy.expose
     def importCSV(self):
-        try:
-            threading.Thread(target=import_CSV, name='IMPORTCSV', args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
-        except Exception as e:
-            logger.error(u'Unable to complete the import: %s' % str(e))
+        if 'IMPORTCSV' not in [n.name for n in [t for t in threading.enumerate()]]:
+            try:
+                threading.Thread(target=import_CSV, name='IMPORTCSV', args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
+            except Exception as e:
+                logger.error(u'Unable to complete the import: %s' % str(e))
+        else:
+            logger.debug('IMPORTCSV already running')
         raise cherrypy.HTTPRedirect("manage")
 
     @cherrypy.expose
     def exportCSV(self):
-        try:
-            threading.Thread(target=export_CSV, name='EXPORTCSV', args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
-        except Exception as e:
-            logger.error(u'Unable to complete the export: %s' % str(e))
+        if 'EXPORTCSV' not in [n.name for n in [t for t in threading.enumerate()]]:
+            try:
+                threading.Thread(target=export_CSV, name='EXPORTCSV', args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
+            except Exception as e:
+                logger.error(u'Unable to complete the export: %s' % str(e))
+        else:
+            logger.debug('EXPORTCSV already running')
         raise cherrypy.HTTPRedirect("manage")
 
     # JOB CONTROL #######################################################
@@ -1814,21 +1832,28 @@ class WebInterface(object):
 
     @cherrypy.expose
     def forceProcess(self, source=None):
-        threading.Thread(target=processDir, name='POSTPROCESS', args=[True]).start()
+        if 'POSTPROCESS' not in [n.name for n in [t for t in threading.enumerate()]]:
+            threading.Thread(target=processDir, name='POSTPROCESS', args=[True]).start()
+        else:
+            logger.debug('POSTPROCESS already running')
         raise cherrypy.HTTPRedirect(source)
 
     @cherrypy.expose
     def forceSearch(self, source=None):
         if source == "magazines":
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
-                threading.Thread(target=search_magazines, name='SEARCHMAG', args=[None, True]).start()
+                if 'SEARCHALLMAG' not in [n.name for n in [t for t in threading.enumerate()]]:
+                    threading.Thread(target=search_magazines, name='SEARCHALLMAG', args=[]).start()
         elif source == "books":
             if lazylibrarian.USE_NZB():
-                threading.Thread(target=search_nzb_book, name='SEARCHNZB', args=[]).start()
+                if 'SEARCHALLNZB' not in [n.name for n in [t for t in threading.enumerate()]]:
+                    threading.Thread(target=search_nzb_book, name='SEARCHALLNZB', args=[]).start()
             if lazylibrarian.USE_TOR():
-                threading.Thread(target=search_tor_book, name='SEARCHTOR', args=[]).start()
+                if 'SEARCHALLTOR' not in [n.name for n in [t for t in threading.enumerate()]]:
+                    threading.Thread(target=search_tor_book, name='SEARCHALLTOR', args=[]).start()
             if lazylibrarian.USE_RSS():
-                threading.Thread(target=search_rss_book, name='SEARCHRSS', args=[]).start()
+                if 'SEARCHALLRSS' not in [n.name for n in [t for t in threading.enumerate()]]:
+                    threading.Thread(target=search_rss_book, name='SEARCHALLRSS', args=[]).start()
         else:
             logger.debug(u"forceSearch called with bad source")
         raise cherrypy.HTTPRedirect(source)

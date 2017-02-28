@@ -29,15 +29,18 @@ from lib.fuzzywuzzy import fuzz
 
 
 def cron_search_nzb_book():
-    threading.currentThread().name = "CRON-SEARCHNZB"
-    search_nzb_book()
+    if 'SEARCHALLNZB' not in [n.name for n in [t for t in threading.enumerate()]]:
+        search_nzb_book()
 
 
 def search_nzb_book(books=None, reset=False):
     try:
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
-            threading.currentThread().name = "SEARCHNZB"
+            if books is None:
+                threading.currentThread().name = "SEARCHALLNZB"
+            else:
+                threading.currentThread().name = "SEARCHNZB"
 
         if not lazylibrarian.USE_NZB():
             logger.warn('No NEWZNAB/TORZNAB providers set, check config')
