@@ -62,16 +62,16 @@ def fetchURL(URL, headers=None, retry=True):
         return str(e), False
 
 
-def cache_img(img_type,img_ID, img_url):
+def cache_img(img_type, img_ID, img_url, refresh=False):
     """ Cache the image from the given URL in the local images cache
-        linked to the id, return the link to the cached file
-        or None if failed to cache """
+        linked to the id, return the link to the cached file, True
+        or error message, False if failed to cache """
 
     cachedir = lazylibrarian.CACHEDIR
     coverfile = os.path.join(cachedir, img_type, img_ID + '.jpg')
     link = 'cache/%s/%s.jpg' % (img_type, img_ID)
-    # if os.path.isfile(coverfile):  # overwrite any cached image
-    #    return link
+    if os.path.isfile(coverfile) and not refresh:  # overwrite any cached image
+       return link, True
 
     result, success = fetchURL(img_url)
 
@@ -79,10 +79,11 @@ def cache_img(img_type,img_ID, img_url):
         try:
             with open(coverfile, 'wb') as img:
                 img.write(result)
-            return link
+            return link, True
         except Exception as e:
             logger.debug("Error writing image to %s, %s" % (coverfile, str(e)))
-    return None
+            return str(e), False
+    return result, False
 
 
 def get_xml_request(my_url, useCache=True):

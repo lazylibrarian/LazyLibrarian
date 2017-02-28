@@ -436,6 +436,7 @@ class GoodReads:
                                 logger.debug('Skipped %s with language %s' % (book.find('title').text, bookLanguage))
                                 ignored += 1
                                 continue
+
                         bookname = book.find('title').text
                         bookid = book.find('id').text
                         bookdesc = book.find('description').text
@@ -556,11 +557,13 @@ class GoodReads:
                                         myDB.upsert("books", newValueDict, controlValueDict)
 
                                 elif bookimg and bookimg.startswith('http'):
-                                    link = cache_img("book", bookid, bookimg)
-                                    if link:
+                                    link, success = cache_img("book", bookid, bookimg, refresh=refresh)
+                                    if success:
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": link}
                                         myDB.upsert("books", newValueDict, controlValueDict)
+                                    else:
+                                        logger.debug('Failed to cache image for %s' % bookimg)
 
                                 if seriesNum is None:
                                     # try to get series info from librarything
@@ -760,11 +763,13 @@ class GoodReads:
                 myDB.upsert("books", newValueDict, controlValueDict)
 
         elif bookimg and bookimg.startswith('http'):
-            link = cache_img("book", bookid, bookimg)
-            if link:
+            link, success = cache_img("book", bookid, bookimg)
+            if success:
                 controlValueDict = {"BookID": bookid}
                 newValueDict = {"BookImg": link}
                 myDB.upsert("books", newValueDict, controlValueDict)
+            else:
+                logger.debug('Failed to cache image for %s' % bookimg)
 
         if seriesNum is None:
             #  try to get series info from librarything

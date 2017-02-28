@@ -913,8 +913,8 @@ class WebInterface(object):
                             # cache image from url
                             extn = os.path.splitext(authorimg)[1].lower()
                             if extn and extn in ['.jpg', '.jpeg', '.png']:
-                                authorimg = cache_img("author", authorid, authorimg)
-                                if authorimg:
+                                authorimg, success = cache_img("author", authorid, authorimg)
+                                if success:
                                     rejected = False
 
                         if rejected:

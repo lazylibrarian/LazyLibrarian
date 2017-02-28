@@ -790,8 +790,8 @@ def LibraryScan(startdir=None):
                     bookid = item['bookid']
                     bookimg = item['bookimg']
                     # bookname = item['bookname']
-                    newimg = cache_img("book", bookid, bookimg)
-                    if newimg:
+                    newimg, success = cache_img("book", bookid, bookimg)
+                    if success:
                         myDB.action('update books set BookImg="%s" where BookID="%s"' % (newimg, bookid))
 
             images = myDB.select('select AuthorID, AuthorImg, AuthorName from authors where AuthorImg like "http%"')
@@ -801,8 +801,8 @@ def LibraryScan(startdir=None):
                     authorid = item['authorid']
                     authorimg = item['authorimg']
                     # authorname = item['authorname']
-                    newimg = cache_img("author", authorid, authorimg)
-                    if newimg:
+                    newimg, success = cache_img("author", authorid, authorimg)
+                    if success:
                         myDB.action('update authors set AuthorImg="%s" where AuthorID="%s"' % (newimg, authorid))
 
             # On full scan, update bookcounts for all authors, not just new ones - refresh may have located
