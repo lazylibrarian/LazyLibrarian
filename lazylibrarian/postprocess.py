@@ -767,7 +767,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     if bookname and lazylibrarian.CONFIG['ONE_FORMAT']:
         booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
         for booktype in booktype_list:
-            while not match:
+            if not match:
                 for bookfile in os.listdir(pp_path):
                     extn = os.path.splitext(bookfile)[1].lstrip('.')
                     if extn and extn.lower() == booktype:
