@@ -476,6 +476,12 @@ class GoodReads:
                             removedResults += 1
                             rejected = True
 
+                        if not rejected and lazylibrarian.CONFIG['NO_FUTURE']:
+                            if pubyear > today()[:4]:
+                                logger.debug('Rejecting %s, future publication date %s' % (bookname, pubyear))
+                                removedResults += 1
+                                rejected = True
+
                         if not rejected and not bookname:
                             logger.debug('Rejecting bookid %s for %s, no bookname' %
                                          (bookid, authorNameResult))

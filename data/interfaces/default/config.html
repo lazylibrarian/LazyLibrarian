@@ -182,7 +182,20 @@
                     <label>Goodreads API:</label><input type="text" name="gr_api" value="${lazylibrarian.CONFIG['GR_API']}" size="30">
                     <BR>
                     <label>GoogleBooks API:</label><input type="text" name="gb_api" value="${lazylibrarian.CONFIG['GB_API']}" size="30">
-                    <BR><br><br>
+                    <BR>
+                    <div>
+                    <%
+                    if lazylibrarian.CONFIG['NO_FUTURE'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                    <input type="checkbox" name="no_future" value=1 ${checked} /><label>Ignore unpublished</label>
+                    <BR>
+                    <small>Ignore books with future publication date
+                    </small>
+                    </div>
+                    <br><br>
                     <h3>File Formats</h3>
                     <BR>
                     <label>Ebooks:</label><input type="text" name="ebook_type" value="${lazylibrarian.CONFIG['EBOOK_TYPE']}" size="0">

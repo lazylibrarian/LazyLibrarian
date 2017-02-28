@@ -521,6 +521,13 @@ class GoogleBooks:
                             removedResults += 1
                             rejected = True
 
+                        if not rejected: # and lazylibrarian.CONFIG['NO_FUTURE']:
+                            # googlebooks sometimes gives yyyy, sometimes yyyy-mm, sometimes yyyy-mm-dd
+                            if bookdate > today()[:len(bookdate)]:
+                                logger.debug('Rejecting %s, future publication date %s' % (bookname, bookdate))
+                                removedResults += 1
+                                rejected = True
+
                         if not rejected:
                             find_books = myDB.select('SELECT * FROM books WHERE BookName = "%s" and AuthorName = "%s"' %
                                                      (bookname.replace('"', '""'), authorname.replace('"', '""')))

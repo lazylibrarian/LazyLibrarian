@@ -250,6 +250,7 @@ CONFIG_DEFINITIONS = {
     'NOTFOUND_STATUS': ('str', 'LibraryScan', 'Skipped'),
     'NEWBOOK_STATUS': ('str', 'LibraryScan', 'Skipped'),
     'NEWAUTHOR_STATUS': ('str', 'LibraryScan', 'Skipped'),
+    'NO_FUTURE': ('bool', 'LibraryScan', 0),
     'EBOOK_DEST_FOLDER': ('str', 'PostProcess', '$Author/$Title'),
     'EBOOK_DEST_FILE': ('str', 'PostProcess', '$Title - $Author'),
     'ONE_FORMAT': ('bool', 'PostProcess', 0),
