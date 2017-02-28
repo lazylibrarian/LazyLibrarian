@@ -98,6 +98,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'searchItem': '&item= get search results for an item (author, title, isbn)',
             'showJobs': 'show status of running jobs',
             'restartJobs': 'restart background jobs',
+            'showThreads': 'show threaded processes',
             'checkRunningJobs': 'ensure all needed jobs are running',
             'getWorkSeries': '&id= Get series & seriesNum from Librarything BookWork using BookID',
             'getWorkPage': '&id= Get url of Librarything BookWork using BookID',
@@ -201,6 +202,9 @@ class Api(object):
     def _getHistory(self):
         self.data = self._dic_from_query(
             "SELECT * from wanted WHERE Status != 'Skipped' and Status != 'Ignored'")
+
+    def _showThreads(self):
+        self.data = [n.name for n in [t for t in threading.enumerate()]]
 
     def _showMonths(self):
         self.data = lazylibrarian.MONTHNAMES
