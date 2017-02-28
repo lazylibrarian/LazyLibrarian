@@ -187,8 +187,8 @@ def move_into_subdir(sourcedir, targetdir, fname):
 
 
 def cron_processDir():
-    threading.currentThread().name = "CRON-POSTPROCESS"
-    processDir()
+    if 'POSTPROCESS' not in [n.name for n in [t for t in threading.enumerate()]]:
+        processDir()
 
 
 def processDir(reset=False):
