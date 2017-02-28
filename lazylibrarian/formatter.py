@@ -245,6 +245,7 @@ def getList(st):
     # could maybe strip them out?
 
     if st:
+        st = unaccented_str(st)
         lex = shlex.shlex(st)
         lex.whitespace += ',+'
         lex.quotes = ''
