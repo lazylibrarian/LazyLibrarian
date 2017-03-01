@@ -37,7 +37,7 @@ from lazylibrarian.searchnzb import search_nzb_book
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.searchtorrents import search_tor_book
 from lazylibrarian.cache import cache_img
-from lazylibrarian.searchitem import searchItem
+from lazylibrarian.manualbook import searchItem
 
 cmd_dict = {'help': 'list available commands. ' +
                     'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +
