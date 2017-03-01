@@ -260,10 +260,12 @@ def getBookCover(bookID=None):
         try:
             img = work.split('og:image')[1].split('="')[1].split('"')[0]
             if img and img.startswith('http'):
-                coverlink = cache_img("book", bookID, img)
-                if coverlink:
+                coverlink, success = cache_img("book", bookID, img)
+                if success:
                     logger.debug(u"getBookCover: Caching librarything cover for %s" % bookID)
                     return coverlink
+                else:
+                    logger.debug('getBookCover: Failed to cache image for %s [%s]' % (img, coverlink))
             else:
                 logger.debug("getBookCover: No image found in work page for %s" % bookID)
         except IndexError:
@@ -300,12 +302,12 @@ def getBookCover(bookID=None):
                     if time_now <= lazylibrarian.LAST_GOODREADS:
                         time.sleep(1)
                         lazylibrarian.LAST_GOODREADS = time_now
-                    coverlink = cache_img("book", bookID, img)
-                    if coverlink:
+                    coverlink, success = cache_img("book", bookID, img)
+                    if success:
                         logger.debug("getBookCover: Caching goodreads cover for %s %s" % (author, title))
                         return coverlink
                     else:
-                        logger.debug("getBookCover: Error getting goodreads image for %s, [%s]" % (img, result))
+                        logger.debug("getBookCover: Error getting goodreads image for %s, [%s]" % (img, coverlink))
                 else:
                     logger.debug("getBookCover: No image found in goodreads page for %s" % bookID)
             else:
@@ -323,12 +325,12 @@ def getBookCover(bookID=None):
             except IndexError:
                 img = None
             if img and img.startswith('http'):
-                coverlink = cache_img("book", bookID, img)
-                if coverlink:
+                coverlink, success = cache_img("book", bookID, img)
+                if success:
                     logger.debug("getBookCover: Caching google cover for %s %s" % (author, title))
                     return coverlink
                 else:
-                    logger.debug("getBookCover: Error getting google image %s, [%s]" % (img, result))
+                    logger.debug("getBookCover: Error getting google image %s, [%s]" % (img, coverlink))
             else:
                 logger.debug("getBookCover: No image found in google page for %s" % bookID)
         else:
@@ -366,12 +368,12 @@ def getAuthorImage(authorid=None):
             except IndexError:
                 img = None
             if img and img.startswith('http'):
-                coverlink = cache_img("author", authorid, img)
-                if coverlink:
+                coverlink, success = cache_img("author", authorid, img)
+                if success:
                     logger.debug("Cached google image for %s" % authorname)
                     return coverlink
                 else:
-                    logger.debug("Error getting google image %s, [%s]" % (img, result))
+                    logger.debug("Error getting google image %s, [%s]" % (img, coverlink))
             else:
                 logger.debug("No image found in google page for %s" % authorname)
         else:

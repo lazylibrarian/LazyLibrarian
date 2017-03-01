@@ -32,15 +32,18 @@ from lib.fuzzywuzzy import fuzz
 
 
 def cron_search_magazines():
-    threading.currentThread().name = "CRON-SEARCHMAG"
-    search_magazines()
+    if 'SEARCHALLMAG' not in [n.name for n in [t for t in threading.enumerate()]]:
+        search_magazines()
 
 def search_magazines(mags=None, reset=False):
     # produce a list of magazines to search for, tor, nzb, torznab, rss
     try:
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
-            threading.currentThread().name = "SEARCHMAG"
+            if mags is None:
+                threading.currentThread().name = "SEARCHALLMAG"
+            else:
+                threading.currentThread().name = "SEARCHMAG"
 
         if not internet():
             logger.warn('Search Magazines: No internet connection')

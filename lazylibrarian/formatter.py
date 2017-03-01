@@ -100,7 +100,7 @@ def now():
 
 def today():
     """
-    Return todays date in format yyyy-mm-dd
+    Return todays date in format yyyymmdd
     """
     dttoday = datetime.date.today()
     yyyymmdd = datetime.date.isoformat(dttoday)
@@ -245,6 +245,7 @@ def getList(st):
     # could maybe strip them out?
 
     if st:
+        st = unaccented_str(st)
         lex = shlex.shlex(st)
         lex.whitespace += ',+'
         lex.quotes = ''

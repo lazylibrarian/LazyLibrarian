@@ -131,10 +131,12 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
 
         # allow caching
         if authorimg and authorimg.startswith('http'):
-            newimg = cache_img("author", authorid, authorimg)
-            if newimg:
+            newimg, success = cache_img("author", authorid, authorimg, refresh=refresh)
+            if success:
                 authorimg = newimg
                 new_img = True
+            else:
+                logger.debug('Failed to cache image for %s' % authorimg)
 
         if new_img:
             controlValueDict = {"AuthorID": authorid}

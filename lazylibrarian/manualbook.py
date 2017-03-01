@@ -45,6 +45,9 @@ def searchItem(item=None, bookid=None):
     else:
         book['bookid'] = searchterm
 
+    nproviders = lazylibrarian.USE_NZB() + lazylibrarian.USE_TOR() + lazylibrarian.USE_RSS()
+    logger.debug('Searching %s providers for %s' % (nproviders, searchterm))
+
     if lazylibrarian.USE_NZB():
         resultlist, nproviders = IterateOverNewzNabSites(book, 'general')
         if nproviders:
