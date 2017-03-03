@@ -108,6 +108,7 @@
                 "sAjaxSource": 'getBooks?BookLang=eng',
                 "bFilter": true,
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $(nRow).addClass("gradeZ");
                     var w = window.innerWidth;
                     if ( w < 320 )
                     {   // hide cover,author,series,stars,date on smallest devices

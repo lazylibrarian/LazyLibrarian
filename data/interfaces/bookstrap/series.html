@@ -13,9 +13,9 @@
 <h1>Series</h1>
 <form action="markSeries" method="get" class="form-inline">
     <div class="indented">
-            <input type="hidden" name="redirect" value="author">
+            <input type="hidden" name="redirect" value="series">
             <div class="form-group">
-                <label for="action" class="">Mark selected as</label>
+                <label for="action" class="">Mark selected series as</label>
                 <select class="markSeries form-control input-sm" id="action" name="action">
                     %for item in ['Wanted', 'Active', 'Skipped']:
                         <option value="${item}"
@@ -38,18 +38,20 @@
                 <th class="authorid hidden">AuthorID</th>
                 <th class="authorname">Author</th>
                 <th class="series">Series Name</th>
-                <th class="status text-center">Show Series</th>
+                <th class="status text-center">Status</th>
+                <th class="stars text-center">Show Series</th>
             </tr>
         </thead>
 
         <tbody>
         %for result in series:
             <tr>
-                <td class="select"><input type="checkbox" name="${result['SeriesName']}" /></td>
+                <td class="select"><input type="checkbox" name="${result['SeriesID']}" /></td>
                 <td class="authorid hidden">${result['AuthorID']}</td>
                 <td class="authorname">${result['AuthorName']}</td>
                 <td class="series">${result['SeriesName']}</td>
-                <td class="status text-center"><a class="b btn btn-xs btn-success" href="seriesMembers?seriesid=${result['SeriesID']}" title="Select"><i class="fa"></i>Select</a></p></td>
+                <td class="status text-center">${result['Status']}</td>
+                <td class="stars text-center"><a class="b btn btn-xs btn-success" href="seriesMembers?seriesid=${result['SeriesID']}" title="Select"><i class="fa"></i>Select</a></p></td>
             </tr>
         %endfor
         </tbody>

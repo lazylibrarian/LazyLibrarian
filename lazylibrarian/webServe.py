@@ -106,23 +106,41 @@ class WebInterface(object):
     @cherrypy.expose
     def seriesMembers(self, seriesid):
         myDB = database.DBConnection()
-        cmd = 'SELECT SeriesName,AuthorName from series,authors where authors.AuthorID=series.AuthorID'
+        cmd = 'SELECT SeriesName,SeriesID,AuthorName from series,authors where authors.AuthorID=series.AuthorID'
         cmd += ' and SeriesID=%s' % seriesid
         series = myDB.match(cmd)
-        cmd = 'SELECT series.SeriesID,member.BookID,BookName,SeriesNum,BookImg from member,series,books'
+        cmd = 'SELECT member.BookID,BookName,SeriesNum,BookImg,books.Status from member,series,books'
         cmd += ' where series.SeriesID=member.SeriesID and books.BookID=member.BookID'
         cmd += ' and series.SeriesID=%s order by SeriesName' % seriesid
         members = myDB.select(cmd)
         return serve_template(templatename="members.html", title="Series", members=members, series=series)
+
+    @cherrypy.expose
+    def markMembers(self, action=None, **args):
+        return self.markBooks(self, action=action, **args)
+
+    @cherrypy.expose
+    def markSeries(self, action=None, **args):
+        self.label_thread()
+        myDB = database.DBConnection()
+        if action:
+            for seriesid in args:
+                # ouch dirty workaround...
+                if not seriesid == 'book_table_length':
+                    if action in ["Wanted", "Active", "Skipped"]:
+                        match = myDB.match('SELECT SeriesName from series WHERE SeriesID = "%s"' % seriesid)
+                        if match:
+                            myDB.upsert("series", {'Status': action}, {'SeriesID': seriesid})
+                            logger.debug(u'Status set to "%s" for "%s"' % (action, match['SeriesName']))
+
+            raise cherrypy.HTTPRedirect("series")
 
     # CONFIG ############################################################
 
     @cherrypy.expose
     def config(self):
         self.label_thread()
-        http_look_dir = os.path.join(
-            str(lazylibrarian.PROG_DIR),
-            'data' + os.sep + 'interfaces')
+        http_look_dir = os.path.join(lazylibrarian.PROG_DIR, 'data' + os.sep + 'interfaces')
         http_look_list = [name for name in os.listdir(http_look_dir)
                           if os.path.isdir(os.path.join(http_look_dir, name))]
         status_list = ['Skipped', 'Wanted', 'Have', 'Ignored']
@@ -1044,7 +1062,7 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("books")
 
     @cherrypy.expose
-    def markBooks(self, AuthorID=None, action=None, redirect=None, **args):
+    def markBooks(self, AuthorID=None, seriesid=None, action=None, redirect=None, **args):
         self.label_thread()
 
         myDB = database.DBConnection()
@@ -1060,7 +1078,7 @@ class WebInterface(object):
                         if title:
                             bookname = title['BookName']
                             myDB.upsert("books", {'Status': action}, {'BookID': bookid})
-                            logger.info(u'Status set to "%s" for "%s"' % (action, bookname))
+                            logger.debug(u'Status set to "%s" for "%s"' % (action, bookname))
                     if action in ["Remove", "Delete"]:
                         bookdata = myDB.match(
                             'SELECT AuthorID,Bookname,BookFile from books WHERE BookID = "%s"' %
@@ -1080,7 +1098,7 @@ class WebInterface(object):
                             authorcheck = myDB.match('SELECT AuthorID from authors WHERE AuthorID = "%s"' % AuthorID)
                             if authorcheck:
                                 myDB.upsert("books", {"Status": "Ignored"}, {"BookID": bookid})
-                                logger.info(u'Status set to Ignored for "%s"' % bookname)
+                                logger.debug(u'Status set to Ignored for "%s"' % bookname)
                             else:
                                 myDB.action('DELETE from books WHERE BookID = "%s"' % bookid)
                                 logger.info(u'Removed "%s" from database' % bookname)
@@ -1104,10 +1122,11 @@ class WebInterface(object):
                 threading.Thread(target=search_tor_book, name='SEARCHTOR', args=[books]).start()
 
         if redirect == "author":
-            raise cherrypy.HTTPRedirect(
-                "authorPage?AuthorID=%s" % AuthorID)
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
         elif redirect == "books":
             raise cherrypy.HTTPRedirect("books")
+        elif redirect == "members":
+            raise cherrypy.HTTPRedirect("seriesMembers?seriesid=%s" % seriesid)
         else:
             raise cherrypy.HTTPRedirect("manage")
 

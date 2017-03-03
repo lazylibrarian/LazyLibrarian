@@ -12,13 +12,14 @@
 <%def name="body()">
 <h1>${series['AuthorName']}</h1>
 <h2>${series['SeriesName']}</h2>
-<form action="markSeries" method="get" class="form-inline">
+<form action="markMembers" method="get" class="form-inline">
     <div class="indented">
-            <input type="hidden" name="redirect" value="author">
+            <input type="hidden" name="redirect" value="members">
+            <input type="hidden" name="seriesid" value="${series['SeriesID']}">
             <div class="form-group">
                 <label for="action" class="">Mark selected as</label>
-                <select class="markSeries form-control input-sm" id="action" name="action">
-                    %for item in ['Wanted', 'Active', 'Skipped']:
+                <select class="markMembers form-control input-sm" id="action" name="action">
+                    %for item in ["Wanted", "Have", "Ignored", "Skipped", "Remove", "Delete"]:
                         <option value="${item}"
                         %if whichStatus == item:
                             selected = "selected"
@@ -27,7 +28,7 @@
                     %endfor
                 </select>
             </div>
-            <input type="submit" class="markSeries btn btn-sm btn-primary" value="Go">
+            <input type="submit" class="markMembers btn btn-sm btn-primary" value="Go">
 
     </div>
     <p>&nbsp;</p>
@@ -38,8 +39,9 @@
                 <th class="select no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
                 <th class="bookart text-center no-sort hidden-xs">Cover</th>
                 <th class="bookname">Title</th>
-                <th class="seriesnum">Series Number</th>
-                <th class="status text-center">Edit Details</th>
+                <th class="date col-xs-1 text-center">Num</th>
+                <th class="status text-center">Status</th>
+                <th class="stars text-center">Edit Details</th>
             </tr>
         </thead>
 
@@ -47,10 +49,11 @@
         %for result in members:
             <tr>
                 <td class="select"><input type="checkbox" name="${result['BookID']}" /></td>
-                <td class="bookart text-center"><a href="${result['BookImg']}" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" class="bookcover-xs img-responsive" alt="Cover"></a></td>
+                <td class="bookart text-center hidden-xs"><a href="${result['BookImg']}" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" class="bookcover-xs img-responsive" alt="Cover"></a></td>
                     <td class="bookname">${result['BookName']}</td>
-                <td class="seriesnum">${result['SeriesNum']}</td>
-                <td class="status text-center"><a class="b btn btn-xs btn-success" href="editBook?bookid=${result['BookID']}" title="Select"><i class="fa fa-book"></i> Edit</a></p></td>
+                <td class="date text-center">${result['SeriesNum']}</td>
+                <td class="status text-center">${result['Status']}</td>
+                <td class="stars text-center"><a class="b btn btn-xs btn-success" href="editBook?bookid=${result['BookID']}" title="Select"><i class="fa fa-book"></i> Edit</a></p></td>
             </tr>
         %endfor
         </tbody>

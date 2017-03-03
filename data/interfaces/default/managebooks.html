@@ -92,6 +92,10 @@
                 // need to pass requested status to getManage
                 "sAjaxSource": 'getManage?whichStatus=Skipped',
                 "bFilter": true,
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $(nRow).addClass("gradeZ");
+                    return nRow;
+                },
             });
 			$('.dataTables_filter input').attr("placeholder", "Search table here");
     });

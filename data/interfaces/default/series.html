@@ -13,11 +13,16 @@
 <h1>&nbsp&nbspSeries</h1>
     <p class="indented">
         <form action="markSeries" method="get">
-            <label>Mark selected as: </label>
+            <input type="hidden" name="redirect" value="series">
+            <label>Mark selected series as: </label>
             <select class="markSeries" name="action" id="action">
-                <option value="Wanted">Wanted</option>
-                <option value="Active">Active</option>
-                <option value="Skipped">Skipped</option>
+                    %for item in ['Wanted', 'Active', 'Skipped']:
+                        <option value="${item}"
+                        %if whichStatus == item:
+                            selected = "selected"
+                        %endif
+                        >${item}</option>
+                    %endfor
             </select>
         <input type="submit" class="markSeries" id="go" value="Go">
         <br><br>
@@ -28,17 +33,19 @@
                 <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
                 <th id="authorname">Author</th>
                 <th id="bookname">Series Name</th>
-                <th id="status">Series</th>
+                <th id="status">Status</th>
+                <th id="stars">Series</th>
             </tr>
         </thead>
 
         <tbody>
         %for result in series:
             <tr class="gradeZ">
-                <td id="select"><input type="checkbox" name="${result['SeriesName']}" /></td>
+                <td id="select"><input type="checkbox" name="${result['SeriesID']}" /></td>
                 <td id="authorname">${result['AuthorName']}</td>
                 <td id="bookname">${result['SeriesName']}</td>
-                <td id="status text-center"><a class="button grey" href="seriesMembers?seriesid=${result['SeriesID']}" title="Select">Select</a></p></td>
+                <td id="status">${result['Status']}</td>
+                <td id="stars"><a class="button grey" href="seriesMembers?seriesid=${result['SeriesID']}" title="Show">Show</a></p></td>
             </tr>
         %endfor
         </tbody>
