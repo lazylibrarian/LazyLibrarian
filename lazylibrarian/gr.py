@@ -22,7 +22,7 @@ import urllib2
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage
+from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, setBookSeries
 from lazylibrarian.cache import get_xml_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList
 from lib.fuzzywuzzy import fuzz
@@ -59,7 +59,7 @@ class GoodReads:
                 try:
                     rootxml, in_cache = get_xml_request(set_url)
                 except Exception as e:
-                    logger.error("Error finding results: %s" % str(e))
+                    logger.error("Error finding gr results: %s" % str(e))
                     return
                 if not len(rootxml):
                     logger.debug("Error requesting results")
@@ -449,7 +449,7 @@ class GoodReads:
 
                         bookname, booksub = split_title(authorNameResult, bookname)
 
-                        dic = {':': '', '"': '', '\'': ''}
+                        dic = {':': '', '"': ''}  # do we need to strip apostrophes , '\'': ''}
                         bookname = replace_all(bookname, dic)
                         bookname = bookname.strip()  # strip whitespace
                         booksub = replace_all(booksub, dic)
@@ -517,35 +517,36 @@ class GoodReads:
                                 rejected = True
 
                         if not rejected:
-                            if book_status != "Ignored":
-                                if not locked:
-                                    controlValueDict = {"BookID": bookid}
-                                    newValueDict = {
-                                        "AuthorName": authorNameResult,
-                                        "AuthorID": authorid,
-                                        "AuthorLink": None,
-                                        "BookName": bookname,
-                                        "BookSub": booksub,
-                                        "BookDesc": bookdesc,
-                                        "BookIsbn": bookisbn,
-                                        "BookPub": bookpub,
-                                        "BookGenre": None,
-                                        "BookImg": bookimg,
-                                        "BookLink": booklink,
-                                        "BookRate": bookrate,
-                                        "BookPages": bookpages,
-                                        "BookDate": pubyear,
-                                        "BookLang": bookLanguage,
-                                        "Status": book_status,
-                                        "BookAdded": today(),
-                                        "Series": series,
-                                        "SeriesNum": seriesNum
-                                    }
+                            if book_status != "Ignored" and not locked:
+                                newseries = series
+                                if seriesNum:
+                                    newseries = series + ' ' + seriesNum
+                                controlValueDict = {"BookID": bookid}
+                                newValueDict = {
+                                    "AuthorName": authorNameResult,
+                                    "AuthorID": authorid,
+                                    "AuthorLink": "",
+                                    "BookName": bookname,
+                                    "BookSub": booksub,
+                                    "BookDesc": bookdesc,
+                                    "BookIsbn": bookisbn,
+                                    "BookPub": bookpub,
+                                    "BookGenre": "",
+                                    "BookImg": bookimg,
+                                    "BookLink": booklink,
+                                    "BookRate": bookrate,
+                                    "BookPages": bookpages,
+                                    "BookDate": pubyear,
+                                    "BookLang": bookLanguage,
+                                    "Status": book_status,
+                                    "BookAdded": today(),
+                                    "Series": newseries
+                                }
 
-                                    resultsCount += 1
+                                resultsCount += 1
 
-                                    myDB.upsert("books", newValueDict, controlValueDict)
-                                    logger.debug(u"Book found: " + book.find('title').text + " " + pubyear)
+                                myDB.upsert("books", newValueDict, controlValueDict)
+                                logger.debug(u"Book found: " + book.find('title').text + " " + pubyear)
 
                                 if 'nocover' in bookimg or 'nophoto' in bookimg:
                                     # try to get a cover from librarything
@@ -565,17 +566,21 @@ class GoodReads:
                                     else:
                                         logger.debug('Failed to cache image for %s' % bookimg)
 
-                                if seriesNum is None:
-                                    # try to get series info from librarything
-                                    series, seriesNum = getWorkSeries(bookid)
-                                    if seriesNum:
-                                        logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))
-                                        controlValueDict = {"BookID": bookid}
-                                        newValueDict = {
-                                            "Series": series,
-                                            "SeriesNum": seriesNum
-                                        }
-                                        myDB.upsert("books", newValueDict, controlValueDict)
+                                # prefer series info from librarything
+                                seriesdict = setBookSeries(bookid)
+                                if seriesdict:
+                                    logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
+                                else:
+                                    # librarything doesn't have series info. Any in the title?
+                                    if series:
+                                        match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % series)
+                                        if not match:
+                                            myDB.action('INSERT into series (SeriesName, AuthorID, Status) VALUES ("%s", "%s", "Active")' %
+                                                        (series, authorid))
+                                            match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % series)
+                                        controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
+                                        newValueDict = {"SeriesNum": seriesNum}
+                                        myDB.upsert("member", newValueDict, controlValueDict)
 
                                 worklink = getWorkPage(bookid)
                                 if worklink:
@@ -584,10 +589,11 @@ class GoodReads:
                                     myDB.upsert("books", newValueDict, controlValueDict)
 
                                 if not find_book_status:
-                                    logger.debug(u"[%s] Added book: %s" % (authorname, bookname))
+                                    logger.debug(u"[%s] Added book: %s [%s] %s" %
+                                                (authorname, bookname, bookLanguage, book_status))
                                     added_count += 1
                                 else:
-                                    logger.debug(u"[%s] Updated book: %s" % (authorname, bookname))
+                                    logger.debug(u"[%s] Updated book: %s, %s" % (authorname, bookname, book_status))
                                     updated_count += 1
                             else:
                                 book_ignore_count += 1
@@ -620,10 +626,10 @@ class GoodReads:
                 lastbookdate = lastbook['BookDate']
                 lastbookimg = lastbook['BookImg']
             else:
-                lastbookname = None
-                lastbooklink = None
-                lastbookdate = None
-                lastbookimg = None
+                lastbookname = ""
+                lastbooklink = ""
+                lastbookdate = ""
+                lastbookimg = ""
 
             controlValueDict = {"AuthorID": authorid}
             newValueDict = {
@@ -727,17 +733,20 @@ class GoodReads:
         else:
             series, seriesNum = bookSeries(bookname)
 
+        newseries = series
+        if seriesNum:
+            newseries = series + ' ' + seriesNum
         controlValueDict = {"BookID": bookid}
         newValueDict = {
             "AuthorName": authorname,
             "AuthorID": AuthorID,
-            "AuthorLink": None,
+            "AuthorLink": "",
             "BookName": bookname,
             "BookSub": booksub,
             "BookDesc": bookdesc,
             "BookIsbn": bookisbn,
             "BookPub": bookpub,
-            "BookGenre": None,
+            "BookGenre": "",
             "BookImg": bookimg,
             "BookLink": booklink,
             "BookRate": bookrate,
@@ -746,8 +755,7 @@ class GoodReads:
             "BookLang": bookLanguage,
             "Status": "Wanted",
             "BookAdded": today(),
-            "Series": series,
-            "SeriesNum": seriesNum
+            "Series": newseries
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
@@ -771,17 +779,21 @@ class GoodReads:
             else:
                 logger.debug('Failed to cache image for %s' % bookimg)
 
-        if seriesNum is None:
-            #  try to get series info from librarything
-            series, seriesNum = getWorkSeries(bookid)
-            if seriesNum:
-                logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))
-                controlValueDict = {"BookID": bookid}
-                newValueDict = {
-                    "Series": series,
-                    "SeriesNum": seriesNum
-                }
-                myDB.upsert("books", newValueDict, controlValueDict)
+        # prefer series info from librarything
+        seriesdict = setBookSeries(bookid)
+        if seriesdict:
+            logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
+        else:
+            # librarything doesn't have series info. Any in the title?
+            if series:
+                match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % series)
+                if not match:
+                    myDB.action('INSERT into series (SeriesName, AuthorID, Status) VALUES ("%s", "%s", "Active")' %
+                                (series, AuthorID))
+                    match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % series)
+                controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
+                newValueDict = {"SeriesNum": seriesNum}
+                myDB.upsert("member", newValueDict, controlValueDict)
 
         worklink = getWorkPage(bookid)
         if worklink:

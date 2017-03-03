@@ -66,6 +66,50 @@ def getBookCovers():
         logger.debug('No missing book covers')
 
 
+def setAllBookSeries():
+    """ Try to set series details for all books """
+    myDB = database.DBConnection()
+    books = myDB.select('select BookID from books where Manual is not "1"')
+    counter = 0
+    if books:
+        logger.info('Checking series for %s book%s' % (len(books), plural(len(books))))
+        for book in books:
+            bookid = book['BookID']
+            seriesdict = setBookSeries(bookid)
+            counter += 1
+    logger.info('Series check complete, updated %s book%s' % (counter, plural(counter)))
+
+
+def setBookSeries(bookid):
+    """ Try to set series details for a book from workpage """
+    seriesdict = getWorkSeries(bookid)
+    myDB = database.DBConnection()
+    if seriesdict:
+        series = ''
+        for item in seriesdict:
+            # keep all series in the book table for speed
+            newseries = "%s %s" % (item, seriesdict[item])
+            newseries.strip()
+            if newseries:
+                if series:
+                    series += '<br>'
+                series += newseries
+            # and each series in the series and member tables for searching
+            match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % item)
+            book = myDB.match('SELECT BookName, AuthorID from books where BookID=%s' % bookid)
+            if not match:
+                myDB.action('INSERT into series (SeriesName, AuthorID, Status) VALUES ("%s", "%s", "Active")' %
+                            (item, book['AuthorID']))
+                match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % item)
+            controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
+            newValueDict = {"SeriesNum": seriesdict[item]}
+            myDB.upsert("member", newValueDict, controlValueDict)
+        controlValueDict = {"BookID": bookid}
+        newValueDict = {"Series": series}
+        myDB.upsert("books", newValueDict, controlValueDict)
+        return seriesdict
+    return {}
+
 def setWorkPages():
     """ Set the workpage link for any books that don't already have one """
 
@@ -141,14 +185,10 @@ def getBookWork(bookID=None, reason=None):
             return source
         else:
             lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
-            bookisbn = item['BookISBN']
-            if bookisbn:
-                URL = 'http://www.librarything.com/api/whatwork.php?isbn=' + bookisbn
-            else:
-                title = safe_unicode(item['BookName']).encode(lazylibrarian.SYS_ENCODING)
-                author = safe_unicode(item['AuthorName']).encode(lazylibrarian.SYS_ENCODING)
-                safeparams = urllib.quote_plus("%s %s" % (author, title))
-                URL = 'http://www.librarything.com/api/whatwork.php?title=' + safeparams
+            title = safe_unicode(item['BookName']).encode(lazylibrarian.SYS_ENCODING)
+            author = safe_unicode(item['AuthorName']).encode(lazylibrarian.SYS_ENCODING)
+            safeparams = urllib.quote_plus("%s %s" % (author, title))
+            URL = 'http://www.librarything.com/api/whatwork.php?title=' + safeparams
             librarything_wait()
             result, success = fetchURL(URL)
             if success:
@@ -159,16 +199,41 @@ def getBookWork(bookID=None, reason=None):
                 except Exception:
                     try:
                         errmsg = result.split('<error>')[1].split('</error>')[0]
-                        # still cache if whatwork returned a result without a link, so we don't keep retrying
-                        logger.debug(u"getBookWork: Got librarything error page: [%s] %s" % (errmsg, URL.split('?')[1]))
                     except Exception:
-                        logger.debug(u"getBookWork: Unable to find workpage link for %s" % URL.split('?')[1])
-                        return None
+                        errmsg = "Unknown Error"
+                    # if no workpage link, try isbn instead
+                    if item['BookISBN']:
+                        URL = 'http://www.librarything.com/api/whatwork.php?isbn=' + item['BookISBN']
+                        librarything_wait()
+                        result, success = fetchURL(URL)
+                        if success:
+                            try:
+                                workpage = result.split('<link>')[1].split('</link>')[0]
+                                librarything_wait()
+                                result, success = fetchURL(workpage)
+                            except Exception:
+                                # no workpage link found by isbn
+                                try:
+                                    errmsg = result.split('<error>')[1].split('</error>')[0]
+                                except Exception:
+                                    errmsg = "Unknown Error"
+                                # still cache if whatwork returned a result without a link, so we don't keep retrying
+                                result = "getBookWork: Librarything error: [" + errmsg + "] for " + item['BookISBN']
+                                logger.debug(result)
+                                success = True
+                    else:
+                        # still cache if whatwork returned a result without a link, so we don't keep retrying
+                        result = "getBookWork: Librarything error: [" + errmsg + "] for "
+                        logger.debug(result + item['AuthorName'] + ' ' + item['BookName'])
+                        result = result + safeparams
+                        success = True
                 if success:
-                    logger.debug(u"getBookWork: Caching workpage for %s" % workfile)
                     with open(workfile, "w") as cachefile:
                         cachefile.write(result)
-                    return result
+                    if not result.startswith('getBookWork'):
+                        logger.debug(u"getBookWork: Caching workpage for %s" % workfile)
+                        return result
+                    return None
                 else:
                     logger.debug(u"getBookWork: Unable to cache workpage, got %s" % result)
                 return None
@@ -197,25 +262,33 @@ def getWorkPage(bookID=None):
 
 
 def getWorkSeries(bookID=None):
-    """ Return the series name and number in series for the given bookid
-        Returns None if no series or series number """
+    """ Return the series names and numbers in series for the given bookid as a dictionary """
+    seriesdict = {}
     if not bookID:
         logger.error("getWorkSeries - No bookID")
-        return None, None
+        return seriesdict
+
     work = getBookWork(bookID, "Series")
     if work:
         try:
-            series = work.split('<a href="/series/')[1].split('">')[1].split('</a>')[0]
+            serieslist = work.split('<h3><b>Series:')[1].split('</h3>')[0].split('<a href="/series/')
+            for item in serieslist[1:]:
+                try:
+                    series = item.split('">')[1].split('</a>')[0]
+                    series = safe_unicode(series).encode(lazylibrarian.SYS_ENCODING)
+                    if series and '(' in series:
+                        seriesnum = series.split('(')[1].split(')')[0].strip()
+                        series = series.split(' (')[0].strip()
+                    else:
+                        seriesnum = ''
+                        series = series.strip()
+                    seriesdict[series] = seriesnum
+                except IndexError:
+                    pass
         except IndexError:
-            return None, None
-        series = safe_unicode(series).encode(lazylibrarian.SYS_ENCODING)
-        if series and '(' in series:
-            seriesnum = series.split('(')[1].split(')')[0]
-            series = series.split(' (')[0]
-        else:
-            seriesnum = None
-        return series, seriesnum
-    return None, None
+            pass
+
+    return seriesdict
 
 
 def getBookCover(bookID=None):
@@ -272,14 +345,12 @@ def getBookCover(bookID=None):
             logger.debug('getBookCover: Image not found in work page for %s' % bookID)
 
     # not found in librarything work page, try to get a cover from goodreads or google instead
-
     item = myDB.match('select BookName,AuthorName,BookLink from books where bookID="%s"' % bookID)
     if item:
         title = safe_unicode(item['BookName']).encode(lazylibrarian.SYS_ENCODING)
         author = safe_unicode(item['AuthorName']).encode(lazylibrarian.SYS_ENCODING)
         booklink = item['BookLink']
         safeparams = urllib.quote_plus("%s %s" % (author, title))
-
         if 'goodreads' in booklink:
             # if the bookID is a goodreads one, we can call https://www.goodreads.com/book/show/{bookID}
             # and scrape the page for og:image
@@ -304,7 +375,8 @@ def getBookCover(bookID=None):
                         lazylibrarian.LAST_GOODREADS = time_now
                     coverlink, success = cache_img("book", bookID, img)
                     if success:
-                        logger.debug("getBookCover: Caching goodreads cover for %s %s" % (author, title))
+                        logger.debug("getBookCover: Caching goodreads cover for %s %s" %
+                                    (item['AuthorName'],item['BookName']))
                         return coverlink
                     else:
                         logger.debug("getBookCover: Error getting goodreads image for %s, [%s]" % (img, coverlink))
@@ -327,7 +399,8 @@ def getBookCover(bookID=None):
             if img and img.startswith('http'):
                 coverlink, success = cache_img("book", bookID, img)
                 if success:
-                    logger.debug("getBookCover: Caching google cover for %s %s" % (author, title))
+                    logger.debug("getBookCover: Caching google cover for %s %s" %
+                                (item['AuthorName'], item['BookName']))
                     return coverlink
                 else:
                     logger.debug("getBookCover: Error getting google image %s, [%s]" % (img, coverlink))

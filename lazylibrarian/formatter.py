@@ -26,7 +26,7 @@ import lazylibrarian
 
 def bookSeries(bookname):
     """
-    Try to get a book series/seriesNum from a bookname, or return None
+    Try to get a book series/seriesNum from a bookname, or return empty string
     See if book is in multiple series first, if so return first one
     eg "The Shepherds Crown (Discworld, #41; Tiffany Aching, #5)"
     if no match, try single series, eg Mrs Bradshaws Handbook (Discworld, #40.5)
@@ -42,8 +42,8 @@ def bookSeries(bookname):
     [;,]          a semicolon or comma if multiple series
     )             end group
     """
-    series = None
-    seriesNum = None
+    series = ""
+    seriesNum = ""
 
     result = re.search(r"\(([\S\s]+),? #?(\d+\.?-?\d*[;,])", bookname)
     if result:
@@ -66,6 +66,8 @@ def bookSeries(bookname):
     if series and series.lower().endswith(' book'):
         series = series[:-5]
 
+    series = series.strip()
+    seriesNum = seriesNum.strip()
     return series, seriesNum
 
 

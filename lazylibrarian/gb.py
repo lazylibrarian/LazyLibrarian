@@ -25,7 +25,7 @@ from urllib2 import HTTPError
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage
+from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, setBookSeries
 from lazylibrarian.cache import get_json_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn, getList
 from lazylibrarian.gr import GoodReads
@@ -85,7 +85,7 @@ class GoogleBooks:
 
                         try:
                             jsonresults, in_cache = get_json_request(URL)
-                            if jsonresults is None:
+                            if not jsonresults:
                                 number_results = 0
                             else:
                                 if not in_cache:
@@ -143,12 +143,12 @@ class GoogleBooks:
                             try:
                                 bookpub = item['volumeInfo']['publisher']
                             except KeyError:
-                                bookpub = None
+                                bookpub = ""
 
                             try:
                                 booksub = item['volumeInfo']['subtitle']
                             except KeyError:
-                                booksub = None
+                                booksub = ""
 
                             try:
                                 bookdate = item['volumeInfo']['publishedDate']
@@ -174,7 +174,7 @@ class GoogleBooks:
                             try:
                                 bookgenre = item['volumeInfo']['categories'][0]
                             except KeyError:
-                                bookgenre = None
+                                bookgenre = ""
 
                             try:
                                 bookdesc = item['volumeInfo']['description']
@@ -298,7 +298,7 @@ class GoogleBooks:
 
                     try:
                         jsonresults, in_cache = get_json_request(URL, useCache=not refresh)
-                        if jsonresults is None:
+                        if not jsonresults:
                             number_results = 0
                         else:
                             if not in_cache:
@@ -435,27 +435,27 @@ class GoogleBooks:
                         try:
                             bookpub = item['volumeInfo']['publisher']
                         except KeyError:
-                            bookpub = None
+                            bookpub = ""
 
                         try:
                             booksub = item['volumeInfo']['subtitle']
                         except KeyError:
-                            booksub = None
+                            booksub = ""
 
-                        if booksub is None:
-                            series = None
-                            seriesNum = None
+                        if not booksub:
+                            series = ""
+                            seriesNum = ""
                         else:
                             try:
                                 series = booksub.split('(')[1].split(' Series ')[0]
                             except IndexError:
-                                series = None
+                                series = ""
                             try:
                                 seriesNum = booksub.split('(')[1].split(' Series ')[1].split(')')[0]
                                 if seriesNum[0] == '#':
                                     seriesNum = seriesNum[1:]
                             except IndexError:
-                                seriesNum = None
+                                seriesNum = ""
 
                         try:
                             bookdate = item['volumeInfo']['publishedDate']
@@ -480,12 +480,12 @@ class GoogleBooks:
                         try:
                             bookgenre = item['volumeInfo']['categories'][0]
                         except KeyError:
-                            bookgenre = None
+                            bookgenre = ""
 
                         try:
                             bookdesc = item['volumeInfo']['description']
                         except KeyError:
-                            bookdesc = None
+                            bookdesc = ""
 
                         bookname = item['volumeInfo']['title']
                         bookname = unaccented(bookname)
@@ -557,6 +557,9 @@ class GoogleBooks:
 
                         if not rejected:
                             if book_status != "Ignored" and not locked:
+                                newseries = series
+                                if seriesNum:
+                                    newseries = series + ' ' + seriesNum
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {
                                     "AuthorName": authorname,
@@ -576,8 +579,7 @@ class GoogleBooks:
                                     "BookLang": booklang,
                                     "Status": book_status,
                                     "BookAdded": today(),
-                                    "Series": series,
-                                    "SeriesNum": seriesNum
+                                    "Series": newseries
                                 }
                                 resultcount += 1
 
@@ -602,17 +604,21 @@ class GoogleBooks:
                                     else:
                                         logger.debug('Failed to cache image for %s' % bookimg)
 
-                                if seriesNum is None:
-                                    # try to get series info from librarything
-                                    series, seriesNum = getWorkSeries(bookid)
-                                    if seriesNum:
-                                        logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))
-                                        controlValueDict = {"BookID": bookid}
-                                        newValueDict = {
-                                            "Series": series,
-                                            "SeriesNum": seriesNum
-                                        }
-                                        myDB.upsert("books", newValueDict, controlValueDict)
+                                # prefer series info from librarything
+                                seriesdict = setBookSeries(bookid)
+                                if seriesdict:
+                                    logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
+                                else:
+                                    # librarything doesn't have series info. Any in the title?
+                                    if series:
+                                        match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % series)
+                                        if not match:
+                                            myDB.action('INSERT into series (SeriesName, AuthorID, Status) VALUES ("%s", "%s", "%s", "Active")' %
+                                                        (series, authorid))
+                                            match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % series)
+                                        controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
+                                        newValueDict = {"SeriesNum": seriesNum}
+                                        myDB.upsert("member", newValueDict, controlValueDict)
 
                                 worklink = getWorkPage(bookid)
                                 if worklink:
@@ -621,11 +627,12 @@ class GoogleBooks:
                                     myDB.upsert("books", newValueDict, controlValueDict)
 
                                 if not find_book_status:
-                                    logger.debug("[%s] Added book: %s [%s]" % (authorname, bookname, booklang))
+                                    logger.debug("[%s] Added book: %s [%s] %s" %
+                                                (authorname, bookname, booklang, book_status))
                                     added_count += 1
                                 else:
                                     updated_count += 1
-                                    logger.debug("[%s] Updated book: %s" % (authorname, bookname))
+                                    logger.debug("[%s] Updated book: %s, %s" % (authorname, bookname, book_status))
                             else:
                                 book_ignore_count += 1
             except KeyError:
@@ -643,10 +650,10 @@ class GoogleBooks:
                 lastbookdate = lastbook['BookDate']
                 lastbookimg = lastbook['BookImg']
             else:
-                lastbookname = None
-                lastbooklink = None
-                lastbookdate = None
-                lastbookimg = None
+                lastbookname = ""
+                lastbooklink = ""
+                lastbookdate = ""
+                lastbookimg = ""
 
             controlValueDict = {"AuthorID": authorid}
             newValueDict = {
@@ -692,7 +699,7 @@ class GoogleBooks:
               str(bookid) + "?key=" + lazylibrarian.CONFIG['GB_API']
         jsonresults, in_cache = get_json_request(URL)
 
-        if jsonresults is None:
+        if not jsonresults:
             logger.debug('No results found for %s' % bookid)
             return
 
@@ -721,24 +728,24 @@ class GoogleBooks:
         try:
             bookpub = jsonresults['volumeInfo']['publisher']
         except KeyError:
-            bookpub = None
+            bookpub = ""
 
-        series = None
-        seriesNum = None
+        series = ""
+        seriesNum = ""
         try:
             booksub = jsonresults['volumeInfo']['subtitle']
             try:
                 series = booksub.split('(')[1].split(' Series ')[0]
             except IndexError:
-                series = None
+                series = ""
             try:
                 seriesNum = booksub.split('(')[1].split(' Series ')[1].split(')')[0]
                 if seriesNum[0] == '#':
                     seriesNum = seriesNum[1:]
             except IndexError:
-                seriesNum = None
+                seriesNum = ""
         except KeyError:
-            booksub = None
+            booksub = ""
 
         try:
             bookdate = jsonresults['volumeInfo']['publishedDate']
@@ -763,20 +770,20 @@ class GoogleBooks:
         try:
             bookgenre = jsonresults['volumeInfo']['categories'][0]
         except KeyError:
-            bookgenre = None
+            bookgenre = ""
 
         try:
             bookdesc = jsonresults['volumeInfo']['description']
         except KeyError:
-            bookdesc = None
+            bookdesc = ""
 
         try:
             if jsonresults['volumeInfo']['industryIdentifiers'][0]['type'] == 'ISBN_10':
                 bookisbn = jsonresults['volumeInfo']['industryIdentifiers'][0]['identifier']
             else:
-                bookisbn = None
+                bookisbn = ""
         except KeyError:
-            bookisbn = None
+            bookisbn = ""
 
         booklink = jsonresults['volumeInfo']['canonicalVolumeLink']
         bookrate = float(bookrate)
@@ -789,6 +796,9 @@ class GoogleBooks:
             logger.warn('No AuthorID found for %s' % authorname)
             return
 
+        newseries = series
+        if seriesNum:
+            newseries = series + ' ' + seriesNum
         controlValueDict = {"BookID": bookid}
         newValueDict = {
             "AuthorName": authorname,
@@ -808,8 +818,7 @@ class GoogleBooks:
             "BookLang": booklang,
             "Status": "Wanted",
             "BookAdded": today(),
-            "Series": series,
-            "SeriesNum": seriesNum
+            "Series": newseries
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
@@ -833,17 +842,21 @@ class GoogleBooks:
                 else:
                     logger.debug('Failed to cache image for %s' % bookimg)
 
-        if seriesNum is None:
-            # try to get series info from librarything
-            series, seriesNum = getWorkSeries(bookid)
-            if seriesNum:
-                logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))
-                controlValueDict = {"BookID": bookid}
-                newValueDict = {
-                    "Series": series,
-                    "SeriesNum": seriesNum
-                }
-                myDB.upsert("books", newValueDict, controlValueDict)
+        # prefer series info from librarything
+        seriesdict = setBookSeries(bookid)
+        if seriesdict:
+            logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
+        else:
+            # librarything doesn't have series info. Any in the title?
+            if series:
+                match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % series)
+                if not match:
+                    myDB.action('INSERT into series (SeriesName, AuthorID, Status) VALUES ("%s", "%s", "Active")' %
+                                (series, AuthorID))
+                    match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % series)
+                controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
+                newValueDict = {"SeriesNum": seriesNum}
+                myDB.upsert("member", newValueDict, controlValueDict)
 
         worklink = getWorkPage(bookid)
         if worklink:

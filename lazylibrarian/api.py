@@ -21,7 +21,7 @@ import shutil
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, \
+from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, setAllBookSeries, \
     getBookCover, getAuthorImage, getAuthorImages
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, dbUpdate, setperm
 from lazylibrarian.csvfile import import_CSV, export_CSV
@@ -37,7 +37,7 @@ from lazylibrarian.searchnzb import search_nzb_book
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.searchtorrents import search_tor_book
 from lazylibrarian.cache import cache_img
-from lazylibrarian.searchitem import searchItem
+from lazylibrarian.manualbook import searchItem
 
 cmd_dict = {'help': 'list available commands. ' +
                     'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +
@@ -100,11 +100,12 @@ cmd_dict = {'help': 'list available commands. ' +
             'restartJobs': 'restart background jobs',
             'showThreads': 'show threaded processes',
             'checkRunningJobs': 'ensure all needed jobs are running',
-            'getWorkSeries': '&id= Get series & seriesNum from Librarything BookWork using BookID',
+            'getWorkSeries': '&id= Get series from Librarything BookWork using BookID',
             'getWorkPage': '&id= Get url of Librarything BookWork using BookID',
             'getBookCovers': '[&wait] Check all books for cached cover and download one if missing',
             'cleanCache': '[&wait] Clean unused and expired files from the LazyLibrarian caches',
             'setWorkPages': '[&wait] Set the WorkPages links in the database',
+            'setAllBookSeries': '[&wait] Set the series details from book workpages',
             'importAlternate': '[&wait] [&dir=] Import books from named or alternate folder and any subfolders',
             'importCSVwishlist': '[&wait] [&dir=] Import a CSV wishlist from named or alternate directory',
             'exportCSVwishlist': '[&wait] [&dir=] Export a CSV wishlist to named or alternate directory'
@@ -256,8 +257,7 @@ class Api(object):
     def _getAllBooks(self):
         self.data = self._dic_from_query(
             'SELECT AuthorID,AuthorName,AuthorLink, BookName,BookSub,BookGenre,BookIsbn,BookPub, \
-            BookRate,BookImg,BookPages,BookLink,BookID,BookDate,BookLang,BookAdded,Status,Series,SeriesNum \
-            from books')
+            BookRate,BookImg,BookPages,BookLink,BookID,BookDate,BookLang,BookAdded,Status,Series from books')
 
     def _getIssues(self, **kwargs):
         if 'name' not in kwargs:
@@ -480,6 +480,13 @@ class Api(object):
             setWorkPages()
         else:
             threading.Thread(target=setWorkPages, name='API-SETWORKPAGES', args=[]).start()
+
+    @staticmethod
+    def _setAllBookSeries(**kwargs):
+        if 'wait' in kwargs:
+            setAllBookSeries()
+        else:
+            threading.Thread(target=setAllBookSeries, name='API-SETALLBOOKSERIES', args=[]).start()
 
     @staticmethod
     def _getBookCovers(**kwargs):
