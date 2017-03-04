@@ -546,7 +546,7 @@ def dbupgrade(db_current_version):
                                 match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % book['Series'])
                                 if not match:
                                     cmd = 'INSERT into series (SeriesName, AuthorID, Status) VALUES '
-                                    cmd = cmd + '("%s", "%s", "Active")' % (book['Series'], book['AuthorID'])
+                                    cmd += '("%s", "%s", "Active")' % (book['Series'], book['AuthorID'])
                                     myDB.action(cmd)
                                     match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % book['Series'])
                                 controlValueDict = {"BookID": book["BookID"], "SeriesID": match['SeriesID']}
@@ -588,6 +588,8 @@ def dbupgrade(db_current_version):
             logger.info('Error: ' + str(e))
 
         myDB.action('PRAGMA user_version = %s' % db_current_version)
+        lazylibrarian.UPDATE_MSG = 'Cleaning Database after upgrade'
+        myDB.action('vacuum')
         lazylibrarian.UPDATE_MSG = 'Database updated to version %s' % db_current_version
         logger.info(lazylibrarian.UPDATE_MSG)
 

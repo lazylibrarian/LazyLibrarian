@@ -100,6 +100,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'restartJobs': 'restart background jobs',
             'showThreads': 'show threaded processes',
             'checkRunningJobs': 'ensure all needed jobs are running',
+            'vacuum': 'vacuum the database',
             'getWorkSeries': '&id= Get series from Librarything BookWork using BookID',
             'getWorkPage': '&id= Get url of Librarything BookWork using BookID',
             'getBookCovers': '[&wait] Check all books for cached cover and download one if missing',
@@ -210,7 +211,8 @@ class Api(object):
     def _showMonths(self):
         self.data = lazylibrarian.MONTHNAMES
 
-    def _dumpMonths(self):
+    @staticmethod
+    def _dumpMonths():
         json_file = os.path.join(lazylibrarian.DATADIR, 'monthnames.json')
         with open(json_file, 'w') as f:
             json.dump(lazylibrarian.MONTHNAMES, f)
@@ -218,6 +220,9 @@ class Api(object):
     def _getWanted(self):
         self.data = self._dic_from_query(
             "SELECT * from books WHERE Status='Wanted'")
+
+    def _vacuum(self):
+        self.data = self._dic_from_query("vacuum; pragma integrity_check")
 
     def _getSnatched(self):
         self.data = self._dic_from_query(
