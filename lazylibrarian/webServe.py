@@ -663,15 +663,12 @@ class WebInterface(object):
                     l.append(title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage)
 
                     # is the book part of a series
-                    if row[11]:
-                        l.append('<td class="series">%s</td>' % row[11])
-                    else:
-                        l.append('<td class="series"></td>')
+                    l.append('<td class="series">%s</td>' % row[11])
 
-                    l.append(
-                        '<td class="stars text-center"><img src="images/' + starimg + '" alt="Rating"></td>')
+                    l.append('<td class="stars text-center"><img src="images/' + starimg + '" alt="Rating"></td>')
 
                     l.append('<td class="date text-center">%s</td>' % row[4])
+
                     if row[5] == 'Open':
                         btn = '<td class="status text-center"><a class="button green btn btn-xs btn-warning"'
                         btn += ' href="openBook?bookid=%s' % row[6]
@@ -720,13 +717,9 @@ class WebInterface(object):
                     l.append(title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage)
 
                     # is the book part of a series
-                    if row[11]:
-                        l.append('<td class="series">%s</td>' % row[11])
-                    else:
-                        l.append('<td class="series"></td>')
+                    l.append('<td id="series">%s</td>' % row[11])
 
-                    l.append(
-                        '<td id="stars"><img src="images/' + starimg + '" width="50" height="10"></td>')
+                    l.append('<td id="stars"><img src="images/' + starimg + '" width="50" height="10"></td>')
 
                     l.append('<td id="date">%s</td>' % row[4])
 
@@ -1882,6 +1875,7 @@ class WebInterface(object):
             logger.debug(u"forceSearch called with bad source")
         raise cherrypy.HTTPRedirect(source)
 
+
     @cherrypy.expose
     def manage(self, whichStatus=None):
         if whichStatus is None:
@@ -1964,10 +1958,7 @@ class WebInterface(object):
                         l.append('<td id="bookname">%s<br>%s</td>' % (row[1], sitelink))
 
                 # is the book part of a series
-                if row[7]:
-                    l.append('<td id="series">%s</td>' % row[7])
-                else:
-                    l.append('<td id="series"></td>')
+                l.append('<td id="series">%s</td>' % row[7])
 
                 l.append('<td id="date">%s</td>' % row[2])
 
