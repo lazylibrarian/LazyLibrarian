@@ -492,7 +492,6 @@ def processDir(reset=False):
                         notify_download("%s from %s at %s" % (global_name, book['NZBprov'], now()))
                 else:
                     logger.error('Postprocessing for %s has failed: %s' % (global_name, err))
-                    logger.error('Warning - Residual files remain in %s.fail' % pp_path)
                     controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
                     newValueDict = {"Status": "Failed", "NZBDate": now()}
                     myDB.upsert("wanted", newValueDict, controlValueDict)
@@ -505,8 +504,17 @@ def processDir(reset=False):
                     # again (and fail again)
                     try:
                         os.rename(pp_path, pp_path + '.fail')
+                        logger.error('Warning - Residual files remain in %s.fail' % pp_path)
                     except Exception as e:
+                        # rename fails on MacOS as can't rename a directory that's not empty??
                         logger.error("Unable to rename %s, %s" % (pp_path, str(e)))
+                        try:
+                            fname = os.path.join(pp_path, "LL.(fail).bts")
+                            with open(fname, 'a'):
+                                os.utime(fname, None)
+                            logger.error('Warning - Residual files remain in %s' % pp_path)
+                        except:
+                            logger.error('Warning - Unable to create bts file. Residual files remain in %s' % pp_path)
 
         # Check for any books in download that weren't marked as snatched, but have a LL.(bookid)
         # do a fresh listdir in case we processed and deleted any earlier
