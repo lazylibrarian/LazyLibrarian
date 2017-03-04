@@ -51,15 +51,15 @@
                 <label for="booklang" class="control-label">Language:</label>
                 <input type="text" id="booklang" name="booklang" value="${config['bookLang']}" class="form-control" placeholder="Language">
             </div>
-            <div class="col-md-6">
-                  <legend>Book Series</legend>
+            <div class="form-group">
                   %for item in seriesdict:
                       <label for="series[${loop.index}]" class="control-label">
-                      Series ${loop.index}</label>
+                      Book Series ${loop.index}</label>
           		        <input type="text" id="series[${loop.index}][name]" name="series[${loop.index}][name]" value="${item['SeriesName']}" class="form-control" placeholder="Series Name">
 	    		        <input type="text" id="series[${loop.index}][number]" name="series[${loop.index}][number]" value="${item['SeriesNum']}" class="form-control" placeholder="Number">
                    %endfor
-                   </div>
+            </div>
+        </fieldset>
             <div class="checkbox">
                 <%
                     if config['Manual'] == "1":
@@ -72,7 +72,6 @@
                 Lock settings</label>
             </div>
 
-        </fieldset>
         <br>
         <div class="table_wrapper_button">
             <input type="submit" value="Save changes" id="add" class="btn btn-primary">

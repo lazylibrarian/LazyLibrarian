@@ -58,13 +58,11 @@
                 <input type="text" name="booklang" value="${config['bookLang']}" class="form-control" placeholder="Language" size="36">
                 <br><br>
             </div>
-
-                  <h3>Book Series</h3>
-                  %for item in seriesdict:
-                      <label>Series ${loop.index}</label>
-          		      <input type="text" name="series[${loop.index}][name]" value="${item['SeriesName']}" class="providers-input" size="26 "placeholder="Series Name">
-	    		        <input type="text" name="series[${loop.index}][number]" value="${item['SeriesNum']}" class="providers-input" size="26" placeholder="Number">
-                   %endfor
+            %for item in seriesdict:
+                <label>Book Series ${loop.index}</label>
+   		        <input type="text" name="series[${loop.index}][name]" value="${item['SeriesName']}" class="form-control" size="36 "placeholder="Series Name">
+	    		<input type="text" name="series[${loop.index}][number]" value="${item['SeriesNum']}" class="form-control" size="36" placeholder="Number">
+            %endfor
             <br>
             <%
                 if config['Manual'] == "1":

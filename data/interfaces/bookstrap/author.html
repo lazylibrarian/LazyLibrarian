@@ -47,7 +47,7 @@
     <div id="authorhead_container" class="col-md-9">
         <div id="authorhead_menu">
             <h1><a href="${author['AuthorLink']}" target="_blank" rel="noreferrer">${author['AuthorName']}</a>
-            <a href="editAuthor?authorid=${author['AuthorID']}"&amp;target="_new"><small><i>Edit</i></a></h1>
+            <a href="editAuthor?authorid=${author['AuthorID']}"&amp;target="_new"><small><i>Edit</i></small></a></h1>
             %if author['AuthorDeath']:
             <p><b>Born:</b> ${author['AuthorBorn']}, <b>Died:</b> ${author['AuthorDeath']}</p>
             %else:
@@ -163,7 +163,7 @@
                     if result['workpage']:
                         if len(result['workpage']) > 4:
                             workpage = '<a href="' + result['workpage'] + '" target="_new"><small><i>LibraryThing</i></small></a>'
-                    editpage = '<a href="editBook?bookid=' + result['bookID'] + '" target="_new"><small><i>Manual</i></a>'
+                    editpage = '<a href="editBook?bookid=' + result['bookID'] + '" target="_new"><small><i>Manual</i><small></a>'
                 %>
                 <tr>
                     <td class="select"><input type="checkbox" name="${result['BookID']}" /></td>
