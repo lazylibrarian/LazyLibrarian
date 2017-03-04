@@ -105,7 +105,7 @@
                 "aaSorting": [[2, 'asc']],
                  "bServerSide": true,
                 // need to pass requested language filter to getBooks
-                "sAjaxSource": 'getBooks?BookLang=eng',
+                "sAjaxSource": 'getBooks?BookLang=${chooselanguage}',
                 "bFilter": true,
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     $(nRow).addClass("gradeZ");

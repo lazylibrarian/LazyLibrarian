@@ -517,7 +517,6 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("home")
 
     # BOOKS #############################################################
-    LANGFILTER = ''
 
     @cherrypy.expose
     def booksearch(self, bookid=None, title="", author=""):
@@ -561,18 +560,15 @@ class WebInterface(object):
 
     @cherrypy.expose
     def books(self, BookLang=None):
-        global LANGFILTER
         myDB = database.DBConnection()
         languages = myDB.select('SELECT DISTINCT BookLang from books WHERE \
                                 STATUS !="Skipped" AND STATUS !="Ignored"')
-        LANGFILTER = BookLang
         return serve_template(templatename="books.html", title='Books', books=[], languages=languages)
 
     # noinspection PyUnusedLocal
     @cherrypy.expose
     def getBooks(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
-        global LANGFILTER
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
@@ -582,8 +578,8 @@ class WebInterface(object):
         cmd = 'SELECT bookimg, authorname, bookname, bookrate, bookdate, status, bookid,'
         cmd += ' booksub, booklink, workpage, authorid, series from books WHERE STATUS !="Skipped"'
         cmd += ' AND STATUS !="Ignored"'
-        if LANGFILTER is not None and LANGFILTER:
-            cmd += ' and BOOKLANG="' + LANGFILTER + '"'
+        if 'BookLang' in kwargs:
+            cmd += ' and BOOKLANG="' + kwargs['BookLang'] + '"'
         rowlist = myDB.select(cmd)
         # turn the sqlite rowlist into a list of lists
         d = []
@@ -975,17 +971,12 @@ class WebInterface(object):
     def editBook(self, bookid=None):
 
         myDB = database.DBConnection()
-
         authors = myDB.select(
             "SELECT AuthorName from authors WHERE Status !='Ignored' ORDER by AuthorName COLLATE NOCASE")
         bookdata = myDB.match('SELECT * from books WHERE BookID="%s"' % bookid)
-        seriesdict = {}
         cmd ='SELECT SeriesName, SeriesNum from member,series '
         cmd += 'where series.SeriesID=member.SeriesID and BookID=%s' % bookid
-        seriesdata = myDB.select(cmd)
-        if seriesdata:
-            for item in seriesdata:
-                seriesdict[item['SeriesName']] = item['SeriesNum']
+        seriesdict = myDB.select(cmd)
         if bookdata:
             return serve_template(templatename="editbook.html", title="Edit Book",
                                     config=bookdata, seriesdict=seriesdict, authors=authors)
@@ -994,15 +985,14 @@ class WebInterface(object):
 
     @cherrypy.expose
     def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre=None, booklang='',
-                   series=None, manual='0', authorname=''):
+                   series=None, manual='0', authorname='', **kwargs):
         myDB = database.DBConnection()
-
         if bookid:
             bookdata = myDB.match('SELECT * from books WHERE BookID="%s"' % bookid)
             if bookdata:
                 edited = False
                 moved = False
-                if series == 'None' or not len(series):
+                if series and not len(series):
                     series = None
                 if bookgenre == 'None' or not len(bookgenre):
                     bookgenre = None
@@ -1209,14 +1199,11 @@ class WebInterface(object):
 
         return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
 
-    ISSUEFILTER = ''
 
     @cherrypy.expose
     def pastIssues(self, whichStatus=None):
-        global ISSUEFILTER
         if whichStatus is None:
             whichStatus = "Skipped"
-        ISSUEFILTER = whichStatus
         return serve_template(
             templatename="manageissues.html", title="Magazine Status Management", issues=[], whichStatus=whichStatus)
 
@@ -1224,16 +1211,13 @@ class WebInterface(object):
     @cherrypy.expose
     def getPastIssues(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
-        global ISSUEFILTER
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
-
         # need to filter on whichStatus
         rowlist = myDB.select(
-            'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov from pastissues WHERE Status="%s"' % ISSUEFILTER)
-
+            'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov from pastissues WHERE Status=' + kwargs['whichStatus'])
         d = []
         filtered = []
         if len(rowlist):
@@ -1261,7 +1245,8 @@ class WebInterface(object):
             d = []  # the masterlist to be filled with the html data
             for row in rows:
                 l = ['<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[0],
-                     '<td id="magtitle">%s</td>' % row[1], '<td id="lastacquired">%s</td>' % row[2],
+                     '<td id="magtitle">%s</td>' % row[1],
+                     '<td id="lastacquired">%s</td>' % row[2],
                      '<td id="issuedate">%s</td>' % row[3],
                      '<td id="provider">%s</td>' % row[4]]  # for each Row use a separate list
                 d.append(l)  # add the rowlist to the masterlist
@@ -1593,7 +1578,8 @@ class WebInterface(object):
     def importAlternate(self):
         if 'IMPORTALT' not in [n.name for n in [t for t in threading.enumerate()]]:
             try:
-                threading.Thread(target=processAlternate, name='IMPORTALT', args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
+                threading.Thread(target=processAlternate, name='IMPORTALT',
+                                args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
             except Exception as e:
                 logger.error(u'Unable to complete the import: %s' % str(e))
         else:
@@ -1604,7 +1590,8 @@ class WebInterface(object):
     def importCSV(self):
         if 'IMPORTCSV' not in [n.name for n in [t for t in threading.enumerate()]]:
             try:
-                threading.Thread(target=import_CSV, name='IMPORTCSV', args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
+                threading.Thread(target=import_CSV, name='IMPORTCSV',
+                                args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
             except Exception as e:
                 logger.error(u'Unable to complete the import: %s' % str(e))
         else:
@@ -1615,7 +1602,8 @@ class WebInterface(object):
     def exportCSV(self):
         if 'EXPORTCSV' not in [n.name for n in [t for t in threading.enumerate()]]:
             try:
-                threading.Thread(target=export_CSV, name='EXPORTCSV', args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
+                threading.Thread(target=export_CSV, name='EXPORTCSV',
+                                args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
             except Exception as e:
                 logger.error(u'Unable to complete the export: %s' % str(e))
         else:
@@ -1890,14 +1878,10 @@ class WebInterface(object):
             logger.debug(u"forceSearch called with bad source")
         raise cherrypy.HTTPRedirect(source)
 
-    MANAGEFILTER = ''
-
     @cherrypy.expose
     def manage(self, whichStatus=None):
-        global MANAGEFILTER
         if whichStatus is None:
             whichStatus = "Wanted"
-        MANAGEFILTER = whichStatus
         return serve_template(templatename="managebooks.html", title="Book Status Management",
                               books=[], whichStatus=whichStatus)
 
@@ -1905,7 +1889,6 @@ class WebInterface(object):
     @cherrypy.expose
     def getManage(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
-        global MANAGEFILTER
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
@@ -1914,7 +1897,7 @@ class WebInterface(object):
         # print "getManage %s" % iDisplayStart
         #   need to filter on whichStatus
         cmd = 'SELECT authorname, bookname, bookdate, bookid, booklink, booksub, authorid, series '
-        cmd = cmd + 'from books WHERE STATUS="' + MANAGEFILTER + '"'
+        cmd += 'from books WHERE STATUS=%s' % kwargs['whichStatus']
         rowlist = myDB.select(cmd)
 
         d = []

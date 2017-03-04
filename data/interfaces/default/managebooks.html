@@ -21,7 +21,7 @@
         <select name="whichStatus">
         %for item in ['Skipped', 'Wanted', 'Open', 'Have', 'Ignored']:
             <option value="${item}"
-                %if whichStatus == item:
+                %if item == whichStatus:
                     selected = "selected"
                 %endif
             >${item}</option>
@@ -48,9 +48,7 @@
 
     Change selected books to <select class="markBooks" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
         %for item in ['Skipped', 'Wanted', 'Snatched', 'Have', 'Ignored']:
-            %if whichStatus != item:
-                <option value="${item}">${item}</option>
-            %endif
+            <option value="${item}">${item}</option>
         %endfor
             </select>
         <input type="submit" class="markBooks" value="Go">
@@ -89,9 +87,8 @@
                 "sPaginationType": "full_numbers",
                 "aaSorting": [[1, 'asc']],
                  "bServerSide": true,
-                // need to pass requested status to getManage
-                "sAjaxSource": 'getManage?whichStatus=Skipped',
                 "bFilter": true,
+                "sAjaxSource": 'getManage?whichStatus="${whichStatus}"',
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     $(nRow).addClass("gradeZ");
                     return nRow;

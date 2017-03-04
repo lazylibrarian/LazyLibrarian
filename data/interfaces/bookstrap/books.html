@@ -106,7 +106,7 @@
             "sPaginationType": "full_numbers",
             "aaSorting": [[0, 'asc']],
             "bServerSide": true,
-            "sAjaxSource": 'getBooks?BookLang="eng"',
+            "sAjaxSource": 'getBooks?BookLang=${chooselanguage}',
             "bFilter": true,
             "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                 var w = window.innerWidth;

@@ -41,20 +41,6 @@
                 <th class="Provider">Provider</th>
            </tr>
         </thead>
-<!--
-        <tbody>
-        %for result in issues:
-                <tr>
-                    <td class="select"><input type="checkbox" name="${result['NZBurl']}" class="checkbox" /></td>
-                    <td class="magtitle">${result['NZBtitle']}</td>
-                    <td class="lastacquired text-center">${result['NZBdate']}</td>
-                    <td class="issuedate text-center">${result['Auxinfo']}</td>
-                    <td class="provider">${result['NZBprov']}</td>
-                    <td class="status text-center">${result['Status']}</td>
-                </tr>
-        %endfor
-        </tbody>
--->
     </table>
     <p>
 
@@ -100,7 +86,7 @@
                 "aaSorting": [[1, 'asc']],
                 "bServerSide": true,
                 // need to pass requested status filter
-                "sAjaxSource": 'getPastIssues?whichStatus=Skipped',
+                "sAjaxSource": 'getPastIssues?whichStatus="${whichStatus}"',
                 "bFilter": true,
             });
             $('.dataTables_filter input').attr("placeholder", "Search filter");
