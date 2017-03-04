@@ -517,6 +517,7 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("home")
 
     # BOOKS #############################################################
+    LANGFILTER = ''
 
     @cherrypy.expose
     def booksearch(self, bookid=None, title="", author=""):
@@ -560,15 +561,18 @@ class WebInterface(object):
 
     @cherrypy.expose
     def books(self, BookLang=None):
+        global LANGFILTER
         myDB = database.DBConnection()
         languages = myDB.select('SELECT DISTINCT BookLang from books WHERE \
                                 STATUS !="Skipped" AND STATUS !="Ignored"')
+        LANGFILTER = BookLang
         return serve_template(templatename="books.html", title='Books', books=[], languages=languages)
 
     # noinspection PyUnusedLocal
     @cherrypy.expose
     def getBooks(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
+        global LANGFILTER
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
@@ -578,8 +582,8 @@ class WebInterface(object):
         cmd = 'SELECT bookimg, authorname, bookname, bookrate, bookdate, status, bookid,'
         cmd += ' booksub, booklink, workpage, authorid, series from books WHERE STATUS !="Skipped"'
         cmd += ' AND STATUS !="Ignored"'
-        if 'BookLang' in kwargs:
-            cmd += ' and BOOKLANG="' + kwargs['BookLang'] + '"'
+        if LANGFILTER is not None and len(LANGFILTER):
+            cmd += ' and BOOKLANG="' + LANGFILTER + '"'
         rowlist = myDB.select(cmd)
         # turn the sqlite rowlist into a list of lists
         d = []

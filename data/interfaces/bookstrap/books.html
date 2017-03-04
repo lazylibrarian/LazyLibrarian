@@ -14,7 +14,7 @@
             %if len(languages) >= 1:
                 <div class="form-group">
                     <label for="chooselanguage"><small>Language</small></label>
-                    <select class="form-control input-sm" id="chooselanguage" onchange="window.location = 'books?BookLang=' + this.options[this.selectedIndex].value">
+                    <select class="form-control input-sm" name="chooselanguage" id="chooselanguage" onchange="window.location = 'books?BookLang=' + this.options[this.selectedIndex].value">
                         <option value="">All</option>
                         %for language in languages:
                         <option value="${language['BookLang']}">${language['BookLang']}</option>
@@ -88,6 +88,8 @@
                 }
             });
 
+        $('#chooselanguage').val(getUrlVars()['BookLang']);
+
         var oTable = $('#book_table').dataTable({
             "bAutoWidth": false,
             "order": [[ 2, 'asc' ]],
@@ -106,7 +108,7 @@
             "sPaginationType": "full_numbers",
             "aaSorting": [[0, 'asc']],
             "bServerSide": true,
-            "sAjaxSource": 'getBooks?BookLang=${chooselanguage}',
+            "sAjaxSource": "getBooks",
             "bFilter": true,
             "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                 var w = window.innerWidth;
@@ -123,7 +125,6 @@
         $('.dataTables_filter input').attr("placeholder", "Search filter");
     	$(window).resize(function() {oTable.fnDraw(false)});
 
-        $('#chooselanguage').val(getUrlVars()['BookLang']);
     });
 
     // Read a page's GET URL variables and return them as an associative array.

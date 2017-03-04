@@ -10,8 +10,7 @@
             <li ><a id="button" href="forceProcess?source=books">Force Post-Processing</a></li>
             %if len(languages) > 1:
                 <li>Language:&nbsp</li>
-
-                <li><select onchange="window.location = 'books?BookLang=' + this.options[this.selectedIndex].value">
+                <li><select name="chooselanguage" onchange="window.location = 'books?BookLang=' + this.options[this.selectedIndex].value">
                     <option>Select</option>
                 %for language in languages:
                     <option value="${language['BookLang']}">${language['BookLang']}</option>
@@ -104,8 +103,7 @@
                 "sPaginationType": "full_numbers",
                 "aaSorting": [[2, 'asc']],
                  "bServerSide": true,
-                // need to pass requested language filter to getBooks
-                "sAjaxSource": 'getBooks?BookLang=${chooselanguage}',
+                "sAjaxSource": 'getBooks',
                 "bFilter": true,
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     $(nRow).addClass("gradeZ");
