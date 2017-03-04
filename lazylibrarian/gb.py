@@ -613,12 +613,50 @@ class GoogleBooks:
                                     if series:
                                         match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % series)
                                         if not match:
-                                            myDB.action('INSERT into series (SeriesName, AuthorID, Status) VALUES ("%s", "%s", "%s", "Active")' %
+                                            myDB.action('INSERT into series (SeriesName, AuthorID, Status) VALUES ("%s", "%s", "Active")' %
                                                         (series, authorid))
                                             match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % series)
                                         controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
                                         newValueDict = {"SeriesNum": seriesNum}
                                         myDB.upsert("member", newValueDict, controlValueDict)
+
+                                        seriesdict = {series: seriesNum}
+
+                                new_status = ''
+                                if seriesdict:
+                                    # Is the book part of any series we want?
+                                    for item in seriesdict:
+                                        match = myDB.match('SELECT SeriesName,Status from series where SeriesID=%s' % item)
+                                        if match['Status'] == 'Wanted':
+                                            new_status = 'Wanted'
+                                            logger.debug('Marking %s as %s, series %s' %
+                                                        (bookname, new_status, match['SeriesName']))
+                                            break
+
+                                    if not new_status:
+                                        # Is it part of any series we don't want?
+                                        for item in seriesdict:
+                                            match = myDB.match('SELECT SeriesName,Status from series where SeriesID=%s' % item)
+                                            if match['Status'] == 'Skipped':
+                                                new_status = 'Skipped'
+                                                logger.debug('Marking %s as %s, series %s' %
+                                                            (bookname, new_status, match['SeriesName']))
+                                                break
+
+                                if not new_status:
+                                    # Author we don't want?
+                                    for item in seriesdict:
+                                        match = myDB.match('SELECT Status from authors where AuthorID=%s' % authorid)
+                                        if match['Status'] == 'Paused':
+                                            new_status = 'Skipped'
+                                            logger.debug('Marking %s as %s, author %s' %
+                                                        (bookname, new_status, match['Status']))
+                                            break
+
+                                # If none of these, leave default "newbook" or "newauthor" status
+                                if new_status:
+                                    myDB.action('UPDATE books SET Status=%s WHERE BookID=%s' % (new_status, bookid))
+                                    book_status = new_status
 
                                 worklink = getWorkPage(bookid)
                                 if worklink:

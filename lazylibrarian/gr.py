@@ -459,17 +459,6 @@ class GoodReads:
                         else:
                             series, seriesNum = bookSeries(bookname)
 
-                        # GoodReads sometimes has multiple bookids for the same book (same author/title, different editions)
-                        # and sometimes uses the same bookid if the book is the same but the title is slightly different
-                        # We use bookid, then reject if another author/title has a different bookid so we just keep one...
-                        find_book_status = myDB.match('SELECT * FROM books WHERE BookID = "%s"' % bookid)
-                        if find_book_status:
-                            book_status = find_book_status['Status']
-                            locked = find_book_status['Manual']
-                        else:
-                            book_status = bookstatus
-                            locked = False
-
                         rejected = False
 
                         if re.match('[^\w-]', bookname):  # reject books with bad characters in title
@@ -517,6 +506,16 @@ class GoodReads:
                                 rejected = True
 
                         if not rejected:
+                            find_book_status = myDB.match('SELECT * FROM books WHERE BookID = "%s"' % bookid)
+                            if find_book_status:
+                                book_status = find_book_status['Status']
+                                locked = find_book_status['Manual']
+                            else:
+                                book_status = bookstatus
+                                locked = False
+
+                            # Is the book already in the database?
+                            # Leave alone if locked or status "ignore"
                             if book_status != "Ignored" and not locked:
                                 newseries = series
                                 if seriesNum:
@@ -571,16 +570,54 @@ class GoodReads:
                                 if seriesdict:
                                     logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
                                 else:
-                                    # librarything doesn't have series info. Any in the title?
+                                    # librarything doesn't have series info. Was there any in the title?
                                     if series:
                                         match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % series)
                                         if not match:
-                                            myDB.action('INSERT into series (SeriesName, AuthorID, Status) VALUES ("%s", "%s", "Active")' %
-                                                        (series, authorid))
-                                            match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % series)
+                                            cmd = 'INSERT into series (SeriesName, AuthorID, Status)'
+                                            cmd += ' VALUES ("%s", "%s", "Active")' % (series, authorid)
+                                            myDB.action(cmd)
+                                            match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % item)
                                         controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
                                         newValueDict = {"SeriesNum": seriesNum}
                                         myDB.upsert("member", newValueDict, controlValueDict)
+                                        seriesdict = {series: seriesNum}
+
+                                new_status = ''
+                                if seriesdict:
+                                    # Is the book part of any series we want?
+                                    for item in seriesdict:
+                                        match = myDB.match('SELECT Status from series where SeriesName="%s"' % item)
+                                        if match['Status'] == 'Wanted':
+                                            new_status = 'Wanted'
+                                            logger.debug('Marking %s as %s, series %s' %
+                                                        (bookname, new_status, item))
+                                            break
+
+                                    if not new_status:
+                                        # Is it part of any series we don't want?
+                                        for item in seriesdict:
+                                            match = myDB.match('SELECT Status from series where SeriesName="%s"' % item)
+                                            if match['Status'] == 'Skipped':
+                                                new_status = 'Skipped'
+                                                logger.debug('Marking %s as %s, series %s' %
+                                                            (bookname, new_status, item))
+                                                break
+
+                                if not new_status:
+                                    # Author we don't want?
+                                    for item in seriesdict:
+                                        match = myDB.match('SELECT Status from authors where AuthorID=%s' % authorid)
+                                        if match['Status'] == 'Paused':
+                                            new_status = 'Skipped'
+                                            logger.debug('Marking %s as %s, author %s' %
+                                                        (bookname, new_status, match['Status']))
+                                            break
+
+                                # If none of these, leave default "newbook" or "newauthor" status
+                                if new_status:
+                                    myDB.action('UPDATE books SET Status=%s WHERE BookID=%s' % (new_status, bookid))
+                                    book_status = new_status
 
                                 worklink = getWorkPage(bookid)
                                 if worklink:
