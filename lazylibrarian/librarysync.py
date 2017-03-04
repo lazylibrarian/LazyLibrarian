@@ -737,17 +737,11 @@ def LibraryScan(startdir=None):
                 "SELECT sum(GR_book_hits), sum(GR_lang_hits), sum(LT_lang_hits), sum(GB_lang_change), \
                     sum(cache_hits), sum(bad_lang), sum(bad_char), sum(uncached), sum(duplicates) FROM stats")
 
-            st={}
-            st['GR_book_hits'] = stats['sum(GR_book_hits)']
-            st['GB_book_hits'] = stats['sum(GR_book_hits)']  # yes, it is the same!
-            st['GR_lang_hits'] = stats['sum(GR_lang_hits)']
-            st['LT_lang_hits'] = stats['sum(LT_lang_hits)']
-            st['GB_lang_change'] = stats['sum(GB_lang_change)']
-            st['cache_hits'] = stats['sum(cache_hits)']
-            st['bad_lang'] = stats['sum(bad_lang)']
-            st['bad_char'] = stats['sum(bad_char)']
-            st['uncached'] = stats['sum(uncached)']
-            st['duplicates'] = stats['sum(duplicates)']
+            st= {'GR_book_hits': stats['sum(GR_book_hits)'], 'GB_book_hits': stats['sum(GR_book_hits)'],
+                 'GR_lang_hits': stats['sum(GR_lang_hits)'], 'LT_lang_hits': stats['sum(LT_lang_hits)'],
+                 'GB_lang_change': stats['sum(GB_lang_change)'], 'cache_hits': stats['sum(cache_hits)'],
+                 'bad_lang': stats['sum(bad_lang)'], 'bad_char': stats['sum(bad_char)'],
+                 'uncached': stats['sum(uncached)'], 'duplicates': stats['sum(duplicates)']}
 
             for item in st.keys():
                 if st[item] is None:

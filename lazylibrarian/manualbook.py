@@ -63,12 +63,10 @@ def searchItem(item=None, bookid=None):
 
     # reprocess to get consistent results
     searchresults = []
-    sortedlist = []
     for item in results:
         print item
         title = ''
         url = ''
-        prov = ''
         size = ''
         date = ''
         mode = ''
@@ -113,14 +111,8 @@ def searchItem(item=None, bookid=None):
             if score >= 40:  # ignore wildly wrong results?
                 if '?' in url:
                     url = url.split('?')[0]
-                result = {}
-                result['score'] = score
-                result['title'] = title
-                result['provider'] = provider
-                result['size'] = size
-                result['date'] = date
-                result['url'] = urllib.quote_plus(url)
-                result['mode'] = mode
+                result = {'score': score, 'title': title, 'provider': provider, 'size': size, 'date': date,
+                          'url': urllib.quote_plus(url), 'mode': mode}
 
                 searchresults.append(result)
 

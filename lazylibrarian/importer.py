@@ -36,6 +36,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
         myDB = database.DBConnection()
         match = False
         authorimg = ''
+        new_author = not refresh
         if authorid:
             controlValueDict = {"AuthorID": authorid}
             newValueDict = {"Status": "Loading"}
@@ -162,7 +163,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
 
         # update totals works for existing authors only.
         # New authors need their totals updating after libraryscan or import of books.
-        if dbauthor:
+        if not new_author:
             update_totals(authorid)
         logger.debug("[%s] Author update complete" % authorname)
     except Exception:
