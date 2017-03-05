@@ -10,13 +10,12 @@
 
 <%def name="body()">
 <BR><BR>
-<h1>&nbsp&nbsp${series['AuthorName']}</h1>
-<h2>&nbsp&nbsp${series['SeriesName']}</h2>
+<h1>&nbsp&nbsp${series['AuthorName']}: ${series['SeriesName']}</h1>
     <p class="indented">
         <form action="markMembers" method="get">
             <input type="hidden" name="redirect" value="members">
             <input type="hidden" name="seriesid" value="${series['SeriesID']}">
-            <label>Mark selected as: </label>
+            <label>&nbsp&nbspMark selected as: </label>
             <select class="markMembers" name="action" id="action">
                     %for item in ["Wanted", "Have", "Ignored", "Skipped", "Remove", "Delete"]:
                         <option value="${item}"

@@ -10,7 +10,7 @@
 
 <%def name="body()">
     <BR>
-<h1>&nbsp&nbspManage Past Issues</h1><br>
+<h1>&nbsp&nbsp${title}</h1><br>
 
     <form action="pastIssues" method="get">
     Manage Issues with status <select name="whichStatus">
@@ -38,20 +38,6 @@
                 <th id="provider">NZBprov</th>
            </tr>
         </thead>
-<!--
-        <tbody>
-        %for result in issues:
-                <tr class="gradeZ">
-                    <td id="select"><input type="checkbox" name="${result['NZBurl']}" class="checkbox" /></td>
-                    <td id="magtitle"><BR>${result['NZBtitle']}<BR><BR></td>
-                    <td id="lastacquired">${result['NZBdate']}</td>
-                    <td id="issuedate">${result['Auxinfo']}</td>
-                    <td id="provider">${result['NZBprov']}</td>
-                    <td id="status">${result['Status']}</td>
-                </tr>
-        %endfor
-        </tbody>
--->
     </table>
     <p>
 

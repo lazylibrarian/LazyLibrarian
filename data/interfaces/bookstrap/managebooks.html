@@ -14,10 +14,10 @@
 </%def>
 
 <%def name="body()">
-    <p>&nbsp;</p>
+    <h1>${title}</h1>
     <form action="manage" method="get" class="form-inline">
         <div class="form-group">
-            <label for="whichStatus" class="control-label">Manage books with status:</label>
+            <label for="whichStatus" class="control-label">Books with status:</label>
             <select name="whichStatus" class="form-control input-sm">
         %for item in ['Skipped', 'Wanted', 'Open', 'Have', 'Ignored']:
             <option value="${item}"
@@ -32,8 +32,6 @@
     </form>
     <br>
 
-    <h3>Books with status ${whichStatus}</h3>
-        <br>
     <form action="markBooks" method="get" class="form-inline">
         <input type="hidden" name="redirect" value="manage">
         <div class="table-responsive">

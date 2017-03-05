@@ -14,10 +14,10 @@
 </%def>
 
 <%def name="body()">
-<BR>
-<h1>&nbsp&nbspManage Books</h1><br>
+<BR><BR>
+<h1>&nbsp&nbsp${title}</h1><br>
     <form action="manage" method="get">
-        <label>Manage books with status: </label>
+        <label>&nbsp&nbspBooks with status: </label>
         <select name="whichStatus">
         %for item in ['Skipped', 'Wanted', 'Open', 'Have', 'Ignored']:
             <option value="${item}"
@@ -26,12 +26,10 @@
                 %endif
             >${item}</option>
         %endfor
-    </select>
-    <input  class="btn" type="submit" value="Manage" />
+        </select>
+        <input  class="btn" type="submit" value="Manage" />
     </form>
     <br>
-    <h3>Books with status ${whichStatus}</h3>
-        <br>
     <form action="markBooks" method="get"><input type="hidden" name="redirect" value="manage">
     <table class="display" id="book_table">
         <thead>
@@ -46,7 +44,8 @@
     </table>
     <p>
 
-    Change selected books to <select class="markBooks" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
+    &nbsp&nbspChange selected books to:
+    <select class="markBooks" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
         %for item in ['Skipped', 'Wanted', 'Snatched', 'Have', 'Ignored']:
             <option value="${item}">${item}</option>
         %endfor

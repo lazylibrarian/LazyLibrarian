@@ -14,7 +14,7 @@
 </%def>
 <%def name="body()">
 <BR><br>
-<h1>&nbsp&nbsp${config['authorName']}</h1>
+<h1>&nbsp&nbsp${title}</h1>
 <br><br>
     <form action="bookUpdate" method="post">
     <div class="table_wrapper">
@@ -65,7 +65,7 @@
             %endfor
                 <label>New Series ${loop.index}</label>
    		        <input type="text" name="series[new][name]" value="" class="form-control" size="36 "placeholder="Series Name">
-	    		<input type="text" name="series[new][number]" value="" class="form-control" size="36" placeholder="Number">
+	    		<input type="text" name="series[new][number]" value=" class="form-control" size="36" placeholder="Number">
             <br>
             <%
                 if config['Manual'] == "1":

@@ -10,8 +10,7 @@
 </%def>
 
 <%def name="body()">
-<h1>${series['AuthorName']}</h1>
-<h2>${series['SeriesName']}</h2>
+<h1>${series['AuthorName']}: ${series['SeriesName']}</h1>
 <form action="markMembers" method="get" class="form-inline">
     <div class="indented">
             <input type="hidden" name="redirect" value="members">

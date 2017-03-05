@@ -83,7 +83,7 @@ class WebInterface(object):
             myDB = database.DBConnection()
             authors = myDB.select(
                 'SELECT * from authors where Status != "Ignored" order by AuthorName COLLATE NOCASE')
-            return serve_template(templatename="index.html", title="Home", authors=authors)
+            return serve_template(templatename="index.html", title="Authors", authors=authors)
 
     @staticmethod
     def label_thread(name=None):
@@ -98,13 +98,17 @@ class WebInterface(object):
     @cherrypy.expose
     def series(self, AuthorID=None):
         myDB = database.DBConnection()
+        title = "Series"
         cmd = 'SELECT SeriesID,series.AuthorID,SeriesName,series.Status,AuthorName from series,authors'
         cmd += ' where authors.AuthorID=series.AuthorID'
         if AuthorID:
+            match = myDB.match('SELECT AuthorName from authors WHERE AuthorID=%s' % AuthorID)
+            if match:
+                title = "%s Series" % match['AuthorName']
             cmd += ' and series.AuthorID=' + AuthorID
         cmd += ' order by AuthorName,SeriesName'
         series = myDB.select(cmd)
-        return serve_template(templatename="series.html", title="Series", series=series)
+        return serve_template(templatename="series.html", title=title, series=series)
 
     @cherrypy.expose
     def seriesMembers(self, seriesid):
@@ -348,8 +352,8 @@ class WebInterface(object):
 
         sortedlist_final = sorted(
             searchresults, key=itemgetter('highest_fuzz', 'num_reviews'), reverse=True)
-        return serve_template(templatename="searchresults.html", title='Search Results for: "' +
-                                                                       name + '"', searchresults=sortedlist_final,
+        return serve_template(templatename="searchresults.html", title='Search Results: "' +
+                              name + '"', searchresults=sortedlist_final,
                               authorlist=authorlist,
                               booklist=booklist, booksearch=booksearch)
 
@@ -528,7 +532,8 @@ class WebInterface(object):
         searchterm = '%s %s' % (author, title)
         searchterm.strip()
         results = searchItem(searchterm, bookid)
-        return serve_template(templatename="manualsearch.html", title=searchterm, bookid=bookid, results=results)
+        return serve_template(templatename="manualsearch.html", title='Search Results: "' +
+                              searchterm + '"', bookid=bookid, results=results)
 
 
     @cherrypy.expose
@@ -847,7 +852,7 @@ class WebInterface(object):
         if data:
             return serve_template(templatename="editauthor.html", title="Edit Author", config=data)
         else:
-            logger.info(u'Missing author %s' % authorid)
+            logger.info(u'Missing author %s:' % authorid)
 
     @cherrypy.expose
     def authorUpdate(self, authorid='', authorname='', authorborn='', authordeath='', authorimg='', manual='0'):
@@ -1232,7 +1237,7 @@ class WebInterface(object):
         if whichStatus is None:
             whichStatus = "Skipped"
         return serve_template(
-            templatename="manageissues.html", title="Magazine Status Management", issues=[], whichStatus=whichStatus)
+            templatename="manageissues.html", title="Manage Past Issues", issues=[], whichStatus=whichStatus)
 
     # noinspection PyUnusedLocal
     @cherrypy.expose
@@ -1910,7 +1915,7 @@ class WebInterface(object):
     def manage(self, whichStatus=None):
         if whichStatus is None:
             whichStatus = "Wanted"
-        return serve_template(templatename="managebooks.html", title="Book Status Management",
+        return serve_template(templatename="managebooks.html", title="Manage Books",
                               books=[], whichStatus=whichStatus)
 
     # noinspection PyUnusedLocal

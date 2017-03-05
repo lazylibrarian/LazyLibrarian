@@ -10,7 +10,7 @@
 </%def>
 
 <%def name="body()">
-<h1>Series</h1>
+<h1>${title}</h1>
 <form action="markSeries" method="get" class="form-inline">
     <div class="indented">
             <input type="hidden" name="redirect" value="series">
@@ -77,7 +77,7 @@
                 ,
                 "oLanguage": {
                     "sLengthMenu":"_MENU_ rows per page",
-                    "sEmptyTable": "No books found",
+                    "sEmptyTable": "No series found",
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
                     "sInfoEmpty":"Showing 0 to 0 of 0 rows",
                     "sInfoFiltered":"(filtered from _MAX_ total rows)"},

@@ -15,7 +15,8 @@
 </%def>
 
 <%def name="body()">
-
+<br><br>
+    <h1>nbsp&nbsp${title}</h1>
     <p class="indented">
         <form action="markIssues" method="get">
             <select name="action" id="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
@@ -35,7 +36,7 @@
                 % else:
                 <th id="bookart" hidden="true">Cover</th>
                 % endif
-                <th id="issuedate">${issues[0]['Title']}</th>
+                <th id="issuedate">Issue</th>
                 <th id="lastacquired">Acquired</th>
                 <th id="issue">Issue</th>
             </tr>
