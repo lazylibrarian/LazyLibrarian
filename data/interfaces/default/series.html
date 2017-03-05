@@ -13,7 +13,7 @@
 <h1>&nbsp&nbsp${title}</h1>
     <p class="indented">
         <form action="markSeries" method="get">
-            <input type="hidden" name="redirect" value="series">
+            <input type="hidden" name="redirect" value=${authorid}>
             <label>&nbsp&nbspMark selected series as: </label>
             <select class="markSeries" name="action" id="action">
                     %for item in ['Wanted', 'Active', 'Skipped']:

@@ -108,7 +108,7 @@ class WebInterface(object):
             cmd += ' and series.AuthorID=' + AuthorID
         cmd += ' order by AuthorName,SeriesName'
         series = myDB.select(cmd)
-        return serve_template(templatename="series.html", title=title, series=series)
+        return serve_template(templatename="series.html", title=title, authorid=AuthorID, series=series)
 
     @cherrypy.expose
     def seriesMembers(self, seriesid):
@@ -120,7 +120,8 @@ class WebInterface(object):
         cmd += ' where series.SeriesID=member.SeriesID and books.BookID=member.BookID'
         cmd += ' and series.SeriesID=%s order by SeriesName' % seriesid
         members = myDB.select(cmd)
-        return serve_template(templatename="members.html", title="Series", members=members, series=series)
+        return serve_template(templatename="members.html", title=series['AuthorName'] + ": " + series['SeriesName'],
+                                members=members, series=series)
 
     @cherrypy.expose
     def markMembers(self, action=None, **args):
@@ -139,7 +140,9 @@ class WebInterface(object):
                         if match:
                             myDB.upsert("series", {'Status': action}, {'SeriesID': seriesid})
                             logger.debug(u'Status set to "%s" for "%s"' % (action, match['SeriesName']))
-
+            if "redirect" in args:
+                if not args['redirect'] == 'None':
+                    raise cherrypy.HTTPRedirect("series?AuthorID=%s" % args['redirect'])
             raise cherrypy.HTTPRedirect("series")
 
     # CONFIG ############################################################
