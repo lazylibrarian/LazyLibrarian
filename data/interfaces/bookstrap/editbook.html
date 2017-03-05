@@ -58,6 +58,10 @@
           		        <input type="text" id="series[${loop.index}][name]" name="series[${loop.index}][name]" value="${item['SeriesName']}" class="form-control" placeholder="Series Name">
 	    		        <input type="text" id="series[${loop.index}][number]" name="series[${loop.index}][number]" value="${item['SeriesNum']}" class="form-control" placeholder="Number">
                    %endfor
+                      <label for="series[new]" class="control-label">
+                      New Series </label>
+          		      <input type="text" id="series[new][name]" name="series[new][name]" value="" class="form-control" placeholder="Series Name">
+	    		      <input type="text" id="series[new][number]" name="series[new][number]" value="" class="form-control" placeholder="Number">
             </div>
         </fieldset>
             <div class="checkbox">

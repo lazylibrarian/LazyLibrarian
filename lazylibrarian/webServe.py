@@ -96,10 +96,13 @@ class WebInterface(object):
 
     # SERIES ############################################################
     @cherrypy.expose
-    def series(self):
+    def series(self, AuthorID=None):
         myDB = database.DBConnection()
         cmd = 'SELECT SeriesID,series.AuthorID,SeriesName,series.Status,AuthorName from series,authors'
-        cmd += ' where authors.AuthorID=series.AuthorID order by AuthorName,SeriesName'
+        cmd += ' where authors.AuthorID=series.AuthorID'
+        if AuthorID:
+            cmd += ' and series.AuthorID=' + AuthorID
+        cmd += ' order by AuthorName,SeriesName'
         series = myDB.select(cmd)
         return serve_template(templatename="series.html", title="Series", series=series)
 
@@ -992,8 +995,6 @@ class WebInterface(object):
             if bookdata:
                 edited = ''
                 moved = False
-                if series == 'None':
-                    series = ''
                 if bookgenre == 'None':
                     bookgenre = ''
                 manual = bool(check_int(manual, 0))
@@ -1023,12 +1024,19 @@ class WebInterface(object):
 
                 cmd ='SELECT SeriesName, SeriesNum from member,series '
                 cmd += 'where series.SeriesID=member.SeriesID and BookID=%s' % bookid
-                old_dict = myDB.select(cmd)
+                old_series = myDB.select(cmd)
+                old_dict = {}
                 new_dict = {}
                 dict_counter = 0
                 while "series[%s][name]" % dict_counter in kwargs:
                     new_dict[kwargs["series[%s][name]" % dict_counter]] = kwargs["series[%s][number]" % dict_counter]
                     dict_counter += 1
+                if 'series[new][name]' in kwargs and 'series[new][number]' in kwargs:
+                    if kwargs['series[new][name]']:
+                        new_dict[kwargs['series[new][name]']] = kwargs['series[new][number]']
+                for item in old_series:
+                    old_dict[item['SeriesName']] = item['SeriesNum']
+
                 series_changed= False
                 for item in old_dict:
                     if not item in new_dict:
@@ -1065,10 +1073,10 @@ class WebInterface(object):
                     logger.info('Book [%s] has been moved' % bookname)
                 else:
                     logger.debug('Book [%s] has not been moved' % bookname)
+                #if edited or moved:
+                raise cherrypy.HTTPRedirect("editBook?BookID=%s" % bookid)
 
-            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % bookdata["AuthorID"])
-        else:
-            raise cherrypy.HTTPRedirect("books")
+        raise cherrypy.HTTPRedirect("books")
 
     @cherrypy.expose
     def markBooks(self, AuthorID=None, seriesid=None, action=None, redirect=None, **args):

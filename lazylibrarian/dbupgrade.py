@@ -24,7 +24,7 @@ import lazylibrarian
 from lazylibrarian import logger, database, magazinescan, bookwork
 from lazylibrarian.formatter import plural, bookSeries
 from lazylibrarian.common import restartJobs
-from lazylibrarian.bookwork import setSeries
+from lazylibrarian.bookwork import getWorkSeries, setSeries
 
 def upgrade_needed():
     """

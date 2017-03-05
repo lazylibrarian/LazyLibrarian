@@ -85,8 +85,9 @@ def setSeries(seriesdict=None, bookid=None):
     """ set series details in booktable and series/member tables from the supplied dict """
     myDB = database.DBConnection()
     if seriesdict and bookid:
-        # delete any old entries -- NOTE does not delete any empty series
+        # delete any old entries
         myDB.action('DELETE from member WHERE Bookid=%s' % bookid)
+        deleteEmptySeries()
         series = ''
         for item in seriesdict:
             # keep all series in the book table for speed
@@ -110,6 +111,16 @@ def setSeries(seriesdict=None, bookid=None):
         newValueDict = {"Series": series}
         myDB.upsert("books", newValueDict, controlValueDict)
 
+
+def deleteEmptySeries():
+    """ remove any series from series table that have no entries in member table """
+    myDB = database.DBConnection()
+    series = myDB.select('SELECT SeriesID,SeriesName from series')
+    for item in series:
+        match = myDB.match('SELECT BookID from member where SeriesID=%s' % item['SeriesID'])
+        if not match:
+            logger.debug('Deleting empty series %s' % item['SeriesName'])
+            myDB.action('DELETE from series where SeriesID=%s' % item['SeriesID'])
 
 def setWorkPages():
     """ Set the workpage link for any books that don't already have one """
