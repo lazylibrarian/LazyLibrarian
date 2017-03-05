@@ -259,6 +259,7 @@ def LibraryScan(startdir=None):
         destdir = lazylibrarian.DIRECTORY('Destination')
         if not startdir:
             if not destdir:
+                logger.warn('Cannot find destination directory: %s. Not scanning' % destdir)
                 return 0
             startdir = destdir
 
@@ -700,11 +701,9 @@ def LibraryScan(startdir=None):
                                             modified_count += 1
                                             logger.warn("Updating book location for %s %s from %s to %s" %
                                                         (author, book, check_status['BookFile'], book_filename))
-                                            logger.debug("%s %s matched BookID %s, [%s][%s]" % (author, book, bookid,
-                                                                                                check_status[
-                                                                                                    'AuthorName'],
-                                                                                                check_status[
-                                                                                                    'BookName']))
+                                            logger.debug("%s %s matched %s BookID %s, [%s][%s]" %
+                                                        (author, book, check_status['Status'], bookid,
+                                                        check_status['AuthorName'], check_status['BookName']))
                                             myDB.action('UPDATE books set BookFile="%s" where BookID="%s"' %
                                                         (book_filename, bookid))
 

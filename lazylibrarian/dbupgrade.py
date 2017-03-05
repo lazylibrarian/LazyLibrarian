@@ -24,7 +24,7 @@ import lazylibrarian
 from lazylibrarian import logger, database, magazinescan, bookwork
 from lazylibrarian.formatter import plural, bookSeries
 from lazylibrarian.common import restartJobs
-from lazylibrarian.bookwork import setBookSeries
+from lazylibrarian.bookwork import setSeries
 
 def upgrade_needed():
     """
@@ -540,23 +540,12 @@ def dbupgrade(db_current_version):
                     for book in books:
                         cnt += 1
                         lazylibrarian.UPDATE_MSG = "Updating book series: %s of %s" % (cnt, tot)
-                        seriesdict = setBookSeries(book['BookID'])
+                        seriesdict = getWorkSeries(book['BookID'])
                         if not seriesdict:  # no workpage series, use the current values if present
                             if book['Series'] and book['SeriesNum']:
-                                match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % book['Series'])
-                                if not match:
-                                    cmd = 'INSERT into series (SeriesName, AuthorID, Status) VALUES '
-                                    cmd += '("%s", "%s", "Active")' % (book['Series'], book['AuthorID'])
-                                    myDB.action(cmd)
-                                    match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % book['Series'])
-                                controlValueDict = {"BookID": book["BookID"], "SeriesID": match['SeriesID']}
-                                newValueDict = {"SeriesNum": book['SeriesNum']}
-                                myDB.upsert("member", newValueDict, controlValueDict)
-                                controlValueDict = {"BookID": book["BookID"]}
-                                newseries = "%s %s" % (book['Series'], book['SeriesNum'])
-                                newseries.strip()
-                                newValueDict = {"Series": newseries}
-                                myDB.upsert("books", newValueDict, controlValueDict)
+                                seriesdict = {book['Series']: book['SeriesNum']}
+                        if seriesdict:
+                            setSeries(seriesdict, book['BookID'])
 
                     lazylibrarian.UPDATE_MSG = "Book series update complete"
                     logger.info(lazylibrarian.UPDATE_MSG)

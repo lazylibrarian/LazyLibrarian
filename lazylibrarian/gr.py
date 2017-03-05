@@ -22,7 +22,7 @@ import urllib2
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, setBookSeries
+from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, setSeries
 from lazylibrarian.cache import get_xml_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList
 from lib.fuzzywuzzy import fuzz
@@ -517,9 +517,6 @@ class GoodReads:
                             # Is the book already in the database?
                             # Leave alone if locked or status "ignore"
                             if book_status != "Ignored" and not locked:
-                                newseries = series
-                                if seriesNum:
-                                    newseries = series + ' ' + seriesNum
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {
                                     "AuthorName": authorNameResult,
@@ -539,7 +536,7 @@ class GoodReads:
                                     "BookLang": bookLanguage,
                                     "Status": book_status,
                                     "BookAdded": today(),
-                                    "Series": newseries
+                                    "Series": ''
                                 }
 
                                 resultsCount += 1
@@ -566,22 +563,13 @@ class GoodReads:
                                         logger.debug('Failed to cache image for %s' % bookimg)
 
                                 # prefer series info from librarything
-                                seriesdict = setBookSeries(bookid)
+                                seriesdict = getWorkSeries(bookid)
                                 if seriesdict:
                                     logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
                                 else:
-                                    # librarything doesn't have series info. Was there any in the title?
                                     if series:
-                                        match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % series)
-                                        if not match:
-                                            cmd = 'INSERT into series (SeriesName, AuthorID, Status)'
-                                            cmd += ' VALUES ("%s", "%s", "Active")' % (series, authorid)
-                                            myDB.action(cmd)
-                                            match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % item)
-                                        controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
-                                        newValueDict = {"SeriesNum": seriesNum}
-                                        myDB.upsert("member", newValueDict, controlValueDict)
                                         seriesdict = {series: seriesNum}
+                                setSeries(seriesdict, bookid)
 
                                 new_status = ''
                                 if seriesdict:
@@ -590,8 +578,7 @@ class GoodReads:
                                         match = myDB.match('SELECT Status from series where SeriesName="%s"' % item)
                                         if match['Status'] == 'Wanted':
                                             new_status = 'Wanted'
-                                            logger.debug('Marking %s as %s, series %s' %
-                                                        (bookname, new_status, item))
+                                            logger.debug('Marking %s as %s, series %s' % (bookname, new_status, item))
                                             break
 
                                     if not new_status:
@@ -601,7 +588,7 @@ class GoodReads:
                                             if match['Status'] == 'Skipped':
                                                 new_status = 'Skipped'
                                                 logger.debug('Marking %s as %s, series %s' %
-                                                            (bookname, new_status, item))
+                                                                (bookname, new_status, item))
                                                 break
 
                                 if not new_status:
@@ -770,9 +757,6 @@ class GoodReads:
         else:
             series, seriesNum = bookSeries(bookname)
 
-        newseries = series
-        if seriesNum:
-            newseries = series + ' ' + seriesNum
         controlValueDict = {"BookID": bookid}
         newValueDict = {
             "AuthorName": authorname,
@@ -792,7 +776,7 @@ class GoodReads:
             "BookLang": bookLanguage,
             "Status": "Wanted",
             "BookAdded": today(),
-            "Series": newseries
+            "Series": ''
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
@@ -817,20 +801,13 @@ class GoodReads:
                 logger.debug('Failed to cache image for %s' % bookimg)
 
         # prefer series info from librarything
-        seriesdict = setBookSeries(bookid)
+        seriesdict = getWorkSeries(bookid)
         if seriesdict:
             logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
         else:
-            # librarything doesn't have series info. Any in the title?
             if series:
-                match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % series)
-                if not match:
-                    myDB.action('INSERT into series (SeriesName, AuthorID, Status) VALUES ("%s", "%s", "Active")' %
-                                (series, AuthorID))
-                    match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % series)
-                controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
-                newValueDict = {"SeriesNum": seriesNum}
-                myDB.upsert("member", newValueDict, controlValueDict)
+                seriesdict = {series: seriesNum}
+        setSeries(seriesdict, bookid)
 
         worklink = getWorkPage(bookid)
         if worklink:

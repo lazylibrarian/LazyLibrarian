@@ -67,7 +67,7 @@ def getBookCovers():
 
 
 def setAllBookSeries():
-    """ Try to set series details for all books """
+    """ Try to set series details for all books from workpages"""
     myDB = database.DBConnection()
     books = myDB.select('select BookID from books where Manual is not "1"')
     counter = 0
@@ -75,29 +75,31 @@ def setAllBookSeries():
         logger.info('Checking series for %s book%s' % (len(books), plural(len(books))))
         for book in books:
             bookid = book['BookID']
-            seriesdict = setBookSeries(bookid)
-            counter += 1
+            seriesdict = getWorkSeries(bookid)
+            if seriesdict:
+                counter += 1
+                setSeries(seriesdict, bookid)
     logger.info('Series check complete, updated %s book%s' % (counter, plural(counter)))
 
-
-def setBookSeries(bookid):
-    """ Try to set series details for a book from workpage """
-    seriesdict = getWorkSeries(bookid)
+def setSeries(seriesdict=None, bookid=None):
+    """ set series details in booktable and series/member tables from the supplied dict """
     myDB = database.DBConnection()
-    if seriesdict:
+    if seriesdict and bookid:
+        # delete any old entries -- NOTE does not delete any empty series
+        myDB.action('DELETE from member WHERE Bookid=%s' % bookid)
         series = ''
         for item in seriesdict:
             # keep all series in the book table for speed
             newseries = "%s %s" % (item, seriesdict[item])
             newseries.strip()
-            if newseries:
-                if series:
-                    series += '<br>'
-                series += newseries
+            if series:
+                series += '<br>'
+            series += newseries
             # and each series in the series and member tables for searching
             match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % item)
             book = myDB.match('SELECT BookName, AuthorID from books where BookID=%s' % bookid)
             if not match:
+                # new series, need to set status and get SeriesID
                 myDB.action('INSERT into series (SeriesName, AuthorID, Status) VALUES ("%s", "%s", "Active")' %
                             (item, book['AuthorID']))
                 match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % item)
@@ -107,8 +109,7 @@ def setBookSeries(bookid):
         controlValueDict = {"BookID": bookid}
         newValueDict = {"Series": series}
         myDB.upsert("books", newValueDict, controlValueDict)
-        return seriesdict
-    return {}
+
 
 def setWorkPages():
     """ Set the workpage link for any books that don't already have one """

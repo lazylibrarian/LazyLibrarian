@@ -44,7 +44,7 @@ from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
 from lazylibrarian.cache import cache_img
 from lazylibrarian.notifiers import notify_snatch
 from lazylibrarian.manualbook import searchItem
-from lazylibrarian.bookwork import getWorkSeries
+from lazylibrarian.bookwork import getWorkSeries, setSeries
 from lib.deluge_client import DelugeRPCClient
 from mako import exceptions
 from mako.lookup import TemplateLookup
@@ -854,26 +854,26 @@ class WebInterface(object):
         if authorid:
             authdata = myDB.match('SELECT * from authors WHERE AuthorID="%s"' % authorid)
             if authdata:
-                edited = False
+                edited = ""
                 moved = False
-                if authorborn == 'None' or not len(authorborn):
-                    authorborn = None
-                if authordeath == 'None' or not len(authordeath):
-                    authordeath = None
-                if authorimg == 'None' or not len(authorimg):
-                    authorimg = None
+                if authorborn == 'None':
+                    authorborn = ''
+                if authordeath == 'None':
+                    authordeath = ''
+                if authorimg == 'None':
+                    authorimg = ''
                 manual = bool(check_int(manual, 0))
 
                 if not (authdata["AuthorName"] == authorname):
-                    edited = True
+                    edited += "Name "
                 if not (authdata["AuthorBorn"] == authorborn):
-                    edited = True
+                    edited += "Born "
                 if not (authdata["AuthorDeath"] == authordeath):
-                    edited = True
+                    edited += "Died "
                 if not (authdata["AuthorImg"] == authorimg):
-                    edited = True
+                    edited += "Image "
                 if not (bool(check_int(authdata["Manual"], 0)) == manual):
-                    edited = True
+                    edited += "Manual "
 
                 if not (authdata["AuthorName"] == authorname):
                     match = myDB.match('SELECT AuthorName from authors where AuthorName="%s"' % authorname)
@@ -897,7 +897,8 @@ class WebInterface(object):
                             except ValueError:
                                 authorborn = authdata["AuthorBorn"]
                         if rejected:
-                            logger.debug("Author Born date [%s] rejected" % ab)
+                            logger.warn("Author Born date [%s] rejected" % ab)
+                            edited = edited.replace('Born ', '')
 
                     ab = authordeath
                     authordeath = authdata["AuthorDeath"]  # assume fail, leave unchanged
@@ -911,7 +912,8 @@ class WebInterface(object):
                             except ValueError:
                                 authordeath = authdata["AuthorDeath"]
                         if rejected:
-                            logger.debug("Author Died date [%s] rejected" % ab)
+                            logger.warn("Author Died date [%s] rejected" % ab)
+                            edited = edited.replace('Died ', '')
 
                     if not authorimg:
                         authorimg = authdata["AuthorImg"]
@@ -939,8 +941,9 @@ class WebInterface(object):
                                     rejected = False
 
                         if rejected:
-                            logger.debug("Author Image [%s] rejected" % authorimg)
+                            logger.warn("Author Image [%s] rejected" % authorimg)
                             authorimg = authdata["AuthorImg"]
+                            edited = edited.replace('Image ', '')
 
                     controlValueDict = {'AuthorID': authorid}
                     newValueDict = {
@@ -951,7 +954,7 @@ class WebInterface(object):
                         'Manual': bool(manual)
                     }
                     myDB.upsert("authors", newValueDict, controlValueDict)
-                    logger.info('Author [%s] has been updated' % authorname)
+                    logger.info('Updated [ %s] for %s' % (edited, authorname))
 
                     if moved:
                         # move all books by this author to new name unless book is set to manual
@@ -981,33 +984,29 @@ class WebInterface(object):
             logger.info(u'Missing book %s' % bookid)
 
     @cherrypy.expose
-    def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre=None, booklang='',
-                   series=None, manual='0', authorname='', **kwargs):
+    def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre='', booklang='',
+                   series='', manual='0', authorname='', **kwargs):
         myDB = database.DBConnection()
         if bookid:
             bookdata = myDB.match('SELECT * from books WHERE BookID="%s"' % bookid)
             if bookdata:
-                edited = False
+                edited = ''
                 moved = False
-                if series and not len(series):
-                    series = None
-                if bookgenre == 'None' or not len(bookgenre):
-                    bookgenre = None
+                if series == 'None':
+                    series = ''
+                if bookgenre == 'None':
+                    bookgenre = ''
                 manual = bool(check_int(manual, 0))
                 if not (bookdata["BookName"] == bookname):
-                    edited = True
+                    edited += "Title "
                 if not (bookdata["BookSub"] == booksub):
-                    edited = True
+                    edited += "Subtitle "
                 if not (bookdata["BookGenre"] == bookgenre):
-                    edited = True
+                    edited += "Genre "
                 if not (bookdata["BookLang"] == booklang):
-                    edited = True
-                #seriesdict = getWorkSeries(bookid)
-                #if not (seriesdict == series):
-                #    print "***** [%s][%s]" % (seriesdict, series)
-                #    edited = True
+                    edited += "Language "
                 if not (bool(check_int(bookdata["Manual"], 0)) == manual):
-                    edited = True
+                    edited += "Manual "
                 if not (bookdata["AuthorName"] == authorname):
                     moved = True
 
@@ -1018,11 +1017,34 @@ class WebInterface(object):
                         'BookSub': booksub,
                         'BookGenre': bookgenre,
                         'BookLang': booklang,
-                        'Series': series,
                         'Manual': bool(manual)
                     }
                     myDB.upsert("books", newValueDict, controlValueDict)
-                    logger.info('Book [%s] has been updated' % bookname)
+
+                cmd ='SELECT SeriesName, SeriesNum from member,series '
+                cmd += 'where series.SeriesID=member.SeriesID and BookID=%s' % bookid
+                old_dict = myDB.select(cmd)
+                new_dict = {}
+                dict_counter = 0
+                while "series[%s][name]" % dict_counter in kwargs:
+                    new_dict[kwargs["series[%s][name]" % dict_counter]] = kwargs["series[%s][number]" % dict_counter]
+                    dict_counter += 1
+                series_changed= False
+                for item in old_dict:
+                    if not item in new_dict:
+                        series_changed = True
+                for item in new_dict:
+                    if not item in old_dict:
+                        series_changed = True
+                    else:
+                        if new_dict[item] != old_dict[item]:
+                            series_changed = True
+                if series_changed:
+                    setSeries(new_dict, bookid)
+                    edited += "Series "
+
+                if edited:
+                    logger.info('Updated [ %s] for %s' % (edited, bookname))
                 else:
                     logger.debug('Book [%s] has not been changed' % bookname)
 

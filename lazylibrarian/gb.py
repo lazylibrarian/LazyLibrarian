@@ -25,7 +25,7 @@ from urllib2 import HTTPError
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, setBookSeries
+from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, setSeries
 from lazylibrarian.cache import get_json_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn, getList
 from lazylibrarian.gr import GoodReads
@@ -557,9 +557,6 @@ class GoogleBooks:
 
                         if not rejected:
                             if book_status != "Ignored" and not locked:
-                                newseries = series
-                                if seriesNum:
-                                    newseries = series + ' ' + seriesNum
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {
                                     "AuthorName": authorname,
@@ -579,7 +576,7 @@ class GoogleBooks:
                                     "BookLang": booklang,
                                     "Status": book_status,
                                     "BookAdded": today(),
-                                    "Series": newseries
+                                    "Series": ''
                                 }
                                 resultcount += 1
 
@@ -605,22 +602,14 @@ class GoogleBooks:
                                         logger.debug('Failed to cache image for %s' % bookimg)
 
                                 # prefer series info from librarything
-                                seriesdict = setBookSeries(bookid)
+                                seriesdict = getWorkSeries(bookid)
                                 if seriesdict:
                                     logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
                                 else:
                                     # librarything doesn't have series info. Any in the title?
                                     if series:
-                                        match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % series)
-                                        if not match:
-                                            myDB.action('INSERT into series (SeriesName, AuthorID, Status) VALUES ("%s", "%s", "Active")' %
-                                                        (series, authorid))
-                                            match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % series)
-                                        controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
-                                        newValueDict = {"SeriesNum": seriesNum}
-                                        myDB.upsert("member", newValueDict, controlValueDict)
-
                                         seriesdict = {series: seriesNum}
+                                setSeries(seriesdict, bookid)
 
                                 new_status = ''
                                 if seriesdict:
@@ -834,9 +823,6 @@ class GoogleBooks:
             logger.warn('No AuthorID found for %s' % authorname)
             return
 
-        newseries = series
-        if seriesNum:
-            newseries = series + ' ' + seriesNum
         controlValueDict = {"BookID": bookid}
         newValueDict = {
             "AuthorName": authorname,
@@ -856,7 +842,7 @@ class GoogleBooks:
             "BookLang": booklang,
             "Status": "Wanted",
             "BookAdded": today(),
-            "Series": newseries
+            "Series": ''
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
@@ -881,20 +867,13 @@ class GoogleBooks:
                     logger.debug('Failed to cache image for %s' % bookimg)
 
         # prefer series info from librarything
-        seriesdict = setBookSeries(bookid)
+        seriesdict = getWorkSeries(bookid)
         if seriesdict:
             logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
         else:
-            # librarything doesn't have series info. Any in the title?
             if series:
-                match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % series)
-                if not match:
-                    myDB.action('INSERT into series (SeriesName, AuthorID, Status) VALUES ("%s", "%s", "Active")' %
-                                (series, AuthorID))
-                    match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % series)
-                controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
-                newValueDict = {"SeriesNum": seriesNum}
-                myDB.upsert("member", newValueDict, controlValueDict)
+                seriesdict = {series: seriesNum}
+        setSeries(seriesdict, bookid)
 
         worklink = getWorkPage(bookid)
         if worklink:
