@@ -708,8 +708,17 @@ def import_book(pp_path=None, bookID=None):
                 myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % bookID)
                 try:
                     os.rename(pp_path, pp_path + '.fail')
+                    logger.error('Warning - Residual files remain in %s.fail' % pp_path)
                 except Exception as e:
-                    logger.debug("Unable to rename %s, %s" % (pp_path, str(e)))
+                    # rename fails on MacOS as can't rename a directory that's not empty??
+                    logger.error("Unable to rename %s, %s" % (pp_path, str(e)))
+                    try:
+                        fname = os.path.join(pp_path, "LL.(fail).bts")
+                        with open(fname, 'a'):
+                            os.utime(fname, None)
+                        logger.error('Warning - Residual files remain in %s' % pp_path)
+                    except:
+                        logger.error('Warning - Unable to create bts file. Residual files remain in %s' % pp_path)
         return False
     except Exception:
         logger.error('Unhandled exception in importBook: %s' % traceback.format_exc())
