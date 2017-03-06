@@ -36,6 +36,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
         myDB = database.DBConnection()
         match = False
         authorimg = ''
+        new_author = not refresh
         if authorid:
             controlValueDict = {"AuthorID": authorid}
             newValueDict = {"Status": "Loading"}
@@ -44,9 +45,11 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
             if not dbauthor:
                 authorname = 'unknown author'
                 logger.debug("Now adding new author id: %s to database" % authorid)
+                new_author = True
             else:
                 authorname = dbauthor['authorname']
                 logger.debug("Now updating author %s " % authorname)
+                new_author = False
 
             myDB.upsert("authors", newValueDict, controlValueDict)
 
@@ -89,9 +92,11 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
                     "Status": "Loading"
                 }
                 logger.debug("Now adding new author: %s to database" % authorname)
+                new_author = True
             else:
                 newValueDict = {"Status": "Loading"}
                 logger.debug("Now updating author: %s" % authorname)
+                new_author = False
             myDB.upsert("authors", newValueDict, controlValueDict)
 
             author = GR.find_author_id(refresh=refresh)
@@ -123,8 +128,8 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
 
         # if author is set to manual, should we allow replacing 'nophoto' ?
         new_img = False
-        dbauthor = myDB.match("SELECT Manual from authors WHERE AuthorID='%s'" % authorid)
-        if not dbauthor['Manual']:
+        match = myDB.match("SELECT Manual from authors WHERE AuthorID='%s'" % authorid)
+        if not match or not match['Manual']:
             if authorimg and 'nophoto' in authorimg:
                 authorimg = getAuthorImage(authorid)
                 new_img = True
@@ -143,10 +148,10 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
             newValueDict = {"AuthorImg": authorimg}
             myDB.upsert("authors", newValueDict, controlValueDict)
 
-        if dbauthor:
-            bookstatus = lazylibrarian.CONFIG['NEWBOOK_STATUS']
-        else:
+        if new_author:
             bookstatus = lazylibrarian.CONFIG['NEWAUTHOR_STATUS']
+        else:
+            bookstatus = lazylibrarian.CONFIG['NEWBOOK_STATUS']
 
         # process books
         if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
@@ -158,7 +163,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
 
         # update totals works for existing authors only.
         # New authors need their totals updating after libraryscan or import of books.
-        if dbauthor:
+        if not new_author:
             update_totals(authorid)
         logger.debug("[%s] Author update complete" % authorname)
     except Exception:

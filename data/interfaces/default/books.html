@@ -10,8 +10,7 @@
             <li ><a id="button" href="forceProcess?source=books">Force Post-Processing</a></li>
             %if len(languages) > 1:
                 <li>Language:&nbsp</li>
-
-                <li><select onchange="window.location = 'books?BookLang=' + this.options[this.selectedIndex].value">
+                <li><select name="chooselanguage" onchange="window.location = 'books?BookLang=' + this.options[this.selectedIndex].value">
                     <option>Select</option>
                 %for language in languages:
                     <option value="${language['BookLang']}">${language['BookLang']}</option>
@@ -24,10 +23,10 @@
 
 <%def name="body()">
 <BR><BR>
-<h1>&nbsp&nbspBooks</h1>
+<h1>&nbsp&nbsp${title}</h1>
     <p class="indented">
         <form action="markBooks" method="get">
-            <label>Mark selected books as: </label>
+            <label>&nbsp&nbspMark selected books as: </label>
             <select class="markBooks" name="action" id="action">
                 <option value="Wanted">Wanted</option>
                 <option value="Have">Have</option>
@@ -48,7 +47,6 @@
                 <th id="authorname">Author</th>
                 <th id="bookname">Title</th>
 		        <th id="series">Series</th>
-		        <th id="seriesNum">Num</th>
                 <th id="stars">Rating</th>
                 <th id="date">Released</th>
                 <th id="status">Status</th>
@@ -92,7 +90,6 @@
                     null,
                     null,
                     null,
-                    null,
                     {"bSortable": false}
                     ],
                 "oLanguage": {
@@ -106,39 +103,36 @@
                 "sPaginationType": "full_numbers",
                 "aaSorting": [[2, 'asc']],
                  "bServerSide": true,
-                // need to pass requested language filter to getBooks
-                "sAjaxSource": 'getBooks?BookLang=eng',
+                "sAjaxSource": 'getBooks',
                 "bFilter": true,
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $(nRow).addClass("gradeZ");
                     var w = window.innerWidth;
                     if ( w < 320 )
-                    {   // hide cover,author,series,seriesnum,stars,date on smallest devices
+                    {   // hide cover,author,series,stars,date on smallest devices
                         $('td', nRow).eq(1).addClass('hidden');
                         $('td', nRow).eq(2).addClass('hidden');
                         $('td', nRow).eq(4).addClass('hidden');
                         $('td', nRow).eq(5).addClass('hidden');
                         $('td', nRow).eq(6).addClass('hidden');
-                        $('td', nRow).eq(7).addClass('hidden');
                     }
                     if ( w < 640 )
-                    {   // hide cover,series,seriesnum,stars,date on smaller devices
+                    {   // hide cover,series,stars,date on smaller devices
                         $('td', nRow).eq(1).addClass('hidden');
                         $('td', nRow).eq(4).addClass('hidden');
                         $('td', nRow).eq(5).addClass('hidden');
                         $('td', nRow).eq(6).addClass('hidden');
-                        $('td', nRow).eq(7).addClass('hidden');
                     }
                     if ( w < 768 )
-                    {   // hide cover,seriesnum,stars,date on small devices
+                    {   // hide cover,stars,date on small devices
                         $('td', nRow).eq(1).addClass('hidden');
                         $('td', nRow).eq(5).addClass('hidden');
                         $('td', nRow).eq(6).addClass('hidden');
-                        $('td', nRow).eq(7).addClass('hidden');
                     }
                     if ( w < 1024 )
                     {   // hide stars,date on medium devices
+                        $('td', nRow).eq(5).addClass('hidden');
                         $('td', nRow).eq(6).addClass('hidden');
-                        $('td', nRow).eq(7).addClass('hidden');
                     }
                     return nRow;
                 },

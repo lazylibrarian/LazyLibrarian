@@ -1,0 +1,90 @@
+<%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
+
+<%def name="headerIncludes()">
+    <div id="subhead_container">
+    </div>
+</%def>
+
+<%def name="body()">
+<BR><BR>
+<h1>&nbsp&nbsp${title}</h1>
+    <p class="indented">
+        <form action="markMembers" method="get">
+            <input type="hidden" name="redirect" value="members">
+            <input type="hidden" name="seriesid" value="${series['SeriesID']}">
+            <label>&nbsp&nbspMark selected as: </label>
+            <select class="markMembers" name="action" id="action">
+                    %for item in ["Wanted", "Have", "Ignored", "Skipped", "Remove", "Delete"]:
+                        <option value="${item}"
+                        %if whichStatus == item:
+                            selected = "selected"
+                        %endif
+                        >${item}</option>
+                    %endfor
+            </select>
+        <input type="submit" class="markMembers" id="go" value="Go">
+        <br><br>
+    </p>
+    <table class="display" id="book_table" style="width:100%;">
+        <thead>
+            <tr>
+                <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
+                <th id="bookart">Cover</th>
+                <th id="bookname">Title</th>
+                <th id="series">Number</th>
+                <th id="status">Status</th>
+                <th id="stars">Select</th>
+            </tr>
+        </thead>
+
+        <tbody>
+        %for result in members:
+            <tr>
+                <td id="select"><input type="checkbox" name="${result['BookID']}" /></td>
+                <td id="bookart"><a href="${result['BookImg']}" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" width="60" alt="Cover" class="bookcover-sm"></a></td>
+                <td id="bookname">${result['BookName']}</td>
+                <td id="series">${result['SeriesNum']}</td>
+                <td id="status">${result['Status']}</td>
+                <td id="stars"><a class="button grey" href="editBook?bookid=${result['BookID']}" title="Select">Edit</a></p></td>
+            </tr>
+        %endfor
+        </tbody>
+    </table>
+</div>
+</form>
+<p>&nbsp;</p>
+</%def>
+
+<%def name="headIncludes()">
+    <link rel="stylesheet" href="css/data_table.css">
+</%def>
+
+<%def name="javascriptIncludes()">
+    <script src="js/libs/jquery.dataTables.min.js"></script>
+    <script>
+    $(document).ready(function()
+    {
+        var oTable = $('#book_table').dataTable(
+            {
+                "order": [[ 3, 'asc' ]],
+                "columnDefs":
+                    [{ targets: 'no-sort', orderable: false }] // Don't allow colums of class no-sort to be sorted
+                ,
+                "oLanguage": {
+                    "sLengthMenu":"Show _MENU_ rows per page",
+                    "sEmptyTable": "No books found",
+                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 rows",
+                    "sInfoFiltered":"(filtered from _MAX_ total rows)"},
+                "sPaginationType": "full_numbers",
+                "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
+                "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
+            });
+			$('.dataTables_filter input').attr("placeholder", "Search filter");
+			$(window).resize(function() {oTable.fnDraw(false)});
+    });
+</script>
+</%def>

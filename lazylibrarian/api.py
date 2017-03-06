@@ -21,7 +21,7 @@ import shutil
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, \
+from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, setAllBookSeries, \
     getBookCover, getAuthorImage, getAuthorImages
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, dbUpdate, setperm
 from lazylibrarian.csvfile import import_CSV, export_CSV
@@ -100,11 +100,13 @@ cmd_dict = {'help': 'list available commands. ' +
             'restartJobs': 'restart background jobs',
             'showThreads': 'show threaded processes',
             'checkRunningJobs': 'ensure all needed jobs are running',
-            'getWorkSeries': '&id= Get series & seriesNum from Librarything BookWork using BookID',
+            'vacuum': 'vacuum the database',
+            'getWorkSeries': '&id= Get series from Librarything BookWork using BookID',
             'getWorkPage': '&id= Get url of Librarything BookWork using BookID',
             'getBookCovers': '[&wait] Check all books for cached cover and download one if missing',
             'cleanCache': '[&wait] Clean unused and expired files from the LazyLibrarian caches',
             'setWorkPages': '[&wait] Set the WorkPages links in the database',
+            'setAllBookSeries': '[&wait] Set the series details from book workpages',
             'importAlternate': '[&wait] [&dir=] Import books from named or alternate folder and any subfolders',
             'importCSVwishlist': '[&wait] [&dir=] Import a CSV wishlist from named or alternate directory',
             'exportCSVwishlist': '[&wait] [&dir=] Export a CSV wishlist to named or alternate directory'
@@ -209,7 +211,8 @@ class Api(object):
     def _showMonths(self):
         self.data = lazylibrarian.MONTHNAMES
 
-    def _dumpMonths(self):
+    @staticmethod
+    def _dumpMonths():
         json_file = os.path.join(lazylibrarian.DATADIR, 'monthnames.json')
         with open(json_file, 'w') as f:
             json.dump(lazylibrarian.MONTHNAMES, f)
@@ -217,6 +220,9 @@ class Api(object):
     def _getWanted(self):
         self.data = self._dic_from_query(
             "SELECT * from books WHERE Status='Wanted'")
+
+    def _vacuum(self):
+        self.data = self._dic_from_query("vacuum; pragma integrity_check")
 
     def _getSnatched(self):
         self.data = self._dic_from_query(
@@ -256,8 +262,7 @@ class Api(object):
     def _getAllBooks(self):
         self.data = self._dic_from_query(
             'SELECT AuthorID,AuthorName,AuthorLink, BookName,BookSub,BookGenre,BookIsbn,BookPub, \
-            BookRate,BookImg,BookPages,BookLink,BookID,BookDate,BookLang,BookAdded,Status,Series,SeriesNum \
-            from books')
+            BookRate,BookImg,BookPages,BookLink,BookID,BookDate,BookLang,BookAdded,Status,Series from books')
 
     def _getIssues(self, **kwargs):
         if 'name' not in kwargs:
@@ -480,6 +485,13 @@ class Api(object):
             setWorkPages()
         else:
             threading.Thread(target=setWorkPages, name='API-SETWORKPAGES', args=[]).start()
+
+    @staticmethod
+    def _setAllBookSeries(**kwargs):
+        if 'wait' in kwargs:
+            setAllBookSeries()
+        else:
+            threading.Thread(target=setAllBookSeries, name='API-SETALLBOOKSERIES', args=[]).start()
 
     @staticmethod
     def _getBookCovers(**kwargs):

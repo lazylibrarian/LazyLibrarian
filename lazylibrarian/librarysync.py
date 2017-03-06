@@ -259,6 +259,7 @@ def LibraryScan(startdir=None):
         destdir = lazylibrarian.DIRECTORY('Destination')
         if not startdir:
             if not destdir:
+                logger.warn('Cannot find destination directory: %s. Not scanning' % destdir)
                 return 0
             startdir = destdir
 
@@ -668,7 +669,7 @@ def LibraryScan(startdir=None):
                                                 if not bookid:
                                                     logger.warn("GoodReads doesn't know about %s" % book)
                                         except Exception as e:
-                                            logger.error("Error finding results: %s" % str(e))
+                                            logger.error("Error finding rescan results: %s" % str(e))
 
                                     elif lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
                                         # if we get here using googlebooks it's because googlebooks
@@ -700,11 +701,9 @@ def LibraryScan(startdir=None):
                                             modified_count += 1
                                             logger.warn("Updating book location for %s %s from %s to %s" %
                                                         (author, book, check_status['BookFile'], book_filename))
-                                            logger.debug("%s %s matched BookID %s, [%s][%s]" % (author, book, bookid,
-                                                                                                check_status[
-                                                                                                    'AuthorName'],
-                                                                                                check_status[
-                                                                                                    'BookName']))
+                                            logger.debug("%s %s matched %s BookID %s, [%s][%s]" %
+                                                        (author, book, check_status['Status'], bookid,
+                                                        check_status['AuthorName'], check_status['BookName']))
                                             myDB.action('UPDATE books set BookFile="%s" where BookID="%s"' %
                                                         (book_filename, bookid))
 
@@ -737,17 +736,11 @@ def LibraryScan(startdir=None):
                 "SELECT sum(GR_book_hits), sum(GR_lang_hits), sum(LT_lang_hits), sum(GB_lang_change), \
                     sum(cache_hits), sum(bad_lang), sum(bad_char), sum(uncached), sum(duplicates) FROM stats")
 
-            st={}
-            st['GR_book_hits'] = stats['sum(GR_book_hits)']
-            st['GB_book_hits'] = stats['sum(GR_book_hits)']  # yes, it is the same!
-            st['GR_lang_hits'] = stats['sum(GR_lang_hits)']
-            st['LT_lang_hits'] = stats['sum(LT_lang_hits)']
-            st['GB_lang_change'] = stats['sum(GB_lang_change)']
-            st['cache_hits'] = stats['sum(cache_hits)']
-            st['bad_lang'] = stats['sum(bad_lang)']
-            st['bad_char'] = stats['sum(bad_char)']
-            st['uncached'] = stats['sum(uncached)']
-            st['duplicates'] = stats['sum(duplicates)']
+            st= {'GR_book_hits': stats['sum(GR_book_hits)'], 'GB_book_hits': stats['sum(GR_book_hits)'],
+                 'GR_lang_hits': stats['sum(GR_lang_hits)'], 'LT_lang_hits': stats['sum(LT_lang_hits)'],
+                 'GB_lang_change': stats['sum(GB_lang_change)'], 'cache_hits': stats['sum(cache_hits)'],
+                 'bad_lang': stats['sum(bad_lang)'], 'bad_char': stats['sum(bad_char)'],
+                 'uncached': stats['sum(uncached)'], 'duplicates': stats['sum(duplicates)']}
 
             for item in st.keys():
                 if st[item] is None:

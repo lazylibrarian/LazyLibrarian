@@ -14,10 +14,10 @@
 </%def>
 
 <%def name="body()">
-    <p>&nbsp;</p>
+    <h1>${title}</h1>
     <form action="manage" method="get" class="form-inline">
         <div class="form-group">
-            <label for="whichStatus" class="control-label">Manage books with status:</label>
+            <label for="whichStatus" class="control-label">Books with status:</label>
             <select name="whichStatus" class="form-control input-sm">
         %for item in ['Skipped', 'Wanted', 'Open', 'Have', 'Ignored']:
             <option value="${item}"
@@ -32,8 +32,6 @@
     </form>
     <br>
 
-    <h3>Books with status ${whichStatus}</h3>
-        <br>
     <form action="markBooks" method="get" class="form-inline">
         <input type="hidden" name="redirect" value="manage">
         <div class="table-responsive">
@@ -44,7 +42,6 @@
                         <th class="authorname">Author</th>
                         <th class="bookname">Title</th>
                         <th class="series">Series</th>
-                        <th class="seriesNum text-center">Num</th>
                         <th class="date text-center">Released</th>
                     </tr>
                 </thead>
@@ -56,9 +53,7 @@
             <label for="markBooks" class="control-label">Change selected books to: </label>
             <select id="markBooks" class="markBooks form-control input-sm" name="action">
             %for item in ['Skipped', 'Wanted', 'Snatched', 'Have', 'Ignored']:
-                %if whichStatus != item:
-                    <option value="${item}">${item}</option>
-                %endif
+                <option value="${item}">${item}</option>
             %endfor
             </select>
         </div>
@@ -73,7 +68,7 @@
 </%def>
 
 <%def name="javascriptIncludes()">
-    <script type="text/ecmascript">
+    <script type="text/javascript">
     $(document).ready(function()
     {
         $('#book_table').dataTable(
@@ -94,8 +89,7 @@
                 "sPaginationType": "full_numbers",
                 "aaSorting": [[0, 'asc']],
                 "bServerSide": true,
-                // need to pass requested status to getManage
-                "sAjaxSource": 'getManage?whichStatus="Skipped"',
+                "sAjaxSource": 'getManage?whichStatus="${whichStatus}"',
                 "bFilter": true,
             });
 			$('.dataTables_filter input').attr("placeholder", "Search filter");

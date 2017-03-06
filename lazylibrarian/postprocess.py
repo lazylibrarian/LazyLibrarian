@@ -492,7 +492,6 @@ def processDir(reset=False):
                         notify_download("%s from %s at %s" % (global_name, book['NZBprov'], now()))
                 else:
                     logger.error('Postprocessing for %s has failed: %s' % (global_name, err))
-                    logger.error('Warning - Residual files remain in %s.fail' % pp_path)
                     controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
                     newValueDict = {"Status": "Failed", "NZBDate": now()}
                     myDB.upsert("wanted", newValueDict, controlValueDict)
@@ -505,8 +504,17 @@ def processDir(reset=False):
                     # again (and fail again)
                     try:
                         os.rename(pp_path, pp_path + '.fail')
+                        logger.error('Warning - Residual files remain in %s.fail' % pp_path)
                     except Exception as e:
+                        # rename fails on MacOS as can't rename a directory that's not empty??
                         logger.error("Unable to rename %s, %s" % (pp_path, str(e)))
+                        try:
+                            fname = os.path.join(pp_path, "LL.(fail).bts")
+                            with open(fname, 'a'):
+                                os.utime(fname, None)
+                            logger.error('Warning - Residual files remain in %s' % pp_path)
+                        except:
+                            logger.error('Warning - Unable to create bts file. Residual files remain in %s' % pp_path)
 
         # Check for any books in download that weren't marked as snatched, but have a LL.(bookid)
         # do a fresh listdir in case we processed and deleted any earlier
@@ -700,8 +708,17 @@ def import_book(pp_path=None, bookID=None):
                 myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % bookID)
                 try:
                     os.rename(pp_path, pp_path + '.fail')
+                    logger.error('Warning - Residual files remain in %s.fail' % pp_path)
                 except Exception as e:
-                    logger.debug("Unable to rename %s, %s" % (pp_path, str(e)))
+                    # rename fails on MacOS as can't rename a directory that's not empty??
+                    logger.error("Unable to rename %s, %s" % (pp_path, str(e)))
+                    try:
+                        fname = os.path.join(pp_path, "LL.(fail).bts")
+                        with open(fname, 'a'):
+                            os.utime(fname, None)
+                        logger.error('Warning - Residual files remain in %s' % pp_path)
+                    except:
+                        logger.error('Warning - Unable to create bts file. Residual files remain in %s' % pp_path)
         return False
     except Exception:
         logger.error('Unhandled exception in importBook: %s' % traceback.format_exc())
@@ -806,6 +823,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 os.rename(os.path.join(pp_path, filename + extn), os.path.join(
                     pp_path, global_name.replace('"', '_') + extn))
 
+            calibre_id = ''
             if bookid.isdigit():
                 identifier = "goodreads:%s" % bookid
             else:
@@ -871,6 +889,10 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             calibre_dir = os.path.join(dest_dir, unaccented_str(authorname.replace('"', '_')), '')
             if os.path.isdir(calibre_dir):
                 imported = LibraryScan(calibre_dir)  # rescan authors directory so we get the new book in our database
+                # Check calibre put a valid book in the target directory
+                if calibre_id and not book_file(os.path.join(dest_path, '%s (%s)' % (global_name, calibre_id))):
+                    logger.warn("Failed to find a valid book in [%s]" % dest_path)
+                #    imported = False
             else:
                 logger.error("Failed to locate calibre dir [%s]" % calibre_dir)
                 imported = False

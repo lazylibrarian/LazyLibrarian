@@ -14,24 +14,22 @@
 </%def>
 
 <%def name="body()">
-<BR>
-<h1>&nbsp&nbspManage Books</h1><br>
+<BR><BR>
+<h1>&nbsp&nbsp${title}</h1><br>
     <form action="manage" method="get">
-        <label>Manage books with status: </label>
+        <label>&nbsp&nbspBooks with status: </label>
         <select name="whichStatus">
         %for item in ['Skipped', 'Wanted', 'Open', 'Have', 'Ignored']:
             <option value="${item}"
-                %if whichStatus == item:
+                %if item == whichStatus:
                     selected = "selected"
                 %endif
             >${item}</option>
         %endfor
-    </select>
-    <input  class="btn" type="submit" value="Manage" />
+        </select>
+        <input  class="btn" type="submit" value="Manage" />
     </form>
     <br>
-    <h3>Books with status ${whichStatus}</h3>
-        <br>
     <form action="markBooks" method="get"><input type="hidden" name="redirect" value="manage">
     <table class="display" id="book_table">
         <thead>
@@ -40,18 +38,16 @@
                 <th id="authorname">Author</th>
                 <th id="bookname">Title</th>
         		<th id="series">Series</th>
-		        <th id="seriesNum">Num</th>
                 <th id="date">Released</th>
             </tr>
         </thead>
     </table>
     <p>
 
-    Change selected books to <select class="markBooks" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
+    &nbsp&nbspChange selected books to:
+    <select class="markBooks" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
         %for item in ['Skipped', 'Wanted', 'Snatched', 'Have', 'Ignored']:
-            %if whichStatus != item:
-                <option value="${item}">${item}</option>
-            %endif
+            <option value="${item}">${item}</option>
         %endfor
             </select>
         <input type="submit" class="markBooks" value="Go">
@@ -77,7 +73,6 @@
                     null,
                     null,
                     null,
-                    null,
                     null
                     ],
                 "oLanguage": {
@@ -91,9 +86,12 @@
                 "sPaginationType": "full_numbers",
                 "aaSorting": [[1, 'asc']],
                  "bServerSide": true,
-                // need to pass requested status to getManage
-                "sAjaxSource": 'getManage?whichStatus=Skipped',
                 "bFilter": true,
+                "sAjaxSource": 'getManage?whichStatus="${whichStatus}"',
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $(nRow).addClass("gradeZ");
+                    return nRow;
+                },
             });
 			$('.dataTables_filter input').attr("placeholder", "Search table here");
     });

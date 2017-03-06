@@ -18,7 +18,7 @@
     <form action="bookUpdate" method="post">
         <div class="configtable">
         <fieldset>
-            <legend>${config['authorName']}</legend>
+            <legend>${title}</legend>
             <div class="form-group">
                 <label for="moveBook" class="control-label">Change author to: </label>
                 <select id="moveBook" class="moveBook form-control input-sm" name="authorname">
@@ -52,13 +52,18 @@
                 <input type="text" id="booklang" name="booklang" value="${config['bookLang']}" class="form-control" placeholder="Language">
             </div>
             <div class="form-group">
-                <label for="series" class="control-label">Series:</label>
-                <input type="text" id="series" name="series" value="${config['Series']}" class="form-control" placeholder="Series">
+                  %for item in seriesdict:
+                      <label for="series[${loop.index}]" class="control-label">
+                      Book Series ${loop.index}</label>
+          		        <input type="text" id="series[${loop.index}][name]" name="series[${loop.index}][name]" value="${item['SeriesName']}" class="form-control" placeholder="Series Name">
+	    		        <input type="text" id="series[${loop.index}][number]" name="series[${loop.index}][number]" value="${item['SeriesNum']}" class="form-control" placeholder="Number">
+                   %endfor
+                      <label for="series[new]" class="control-label">
+                      New Series </label>
+          		      <input type="text" id="series[new][name]" name="series[new][name]" value="" class="form-control" placeholder="Series Name">
+	    		      <input type="text" id="series[new][number]" name="series[new][number]" value="" class="form-control" placeholder="Number">
             </div>
-            <div class="form-group">
-                <label for="seriesnum" class="control-label">Series Number:</label>
-                <input type="text" id="seriesnum" name="seriesnum" value="${config['SeriesNum']}" class="form-control" placeholder="Series Number">
-            </div>
+        </fieldset>
             <div class="checkbox">
                 <%
                     if config['Manual'] == "1":
@@ -71,12 +76,10 @@
                 Lock settings</label>
             </div>
 
-        </fieldset>
-
         <div class="table_wrapper_button">
             <input type="submit" value="Save changes" id="add" class="btn btn-primary">
         </div>
-
+    <p>&nbsp;</p>
     </div> <!-- form -->
 
     </form>

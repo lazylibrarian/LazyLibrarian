@@ -22,7 +22,7 @@ import urllib2
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage
+from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, setSeries, setStatus
 from lazylibrarian.cache import get_xml_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList
 from lib.fuzzywuzzy import fuzz
@@ -59,7 +59,7 @@ class GoodReads:
                 try:
                     rootxml, in_cache = get_xml_request(set_url)
                 except Exception as e:
-                    logger.error("Error finding results: %s" % str(e))
+                    logger.error("Error finding gr results: %s" % str(e))
                     return
                 if not len(rootxml):
                     logger.debug("Error requesting results")
@@ -449,7 +449,7 @@ class GoodReads:
 
                         bookname, booksub = split_title(authorNameResult, bookname)
 
-                        dic = {':': '', '"': '', '\'': ''}
+                        dic = {':': '', '"': ''}  # do we need to strip apostrophes , '\'': ''}
                         bookname = replace_all(bookname, dic)
                         bookname = bookname.strip()  # strip whitespace
                         booksub = replace_all(booksub, dic)
@@ -459,18 +459,8 @@ class GoodReads:
                         else:
                             series, seriesNum = bookSeries(bookname)
 
-                        # GoodReads sometimes has multiple bookids for the same book (same author/title, different editions)
-                        # and sometimes uses the same bookid if the book is the same but the title is slightly different
-                        # We use bookid, then reject if another author/title has a different bookid so we just keep one...
-                        find_book_status = myDB.match('SELECT * FROM books WHERE BookID = "%s"' % bookid)
-                        if find_book_status:
-                            book_status = find_book_status['Status']
-                            locked = find_book_status['Manual']
-                        else:
-                            book_status = bookstatus
-                            locked = False
-
                         rejected = False
+                        check_status = False
 
                         if re.match('[^\w-]', bookname):  # reject books with bad characters in title
                             logger.debug(u"removed result [" + bookname + "] for bad characters")
@@ -495,7 +485,7 @@ class GoodReads:
                             if find_books:
                                 for find_book in find_books:
                                     if find_book['BookID'] != bookid:
-                                        # we have a book with this author/title already
+                                        # we have a different book with this author/title already
                                         logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
                                                      (find_book['BookID'], authorNameResult, bookname, bookid))
                                         duplicates += 1
@@ -513,39 +503,53 @@ class GoodReads:
                                 else:
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got this book in database' %
                                                  (bookid, authorNameResult, bookname))
+                                    check_status = True
                                 duplicates += 1
                                 rejected = True
 
-                        if not rejected:
-                            if book_status != "Ignored":
-                                if not locked:
-                                    controlValueDict = {"BookID": bookid}
-                                    newValueDict = {
-                                        "AuthorName": authorNameResult,
-                                        "AuthorID": authorid,
-                                        "AuthorLink": None,
-                                        "BookName": bookname,
-                                        "BookSub": booksub,
-                                        "BookDesc": bookdesc,
-                                        "BookIsbn": bookisbn,
-                                        "BookPub": bookpub,
-                                        "BookGenre": None,
-                                        "BookImg": bookimg,
-                                        "BookLink": booklink,
-                                        "BookRate": bookrate,
-                                        "BookPages": bookpages,
-                                        "BookDate": pubyear,
-                                        "BookLang": bookLanguage,
-                                        "Status": book_status,
-                                        "BookAdded": today(),
-                                        "Series": series,
-                                        "SeriesNum": seriesNum
-                                    }
+                        if check_status or not rejected:
+                            existing_book = myDB.match('SELECT Status,Manual FROM books WHERE BookID = "%s"' % bookid)
+                            if existing_book:
+                                book_status = existing_book['Status']
+                                locked = existing_book['Manual']
+                                if locked is None:
+                                    locked = False
+                                elif locked.isdigit():
+                                    locked = bool(int(locked))
+                            else:
+                                book_status = bookstatus  # new_book status, or new_author status
+                                locked = False
 
-                                    resultsCount += 1
+                            # Is the book already in the database?
+                            # Leave alone if locked or status "ignore"
+                            if not locked and book_status != "Ignored":
+                                controlValueDict = {"BookID": bookid}
+                                newValueDict = {
+                                    "AuthorName": authorNameResult,
+                                    "AuthorID": authorid,
+                                    "AuthorLink": "",
+                                    "BookName": bookname,
+                                    "BookSub": booksub,
+                                    "BookDesc": bookdesc,
+                                    "BookIsbn": bookisbn,
+                                    "BookPub": bookpub,
+                                    "BookGenre": "",
+                                    "BookImg": bookimg,
+                                    "BookLink": booklink,
+                                    "BookRate": bookrate,
+                                    "BookPages": bookpages,
+                                    "BookDate": pubyear,
+                                    "BookLang": bookLanguage,
+                                    "Status": book_status,
+                                    "BookAdded": today(),
+                                    "Series": ''
+                                }
 
-                                    myDB.upsert("books", newValueDict, controlValueDict)
-                                    logger.debug(u"Book found: " + book.find('title').text + " " + pubyear)
+                                resultsCount += 1
+                                updated = False
+
+                                myDB.upsert("books", newValueDict, controlValueDict)
+                                logger.debug(u"Book found: " + book.find('title').text + " " + pubyear)
 
                                 if 'nocover' in bookimg or 'nophoto' in bookimg:
                                     # try to get a cover from librarything
@@ -555,6 +559,7 @@ class GoodReads:
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": workcover}
                                         myDB.upsert("books", newValueDict, controlValueDict)
+                                        updated = True
 
                                 elif bookimg and bookimg.startswith('http'):
                                     link, success = cache_img("book", bookid, bookimg, refresh=refresh)
@@ -562,20 +567,25 @@ class GoodReads:
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": link}
                                         myDB.upsert("books", newValueDict, controlValueDict)
+                                        updated = True
                                     else:
                                         logger.debug('Failed to cache image for %s' % bookimg)
 
-                                if seriesNum is None:
-                                    # try to get series info from librarything
-                                    series, seriesNum = getWorkSeries(bookid)
-                                    if seriesNum:
-                                        logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))
-                                        controlValueDict = {"BookID": bookid}
-                                        newValueDict = {
-                                            "Series": series,
-                                            "SeriesNum": seriesNum
-                                        }
-                                        myDB.upsert("books", newValueDict, controlValueDict)
+                                # prefer series info from librarything
+                                seriesdict = getWorkSeries(bookid)
+                                if seriesdict:
+                                    logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
+                                    updated = True
+                                else:
+                                    if series:
+                                        seriesdict = {series: seriesNum}
+                                setSeries(seriesdict, bookid)
+
+                                new_status = setStatus(bookid, seriesdict, bookstatus)
+
+                                if not new_status == book_status:
+                                    book_status = new_status
+                                    updated = True
 
                                 worklink = getWorkPage(bookid)
                                 if worklink:
@@ -583,11 +593,13 @@ class GoodReads:
                                     newValueDict = {"WorkPage": worklink}
                                     myDB.upsert("books", newValueDict, controlValueDict)
 
-                                if not find_book_status:
-                                    logger.debug(u"[%s] Added book: %s" % (authorname, bookname))
+                                if not existing_book:
+                                    logger.debug(u"[%s] Added book: %s [%s] %s" %
+                                                (authorname, bookname, bookLanguage, book_status))
                                     added_count += 1
-                                else:
-                                    logger.debug(u"[%s] Updated book: %s" % (authorname, bookname))
+                                elif updated:
+                                    logger.debug(u"[%s] Updated book: %s [%s] %s" %
+                                                (authorname, bookname, bookLanguage, book_status))
                                     updated_count += 1
                             else:
                                 book_ignore_count += 1
@@ -620,10 +632,10 @@ class GoodReads:
                 lastbookdate = lastbook['BookDate']
                 lastbookimg = lastbook['BookImg']
             else:
-                lastbookname = None
-                lastbooklink = None
-                lastbookdate = None
-                lastbookimg = None
+                lastbookname = ""
+                lastbooklink = ""
+                lastbookdate = ""
+                lastbookimg = ""
 
             controlValueDict = {"AuthorID": authorid}
             newValueDict = {
@@ -731,13 +743,13 @@ class GoodReads:
         newValueDict = {
             "AuthorName": authorname,
             "AuthorID": AuthorID,
-            "AuthorLink": None,
+            "AuthorLink": "",
             "BookName": bookname,
             "BookSub": booksub,
             "BookDesc": bookdesc,
             "BookIsbn": bookisbn,
             "BookPub": bookpub,
-            "BookGenre": None,
+            "BookGenre": "",
             "BookImg": bookimg,
             "BookLink": booklink,
             "BookRate": bookrate,
@@ -746,8 +758,7 @@ class GoodReads:
             "BookLang": bookLanguage,
             "Status": "Wanted",
             "BookAdded": today(),
-            "Series": series,
-            "SeriesNum": seriesNum
+            "Series": ''
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
@@ -771,17 +782,14 @@ class GoodReads:
             else:
                 logger.debug('Failed to cache image for %s' % bookimg)
 
-        if seriesNum is None:
-            #  try to get series info from librarything
-            series, seriesNum = getWorkSeries(bookid)
-            if seriesNum:
-                logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))
-                controlValueDict = {"BookID": bookid}
-                newValueDict = {
-                    "Series": series,
-                    "SeriesNum": seriesNum
-                }
-                myDB.upsert("books", newValueDict, controlValueDict)
+        # prefer series info from librarything
+        seriesdict = getWorkSeries(bookid)
+        if seriesdict:
+            logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
+        else:
+            if series:
+                seriesdict = {series: seriesNum}
+        setSeries(seriesdict, bookid)
 
         worklink = getWorkPage(bookid)
         if worklink:

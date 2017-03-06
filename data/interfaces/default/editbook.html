@@ -14,7 +14,7 @@
 </%def>
 <%def name="body()">
 <BR><br>
-<h1>&nbsp&nbsp${config['authorName']}</h1>
+<h1>&nbsp&nbsp${title}</h1>
 <br><br>
     <form action="bookUpdate" method="post">
     <div class="table_wrapper">
@@ -58,16 +58,15 @@
                 <input type="text" name="booklang" value="${config['bookLang']}" class="form-control" placeholder="Language" size="36">
                 <br><br>
             </div>
-            <div class="row">
-                <label>Series:</label>
-                <input type="text" id="series" name="series" value="${config['Series']}" class="form-control" size="36" placeholder="Series">
-                <br><br>
-            </div>
-            <div class="row">
-                <label>Series Number:</label>
-                <input type="text" name="seriesnum" value="${config['SeriesNum']}" placeholder="Series Number" size="36">
-                <br><br>
-            </div>
+            %for item in seriesdict:
+                <label>Book Series ${loop.index}</label>
+   		        <input type="text" name="series[${loop.index}][name]" value="${item['SeriesName']}" class="form-control" size="36 "placeholder="Series Name">
+	    		<input type="text" name="series[${loop.index}][number]" value="${item['SeriesNum']}" class="form-control" size="36" placeholder="Number">
+            %endfor
+                <label>New Series ${loop.index}</label>
+   		        <input type="text" name="series[new][name]" value="" class="form-control" size="36 "placeholder="Series Name">
+	    		<input type="text" name="series[new][number]" value=" class="form-control" size="36" placeholder="Number">
+            <br>
             <%
                 if config['Manual'] == "1":
                     checked = 'checked="checked"'

@@ -44,6 +44,7 @@ from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
 from lazylibrarian.cache import cache_img
 from lazylibrarian.notifiers import notify_snatch
 from lazylibrarian.manualbook import searchItem
+from lazylibrarian.bookwork import getWorkSeries, setSeries
 from lib.deluge_client import DelugeRPCClient
 from mako import exceptions
 from mako.lookup import TemplateLookup
@@ -82,7 +83,7 @@ class WebInterface(object):
             myDB = database.DBConnection()
             authors = myDB.select(
                 'SELECT * from authors where Status != "Ignored" order by AuthorName COLLATE NOCASE')
-            return serve_template(templatename="index.html", title="Home", authors=authors)
+            return serve_template(templatename="index.html", title="Authors", authors=authors)
 
     @staticmethod
     def label_thread(name=None):
@@ -93,14 +94,63 @@ class WebInterface(object):
             else:
                 threading.currentThread().name = "WEBSERVER"
 
+    # SERIES ############################################################
+    @cherrypy.expose
+    def series(self, AuthorID=None):
+        myDB = database.DBConnection()
+        title = "Series"
+        cmd = 'SELECT SeriesID,series.AuthorID,SeriesName,series.Status,AuthorName from series,authors'
+        cmd += ' where authors.AuthorID=series.AuthorID'
+        if AuthorID:
+            match = myDB.match('SELECT AuthorName from authors WHERE AuthorID=%s' % AuthorID)
+            if match:
+                title = "%s Series" % match['AuthorName']
+            cmd += ' and series.AuthorID=' + AuthorID
+        cmd += ' order by AuthorName,SeriesName'
+        series = myDB.select(cmd)
+        return serve_template(templatename="series.html", title=title, authorid=AuthorID, series=series)
+
+    @cherrypy.expose
+    def seriesMembers(self, seriesid):
+        myDB = database.DBConnection()
+        cmd = 'SELECT SeriesName,SeriesID,AuthorName from series,authors where authors.AuthorID=series.AuthorID'
+        cmd += ' and SeriesID=%s' % seriesid
+        series = myDB.match(cmd)
+        cmd = 'SELECT member.BookID,BookName,SeriesNum,BookImg,books.Status from member,series,books'
+        cmd += ' where series.SeriesID=member.SeriesID and books.BookID=member.BookID'
+        cmd += ' and series.SeriesID=%s order by SeriesName' % seriesid
+        members = myDB.select(cmd)
+        return serve_template(templatename="members.html", title=series['AuthorName'] + ": " + series['SeriesName'],
+                                members=members, series=series)
+
+    @cherrypy.expose
+    def markMembers(self, action=None, **args):
+        return self.markBooks(self, action=action, **args)
+
+    @cherrypy.expose
+    def markSeries(self, action=None, **args):
+        self.label_thread()
+        myDB = database.DBConnection()
+        if action:
+            for seriesid in args:
+                # ouch dirty workaround...
+                if not seriesid == 'book_table_length':
+                    if action in ["Wanted", "Active", "Skipped"]:
+                        match = myDB.match('SELECT SeriesName from series WHERE SeriesID = "%s"' % seriesid)
+                        if match:
+                            myDB.upsert("series", {'Status': action}, {'SeriesID': seriesid})
+                            logger.debug(u'Status set to "%s" for "%s"' % (action, match['SeriesName']))
+            if "redirect" in args:
+                if not args['redirect'] == 'None':
+                    raise cherrypy.HTTPRedirect("series?AuthorID=%s" % args['redirect'])
+            raise cherrypy.HTTPRedirect("series")
+
     # CONFIG ############################################################
 
     @cherrypy.expose
     def config(self):
         self.label_thread()
-        http_look_dir = os.path.join(
-            str(lazylibrarian.PROG_DIR),
-            'data' + os.sep + 'interfaces')
+        http_look_dir = os.path.join(lazylibrarian.PROG_DIR, 'data' + os.sep + 'interfaces')
         http_look_list = [name for name in os.listdir(http_look_dir)
                           if os.path.isdir(os.path.join(http_look_dir, name))]
         status_list = ['Skipped', 'Wanted', 'Have', 'Ignored']
@@ -265,7 +315,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def search(self, name):
-        if name is None or not len(name):
+        if name is None or not name:
             raise cherrypy.HTTPRedirect("home")
 
         myDB = database.DBConnection()
@@ -305,8 +355,8 @@ class WebInterface(object):
 
         sortedlist_final = sorted(
             searchresults, key=itemgetter('highest_fuzz', 'num_reviews'), reverse=True)
-        return serve_template(templatename="searchresults.html", title='Search Results for: "' +
-                                                                       name + '"', searchresults=sortedlist_final,
+        return serve_template(templatename="searchresults.html", title='Search Results: "' +
+                              name + '"', searchresults=sortedlist_final,
                               authorlist=authorlist,
                               booklist=booklist, booksearch=booksearch)
 
@@ -485,7 +535,8 @@ class WebInterface(object):
         searchterm = '%s %s' % (author, title)
         searchterm.strip()
         results = searchItem(searchterm, bookid)
-        return serve_template(templatename="manualsearch.html", title=searchterm, bookid=bookid, results=results)
+        return serve_template(templatename="manualsearch.html", title='Search Results: "' +
+                              searchterm + '"', bookid=bookid, results=results)
 
 
     @cherrypy.expose
@@ -539,16 +590,12 @@ class WebInterface(object):
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
         #   need to check and filter on BookLang if set
-        if LANGFILTER is None or not len(LANGFILTER):
-            cmd = 'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid,'
-            cmd += ' booksub, booklink, workpage, authorid from books WHERE STATUS !="Skipped"'
-            cmd += ' AND STATUS !="Ignored"'
-            rowlist = myDB.select(cmd)
-        else:
-            cmd = 'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid,'
-            cmd += ' booksub, booklink, workpage, authorid from books WHERE STATUS !="Skipped"'
-            cmd = cmd + ' AND STATUS !="Ignored" and BOOKLANG="' + LANGFILTER + '"'
-            rowlist = myDB.select(cmd)
+        cmd = 'SELECT bookimg, authorname, bookname, bookrate, bookdate, status, bookid,'
+        cmd += ' booksub, booklink, workpage, authorid, series from books WHERE STATUS !="Skipped"'
+        cmd += ' AND STATUS !="Ignored"'
+        if LANGFILTER is not None and len(LANGFILTER):
+            cmd += ' and BOOKLANG="' + LANGFILTER + '"'
+        rowlist = myDB.select(cmd)
         # turn the sqlite rowlist into a list of lists
         d = []
         filtered = []
@@ -578,7 +625,7 @@ class WebInterface(object):
             d = []  # the masterlist to be filled with the html data
             for row in rows:
                 l = []  # for each Row use a separate list
-                bookrate = float(row[5])
+                bookrate = float(row[3])
                 if bookrate < 0.5:
                     starimg = '0-stars.png'
                 elif 0.5 <= bookrate < 1.5:
@@ -597,122 +644,107 @@ class WebInterface(object):
                 worklink = ''
 
                 if lazylibrarian.CONFIG['HTTP_LOOK'] == 'bookstrap':
-                    if row[11]:  # is there a workpage link
-                        if len(row[11]) > 4:
+                    if row[9]:  # is there a workpage link
+                        if len(row[9]) > 4:
                             worklink = '<td><a href="' + \
-                                       row[11] + '" target="_new"><small><i>LibraryThing</i></small></a></td>'
+                                       row[9] + '" target="_new"><small><i>LibraryThing</i></small></a></td>'
 
-                    editpage = '<a href="editBook?bookid=' + row[8] + '" target="_new"><small><i>Manual</i></a>'
+                    editpage = '<a href="editBook?bookid=' + row[6] + '" target="_new"><small><i>Manual</i></a>'
 
                     sitelink = ''
-                    if 'goodreads' in row[10]:
+                    if 'goodreads' in row[8]:
                         sitelink = '<td><a href="' + \
-                                   row[10] + '" target="_new"><small><i>GoodReads</i></small></a></td>'
-                    if 'google' in row[10]:
+                                   row[8] + '" target="_new"><small><i>GoodReads</i></small></a></td>'
+                    if 'google' in row[8]:
                         sitelink = '<td><a href="' + \
-                                   row[10] + '" target="_new"><small><i>GoogleBooks</i></small></a></td>'
+                                   row[8] + '" target="_new"><small><i>GoogleBooks</i></small></a></td>'
 
                     l.append(
-                        '<td class="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[8])
+                        '<td class="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[6])
                     lref = '<td class="bookart text-center"><a href="%s' % row[0]
                     lref += '" target="_blank" rel="noreferrer"><img src="%s' % row[0]
                     lref += '" alt="Cover" class="bookcover-sm img-responsive"></a></td>'
                     l.append(lref)
                     l.append(
-                        '<td class="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[12], row[1]))
-                    if row[9]:  # is there a sub-title
-                        title = '<td class="bookname">%s<br><small><i>%s</i></small></td>' % (row[2], row[9])
+                        '<td class="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[10], row[1]))
+                    if row[7]:  # is there a sub-title
+                        title = '<td class="bookname">%s<br><small><i>%s</i></small></td>' % (row[2], row[7])
                     else:
                         title = '<td class="bookname">%s</td>' % row[2]
                     l.append(title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage)
 
-                    if row[3]:  # is the book part of a series
-                        l.append('<td class="series">%s</td>' % row[3])
-                    else:
-                        l.append('<td class="series">None</td>')
+                    # is the book part of a series
+                    l.append('<td class="series">%s</td>' % row[11])
 
-                    if row[4]:
-                        l.append('<td class="seriesNum text-center">%s</td>' % row[4])
-                    else:
-                        l.append('<td class="seriesNum text-center">None</td>')
+                    l.append('<td class="stars text-center"><img src="images/' + starimg + '" alt="Rating"></td>')
 
-                    l.append(
-                        '<td class="stars text-center"><img src="images/' + starimg + '" alt="Rating"></td>')
+                    l.append('<td class="date text-center">%s</td>' % row[4])
 
-                    l.append('<td class="date text-center">%s</td>' % row[6])
-                    if row[7] == 'Open':
+                    if row[5] == 'Open':
                         btn = '<td class="status text-center"><a class="button green btn btn-xs btn-warning"'
-                        btn += ' href="openBook?bookid=%s' % row[8]
-                        btn += '" target="_self"><i class="fa fa-book"></i>%s</a></td>' % row[7]
-                    elif row[7] == 'Wanted':
-                        btn = '<td class="status text-center"><p><a class="a btn btn-xs btn-danger">%s' % row[7]
+                        btn += ' href="openBook?bookid=%s' % row[6]
+                        btn += '" target="_self"><i class="fa fa-book"></i>%s</a></td>' % row[5]
+                    elif row[5] == 'Wanted':
+                        btn = '<td class="status text-center"><p><a class="a btn btn-xs btn-danger">%s' % row[5]
                         btn += '</a></p><p><a class="b btn btn-xs btn-success" '
-                        btn += 'href="searchForBook?bookid=%s' % row[8]
+                        btn += 'href="searchForBook?bookid=%s' % row[6]
                         btn += '" target="_self"><i class="fa fa-search"></i> Search</a></p></td>'
-                    elif row[7] == 'Snatched' or row[7] == 'Have':
-                        btn = '<td class="status text-center"><a class="button btn btn-xs btn-info">%s' % row[7]
+                    elif row[5] == 'Snatched' or row[5] == 'Have':
+                        btn = '<td class="status text-center"><a class="button btn btn-xs btn-info">%s' % row[5]
                         btn += '</a></td>'
                     else:
-                        btn = '<td class="status text-center"><a class="button btn btn-xs btn-default grey">%s' % row[7]
+                        btn = '<td class="status text-center"><a class="button btn btn-xs btn-default grey">%s' % row[5]
                         btn += '</a></td>'
                     l.append(btn)
 
                 else:  # lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
-                    if row[11]:  # is there a workpage link
-                        if len(row[11]) > 4:
+                    if row[9]:  # is there a workpage link
+                        if len(row[9]) > 4:
                             worklink = '<td><a href="' + \
-                                       row[11] + '" target="_new"><i class="smalltext">LibraryThing</i></a></td>'
+                                       row[9] + '" target="_new"><i class="smalltext">LibraryThing</i></a></td>'
 
-                    editpage = '<a href="editBook?bookid=' + row[
-                        8] + '" target="_new"><i class="smalltext">Manual</i></a>'
+                    editpage = '<a href="editBook?bookid=' + row[6] + \
+                                '" target="_new"><i class="smalltext">Manual</i></a>'
 
                     sitelink = ''
-                    if 'goodreads' in row[10]:
+                    if 'goodreads' in row[8]:
                         sitelink = '<td><a href="' + \
-                                   row[10] + '" target="_new"><i class="smalltext">GoodReads</i></a></td>'
-                    if 'google' in row[10]:
+                                   row[8] + '" target="_new"><i class="smalltext">GoodReads</i></a></td>'
+                    if 'google' in row[8]:
                         sitelink = '<td><a href="' + \
-                                   row[10] + '" target="_new"><i class="smalltext">GoogleBooks</i></a></td>'
+                                   row[8] + '" target="_new"><i class="smalltext">GoogleBooks</i></a></td>'
 
                     l.append(
-                        '<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[8])
+                        '<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[6])
                     lref = '<td id="bookart"><a href="%s" target="_new"><img src="%s' % (row[0], row[0])
                     lref += '" height="75" width="50"></a></td>'
                     l.append(lref)
                     l.append(
-                        '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[12], row[1]))
-                    if row[9]:  # is there a sub-title
-                        title = '<td id="bookname">%s<br><i class="smalltext">%s</i></td>' % (row[2], row[9])
+                        '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[10], row[1]))
+                    if row[7]:  # is there a sub-title
+                        title = '<td id="bookname">%s<br><i class="smalltext">%s</i></td>' % (row[2], row[7])
                     else:
                         title = '<td id="bookname">%s</td>' % row[2]
                     l.append(title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage)
 
-                    if row[3]:  # is the book part of a series
-                        l.append('<td id="series">%s</td>' % row[3])
-                    else:
-                        l.append('<td id="series">None</td>')
+                    # is the book part of a series
+                    l.append('<td id="series">%s</td>' % row[11])
 
-                    if row[4]:
-                        l.append('<td id="seriesNum">%s</td>' % row[4])
-                    else:
-                        l.append('<td id="seriesNum">None</td>')
+                    l.append('<td id="stars"><img src="images/' + starimg + '" width="50" height="10"></td>')
 
-                    l.append(
-                        '<td id="stars"><img src="images/' + starimg + '" width="50" height="10"></td>')
+                    l.append('<td id="date">%s</td>' % row[4])
 
-                    l.append('<td id="date">%s</td>' % row[6])
-
-                    if row[7] == 'Open':
-                        btn = '<td id="status"><a class="button green" href="openBook?bookid=%s' % row[8]
+                    if row[5] == 'Open':
+                        btn = '<td id="status"><a class="button green" href="openBook?bookid=%s' % row[6]
                         btn += '" target="_self">Open</a></td>'
-                    elif row[7] == 'Wanted':
-                        btn = '<td id="status"><a class="button red" href="searchForBook?bookid=%s' % row[8]
+                    elif row[5] == 'Wanted':
+                        btn = '<td id="status"><a class="button red" href="searchForBook?bookid=%s' % row[6]
                         btn += '" target="_self"><span class="a">Wanted</span>'
                         btn += '<span class="b">Search</span></a></td>'
-                    elif row[7] == 'Snatched' or row[7] == 'Have':
-                        btn = '<td id="status"><a class="button">%s</a></td>' % row[7]
+                    elif row[5] == 'Snatched' or row[5] == 'Have':
+                        btn = '<td id="status"><a class="button">%s</a></td>' % row[5]
                     else:
-                        btn = '<td id="status"><a class="button grey">%s</a></td>' % row[7]
+                        btn = '<td id="status"><a class="button grey">%s</a></td>' % row[5]
                     l.append(btn)
 
                 d.append(l)  # add the rowlist to the masterlist
@@ -823,7 +855,7 @@ class WebInterface(object):
         if data:
             return serve_template(templatename="editauthor.html", title="Edit Author", config=data)
         else:
-            logger.info(u'Missing author %s' % authorid)
+            logger.info(u'Missing author %s:' % authorid)
 
     @cherrypy.expose
     def authorUpdate(self, authorid='', authorname='', authorborn='', authordeath='', authorimg='', manual='0'):
@@ -833,26 +865,26 @@ class WebInterface(object):
         if authorid:
             authdata = myDB.match('SELECT * from authors WHERE AuthorID="%s"' % authorid)
             if authdata:
-                edited = False
+                edited = ""
                 moved = False
-                if authorborn == 'None' or not len(authorborn):
-                    authorborn = None
-                if authordeath == 'None' or not len(authordeath):
-                    authordeath = None
-                if authorimg == 'None' or not len(authorimg):
-                    authorimg = None
+                if authorborn == 'None':
+                    authorborn = ''
+                if authordeath == 'None':
+                    authordeath = ''
+                if authorimg == 'None':
+                    authorimg = ''
                 manual = bool(check_int(manual, 0))
 
                 if not (authdata["AuthorName"] == authorname):
-                    edited = True
+                    edited += "Name "
                 if not (authdata["AuthorBorn"] == authorborn):
-                    edited = True
+                    edited += "Born "
                 if not (authdata["AuthorDeath"] == authordeath):
-                    edited = True
+                    edited += "Died "
                 if not (authdata["AuthorImg"] == authorimg):
-                    edited = True
+                    edited += "Image "
                 if not (bool(check_int(authdata["Manual"], 0)) == manual):
-                    edited = True
+                    edited += "Manual "
 
                 if not (authdata["AuthorName"] == authorname):
                     match = myDB.match('SELECT AuthorName from authors where AuthorName="%s"' % authorname)
@@ -876,7 +908,8 @@ class WebInterface(object):
                             except ValueError:
                                 authorborn = authdata["AuthorBorn"]
                         if rejected:
-                            logger.debug("Author Born date [%s] rejected" % ab)
+                            logger.warn("Author Born date [%s] rejected" % ab)
+                            edited = edited.replace('Born ', '')
 
                     ab = authordeath
                     authordeath = authdata["AuthorDeath"]  # assume fail, leave unchanged
@@ -890,7 +923,8 @@ class WebInterface(object):
                             except ValueError:
                                 authordeath = authdata["AuthorDeath"]
                         if rejected:
-                            logger.debug("Author Died date [%s] rejected" % ab)
+                            logger.warn("Author Died date [%s] rejected" % ab)
+                            edited = edited.replace('Died ', '')
 
                     if not authorimg:
                         authorimg = authdata["AuthorImg"]
@@ -918,8 +952,9 @@ class WebInterface(object):
                                     rejected = False
 
                         if rejected:
-                            logger.debug("Author Image [%s] rejected" % authorimg)
+                            logger.warn("Author Image [%s] rejected" % authorimg)
                             authorimg = authdata["AuthorImg"]
+                            edited = edited.replace('Image ', '')
 
                     controlValueDict = {'AuthorID': authorid}
                     newValueDict = {
@@ -930,7 +965,7 @@ class WebInterface(object):
                         'Manual': bool(manual)
                     }
                     myDB.upsert("authors", newValueDict, controlValueDict)
-                    logger.info('Author [%s] has been updated' % authorname)
+                    logger.info('Updated [ %s] for %s' % (edited, authorname))
 
                     if moved:
                         # move all books by this author to new name unless book is set to manual
@@ -947,48 +982,40 @@ class WebInterface(object):
     def editBook(self, bookid=None):
 
         myDB = database.DBConnection()
-
         authors = myDB.select(
             "SELECT AuthorName from authors WHERE Status !='Ignored' ORDER by AuthorName COLLATE NOCASE")
         bookdata = myDB.match('SELECT * from books WHERE BookID="%s"' % bookid)
+        cmd ='SELECT SeriesName, SeriesNum from member,series '
+        cmd += 'where series.SeriesID=member.SeriesID and BookID=%s' % bookid
+        seriesdict = myDB.select(cmd)
         if bookdata:
-            return serve_template(templatename="editbook.html", title="Edit Book", config=bookdata, authors=authors)
+            return serve_template(templatename="editbook.html", title="Edit Book",
+                                    config=bookdata, seriesdict=seriesdict, authors=authors)
         else:
             logger.info(u'Missing book %s' % bookid)
 
     @cherrypy.expose
-    def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre=None, booklang='',
-                   series=None, seriesnum=None, manual='0', authorname=''):
+    def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre='', booklang='',
+                   series='', manual='0', authorname='', **kwargs):
         myDB = database.DBConnection()
-
         if bookid:
             bookdata = myDB.match('SELECT * from books WHERE BookID="%s"' % bookid)
             if bookdata:
-                edited = False
+                edited = ''
                 moved = False
-                if series == 'None' or not len(series):
-                    series = None
-                if seriesnum == 'None' or not len(seriesnum):
-                    seriesnum = None
-                if bookgenre == 'None' or not len(bookgenre):
-                    bookgenre = None
+                if bookgenre == 'None':
+                    bookgenre = ''
                 manual = bool(check_int(manual, 0))
-
                 if not (bookdata["BookName"] == bookname):
-                    edited = True
+                    edited += "Title "
                 if not (bookdata["BookSub"] == booksub):
-                    edited = True
+                    edited += "Subtitle "
                 if not (bookdata["BookGenre"] == bookgenre):
-                    edited = True
+                    edited += "Genre "
                 if not (bookdata["BookLang"] == booklang):
-                    edited = True
-                if not (bookdata["Series"] == series):
-                    edited = True
-                if not (bookdata["SeriesNum"] == seriesnum):
-                    edited = True
+                    edited += "Language "
                 if not (bool(check_int(bookdata["Manual"], 0)) == manual):
-                    edited = True
-
+                    edited += "Manual "
                 if not (bookdata["AuthorName"] == authorname):
                     moved = True
 
@@ -999,12 +1026,41 @@ class WebInterface(object):
                         'BookSub': booksub,
                         'BookGenre': bookgenre,
                         'BookLang': booklang,
-                        'Series': series,
-                        'SeriesNum': seriesnum,
                         'Manual': bool(manual)
                     }
                     myDB.upsert("books", newValueDict, controlValueDict)
-                    logger.info('Book [%s] has been updated' % bookname)
+
+                cmd ='SELECT SeriesName, SeriesNum from member,series '
+                cmd += 'where series.SeriesID=member.SeriesID and BookID=%s' % bookid
+                old_series = myDB.select(cmd)
+                old_dict = {}
+                new_dict = {}
+                dict_counter = 0
+                while "series[%s][name]" % dict_counter in kwargs:
+                    new_dict[kwargs["series[%s][name]" % dict_counter]] = kwargs["series[%s][number]" % dict_counter]
+                    dict_counter += 1
+                if 'series[new][name]' in kwargs and 'series[new][number]' in kwargs:
+                    if kwargs['series[new][name]']:
+                        new_dict[kwargs['series[new][name]']] = kwargs['series[new][number]']
+                for item in old_series:
+                    old_dict[item['SeriesName']] = item['SeriesNum']
+
+                series_changed= False
+                for item in old_dict:
+                    if not item in new_dict:
+                        series_changed = True
+                for item in new_dict:
+                    if not item in old_dict:
+                        series_changed = True
+                    else:
+                        if new_dict[item] != old_dict[item]:
+                            series_changed = True
+                if series_changed:
+                    setSeries(new_dict, bookid)
+                    edited += "Series "
+
+                if edited:
+                    logger.info('Updated [ %s] for %s' % (edited, bookname))
                 else:
                     logger.debug('Book [%s] has not been changed' % bookname)
 
@@ -1025,13 +1081,13 @@ class WebInterface(object):
                     logger.info('Book [%s] has been moved' % bookname)
                 else:
                     logger.debug('Book [%s] has not been moved' % bookname)
+                #if edited or moved:
+                raise cherrypy.HTTPRedirect("editBook?BookID=%s" % bookid)
 
-            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % bookdata["AuthorID"])
-        else:
-            raise cherrypy.HTTPRedirect("books")
+        raise cherrypy.HTTPRedirect("books")
 
     @cherrypy.expose
-    def markBooks(self, AuthorID=None, action=None, redirect=None, **args):
+    def markBooks(self, AuthorID=None, seriesid=None, action=None, redirect=None, **args):
         self.label_thread()
 
         myDB = database.DBConnection()
@@ -1047,7 +1103,7 @@ class WebInterface(object):
                         if title:
                             bookname = title['BookName']
                             myDB.upsert("books", {'Status': action}, {'BookID': bookid})
-                            logger.info(u'Status set to "%s" for "%s"' % (action, bookname))
+                            logger.debug(u'Status set to "%s" for "%s"' % (action, bookname))
                     if action in ["Remove", "Delete"]:
                         bookdata = myDB.match(
                             'SELECT AuthorID,Bookname,BookFile from books WHERE BookID = "%s"' %
@@ -1067,7 +1123,7 @@ class WebInterface(object):
                             authorcheck = myDB.match('SELECT AuthorID from authors WHERE AuthorID = "%s"' % AuthorID)
                             if authorcheck:
                                 myDB.upsert("books", {"Status": "Ignored"}, {"BookID": bookid})
-                                logger.info(u'Status set to Ignored for "%s"' % bookname)
+                                logger.debug(u'Status set to Ignored for "%s"' % bookname)
                             else:
                                 myDB.action('DELETE from books WHERE BookID = "%s"' % bookid)
                                 logger.info(u'Removed "%s" from database' % bookname)
@@ -1091,10 +1147,11 @@ class WebInterface(object):
                 threading.Thread(target=search_tor_book, name='SEARCHTOR', args=[books]).start()
 
         if redirect == "author":
-            raise cherrypy.HTTPRedirect(
-                "authorPage?AuthorID=%s" % AuthorID)
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
         elif redirect == "books":
             raise cherrypy.HTTPRedirect("books")
+        elif redirect == "members":
+            raise cherrypy.HTTPRedirect("seriesMembers?seriesid=%s" % seriesid)
         else:
             raise cherrypy.HTTPRedirect("manage")
 
@@ -1177,31 +1234,25 @@ class WebInterface(object):
 
         return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
 
-    ISSUEFILTER = ''
 
     @cherrypy.expose
     def pastIssues(self, whichStatus=None):
-        global ISSUEFILTER
         if whichStatus is None:
             whichStatus = "Skipped"
-        ISSUEFILTER = whichStatus
         return serve_template(
-            templatename="manageissues.html", title="Magazine Status Management", issues=[], whichStatus=whichStatus)
+            templatename="manageissues.html", title="Manage Past Issues", issues=[], whichStatus=whichStatus)
 
     # noinspection PyUnusedLocal
     @cherrypy.expose
     def getPastIssues(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
-        global ISSUEFILTER
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
-
         # need to filter on whichStatus
         rowlist = myDB.select(
-            'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov from pastissues WHERE Status="%s"' % ISSUEFILTER)
-
+            'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov from pastissues WHERE Status=' + kwargs['whichStatus'])
         d = []
         filtered = []
         if len(rowlist):
@@ -1229,7 +1280,8 @@ class WebInterface(object):
             d = []  # the masterlist to be filled with the html data
             for row in rows:
                 l = ['<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[0],
-                     '<td id="magtitle">%s</td>' % row[1], '<td id="lastacquired">%s</td>' % row[2],
+                     '<td id="magtitle">%s</td>' % row[1],
+                     '<td id="lastacquired">%s</td>' % row[2],
                      '<td id="issuedate">%s</td>' % row[3],
                      '<td id="provider">%s</td>' % row[4]]  # for each Row use a separate list
                 d.append(l)  # add the rowlist to the masterlist
@@ -1561,7 +1613,8 @@ class WebInterface(object):
     def importAlternate(self):
         if 'IMPORTALT' not in [n.name for n in [t for t in threading.enumerate()]]:
             try:
-                threading.Thread(target=processAlternate, name='IMPORTALT', args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
+                threading.Thread(target=processAlternate, name='IMPORTALT',
+                                args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
             except Exception as e:
                 logger.error(u'Unable to complete the import: %s' % str(e))
         else:
@@ -1572,7 +1625,8 @@ class WebInterface(object):
     def importCSV(self):
         if 'IMPORTCSV' not in [n.name for n in [t for t in threading.enumerate()]]:
             try:
-                threading.Thread(target=import_CSV, name='IMPORTCSV', args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
+                threading.Thread(target=import_CSV, name='IMPORTCSV',
+                                args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
             except Exception as e:
                 logger.error(u'Unable to complete the import: %s' % str(e))
         else:
@@ -1583,7 +1637,8 @@ class WebInterface(object):
     def exportCSV(self):
         if 'EXPORTCSV' not in [n.name for n in [t for t in threading.enumerate()]]:
             try:
-                threading.Thread(target=export_CSV, name='EXPORTCSV', args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
+                threading.Thread(target=export_CSV, name='EXPORTCSV',
+                                args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
             except Exception as e:
                 logger.error(u'Unable to complete the export: %s' % str(e))
         else:
@@ -1858,22 +1913,18 @@ class WebInterface(object):
             logger.debug(u"forceSearch called with bad source")
         raise cherrypy.HTTPRedirect(source)
 
-    MANAGEFILTER = ''
 
     @cherrypy.expose
     def manage(self, whichStatus=None):
-        global MANAGEFILTER
         if whichStatus is None:
             whichStatus = "Wanted"
-        MANAGEFILTER = whichStatus
-        return serve_template(templatename="managebooks.html", title="Book Status Management",
+        return serve_template(templatename="managebooks.html", title="Manage Books",
                               books=[], whichStatus=whichStatus)
 
     # noinspection PyUnusedLocal
     @cherrypy.expose
     def getManage(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
-        global MANAGEFILTER
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
@@ -1881,8 +1932,8 @@ class WebInterface(object):
 
         # print "getManage %s" % iDisplayStart
         #   need to filter on whichStatus
-        cmd = 'SELECT authorname, bookname, series, seriesnum, bookdate, bookid, booklink, booksub, authorid '
-        cmd = cmd + 'from books WHERE STATUS="' + MANAGEFILTER + '"'
+        cmd = 'SELECT authorname, bookname, bookdate, bookid, booklink, booksub, authorid, series '
+        cmd += 'from books WHERE STATUS=%s' % kwargs['whichStatus']
         rowlist = myDB.select(cmd)
 
         d = []
@@ -1912,49 +1963,42 @@ class WebInterface(object):
             # now add html to the ones we want to display
             d = []  # the masterlist to be filled with the html data
             for row in rows:
-                l = ['<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[5],
+                l = ['<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[3],
                      '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (
-                         row[8], row[0])]  # for each Row use a separate list
+                         row[6], row[0])]  # for each Row use a separate list
 
                 if lazylibrarian.CONFIG['HTTP_LOOK'] == 'bookstrap':
                     sitelink = ''
-                    if 'goodreads' in row[6]:
-                        sitelink = '<a href="%s" target="_new"><small><i>GoodReads</i></small></a>' % row[6]
-                    if 'google' in row[6]:
-                        sitelink = '<a href="%s" target="_new"><small><i>GoogleBooks</i></small></a>' % row[6]
+                    if 'goodreads' in row[4]:
+                        sitelink = '<a href="%s" target="_new"><small><i>GoodReads</i></small></a>' % row[4]
+                    if 'google' in row[4]:
+                        sitelink = '<a href="%s" target="_new"><small><i>GoogleBooks</i></small></a>' % row[4]
 
-                    if row[7]:  # is there a sub-title
+                    if row[5]:  # is there a sub-title
                         l.append(
                             '<td id="bookname">%s<br><small><i>%s</i></small><br>%s</td>' %
-                            (row[1], row[7], sitelink))
+                            (row[1], row[5], sitelink))
                     else:
                         l.append('<td id="bookname">%s<br>%s</td>' % (row[1], sitelink))
 
                 else:  # lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
                     sitelink = ''
-                    if 'goodreads' in row[6]:
-                        sitelink = '<a href="%s" target="_new"><i class="smalltext">GoodReads</i></a>' % row[6]
-                    if 'google' in row[6]:
-                        sitelink = '<a href="%s" target="_new"><i class="smalltext">GoogleBooks</i></a>' % row[6]
+                    if 'goodreads' in row[4]:
+                        sitelink = '<a href="%s" target="_new"><i class="smalltext">GoodReads</i></a>' % row[4]
+                    if 'google' in row[4]:
+                        sitelink = '<a href="%s" target="_new"><i class="smalltext">GoogleBooks</i></a>' % row[4]
 
-                    if row[7]:  # is there a sub-title
+                    if row[5]:  # is there a sub-title
                         l.append(
                             '<td id="bookname">%s<br><i class="smalltext">%s</i><br>%s</td>' %
-                            (row[1], row[7], sitelink))
+                            (row[1], row[5], sitelink))
                     else:
                         l.append('<td id="bookname">%s<br>%s</td>' % (row[1], sitelink))
 
-                if row[2]:  # is the book part of a series
-                    l.append('<td id="series">%s</td>' % row[2])
-                else:
-                    l.append('<td id="series">None</td>')
+                # is the book part of a series
+                l.append('<td id="series">%s</td>' % row[7])
 
-                if row[3]:
-                    l.append('<td id="seriesNum">%s</td>' % row[3])
-                else:
-                    l.append('<td id="seriesNum">None</td>')
-
-                l.append('<td id="date">%s</td>' % row[4])
+                l.append('<td id="date">%s</td>' % row[2])
 
                 d.append(l)  # add the rowlist to the masterlist
 

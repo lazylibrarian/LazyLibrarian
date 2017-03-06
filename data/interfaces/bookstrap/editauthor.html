@@ -13,7 +13,7 @@
     <form action="authorUpdate" method="post">
         <div class="configtable">
         <fieldset>
-            <legend>${config['authorName']}</legend>
+            <legend>${title}</legend>
             <div class="form-group">
                 <input type="text" id="authorid" name="authorid" value="${config['AuthorID']}" class="hidden">
             </div>
@@ -52,7 +52,7 @@
         <div class="table_wrapper_button">
             <input type="submit" value="Save changes" id="add" class="btn btn-primary">
         </div>
-
+    <p>&nbsp;</p>
     </div> <!-- form -->
 
 </%def>
