@@ -823,6 +823,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 os.rename(os.path.join(pp_path, filename + extn), os.path.join(
                     pp_path, global_name.replace('"', '_') + extn))
 
+            calibre_id = ''
             if bookid.isdigit():
                 identifier = "goodreads:%s" % bookid
             else:
@@ -889,9 +890,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             if os.path.isdir(calibre_dir):
                 imported = LibraryScan(calibre_dir)  # rescan authors directory so we get the new book in our database
                 # Check calibre put a valid book in the target directory
-                if not book_file(dest_path):
-                    logger.debug("Failed to find a valid book in [%s]" % dest_path)
-                    imported = False
+                if calibre_id and not book_file(os.path.join(dest_path, '%s (%s)' % (global_name, calibre_id))):
+                    logger.warn("Failed to find a valid book in [%s]" % dest_path)
+                #    imported = False
             else:
                 logger.error("Failed to locate calibre dir [%s]" % calibre_dir)
                 imported = False
