@@ -501,15 +501,21 @@ class GoogleBooks:
                         # and sometimes uses the same bookid if the book is the same but the title is slightly different
                         #
                         # Not sure if googlebooks does too, but we only want one...
-                        find_book_status = myDB.match('SELECT * FROM books WHERE BookID = "%s"' % bookid)
-                        if find_book_status:
-                            book_status = find_book_status['Status']
-                            locked = find_book_status['Manual']
+                        existing_book = myDB.match('SELECT Status,Manual FROM books WHERE BookID = "%s"' % bookid)
+                        if existing_book:
+                            book_status = existing_book['Status']
+                            locked = existing_book['Manual']
+                            if locked is None:
+                                locked = False
+                            elif locked.isdigit():
+                                locked = bool(int(locked))
                         else:
-                            book_status = bookstatus
+                            book_status = bookstatus  # new_book status, or new_author status
                             locked = False
 
                         rejected = False
+                        check_status = False
+
                         if re.match('[^\w-]', bookname):  # remove books with bad characters in title
                             logger.debug("[%s] removed book for bad characters" % bookname)
                             removedResults += 1
@@ -521,7 +527,7 @@ class GoogleBooks:
                             removedResults += 1
                             rejected = True
 
-                        if not rejected: # and lazylibrarian.CONFIG['NO_FUTURE']:
+                        if not rejected and lazylibrarian.CONFIG['NO_FUTURE']:
                             # googlebooks sometimes gives yyyy, sometimes yyyy-mm, sometimes yyyy-mm-dd
                             if bookdate > today()[:len(bookdate)]:
                                 logger.debug('Rejecting %s, future publication date %s' % (bookname, bookdate))
@@ -534,7 +540,7 @@ class GoogleBooks:
                             if find_books:
                                 for find_book in find_books:
                                     if find_book['BookID'] != bookid:
-                                        # we have a book with this author/title already
+                                        # we have a different book with this author/title already
                                         logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
                                                      (find_book['BookID'], authorname, bookname, bookid))
                                         rejected = True
@@ -552,10 +558,11 @@ class GoogleBooks:
                                 else:
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got this book in database' %
                                                  (bookid, authorname, bookname))
+                                    check_status = True
                                 duplicates += 1
                                 rejected = True
 
-                        if not rejected:
+                        if check_status or not rejected:
                             if book_status != "Ignored" and not locked:
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {
@@ -582,7 +589,7 @@ class GoogleBooks:
 
                                 myDB.upsert("books", newValueDict, controlValueDict)
                                 logger.debug(u"Book found: " + bookname + " " + bookdate)
-
+                                updated = False
                                 if 'nocover' in bookimg or 'nophoto' in bookimg:
                                     # try to get a cover from librarything
                                     workcover = getBookCover(bookid)
@@ -591,6 +598,7 @@ class GoogleBooks:
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": workcover}
                                         myDB.upsert("books", newValueDict, controlValueDict)
+                                        updated = True
 
                                 elif bookimg and bookimg.startswith('http'):
                                     link, success = cache_img("book", bookid, bookimg, refresh=refresh)
@@ -598,6 +606,7 @@ class GoogleBooks:
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": link}
                                         myDB.upsert("books", newValueDict, controlValueDict)
+                                        updated = True
                                     else:
                                         logger.debug('Failed to cache image for %s' % bookimg)
 
@@ -605,6 +614,7 @@ class GoogleBooks:
                                 seriesdict = getWorkSeries(bookid)
                                 if seriesdict:
                                     logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
+                                    updated = True
                                 else:
                                     # librarything doesn't have series info. Any in the title?
                                     if series:
@@ -612,30 +622,35 @@ class GoogleBooks:
                                 setSeries(seriesdict, bookid)
 
                                 new_status = ''
+                                # Don't update status if we already have the book
+                                if book_status in ['Have', 'Open']:
+                                    new_status = book_status
+
                                 if seriesdict:
-                                    # Is the book part of any series we want?
-                                    for item in seriesdict:
-                                        match = myDB.match('SELECT SeriesName,Status from series where SeriesID=%s' % item)
-                                        if match['Status'] == 'Wanted':
-                                            new_status = 'Wanted'
-                                            logger.debug('Marking %s as %s, series %s' %
-                                                        (bookname, new_status, match['SeriesName']))
-                                            break
+                                    if not new_status:
+                                        # Is the book part of any series we want?
+                                        for item in seriesdict:
+                                            match = myDB.match('SELECT Status from series where SeriesName="%s"' % item)
+                                            if match['Status'] == 'Wanted':
+                                                new_status = 'Wanted'
+                                                logger.debug('Marking %s as %s, series %s' %
+                                                            (bookname, new_status, item))
+                                                break
 
                                     if not new_status:
                                         # Is it part of any series we don't want?
                                         for item in seriesdict:
-                                            match = myDB.match('SELECT SeriesName,Status from series where SeriesID=%s' % item)
+                                            match = myDB.match('SELECT Status from series where SeriesName="%s"' % item)
                                             if match['Status'] == 'Skipped':
                                                 new_status = 'Skipped'
                                                 logger.debug('Marking %s as %s, series %s' %
-                                                            (bookname, new_status, match['SeriesName']))
+                                                            (bookname, new_status, item))
                                                 break
 
                                 if not new_status:
                                     # Author we don't want?
                                     for item in seriesdict:
-                                        match = myDB.match('SELECT Status from authors where AuthorID=%s' % authorid)
+                                        match = myDB.match('SELECT Status from authors where AuthorID="%s"' % authorid)
                                         if match['Status'] == 'Paused':
                                             new_status = 'Skipped'
                                             logger.debug('Marking %s as %s, author %s' %
@@ -644,8 +659,9 @@ class GoogleBooks:
 
                                 # If none of these, leave default "newbook" or "newauthor" status
                                 if new_status:
-                                    myDB.action('UPDATE books SET Status=%s WHERE BookID=%s' % (new_status, bookid))
+                                    myDB.action('UPDATE books SET Status="%s" WHERE BookID="%s"' % (new_status, bookid))
                                     book_status = new_status
+                                    updated = True
 
                                 worklink = getWorkPage(bookid)
                                 if worklink:
@@ -653,13 +669,14 @@ class GoogleBooks:
                                     newValueDict = {"WorkPage": worklink}
                                     myDB.upsert("books", newValueDict, controlValueDict)
 
-                                if not find_book_status:
+                                if not existing_book:
                                     logger.debug("[%s] Added book: %s [%s] %s" %
                                                 (authorname, bookname, booklang, book_status))
                                     added_count += 1
-                                else:
+                                elif updated:
+                                    logger.debug("[%s] Updated book: %s [%s] %s" %
+                                                (authorname, bookname, booklang, book_status))
                                     updated_count += 1
-                                    logger.debug("[%s] Updated book: %s, %s" % (authorname, bookname, book_status))
                             else:
                                 book_ignore_count += 1
             except KeyError:

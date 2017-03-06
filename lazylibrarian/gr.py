@@ -460,6 +460,7 @@ class GoodReads:
                             series, seriesNum = bookSeries(bookname)
 
                         rejected = False
+                        check_status = False
 
                         if re.match('[^\w-]', bookname):  # reject books with bad characters in title
                             logger.debug(u"removed result [" + bookname + "] for bad characters")
@@ -484,7 +485,7 @@ class GoodReads:
                             if find_books:
                                 for find_book in find_books:
                                     if find_book['BookID'] != bookid:
-                                        # we have a book with this author/title already
+                                        # we have a different book with this author/title already
                                         logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
                                                      (find_book['BookID'], authorNameResult, bookname, bookid))
                                         duplicates += 1
@@ -502,21 +503,26 @@ class GoodReads:
                                 else:
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got this book in database' %
                                                  (bookid, authorNameResult, bookname))
+                                    check_status = True
                                 duplicates += 1
                                 rejected = True
 
-                        if not rejected:
-                            find_book_status = myDB.match('SELECT * FROM books WHERE BookID = "%s"' % bookid)
-                            if find_book_status:
-                                book_status = find_book_status['Status']
-                                locked = find_book_status['Manual']
+                        if check_status or not rejected:
+                            existing_book = myDB.match('SELECT Status,Manual FROM books WHERE BookID = "%s"' % bookid)
+                            if existing_book:
+                                book_status = existing_book['Status']
+                                locked = existing_book['Manual']
+                                if locked is None:
+                                    locked = False
+                                elif locked.isdigit():
+                                    locked = bool(int(locked))
                             else:
-                                book_status = bookstatus
+                                book_status = bookstatus  # new_book status, or new_author status
                                 locked = False
 
                             # Is the book already in the database?
                             # Leave alone if locked or status "ignore"
-                            if book_status != "Ignored" and not locked:
+                            if not locked and book_status != "Ignored":
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {
                                     "AuthorName": authorNameResult,
@@ -540,6 +546,7 @@ class GoodReads:
                                 }
 
                                 resultsCount += 1
+                                updated = False
 
                                 myDB.upsert("books", newValueDict, controlValueDict)
                                 logger.debug(u"Book found: " + book.find('title').text + " " + pubyear)
@@ -552,6 +559,7 @@ class GoodReads:
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": workcover}
                                         myDB.upsert("books", newValueDict, controlValueDict)
+                                        updated = True
 
                                 elif bookimg and bookimg.startswith('http'):
                                     link, success = cache_img("book", bookid, bookimg, refresh=refresh)
@@ -559,6 +567,7 @@ class GoodReads:
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": link}
                                         myDB.upsert("books", newValueDict, controlValueDict)
+                                        updated = True
                                     else:
                                         logger.debug('Failed to cache image for %s' % bookimg)
 
@@ -566,20 +575,27 @@ class GoodReads:
                                 seriesdict = getWorkSeries(bookid)
                                 if seriesdict:
                                     logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
+                                    updated = True
                                 else:
                                     if series:
                                         seriesdict = {series: seriesNum}
                                 setSeries(seriesdict, bookid)
 
                                 new_status = ''
+                                # Don't update status if we already have the book
+                                if book_status in ['Have', 'Open']:
+                                    new_status = book_status
+
                                 if seriesdict:
-                                    # Is the book part of any series we want?
-                                    for item in seriesdict:
-                                        match = myDB.match('SELECT Status from series where SeriesName="%s"' % item)
-                                        if match['Status'] == 'Wanted':
-                                            new_status = 'Wanted'
-                                            logger.debug('Marking %s as %s, series %s' % (bookname, new_status, item))
-                                            break
+                                    if not new_status:
+                                        # Is the book part of any series we want?
+                                        for item in seriesdict:
+                                            match = myDB.match('SELECT Status from series where SeriesName="%s"' % item)
+                                            if match['Status'] == 'Wanted':
+                                                new_status = 'Wanted'
+                                                logger.debug('Marking %s as %s, series %s' %
+                                                            (bookname, new_status, item))
+                                                break
 
                                     if not new_status:
                                         # Is it part of any series we don't want?
@@ -588,13 +604,13 @@ class GoodReads:
                                             if match['Status'] == 'Skipped':
                                                 new_status = 'Skipped'
                                                 logger.debug('Marking %s as %s, series %s' %
-                                                                (bookname, new_status, item))
+                                                            (bookname, new_status, item))
                                                 break
 
                                 if not new_status:
                                     # Author we don't want?
                                     for item in seriesdict:
-                                        match = myDB.match('SELECT Status from authors where AuthorID=%s' % authorid)
+                                        match = myDB.match('SELECT Status from authors where AuthorID="%s"' % authorid)
                                         if match['Status'] == 'Paused':
                                             new_status = 'Skipped'
                                             logger.debug('Marking %s as %s, author %s' %
@@ -602,9 +618,10 @@ class GoodReads:
                                             break
 
                                 # If none of these, leave default "newbook" or "newauthor" status
-                                if new_status:
-                                    myDB.action('UPDATE books SET Status=%s WHERE BookID=%s' % (new_status, bookid))
+                                if new_status and new_status != book_status:
+                                    myDB.action('UPDATE books SET Status="%s" WHERE BookID="%s"' % (new_status, bookid))
                                     book_status = new_status
+                                    updated = True
 
                                 worklink = getWorkPage(bookid)
                                 if worklink:
@@ -612,12 +629,13 @@ class GoodReads:
                                     newValueDict = {"WorkPage": worklink}
                                     myDB.upsert("books", newValueDict, controlValueDict)
 
-                                if not find_book_status:
+                                if not existing_book:
                                     logger.debug(u"[%s] Added book: %s [%s] %s" %
                                                 (authorname, bookname, bookLanguage, book_status))
                                     added_count += 1
-                                else:
-                                    logger.debug(u"[%s] Updated book: %s, %s" % (authorname, bookname, book_status))
+                                elif updated:
+                                    logger.debug(u"[%s] Updated book: %s [%s] %s" %
+                                                (authorname, bookname, bookLanguage, book_status))
                                     updated_count += 1
                             else:
                                 book_ignore_count += 1

@@ -84,10 +84,9 @@ def setAllBookSeries():
 def setSeries(seriesdict=None, bookid=None):
     """ set series details in booktable and series/member tables from the supplied dict """
     myDB = database.DBConnection()
-    if seriesdict and bookid:
+    if bookid:
         # delete any old entries
         myDB.action('DELETE from member WHERE Bookid=%s' % bookid)
-        deleteEmptySeries()
         series = ''
         for item in seriesdict:
             # keep all series in the book table for speed
@@ -110,6 +109,7 @@ def setSeries(seriesdict=None, bookid=None):
         controlValueDict = {"BookID": bookid}
         newValueDict = {"Series": series}
         myDB.upsert("books", newValueDict, controlValueDict)
+        deleteEmptySeries()
 
 
 def deleteEmptySeries():
@@ -175,14 +175,16 @@ def getBookWork(bookID=None, reason=None):
             os.mkdir(cacheLocation)
         workfile = os.path.join(cacheLocation, bookID + '.html')
 
-        # does the workpage need to expire?
-        # if os.path.isfile(workfile):
-        #    cache_modified_time = os.stat(workfile).st_mtime
-        #    time_now = time.time()
-        #    expiry = lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60  # expire cache after this many seconds
-        #    if cache_modified_time < time_now - expiry:
-        #        # Cache entry is too old, delete it
-        #        os.remove(workfile)
+        # does the workpage need to expire? For now only expire if it was an error page
+        # (small file) as librarything might get better info over time
+        if os.path.isfile(workfile):
+            if os.path.getsize(workfile) < 500:
+                cache_modified_time = os.stat(workfile).st_mtime
+                time_now = time.time()
+                expiry = lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60  # expire cache after this many seconds
+                if cache_modified_time < time_now - expiry:
+                    # Cache entry is too old, delete it
+                    os.remove(workfile)
 
         if os.path.isfile(workfile):
             # use cached file if possible to speed up refreshactiveauthors and librarysync re-runs
@@ -230,22 +232,22 @@ def getBookWork(bookID=None, reason=None):
                                 except Exception:
                                     errmsg = "Unknown Error"
                                 # still cache if whatwork returned a result without a link, so we don't keep retrying
-                                result = "getBookWork: Librarything error: [" + errmsg + "] for " + item['BookISBN']
-                                logger.debug(result)
+                                logger.debug("getBookWork: Librarything error: [%s] for %s" %
+                                            (errmsg, item['BookISBN']))
                                 success = True
                     else:
                         # still cache if whatwork returned a result without a link, so we don't keep retrying
-                        result = "getBookWork: Librarything error: [" + errmsg + "] for "
-                        logger.debug(result + item['AuthorName'] + ' ' + item['BookName'])
-                        result = result + safeparams
+                        msg = "getBookWork: Librarything error: [" + errmsg + "] for "
+                        logger.debug(msg + item['AuthorName'] + ' ' + item['BookName'])
                         success = True
                 if success:
                     with open(workfile, "w") as cachefile:
                         cachefile.write(result)
-                    if not result.startswith('getBookWork'):
                         logger.debug(u"getBookWork: Caching workpage for %s" % workfile)
-                        return result
-                    return None
+                        # return None if we got an error page back
+                        if '</request><error>' in result:
+                            return None
+                    return result
                 else:
                     logger.debug(u"getBookWork: Unable to cache workpage, got %s" % result)
                 return None
