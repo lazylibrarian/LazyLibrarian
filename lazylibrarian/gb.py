@@ -25,7 +25,7 @@ from urllib2 import HTTPError
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, setSeries
+from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, setSeries, setStatus
 from lazylibrarian.cache import get_json_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn, getList
 from lazylibrarian.gr import GoodReads
@@ -621,45 +621,9 @@ class GoogleBooks:
                                         seriesdict = {series: seriesNum}
                                 setSeries(seriesdict, bookid)
 
-                                new_status = ''
-                                # Don't update status if we already have the book
-                                if book_status in ['Have', 'Open']:
-                                    new_status = book_status
+                                new_status = setStatus(bookid, seriesdict, bookstatus)
 
-                                if seriesdict:
-                                    if not new_status:
-                                        # Is the book part of any series we want?
-                                        for item in seriesdict:
-                                            match = myDB.match('SELECT Status from series where SeriesName="%s"' % item)
-                                            if match['Status'] == 'Wanted':
-                                                new_status = 'Wanted'
-                                                logger.debug('Marking %s as %s, series %s' %
-                                                            (bookname, new_status, item))
-                                                break
-
-                                    if not new_status:
-                                        # Is it part of any series we don't want?
-                                        for item in seriesdict:
-                                            match = myDB.match('SELECT Status from series where SeriesName="%s"' % item)
-                                            if match['Status'] == 'Skipped':
-                                                new_status = 'Skipped'
-                                                logger.debug('Marking %s as %s, series %s' %
-                                                            (bookname, new_status, item))
-                                                break
-
-                                if not new_status:
-                                    # Author we don't want?
-                                    for item in seriesdict:
-                                        match = myDB.match('SELECT Status from authors where AuthorID="%s"' % authorid)
-                                        if match['Status'] == 'Paused':
-                                            new_status = 'Skipped'
-                                            logger.debug('Marking %s as %s, author %s' %
-                                                        (bookname, new_status, match['Status']))
-                                            break
-
-                                # If none of these, leave default "newbook" or "newauthor" status
-                                if new_status:
-                                    myDB.action('UPDATE books SET Status="%s" WHERE BookID="%s"' % (new_status, bookid))
+                                if not new_status == book_status:
                                     book_status = new_status
                                     updated = True
 

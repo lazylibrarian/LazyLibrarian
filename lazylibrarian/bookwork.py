@@ -111,6 +111,58 @@ def setSeries(seriesdict=None, bookid=None):
         myDB.upsert("books", newValueDict, controlValueDict)
         deleteEmptySeries()
 
+def setStatus(bookid=None, seriesdict=None, default=None):
+    """ Set the status of a book according to series/author/newbook/newauthor preferences
+        return default if unchanged, default is passed in as newbook or newauthor status """
+    myDB = database.DBConnection()
+    if not bookid:
+        return default
+
+    new_status = ''
+    match = myDB.match('SELECT Status,AuthorID,BookName from books WHERE BookID="%s"' % bookid)
+    if not match:
+        return default
+
+    # Don't update status if we already have the book
+    current_status = match['Status']
+    if current_status in ['Have', 'Open']:
+        return current_status
+
+    new_status = ''
+    authorid = match['AuthorID']
+    # Is the book part of any series we want?
+    for item in seriesdict:
+        match = myDB.match('SELECT Status from series where SeriesName="%s"' % item)
+        if match['Status'] == 'Wanted':
+            new_status = 'Wanted'
+            logger.debug('Marking %s as %s, series %s' % (BookName, new_status, item))
+            break
+
+    if not new_status:
+        # Is it part of any series we don't want?
+        for item in seriesdict:
+            match = myDB.match('SELECT Status from series where SeriesName="%s"' % item)
+            if match['Status'] == 'Skipped':
+                new_status = 'Skipped'
+                logger.debug('Marking %s as %s, series %s' % (BookName, new_status, item))
+                break
+
+    if not new_status:
+        # Author we don't want?
+        for item in seriesdict:
+            match = myDB.match('SELECT Status from authors where AuthorID="%s"' % authorid)
+            if match['Status'] == 'Paused':
+                new_status = 'Skipped'
+                logger.debug('Marking %s as %s, author %s' % (BookName, new_status, match['Status']))
+                break
+
+    # If none of these, leave default "newbook" or "newauthor" status
+    if new_status:
+        myDB.action('UPDATE books SET Status="%s" WHERE BookID="%s"' % (new_status, bookid))
+        return new_status
+
+    return default
+
 
 def deleteEmptySeries():
     """ remove any series from series table that have no entries in member table """

@@ -888,6 +888,10 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             calibre_dir = os.path.join(dest_dir, unaccented_str(authorname.replace('"', '_')), '')
             if os.path.isdir(calibre_dir):
                 imported = LibraryScan(calibre_dir)  # rescan authors directory so we get the new book in our database
+                # Check calibre put a valid book in the target directory
+                if not book_file(dest_path):
+                    logger.debug("Failed to find a valid book in [%s]" % dest_path)
+                    imported = False
             else:
                 logger.error("Failed to locate calibre dir [%s]" % calibre_dir)
                 imported = False
