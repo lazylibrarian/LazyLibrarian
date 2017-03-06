@@ -197,8 +197,8 @@ def authorUpdate():
 
         myDB = database.DBConnection()
         author = myDB.match('SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" \
-                                    or Status="Loading" order by DateAdded ASC')
-        if lazylibrarian.CONFIG['CACHE_AGE']:
+                            order by DateAdded ASC')
+        if author and lazylibrarian.CONFIG['CACHE_AGE']:
             dtnow = datetime.datetime.now()
             diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
             if diff > lazylibrarian.CONFIG['CACHE_AGE']:
