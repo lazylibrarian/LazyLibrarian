@@ -887,12 +887,16 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
             # calibre does not like quotes in author names
             calibre_dir = os.path.join(dest_dir, unaccented_str(authorname.replace('"', '_')), '')
-            if os.path.isdir(calibre_dir):
-                imported = LibraryScan(calibre_dir)  # rescan authors directory so we get the new book in our database
-                # Check calibre put a valid book in the target directory
-                if calibre_id and not book_file(os.path.join(dest_path, '%s (%s)' % (global_name, calibre_id))):
-                    logger.warn("Failed to find a valid book in [%s]" % dest_path)
-                #    imported = False
+            if os.path.isdir(calibre_dir):  # assumed author directory
+                target_dir = os.path.join(calibre_dir, '%s (%s)' % (global_name, calibre_id))
+                if os.path.isdir(target_dir):
+                    imported = LibraryScan(target_dir)
+                    if not book_file(target_dir):
+                        logger.warn("Failed to find a valid book in [%s]" % target_dir)
+                        imported = False
+                else:
+                    target_dir = calibre_dir
+                    imported = LibraryScan(calibre_dir)  # rescan whole authors directory
             else:
                 logger.error("Failed to locate calibre dir [%s]" % calibre_dir)
                 imported = False
