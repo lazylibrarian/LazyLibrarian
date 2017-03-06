@@ -130,12 +130,13 @@ def setStatus(bookid=None, seriesdict=None, default=None):
 
     new_status = ''
     authorid = match['AuthorID']
+    bookname = match['BookName']
     # Is the book part of any series we want?
     for item in seriesdict:
         match = myDB.match('SELECT Status from series where SeriesName="%s"' % item)
         if match['Status'] == 'Wanted':
             new_status = 'Wanted'
-            logger.debug('Marking %s as %s, series %s' % (BookName, new_status, item))
+            logger.debug('Marking %s as %s, series %s' % (bookname, new_status, item))
             break
 
     if not new_status:
@@ -144,7 +145,7 @@ def setStatus(bookid=None, seriesdict=None, default=None):
             match = myDB.match('SELECT Status from series where SeriesName="%s"' % item)
             if match['Status'] == 'Skipped':
                 new_status = 'Skipped'
-                logger.debug('Marking %s as %s, series %s' % (BookName, new_status, item))
+                logger.debug('Marking %s as %s, series %s' % (bookname, new_status, item))
                 break
 
     if not new_status:
@@ -153,7 +154,7 @@ def setStatus(bookid=None, seriesdict=None, default=None):
             match = myDB.match('SELECT Status from authors where AuthorID="%s"' % authorid)
             if match['Status'] == 'Paused':
                 new_status = 'Skipped'
-                logger.debug('Marking %s as %s, author %s' % (BookName, new_status, match['Status']))
+                logger.debug('Marking %s as %s, author %s' % (bookname, new_status, match['Status']))
                 break
 
     # If none of these, leave default "newbook" or "newauthor" status
