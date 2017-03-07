@@ -5,6 +5,11 @@
 
 <%def name="headerIncludes()">
     <div id="subhead_container">
+        <ul id="subhead_menu">
+            <li><a href="authorPage?AuthorID=${series['AuthorID']}" id="button"> Return to Author</a></li>
+            <li><a href="series?AuthorID=${series['AuthorID']}" id="button"> Series List</a></li>
+            <li><a href="refreshAuthor?AuthorID=${series['AuthorID']}" id="button"> Refresh Author</a></li>
+        </ul>
     </div>
 </%def>
 
@@ -64,15 +69,17 @@
 
 <%def name="javascriptIncludes()">
     <script src="js/libs/jquery.dataTables.min.js"></script>
+    <script src="js/natural.js"></script>
     <script>
     $(document).ready(function()
     {
         var oTable = $('#book_table').dataTable(
             {
                 "order": [[ 3, 'asc' ]],
-                "columnDefs":
-                    [{ targets: 'no-sort', orderable: false }] // Don't allow colums of class no-sort to be sorted
-                ,
+                // Don't allow colums of class no-sort to be sorted
+                "columnDefs": [{ targets: 'no-sort', orderable: false },
+                               { type: 'natural', targets: 3 }
+                               ],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ rows per page",
                     "sEmptyTable": "No books found",

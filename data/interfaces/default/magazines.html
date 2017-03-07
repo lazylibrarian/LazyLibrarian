@@ -98,6 +98,7 @@
 
 <%def name="javascriptIncludes()">
     <script src="js/libs/jquery.dataTables.min.js"></script>
+    <script src="js/natural.js"></script>
     <script>
 
     $(document).ready(function()
@@ -130,6 +131,8 @@
                     null
                     ],
                 "order": [[ 2, 'asc']],
+                "columnDefs":
+                    [{ type: 'natural', targets: 3 }],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ magazines per page",
                     "sEmptyTable": "No magazines found",

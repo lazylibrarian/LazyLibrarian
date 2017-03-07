@@ -124,6 +124,8 @@ def setStatus(bookid=None, seriesdict=None, default=None):
         return default
 
     # Don't update status if we already have the book
+    # but allow status change if ignored - might be we had ignore author set,
+    # but want to allow this series
     current_status = match['Status']
     if current_status in ['Have', 'Open']:
         return current_status
@@ -152,7 +154,7 @@ def setStatus(bookid=None, seriesdict=None, default=None):
         # Author we don't want?
         for item in seriesdict:
             match = myDB.match('SELECT Status from authors where AuthorID="%s"' % authorid)
-            if match['Status'] == 'Paused':
+            if match['Status'] in ['Paused', 'Ignored']:
                 new_status = 'Skipped'
                 logger.debug('Marking %s as %s, author %s' % (bookname, new_status, match['Status']))
                 break

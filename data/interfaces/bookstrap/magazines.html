@@ -1,7 +1,6 @@
 <%inherit file="base.html" />
 <%!
     import lazylibrarian
-    from lazylibrarian import database
 %>
 
 <%def name="headerIncludes()">
@@ -143,8 +142,8 @@
                 "responsive": true,
                 "order": [[ 2, 'asc']],
                 "columnDefs":
-                    [{ targets: 'no-sort', orderable: false }]
-                ,
+                    [{ targets: 'no-sort', orderable: false },
+                     { type: 'natural', targets: 3 }],
                 "oLanguage": {
                     "sLengthMenu":"_MENU_ rows per page",
                     "sEmptyTable": "No magazines found",
