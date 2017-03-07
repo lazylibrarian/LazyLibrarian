@@ -583,18 +583,25 @@ class WebInterface(object):
     @cherrypy.expose
     def getBooks(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
+        #for arg in kwargs:
+        #    print arg, kwargs[arg]
+
         global LANGFILTER
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
-        #   need to check and filter on BookLang if set
         cmd = 'SELECT bookimg, authorname, bookname, bookrate, bookdate, status, bookid,'
-        cmd += ' booksub, booklink, workpage, authorid, series from books WHERE STATUS !="Skipped"'
-        cmd += ' AND STATUS !="Ignored"'
-        if LANGFILTER is not None and len(LANGFILTER):
-            cmd += ' and BOOKLANG="' + LANGFILTER + '"'
+        cmd += ' booksub, booklink, workpage, authorid, series from books '
+
+        if kwargs['source'] == "Manage":
+            cmd += 'WHERE STATUS="%s"' % kwargs['whichStatus']
+        else:
+            cmd += 'WHERE STATUS !="Skipped" AND STATUS !="Ignored"'
+            # for "books" need to check and filter on BookLang if set
+            if LANGFILTER is not None and len(LANGFILTER):
+                cmd += ' and BOOKLANG="' + LANGFILTER + '"'
         rowlist = myDB.select(cmd)
         # turn the sqlite rowlist into a list of lists
         d = []
@@ -680,22 +687,24 @@ class WebInterface(object):
 
                     l.append('<td class="date text-center">%s</td>' % row[4])
 
-                    if row[5] == 'Open':
-                        btn = '<td class="status text-center"><a class="button green btn btn-xs btn-warning"'
-                        btn += ' href="openBook?bookid=%s' % row[6]
-                        btn += '" target="_self"><i class="fa fa-book"></i>%s</a></td>' % row[5]
-                    elif row[5] == 'Wanted':
-                        btn = '<td class="status text-center"><p><a class="a btn btn-xs btn-danger">%s' % row[5]
-                        btn += '</a></p><p><a class="b btn btn-xs btn-success" '
-                        btn += 'href="searchForBook?bookid=%s' % row[6]
-                        btn += '" target="_self"><i class="fa fa-search"></i> Search</a></p></td>'
-                    elif row[5] == 'Snatched' or row[5] == 'Have':
-                        btn = '<td class="status text-center"><a class="button btn btn-xs btn-info">%s' % row[5]
-                        btn += '</a></td>'
-                    else:
-                        btn = '<td class="status text-center"><a class="button btn btn-xs btn-default grey">%s' % row[5]
-                        btn += '</a></td>'
-                    l.append(btn)
+                    # Do not show status column in MANAGE page as we are only showing one status
+                    if not kwargs['source'] == "Manage":
+                        if row[5] == 'Open':
+                            btn = '<td class="status text-center"><a class="button green btn btn-xs btn-warning"'
+                            btn += ' href="openBook?bookid=%s' % row[6]
+                            btn += '" target="_self"><i class="fa fa-book"></i>%s</a></td>' % row[5]
+                        elif row[5] == 'Wanted':
+                            btn = '<td class="status text-center"><p><a class="a btn btn-xs btn-danger">%s' % row[5]
+                            btn += '</a></p><p><a class="b btn btn-xs btn-success" '
+                            btn += 'href="searchForBook?bookid=%s' % row[6]
+                            btn += '" target="_self"><i class="fa fa-search"></i> Search</a></p></td>'
+                        elif row[5] == 'Snatched' or row[5] == 'Have':
+                            btn = '<td class="status text-center"><a class="button btn btn-xs btn-info">%s' % row[5]
+                            btn += '</a></td>'
+                        else:
+                            btn = '<td class="status text-center"><a class="button btn btn-xs btn-default grey">%s' % row[5]
+                            btn += '</a></td>'
+                        l.append(btn)
 
                 else:  # lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
                     if row[9]:  # is there a workpage link
@@ -734,18 +743,20 @@ class WebInterface(object):
 
                     l.append('<td id="date">%s</td>' % row[4])
 
-                    if row[5] == 'Open':
-                        btn = '<td id="status"><a class="button green" href="openBook?bookid=%s' % row[6]
-                        btn += '" target="_self">Open</a></td>'
-                    elif row[5] == 'Wanted':
-                        btn = '<td id="status"><a class="button red" href="searchForBook?bookid=%s' % row[6]
-                        btn += '" target="_self"><span class="a">Wanted</span>'
-                        btn += '<span class="b">Search</span></a></td>'
-                    elif row[5] == 'Snatched' or row[5] == 'Have':
-                        btn = '<td id="status"><a class="button">%s</a></td>' % row[5]
-                    else:
-                        btn = '<td id="status"><a class="button grey">%s</a></td>' % row[5]
-                    l.append(btn)
+                    # Do not show status column in MANAGE page
+                    if not kwargs['source'] == "Manage":
+                        if row[5] == 'Open':
+                            btn = '<td id="status"><a class="button green" href="openBook?bookid=%s' % row[6]
+                            btn += '" target="_self">Open</a></td>'
+                        elif row[5] == 'Wanted':
+                            btn = '<td id="status"><a class="button red" href="searchForBook?bookid=%s' % row[6]
+                            btn += '" target="_self"><span class="a">Wanted</span>'
+                            btn += '<span class="b">Search</span></a></td>'
+                        elif row[5] == 'Snatched' or row[5] == 'Have':
+                            btn = '<td id="status"><a class="button">%s</a></td>' % row[5]
+                        else:
+                            btn = '<td id="status"><a class="button grey">%s</a></td>' % row[5]
+                        l.append(btn)
 
                 d.append(l)  # add the rowlist to the masterlist
 
@@ -1921,95 +1932,6 @@ class WebInterface(object):
         return serve_template(templatename="managebooks.html", title="Manage Books",
                               books=[], whichStatus=whichStatus)
 
-    # noinspection PyUnusedLocal
-    @cherrypy.expose
-    def getManage(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
-        # kwargs is used by datatables to pass params
-        myDB = database.DBConnection()
-        iDisplayStart = int(iDisplayStart)
-        iDisplayLength = int(iDisplayLength)
-        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
-
-        # print "getManage %s" % iDisplayStart
-        #   need to filter on whichStatus
-        cmd = 'SELECT authorname, bookname, bookdate, bookid, booklink, booksub, authorid, series '
-        cmd += 'from books WHERE STATUS=%s' % kwargs['whichStatus']
-        rowlist = myDB.select(cmd)
-
-        d = []
-        filtered = []
-        if len(rowlist):
-            # the masterlist to be filled with the row data
-            for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
-                l = []  # for each Row use a separate list
-                for column in row:
-                    l.append(column)
-                d.append(l)  # add the rowlist to the masterlist
-
-            if sSearch:
-                filtered = filter(lambda x: sSearch in str(x), d)
-            else:
-                filtered = d
-
-            sortcolumn = int(iSortCol_0)
-            sortcolumn -= 1  # indexed from 0
-            filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
-
-            if iDisplayLength < 0:  # display = all
-                rows = filtered
-            else:
-                rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
-
-            # now add html to the ones we want to display
-            d = []  # the masterlist to be filled with the html data
-            for row in rows:
-                l = ['<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[3],
-                     '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (
-                         row[6], row[0])]  # for each Row use a separate list
-
-                if lazylibrarian.CONFIG['HTTP_LOOK'] == 'bookstrap':
-                    sitelink = ''
-                    if 'goodreads' in row[4]:
-                        sitelink = '<a href="%s" target="_new"><small><i>GoodReads</i></small></a>' % row[4]
-                    if 'google' in row[4]:
-                        sitelink = '<a href="%s" target="_new"><small><i>GoogleBooks</i></small></a>' % row[4]
-
-                    if row[5]:  # is there a sub-title
-                        l.append(
-                            '<td id="bookname">%s<br><small><i>%s</i></small><br>%s</td>' %
-                            (row[1], row[5], sitelink))
-                    else:
-                        l.append('<td id="bookname">%s<br>%s</td>' % (row[1], sitelink))
-
-                else:  # lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
-                    sitelink = ''
-                    if 'goodreads' in row[4]:
-                        sitelink = '<a href="%s" target="_new"><i class="smalltext">GoodReads</i></a>' % row[4]
-                    if 'google' in row[4]:
-                        sitelink = '<a href="%s" target="_new"><i class="smalltext">GoogleBooks</i></a>' % row[4]
-
-                    if row[5]:  # is there a sub-title
-                        l.append(
-                            '<td id="bookname">%s<br><i class="smalltext">%s</i><br>%s</td>' %
-                            (row[1], row[5], sitelink))
-                    else:
-                        l.append('<td id="bookname">%s<br>%s</td>' % (row[1], sitelink))
-
-                # is the book part of a series
-                l.append('<td id="series">%s</td>' % row[7])
-
-                l.append('<td id="date">%s</td>' % row[2])
-
-                d.append(l)  # add the rowlist to the masterlist
-
-        mydict = {'iTotalDisplayRecords': len(filtered),
-                  'iTotalRecords': len(rowlist),
-                  'aaData': d,
-                  }
-        s = simplejson.dumps(mydict)
-        # print ("getManage returning %s to %s" % (iDisplayStart, iDisplayStart
-        # + iDisplayLength))
-        return s
 
     @cherrypy.expose
     def testDeluge(self):

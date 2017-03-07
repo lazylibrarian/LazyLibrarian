@@ -35,9 +35,11 @@
         <thead>
             <tr>
                 <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
+                <th id="bookart">Cover</th>
                 <th id="authorname">Author</th>
                 <th id="bookname">Title</th>
         		<th id="series">Series</th>
+                <th id="stars">Rating</th>
                 <th id="date">Released</th>
             </tr>
         </thead>
@@ -73,6 +75,8 @@
                     null,
                     null,
                     null,
+                    null,
+                    null,
                     null
                     ],
                 "oLanguage": {
@@ -87,7 +91,7 @@
                 "aaSorting": [[1, 'asc']],
                  "bServerSide": true,
                 "bFilter": true,
-                "sAjaxSource": 'getManage?whichStatus="${whichStatus}"',
+                "sAjaxSource": 'getBooks?whichStatus=${whichStatus}&source=Manage',
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     $(nRow).addClass("gradeZ");
                     return nRow;
