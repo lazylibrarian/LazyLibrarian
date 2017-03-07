@@ -6,6 +6,12 @@
 
 <%def name="headerIncludes()">
     <div id="subhead_container">
+            <a href="authorPage?AuthorID=${series['AuthorID']}" class="btn btn-sm btn-primary">
+            <i class="fa fa-chevron-left"></i> Return to Author</a>
+            <a href="series?AuthorID=${series['AuthorID']}" class="btn btn-sm btn-primary">
+            <i class="fa fa-list"></i> Series List</a>
+            <a href="refreshAuthor?AuthorID=${series['AuthorID']}" class="btn btn-sm btn-primary">
+            <i class="fa fa-refresh"></i> Refresh Author</a>
     </div>
 </%def>
 

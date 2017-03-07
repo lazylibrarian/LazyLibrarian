@@ -113,8 +113,8 @@ class WebInterface(object):
     @cherrypy.expose
     def seriesMembers(self, seriesid):
         myDB = database.DBConnection()
-        cmd = 'SELECT SeriesName,SeriesID,AuthorName from series,authors where authors.AuthorID=series.AuthorID'
-        cmd += ' and SeriesID=%s' % seriesid
+        cmd = 'SELECT SeriesName,SeriesID,AuthorName,authors.AuthorID from series,authors'
+        cmd += ' where authors.AuthorID=series.AuthorID and SeriesID=%s' % seriesid
         series = myDB.match(cmd)
         cmd = 'SELECT member.BookID,BookName,SeriesNum,BookImg,books.Status from member,series,books'
         cmd += ' where series.SeriesID=member.SeriesID and books.BookID=member.BookID'

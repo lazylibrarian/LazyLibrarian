@@ -5,6 +5,11 @@
 
 <%def name="headerIncludes()">
     <div id="subhead_container">
+        <ul id="subhead_menu">
+            <li><a href="authorPage?AuthorID=${series['AuthorID']}" id="button"> Return to Author</a></li>
+            <li><a href="series?AuthorID=${series['AuthorID']}" id="button"> Series List</a></li>
+            <li><a href="refreshAuthor?AuthorID=${series['AuthorID']}" id="button"> Refresh Author</a></li>
+        </ul>
     </div>
 </%def>
 
