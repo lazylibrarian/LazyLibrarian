@@ -1,7 +1,6 @@
 <%inherit file="base.html"/>
 <%!
     import lazylibrarian
-    from lazylibrarian import database
 %>
 
 <%def name="headerIncludes()">
@@ -79,9 +78,10 @@
         var oTable = $('#book_table').dataTable(
             {
                 "order": [[ 3, 'asc' ]],
-                "columnDefs":
-                    [{ targets: 'no-sort', orderable: false }] // Don't allow colums of class no-sort to be sorted
-                ,
+                // Don't allow colums of class no-sort to be sorted
+                "columnDefs": [{ targets: 'no-sort', orderable: false },
+                               { type: 'natural', targets: 3 }
+                               ],
                 "oLanguage": {
                     "sLengthMenu":"_MENU_ rows per page",
                     "sEmptyTable": "No books found",
