@@ -82,20 +82,13 @@ def setAllBookSeries():
     logger.info('Series check complete, updated %s book%s' % (counter, plural(counter)))
 
 def setSeries(seriesdict=None, bookid=None):
-    """ set series details in booktable and series/member tables from the supplied dict """
+    """ set series details in series/member tables from the supplied dict """
     myDB = database.DBConnection()
     if bookid:
         # delete any old entries
         myDB.action('DELETE from member WHERE Bookid=%s' % bookid)
         series = ''
         for item in seriesdict:
-            # keep all series in the book table for speed
-            newseries = "%s %s" % (item, seriesdict[item])
-            newseries.strip()
-            if series:
-                series += '<br>'
-            series += newseries
-            # and each series in the series and member tables for searching
             match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % item)
             book = myDB.match('SELECT BookName, AuthorID from books where BookID=%s' % bookid)
             if not match:
@@ -106,9 +99,6 @@ def setSeries(seriesdict=None, bookid=None):
             controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
             newValueDict = {"SeriesNum": seriesdict[item]}
             myDB.upsert("member", newValueDict, controlValueDict)
-        controlValueDict = {"BookID": bookid}
-        newValueDict = {"Series": series}
-        myDB.upsert("books", newValueDict, controlValueDict)
         deleteEmptySeries()
 
 def setStatus(bookid=None, seriesdict=None, default=None):

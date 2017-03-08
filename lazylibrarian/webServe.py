@@ -906,8 +906,6 @@ class WebInterface(object):
                     authorimg = ''
                 manual = bool(check_int(manual, 0))
 
-                if not (authdata["AuthorName"] == authorname):
-                    edited += "Name "
                 if not (authdata["AuthorBorn"] == authorborn):
                     edited += "Born "
                 if not (authdata["AuthorDeath"] == authordeath):
@@ -923,7 +921,7 @@ class WebInterface(object):
                         logger.debug("Unable to rename, new author name %s already exists" % authorname)
                         authorname = authdata["AuthorName"]
                     else:
-                        moved = True
+                        edited += "Name "
 
                 if edited:
                     # Check dates in format yyyy/mm/dd, or unchanged if fails datecheck
@@ -998,10 +996,6 @@ class WebInterface(object):
                     myDB.upsert("authors", newValueDict, controlValueDict)
                     logger.info('Updated [ %s] for %s' % (edited, authorname))
 
-                    if moved:
-                        # move all books by this author to new name unless book is set to manual
-                        myDB.action('UPDATE books SET AuthorName="%s" where AuthorID=%s and Manual is not "1"' %
-                                    (authorname, authorid))
                 else:
                     logger.debug('Author [%s] has not been changed' % authorname)
 
