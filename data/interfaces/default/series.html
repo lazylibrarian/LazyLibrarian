@@ -16,19 +16,14 @@
 <BR><BR>
 <h1>&nbsp&nbsp${title}</h1>
     <p class="indented">
-        <form action="markSeries" method="get">
-            <input type="hidden" name="redirect" value=${authorid}>
-            <label>&nbsp&nbspMark selected series as: </label>
-            <select class="markSeries" name="action" id="action">
-                    %for item in ['Wanted', 'Active', 'Skipped']:
-                        <option value="${item}"
-                        %if whichStatus == item:
-                            selected = "selected"
-                        %endif
-                        >${item}</option>
-                    %endfor
+        <form action="markBooks" method="get">
+            <label>&nbsp&nbspMark selected books as: </label>
+            <select class="markBooks" name="action" id="action">
+                <option value="Wanted">Wanted</option>
+                <option value="Active">Active</option>
+                <option value="Skipped">Skipped</option>
             </select>
-        <input type="submit" class="markSeries" id="go" value="Go">
+        <input type="submit" class="markBooks" id="go" value="Go">
         <br><br>
     </p>
     <table class="display" id="book_table" style="width:100%;">
@@ -45,7 +40,7 @@
         <tbody>
         %for result in series:
             <tr class="gradeZ">
-                <td id="select"><input type="checkbox" name="${result['SeriesID']}" /></td>
+                <td id="select"><input class="checkbox" type="checkbox" name="${result['SeriesID']}" /></td>
                 <td id="authorname">${result['AuthorName']}</td>
                 <td id="bookname">${result['SeriesName']}</td>
                 <td id="status">${result['Status']}</td>
@@ -55,7 +50,6 @@
         </tbody>
     </table>
 </div>
-</form>
 <p>&nbsp;</p>
 </%def>
 
@@ -70,10 +64,15 @@
     {
         var oTable = $('#book_table').dataTable(
             {
-                "order": [],
-                "columnDefs":
-                    [{ targets: 'no-sort', orderable: false }] // Don't allow colums of class no-sort to be sorted
-                ,
+                "bAutoWidth": false,
+                "order": [[ 1, 'asc' ]],
+                "aoColumns": [
+                    {"bSortable": false},
+                    null,
+                    null,
+                    null,
+                    null
+                    ],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ rows per page",
                     "sEmptyTable": "No series found",
@@ -81,6 +80,7 @@
                     "sInfoEmpty":"Showing 0 to 0 of 0 rows",
                     "sInfoFiltered":"(filtered from _MAX_ total rows)"},
                 "sPaginationType": "full_numbers",
+                "aaSorting": [[1, 'asc']],
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
             });

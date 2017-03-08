@@ -340,7 +340,7 @@ class WebInterface(object):
         for item in authorsearch:
             authorlist.append(item['AuthorName'])
 
-        booksearch = myDB.select("SELECT * from books")
+        booksearch = myDB.select("SELECT Status,BookID from books")
         booklist = []
         for item in booksearch:
             booklist.append(item['BookID'])
@@ -500,7 +500,9 @@ class WebInterface(object):
                 # books might not be in exact same authorname folder
                 # eg Calibre puts books into folder "Eric van Lustbader", but
                 # goodreads told lazylibrarian he's "Eric Van Lustbader", note the capital 'V'
-                anybook = myDB.match('SELECT BookFile from books where AuthorName="%s" and BookFile <> ""' % AuthorName)
+                cmd = 'SELECT BookFile from books,authors where books.AuthorID = authors.AuthorID'
+                cmd += '  and AuthorName="%s" and BookFile <> ""' % AuthorName
+                anybook = myDB.match(cmd)
                 if anybook:
                     authordir = safe_unicode(os.path.dirname(os.path.dirname(anybook['BookFile'])))
             if os.path.isdir(authordir):
@@ -574,8 +576,7 @@ class WebInterface(object):
     def books(self, BookLang=None):
         global LANGFILTER
         myDB = database.DBConnection()
-        languages = myDB.select('SELECT DISTINCT BookLang from books WHERE \
-                                STATUS !="Skipped" AND STATUS !="Ignored"')
+        languages = myDB.select('SELECT DISTINCT BookLang from books WHERE STATUS !="Skipped" AND STATUS !="Ignored"')
         LANGFILTER = BookLang
         return serve_template(templatename="books.html", title='Books', books=[], languages=languages)
 
@@ -592,16 +593,19 @@ class WebInterface(object):
         iDisplayLength = int(iDisplayLength)
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
-        cmd = 'SELECT bookimg, authorname, bookname, bookrate, bookdate, status, bookid,'
-        cmd += ' booksub, booklink, workpage, authorid, series from books '
+        cmd = 'SELECT bookimg,authorname,bookname,bookrate,bookdate,books.status,bookid,'
+        cmd += 'booksub,booklink,workpage,books.authorid from books,authors where books.AuthorID = authors.AuthorID'
 
         if kwargs['source'] == "Manage":
-            cmd += 'WHERE STATUS="%s"' % kwargs['whichStatus']
-        else:
-            cmd += 'WHERE STATUS !="Skipped" AND STATUS !="Ignored"'
+            cmd += ' and books.STATUS="%s"' % kwargs['whichStatus']
+        elif kwargs['source'] == "Books":
+            cmd += ' and books.STATUS !="Skipped" AND books.STATUS !="Ignored"'
             # for "books" need to check and filter on BookLang if set
             if LANGFILTER is not None and len(LANGFILTER):
                 cmd += ' and BOOKLANG="' + LANGFILTER + '"'
+        elif kwargs['source'] == "Author":
+            cmd += ' and AuthorID=%s' % kwargs['AuthorID']
+
         rowlist = myDB.select(cmd)
         # turn the sqlite rowlist into a list of lists
         d = []
@@ -631,6 +635,17 @@ class WebInterface(object):
             # now add html to the ones we want to display
             d = []  # the masterlist to be filled with the html data
             for row in rows:
+                cmd = 'SELECT SeriesName,SeriesNum from series,member '
+                cmd += 'WHERE series.SeriesID = member.SeriesID and member.BookID=%s' % row[6]
+                whichseries = myDB.select(cmd)
+                series = ''
+                for item in whichseries:
+                    newseries = "%s %s" % (item['SeriesName'], item['SeriesNum'])
+                    newseries.strip()
+                    if series and newseries:
+                        series += '<br>'
+                    series += newseries
+
                 l = []  # for each Row use a separate list
                 bookrate = float(row[3])
                 if bookrate < 0.5:
@@ -672,8 +687,11 @@ class WebInterface(object):
                     lref += '" target="_blank" rel="noreferrer"><img src="%s' % row[0]
                     lref += '" alt="Cover" class="bookcover-sm img-responsive"></a></td>'
                     l.append(lref)
-                    l.append(
-                        '<td class="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[10], row[1]))
+
+                    # Don't show author column on author page, we know which author!
+                    if not kwargs['source'] == "Author":
+                        l.append(
+                            '<td class="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[10], row[1]))
                     if row[7]:  # is there a sub-title
                         title = '<td class="bookname">%s<br><small><i>%s</i></small></td>' % (row[2], row[7])
                     else:
@@ -681,7 +699,7 @@ class WebInterface(object):
                     l.append(title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage)
 
                     # is the book part of a series
-                    l.append('<td class="series">%s</td>' % row[11])
+                    l.append('<td class="series">%s</td>' % series)
 
                     l.append('<td class="stars text-center"><img src="images/' + starimg + '" alt="Rating"></td>')
 
@@ -728,8 +746,10 @@ class WebInterface(object):
                     lref = '<td id="bookart"><a href="%s" target="_new"><img src="%s' % (row[0], row[0])
                     lref += '" height="75" width="50"></a></td>'
                     l.append(lref)
-                    l.append(
-                        '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[10], row[1]))
+                    # Don't show author column on author page, we know which author!
+                    if not kwargs['source'] == "Author":
+                        l.append(
+                            '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[10], row[1]))
                     if row[7]:  # is there a sub-title
                         title = '<td id="bookname">%s<br><i class="smalltext">%s</i></td>' % (row[2], row[7])
                     else:
@@ -737,7 +757,7 @@ class WebInterface(object):
                     l.append(title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage)
 
                     # is the book part of a series
-                    l.append('<td id="series">%s</td>' % row[11])
+                    l.append('<td id="series">%s</td>' % series)
 
                     l.append('<td id="stars"><img src="images/' + starimg + '" width="50" height="10"></td>')
 
@@ -773,7 +793,7 @@ class WebInterface(object):
     def addBook(self, bookid=None):
         myDB = database.DBConnection()
         AuthorID = ""
-        booksearch = myDB.select('SELECT * from books WHERE BookID="%s"' % bookid)
+        booksearch = myDB.select('SELECT AuthorID from books WHERE BookID="%s"' % bookid)
         if len(booksearch):
             myDB.upsert("books", {'Status': 'Wanted'}, {'BookID': bookid})
             for book in booksearch:
@@ -826,7 +846,7 @@ class WebInterface(object):
     def searchForBook(self, bookid=None):
         myDB = database.DBConnection()
         AuthorID = ''
-        bookdata = myDB.match('SELECT * from books WHERE BookID="%s"' % bookid)
+        bookdata = myDB.match('SELECT AuthorID from books WHERE BookID="%s"' % bookid)
         if bookdata:
             AuthorID = bookdata["AuthorID"]
 
@@ -844,9 +864,9 @@ class WebInterface(object):
         self.label_thread()
 
         myDB = database.DBConnection()
-
-        bookdata = myDB.match(
-            'SELECT * from books WHERE BookID="%s"' % bookid)
+        cmd = 'SELECT BookFile,AuthorName,BookName from books,authors WHERE BookID="%s"' % bookid
+        cmd += ' and books.AuthorID = authors.AuthorID'
+        bookdata = myDB.match(cmd)
         if bookdata:
             bookfile = bookdata["BookFile"]
             if bookfile and os.path.isfile(bookfile):
@@ -995,7 +1015,9 @@ class WebInterface(object):
         myDB = database.DBConnection()
         authors = myDB.select(
             "SELECT AuthorName from authors WHERE Status !='Ignored' ORDER by AuthorName COLLATE NOCASE")
-        bookdata = myDB.match('SELECT * from books WHERE BookID="%s"' % bookid)
+        cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,Manual,AuthorName,books.AuthorID from books,authors '
+        cmd += 'WHERE books.AuthorID = authors.AuthorID and BookID="%s"' % bookid
+        bookdata = myDB.match(cmd)
         cmd ='SELECT SeriesName, SeriesNum from member,series '
         cmd += 'where series.SeriesID=member.SeriesID and BookID=%s' % bookid
         seriesdict = myDB.select(cmd)
@@ -1010,7 +1032,9 @@ class WebInterface(object):
                    series='', manual='0', authorname='', **kwargs):
         myDB = database.DBConnection()
         if bookid:
-            bookdata = myDB.match('SELECT * from books WHERE BookID="%s"' % bookid)
+            cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,Manual,AuthorName,books.AuthorID from books,authors '
+            cmd += 'WHERE books.AuthorID = authors.AuthorID and BookID="%s"' % bookid
+            bookdata = myDB.match(cmd)
             if bookdata:
                 edited = ''
                 moved = False
@@ -1110,7 +1134,7 @@ class WebInterface(object):
                 # ouch dirty workaround...
                 if not bookid == 'book_table_length':
                     if action in ["Wanted", "Have", "Ignored", "Skipped"]:
-                        title = myDB.match('SELECT * from books WHERE BookID = "%s"' % bookid)
+                        title = myDB.match('SELECT BookName from books WHERE BookID = "%s"' % bookid)
                         if title:
                             bookname = title['BookName']
                             myDB.upsert("books", {'Status': action}, {'BookID': bookid})
@@ -1136,7 +1160,6 @@ class WebInterface(object):
                                 myDB.upsert("books", {"Status": "Ignored"}, {"BookID": bookid})
                                 logger.debug(u'Status set to Ignored for "%s"' % bookname)
                             else:
-                                myDB.action('DELETE from books WHERE BookID = "%s"' % bookid)
                                 logger.info(u'Removed "%s" from database' % bookname)
 
         if redirect == "author" or len(authorcheck):
@@ -1355,8 +1378,7 @@ class WebInterface(object):
                 if not nzburl2:
                     title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s"' % nzburl)
                 else:
-                    title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s" OR NZBurl="%s"' %
-                                        (nzburl, nzburl2))
+                    title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s" OR NZBurl="%s"' % (nzburl, nzburl2))
 
                 for item in title:
                     nzburl = item['NZBurl']

@@ -480,8 +480,10 @@ class GoodReads:
                             rejected = True
 
                         if not rejected:
-                            find_books = myDB.select('SELECT * FROM books WHERE BookName = "%s" and AuthorName = "%s"' %
-                                                     (bookname, authorNameResult.replace('"', '""')))
+                            cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'
+                            cmd += ' and BookName = "%s" and AuthorName = "%s"' % \
+                                    (bookname, authorNameResult.replace('"', '""'))
+                            find_books = myDB.select(cmd)
                             if find_books:
                                 for find_book in find_books:
                                     if find_book['BookID'] != bookid:
@@ -492,8 +494,9 @@ class GoodReads:
                                         rejected = True
 
                         if not rejected:
-                            find_books = myDB.match(
-                                'SELECT AuthorName,BookName FROM books WHERE BookID = "%s"' % bookid)
+                            cmd = 'SELECT AuthorName,BookName FROM books,authors'
+                            cmd += ' WHERE authors.AuthorID = books.AuthorID AND BookID=%s' % bookid
+                            find_books = myDB.match(cmd)
                             if find_books:
                                 # we have a book with this bookid already
                                 if bookname != find_books['BookName'] or authorNameResult != find_books['AuthorName']:

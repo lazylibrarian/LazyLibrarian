@@ -61,8 +61,9 @@ def upgrade_needed():
     # 13 add Manual column to author table for user editing
     # 14 separate book and author images in case id numbers collide
     # 15 move series and seriesnum into separate tables so book can appear in multiple series
+    # 16 remove series column from book table, series only stored in series/member tables now
 
-    db_current_version = 15
+    db_current_version = 16
     if db_version < db_current_version:
         return db_current_version
     return 0
@@ -112,7 +113,7 @@ def dbupgrade(db_current_version):
             myDB.action('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
                 BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
                 BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, \
-                BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, WorkPage TEXT, Manual TEXT)')
+                BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, WorkPage TEXT, Manual TEXT)')
             myDB.action('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, \
                 NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, Source TEXT, DownloadID TEXT)')
             myDB.action('CREATE TABLE IF NOT EXISTS pastissues AS SELECT * FROM wanted WHERE 0')  # same columns
@@ -559,6 +560,21 @@ def dbupgrade(db_current_version):
                 myDB.action('INSERT INTO temp_table SELECT AuthorID, AuthorName, AuthorLink, BookName, BookSub, \
                     BookDesc, BookGenre, BookIsbn, BookPub, BookRate, BookImg, BookPages, BookLink, BookID, \
                     BookFile, BookDate, BookLang, BookAdded, Status, Series, WorkPage, Manual from books')
+                myDB.action('DROP TABLE books')
+                myDB.action('ALTER TABLE temp_table RENAME TO books')
+                lazylibrarian.UPDATE_MSG = 'Reorganisation of books table complete'
+
+        if db_version < 16:
+            if has_column(myDB, "books", "AuthorName"):
+                lazylibrarian.UPDATE_MSG = 'Removing series and authorname from books table'
+                myDB.action('CREATE TABLE IF NOT EXISTS temp_table (AuthorID TEXT, AuthorLink TEXT, \
+                    BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
+                    BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, \
+                    BookFile TEXT, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, WorkPage TEXT, \
+                    Manual TEXT)')
+                myDB.action('INSERT INTO temp_table SELECT AuthorID, AuthorLink, BookName, BookSub, \
+                    BookDesc, BookGenre, BookIsbn, BookPub, BookRate, BookImg, BookPages, BookLink, BookID, \
+                    BookFile, BookDate, BookLang, BookAdded, Status, WorkPage, Manual from books')
                 myDB.action('DROP TABLE books')
                 myDB.action('ALTER TABLE temp_table RENAME TO books')
                 lazylibrarian.UPDATE_MSG = 'Reorganisation of books table complete'

@@ -130,78 +130,9 @@
                 <th class="series">Series</th>
                 <th class="stars text-center hidden-xs">Rating</th>
                 <th class="date text-center hidden-xs">Released</th>
-                <th class="language text-center">Language</th>
                 <th class="status text-center">Status</th>
             </tr>
         </thead>
-
-        <tbody>
-        %for result in books:
-                <%
-                    if result['bookrate'] < 0.5:
-                        starimg = '0-stars.png'
-                    elif result['bookrate'] >= 0.5 and result['bookrate'] < 1.5:
-                        starimg = '1-stars.png'
-                    elif result['bookrate'] >= 1.5 and result['bookrate'] < 2.5:
-                        starimg = '2-stars.png'
-                    elif result['bookrate'] >= 2.5 and result['bookrate'] < 3.5:
-                        starimg = '3-stars.png'
-                    elif result['bookrate'] >= 3.5 and result['bookrate'] < 4.5:
-                        starimg = '4-stars.png'
-                    elif result['bookrate'] >= 4.5:
-                        starimg = '5-stars.png'
-                    else:
-                        starimg = '0-stars.png'
-
-                    sitelink = ''
-                    if 'goodreads' in result['booklink']:
-                        sitelink = '<a href="' + result['booklink'] + '" target="_new"><small><i>GoodReads</i></small></a>'
-                    if 'google' in result['booklink']:
-                        sitelink = '<a href="' + result['booklink'] + '" target="_new"><small><i>GoogleBooks</i></small></a>'
-
-                    workpage = ''
-                    if result['workpage']:
-                        if len(result['workpage']) > 4:
-                            workpage = '<a href="' + result['workpage'] + '" target="_new"><small><i>LibraryThing</i></small></a>'
-                    editpage = '<a href="editBook?bookid=' + result['bookID'] + '" target="_new"><small><i>Manual</i><small></a>'
-                %>
-                <tr>
-                    <td class="select"><input type="checkbox" name="${result['BookID']}" /></td>
-                    <td class="bookart text-center"><a href="${result['bookimg']}" target="_blank" rel="noreferrer"><img src="${result['bookimg']}" class="bookcover-xs img-responsive" alt="Cover"></a></td>
-                    %if result['booksub']:
-                        <td class id="bookname">${result['bookname']}<br>
-                        <small><i>${result['booksub']}</i></small><br>${sitelink}&nbsp;${workpage}&nbsp;${editpage}</td>
-                    %else:
-                        <td class="bookname">${result['bookname']}<br>${sitelink}&nbsp;${workpage}&nbsp;${editpage}</td>
-                    %endif
-                    <td class="series">${result['Series']}</td>
-                    <td class="stars text-center"><img src="images/${starimg}" alt="Rating"></td>
-                    <td class="date text-center">${result['BookDate']}</td>
-                    <td class="language text-center">${result['booklang']}</td>
-
-                    %if result['Status'] == 'Open':
-                        <td class="status text-center"><a class="btn btn-xs btn-warning button green" href="openBook?bookid=${result['bookID']}" target="_self"><i class="fa fa-book"></i> ${result['Status']}</a></td>
-                    %else:
-                        %if result['Status'] == 'Wanted':
-                            <td class="status text-center">
-                                <!--<p><a class="btn btn-xs btn-danger" href="searchForBook?bookid=${result['bookID']}" target="_self"></p>-->
-                                <p><a class="a btn btn-xs btn-danger">${result['Status']}</a></p>
-                                <p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=${result['bookID']}" title="Search Now"><i class="fa fa-search"></i> Search</a></p></td>
-                        %else:
-                            %if result['Status'] == 'Snatched':
-                                <td class="status text-center"><a class="btn btn-xs btn-info button">${result['Status']}</a></td>
-                            %else:
-                                %if result['Status'] == 'Have':
-                                    <td class="status text-center"><a class="btn btn-xs btn-info button">${result['Status']}</a></td>
-                                %else:
-                                    <td class="status text-center"><a class="btn btn-xs btn-default button">${result['Status']}</a></td>
-                                %endif:
-                            %endif
-                        %endif
-                    %endif
-                </tr>
-        %endfor
-        </tbody>
     </table>
 </div>
 </form>
@@ -237,6 +168,10 @@
                     "sInfoEmpty":"Showing 0 to 0 of 0 rows",
                     "sInfoFiltered":"(filtered from _MAX_ total rows)"},
                 "sPaginationType": "full_numbers",
+                "aaSorting": [[5, 'desc']],
+                "bServerSide": true,
+                "sAjaxSource": 'getBooks?source=Author&AuthorID=${author['AuthorID']}',
+                "bFilter": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {

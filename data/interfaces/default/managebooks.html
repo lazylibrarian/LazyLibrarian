@@ -69,10 +69,10 @@
     {
         $('#book_table').dataTable(
             {
-                "order": [[ 1, 'asc' ]],
+                "order": [[ 2, 'asc' ]],
                 "aoColumns": [
                     {"bSortable": false},
-                    null,
+                    {"bSortable": false},
                     null,
                     null,
                     null,
@@ -88,8 +88,8 @@
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "sPaginationType": "full_numbers",
-                "aaSorting": [[1, 'asc']],
-                 "bServerSide": true,
+                "aaSorting": [[2, 'asc']],
+                "bServerSide": true,
                 "bFilter": true,
                 "sAjaxSource": 'getBooks?whichStatus=${whichStatus}&source=Manage',
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {

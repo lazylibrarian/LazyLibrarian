@@ -55,15 +55,16 @@ def search_nzb_book(books=None, reset=False):
 
         if books is None:
             # We are performing a backlog search
-            searchbooks = myDB.select(
-                'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books WHERE Status="Wanted" \
-                order by BookAdded desc')
+            cmd = 'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books,authors '
+            cmd += 'WHERE books.Status="Wanted" and books.AuthorID = authors.AuthorID order by BookAdded desc'
+            searchbooks = myDB.select(cmd)
         else:
             # The user has added a new book
             searchbooks = []
             for book in books:
-                searchbook = myDB.select('SELECT BookID, AuthorName, BookName, BookSub from books WHERE BookID="%s" \
-                                         AND Status="Wanted"' % book['bookid'])
+                cmd = 'SELECT BookID, AuthorName, BookName, BookSub from books WHERE BookID="%s"'
+                cmd += ' AND books.AuthorID = authors.AuthorID AND books.Status="Wanted"' % book['bookid']
+                searchbook = myDB.select(cmd)
                 for terms in searchbook:
                     searchbooks.append(terms)
 
@@ -220,7 +221,7 @@ def processResultList(resultlist, book, searchtype):
         logger.info(u'Best NZB match (%s%%): %s using %s search' %
                     (score, nzb_Title, searchtype))
 
-        snatchedbooks = myDB.match('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
+        snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID="%s" and Status="Snatched"' %
                                    newValueDict["BookID"])
         if snatchedbooks:
             logger.debug('%s already marked snatched' % nzb_Title)

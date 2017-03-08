@@ -149,8 +149,9 @@ def find_book_in_db(myDB, author, book):
     # PAB fuzzy search for book in library, return LL bookid if found or zero
     # if not, return bookid to more easily update status
     # prefer an exact match on author & book
-    match = myDB.match('SELECT BookID FROM books where AuthorName="%s" and BookName="%s"' %
-                       (author.replace('"', '""'), book.replace('"', '""')))
+    cmd = 'SELECT BookID FROM books,authors where books.AuthorID = authors.AuthorID and AuthorName="%s" '
+    cmd += 'and BookName="%s"' % (author.replace('"', '""'), book.replace('"', '""'))
+    match = myDB.match(cmd)
     if match:
         logger.debug('Exact match [%s]' % book)
         return match['BookID']
@@ -160,9 +161,9 @@ def find_book_in_db(myDB, author, book):
         # These are results that work well on my library, minimal false matches and no misses
         # on books that should be matched
         # Maybe make ratios configurable in config.ini later
-
-        books = myDB.select('SELECT BookID,BookName,BookISBN FROM books where AuthorName="%s"' %
-                            author.replace('"', '""'))
+        cmd = 'SELECT BookID,BookName,BookISBN FROM books,authors where books.AuthorID = authors.AuthorID '
+        cmd += 'and AuthorName="%s"' % author.replace('"', '""')
+        books = myDB.select(cmd)
         best_ratio = 0
         best_partial = 0
         best_partname = 0
@@ -310,13 +311,11 @@ def LibraryScan(startdir=None):
         author = ""
 
         if lazylibrarian.CONFIG['FULL_SCAN']:
-            if startdir == destdir:
-                books = myDB.select(
-                    'select AuthorName, BookName, BookFile, BookID from books where Status="Open"')
-            else:
-                books = myDB.select('select AuthorName, BookName, BookFile, BookID from books where Status="Open"' +
-                                    ' and BookFile like "' + startdir + '%"')
-
+            cmd = 'select AuthorName, BookName, BookFile, BookID from books where books.AuthorID = authors.AuthorID'
+            cmd += ' and books.Status="Open"'
+            if not startdir == destdir:
+                cmd += ' and BookFile like "' + startdir + '%"'
+            books = myDB.select(cmd)
             status = lazylibrarian.CONFIG['NOTFOUND_STATUS']
             logger.info('Missing books will be marked as %s' % status)
             for book in books:
@@ -678,9 +677,9 @@ def LibraryScan(startdir=None):
 
                                 # see if it's there now...
                                 if bookid:
-                                    check_status = myDB.match(
-                                        'SELECT Status, BookFile, AuthorName, BookName from books where BookID="%s"' %
-                                        bookid)
+                                    cmd = 'SELECT Status, BookFile, AuthorName, BookName from books '
+                                    cmd += 'where books.AuthorID = authors.AuthorID and BookID="%s"' % bookid
+                                    check_status = myDB.match(cmd)
 
                                     if not check_status:
                                         logger.debug('Unable to find bookid %s in database' % bookid)

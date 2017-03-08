@@ -239,8 +239,9 @@ class Api(object):
             'SELECT * from authors order by AuthorName COLLATE NOCASE')
 
     def _getNoLang(self):
-        self.data = self._dic_from_query(
-            'SELECT BookID,BookISBN,BookName,AuthorName from books where BookLang="Unknown" or BookLang="" or BookLang is NULL')
+        q = 'SELECT BookID,BookISBN,BookName,AuthorName from books,authors where books.AuthorID = authors.AuthorID'
+        q += ' and BookLang="Unknown" or BookLang="" or BookLang is NULL'
+        self.data = self._dic_from_query(q)
 
     def _getAuthor(self, **kwargs):
         if 'id' not in kwargs:
@@ -260,9 +261,10 @@ class Api(object):
         self.data = self._dic_from_query('SELECT * from magazines order by Title COLLATE NOCASE')
 
     def _getAllBooks(self):
-        self.data = self._dic_from_query(
-            'SELECT AuthorID,AuthorName,AuthorLink, BookName,BookSub,BookGenre,BookIsbn,BookPub, \
-            BookRate,BookImg,BookPages,BookLink,BookID,BookDate,BookLang,BookAdded,Status,Series from books')
+        q = 'SELECT AuthorID,AuthorName,AuthorLink, BookName,BookSub,BookGenre,BookIsbn,BookPub,'
+        q += 'BookRate,BookImg,BookPages,BookLink,BookID,BookDate,BookLang,BookAdded,books.Status '
+        q += 'from books,authors where books.AuthorID = authors.AuthorID')
+        self.data = self._dic_from_query(q)
 
     def _getIssues(self, **kwargs):
         if 'name' not in kwargs:
@@ -607,9 +609,10 @@ class Api(object):
             return
         try:
             myDB = database.DBConnection()
+            q = 'SELECT bookid,books.authorid from books,authors where books.AuthorID = authors.AuthorID'
+            q += ' and authorname="%s"' % kwargs['fromname']
+            fromhere = myDB.select(q)
 
-            fromhere = myDB.select(
-                'SELECT bookid,authorid from books where authorname="%s"' % kwargs['fromname'])
             tohere = myDB.match(
                 'SELECT authorid, authorlink from authors where authorname="%s"' % kwargs['toname'])
             if not len(fromhere):

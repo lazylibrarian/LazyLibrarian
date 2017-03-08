@@ -181,8 +181,9 @@ def setWorkPages():
     """ Set the workpage link for any books that don't already have one """
 
     myDB = database.DBConnection()
-
-    books = myDB.select('select BookID,AuthorName,BookName from books where length(WorkPage) < 4')
+    cmd = 'select BookID,AuthorName,BookName from books,authors where length(WorkPage) < 4'
+    cmd += ' and books.AuthorID = authors.AuthorID'
+    books = myDB.select(cmd)
     if books:
         logger.debug('Setting WorkPage for %s book%s' % (len(books), plural(len(books))))
         counter = 0
@@ -221,8 +222,9 @@ def getBookWork(bookID=None, reason=None):
         reason = ""
 
     myDB = database.DBConnection()
-
-    item = myDB.match('select BookName,AuthorName,BookISBN from books where bookID="%s"' % bookID)
+    cmd = 'select BookName,AuthorName,BookISBN from books,authors where bookID="%s"' % bookID
+    cmd += ' and books.AuthorID = authors.AuthorID'
+    item = myDB.match(cmd)
     if item:
         cacheLocation = "WorkCache"
         cacheLocation = os.path.join(lazylibrarian.CACHEDIR, cacheLocation)
@@ -414,7 +416,9 @@ def getBookCover(bookID=None):
             logger.debug('getBookCover: Image not found in work page for %s' % bookID)
 
     # not found in librarything work page, try to get a cover from goodreads or google instead
-    item = myDB.match('select BookName,AuthorName,BookLink from books where bookID="%s"' % bookID)
+    cmd = 'select BookName,AuthorName,BookLink from books,authors where bookID="%s"' % bookID
+    cmd += ' and books.AuthorID = authors.AuthorID'
+    item = myDB.match(cmd)
     if item:
         title = safe_unicode(item['BookName']).encode(lazylibrarian.SYS_ENCODING)
         author = safe_unicode(item['AuthorName']).encode(lazylibrarian.SYS_ENCODING)
