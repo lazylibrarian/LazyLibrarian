@@ -86,11 +86,10 @@ def setSeries(seriesdict=None, bookid=None):
     myDB = database.DBConnection()
     if bookid:
         # delete any old entries
-        myDB.action('DELETE from member WHERE Bookid=%s' % bookid)
-        series = ''
+        myDB.action('DELETE from member WHERE BookID=%s' % bookid)
         for item in seriesdict:
+            book = myDB.match('SELECT AuthorID from books where BookID=%s' % bookid)
             match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % item)
-            book = myDB.match('SELECT BookName, AuthorID from books where BookID=%s' % bookid)
             if not match:
                 # new series, need to set status and get SeriesID
                 myDB.action('INSERT into series (SeriesName, AuthorID, Status) VALUES ("%s", "%s", "Active")' %

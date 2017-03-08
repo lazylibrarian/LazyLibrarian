@@ -545,8 +545,7 @@ def dbupgrade(db_current_version):
                         if not seriesdict:  # no workpage series, use the current values if present
                             if book['Series'] and book['SeriesNum']:
                                 seriesdict = {book['Series']: book['SeriesNum']}
-                        if seriesdict:
-                            setSeries(seriesdict, book['BookID'])
+                        setSeries(seriesdict, book['BookID'])
 
                     lazylibrarian.UPDATE_MSG = "Book series update complete"
                     logger.info(lazylibrarian.UPDATE_MSG)

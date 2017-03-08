@@ -1009,8 +1009,8 @@ class WebInterface(object):
         myDB = database.DBConnection()
         authors = myDB.select(
             "SELECT AuthorName from authors WHERE Status !='Ignored' ORDER by AuthorName COLLATE NOCASE")
-        cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,Manual,AuthorName,books.AuthorID from books,authors '
-        cmd += 'WHERE books.AuthorID = authors.AuthorID and BookID="%s"' % bookid
+        cmd = 'SELECT BookName,BookID,BookSub,BookGenre,BookLang,books.Manual,AuthorName,books.AuthorID '
+        cmd += 'from books,authors WHERE books.AuthorID = authors.AuthorID and BookID="%s"' % bookid
         bookdata = myDB.match(cmd)
         cmd ='SELECT SeriesName, SeriesNum from member,series '
         cmd += 'where series.SeriesID=member.SeriesID and BookID=%s' % bookid
@@ -1026,7 +1026,7 @@ class WebInterface(object):
                    series='', manual='0', authorname='', **kwargs):
         myDB = database.DBConnection()
         if bookid:
-            cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,Manual,AuthorName,books.AuthorID from books,authors '
+            cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,books.Manual,AuthorName,books.AuthorID from books,authors '
             cmd += 'WHERE books.AuthorID = authors.AuthorID and BookID="%s"' % bookid
             bookdata = myDB.match(cmd)
             if bookdata:
