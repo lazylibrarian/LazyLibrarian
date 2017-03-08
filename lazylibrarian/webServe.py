@@ -604,7 +604,7 @@ class WebInterface(object):
             if LANGFILTER is not None and len(LANGFILTER):
                 cmd += ' and BOOKLANG="' + LANGFILTER + '"'
         elif kwargs['source'] == "Author":
-            cmd += ' and AuthorID=%s' % kwargs['AuthorID']
+            cmd += ' and books.AuthorID=%s' % kwargs['AuthorID']
 
         rowlist = myDB.select(cmd)
         # turn the sqlite rowlist into a list of lists
