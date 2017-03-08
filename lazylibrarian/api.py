@@ -261,9 +261,9 @@ class Api(object):
         self.data = self._dic_from_query('SELECT * from magazines order by Title COLLATE NOCASE')
 
     def _getAllBooks(self):
-        q = 'SELECT AuthorID,AuthorName,AuthorLink, BookName,BookSub,BookGenre,BookIsbn,BookPub,'
+        q = 'SELECT authors.AuthorID,AuthorName,AuthorLink, BookName,BookSub,BookGenre,BookIsbn,BookPub,'
         q += 'BookRate,BookImg,BookPages,BookLink,BookID,BookDate,BookLang,BookAdded,books.Status '
-        q += 'from books,authors where books.AuthorID = authors.AuthorID')
+        q += 'from books,authors where books.AuthorID = authors.AuthorID'
         self.data = self._dic_from_query(q)
 
     def _getIssues(self, **kwargs):
@@ -577,7 +577,7 @@ class Api(object):
         try:
             myDB = database.DBConnection()
             authordata = myDB.match(
-                'SELECT AuthorName, AuthorLink from authors WHERE AuthorID="%s"' % kwargs['toid'])
+                'SELECT AuthorName from authors WHERE AuthorID="%s"' % kwargs['toid'])
             if not authordata:
                 self.data = "No destination author [%s] in the database" % kwargs['toid']
             else:
@@ -587,11 +587,7 @@ class Api(object):
                     self.data = "No bookid [%s] in the database" % kwargs['id']
                 else:
                     controlValueDict = {'BookID': kwargs['id']}
-                    newValueDict = {
-                        'AuthorID': kwargs['toid'],
-                        'AuthorName': authordata[0],
-                        'AuthorLink': authordata[1]
-                    }
+                    newValueDict = {'AuthorID': kwargs['toid']}
                     myDB.upsert("books", newValueDict, controlValueDict)
                     update_totals(bookdata[0])  # we moved from here
                     update_totals(kwargs['toid'])  # to here
@@ -614,16 +610,15 @@ class Api(object):
             fromhere = myDB.select(q)
 
             tohere = myDB.match(
-                'SELECT authorid, authorlink from authors where authorname="%s"' % kwargs['toname'])
+                'SELECT authorid from authors where authorname="%s"' % kwargs['toname'])
             if not len(fromhere):
                 self.data = "No books by [%s] in the database" % kwargs['fromname']
             else:
                 if not tohere:
                     self.data = "No destination author [%s] in the database" % kwargs['toname']
                 else:
-                    myDB.action(
-                        'UPDATE books SET authorid="%s", authorname="%s", authorlink="%s" where authorname="%s"' %
-                        (tohere[0], kwargs['toname'], tohere[1], kwargs['fromname']))
+                    myDB.action('UPDATE books SET authorid="%s", where authorname="%s"' %
+                                (tohere[0], kwargs['fromname']))
                     self.data = "Moved %s books from %s to %s" % (len(fromhere), kwargs['fromname'], kwargs['toname'])
                     update_totals(fromhere[0][1])  # we moved from here
                     update_totals(tohere[0])  # to here

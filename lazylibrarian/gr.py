@@ -530,7 +530,6 @@ class GoodReads:
                                 newValueDict = {
                                     "AuthorName": authorNameResult,
                                     "AuthorID": authorid,
-                                    "AuthorLink": "",
                                     "BookName": bookname,
                                     "BookSub": booksub,
                                     "BookDesc": bookdesc,
@@ -746,7 +745,6 @@ class GoodReads:
         newValueDict = {
             "AuthorName": authorname,
             "AuthorID": AuthorID,
-            "AuthorLink": "",
             "BookName": bookname,
             "BookSub": booksub,
             "BookDesc": bookdesc,

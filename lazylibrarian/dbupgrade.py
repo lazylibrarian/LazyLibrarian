@@ -110,7 +110,7 @@ def dbupgrade(db_current_version):
                 AuthorImg TEXT, AuthorLink TEXT, DateAdded TEXT, Status TEXT, LastBook TEXT, LastBookImg TEXT, \
                 LastLink Text, LastDate TEXT,  HaveBooks INTEGER, TotalBooks INTEGER, AuthorBorn TEXT, \
                 AuthorDeath TEXT, UnignoredBooks INTEGER, Manual TEXT)')
-            myDB.action('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
+            myDB.action('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, \
                 BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
                 BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, \
                 BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, WorkPage TEXT, Manual TEXT)')
@@ -565,14 +565,14 @@ def dbupgrade(db_current_version):
                 lazylibrarian.UPDATE_MSG = 'Reorganisation of books table complete'
 
         if db_version < 16:
-            if has_column(myDB, "books", "AuthorName"):
-                lazylibrarian.UPDATE_MSG = 'Removing series and authorname from books table'
-                myDB.action('CREATE TABLE IF NOT EXISTS temp_table (AuthorID TEXT, AuthorLink TEXT, \
+            if has_column(myDB, "books", "AuthorLink"):
+                lazylibrarian.UPDATE_MSG = 'Removing series, authorlink and authorname from books table'
+                myDB.action('CREATE TABLE IF NOT EXISTS temp_table (AuthorID TEXT, \
                     BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
                     BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, \
                     BookFile TEXT, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, WorkPage TEXT, \
                     Manual TEXT)')
-                myDB.action('INSERT INTO temp_table SELECT AuthorID, AuthorLink, BookName, BookSub, \
+                myDB.action('INSERT INTO temp_table SELECT AuthorID, BookName, BookSub, \
                     BookDesc, BookGenre, BookIsbn, BookPub, BookRate, BookImg, BookPages, BookLink, BookID, \
                     BookFile, BookDate, BookLang, BookAdded, Status, WorkPage, Manual from books')
                 myDB.action('DROP TABLE books')

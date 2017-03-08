@@ -1095,14 +1095,10 @@ class WebInterface(object):
 
                 if moved:
                     authordata = myDB.match(
-                        'SELECT AuthorID,AuthorLink from authors WHERE AuthorName="%s"' % authorname)
+                        'SELECT AuthorID from authors WHERE AuthorName="%s"' % authorname)
                     if authordata:
                         controlValueDict = {'BookID': bookid}
-                        newValueDict = {
-                            'AuthorName': authorname,
-                            'AuthorID': authordata['AuthorID'],
-                            'AuthorLink': authordata['AuthorLink']
-                        }
+                        newValueDict = {'AuthorID': authordata['AuthorID']}
                         myDB.upsert("books", newValueDict, controlValueDict)
                         update_totals(bookdata["AuthorID"])  # we moved from here
                         update_totals(authordata['AuthorID'])  # to here

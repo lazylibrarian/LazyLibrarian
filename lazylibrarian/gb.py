@@ -571,7 +571,6 @@ class GoogleBooks:
                                 newValueDict = {
                                     "AuthorName": authorname,
                                     "AuthorID": authorid,
-                                    "AuthorLink": "",
                                     "BookName": bookname,
                                     "BookSub": booksub,
                                     "BookDesc": bookdesc,
@@ -811,7 +810,6 @@ class GoogleBooks:
         newValueDict = {
             "AuthorName": authorname,
             "AuthorID": AuthorID,
-            "AuthorLink": "",
             "BookName": bookname,
             "BookSub": booksub,
             "BookDesc": bookdesc,
