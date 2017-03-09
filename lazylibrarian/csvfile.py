@@ -42,7 +42,7 @@ def export_CSV(search_dir=None, status="Wanted"):
 
         myDB = database.DBConnection()
 
-        cmd = 'SELECT BookID,AuthorName,BookName,BookIsbn,AuthorID FROM books,authors '
+        cmd = 'SELECT BookID,AuthorName,BookName,BookIsbn,books.AuthorID FROM books,authors '
         cmd += 'WHERE books.Status = "%s" and books.AuthorID = authors.AuthorID' % status
         find_status = myDB.select(cmd)
 
@@ -92,18 +92,23 @@ def finditem(item, headers):
         bookid = item['BookID']
 
     # try to find book in our database using bookid or isbn, or if that fails, name matching
+    cmd = 'SELECT AuthorName,BookName,BookID,books.Status FROM books,authors where books.AuthorID = authors.AuthorID '
     if bookid:
-        bookmatch = myDB.match('SELECT AuthorName,BookName,BookID,Status FROM books,authors where books.AuthorID = authors.AuthorID and BookID=%s' % bookid)
+        fullcmd = cmd + 'and BookID=%s' % bookid
+        bookmatch = myDB.match(fullcmd)
     if not bookmatch:
         if is_valid_isbn(isbn10):
-            bookmatch = myDB.match('SELECT AuthorName,BookName,BookID,Status FROM books,authors where books.AuthorID = authors.AuthorID and BookIsbn=%s' % isbn10)
+            fullcmd = cmd + 'and BookIsbn=%s' % isbn10
+            bookmatch = myDB.match(fullcmd)
     if not bookmatch:
         if is_valid_isbn(isbn13):
-            bookmatch = myDB.match('SELECT AuthorName,BookName,BookID,Status FROM books,authors where books.AuthorID = authors.AuthorID and BookIsbn=%s' % isbn13)
+            fullcmd = cmd + 'and BookIsbn=%s' % isbn13
+            bookmatch = myDB.match(fullcmd)
     if not bookmatch:
         bookid = find_book_in_db(myDB, authorname, bookname)
         if bookid:
-            bookmatch = myDB.match('SELECT AuthorName,BookName,BookID,Status FROM books,authors where books.AuthorID = authors.AuthorID and BookID="%s"' % bookid)
+            fullcmd = cmd + 'and BookID="%s"' % bookid
+            bookmatch = myDB.match(fullcmd)
     return bookmatch
 
 

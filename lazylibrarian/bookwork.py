@@ -21,7 +21,7 @@ import urllib
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.cache import cache_img, fetchURL
-from lazylibrarian.formatter import safe_unicode, plural
+from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented
 
 
 def getAuthorImages():
@@ -95,9 +95,12 @@ def setSeries(seriesdict=None, bookid=None):
                 myDB.action('INSERT into series (SeriesName, AuthorID, Status) VALUES ("%s", "%s", "Active")' %
                             (item, book['AuthorID']))
                 match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % item)
-            controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
-            newValueDict = {"SeriesNum": seriesdict[item]}
-            myDB.upsert("member", newValueDict, controlValueDict)
+                if match:
+                    controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
+                    newValueDict = {"SeriesNum": seriesdict[item]}
+                    myDB.upsert("member", newValueDict, controlValueDict)
+                else:
+                    logger.debug('Unable to set series for book %s, %s' % (bookid, repr(seriesdict)))
         deleteEmptySeries()
 
 def setStatus(bookid=None, seriesdict=None, default=None):
@@ -107,7 +110,6 @@ def setStatus(bookid=None, seriesdict=None, default=None):
     if not bookid:
         return default
 
-    new_status = ''
     match = myDB.match('SELECT Status,AuthorID,BookName from books WHERE BookID="%s"' % bookid)
     if not match:
         return default
@@ -141,12 +143,10 @@ def setStatus(bookid=None, seriesdict=None, default=None):
 
     if not new_status:
         # Author we don't want?
-        for item in seriesdict:
-            match = myDB.match('SELECT Status from authors where AuthorID="%s"' % authorid)
-            if match['Status'] in ['Paused', 'Ignored']:
-                new_status = 'Skipped'
-                logger.debug('Marking %s as %s, author %s' % (bookname, new_status, match['Status']))
-                break
+        match = myDB.match('SELECT Status from authors where AuthorID="%s"' % authorid)
+        if match['Status'] in ['Paused', 'Ignored']:
+            new_status = 'Skipped'
+            logger.debug('Marking %s as %s, author %s' % (bookname, new_status, match['Status']))
 
     # If none of these, leave default "newbook" or "newauthor" status
     if new_status:
@@ -335,7 +335,7 @@ def getWorkSeries(bookID=None):
             for item in serieslist[1:]:
                 try:
                     series = item.split('">')[1].split('</a>')[0]
-                    series = safe_unicode(series).encode(lazylibrarian.SYS_ENCODING)
+                    series = cleanName(unaccented(series))
                     if series and '(' in series:
                         seriesnum = series.split('(')[1].split(')')[0].strip()
                         series = series.split(' (')[0].strip()

@@ -24,7 +24,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, setSeries, setStatus
 from lazylibrarian.cache import get_xml_request, cache_img
-from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList
+from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList, cleanName
 from lib.fuzzywuzzy import fuzz
 
 
@@ -528,7 +528,6 @@ class GoodReads:
                             if not locked and book_status != "Ignored":
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {
-                                    "AuthorName": authorNameResult,
                                     "AuthorID": authorid,
                                     "BookName": bookname,
                                     "BookSub": booksub,
@@ -543,8 +542,7 @@ class GoodReads:
                                     "BookDate": pubyear,
                                     "BookLang": bookLanguage,
                                     "Status": book_status,
-                                    "BookAdded": today(),
-                                    "Series": ''
+                                    "BookAdded": today()
                                 }
 
                                 resultsCount += 1
@@ -580,7 +578,7 @@ class GoodReads:
                                     updated = True
                                 else:
                                     if series:
-                                        seriesdict = {series: seriesNum}
+                                        seriesdict = {cleanName(unaccented(series)): seriesNum}
                                 setSeries(seriesdict, bookid)
 
                                 new_status = setStatus(bookid, seriesdict, bookstatus)
@@ -700,7 +698,7 @@ class GoodReads:
         #
         valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
         if bookLanguage not in valid_langs:
-            logger.debug('Book %s language does not match preference, %s' % (bookname, bookLanguage))
+            logger.debug('Book %s goodreads language does not match preference, %s' % (bookname, bookLanguage))
 
         if rootxml.find('./book/publication_year').text is None:
             bookdate = "0000"
@@ -743,7 +741,6 @@ class GoodReads:
 
         controlValueDict = {"BookID": bookid}
         newValueDict = {
-            "AuthorName": authorname,
             "AuthorID": AuthorID,
             "BookName": bookname,
             "BookSub": booksub,
@@ -758,8 +755,7 @@ class GoodReads:
             "BookDate": bookdate,
             "BookLang": bookLanguage,
             "Status": "Wanted",
-            "BookAdded": today(),
-            "Series": ''
+            "BookAdded": today()
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
@@ -789,7 +785,7 @@ class GoodReads:
             logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
         else:
             if series:
-                seriesdict = {series: seriesNum}
+                seriesdict = {cleanName(unaccented(series)): seriesNum}
         setSeries(seriesdict, bookid)
 
         worklink = getWorkPage(bookid)

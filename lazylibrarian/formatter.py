@@ -66,6 +66,7 @@ def bookSeries(bookname):
     if series and series.lower().endswith(' book'):
         series = series[:-5]
 
+    series = cleanName(unaccented(series))
     series = series.strip()
     seriesNum = seriesNum.strip()
     return series, seriesNum

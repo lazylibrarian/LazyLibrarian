@@ -149,8 +149,8 @@ def find_book_in_db(myDB, author, book):
     # PAB fuzzy search for book in library, return LL bookid if found or zero
     # if not, return bookid to more easily update status
     # prefer an exact match on author & book
-    cmd = 'SELECT BookID FROM books,authors where books.AuthorID = authors.AuthorID and AuthorName="%s" '
-    cmd += 'and BookName="%s"' % (author.replace('"', '""'), book.replace('"', '""'))
+    cmd = 'SELECT BookID FROM books,authors where books.AuthorID = authors.AuthorID '
+    cmd += 'and AuthorName="%s" and BookName="%s"' % (author.replace('"', '""'), book.replace('"', '""'))
     match = myDB.match(cmd)
     if match:
         logger.debug('Exact match [%s]' % book)
@@ -289,15 +289,12 @@ def LibraryScan(startdir=None):
                             'Select AuthorID,AuthorName FROM authors WHERE AuthorName="%s"' % authorname)
                         if duplicate:
                             myDB.action('DELETE from authors where authorname="%s"' % author['AuthorName'])
-                            myDB.action('UPDATE books set AuthorName="%s" WHERE AuthorName="%s"' %
-                                        (duplicate['AuthorName'], author['AuthorName']))
                             if author['AuthorID'] != duplicate['AuthorID']:
                                 myDB.action('UPDATE books set AuthorID="%s" WHERE AuthorID="%s"' %
                                             (duplicate['AuthorID'], author['AuthorID']))
                         else:
                             myDB.action(
                                 'UPDATE authors set AuthorName="%s" WHERE AuthorID="%s"' % (authorname, authorid))
-                            myDB.action('UPDATE books set AuthorName="%s" WHERE AuthorID="%s"' % (authorname, authorid))
             except Exception as e:
                 logger.info('Error: ' + str(e))
 
@@ -311,8 +308,8 @@ def LibraryScan(startdir=None):
         author = ""
 
         if lazylibrarian.CONFIG['FULL_SCAN']:
-            cmd = 'select AuthorName, BookName, BookFile, BookID from books where books.AuthorID = authors.AuthorID'
-            cmd += ' and books.Status="Open"'
+            cmd = 'select AuthorName, BookName, BookFile, BookID from books,authors'
+            cmd += ' where books.AuthorID = authors.AuthorID and books.Status="Open"'
             if not startdir == destdir:
                 cmd += ' and BookFile like "' + startdir + '%"'
             books = myDB.select(cmd)
@@ -662,6 +659,7 @@ def LibraryScan(startdir=None):
                                                         GR_ID.find_book(bookid, None)
                                                         if language and language != "Unknown":
                                                             # set language from book metadata
+                                                            logger.debug("Setting language from metadata %s : %s" % (booktitle, language))
                                                             myDB.action('UPDATE books SET BookLang="%s" WHERE BookID="%s"' %
                                                                         (language, bookid))
                                                         break
@@ -677,7 +675,7 @@ def LibraryScan(startdir=None):
 
                                 # see if it's there now...
                                 if bookid:
-                                    cmd = 'SELECT Status, BookFile, AuthorName, BookName from books '
+                                    cmd = 'SELECT books.Status, BookFile, AuthorName, BookName from books,authors '
                                     cmd += 'where books.AuthorID = authors.AuthorID and BookID="%s"' % bookid
                                     check_status = myDB.match(cmd)
 

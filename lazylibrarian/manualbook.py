@@ -64,7 +64,7 @@ def searchItem(item=None, bookid=None):
     # reprocess to get consistent results
     searchresults = []
     for item in results:
-        print item
+        provider = ''
         title = ''
         url = ''
         size = ''
@@ -95,7 +95,7 @@ def searchItem(item=None, bookid=None):
         if 'tor_type' in item:
             mode = item['tor_type']
 
-        if title and url:
+        if title and provider and mode and url:
             # Not all results have a date or a size
             if not date:
                 date = 'Fri, 01 Jan 1970 00:00:00 +0100'

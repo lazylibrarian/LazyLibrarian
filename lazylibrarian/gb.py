@@ -27,7 +27,8 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, setSeries, setStatus
 from lazylibrarian.cache import get_json_request, cache_img
-from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn, getList
+from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn, \
+                                    getList, cleanName
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 
@@ -569,7 +570,6 @@ class GoogleBooks:
                             if book_status != "Ignored" and not locked:
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {
-                                    "AuthorName": authorname,
                                     "AuthorID": authorid,
                                     "BookName": bookname,
                                     "BookSub": booksub,
@@ -584,8 +584,7 @@ class GoogleBooks:
                                     "BookDate": bookdate,
                                     "BookLang": booklang,
                                     "Status": book_status,
-                                    "BookAdded": today(),
-                                    "Series": ''
+                                    "BookAdded": today()
                                 }
                                 resultcount += 1
 
@@ -620,7 +619,7 @@ class GoogleBooks:
                                 else:
                                     # librarything doesn't have series info. Any in the title?
                                     if series:
-                                        seriesdict = {series: seriesNum}
+                                        seriesdict = {cleanName(unaccented(series)): seriesNum}
                                 setSeries(seriesdict, bookid)
 
                                 new_status = setStatus(bookid, seriesdict, bookstatus)
@@ -730,7 +729,7 @@ class GoogleBooks:
             booklang = jsonresults['volumeInfo']['language']
             valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
             if booklang not in valid_langs and 'All' not in valid_langs:
-                logger.debug('Book %s language does not match preference' % bookname)
+                logger.debug('Book %s googlebooks language does not match preference, %s' % (bookname, booklang))
         except KeyError:
             logger.debug('Book does not have language field')
             booklang = "Unknown"
@@ -808,7 +807,6 @@ class GoogleBooks:
 
         controlValueDict = {"BookID": bookid}
         newValueDict = {
-            "AuthorName": authorname,
             "AuthorID": AuthorID,
             "BookName": bookname,
             "BookSub": booksub,
@@ -823,8 +821,7 @@ class GoogleBooks:
             "BookDate": bookdate,
             "BookLang": booklang,
             "Status": "Wanted",
-            "BookAdded": today(),
-            "Series": ''
+            "BookAdded": today()
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
@@ -854,7 +851,7 @@ class GoogleBooks:
             logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
         else:
             if series:
-                seriesdict = {series: seriesNum}
+                seriesdict = {cleanName(unaccented(series)): seriesNum}
         setSeries(seriesdict, bookid)
 
         worklink = getWorkPage(bookid)

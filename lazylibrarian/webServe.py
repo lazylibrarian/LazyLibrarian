@@ -14,12 +14,12 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import Queue
+import datetime
 import hashlib
 import os
 import random
 import threading
 import urllib
-import datetime
 from operator import itemgetter
 from shutil import copyfile, rmtree
 
@@ -29,22 +29,22 @@ import lib.simplejson as simplejson
 from cherrypy.lib.static import serve_file
 from lazylibrarian import logger, database, notifiers, versioncheck, magazinescan, \
     qbittorrent, utorrent, rtorrent, transmission, sabnzbd, nzbget, deluge, synology
+from lazylibrarian.bookwork import setSeries
+from lazylibrarian.cache import cache_img
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, dbUpdate
 from lazylibrarian.csvfile import import_CSV, export_CSV
-from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode, unaccented
+from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode, unaccented, cleanName
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, update_totals
 from lazylibrarian.librarysync import LibraryScan
+from lazylibrarian.manualbook import searchItem
+from lazylibrarian.notifiers import notify_snatch
 from lazylibrarian.postprocess import processAlternate, processDir
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
-from lazylibrarian.cache import cache_img
-from lazylibrarian.notifiers import notify_snatch
-from lazylibrarian.manualbook import searchItem
-from lazylibrarian.bookwork import getWorkSeries, setSeries
 from lib.deluge_client import DelugeRPCClient
 from mako import exceptions
 from mako.lookup import TemplateLookup
@@ -897,7 +897,6 @@ class WebInterface(object):
             authdata = myDB.match('SELECT * from authors WHERE AuthorID="%s"' % authorid)
             if authdata:
                 edited = ""
-                moved = False
                 if authorborn == 'None':
                     authorborn = ''
                 if authordeath == 'None':
@@ -1023,11 +1022,11 @@ class WebInterface(object):
 
     @cherrypy.expose
     def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre='', booklang='',
-                   series='', manual='0', authorname='', **kwargs):
+                   manual='0', authorname='', **kwargs):
         myDB = database.DBConnection()
         if bookid:
-            cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,books.Manual,AuthorName,books.AuthorID from books,authors '
-            cmd += 'WHERE books.AuthorID = authors.AuthorID and BookID="%s"' % bookid
+            cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,books.Manual,AuthorName,books.AuthorID '
+            cmd += 'from books,authors WHERE books.AuthorID = authors.AuthorID and BookID="%s"' % bookid
             bookdata = myDB.match(cmd)
             if bookdata:
                 edited = ''
@@ -1066,13 +1065,17 @@ class WebInterface(object):
                 new_dict = {}
                 dict_counter = 0
                 while "series[%s][name]" % dict_counter in kwargs:
-                    new_dict[kwargs["series[%s][name]" % dict_counter]] = kwargs["series[%s][number]" % dict_counter]
+                    s_name = kwargs["series[%s][name]" % dict_counter]
+                    s_name = cleanName(unaccented(s_name))
+                    new_dict[s_name] = kwargs["series[%s][number]" % dict_counter]
                     dict_counter += 1
                 if 'series[new][name]' in kwargs and 'series[new][number]' in kwargs:
                     if kwargs['series[new][name]']:
-                        new_dict[kwargs['series[new][name]']] = kwargs['series[new][number]']
+                        s_name = kwargs["series[new][name]"]
+                        s_name = cleanName(unaccented(s_name))
+                        new_dict[s_name] = kwargs['series[new][number]']
                 for item in old_series:
-                    old_dict[item['SeriesName']] = item['SeriesNum']
+                    old_dict[cleanName(unaccented(item['SeriesName']))] = item['SeriesNum']
 
                 series_changed= False
                 for item in old_dict:

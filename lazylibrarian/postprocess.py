@@ -911,7 +911,6 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                         logger.warn("Failed to find a valid book in [%s]" % target_dir)
                         imported = False
                 else:
-                    target_dir = calibre_dir
                     imported = LibraryScan(calibre_dir)  # rescan whole authors directory
             else:
                 logger.error("Failed to locate calibre dir [%s]" % calibre_dir)
