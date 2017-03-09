@@ -61,7 +61,7 @@ def upgrade_needed():
     # 13 add Manual column to author table for user editing
     # 14 separate book and author images in case id numbers collide
     # 15 move series and seriesnum into separate tables so book can appear in multiple series
-    # 16 remove series column from book table, series only stored in series/member tables now
+    # 16 remove series, authorlink, authorname columns from book table, only in series/author tables now
 
     db_current_version = 16
     if db_version < db_current_version:
@@ -533,7 +533,7 @@ def dbupgrade(db_current_version):
             myDB.action('CREATE TABLE IF NOT EXISTS member (SeriesID INTEGER, BookID TEXT, SeriesNum TEXT)')
             if has_column(myDB, "books", "SeriesNum"):
                 lazylibrarian.UPDATE_MSG = 'Populating series and member tables'
-                books = myDB.select('SELECT BookID, BookName, AuthorID, AuthorName, Series, SeriesNum from books')
+                books = myDB.select('SELECT BookID, Series, SeriesNum from books')
                 if books:
                     tot = len(books)
                     logger.debug("Updating book series for %s book%s" % (tot, plural(tot)))

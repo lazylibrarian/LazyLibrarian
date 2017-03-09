@@ -95,12 +95,12 @@ def setSeries(seriesdict=None, bookid=None):
                 myDB.action('INSERT into series (SeriesName, AuthorID, Status) VALUES ("%s", "%s", "Active")' %
                             (item, book['AuthorID']))
                 match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % item)
-                if match:
-                    controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
-                    newValueDict = {"SeriesNum": seriesdict[item]}
-                    myDB.upsert("member", newValueDict, controlValueDict)
-                else:
-                    logger.debug('Unable to set series for book %s, %s' % (bookid, repr(seriesdict)))
+            if match:
+                controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
+                newValueDict = {"SeriesNum": seriesdict[item]}
+                myDB.upsert("member", newValueDict, controlValueDict)
+            else:
+                logger.debug('Unable to set series for book %s, %s' % (bookid, repr(seriesdict)))
         deleteEmptySeries()
 
 def setStatus(bookid=None, seriesdict=None, default=None):
@@ -211,7 +211,8 @@ def getBookWork(bookID=None, reason=None):
         reason = ""
 
     myDB = database.DBConnection()
-    # need to specify authors.authorname here as might be called during dbupgrade while books.authorname still present
+    # need to specify authors.AuthorName here as function is called during dbupgrade v15 to v16
+    # while books.authorname column is still present
     cmd = 'select BookName,authors.AuthorName,BookISBN from books,authors where bookID="%s"' % bookID
     cmd += ' and books.AuthorID = authors.AuthorID'
     item = myDB.match(cmd)
@@ -336,13 +337,14 @@ def getWorkSeries(bookID=None):
             for item in serieslist[1:]:
                 try:
                     series = item.split('">')[1].split('</a>')[0]
-                    series = cleanName(unaccented(series))
                     if series and '(' in series:
                         seriesnum = series.split('(')[1].split(')')[0].strip()
                         series = series.split(' (')[0].strip()
                     else:
                         seriesnum = ''
                         series = series.strip()
+                    series = cleanName(unaccented(series))
+                    seriesnum = cleanName(unaccented(seriesnum))
                     seriesdict[series] = seriesnum
                 except IndexError:
                     pass
