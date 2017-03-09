@@ -211,7 +211,8 @@ def getBookWork(bookID=None, reason=None):
         reason = ""
 
     myDB = database.DBConnection()
-    cmd = 'select BookName,AuthorName,BookISBN from books,authors where bookID="%s"' % bookID
+    # need to specify authors.authorname here as might be called during dbupgrade while books.authorname still present
+    cmd = 'select BookName,authors.AuthorName,BookISBN from books,authors where bookID="%s"' % bookID
     cmd += ' and books.AuthorID = authors.AuthorID'
     item = myDB.match(cmd)
     if item:
