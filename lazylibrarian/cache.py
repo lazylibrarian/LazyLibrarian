@@ -67,6 +67,9 @@ def cache_img(img_type, img_ID, img_url, refresh=False):
         linked to the id, return the link to the cached file, True
         or error message, False if failed to cache """
 
+    if img_type not in ['book', 'author']:
+        logger.warn('Internal error in cache_img, img_type = [%s]' % img_type)
+        img_type = 'book'
     cachedir = lazylibrarian.CACHEDIR
     coverfile = os.path.join(cachedir, img_type, img_ID + '.jpg')
     link = 'cache/%s/%s.jpg' % (img_type, img_ID)

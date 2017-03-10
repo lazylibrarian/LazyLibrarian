@@ -104,6 +104,8 @@ def setSeries(seriesdict=None, bookid=None):
                 myDB.action('INSERT into series (SeriesName, AuthorID, Status) VALUES ("%s", "%s", "Active")' %
                             (item, book['AuthorID']))
                 match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % item)
+                # and ask librarything what other books are in the series
+                _ = getBookWork(None, "SeriesMembers", match['SeriesID'])
             if match:
                 controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
                 newValueDict = {"SeriesNum": seriesdict[item]}
@@ -213,34 +215,41 @@ def librarything_wait():
     lazylibrarian.LAST_LIBRARYTHING = time_now
 
 
-def getBookWork(bookID=None, reason=None):
-    """ return the contents of the LibraryThing workpage for the given bookid
+def getBookWork(bookID=None, reason=None, seriesID=None):
+    """ return the contents of the LibraryThing workpage for the given bookid, or seriespage if seriesID given
         preferably from the cache. If not already cached cache the results
-        Return None if no workpage available """
-    if not bookID:
-        logger.error("getBookWork - No bookID")
+        Return None if no workpage/seriespage available """
+    if not bookID and not seriesID:
+        logger.error("getBookWork - No bookID or seriesID")
         return None
 
     if not reason:
         reason = ""
 
     myDB = database.DBConnection()
-    # need to specify authors.AuthorName here as function is called during dbupgrade v15 to v16
-    # while books.authorname column is still present
-    cmd = 'select BookName,authors.AuthorName,BookISBN from books,authors where bookID="%s"' % bookID
-    cmd += ' and books.AuthorID = authors.AuthorID'
+    if bookID:
+        # need to specify authors.AuthorName here as function is called during dbupgrade v15 to v16
+        # while books.authorname column is still present
+        cmd = 'select BookName,authors.AuthorName,BookISBN from books,authors where bookID="%s"' % bookID
+        cmd += ' and books.AuthorID = authors.AuthorID'
+        cacheLocation = "WorkCache"
+    else:
+        cmd = 'select SeriesName from series where SeriesID="%s"' % seriesID
+        cacheLocation = "SeriesCache"
     item = myDB.match(cmd)
     if item:
-        cacheLocation = "WorkCache"
         cacheLocation = os.path.join(lazylibrarian.CACHEDIR, cacheLocation)
         if not os.path.exists(cacheLocation):
             os.mkdir(cacheLocation)
-        workfile = os.path.join(cacheLocation, bookID + '.html')
+        if bookID:
+            workfile = os.path.join(cacheLocation, str(bookID) + '.html')
+        else:
+            workfile = os.path.join(cacheLocation, str(seriesID) + '.html')
 
         # does the workpage need to expire? For now only expire if it was an error page
-        # (small file) as librarything might get better info over time
+        # (small file) or a series page as librarything might get better info over time, more series members etc
         if os.path.isfile(workfile):
-            if os.path.getsize(workfile) < 500:
+            if seriesID or os.path.getsize(workfile) < 500:
                 cache_modified_time = os.stat(workfile).st_mtime
                 time_now = time.time()
                 expiry = lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60  # expire cache after this many seconds
@@ -251,23 +260,32 @@ def getBookWork(bookID=None, reason=None):
         if os.path.isfile(workfile):
             # use cached file if possible to speed up refreshactiveauthors and librarysync re-runs
             lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
-            if reason:
-                logger.debug(u"getBookWork: Returning Cached entry for %s %s" % (bookID, reason))
+            if bookID:
+                if reason:
+                    logger.debug(u"getBookWork: Returning Cached entry for %s %s" % (bookID, reason))
+                else:
+                    logger.debug(u"getBookWork: Returning Cached workpage for %s" % bookID)
             else:
-                logger.debug(u"getBookWork: Returning Cached workpage for %s" % bookID)
+                logger.debug(u"getBookWork: Returning Cached seriespage for %s" % item['seriesName'])
 
             with open(workfile, "r") as cachefile:
                 source = cachefile.read()
             return source
         else:
             lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
-            title = safe_unicode(item['BookName']).encode(lazylibrarian.SYS_ENCODING)
-            author = safe_unicode(item['AuthorName']).encode(lazylibrarian.SYS_ENCODING)
-            safeparams = urllib.quote_plus("%s %s" % (author, title))
-            URL = 'http://www.librarything.com/api/whatwork.php?title=' + safeparams
+            if bookID:
+                title = safe_unicode(item['BookName']).encode(lazylibrarian.SYS_ENCODING)
+                author = safe_unicode(item['AuthorName']).encode(lazylibrarian.SYS_ENCODING)
+                safeparams = urllib.quote_plus("%s %s" % (author, title))
+                URL = 'http://www.librarything.com/api/whatwork.php?title=' + safeparams
+            else:
+                seriesname = safe_unicode(item['seriesName']).encode(lazylibrarian.SYS_ENCODING)
+                safeparams = urllib.quote_plus(seriesname)
+                URL = 'http://www.librarything.com/series/' + safeparams
+
             librarything_wait()
             result, success = fetchURL(URL)
-            if success:
+            if bookID and success:
                 try:
                     workpage = result.split('<link>')[1].split('</link>')[0]
                     librarything_wait()
@@ -302,22 +320,28 @@ def getBookWork(bookID=None, reason=None):
                         msg = "getBookWork: Librarything error: [" + errmsg + "] for "
                         logger.debug(msg + item['AuthorName'] + ' ' + item['BookName'])
                         success = True
-                if success:
-                    with open(workfile, "w") as cachefile:
-                        cachefile.write(result)
+            if success:
+                with open(workfile, "w") as cachefile:
+                    cachefile.write(result)
+                    if bookID:
                         logger.debug(u"getBookWork: Caching workpage for %s" % workfile)
-                        # return None if we got an error page back
-                        if '</request><error>' in result:
-                            return None
-                    return result
-                else:
-                    logger.debug(u"getBookWork: Unable to cache workpage, got %s" % result)
-                return None
+                    else:
+                        logger.debug(u"getBookWork: Caching series page for %s" % workfile)
+                    # return None if we got an error page back
+                    if '</request><error>' in result:
+                        return None
+                return result
             else:
-                logger.debug(u"getBookWork: Unable to cache response for %s, got %s" % (URL, result))
-                return None
+                if bookID:
+                    logger.debug(u"getBookWork: Unable to cache workpage, got %s" % result)
+                else:
+                    logger.debug(u"getBookWork: Unable to cache series page, got %s" % result)
+            return None
     else:
-        logger.debug('Get Book Work - Invalid bookID [%s]' % bookID)
+        if bookID:
+            logger.debug('Get Book Work - Invalid bookID [%s]' % bookID)
+        else:
+            logger.debug('Get Book Work - Invalid seriesID [%s]' % seriesID)
         return None
 
 
@@ -335,6 +359,31 @@ def getWorkPage(bookID=None):
             return ''
         return page
     return ''
+
+
+def getSeriesMembers(seriesID=None):
+    """ Ask librarything for seriesnum, bookname, authorname for all books in a series
+        Return as a list of lists """
+    results = []
+    data = getBookWork(None, "SeriesPage", seriesID)
+    if data:
+        try:
+            table = data.split('class="worksinseries"')[1].split('</table>')[0]
+            rows = table.split('<tr')
+            for row in rows:
+                if 'href=' in row:
+                    booklink = row.split('href="')[1]
+                    bookname = booklink.split('">')[1].split('<')[0]
+                    booklink = booklink.split('"')[0]
+                    authorlink = row.split('href="')[2]
+                    authorname = authorlink.split('">')[1].split('<')[0]
+                    authorlink = authorlink.split('"')[0]
+                    order = row.split('class="order">')[1].split('<')[0]
+                    results.append([order,bookname,authorname])
+        except IndexError:
+            if 'class="worksinseries"' in data:  # error parsing, or just no series data available?
+                logger.debug('Error in series table for series %s' % seriesID)
+    return results
 
 
 def getWorkSeries(bookID=None):

@@ -63,9 +63,13 @@ def export_CSV(search_dir=None, status="Wanted"):
                             resulted['BookIsbn'], resulted['AuthorID']])
                     csvwrite.writerow([("%s" % s).encode(lazylibrarian.SYS_ENCODING) for s in row])
                     count += 1
-            logger.info(u"CSV exported %s book%s to %s" % (count, plural(count), csvFile))
+            msg = "CSV exported %s book%s to %s" % (count, plural(count), csvFile)
+            logger.info(msg)
+            return msg
     except Exception:
-        logger.error('Unhandled exception in exportCSV: %s' % traceback.format_exc())
+        msg = 'Unhandled exception in exportCSV: %s' % traceback.format_exc()
+        logger.error(msg)
+        return msg
 
 
 def finditem(item, headers):
@@ -203,7 +207,11 @@ def import_CSV(search_dir=None):
                 else:
                     logger.warn(u"Skipping book %s by %s, not found in database" % (bookname, authorname))
                     skipcount += 1
-            logger.info(u"Added %i new author%s, marked %i book%s as 'Wanted', %i book%s not found" %
-                        (authcount, plural(authcount), bookcount, plural(bookcount), skipcount, plural(skipcount)))
+            msg = "Added %i new author%s, marked %i book%s as 'Wanted', %i book%s not found" % \
+                    (authcount, plural(authcount), bookcount, plural(bookcount), skipcount, plural(skipcount))
+            logger.info(msg)
+            return msg
     except Exception:
-        logger.error('Unhandled exception in importCSV: %s' % traceback.format_exc())
+        msg = 'Unhandled exception in importCSV: %s' % traceback.format_exc()
+        logger.error(msg)
+        return msg

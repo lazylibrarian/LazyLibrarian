@@ -22,7 +22,7 @@ import threading
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, setAllBookSeries, \
-    getBookCover, getAuthorImage, getAuthorImages
+    getBookCover, getAuthorImage, getAuthorImages, getSeriesMembers
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, dbUpdate, setperm
 from lazylibrarian.csvfile import import_CSV, export_CSV
@@ -102,6 +102,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'checkRunningJobs': 'ensure all needed jobs are running',
             'vacuum': 'vacuum the database',
             'getWorkSeries': '&id= Get series from Librarything BookWork using BookID',
+            'getSeriesMembers': '&id= Get list of series members from Librarything using SeriesID',
             'getWorkPage': '&id= Get url of Librarything BookWork using BookID',
             'getBookCovers': '[&wait] Check all books for cached cover and download one if missing',
             'cleanCache': '[&wait] Clean unused and expired files from the LazyLibrarian caches',
@@ -725,6 +726,14 @@ class Api(object):
     def _loadCFG():
         lazylibrarian.config_read(reloaded=True)
 
+    def _getSeriesMembers(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+        self.data = getSeriesMembers(self.id)
+
     def _getWorkSeries(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
@@ -879,35 +888,32 @@ class Api(object):
     def _showJobs(self):
         self.data = showJobs()
 
-    @staticmethod
-    def _importAlternate(**kwargs):
+    def _importAlternate(self, **kwargs):
         if 'dir' in kwargs:
             usedir = kwargs['dir']
         else:
             usedir = lazylibrarian.CONFIG['ALTERNATE_DIR']
         if 'wait' in kwargs:
-            processAlternate(usedir)
+            self.data = processAlternate(usedir)
         else:
             threading.Thread(target=processAlternate, name='API-IMPORTALT', args=[usedir]).start()
 
-    @staticmethod
-    def _importCSVwishlist(**kwargs):
+    def _importCSVwishlist(self, **kwargs):
         if 'dir' in kwargs:
             usedir = kwargs['dir']
         else:
             usedir = lazylibrarian.CONFIG['ALTERNATE_DIR']
         if 'wait' in kwargs:
-            import_CSV(usedir)
+            self.data = import_CSV(usedir)
         else:
             threading.Thread(target=import_CSV, name='API-IMPORTCSV', args=[usedir]).start()
 
-    @staticmethod
-    def _exportCSVwishlist(**kwargs):
+    def _exportCSVwishlist(self, **kwargs):
         if 'dir' in kwargs:
             usedir = kwargs['dir']
         else:
             usedir = lazylibrarian.CONFIG['ALTERNATE_DIR']
         if 'wait' in kwargs:
-            export_CSV(usedir)
+            self.data = export_CSV(usedir)
         else:
             threading.Thread(target=export_CSV, name='API-EXPORTCSV', args=[usedir]).start()
