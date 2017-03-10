@@ -22,7 +22,8 @@ import urllib2
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, setSeries, setStatus
+from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, deleteEmptySeries, \
+                                    setSeries, setStatus
 from lazylibrarian.cache import get_xml_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList, cleanName
 from lib.fuzzywuzzy import fuzz
@@ -624,6 +625,7 @@ class GoodReads:
                         if all(False for _ in resultxml):  # returns True if iterator is empty
                             resultxml = None
 
+            deleteEmptySeries()
             lastbook = myDB.match('SELECT BookName, BookLink, BookDate, BookImg from books WHERE AuthorID="%s" \
                                 AND Status != "Ignored" order by BookDate DESC' % authorid)
             if lastbook:

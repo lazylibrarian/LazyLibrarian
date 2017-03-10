@@ -79,13 +79,14 @@ def setAllBookSeries():
             if seriesdict:
                 counter += 1
                 setSeries(seriesdict, bookid)
+    deleteEmptySeries()
     logger.info('Series check complete, updated %s book%s' % (counter, plural(counter)))
 
 def setSeries(seriesdict=None, bookid=None):
     """ set series details in series/member tables from the supplied dict """
     myDB = database.DBConnection()
     if bookid:
-        # delete any old entries
+        # delete any old series-member entries
         myDB.action('DELETE from member WHERE BookID=%s' % bookid)
         for item in seriesdict:
             book = myDB.match('SELECT AuthorID from books where BookID=%s' % bookid)
@@ -101,7 +102,9 @@ def setSeries(seriesdict=None, bookid=None):
                 myDB.upsert("member", newValueDict, controlValueDict)
             else:
                 logger.debug('Unable to set series for book %s, %s' % (bookid, repr(seriesdict)))
-        deleteEmptySeries()
+        # removed deleteEmptySeries as setSeries slows down drastically if run in a loop
+        # eg dbupgrade or setAllBookSeries. Better to tidy up all empties when loop finished
+        # deleteEmptySeries()
 
 def setStatus(bookid=None, seriesdict=None, default=None):
     """ Set the status of a book according to series/author/newbook/newauthor preferences

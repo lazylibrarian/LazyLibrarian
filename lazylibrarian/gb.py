@@ -25,7 +25,8 @@ from urllib2 import HTTPError
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, setSeries, setStatus
+from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, deleteEmptySeries, \
+                                    setSeries, setStatus
 from lazylibrarian.cache import get_json_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn, \
                                     getList, cleanName
@@ -647,6 +648,7 @@ class GoogleBooks:
             except KeyError:
                 pass
 
+            deleteEmptySeries()
             logger.debug('[%s] The Google Books API was hit %s time%s to populate book list' %
                          (authorname, api_hits, plural(api_hits)))
 

@@ -22,7 +22,7 @@ import traceback
 
 import lazylibrarian
 from lazylibrarian import logger, database, magazinescan, bookwork
-from lazylibrarian.bookwork import getWorkSeries, setSeries
+from lazylibrarian.bookwork import getWorkSeries, setSeries, deleteEmptySeries
 from lazylibrarian.common import restartJobs
 from lazylibrarian.formatter import plural, bookSeries, cleanName, unaccented
 
@@ -546,7 +546,7 @@ def dbupgrade(db_current_version):
                             if book['Series'] and book['SeriesNum']:
                                 seriesdict = {cleanName(unaccented(book['Series'])): book['SeriesNum']}
                         setSeries(seriesdict, book['BookID'])
-
+                    # deleteEmptySeries  # shouldn't be any on first run?
                     lazylibrarian.UPDATE_MSG = "Book series update complete"
                     logger.debug(lazylibrarian.UPDATE_MSG)
 

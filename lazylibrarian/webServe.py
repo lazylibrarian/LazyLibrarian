@@ -29,7 +29,7 @@ import lib.simplejson as simplejson
 from cherrypy.lib.static import serve_file
 from lazylibrarian import logger, database, notifiers, versioncheck, magazinescan, \
     qbittorrent, utorrent, rtorrent, transmission, sabnzbd, nzbget, deluge, synology
-from lazylibrarian.bookwork import setSeries
+from lazylibrarian.bookwork import setSeries, deleteEmptySeries
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, dbUpdate
 from lazylibrarian.csvfile import import_CSV, export_CSV
@@ -1089,6 +1089,7 @@ class WebInterface(object):
                             series_changed = True
                 if series_changed:
                     setSeries(new_dict, bookid)
+                    deleteEmptySeries()
                     edited += "Series "
 
                 if edited:
