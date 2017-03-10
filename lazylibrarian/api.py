@@ -280,14 +280,13 @@ class Api(object):
 
         self.data = {'magazine': magazine, 'issues': issues}
 
-    @staticmethod
-    def _createMagCovers(**kwargs):
+    def _createMagCovers(self, **kwargs):
         if 'refresh' in kwargs:
             refresh=True
         else:
             refresh=False
         if 'wait' in kwargs:
-            create_covers(refresh=refresh)
+            self.data = create_covers(refresh=refresh)
         else:
             threading.Thread(target=create_covers, name='API-MAGCOVERS', args=[refresh]).start()
 
@@ -418,13 +417,12 @@ class Api(object):
         except Exception as e:
             self.data = str(e)
 
-    @staticmethod
-    def _forceActiveAuthorsUpdate(**kwargs):
+    def _forceActiveAuthorsUpdate(self, **kwargs):
         refresh = False
         if 'refresh' in kwargs:
             refresh = True
         if 'wait' in kwargs:
-            dbUpdate(refresh=refresh)
+            self.data = dbUpdate(refresh=refresh)
         else:
             threading.Thread(target=dbUpdate, name='API-DBUPDATE', args=[refresh]).start()
 
@@ -474,38 +472,33 @@ class Api(object):
         else:
             threading.Thread(target=magazineScan, name='API-MAGSCAN', args=[]).start()
 
-    @staticmethod
-    def _cleanCache(**kwargs):
+    def _cleanCache(self, **kwargs):
         if 'wait' in kwargs:
-            cleanCache()
+            self.data = cleanCache()
         else:
             threading.Thread(target=cleanCache, name='API-CLEANCACHE', args=[]).start()
 
-    @staticmethod
-    def _setWorkPages(**kwargs):
+    def _setWorkPages(self, **kwargs):
         if 'wait' in kwargs:
-            setWorkPages()
+            self.data = setWorkPages()
         else:
             threading.Thread(target=setWorkPages, name='API-SETWORKPAGES', args=[]).start()
 
-    @staticmethod
-    def _setAllBookSeries(**kwargs):
+    def _setAllBookSeries(self, **kwargs):
         if 'wait' in kwargs:
-            setAllBookSeries()
+            self.data = setAllBookSeries()
         else:
             threading.Thread(target=setAllBookSeries, name='API-SETALLBOOKSERIES', args=[]).start()
 
-    @staticmethod
-    def _getBookCovers(**kwargs):
+    def _getBookCovers(self, **kwargs):
         if 'wait' in kwargs:
-            getBookCovers()
+            self.data = getBookCovers()
         else:
             threading.Thread(target=getBookCovers, name='API-GETBOOKCOVERS', args=[]).start()
 
-    @staticmethod
-    def _getAuthorImages(**kwargs):
+    def _getAuthorImages(self, **kwargs):
         if 'wait' in kwargs:
-            getAuthorImages()
+            self.data = getAuthorImages()
         else:
             threading.Thread(target=getAuthorImages, name='API-GETAUTHORIMAGES', args=[]).start()
 
@@ -634,7 +627,7 @@ class Api(object):
         else:
             self.id = kwargs['name']
         try:
-            addAuthorToDB(authorname=self.id, refresh=False)
+            self.data = addAuthorToDB(authorname=self.id, refresh=False)
         except Exception as e:
             self.data = str(e)
 
@@ -645,7 +638,7 @@ class Api(object):
         else:
             self.id = kwargs['id']
         try:
-            addAuthorToDB(authorname='', refresh=False, authorid=self.id)
+            self.data = addAuthorToDB(authorname='', refresh=False, authorid=self.id)
         except Exception as e:
             self.data = str(e)
 

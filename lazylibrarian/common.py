@@ -223,8 +223,11 @@ def dbUpdate(refresh=False):
             # noinspection PyUnresolvedReferences
             lazylibrarian.importer.addAuthorToDB(authorname='', refresh=refresh, authorid=authorid)
         logger.info('Active author update complete')
+        return 'Updated %i active author%s' % (len(activeauthors), plural(len(activeauthors)))
     except Exception:
-        logger.error('Unhandled exception in dbUpdate: %s' % traceback.format_exc())
+        msg = 'Unhandled exception in dbUpdate: %s' % traceback.format_exc()
+        logger.error(msg)
+        return msg
 
 def restartJobs(start='Restart'):
     scheduleJob(start, 'processDir')
@@ -343,7 +346,7 @@ def cleanCache():
         Check covers and authorimages referenced in the database exist and change database entry if missing """
 
     myDB = database.DBConnection()
-
+    result = []
     cache = os.path.join(lazylibrarian.CACHEDIR, "JSONCache")
     # ensure directory is unicode so we get unicode results from listdir
     if isinstance(cache, str):
@@ -362,7 +365,9 @@ def cleanCache():
                 cleaned += 1
             else:
                 kept += 1
-    logger.debug("Cleaned %i file%s from JSONCache, kept %i" % (cleaned, plural(cleaned), kept))
+    msg = "Cleaned %i file%s from JSONCache, kept %i" % (cleaned, plural(cleaned), kept)
+    result.append(msg)
+    logger.debug(msg)
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "XMLCache")
     # ensure directory is unicode so we get unicode results from listdir
@@ -382,7 +387,9 @@ def cleanCache():
                 cleaned += 1
             else:
                 kept += 1
-    logger.debug("Cleaned %i file%s from XMLCache, kept %i" % (cleaned, plural(cleaned), kept))
+    msg = "Cleaned %i file%s from XMLCache, kept %i" % (cleaned, plural(cleaned), kept)
+    result.append(msg)
+    logger.debug(msg)
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "WorkCache")
     # ensure directory is unicode so we get unicode results from listdir
@@ -405,7 +412,9 @@ def cleanCache():
                 cleaned += 1
             else:
                 kept += 1
-    logger.debug("Cleaned %i file%s from WorkCache, kept %i" % (cleaned, plural(cleaned), kept))
+    msg = "Cleaned %i file%s from WorkCache, kept %i" % (cleaned, plural(cleaned), kept)
+    result.append(msg)
+    logger.debug(msg)
 
     cache = lazylibrarian.CACHEDIR
     cleaned = 0
@@ -451,8 +460,9 @@ def cleanCache():
         if cached_file.endswith('.jpg'):
             os.remove(os.path.join(cache, cached_file))
             cleaned += 1
-
-    logger.debug("Cleaned %i file%s from ImageCache, kept %i" % (cleaned, plural(cleaned), kept))
+    msg = "Cleaned %i file%s from ImageCache, kept %i" % (cleaned, plural(cleaned), kept)
+    result.append(msg)
+    logger.debug(msg)
 
     # verify the cover images referenced in the database are present
     images = myDB.action('select BookImg,BookName,BookID from books')
@@ -477,7 +487,9 @@ def cleanCache():
             logger.debug('Cover missing for %s %s' % (item['BookName'], imgfile))
             myDB.action('update books set BookImg="images/nocover.png" where Bookid="%s"' % item['BookID'])
 
-    logger.debug("Cleaned %i missing cover file%s, kept %i" % (cleaned, plural(cleaned), kept))
+    msg = "Cleaned %i missing cover file%s, kept %i" % (cleaned, plural(cleaned), kept)
+    result.append(msg)
+    logger.debug(msg)
 
     # verify the author images referenced in the database are present
     images = myDB.action('select AuthorImg,AuthorName,AuthorID from authors')
@@ -502,4 +514,7 @@ def cleanCache():
             logger.debug('Image missing for %s %s' % (item['AuthorName'], imgfile))
             myDB.action('update authors set AuthorImg="images/nophoto.png" where AuthorID="%s"' % item['AuthorID'])
 
-    logger.debug("Cleaned %i missing author image%s, kept %i" % (cleaned, plural(cleaned), kept))
+    msg = "Cleaned %i missing author image%s, kept %i" % (cleaned, plural(cleaned), kept)
+    result.append(msg)
+    logger.debug(msg)
+    return result

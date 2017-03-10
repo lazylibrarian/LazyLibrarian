@@ -40,9 +40,12 @@ def getAuthorImages():
                 newValueDict = {"AuthorImg": imagelink}
                 myDB.upsert("authors", newValueDict, controlValueDict)
                 counter += 1
-        logger.info('Author Image check complete, updated %s image%s' % (counter, plural(counter)))
+        msg = 'Updated %s image%s' % (counter, plural(counter))
+        logger.info('Author Image check complete: ' + msg)
     else:
-        logger.debug('No missing author images')
+        msg = 'No missing author images'
+        logger.debug(msg)
+    return msg
 
 
 def getBookCovers():
@@ -61,9 +64,12 @@ def getBookCovers():
                 newValueDict = {"BookImg": coverlink}
                 myDB.upsert("books", newValueDict, controlValueDict)
                 counter += 1
-        logger.info('Cover check complete, updated %s cover%s' % (counter, plural(counter)))
+        msg =  'Updated %s cover%s' % (counter, plural(counter))
+        logger.info('Cover check complete: ' + msg)
     else:
-        logger.debug('No missing book covers')
+        msg = 'No missing book covers'
+        logger.debug(msg)
+    return msg
 
 
 def setAllBookSeries():
@@ -80,7 +86,9 @@ def setAllBookSeries():
                 counter += 1
                 setSeries(seriesdict, bookid)
     deleteEmptySeries()
-    logger.info('Series check complete, updated %s book%s' % (counter, plural(counter)))
+    msg = 'Updated %s book%s' % (counter, plural(counter))
+    logger.info('Series check complete: ' + msg)
+    return msg
 
 def setSeries(seriesdict=None, bookid=None):
     """ set series details in series/member tables from the supplied dict """
@@ -189,9 +197,12 @@ def setWorkPages():
                 counter += 1
             else:
                 logger.debug('No WorkPage found for %s: %s' % (book['AuthorName'], book['BookName']))
-        logger.debug('setWorkPages complete, updated %s page%s' % (counter, plural(counter)))
+        msg = 'Updated %s page%s' % (counter, plural(counter))
+        logger.debug("setWorkPages complete: " + msg)
     else:
-        logger.debug('No missing WorkPages')
+        msg = 'No missing WorkPages'
+        logger.debug(msg)
+    return msg
 
 
 def librarything_wait():
