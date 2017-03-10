@@ -105,7 +105,7 @@ def setSeries(seriesdict=None, bookid=None):
                             (item, book['AuthorID']))
                 match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % item)
                 # and ask librarything what other books are in the series
-                _ = getBookWork(None, "SeriesMembers", match['SeriesID'])
+                #_ = getSeriesMembers(match['SeriesID'])
             if match:
                 controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
                 newValueDict = {"SeriesNum": seriesdict[item]}
