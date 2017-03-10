@@ -361,8 +361,29 @@ def getWorkPage(bookID=None):
     return ''
 
 
+def getSeriesPages():
+    myDB = database.DBConnection()
+    series = myDB.select('select SeriesID from series')
+    if series:
+        logger.debug('Getting series info for %s series' % len(series))
+        counter = 0
+        for entry in series:
+            seriesid = entry['SeriesID']
+            result = getSeriesMembers(seriesid)
+            if result:
+                counter += 1
+            else:
+                logger.debug('No series info found for series %s' % seriesid)
+        msg = 'Updated %s page%s' % (counter, plural(counter))
+        logger.debug("Series pages complete: " + msg)
+    else:
+        msg = 'No missing Series Pages'
+        logger.debug(msg)
+    return msg
+
+
 def getSeriesMembers(seriesID=None):
-    """ Ask librarything for seriesnum, bookname, authorname for all books in a series
+    """ Ask librarything for order, bookname, authorname for all books in a series
         Return as a list of lists """
     results = []
     data = getBookWork(None, "SeriesPage", seriesID)
