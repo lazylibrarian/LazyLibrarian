@@ -62,7 +62,8 @@ def search_nzb_book(books=None, reset=False):
             # The user has added a new book
             searchbooks = []
             for book in books:
-                cmd = 'SELECT BookID, AuthorName, BookName, BookSub from books WHERE BookID="%s"' % book['bookid']
+                cmd = 'SELECT BookID, AuthorName, BookName, BookSub from books,authors'
+                cmd += ' WHERE BookID="%s"' % book['bookid']
                 cmd += ' AND books.AuthorID = authors.AuthorID AND books.Status="Wanted"'
                 searchbook = myDB.select(cmd)
                 for terms in searchbook:

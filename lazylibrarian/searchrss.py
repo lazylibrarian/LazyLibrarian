@@ -55,7 +55,7 @@ def search_rss_book(books=None, reset=False):
 
         if books is None:
             # We are performing a backlog search
-            cmd = 'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books '
+            cmd = 'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books,authors '
             cmd += 'WHERE books.AuthorID = authors.AuthorID and books.Status="Wanted" order by BookAdded desc'
             searchbooks = myDB.select(cmd)
 
