@@ -16,7 +16,6 @@
 <%def name="body()">
 <BR><BR>
 <h1>&nbsp&nbsp${title}</h1>
-    <p class="indented">
         <form action="markMembers" method="get">
             <input type="hidden" name="redirect" value="members">
             <input type="hidden" name="seriesid" value="${series['SeriesID']}">
@@ -31,8 +30,9 @@
                     %endfor
             </select>
         <input type="submit" class="markMembers" id="go" value="Go">
+        </form>
         <br><br>
-    </p>
+
     <table class="display" id="book_table" style="width:100%;">
         <thead>
             <tr>
@@ -48,7 +48,7 @@
         <tbody>
         %for result in members:
             <tr>
-                <td id="select"><input type="checkbox" name="${result['BookID']}" /></td>
+                <td id="select"><input class="checkbox" type="checkbox" name="${result['BookID']}" /></td>
                 <td id="bookart"><a href="${result['BookImg']}" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" width="60" alt="Cover" class="bookcover-sm"></a></td>
                 <td id="bookname">${result['BookName']}</td>
                 <td id="series">${result['SeriesNum']}</td>
@@ -59,7 +59,7 @@
         </tbody>
     </table>
 </div>
-</form>
+
 <p>&nbsp;</p>
 </%def>
 
@@ -76,10 +76,15 @@
         var oTable = $('#book_table').dataTable(
             {
                 "order": [[ 3, 'asc' ]],
-                // Don't allow colums of class no-sort to be sorted
-                "columnDefs": [{ targets: 'no-sort', orderable: false },
-                               { type: 'natural', targets: 3 }
-                               ],
+                "aoColumns": [
+                    {"bSortable": false},
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                    ],
+                "columnDefs": [{ type: 'natural', targets: 3 }],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ rows per page",
                     "sEmptyTable": "No books found",
@@ -87,6 +92,7 @@
                     "sInfoEmpty":"Showing 0 to 0 of 0 rows",
                     "sInfoFiltered":"(filtered from _MAX_ total rows)"},
                 "sPaginationType": "full_numbers",
+                "aaSorting": [[3, 'asc']],
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
             });

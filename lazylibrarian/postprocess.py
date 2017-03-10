@@ -352,7 +352,10 @@ def processDir(reset=False):
                 if match and match >= lazylibrarian.CONFIG['DLOAD_RATIO']:
                     mostrecentissue = ''
                     logger.debug(u'Found match (%s%%): %s for %s' % (match, pp_path, book['NZBtitle']))
-                    data = myDB.match('SELECT * from books WHERE BookID="%s"' % book['BookID'])
+
+                    cmd = 'SELECT AuthorName,BookName from books,authors WHERE BookID="%s"' % book['BookID']
+                    cmd += ' and books.AuthorID = authors.AuthorID'
+                    data = myDB.match(cmd)
                     if data:  # it's a book
                         logger.debug(u'Processing book %s' % book['BookID'])
                         authorname = data['AuthorName']
@@ -371,7 +374,7 @@ def processDir(reset=False):
                         dest_dir = lazylibrarian.DIRECTORY('Destination')
                         dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
                     else:
-                        data = myDB.match('SELECT * from magazines WHERE Title="%s"' % book['BookID'])
+                        data = myDB.match('SELECT IssueDate from magazines WHERE Title="%s"' % book['BookID'])
                         if data:  # it's a magazine
                             logger.debug(u'Processing magazine %s' % book['BookID'])
                             # AuxInfo was added for magazine release date, normally housed in 'magazines'
@@ -420,6 +423,10 @@ def processDir(reset=False):
                         if len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
                             logger.debug('Calibre should have created the extras for us')
                         else:
+                            cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,'
+                            cmd += 'BookLang,BookPub from books,authors WHERE BookID="%s"' % book['BookID']
+                            cmd += ' and books.AuthorID = authors.AuthorID'
+                            data = myDB.match(cmd)
                             processExtras(myDB, dest_path, global_name, data)
                     else:
                         # update mags
@@ -647,7 +654,9 @@ def import_book(pp_path=None, bookID=None):
         # Called from "import_alternate" or if we find a "LL.(xxx)" folder that doesn't match a snatched book/mag
         #
         myDB = database.DBConnection()
-        data = myDB.match('SELECT * from books WHERE BookID="%s"' % bookID)
+        cmd = 'SELECT AuthorName,BookName from books,authors WHERE BookID="%s"' % bookID
+        cmd += ' and books.AuthorID = authors.AuthorID'
+        data = myDB.match(cmd)
         if data:
             authorname = data['AuthorName']
             authorname = ' '.join(authorname.split())  # ensure no extra whitespace
@@ -677,6 +686,10 @@ def import_book(pp_path=None, bookID=None):
                         if len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
                             logger.debug('Calibre should have created the extras')
                         else:
+                            cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,'
+                            cmd += 'BookLang,BookPub from books WHERE BookID="%s"' % bookID
+                            cmd += ' and books.AuthorID = authors.AuthorID'
+                            data = myDB.match(cmd)
                             processExtras(myDB, dest_path, global_name, data)
 
                     if not lazylibrarian.CONFIG['DESTINATION_COPY'] and pp_path != dest_dir:
@@ -727,6 +740,9 @@ def import_book(pp_path=None, bookID=None):
 def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
     # given book data, handle calibre autoadd, book image, opf,
     # and update author and book counts
+    if not data:
+        logger.error('processExtras: No data supplied')
+
     authorname = data['AuthorName']
     bookid = data['BookID']
     bookname = data['BookName']
@@ -895,7 +911,6 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                         logger.warn("Failed to find a valid book in [%s]" % target_dir)
                         imported = False
                 else:
-                    target_dir = calibre_dir
                     imported = LibraryScan(calibre_dir)  # rescan whole authors directory
             else:
                 logger.error("Failed to locate calibre dir [%s]" % calibre_dir)

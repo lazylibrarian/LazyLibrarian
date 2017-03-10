@@ -21,7 +21,7 @@ import urllib
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.cache import cache_img, fetchURL
-from lazylibrarian.formatter import safe_unicode, plural
+from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented
 
 
 def getAuthorImages():
@@ -40,9 +40,12 @@ def getAuthorImages():
                 newValueDict = {"AuthorImg": imagelink}
                 myDB.upsert("authors", newValueDict, controlValueDict)
                 counter += 1
-        logger.info('Author Image check complete, updated %s image%s' % (counter, plural(counter)))
+        msg = 'Updated %s image%s' % (counter, plural(counter))
+        logger.info('Author Image check complete: ' + msg)
     else:
-        logger.debug('No missing author images')
+        msg = 'No missing author images'
+        logger.debug(msg)
+    return msg
 
 
 def getBookCovers():
@@ -61,9 +64,12 @@ def getBookCovers():
                 newValueDict = {"BookImg": coverlink}
                 myDB.upsert("books", newValueDict, controlValueDict)
                 counter += 1
-        logger.info('Cover check complete, updated %s cover%s' % (counter, plural(counter)))
+        msg =  'Updated %s cover%s' % (counter, plural(counter))
+        logger.info('Cover check complete: ' + msg)
     else:
-        logger.debug('No missing book covers')
+        msg = 'No missing book covers'
+        logger.debug(msg)
+    return msg
 
 
 def setAllBookSeries():
@@ -79,37 +85,36 @@ def setAllBookSeries():
             if seriesdict:
                 counter += 1
                 setSeries(seriesdict, bookid)
-    logger.info('Series check complete, updated %s book%s' % (counter, plural(counter)))
+    deleteEmptySeries()
+    msg = 'Updated %s book%s' % (counter, plural(counter))
+    logger.info('Series check complete: ' + msg)
+    return msg
 
 def setSeries(seriesdict=None, bookid=None):
-    """ set series details in booktable and series/member tables from the supplied dict """
+    """ set series details in series/member tables from the supplied dict """
     myDB = database.DBConnection()
     if bookid:
-        # delete any old entries
-        myDB.action('DELETE from member WHERE Bookid=%s' % bookid)
-        series = ''
+        # delete any old series-member entries
+        myDB.action('DELETE from member WHERE BookID=%s' % bookid)
         for item in seriesdict:
-            # keep all series in the book table for speed
-            newseries = "%s %s" % (item, seriesdict[item])
-            newseries.strip()
-            if series:
-                series += '<br>'
-            series += newseries
-            # and each series in the series and member tables for searching
+            book = myDB.match('SELECT AuthorID from books where BookID=%s' % bookid)
             match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % item)
-            book = myDB.match('SELECT BookName, AuthorID from books where BookID=%s' % bookid)
             if not match:
                 # new series, need to set status and get SeriesID
                 myDB.action('INSERT into series (SeriesName, AuthorID, Status) VALUES ("%s", "%s", "Active")' %
                             (item, book['AuthorID']))
                 match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % item)
-            controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
-            newValueDict = {"SeriesNum": seriesdict[item]}
-            myDB.upsert("member", newValueDict, controlValueDict)
-        controlValueDict = {"BookID": bookid}
-        newValueDict = {"Series": series}
-        myDB.upsert("books", newValueDict, controlValueDict)
-        deleteEmptySeries()
+                # and ask librarything what other books are in the series
+                #_ = getSeriesMembers(match['SeriesID'])
+            if match:
+                controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
+                newValueDict = {"SeriesNum": seriesdict[item]}
+                myDB.upsert("member", newValueDict, controlValueDict)
+            else:
+                logger.debug('Unable to set series for book %s, %s' % (bookid, repr(seriesdict)))
+        # removed deleteEmptySeries as setSeries slows down drastically if run in a loop
+        # eg dbupgrade or setAllBookSeries. Better to tidy up all empties when loop finished
+        # deleteEmptySeries()
 
 def setStatus(bookid=None, seriesdict=None, default=None):
     """ Set the status of a book according to series/author/newbook/newauthor preferences
@@ -118,7 +123,6 @@ def setStatus(bookid=None, seriesdict=None, default=None):
     if not bookid:
         return default
 
-    new_status = ''
     match = myDB.match('SELECT Status,AuthorID,BookName from books WHERE BookID="%s"' % bookid)
     if not match:
         return default
@@ -152,12 +156,10 @@ def setStatus(bookid=None, seriesdict=None, default=None):
 
     if not new_status:
         # Author we don't want?
-        for item in seriesdict:
-            match = myDB.match('SELECT Status from authors where AuthorID="%s"' % authorid)
-            if match['Status'] in ['Paused', 'Ignored']:
-                new_status = 'Skipped'
-                logger.debug('Marking %s as %s, author %s' % (bookname, new_status, match['Status']))
-                break
+        match = myDB.match('SELECT Status from authors where AuthorID="%s"' % authorid)
+        if match['Status'] in ['Paused', 'Ignored']:
+            new_status = 'Skipped'
+            logger.debug('Marking %s as %s, author %s' % (bookname, new_status, match['Status']))
 
     # If none of these, leave default "newbook" or "newauthor" status
     if new_status:
@@ -181,8 +183,9 @@ def setWorkPages():
     """ Set the workpage link for any books that don't already have one """
 
     myDB = database.DBConnection()
-
-    books = myDB.select('select BookID,AuthorName,BookName from books where length(WorkPage) < 4')
+    cmd = 'select BookID,AuthorName,BookName from books,authors where length(WorkPage) < 4'
+    cmd += ' and books.AuthorID = authors.AuthorID'
+    books = myDB.select(cmd)
     if books:
         logger.debug('Setting WorkPage for %s book%s' % (len(books), plural(len(books))))
         counter = 0
@@ -196,9 +199,12 @@ def setWorkPages():
                 counter += 1
             else:
                 logger.debug('No WorkPage found for %s: %s' % (book['AuthorName'], book['BookName']))
-        logger.debug('setWorkPages complete, updated %s page%s' % (counter, plural(counter)))
+        msg = 'Updated %s page%s' % (counter, plural(counter))
+        logger.debug("setWorkPages complete: " + msg)
     else:
-        logger.debug('No missing WorkPages')
+        msg = 'No missing WorkPages'
+        logger.debug(msg)
+    return msg
 
 
 def librarything_wait():
@@ -209,31 +215,41 @@ def librarything_wait():
     lazylibrarian.LAST_LIBRARYTHING = time_now
 
 
-def getBookWork(bookID=None, reason=None):
-    """ return the contents of the LibraryThing workpage for the given bookid
+def getBookWork(bookID=None, reason=None, seriesID=None):
+    """ return the contents of the LibraryThing workpage for the given bookid, or seriespage if seriesID given
         preferably from the cache. If not already cached cache the results
-        Return None if no workpage available """
-    if not bookID:
-        logger.error("getBookWork - No bookID")
+        Return None if no workpage/seriespage available """
+    if not bookID and not seriesID:
+        logger.error("getBookWork - No bookID or seriesID")
         return None
 
     if not reason:
         reason = ""
 
     myDB = database.DBConnection()
-
-    item = myDB.match('select BookName,AuthorName,BookISBN from books where bookID="%s"' % bookID)
-    if item:
+    if bookID:
+        # need to specify authors.AuthorName here as function is called during dbupgrade v15 to v16
+        # while books.authorname column is still present
+        cmd = 'select BookName,authors.AuthorName,BookISBN from books,authors where bookID="%s"' % bookID
+        cmd += ' and books.AuthorID = authors.AuthorID'
         cacheLocation = "WorkCache"
+    else:
+        cmd = 'select SeriesName from series where SeriesID="%s"' % seriesID
+        cacheLocation = "SeriesCache"
+    item = myDB.match(cmd)
+    if item:
         cacheLocation = os.path.join(lazylibrarian.CACHEDIR, cacheLocation)
         if not os.path.exists(cacheLocation):
             os.mkdir(cacheLocation)
-        workfile = os.path.join(cacheLocation, bookID + '.html')
+        if bookID:
+            workfile = os.path.join(cacheLocation, str(bookID) + '.html')
+        else:
+            workfile = os.path.join(cacheLocation, str(seriesID) + '.html')
 
         # does the workpage need to expire? For now only expire if it was an error page
-        # (small file) as librarything might get better info over time
+        # (small file) or a series page as librarything might get better info over time, more series members etc
         if os.path.isfile(workfile):
-            if os.path.getsize(workfile) < 500:
+            if seriesID or os.path.getsize(workfile) < 500:
                 cache_modified_time = os.stat(workfile).st_mtime
                 time_now = time.time()
                 expiry = lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60  # expire cache after this many seconds
@@ -244,23 +260,32 @@ def getBookWork(bookID=None, reason=None):
         if os.path.isfile(workfile):
             # use cached file if possible to speed up refreshactiveauthors and librarysync re-runs
             lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
-            if reason:
-                logger.debug(u"getBookWork: Returning Cached entry for %s %s" % (bookID, reason))
+            if bookID:
+                if reason:
+                    logger.debug(u"getBookWork: Returning Cached entry for %s %s" % (bookID, reason))
+                else:
+                    logger.debug(u"getBookWork: Returning Cached workpage for %s" % bookID)
             else:
-                logger.debug(u"getBookWork: Returning Cached workpage for %s" % bookID)
+                logger.debug(u"getBookWork: Returning Cached seriespage for %s" % item['seriesName'])
 
             with open(workfile, "r") as cachefile:
                 source = cachefile.read()
             return source
         else:
             lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
-            title = safe_unicode(item['BookName']).encode(lazylibrarian.SYS_ENCODING)
-            author = safe_unicode(item['AuthorName']).encode(lazylibrarian.SYS_ENCODING)
-            safeparams = urllib.quote_plus("%s %s" % (author, title))
-            URL = 'http://www.librarything.com/api/whatwork.php?title=' + safeparams
+            if bookID:
+                title = safe_unicode(item['BookName']).encode(lazylibrarian.SYS_ENCODING)
+                author = safe_unicode(item['AuthorName']).encode(lazylibrarian.SYS_ENCODING)
+                safeparams = urllib.quote_plus("%s %s" % (author, title))
+                URL = 'http://www.librarything.com/api/whatwork.php?title=' + safeparams
+            else:
+                seriesname = safe_unicode(item['seriesName']).encode(lazylibrarian.SYS_ENCODING)
+                safeparams = urllib.quote_plus(seriesname)
+                URL = 'http://www.librarything.com/series/' + safeparams
+
             librarything_wait()
             result, success = fetchURL(URL)
-            if success:
+            if bookID and success:
                 try:
                     workpage = result.split('<link>')[1].split('</link>')[0]
                     librarything_wait()
@@ -295,22 +320,28 @@ def getBookWork(bookID=None, reason=None):
                         msg = "getBookWork: Librarything error: [" + errmsg + "] for "
                         logger.debug(msg + item['AuthorName'] + ' ' + item['BookName'])
                         success = True
-                if success:
-                    with open(workfile, "w") as cachefile:
-                        cachefile.write(result)
+            if success:
+                with open(workfile, "w") as cachefile:
+                    cachefile.write(result)
+                    if bookID:
                         logger.debug(u"getBookWork: Caching workpage for %s" % workfile)
-                        # return None if we got an error page back
-                        if '</request><error>' in result:
-                            return None
-                    return result
-                else:
-                    logger.debug(u"getBookWork: Unable to cache workpage, got %s" % result)
-                return None
+                    else:
+                        logger.debug(u"getBookWork: Caching series page for %s" % workfile)
+                    # return None if we got an error page back
+                    if '</request><error>' in result:
+                        return None
+                return result
             else:
-                logger.debug(u"getBookWork: Unable to cache response for %s, got %s" % (URL, result))
-                return None
+                if bookID:
+                    logger.debug(u"getBookWork: Unable to cache workpage, got %s" % result)
+                else:
+                    logger.debug(u"getBookWork: Unable to cache series page, got %s" % result)
+            return None
     else:
-        logger.debug('Get Book Work - Invalid bookID [%s]' % bookID)
+        if bookID:
+            logger.debug('Get Book Work - Invalid bookID [%s]' % bookID)
+        else:
+            logger.debug('Get Book Work - Invalid seriesID [%s]' % seriesID)
         return None
 
 
@@ -330,6 +361,52 @@ def getWorkPage(bookID=None):
     return ''
 
 
+def getSeriesPages():
+    myDB = database.DBConnection()
+    series = myDB.select('select SeriesID from series')
+    if series:
+        logger.debug('Getting series info for %s series' % len(series))
+        counter = 0
+        for entry in series:
+            seriesid = entry['SeriesID']
+            result = getSeriesMembers(seriesid)
+            if result:
+                counter += 1
+            else:
+                logger.debug('No series info found for series %s' % seriesid)
+        msg = 'Updated %s page%s' % (counter, plural(counter))
+        logger.debug("Series pages complete: " + msg)
+    else:
+        msg = 'No missing Series Pages'
+        logger.debug(msg)
+    return msg
+
+
+def getSeriesMembers(seriesID=None):
+    """ Ask librarything for order, bookname, authorname for all books in a series
+        Return as a list of lists """
+    results = []
+    data = getBookWork(None, "SeriesPage", seriesID)
+    if data:
+        try:
+            table = data.split('class="worksinseries"')[1].split('</table>')[0]
+            rows = table.split('<tr')
+            for row in rows:
+                if 'href=' in row:
+                    booklink = row.split('href="')[1]
+                    bookname = booklink.split('">')[1].split('<')[0]
+                    booklink = booklink.split('"')[0]
+                    authorlink = row.split('href="')[2]
+                    authorname = authorlink.split('">')[1].split('<')[0]
+                    authorlink = authorlink.split('"')[0]
+                    order = row.split('class="order">')[1].split('<')[0]
+                    results.append([order,bookname,authorname])
+        except IndexError:
+            if 'class="worksinseries"' in data:  # error parsing, or just no series data available?
+                logger.debug('Error in series table for series %s' % seriesID)
+    return results
+
+
 def getWorkSeries(bookID=None):
     """ Return the series names and numbers in series for the given bookid as a dictionary """
     seriesdict = {}
@@ -344,13 +421,14 @@ def getWorkSeries(bookID=None):
             for item in serieslist[1:]:
                 try:
                     series = item.split('">')[1].split('</a>')[0]
-                    series = safe_unicode(series).encode(lazylibrarian.SYS_ENCODING)
                     if series and '(' in series:
                         seriesnum = series.split('(')[1].split(')')[0].strip()
                         series = series.split(' (')[0].strip()
                     else:
                         seriesnum = ''
                         series = series.strip()
+                    series = cleanName(unaccented(series))
+                    seriesnum = cleanName(unaccented(seriesnum))
                     seriesdict[series] = seriesnum
                 except IndexError:
                     pass
@@ -414,7 +492,9 @@ def getBookCover(bookID=None):
             logger.debug('getBookCover: Image not found in work page for %s' % bookID)
 
     # not found in librarything work page, try to get a cover from goodreads or google instead
-    item = myDB.match('select BookName,AuthorName,BookLink from books where bookID="%s"' % bookID)
+    cmd = 'select BookName,AuthorName,BookLink from books,authors where bookID="%s"' % bookID
+    cmd += ' and books.AuthorID = authors.AuthorID'
+    item = myDB.match(cmd)
     if item:
         title = safe_unicode(item['BookName']).encode(lazylibrarian.SYS_ENCODING)
         author = safe_unicode(item['AuthorName']).encode(lazylibrarian.SYS_ENCODING)

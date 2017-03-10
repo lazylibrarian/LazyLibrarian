@@ -14,30 +14,30 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import Queue
-import os
 import json
-import threading
+import os
 import shutil
+import threading
 
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, setAllBookSeries, \
-    getBookCover, getAuthorImage, getAuthorImages
+    getBookCover, getAuthorImage, getAuthorImages, getSeriesMembers, getSeriesPages
+from lazylibrarian.cache import cache_img
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, dbUpdate, setperm
 from lazylibrarian.csvfile import import_CSV, export_CSV
-from lazylibrarian.formatter import today, getList
+from lazylibrarian.formatter import today
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, update_totals
 from lazylibrarian.librarysync import LibraryScan
 from lazylibrarian.magazinescan import magazineScan, create_covers
+from lazylibrarian.manualbook import searchItem
 from lazylibrarian.postprocess import processDir, processAlternate
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchnzb import search_nzb_book
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.searchtorrents import search_tor_book
-from lazylibrarian.cache import cache_img
-from lazylibrarian.manualbook import searchItem
 
 cmd_dict = {'help': 'list available commands. ' +
                     'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +
@@ -102,6 +102,8 @@ cmd_dict = {'help': 'list available commands. ' +
             'checkRunningJobs': 'ensure all needed jobs are running',
             'vacuum': 'vacuum the database',
             'getWorkSeries': '&id= Get series from Librarything BookWork using BookID',
+            'getSeriesMembers': '&id= Get list of series members from Librarything using SeriesID',
+            'getSeriesPages': ' Get series info pages from Librarything for all series',
             'getWorkPage': '&id= Get url of Librarything BookWork using BookID',
             'getBookCovers': '[&wait] Check all books for cached cover and download one if missing',
             'cleanCache': '[&wait] Clean unused and expired files from the LazyLibrarian caches',
@@ -239,8 +241,9 @@ class Api(object):
             'SELECT * from authors order by AuthorName COLLATE NOCASE')
 
     def _getNoLang(self):
-        self.data = self._dic_from_query(
-            'SELECT BookID,BookISBN,BookName,AuthorName from books where BookLang="Unknown" or BookLang="" or BookLang is NULL')
+        q = 'SELECT BookID,BookISBN,BookName,AuthorName from books,authors where books.AuthorID = authors.AuthorID'
+        q += ' and BookLang="Unknown" or BookLang="" or BookLang is NULL'
+        self.data = self._dic_from_query(q)
 
     def _getAuthor(self, **kwargs):
         if 'id' not in kwargs:
@@ -260,9 +263,10 @@ class Api(object):
         self.data = self._dic_from_query('SELECT * from magazines order by Title COLLATE NOCASE')
 
     def _getAllBooks(self):
-        self.data = self._dic_from_query(
-            'SELECT AuthorID,AuthorName,AuthorLink, BookName,BookSub,BookGenre,BookIsbn,BookPub, \
-            BookRate,BookImg,BookPages,BookLink,BookID,BookDate,BookLang,BookAdded,Status,Series from books')
+        q = 'SELECT authors.AuthorID,AuthorName,AuthorLink,BookName,BookSub,BookGenre,BookIsbn,BookPub,'
+        q += 'BookRate,BookImg,BookPages,BookLink,BookID,BookDate,BookLang,BookAdded,books.Status '
+        q += 'from books,authors where books.AuthorID = authors.AuthorID'
+        self.data = self._dic_from_query(q)
 
     def _getIssues(self, **kwargs):
         if 'name' not in kwargs:
@@ -278,14 +282,13 @@ class Api(object):
 
         self.data = {'magazine': magazine, 'issues': issues}
 
-    @staticmethod
-    def _createMagCovers(**kwargs):
+    def _createMagCovers(self, **kwargs):
         if 'refresh' in kwargs:
             refresh=True
         else:
             refresh=False
         if 'wait' in kwargs:
-            create_covers(refresh=refresh)
+            self.data = create_covers(refresh=refresh)
         else:
             threading.Thread(target=create_covers, name='API-MAGCOVERS', args=[refresh]).start()
 
@@ -416,13 +419,12 @@ class Api(object):
         except Exception as e:
             self.data = str(e)
 
-    @staticmethod
-    def _forceActiveAuthorsUpdate(**kwargs):
+    def _forceActiveAuthorsUpdate(self, **kwargs):
         refresh = False
         if 'refresh' in kwargs:
             refresh = True
         if 'wait' in kwargs:
-            dbUpdate(refresh=refresh)
+            self.data = dbUpdate(refresh=refresh)
         else:
             threading.Thread(target=dbUpdate, name='API-DBUPDATE', args=[refresh]).start()
 
@@ -472,38 +474,33 @@ class Api(object):
         else:
             threading.Thread(target=magazineScan, name='API-MAGSCAN', args=[]).start()
 
-    @staticmethod
-    def _cleanCache(**kwargs):
+    def _cleanCache(self, **kwargs):
         if 'wait' in kwargs:
-            cleanCache()
+            self.data = cleanCache()
         else:
             threading.Thread(target=cleanCache, name='API-CLEANCACHE', args=[]).start()
 
-    @staticmethod
-    def _setWorkPages(**kwargs):
+    def _setWorkPages(self, **kwargs):
         if 'wait' in kwargs:
-            setWorkPages()
+            self.data = setWorkPages()
         else:
             threading.Thread(target=setWorkPages, name='API-SETWORKPAGES', args=[]).start()
 
-    @staticmethod
-    def _setAllBookSeries(**kwargs):
+    def _setAllBookSeries(self, **kwargs):
         if 'wait' in kwargs:
-            setAllBookSeries()
+            self.data = setAllBookSeries()
         else:
             threading.Thread(target=setAllBookSeries, name='API-SETALLBOOKSERIES', args=[]).start()
 
-    @staticmethod
-    def _getBookCovers(**kwargs):
+    def _getBookCovers(self, **kwargs):
         if 'wait' in kwargs:
-            getBookCovers()
+            self.data = getBookCovers()
         else:
             threading.Thread(target=getBookCovers, name='API-GETBOOKCOVERS', args=[]).start()
 
-    @staticmethod
-    def _getAuthorImages(**kwargs):
+    def _getAuthorImages(self, **kwargs):
         if 'wait' in kwargs:
-            getAuthorImages()
+            self.data = getAuthorImages()
         else:
             threading.Thread(target=getAuthorImages, name='API-GETAUTHORIMAGES', args=[]).start()
 
@@ -575,7 +572,7 @@ class Api(object):
         try:
             myDB = database.DBConnection()
             authordata = myDB.match(
-                'SELECT AuthorName, AuthorLink from authors WHERE AuthorID="%s"' % kwargs['toid'])
+                'SELECT AuthorName from authors WHERE AuthorID="%s"' % kwargs['toid'])
             if not authordata:
                 self.data = "No destination author [%s] in the database" % kwargs['toid']
             else:
@@ -585,11 +582,7 @@ class Api(object):
                     self.data = "No bookid [%s] in the database" % kwargs['id']
                 else:
                     controlValueDict = {'BookID': kwargs['id']}
-                    newValueDict = {
-                        'AuthorID': kwargs['toid'],
-                        'AuthorName': authordata[0],
-                        'AuthorLink': authordata[1]
-                    }
+                    newValueDict = {'AuthorID': kwargs['toid']}
                     myDB.upsert("books", newValueDict, controlValueDict)
                     update_totals(bookdata[0])  # we moved from here
                     update_totals(kwargs['toid'])  # to here
@@ -607,20 +600,20 @@ class Api(object):
             return
         try:
             myDB = database.DBConnection()
+            q = 'SELECT bookid,books.authorid from books,authors where books.AuthorID = authors.AuthorID'
+            q += ' and authorname="%s"' % kwargs['fromname']
+            fromhere = myDB.select(q)
 
-            fromhere = myDB.select(
-                'SELECT bookid,authorid from books where authorname="%s"' % kwargs['fromname'])
             tohere = myDB.match(
-                'SELECT authorid, authorlink from authors where authorname="%s"' % kwargs['toname'])
+                'SELECT authorid from authors where authorname="%s"' % kwargs['toname'])
             if not len(fromhere):
                 self.data = "No books by [%s] in the database" % kwargs['fromname']
             else:
                 if not tohere:
                     self.data = "No destination author [%s] in the database" % kwargs['toname']
                 else:
-                    myDB.action(
-                        'UPDATE books SET authorid="%s", authorname="%s", authorlink="%s" where authorname="%s"' %
-                        (tohere[0], kwargs['toname'], tohere[1], kwargs['fromname']))
+                    myDB.action('UPDATE books SET authorid="%s", where authorname="%s"' %
+                                (tohere[0], kwargs['fromname']))
                     self.data = "Moved %s books from %s to %s" % (len(fromhere), kwargs['fromname'], kwargs['toname'])
                     update_totals(fromhere[0][1])  # we moved from here
                     update_totals(tohere[0])  # to here
@@ -636,7 +629,7 @@ class Api(object):
         else:
             self.id = kwargs['name']
         try:
-            addAuthorToDB(authorname=self.id, refresh=False)
+            self.data = addAuthorToDB(authorname=self.id, refresh=False)
         except Exception as e:
             self.data = str(e)
 
@@ -647,7 +640,7 @@ class Api(object):
         else:
             self.id = kwargs['id']
         try:
-            addAuthorToDB(authorname='', refresh=False, authorid=self.id)
+            self.data = addAuthorToDB(authorname='', refresh=False, authorid=self.id)
         except Exception as e:
             self.data = str(e)
 
@@ -733,6 +726,20 @@ class Api(object):
     @staticmethod
     def _loadCFG():
         lazylibrarian.config_read(reloaded=True)
+
+    def _getSeriesPages(self, **kwargs):
+        if 'wait' in kwargs:
+            self.data = getSeriesPages()
+        else:
+            threading.Thread(target=getSeriesPages, name='SeriesPages', args=[]).start()
+
+    def _getSeriesMembers(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+        self.data = getSeriesMembers(self.id)
 
     def _getWorkSeries(self, **kwargs):
         if 'id' not in kwargs:
@@ -888,35 +895,32 @@ class Api(object):
     def _showJobs(self):
         self.data = showJobs()
 
-    @staticmethod
-    def _importAlternate(**kwargs):
+    def _importAlternate(self, **kwargs):
         if 'dir' in kwargs:
             usedir = kwargs['dir']
         else:
             usedir = lazylibrarian.CONFIG['ALTERNATE_DIR']
         if 'wait' in kwargs:
-            processAlternate(usedir)
+            self.data = processAlternate(usedir)
         else:
             threading.Thread(target=processAlternate, name='API-IMPORTALT', args=[usedir]).start()
 
-    @staticmethod
-    def _importCSVwishlist(**kwargs):
+    def _importCSVwishlist(self, **kwargs):
         if 'dir' in kwargs:
             usedir = kwargs['dir']
         else:
             usedir = lazylibrarian.CONFIG['ALTERNATE_DIR']
         if 'wait' in kwargs:
-            import_CSV(usedir)
+            self.data = import_CSV(usedir)
         else:
             threading.Thread(target=import_CSV, name='API-IMPORTCSV', args=[usedir]).start()
 
-    @staticmethod
-    def _exportCSVwishlist(**kwargs):
+    def _exportCSVwishlist(self, **kwargs):
         if 'dir' in kwargs:
             usedir = kwargs['dir']
         else:
             usedir = lazylibrarian.CONFIG['ALTERNATE_DIR']
         if 'wait' in kwargs:
-            export_CSV(usedir)
+            self.data = export_CSV(usedir)
         else:
             threading.Thread(target=export_CSV, name='API-EXPORTCSV', args=[usedir]).start()

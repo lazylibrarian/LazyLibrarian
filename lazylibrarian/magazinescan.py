@@ -39,12 +39,17 @@ def create_covers(refresh=False):
         logger.info("Creating covers for %s issue%s" % (len(issues), plural(len(issues))))
     else:
         logger.info("Checking covers for %s issue%s" % (len(issues), plural(len(issues))))
+    cnt = 0
     for item in issues:
         try:
             create_cover(item['IssueFile'], refresh=refresh)
+            cnt += 1
         except Exception as why:
             logger.debug('Unable to create cover for %s, %s' % (item['IssueFile'], str(why)))
     logger.info("Cover creation completed")
+    if refresh:
+        return "Created covers for %s issue%s" % (cnt, plural(cnt))
+    return "Checked covers for %s issue%s" % (cnt, plural(cnt))
 
 
 def create_cover(issuefile=None, refresh=False):

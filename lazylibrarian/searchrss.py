@@ -55,15 +55,18 @@ def search_rss_book(books=None, reset=False):
 
         if books is None:
             # We are performing a backlog search
-            searchbooks = myDB.select(
-                'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books WHERE Status="Wanted" \
-                order by BookAdded desc')
+            cmd = 'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books,authors '
+            cmd += 'WHERE books.AuthorID = authors.AuthorID and books.Status="Wanted" order by BookAdded desc'
+            searchbooks = myDB.select(cmd)
+
         else:
             # The user has added a new book
             searchbooks = []
             for book in books:
-                searchbook = myDB.select('SELECT BookID, AuthorName, BookName, BookSub from books WHERE BookID="%s" \
-                                         AND Status="Wanted"' % book['bookid'])
+                cmd = 'SELECT BookID, AuthorName, BookName, BookSub from books,authors '
+                cmd += 'WHERE books.AuthorID = authors.AuthorID and BookID="%s" ' % book['bookid']
+                cmd += 'AND books.Status="Wanted"'
+                searchbook = myDB.select(cmd)
                 for terms in searchbook:
                     searchbooks.append(terms)
 
@@ -193,7 +196,7 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
         logger.info(u'Best RSS match (%s%%): %s using %s search' %
                     (score, nzb_Title, searchtype))
 
-        snatchedbooks = myDB.match('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
+        snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID="%s" and Status="Snatched"' %
                                    newValueDict["BookID"])
 
         if snatchedbooks:  # check if one of the other downloaders got there first

@@ -17,14 +17,14 @@ from __future__ import with_statement
 
 import os
 import shutil
-import sqlite3
 import threading
 import traceback
+
 import lazylibrarian
 from lazylibrarian import logger, database, magazinescan, bookwork
-from lazylibrarian.formatter import plural, bookSeries
+from lazylibrarian.bookwork import getWorkSeries, setSeries, deleteEmptySeries
 from lazylibrarian.common import restartJobs
-from lazylibrarian.bookwork import getWorkSeries, setSeries
+from lazylibrarian.formatter import plural, bookSeries, cleanName, unaccented
 
 def upgrade_needed():
     """
@@ -61,8 +61,9 @@ def upgrade_needed():
     # 13 add Manual column to author table for user editing
     # 14 separate book and author images in case id numbers collide
     # 15 move series and seriesnum into separate tables so book can appear in multiple series
+    # 16 remove series, authorlink, authorname columns from book table, only in series/author tables now
 
-    db_current_version = 15
+    db_current_version = 16
     if db_version < db_current_version:
         return db_current_version
     return 0
@@ -109,10 +110,10 @@ def dbupgrade(db_current_version):
                 AuthorImg TEXT, AuthorLink TEXT, DateAdded TEXT, Status TEXT, LastBook TEXT, LastBookImg TEXT, \
                 LastLink Text, LastDate TEXT,  HaveBooks INTEGER, TotalBooks INTEGER, AuthorBorn TEXT, \
                 AuthorDeath TEXT, UnignoredBooks INTEGER, Manual TEXT)')
-            myDB.action('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
+            myDB.action('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, \
                 BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
                 BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, \
-                BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, WorkPage TEXT, Manual TEXT)')
+                BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, WorkPage TEXT, Manual TEXT)')
             myDB.action('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, \
                 NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, Source TEXT, DownloadID TEXT)')
             myDB.action('CREATE TABLE IF NOT EXISTS pastissues AS SELECT * FROM wanted WHERE 0')  # same columns
@@ -135,60 +136,60 @@ def dbupgrade(db_current_version):
 
             if not has_column(myDB, "books", "BookSub"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold book subtitles.'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE books ADD COLUMN BookSub TEXT')
 
             if not has_column(myDB, "books", "BookSub"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold book publisher'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE books ADD COLUMN BookPub TEXT')
 
             if not has_column(myDB, "books", "BookGenre"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold bookgenre'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE books ADD COLUMN BookGenre TEXT')
 
             if not has_column(myDB, "books", "BookFile"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold book filename'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE books ADD COLUMN BookFile TEXT')
 
             if not has_column(myDB, "wanted", "AuxInfo"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold AuxInfo'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE wanted ADD COLUMN AuxInfo TEXT')
 
             if not has_column(myDB, "wanted", "NZBsize"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold NZBsize'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE wanted ADD COLUMN NZBsize TEXT')
 
             if not has_column(myDB, "wanted", "NZBmode"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold NZBmode'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE wanted ADD COLUMN NZBmode TEXT')
 
             if not has_column(myDB, "authors", "UnignoredBooks"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold UnignoredBooks'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE authors ADD COLUMN UnignoredBooks INTEGER')
 
             if not has_column(myDB, "magazines", "IssueStatus"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold IssueStatus'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE magazines ADD COLUMN IssueStatus TEXT')
 
             addedWorkPage = False
             if not has_column(myDB, "books", "WorkPage"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold WorkPage'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE books ADD COLUMN WorkPage TEXT')
                 addedWorkPage = True
 
             addedSeries = False
-            if not has_column(myDB, "books", "Series"):
+            if not has_column(myDB, "series", "SeriesID") and not has_column(myDB, "books", "Series"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold Series'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE books ADD COLUMN Series TEXT')
                 addedSeries = True
 
@@ -201,7 +202,7 @@ def dbupgrade(db_current_version):
             if not has_column(myDB, "books", "SeriesNum") and has_column(myDB, "books", "SeriesOrder"):
                 # no SeriesNum column, so create one
                 lazylibrarian.UPDATE_MSG = 'Updating books to hold SeriesNum'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE books ADD COLUMN SeriesNum TEXT')
                 myDB.action('UPDATE books SET SeriesNum = SeriesOrder')
                 myDB.action('UPDATE books SET SeriesOrder = Null')
@@ -209,14 +210,14 @@ def dbupgrade(db_current_version):
             addedIssues = False
             if not has_column(myDB, "issues", "Title"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold Issues table'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action(
                     'CREATE TABLE issues (Title TEXT, IssueID TEXT, IssueAcquired TEXT, IssueDate TEXT, IssueFile TEXT)')
                 addedIssues = True
 
             if not has_column(myDB, "issues", "IssueID"):
                 lazylibrarian.UPDATE_MSG = 'Updating Issues table to hold IssueID'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE issues ADD COLUMN IssueID TEXT')
                 addedIssues = True
 
@@ -231,7 +232,7 @@ def dbupgrade(db_current_version):
             if addedWorkPage:
                 try:
                     lazylibrarian.UPDATE_MSG = 'Adding WorkPage to existing books'
-                    logger.info(lazylibrarian.UPDATE_MSG)
+                    logger.debug(lazylibrarian.UPDATE_MSG)
                     threading.Thread(target=bookwork.setWorkPages, name="ADDWORKPAGE", args=[]).start()
                 except Exception as e:
                     logger.debug("Failed to update WorkPages, %s" % str(e))
@@ -241,7 +242,7 @@ def dbupgrade(db_current_version):
                     books = myDB.select('SELECT BookID, BookName FROM books')
                     if books:
                         lazylibrarian.UPDATE_MSG = 'Adding series to existing books'
-                        logger.info(lazylibrarian.UPDATE_MSG)
+                        logger.debug(lazylibrarian.UPDATE_MSG)
                         tot = len(books)
                         cnt = 0
                         for book in books:
@@ -256,14 +257,14 @@ def dbupgrade(db_current_version):
                                 }
                                 myDB.upsert("books", newValueDict, controlValueDict)
                 except Exception as e:
-                    logger.info('Error: ' + str(e))
+                    logger.error('Error: ' + str(e))
 
         if db_version < 2:
             try:
                 results = myDB.select('SELECT BookID,NZBsize FROM wanted WHERE NZBsize LIKE "% MB"')
                 if results:
                     lazylibrarian.UPDATE_MSG = 'Removing units from wanted table'
-                    logger.info(lazylibrarian.UPDATE_MSG)
+                    logger.debug(lazylibrarian.UPDATE_MSG)
                     tot = len(results)
                     cnt = 0
                     for units in results:
@@ -274,12 +275,12 @@ def dbupgrade(db_current_version):
                         myDB.action('UPDATE wanted SET NZBsize = "%s" WHERE BookID = "%s"' % (nzbsize, units["BookID"]))
 
             except Exception as e:
-                logger.info('Error: ' + str(e))
+                logger.error('Error: ' + str(e))
 
         if db_version < 3:
             if has_column(myDB, "books", "SeriesOrder"):
                 lazylibrarian.UPDATE_MSG = 'Removing SeriesOrder from books table'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action('CREATE TABLE IF NOT EXISTS temp_books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
                     BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
                     BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, \
@@ -293,7 +294,7 @@ def dbupgrade(db_current_version):
 
             if not has_column(myDB, "pastissues", "BookID"):
                 lazylibrarian.UPDATE_MSG = 'Moving magazine past issues into new table'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action(
                     'CREATE TABLE pastissues AS SELECT * FROM wanted WHERE Status="Skipped" AND length(AuxInfo) > 0')
                 myDB.action('DELETE FROM wanted WHERE Status="Skipped" AND length(AuxInfo) > 0')
@@ -301,7 +302,7 @@ def dbupgrade(db_current_version):
         if db_version < 4:
             if not has_column(myDB, "stats", "duplicates"):
                 lazylibrarian.UPDATE_MSG = 'Updating stats table to hold duplicates'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE stats ADD COLUMN duplicates INT')
 
         if db_version < 5:
@@ -309,7 +310,7 @@ def dbupgrade(db_current_version):
                 'SELECT IssueID,IssueDate from issues WHERE length(IssueDate) < 4 and length(IssueDate) > 0')
             if issues:
                 lazylibrarian.UPDATE_MSG = 'Updating issues table to hold 4 digit issue numbers'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 tot = len(issues)
                 cnt = 0
                 for issue in issues:
@@ -324,7 +325,7 @@ def dbupgrade(db_current_version):
                 'SELECT Title,IssueDate from magazines WHERE length(IssueDate) < 4 and length(IssueDate) > 0')
             if mags:
                 lazylibrarian.UPDATE_MSG = 'Updating magazines table to 4 digits'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 tot = len(mags)
                 cnt = 0
                 for mag in mags:
@@ -338,13 +339,13 @@ def dbupgrade(db_current_version):
         if db_version < 6:
             if not has_column(myDB, "books", "Manual"):
                 lazylibrarian.UPDATE_MSG = 'Updating books table to hold Manual setting'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE books ADD COLUMN Manual TEXT')
 
         if db_version < 7:
             if not has_column(myDB, "wanted", "Source"):
                 lazylibrarian.UPDATE_MSG = 'Updating wanted table to hold Source and DownloadID'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE wanted ADD COLUMN Source TEXT')
                 myDB.action('ALTER TABLE wanted ADD COLUMN DownloadID TEXT')
 
@@ -353,7 +354,7 @@ def dbupgrade(db_current_version):
             dst = lazylibrarian.CACHEDIR
             images = myDB.select('SELECT AuthorID, AuthorImg FROM authors WHERE AuthorImg LIKE "images/cache/%"')
             if images:
-                logger.info('Moving author images to new location')
+                logger.debug('Moving author images to new location')
                 tot = len(images)
                 cnt = 0
                 for image in images:
@@ -369,11 +370,11 @@ def dbupgrade(db_current_version):
                             shutil.move(os.path.join(src, img), os.path.join(dst, img))
                         except Exception as e:
                             logger.warn("dbupgrade: %s" % str(e))
-                logger.info("Author Image cache updated")
+                logger.debug("Author Image cache updated")
 
             images = myDB.select('SELECT BookID, BookImg FROM books WHERE BookImg LIKE "images/cache/%"')
             if images:
-                logger.info('Moving book images to new location')
+                logger.debug('Moving book images to new location')
                 tot = len(images)
                 cnt = 0
                 for image in images:
@@ -389,13 +390,13 @@ def dbupgrade(db_current_version):
                             shutil.move(srcfile, os.path.join(dst, img))
                         except Exception as e:
                             logger.warn("dbupgrade: %s" % str(e))
-                logger.info("Book Image cache updated")
+                logger.debug("Book Image cache updated")
 
         if db_version < 9:
             if not has_column(myDB, "magazines", "Reject"):
                 # remove frequency column, rename regex to reject, add new regex column for searches
                 lazylibrarian.UPDATE_MSG = 'Updating magazines table'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action('CREATE TABLE IF NOT EXISTS temp_table (Title TEXT, Regex TEXT, Status TEXT, \
                             MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT, Reject TEXT)')
                 myDB.action('INSERT INTO temp_table SELECT Title, Regex, Status, MagazineAdded, LastAcquired, \
@@ -414,7 +415,7 @@ def dbupgrade(db_current_version):
             # keep last book image
             if not has_column(myDB, "authors", "LastBookImg"):
                 lazylibrarian.UPDATE_MSG = 'Updating author table to hold last book image'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE authors ADD COLUMN LastBookImg TEXT')
                 books = myDB.select('SELECT AuthorID, AuthorName, LastBook from authors')
 
@@ -431,7 +432,7 @@ def dbupgrade(db_current_version):
             # keep last magazine issue image
             if not has_column(myDB, "Magazines", "LatestCover"):
                 lazylibrarian.UPDATE_MSG = 'Updating magazine table to hold last issue image'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE magazines ADD COLUMN LatestCover TEXT')
                 mags = myDB.select('SELECT Title, LastAcquired from magazines')
 
@@ -448,7 +449,7 @@ def dbupgrade(db_current_version):
         if db_version < 13:
             if not has_column(myDB, "authors", "Manual"):
                 lazylibrarian.UPDATE_MSG = 'Updating authors table to hold Manual setting'
-                logger.info(lazylibrarian.UPDATE_MSG)
+                logger.debug(lazylibrarian.UPDATE_MSG)
                 myDB.action('ALTER TABLE authors ADD COLUMN Manual TEXT')
 
         if db_version < 14:
@@ -466,7 +467,7 @@ def dbupgrade(db_current_version):
             images = myDB.select(query)
             if images:
                 tot = len(images)
-                logger.info('Moving %s author images to new location' % tot)
+                logger.debug('Moving %s author images to new location' % tot)
                 cnt = 0
                 for image in images:
                     cnt += 1
@@ -484,7 +485,7 @@ def dbupgrade(db_current_version):
                                 logger.warn("dbupgrade: %s" % str(e))
                     except Exception as e:
                         logger.warn('Failed to update author image for %s: %s' % (image['AuthorName'], str(e)))
-                logger.info("Author Image cache updated")
+                logger.debug("Author Image cache updated")
 
             try:
                 os.mkdir(os.path.join(src, 'book'))
@@ -499,7 +500,7 @@ def dbupgrade(db_current_version):
 
             if images:
                 tot = len(images)
-                logger.info('Moving %s book images to new location' % tot)
+                logger.debug('Moving %s book images to new location' % tot)
                 cnt = 0
                 for image in images:
                     cnt += 1
@@ -517,7 +518,7 @@ def dbupgrade(db_current_version):
                                 logger.warn("dbupgrade: %s" % str(e))
                     except Exception as e:
                         logger.warn('Failed to update book image for %s: %s' % (image['BookName'], str(e)))
-                logger.info("Book Image cache updated")
+                logger.debug("Book Image cache updated")
 
             # at this point there should be no more .jpg files in the root of the cachedir
             # any that are still there are for books/authors deleted from database
@@ -532,10 +533,10 @@ def dbupgrade(db_current_version):
             myDB.action('CREATE TABLE IF NOT EXISTS member (SeriesID INTEGER, BookID TEXT, SeriesNum TEXT)')
             if has_column(myDB, "books", "SeriesNum"):
                 lazylibrarian.UPDATE_MSG = 'Populating series and member tables'
-                books = myDB.select('SELECT BookID, BookName, AuthorID, AuthorName, Series, SeriesNum from books')
+                books = myDB.select('SELECT BookID, Series, SeriesNum from books')
                 if books:
                     tot = len(books)
-                    logger.info("Updating book series for %s book%s" % (tot, plural(tot)))
+                    logger.debug("Updating book series for %s book%s" % (tot, plural(tot)))
                     cnt = 0
                     for book in books:
                         cnt += 1
@@ -543,12 +544,11 @@ def dbupgrade(db_current_version):
                         seriesdict = getWorkSeries(book['BookID'])
                         if not seriesdict:  # no workpage series, use the current values if present
                             if book['Series'] and book['SeriesNum']:
-                                seriesdict = {book['Series']: book['SeriesNum']}
-                        if seriesdict:
-                            setSeries(seriesdict, book['BookID'])
-
+                                seriesdict = {cleanName(unaccented(book['Series'])): book['SeriesNum']}
+                        setSeries(seriesdict, book['BookID'])
+                    # deleteEmptySeries  # shouldn't be any on first run?
                     lazylibrarian.UPDATE_MSG = "Book series update complete"
-                    logger.info(lazylibrarian.UPDATE_MSG)
+                    logger.debug(lazylibrarian.UPDATE_MSG)
 
                 lazylibrarian.UPDATE_MSG = 'Removing seriesnum from books table'
                 myDB.action('CREATE TABLE IF NOT EXISTS temp_table (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
@@ -563,18 +563,33 @@ def dbupgrade(db_current_version):
                 myDB.action('ALTER TABLE temp_table RENAME TO books')
                 lazylibrarian.UPDATE_MSG = 'Reorganisation of books table complete'
 
+        if db_version < 16:
+            if has_column(myDB, "books", "AuthorLink"):
+                lazylibrarian.UPDATE_MSG = 'Removing series, authorlink and authorname from books table'
+                myDB.action('CREATE TABLE IF NOT EXISTS temp_table (AuthorID TEXT, \
+                    BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
+                    BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, \
+                    BookFile TEXT, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, WorkPage TEXT, \
+                    Manual TEXT)')
+                myDB.action('INSERT INTO temp_table SELECT AuthorID, BookName, BookSub, \
+                    BookDesc, BookGenre, BookIsbn, BookPub, BookRate, BookImg, BookPages, BookLink, BookID, \
+                    BookFile, BookDate, BookLang, BookAdded, Status, WorkPage, Manual from books')
+                myDB.action('DROP TABLE books')
+                myDB.action('ALTER TABLE temp_table RENAME TO books')
+                lazylibrarian.UPDATE_MSG = 'Reorganisation of books table complete'
+
 
         # Now do any non-version-specific tidying
         try:
             authors = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL')
             if authors:
-                logger.info('Removing %s un-named author%s from database' % (len(authors), plural(len(authors))))
+                logger.debug('Removing %s un-named author%s from database' % (len(authors), plural(len(authors))))
                 for author in authors:
                     authorid = author["AuthorID"]
                     myDB.action('DELETE from authors WHERE AuthorID="%s"' % authorid)
                     myDB.action('DELETE from books WHERE AuthorID="%s"' % authorid)
         except Exception as e:
-            logger.info('Error: ' + str(e))
+            logger.error('Error: ' + str(e))
 
         myDB.action('PRAGMA user_version = %s' % db_current_version)
         lazylibrarian.UPDATE_MSG = 'Cleaning Database after upgrade'

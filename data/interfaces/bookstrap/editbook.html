@@ -7,9 +7,9 @@
     <div id="subhead_container" class="row">
         <div id="subhead_menu" class="form-inline">
             <div class="col-xs-10">
-                <a id="manualbook" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['bookID']}&title=${config['bookName']}&author=${config['AuthorName']}"><i id="mb_icon" class="fa fa-refresh"></i> Author/Title Search</a>
-                <a id="manualtitle" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['bookID']}&title=${config['bookName']}"><i id="mt_icon" class="fa fa-refresh"></i> Title Search</a>
-                <a id="manualauthor" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['bookID']}&author=${config['AuthorName']}"><i id="ma_icon" class="fa fa-refresh"></i> Author Search</a>
+                <a id="manualbook" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}&author=${config['AuthorName']}"><i id="mb_icon" class="fa fa-refresh"></i> Author/Title Search</a>
+                <a id="manualtitle" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}"><i id="mt_icon" class="fa fa-refresh"></i> Title Search</a>
+                <a id="manualauthor" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&author=${config['AuthorName']}"><i id="ma_icon" class="fa fa-refresh"></i> Author Search</a>
             </div>
         </div>
     </div>
@@ -21,10 +21,10 @@
             <legend>${title}</legend>
             <div class="form-group">
                 <label for="moveBook" class="control-label">Change author to: </label>
-                <select id="moveBook" class="moveBook form-control input-sm" name="authorname">
+                <select id="moveBook" class="moveBook form-control input" name="authorname">
                 %for item in authors:
                     <option value="${item['AuthorName']}"
-                    %if config['authorName'] == item['AuthorName']:
+                    %if config['AuthorName'] == item['AuthorName']:
                         selected = "selected"
                     %endif
                     >${item['AuthorName']}</option>
@@ -33,23 +33,23 @@
             </div>
 
             <div class="form-group">
-                <input type="text" id="bookid" name="bookid" value="${config['bookID']}" class="hidden">
+                <input type="text" id="bookid" name="bookid" value="${config['BookID']}" class="hidden">
             </div>
             <div class="form-group">
                 <label for="bookname" class="control-label">Book Title:</label>
-                <input type="text" id="bookname" name="bookname" value="${config['bookName']}" class="form-control" placeholder="Book Title">
+                <input type="text" id="bookname" name="bookname" value="${config['BookName']}" class="form-control" placeholder="Book Title">
             </div>
             <div class="form-group">
                 <label for="booksub" class="control-label">Subtitle:</label>
-                <input type="text" id="booksub" name="booksub" value="${config['bookSub']}" class="form-control" placeholder="Subtitle">
+                <input type="text" id="booksub" name="booksub" value="${config['BookSub']}" class="form-control" placeholder="Subtitle">
             </div>
             <div class="form-group">
                 <label for="bookgenre" class="control-label">Genre:</label>
-                <input type="text" id="bookgenre" name="bookgenre" value="${config['bookGenre']}" class="form-control" placeholder="Genre">
+                <input type="text" id="bookgenre" name="bookgenre" value="${config['BookGenre']}" class="form-control" placeholder="Genre">
             </div>
             <div class="form-group">
                 <label for="booklang" class="control-label">Language:</label>
-                <input type="text" id="booklang" name="booklang" value="${config['bookLang']}" class="form-control" placeholder="Language">
+                <input type="text" id="booklang" name="booklang" value="${config['BookLang']}" class="form-control" placeholder="Language">
             </div>
             <div class="form-group">
                   %for item in seriesdict:

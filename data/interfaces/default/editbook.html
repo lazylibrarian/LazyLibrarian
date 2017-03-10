@@ -6,9 +6,9 @@
 <%def name="headerIncludes()">
     <div id="subhead_container">
         <ul id="subhead_menu">
-            <li><a href="booksearch?bookid=${config['bookID']}&title=${config['bookName']}&author=${config['AuthorName']}" id="button"> Author/Title Search </a></li>
-            <li><a href="booksearch?bookid=${config['bookID']}&title=${config['bookName']}" id="button"> Title Search </a></li>
-            <li><a href="booksearch?bookid=${config['bookID']}&author=${config['AuthorName']}" id="button"> Author Search </a></li>
+            <li><a href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}&author=${config['AuthorName']}" id="button"> Author/Title Search </a></li>
+            <li><a href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}" id="button"> Title Search </a></li>
+            <li><a href="booksearch?bookid=${config['BookID']}&author=${config['AuthorName']}" id="button"> Author Search </a></li>
         </ul>
     </div>
 </%def>
@@ -22,7 +22,7 @@
             <tr>
             <td>
             <div>
-                <input type="text" name="bookid" value="${config['bookID']}" class="hidden">
+                <input type="text" name="bookid" value="${config['BookID']}" class="hidden">
             </div>
             <div class="row">
                 <label>Change author to: </label>
@@ -40,22 +40,22 @@
 
             <div class="row">
                 <label>Book Title:</label>
-                <input type="text" name="bookname" value="${config['bookName']}" class="form-control" placeholder="Book Title" size="36">
+                <input type="text" name="bookname" value="${config['BookName']}" class="form-control" placeholder="Book Title" size="36">
                 <br><br>
             </div>
             <div class="row">
                 <label>Subtitle:</label>
-                <input type="text" name="booksub" value="${config['bookSub']}" class="form-control" placeholder="Subtitle" size="36">
+                <input type="text" name="booksub" value="${config['BookSub']}" class="form-control" placeholder="Subtitle" size="36">
                 <br><br>
             </div>
             <div class="row">
                 <label>Genre:</label>
-                <input type="text" name="bookgenre" value="${config['bookGenre']}" class="form-control" placeholder="Genre" size="36">
+                <input type="text" name="bookgenre" value="${config['BookGenre']}" class="form-control" placeholder="Genre" size="36">
                 <br><br>
             </div>
             <div class="row">
                 <label>Language:</label>
-                <input type="text" name="booklang" value="${config['bookLang']}" class="form-control" placeholder="Language" size="36">
+                <input type="text" name="booklang" value="${config['BookLang']}" class="form-control" placeholder="Language" size="36">
                 <br><br>
             </div>
             %for item in seriesdict:

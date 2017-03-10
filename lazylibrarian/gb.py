@@ -25,9 +25,11 @@ from urllib2 import HTTPError
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, setSeries, setStatus
+from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, deleteEmptySeries, \
+                                    setSeries, setStatus
 from lazylibrarian.cache import get_json_request, cache_img
-from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn, getList
+from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn, \
+                                    getList, cleanName
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 
@@ -535,8 +537,10 @@ class GoogleBooks:
                                 rejected = True
 
                         if not rejected:
-                            find_books = myDB.select('SELECT * FROM books WHERE BookName = "%s" and AuthorName = "%s"' %
-                                                     (bookname.replace('"', '""'), authorname.replace('"', '""')))
+                            cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'
+                            cmd += ' and BookName = "%s" and AuthorName = "%s"'% \
+                                    (bookname.replace('"', '""', authorname.replace('"', '""')))
+                            find_books = myDB.select(cmd)
                             if find_books:
                                 for find_book in find_books:
                                     if find_book['BookID'] != bookid:
@@ -547,8 +551,9 @@ class GoogleBooks:
                                         duplicates += 1
 
                         if not rejected:
-                            find_books = myDB.match(
-                                'SELECT AuthorName,BookName FROM books WHERE BookID = "%s"' % bookid)
+                            cmd = 'SELECT AuthorName,BookName FROM books,authors'
+                            cmd += ' WHERE authors.AuthorID = books.AuthorID AND BookID=%s' % bookid
+                            find_books = myDB.match(cmd)
                             if find_books:
                                 # we have a book with this bookid already
                                 if bookname != find_books['BookName'] or authorname != find_books['AuthorName']:
@@ -566,9 +571,7 @@ class GoogleBooks:
                             if book_status != "Ignored" and not locked:
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {
-                                    "AuthorName": authorname,
                                     "AuthorID": authorid,
-                                    "AuthorLink": "",
                                     "BookName": bookname,
                                     "BookSub": booksub,
                                     "BookDesc": bookdesc,
@@ -582,8 +585,7 @@ class GoogleBooks:
                                     "BookDate": bookdate,
                                     "BookLang": booklang,
                                     "Status": book_status,
-                                    "BookAdded": today(),
-                                    "Series": ''
+                                    "BookAdded": today()
                                 }
                                 resultcount += 1
 
@@ -618,7 +620,7 @@ class GoogleBooks:
                                 else:
                                     # librarything doesn't have series info. Any in the title?
                                     if series:
-                                        seriesdict = {series: seriesNum}
+                                        seriesdict = {cleanName(unaccented(series)): seriesNum}
                                 setSeries(seriesdict, bookid)
 
                                 new_status = setStatus(bookid, seriesdict, bookstatus)
@@ -646,6 +648,7 @@ class GoogleBooks:
             except KeyError:
                 pass
 
+            deleteEmptySeries()
             logger.debug('[%s] The Google Books API was hit %s time%s to populate book list' %
                          (authorname, api_hits, plural(api_hits)))
 
@@ -728,7 +731,7 @@ class GoogleBooks:
             booklang = jsonresults['volumeInfo']['language']
             valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
             if booklang not in valid_langs and 'All' not in valid_langs:
-                logger.debug('Book %s language does not match preference' % bookname)
+                logger.debug('Book %s googlebooks language does not match preference, %s' % (bookname, booklang))
         except KeyError:
             logger.debug('Book does not have language field')
             booklang = "Unknown"
@@ -806,9 +809,7 @@ class GoogleBooks:
 
         controlValueDict = {"BookID": bookid}
         newValueDict = {
-            "AuthorName": authorname,
             "AuthorID": AuthorID,
-            "AuthorLink": "",
             "BookName": bookname,
             "BookSub": booksub,
             "BookDesc": bookdesc,
@@ -822,8 +823,7 @@ class GoogleBooks:
             "BookDate": bookdate,
             "BookLang": booklang,
             "Status": "Wanted",
-            "BookAdded": today(),
-            "Series": ''
+            "BookAdded": today()
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
@@ -853,7 +853,7 @@ class GoogleBooks:
             logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
         else:
             if series:
-                seriesdict = {series: seriesNum}
+                seriesdict = {cleanName(unaccented(series)): seriesNum}
         setSeries(seriesdict, bookid)
 
         worklink = getWorkPage(bookid)

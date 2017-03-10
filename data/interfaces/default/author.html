@@ -118,73 +118,10 @@
 		        <th id="series">Series</th>
                 <th id="stars">Rating</th>
                 <th id="date">Released</th>
-                <th id="language">Language</th>
                 <th id="status">Status</th>
             </tr>
         </thead>
-
-        <tbody>
-        %for result in books:
-                <%
-                    if result['bookrate'] < 0.5:
-                        starimg = '0-stars.png'
-                    elif result['bookrate'] >= 0.5 and result['bookrate'] < 1.5:
-                        starimg = '1-stars.png'
-                    elif result['bookrate'] >= 1.5 and result['bookrate'] < 2.5:
-                        starimg = '2-stars.png'
-                    elif result['bookrate'] >= 2.5 and result['bookrate'] < 3.5:
-                        starimg = '3-stars.png'
-                    elif result['bookrate'] >= 3.5 and result['bookrate'] < 4.5:
-                        starimg = '4-stars.png'
-                    elif result['bookrate'] >= 4.5:
-                        starimg = '5-stars.png'
-                    else:
-                        starimg = '0-stars.png'
-
-                    sitelink = ''
-                    if 'goodreads' in result['booklink']:
-                        sitelink = '<a href="' + result['booklink'] + '" target="_new"><i class="smalltext">GoodReads</i></a>'
-                    if 'google' in result['booklink']:
-                        sitelink = '<a href="' + result['booklink'] + '" target="_new"><i class="smalltext">GoogleBooks</i></a>'
-
-                    workpage = ''
-                    if result['workpage']:
-                        if len(result['workpage']) > 4:
-                            workpage = '<a href="' + result['workpage'] + '" target="_new"><i class="smalltext">LibraryThing</i></a>'
-                    editpage = '<a href="editBook?bookid=' + result['bookID'] + '"><i class="smalltext">Manual</i></a>'
-                %>
-                <tr class="gradeZ">
-                    <td id="select"><input type="checkbox" name="${result['BookID']}" class="checkbox" /></td>
-                    <td id="bookart"><a href="${result['bookimg']}" target="_new"><img src="${result['bookimg']}" height="75" width="50"></a></td>
-                    %if result['booksub']:
-                        <td id="bookname">${result['bookname']}<br>
-                        <i class="smalltext">${result['booksub']}</i><br>${sitelink}&nbsp;${workpage}&nbsp;${editpage}</td>
-                    %else:
-                        <td id="bookname">${result['bookname']}<br>${sitelink}&nbsp;${workpage}&nbsp;${editpage}</td>
-                    %endif
-                    <td id="series">${result['Series']}</td>
-                    <td id="stars"><img src="images/${starimg}" width="50" height="10"></td>
-                    <td id="date">${result['BookDate']}</td>
-                    <td id="language">${result['booklang']}</td>
-
-                    %if result['Status'] == 'Open':
-                        <td id="status"><a class="button green" href="openBook?bookid=${result['bookID']}" target="_self">${result['Status']}</a></td>
-                    %else:
-                        %if result['Status'] == 'Wanted':
-                            <td id="status"><a class="button red" href="searchForBook?bookid=${result['bookID']}" target="_self"><span class="a">${result['Status']}</span><span class="b">Search</span></a></td>
-                        %else:
-                            %if result['Status'] == 'Snatched':
-                                <td id="status"><a class="button">${result['Status']}</a></td>
-                            %else:
-                                <td id="status"><a class="button grey">${result['Status']}</a></td>
-                            %endif
-                        %endif
-                    %endif
-                </tr>
-        %endfor
-        </tbody>
     </table>
-    <br /><br /><br />
     </form>
 </%def>
 
@@ -215,6 +152,10 @@
                     "sInfoEmpty":"Showing 0 to 0 of 0 books",
                     "sInfoFiltered":"(filtered from _MAX_ total books)"},
                 "sPaginationType": "full_numbers",
+                "aaSorting": [[5, 'desc']],
+                "bServerSide": true,
+                "sAjaxSource": 'getBooks?source=Author&AuthorID=${author['AuthorID']}',
+                "bFilter": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {

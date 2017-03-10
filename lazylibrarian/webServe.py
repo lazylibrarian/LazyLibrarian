@@ -14,12 +14,12 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import Queue
+import datetime
 import hashlib
 import os
 import random
 import threading
 import urllib
-import datetime
 from operator import itemgetter
 from shutil import copyfile, rmtree
 
@@ -29,22 +29,22 @@ import lib.simplejson as simplejson
 from cherrypy.lib.static import serve_file
 from lazylibrarian import logger, database, notifiers, versioncheck, magazinescan, \
     qbittorrent, utorrent, rtorrent, transmission, sabnzbd, nzbget, deluge, synology
+from lazylibrarian.bookwork import setSeries, deleteEmptySeries
+from lazylibrarian.cache import cache_img
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, dbUpdate
 from lazylibrarian.csvfile import import_CSV, export_CSV
-from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode, unaccented
+from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode, unaccented, cleanName
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, update_totals
 from lazylibrarian.librarysync import LibraryScan
+from lazylibrarian.manualbook import searchItem
+from lazylibrarian.notifiers import notify_snatch
 from lazylibrarian.postprocess import processAlternate, processDir
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
-from lazylibrarian.cache import cache_img
-from lazylibrarian.notifiers import notify_snatch
-from lazylibrarian.manualbook import searchItem
-from lazylibrarian.bookwork import getWorkSeries, setSeries
 from lib.deluge_client import DelugeRPCClient
 from mako import exceptions
 from mako.lookup import TemplateLookup
@@ -340,7 +340,7 @@ class WebInterface(object):
         for item in authorsearch:
             authorlist.append(item['AuthorName'])
 
-        booksearch = myDB.select("SELECT * from books")
+        booksearch = myDB.select("SELECT Status,BookID from books")
         booklist = []
         for item in booksearch:
             booklist.append(item['BookID'])
@@ -500,7 +500,9 @@ class WebInterface(object):
                 # books might not be in exact same authorname folder
                 # eg Calibre puts books into folder "Eric van Lustbader", but
                 # goodreads told lazylibrarian he's "Eric Van Lustbader", note the capital 'V'
-                anybook = myDB.match('SELECT BookFile from books where AuthorName="%s" and BookFile <> ""' % AuthorName)
+                cmd = 'SELECT BookFile from books,authors where books.AuthorID = authors.AuthorID'
+                cmd += '  and AuthorName="%s" and BookFile <> ""' % AuthorName
+                anybook = myDB.match(cmd)
                 if anybook:
                     authordir = safe_unicode(os.path.dirname(os.path.dirname(anybook['BookFile'])))
             if os.path.isdir(authordir):
@@ -574,8 +576,7 @@ class WebInterface(object):
     def books(self, BookLang=None):
         global LANGFILTER
         myDB = database.DBConnection()
-        languages = myDB.select('SELECT DISTINCT BookLang from books WHERE \
-                                STATUS !="Skipped" AND STATUS !="Ignored"')
+        languages = myDB.select('SELECT DISTINCT BookLang from books WHERE STATUS !="Skipped" AND STATUS !="Ignored"')
         LANGFILTER = BookLang
         return serve_template(templatename="books.html", title='Books', books=[], languages=languages)
 
@@ -583,18 +584,28 @@ class WebInterface(object):
     @cherrypy.expose
     def getBooks(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
+        #for arg in kwargs:
+        #    print arg, kwargs[arg]
+
         global LANGFILTER
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
-        #   need to check and filter on BookLang if set
-        cmd = 'SELECT bookimg, authorname, bookname, bookrate, bookdate, status, bookid,'
-        cmd += ' booksub, booklink, workpage, authorid, series from books WHERE STATUS !="Skipped"'
-        cmd += ' AND STATUS !="Ignored"'
-        if LANGFILTER is not None and len(LANGFILTER):
-            cmd += ' and BOOKLANG="' + LANGFILTER + '"'
+        cmd = 'SELECT bookimg,authorname,bookname,bookrate,bookdate,books.status,bookid,'
+        cmd += 'booksub,booklink,workpage,books.authorid from books,authors where books.AuthorID = authors.AuthorID'
+
+        if kwargs['source'] == "Manage":
+            cmd += ' and books.STATUS="%s"' % kwargs['whichStatus']
+        elif kwargs['source'] == "Books":
+            cmd += ' and books.STATUS !="Skipped" AND books.STATUS !="Ignored"'
+            # for "books" need to check and filter on BookLang if set
+            if LANGFILTER is not None and len(LANGFILTER):
+                cmd += ' and BOOKLANG="' + LANGFILTER + '"'
+        elif kwargs['source'] == "Author":
+            cmd += ' and books.AuthorID=%s' % kwargs['AuthorID']
+
         rowlist = myDB.select(cmd)
         # turn the sqlite rowlist into a list of lists
         d = []
@@ -624,6 +635,17 @@ class WebInterface(object):
             # now add html to the ones we want to display
             d = []  # the masterlist to be filled with the html data
             for row in rows:
+                cmd = 'SELECT SeriesName,SeriesNum from series,member '
+                cmd += 'WHERE series.SeriesID = member.SeriesID and member.BookID=%s' % row[6]
+                whichseries = myDB.select(cmd)
+                series = ''
+                for item in whichseries:
+                    newseries = "%s %s" % (item['SeriesName'], item['SeriesNum'])
+                    newseries.strip()
+                    if series and newseries:
+                        series += '<br>'
+                    series += newseries
+
                 l = []  # for each Row use a separate list
                 bookrate = float(row[3])
                 if bookrate < 0.5:
@@ -665,8 +687,11 @@ class WebInterface(object):
                     lref += '" target="_blank" rel="noreferrer"><img src="%s' % row[0]
                     lref += '" alt="Cover" class="bookcover-sm img-responsive"></a></td>'
                     l.append(lref)
-                    l.append(
-                        '<td class="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[10], row[1]))
+
+                    # Don't show author column on author page, we know which author!
+                    if not kwargs['source'] == "Author":
+                        l.append(
+                            '<td class="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[10], row[1]))
                     if row[7]:  # is there a sub-title
                         title = '<td class="bookname">%s<br><small><i>%s</i></small></td>' % (row[2], row[7])
                     else:
@@ -674,28 +699,30 @@ class WebInterface(object):
                     l.append(title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage)
 
                     # is the book part of a series
-                    l.append('<td class="series">%s</td>' % row[11])
+                    l.append('<td class="series">%s</td>' % series)
 
                     l.append('<td class="stars text-center"><img src="images/' + starimg + '" alt="Rating"></td>')
 
                     l.append('<td class="date text-center">%s</td>' % row[4])
 
-                    if row[5] == 'Open':
-                        btn = '<td class="status text-center"><a class="button green btn btn-xs btn-warning"'
-                        btn += ' href="openBook?bookid=%s' % row[6]
-                        btn += '" target="_self"><i class="fa fa-book"></i>%s</a></td>' % row[5]
-                    elif row[5] == 'Wanted':
-                        btn = '<td class="status text-center"><p><a class="a btn btn-xs btn-danger">%s' % row[5]
-                        btn += '</a></p><p><a class="b btn btn-xs btn-success" '
-                        btn += 'href="searchForBook?bookid=%s' % row[6]
-                        btn += '" target="_self"><i class="fa fa-search"></i> Search</a></p></td>'
-                    elif row[5] == 'Snatched' or row[5] == 'Have':
-                        btn = '<td class="status text-center"><a class="button btn btn-xs btn-info">%s' % row[5]
-                        btn += '</a></td>'
-                    else:
-                        btn = '<td class="status text-center"><a class="button btn btn-xs btn-default grey">%s' % row[5]
-                        btn += '</a></td>'
-                    l.append(btn)
+                    # Do not show status column in MANAGE page as we are only showing one status
+                    if not kwargs['source'] == "Manage":
+                        if row[5] == 'Open':
+                            btn = '<td class="status text-center"><a class="button green btn btn-xs btn-warning"'
+                            btn += ' href="openBook?bookid=%s' % row[6]
+                            btn += '" target="_self"><i class="fa fa-book"></i>%s</a></td>' % row[5]
+                        elif row[5] == 'Wanted':
+                            btn = '<td class="status text-center"><p><a class="a btn btn-xs btn-danger">%s' % row[5]
+                            btn += '</a></p><p><a class="b btn btn-xs btn-success" '
+                            btn += 'href="searchForBook?bookid=%s' % row[6]
+                            btn += '" target="_self"><i class="fa fa-search"></i> Search</a></p></td>'
+                        elif row[5] == 'Snatched' or row[5] == 'Have':
+                            btn = '<td class="status text-center"><a class="button btn btn-xs btn-info">%s' % row[5]
+                            btn += '</a></td>'
+                        else:
+                            btn = '<td class="status text-center"><a class="button btn btn-xs btn-default grey">%s' % row[5]
+                            btn += '</a></td>'
+                        l.append(btn)
 
                 else:  # lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
                     if row[9]:  # is there a workpage link
@@ -719,8 +746,10 @@ class WebInterface(object):
                     lref = '<td id="bookart"><a href="%s" target="_new"><img src="%s' % (row[0], row[0])
                     lref += '" height="75" width="50"></a></td>'
                     l.append(lref)
-                    l.append(
-                        '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[10], row[1]))
+                    # Don't show author column on author page, we know which author!
+                    if not kwargs['source'] == "Author":
+                        l.append(
+                            '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[10], row[1]))
                     if row[7]:  # is there a sub-title
                         title = '<td id="bookname">%s<br><i class="smalltext">%s</i></td>' % (row[2], row[7])
                     else:
@@ -728,24 +757,26 @@ class WebInterface(object):
                     l.append(title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage)
 
                     # is the book part of a series
-                    l.append('<td id="series">%s</td>' % row[11])
+                    l.append('<td id="series">%s</td>' % series)
 
                     l.append('<td id="stars"><img src="images/' + starimg + '" width="50" height="10"></td>')
 
                     l.append('<td id="date">%s</td>' % row[4])
 
-                    if row[5] == 'Open':
-                        btn = '<td id="status"><a class="button green" href="openBook?bookid=%s' % row[6]
-                        btn += '" target="_self">Open</a></td>'
-                    elif row[5] == 'Wanted':
-                        btn = '<td id="status"><a class="button red" href="searchForBook?bookid=%s' % row[6]
-                        btn += '" target="_self"><span class="a">Wanted</span>'
-                        btn += '<span class="b">Search</span></a></td>'
-                    elif row[5] == 'Snatched' or row[5] == 'Have':
-                        btn = '<td id="status"><a class="button">%s</a></td>' % row[5]
-                    else:
-                        btn = '<td id="status"><a class="button grey">%s</a></td>' % row[5]
-                    l.append(btn)
+                    # Do not show status column in MANAGE page
+                    if not kwargs['source'] == "Manage":
+                        if row[5] == 'Open':
+                            btn = '<td id="status"><a class="button green" href="openBook?bookid=%s' % row[6]
+                            btn += '" target="_self">Open</a></td>'
+                        elif row[5] == 'Wanted':
+                            btn = '<td id="status"><a class="button red" href="searchForBook?bookid=%s' % row[6]
+                            btn += '" target="_self"><span class="a">Wanted</span>'
+                            btn += '<span class="b">Search</span></a></td>'
+                        elif row[5] == 'Snatched' or row[5] == 'Have':
+                            btn = '<td id="status"><a class="button">%s</a></td>' % row[5]
+                        else:
+                            btn = '<td id="status"><a class="button grey">%s</a></td>' % row[5]
+                        l.append(btn)
 
                 d.append(l)  # add the rowlist to the masterlist
 
@@ -762,7 +793,7 @@ class WebInterface(object):
     def addBook(self, bookid=None):
         myDB = database.DBConnection()
         AuthorID = ""
-        booksearch = myDB.select('SELECT * from books WHERE BookID="%s"' % bookid)
+        booksearch = myDB.select('SELECT AuthorID from books WHERE BookID="%s"' % bookid)
         if len(booksearch):
             myDB.upsert("books", {'Status': 'Wanted'}, {'BookID': bookid})
             for book in booksearch:
@@ -815,7 +846,7 @@ class WebInterface(object):
     def searchForBook(self, bookid=None):
         myDB = database.DBConnection()
         AuthorID = ''
-        bookdata = myDB.match('SELECT * from books WHERE BookID="%s"' % bookid)
+        bookdata = myDB.match('SELECT AuthorID from books WHERE BookID="%s"' % bookid)
         if bookdata:
             AuthorID = bookdata["AuthorID"]
 
@@ -833,9 +864,9 @@ class WebInterface(object):
         self.label_thread()
 
         myDB = database.DBConnection()
-
-        bookdata = myDB.match(
-            'SELECT * from books WHERE BookID="%s"' % bookid)
+        cmd = 'SELECT BookFile,AuthorName,BookName from books,authors WHERE BookID="%s"' % bookid
+        cmd += ' and books.AuthorID = authors.AuthorID'
+        bookdata = myDB.match(cmd)
         if bookdata:
             bookfile = bookdata["BookFile"]
             if bookfile and os.path.isfile(bookfile):
@@ -866,7 +897,6 @@ class WebInterface(object):
             authdata = myDB.match('SELECT * from authors WHERE AuthorID="%s"' % authorid)
             if authdata:
                 edited = ""
-                moved = False
                 if authorborn == 'None':
                     authorborn = ''
                 if authordeath == 'None':
@@ -875,8 +905,6 @@ class WebInterface(object):
                     authorimg = ''
                 manual = bool(check_int(manual, 0))
 
-                if not (authdata["AuthorName"] == authorname):
-                    edited += "Name "
                 if not (authdata["AuthorBorn"] == authorborn):
                     edited += "Born "
                 if not (authdata["AuthorDeath"] == authordeath):
@@ -892,7 +920,7 @@ class WebInterface(object):
                         logger.debug("Unable to rename, new author name %s already exists" % authorname)
                         authorname = authdata["AuthorName"]
                     else:
-                        moved = True
+                        edited += "Name "
 
                 if edited:
                     # Check dates in format yyyy/mm/dd, or unchanged if fails datecheck
@@ -967,10 +995,6 @@ class WebInterface(object):
                     myDB.upsert("authors", newValueDict, controlValueDict)
                     logger.info('Updated [ %s] for %s' % (edited, authorname))
 
-                    if moved:
-                        # move all books by this author to new name unless book is set to manual
-                        myDB.action('UPDATE books SET AuthorName="%s" where AuthorID=%s and Manual is not "1"' %
-                                    (authorname, authorid))
                 else:
                     logger.debug('Author [%s] has not been changed' % authorname)
 
@@ -984,7 +1008,9 @@ class WebInterface(object):
         myDB = database.DBConnection()
         authors = myDB.select(
             "SELECT AuthorName from authors WHERE Status !='Ignored' ORDER by AuthorName COLLATE NOCASE")
-        bookdata = myDB.match('SELECT * from books WHERE BookID="%s"' % bookid)
+        cmd = 'SELECT BookName,BookID,BookSub,BookGenre,BookLang,books.Manual,AuthorName,books.AuthorID '
+        cmd += 'from books,authors WHERE books.AuthorID = authors.AuthorID and BookID="%s"' % bookid
+        bookdata = myDB.match(cmd)
         cmd ='SELECT SeriesName, SeriesNum from member,series '
         cmd += 'where series.SeriesID=member.SeriesID and BookID=%s' % bookid
         seriesdict = myDB.select(cmd)
@@ -996,10 +1022,12 @@ class WebInterface(object):
 
     @cherrypy.expose
     def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre='', booklang='',
-                   series='', manual='0', authorname='', **kwargs):
+                   manual='0', authorname='', **kwargs):
         myDB = database.DBConnection()
         if bookid:
-            bookdata = myDB.match('SELECT * from books WHERE BookID="%s"' % bookid)
+            cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,books.Manual,AuthorName,books.AuthorID '
+            cmd += 'from books,authors WHERE books.AuthorID = authors.AuthorID and BookID="%s"' % bookid
+            bookdata = myDB.match(cmd)
             if bookdata:
                 edited = ''
                 moved = False
@@ -1037,13 +1065,17 @@ class WebInterface(object):
                 new_dict = {}
                 dict_counter = 0
                 while "series[%s][name]" % dict_counter in kwargs:
-                    new_dict[kwargs["series[%s][name]" % dict_counter]] = kwargs["series[%s][number]" % dict_counter]
+                    s_name = kwargs["series[%s][name]" % dict_counter]
+                    s_name = cleanName(unaccented(s_name))
+                    new_dict[s_name] = kwargs["series[%s][number]" % dict_counter]
                     dict_counter += 1
                 if 'series[new][name]' in kwargs and 'series[new][number]' in kwargs:
                     if kwargs['series[new][name]']:
-                        new_dict[kwargs['series[new][name]']] = kwargs['series[new][number]']
+                        s_name = kwargs["series[new][name]"]
+                        s_name = cleanName(unaccented(s_name))
+                        new_dict[s_name] = kwargs['series[new][number]']
                 for item in old_series:
-                    old_dict[item['SeriesName']] = item['SeriesNum']
+                    old_dict[cleanName(unaccented(item['SeriesName']))] = item['SeriesNum']
 
                 series_changed= False
                 for item in old_dict:
@@ -1057,6 +1089,7 @@ class WebInterface(object):
                             series_changed = True
                 if series_changed:
                     setSeries(new_dict, bookid)
+                    deleteEmptySeries()
                     edited += "Series "
 
                 if edited:
@@ -1066,14 +1099,10 @@ class WebInterface(object):
 
                 if moved:
                     authordata = myDB.match(
-                        'SELECT AuthorID,AuthorLink from authors WHERE AuthorName="%s"' % authorname)
+                        'SELECT AuthorID from authors WHERE AuthorName="%s"' % authorname)
                     if authordata:
                         controlValueDict = {'BookID': bookid}
-                        newValueDict = {
-                            'AuthorName': authorname,
-                            'AuthorID': authordata['AuthorID'],
-                            'AuthorLink': authordata['AuthorLink']
-                        }
+                        newValueDict = {'AuthorID': authordata['AuthorID']}
                         myDB.upsert("books", newValueDict, controlValueDict)
                         update_totals(bookdata["AuthorID"])  # we moved from here
                         update_totals(authordata['AuthorID'])  # to here
@@ -1099,7 +1128,7 @@ class WebInterface(object):
                 # ouch dirty workaround...
                 if not bookid == 'book_table_length':
                     if action in ["Wanted", "Have", "Ignored", "Skipped"]:
-                        title = myDB.match('SELECT * from books WHERE BookID = "%s"' % bookid)
+                        title = myDB.match('SELECT BookName from books WHERE BookID = "%s"' % bookid)
                         if title:
                             bookname = title['BookName']
                             myDB.upsert("books", {'Status': action}, {'BookID': bookid})
@@ -1125,7 +1154,6 @@ class WebInterface(object):
                                 myDB.upsert("books", {"Status": "Ignored"}, {"BookID": bookid})
                                 logger.debug(u'Status set to Ignored for "%s"' % bookname)
                             else:
-                                myDB.action('DELETE from books WHERE BookID = "%s"' % bookid)
                                 logger.info(u'Removed "%s" from database' % bookname)
 
         if redirect == "author" or len(authorcheck):
@@ -1344,8 +1372,7 @@ class WebInterface(object):
                 if not nzburl2:
                     title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s"' % nzburl)
                 else:
-                    title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s" OR NZBurl="%s"' %
-                                        (nzburl, nzburl2))
+                    title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s" OR NZBurl="%s"' % (nzburl, nzburl2))
 
                 for item in title:
                     nzburl = item['NZBurl']
@@ -1921,95 +1948,6 @@ class WebInterface(object):
         return serve_template(templatename="managebooks.html", title="Manage Books",
                               books=[], whichStatus=whichStatus)
 
-    # noinspection PyUnusedLocal
-    @cherrypy.expose
-    def getManage(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
-        # kwargs is used by datatables to pass params
-        myDB = database.DBConnection()
-        iDisplayStart = int(iDisplayStart)
-        iDisplayLength = int(iDisplayLength)
-        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
-
-        # print "getManage %s" % iDisplayStart
-        #   need to filter on whichStatus
-        cmd = 'SELECT authorname, bookname, bookdate, bookid, booklink, booksub, authorid, series '
-        cmd += 'from books WHERE STATUS=%s' % kwargs['whichStatus']
-        rowlist = myDB.select(cmd)
-
-        d = []
-        filtered = []
-        if len(rowlist):
-            # the masterlist to be filled with the row data
-            for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
-                l = []  # for each Row use a separate list
-                for column in row:
-                    l.append(column)
-                d.append(l)  # add the rowlist to the masterlist
-
-            if sSearch:
-                filtered = filter(lambda x: sSearch in str(x), d)
-            else:
-                filtered = d
-
-            sortcolumn = int(iSortCol_0)
-            sortcolumn -= 1  # indexed from 0
-            filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
-
-            if iDisplayLength < 0:  # display = all
-                rows = filtered
-            else:
-                rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
-
-            # now add html to the ones we want to display
-            d = []  # the masterlist to be filled with the html data
-            for row in rows:
-                l = ['<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[3],
-                     '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (
-                         row[6], row[0])]  # for each Row use a separate list
-
-                if lazylibrarian.CONFIG['HTTP_LOOK'] == 'bookstrap':
-                    sitelink = ''
-                    if 'goodreads' in row[4]:
-                        sitelink = '<a href="%s" target="_new"><small><i>GoodReads</i></small></a>' % row[4]
-                    if 'google' in row[4]:
-                        sitelink = '<a href="%s" target="_new"><small><i>GoogleBooks</i></small></a>' % row[4]
-
-                    if row[5]:  # is there a sub-title
-                        l.append(
-                            '<td id="bookname">%s<br><small><i>%s</i></small><br>%s</td>' %
-                            (row[1], row[5], sitelink))
-                    else:
-                        l.append('<td id="bookname">%s<br>%s</td>' % (row[1], sitelink))
-
-                else:  # lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
-                    sitelink = ''
-                    if 'goodreads' in row[4]:
-                        sitelink = '<a href="%s" target="_new"><i class="smalltext">GoodReads</i></a>' % row[4]
-                    if 'google' in row[4]:
-                        sitelink = '<a href="%s" target="_new"><i class="smalltext">GoogleBooks</i></a>' % row[4]
-
-                    if row[5]:  # is there a sub-title
-                        l.append(
-                            '<td id="bookname">%s<br><i class="smalltext">%s</i><br>%s</td>' %
-                            (row[1], row[5], sitelink))
-                    else:
-                        l.append('<td id="bookname">%s<br>%s</td>' % (row[1], sitelink))
-
-                # is the book part of a series
-                l.append('<td id="series">%s</td>' % row[7])
-
-                l.append('<td id="date">%s</td>' % row[2])
-
-                d.append(l)  # add the rowlist to the masterlist
-
-        mydict = {'iTotalDisplayRecords': len(filtered),
-                  'iTotalRecords': len(rowlist),
-                  'aaData': d,
-                  }
-        s = simplejson.dumps(mydict)
-        # print ("getManage returning %s to %s" % (iDisplayStart, iDisplayStart
-        # + iDisplayLength))
-        return s
 
     @cherrypy.expose
     def testDeluge(self):

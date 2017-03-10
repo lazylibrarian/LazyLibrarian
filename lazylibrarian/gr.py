@@ -22,9 +22,10 @@ import urllib2
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, setSeries, setStatus
+from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, deleteEmptySeries, \
+                                    setSeries, setStatus
 from lazylibrarian.cache import get_xml_request, cache_img
-from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList
+from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList, cleanName
 from lib.fuzzywuzzy import fuzz
 
 
@@ -480,8 +481,10 @@ class GoodReads:
                             rejected = True
 
                         if not rejected:
-                            find_books = myDB.select('SELECT * FROM books WHERE BookName = "%s" and AuthorName = "%s"' %
-                                                     (bookname, authorNameResult.replace('"', '""')))
+                            cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'
+                            cmd += ' and BookName = "%s" and AuthorName = "%s"' % \
+                                    (bookname, authorNameResult.replace('"', '""'))
+                            find_books = myDB.select(cmd)
                             if find_books:
                                 for find_book in find_books:
                                     if find_book['BookID'] != bookid:
@@ -492,8 +495,9 @@ class GoodReads:
                                         rejected = True
 
                         if not rejected:
-                            find_books = myDB.match(
-                                'SELECT AuthorName,BookName FROM books WHERE BookID = "%s"' % bookid)
+                            cmd = 'SELECT AuthorName,BookName FROM books,authors'
+                            cmd += ' WHERE authors.AuthorID = books.AuthorID AND BookID=%s' % bookid
+                            find_books = myDB.match(cmd)
                             if find_books:
                                 # we have a book with this bookid already
                                 if bookname != find_books['BookName'] or authorNameResult != find_books['AuthorName']:
@@ -525,9 +529,7 @@ class GoodReads:
                             if not locked and book_status != "Ignored":
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {
-                                    "AuthorName": authorNameResult,
                                     "AuthorID": authorid,
-                                    "AuthorLink": "",
                                     "BookName": bookname,
                                     "BookSub": booksub,
                                     "BookDesc": bookdesc,
@@ -541,8 +543,7 @@ class GoodReads:
                                     "BookDate": pubyear,
                                     "BookLang": bookLanguage,
                                     "Status": book_status,
-                                    "BookAdded": today(),
-                                    "Series": ''
+                                    "BookAdded": today()
                                 }
 
                                 resultsCount += 1
@@ -578,7 +579,7 @@ class GoodReads:
                                     updated = True
                                 else:
                                     if series:
-                                        seriesdict = {series: seriesNum}
+                                        seriesdict = {cleanName(unaccented(series)): seriesNum}
                                 setSeries(seriesdict, bookid)
 
                                 new_status = setStatus(bookid, seriesdict, bookstatus)
@@ -624,6 +625,7 @@ class GoodReads:
                         if all(False for _ in resultxml):  # returns True if iterator is empty
                             resultxml = None
 
+            deleteEmptySeries()
             lastbook = myDB.match('SELECT BookName, BookLink, BookDate, BookImg from books WHERE AuthorID="%s" \
                                 AND Status != "Ignored" order by BookDate DESC' % authorid)
             if lastbook:
@@ -698,7 +700,7 @@ class GoodReads:
         #
         valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
         if bookLanguage not in valid_langs:
-            logger.debug('Book %s language does not match preference, %s' % (bookname, bookLanguage))
+            logger.debug('Book %s goodreads language does not match preference, %s' % (bookname, bookLanguage))
 
         if rootxml.find('./book/publication_year').text is None:
             bookdate = "0000"
@@ -741,9 +743,7 @@ class GoodReads:
 
         controlValueDict = {"BookID": bookid}
         newValueDict = {
-            "AuthorName": authorname,
             "AuthorID": AuthorID,
-            "AuthorLink": "",
             "BookName": bookname,
             "BookSub": booksub,
             "BookDesc": bookdesc,
@@ -757,8 +757,7 @@ class GoodReads:
             "BookDate": bookdate,
             "BookLang": bookLanguage,
             "Status": "Wanted",
-            "BookAdded": today(),
-            "Series": ''
+            "BookAdded": today()
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
@@ -788,7 +787,7 @@ class GoodReads:
             logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
         else:
             if series:
-                seriesdict = {series: seriesNum}
+                seriesdict = {cleanName(unaccented(series)): seriesNum}
         setSeries(seriesdict, bookid)
 
         worklink = getWorkPage(bookid)

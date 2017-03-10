@@ -42,7 +42,9 @@ def export_CSV(search_dir=None, status="Wanted"):
 
         myDB = database.DBConnection()
 
-        find_status = myDB.select('SELECT * FROM books WHERE Status = "%s"' % status)
+        cmd = 'SELECT BookID,AuthorName,BookName,BookIsbn,books.AuthorID FROM books,authors '
+        cmd += 'WHERE books.Status = "%s" and books.AuthorID = authors.AuthorID' % status
+        find_status = myDB.select(cmd)
 
         if not find_status:
             logger.warn(u"No books marked as %s" % status)
@@ -61,9 +63,13 @@ def export_CSV(search_dir=None, status="Wanted"):
                             resulted['BookIsbn'], resulted['AuthorID']])
                     csvwrite.writerow([("%s" % s).encode(lazylibrarian.SYS_ENCODING) for s in row])
                     count += 1
-            logger.info(u"CSV exported %s book%s to %s" % (count, plural(count), csvFile))
+            msg = "CSV exported %s book%s to %s" % (count, plural(count), csvFile)
+            logger.info(msg)
+            return msg
     except Exception:
-        logger.error('Unhandled exception in exportCSV: %s' % traceback.format_exc())
+        msg = 'Unhandled exception in exportCSV: %s' % traceback.format_exc()
+        logger.error(msg)
+        return msg
 
 
 def finditem(item, headers):
@@ -90,18 +96,23 @@ def finditem(item, headers):
         bookid = item['BookID']
 
     # try to find book in our database using bookid or isbn, or if that fails, name matching
+    cmd = 'SELECT AuthorName,BookName,BookID,books.Status FROM books,authors where books.AuthorID = authors.AuthorID '
     if bookid:
-        bookmatch = myDB.match('SELECT * FROM books where BookID=%s' % bookid)
+        fullcmd = cmd + 'and BookID=%s' % bookid
+        bookmatch = myDB.match(fullcmd)
     if not bookmatch:
         if is_valid_isbn(isbn10):
-            bookmatch = myDB.match('SELECT * FROM books where BookIsbn=%s' % isbn10)
+            fullcmd = cmd + 'and BookIsbn=%s' % isbn10
+            bookmatch = myDB.match(fullcmd)
     if not bookmatch:
         if is_valid_isbn(isbn13):
-            bookmatch = myDB.match('SELECT * FROM books where BookIsbn=%s' % isbn13)
+            fullcmd = cmd + 'and BookIsbn=%s' % isbn13
+            bookmatch = myDB.match(fullcmd)
     if not bookmatch:
         bookid = find_book_in_db(myDB, authorname, bookname)
         if bookid:
-            bookmatch = myDB.match('SELECT * FROM books where BookID="%s"' % bookid)
+            fullcmd = cmd + 'and BookID="%s"' % bookid
+            bookmatch = myDB.match(fullcmd)
     return bookmatch
 
 
@@ -196,7 +207,11 @@ def import_CSV(search_dir=None):
                 else:
                     logger.warn(u"Skipping book %s by %s, not found in database" % (bookname, authorname))
                     skipcount += 1
-            logger.info(u"Added %i new author%s, marked %i book%s as 'Wanted', %i book%s not found" %
-                        (authcount, plural(authcount), bookcount, plural(bookcount), skipcount, plural(skipcount)))
+            msg = "Added %i new author%s, marked %i book%s as 'Wanted', %i book%s not found" % \
+                    (authcount, plural(authcount), bookcount, plural(bookcount), skipcount, plural(skipcount))
+            logger.info(msg)
+            return msg
     except Exception:
-        logger.error('Unhandled exception in importCSV: %s' % traceback.format_exc())
+        msg = 'Unhandled exception in importCSV: %s' % traceback.format_exc()
+        logger.error(msg)
+        return msg

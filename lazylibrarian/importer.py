@@ -165,10 +165,13 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None):
         # New authors need their totals updating after libraryscan or import of books.
         if not new_author:
             update_totals(authorid)
-        logger.debug("[%s] Author update complete" % authorname)
+        msg = "[%s] Author update complete" % authorname
+        logger.debug(msg)
+        return msg
     except Exception:
-        logger.error('Unhandled exception in addAuthorToDB: %s' % traceback.format_exc())
-
+        msg = 'Unhandled exception in addAuthorToDB: %s' % traceback.format_exc()
+        logger.error(msg)
+        return msg
 
 def update_totals(AuthorID):
     myDB = database.DBConnection()
