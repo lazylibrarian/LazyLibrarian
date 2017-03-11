@@ -687,7 +687,7 @@ def import_book(pp_path=None, bookID=None):
                             logger.debug('Calibre should have created the extras')
                         else:
                             cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,'
-                            cmd += 'BookLang,BookPub from books WHERE BookID="%s"' % bookID
+                            cmd += 'BookLang,BookPub from books,authors WHERE BookID="%s"' % bookID
                             cmd += ' and books.AuthorID = authors.AuthorID'
                             data = myDB.match(cmd)
                             processExtras(myDB, dest_path, global_name, data)
@@ -775,13 +775,15 @@ def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
     myDB.upsert("books", newValueDict, controlValueDict)
 
     # update authors
-    havebooks = myDB.match(
-        'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' %
-        authorname)
-    controlValueDict = {"AuthorName": authorname}
-    newValueDict = {"HaveBooks": havebooks['counter']}
-    countauthor = len(myDB.select('SELECT AuthorID FROM authors WHERE AuthorName="%s"' % authorname))
-    if countauthor:
+    match = myDB.match('SELECT AuthorID FROM authors WHERE AuthorName="%s"' % authorname)
+    if match:
+        authorid = match['AuthorID']
+        cmd = 'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % authorid
+        cmd += ' and (Status="Have" OR Status="Open")'
+        havebooks = myDB.match(cmd)
+
+        controlValueDict = {"AuthorID": authorid}
+        newValueDict = {"HaveBooks": havebooks['counter']}
         myDB.upsert("authors", newValueDict, controlValueDict)
 
 
