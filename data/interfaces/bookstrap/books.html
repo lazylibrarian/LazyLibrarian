@@ -31,6 +31,7 @@
     <h1>${title}</h1>
     <form action="markBooks" method="get" class="form-inline">
         <div class="indented">
+        <input type="hidden" name="booklang" value="booklang">
         <div class="form-group">
             <label for="markBooks" class="control-label">Mark selected books as</label>
             <select class="markBooks form-control input-sm" id="action" name="action">
@@ -108,7 +109,7 @@
             "sPaginationType": "full_numbers",
             "aaSorting": [[0, 'asc']],
             "bServerSide": true,
-            "sAjaxSource": 'getBooks?source=Books',
+            "sAjaxSource": 'getBooks?source=Books&booklang=${booklang}',
             "bFilter": true,
             "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                 var w = window.innerWidth;

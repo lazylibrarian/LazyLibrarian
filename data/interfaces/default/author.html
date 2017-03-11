@@ -94,6 +94,8 @@
     <p class="indented">
         <form action="markBooks" method="get"><input type="hidden" name="AuthorID" value="${author['AuthorID']}">
             <input type="hidden" name="redirect" value="author">
+            <input type="hidden" name="booklang" value="booklang">
+            <input type="hidden" name="ignored" value="ignored">
             <select class="markBooks" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
                 <option value="Wanted">Wanted</option>
                 <option value="Have">Have</option>
@@ -154,7 +156,7 @@
                 "sPaginationType": "full_numbers",
                 "aaSorting": [[5, 'desc']],
                 "bServerSide": true,
-                "sAjaxSource": 'getBooks?source=Author&AuthorID=${author['AuthorID']}',
+                "sAjaxSource": 'getBooks?source=Author&AuthorID=${author['AuthorID']}&booklang=${booklang}&ignored=${ignored}',
                 "bFilter": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},

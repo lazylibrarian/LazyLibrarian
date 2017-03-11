@@ -369,34 +369,20 @@ class WebInterface(object):
         if Ignored:
             languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorID = '%s' \
                                     AND Status ='Ignored'" % AuthorID)
-            if BookLang:
-                querybooks = "SELECT * from books WHERE AuthorID = '%s' AND BookLang = '%s' \
-                              AND Status ='Ignored' order by BookDate DESC, BookRate DESC" % (
-                    AuthorID, BookLang)
-            else:
-                querybooks = "SELECT * from books WHERE AuthorID = '%s' and Status ='Ignored' \
-                              order by BookDate DESC, BookRate DESC" % AuthorID
         else:
             languages = myDB.select(
                 "SELECT DISTINCT BookLang from books WHERE AuthorID = '%s' AND Status !='Ignored'" % AuthorID)
-            if BookLang:
-                querybooks = "SELECT * from books WHERE AuthorID = '%s' AND BookLang = '%s' \
-                              AND Status !='Ignored' order by BookDate DESC, BookRate DESC" % (
-                    AuthorID, BookLang)
-            else:
-                querybooks = "SELECT * from books WHERE AuthorID = '%s' and Status !='Ignored' \
-                              order by BookDate DESC, BookRate DESC" % AuthorID
 
         queryauthors = "SELECT * from authors WHERE AuthorID = '%s'" % AuthorID
 
         author = myDB.match(queryauthors)
-        books = myDB.select(querybooks)
+
         if not author:
             raise cherrypy.HTTPRedirect("home")
         authorname = author['AuthorName'].encode(lazylibrarian.SYS_ENCODING)
         return serve_template(
             templatename="author.html", title=urllib.quote_plus(authorname),
-            author=author, books=books, languages=languages)
+            author=author, languages=languages, booklang=BookLang, ignored=Ignored)
 
     @cherrypy.expose
     def pauseAuthor(self, AuthorID):
@@ -529,7 +515,6 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("home")
 
     # BOOKS #############################################################
-    LANGFILTER = ''
 
     @cherrypy.expose
     def booksearch(self, bookid=None, title="", author=""):
@@ -574,11 +559,9 @@ class WebInterface(object):
 
     @cherrypy.expose
     def books(self, BookLang=None):
-        global LANGFILTER
         myDB = database.DBConnection()
         languages = myDB.select('SELECT DISTINCT BookLang from books WHERE STATUS !="Skipped" AND STATUS !="Ignored"')
-        LANGFILTER = BookLang
-        return serve_template(templatename="books.html", title='Books', books=[], languages=languages)
+        return serve_template(templatename="books.html", title='Books', books=[], languages=languages, booklang=BookLang)
 
     # noinspection PyUnusedLocal
     @cherrypy.expose
@@ -587,24 +570,28 @@ class WebInterface(object):
         #for arg in kwargs:
         #    print arg, kwargs[arg]
 
-        global LANGFILTER
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
-        cmd = 'SELECT bookimg,authorname,bookname,bookrate,bookdate,books.status,bookid,'
+        cmd = 'SELECT bookimg,authorname,bookname,bookrate,bookdate,books.status,bookid,booklang,'
         cmd += 'booksub,booklink,workpage,books.authorid from books,authors where books.AuthorID = authors.AuthorID'
 
         if kwargs['source'] == "Manage":
             cmd += ' and books.STATUS="%s"' % kwargs['whichStatus']
         elif kwargs['source'] == "Books":
             cmd += ' and books.STATUS !="Skipped" AND books.STATUS !="Ignored"'
-            # for "books" need to check and filter on BookLang if set
-            if LANGFILTER is not None and len(LANGFILTER):
-                cmd += ' and BOOKLANG="' + LANGFILTER + '"'
         elif kwargs['source'] == "Author":
             cmd += ' and books.AuthorID=%s' % kwargs['AuthorID']
+            if 'ignored' in kwargs and kwargs['ignored'] == "True":
+                cmd += ' and books.status="Ignored"'
+            else:
+                cmd += ' and books.status != "Ignored"'
+        if kwargs['source'] in ["Books", "Author"]:
+            # for "books" and "author" need to check and filter on BookLang if set
+            if 'booklang' in kwargs and kwargs['booklang'] != 'None':
+                cmd += ' and BOOKLANG="%s"' % kwargs['booklang']
 
         rowlist = myDB.select(cmd)
         # turn the sqlite rowlist into a list of lists

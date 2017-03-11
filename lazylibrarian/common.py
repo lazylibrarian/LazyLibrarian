@@ -342,7 +342,7 @@ def clearLog():
 
 def cleanCache():
     """ Remove unused files from the cache - delete if expired or unused.
-        Check JSONCache  WorkCache  XMLCache  Author  Book
+        Check JSONCache  WorkCache  XMLCache  SeriesCache Author  Book
         Check covers and authorimages referenced in the database exist and change database entry if missing """
 
     myDB = database.DBConnection()
@@ -413,6 +413,31 @@ def cleanCache():
             else:
                 kept += 1
     msg = "Cleaned %i file%s from WorkCache, kept %i" % (cleaned, plural(cleaned), kept)
+    result.append(msg)
+    logger.debug(msg)
+
+    cache = os.path.join(lazylibrarian.CACHEDIR, "SeriesCache")
+    # ensure directory is unicode so we get unicode results from listdir
+    if isinstance(cache, str):
+        cache = cache.decode(lazylibrarian.SYS_ENCODING)
+    cleaned = 0
+    kept = 0
+    if os.path.isdir(cache):
+        for cached_file in os.listdir(cache):
+            target = os.path.join(cache, cached_file)
+            try:
+                seriesid = cached_file.split('.')[0]
+            except IndexError:
+                logger.error('Clean Cache: Error splitting %s' % cached_file)
+                continue
+            item = myDB.match('select SeriesID from series where SeriesID="%s"' % seriesid)
+            if not item:
+                # SeriesPage no longer referenced in database, delete cached_file
+                os.remove(target)
+                cleaned += 1
+            else:
+                kept += 1
+    msg = "Cleaned %i file%s from SeriesCache, kept %i" % (cleaned, plural(cleaned), kept)
     result.append(msg)
     logger.debug(msg)
 

@@ -25,6 +25,7 @@
 <BR><BR>
 <h1>&nbsp&nbsp${title}</h1>
     <p class="indented">
+        <input type="hidden" name="booklang" value="booklang">
         <form action="markBooks" method="get">
             <label>&nbsp&nbspMark selected books as: </label>
             <select class="markBooks" name="action" id="action">
@@ -103,7 +104,7 @@
                 "sPaginationType": "full_numbers",
                 "aaSorting": [[2, 'asc']],
                 "bServerSide": true,
-                "sAjaxSource": 'getBooks?source=Books',
+                "sAjaxSource": 'getBooks?source=Books&booklang=${booklang}',
                 "bFilter": true,
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     $(nRow).addClass("gradeZ");

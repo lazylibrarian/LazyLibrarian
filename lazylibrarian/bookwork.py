@@ -396,10 +396,13 @@ def getSeriesMembers(seriesID=None):
                     booklink = row.split('href="')[1]
                     bookname = booklink.split('">')[1].split('<')[0]
                     booklink = booklink.split('"')[0]
-                    authorlink = row.split('href="')[2]
-                    authorname = authorlink.split('">')[1].split('<')[0]
-                    authorlink = authorlink.split('"')[0]
-                    order = row.split('class="order">')[1].split('<')[0]
+                    try:
+                        authorlink = row.split('href="')[2]
+                        authorname = authorlink.split('">')[1].split('<')[0]
+                        authorlink = authorlink.split('"')[0]
+                        order = row.split('class="order">')[1].split('<')[0]
+                    except IndexError:
+                        logger.debug('Incomplete data in series table for series %s' % seriesID)
                     results.append([order,bookname,authorname])
         except IndexError:
             if 'class="worksinseries"' in data:  # error parsing, or just no series data available?
