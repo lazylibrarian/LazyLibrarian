@@ -653,20 +653,20 @@ class WebInterface(object):
                 worklink = ''
 
                 if lazylibrarian.CONFIG['HTTP_LOOK'] == 'bookstrap':
-                    if row[9]:  # is there a workpage link
-                        if len(row[9]) > 4:
+                    if row[10]:  # is there a workpage link
+                        if len(row[10]) > 4:
                             worklink = '<td><a href="' + \
-                                       row[9] + '" target="_new"><small><i>LibraryThing</i></small></a></td>'
+                                       row[10] + '" target="_new"><small><i>LibraryThing</i></small></a></td>'
 
                     editpage = '<a href="editBook?bookid=' + row[6] + '" target="_new"><small><i>Manual</i></a>'
 
                     sitelink = ''
-                    if 'goodreads' in row[8]:
+                    if 'goodreads' in row[9]:
                         sitelink = '<td><a href="' + \
-                                   row[8] + '" target="_new"><small><i>GoodReads</i></small></a></td>'
-                    if 'google' in row[8]:
+                                   row[9] + '" target="_new"><small><i>GoodReads</i></small></a></td>'
+                    if 'google' in row[9]:
                         sitelink = '<td><a href="' + \
-                                   row[8] + '" target="_new"><small><i>GoogleBooks</i></small></a></td>'
+                                   row[9] + '" target="_new"><small><i>GoogleBooks</i></small></a></td>'
 
                     l.append(
                         '<td class="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[6])
@@ -678,9 +678,9 @@ class WebInterface(object):
                     # Don't show author column on author page, we know which author!
                     if not kwargs['source'] == "Author":
                         l.append(
-                            '<td class="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[10], row[1]))
-                    if row[7]:  # is there a sub-title
-                        title = '<td class="bookname">%s<br><small><i>%s</i></small></td>' % (row[2], row[7])
+                            '<td class="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[11], row[1]))
+                    if row[8]:  # is there a sub-title
+                        title = '<td class="bookname">%s<br><small><i>%s</i></small></td>' % (row[2], row[8])
                     else:
                         title = '<td class="bookname">%s</td>' % row[2]
                     l.append(title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage)
@@ -712,21 +712,21 @@ class WebInterface(object):
                         l.append(btn)
 
                 else:  # lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
-                    if row[9]:  # is there a workpage link
-                        if len(row[9]) > 4:
+                    if row[10]:  # is there a workpage link
+                        if len(row[10]) > 4:
                             worklink = '<td><a href="' + \
-                                       row[9] + '" target="_new"><i class="smalltext">LibraryThing</i></a></td>'
+                                       row[10] + '" target="_new"><i class="smalltext">LibraryThing</i></a></td>'
 
                     editpage = '<a href="editBook?bookid=' + row[6] + \
                                 '" target="_new"><i class="smalltext">Manual</i></a>'
 
                     sitelink = ''
-                    if 'goodreads' in row[8]:
+                    if 'goodreads' in row[9]:
                         sitelink = '<td><a href="' + \
-                                   row[8] + '" target="_new"><i class="smalltext">GoodReads</i></a></td>'
-                    if 'google' in row[8]:
+                                   row[9] + '" target="_new"><i class="smalltext">GoodReads</i></a></td>'
+                    if 'google' in row[9]:
                         sitelink = '<td><a href="' + \
-                                   row[8] + '" target="_new"><i class="smalltext">GoogleBooks</i></a></td>'
+                                   row[9] + '" target="_new"><i class="smalltext">GoogleBooks</i></a></td>'
 
                     l.append(
                         '<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[6])
@@ -736,9 +736,9 @@ class WebInterface(object):
                     # Don't show author column on author page, we know which author!
                     if not kwargs['source'] == "Author":
                         l.append(
-                            '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[10], row[1]))
-                    if row[7]:  # is there a sub-title
-                        title = '<td id="bookname">%s<br><i class="smalltext">%s</i></td>' % (row[2], row[7])
+                            '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[11], row[1]))
+                    if row[8]:  # is there a sub-title
+                        title = '<td id="bookname">%s<br><i class="smalltext">%s</i></td>' % (row[2], row[8])
                     else:
                         title = '<td id="bookname">%s</td>' % row[2]
                     l.append(title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage)

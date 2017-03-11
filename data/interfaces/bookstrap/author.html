@@ -24,7 +24,7 @@
             %if len(languages) >= 1:
                 <div class="form-group pull-right">
                     <label for="chooselanguage"><small>Language</small></label>
-                    <select class="form-control input-sm" id="chooselanguage" onchange="location = 'authorPage?AuthorID=${author['AuthorID']}&amp;BookLang=' + this.options[this.selectedIndex].value;">
+                    <select class="form-control input-sm" name="chooselanguage" onchange="window.location = 'authorPage?AuthorID=${author['AuthorID']}&BookLang=' + this.options[this.selectedIndex].value">
                         <option value="">All</option>
                         %for language in languages:
                         <option value="${language['BookLang']}">${language['BookLang']}</option>
