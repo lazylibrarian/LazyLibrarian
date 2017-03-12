@@ -17,10 +17,11 @@ import os
 import shutil
 import time
 import urllib
+from lib.fuzzywuzzy import fuzz
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.cache import cache_img, fetchURL
+from lazylibrarian.cache import cache_img, fetchURL, get_xml_request
 from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented
 
 
@@ -101,8 +102,7 @@ def setSeries(seriesdict=None, bookid=None):
             match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % item)
             if not match:
                 # new series, need to set status and get SeriesID
-                myDB.action('INSERT into series (SeriesName, AuthorID, Status) VALUES ("%s", "%s", "Active")' %
-                            (item, book['AuthorID']))
+                myDB.action('INSERT into series (SeriesName, Status) VALUES ("%s", "Active")' % item)
                 match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % item)
                 # and ask librarything what other books are in the series
                 #_ = getSeriesMembers(match['SeriesID'])
@@ -110,6 +110,14 @@ def setSeries(seriesdict=None, bookid=None):
                 controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
                 newValueDict = {"SeriesNum": seriesdict[item]}
                 myDB.upsert("member", newValueDict, controlValueDict)
+                # Not sure if we can use upsert with empty controlValueDict, so do it manually...
+                test = myDB.match('SELECT SeriesID from seriesauthors WHERE SeriesID=%s and AuthorID=%s' %
+                                (match['SeriesID'], book['AuthorID']))
+                if not test:
+                    test = myDB.match('Insert into seriesauthors ("SeriesID", "AuthorID") VALUES ("%s", "%s")' %
+                                (match['SeriesID'], book['AuthorID']))
+                if not test:
+                    logger.debug('Unable to insert %s, %s into seriesauthors' % (match['SeriesID'], book['AuthorID']))
             else:
                 logger.debug('Unable to set series for book %s, %s' % (bookid, repr(seriesdict)))
         # removed deleteEmptySeries as setSeries slows down drastically if run in a loop
@@ -361,25 +369,94 @@ def getWorkPage(bookID=None):
     return ''
 
 
-def getSeriesPages():
+def getAllSeriesAuthors():
+    """ For each entry in the series table, get a list of authors contributing to the series
+        and import those authors (and their books) into the database """
     myDB = database.DBConnection()
     series = myDB.select('select SeriesID from series')
     if series:
-        logger.debug('Getting series info for %s series' % len(series))
+        logger.debug('Getting series authors for %s series' % len(series))
         counter = 0
+        total = 0
         for entry in series:
             seriesid = entry['SeriesID']
-            result = getSeriesMembers(seriesid)
+            result = getSeriesAuthors(seriesid)
             if result:
                 counter += 1
+                total += result
             else:
                 logger.debug('No series info found for series %s' % seriesid)
-        msg = 'Updated %s page%s' % (counter, plural(counter))
+        msg = 'Updated authors for %s series, added %s new author%s' % (counter, total, plural(total))
         logger.debug("Series pages complete: " + msg)
     else:
-        msg = 'No missing Series Pages'
+        msg = 'No entries in the series table'
         logger.debug(msg)
     return msg
+
+def getSeriesAuthors(seriesid):
+    """ Get a list of authors contributing to a series
+        and import those authors (and their books) into the database
+        Return how many authors you added """
+    myDB = database.DBConnection()
+    result = myDB.match("select count('AuthorID') as counter from authors")
+    start = int(result['counter'])
+    result = myDB.match('select SeriesName from series where SeriesID = %s' % seriesid)
+    seriesname = result['SeriesName']
+    members = getSeriesMembers(seriesid)
+    if members:
+        myDB = database.DBConnection()
+        for member in members:
+            order = member[0]
+            bookname = member[1]
+            authorname = member[2]
+
+            base_url = 'http://www.goodreads.com/search.xml?q='
+            params = {"key": lazylibrarian.CONFIG['GR_API']}
+            searchname = bookname + ' ' + authorname
+            searchname = cleanName(unaccented(searchname))
+            searchterm = urllib.quote_plus(searchname.encode(lazylibrarian.SYS_ENCODING))
+            set_url = base_url + searchterm + '&' + urllib.urlencode(params)
+            authorid = ''
+            try:
+                rootxml, in_cache = get_xml_request(set_url)
+                if len(rootxml):
+                    resultxml = rootxml.getiterator('work')
+                    for item in resultxml:
+                        booktitle = item.find('./best_book/title').text
+                        book_fuzz = fuzz.token_set_ratio(booktitle, bookname)
+                        if book_fuzz >= 98:
+                            author = item.find('./best_book/author/name').text
+                            authorid = item.find('./best_book/author/id').text
+                            logger.debug("Author Search found %s %s, authorid %s" % (author, booktitle, authorid))
+                            break
+                if not authorid:  # try again with title only
+                    searchname = cleanName(unaccented(bookname))
+                    searchterm = urllib.quote_plus(searchname.encode(lazylibrarian.SYS_ENCODING))
+                    set_url = base_url + searchterm + '&' + urllib.urlencode(params)
+                    rootxml, in_cache = get_xml_request(set_url)
+                    if len(rootxml):
+                        resultxml = rootxml.getiterator('work')
+                        for item in resultxml:
+                            booktitle = item.find('./best_book/title').text
+                            book_fuzz = fuzz.token_set_ratio(booktitle, bookname)
+                            if book_fuzz >= 98:
+                                author = item.find('./best_book/author/name').text
+                                authorid = item.find('./best_book/author/id').text
+                                logger.debug("Title Search found %s %s, authorid %s" % (author, booktitle, authorid))
+                                break
+                if not authorid:
+                    logger.warn("GoodReads doesn't know about %s %s" % (authorname, bookname))
+            except Exception as e:
+                logger.error("Error finding goodreads results: %s" % str(e))
+
+            if authorid:
+                lazylibrarian.importer.addAuthorToDB(authorname=None, refresh=False, authorid=authorid)
+
+    result = myDB.match("select count('AuthorID') as counter from authors")
+    finish = int(result['counter'])
+    newauth = finish - start
+    logger.debug("Added %s new author%s for %s" % (newauth, plural(newauth), seriesname))
+    return newauth
 
 
 def getSeriesMembers(seriesID=None):

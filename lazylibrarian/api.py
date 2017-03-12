@@ -22,7 +22,7 @@ import threading
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, setAllBookSeries, \
-    getBookCover, getAuthorImage, getAuthorImages, getSeriesMembers, getSeriesPages
+    getBookCover, getAuthorImage, getAuthorImages, getSeriesMembers, getSeriesAuthors
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, dbUpdate, setperm
 from lazylibrarian.csvfile import import_CSV, export_CSV
@@ -103,7 +103,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'vacuum': 'vacuum the database',
             'getWorkSeries': '&id= Get series from Librarything BookWork using BookID',
             'getSeriesMembers': '&id= Get list of series members from Librarything using SeriesID',
-            'getSeriesPages': ' Get series info pages from Librarything for all series',
+            'getSeriesAuthors': '&id= Get all authors from Librarything for a series and import them',
             'getWorkPage': '&id= Get url of Librarything BookWork using BookID',
             'getBookCovers': '[&wait] Check all books for cached cover and download one if missing',
             'cleanCache': '[&wait] Clean unused and expired files from the LazyLibrarian caches',
@@ -727,11 +727,13 @@ class Api(object):
     def _loadCFG():
         lazylibrarian.config_read(reloaded=True)
 
-    def _getSeriesPages(self, **kwargs):
-        if 'wait' in kwargs:
-            self.data = getSeriesPages()
+    def _getSeriesAuthors(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
         else:
-            threading.Thread(target=getSeriesPages, name='SeriesPages', args=[]).start()
+            self.id = kwargs['id']
+            count = getSeriesAuthors(self.id)
+            self.data = "Added " + count
 
     def _getSeriesMembers(self, **kwargs):
         if 'id' not in kwargs:

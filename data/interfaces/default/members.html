@@ -15,7 +15,11 @@
 
 <%def name="body()">
 <BR><BR>
-<h1>&nbsp&nbsp${title}</h1>
+%if multi == "True":
+    <h1>&nbsp&nbsp${title}</h1>
+%else:
+    <h1>&nbsp&nbsp${series['AuthorName']} : ${title}</h1>
+%endif
         <form action="markMembers" method="get">
             <input type="hidden" name="redirect" value="members">
             <input type="hidden" name="seriesid" value="${series['SeriesID']}">
@@ -39,6 +43,11 @@
                 <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
                 <th id="bookart">Cover</th>
                 <th id="bookname">Title</th>
+                %if multi == "True":
+                    <th id="authorname">Author</th>
+                %else:
+                    <th id="authorname" class="hidden">Author</th>
+                %endif
                 <th id="series">Number</th>
                 <th id="status">Status</th>
                 <th id="stars">Select</th>
@@ -51,6 +60,11 @@
                 <td id="select"><input class="checkbox" type="checkbox" name="${result['BookID']}" /></td>
                 <td id="bookart"><a href="${result['BookImg']}" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" width="60" alt="Cover" class="bookcover-sm"></a></td>
                 <td id="bookname">${result['BookName']}</td>
+                %if multi == "True":
+                    <td id="authorname">${result['AuthorName']}</td>
+                %else:
+                    <td id="authorname" class="hidden">${result['AuthorName']}</td>
+                %endif
                 <td id="series">${result['SeriesNum']}</td>
                 <td id="status">${result['Status']}</td>
                 <td id="stars"><a class="button grey" href="editBook?bookid=${result['BookID']}" title="Select">Edit</a></p></td>
@@ -75,16 +89,17 @@
     {
         var oTable = $('#book_table').dataTable(
             {
-                "order": [[ 3, 'asc' ]],
+                "order": [[ 4, 'asc' ]],
                 "aoColumns": [
                     {"bSortable": false},
                     null,
                     null,
                     null,
                     null,
+                    null,
                     null
                     ],
-                "columnDefs": [{ type: 'natural', targets: 3 }],
+                "columnDefs": [{ type: 'natural', targets: 4 }],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ rows per page",
                     "sEmptyTable": "No books found",
@@ -92,7 +107,7 @@
                     "sInfoEmpty":"Showing 0 to 0 of 0 rows",
                     "sInfoFiltered":"(filtered from _MAX_ total rows)"},
                 "sPaginationType": "full_numbers",
-                "aaSorting": [[3, 'asc']],
+                "aaSorting": [[4, 'asc']],
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
             });
