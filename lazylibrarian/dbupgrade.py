@@ -62,8 +62,9 @@ def upgrade_needed():
     # 14 separate book and author images in case id numbers collide
     # 15 move series and seriesnum into separate tables so book can appear in multiple series
     # 16 remove series, authorlink, authorname columns from book table, only in series/author tables now
+    # 17 remove authorid from series table, new seriesauthor table to allow multiple authors per series
 
-    db_current_version = 16
+    db_current_version = 17
     if db_version < db_current_version:
         return db_current_version
     return 0
@@ -127,8 +128,9 @@ def dbupgrade(db_current_version):
                 LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int, \
                 duplicates int)')
             myDB.action('CREATE TABLE IF NOT EXISTS series (SeriesID INTEGER PRIMARY KEY, SeriesName TEXT, \
-                        AuthorID TEXT, Status TEXT)')
+                Status TEXT)')
             myDB.action('CREATE TABLE IF NOT EXISTS member (SeriesID INTEGER, BookID TEXT, SeriesNum TEXT)')
+            myDB.action('CREATE TABLE IF NOT EXISTS seriesauthors (SeriesID INTEGER, AuthorID TEXT)')
 
 
             # These are the incremental changes before database versioning was introduced.
@@ -577,6 +579,19 @@ def dbupgrade(db_current_version):
                 myDB.action('DROP TABLE books')
                 myDB.action('ALTER TABLE temp_table RENAME TO books')
                 lazylibrarian.UPDATE_MSG = 'Reorganisation of books table complete'
+
+        if db_version < 17:
+            if has_column(myDB, "series", "AuthorID"):
+                lazylibrarian.UPDATE_MSG = 'Creating seriesauthors table'
+                # In this version of the database there is only one author per series so use that as starting point
+                myDB.action('CREATE TABLE IF NOT EXISTS seriesauthors (SeriesID INTEGER, AuthorID TEXT)')
+                myDB.action('INSERT INTO seriesauthors SELECT SeriesID, AuthorID FROM series')
+                myDB.action('CREATE TABLE IF NOT EXISTS temp_table (SeriesID INTEGER PRIMARY KEY, SeriesName TEXT, \
+                    Status TEXT)')
+                myDB.action('INSERT INTO temp_table SELECT  SeriesID, SeriesName, Status FROM series')
+                myDB.action('DROP TABLE series')
+                myDB.action('ALTER TABLE temp_table RENAME TO series')
+                lazylibrarian.UPDATE_MSG = 'Reorganisation of series table complete'
 
 
         # Now do any non-version-specific tidying

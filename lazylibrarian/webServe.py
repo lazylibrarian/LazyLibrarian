@@ -29,7 +29,7 @@ import lib.simplejson as simplejson
 from cherrypy.lib.static import serve_file
 from lazylibrarian import logger, database, notifiers, versioncheck, magazinescan, \
     qbittorrent, utorrent, rtorrent, transmission, sabnzbd, nzbget, deluge, synology
-from lazylibrarian.bookwork import setSeries, deleteEmptySeries
+from lazylibrarian.bookwork import setSeries, deleteEmptySeries, getSeriesAuthors
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, dbUpdate
 from lazylibrarian.csvfile import import_CSV, export_CSV
@@ -99,13 +99,15 @@ class WebInterface(object):
     def series(self, AuthorID=None):
         myDB = database.DBConnection()
         title = "Series"
-        cmd = 'SELECT SeriesID,series.AuthorID,SeriesName,series.Status,AuthorName from series,authors'
-        cmd += ' where authors.AuthorID=series.AuthorID'
+        cmd = 'SELECT series.SeriesID,seriesauthors.AuthorID,SeriesName,series.Status,AuthorName'
+        cmd += ' from series,authors,seriesauthors'
+        cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
         if AuthorID:
             match = myDB.match('SELECT AuthorName from authors WHERE AuthorID=%s' % AuthorID)
             if match:
                 title = "%s Series" % match['AuthorName']
-            cmd += ' and series.AuthorID=' + AuthorID
+            cmd += ' and seriesauthors.AuthorID=' + AuthorID
+        cmd += ' GROUP BY series.seriesID'
         cmd += ' order by AuthorName,SeriesName'
         series = myDB.select(cmd)
         return serve_template(templatename="series.html", title=title, authorid=AuthorID, series=series)
@@ -113,15 +115,29 @@ class WebInterface(object):
     @cherrypy.expose
     def seriesMembers(self, seriesid):
         myDB = database.DBConnection()
-        cmd = 'SELECT SeriesName,SeriesID,AuthorName,authors.AuthorID from series,authors'
-        cmd += ' where authors.AuthorID=series.AuthorID and SeriesID=%s' % seriesid
+        cmd = 'SELECT SeriesName,series.SeriesID,AuthorName,seriesauthors.AuthorID'
+        cmd += ' from series,authors,seriesauthors'
+        cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
+        cmd += ' and series.SeriesID=%s' % seriesid
         series = myDB.match(cmd)
-        cmd = 'SELECT member.BookID,BookName,SeriesNum,BookImg,books.Status from member,series,books'
+        cmd = 'SELECT member.BookID,BookName,SeriesNum,BookImg,books.Status,AuthorName,authors.AuthorID'
+        cmd += ' from member,series,books,authors'
         cmd += ' where series.SeriesID=member.SeriesID and books.BookID=member.BookID'
+        cmd += ' and books.AuthorID=authors.AuthorID'
         cmd += ' and series.SeriesID=%s order by SeriesName' % seriesid
         members = myDB.select(cmd)
-        return serve_template(templatename="members.html", title=series['AuthorName'] + ": " + series['SeriesName'],
-                                members=members, series=series)
+        # is it a multi-author series?
+        multi = "False"
+        authorid = ''
+        for item in members:
+            if not authorid:
+                authorid = item['AuthorID']
+            else:
+                if not authorid == item['AuthorID']:
+                    multi = "True"
+                    break
+        return serve_template(templatename="members.html", title=series['SeriesName'],
+                                members=members, series=series, multi=multi)
 
     @cherrypy.expose
     def markMembers(self, action=None, **args):
@@ -140,6 +156,8 @@ class WebInterface(object):
                         if match:
                             myDB.upsert("series", {'Status': action}, {'SeriesID': seriesid})
                             logger.debug(u'Status set to "%s" for "%s"' % (action, match['SeriesName']))
+                            if action in ['Wanted', 'Active']:
+                                threading.Thread(target=getSeriesAuthors, name='SERIESAUTHORS', args=[seriesid]).start()
             if "redirect" in args:
                 if not args['redirect'] == 'None':
                     raise cherrypy.HTTPRedirect("series?AuthorID=%s" % args['redirect'])

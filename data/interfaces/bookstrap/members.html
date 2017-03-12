@@ -15,7 +15,12 @@
 </%def>
 
 <%def name="body()">
-<h1>${title}</h1>
+%if multi == "True":
+    <h1>${title}</h1>
+%else:
+    <h1>${series['AuthorName']} : ${title}</h1>
+%endif
+
 <form action="markMembers" method="get" class="form-inline">
     <div class="indented">
             <input type="hidden" name="redirect" value="members">
@@ -43,6 +48,11 @@
                 <th class="select no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
                 <th class="bookart text-center no-sort hidden-xs">Cover</th>
                 <th class="bookname">Title</th>
+                %if multi == "True":
+                    <th class="authorname">Author</th>
+                %else:
+                    <th class="authorname hidden">Author</th>
+                %endif
                 <th class="date col-xs-1 text-center">Num</th>
                 <th class="status text-center">Status</th>
                 <th class="stars text-center">Edit Details</th>
@@ -54,7 +64,12 @@
             <tr>
                 <td class="select"><input type="checkbox" name="${result['BookID']}" /></td>
                 <td class="bookart text-center hidden-xs"><a href="${result['BookImg']}" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" class="bookcover-xs img-responsive" alt="Cover"></a></td>
-                    <td class="bookname">${result['BookName']}</td>
+                <td class="bookname">${result['BookName']}</td>
+                %if multi == "True":
+                    <td class="authorname">${result['AuthorName']}</td>
+                %else:
+                    <td class="authorname hidden">${result['AuthorName']}</td>
+                %endif
                 <td class="date text-center">${result['SeriesNum']}</td>
                 <td class="status text-center">${result['Status']}</td>
                 <td class="stars text-center"><a class="b btn btn-xs btn-success" href="editBook?bookid=${result['BookID']}" title="Select"><i class="fa fa-book"></i> Edit</a></p></td>
@@ -77,10 +92,10 @@
     {
         var oTable = $('#book_table').dataTable(
             {
-                "order": [[ 3, 'asc' ]],
+                "order": [[ 4, 'asc' ]],
                 // Don't allow colums of class no-sort to be sorted
                 "columnDefs": [{ targets: 'no-sort', orderable: false },
-                               { type: 'natural', targets: 3 }
+                               { type: 'natural', targets: 4 }
                                ],
                 "oLanguage": {
                     "sLengthMenu":"_MENU_ rows per page",
@@ -89,6 +104,7 @@
                     "sInfoEmpty":"Showing 0 to 0 of 0 rows",
                     "sInfoFiltered":"(filtered from _MAX_ total rows)"},
                 "sPaginationType": "full_numbers",
+                "aaSorting": [[4, 'asc']],
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
             });
