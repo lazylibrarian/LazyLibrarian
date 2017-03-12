@@ -455,7 +455,7 @@ def getSeriesAuthors(seriesid):
     result = myDB.match("select count('AuthorID') as counter from authors")
     finish = int(result['counter'])
     newauth = finish - start
-    logger.debug("Added %s new author%s for %s" % (newauth, plural(newauth), seriesname))
+    logger.info("Added %s new author%s for %s" % (newauth, plural(newauth), seriesname))
     return newauth
 
 
@@ -478,9 +478,9 @@ def getSeriesMembers(seriesID=None):
                         authorname = authorlink.split('">')[1].split('<')[0]
                         authorlink = authorlink.split('"')[0]
                         order = row.split('class="order">')[1].split('<')[0]
+                        results.append([order, bookname, authorname])
                     except IndexError:
                         logger.debug('Incomplete data in series table for series %s' % seriesID)
-                    results.append([order,bookname,authorname])
         except IndexError:
             if 'class="worksinseries"' in data:  # error parsing, or just no series data available?
                 logger.debug('Error in series table for series %s' % seriesID)

@@ -156,7 +156,7 @@ class WebInterface(object):
                         if match:
                             myDB.upsert("series", {'Status': action}, {'SeriesID': seriesid})
                             logger.debug(u'Status set to "%s" for "%s"' % (action, match['SeriesName']))
-                            if action == 'Wanted':
+                            if action in ['Wanted', 'Active']:
                                 threading.Thread(target=getSeriesAuthors, name='SERIESAUTHORS', args=[seriesid]).start()
             if "redirect" in args:
                 if not args['redirect'] == 'None':
