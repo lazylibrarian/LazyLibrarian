@@ -96,9 +96,9 @@ def setSeries(seriesdict=None, bookid=None):
     myDB = database.DBConnection()
     if bookid:
         # delete any old series-member entries
-        myDB.action('DELETE from member WHERE BookID=%s' % bookid)
+        myDB.action('DELETE from member WHERE BookID="%s"' % bookid)
         for item in seriesdict:
-            book = myDB.match('SELECT AuthorID from books where BookID=%s' % bookid)
+            book = myDB.match('SELECT AuthorID from books where BookID="%s"' % bookid)
             match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % item)
             if not match:
                 # new series, need to set status and get SeriesID
@@ -111,7 +111,7 @@ def setSeries(seriesdict=None, bookid=None):
                 newValueDict = {"SeriesNum": seriesdict[item]}
                 myDB.upsert("member", newValueDict, controlValueDict)
                 # Not sure if we can use upsert with empty controlValueDict, so do it manually...
-                test = myDB.match('SELECT SeriesID from seriesauthors WHERE SeriesID=%s and AuthorID=%s' %
+                test = myDB.match('SELECT SeriesID from seriesauthors WHERE SeriesID="%s" and AuthorID="%s"' %
                                 (match['SeriesID'], book['AuthorID']))
                 if not test:
                     test = myDB.match('Insert into seriesauthors ("SeriesID", "AuthorID") VALUES ("%s", "%s")' %
@@ -182,10 +182,10 @@ def deleteEmptySeries():
     myDB = database.DBConnection()
     series = myDB.select('SELECT SeriesID,SeriesName from series')
     for item in series:
-        match = myDB.match('SELECT BookID from member where SeriesID=%s' % item['SeriesID'])
+        match = myDB.match('SELECT BookID from member where SeriesID="%s"' % item['SeriesID'])
         if not match:
             logger.debug('Deleting empty series %s' % item['SeriesName'])
-            myDB.action('DELETE from series where SeriesID=%s' % item['SeriesID'])
+            myDB.action('DELETE from series where SeriesID="%s"' % item['SeriesID'])
 
 def setWorkPages():
     """ Set the workpage link for any books that don't already have one """
@@ -400,7 +400,7 @@ def getSeriesAuthors(seriesid):
     myDB = database.DBConnection()
     result = myDB.match("select count('AuthorID') as counter from authors")
     start = int(result['counter'])
-    result = myDB.match('select SeriesName from series where SeriesID = %s' % seriesid)
+    result = myDB.match('select SeriesName from series where SeriesID="%s"' % seriesid)
     seriesname = result['SeriesName']
     members = getSeriesMembers(seriesid)
     if members:
@@ -658,7 +658,7 @@ def getAuthorImage(authorid=None):
 
     lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
     myDB = database.DBConnection()
-    authors = myDB.select('select AuthorName from authors where AuthorID = "%s"' % authorid)
+    authors = myDB.select('select AuthorName from authors where AuthorID="%s"' % authorid)
     if authors:
         authorname = safe_unicode(authors[0][0]).encode(lazylibrarian.SYS_ENCODING)
         safeparams = urllib.quote_plus("author %s" % authorname)
