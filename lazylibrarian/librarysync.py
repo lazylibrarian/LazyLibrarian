@@ -351,7 +351,7 @@ def find_author_in_db(author):
     if not check_exist_author:
         logger.debug("Failed to match author [%s] in database" % author)
         if not lazylibrarian.CONFIG['ADD_AUTHOR']:
-            logger.debug("Add authors to database is disabled")
+            logger.warn("Add authors to database is disabled")
         return ""
     return author
 
