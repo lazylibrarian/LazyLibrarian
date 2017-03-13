@@ -379,15 +379,8 @@ def magazineScan():
                 create_cover(issuefile)
 
                 # see if this issues date values are useful
-                # if its a new magazine, magazineadded,magissuedate,lastacquired are all None
-                # if magazineadded is NOT None, but the others are, we've deleted one or more issues
-                # so the most recent dates may be wrong and need to be updated.
-                # Set magazine_issuedate to issuedate of most recent issue we have
-                # Set magazine_added to acquired date of earliest issue we have
-                # Set magazine_lastacquired to acquired date of most recent issue we have
-                # acquired dates are read from magazine file timestamps
-                if not magazineadded:  # new magazine, this might be the only issue
-                    controlValueDict = {"Title": title}
+                controlValueDict = {"Title": title}
+                if not mag_entry:  # new magazine, this is the only issue
                     newValueDict = {
                         "MagazineAdded": iss_acquired,
                         "LastAcquired": iss_acquired,
@@ -397,19 +390,19 @@ def magazineScan():
                     }
                     myDB.upsert("magazines", newValueDict, controlValueDict)
                 else:
+                    # Set magazine_issuedate to issuedate of most recent issue we have
+                    # Set magazine_added to acquired date of earliest issue we have
+                    # Set magazine_lastacquired to acquired date of most recent issue we have
+                    # acquired dates are read from magazine file timestamps
+                    newValueDict = {"IssueStatus": "Open"}
                     if iss_acquired < magazineadded:
-                        controlValueDict = {"Title": title}
-                        newValueDict = {"MagazineAdded": iss_acquired}
-                        myDB.upsert("magazines", newValueDict, controlValueDict)
+                        newValueDict["MagazineAdded"] =  iss_acquired
                     if not maglastacquired or iss_acquired > maglastacquired:
-                        controlValueDict = {"Title": title}
-                        newValueDict = {"LastAcquired": iss_acquired,
-                                        "LatestCover": os.path.splitext(issuefile)[0] + '.jpg'}
-                        myDB.upsert("magazines", newValueDict, controlValueDict)
+                        newValueDict["LastAcquired"] = iss_acquired
+                        newValueDict["LatestCover"] = os.path.splitext(issuefile)[0] + '.jpg'
                     if not magissuedate or issuedate > magissuedate:
-                        controlValueDict = {"Title": title}
-                        newValueDict = {"IssueDate": issuedate}
-                        myDB.upsert("magazines", newValueDict, controlValueDict)
+                        newValueDict["IssueDate"] = issuedate
+                    myDB.upsert("magazines", newValueDict, controlValueDict)
 
     magcount = myDB.match("select count(*) from magazines")
     isscount = myDB.match("select count(*) from issues")
