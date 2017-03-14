@@ -20,6 +20,7 @@ import os
 import random
 import threading
 import urllib
+import re
 from operator import itemgetter
 from shutil import copyfile, rmtree
 
@@ -628,10 +629,6 @@ class WebInterface(object):
             else:
                 filtered = d
 
-            sortcolumn = int(iSortCol_0)
-            sortcolumn -= 1  # indexed from 0
-            filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
-
             if iDisplayLength < 0:  # display = all
                 rows = filtered
             else:
@@ -785,6 +782,10 @@ class WebInterface(object):
 
                 d.append(l)  # add the rowlist to the masterlist
 
+                sortcolumn = int(iSortCol_0)
+                #d.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+                self.natural_sort(d,key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
                   'aaData': d,
@@ -793,6 +794,18 @@ class WebInterface(object):
         # print ("Getbooks returning %s to %s" % (iDisplayStart, iDisplayStart
         # + iDisplayLength))
         return s
+
+
+    def natural_sort(self, lst, key=lambda s:s, reverse=False):
+        """
+        Sort the list into natural alphanumeric order.
+        """
+        def get_alphanum_key_func(key):
+            convert = lambda text: int(text) if text.isdigit() else text
+            return lambda s: [convert(c) for c in re.split('([0-9]+)', key(s))]
+        sort_key = get_alphanum_key_func(key)
+        lst.sort(key=sort_key, reverse=reverse)
+
 
     @cherrypy.expose
     def addBook(self, bookid=None):
