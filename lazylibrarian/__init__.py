@@ -109,6 +109,8 @@ CONFIG_DEFINITIONS = {
     'LOGFILES': ('int', 'General', 10),
     'LOGSIZE': ('int', 'General', 204800),
     'LOGLEVEL': ('int', 'General', 1),
+    'FILE_PERM': ('str', 'General', '0o644'),
+    'DIR_PERM': ('str', 'General', '0o755'),
     'MATCH_RATIO': ('int', 'General', 80),
     'DLOAD_RATIO': ('int', 'General', 90),
     'DISPLAYLENGTH': ('int', 'General', 10),

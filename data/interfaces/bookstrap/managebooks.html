@@ -54,7 +54,7 @@
         <div class="form-group">
             <label for="markBooks" class="control-label">Change selected books to: </label>
             <select id="markBooks" class="markBooks form-control input-sm" name="action">
-            %for item in ['Skipped', 'Wanted', 'Snatched', 'Have', 'Ignored']:
+            %for item in ['Skipped', 'Wanted', 'Have', 'Ignored']:
                 <option value="${item}">${item}</option>
             %endfor
             </select>
@@ -89,7 +89,7 @@
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "sPaginationType": "full_numbers",
-                "aaSorting": [[0, 'asc']],
+                "aaSorting": [[1, 'asc']],
                 "bServerSide": true,
                 "sAjaxSource": 'getBooks?whichStatus=${whichStatus}&source=Manage',
                 "bFilter": true,

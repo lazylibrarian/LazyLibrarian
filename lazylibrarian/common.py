@@ -57,9 +57,9 @@ def setperm(file_or_dir):
         return
 
     if os.path.isdir(file_or_dir):
-        perm = 0o755
+        perm = lazylibrarian.CONFIG['DIR_PERM']
     elif os.path.isfile(file_or_dir):
-        perm = 0o644
+        perm = lazylibrarian.CONFIG['FILE_PERM']
     else:
         return False
     try:
