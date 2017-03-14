@@ -159,10 +159,8 @@
     {
         var oTable = $('#book_table').dataTable(
             {
-                "order": [],
-                "columnDefs":
-                    [{ targets: 'no-sort', orderable: false }] // Don't allow colums of class no-sort to be sorted
-                ,
+                "order": [[ 5, 'desc' ]],
+                "columnDefs": [{ targets: 'no-sort', orderable: false }],
                 "oLanguage": {
                     "sLengthMenu":"_MENU_ rows per page",
                     "sEmptyTable": "No books found",

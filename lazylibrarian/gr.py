@@ -727,6 +727,21 @@ class GoodReads:
         author = GR.find_author_id()
         if author:
             AuthorID = author['authorid']
+            match = myDB.match('SELECT AuthorID from authors WHERE AuthorID="%s"' % AuthorID)
+            if not match:
+                # no author but request to add book, add author as "ignored"
+                # User hit "add book" button from a search
+                controlValueDict = {"AuthorID": AuthorID}
+                newValueDict = {
+                    "AuthorName": author['authorname'],
+                    "AuthorImg": author['authorimg'],
+                    "AuthorLink": author['authorlink'],
+                    "AuthorBorn": author['authorborn'],
+                    "AuthorDeath": author['authordeath'],
+                    "DateAdded": today(),
+                    "Status": "Ignored"
+                }
+                myDB.upsert("authors", newValueDict, controlValueDict)
         else:
             logger.warn("No AuthorID for %s, unable to add book %s" % (authorname, bookname))
             return
