@@ -21,7 +21,6 @@ import random
 import threading
 import urllib
 import re
-from operator import itemgetter
 from shutil import copyfile, rmtree
 
 import cherrypy
@@ -37,7 +36,7 @@ from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode, unaccented, cleanName
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
-from lazylibrarian.importer import addAuthorToDB, update_totals
+from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals, search_for
 from lazylibrarian.librarysync import LibraryScan
 from lazylibrarian.manualbook import searchItem
 from lazylibrarian.notifiers import notify_snatch
@@ -338,21 +337,6 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("home")
 
         myDB = database.DBConnection()
-        if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
-            GB = GoogleBooks(name)
-            queue = Queue.Queue()
-            search_api = threading.Thread(
-                target=GB.find_results, name='GB-RESULTS', args=[name, queue])
-            search_api.start()
-        else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
-            queue = Queue.Queue()
-            GR = GoodReads(name)
-            search_api = threading.Thread(
-                target=GR.find_results, name='GR-RESULTS', args=[name, queue])
-            search_api.start()
-
-        search_api.join()
-        searchresults = queue.get()
 
         authorsearch = myDB.select("SELECT AuthorName from authors")
         authorlist = []
@@ -364,19 +348,9 @@ class WebInterface(object):
         for item in booksearch:
             booklist.append(item['BookID'])
 
-        # need a url safe version of authorname for passing to
-        # searchresults.html as it might be a new author with no authorid yet
-        resultlist = []
-        for result in searchresults:
-            result['safeauthorname'] = urllib.quote_plus(
-                result['authorname'].encode(lazylibrarian.SYS_ENCODING))
-            resultlist.append(result)
-
-        sortedlist_final = sorted(
-            searchresults, key=itemgetter('highest_fuzz', 'num_reviews'), reverse=True)
+        searchresults = search_for(name)
         return serve_template(templatename="searchresults.html", title='Search Results: "' +
-                              name + '"', searchresults=sortedlist_final,
-                              authorlist=authorlist,
+                              name + '"', searchresults=searchresults, authorlist=authorlist,
                               booklist=booklist, booksearch=booksearch)
 
     # AUTHOR ############################################################
@@ -525,7 +499,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def addAuthor(self, AuthorName):
-        threading.Thread(target=addAuthorToDB, name='ADDAUTHOR', args=[AuthorName, False]).start()
+        threading.Thread(target=addAuthorNameToDB, name='ADDAUTHOR', args=[AuthorName, False]).start()
         raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
@@ -811,29 +785,18 @@ class WebInterface(object):
     def addBook(self, bookid=None):
         myDB = database.DBConnection()
         AuthorID = ""
-        booksearch = myDB.select('SELECT AuthorID from books WHERE BookID="%s"' % bookid)
-        if len(booksearch):
+        match = myDB.match('SELECT AuthorID from books WHERE BookID="%s"' % bookid)
+        if match:
             myDB.upsert("books", {'Status': 'Wanted'}, {'BookID': bookid})
-            for book in booksearch:
-                AuthorID = book['AuthorID']
-                update_totals(AuthorID)
+            AuthorID = match['AuthorID']
+            update_totals(AuthorID)
         else:
             if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
                 GB = GoogleBooks(bookid)
-                queue = Queue.Queue()
-                find_book = threading.Thread(
-                    target=GB.find_book, name='GB-BOOK', args=[bookid, queue])
-                find_book.start()
+                find_book = threading.Thread(target=GB.find_book, name='GB-BOOK', args=[bookid]).start()
             else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
-                queue = Queue.Queue()
                 GR = GoodReads(bookid)
-                find_book = threading.Thread(
-                    target=GR.find_book, name='GR-BOOK', args=[bookid, queue])
-                find_book.start()
-            if len(bookid) == 0:
-                raise cherrypy.HTTPRedirect("config")
-
-            find_book.join()
+                find_book = threading.Thread(target=GR.find_book, name='GR-BOOK', args=[bookid]).start()
 
         if lazylibrarian.CONFIG['IMP_AUTOSEARCH']:
             books = [{"bookid": bookid}]

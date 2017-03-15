@@ -909,8 +909,8 @@ TABLE#book_table TH#addAuthor
 }
 TABLE#book_table TH#fuzz
 {
-	text-align: left;
-	min-width: 50px;
+	text-align: center;
+	width: 50px;
 }
 TABLE#book_table TD#select
 {

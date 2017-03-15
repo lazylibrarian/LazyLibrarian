@@ -450,7 +450,7 @@ def getSeriesAuthors(seriesid):
                 logger.error("Error finding goodreads results: %s" % str(e))
 
             if authorid:
-                lazylibrarian.importer.addAuthorToDB(authorname=None, refresh=False, authorid=authorid)
+                lazylibrarian.importer.addAuthorToDB(refresh=False, authorid=authorid)
 
     result = myDB.match("select count('AuthorID') as counter from authors")
     finish = int(result['counter'])

@@ -106,15 +106,16 @@ def processAlternate(source_dir=None):
                             logger.debug("No author id for [%s]" % authorname)
                         if author_gr:
                             grauthorname = author_gr['authorname']
+                            authorid = author_gr['authorid']
                             logger.debug("GoodReads reports [%s] for [%s]" % (grauthorname, authorname))
                             authorname = grauthorname
-                            authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % authorname)
+                            authmatch = myDB.match('SELECT * FROM authors where AuthorID="%s"' % authorid)
 
                 if authmatch:
                     logger.debug("ALT: Author %s found in database" % authorname)
                 elif internet():
                     logger.debug("ALT: Author %s not found, adding to database" % authorname)
-                    addAuthorToDB(authorname)
+                    addAuthorToDB(authorid=authorid)
                 else:
                     logger.debug("ALT: Author %s not found" % authorname)
                     return False

@@ -21,7 +21,7 @@ import lib.csv as csv
 from lazylibrarian import database, logger
 from lazylibrarian.common import csv_file
 from lazylibrarian.formatter import plural, is_valid_isbn, now
-from lazylibrarian.importer import addAuthorToDB
+from lazylibrarian.importer import addAuthorNameToDB
 from lazylibrarian.librarysync import find_book_in_db
 
 
@@ -177,14 +177,14 @@ def import_CSV(search_dir=None):
                 else:
                     newauthor = True
                     logger.debug(u"CSV: Author %s not found, adding to database" % authorname)
-                    addAuthorToDB(authorname, False)
+                    addAuthorNameToDB(author=authorname, refresh=False, addbooks=True)
                     authcount += 1
 
                 bookmatch = finditem(content[item], headers)
 
                 # if we didn't find it, maybe author info is stale
                 if not bookmatch and not newauthor:
-                    addAuthorToDB(authorname, True)
+                    addAuthorNameToDB(author=authorname, refresh=True, addbooks=True)
                     bookmatch = finditem(content[item], headers)
 
                 bookname = ''
@@ -196,7 +196,7 @@ def import_CSV(search_dir=None):
                     bookid = bookmatch['BookID']
                     # noinspection PyTypeChecker
                     bookstatus = bookmatch['Status']
-                    if bookstatus == 'Open' or bookstatus == 'Wanted' or bookstatus == 'Have':
+                    if bookstatus in ['Open', 'Wanted', 'Have']:
                         logger.info(u'Found book %s by %s, already marked as "%s"' % (bookname, authorname, bookstatus))
                     else:  # skipped/ignored
                         logger.info(u'Found book %s by %s, marking as "Wanted"' % (bookname, authorname))
