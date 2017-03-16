@@ -1748,6 +1748,52 @@
                                         </div>
                                     </fieldset>
                                 </div>
+                                <div class="checkbox">
+                                    <%
+                                    if lazylibrarian.CONFIG['USE_CUSTOM'] == True:
+                                        checked = 'checked="checked"'
+                                    else:
+                                        checked = ''
+                                    %>
+                                    <label for="use_custom" class="control-label">
+                                    <input type="checkbox" id="use_custom" name="use_custom" value="1" ${checked} />
+                                    Enable Custom Notifications</label>
+                                </div>
+                                <div id="customoptions">
+                                    <fieldset>
+                                        <legend>Custom</legend>
+                                        <div class="checkbox">
+                                            <%
+                                            if lazylibrarian.CONFIG['CUSTOM_NOTIFY_ONSNATCH'] == True:
+                                                checked = 'checked="checked"'
+                                            else:
+                                                checked = ''
+                                            %>
+                                            <label for="custom_notify_onsnatch">
+                                            <input type="checkbox" id="custom_notify_onsnatch" name="custom_notify_onsnatch" value="1" ${checked} />
+                                            Notify on snatch</label>
+                                        </div>
+                                        <div class="checkbox">
+                                            <%
+                                            if lazylibrarian.CONFIG['CUSTOM_NOTIFY_ONDOWNLOAD'] == True:
+                                                checked = 'checked="checked"'
+                                            else:
+                                                checked = ''
+                                            %>
+                                            <label for="custom_notify_ondownload">
+                                            <input type="checkbox" id="custom_notify_ondownload" name="custom_notify_ondownload" value="1" ${checked} />
+                                            Notify on download</label>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="custom_script">Custom script to run</label>
+                                            <input type="text" id="custom_script" name="custom_script" value="${lazylibrarian.CONFIG['CUSTOM_SCRIPT']}" class="form-control" placeholder="Custom Script">
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="button" value="Test Custom" id="testCustom" class="btn btn-default">
+                                            <span class="help-block">Save settings before testing</span>
+                                        </div>
+                                    </fieldset>
+                                </div>
 
                             </div>
                         </div>
@@ -2499,6 +2545,26 @@
                     }
             });
 
+            if ($("#use_custom").is(":checked"))
+                    {
+                            $("#customoptions").show();
+                    }
+            else
+                    {
+                            $("#customoptions").hide();
+                    }
+
+            $("#use_custom").click(function(){
+                    if ($("#use_custom").is(":checked"))
+                    {
+                            $("#customoptions").slideDown();
+                    }
+                    else
+                    {
+                            $("#customoptions").slideUp();
+                    }
+            });
+
             if ($("#use_email").is(":checked"))
                     {
                             $("#emailoptions").show();
@@ -2563,6 +2629,12 @@
 
             $('#testSlack').click(function () {
                 $.get("testSlack",
+                    function (data) { window.alert(data) });
+
+            });
+
+            $('#testCustom').click(function () {
+                $.get("testCustom",
                     function (data) { window.alert(data) });
 
             });

@@ -32,7 +32,7 @@ from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB
 from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
 from lazylibrarian.magazinescan import create_id, create_cover
-from lazylibrarian.notifiers import notify_download
+from lazylibrarian.notifiers import notify_download, custom_notify
 from lib.deluge_client import DelugeRPCClient
 from lib.fuzzywuzzy import fuzz
 
@@ -496,6 +496,7 @@ def processDir(reset=False):
 
                     logger.info('Successfully processed: %s' % global_name)
                     ppcount += 1
+                    custom_notify(book['BookID'])
                     if internet():
                         notify_download("%s from %s at %s" % (global_name, book['NZBprov'], now()))
                 else:
@@ -707,6 +708,7 @@ def import_book(pp_path=None, bookID=None):
                             logger.debug("Not removing original files as in download root")
 
                 logger.info('Successfully processed: %s' % global_name)
+                custom_notify(bookID)
                 if internet():
                     notify_download("%s %s at %s" % (global_name, snatched_from, now()))
                 return True
