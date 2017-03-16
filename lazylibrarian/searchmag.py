@@ -24,7 +24,7 @@ from lazylibrarian import logger, database
 from lazylibrarian.common import scheduleJob, internet
 from lazylibrarian.formatter import plural, now, unaccented_str, replace_all, unaccented, \
     nzbdate2format, getList, month2num, datecompare, check_int, check_year
-from lazylibrarian.notifiers import notify_snatch
+from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.providers import IterateOverNewzNabSites, IterateOverTorrentSites, IterateOverRSSSites
 from lazylibrarian.searchnzb import NZBDownloadMethod
 from lazylibrarian.searchtorrents import TORDownloadMethod
@@ -470,6 +470,7 @@ def search_magazines(mags=None, reset=False):
                         logger.info('Downloading %s from %s' % (magazine['nzbtitle'], magazine["nzbprov"]))
                         notify_snatch("%s from %s at %s" %
                                       (unaccented(magazine['nzbtitle']), magazine["nzbprov"], now()))
+                        custom_notify_snatch(magazine['bookid'])
                         scheduleJob(action='Start', target='processDir')
 
         if reset:

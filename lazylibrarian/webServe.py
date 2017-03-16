@@ -39,7 +39,7 @@ from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals, search_for
 from lazylibrarian.librarysync import LibraryScan
 from lazylibrarian.manualbook import searchItem
-from lazylibrarian.notifiers import notify_snatch
+from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.postprocess import processAlternate, processDir
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
@@ -544,6 +544,7 @@ class WebInterface(object):
             if snatch:
                 logger.info('Downloading %s from %s' % (bookdata["BookName"], provider))
                 notify_snatch("%s from %s at %s" % (unaccented(bookdata["BookName"]), provider, now()))
+                custom_notify_snatch(bookid)
                 scheduleJob(action='Start', target='processDir')
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
         else:
@@ -1414,6 +1415,7 @@ class WebInterface(object):
                 if snatch:  # if snatch fails, downloadmethods already report it
                     logger.info('Downloading %s from %s' % (items['nzbtitle'], items['nzbprov']))
                     notifiers.notify_snatch(items['nzbtitle'] + ' at ' + now())
+                    custom_notify_snatch(items['bookid'])
                     scheduleJob(action='Start', target='processDir')
         raise cherrypy.HTTPRedirect("pastIssues")
 

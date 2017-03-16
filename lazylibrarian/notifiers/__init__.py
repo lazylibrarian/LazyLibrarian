@@ -49,8 +49,11 @@ notifiers = [
     email_notifier
 ]
 
-def custom_notify(bookid):
+def custom_notify_download(bookid):
     custom_notifier.notify_download(bookid)
+
+def custom_notify_snatch(bookid):
+    custom_notifier.notify_snatch(bookid)
 
 def notify_download(title):
     for n in notifiers:

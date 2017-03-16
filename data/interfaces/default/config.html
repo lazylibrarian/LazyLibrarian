@@ -1480,6 +1480,47 @@
                         </div>
                      </div>
                 </fieldset>
+                <fieldset>
+                    <BR>
+                    <h3>Custom</h3>
+                    <div class="row checkbox">
+                    <%
+                    if lazylibrarian.CONFIG['USE_SLACK'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                        <input type="checkbox" name="use_custom" id="custom" value="1" ${checked} />
+                        <label>Enable Custom Notifications</label>
+                    </div>
+                    <div id="customoptions">
+                        <div class="row">
+                    <%
+                    if lazylibrarian.CONFIG['CUSTOM_NOTIFY_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                            <input type="checkbox" name="custom_notify_onsnatch" value="1" ${checked} />Notify on snatch
+                        </div>
+                        <div class="row">
+                    <%
+                    if lazylibrarian.CONFIG['CUSTOM_NOTIFY_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                            <input type="checkbox" name="custom_notify_ondownload" value="1" ${checked} />Notify on download
+                        </div>
+                        <div class="row">
+                            <input type="text" name="custom_script" value="${lazylibrarian.CONFIG['CUSTOM_SCRIPT']}" size="26" placeholder="Custom script">
+                        </div>
+                        <div class="row">
+                            <input type="button" value="Test Custom" id="testCustom">
+                            <br><small>Save settings before testing</small>
+                        </div>
+                     </div>
+                </fieldset>
             </td>
         </table>
         </div>

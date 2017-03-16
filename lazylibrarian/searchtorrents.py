@@ -30,7 +30,7 @@ import lazylibrarian
 from lazylibrarian import logger, database, utorrent, transmission, qbittorrent, deluge, rtorrent, synology, bencode
 from lazylibrarian.common import scheduleJob, USER_AGENT, setperm, internet
 from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, check_int, now, cleanName
-from lazylibrarian.notifiers import notify_snatch
+from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.providers import IterateOverTorrentSites
 from lib.deluge_client import DelugeRPCClient
 from lib.fuzzywuzzy import fuzz
@@ -239,6 +239,7 @@ def processResultList(resultlist, book, searchtype):
                 logger.info('Downloading %s from %s' % (newValueDict["NZBtitle"], newValueDict["NZBprov"]))
                 notify_snatch("%s from %s at %s" %
                               (newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
+                custom_notify_snatch(newValueDict["BookID"])
                 scheduleJob(action='Start', target='processDir')
                 return True + True  # we found it
     else:

@@ -22,4 +22,5 @@ with open('notification.out', 'w') as f:
             f.write(str(e))
 
     for item in mydict:
+        # column name: value
         f.write("%s: %s\n" % (item, mydict[item]))

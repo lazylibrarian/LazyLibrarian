@@ -21,7 +21,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.common import scheduleJob, internet
 from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, check_int, now
-from lazylibrarian.notifiers import notify_snatch
+from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.providers import IterateOverRSSSites, get_searchterm
 from lazylibrarian.searchnzb import NZBDownloadMethod
 from lazylibrarian.searchtorrents import TORDownloadMethod
@@ -223,6 +223,7 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
                 logger.info('Downloading %s from %s' % (newValueDict["NZBtitle"], newValueDict["NZBprov"]))
                 notify_snatch("%s from %s at %s" %
                               (newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
+                custom_notify_snatch(newValueDict["BookID"])
                 scheduleJob(action='Start', target='processDir')
                 return True + True  # we found it
     else:
