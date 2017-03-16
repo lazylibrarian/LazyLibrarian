@@ -503,8 +503,8 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
-    def addAuthorID(self, AuthorID, AuthorName):
-        threading.Thread(target=addAuthorToDB, name='ADDAUTHOR', args=[AuthorName, False, AuthorID]).start()
+    def addAuthorID(self, AuthorID):
+        threading.Thread(target=addAuthorToDB, name='ADDAUTHOR', args=['', False, AuthorID]).start()
         raise cherrypy.HTTPRedirect("home")
 
     # BOOKS #############################################################
@@ -1864,6 +1864,15 @@ class WebInterface(object):
             return "Slack notification failed,\n%s" % result
         else:
             return "Slack notification successful"
+
+    @cherrypy.expose
+    def testCustom(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        result = notifiers.custom_notifier.test_notify()
+        if not result:
+            return "Custom notification failed"
+        else:
+            return "Custom notification successful"
 
     @cherrypy.expose
     def testEmail(self):
