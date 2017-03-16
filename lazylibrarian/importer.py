@@ -23,7 +23,7 @@ from operator import itemgetter
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import getAuthorImage
 from lazylibrarian.cache import cache_img
-from lazylibrarian.formatter import today, unaccented
+from lazylibrarian.formatter import today, unaccented, formatAuthorName
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 
@@ -35,35 +35,7 @@ def addAuthorNameToDB(author, refresh=False, addbooks=True):
     # authorname returned is our preferred name, or empty string if not found or unable to add
     myDB = database.DBConnection()
     new = False
-    if "," in author:
-        postfix = getList(lazylibrarian.CONFIG['NAME_POSTFIX'])
-        words = author.split(',')
-        if len(words) == 2:
-            # Need to handle names like "L. E. Modesitt, Jr." or "J. Springmann, Phd"
-            # use an exceptions list for now, there might be a better way...
-            if words[1].strip().strip('.').strip('_').lower() in postfix:
-                surname = words[1].strip()
-                forename = words[0].strip()
-            else:
-                # guess its "surname, forename" or "surname, initial(s)" so swap them round
-                forename = words[1].strip()
-                surname = words[0].strip()
-            if author != forename + ' ' + surname:
-                logger.debug('Formatted authorname [%s] to [%s %s]' % (author, forename, surname))
-                author = forename + ' ' + surname
-    # reformat any initials, we want to end up with A.B. van Smith
-    if author[1] in '. ':
-        surname = author
-        forename = ''
-        while surname[1] in '. ':
-            forename = forename + surname[0] + '.'
-            surname = surname[2:].strip()
-        if author != forename + ' ' + surname:
-            logger.debug('Stripped authorname [%s] to [%s %s]' % (author, forename, surname))
-            author = forename + ' ' + surname
-
-    author = ' '.join(author.split())  # ensure no extra whitespace
-
+    author = formatAuthorName(author)
     # Check if the author exists, and import the author if not,
     check_exist_author = myDB.match('SELECT * FROM authors where AuthorName="%s"' % author.replace('"', '""'))
 

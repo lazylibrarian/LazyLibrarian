@@ -25,7 +25,8 @@ from lazylibrarian import logger, database
 from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, deleteEmptySeries, \
                                     setSeries, setStatus
 from lazylibrarian.cache import get_xml_request, cache_img
-from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList, cleanName
+from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList, \
+                                    cleanName, formatAuthorName
 from lib.fuzzywuzzy import fuzz
 
 
@@ -43,13 +44,7 @@ class GoodReads:
         try:
             resultlist = []
             api_hits = 0
-            # Goodreads doesn't like initials followed by spaces,
-            # eg "M L Hamilton", needs "M. L. Hamilton" or "M.L.Hamilton"
-            # but DOES need spaces if not initials eg "Tom.Holt" fails, but "Tom Holt" works
-            if authorname[1] == ' ':
-                authorname = authorname.replace(' ', '.')
-                authorname = authorname.replace('..', '.')
-
+            authorname = formatAuthorName(authorname)
             url = urllib.quote_plus(authorname.encode(lazylibrarian.SYS_ENCODING))
             set_url = 'http://www.goodreads.com/search.xml?q=' + url + '&' + urllib.urlencode(self.params)
             logger.debug('Now searching GoodReads API with keyword: ' + authorname)
@@ -162,12 +157,7 @@ class GoodReads:
 
     def find_author_id(self, refresh=False):
         author = self.name
-        # Goodreads doesn't like initials followed by spaces,
-        # eg "M L Hamilton", needs "M. L. Hamilton" or "M.L.Hamilton"
-        # but DOES need spaces if not initials eg "Tom.Holt" fails, but "Tom Holt" works
-        if author[1] == ' ':
-            author = author.replace(' ', '.')
-            author = author.replace('..', '.')
+        author = formatAuthorName(author)
         URL = 'http://www.goodreads.com/api/author_url/' + urllib.quote(author) + '?' + urllib.urlencode(self.params)
 
         # googlebooks gives us author names with long form unicode characters

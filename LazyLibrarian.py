@@ -8,6 +8,7 @@ import stat
 import sys
 import threading
 import time
+import re
 
 import lazylibrarian
 from lazylibrarian import webStart, logger, versioncheck, dbupgrade
