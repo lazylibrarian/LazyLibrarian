@@ -189,9 +189,9 @@ def import_CSV(search_dir=None):
                         newValueDict = {"Status": "Wanted"}
                         myDB.upsert("books", newValueDict, controlValueDict)
                         bookcount += 1
+                        result = ''
                 else:
                     searchterm = "%s %s" % (authorname, content[item]['Title'])
-                    logger.debug("Searching for [%s]" % searchterm)
                     results = search_for(unaccented(searchterm))
                     if results:
                         result = results[0]
@@ -202,10 +202,20 @@ def import_CSV(search_dir=None):
                             import_book(result['bookid'])
                             bookcount += 1
                             bookmatch = True
+                    else:
+                        result = ''
 
                 if not bookmatch:
-                    logger.warn(u"Skipping book %s by %s, not found" %
-                                (content[item]['Title'], content[item]['Author']))
+                    msg = "Skipping book %s by %s" % (content[item]['Title'], content[item]['Author'])
+                    if not result:
+                        msg += ', No results returned'
+                        logger.warn(msg)
+                    else:
+                        msg += ', No match found'
+                        logger.warn(msg)
+                        msg = "Closest match (%s%% %s%%) %s: %s" % (result['author_fuzz'], result['book_fuzz'],
+                                                                    result['authorname'], result['bookname'])
+                        logger.warn(msg)
                     skipcount += 1
             msg = "Added %i new author%s, marked %i book%s as 'Wanted', %i book%s not found" % \
                     (authcount, plural(authcount), bookcount, plural(bookcount), skipcount, plural(skipcount))
