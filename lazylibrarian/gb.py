@@ -204,7 +204,7 @@ class GoogleBooks:
                             if is_valid_isbn(authorname):
                                 isbn_fuzz = 100
 
-                            highest_fuzz = max(author_fuzz, book_fuzz, isbn_fuzz)
+                            highest_fuzz = max((author_fuzz + book_fuzz) / 2, isbn_fuzz)
 
                             dic = {':': '', '"': '', '\'': ''}
                             bookname = replace_all(bookname, dic)

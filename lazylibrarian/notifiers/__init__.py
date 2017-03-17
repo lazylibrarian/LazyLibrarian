@@ -24,6 +24,7 @@ import pushbullet
 import pushover
 import slack
 import tweet
+import custom_notify
 
 # online
 twitter_notifier = tweet.TwitterNotifier()
@@ -34,6 +35,8 @@ androidpn_notifier = androidpn.AndroidPNNotifier()
 nma_notifier = nma.NMA_Notifier()
 slack_notifier = slack.SlackNotifier()
 email_notifier = email_notify.EmailNotifier()
+#
+custom_notifier = custom_notify.CustomNotifier()
 
 notifiers = [
     twitter_notifier,
@@ -46,11 +49,15 @@ notifiers = [
     email_notifier
 ]
 
+def custom_notify_download(bookid):
+    custom_notifier.notify_download(bookid)
+
+def custom_notify_snatch(bookid):
+    custom_notifier.notify_snatch(bookid)
 
 def notify_download(title):
     for n in notifiers:
         n.notify_download(title)
-
 
 def notify_snatch(title):
     for n in notifiers:

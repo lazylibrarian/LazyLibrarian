@@ -8,6 +8,7 @@ import stat
 import sys
 import threading
 import time
+import re
 
 import lazylibrarian
 from lazylibrarian import webStart, logger, versioncheck, dbupgrade
@@ -154,7 +155,10 @@ def main():
             lazylibrarian.CONFIG['LATEST_VERSION'] = "not checked"
             lazylibrarian.CONFIG['COMMITS_BEHIND'] = 0
             lazylibrarian.COMMIT_LIST = ""
-
+            if not re.match('^[a-z0-9]+$', lazylibrarian.CONFIG['CURRENT_VERSION']):
+                logger.error('Current version doesn\'t look like a hash, not using it')
+                os.remove(version_file)
+                old = False
     if old:
         lazylibrarian.CONFIG['CURRENT_VERSION'] = versioncheck.getCurrentVersion()
         lazylibrarian.CONFIG['LATEST_VERSION'] = versioncheck.getLatestVersion()

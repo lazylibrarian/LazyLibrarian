@@ -29,7 +29,7 @@ from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.formatter import today
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
-from lazylibrarian.importer import addAuthorToDB, update_totals
+from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals
 from lazylibrarian.librarysync import LibraryScan
 from lazylibrarian.magazinescan import magazineScan, create_covers
 from lazylibrarian.manualbook import searchItem
@@ -94,6 +94,9 @@ cmd_dict = {'help': 'list available commands. ' +
             'getBookCover': '&id= fetch a link to a cover from bookfolder/cache/librarything/goodreads/google for a BookID',
             'getAllBooks': 'list all books in the database',
             'getNoLang': 'list all books in the database with unknown language',
+            'listIgnoredAuthors': 'list all authors in the database marked ignored',
+            'listIgnoredBooks': 'list all books in the database marked ignored',
+            'listIgnoredSeries': 'list all series in the database marked ignored',
             'searchBook': '&id= [&wait] search for one book by BookID',
             'searchItem': '&item= get search results for an item (author, title, isbn)',
             'showJobs': 'show status of running jobs',
@@ -243,6 +246,18 @@ class Api(object):
     def _getNoLang(self):
         q = 'SELECT BookID,BookISBN,BookName,AuthorName from books,authors where books.AuthorID = authors.AuthorID'
         q += ' and BookLang="Unknown" or BookLang="" or BookLang is NULL'
+        self.data = self._dic_from_query(q)
+
+    def _listIgnoredSeries(self):
+        q = 'SELECT SeriesID,SeriesName from series where Status="Ignored"'
+        self.data = self._dic_from_query(q)
+
+    def _listIgnoredBooks(self):
+        q = 'SELECT BookID,BookName from books where Status="Ignored"'
+        self.data = self._dic_from_query(q)
+
+    def _listIgnoredAuthors(self):
+        q = 'SELECT AuthorID,AuthorName from authors where Status="Ignored"'
         self.data = self._dic_from_query(q)
 
     def _getAuthor(self, **kwargs):
@@ -629,7 +644,7 @@ class Api(object):
         else:
             self.id = kwargs['name']
         try:
-            self.data = addAuthorToDB(authorname=self.id, refresh=False)
+            self.data = addAuthorNameToDB(author=self.id, refresh=False)
         except Exception as e:
             self.data = str(e)
 
@@ -640,7 +655,7 @@ class Api(object):
         else:
             self.id = kwargs['id']
         try:
-            self.data = addAuthorToDB(authorname='', refresh=False, authorid=self.id)
+            self.data = addAuthorToDB(refresh=False, authorid=self.id)
         except Exception as e:
             self.data = str(e)
 

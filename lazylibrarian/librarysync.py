@@ -30,7 +30,7 @@ from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, ge
     cleanName, replace_all, split_title
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
-from lazylibrarian.importer import addAuthorToDB, update_totals
+from lazylibrarian.importer import update_totals, addAuthorNameToDB
 from lib.fuzzywuzzy import fuzz
 from lib.mobi import Mobi
 
@@ -253,107 +253,6 @@ def find_book_in_db(myDB, author, book):
         return 0
 
 
-def find_author_in_db(author):
-    # get authors name in a consistent format, look them up in the database and return name as we know it
-    # if not in database, try to import them, return empty string if not found or unable to add
-    myDB = database.DBConnection()
-    if "," in author:
-        postfix = getList(lazylibrarian.CONFIG['NAME_POSTFIX'])
-        words = author.split(',')
-        if len(words) == 2:
-            # Need to handle names like "L. E. Modesitt, Jr." or "J. Springmann, Phd"
-            # use an exceptions list for now, there might be a better way...
-            if words[1].strip().strip('.').strip('_').lower() in postfix:
-                surname = words[1].strip()
-                forename = words[0].strip()
-            else:
-                # guess its "surname, forename" or "surname, initial(s)" so swap them round
-                forename = words[1].strip()
-                surname = words[0].strip()
-            if author != forename + ' ' + surname:
-                logger.debug('Formatted authorname [%s] to [%s %s]' % (author, forename, surname))
-                author = forename + ' ' + surname
-    # reformat any initials, we want to end up with A.B. van Smith
-    if author[1] in '. ':
-        surname = author
-        forename = ''
-        while surname[1] in '. ':
-            forename = forename + surname[0] + '.'
-            surname = surname[2:].strip()
-        if author != forename + ' ' + surname:
-            logger.debug('Stripped authorname [%s] to [%s %s]' % (author, forename, surname))
-            author = forename + ' ' + surname
-
-    author = ' '.join(author.split())  # ensure no extra whitespace
-
-    # Check if the author exists, and import the author if not,
-    # before starting any complicated book-name matching to save repeating the search
-    #
-    check_exist_author = myDB.match('SELECT * FROM authors where AuthorName="%s"' % author.replace('"', '""'))
-
-    if not check_exist_author and lazylibrarian.CONFIG['ADD_AUTHOR']:
-        logger.debug('Author %s not found in database, trying to add' % author)
-        # no match for supplied author, but we're allowed to add new ones
-        GR = GoodReads(author)
-        try:
-            author_gr = GR.find_author_id()
-        except Exception as e:
-            logger.warn("Error finding author id for [%s] %s" % (author, str(e)))
-            return ""
-
-        # only try to add if GR data matches found author data
-        if author_gr:
-            authorname = author_gr['authorname']
-
-            # "J.R.R. Tolkien" is the same person as "J. R. R. Tolkien" and "J R R Tolkien"
-            match_auth = author.replace('.', ' ')
-            match_auth = ' '.join(match_auth.split())
-
-            match_name = authorname.replace('.', ' ')
-            match_name = ' '.join(match_name.split())
-
-            match_name = unaccented(match_name)
-            match_auth = unaccented(match_auth)
-
-            # allow a degree of fuzziness to cater for different accented character handling.
-            # some author names have accents,
-            # filename may have the accented or un-accented version of the character
-            # The currently non-configurable value of fuzziness might need to go in config
-            # We stored GoodReads unmodified author name in
-            # author_gr, so store in LL db under that
-            # fuzz.ratio doesn't lowercase for us
-            match_fuzz = fuzz.ratio(match_auth.lower(), match_name.lower())
-            if match_fuzz < 90:
-                logger.debug("Failed to match author [%s] to authorname [%s] fuzz [%d]" %
-                                (author, match_name, match_fuzz))
-
-            # To save loading hundreds of books by unknown authors at GR or GB, ignore unknown
-            if (author != "Unknown") and (match_fuzz >= 90):
-                # use "intact" name for author that we stored in
-                # GR author_dict, not one of the various mangled versions
-                # otherwise the books appear to be by a different author!
-                author = author_gr['authorname']
-                # this new authorname may already be in the
-                # database, so check again
-                check_exist_author = myDB.match(
-                                        'SELECT * FROM authors where AuthorName="%s"' % author.replace('"', '""'))
-                if check_exist_author:
-                    logger.debug('Found goodreads authorname %s in database' % author)
-                else:
-                    logger.info("Adding new author [%s]" % author)
-                    try:
-                        addAuthorToDB(author, False)
-                        check_exist_author = myDB.match('SELECT * FROM authors where AuthorName="%s"' %
-                                                        author.replace('"', '""'))
-                    except Exception:
-                        logger.debug('Failed to add author [%s] to db' % author)
-    # check author exists in db, either newly loaded or already there
-    if not check_exist_author:
-        logger.debug("Failed to match author [%s] in database" % author)
-        if not lazylibrarian.CONFIG['ADD_AUTHOR']:
-            logger.warn("Add authors to database is disabled")
-        return ""
-    return author
 
 
 def LibraryScan(startdir=None):
@@ -430,7 +329,7 @@ def LibraryScan(startdir=None):
         # to save repeat-scans of the same directory if it contains multiple formats of the same book,
         # keep track of which directories we've already looked at
         processed_subdirectories = []
-
+        warned = False  # have we warned about no new authors setting
         matchString = ''
         for char in lazylibrarian.CONFIG['EBOOK_DEST_FILE']:
             matchString = matchString + '\\' + char
@@ -567,7 +466,7 @@ def LibraryScan(startdir=None):
                                 else:
                                     logger.debug("Already cached Lang [%s] ISBN [%s]" % (language, isbnhead))
 
-                            author = find_author_in_db(author)  # get the author name as we know it...
+                            author, new = addAuthorNameToDB(author)  # get the author name as we know it...
 
                             if author:
                                 # author exists, check if this book by this author is in our database
@@ -730,6 +629,10 @@ def LibraryScan(startdir=None):
                                 else:
                                     logger.warn(
                                         "Failed to match book [%s] by [%s] in database" % (book, author))
+                            else:
+                                if not warned and not lazylibrarian.CONFIG['ADD_AUTHOR']:
+                                    logger.warn("Add authors to database is disabled")
+                                    warned = True
 
         logger.info("%s/%s new/modified book%s found and added to the database" %
                     (new_book_count, modified_count, plural(new_book_count + modified_count)))

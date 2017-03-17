@@ -205,7 +205,7 @@ def authorUpdate():
                 logger.info('Starting update for %s' % author['AuthorName'])
                 authorid = author['AuthorID']
                 # noinspection PyUnresolvedReferences
-                lazylibrarian.importer.addAuthorToDB(authorname='', refresh=True, authorid=authorid)
+                lazylibrarian.importer.addAuthorToDB(refresh=True, authorid=authorid)
             else:
                 logger.debug('Oldest author info is %s day%s old' % (diff, plural(diff)))
     except Exception:
@@ -221,7 +221,7 @@ def dbUpdate(refresh=False):
         for author in activeauthors:
             authorid = author['AuthorID']
             # noinspection PyUnresolvedReferences
-            lazylibrarian.importer.addAuthorToDB(authorname='', refresh=refresh, authorid=authorid)
+            lazylibrarian.importer.addAuthorToDB(refresh=refresh, authorid=authorid)
         logger.info('Active author update complete')
         return 'Updated %i active author%s' % (len(activeauthors), plural(len(activeauthors)))
     except Exception:

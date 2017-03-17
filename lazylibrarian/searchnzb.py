@@ -23,7 +23,7 @@ from lazylibrarian import logger, database, providers, nzbget, sabnzbd, classes,
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import scheduleJob, setperm, internet
 from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, now, check_int
-from lazylibrarian.notifiers import notify_snatch
+from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.searchtorrents import TORDownloadMethod
 from lib.fuzzywuzzy import fuzz
 
@@ -238,6 +238,7 @@ def processResultList(resultlist, book, searchtype):
                 logger.info('Downloading %s from %s' % (newValueDict["NZBtitle"], newValueDict["NZBprov"]))
                 notify_snatch("%s from %s at %s" %
                               (newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
+                custom_notify_snatch(newValueDict["BookID"])
                 scheduleJob(action='Start', target='processDir')
                 return True + True  # we found it
     else:

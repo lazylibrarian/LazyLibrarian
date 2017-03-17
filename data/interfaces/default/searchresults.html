@@ -16,7 +16,7 @@
 				<th id="date">Released</th>
 				<th id="stars">Rating</th>
                 <th id="addAuthor">Add</th>
-                <th id="fuzz">Match</th>
+                <th id="stars">Match</th>
              </tr>
         </thead>
 
@@ -39,18 +39,12 @@
                     else:
                         starimg = '0-stars.png'
 
-                    if authorlist:
-                        if result['authorname'] in authorlist:
-                            destination = "authorPage?AuthorID="+result['authorid']
-                            value = "Have Author"
-                            but_class = "button green"
-                        else:
-                            destination = "addAuthorID?AuthorID="+result['authorid']+'&AuthorName='+result['safeauthorname']
-                            value = "Add Author"
-                            but_class = "button"
-
+                    if authorlist and result['authorname'] in authorlist:
+                        destination = "authorPage?AuthorID="+result['authorid']
+                        value = "Have Author"
+                        but_class = "button green"
                     else:
-                        destination = "addAuthorID?AuthorID="+result['authorid']+'&AuthorName='+result['safeauthorname']
+                        destination = "addAuthorID?AuthorID="+result['authorid']
                         value = "Add Author"
                         but_class = "button"
 
@@ -114,6 +108,8 @@
     {
         $('#book_table').dataTable(
             {
+                "responsive": true,
+                "order": [[ 6, 'desc' ]],
                 "aoColumns": [
                     null,
                     null,

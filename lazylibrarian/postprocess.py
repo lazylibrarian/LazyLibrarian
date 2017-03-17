@@ -32,7 +32,7 @@ from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB
 from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
 from lazylibrarian.magazinescan import create_id, create_cover
-from lazylibrarian.notifiers import notify_download
+from lazylibrarian.notifiers import notify_download, custom_notify_download
 from lib.deluge_client import DelugeRPCClient
 from lib.fuzzywuzzy import fuzz
 
@@ -106,15 +106,16 @@ def processAlternate(source_dir=None):
                             logger.debug("No author id for [%s]" % authorname)
                         if author_gr:
                             grauthorname = author_gr['authorname']
+                            authorid = author_gr['authorid']
                             logger.debug("GoodReads reports [%s] for [%s]" % (grauthorname, authorname))
                             authorname = grauthorname
-                            authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % authorname)
+                            authmatch = myDB.match('SELECT * FROM authors where AuthorID="%s"' % authorid)
 
                 if authmatch:
                     logger.debug("ALT: Author %s found in database" % authorname)
                 elif internet():
                     logger.debug("ALT: Author %s not found, adding to database" % authorname)
-                    addAuthorToDB(authorname)
+                    addAuthorToDB(authorid=authorid)
                 else:
                     logger.debug("ALT: Author %s not found" % authorname)
                     return False
@@ -495,6 +496,7 @@ def processDir(reset=False):
 
                     logger.info('Successfully processed: %s' % global_name)
                     ppcount += 1
+                    custom_notify_download(book['BookID'])
                     if internet():
                         notify_download("%s from %s at %s" % (global_name, book['NZBprov'], now()))
                 else:
@@ -706,6 +708,7 @@ def import_book(pp_path=None, bookID=None):
                             logger.debug("Not removing original files as in download root")
 
                 logger.info('Successfully processed: %s' % global_name)
+                custom_notify(bookID)
                 if internet():
                     notify_download("%s %s at %s" % (global_name, snatched_from, now()))
                 return True
