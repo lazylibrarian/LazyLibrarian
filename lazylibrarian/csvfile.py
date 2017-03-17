@@ -19,8 +19,8 @@ import traceback
 import lazylibrarian
 import lib.csv as csv
 from lazylibrarian import database, logger
-from lazylibrarian.common import csv_file
-from lazylibrarian.formatter import plural, is_valid_isbn, now, formatAuthorName, unaccented
+from lazylibrarian.common import csv_file, formatAuthorName
+from lazylibrarian.formatter import plural, is_valid_isbn, now, unaccented
 from lazylibrarian.importer import search_for, import_book
 from lazylibrarian.librarysync import find_book_in_db
 

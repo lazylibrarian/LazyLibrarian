@@ -30,6 +30,7 @@ from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSerie
 from lazylibrarian.cache import get_json_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn, \
                                     getList, cleanName
+from lazylibrarian.common import formatAuthorName
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 
@@ -56,9 +57,7 @@ class GoogleBooks:
                 api_strings = ['isbn:']
 
             api_hits = 0
-            logger.debug(
-                'Now searching Google Books API with keyword: ' +
-                self.name)
+            logger.debug('Now searching Google Books API with keyword: ' + self.name)
 
             resultcount = 0
             ignored = 0
@@ -70,8 +69,9 @@ class GoogleBooks:
                 if api_value == "isbn:":
                     set_url = self.url + urllib.quote(api_value + self.name.encode(lazylibrarian.SYS_ENCODING))
                 else:
+                    authorname = formatAuthorName(authorname)
                     set_url = self.url + \
-                              urllib.quote(api_value + '"' + self.name.encode(lazylibrarian.SYS_ENCODING) + '"')
+                              urllib.quote(api_value + '"' + authorname.encode(lazylibrarian.SYS_ENCODING) + '"')
 
                 startindex = 0
                 resultcount = 0

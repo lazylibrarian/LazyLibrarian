@@ -23,7 +23,8 @@ from operator import itemgetter
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import getAuthorImage
 from lazylibrarian.cache import cache_img
-from lazylibrarian.formatter import today, unaccented, formatAuthorName
+from lazylibrarian.formatter import today, unaccented
+from lazylibrarian.common import formatAuthorName
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 
