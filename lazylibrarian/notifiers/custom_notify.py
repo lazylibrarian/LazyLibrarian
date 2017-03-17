@@ -55,10 +55,12 @@ class CustomNotifier:
                     else:
                         params.append(str(dictionary[item]))
 
-                res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                if len(res):
+                try:
+                    res = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
                     return res
-                return True
+                except Exception as e:
+                    logger.warn('Error sending command: %s' % e)
+                    return False
             else:
                 logger.warn('Error sending custom notification: Check config')
                 return False
@@ -67,6 +69,7 @@ class CustomNotifier:
             logger.warn('Error sending custom notification: %s' % e)
             return False
 
+        return True
         #
         # Public functions
         #
@@ -80,7 +83,8 @@ class CustomNotifier:
             self._notify(message=title, event=notifyStrings[NOTIFY_DOWNLOAD])
 
     def test_notify(self, title="Test"):
-        return self._notify(message=title, event="Test", force=True)
-
+        res = self._notify(message=title, event="Test", force=True)
+        logger.debug(res)
+        return res
 
 notifier = CustomNotifier

@@ -1871,8 +1871,8 @@ class WebInterface(object):
     def testCustom(self):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         result = notifiers.custom_notifier.test_notify()
-        if not result:
-            return "Custom notification failed"
+        if result:
+            return "Custom notification failed,\n%s" % result
         else:
             return "Custom notification successful"
 
