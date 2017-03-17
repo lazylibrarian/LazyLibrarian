@@ -20,8 +20,8 @@ import lazylibrarian
 import lib.csv as csv
 from lazylibrarian import database, logger
 from lazylibrarian.common import csv_file
-from lazylibrarian.formatter import plural, is_valid_isbn, now
-from lazylibrarian.importer import addAuthorNameToDB
+from lazylibrarian.formatter import plural, is_valid_isbn, now, formatAuthorName, unaccented
+from lazylibrarian.importer import search_for, import_book
 from lazylibrarian.librarysync import find_book_in_db
 
 
@@ -72,7 +72,7 @@ def export_CSV(search_dir=None, status="Wanted"):
         return msg
 
 
-def finditem(item, headers):
+def finditem(item, authorname, headers):
     """
     Try to find book matching the csv item in the database
     Return database entry, or False if not found
@@ -83,9 +83,7 @@ def finditem(item, headers):
     isbn13 = ""
     bookid = ""
     bookname = item['Title']
-    authorname = item['Author']
-    if isinstance(authorname, str):
-        authorname = authorname.decode(lazylibrarian.SYS_ENCODING)
+
     if isinstance(bookname, str):
         bookname = bookname.decode(lazylibrarian.SYS_ENCODING)
     if 'ISBN' in headers:
@@ -165,10 +163,7 @@ def import_CSV(search_dir=None):
             skipcount = 0
             logger.debug(u"CSV: Found %s book%s in csv file" % (len(content.keys()), plural(len(content.keys()))))
             for item in content.keys():
-                authorname = content[item]['Author']
-                if isinstance(authorname, str):
-                    authorname = authorname.decode(lazylibrarian.SYS_ENCODING)
-                authorname = ' '.join(authorname.split())  # strip extra whitespace
+                authorname = formatAuthorName(content[item]['Author'])
                 authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % authorname)
 
                 if authmatch:
@@ -176,25 +171,15 @@ def import_CSV(search_dir=None):
                     logger.debug(u"CSV: Author %s found in database" % authorname)
                 else:
                     newauthor = True
-                    logger.debug(u"CSV: Author %s not found, adding to database" % authorname)
-                    addAuthorNameToDB(author=authorname, refresh=False, addbooks=True)
+                    logger.debug(u"CSV: Author %s not found" % authorname)
                     authcount += 1
 
-                bookmatch = finditem(content[item], headers)
+                bookmatch = finditem(content[item], authorname, headers)
 
-                # if we didn't find it, maybe author info is stale
-                if not bookmatch and not newauthor:
-                    addAuthorNameToDB(author=authorname, refresh=True, addbooks=True)
-                    bookmatch = finditem(content[item], headers)
-
-                bookname = ''
                 if bookmatch:
                     authorname = bookmatch['AuthorName']
-                    # noinspection PyTypeChecker
                     bookname = bookmatch['BookName']
-                    # noinspection PyTypeChecker
                     bookid = bookmatch['BookID']
-                    # noinspection PyTypeChecker
                     bookstatus = bookmatch['Status']
                     if bookstatus in ['Open', 'Wanted', 'Have']:
                         logger.info(u'Found book %s by %s, already marked as "%s"' % (bookname, authorname, bookstatus))
@@ -205,7 +190,22 @@ def import_CSV(search_dir=None):
                         myDB.upsert("books", newValueDict, controlValueDict)
                         bookcount += 1
                 else:
-                    logger.warn(u"Skipping book %s by %s, not found in database" % (bookname, authorname))
+                    searchterm = "%s %s" % (authorname, content[item]['Title'])
+                    logger.debug("Searching for [%s]" % searchterm)
+                    results = search_for(unaccented(searchterm))
+                    if results:
+                        result = results[0]
+                        if result['author_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO'] \
+                            and result['book_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO']:
+                            logger.info("Found (%s%% %s%%) %s: %s" % (result['author_fuzz'], result['book_fuzz'],
+                                                                        result['authorname'], result['bookname']))
+                            import_book(result['bookid'])
+                            bookcount += 1
+                            bookmatch = True
+
+                if not bookmatch:
+                    logger.warn(u"Skipping book %s by %s, not found" %
+                                (content[item]['Title'], content[item]['Author']))
                     skipcount += 1
             msg = "Added %i new author%s, marked %i book%s as 'Wanted', %i book%s not found" % \
                     (authcount, plural(authcount), bookcount, plural(bookcount), skipcount, plural(skipcount))

@@ -109,7 +109,7 @@ class GoodReads:
                             isbn_fuzz = int(0)
                     except Exception:
                         isbn_fuzz = int(0)
-                    highest_fuzz = max(author_fuzz, book_fuzz, isbn_fuzz)
+                    highest_fuzz = max((author_fuzz + book_fuzz) / 2, isbn_fuzz)
 
                     bookid = author.find('./best_book/id').text
 
