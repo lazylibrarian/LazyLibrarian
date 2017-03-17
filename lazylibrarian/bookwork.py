@@ -114,10 +114,8 @@ def setSeries(seriesdict=None, bookid=None):
                 test = myDB.match('SELECT SeriesID from seriesauthors WHERE SeriesID="%s" and AuthorID="%s"' %
                                 (match['SeriesID'], book['AuthorID']))
                 if not test:
-                    test = myDB.match('Insert into seriesauthors ("SeriesID", "AuthorID") VALUES ("%s", "%s")' %
+                    myDB.action('Insert into seriesauthors ("SeriesID", "AuthorID") VALUES ("%s", "%s")' %
                                 (match['SeriesID'], book['AuthorID']))
-                if not test:
-                    logger.debug('Unable to insert %s, %s into seriesauthors' % (match['SeriesID'], book['AuthorID']))
             else:
                 logger.debug('Unable to set series for book %s, %s' % (bookid, repr(seriesdict)))
         # removed deleteEmptySeries as setSeries slows down drastically if run in a loop
