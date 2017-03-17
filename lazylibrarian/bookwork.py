@@ -282,8 +282,8 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
         else:
             lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
             if bookID:
-                title = safe_unicode(item['BookName']).encode(lazylibrarian.SYS_ENCODING)
-                author = safe_unicode(item['AuthorName']).encode(lazylibrarian.SYS_ENCODING)
+                title = safe_unicode(unaccented(item['BookName'])).encode(lazylibrarian.SYS_ENCODING)
+                author = safe_unicode(unaccented(item['AuthorName'])).encode(lazylibrarian.SYS_ENCODING)
                 safeparams = urllib.quote_plus("%s %s" % (author, title))
                 URL = 'http://www.librarything.com/api/whatwork.php?title=' + safeparams
             else:

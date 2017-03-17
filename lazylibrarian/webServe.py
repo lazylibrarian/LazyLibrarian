@@ -103,10 +103,10 @@ class WebInterface(object):
         cmd += ' from series,authors,seriesauthors'
         cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
         if AuthorID:
-            match = myDB.match('SELECT AuthorName from authors WHERE AuthorID=%s' % AuthorID)
+            match = myDB.match('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
             if match:
                 title = "%s Series" % match['AuthorName']
-            cmd += ' and seriesauthors.AuthorID=' + AuthorID
+            cmd += ' and seriesauthors.AuthorID="%s"' % AuthorID
         cmd += ' GROUP BY series.seriesID'
         cmd += ' order by AuthorName,SeriesName'
         series = myDB.select(cmd)
@@ -118,13 +118,13 @@ class WebInterface(object):
         cmd = 'SELECT SeriesName,series.SeriesID,AuthorName,seriesauthors.AuthorID'
         cmd += ' from series,authors,seriesauthors'
         cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
-        cmd += ' and series.SeriesID=%s' % seriesid
+        cmd += ' and series.SeriesID="%s"' % seriesid
         series = myDB.match(cmd)
         cmd = 'SELECT member.BookID,BookName,SeriesNum,BookImg,books.Status,AuthorName,authors.AuthorID'
         cmd += ' from member,series,books,authors'
         cmd += ' where series.SeriesID=member.SeriesID and books.BookID=member.BookID'
         cmd += ' and books.AuthorID=authors.AuthorID'
-        cmd += ' and series.SeriesID=%s order by SeriesName' % seriesid
+        cmd += ' and series.SeriesID="%s" order by SeriesName' % seriesid
         members = myDB.select(cmd)
         # is it a multi-author series?
         multi = "False"
@@ -577,7 +577,7 @@ class WebInterface(object):
         elif kwargs['source'] == "Books":
             cmd += ' and books.STATUS !="Skipped" AND books.STATUS !="Ignored"'
         elif kwargs['source'] == "Author":
-            cmd += ' and books.AuthorID=%s' % kwargs['AuthorID']
+            cmd += ' and books.AuthorID="%s"' % kwargs['AuthorID']
             if 'ignored' in kwargs and kwargs['ignored'] == "True":
                 cmd += ' and books.status="Ignored"'
             else:
@@ -613,7 +613,7 @@ class WebInterface(object):
             d = []  # the masterlist to be filled with the html data
             for row in rows:
                 cmd = 'SELECT SeriesName,SeriesNum from series,member '
-                cmd += 'WHERE series.SeriesID = member.SeriesID and member.BookID=%s' % row[6]
+                cmd += 'WHERE series.SeriesID = member.SeriesID and member.BookID="%s"' % row[6]
                 whichseries = myDB.select(cmd)
                 series = ''
                 for item in whichseries:
@@ -994,7 +994,7 @@ class WebInterface(object):
         cmd += 'from books,authors WHERE books.AuthorID = authors.AuthorID and BookID="%s"' % bookid
         bookdata = myDB.match(cmd)
         cmd ='SELECT SeriesName, SeriesNum from member,series '
-        cmd += 'where series.SeriesID=member.SeriesID and BookID=%s' % bookid
+        cmd += 'where series.SeriesID=member.SeriesID and BookID="%s"' % bookid
         seriesdict = myDB.select(cmd)
         if bookdata:
             return serve_template(templatename="editbook.html", title="Edit Book",
@@ -1041,7 +1041,7 @@ class WebInterface(object):
                     myDB.upsert("books", newValueDict, controlValueDict)
 
                 cmd ='SELECT SeriesName, SeriesNum from member,series '
-                cmd += 'where series.SeriesID=member.SeriesID and BookID=%s' % bookid
+                cmd += 'where series.SeriesID=member.SeriesID and BookID="%s"' % bookid
                 old_series = myDB.select(cmd)
                 old_dict = {}
                 new_dict = {}

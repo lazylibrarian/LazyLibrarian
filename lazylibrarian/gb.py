@@ -539,7 +539,7 @@ class GoogleBooks:
                         if not rejected:
                             cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'
                             cmd += ' and BookName = "%s" and AuthorName = "%s"'% \
-                                    (bookname.replace('"', '""', authorname.replace('"', '""')))
+                                    (bookname.replace('"', '""'), authorname.replace('"', '""'))
                             find_books = myDB.select(cmd)
                             if find_books:
                                 for find_book in find_books:
@@ -552,7 +552,7 @@ class GoogleBooks:
 
                         if not rejected:
                             cmd = 'SELECT AuthorName,BookName FROM books,authors'
-                            cmd += ' WHERE authors.AuthorID = books.AuthorID AND BookID=%s' % bookid
+                            cmd += ' WHERE authors.AuthorID = books.AuthorID AND BookID="%s"' % bookid
                             find_books = myDB.match(cmd)
                             if find_books:
                                 # we have a book with this bookid already
