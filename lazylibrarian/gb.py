@@ -452,12 +452,25 @@ class GoogleBooks:
                                 series = booksub.split('(')[1].split(' Series ')[0]
                             except IndexError:
                                 series = ""
+                            if series.endswith(')'):
+                                series = series[:-1]
                             try:
                                 seriesNum = booksub.split('(')[1].split(' Series ')[1].split(')')[0]
                                 if seriesNum[0] == '#':
                                     seriesNum = seriesNum[1:]
                             except IndexError:
                                 seriesNum = ""
+
+                            if not seriesNum and '#' in series:
+                                words = series.rsplit('#', 1)
+                                series = words[0].strip()
+                                seriesNum = words[1].strip()
+                            if not seriesNum and ' ' in series:
+                                words = series.rsplit(' ', 1)
+                                # has to be unicode for isnumeric()
+                                if (u"%s" % words[1]).isnumeric():
+                                    series = words[0]
+                                    seriesNum = words[1]
 
                         try:
                             bookdate = item['volumeInfo']['publishedDate']
