@@ -2,6 +2,7 @@ To help with identifying and fixing issues, please include as much information a
 ### LazyLibrarian version number (at the bottom of config page)
 ### Operating system used (windows, mac, linux, NAS type)
 ### Interface in use (default, bookstrap)
+### Which api (Goodreads, GoogleBooks, both)
 ### Source of your LazyLibrarian installation (git, zip file, 3rd party package)
 ### Relevant debug log with api keys and any passwords redacted
 
