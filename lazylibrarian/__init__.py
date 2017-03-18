@@ -346,6 +346,8 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
             # Old config file format had strings in quotes. ConfigParser doesn't.
             if my_val.startswith('"') and my_val.endswith('"'):
                 my_val = my_val[1:-1]
+            if not len(my_val):
+                my_val = def_val
             my_val = my_val.decode(SYS_ENCODING)
         except Exception:
             my_val = str(def_val)
@@ -586,7 +588,7 @@ def config_write():
         if key in ['LOGDIR', 'DESTINATION_DIR', 'ALTERNATE_DIR', 'DOWLOAD_DIR',
                     'EBOOK_DEST_FILE', 'EBOOK_DEST_FOLDER', 'MAG_DEST_FILE', 'MAG_DEST_FOLDER']:
             value = value.encode(SYS_ENCODING)
-        if key == 'REJECT_WORDS':
+        elif key in ['REJECT_WORDS', 'MAG_TYPE', 'EBOOK_TYPE']:
             value = value.encode(SYS_ENCODING).lower()
 
         CFG.set(section, key.lower(), value)
