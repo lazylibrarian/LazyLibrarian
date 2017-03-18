@@ -524,6 +524,7 @@ def dbupgrade(db_current_version):
 
             # at this point there should be no more .jpg files in the root of the cachedir
             # any that are still there are for books/authors deleted from database
+            # or magazine latest issue cover files that get copied as required
             for image in os.listdir(src):
                 if image.endswith('.jpg'):
                     os.remove(os.path.join(src, image))

@@ -1184,13 +1184,15 @@ class WebInterface(object):
                 else:
                     issues = 0
                 magimg = mag['LatestCover']
-                if not magimg or not os.path.isfile(magimg):
+                # special flag to say "no covers required"
+                if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None' or not magimg or not os.path.isfile(magimg):
                     magimg = 'images/nocover.jpg'
                 else:
                     myhash = hashlib.md5(magimg).hexdigest()
                     hashname = os.path.join(lazylibrarian.CACHEDIR, myhash + ".jpg")
-                    copyfile(magimg, hashname)
-                    setperm(hashname)
+                    if not os.path.isfile(magimg):
+                        copyfile(magimg, hashname)
+                        setperm(hashname)
                     magimg = 'cache/' + myhash + '.jpg'
                     covercount += 1
 
@@ -1199,9 +1201,6 @@ class WebInterface(object):
                 this_mag['Cover'] = magimg
                 this_mag['safetitle'] = urllib.quote_plus(mag['Title'].encode(lazylibrarian.SYS_ENCODING))
                 mags.append(this_mag)
-
-        if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':  # special flag to say "no covers required"
-            covercount = 0
 
         return serve_template(templatename="magazines.html", title="Magazines", magazines=mags, covercount=covercount)
 
