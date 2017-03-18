@@ -30,6 +30,7 @@ from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSerie
 from lazylibrarian.cache import get_json_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn, \
                                     getList, cleanName
+from lazylibrarian.common import formatAuthorName
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 
@@ -56,9 +57,7 @@ class GoogleBooks:
                 api_strings = ['isbn:']
 
             api_hits = 0
-            logger.debug(
-                'Now searching Google Books API with keyword: ' +
-                self.name)
+            logger.debug('Now searching Google Books API with keyword: ' + self.name)
 
             resultcount = 0
             ignored = 0
@@ -70,8 +69,9 @@ class GoogleBooks:
                 if api_value == "isbn:":
                     set_url = self.url + urllib.quote(api_value + self.name.encode(lazylibrarian.SYS_ENCODING))
                 else:
+                    authorname = formatAuthorName(authorname)
                     set_url = self.url + \
-                              urllib.quote(api_value + '"' + self.name.encode(lazylibrarian.SYS_ENCODING) + '"')
+                              urllib.quote(api_value + '"' + authorname.encode(lazylibrarian.SYS_ENCODING) + '"')
 
                 startindex = 0
                 resultcount = 0
@@ -452,12 +452,25 @@ class GoogleBooks:
                                 series = booksub.split('(')[1].split(' Series ')[0]
                             except IndexError:
                                 series = ""
+                            if series.endswith(')'):
+                                series = series[:-1]
                             try:
                                 seriesNum = booksub.split('(')[1].split(' Series ')[1].split(')')[0]
                                 if seriesNum[0] == '#':
                                     seriesNum = seriesNum[1:]
                             except IndexError:
                                 seriesNum = ""
+
+                            if not seriesNum and '#' in series:
+                                words = series.rsplit('#', 1)
+                                series = words[0].strip()
+                                seriesNum = words[1].strip()
+                            if not seriesNum and ' ' in series:
+                                words = series.rsplit(' ', 1)
+                                # has to be unicode for isnumeric()
+                                if (u"%s" % words[1]).isnumeric():
+                                    series = words[0]
+                                    seriesNum = words[1]
 
                         try:
                             bookdate = item['volumeInfo']['publishedDate']

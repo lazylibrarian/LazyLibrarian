@@ -114,10 +114,8 @@ def setSeries(seriesdict=None, bookid=None):
                 test = myDB.match('SELECT SeriesID from seriesauthors WHERE SeriesID="%s" and AuthorID="%s"' %
                                 (match['SeriesID'], book['AuthorID']))
                 if not test:
-                    test = myDB.match('Insert into seriesauthors ("SeriesID", "AuthorID") VALUES ("%s", "%s")' %
+                    myDB.action('Insert into seriesauthors ("SeriesID", "AuthorID") VALUES ("%s", "%s")' %
                                 (match['SeriesID'], book['AuthorID']))
-                if not test:
-                    logger.debug('Unable to insert %s, %s into seriesauthors' % (match['SeriesID'], book['AuthorID']))
             else:
                 logger.debug('Unable to set series for book %s, %s' % (bookid, repr(seriesdict)))
         # removed deleteEmptySeries as setSeries slows down drastically if run in a loop
@@ -265,6 +263,8 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
                     # Cache entry is too old, delete it
                     os.remove(workfile)
 
+            #os.remove(workfile)  # ignore cache for testing
+
         if os.path.isfile(workfile):
             # use cached file if possible to speed up refreshactiveauthors and librarysync re-runs
             lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
@@ -282,14 +282,13 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
         else:
             lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
             if bookID:
-                title = safe_unicode(unaccented(item['BookName'])).encode(lazylibrarian.SYS_ENCODING)
-                author = safe_unicode(unaccented(item['AuthorName'])).encode(lazylibrarian.SYS_ENCODING)
-                safeparams = urllib.quote_plus("%s %s" % (author, title))
-                URL = 'http://www.librarything.com/api/whatwork.php?title=' + safeparams
+                title = safe_unicode(item['BookName']).encode(lazylibrarian.SYS_ENCODING)
+                author = safe_unicode(item['AuthorName']).encode(lazylibrarian.SYS_ENCODING)
+                URL = 'http://www.librarything.com/api/whatwork.php?author=%s&title=%s' % \
+                        (urllib.quote_plus(author), urllib.quote_plus(title))
             else:
                 seriesname = safe_unicode(item['seriesName']).encode(lazylibrarian.SYS_ENCODING)
-                safeparams = urllib.quote_plus(seriesname)
-                URL = 'http://www.librarything.com/series/' + safeparams
+                URL = 'http://www.librarything.com/series/%s' % urllib.quote_plus(seriesname)
 
             librarything_wait()
             result, success = fetchURL(URL)
@@ -320,12 +319,12 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
                                 except Exception:
                                     errmsg = "Unknown Error"
                                 # still cache if whatwork returned a result without a link, so we don't keep retrying
-                                logger.debug("getBookWork: Librarything error: [%s] for %s" %
+                                logger.debug("getBookWork: Librarything: [%s] for ISBN %s" %
                                             (errmsg, item['BookISBN']))
                                 success = True
                     else:
                         # still cache if whatwork returned a result without a link, so we don't keep retrying
-                        msg = "getBookWork: Librarything error: [" + errmsg + "] for "
+                        msg = "getBookWork: Librarything: [" + errmsg + "] for "
                         logger.debug(msg + item['AuthorName'] + ' ' + item['BookName'])
                         success = True
             if success:
