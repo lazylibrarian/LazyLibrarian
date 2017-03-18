@@ -22,7 +22,7 @@ import threading
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, setAllBookSeries, \
-    getBookCover, getAuthorImage, getAuthorImages, getSeriesMembers, getSeriesAuthors
+    getBookCover, getAuthorImage, getAuthorImages, getSeriesMembers, getSeriesAuthors, deleteEmptySeries
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, dbUpdate, setperm
 from lazylibrarian.csvfile import import_CSV, export_CSV
@@ -110,6 +110,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'getWorkPage': '&id= Get url of Librarything BookWork using BookID',
             'getBookCovers': '[&wait] Check all books for cached cover and download one if missing',
             'cleanCache': '[&wait] Clean unused and expired files from the LazyLibrarian caches',
+            'deleteEmptySeries': 'Delete any book series that have no members',
             'setWorkPages': '[&wait] Set the WorkPages links in the database',
             'setAllBookSeries': '[&wait] Set the series details from book workpages',
             'importAlternate': '[&wait] [&dir=] Import books from named or alternate folder and any subfolders',
@@ -488,6 +489,9 @@ class Api(object):
             magazineScan()
         else:
             threading.Thread(target=magazineScan, name='API-MAGSCAN', args=[]).start()
+
+    def _deleteEmptySeries(self, **kwargs):
+        self.data = deleteEmptySeries()
 
     def _cleanCache(self, **kwargs):
         if 'wait' in kwargs:

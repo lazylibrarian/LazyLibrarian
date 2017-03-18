@@ -176,14 +176,17 @@ def setStatus(bookid=None, seriesdict=None, default=None):
 
 
 def deleteEmptySeries():
-    """ remove any series from series table that have no entries in member table """
+    """ remove any series from series table that have no entries in member table, return how many deleted """
     myDB = database.DBConnection()
     series = myDB.select('SELECT SeriesID,SeriesName from series')
+    count = 0
     for item in series:
         match = myDB.match('SELECT BookID from member where SeriesID="%s"' % item['SeriesID'])
         if not match:
             logger.debug('Deleting empty series %s' % item['SeriesName'])
+            count+= 1
             myDB.action('DELETE from series where SeriesID="%s"' % item['SeriesID'])
+    return count
 
 def setWorkPages():
     """ Set the workpage link for any books that don't already have one """
