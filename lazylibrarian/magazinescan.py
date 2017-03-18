@@ -391,6 +391,7 @@ def magazineScan():
                     myDB.upsert("magazines", newValueDict, controlValueDict)
                 else:
                     # Set magazine_issuedate to issuedate of most recent issue we have
+                    # Set latestcover to most recent issue cover
                     # Set magazine_added to acquired date of earliest issue we have
                     # Set magazine_lastacquired to acquired date of most recent issue we have
                     # acquired dates are read from magazine file timestamps
@@ -399,9 +400,9 @@ def magazineScan():
                         newValueDict["MagazineAdded"] =  iss_acquired
                     if not maglastacquired or iss_acquired > maglastacquired:
                         newValueDict["LastAcquired"] = iss_acquired
-                        newValueDict["LatestCover"] = os.path.splitext(issuefile)[0] + '.jpg'
                     if not magissuedate or issuedate > magissuedate:
                         newValueDict["IssueDate"] = issuedate
+                        newValueDict["LatestCover"] = os.path.splitext(issuefile)[0] + '.jpg'
                     myDB.upsert("magazines", newValueDict, controlValueDict)
 
     magcount = myDB.match("select count(*) from magazines")
