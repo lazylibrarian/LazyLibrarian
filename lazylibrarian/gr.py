@@ -473,7 +473,7 @@ class GoodReads:
 
                         if not rejected:
                             cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'
-                            cmd += ' and BookName = "%s" and AuthorName = "%s"' % \
+                            cmd += ' and BookName = "%s" and AuthorName = "%s" COLLATE NOCASE' % \
                                     (bookname, authorNameResult.replace('"', '""'))
                             find_books = myDB.select(cmd)
                             if find_books:
