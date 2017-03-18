@@ -263,7 +263,7 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
                     # Cache entry is too old, delete it
                     os.remove(workfile)
 
-            os.remove(workfile)  # ignore cache for testing
+            #os.remove(workfile)  # ignore cache for testing
 
         if os.path.isfile(workfile):
             # use cached file if possible to speed up refreshactiveauthors and librarysync re-runs
@@ -319,14 +319,13 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
                                 except Exception:
                                     errmsg = "Unknown Error"
                                 # still cache if whatwork returned a result without a link, so we don't keep retrying
-                                logger.debug("getBookWork: Librarything error: [%s] for %s" %
+                                logger.debug("getBookWork: Librarything: [%s] for ISBN %s" %
                                             (errmsg, item['BookISBN']))
                                 success = True
                     else:
                         # still cache if whatwork returned a result without a link, so we don't keep retrying
-                        msg = "getBookWork: Librarything error: [" + errmsg + "] for "
+                        msg = "getBookWork: Librarything: [" + errmsg + "] for "
                         logger.debug(msg + item['AuthorName'] + ' ' + item['BookName'])
-                        logger.debug(URL)
                         success = True
             if success:
                 with open(workfile, "w") as cachefile:
