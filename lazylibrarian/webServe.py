@@ -13,14 +13,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import Queue
 import datetime
 import hashlib
 import os
 import random
+import re
 import threading
 import urllib
-import re
 from shutil import copyfile, rmtree
 
 import cherrypy
@@ -771,14 +770,15 @@ class WebInterface(object):
         return s
 
 
-    def natural_sort(self, lst, key=lambda s:s, reverse=False):
+    @staticmethod
+    def natural_sort(lst, key=lambda s:s, reverse=False):
         """
         Sort the list into natural alphanumeric order.
         """
-        def get_alphanum_key_func(key):
+        def get_alphanum_key_func(mykey):
             convert = lambda text: int(text) if text.isdigit() else text
-            return lambda s: [convert(c) for c in re.split('([0-9]+)', key(s))]
-        sort_key = get_alphanum_key_func(key)
+            return lambda s: [convert(c) for c in re.split('([0-9]+)', mykey(s))]
+        sort_key = get_alphanum_key_func(mykey)
         lst.sort(key=sort_key, reverse=reverse)
 
 

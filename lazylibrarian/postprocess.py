@@ -91,7 +91,7 @@ def processAlternate(source_dir=None):
                 authorname = metadata['creator']
                 bookname = metadata['title']
                 myDB = database.DBConnection()
-
+                authorid = ''
                 authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % authorname)
 
                 if not authmatch:
@@ -115,7 +115,10 @@ def processAlternate(source_dir=None):
                     logger.debug("ALT: Author %s found in database" % authorname)
                 elif internet():
                     logger.debug("ALT: Author %s not found, adding to database" % authorname)
-                    addAuthorToDB(authorid=authorid)
+                    if authorid:
+                        addAuthorToDB(authorid=authorid)
+                    else:
+                        addAuthorNameToDB(authorname=authorname)
                 else:
                     logger.debug("ALT: Author %s not found" % authorname)
                     return False
@@ -708,7 +711,7 @@ def import_book(pp_path=None, bookID=None):
                             logger.debug("Not removing original files as in download root")
 
                 logger.info('Successfully processed: %s' % global_name)
-                custom_notify(bookID)
+                custom_notify_download(bookID)
                 if internet():
                     notify_download("%s %s at %s" % (global_name, snatched_from, now()))
                 return True

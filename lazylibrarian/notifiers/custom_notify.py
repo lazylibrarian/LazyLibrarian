@@ -69,7 +69,6 @@ class CustomNotifier:
             logger.warn('Error sending custom notification: %s' % e)
             return False
 
-        return True
         #
         # Public functions
         #
