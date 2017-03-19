@@ -22,7 +22,7 @@ import traceback
 
 import lazylibrarian
 from lazylibrarian import logger, database, magazinescan, bookwork
-from lazylibrarian.bookwork import getWorkSeries, setSeries, deleteEmptySeries
+from lazylibrarian.bookwork import getWorkSeries, setSeries
 from lazylibrarian.common import restartJobs
 from lazylibrarian.formatter import plural, bookSeries, cleanName, unaccented
 
