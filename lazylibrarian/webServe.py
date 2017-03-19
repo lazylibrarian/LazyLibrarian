@@ -587,6 +587,7 @@ class WebInterface(object):
                 cmd += ' and BOOKLANG="%s"' % kwargs['booklang']
 
         rowlist = myDB.select(cmd)
+
         # turn the sqlite rowlist into a list of lists
         d = []
         filtered = []
@@ -613,7 +614,9 @@ class WebInterface(object):
             for row in rows:
                 cmd = 'SELECT SeriesName,SeriesNum from series,member '
                 cmd += 'WHERE series.SeriesID = member.SeriesID and member.BookID="%s"' % row[6]
+
                 whichseries = myDB.select(cmd)
+
                 series = ''
                 for item in whichseries:
                     newseries = "%s %s" % (item['SeriesName'], item['SeriesNum'])
@@ -775,10 +778,10 @@ class WebInterface(object):
         """
         Sort the list into natural alphanumeric order.
         """
-        def get_alphanum_key_func(mykey):
+        def get_alphanum_key_func(key):
             convert = lambda text: int(text) if text.isdigit() else text
-            return lambda s: [convert(c) for c in re.split('([0-9]+)', mykey(s))]
-        sort_key = get_alphanum_key_func(mykey)
+            return lambda s: [convert(c) for c in re.split('([0-9]+)', key(s))]
+        sort_key = get_alphanum_key_func(key)
         lst.sort(key=sort_key, reverse=reverse)
 
 

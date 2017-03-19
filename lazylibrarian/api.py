@@ -22,7 +22,8 @@ import threading
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, setAllBookSeries, \
-    getBookCover, getAuthorImage, getAuthorImages, getSeriesMembers, getSeriesAuthors, deleteEmptySeries
+    getBookCover, getAuthorImage, getAuthorImages, getSeriesMembers, getSeriesAuthors, deleteEmptySeries, \
+    getBookAuthors
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, dbUpdate, setperm
 from lazylibrarian.csvfile import import_CSV, export_CSV
@@ -109,6 +110,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'getSeriesAuthors': '&id= Get all authors from Librarything for a series and import them',
             'getWorkPage': '&id= Get url of Librarything BookWork using BookID',
             'getBookCovers': '[&wait] Check all books for cached cover and download one if missing',
+            'getBookAuthors': '&id= Get list of authors associated with this book',
             'cleanCache': '[&wait] Clean unused and expired files from the LazyLibrarian caches',
             'deleteEmptySeries': 'Delete any book series that have no members',
             'setWorkPages': '[&wait] Set the WorkPages links in the database',
@@ -761,6 +763,14 @@ class Api(object):
         else:
             self.id = kwargs['id']
         self.data = getSeriesMembers(self.id)
+
+    def _getBookAuthors(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+        self.data = getBookAuthors(self.id)
 
     def _getWorkSeries(self, **kwargs):
         if 'id' not in kwargs:

@@ -395,6 +395,29 @@ def getAllSeriesAuthors():
         logger.debug(msg)
     return msg
 
+def getBookAuthors(bookid):
+    """ Get a list of authors contributing to a book from the bookwork file """
+    data = getBookWork(bookid, "Authors")
+    try:
+        data = data.split('otherauthors_container')[1].split('</table>')[0].split('<table')[1].split('>',1)[1]
+    except IndexError:
+        data = ''
+
+    authorlist = []
+    if data and 'Work?' in data:
+        rows = data.split('<tr')
+        for row in rows[2:]:
+            author = {}
+            col = row.split('<td>')
+            author['name'] = col[1].split('">')[1].split('<')[0]
+            author['role'] = col[2].split('<')[0]
+            author['type'] = col[3].split('<')[0]
+            author['work'] = col[4].split('<')[0]
+            author['status'] = col[5].split('<')[0]
+            authorlist.append(author)
+    return authorlist
+
+
 def getSeriesAuthors(seriesid):
     """ Get a list of authors contributing to a series
         and import those authors (and their books) into the database
