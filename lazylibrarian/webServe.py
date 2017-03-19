@@ -1193,7 +1193,7 @@ class WebInterface(object):
                 else:
                     myhash = hashlib.md5(magimg).hexdigest()
                     hashname = os.path.join(lazylibrarian.CACHEDIR, myhash + ".jpg")
-                    if not os.path.isfile(magimg):
+                    if not os.path.isfile(hashname):
                         copyfile(magimg, hashname)
                         setperm(hashname)
                     magimg = 'cache/' + myhash + '.jpg'

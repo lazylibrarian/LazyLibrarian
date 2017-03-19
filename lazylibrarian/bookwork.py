@@ -398,10 +398,11 @@ def getAllSeriesAuthors():
 def getBookAuthors(bookid):
     """ Get a list of authors contributing to a book from the bookwork file """
     data = getBookWork(bookid, "Authors")
-    try:
-        data = data.split('otherauthors_container')[1].split('</table>')[0].split('<table')[1].split('>',1)[1]
-    except IndexError:
-        data = ''
+    if data:
+        try:
+            data = data.split('otherauthors_container')[1].split('</table>')[0].split('<table')[1].split('>',1)[1]
+        except IndexError:
+            data = ''
 
     authorlist = []
     if data and 'Work?' in data:
