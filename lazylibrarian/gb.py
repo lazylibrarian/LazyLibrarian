@@ -553,26 +553,24 @@ class GoogleBooks:
                             cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'
                             cmd += ' and BookName = "%s" and AuthorName = "%s" COLLATE NOCASE'% \
                                     (bookname.replace('"', '""'), authorname.replace('"', '""'))
-                            find_books = myDB.select(cmd)
-                            if find_books:
-                                for find_book in find_books:
-                                    if find_book['BookID'] != bookid:
-                                        # we have a different book with this author/title already
-                                        logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
-                                                     (find_book['BookID'], authorname, bookname, bookid))
-                                        rejected = True
-                                        duplicates += 1
+                            match = myDB.match(cmd)
+                            if match:
+                                if match['BookID'] != bookid:
+                                    # we have a different book with this author/title already
+                                    logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
+                                                 (match['BookID'], authorname, bookname, bookid))
+                                    rejected = True
+                                    duplicates += 1
 
                         if not rejected:
                             cmd = 'SELECT AuthorName,BookName FROM books,authors'
                             cmd += ' WHERE authors.AuthorID = books.AuthorID AND BookID="%s"' % bookid
-                            find_books = myDB.match(cmd)
-                            if find_books:
+                            match = myDB.match(cmd)
+                            if match:
                                 # we have a book with this bookid already
-                                if bookname != find_books['BookName'] or authorname != find_books['AuthorName']:
+                                if bookname != match['BookName'] or authorname != match['AuthorName']:
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got bookid for [%s][%s]' %
-                                                 (bookid, authorname, bookname,
-                                                  find_books['AuthorName'], find_books['BookName']))
+                                                 (bookid, authorname, bookname, match['AuthorName'], match['BookName']))
                                 else:
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got this book in database' %
                                                  (bookid, authorname, bookname))
