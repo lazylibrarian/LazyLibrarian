@@ -191,7 +191,7 @@ def import_CSV(search_dir=None):
                         bookcount += 1
                         result = ''
                 else:
-                    searchterm = "%s %s" % (authorname, content[item]['Title'])
+                    searchterm = "%s %s" % (formatAuthorName(authorname), content[item]['Title'])
                     results = search_for(unaccented(searchterm))
                     if results:
                         result = results[0]

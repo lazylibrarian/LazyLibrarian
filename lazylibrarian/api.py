@@ -25,7 +25,8 @@ from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, g
     getBookCover, getAuthorImage, getAuthorImages, getSeriesMembers, getSeriesAuthors, deleteEmptySeries, \
     getBookAuthors
 from lazylibrarian.cache import cache_img
-from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, dbUpdate, setperm
+from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, dbUpdate, setperm, \
+    formatAuthorName
 from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.formatter import today
 from lazylibrarian.gb import GoogleBooks
@@ -567,15 +568,16 @@ class Api(object):
             self.data = 'Missing parameter: name'
             return
 
+        authorname = formatAuthorName(kwargs['name'])
         if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
-            GB = GoogleBooks(kwargs['name'])
+            GB = GoogleBooks(authorname)
             queue = Queue.Queue()
-            search_api = threading.Thread(target=GB.find_results, name='API-GBRESULTS', args=[kwargs['name'], queue])
+            search_api = threading.Thread(target=GB.find_results, name='API-GBRESULTS', args=[authorname, queue])
             search_api.start()
         else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
             queue = Queue.Queue()
-            GR = GoodReads(kwargs['name'])
-            search_api = threading.Thread(target=GR.find_results, name='API-GRRESULTS', args=[kwargs['name'], queue])
+            GR = GoodReads(authorname)
+            search_api = threading.Thread(target=GR.find_results, name='API-GRRESULTS', args=[authorname, queue])
             search_api.start()
 
         search_api.join()

@@ -19,12 +19,14 @@ import traceback
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.common import scheduleJob, internet
-from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, check_int, now
+from lazylibrarian.common import scheduleJob, internet,  formatAuthorName
+from lazylibrarian.formatter import plural, unaccented_str, unaccented, replace_all, getList, check_int, now
 from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
-from lazylibrarian.providers import IterateOverRSSSites, get_searchterm
+from lazylibrarian.providers import IterateOverRSSSites, IterateOverGoodReads, get_searchterm
 from lazylibrarian.searchnzb import NZBDownloadMethod
 from lazylibrarian.searchtorrents import TORDownloadMethod
+from lazylibrarian.importer import import_book, search_for
+from lazylibrarian.csvfile import finditem
 from lib.fuzzywuzzy import fuzz
 
 
@@ -53,6 +55,67 @@ def search_rss_book(books=None, reset=False):
 
         myDB = database.DBConnection()
 
+        resultlist, wishproviders = IterateOverGoodReads()
+        if not wishproviders:
+            logger.debug('No rss wishlists are set')
+        else:
+            # for each item in resultlist, add to database and mark as wanted
+            for book in resultlist:
+                # we get rss_author, rss_title, rss_isbn, rss_bookid (goodreads bookid)
+                # we can just use bookid if goodreads, or try isbn and name matching on author/title
+                # not sure if anyone would use a goodreads wishlist if not using goodreads interface...
+                if book['rss_bookid'] and lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
+                    import_book(book['rss_bookid'])
+                else:
+                    item = {}
+                    headers = []
+                    item['Title'] = book['rss_title']
+                    if book['rss_bookid']:
+                        item['BookID'] = book['rss_bookid']
+                        headers.append('BookID')
+                    if book['rss_isbn']:
+                        item['ISBN'] = book['rss_isbn']
+                        headers.append('ISBN')
+                    bookmatch = finditem(item, book['rss_author'], headers)
+                    if bookmatch:
+                        authorname = bookmatch['AuthorName']
+                        bookname = bookmatch['BookName']
+                        bookid = bookmatch['BookID']
+                        bookstatus = bookmatch['Status']
+                        if bookstatus in ['Open', 'Wanted', 'Have']:
+                            logger.info(u'Found book %s by %s, already marked as "%s"' % (bookname, authorname, bookstatus))
+                        else:  # skipped/ignored
+                            logger.info(u'Found book %s by %s, marking as "Wanted"' % (bookname, authorname))
+                            controlValueDict = {"BookID": bookid}
+                            newValueDict = {"Status": "Wanted"}
+                            myDB.upsert("books", newValueDict, controlValueDict)
+                            result = ''
+                    else:
+                        searchterm = "%s %s" % (formatAuthorName(book['rss_author']), item['Title'])
+                        results = search_for(unaccented(searchterm))
+                        if results:
+                            result = results[0]
+                            if result['author_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO'] \
+                                and result['book_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO']:
+                                logger.info("Found (%s%% %s%%) %s: %s" % (result['author_fuzz'], result['book_fuzz'],
+                                                                            result['authorname'], result['bookname']))
+                                import_book(result['bookid'])
+                                bookmatch = True
+                        else:
+                            result = ''
+
+                    if not bookmatch:
+                        msg = "Skipping book %s by %s" % (item['Title'], book['rss_author'])
+                        if not result:
+                            msg += ', No results returned'
+                            logger.warn(msg)
+                        else:
+                            msg += ', No match found'
+                            logger.warn(msg)
+                            msg = "Closest match (%s%% %s%%) %s: %s" % (result['author_fuzz'], result['book_fuzz'],
+                                                                        result['authorname'], result['bookname'])
+                            logger.warn(msg)
+
         if books is None:
             # We are performing a backlog search
             cmd = 'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books,authors '
@@ -77,7 +140,8 @@ def search_rss_book(books=None, reset=False):
 
         resultlist, nproviders = IterateOverRSSSites()
         if not nproviders:
-            logger.warn('No rss providers are set, check config')
+            if not wishproviders:
+                logger.warn('No rss providers are set, check config')
             return  # No point in continuing
 
         rss_count = 0

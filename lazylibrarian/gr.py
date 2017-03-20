@@ -26,7 +26,7 @@ from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSerie
                                     setSeries, setStatus
 from lazylibrarian.cache import get_xml_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList, \
-                                    cleanName
+                                    cleanName, is_valid_isbn
 from lazylibrarian.common import formatAuthorName
 from lib.fuzzywuzzy import fuzz
 
@@ -41,15 +41,15 @@ class GoodReads:
             logger.warn('No Goodreads API key, check config')
         self.params = {"key": lazylibrarian.CONFIG['GR_API']}
 
-    def find_results(self, authorname=None, queue=None):
+    def find_results(self, searchterm=None, queue=None):
         try:
             resultlist = []
             api_hits = 0
-            authorname = formatAuthorName(authorname)
-            url = urllib.quote_plus(authorname.encode(lazylibrarian.SYS_ENCODING))
+
+            url = urllib.quote_plus(searchterm.encode(lazylibrarian.SYS_ENCODING))
             set_url = 'http://www.goodreads.com/search.xml?q=' + url + '&' + urllib.urlencode(self.params)
-            logger.debug('Now searching GoodReads API with keyword: ' + authorname)
-            logger.debug('Searching for %s at: %s' % (authorname, set_url))
+            logger.debug('Now searching GoodReads API with keyword: ' + searchterm)
+            logger.debug('Searching for %s at: %s' % (searchterm, set_url))
 
             resultcount = 0
             try:
@@ -100,16 +100,12 @@ class GoodReads:
                     else:
                         bookTitle = author.find('./best_book/title').text
 
-                    author_fuzz = fuzz.token_set_ratio(authorNameResult, authorname)
-                    book_fuzz = fuzz.token_set_ratio(bookTitle, authorname)
-                    try:
-                        isbn_check = int(authorname[:-1])
-                        if (len(str(isbn_check)) == 9) or (len(str(isbn_check)) == 12):
-                            isbn_fuzz = int(100)
-                        else:
-                            isbn_fuzz = int(0)
-                    except Exception:
-                        isbn_fuzz = int(0)
+                    author_fuzz = fuzz.token_set_ratio(authorNameResult, searchterm)
+                    book_fuzz = fuzz.token_set_ratio(bookTitle, searchterm)
+                    isbn_fuzz = 0
+                    if is_valid_isbn(searchterm):
+                            isbn_fuzz = 100
+
                     highest_fuzz = max((author_fuzz + book_fuzz) / 2, isbn_fuzz)
 
                     bookid = author.find('./best_book/id').text
@@ -147,9 +143,9 @@ class GoodReads:
                 else:
                     logger.error('An unexpected error has occurred when searching for an author: %s' % str(err))
 
-            logger.debug('Found %s result%s with keyword: %s' % (resultcount, plural(resultcount), authorname))
+            logger.debug('Found %s result%s with keyword: %s' % (resultcount, plural(resultcount), searchterm))
             logger.debug(
-                'The GoodReads API was hit %s time%s for keyword %s' % (api_hits, plural(api_hits), authorname))
+                'The GoodReads API was hit %s time%s for keyword %s' % (api_hits, plural(api_hits), searchterm))
 
             queue.put(resultlist)
 

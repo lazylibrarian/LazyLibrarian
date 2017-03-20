@@ -47,13 +47,13 @@ class GoogleBooks:
             'key': lazylibrarian.CONFIG['GB_API']
         }
 
-    def find_results(self, authorname=None, queue=None):
+    def find_results(self, searchterm=None, queue=None):
         try:
             myDB = database.DBConnection()
             resultlist = []
             # See if we should check ISBN field, otherwise ignore it
             api_strings = ['inauthor:', 'intitle:']
-            if is_valid_isbn(authorname):
+            if is_valid_isbn(searchterm):
                 api_strings = ['isbn:']
 
             api_hits = 0
@@ -69,11 +69,8 @@ class GoogleBooks:
                 if api_value == "isbn:":
                     set_url = self.url + urllib.quote(api_value + self.name.encode(lazylibrarian.SYS_ENCODING))
                 else:
-                    #authorname = formatAuthorName(authorname)  # might be author and book, not just authorname
-                    if '(' in authorname:
-                        authorname = authorname.split('(')[0].strip()
                     set_url = self.url + \
-                              urllib.quote(api_value + '"' + authorname.encode(lazylibrarian.SYS_ENCODING) + '"')
+                              urllib.quote(api_value + '"' + searchterm.encode(lazylibrarian.SYS_ENCODING) + '"')
 
                 startindex = 0
                 resultcount = 0
@@ -199,11 +196,11 @@ class GoogleBooks:
                             except KeyError:
                                 bookisbn = 0
 
-                            author_fuzz = fuzz.token_set_ratio(Author, authorname)
-                            book_fuzz = fuzz.token_set_ratio(bookname, authorname)
+                            author_fuzz = fuzz.token_set_ratio(Author, searchterm)
+                            book_fuzz = fuzz.token_set_ratio(bookname, searchterm)
 
                             isbn_fuzz = 0
-                            if is_valid_isbn(authorname):
+                            if is_valid_isbn(searchterm):
                                 isbn_fuzz = 100
 
                             highest_fuzz = max((author_fuzz + book_fuzz) / 2, isbn_fuzz)
@@ -255,7 +252,7 @@ class GoogleBooks:
             logger.debug("Removed %s unwanted language result%s" % (ignored, plural(ignored)))
             logger.debug("Removed %s book%s with no author" % (no_author_count, plural(no_author_count)))
             logger.debug("Showing %s result%s for (%s) with keyword: %s" %
-                         (resultcount, plural(resultcount), api_value, authorname))
+                         (resultcount, plural(resultcount), api_value, searchterm))
             logger.debug(
                 'The Google Books API was hit %s time%s for keyword %s' %
                 (api_hits, plural(api_hits), self.name))
