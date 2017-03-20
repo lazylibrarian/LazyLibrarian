@@ -69,7 +69,9 @@ class GoogleBooks:
                 if api_value == "isbn:":
                     set_url = self.url + urllib.quote(api_value + self.name.encode(lazylibrarian.SYS_ENCODING))
                 else:
-                    authorname = formatAuthorName(authorname)
+                    #authorname = formatAuthorName(authorname)  # might be author and book, not just authorname
+                    if '(' in authorname:
+                        authorname = authorname.split('(')[0].strip()
                     set_url = self.url + \
                               urllib.quote(api_value + '"' + authorname.encode(lazylibrarian.SYS_ENCODING) + '"')
 
