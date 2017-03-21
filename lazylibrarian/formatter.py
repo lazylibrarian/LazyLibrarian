@@ -219,12 +219,11 @@ def is_valid_isbn(isbn):
     if len(isbn) == 13:
         if isbn.isdigit():
             return True
-        elif len(isbn) == 10:
-            if isbn[:9].isdigit():
-                return True
-            else:
-                if isbn[9] in ["Xx"] and isbn[:8].isdigit():
-                    return True
+    elif len(isbn) == 10:
+        if isbn[:9].isdigit():
+            return True
+        elif isbn[9] in ["Xx"] and isbn[:8].isdigit():
+            return True
     return False
 
 

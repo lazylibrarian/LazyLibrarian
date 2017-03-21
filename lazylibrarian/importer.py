@@ -291,7 +291,8 @@ def import_book(bookid):
 
 
 def search_for(searchterm):
-    """ search goodreads or googlebooks for a searchterm, return a list of results """
+    """ search goodreads or googlebooks for a searchterm, return a list of results
+    """
     myDB = database.DBConnection()
     if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
         GB = GoogleBooks(searchterm)
@@ -306,6 +307,5 @@ def search_for(searchterm):
 
     search_api.join()
     searchresults = queue.get()
-
     sortedlist = sorted(searchresults, key=itemgetter('highest_fuzz', 'num_reviews'), reverse=True)
     return sortedlist

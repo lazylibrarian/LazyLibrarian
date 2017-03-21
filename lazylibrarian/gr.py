@@ -48,7 +48,7 @@ class GoodReads:
 
             url = urllib.quote_plus(searchterm.encode(lazylibrarian.SYS_ENCODING))
             set_url = 'http://www.goodreads.com/search.xml?q=' + url + '&' + urllib.urlencode(self.params)
-            logger.debug('Now searching GoodReads API with keyword: ' + searchterm)
+            logger.debug('Now searching GoodReads API with keyword: %s' % searchterm)
             logger.debug('Searching for %s at: %s' % (searchterm, set_url))
 
             resultcount = 0
@@ -638,14 +638,14 @@ class GoodReads:
             # This is here because GoodReads sometimes has several entries with the same BookID!
             modified_count = added_count + updated_count
 
-            logger.debug("Found %s total book%s for author" % (total_count, plural(total_count)))
-            logger.debug("Removed %s unwanted language result%s for author" % (ignored, plural(ignored)))
+            logger.debug("Found %s result%s" % (total_count, plural(total_count)))
+            logger.debug("Removed %s unwanted language result%s" % (ignored, plural(ignored)))
             logger.debug(
-                "Removed %s bad character or no-name result%s for author" %
+                "Removed %s bad character or no-name result%s" %
                 (removedResults, plural(removedResults)))
-            logger.debug("Removed %s duplicate result%s for author" % (duplicates, plural(duplicates)))
+            logger.debug("Removed %s duplicate result%s" % (duplicates, plural(duplicates)))
             logger.debug("Found %s book%s by author marked as Ignored" % (book_ignore_count, plural(book_ignore_count)))
-            logger.debug("Imported/Updated %s book%s for author" % (modified_count, plural(modified_count)))
+            logger.debug("Imported/Updated %s book%s" % (modified_count, plural(modified_count)))
 
             myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i, %i)' %
                         (authorname.replace('"', '""'), api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change,
@@ -762,7 +762,7 @@ class GoodReads:
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
-        logger.debug("Bookid %s: %s added to the books database" % (bookid, bookname))
+        logger.info("%s added to the books database" % bookname)
 
         if 'nocover' in bookimg or 'nophoto' in bookimg:
             # try to get a cover from librarything

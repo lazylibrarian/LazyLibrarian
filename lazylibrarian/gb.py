@@ -48,6 +48,9 @@ class GoogleBooks:
         }
 
     def find_results(self, searchterm=None, queue=None):
+        """ GoogleBooks performs much better if we search for author OR title
+            not both at once, so two searches needed
+        """
         try:
             myDB = database.DBConnection()
             resultlist = []
@@ -57,20 +60,35 @@ class GoogleBooks:
                 api_strings = ['isbn:']
 
             api_hits = 0
-            logger.debug('Now searching Google Books API with keyword: ' + self.name)
+            logger.debug('Now searching Google Books API with searchterm: ' + searchterm)
 
             resultcount = 0
             ignored = 0
             total_count = 0
             no_author_count = 0
             api_value = ''
+            fullterm = searchterm
 
             for api_value in api_strings:
                 if api_value == "isbn:":
-                    set_url = self.url + urllib.quote(api_value + self.name.encode(lazylibrarian.SYS_ENCODING))
-                else:
+                    set_url = self.url + urllib.quote(api_value + searchterm.encode(lazylibrarian.SYS_ENCODING))
+                elif api_value == 'intitle:':
+                    searchterm = fullterm
+                    if ' by ' in searchterm:
+                        searchterm = searchterm.split(' by ')[0]    # just search for title
+                        if ' (' in searchterm:
+                            searchterm = searchterm.split(' (')[0]    # with out any series info
+                            searchterm = searchterm.replace("'","").replace('"','')  # and no quotes
+                    searchterm = searchterm.strip()
                     set_url = self.url + \
                               urllib.quote(api_value + '"' + searchterm.encode(lazylibrarian.SYS_ENCODING) + '"')
+                elif api_value == 'inauthor:':
+                    searchterm = fullterm
+                    if ' by ' in searchterm:
+                        searchterm = searchterm.split(' by ')[1]    # just search for author
+                    set_url = self.url + \
+                              urllib.quote(api_value + '"' + searchterm.encode(lazylibrarian.SYS_ENCODING) + '"')
+                    searchterm = searchterm.strip()
 
                 startindex = 0
                 resultcount = 0
@@ -94,9 +112,7 @@ class GoogleBooks:
                                 number_results = jsonresults['totalItems']
                                 logger.debug('Searching url: ' + URL)
                             if number_results == 0:
-                                logger.warn(
-                                    'Found no results for %s with value: %s' %
-                                    (api_value, self.name))
+                                logger.warn('Found no results for %s with value: %s' % (api_value, searchterm))
                                 break
                             else:
                                 pass
@@ -196,11 +212,11 @@ class GoogleBooks:
                             except KeyError:
                                 bookisbn = 0
 
-                            author_fuzz = fuzz.token_set_ratio(Author, searchterm)
-                            book_fuzz = fuzz.token_set_ratio(bookname, searchterm)
+                            author_fuzz = fuzz.token_set_ratio(Author, fullterm)
+                            book_fuzz = fuzz.token_set_ratio(bookname, fullterm)
 
                             isbn_fuzz = 0
-                            if is_valid_isbn(searchterm):
+                            if is_valid_isbn(fullterm):
                                 isbn_fuzz = 100
 
                             highest_fuzz = max((author_fuzz + book_fuzz) / 2, isbn_fuzz)
@@ -248,14 +264,14 @@ class GoogleBooks:
                 except KeyError:
                     break
 
-            logger.debug("Found %s total result%s" % (total_count, plural(total_count)))
+                logger.debug("Returning %s result%s for (%s) with keyword: %s" %
+                            (resultcount, plural(resultcount), api_value, searchterm))
+
+            logger.debug("Found %s result%s" % (total_count, plural(total_count)))
             logger.debug("Removed %s unwanted language result%s" % (ignored, plural(ignored)))
             logger.debug("Removed %s book%s with no author" % (no_author_count, plural(no_author_count)))
-            logger.debug("Showing %s result%s for (%s) with keyword: %s" %
-                         (resultcount, plural(resultcount), api_value, searchterm))
-            logger.debug(
-                'The Google Books API was hit %s time%s for keyword %s' %
-                (api_hits, plural(api_hits), self.name))
+            logger.debug('The Google Books API was hit %s time%s for searchterm: %s' %
+                        (api_hits, plural(api_hits), fullterm))
             queue.put(resultlist)
 
         except Exception:
@@ -815,19 +831,22 @@ class GoogleBooks:
             AuthorID = author['authorid']
             match = myDB.match('SELECT AuthorID from authors WHERE AuthorID="%s"' % AuthorID)
             if not match:
-                # no author but request to add book, add author as "ignored"
-                # User hit "add book" button from a search
-                controlValueDict = {"AuthorID": AuthorID}
-                newValueDict = {
-                    "AuthorName": author['authorname'],
-                    "AuthorImg": author['authorimg'],
-                    "AuthorLink": author['authorlink'],
-                    "AuthorBorn": author['authorborn'],
-                    "AuthorDeath": author['authordeath'],
-                    "DateAdded": today(),
-                    "Status": "Ignored"
-                }
-                myDB.upsert("authors", newValueDict, controlValueDict)
+                match = myDB.match('SELECT AuthorID from authors WHERE AuthorName="%s"' %  author['authorname'])
+                if match:
+                    AuthorID = match['AuthorID']    # we have a different authorid for that authorname
+                else:   # no author but request to add book, add author as "ignored"
+                        # User hit "add book" button from a search
+                    controlValueDict = {"AuthorID": AuthorID}
+                    newValueDict = {
+                        "AuthorName": author['authorname'],
+                        "AuthorImg": author['authorimg'],
+                        "AuthorLink": author['authorlink'],
+                        "AuthorBorn": author['authorborn'],
+                        "AuthorDeath": author['authordeath'],
+                        "DateAdded": today(),
+                        "Status": "Ignored"
+                    }
+                    myDB.upsert("authors", newValueDict, controlValueDict)
         else:
             logger.warn("No AuthorID for %s, unable to add book %s" % (authorname, bookname))
             return
@@ -852,7 +871,7 @@ class GoogleBooks:
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
-        logger.debug("%s added to the books database" % bookname)
+        logger.info("%s added to the books database" % bookname)
 
         if 'nocover' in bookimg or 'nophoto' in bookimg:
             # try to get a cover from librarything

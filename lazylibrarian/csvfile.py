@@ -100,11 +100,11 @@ def finditem(item, authorname, headers):
         bookmatch = myDB.match(fullcmd)
     if not bookmatch:
         if is_valid_isbn(isbn10):
-            fullcmd = cmd + 'and BookIsbn=%s' % isbn10
+            fullcmd = cmd + 'and BookIsbn="%s"' % isbn10
             bookmatch = myDB.match(fullcmd)
     if not bookmatch:
         if is_valid_isbn(isbn13):
-            fullcmd = cmd + 'and BookIsbn=%s' % isbn13
+            fullcmd = cmd + 'and BookIsbn="%s"' % isbn13
             bookmatch = myDB.match(fullcmd)
     if not bookmatch:
         bookid = find_book_in_db(myDB, authorname, bookname)
@@ -191,7 +191,7 @@ def import_CSV(search_dir=None):
                         bookcount += 1
                         result = ''
                 else:
-                    searchterm = "%s %s" % (formatAuthorName(authorname), content[item]['Title'])
+                    searchterm = "%s by %s" % (content[item]['Title'], formatAuthorName(authorname))
                     results = search_for(unaccented(searchterm))
                     if results:
                         result = results[0]

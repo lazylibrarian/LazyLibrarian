@@ -59,10 +59,10 @@ def search_rss_book(books=None, reset=False):
         if not wishproviders:
             logger.debug('No rss wishlists are set')
         else:
-            # for each item in resultlist, add to database and mark as wanted
+            # for each item in resultlist, add to database if necessary, and mark as wanted
             for book in resultlist:
                 # we get rss_author, rss_title, rss_isbn, rss_bookid (goodreads bookid)
-                # we can just use bookid if goodreads, or try isbn and name matching on author/title
+                # we can just use bookid if goodreads, or try isbn and name matching on author/title if googlebooks
                 # not sure if anyone would use a goodreads wishlist if not using goodreads interface...
                 if book['rss_bookid'] and lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
                     import_book(book['rss_bookid'])
@@ -77,7 +77,7 @@ def search_rss_book(books=None, reset=False):
                         item['ISBN'] = book['rss_isbn']
                         headers.append('ISBN')
                     bookmatch = finditem(item, book['rss_author'], headers)
-                    if bookmatch:
+                    if bookmatch:  # it's already in the database
                         authorname = bookmatch['AuthorName']
                         bookname = bookmatch['BookName']
                         bookid = bookmatch['BookID']
@@ -90,9 +90,20 @@ def search_rss_book(books=None, reset=False):
                             newValueDict = {"Status": "Wanted"}
                             myDB.upsert("books", newValueDict, controlValueDict)
                             result = ''
-                    else:
-                        searchterm = "%s %s" % (formatAuthorName(book['rss_author']), item['Title'])
-                        results = search_for(unaccented(searchterm))
+                    else:  # not in database yet
+                        results = ''
+                        if book['rss_isbn']:
+                            results = search_for(book['rss_isbn'])
+                        if results:
+                            result = results[0]
+                            if result['isbn_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO']:
+                                logger.info("Found (%s%%) %s: %s" %
+                                            (result['isbn_fuzz'], result['authorname'], result['bookname']))
+                                import_book(result['bookid'])
+                                bookmatch = True
+                        if not results:
+                            searchterm = "%s by %s" % (item['Title'], formatAuthorName(book['rss_author']))
+                            results = search_for(unaccented(searchterm))
                         if results:
                             result = results[0]
                             if result['author_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO'] \
