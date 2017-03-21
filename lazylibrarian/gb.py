@@ -49,7 +49,7 @@ class GoogleBooks:
 
     def find_results(self, searchterm=None, queue=None):
         """ GoogleBooks performs much better if we search for author OR title
-            not both at once, so two searches needed
+            not both at once, so if searchterm is not isbn, two searches needed
         """
         try:
             myDB = database.DBConnection()
@@ -67,25 +67,30 @@ class GoogleBooks:
             total_count = 0
             no_author_count = 0
             api_value = ''
+            title = ''
+            authorname = ''
             fullterm = searchterm
+
+            if ' <ll> ' in searchterm:  # special token separates title from author
+                title, authorname = searchterm.split(' <ll> ')
 
             for api_value in api_strings:
                 if api_value == "isbn:":
                     set_url = self.url + urllib.quote(api_value + searchterm.encode(lazylibrarian.SYS_ENCODING))
                 elif api_value == 'intitle:':
                     searchterm = fullterm
-                    if ' by ' in searchterm:
-                        searchterm = searchterm.split(' by ')[0]    # just search for title
-                        if ' (' in searchterm:
-                            searchterm = searchterm.split(' (')[0]    # with out any series info
-                            searchterm = searchterm.replace("'","").replace('"','')  # and no quotes
+                    if title:  # just search for title
+                        if ' (' in title:
+                            title = title.split(' (')[0]    # with out any series info
+                        searchterm = title
+                    searchterm = searchterm.replace("'","").replace('"','')  # and no quotes
                     searchterm = searchterm.strip()
                     set_url = self.url + \
                               urllib.quote(api_value + '"' + searchterm.encode(lazylibrarian.SYS_ENCODING) + '"')
                 elif api_value == 'inauthor:':
                     searchterm = fullterm
-                    if ' by ' in searchterm:
-                        searchterm = searchterm.split(' by ')[1]    # just search for author
+                    if authorname:
+                        searchterm = authorname    # just search for author
                     set_url = self.url + \
                               urllib.quote(api_value + '"' + searchterm.encode(lazylibrarian.SYS_ENCODING) + '"')
                     searchterm = searchterm.strip()
@@ -212,8 +217,19 @@ class GoogleBooks:
                             except KeyError:
                                 bookisbn = 0
 
-                            author_fuzz = fuzz.token_set_ratio(Author, fullterm)
-                            book_fuzz = fuzz.token_set_ratio(bookname, fullterm)
+                            if authorname:
+                                author_fuzz = fuzz.ratio(Author, authorname)
+                            else:
+                                author_fuzz = fuzz.ratio(Author, fullterm)
+
+                            if title:
+                                book_fuzz = fuzz.ratio(bookname, title)
+                                # lose a point for each extra word in the fuzzy matches so we get the closest match
+                                words = len(getList(bookname))
+                                words -= len(getList(title))
+                                book_fuzz -= abs(words)
+                            else:
+                                book_fuzz = fuzz.ratio(bookname, fullterm)
 
                             isbn_fuzz = 0
                             if is_valid_isbn(fullterm):
@@ -229,8 +245,7 @@ class GoogleBooks:
                             bookid = item['id']
 
                             author = myDB.select(
-                                'SELECT AuthorID FROM authors WHERE AuthorName = "%s"' %
-                                Author.replace('"', '""'))
+                                'SELECT AuthorID FROM authors WHERE AuthorName = "%s"' % Author.replace('"', '""'))
                             if author:
                                 AuthorID = author[0]['authorid']
                             else:
@@ -833,6 +848,8 @@ class GoogleBooks:
             if not match:
                 match = myDB.match('SELECT AuthorID from authors WHERE AuthorName="%s"' %  author['authorname'])
                 if match:
+                    logger.debug('%s: Changing authorid from %s to %s' %
+                                (author['authorname'], AuthorID, match['AuthorID']))
                     AuthorID = match['AuthorID']    # we have a different authorid for that authorname
                 else:   # no author but request to add book, add author as "ignored"
                         # User hit "add book" button from a search

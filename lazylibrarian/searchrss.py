@@ -102,7 +102,7 @@ def search_rss_book(books=None, reset=False):
                                 import_book(result['bookid'])
                                 bookmatch = True
                         if not results:
-                            searchterm = "%s by %s" % (item['Title'], formatAuthorName(book['rss_author']))
+                            searchterm = "%s <ll> %s" % (item['Title'], formatAuthorName(book['rss_author']))
                             results = search_for(unaccented(searchterm))
                         if results:
                             result = results[0]

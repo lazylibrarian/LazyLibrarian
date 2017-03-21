@@ -45,7 +45,8 @@ class GoodReads:
         try:
             resultlist = []
             api_hits = 0
-
+            if ' <ll> ' in searchterm:
+                searchterm = searchterm.replace(' <ll> ', '')
             url = urllib.quote_plus(searchterm.encode(lazylibrarian.SYS_ENCODING))
             set_url = 'http://www.goodreads.com/search.xml?q=' + url + '&' + urllib.urlencode(self.params)
             logger.debug('Now searching GoodReads API with keyword: %s' % searchterm)
@@ -100,8 +101,8 @@ class GoodReads:
                     else:
                         bookTitle = author.find('./best_book/title').text
 
-                    author_fuzz = fuzz.token_set_ratio(authorNameResult, searchterm)
-                    book_fuzz = fuzz.token_set_ratio(bookTitle, searchterm)
+                    author_fuzz = fuzz.ratio(authorNameResult, searchterm)
+                    book_fuzz = fuzz.ratio(bookTitle, searchterm)
                     isbn_fuzz = 0
                     if is_valid_isbn(searchterm):
                             isbn_fuzz = 100
@@ -715,19 +716,24 @@ class GoodReads:
             AuthorID = author['authorid']
             match = myDB.match('SELECT AuthorID from authors WHERE AuthorID="%s"' % AuthorID)
             if not match:
-                # no author but request to add book, add author as "ignored"
-                # User hit "add book" button from a search
-                controlValueDict = {"AuthorID": AuthorID}
-                newValueDict = {
-                    "AuthorName": author['authorname'],
-                    "AuthorImg": author['authorimg'],
-                    "AuthorLink": author['authorlink'],
-                    "AuthorBorn": author['authorborn'],
-                    "AuthorDeath": author['authordeath'],
-                    "DateAdded": today(),
-                    "Status": "Ignored"
-                }
-                myDB.upsert("authors", newValueDict, controlValueDict)
+                match = myDB.match('SELECT AuthorID from authors WHERE AuthorName="%s"' %  author['authorname'])
+                if match:
+                    logger.debug('%s: Changing authorid from %s to %s' %
+                                (author['authorname'], AuthorID, match['AuthorID']))
+                    AuthorID = match['AuthorID']    # we have a different authorid for that authorname
+                else:   # no author but request to add book, add author as "ignored"
+                        # User hit "add book" button from a search
+                    controlValueDict = {"AuthorID": AuthorID}
+                    newValueDict = {
+                        "AuthorName": author['authorname'],
+                        "AuthorImg": author['authorimg'],
+                        "AuthorLink": author['authorlink'],
+                        "AuthorBorn": author['authorborn'],
+                        "AuthorDeath": author['authordeath'],
+                        "DateAdded": today(),
+                        "Status": "Ignored"
+                    }
+                    myDB.upsert("authors", newValueDict, controlValueDict)
         else:
             logger.warn("No AuthorID for %s, unable to add book %s" % (authorname, bookname))
             return
