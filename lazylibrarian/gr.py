@@ -26,7 +26,7 @@ from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSerie
                                     setSeries, setStatus
 from lazylibrarian.cache import get_xml_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList, \
-                                    cleanName
+                                    cleanName, is_valid_isbn
 from lazylibrarian.common import formatAuthorName
 from lib.fuzzywuzzy import fuzz
 
@@ -41,15 +41,17 @@ class GoodReads:
             logger.warn('No Goodreads API key, check config')
         self.params = {"key": lazylibrarian.CONFIG['GR_API']}
 
-    def find_results(self, authorname=None, queue=None):
+    def find_results(self, searchterm=None, queue=None):
         try:
             resultlist = []
             api_hits = 0
-            authorname = formatAuthorName(authorname)
-            url = urllib.quote_plus(authorname.encode(lazylibrarian.SYS_ENCODING))
+            # we don't use the title/author separator in goodreads
+            searchterm = searchterm.replace(' <ll> ', '')
+
+            url = urllib.quote_plus(searchterm.encode(lazylibrarian.SYS_ENCODING))
             set_url = 'http://www.goodreads.com/search.xml?q=' + url + '&' + urllib.urlencode(self.params)
-            logger.debug('Now searching GoodReads API with keyword: ' + authorname)
-            logger.debug('Searching for %s at: %s' % (authorname, set_url))
+            logger.debug('Now searching GoodReads API with searchterm: %s' % searchterm)
+            #logger.debug('Searching for %s at: %s' % (searchterm, set_url))
 
             resultcount = 0
             try:
@@ -100,16 +102,12 @@ class GoodReads:
                     else:
                         bookTitle = author.find('./best_book/title').text
 
-                    author_fuzz = fuzz.token_set_ratio(authorNameResult, authorname)
-                    book_fuzz = fuzz.token_set_ratio(bookTitle, authorname)
-                    try:
-                        isbn_check = int(authorname[:-1])
-                        if (len(str(isbn_check)) == 9) or (len(str(isbn_check)) == 12):
-                            isbn_fuzz = int(100)
-                        else:
-                            isbn_fuzz = int(0)
-                    except Exception:
-                        isbn_fuzz = int(0)
+                    author_fuzz = fuzz.ratio(authorNameResult, searchterm)
+                    book_fuzz = fuzz.ratio(bookTitle, searchterm)
+                    isbn_fuzz = 0
+                    if is_valid_isbn(searchterm):
+                            isbn_fuzz = 100
+
                     highest_fuzz = max((author_fuzz + book_fuzz) / 2, isbn_fuzz)
 
                     bookid = author.find('./best_book/id').text
@@ -147,9 +145,9 @@ class GoodReads:
                 else:
                     logger.error('An unexpected error has occurred when searching for an author: %s' % str(err))
 
-            logger.debug('Found %s result%s with keyword: %s' % (resultcount, plural(resultcount), authorname))
+            logger.debug('Found %s result%s with keyword: %s' % (resultcount, plural(resultcount), searchterm))
             logger.debug(
-                'The GoodReads API was hit %s time%s for keyword %s' % (api_hits, plural(api_hits), authorname))
+                'The GoodReads API was hit %s time%s for keyword %s' % (api_hits, plural(api_hits), searchterm))
 
             queue.put(resultlist)
 
@@ -475,26 +473,25 @@ class GoodReads:
                             cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'
                             cmd += ' and BookName = "%s" and AuthorName = "%s" COLLATE NOCASE' % \
                                     (bookname, authorNameResult.replace('"', '""'))
-                            find_books = myDB.select(cmd)
-                            if find_books:
-                                for find_book in find_books:
-                                    if find_book['BookID'] != bookid:
-                                        # we have a different book with this author/title already
-                                        logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
-                                                     (find_book['BookID'], authorNameResult, bookname, bookid))
-                                        duplicates += 1
-                                        rejected = True
+                            match = myDB.match(cmd)
+                            if match:
+                                if match['BookID'] != bookid:
+                                    # we have a different book with this author/title already
+                                    logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
+                                                 (match['BookID'], authorNameResult, bookname, bookid))
+                                    duplicates += 1
+                                    rejected = True
 
                         if not rejected:
                             cmd = 'SELECT AuthorName,BookName FROM books,authors'
                             cmd += ' WHERE authors.AuthorID = books.AuthorID AND BookID=%s' % bookid
-                            find_books = myDB.match(cmd)
-                            if find_books:
+                            match = myDB.match(cmd)
+                            if match:
                                 # we have a book with this bookid already
-                                if bookname != find_books['BookName'] or authorNameResult != find_books['AuthorName']:
+                                if bookname != match['BookName'] or authorNameResult != match['AuthorName']:
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got bookid for [%s][%s]' %
                                                  (bookid, authorNameResult, bookname,
-                                                  find_books['AuthorName'], find_books['BookName']))
+                                                 match['AuthorName'], match['BookName']))
                                 else:
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got this book in database' %
                                                  (bookid, authorNameResult, bookname))
@@ -643,14 +640,14 @@ class GoodReads:
             # This is here because GoodReads sometimes has several entries with the same BookID!
             modified_count = added_count + updated_count
 
-            logger.debug("Found %s total book%s for author" % (total_count, plural(total_count)))
-            logger.debug("Removed %s unwanted language result%s for author" % (ignored, plural(ignored)))
+            logger.debug("Found %s result%s" % (total_count, plural(total_count)))
+            logger.debug("Removed %s unwanted language result%s" % (ignored, plural(ignored)))
             logger.debug(
-                "Removed %s bad character or no-name result%s for author" %
+                "Removed %s bad character or no-name result%s" %
                 (removedResults, plural(removedResults)))
-            logger.debug("Removed %s duplicate result%s for author" % (duplicates, plural(duplicates)))
+            logger.debug("Removed %s duplicate result%s" % (duplicates, plural(duplicates)))
             logger.debug("Found %s book%s by author marked as Ignored" % (book_ignore_count, plural(book_ignore_count)))
-            logger.debug("Imported/Updated %s book%s for author" % (modified_count, plural(modified_count)))
+            logger.debug("Imported/Updated %s book%s" % (modified_count, plural(modified_count)))
 
             myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i, %i)' %
                         (authorname.replace('"', '""'), api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change,
@@ -720,19 +717,24 @@ class GoodReads:
             AuthorID = author['authorid']
             match = myDB.match('SELECT AuthorID from authors WHERE AuthorID="%s"' % AuthorID)
             if not match:
-                # no author but request to add book, add author as "ignored"
-                # User hit "add book" button from a search
-                controlValueDict = {"AuthorID": AuthorID}
-                newValueDict = {
-                    "AuthorName": author['authorname'],
-                    "AuthorImg": author['authorimg'],
-                    "AuthorLink": author['authorlink'],
-                    "AuthorBorn": author['authorborn'],
-                    "AuthorDeath": author['authordeath'],
-                    "DateAdded": today(),
-                    "Status": "Ignored"
-                }
-                myDB.upsert("authors", newValueDict, controlValueDict)
+                match = myDB.match('SELECT AuthorID from authors WHERE AuthorName="%s"' %  author['authorname'])
+                if match:
+                    logger.debug('%s: Changing authorid from %s to %s' %
+                                (author['authorname'], AuthorID, match['AuthorID']))
+                    AuthorID = match['AuthorID']    # we have a different authorid for that authorname
+                else:   # no author but request to add book, add author as "ignored"
+                        # User hit "add book" button from a search
+                    controlValueDict = {"AuthorID": AuthorID}
+                    newValueDict = {
+                        "AuthorName": author['authorname'],
+                        "AuthorImg": author['authorimg'],
+                        "AuthorLink": author['authorlink'],
+                        "AuthorBorn": author['authorborn'],
+                        "AuthorDeath": author['authordeath'],
+                        "DateAdded": today(),
+                        "Status": "Ignored"
+                    }
+                    myDB.upsert("authors", newValueDict, controlValueDict)
         else:
             logger.warn("No AuthorID for %s, unable to add book %s" % (authorname, bookname))
             return
@@ -767,7 +769,7 @@ class GoodReads:
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
-        logger.debug("Bookid %s: %s added to the books database" % (bookid, bookname))
+        logger.info("%s added to the books database" % bookname)
 
         if 'nocover' in bookimg or 'nophoto' in bookimg:
             # try to get a cover from librarything

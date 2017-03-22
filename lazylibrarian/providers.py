@@ -236,11 +236,72 @@ def IterateOverRSSSites():
     resultslist = []
     providers = 0
     for provider in lazylibrarian.RSS_PROV:
-        if provider['ENABLED']:
+        if provider['ENABLED'] and not 'goodreads' in provider['HOST'] and not 'list_rss' in provider['HOST']:
             providers += 1
             logger.debug('[IterateOverRSSSites] - %s' % provider['HOST'])
             resultslist += RSS(provider['HOST'], provider['NAME'])
     return resultslist, providers
+
+def IterateOverGoodReads():
+
+    resultslist = []
+    providers = 0
+    for provider in lazylibrarian.RSS_PROV:
+        if provider['ENABLED'] and 'goodreads' in provider['HOST'] and 'list_rss' in provider['HOST']:
+            providers += 1
+            logger.debug('[IterateOverGoodReads] - %s' % provider['HOST'])
+            resultslist += GOODREADS(provider['HOST'], provider['NAME'])
+    return resultslist, providers
+
+
+def GOODREADS(host=None, feednr=None):
+    """
+    Goodreads RSS query function, return all the results in a list, can handle multiple wishlists
+    but expects goodreads format (looks for goodreads category names)
+    """
+    results = []
+
+    if not str(host)[:4] == "http":
+        host = 'http://' + host
+
+    URL = host
+
+    result, success = fetchURL(URL)
+    if success:
+        data = feedparser.parse(result)
+    else:
+        logger.error('Error fetching data from %s: %s' % (host, result))
+        data = None
+
+    if data:
+        logger.debug(u'Parsing results from %s' % URL)
+        provider = data['feed']['link']
+        logger.debug("RSS %s returned %i result%s" % (provider, len(data.entries), plural(len(data.entries))))
+        for post in data.entries:
+            title = ''
+            book_id = ''
+            author_name = ''
+            isbn = ''
+            if 'title' in post:
+                title = post.title
+            if 'book_id' in post:
+                book_id = post.book_id
+            if 'author_name' in post:
+                author_name = post.author_name
+            if 'isbn' in post:
+                isbn = post.isbn
+            if title and author_name:
+                results.append({
+                    'rss_prov': provider,
+                    'rss_feed': feednr,
+                    'rss_title': title,
+                    'rss_author': author_name,
+                    'rss_bookid': book_id,
+                    'rss_isbn': isbn
+                })
+    else:
+        logger.debug('No data returned from %s' % host)
+    return results
 
 
 def RSS(host=None, feednr=None):

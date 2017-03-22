@@ -28,19 +28,26 @@ from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented
 def getAuthorImages():
     """ Try to get an author image for all authors without one"""
     myDB = database.DBConnection()
-    authors = myDB.select('select AuthorID, AuthorName from authors where AuthorImg like "%nophoto%" and Manual is not "1"')
+    cmd = 'select AuthorID, AuthorName from authors where (AuthorImg like "%nophoto%" or AuthorImg is null)'
+    cmd += ' and Manual is not "1"'
+    authors = myDB.select(cmd)
     if authors:
         logger.info('Checking images for %s author%s' % (len(authors), plural(len(authors))))
         counter = 0
         for author in authors:
             authorid = author['AuthorID']
             imagelink = getAuthorImage(authorid)
-            if imagelink and "nophoto" not in imagelink:
+            if not imagelink:
+                logger.debug('No image found for %s' % author['AuthorName'])
+                newValueDict = {"AuthorImg": 'images/nophoto.png'}
+            elif 'nophoto' not in imagelink:
                 logger.debug('Updating %s image to %s' % (author['AuthorName'], imagelink))
-                controlValueDict = {"AuthorID": authorid}
                 newValueDict = {"AuthorImg": imagelink}
-                myDB.upsert("authors", newValueDict, controlValueDict)
                 counter += 1
+
+            controlValueDict = {"AuthorID": authorid}
+            myDB.upsert("authors", newValueDict, controlValueDict)
+
         msg = 'Updated %s image%s' % (counter, plural(counter))
         logger.info('Author Image check complete: ' + msg)
     else:

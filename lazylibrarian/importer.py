@@ -209,8 +209,10 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
         match = myDB.match("SELECT Manual from authors WHERE AuthorID='%s'" % authorid)
         if not match or not match['Manual']:
             if authorimg and 'nophoto' in authorimg:
-                authorimg = getAuthorImage(authorid)
-                new_img = True
+                newimg = getAuthorImage(authorid)
+                if newimg:
+                    authorimg = newimg
+                    new_img = True
 
         # allow caching
         if authorimg and authorimg.startswith('http'):
@@ -291,7 +293,8 @@ def import_book(bookid):
 
 
 def search_for(searchterm):
-    """ search goodreads or googlebooks for a searchterm, return a list of results """
+    """ search goodreads or googlebooks for a searchterm, return a list of results
+    """
     myDB = database.DBConnection()
     if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
         GB = GoogleBooks(searchterm)
@@ -306,6 +309,5 @@ def search_for(searchterm):
 
     search_api.join()
     searchresults = queue.get()
-
     sortedlist = sorted(searchresults, key=itemgetter('highest_fuzz', 'num_reviews'), reverse=True)
     return sortedlist

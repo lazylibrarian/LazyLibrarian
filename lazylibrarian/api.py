@@ -25,7 +25,8 @@ from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, g
     getBookCover, getAuthorImage, getAuthorImages, getSeriesMembers, getSeriesAuthors, deleteEmptySeries, \
     getBookAuthors
 from lazylibrarian.cache import cache_img
-from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, dbUpdate, setperm
+from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, dbUpdate, setperm, \
+    formatAuthorName
 from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.formatter import today
 from lazylibrarian.gb import GoogleBooks
@@ -98,6 +99,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'listIgnoredAuthors': 'list all authors in the database marked ignored',
             'listIgnoredBooks': 'list all books in the database marked ignored',
             'listIgnoredSeries': 'list all series in the database marked ignored',
+            'listMissingWorkpages': 'list all books with errorpage or no workpage',
             'searchBook': '&id= [&wait] search for one book by BookID',
             'searchItem': '&item= get search results for an item (author, title, isbn)',
             'showJobs': 'show status of running jobs',
@@ -262,6 +264,22 @@ class Api(object):
     def _listIgnoredAuthors(self):
         q = 'SELECT AuthorID,AuthorName from authors where Status="Ignored"'
         self.data = self._dic_from_query(q)
+
+    def _listMissingWorkpages(self):
+        # first the ones with no workpage
+        q = 'SELECT BookID from books where length(WorkPage) < 4'
+        res = self._dic_from_query(q)
+        # now the ones with an error page
+        cache = os.path.join(lazylibrarian.CACHEDIR, "WorkCache")
+        # ensure directory is unicode so we get unicode results from listdir
+        if os.path.isdir(cache):
+            for cached_file in os.listdir(cache):
+                target = os.path.join(cache, cached_file)
+                if os.path.isfile(target):
+                    if os.path.getsize(target) < 500 and '.' in cached_file:
+                        bookid = cached_file.split('.')[0]
+                        res.append({"BookID": bookid})
+        self.data = res
 
     def _getAuthor(self, **kwargs):
         if 'id' not in kwargs:
@@ -550,15 +568,16 @@ class Api(object):
             self.data = 'Missing parameter: name'
             return
 
+        authorname = formatAuthorName(kwargs['name'])
         if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
-            GB = GoogleBooks(kwargs['name'])
+            GB = GoogleBooks(authorname)
             queue = Queue.Queue()
-            search_api = threading.Thread(target=GB.find_results, name='API-GBRESULTS', args=[kwargs['name'], queue])
+            search_api = threading.Thread(target=GB.find_results, name='API-GBRESULTS', args=[authorname, queue])
             search_api.start()
         else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
             queue = Queue.Queue()
-            GR = GoodReads(kwargs['name'])
-            search_api = threading.Thread(target=GR.find_results, name='API-GRRESULTS', args=[kwargs['name'], queue])
+            GR = GoodReads(authorname)
+            search_api = threading.Thread(target=GR.find_results, name='API-GRRESULTS', args=[authorname, queue])
             search_api.start()
 
         search_api.join()
