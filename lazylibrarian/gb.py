@@ -49,7 +49,9 @@ class GoogleBooks:
 
     def find_results(self, searchterm=None, queue=None):
         """ GoogleBooks performs much better if we search for author OR title
-            not both at once, so if searchterm is not isbn, two searches needed
+            not both at once, so if searchterm is not isbn, two searches needed.
+            Lazylibrarian searches use <ll> to separate title from author in searchterm
+            If this token isn't present, it's an isbn or searchterm as supplied by user
         """
         try:
             myDB = database.DBConnection()
@@ -60,19 +62,21 @@ class GoogleBooks:
                 api_strings = ['isbn:']
 
             api_hits = 0
-            logger.debug('Now searching Google Books API with searchterm: ' + searchterm)
 
             resultcount = 0
             ignored = 0
             total_count = 0
             no_author_count = 0
             api_value = ''
-            title = ''
-            authorname = ''
-            fullterm = searchterm
 
             if ' <ll> ' in searchterm:  # special token separates title from author
                 title, authorname = searchterm.split(' <ll> ')
+            else:
+                title = ''
+                authorname = ''
+
+            fullterm = searchterm.replace(' <ll> ', '')
+            logger.debug('Now searching Google Books API with searchterm: %s' % fullterm)
 
             for api_value in api_strings:
                 if api_value == "isbn:":

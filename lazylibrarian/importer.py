@@ -209,8 +209,10 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
         match = myDB.match("SELECT Manual from authors WHERE AuthorID='%s'" % authorid)
         if not match or not match['Manual']:
             if authorimg and 'nophoto' in authorimg:
-                authorimg = getAuthorImage(authorid)
-                new_img = True
+                newimg = getAuthorImage(authorid)
+                if newimg:
+                    authorimg = newimg
+                    new_img = True
 
         # allow caching
         if authorimg and authorimg.startswith('http'):

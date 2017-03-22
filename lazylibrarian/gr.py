@@ -45,12 +45,13 @@ class GoodReads:
         try:
             resultlist = []
             api_hits = 0
-            if ' <ll> ' in searchterm:
-                searchterm = searchterm.replace(' <ll> ', '')
+            # we don't use the title/author separator in goodreads
+            searchterm = searchterm.replace(' <ll> ', '')
+
             url = urllib.quote_plus(searchterm.encode(lazylibrarian.SYS_ENCODING))
             set_url = 'http://www.goodreads.com/search.xml?q=' + url + '&' + urllib.urlencode(self.params)
-            logger.debug('Now searching GoodReads API with keyword: %s' % searchterm)
-            logger.debug('Searching for %s at: %s' % (searchterm, set_url))
+            logger.debug('Now searching GoodReads API with searchterm: %s' % searchterm)
+            #logger.debug('Searching for %s at: %s' % (searchterm, set_url))
 
             resultcount = 0
             try:
