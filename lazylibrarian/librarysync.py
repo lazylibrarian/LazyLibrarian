@@ -466,7 +466,7 @@ def LibraryScan(startdir=None):
                                 else:
                                     logger.debug("Already cached Lang [%s] ISBN [%s]" % (language, isbnhead))
 
-                            author, new = addAuthorNameToDB(author)  # get the author name as we know it...
+                            author, authorid, new = addAuthorNameToDB(author)  # get the author name as we know it...
 
                             if author:
                                 # author exists, check if this book by this author is in our database

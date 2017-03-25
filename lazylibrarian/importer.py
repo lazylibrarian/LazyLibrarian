@@ -38,7 +38,7 @@ def addAuthorNameToDB(author, refresh=False, addbooks=True):
     new = False
     author = formatAuthorName(author)
     # Check if the author exists, and import the author if not,
-    check_exist_author = myDB.match('SELECT * FROM authors where AuthorName="%s"' % author.replace('"', '""'))
+    check_exist_author = myDB.match('SELECT AuthorID FROM authors where AuthorName="%s"' % author.replace('"', '""'))
 
     if not check_exist_author and lazylibrarian.CONFIG['ADD_AUTHOR']:
         logger.debug('Author %s not found in database, trying to add' % author)
@@ -100,8 +100,8 @@ def addAuthorNameToDB(author, refresh=False, addbooks=True):
     # check author exists in db, either newly loaded or already there
     if not check_exist_author:
         logger.debug("Failed to match author [%s] in database" % author)
-        return "", False
-    return author, new
+        return "", "", False
+    return author, check_exist_author['AuthorID'], new
 
 
 def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):

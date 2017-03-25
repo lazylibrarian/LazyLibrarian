@@ -29,7 +29,7 @@ from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_
 from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, \
     unaccented, getList
 from lazylibrarian.gr import GoodReads
-from lazylibrarian.importer import addAuthorToDB
+from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB
 from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
 from lazylibrarian.magazinescan import create_id, create_cover
 from lazylibrarian.notifiers import notify_download, custom_notify_download

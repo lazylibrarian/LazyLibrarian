@@ -413,16 +413,19 @@ def getBookAuthors(bookid):
 
     authorlist = []
     if data and 'Work?' in data:
-        rows = data.split('<tr')
-        for row in rows[2:]:
-            author = {}
-            col = row.split('<td>')
-            author['name'] = col[1].split('">')[1].split('<')[0]
-            author['role'] = col[2].split('<')[0]
-            author['type'] = col[3].split('<')[0]
-            author['work'] = col[4].split('<')[0]
-            author['status'] = col[5].split('<')[0]
-            authorlist.append(author)
+        try:
+            rows = data.split('<tr')
+            for row in rows[2:]:
+                author = {}
+                col = row.split('<td>')
+                author['name'] = col[1].split('">')[1].split('<')[0]
+                author['role'] = col[2].split('<')[0]
+                author['type'] = col[3].split('<')[0]
+                author['work'] = col[4].split('<')[0]
+                author['status'] = col[5].split('<')[0]
+                authorlist.append(author)
+        except IndexError:
+            logger.debug('Error parsing authorlist for %s' % bookid)
     return authorlist
 
 
