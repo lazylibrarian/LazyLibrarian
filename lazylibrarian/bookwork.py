@@ -23,6 +23,57 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.cache import cache_img, fetchURL, get_xml_request
 from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented
+from lazylibrarian.common import formatAuthorName
+
+def setAllBookAuthors():
+    myDB = database.DBConnection()
+    myDB.action('drop table bookauthors')
+    myDB.action('create table if not exists bookauthors (AuthorID TEXT, BookID TEXT)')
+    myDB.action('insert into bookauthors select AuthorID,BookID from books')
+    totalauthors = 0
+    totalrefs = 0
+    books = myDB.select('select bookid,bookname,authorid from books where workpage is not null and workpage != ""')
+    for book in books:
+        newauthors, newrefs = setBookAuthors(book)
+        totalauthors += newauthors
+        totalrefs += newrefs
+    msg = "Added %s new authors to database, %s new bookauthors" % (newauthors, newrefs)
+    logger.debug(msg)
+    return totalauthors, totalrefs
+
+
+def setAllBookAuthors():
+    myDB = database.DBConnection()
+    author = myDB.match('select authorname from authors where authorid = "%s"' % book['authorid'])
+    authors = [formatAuthorName(author['authorname'])]
+    newauthors = 0
+    newrefs = 0
+    try:
+        authorlist = getBookAuthors(book['bookid'])
+        for author in authorlist:
+            authtype = author['type']
+            if authtype in ['primary author','main author','secondary author']:
+                if author['role'] in ['Author', '&mdash;'] and author['work'] == 'all editions':
+                    name = formatAuthorName(unaccented(author['name']))
+                    exists = myDB.match('select authorid from authors where authorname = "%s"' % name)
+                    if exists:
+                        authorid = exists['authorid']
+                    else:
+                        # try to add new author to database by name
+                        name, authorid, new = lazylibrarian.importer.addAuthorNameToDB(name, False, False)
+                        if new and authorid:
+                            newauthors += 1
+                    if authorid:
+                        # suppress duplicates in bookauthors
+                        match = myDB.match('select authorid from bookauthors where authorid="%s" and bookid="%s"' %
+                                            (authorid, book['bookid']))
+                        if not match:
+                            newrefs += 1
+                            myDB.action('INSERT into bookauthors (AuthorID, BookID) VALUES ("%s", "%s")' %
+                                       (authorid, book['bookid']))
+    except:
+        logger.debug("Error parsing authorlist for " + book['bookname'])
+    return newauthors, newrefs
 
 
 def getAuthorImages():

@@ -23,7 +23,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, setAllBookSeries, \
     getBookCover, getAuthorImage, getAuthorImages, getSeriesMembers, getSeriesAuthors, deleteEmptySeries, \
-    getBookAuthors
+    getBookAuthors, setAllBookAuthors
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, dbUpdate, setperm, \
     formatAuthorName
@@ -117,6 +117,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'deleteEmptySeries': 'Delete any book series that have no members',
             'setWorkPages': '[&wait] Set the WorkPages links in the database',
             'setAllBookSeries': '[&wait] Set the series details from book workpages',
+            'setAllBookAuthors': '[&wait] Set all authors for all books from book workpages',
             'importAlternate': '[&wait] [&dir=] Import books from named or alternate folder and any subfolders',
             'importCSVwishlist': '[&wait] [&dir=] Import a CSV wishlist from named or alternate directory',
             'exportCSVwishlist': '[&wait] [&dir=] Export a CSV wishlist to named or alternate directory'
@@ -530,6 +531,12 @@ class Api(object):
             self.data = setAllBookSeries()
         else:
             threading.Thread(target=setAllBookSeries, name='API-SETALLBOOKSERIES', args=[]).start()
+
+    def _setAllBookAuthors(self, **kwargs):
+        if 'wait' in kwargs:
+            self.data = setAllBookAuthors()
+        else:
+            threading.Thread(target=setAllBookAuthors, name='API-SETALLBOOKAUTHORS', args=[]).start()
 
     def _getBookCovers(self, **kwargs):
         if 'wait' in kwargs:

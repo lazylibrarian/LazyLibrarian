@@ -246,6 +246,12 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
             # New authors need their totals updating after libraryscan or import of books.
             if not new_author:
                 update_totals(authorid)
+        else:
+            # if we're not loading any books, mark author as ignored
+            controlValueDict = {"AuthorID": authorid}
+            newValueDict = {"Status": "Ignored"}
+            myDB.upsert("authors", newValueDict, controlValueDict)
+
         msg = "[%s] Author update complete" % authorname
         logger.debug(msg)
         return msg
