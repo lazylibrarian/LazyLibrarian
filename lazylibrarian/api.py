@@ -511,7 +511,7 @@ class Api(object):
         else:
             threading.Thread(target=magazineScan, name='API-MAGSCAN', args=[]).start()
 
-    def _deleteEmptySeries(self, **kwargs):
+    def _deleteEmptySeries(self):
         self.data = deleteEmptySeries()
 
     def _cleanCache(self, **kwargs):

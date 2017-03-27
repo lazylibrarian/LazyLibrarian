@@ -118,7 +118,7 @@ def processAlternate(source_dir=None):
                     if authorid:
                         addAuthorToDB(authorid=authorid)
                     else:
-                        addAuthorNameToDB(authorname=authorname)
+                        addAuthorNameToDB(author=authorname)
                 else:
                     logger.debug("ALT: Author %s not found" % authorname)
                     return False

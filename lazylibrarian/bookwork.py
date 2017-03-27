@@ -27,9 +27,10 @@ from lazylibrarian.common import formatAuthorName
 
 def setAllBookAuthors():
     myDB = database.DBConnection()
-    myDB.action('drop table bookauthors')
-    myDB.action('create table if not exists bookauthors (AuthorID TEXT, BookID TEXT)')
-    myDB.action('insert into bookauthors select AuthorID,BookID from books')
+    myDB.action('drop table if exists bookauthors')
+    myDB.action('create table bookauthors (AuthorID TEXT, BookID TEXT)')
+    myDB.action('insert into bookauthors select AuthorID, BookID from books')
+    # also need to drop authorid from books table once it all works properly
     totalauthors = 0
     totalrefs = 0
     books = myDB.select('select bookid,bookname,authorid from books where workpage is not null and workpage != ""')
@@ -37,15 +38,13 @@ def setAllBookAuthors():
         newauthors, newrefs = setBookAuthors(book)
         totalauthors += newauthors
         totalrefs += newrefs
-    msg = "Added %s new authors to database, %s new bookauthors" % (newauthors, newrefs)
+    msg = "Added %s new authors to database, %s new bookauthors" % (totalauthors, totalrefs)
     logger.debug(msg)
     return totalauthors, totalrefs
 
 
-def setAllBookAuthors():
+def setBookAuthors(book):
     myDB = database.DBConnection()
-    author = myDB.match('select authorname from authors where authorid = "%s"' % book['authorid'])
-    authors = [formatAuthorName(author['authorname'])]
     newauthors = 0
     newrefs = 0
     try:
@@ -88,16 +87,18 @@ def getAuthorImages():
         for author in authors:
             authorid = author['AuthorID']
             imagelink = getAuthorImage(authorid)
+            newValueDict = {}
             if not imagelink:
                 logger.debug('No image found for %s' % author['AuthorName'])
                 newValueDict = {"AuthorImg": 'images/nophoto.png'}
             elif 'nophoto' not in imagelink:
                 logger.debug('Updating %s image to %s' % (author['AuthorName'], imagelink))
                 newValueDict = {"AuthorImg": imagelink}
-                counter += 1
 
-            controlValueDict = {"AuthorID": authorid}
-            myDB.upsert("authors", newValueDict, controlValueDict)
+            if newValueDict:
+                counter += 1
+                controlValueDict = {"AuthorID": authorid}
+                myDB.upsert("authors", newValueDict, controlValueDict)
 
         msg = 'Updated %s image%s' % (counter, plural(counter))
         logger.info('Author Image check complete: ' + msg)
@@ -493,7 +494,7 @@ def getSeriesAuthors(seriesid):
     if members:
         myDB = database.DBConnection()
         for member in members:
-            order = member[0]
+            #order = member[0]
             bookname = member[1]
             authorname = member[2]
 
@@ -559,11 +560,11 @@ def getSeriesMembers(seriesID=None):
                 if 'href=' in row:
                     booklink = row.split('href="')[1]
                     bookname = booklink.split('">')[1].split('<')[0]
-                    booklink = booklink.split('"')[0]
+                    #booklink = booklink.split('"')[0]
                     try:
                         authorlink = row.split('href="')[2]
                         authorname = authorlink.split('">')[1].split('<')[0]
-                        authorlink = authorlink.split('"')[0]
+                        #authorlink = authorlink.split('"')[0]
                         order = row.split('class="order">')[1].split('<')[0]
                         results.append([order, bookname, authorname])
                     except IndexError:

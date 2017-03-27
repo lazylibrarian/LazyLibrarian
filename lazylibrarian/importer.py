@@ -29,7 +29,7 @@ from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 
 
-def addAuthorNameToDB(author, refresh=False, addbooks=True):
+def addAuthorNameToDB(author=None, refresh=False, addbooks=True):
     # get authors name in a consistent format, look them up in the database
     # if not in database, try to import them.
     # return authorname,new where new=False if author already in db, new=True if added
@@ -53,7 +53,7 @@ def addAuthorNameToDB(author, refresh=False, addbooks=True):
         # only try to add if GR data matches found author data
         if author_gr:
             authorname = author_gr['authorname']
-            authorid = author_gr['authorid']
+            #authorid = author_gr['authorid']
             # "J.R.R. Tolkien" is the same person as "J. R. R. Tolkien" and "J R R Tolkien"
             match_auth = author.replace('.', ' ')
             match_auth = ' '.join(match_auth.split())
@@ -289,19 +289,17 @@ def update_totals(AuthorID):
 
 def import_book(bookid):
     """ search goodreads or googlebooks for a bookid and import the book """
-    myDB = database.DBConnection()
     if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
         GB = GoogleBooks(bookid)
-        search_api = threading.Thread(target=GB.find_book, name='GB-IMPORT', args=[bookid]).start()
+        _ = threading.Thread(target=GB.find_book, name='GB-IMPORT', args=[bookid]).start()
     else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
         GR = GoodReads(bookid)
-        search_api = threading.Thread(target=GR.find_book, name='GR-RESULTS', args=[bookid]).start()
+        _ = threading.Thread(target=GR.find_book, name='GR-RESULTS', args=[bookid]).start()
 
 
 def search_for(searchterm):
     """ search goodreads or googlebooks for a searchterm, return a list of results
     """
-    myDB = database.DBConnection()
     if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
         GB = GoogleBooks(searchterm)
         queue = Queue.Queue()

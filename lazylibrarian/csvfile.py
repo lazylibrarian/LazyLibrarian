@@ -167,15 +167,13 @@ def import_CSV(search_dir=None):
                 authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % authorname)
 
                 if authmatch:
-                    newauthor = False
                     logger.debug(u"CSV: Author %s found in database" % authorname)
                 else:
-                    newauthor = True
                     logger.debug(u"CSV: Author %s not found" % authorname)
                     authcount += 1
 
                 bookmatch = finditem(content[item], authorname, headers)
-
+                result = ''
                 if bookmatch:
                     authorname = bookmatch['AuthorName']
                     bookname = bookmatch['BookName']
@@ -189,7 +187,6 @@ def import_CSV(search_dir=None):
                         newValueDict = {"Status": "Wanted"}
                         myDB.upsert("books", newValueDict, controlValueDict)
                         bookcount += 1
-                        result = ''
                 else:
                     searchterm = "%s <ll> %s" % (content[item]['Title'], formatAuthorName(authorname))
                     results = search_for(unaccented(searchterm))
@@ -202,8 +199,6 @@ def import_CSV(search_dir=None):
                             import_book(result['bookid'])
                             bookcount += 1
                             bookmatch = True
-                    else:
-                        result = ''
 
                 if not bookmatch:
                     msg = "Skipping book %s by %s" % (content[item]['Title'], content[item]['Author'])
