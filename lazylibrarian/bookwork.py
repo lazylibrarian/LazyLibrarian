@@ -619,7 +619,7 @@ def getBookCover(bookID=None):
         return None
 
     cachedir = lazylibrarian.CACHEDIR
-    coverfile = os.path.join(cachedir, bookID + '.jpg')
+    coverfile = os.path.join(cachedir, "book", bookID + '.jpg')
 
     if os.path.isfile(coverfile):  # use cached image if there is one
         lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
@@ -736,7 +736,7 @@ def getAuthorImage(authorid=None):
         return None
 
     cachedir = lazylibrarian.CACHEDIR
-    coverfile = os.path.join(cachedir, authorid + '.jpg')
+    coverfile = os.path.join(cachedir, "author", authorid + '.jpg')
 
     if os.path.isfile(coverfile):  # use cached image if there is one
         lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
