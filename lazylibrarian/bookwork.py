@@ -624,7 +624,7 @@ def getBookCover(bookID=None):
     if os.path.isfile(coverfile):  # use cached image if there is one
         lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
         logger.debug(u"getBookCover: Returning Cached response for %s" % coverfile)
-        coverlink = 'cache/' + bookID + '.jpg'
+        coverlink = 'cache/book/' + bookID + '.jpg'
         return coverlink
 
     lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
@@ -639,7 +639,7 @@ def getBookCover(bookID=None):
             if os.path.isfile(coverimg):
                 logger.debug(u"getBookCover: Copying book cover to %s" % coverfile)
                 shutil.copyfile(coverimg, coverfile)
-                coverlink = 'cache/' + bookID + '.jpg'
+                coverlink = 'cache/book/' + bookID + '.jpg'
                 return coverlink
 
     # if no cover.jpg, see if librarything workpage has a cover
@@ -741,7 +741,7 @@ def getAuthorImage(authorid=None):
     if os.path.isfile(coverfile):  # use cached image if there is one
         lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
         logger.debug(u"getAuthorImage: Returning Cached response for %s" % coverfile)
-        coverlink = 'cache/' + authorid + '.jpg'
+        coverlink = 'cache/author/' + authorid + '.jpg'
         return coverlink
 
     lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
