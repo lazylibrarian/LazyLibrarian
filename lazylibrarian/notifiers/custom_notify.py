@@ -28,7 +28,6 @@ class CustomNotifier:
             return False
 
         subject = event
-        text = message
 
         logger.debug('Custom Event: %s' % event)
         logger.debug('Custom Message: %s' % message)

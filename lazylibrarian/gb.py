@@ -26,11 +26,10 @@ from urllib2 import HTTPError
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, deleteEmptySeries, \
-                                    setSeries, setStatus
+    setSeries, setStatus
 from lazylibrarian.cache import get_json_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn, \
-                                    getList, cleanName
-from lazylibrarian.common import formatAuthorName
+    getList, cleanName
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 
@@ -63,11 +62,9 @@ class GoogleBooks:
 
             api_hits = 0
 
-            resultcount = 0
             ignored = 0
             total_count = 0
             no_author_count = 0
-            api_value = ''
 
             if ' <ll> ' in searchterm:  # special token separates title from author
                 title, authorname = searchterm.split(' <ll> ')
@@ -79,8 +76,9 @@ class GoogleBooks:
             logger.debug('Now searching Google Books API with searchterm: %s' % fullterm)
 
             for api_value in api_strings:
+                set_url = self.url
                 if api_value == "isbn:":
-                    set_url = self.url + urllib.quote(api_value + searchterm.encode(lazylibrarian.SYS_ENCODING))
+                    set_url = set_url + urllib.quote(api_value + searchterm.encode(lazylibrarian.SYS_ENCODING))
                 elif api_value == 'intitle:':
                     searchterm = fullterm
                     if title:  # just search for title
@@ -89,13 +87,13 @@ class GoogleBooks:
                         searchterm = title
                     searchterm = searchterm.replace("'","").replace('"','')  # and no quotes
                     searchterm = searchterm.strip()
-                    set_url = self.url + \
+                    set_url = set_url + \
                               urllib.quote(api_value + '"' + searchterm.encode(lazylibrarian.SYS_ENCODING) + '"')
                 elif api_value == 'inauthor:':
                     searchterm = fullterm
                     if authorname:
                         searchterm = authorname    # just search for author
-                    set_url = self.url + \
+                    set_url = set_url + \
                               urllib.quote(api_value + '"' + searchterm.encode(lazylibrarian.SYS_ENCODING) + '"')
                     searchterm = searchterm.strip()
 

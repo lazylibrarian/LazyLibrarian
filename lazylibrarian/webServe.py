@@ -797,10 +797,10 @@ class WebInterface(object):
         else:
             if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
                 GB = GoogleBooks(bookid)
-                find_book = threading.Thread(target=GB.find_book, name='GB-BOOK', args=[bookid]).start()
+                _ = threading.Thread(target=GB.find_book, name='GB-BOOK', args=[bookid]).start()
             else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
                 GR = GoodReads(bookid)
-                find_book = threading.Thread(target=GR.find_book, name='GR-BOOK', args=[bookid]).start()
+                _ = threading.Thread(target=GR.find_book, name='GR-BOOK', args=[bookid]).start()
 
         if lazylibrarian.CONFIG['IMP_AUTOSEARCH']:
             books = [{"bookid": bookid}]
@@ -1432,15 +1432,34 @@ class WebInterface(object):
                 issue = myDB.match('SELECT IssueFile,Title,IssueDate from issues WHERE IssueID="%s"' % item)
                 if issue:
                     if action == "Delete":
-                        try:
-                            rmtree(os.path.dirname(issue['IssueFile']), ignore_errors=True)
+                        result = self.deleteIssue(issue['IssueFile'])
+                        if result:
                             logger.info(u'Issue %s of %s deleted from disc' % (issue['IssueDate'], issue['Title']))
-                        except Exception as e:
-                            logger.debug('rmtree failed on %s, %s' % (issue['IssueFile'], str(e)))
                     if action == "Remove" or action == "Delete":
                         myDB.action('DELETE from issues WHERE IssueID="%s"' % item)
                         logger.info(u'Issue %s of %s removed from database' % (issue['IssueDate'], issue['Title']))
         raise cherrypy.HTTPRedirect("magazines")
+
+    @staticmethod
+    def deleteIssue(issuefile):
+        try:
+            # delete the magazine file and any cover image
+            if os.path.exists(issuefile):
+                os.remove(issuefile)
+            fname, extn = os.path.splitext(issuefile)
+            fname = fname + '.jpg'
+            if os.path.exists(fname):
+                os.remove(fname)
+            # if the directory is now empty, delete that too
+            try:
+                os.rmdir(os.path.dirname(issuefile))
+            except Exception:
+                logger.debug('Directory %s not deleted, not empty?' % os.path.dirname(issuefile))
+            return True
+        except Exception as e:
+            logger.debug('delete issue failed on %s, %s' % (issuefile, str(e)))
+        return False
+
 
     @cherrypy.expose
     def markMagazines(self, action=None, **args):
@@ -1462,21 +1481,19 @@ class WebInterface(object):
                     logger.debug(u'Deleting magazine %s from disc' % item)
                     issuedir = ''
                     for issue in issues:  # delete all issues of this magazine
-                        try:
+                        result = self.deleteIssue(issue['IssueFile'])
+                        if result:
+                            logger.debug(u'Issue %s deleted from disc' % issue['IssueFile'])
                             issuedir = os.path.dirname(issue['IssueFile'])
-                            rmtree(issuedir, ignore_errors=True)
-                            logger.debug(u'Issue directory %s deleted from disc' % issuedir)
-                        except Exception as e:
-                            logger.debug('rmtree failed on %s, %s' % (issuedir, str(e)))
+                        else:
+                            logger.debug('Failed to delete %s' % (issue['IssueFile']))
                     if issuedir:
                         magdir = os.path.dirname(issuedir)
-                        if not os.listdir(magdir):  # this magazines directory is now empty
-                            try:
-                                rmtree(magdir, ignore_errors=True)
-                                logger.debug(u'Magazine directory %s deleted from disc' % magdir)
-                            except Exception as e:
-                                logger.debug('rmtree failed on %s, %s' % (magdir, str(e)))
-                        else:
+                        # delete this magazines directory if now empty
+                        try:
+                            os.rmdir(magdir)
+                            logger.debug(u'Magazine directory %s deleted from disc' % magdir)
+                        except Exception as e:
                             logger.debug(u'Magazine directory %s is not empty' % magdir)
                     logger.info(u'Magazine %s deleted from disc' % item)
                 if action == "Remove" or action == "Delete":

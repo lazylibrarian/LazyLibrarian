@@ -89,7 +89,6 @@ def search_rss_book(books=None, reset=False):
                             controlValueDict = {"BookID": bookid}
                             newValueDict = {"Status": "Wanted"}
                             myDB.upsert("books", newValueDict, controlValueDict)
-                            result = ''
                     else:  # not in database yet
                         results = ''
                         if book['rss_isbn']:
@@ -112,12 +111,11 @@ def search_rss_book(books=None, reset=False):
                                                                             result['authorname'], result['bookname']))
                                 import_book(result['bookid'])
                                 bookmatch = True
-                        else:
-                            result = ''
 
                     if not bookmatch:
                         msg = "Skipping book %s by %s" % (item['Title'], book['rss_author'])
-                        if not result:
+                        # noinspection PyUnboundLocalVariable
+                        if not results:
                             msg += ', No results returned'
                             logger.warn(msg)
                         else:

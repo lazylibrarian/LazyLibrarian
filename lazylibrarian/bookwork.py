@@ -23,6 +23,56 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.cache import cache_img, fetchURL, get_xml_request
 from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented
+from lazylibrarian.common import formatAuthorName
+
+def setAllBookAuthors():
+    myDB = database.DBConnection()
+    myDB.action('drop table if exists bookauthors')
+    myDB.action('create table bookauthors (AuthorID TEXT, BookID TEXT)')
+    myDB.action('insert into bookauthors select AuthorID, BookID from books')
+    # also need to drop authorid from books table once it all works properly
+    totalauthors = 0
+    totalrefs = 0
+    books = myDB.select('select bookid,bookname,authorid from books where workpage is not null and workpage != ""')
+    for book in books:
+        newauthors, newrefs = setBookAuthors(book)
+        totalauthors += newauthors
+        totalrefs += newrefs
+    msg = "Added %s new authors to database, %s new bookauthors" % (totalauthors, totalrefs)
+    logger.debug(msg)
+    return totalauthors, totalrefs
+
+
+def setBookAuthors(book):
+    myDB = database.DBConnection()
+    newauthors = 0
+    newrefs = 0
+    try:
+        authorlist = getBookAuthors(book['bookid'])
+        for author in authorlist:
+            authtype = author['type']
+            if authtype in ['primary author','main author','secondary author']:
+                if author['role'] in ['Author', '&mdash;'] and author['work'] == 'all editions':
+                    name = formatAuthorName(unaccented(author['name']))
+                    exists = myDB.match('select authorid from authors where authorname = "%s"' % name)
+                    if exists:
+                        authorid = exists['authorid']
+                    else:
+                        # try to add new author to database by name
+                        name, authorid, new = lazylibrarian.importer.addAuthorNameToDB(name, False, False)
+                        if new and authorid:
+                            newauthors += 1
+                    if authorid:
+                        # suppress duplicates in bookauthors
+                        match = myDB.match('select authorid from bookauthors where authorid="%s" and bookid="%s"' %
+                                            (authorid, book['bookid']))
+                        if not match:
+                            newrefs += 1
+                            myDB.action('INSERT into bookauthors (AuthorID, BookID) VALUES ("%s", "%s")' %
+                                       (authorid, book['bookid']))
+    except:
+        logger.debug("Error parsing authorlist for " + book['bookname'])
+    return newauthors, newrefs
 
 
 def getAuthorImages():
@@ -37,16 +87,18 @@ def getAuthorImages():
         for author in authors:
             authorid = author['AuthorID']
             imagelink = getAuthorImage(authorid)
+            newValueDict = {}
             if not imagelink:
                 logger.debug('No image found for %s' % author['AuthorName'])
                 newValueDict = {"AuthorImg": 'images/nophoto.png'}
             elif 'nophoto' not in imagelink:
                 logger.debug('Updating %s image to %s' % (author['AuthorName'], imagelink))
                 newValueDict = {"AuthorImg": imagelink}
-                counter += 1
 
-            controlValueDict = {"AuthorID": authorid}
-            myDB.upsert("authors", newValueDict, controlValueDict)
+            if newValueDict:
+                counter += 1
+                controlValueDict = {"AuthorID": authorid}
+                myDB.upsert("authors", newValueDict, controlValueDict)
 
         msg = 'Updated %s image%s' % (counter, plural(counter))
         logger.info('Author Image check complete: ' + msg)
@@ -413,16 +465,19 @@ def getBookAuthors(bookid):
 
     authorlist = []
     if data and 'Work?' in data:
-        rows = data.split('<tr')
-        for row in rows[2:]:
-            author = {}
-            col = row.split('<td>')
-            author['name'] = col[1].split('">')[1].split('<')[0]
-            author['role'] = col[2].split('<')[0]
-            author['type'] = col[3].split('<')[0]
-            author['work'] = col[4].split('<')[0]
-            author['status'] = col[5].split('<')[0]
-            authorlist.append(author)
+        try:
+            rows = data.split('<tr')
+            for row in rows[2:]:
+                author = {}
+                col = row.split('<td>')
+                author['name'] = col[1].split('">')[1].split('<')[0]
+                author['role'] = col[2].split('<')[0]
+                author['type'] = col[3].split('<')[0]
+                author['work'] = col[4].split('<')[0]
+                author['status'] = col[5].split('<')[0]
+                authorlist.append(author)
+        except IndexError:
+            logger.debug('Error parsing authorlist for %s' % bookid)
     return authorlist
 
 
@@ -439,7 +494,7 @@ def getSeriesAuthors(seriesid):
     if members:
         myDB = database.DBConnection()
         for member in members:
-            order = member[0]
+            #order = member[0]
             bookname = member[1]
             authorname = member[2]
 
@@ -505,11 +560,11 @@ def getSeriesMembers(seriesID=None):
                 if 'href=' in row:
                     booklink = row.split('href="')[1]
                     bookname = booklink.split('">')[1].split('<')[0]
-                    booklink = booklink.split('"')[0]
+                    #booklink = booklink.split('"')[0]
                     try:
                         authorlink = row.split('href="')[2]
                         authorname = authorlink.split('">')[1].split('<')[0]
-                        authorlink = authorlink.split('"')[0]
+                        #authorlink = authorlink.split('"')[0]
                         order = row.split('class="order">')[1].split('<')[0]
                         results.append([order, bookname, authorname])
                     except IndexError:
@@ -564,12 +619,12 @@ def getBookCover(bookID=None):
         return None
 
     cachedir = lazylibrarian.CACHEDIR
-    coverfile = os.path.join(cachedir, bookID + '.jpg')
+    coverfile = os.path.join(cachedir, "book", bookID + '.jpg')
 
     if os.path.isfile(coverfile):  # use cached image if there is one
         lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
         logger.debug(u"getBookCover: Returning Cached response for %s" % coverfile)
-        coverlink = 'cache/' + bookID + '.jpg'
+        coverlink = 'cache/book/' + bookID + '.jpg'
         return coverlink
 
     lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
@@ -584,7 +639,7 @@ def getBookCover(bookID=None):
             if os.path.isfile(coverimg):
                 logger.debug(u"getBookCover: Copying book cover to %s" % coverfile)
                 shutil.copyfile(coverimg, coverfile)
-                coverlink = 'cache/' + bookID + '.jpg'
+                coverlink = 'cache/book/' + bookID + '.jpg'
                 return coverlink
 
     # if no cover.jpg, see if librarything workpage has a cover
@@ -681,12 +736,12 @@ def getAuthorImage(authorid=None):
         return None
 
     cachedir = lazylibrarian.CACHEDIR
-    coverfile = os.path.join(cachedir, authorid + '.jpg')
+    coverfile = os.path.join(cachedir, "author", authorid + '.jpg')
 
     if os.path.isfile(coverfile):  # use cached image if there is one
         lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
         logger.debug(u"getAuthorImage: Returning Cached response for %s" % coverfile)
-        coverlink = 'cache/' + authorid + '.jpg'
+        coverlink = 'cache/author/' + authorid + '.jpg'
         return coverlink
 
     lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
