@@ -269,11 +269,57 @@ def split_title(author, book):
     # Strip title at colon if starts with author, eg Tom Clancy: Ghost Protocol
     if book.startswith(author + ':'):
         book = book.split(author + ':')[1].strip()
+    brace = book.find('(')
+    if brace and book.endswith(')'):
+        # if title ends with words in braces, split on last brace
+        # as this always seems to be a subtitle or series info
+        parts = book.rsplit('(', 1)
+        parts[1] = '(' + parts[1]
+        bookname = parts[0].strip()
+        booksub = parts[1]
+        return bookname, booksub
+    # if not (words in braces at end of string)
+    # split subtitle on whichever comes first, ':' or '('
+    # unless the part in braces is one word, eg (TM) or (Annotated)
+    # Might need to expand this to be a list of allowed words?
+    # .find() returns position in string (0 to len-1) or -1 if not found
+    # change position to 1 to len, or zero if not found so we can use boolean if
     colon = book.find(':')
+    colon += 1
+    brace += 1
+    bookname = book
+    booksub = ''
+    parts = ''
+    if brace:
+        endbrace = book.find(')')
+        endbrace += 1
+        if endbrace:
+            if ' ' not in book[brace:endbrace-1]:
+                brace = 0
+    if colon and brace:
+        if colon < brace:
+            parts = book.split(':', 1)
+        else:
+            parts = book.split('(', 1)
+            parts[1] = '(' + parts[1]
+    elif colon:
+        parts = book.split(':', 1)
+    elif brace:
+        parts = book.split('(', 1)
+        parts[1] = '(' + parts[1]
+    if parts:
+        bookname = parts[0].strip()
+        booksub = parts[1]
+    return bookname, booksub
+
+
+def split_title(author, book):
+    # Strip title at colon if starts with author, eg Tom Clancy: Ghost Protocol
+    if book.startswith(author + ':'):
+        book = book.split(author + ':')[1].strip()
     brace = book.find('(')
     # .find() returns position in string (0 to len-1) or -1 if not found
     # change position to 1 to len, or zero if not found
-    colon += 1
     brace += 1
     if brace and book.endswith(')'):
         # if title ends with words in braces, split on last brace
@@ -283,9 +329,11 @@ def split_title(author, book):
         bookname = parts[0]
         booksub = parts[1]
         return bookname, booksub
-    # split subtitle on first, ':'
     bookname = book
     booksub = ''
+    # try to split subtitle on first ':'
+    colon = book.find(':')
+    colon += 1
     if colon:
         parts = book.split(':', 1)
         bookname = parts[0]
