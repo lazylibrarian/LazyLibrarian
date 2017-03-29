@@ -595,7 +595,7 @@ def getWorkSeries(bookID=None):
                     else:
                         seriesnum = ''
                         series = series.strip()
-                    series = cleanName(unaccented(series))
+                    series = cleanName(unaccented(series), '&/')
                     seriesnum = cleanName(unaccented(seriesnum))
                     seriesdict[series] = seriesnum
                 except IndexError:

@@ -1051,16 +1051,16 @@ class WebInterface(object):
                 dict_counter = 0
                 while "series[%s][name]" % dict_counter in kwargs:
                     s_name = kwargs["series[%s][name]" % dict_counter]
-                    s_name = cleanName(unaccented(s_name))
+                    s_name = cleanName(unaccented(s_name), '&/')
                     new_dict[s_name] = kwargs["series[%s][number]" % dict_counter]
                     dict_counter += 1
                 if 'series[new][name]' in kwargs and 'series[new][number]' in kwargs:
                     if kwargs['series[new][name]']:
                         s_name = kwargs["series[new][name]"]
-                        s_name = cleanName(unaccented(s_name))
+                        s_name = cleanName(unaccented(s_name), '&/')
                         new_dict[s_name] = kwargs['series[new][number]']
                 for item in old_series:
-                    old_dict[cleanName(unaccented(item['SeriesName']))] = item['SeriesNum']
+                    old_dict[cleanName(unaccented(item['SeriesName']), '&/')] = item['SeriesNum']
 
                 series_changed= False
                 for item in old_dict:
@@ -1096,7 +1096,7 @@ class WebInterface(object):
                 else:
                     logger.debug('Book [%s] has not been moved' % bookname)
                 #if edited or moved:
-                raise cherrypy.HTTPRedirect("editBook?BookID=%s" % bookid)
+                raise cherrypy.HTTPRedirect("editBook?bookid=%s" % bookid)
 
         raise cherrypy.HTTPRedirect("books")
 

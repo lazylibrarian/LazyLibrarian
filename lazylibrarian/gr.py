@@ -583,11 +583,11 @@ class GoodReads:
                                     myDB.upsert("books", newValueDict, controlValueDict)
 
                                 if not existing_book:
-                                    logger.debug(u"[%s] Added book: %s [%s] %s" %
+                                    logger.debug(u"[%s] Added book: %s [%s] status %s" %
                                                 (authorname, bookname, bookLanguage, book_status))
                                     added_count += 1
                                 elif updated:
-                                    logger.debug(u"[%s] Updated book: %s [%s] %s" %
+                                    logger.debug(u"[%s] Updated book: %s [%s] status %s" %
                                                 (authorname, bookname, bookLanguage, book_status))
                                     updated_count += 1
                             else:
