@@ -204,7 +204,7 @@ def setStatus(bookid=None, seriesdict=None, default=None):
     bookname = match['BookName']
     # Is the book part of any series we want?
     for item in seriesdict:
-        match = myDB.match('SELECT Status from series where SeriesName="%s"' % item)
+        match = myDB.match('SELECT Status from series where SeriesName="%s" COLLATE NOCASE' % item)
         if match['Status'] == 'Wanted':
             new_status = 'Wanted'
             logger.debug('Marking %s as %s, series %s' % (bookname, new_status, item))
@@ -213,7 +213,7 @@ def setStatus(bookid=None, seriesdict=None, default=None):
     if not new_status:
         # Is it part of any series we don't want?
         for item in seriesdict:
-            match = myDB.match('SELECT Status from series where SeriesName="%s"' % item)
+            match = myDB.match('SELECT Status from series where SeriesName="%s" COLLATE NOCASE' % item)
             if match['Status'] == 'Skipped':
                 new_status = 'Skipped'
                 logger.debug('Marking %s as %s, series %s' % (bookname, new_status, item))

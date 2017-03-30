@@ -583,7 +583,7 @@ class GoogleBooks:
 
                         if not rejected:
                             cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'
-                            cmd += ' and BookName = "%s" and AuthorName = "%s" COLLATE NOCASE'% \
+                            cmd += ' and BookName = "%s" COLLATE NOCASE and AuthorName = "%s" COLLATE NOCASE'% \
                                     (bookname.replace('"', '""'), authorname.replace('"', '""'))
                             match = myDB.match(cmd)
                             if match:
