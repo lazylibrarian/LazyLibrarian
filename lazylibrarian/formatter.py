@@ -341,8 +341,8 @@ def split_title(author, book):
     return bookname, booksub
 
 
-def cleanName(name):
-    validNameChars = u"-_.() %s%s" % (string.ascii_letters, string.digits)
+def cleanName(name, extras=None):
+    validNameChars = u"-_.() %s%s%s" % (string.ascii_letters, string.digits, extras)
     try:
         cleanedName = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore')
     except TypeError:

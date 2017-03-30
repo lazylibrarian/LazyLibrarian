@@ -679,11 +679,11 @@ class GoogleBooks:
                                     myDB.upsert("books", newValueDict, controlValueDict)
 
                                 if not existing_book:
-                                    logger.debug("[%s] Added book: %s [%s] %s" %
+                                    logger.debug("[%s] Added book: %s [%s] status %s" %
                                                 (authorname, bookname, booklang, book_status))
                                     added_count += 1
                                 elif updated:
-                                    logger.debug("[%s] Updated book: %s [%s] %s" %
+                                    logger.debug("[%s] Updated book: %s [%s] status %s" %
                                                 (authorname, bookname, booklang, book_status))
                                     updated_count += 1
                             else:

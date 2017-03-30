@@ -158,7 +158,7 @@ def setSeries(seriesdict=None, bookid=None):
         myDB.action('DELETE from member WHERE BookID="%s"' % bookid)
         for item in seriesdict:
             book = myDB.match('SELECT AuthorID from books where BookID="%s"' % bookid)
-            match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % item)
+            match = myDB.match('SELECT SeriesID from series where SeriesName="%s" COLLATE NOCASE' % item)
             if not match:
                 # new series, need to set status and get SeriesID
                 myDB.action('INSERT into series (SeriesName, Status) VALUES ("%s", "Active")' % item)
@@ -595,7 +595,7 @@ def getWorkSeries(bookID=None):
                     else:
                         seriesnum = ''
                         series = series.strip()
-                    series = cleanName(unaccented(series))
+                    series = cleanName(unaccented(series), '&/')
                     seriesnum = cleanName(unaccented(seriesnum))
                     seriesdict[series] = seriesnum
                 except IndexError:

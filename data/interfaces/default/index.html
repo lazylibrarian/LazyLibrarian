@@ -90,6 +90,11 @@
                     null,
                     null
                     ],
+                "responsive": true,
+                "order": [[ 1, 'asc']],
+                "columnDefs":
+                    [{ type: 'natural', targets: 3 },
+                     { type: 'natural-nohtml', targets: 4 }],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ authors per page",
                     "sEmptyTable": "No authors found",
@@ -99,7 +104,7 @@
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "sPaginationType": "full_numbers",
-                "aaSorting": [[0, 'asc']],
+                "aaSorting": [[1, 'asc']],
             });
 			$('.dataTables_filter input').attr("placeholder", "Search table here");
     });
