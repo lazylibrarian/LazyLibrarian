@@ -150,7 +150,8 @@ def find_book_in_db(myDB, author, book):
     # if not, return bookid to more easily update status
     # prefer an exact match on author & book
     cmd = 'SELECT BookID FROM books,authors where books.AuthorID = authors.AuthorID '
-    cmd += 'and AuthorName="%s" and BookName="%s"' % (author.replace('"', '""'), book.replace('"', '""'))
+    cmd += 'and AuthorName="%s" COLLATE NOCASE and BookName="%s" COLLATE NOCASE' % \
+            (author.replace('"', '""'), book.replace('"', '""'))
     match = myDB.match(cmd)
     if match:
         logger.debug('Exact match [%s]' % book)
@@ -162,7 +163,7 @@ def find_book_in_db(myDB, author, book):
         # on books that should be matched
         # Maybe make ratios configurable in config.ini later
         cmd = 'SELECT BookID,BookName,BookISBN FROM books,authors where books.AuthorID = authors.AuthorID '
-        cmd += 'and AuthorName="%s"' % author.replace('"', '""')
+        cmd += 'and AuthorName="%s" COLLATE NOCASE' % author.replace('"', '""')
         books = myDB.select(cmd)
         best_ratio = 0
         best_partial = 0
@@ -233,7 +234,7 @@ def find_book_in_db(myDB, author, book):
 
         if best_ratio > 90:
             logger.debug(
-                "Fuzz match   ratio [%d] [%s] [%s]" % (best_ratio, book, ratio_name))
+                "Fuzz match ratio [%d] [%s] [%s]" % (best_ratio, book, ratio_name))
             return ratio_id
         if best_partial > 85:
             logger.debug(
@@ -251,7 +252,6 @@ def find_book_in_db(myDB, author, book):
         else:
             logger.debug('No books found in database for %s' % author)
         return 0
-
 
 
 
