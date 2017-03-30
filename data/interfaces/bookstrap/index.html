@@ -16,7 +16,7 @@
     <table class="display table table-striped table-hover table-bordered" id="author_table">
         <thead>
             <tr>
-                <th class="authorimg col-xs-1">Image</th>
+                <th class="authorimg no-sort col-xs-1">Image</th>
                 <th class="authorname col-xs-3">Author</th>
                 <th class="bookname col-xs-4">Latest Book</th>
                 <th class="date col-xs-1 text-center">Released</th>
@@ -85,15 +85,12 @@
     {
         $('#author_table').dataTable(
             {
-                "aoColumns": [
-                    {"bSortable": false},
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
-                    ],
                 "responsive": true,
+                "order": [[ 1, 'asc']],
+                "columnDefs":
+                    [{ targets: 'no-sort', orderable: false },
+                     { type: 'natural', targets: 3 },
+                     { type: 'natural-nohtml', targets: 4 }],
                 "oLanguage": {
                     "sLengthMenu":"_MENU_ rows per page",
                     "sEmptyTable": "No authors found",
