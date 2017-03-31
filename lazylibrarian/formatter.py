@@ -69,6 +69,10 @@ def bookSeries(bookname):
     series = cleanName(unaccented(series))
     series = series.strip()
     seriesNum = seriesNum.strip()
+    if series.lower().strip('.') == 'vol':
+        series = ''
+    if series.lower().strip('.').endswith('vol'):
+        series = series[:-4].strip()
     return series, seriesNum
 
 
