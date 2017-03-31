@@ -780,7 +780,7 @@ class Api(object):
         else:
             self.id = kwargs['id']
             count = getSeriesAuthors(self.id)
-            self.data = "Added " + count
+            self.data = "Added %s" % count
 
     def _getSeriesMembers(self, **kwargs):
         if 'id' not in kwargs:
