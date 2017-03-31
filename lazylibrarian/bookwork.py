@@ -64,12 +64,9 @@ def setBookAuthors(book):
                             newauthors += 1
                     if authorid:
                         # suppress duplicates in bookauthors
-                        match = myDB.match('select authorid from bookauthors where authorid="%s" and bookid="%s"' %
-                                            (authorid, book['bookid']))
-                        if not match:
-                            newrefs += 1
-                            myDB.action('INSERT into bookauthors (AuthorID, BookID) VALUES ("%s", "%s")' %
-                                       (authorid, book['bookid']))
+                        myDB.action('INSERT into bookauthors (AuthorID, BookID) VALUES ("%s", "%s")' %
+                                   (authorid, book['bookid']), suppress='UNIQUE')
+                        newrefs += 1
     except:
         logger.debug("Error parsing authorlist for " + book['bookname'])
     return newauthors, newrefs
@@ -163,18 +160,14 @@ def setSeries(seriesdict=None, bookid=None):
                 # new series, need to set status and get SeriesID
                 myDB.action('INSERT into series (SeriesName, Status) VALUES ("%s", "Active")' % item)
                 match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % item)
-                # and ask librarything what other books are in the series
+                # ask librarything what other books are in the series - leave for user to query if series wanted
                 #_ = getSeriesMembers(match['SeriesID'])
             if match:
                 controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
                 newValueDict = {"SeriesNum": seriesdict[item]}
                 myDB.upsert("member", newValueDict, controlValueDict)
-                # Not sure if we can use upsert with empty controlValueDict, so do it manually...
-                test = myDB.match('SELECT SeriesID from seriesauthors WHERE SeriesID="%s" and AuthorID="%s"' %
-                                (match['SeriesID'], book['AuthorID']))
-                if not test:
-                    myDB.action('Insert into seriesauthors ("SeriesID", "AuthorID") VALUES ("%s", "%s")' %
-                                (match['SeriesID'], book['AuthorID']))
+                myDB.action('INSERT INTO seriesauthors ("SeriesID", "AuthorID") VALUES ("%s", "%s")' %
+                                (match['SeriesID'], book['AuthorID']), suppress='UNIQUE')
             else:
                 logger.debug('Unable to set series for book %s, %s' % (bookid, repr(seriesdict)))
         # removed deleteEmptySeries as setSeries slows down drastically if run in a loop

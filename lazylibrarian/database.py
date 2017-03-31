@@ -30,7 +30,7 @@ class DBConnection:
         self.connection = sqlite3.connect(lazylibrarian.DBFILE, 20)
         self.connection.row_factory = sqlite3.Row
 
-    def action(self, query, args=None):
+    def action(self, query, args=None, suppress=None):
         with db_lock:
 
             if not query:
@@ -62,6 +62,15 @@ class DBConnection:
                         logger.error('Database error: %s' % e)
                         logger.error("Failed query: [%s]" % query)
                         raise
+
+                except  sqlite3.IntegrityError as e:
+                        if 'UNIQUE constraint failed' in e.message and suppress == 'UNIQUE':
+                            logger.debug('Unique entry suppressed [%s]' % query)
+                            break
+                        else:
+                            logger.error('Database Integrity error: %s' % e)
+                            logger.error("Failed query: [%s]" % query)
+                            raise
 
                 except sqlite3.DatabaseError as e:
                     logger.error('Fatal error executing %s :: %s' % (query, e))

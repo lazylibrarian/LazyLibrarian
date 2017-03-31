@@ -449,6 +449,7 @@ class WebInterface(object):
             AuthorName = authorsearch['AuthorName']
             logger.info(u"Removing all references to author: %s" % AuthorName)
             myDB.action('DELETE from authors WHERE AuthorID="%s"' % AuthorID)
+            myDB.action('DELETE from seriesauthors WHERE AuthorID="%s"' % AuthorID)
             myDB.action('DELETE from books WHERE AuthorID="%s"' % AuthorID)
         raise cherrypy.HTTPRedirect("home")
 
