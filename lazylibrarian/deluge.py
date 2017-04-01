@@ -38,7 +38,7 @@ from lazylibrarian.common import setperm
 
 delugeweb_auth = {}
 delugeweb_url = ''
-
+headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
 
 def addTorrent(link, data=None):
     try:
@@ -207,8 +207,6 @@ def _get_auth():
     logger.debug('Deluge: Authenticating...')
     global delugeweb_auth, delugeweb_url, headers
     delugeweb_auth = {}
-    headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
-
 
     delugeweb_host = lazylibrarian.CONFIG['DELUGE_HOST']
     delugeweb_password = lazylibrarian.CONFIG['DELUGE_PASS']

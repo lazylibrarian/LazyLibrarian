@@ -28,8 +28,11 @@ from lazylibrarian.common import formatAuthorName
 def setAllBookAuthors():
     myDB = database.DBConnection()
     myDB.action('drop table if exists bookauthors')
-    myDB.action('create table bookauthors (AuthorID TEXT, BookID TEXT)')
-    myDB.action('insert into bookauthors select AuthorID, BookID from books')
+    myDB.action('create table bookauthors (AuthorID TEXT, BookID TEXT, UNIQUE (AuthorID, BookID))')
+    books = myDB.select('SELECT AuthorID,BookID from books')
+    for item in books:
+        myDB.action('insert into bookauthors (AuthorID, BookID) values (%s, %s)' %
+                    (item['AuthorID'], item['BookID']) , suppress='UNIQUE')
     # also need to drop authorid from books table once it all works properly
     totalauthors = 0
     totalrefs = 0

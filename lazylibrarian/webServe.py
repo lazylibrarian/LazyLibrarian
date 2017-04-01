@@ -1494,7 +1494,7 @@ class WebInterface(object):
                         try:
                             os.rmdir(magdir)
                             logger.debug(u'Magazine directory %s deleted from disc' % magdir)
-                        except Exception as e:
+                        except Exception:
                             logger.debug(u'Magazine directory %s is not empty' % magdir)
                     logger.info(u'Magazine %s deleted from disc' % item)
                 if action == "Remove" or action == "Delete":

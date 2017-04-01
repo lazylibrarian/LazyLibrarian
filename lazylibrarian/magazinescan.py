@@ -400,7 +400,7 @@ def magazineScan():
                         newValueDict["MagazineAdded"] =  iss_acquired
                     if not maglastacquired or iss_acquired > maglastacquired:
                         newValueDict["LastAcquired"] = iss_acquired
-                    if not magissuedate or issuedate > magissuedate:
+                    if not magissuedate or issuedate >= magissuedate:
                         newValueDict["IssueDate"] = issuedate
                         newValueDict["LatestCover"] = os.path.splitext(issuefile)[0] + '.jpg'
                     myDB.upsert("magazines", newValueDict, controlValueDict)

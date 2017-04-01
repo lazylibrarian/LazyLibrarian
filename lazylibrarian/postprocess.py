@@ -434,17 +434,21 @@ def processDir(reset=False):
                             processExtras(myDB, dest_path, global_name, data)
                     else:
                         # update mags
-                        controlValueDict = {"Title": book['BookID']}
                         if mostrecentissue:
                             if mostrecentissue.isdigit() and str(book['AuxInfo']).isdigit():
-                                older = int(mostrecentissue) > int(book['AuxInfo'])  # issuenumber
+                                older = (int(mostrecentissue) > int(book['AuxInfo']))  # issuenumber
                             else:
-                                older = mostrecentissue > book['AuxInfo']  # YYYY-MM-DD
+                                older = (mostrecentissue > book['AuxInfo'])  # YYYY-MM-DD
                         else:
                             older = False
-                        # dest_path is where we put the magazine after processing, but we don't have the full filename
-                        # so look for any "book" in that directory
-                        dest_file = book_file(dest_path, booktype='mag')
+                        # we don't know the full filename at this point, have to reconstruct it...
+                        for extn in getList(lazylibrarian.CONFIG['MAG_TYPE']):
+                            dest_file = os.path.join(dest_path, '%s.%s' % (global_name, extn))
+                            if os.path.isfile(dest_file):
+                                logger.debug('Found magazine file %s' % dest_file)
+                                break
+
+                        controlValueDict = {"Title": book['BookID']}
                         if older:  # check this in case processing issues arriving out of order
                             newValueDict = {"LastAcquired": today(), "IssueStatus": "Open"}
                         else:
