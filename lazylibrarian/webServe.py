@@ -1121,8 +1121,7 @@ class WebInterface(object):
                             logger.debug(u'Status set to "%s" for "%s"' % (action, bookname))
                     if action in ["Remove", "Delete"]:
                         bookdata = myDB.match(
-                            'SELECT AuthorID,Bookname,BookFile from books WHERE BookID = "%s"' %
-                            bookid)
+                            'SELECT AuthorID,Bookname,BookFile from books WHERE BookID = "%s"' % bookid)
                         if bookdata:
                             AuthorID = bookdata['AuthorID']
                             bookname = bookdata['BookName']
@@ -1140,6 +1139,7 @@ class WebInterface(object):
                                 myDB.upsert("books", {"Status": "Ignored"}, {"BookID": bookid})
                                 logger.debug(u'Status set to Ignored for "%s"' % bookname)
                             else:
+                                myDB.action('delete from books where bookid="%s"' % bookid)
                                 logger.info(u'Removed "%s" from database' % bookname)
 
         if redirect == "author" or len(authorcheck):

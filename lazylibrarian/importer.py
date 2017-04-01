@@ -36,6 +36,10 @@ def addAuthorNameToDB(author=None, refresh=False, addbooks=True):
     # authorname returned is our preferred name, or empty string if not found or unable to add
     myDB = database.DBConnection()
     new = False
+    if len(author) < 2:
+        logger.debug('Invalid Author Name [%s]' % author)
+        return "", "", False
+
     author = formatAuthorName(author)
     # Check if the author exists, and import the author if not,
     check_exist_author = myDB.match('SELECT AuthorID FROM authors where AuthorName="%s"' % author.replace('"', '""'))
@@ -48,7 +52,7 @@ def addAuthorNameToDB(author=None, refresh=False, addbooks=True):
             author_gr = GR.find_author_id()
         except Exception as e:
             logger.warn("Error finding author id for [%s] %s" % (author, str(e)))
-            return "", False
+            return "", "", False
 
         # only try to add if GR data matches found author data
         if author_gr:

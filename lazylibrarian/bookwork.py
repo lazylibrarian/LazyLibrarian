@@ -147,26 +147,29 @@ def setAllBookSeries():
     logger.info('Series check complete: ' + msg)
     return msg
 
-def setSeries(seriesdict=None, bookid=None):
+def setSeries(seriesdict=None, bookid=None, seriesauthors=True):
     """ set series details in series/member tables from the supplied dict """
     myDB = database.DBConnection()
     if bookid:
         # delete any old series-member entries
         myDB.action('DELETE from member WHERE BookID="%s"' % bookid)
         for item in seriesdict:
-            book = myDB.match('SELECT AuthorID from books where BookID="%s"' % bookid)
             match = myDB.match('SELECT SeriesID from series where SeriesName="%s" COLLATE NOCASE' % item)
             if not match:
                 # new series, need to set status and get SeriesID
                 myDB.action('INSERT into series (SeriesName, Status) VALUES ("%s", "Active")' % item)
                 match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % item)
-                # ask librarything what other books are in the series - leave for user to query if series wanted
+                # don't ask librarything what other books are in the series - leave for user to query if series wanted
                 #_ = getSeriesMembers(match['SeriesID'])
-            if match:
+            book = myDB.match('SELECT AuthorID from books where BookID="%s"' % bookid)
+            if match and book:
                 controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
                 newValueDict = {"SeriesNum": seriesdict[item]}
                 myDB.upsert("member", newValueDict, controlValueDict)
-                myDB.action('INSERT INTO seriesauthors ("SeriesID", "AuthorID") VALUES ("%s", "%s")' %
+                # database versions earlier that 17 don't have seriesauthors table
+                # but this function is used in dbupgrade
+                if seriesauthors:
+                    myDB.action('INSERT INTO seriesauthors ("SeriesID", "AuthorID") VALUES ("%s", "%s")' %
                                 (match['SeriesID'], book['AuthorID']), suppress='UNIQUE')
             else:
                 logger.debug('Unable to set series for book %s, %s' % (bookid, repr(seriesdict)))
@@ -185,9 +188,8 @@ def setStatus(bookid=None, seriesdict=None, default=None):
     if not match:
         return default
 
-    # Don't update status if we already have the book
-    # but allow status change if ignored - might be we had ignore author set,
-    # but want to allow this series
+    # Don't update status if we already have the book but allow status change if ignored
+    # might be we had ignore author set, but want to allow this series
     current_status = match['Status']
     if current_status in ['Have', 'Open']:
         return current_status

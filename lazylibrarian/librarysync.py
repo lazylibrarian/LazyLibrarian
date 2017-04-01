@@ -396,10 +396,12 @@ def LibraryScan(startdir=None):
                             except Exception as e:
                                 logger.debug('get_book_info failed for %s, %s' % (book_filename, str(e)))
                                 res = {}
-                            if 'title' in res and 'creator' in res:  # this is the minimum we need
-                                match = 1
+                            # title and creator are the minimum we need
+                            if 'title' in res and 'creator' in res \
+                                and len(res['creator']) > 2 and len(res['title']) > 2:
                                 book = res['title']
                                 author = res['creator']
+                                match = 1
                                 if 'language' in res:
                                     language = res['language']
                                 if 'identifier' in res:
@@ -410,7 +412,6 @@ def LibraryScan(startdir=None):
                                 logger.debug("book meta [%s] [%s] [%s] [%s] [%s]" %
                                              (isbn, language, author, book, extn))
                             else:
-
                                 logger.debug("Book meta incomplete in %s" % book_filename)
 
                         # calibre uses "metadata.opf", LL uses "bookname - authorname.opf"
@@ -424,7 +425,9 @@ def LibraryScan(startdir=None):
                         except Exception as e:
                             logger.debug('get_book_info failed for %s, %s' % (metafile, str(e)))
                             res = {}
-                        if 'title' in res and 'creator' in res:  # this is the minimum we need
+                        # title and creator are the minimum we need
+                        if 'title' in res and 'creator' in res \
+                                and len(res['creator']) > 2 and len(res['title']) > 2:
                             match = 1
                             book = res['title']
                             author = res['creator']
@@ -440,7 +443,7 @@ def LibraryScan(startdir=None):
 
                         if not match:  # no author/book from metadata file, and not embedded either
                             match = pattern.match(files)
-                            if match:
+                            if match and len(match.group("author")) > 2 and len(match.group("book")) > 2:
                                 author = match.group("author")
                                 book = match.group("book")
                             else:
