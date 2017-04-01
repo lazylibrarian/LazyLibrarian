@@ -63,8 +63,9 @@ def upgrade_needed():
     # 15 move series and seriesnum into separate tables so book can appear in multiple series
     # 16 remove series, authorlink, authorname columns from book table, only in series/author tables now
     # 17 remove authorid from series table, new seriesauthor table to allow multiple authors per series
+    # 18 Added unique constraint to seriesauthors table
 
-    db_current_version = 17
+    db_current_version = 18
     if db_version < db_current_version:
         return db_current_version
     return 0
@@ -554,7 +555,7 @@ def dbupgrade(db_current_version):
                         if not seriesdict:  # no workpage series, use the current values if present
                             if book['Series'] and book['SeriesNum']:
                                 seriesdict = {cleanName(unaccented(book['Series'])): book['SeriesNum']}
-                        setSeries(seriesdict, book['BookID'])
+                        setSeries(seriesdict, book['BookID'], seriesauthors=False)
                     # deleteEmptySeries  # shouldn't be any on first run?
                     lazylibrarian.UPDATE_MSG = "Book series update complete"
                     logger.debug(lazylibrarian.UPDATE_MSG)
@@ -591,14 +592,41 @@ def dbupgrade(db_current_version):
             if has_column(myDB, "series", "AuthorID"):
                 lazylibrarian.UPDATE_MSG = 'Creating seriesauthors table'
                 # In this version of the database there is only one author per series so use that as starting point
-                myDB.action('CREATE TABLE IF NOT EXISTS seriesauthors (SeriesID INTEGER, AuthorID TEXT)')
-                myDB.action('INSERT INTO seriesauthors SELECT SeriesID, AuthorID FROM series')
-                myDB.action('CREATE TABLE IF NOT EXISTS temp_table (SeriesID INTEGER PRIMARY KEY, SeriesName TEXT, \
+                myDB.action('CREATE TABLE seriesauthors (SeriesID INTEGER, AuthorID TEXT, UNIQUE (SeriesID,AuthorID))')
+                series = myDB.select('SELECT SeriesID,AuthorID from series')
+                cnt = 0
+                tot = len(series)
+                for item in series:
+                    cnt += 1
+                    lazylibrarian.UPDATE_MSG = "Updating seriesauthors: %s of %s" % (cnt, tot)
+                    myDB.action('insert into seriesauthors (SeriesID, AuthorID) values (%s, %s)' %
+                                (item['SeriesID'], item['AuthorID']) , suppress='UNIQUE')
+
+                myDB.action('DROP TABLE temp_table')
+                myDB.action('CREATE TABLE temp_table (SeriesID INTEGER PRIMARY KEY, SeriesName TEXT, \
                     Status TEXT)')
                 myDB.action('INSERT INTO temp_table SELECT  SeriesID, SeriesName, Status FROM series')
                 myDB.action('DROP TABLE series')
                 myDB.action('ALTER TABLE temp_table RENAME TO series')
                 lazylibrarian.UPDATE_MSG = 'Reorganisation of series table complete'
+
+        if db_version < 18:
+            data = myDB.match('pragma index_list(seriesauthors)')
+            if not data:
+                lazylibrarian.UPDATE_MSG = 'Adding unique constraint to seriesauthors table'
+                myDB.action('DROP TABLE IF EXISTS temp_table')
+                myDB.action('ALTER TABLE seriesauthors RENAME to temp_table')
+                myDB.action('CREATE TABLE seriesauthors (SeriesID INTEGER, AuthorID TEXT, UNIQUE (SeriesID,AuthorID))')
+                series = myDB.select('SELECT SeriesID,AuthorID from temp_table')
+                cnt = 0
+                tot = len(series)
+                for item in series:
+                    cnt += 1
+                    lazylibrarian.UPDATE_MSG = "Updating seriesauthors: %s of %s" % (cnt, tot)
+                    myDB.action('insert into seriesauthors (SeriesID, AuthorID) values (%s, %s)' %
+                                (item['SeriesID'], item['AuthorID']) , suppress='UNIQUE')
+                myDB.action('DROP TABLE temp_table')
+                lazylibrarian.UPDATE_MSG = 'Reorganisation of seriesauthors complete'
 
 
         # Now do any non-version-specific tidying

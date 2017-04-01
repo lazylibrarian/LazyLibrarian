@@ -439,7 +439,7 @@ class GoodReads:
 
                         bookname, booksub = split_title(authorNameResult, bookname)
 
-                        dic = {':': '', '"': ''}  # do we need to strip apostrophes , '\'': ''}
+                        dic = {':': '.', '"': ''}  # do we need to strip apostrophes , '\'': ''}
                         bookname = replace_all(bookname, dic)
                         bookname = bookname.strip()  # strip whitespace
                         booksub = replace_all(booksub, dic)
@@ -741,7 +741,7 @@ class GoodReads:
 
         bookname = unaccented(bookname)
         bookname, booksub = split_title(authorname, bookname)
-        dic = {':': '', '"': '', '\'': ''}
+        dic = {':': '.', '"': '', '\'': ''}
         bookname = replace_all(bookname, dic).strip()
         booksub = replace_all(booksub, dic).strip()
         if booksub:

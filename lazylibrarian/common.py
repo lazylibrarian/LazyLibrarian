@@ -56,10 +56,10 @@ def formatAuthorName(author):
                 logger.debug('Formatted authorname [%s] to [%s %s]' % (author, forename, surname))
                 author = forename + ' ' + surname
     # reformat any initials, we want to end up with L.E. Modesitt Jr
-    if author[1] in '. ':
+    if len(author) > 2 and author[1] in '. ':
         surname = author
         forename = ''
-        while surname[1] in '. ':
+        while len(surname) > 2 and surname[1] in '. ':
             forename = forename + surname[0] + '.'
             surname = surname[2:].strip()
         if author != forename + ' ' + surname:

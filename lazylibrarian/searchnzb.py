@@ -135,7 +135,7 @@ def processResultList(resultlist, book, searchtype):
                 ':': '', '!': '', '-': ' ', '\s\s': ' '}
 
     dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
-           ',': '', '*': '', ':': '', ';': '', '\'': ''}
+           ',': '', '*': '', ':': '.', ';': '', '\'': ''}
 
     match_ratio = int(lazylibrarian.CONFIG['MATCH_RATIO'])
     reject_list = getList(lazylibrarian.CONFIG['REJECT_WORDS'])

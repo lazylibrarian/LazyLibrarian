@@ -239,7 +239,7 @@ class GoogleBooks:
 
                             highest_fuzz = max((author_fuzz + book_fuzz) / 2, isbn_fuzz)
 
-                            dic = {':': '', '"': '', '\'': ''}
+                            dic = {':': '.', '"': '', '\'': ''}
                             bookname = replace_all(bookname, dic)
 
                             bookname = unaccented(bookname)
@@ -536,7 +536,7 @@ class GoogleBooks:
 
                         bookname = item['volumeInfo']['title']
                         bookname = unaccented(bookname)
-                        dic = {':': '', '"': '', '\'': ''}
+                        dic = {':': '.', '"': '', '\'': ''}
                         bookname = replace_all(bookname, dic)
                         bookname = bookname.strip()  # strip whitespace
 
@@ -758,7 +758,7 @@ class GoogleBooks:
             return
 
         bookname = jsonresults['volumeInfo']['title']
-        dic = {':': '', '"': '', '\'': ''}
+        dic = {':': '.', '"': '', '\'': ''}
         bookname = replace_all(bookname, dic)
 
         bookname = unaccented(bookname)
