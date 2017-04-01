@@ -25,6 +25,7 @@ import pushover
 import slack
 import tweet
 import custom_notify
+from lazylibrarian import logger
 
 # online
 twitter_notifier = tweet.TwitterNotifier()
