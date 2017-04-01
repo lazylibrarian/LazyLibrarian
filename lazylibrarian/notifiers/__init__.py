@@ -50,15 +50,28 @@ notifiers = [
 ]
 
 def custom_notify_download(bookid):
-    custom_notifier.notify_download(bookid)
+    try:
+        custom_notifier.notify_download(bookid)
+    except Exception as e:
+        logger.warn('Custom notify download failed: %s' % str(e))
+
 
 def custom_notify_snatch(bookid):
-    custom_notifier.notify_snatch(bookid)
+    try:
+        custom_notifier.notify_snatch(bookid)
+    except Exception as e:
+        logger.warn('Custom notify snatch failed: %s' % str(e))
 
 def notify_download(title):
-    for n in notifiers:
-        n.notify_download(title)
+    try:
+        for n in notifiers:
+            n.notify_download(title)
+    except Exception as e:
+        logger.warn('Notify download failed: %s' % str(e))
 
 def notify_snatch(title):
-    for n in notifiers:
-        n.notify_snatch(title)
+    try:
+        for n in notifiers:
+            n.notify_snatch(title)
+    except Exception as e:
+        logger.warn('Notify snatch failed: %s' % str(e))
