@@ -414,7 +414,7 @@ def processDir(reset=False):
                                 logger.debug('Match: %s%%  %s' % (match[0], match[1]))
                     continue
 
-                success, err = processDestination(pp_path, dest_path, authorname, bookname, global_name, book['BookID'])
+                success, dest_file = processDestination(pp_path, dest_path, authorname, bookname, global_name, book['BookID'])
                 if success:
                     logger.debug("Processed %s: %s, %s" % (book['NZBmode'], global_name, book['NZBurl']))
                     # update nzbs, only update the snatched ones in case multiple matches for same book/magazine issue
@@ -441,12 +441,6 @@ def processDir(reset=False):
                                 older = (mostrecentissue > book['AuxInfo'])  # YYYY-MM-DD
                         else:
                             older = False
-                        # we don't know the full filename at this point, have to reconstruct it...
-                        for extn in getList(lazylibrarian.CONFIG['MAG_TYPE']):
-                            dest_file = os.path.join(dest_path, '%s.%s' % (global_name, extn))
-                            if os.path.isfile(dest_file):
-                                logger.debug('Found magazine file %s' % dest_file)
-                                break
 
                         controlValueDict = {"Title": book['BookID']}
                         if older:  # check this in case processing issues arriving out of order
@@ -507,7 +501,7 @@ def processDir(reset=False):
                     if internet():
                         notify_download("%s from %s at %s" % (global_name, book['NZBprov'], now()))
                 else:
-                    logger.error('Postprocessing for %s has failed: %s' % (global_name, err))
+                    logger.error('Postprocessing for %s has failed: %s' % (global_name, dest_file))
                     controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
                     newValueDict = {"Status": "Failed", "NZBDate": now()}
                     myDB.upsert("wanted", newValueDict, controlValueDict)
@@ -682,7 +676,7 @@ def import_book(pp_path=None, bookID=None):
             dest_path = unaccented_str(replace_all(dest_path, __dic__))
             dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
 
-            success, err = processDestination(pp_path, dest_path, authorname, bookname, global_name, bookID)
+            success, dest_file = processDestination(pp_path, dest_path, authorname, bookname, global_name, bookID)
             if success:
                 # update nzbs
                 was_snatched = myDB.match('SELECT BookID, NZBprov FROM wanted WHERE BookID="%s"' % bookID)
@@ -720,7 +714,7 @@ def import_book(pp_path=None, bookID=None):
                     notify_download("%s %s at %s" % (global_name, snatched_from, now()))
                 return True
             else:
-                logger.error('Postprocessing for %s has failed: %s' % (global_name, err))
+                logger.error('Postprocessing for %s has failed: %s' % (global_name, dest_file))
                 logger.error('Warning - Residual files remain in %s.fail' % pp_path)
                 was_snatched = myDB.match('SELECT BookID FROM wanted WHERE BookID="%s"' % bookID)
                 if was_snatched:
@@ -798,7 +792,9 @@ def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
 
 
 def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, bookid=None):
-    # check we got a book/magazine in the downloaded files, if not, return
+    """ Copy book/mag and associated files into target directory
+        Return True, full_path_to_book  or False, error_message"""
+
     if bookname:
         booktype = 'book'
     else:
@@ -813,24 +809,24 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
         for booktype in booktype_list:
             if not match:
-                for bookfile in os.listdir(pp_path):
-                    extn = os.path.splitext(bookfile)[1].lstrip('.')
+                for fname in os.listdir(pp_path):
+                    extn = os.path.splitext(fname)[1].lstrip('.')
                     if extn and extn.lower() == booktype:
                         match = booktype
                         break
         if match:
             logger.debug('One format import, best match = %s' % match)
-            for bookfile in os.listdir(pp_path):
-                if is_valid_booktype(bookfile, booktype=booktype) and not bookfile.endswith(match):
+            for fname in os.listdir(pp_path):
+                if is_valid_booktype(fname, booktype=booktype) and not fname.endswith(match):
                     try:
-                        logger.debug('Deleting %s' % os.path.splitext(bookfile)[1])
-                        os.remove(os.path.join(pp_path, bookfile))
+                        logger.debug('Deleting %s' % os.path.splitext(fname)[1])
+                        os.remove(os.path.join(pp_path, fname))
                     except OSError as why:
-                        logger.debug('Unable to delete %s: %s' % (bookfile, why.strerror))
+                        logger.debug('Unable to delete %s: %s' % (fname, why.strerror))
 
     else:  # mag or multi-format book
-        for bookfile in os.listdir(pp_path):
-            if is_valid_booktype(bookfile, booktype=booktype):
+        for fname in os.listdir(pp_path):
+            if is_valid_booktype(fname, booktype=booktype):
                 match = True
                 break
 
@@ -839,14 +835,15 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         return False, 'Unable to locate a book/magazine in %s, leaving for manual processing' % pp_path
 
     # Do we want calibre to import the book for us
+    newbookfile= ''
     if bookname and len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
         dest_dir = lazylibrarian.DIRECTORY('Destination')
         params = []
         try:
             logger.debug('Importing %s into calibre library' % global_name)
             # calibre ignores metadata.opf and book_name.opf
-            for bookfile in os.listdir(pp_path):
-                filename, extn = os.path.splitext(bookfile)
+            for fname in os.listdir(pp_path):
+                filename, extn = os.path.splitext(fname)
                 # calibre does not like quotes in author names
                 os.rename(os.path.join(pp_path, filename + extn), os.path.join(
                     pp_path, global_name.replace('"', '_') + extn))
@@ -919,7 +916,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 target_dir = os.path.join(calibre_dir, '%s (%s)' % (global_name, calibre_id))
                 if os.path.isdir(target_dir):
                     imported = LibraryScan(target_dir)
-                    if not book_file(target_dir):
+                    newbookfile = book_file(target_dir)
+                    if not newbookfile:
                         logger.warn("Failed to find a valid book in [%s]" % target_dir)
                         imported = False
                 else:
@@ -933,10 +931,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         except subprocess.CalledProcessError as e:
             logger.debug(params)
             return False, 'calibredb import failed: %s' % e.output
-
         except OSError as e:
             return False, 'calibredb failed, %s' % e.strerror
-
     else:
         # we are copying the files ourselves, either it's a magazine or we don't want to use calibre
         if not os.path.exists(dest_path):
@@ -961,14 +957,16 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     is_valid_booktype(fname, booktype=booktype):
                 logger.debug('Copying %s to directory %s' % (fname, dest_path))
                 try:
-                    shutil.copyfile(os.path.join(pp_path, fname), os.path.join(
-                        dest_path, global_name + os.path.splitext(fname)[1]))
-                    setperm(os.path.join(dest_path, global_name + os.path.splitext(fname)[1]))
+                    destfile = os.path.join(dest_path, global_name + os.path.splitext(fname)[1])
+                    shutil.copyfile(os.path.join(pp_path, fname), destfile)
+                    setperm(destfile)
+                    if is_valid_booktype(destfile, booktype=booktype):
+                        newbookfile = destfile
                 except Exception as why:
                     return False, "Unable to copy file %s to %s: %s" % (fname, dest_path, str(why))
             else:
                 logger.debug('Ignoring unwanted file: %s' % fname)
-    return True, ""
+    return True, newbookfile
 
 
 def processAutoAdd(src_path=None):
@@ -998,8 +996,8 @@ def processAutoAdd(src_path=None):
             booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
             for booktype in booktype_list:
                 while not match:
-                    for bookfile in names:
-                        extn = os.path.splitext(bookfile)[1].lstrip('.')
+                    for name in names:
+                        extn = os.path.splitext(name)[1].lstrip('.')
                         if extn and extn.lower() == booktype:
                             match = booktype
                             break
