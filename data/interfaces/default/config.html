@@ -285,7 +285,6 @@
                                 <div class="row">
                                     <label>SABnzb Connection:</label>
                                     <input type="button" value="Test SABnzbd" id="testSABnzbd" style="float:right;">
-                                    <small>Save settings before testing</small>
                                 </div>
                             </fieldset>
 
@@ -327,7 +326,6 @@
                                 <div class="row">
                                     <label>NZBget Connection:</label>
                                     <input type="button" value="Test NZBget" id="testNZBget" style="float:right;">
-                                    <small>Save settings before testing</small>
                                 </div>
                             </fieldset>
 
@@ -445,7 +443,6 @@
                                 </div>
                                 <div class="row">
                                     <input type="button" value="Test Deluge" id="testDeluge" style="float:right;">
-                                    <small>Save settings before testing</small>
                                 </div>
                             </fieldset>
 
@@ -478,7 +475,6 @@
                                 </div>
                                 <div class="row">
                                     <input type="button" value="Test Transmission" id="testTransmission" style="float:right;">
-                                    <small>Save settings before testing</small>
                                 </div>
                             </fieldset>
 
@@ -518,7 +514,6 @@
                                 </div>
                                 <div class="row">
                                     <input type="button" value="Test rTorrent" id="testrTorrent" style="float:right;">
-                                    <small>Save settings before testing</small>
                                 </div>
                             </fieldset>
 
@@ -556,7 +551,6 @@
                                 </div>
                                 <div class="row">
                                     <input type="button" value="Test uTorrent" id="testuTorrent" style="float:right;">
-                                    <small>Save settings before testing</small>
                                 </div>
                             </fieldset>
                              <div class="row checkbox">
@@ -592,7 +586,6 @@
                                 </div>
                                 <div class="row">
                                     <input type="button" value="Test qBittorrent" id="testqBittorrent" style="float:right;">
-                                    <small>Save settings before testing</small>
                                 </div>
                             </fieldset>
                             <div class="row checkbox">
@@ -1105,7 +1098,6 @@
                         </div>
                         <div class="row">
                             <input type="button" value="Test Twitter" id="testTwitter" />
-                            <br><small>Save settings before testing</small>
                         </div>
                     </div>
                 </fieldset>
@@ -1146,7 +1138,6 @@
                         </div>
                         <div class="row">
                             <input type="button" value="Test Boxcar" id="testBoxcar">
-                            <br><small>Save settings before testing</small>
                         </div>
                     </div>
                 </fieldset>
@@ -1190,7 +1181,6 @@
                         </div>
                         <div class="row">
                             <input type="button" value="Test Pushbullet" id="testPushbullet">
-                            <br><small>Save settings before testing</small>
                         </div>
                      </div>
                 </fieldset>
@@ -1241,7 +1231,6 @@
                         </div>
                         <div class="row">
                             <input type="button" value="Test Pushover" id="testPushover">
-                            <br><small>Save settings before testing</small>
                         </div>
                     </div>
                 </fieldset>
@@ -1294,7 +1283,6 @@
                         </div>
                         <div class="row">
                             <input type="button" value="Test AndroidPN" id="testAndroidPN">
-                            <br><small>Save settings before testing</small>
                         </div>
                     </div>
                 </fieldset>
@@ -1361,7 +1349,6 @@
                                     </div>
                                     <div class="row">
                                         <input type="button" value="Test NMA" id="testNMA">
-                                        <br><small>Save settings before testing</small>
                                     </div>
                                 </div>
 		        </fieldset>
@@ -1402,7 +1389,6 @@
                         </div>
                         <div class="row">
                             <input type="button" value="Test Slack" id="testSlack">
-                            <br><small>Save settings before testing</small>
                         </div>
                      </div>
                 </fieldset>
@@ -1476,7 +1462,6 @@
                         </div>
                         <div class="row">
                             <input type="button" value="Test Email" id="testEmail">
-                            <br><small>Save settings before testing</small>
                         </div>
                      </div>
                 </fieldset>
@@ -1517,7 +1502,6 @@
                         </div>
                         <div class="row">
                             <input type="button" value="Test Custom" id="testCustom">
-                            <br><small>Save settings before testing</small>
                         </div>
                      </div>
                 </fieldset>
@@ -2136,51 +2120,85 @@
             });
 
             $('#testSABnzbd').click(function () {
-                $.get("testSABnzbd",
+                var host = $.trim($("#sab_host").val());
+                var port = $.trim($("#sab_port").val());
+                var user = $.trim($("#sab_user").val());
+                var pwd = $.trim($("#sab_pass").val());
+                var api = $.trim($("#sab_api").val());
+                var cat = $.trim($("#sab_cat").val());
+                var subdir = $.trim($("#sab_subdir").val());
+                $.get("testSABnzbd", {'host': host, 'port': port, 'user': user, 'pwd': pwd, 'api': api, 'cat': cat, 'subdir': subdir},
                     function (data) { alert(data); });
-
             });
 
             $('#testNZBget').click(function () {
-                $.get("testNZBget",
+                var host = $.trim($("#nzbget_host").val());
+                var port = $.trim($("#nzbget_port").val());
+                var user = $.trim($("#nzbget_user").val());
+                var pwd = $.trim($("#nzbget_pass").val());
+                var cat = $.trim($("#nzbget_category").val());
+                var pri = $.trim($("#nzbget_priority").val());
+                $.get("testNZBget", {'host': host, 'port': port, 'user': user, 'pwd': pwd, 'cat': cat, 'pri': pri},
                     function (data) { alert(data); });
-
             });
 
             $('#testSynology').click(function () {
-                $.get("testSynology",
+                var host = $.trim($("#synology_host").val());
+                var port = $.trim($("#synology_port").val());
+                var user = $.trim($("#synology_user").val());
+                var pwd = $.trim($("#synology_pass").val());
+                var dir = $.trim($("#synology_dir").val());
+                $.get("testSynology", {'host': host, 'port': port, 'user': user, 'pwd': pwd, 'dir': dir},
                     function (data) { alert(data); });
-
             });
 
             $('#testDeluge').click(function () {
-                $.get("testDeluge",
+                var host = $.trim($("#deluge_host").val());
+                var port = $.trim($("#deluge_port").val());
+                var user = $.trim($("#deluge_user").val());
+                var pwd = $.trim($("#deluge_pass").val());
+                var label = $.trim($("#deluge_label").val());
+                $.get("testDeluge", {'host': host, 'port': port, 'user': user, 'pwd': pwd, 'label': label},
                     function (data) { alert(data); });
-
             });
 
             $('#testTransmission').click(function () {
-                $.get("testTransmission",
+                var host = $.trim($("#transmission_host").val());
+                var port = $.trim($("#transmission_port").val());
+                var user = $.trim($("#transmission_user").val());
+                var pwd = $.trim($("#transmission_pass").val());
+                $.get("testTransmission", {'host': host, 'port': port, 'user': user, 'pwd': pwd},
                     function (data) { alert(data); });
-
             });
 
             $('#testqBittorrent').click(function () {
-                $.get("testqBittorrent",
+                var host = $.trim($("#qbittorrent_host").val());
+                var port = $.trim($("#qbittorrent_port").val());
+                var user = $.trim($("#qbittorrent_user").val());
+                var pwd = $.trim($("#qbittorrent_pass").val());
+                var label = $.trim($("#qbittorrent_label").val());
+                $.get("testqBittorrent", {'host': host, 'port': port, 'user': user, 'pwd': pwd, 'label': label},
                     function (data) { alert(data); });
-
             });
 
             $('#testuTorrent').click(function () {
-                $.get("testuTorrent",
+                var host = $.trim($("#utorrent_host").val());
+                var port = $.trim($("#utorrent_port").val());
+                var user = $.trim($("#utorrent_user").val());
+                var pwd = $.trim($("#utorrent_pass").val());
+                var label = $.trim($("#utorrent_label").val());
+                $.get("testuTorrent", {'host': host, 'port': port, 'user': user, 'pwd': pwd, 'label': label},
                     function (data) { alert(data); });
-
             });
 
             $('#testrTorrent').click(function () {
-                $.get("testrTorrent",
+                var host = $.trim($("#rtorrent_host").val());
+                var dir = $.trim($("#rtorrent_dir").val());
+                var user = $.trim($("#rtorrent_user").val());
+                var pwd = $.trim($("#rtorrent_pass").val());
+                var label = $.trim($("#rtorrent_label").val());
+                $.get("testrTorrent", {'host': host, 'dir': dir, 'user': user, 'pwd': pwd, 'label': label},
                     function (data) { alert(data); });
-
             });
 
             $('#twitterStep1').click(function () {
@@ -2202,37 +2220,56 @@
             });
 
             $('#testBoxcar').click(function () {
-                $.get("testBoxcar",
+                var token = $.trim($("#boxcar_token").val());
+                $.get("testBoxcar", {'token': token},
                     function (data) { alert(data); });
             });
 
             $('#testPushbullet').click(function () {
-                $.get("testPushbullet",
+                var token = $.trim($("#pushbullet_token").val());
+                var device = $.trim($("#pushbullet_deviceid").val());
+                $.get("testPushbullet", {'token': token, 'device': device},
                     function (data) { alert(data); });
             });
 
             $('#testCustom').click(function () {
-                $.get("testCustom",
+                var script = $.trim($("#custom_script").val());
+                $.get("testCustom", {'script': script},
                     function (data) { alert(data); });
             });
 
             $('#testSlack').click(function () {
-                $.get("testSlack",
+                var token = $.trim($("#slack_token").val());
+                $.get("testSlack", {'token': token},
                     function (data) { alert(data); });
             });
 
             $('#testEmail').click(function () {
-                $.get("testEmail",
+                var tls = ($("#email_tls").prop('checked') == true) ? 'True' : 'False';
+                var ssl = ($("#email_ssl").prop('checked') == true) ? 'True' : 'False';
+                var emailfrom = $.trim($("#email_from").val());
+                var emailto = $.trim($("#email_to").val());
+                var server = $.trim($("#email_smtp_server").val());
+                var user = $.trim($("#email_smtp_user").val());
+                var password = $.trim($("#email_smtp_password").val());
+                var port = $.trim($("#email_smtp_port").val());
+                $.get("testEmail", {'tls': tls, 'ssl': ssl, 'emailfrom': emailfrom, 'emailto': emailto, 'server': server, 'user': user, 'password': password, 'port': port},
                     function (data) { alert(data); });
             });
 
             $('#testPushover').click(function () {
-                $.get("testPushover",
+                var apitoken = $.trim($("#pushover_apitoken").val());
+                var keys = $.trim($("#pushover_keys").val());
+                var priority = $.trim($("#pushover_priority").val());
+                var device = $.trim($("#pushover_device").val());
+                $.get("testPushover", {'apitoken': apitoken, 'keys': keys, 'priority': priority, 'device': device},
                     function (data) { alert(data); });
             });
 
             $('#testNMA').click(function () {
-                $.get("testNMA",
+                var apikey = $.trim($("#nma_apikey").val());
+                var priority = $.trim($("#nma_priority").val());
+                $.get("testNMA", {'apikey': apikey, 'priority': priority},
                     function (data) { alert(data); });
             });
 
@@ -2240,11 +2277,9 @@
                 var androidpn_url = $.trim($("#androidpn_url").val());
                 var androidpn_username = $.trim($("#androidpn_username").val());
                 var androidpn_broadcast = ($("#androidpn_broadcast").prop('checked') == true) ? 'Y' : 'N';
-                $.get("/testAndroidPN", {'url': androidpn_url, 'username': androidpn_username, 'broadcast': androidpn_broadcast})
-                    .done(function (data) {
-                        $("#testAndroidPN-result").html(data);
-                    });
-                });
+                $.get("testAndroidPN", {'url': androidpn_url, 'username': androidpn_username, 'broadcast': androidpn_broadcast},
+                    function (data) { alert(data); });
+            });
 
             // when the page first loads, hide all tab headers and panels
             $('#tabs ul li').removeClass('active');
