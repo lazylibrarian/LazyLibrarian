@@ -248,7 +248,8 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
 
             score = (tor_Title_match + tor_Author_match) / 2  # as a percentage
             # lose a point for each extra word in the title so we get the closest match
-            words = len(getList(torTitle))
+            # but ignore anything at the end in square braces [keywords, genres etc]
+            words = len(getList(torTitle.rsplit('[', 1)[0]))
             words -= len(getList(authorname))
             words -= len(getList(bookname))
             score -= abs(words)

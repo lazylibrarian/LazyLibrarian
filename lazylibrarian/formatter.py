@@ -317,34 +317,6 @@ def split_title(author, book):
     return bookname, booksub
 
 
-def split_title(author, book):
-    # Strip title at colon if starts with author, eg Tom Clancy: Ghost Protocol
-    if book.startswith(author + ':'):
-        book = book.split(author + ':')[1].strip()
-    brace = book.find('(')
-    # .find() returns position in string (0 to len-1) or -1 if not found
-    # change position to 1 to len, or zero if not found
-    brace += 1
-    if brace and book.endswith(')'):
-        # if title ends with words in braces, split on last brace
-        # as we assume this is a subtitle or series info
-        parts = book.rsplit('(', 1)
-        parts[1] = '(' + parts[1]
-        bookname = parts[0]
-        booksub = parts[1]
-        return bookname, booksub
-    bookname = book
-    booksub = ''
-    # try to split subtitle on first ':'
-    colon = book.find(':')
-    colon += 1
-    if colon:
-        parts = book.split(':', 1)
-        bookname = parts[0]
-        booksub = parts[1]
-    return bookname, booksub
-
-
 def cleanName(name, extras=None):
     validNameChars = u"-_.() %s%s%s" % (string.ascii_letters, string.digits, extras)
     try:

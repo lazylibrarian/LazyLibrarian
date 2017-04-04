@@ -113,6 +113,9 @@ class AndroidPNNotifier:
         logger.debug(u"ANDROIDPN: Sending notice with details: title=\"%s\", message=\"%s\", username=%s, url=%s, broadcast=%s" %
                      (title, message, username, url, broadcast))
 
+        if not username or not url:
+            return False
+
         return self._sendAndroidPN(title, message, url, username, broadcast)
 
 #
@@ -127,8 +130,8 @@ class AndroidPNNotifier:
         if lazylibrarian.CONFIG['ANDROIDPN_NOTIFY_ONDOWNLOAD']:
             self._notify(notifyStrings[NOTIFY_DOWNLOAD], ep_name)
 
-    def test_notify(self, url, username, broadcast):
-        return self._notify("Test", "This is a test notification from Sick Beard", url, username, broadcast, force=True)
+    def test_notify(self):
+        return self._notify("Test", "This is a test notification from LazyLibrarian", force=True)
 
     def update_library(self, ep_obj=None):
         pass

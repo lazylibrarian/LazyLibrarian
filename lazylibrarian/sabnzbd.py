@@ -54,7 +54,7 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
     if not hostname.startswith("http"):
         hostname = 'http://' + hostname
 
-    HOST = "%s:%i" % (hostname, lazylibrarian.CONFIG['SAB_PORT'])
+    HOST = "%s:%s" % (hostname, lazylibrarian.CONFIG['SAB_PORT'])
 
     if lazylibrarian.CONFIG['SAB_SUBDIR']:
         HOST = HOST + "/" + lazylibrarian.CONFIG['SAB_SUBDIR']

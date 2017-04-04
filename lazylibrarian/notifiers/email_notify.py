@@ -20,6 +20,7 @@ from email.mime.text import MIMEText
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
+from lazylibrarian.formatter import check_int
 
 
 class EmailNotifier:
@@ -44,14 +45,16 @@ class EmailNotifier:
 
         try:
             if lazylibrarian.CONFIG['EMAIL_SSL']:
-                mailserver = smtplib.SMTP_SSL(lazylibrarian.CONFIG['EMAIL_SMTP_SERVER'], lazylibrarian.CONFIG['EMAIL_SMTP_PORT'])
+                mailserver = smtplib.SMTP_SSL(lazylibrarian.CONFIG['EMAIL_SMTP_SERVER'],
+                                                check_int(lazylibrarian.CONFIG['EMAIL_SMTP_PORT'], 465))
             else:
-                mailserver = smtplib.SMTP(lazylibrarian.CONFIG['EMAIL_SMTP_SERVER'], lazylibrarian.CONFIG['EMAIL_SMTP_PORT'])
+                mailserver = smtplib.SMTP(lazylibrarian.CONFIG['EMAIL_SMTP_SERVER'],
+                                            check_int(lazylibrarian.CONFIG['EMAIL_SMTP_PORT'], 25))
 
-            if lazylibrarian.CONFIG['EMAIL_TLS']:
+            if lazylibrarian.CONFIG['EMAIL_TLS'] == 'True':
                 mailserver.starttls()
-
-            mailserver.ehlo()
+            else:
+                mailserver.ehlo()
 
             if lazylibrarian.CONFIG['EMAIL_SMTP_USER']:
                 mailserver.login(lazylibrarian.CONFIG['EMAIL_SMTP_USER'], lazylibrarian.CONFIG['EMAIL_SMTP_PASSWORD'])

@@ -1494,7 +1494,7 @@ class WebInterface(object):
                         try:
                             os.rmdir(magdir)
                             logger.debug(u'Magazine directory %s deleted from disc' % magdir)
-                        except Exception as e:
+                        except Exception:
                             logger.debug(u'Magazine directory %s is not empty' % magdir)
                     logger.info(u'Magazine %s deleted from disc' % item)
                 if action == "Remove" or action == "Delete":
@@ -1827,83 +1827,131 @@ class WebInterface(object):
             return "Error sending tweet"
 
     @cherrypy.expose
-    def testAndroidPN(self, url=None, username=None, broadcast=None):
-        cherrypy.response.headers[
-            'Cache-Control'] = "max-age=0,no-cache,no-store"
-
-        result = notifiers.androidpn_notifier.test_notify(
-            url, username, broadcast)
+    def testAndroidPN(self, **kwargs):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'url' in kwargs:
+            lazylibrarian.CONFIG['ANDROIDPN_URL'] = kwargs['url']
+        if 'username' in kwargs:
+            lazylibrarian.CONFIG['ANDROIDPN_USERNAME'] = kwargs['username']
+        if 'broadcast' in kwargs:
+            lazylibrarian.CONFIG['ANDROIDPN_BROADCAST'] = kwargs['broadcast']
+        result = notifiers.androidpn_notifier.test_notify()
         if result:
+            lazylibrarian.config_write()
             return "Test AndroidPN notice sent successfully"
         else:
             return "Test AndroidPN notice failed"
 
     @cherrypy.expose
-    def testBoxcar(self):
+    def testBoxcar(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'token' in kwargs:
+            lazylibrarian.CONFIG['BOXCAR_TOKEN'] = kwargs['token']
         result = notifiers.boxcar_notifier.test_notify()
         if result:
+            lazylibrarian.config_write()
             return "Boxcar notification successful,\n%s" % result
         else:
             return "Boxcar notification failed"
 
     @cherrypy.expose
-    def testPushbullet(self):
+    def testPushbullet(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-
+        if 'token' in kwargs:
+            lazylibrarian.CONFIG['PUSHBULLET_TOKEN'] = kwargs['token']
+        if 'device' in kwargs:
+            lazylibrarian.CONFIG['PUSHBULLET_DEVICEID'] = kwargs['device']
         result = notifiers.pushbullet_notifier.test_notify()
         if result:
+            lazylibrarian.config_write()
             return "Pushbullet notification successful,\n%s" % result
         else:
             return "Pushbullet notification failed"
 
     @cherrypy.expose
-    def testPushover(self):
+    def testPushover(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'apitoken' in kwargs:
+            lazylibrarian.CONFIG['PUSHOVER_APITOKEN'] = kwargs['apitoken']
+        if 'keys' in kwargs:
+            lazylibrarian.CONFIG['PUSHOVER_KEYS'] = kwargs['keys']
+        if 'priority' in kwargs:
+            lazylibrarian.CONFIG['PUSHOVER_PRIORITY'] = kwargs['priority']
+        if 'device' in kwargs:
+            lazylibrarian.CONFIG['PUSHOVER_DEVICE'] = kwargs['device']
 
         result = notifiers.pushover_notifier.test_notify()
         if result:
+            lazylibrarian.config_write()
             return "Pushover notification successful,\n%s" % result
         else:
             return "Pushover notification failed"
 
     @cherrypy.expose
-    def testNMA(self):
+    def testNMA(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'apikey' in kwargs:
+            lazylibrarian.CONFIG['NMA_APIKEY'] = kwargs['apikey']
+        if 'priority' in kwargs:
+            lazylibrarian.CONFIG['NMA_PRIORITY'] = kwargs['priority']
 
         result = notifiers.nma_notifier.test_notify()
         if result:
+            lazylibrarian.config_write()
             return "Test NMA notice sent successfully"
         else:
             return "Test NMA notice failed"
 
     @cherrypy.expose
-    def testSlack(self):
+    def testSlack(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'token' in kwargs:
+            lazylibrarian.CONFIG['SLACK_TOKEN'] = kwargs['token']
 
         result = notifiers.slack_notifier.test_notify()
         if result != "ok":
             return "Slack notification failed,\n%s" % result
         else:
+            lazylibrarian.config_write()
             return "Slack notification successful"
 
     @cherrypy.expose
-    def testCustom(self):
+    def testCustom(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'script' in kwargs:
+            lazylibrarian.CONFIG['CUSTOM_SCRIPT'] = kwargs['script']
         result = notifiers.custom_notifier.test_notify()
         if result:
             return "Custom notification failed,\n%s" % result
         else:
+            lazylibrarian.config_write()
             return "Custom notification successful"
 
     @cherrypy.expose
-    def testEmail(self):
+    def testEmail(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'tls' in kwargs:
+            lazylibrarian.CONFIG['EMAIL_TLS'] = kwargs['tls']
+        if 'ssl' in kwargs:
+            lazylibrarian.CONFIG['EMAIL_SSL'] = kwargs['ssl']
+        if 'emailfrom' in kwargs:
+            lazylibrarian.CONFIG['EMAIL_FROM'] = kwargs['emailfrom']
+        if 'emailto' in kwargs:
+            lazylibrarian.CONFIG['EMAIL_TO'] = kwargs['emailto']
+        if 'server' in kwargs:
+            lazylibrarian.CONFIG['EMAIL_SMTP_SERVER'] = kwargs['server']
+        if 'user' in kwargs:
+            lazylibrarian.CONFIG['EMAIL_SMTP_USER'] = kwargs['user']
+        if 'password' in kwargs:
+            lazylibrarian.CONFIG['EMAIL_SMTP_PASSWORD'] = kwargs['password']
+        if 'port' in kwargs:
+            lazylibrarian.CONFIG['EMAIL_SMTP_PORT'] = kwargs['port']
 
         result = notifiers.email_notifier.test_notify()
         if not result:
             return "Email notification failed"
         else:
+            lazylibrarian.config_write()
             return "Email notification successful, check your email"
 
     # API ###############################################################
@@ -1962,31 +2010,48 @@ class WebInterface(object):
 
 
     @cherrypy.expose
-    def testDeluge(self):
+    def testDeluge(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'host' in kwargs:
+            lazylibrarian.CONFIG['DELUGE_HOST'] = kwargs['host']
+        if 'port' in kwargs:
+            lazylibrarian.CONFIG['DELUGE_PORT'] = kwargs['port']
+        if 'user' in kwargs:
+            lazylibrarian.CONFIG['DELUGE_USER'] = kwargs['user']
+        if 'pwd' in kwargs:
+            lazylibrarian.CONFIG['DELUGE_PASS'] = kwargs['pwd']
+        if 'label' in kwargs:
+            lazylibrarian.CONFIG['DELUGE_LABEL'] = kwargs['label']
+
         try:
             if not lazylibrarian.CONFIG['DELUGE_USER']:
                 # no username, talk to the webui
-                return deluge.checkLink()
-
-            # if there's a username, talk to the daemon directly
-            client = DelugeRPCClient(lazylibrarian.CONFIG['DELUGE_HOST'],
-                                     int(lazylibrarian.CONFIG['DELUGE_PORT']),
-                                     lazylibrarian.CONFIG['DELUGE_USER'],
-                                     lazylibrarian.CONFIG['DELUGE_PASS'])
-            client.connect()
-            if lazylibrarian.CONFIG['DELUGE_LABEL']:
-                labels = client.call('label.get_labels')
-                if lazylibrarian.CONFIG['DELUGE_LABEL'] not in labels:
-                    msg = "Deluge: Unknown label [%s]\n" % lazylibrarian.CONFIG['DELUGE_LABEL']
-                    if labels:
-                        msg += "Valid labels:\n"
-                        for label in labels:
-                            msg += '%s\n' % label
-                    else:
-                        msg += "Deluge daemon seems to have no labels set"
+                msg = deluge.checkLink()
+                if 'FAILED' in msg:
                     return msg
-            return "Deluge: Daemon connection Successful"
+            else:
+                # if there's a username, talk to the daemon directly
+                client = DelugeRPCClient(lazylibrarian.CONFIG['DELUGE_HOST'],
+                                         int(lazylibrarian.CONFIG['DELUGE_PORT']),
+                                         lazylibrarian.CONFIG['DELUGE_USER'],
+                                         lazylibrarian.CONFIG['DELUGE_PASS'])
+                client.connect()
+                msg = "Deluge: Daemon connection Successful"
+                if lazylibrarian.CONFIG['DELUGE_LABEL']:
+                    labels = client.call('label.get_labels')
+                    if lazylibrarian.CONFIG['DELUGE_LABEL'] not in labels:
+                        msg = "Deluge: Unknown label [%s]\n" % lazylibrarian.CONFIG['DELUGE_LABEL']
+                        if labels:
+                            msg += "Valid labels:\n"
+                            for label in labels:
+                                msg += '%s\n' % label
+                        else:
+                            msg += "Deluge daemon seems to have no labels set"
+                        return msg
+            # success, save settings
+            lazylibrarian.config_write()
+            return msg
+
         except Exception as e:
             msg = "Deluge: Daemon connection FAILED\n"
             if 'Connection refused' in str(e):
@@ -1999,36 +2064,133 @@ class WebInterface(object):
             return msg
 
     @cherrypy.expose
-    def testSABnzbd(self):
+    def testSABnzbd(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-        return sabnzbd.checkLink()
+        if 'host' in kwargs:
+            lazylibrarian.CONFIG['SAB_HOST'] = kwargs['host']
+        if 'port' in kwargs:
+            lazylibrarian.CONFIG['SAB_PORT'] = kwargs['port']
+        if 'user' in kwargs:
+            lazylibrarian.CONFIG['SAB_USER'] = kwargs['user']
+        if 'pwd' in kwargs:
+            lazylibrarian.CONFIG['SAB_PASS'] = kwargs['pwd']
+        if 'api' in kwargs:
+            lazylibrarian.CONFIG['SAB_API'] = kwargs['api']
+        if 'cat' in kwargs:
+            lazylibrarian.CONFIG['SAB_CAT'] = kwargs['cat']
+        if 'subdir' in kwargs:
+            lazylibrarian.CONFIG['SAB_SUBDIR'] = kwargs['subdir']
+        msg = sabnzbd.checkLink()
+        if 'success' in msg:
+            lazylibrarian.config_write()
+        return msg
 
     @cherrypy.expose
-    def testNZBget(self):
+    def testNZBget(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-        return nzbget.checkLink()
+        if 'host' in kwargs:
+            lazylibrarian.CONFIG['NZBGET_HOST'] = kwargs['host']
+        if 'port' in kwargs:
+            lazylibrarian.CONFIG['NZBGET_PORT'] = kwargs['port']
+        if 'user' in kwargs:
+            lazylibrarian.CONFIG['NZBGET_USER'] = kwargs['user']
+        if 'pwd' in kwargs:
+            lazylibrarian.CONFIG['NZBGET_PASS'] = kwargs['pwd']
+        if 'cat' in kwargs:
+            lazylibrarian.CONFIG['NZBGET_CATEGORY'] = kwargs['cat']
+        if 'pri' in kwargs:
+            lazylibrarian.CONFIG['NZBGET_PRIORITY'] = kwargs['pri']
+        msg = nzbget.checkLink()
+        if 'success' in msg:
+            lazylibrarian.config_write()
+        return msg
 
     @cherrypy.expose
-    def testTransmission(self):
+    def testTransmission(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-        return transmission.checkLink()
+        if 'host' in kwargs:
+            lazylibrarian.CONFIG['TRANSMISSION_HOST'] = kwargs['host']
+        if 'port' in kwargs:
+            lazylibrarian.CONFIG['TRANSMISSION_PORT'] = kwargs['port']
+        if 'user' in kwargs:
+            lazylibrarian.CONFIG['TRANSMISSION_USER'] = kwargs['user']
+        if 'pwd' in kwargs:
+            lazylibrarian.CONFIG['TRANSMISSION_PASS'] = kwargs['pwd']
+        msg = transmission.checkLink()
+        if 'success' in msg:
+            lazylibrarian.config_write()
+        return msg
 
     @cherrypy.expose
-    def testqBittorrent(self):
+    def testqBittorrent(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-        return qbittorrent.checkLink()
+        if 'host' in kwargs:
+            lazylibrarian.CONFIG['QBITTORRENT_HOST'] = kwargs['host']
+        if 'port' in kwargs:
+            lazylibrarian.CONFIG['QBITTORRENT_PORT'] = kwargs['port']
+        if 'user' in kwargs:
+            lazylibrarian.CONFIG['QBITTORRENT_USER'] = kwargs['user']
+        if 'pwd' in kwargs:
+            lazylibrarian.CONFIG['QBITTORRENT_PASS'] = kwargs['pwd']
+        if 'label' in kwargs:
+            lazylibrarian.CONFIG['QBITTORRENT_LABEL'] = kwargs['label']
+        msg = qbittorrent.checkLink()
+        if 'success' in msg:
+            lazylibrarian.config_write()
+        return msg
 
     @cherrypy.expose
-    def testuTorrent(self):
+    def testuTorrent(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-        return utorrent.checkLink()
+        if 'host' in kwargs:
+            lazylibrarian.CONFIG['UTORRENT_HOST'] = kwargs['host']
+        if 'port' in kwargs:
+            lazylibrarian.CONFIG['UTORRENT_PORT'] = kwargs['port']
+        if 'user' in kwargs:
+            lazylibrarian.CONFIG['UTORRENT_USER'] = kwargs['user']
+        if 'pwd' in kwargs:
+            lazylibrarian.CONFIG['UTORRENT_PASS'] = kwargs['pwd']
+        if 'label' in kwargs:
+            lazylibrarian.CONFIG['UTORRENT_LABEL'] = kwargs['label']
+        msg = utorrent.checkLink()
+        if 'success' in msg:
+            lazylibrarian.config_write()
+        return msg
+
 
     @cherrypy.expose
-    def testrTorrent(self):
+    def testrTorrent(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-        return rtorrent.checkLink()
+        if 'host' in kwargs:
+            lazylibrarian.CONFIG['RTORRENT_HOST'] = kwargs['host']
+        if 'dir' in kwargs:
+            lazylibrarian.CONFIG['RTORRENT_DIR'] = kwargs['dir']
+        if 'user' in kwargs:
+            lazylibrarian.CONFIG['RTORRENT_USER'] = kwargs['user']
+        if 'pwd' in kwargs:
+            lazylibrarian.CONFIG['RTORRENT_PASS'] = kwargs['pwd']
+        if 'label' in kwargs:
+            lazylibrarian.CONFIG['RTORRENT_LABEL'] = kwargs['label']
+        msg = rtorrent.checkLink()
+        if 'success' in msg:
+            lazylibrarian.config_write()
+        return msg
+
 
     @cherrypy.expose
-    def testSynology(self):
+    def testSynology(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-        return synology.checkLink()
+        if 'host' in kwargs:
+            lazylibrarian.CONFIG['SYNOLOGY_HOST'] = kwargs['host']
+        if 'port' in kwargs:
+            lazylibrarian.CONFIG['SYNOLOGY_PORT'] = kwargs['port']
+        if 'user' in kwargs:
+            lazylibrarian.CONFIG['SYNOLOGY_USER'] = kwargs['user']
+        if 'pwd' in kwargs:
+            lazylibrarian.CONFIG['SYNOLOGY_PASS'] = kwargs['pwd']
+        if 'dir' in kwargs:
+            lazylibrarian.CONFIG['SYNOLOGY_DIR'] = kwargs['dir']
+        msg = synology.checkLink()
+        if 'success' in msg:
+            lazylibrarian.config_write()
+        return msg
