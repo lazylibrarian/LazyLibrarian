@@ -20,6 +20,7 @@ import urllib
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
+from lazylibrarian.formatter import check_int
 
 
 def _getJSON(URL, params):
@@ -276,9 +277,9 @@ def _addTorrentURI(task_cgi, sid, torurl):
 def _hostURL():
     # Build webapi_url from config settings
     host = lazylibrarian.CONFIG['SYNOLOGY_HOST']
-    port = lazylibrarian.CONFIG['SYNOLOGY_PORT']
-    if not host:
-        logger.debug("Synology host not defined, check config")
+    port = check_int(lazylibrarian.CONFIG['SYNOLOGY_PORT'], 0)
+    if not host or not port:
+        logger.debug("Invalid Synology host or port, check your config")
         return False
     if not host.startswith('http'):
         host = 'http://' + host

@@ -21,6 +21,7 @@ import urllib2
 
 import lazylibrarian
 from lazylibrarian import logger
+from lazylibrarian.formatter import check_int
 
 
 def checkLink():
@@ -49,12 +50,17 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
         return False
 
     hostname = lazylibrarian.CONFIG['SAB_HOST']
+    port = check_int(lazylibrarian.CONFIG['SAB_PORT'], 0)
+    if not hostname or not port:
+        logger.error('Invalid sabnzbd host or port, check your config')
+        return False
+
     if hostname.endswith('/'):
         hostname = hostname[:-1]
     if not hostname.startswith("http"):
         hostname = 'http://' + hostname
 
-    HOST = "%s:%s" % (hostname, lazylibrarian.CONFIG['SAB_PORT'])
+    HOST = "%s:%s" % (hostname, port)
 
     if lazylibrarian.CONFIG['SAB_SUBDIR']:
         HOST = HOST + "/" + lazylibrarian.CONFIG['SAB_SUBDIR']

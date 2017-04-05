@@ -35,6 +35,7 @@ import lazylibrarian
 import lib.requests as requests
 from lazylibrarian import logger
 from lazylibrarian.common import setperm
+from lazylibrarian.formatter import check_int
 
 delugeweb_auth = {}
 delugeweb_url = ''
@@ -209,6 +210,11 @@ def _get_auth():
     delugeweb_auth = {}
 
     delugeweb_host = lazylibrarian.CONFIG['DELUGE_HOST']
+    delugeweb_port = check_int(lazylibrarian.CONFIG['DELUGE_PORT'], 0)
+    if not delugeweb_host or not delugeweb_port:
+        logger.error('Invalid delugeweb host or port, check your config')
+        return None
+
     delugeweb_password = lazylibrarian.CONFIG['DELUGE_PASS']
 
     if not delugeweb_host.startswith('http'):
@@ -217,7 +223,7 @@ def _get_auth():
     if delugeweb_host.endswith('/'):
         delugeweb_host = delugeweb_host[:-1]
 
-    delugeweb_host = "%s:%s" % (delugeweb_host, lazylibrarian.CONFIG['DELUGE_PORT'])
+    delugeweb_host = "%s:%s" % (delugeweb_host, delugeweb_port)
 
     delugeweb_url = delugeweb_host + '/json'
 

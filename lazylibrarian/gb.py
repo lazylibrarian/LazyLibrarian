@@ -82,8 +82,7 @@ class GoogleBooks:
                 elif api_value == 'intitle:':
                     searchterm = fullterm
                     if title:  # just search for title
-                        if ' (' in title:
-                            title = title.split(' (')[0]    # with out any series info
+                        title = title.split(' (')[0]    # with out any series info
                         searchterm = title
                     searchterm = searchterm.replace("'","").replace('"','')  # and no quotes
                     searchterm = searchterm.strip()

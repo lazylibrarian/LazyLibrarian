@@ -26,6 +26,7 @@ from base64 import standard_b64encode
 
 import lazylibrarian
 from lazylibrarian import logger
+from lazylibrarian.formatter import check_int
 
 
 def checkLink():
@@ -48,8 +49,9 @@ def sendNZB(nzb, cmd=None, nzbID=None):
     # by setting nzbID and cmd (we currently only use test and delete)
 
     host = lazylibrarian.CONFIG['NZBGET_HOST']
-    if host is None:
-        logger.error(u"No NZBget host found in configuration. Please configure it.")
+    port = check_int(lazylibrarian.CONFIG['NZBGET_PORT'], 0)
+    if not host or not port:
+        logger.error('Invalid NZBget host or port, check your config')
         return False
 
     addToTop = False
@@ -63,7 +65,7 @@ def sendNZB(nzb, cmd=None, nzbID=None):
     hostparts = host.split('://')
 
     url = hostparts[0] + '://' + nzbgetXMLrpc % {"host": hostparts[1], "username": lazylibrarian.CONFIG['NZBGET_USER'],
-                                                 "port": lazylibrarian.CONFIG['NZBGET_PORT'],
+                                                 "port": port,
                                                  "password": lazylibrarian.CONFIG['NZBGET_PASS']}
     try:
         nzbGetRPC = xmlrpclib.ServerProxy(url)
