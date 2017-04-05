@@ -40,7 +40,6 @@ class qbittorrentclient(object):
         port = check_int(lazylibrarian.CONFIG['QBITTORRENT_PORT'], 0)
         if not host or not port:
             logger.error('Invalid Qbittorrent host or port, check your config')
-            return False
 
         if not host.startswith('http'):
             host = 'http://' + host

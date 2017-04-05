@@ -38,23 +38,23 @@ class utorrentclient(object):
         port = check_int(lazylibrarian.CONFIG['UTORRENT_PORT'], 0)
         if not host or not port:
             logger.error('Invalid Utorrent host or port, check your config')
-        else:
-            if not host.startswith('http'):
-                host = 'http://' + host
 
-            if host.endswith('/'):
-                host = host[:-1]
+        if not host.startswith('http'):
+            host = 'http://' + host
 
-            if host.endswith('/gui'):
-                host = host[:-4]
+        if host.endswith('/'):
+            host = host[:-1]
 
-            host = "%s:%s" % (host, port)
-            self.base_url = host
-            self.username = lazylibrarian.CONFIG['UTORRENT_USER']
-            self.password = lazylibrarian.CONFIG['UTORRENT_PASS']
-            self.opener = self._make_opener('uTorrent', self.base_url, self.username, self.password)
-            self.token = self._get_token()
-            # TODO refresh token, when necessary
+        if host.endswith('/gui'):
+            host = host[:-4]
+
+        host = "%s:%s" % (host, port)
+        self.base_url = host
+        self.username = lazylibrarian.CONFIG['UTORRENT_USER']
+        self.password = lazylibrarian.CONFIG['UTORRENT_PASS']
+        self.opener = self._make_opener('uTorrent', self.base_url, self.username, self.password)
+        self.token = self._get_token()
+        # TODO refresh token, when necessary
 
     @staticmethod
     def _make_opener(realm, base_url, username, password):
