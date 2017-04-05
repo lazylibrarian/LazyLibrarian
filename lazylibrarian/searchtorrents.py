@@ -323,8 +323,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None):
             # torznab results need to be re-encoded
             # had a problem with torznab utf-8 encoded strings not matching
             # our utf-8 strings because of long/short form differences
-            url = tor_url.split('&file=')[0]
-            value = tor_url.split('&file=')[1]
+            url, value = tor_url.split('&file=', 1)
             if isinstance(value, str):
                 value = value.decode('utf-8')  # make unicode
             value = unicodedata.normalize('NFC', value)  # normalize to short form

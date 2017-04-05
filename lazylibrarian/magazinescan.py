@@ -144,8 +144,7 @@ def create_cover(issuefile=None, refresh=False):
                     res = subprocess.check_output(params, stderr=subprocess.STDOUT)
                     logger.debug("Found %s [%s] version %s" % (generator, GS, res))
                     generator = "%s version %s" % (generator, res)
-                    if '[' in issuefile:
-                        issuefile = issuefile.split('[')[0]
+                    issuefile = issuefile.split('[')[0]
                     params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1", "-dLastPage=1",
                               "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
                     res = subprocess.check_output(params, stderr=subprocess.STDOUT)
@@ -215,8 +214,7 @@ def create_cover(issuefile=None, refresh=False):
                             res = subprocess.check_output(params, stderr=subprocess.STDOUT)
                             logger.debug("Found gs [%s] version %s" % (GS, res))
                             generator = "%s version %s" % (generator, res)
-                            if '[' in issuefile:
-                                issuefile = issuefile.split('[')[0]
+                            issuefile = issuefile.split('[')[0]
                             params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1",
                                       "-dLastPage=1", "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
                             res = subprocess.check_output(params, stderr=subprocess.STDOUT)
@@ -251,8 +249,7 @@ def magazineScan():
     myDB = database.DBConnection()
 
     mag_path = lazylibrarian.CONFIG['MAG_DEST_FOLDER']
-    if '$' in mag_path:
-        mag_path = mag_path.split('$')[0]
+    mag_path = mag_path.split('$')[0]
 
     if lazylibrarian.CONFIG['MAG_RELATIVE']:
         if mag_path[0] not in '._':

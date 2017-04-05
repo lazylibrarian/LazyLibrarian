@@ -23,6 +23,7 @@ import urlparse
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
+from lazylibrarian.formatter import check_int
 
 
 class utorrentclient(object):
@@ -34,6 +35,10 @@ class utorrentclient(object):
                  password='',):  # lazylibrarian.CONFIG['UTORRENT_PASS']):
 
         host = lazylibrarian.CONFIG['UTORRENT_HOST']
+        port = check_int(lazylibrarian.CONFIG['UTORRENT_PORT'], 0)
+        if not host or not port:
+            logger.error('Invalid Utorrent host or port, check your config')
+
         if not host.startswith('http'):
             host = 'http://' + host
 
@@ -43,7 +48,7 @@ class utorrentclient(object):
         if host.endswith('/gui'):
             host = host[:-4]
 
-        host = "%s:%s" % (host, lazylibrarian.CONFIG['UTORRENT_PORT'])
+        host = "%s:%s" % (host, port)
         self.base_url = host
         self.username = lazylibrarian.CONFIG['UTORRENT_USER']
         self.password = lazylibrarian.CONFIG['UTORRENT_PASS']

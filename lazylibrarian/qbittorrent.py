@@ -27,6 +27,7 @@ import urllib2
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
+from lazylibrarian.formatter import check_int
 
 
 class qbittorrentclient(object):
@@ -36,6 +37,10 @@ class qbittorrentclient(object):
     def __init__(self):
 
         host = lazylibrarian.CONFIG['QBITTORRENT_HOST']
+        port = check_int(lazylibrarian.CONFIG['QBITTORRENT_PORT'], 0)
+        if not host or not port:
+            logger.error('Invalid Qbittorrent host or port, check your config')
+
         if not host.startswith('http'):
             host = 'http://' + host
 
@@ -45,7 +50,7 @@ class qbittorrentclient(object):
         if host.endswith('/gui'):
             host = host[:-4]
 
-        host = "%s:%s" % (host, lazylibrarian.CONFIG['QBITTORRENT_PORT'])
+        host = "%s:%s" % (host, port)
         self.base_url = host
         self.username = lazylibrarian.CONFIG['QBITTORRENT_USER']
         self.password = lazylibrarian.CONFIG['QBITTORRENT_PASS']

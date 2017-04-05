@@ -27,8 +27,9 @@ from magnet2torrent import magnet2torrent
 def getServer():
     host = lazylibrarian.CONFIG['RTORRENT_HOST']
     if not host:
-        logger.debug("rtorrent error: No host found")
+        logger.error("rtorrent error: No host found, check your config")
         return False
+
     if not host.startswith('http'):
         host = 'http://' + host
     if host.endswith('/'):

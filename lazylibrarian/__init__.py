@@ -911,10 +911,7 @@ def build_monthtable():
             locale.setlocale(locale.LC_ALL, current_locale)  # restore entry state
             logger.warn("Unable to load requested locale [%s] %s" % (lang, str(e)))
             try:
-                if '_' in lang:
-                    wanted_lang = lang.split('_')[0]
-                else:
-                    wanted_lang = lang
+                wanted_lang = lang.split('_')[0]
                 params = ['locale', '-a']
                 all_locales = subprocess.check_output(params).split()
                 locale_list = []

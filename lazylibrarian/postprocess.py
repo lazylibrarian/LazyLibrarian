@@ -286,11 +286,8 @@ def processDir(reset=False):
                         # so we try to do a "best match" on the name, there might be a better way...
 
                         matchname = fname
-                        if ' LL.(' in matchname:
-                            matchname = matchname.split(' LL.(')[0]
-
-                        if ' LL.(' in matchtitle:
-                            matchtitle = matchtitle.split(' LL.(')[0]
+                        matchname = matchname.split(' LL.(')[0]
+                        matchtitle = matchtitle.split(' LL.(')[0]
                         match = fuzz.token_set_ratio(matchtitle, matchname)
                         if int(lazylibrarian.LOGLEVEL) > 2:
                             logger.debug("%s%% match %s : %s" % (match, matchtitle, matchname))

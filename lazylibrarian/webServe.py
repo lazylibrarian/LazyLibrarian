@@ -2100,6 +2100,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['NZBGET_CATEGORY'] = kwargs['cat']
         if 'pri' in kwargs:
             lazylibrarian.CONFIG['NZBGET_PRIORITY'] = kwargs['pri']
+
         msg = nzbget.checkLink()
         if 'success' in msg:
             lazylibrarian.config_write()
