@@ -95,12 +95,16 @@ class WebInterface(object):
 
     # SERIES ############################################################
     @cherrypy.expose
-    def series(self, AuthorID=None):
+    def series(self, AuthorID=None, whichStatus=None):
+        if whichStatus is None:
+            whichStatus='All'
         myDB = database.DBConnection()
         title = "Series"
         cmd = 'SELECT series.SeriesID,seriesauthors.AuthorID,SeriesName,series.Status,AuthorName'
         cmd += ' from series,authors,seriesauthors'
         cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
+        if not whichStatus == 'All':
+            cmd += ' and series.Status="%s"' % whichStatus
         if AuthorID:
             match = myDB.match('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
             if match:
@@ -109,7 +113,7 @@ class WebInterface(object):
         cmd += ' GROUP BY series.seriesID'
         cmd += ' order by AuthorName,SeriesName'
         series = myDB.select(cmd)
-        return serve_template(templatename="series.html", title=title, authorid=AuthorID, series=series)
+        return serve_template(templatename="series.html", title=title, authorid=AuthorID, series=series, whichStatus=whichStatus)
 
     @cherrypy.expose
     def seriesMembers(self, seriesid):

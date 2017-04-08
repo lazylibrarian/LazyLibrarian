@@ -12,25 +12,23 @@
 
 <%def name="body()">
 <h1>${title}</h1>
+    <form action="series" method="get" class="form-inline">
+        <div class="form-group">
+            <label for="whichStatus" class="control-label">Series with status:</label>
+            <select name="whichStatus" class="form-control input-sm">
+        %for item in ['All', 'Skipped', 'Wanted', 'Active', 'Ignored']:
+            <option value="${item}"
+                %if whichStatus == item:
+                    selected = "selected"
+                %endif
+            >${item}</option>
+        %endfor
+            </select>
+        </div>
+    <input  class="btn btn-sm btn-default" type="submit" value="Manage" />
+    </form>
+    <br>
 <form action="markSeries" method="get" class="form-inline">
-    <div class="indented">
-            <input type="hidden" name="redirect" value=${authorid}>
-            <div class="form-group">
-                <label for="action" class="">Mark selected series as</label>
-                <select class="markSeries form-control input-sm" id="action" name="action">
-                    %for item in ['Wanted', 'Active', 'Skipped']:
-                        <option value="${item}"
-                        %if whichStatus == item:
-                            selected = "selected"
-                        %endif
-                        >${item}</option>
-                    %endfor
-                </select>
-            </div>
-            <input type="submit" class="markSeries btn btn-sm btn-primary" value="Go">
-
-    </div>
-    <p>&nbsp;</p>
 <div class="table-responsive">
     <table class="display table table-striped table-hover table-bordered" id="book_table">
         <thead>
@@ -58,6 +56,15 @@
         </tbody>
     </table>
 </div>
+        <div class="form-group">
+            <label for="markSeries" class="control-label">Change selected series to: </label>
+            <select id="markSeries" class="markSeries form-control input-sm" name="action">
+            %for item in ['Skipped', 'Wanted', 'Active', 'Ignored']:
+                <option value="${item}">${item}</option>
+            %endfor
+            </select>
+        </div>
+        <input type="submit" class="markSeries btn btn-sm btn-default" value="Go">
 </form>
 <p>&nbsp;</p>
 </%def>

@@ -249,6 +249,7 @@ CONFIG_DEFINITIONS = {
     'VERSIONCHECK_INTERVAL': ('int', 'SearchScan', '24'),
     'FULL_SCAN': ('bool', 'LibraryScan', 0),
     'ADD_AUTHOR': ('bool', 'LibraryScan', 1),
+    'ADD_SERIES': ('bool', 'LibraryScan', 1),
     'NOTFOUND_STATUS': ('str', 'LibraryScan', 'Skipped'),
     'NEWBOOK_STATUS': ('str', 'LibraryScan', 'Skipped'),
     'NEWAUTHOR_STATUS': ('str', 'LibraryScan', 'Skipped'),

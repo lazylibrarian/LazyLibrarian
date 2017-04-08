@@ -654,16 +654,18 @@ class GoogleBooks:
                                     else:
                                         logger.debug('Failed to cache image for %s' % bookimg)
 
-                                # prefer series info from librarything
-                                seriesdict = getWorkSeries(bookid)
-                                if seriesdict:
-                                    logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
-                                    updated = True
-                                else:
-                                    # librarything doesn't have series info. Any in the title?
-                                    if series:
-                                        seriesdict = {cleanName(unaccented(series)): seriesNum}
-                                setSeries(seriesdict, bookid)
+                                seriesdict = {}
+                                if lazylibrarian.CONFIG['ADD_SERIES']:
+                                    # prefer series info from librarything
+                                    seriesdict = getWorkSeries(bookid)
+                                    if seriesdict:
+                                        logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
+                                        updated = True
+                                    else:
+                                        # librarything doesn't have series info. Any in the title?
+                                        if series:
+                                            seriesdict = {cleanName(unaccented(series)): seriesNum}
+                                    setSeries(seriesdict, bookid)
 
                                 new_status = setStatus(bookid, seriesdict, bookstatus)
 
@@ -909,14 +911,15 @@ class GoogleBooks:
                 else:
                     logger.debug('Failed to cache image for %s' % bookimg)
 
-        # prefer series info from librarything
-        seriesdict = getWorkSeries(bookid)
-        if seriesdict:
-            logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
-        else:
-            if series:
-                seriesdict = {cleanName(unaccented(series)): seriesNum}
-        setSeries(seriesdict, bookid)
+        if lazylibrarian.CONFIG['ADD_SERIES']:
+            # prefer series info from librarything
+            seriesdict = getWorkSeries(bookid)
+            if seriesdict:
+                logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
+            else:
+                if series:
+                    seriesdict = {cleanName(unaccented(series)): seriesNum}
+            setSeries(seriesdict, bookid)
 
         worklink = getWorkPage(bookid)
         if worklink:

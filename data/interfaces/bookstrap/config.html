@@ -1196,6 +1196,18 @@
                                         </div>
                                         <div class="checkbox">
                                             <%
+                                            if lazylibrarian.CONFIG['ADD_SERIES'] == True:
+                                                checked = 'checked="checked"'
+                                            else:
+                                                checked = ''
+                                            %>
+                                            <label for="add_series" class="control-label">
+                                            <input type="checkbox" id="add_series" name="add_series" value="1" ${checked} />
+                                            Add Series</label>
+                                            <span class="help-block">This will add new series</span>
+                                        </div>
+                                        <div class="checkbox">
+                                            <%
                                             if lazylibrarian.CONFIG['IMP_AUTOSEARCH'] == True:
                                                 checked = 'checked="checked"'
                                             else:
