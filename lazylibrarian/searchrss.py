@@ -65,7 +65,19 @@ def search_rss_book(books=None, reset=False):
                 # we can just use bookid if goodreads, or try isbn and name matching on author/title if googlebooks
                 # not sure if anyone would use a goodreads wishlist if not using goodreads interface...
                 if book['rss_bookid'] and lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
-                    import_book(book['rss_bookid'])
+                    bookmatch = myDB.match('select Status,BookName from books where bookid="%s"' % book['rss_bookid'])
+                    if bookmatch:
+                        bookstatus = bookmatch['Status']
+                        bookname = bookmatch['BookName']
+                        if bookstatus in ['Open', 'Wanted', 'Have']:
+                            logger.info(u'Found book %s, already marked as "%s"' % (bookname, bookstatus))
+                        else:  # skipped/ignored
+                            logger.info(u'Found book %s, marking as "Wanted"' % bookname)
+                            controlValueDict = {"BookID": bookid}
+                            newValueDict = {"Status": "Wanted"}
+                            myDB.upsert("books", newValueDict, controlValueDict)
+                    else:
+                      import_book(book['rss_bookid'])
                 else:
                     item = {}
                     headers = []
