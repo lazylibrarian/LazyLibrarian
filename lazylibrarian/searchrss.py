@@ -64,6 +64,7 @@ def search_rss_book(books=None, reset=False):
                 # we get rss_author, rss_title, rss_isbn, rss_bookid (goodreads bookid)
                 # we can just use bookid if goodreads, or try isbn and name matching on author/title if googlebooks
                 # not sure if anyone would use a goodreads wishlist if not using goodreads interface...
+                logger.debug('Processing %s item%s in wishlists' % (len(resultlist), plural(len(resultlist))))
                 if book['rss_bookid'] and lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
                     bookmatch = myDB.match('select Status,BookName from books where bookid="%s"' % book['rss_bookid'])
                     if bookmatch:
@@ -157,13 +158,13 @@ def search_rss_book(books=None, reset=False):
         if len(searchbooks) == 0:
             return
 
-        logger.info('RSS Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
-
         resultlist, nproviders = IterateOverRSSSites()
         if not nproviders:
             if not wishproviders:
                 logger.warn('No rss providers are set, check config')
             return  # No point in continuing
+
+        logger.info('RSS Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
 
         rss_count = 0
         for book in searchbooks:
