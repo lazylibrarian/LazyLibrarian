@@ -91,8 +91,12 @@ def setperm(file_or_dir):
 
     if os.path.isdir(file_or_dir):
         perm = lazylibrarian.CONFIG['DIR_PERM']
+        if not perm:
+            perm = '0o755'
     elif os.path.isfile(file_or_dir):
         perm = lazylibrarian.CONFIG['FILE_PERM']
+        if not perm:
+            perm = '0o644'
     else:
         return False
     try:
@@ -229,8 +233,8 @@ def authorUpdate():
             return
 
         myDB = database.DBConnection()
-        author = myDB.match('SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" \
-                            order by DateAdded ASC')
+        cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" order by DateAdded ASC'
+        author = myDB.match(cmd)
         if author and lazylibrarian.CONFIG['CACHE_AGE']:
             dtnow = datetime.datetime.now()
             diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
@@ -248,8 +252,8 @@ def authorUpdate():
 def dbUpdate(refresh=False):
     try:
         myDB = database.DBConnection()
-        activeauthors = myDB.select('SELECT AuthorID from authors WHERE Status="Active" \
-                                    or Status="Loading" order by DateAdded ASC')
+        cmd = 'SELECT AuthorID from authors WHERE Status="Active" or Status="Loading" order by DateAdded ASC'
+        activeauthors = myDB.select(cmd)
         logger.info('Starting update for %i active author%s' % (len(activeauthors), plural(len(activeauthors))))
         for author in activeauthors:
             authorid = author['AuthorID']
@@ -322,8 +326,9 @@ def showJobs():
     wanted = myDB.match("SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'")
     result.append("%i item%s marked as Snatched" % (snatched['counter'], plural(snatched['counter'])))
     result.append("%i item%s marked as Wanted" % (wanted['counter'], plural(wanted['counter'])))
-    author = myDB.match('SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" \
-                                or Status="Loading" order by DateAdded ASC')
+    cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" or Status="Loading"'
+    cmd += ' order by DateAdded ASC'
+    author = myDB.match(cmd)
     dtnow = datetime.datetime.now()
     diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
     result.append('Oldest author info is %s day%s old' % (diff, plural(diff)))

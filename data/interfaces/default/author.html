@@ -21,7 +21,9 @@
                 <li><a href="resumeAuthor?AuthorID=${author['AuthorID']}" id="button"> Unignore Author</a></li>
             %endif
             <li><a href="authorPage?AuthorID=${author['AuthorID']}&Ignored=True" id="button"> Ignored Books </a></li>
-            <li><a href="series?AuthorID=${author['AuthorID']}" id="button"> Series </a></li>
+            %if showseries >= 1:
+            <li><a name="seriesbutton" href="series?AuthorID=${author['AuthorID']}" id="button"> Series </a></li>
+            %endif
             %if len(languages) >= 1:
                 <li>Language:&nbsp</li>
 

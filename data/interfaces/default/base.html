@@ -133,8 +133,8 @@
 							<a href="home" class="navbarlogo"><img src="images/lazylibrarian.png" width="64" height="64" alt="lazylibrarian"></a>
 							<a href="home" class="navbarele"><img src="images/nav/auth.png"></img></a>
 							<a href="books" class="navbarele"><img src="images/nav/book.png"></img></a>
-							<a href="series" class="navbarele"><img src="images/nav/series.png"></img></a>
-							<a href="magazines" class="navbarele"><img src="images/nav/mags.png"></img></a>
+							<a id="series" href="series" class="navbarele"><img src="images/nav/series.png"></img></a>
+							<a id="magazines" href="magazines" class="navbarele"><img src="images/nav/mags.png"></img></a>
                             <a href="manage" class="navbarele"><img src="images/nav/manage.png"></img></a>
 							<a href="history" class="navbarele"><img src="images/nav/hist.png"></img></a>
 							<a href="logs" class="navbarele"><img src="images/nav/logs.png"></img></a>
@@ -161,7 +161,14 @@
         </div>
     </div>
 
-
+<script type="text/javascript">
+    % if lazylibrarian.SHOW_SERIES == 0:
+        $('#series').addClass("hidden");
+    % endif
+    % if lazylibrarian.SHOW_MAGS == 0:
+        $('#magazines').addClass("hidden");
+    % endif
+</script>
 
     <!--[if lt IE 7 ]>
     <script src="js/libs/dd_belatedpng.js"></script>

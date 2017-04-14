@@ -566,10 +566,8 @@ def processDir(reset=False):
                 if int(lazylibrarian.LOGLEVEL) > 2:
                     logger.debug("Skipping (not LL) %s" % entry)
 
-        if ppcount == 0:
-            logger.info('No snatched books/mags have been found')
-        else:
-            logger.info('%s book%s/mag%s processed.' % (ppcount, plural(ppcount), plural(ppcount)))
+
+        logger.info('%s book%s/mag%s processed.' % (ppcount, plural(ppcount), plural(ppcount)))
 
         # Now check for any that are still marked snatched...
         snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
@@ -596,7 +594,7 @@ def processDir(reset=False):
         # Check if postprocessor needs to run again
         snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
         if len(snatched) == 0:
-            logger.info('Nothing marked as snatched.')
+            logger.info('Nothing marked as snatched. Stopping postprocessor.')
             scheduleJob(action='Stop', target='processDir')
             return
 

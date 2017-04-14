@@ -64,8 +64,21 @@ def search_rss_book(books=None, reset=False):
                 # we get rss_author, rss_title, rss_isbn, rss_bookid (goodreads bookid)
                 # we can just use bookid if goodreads, or try isbn and name matching on author/title if googlebooks
                 # not sure if anyone would use a goodreads wishlist if not using goodreads interface...
+                logger.debug('Processing %s item%s in wishlists' % (len(resultlist), plural(len(resultlist))))
                 if book['rss_bookid'] and lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
-                    import_book(book['rss_bookid'])
+                    bookmatch = myDB.match('select Status,BookName from books where bookid="%s"' % book['rss_bookid'])
+                    if bookmatch:
+                        bookstatus = bookmatch['Status']
+                        bookname = bookmatch['BookName']
+                        if bookstatus in ['Open', 'Wanted', 'Have']:
+                            logger.info(u'Found book %s, already marked as "%s"' % (bookname, bookstatus))
+                        else:  # skipped/ignored
+                            logger.info(u'Found book %s, marking as "Wanted"' % bookname)
+                            controlValueDict = {"BookID": book['rss_bookid']}
+                            newValueDict = {"Status": "Wanted"}
+                            myDB.upsert("books", newValueDict, controlValueDict)
+                    else:
+                      import_book(book['rss_bookid'])
                 else:
                     item = {}
                     headers = []
@@ -145,13 +158,13 @@ def search_rss_book(books=None, reset=False):
         if len(searchbooks) == 0:
             return
 
-        logger.info('RSS Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
-
         resultlist, nproviders = IterateOverRSSSites()
         if not nproviders:
             if not wishproviders:
                 logger.warn('No rss providers are set, check config')
             return  # No point in continuing
+
+        logger.info('RSS Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
 
         rss_count = 0
         for book in searchbooks:

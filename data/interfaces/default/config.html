@@ -982,7 +982,18 @@
                     %>
                   <label>Add Authors:</label><input type="checkbox" name="add_author" value=1 ${checked} />
                   <br>
-                  <small>This will auto add new authors from GoodReads</small>
+                  <small>This will allow new authors to be added</small>
+                  </div>
+                  <div>
+                    <%
+                    if lazylibrarian.CONFIG['ADD_SERIES'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <label>Add Series:</label><input type="checkbox" name="add_series" value=1 ${checked} />
+                  <br>
+                  <small>This will allow new series info to be added</small>
                   </div>
                   <div>
                     <%

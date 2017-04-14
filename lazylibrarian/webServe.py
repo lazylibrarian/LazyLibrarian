@@ -95,12 +95,16 @@ class WebInterface(object):
 
     # SERIES ############################################################
     @cherrypy.expose
-    def series(self, AuthorID=None):
+    def series(self, AuthorID=None, whichStatus=None):
+        if whichStatus is None:
+            whichStatus='All'
         myDB = database.DBConnection()
         title = "Series"
         cmd = 'SELECT series.SeriesID,seriesauthors.AuthorID,SeriesName,series.Status,AuthorName'
         cmd += ' from series,authors,seriesauthors'
         cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
+        if not whichStatus == 'All':
+            cmd += ' and series.Status="%s"' % whichStatus
         if AuthorID:
             match = myDB.match('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
             if match:
@@ -109,7 +113,7 @@ class WebInterface(object):
         cmd += ' GROUP BY series.seriesID'
         cmd += ' order by AuthorName,SeriesName'
         series = myDB.select(cmd)
-        return serve_template(templatename="series.html", title=title, authorid=AuthorID, series=series)
+        return serve_template(templatename="series.html", title=title, authorid=AuthorID, series=series, whichStatus=whichStatus)
 
     @cherrypy.expose
     def seriesMembers(self, seriesid):
@@ -324,8 +328,6 @@ class WebInterface(object):
         lazylibrarian.config_write()
         checkRunningJobs()
 
-        logger.info('Config file [%s] has been updated' % lazylibrarian.CONFIGFILE)
-
         raise cherrypy.HTTPRedirect("config")
 
     # SEARCH ############################################################
@@ -359,8 +361,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
 
         if Ignored:
-            languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorID = '%s' \
-                                    AND Status ='Ignored'" % AuthorID)
+            languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorID = '%s' AND Status ='Ignored'" % AuthorID)
         else:
             languages = myDB.select(
                 "SELECT DISTINCT BookLang from books WHERE AuthorID = '%s' AND Status !='Ignored'" % AuthorID)
@@ -374,7 +375,7 @@ class WebInterface(object):
         authorname = author['AuthorName'].encode(lazylibrarian.SYS_ENCODING)
         return serve_template(
             templatename="author.html", title=urllib.quote_plus(authorname),
-            author=author, languages=languages, booklang=BookLang, ignored=Ignored)
+            author=author, languages=languages, booklang=BookLang, ignored=Ignored, showseries=lazylibrarian.SHOW_SERIES)
 
     @cherrypy.expose
     def pauseAuthor(self, AuthorID):

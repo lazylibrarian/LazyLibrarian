@@ -94,8 +94,8 @@
                         <ul class="nav navbar-nav">
                             <li><a href="home" class="navbarele">Authors</a></li>
                             <li><a href="books" class="navbarele">Books</a></li>
-                            <li><a href="series" class="navbarele">Series</a></li>
-                            <li><a href="magazines" class="navbarele">Magazines</a></li>
+                            <li><a id="series" href="series" class="navbarele">Series</a></li>
+                            <li><a id="magazines" href="magazines" class="navbarele">Magazines</a></li>
                             <li><a href="manage" class="navbarele">Manage</a></li>
                             <li><a href="history" class="navbarele">History</a></li>
                             <li><a href="logs" class="navbarele">Logs</a></li>
@@ -132,7 +132,13 @@
 
 <script type="text/javascript">
     msg = '';
-        % if  lazylibrarian.CONFIG['INSTALL_TYPE'] == 'git' or lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
+        % if lazylibrarian.SHOW_SERIES == 0:
+            $('#series').addClass("hidden");
+        % endif
+        % if lazylibrarian.SHOW_MAGS == 0:
+            $('#magazines').addClass("hidden");
+        % endif
+        % if lazylibrarian.CONFIG['INSTALL_TYPE'] == 'git' or lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
             % if not lazylibrarian.CONFIG['CURRENT_VERSION']:
                 msg = 'You are running an unknown version of lazylibrarian.<br/><a href="update" class="btn btn-xs btn-primary pull-right">Update</a>'
             % elif (lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source' and lazylibrarian.CONFIG['CURRENT_VERSION'] == 'No Version File' ):
