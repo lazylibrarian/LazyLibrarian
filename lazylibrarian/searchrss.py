@@ -74,7 +74,7 @@ def search_rss_book(books=None, reset=False):
                             logger.info(u'Found book %s, already marked as "%s"' % (bookname, bookstatus))
                         else:  # skipped/ignored
                             logger.info(u'Found book %s, marking as "Wanted"' % bookname)
-                            controlValueDict = {"BookID": bookid}
+                            controlValueDict = {"BookID": book['rss_bookid']}
                             newValueDict = {"Status": "Wanted"}
                             myDB.upsert("books", newValueDict, controlValueDict)
                     else:

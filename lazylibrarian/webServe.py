@@ -378,7 +378,7 @@ class WebInterface(object):
         authorname = author['AuthorName'].encode(lazylibrarian.SYS_ENCODING)
         return serve_template(
             templatename="author.html", title=urllib.quote_plus(authorname),
-            author=author, languages=languages, booklang=BookLang, ignored=Ignored)
+            author=author, languages=languages, booklang=BookLang, ignored=Ignored, showseries=lazylibrarian.SHOW_SERIES)
 
     @cherrypy.expose
     def pauseAuthor(self, AuthorID):

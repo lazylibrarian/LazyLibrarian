@@ -366,8 +366,8 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
 def initialize():
     global FULL_PATH, PROG_DIR, ARGS, DAEMON, SIGNAL, PIDFILE, DATADIR, CONFIGFILE, SYS_ENCODING, LOGLEVEL, \
             CONFIG, CFG, DBFILE, COMMIT_LIST, SCHED, INIT_LOCK, __INITIALIZED__, started, LOGLIST, LOGFULL, \
-            UPDATE_MSG, CURRENT_TAB, CACHE_HIT, CACHE_MISS, LAST_LIBRARYTHING, LAST_GOODREADS, \
-            CACHEDIR, BOOKSTRAP_THEMELIST, MONTHNAMES, CONFIG_DEFINITIONS, isbn_979_dict, isbn_978_dict
+            UPDATE_MSG, CURRENT_TAB, CACHE_HIT, CACHE_MISS, LAST_LIBRARYTHING, LAST_GOODREADS, SHOW_SERIES, \
+            SHOW_MAGS, CACHEDIR, BOOKSTRAP_THEMELIST, MONTHNAMES, CONFIG_DEFINITIONS, isbn_979_dict, isbn_978_dict
 
     with INIT_LOCK:
 
@@ -439,6 +439,13 @@ def initialize():
                 version = 0
             logger.info("Database is version %s, integrity check: %s" % (version, check[0]))
 
+            series_list = myDB.select('SELECT SeriesID from series')
+            SHOW_SERIES = len(series_list)
+            if CONFIG['ADD_SERIES'] == True:
+                SHOW_SERIES = 1
+           
+            SHOW_MAGS = len(CONFIG['MAG_DEST_FOLDER'])
+
         except Exception as e:
             logger.error("Can't connect to the database: %s" % str(e))
 
@@ -450,7 +457,7 @@ def initialize():
 
 
 def config_read(reloaded=False):
-    global CONFIG, CONFIG_DEFINITIONS, NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV
+    global CONFIG, CONFIG_DEFINITIONS, NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, SHOW_SERIES, SHOW_MAGS
 
     # legacy name conversions, separate out host/port
     for provider in ['NZBGet', 'UTORRENT', 'QBITTORRENT', 'TRANSMISSION']:
@@ -582,6 +589,8 @@ def config_read(reloaded=False):
 
 
 def config_write():
+    global SHOW_SERIES, SHOW_MAGS
+
     for key in CONFIG_DEFINITIONS.keys():
         item_type, section, default = CONFIG_DEFINITIONS[key]
         check_section(section)
@@ -647,6 +656,13 @@ def config_write():
         CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
         CFG.set(provider['NAME'], 'HOST', provider['HOST'])
     add_rss_slot()
+
+    myDB = database.DBConnection()
+    series_list = myDB.select('SELECT SeriesID from series')
+    SHOW_SERIES = len(series_list)
+    if CONFIG['ADD_SERIES'] == True:
+        SHOW_SERIES = 1
+    SHOW_MAGS = len(CONFIG['MAG_DEST_FOLDER'])
 
     with open(CONFIGFILE + '.new', 'wb') as configfile:
         CFG.write(configfile)
