@@ -693,7 +693,7 @@ def config_write():
 		logger.warn(msg)
 
 	if not msg:
-		msg = 'Config file [%s] has been updated' % lazylibrarian.CONFIGFILE
+		msg = 'Config file [%s] has been updated' % CONFIGFILE
 		logger.info(msg)
 
 
