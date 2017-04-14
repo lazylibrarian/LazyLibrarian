@@ -328,8 +328,6 @@ class WebInterface(object):
         lazylibrarian.config_write()
         checkRunningJobs()
 
-        logger.info('Config file [%s] has been updated' % lazylibrarian.CONFIGFILE)
-
         raise cherrypy.HTTPRedirect("config")
 
     # SEARCH ############################################################
@@ -363,8 +361,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
 
         if Ignored:
-            languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorID = '%s' \
-                                    AND Status ='Ignored'" % AuthorID)
+            languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorID = '%s' AND Status ='Ignored'" % AuthorID)
         else:
             languages = myDB.select(
                 "SELECT DISTINCT BookLang from books WHERE AuthorID = '%s' AND Status !='Ignored'" % AuthorID)

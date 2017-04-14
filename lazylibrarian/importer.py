@@ -270,15 +270,17 @@ def update_totals(AuthorID):
     match = myDB.select('SELECT AuthorID from authors WHERE AuthorID="%s"' % AuthorID)
     if not match:
         return
-
-    lastbook = myDB.match('SELECT BookName, BookLink, BookDate from books WHERE \
-                           AuthorID="%s" AND Status != "Ignored" order by BookDate DESC' % AuthorID)
-    unignoredbooks = myDB.match('SELECT count("BookID") as counter FROM books WHERE \
-                                 AuthorID="%s" AND Status != "Ignored"' % AuthorID)
+    cmd = 'SELECT BookName, BookLink, BookDate from books WHERE AuthorID="%s"' % AuthorID
+    cmd += ' AND Status != "Ignored" order by BookDate DESC' 
+    lastbook = myDB.match(cmd)
+    cmd = 'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % AuthorID
+    cmd += ' AND Status != "Ignored"'
+    unignoredbooks = myDB.match(cmd)
     totalbooks = myDB.match(
         'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % AuthorID)
-    havebooks = myDB.match('SELECT count("BookID") as counter FROM books WHERE AuthorID="%s" AND \
-                            (Status="Have" OR Status="Open")' % AuthorID)
+    cmd = 'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % AuthorID
+    cmd += ' AND (Status="Have" OR Status="Open")'
+    havebooks = myDB.match(cmd)
     controlValueDict = {"AuthorID": AuthorID}
 
     newValueDict = {
