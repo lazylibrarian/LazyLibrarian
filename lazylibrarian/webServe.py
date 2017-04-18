@@ -94,26 +94,107 @@ class WebInterface(object):
                 threading.currentThread().name = "WEBSERVER"
 
     # SERIES ############################################################
+    # noinspection PyUnusedLocal
     @cherrypy.expose
-    def series(self, AuthorID=None, whichStatus=None):
-        if whichStatus is None:
-            whichStatus='All'
+    def getSeries(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
+        # kwargs is used by datatables to pass params
+        iDisplayStart = int(iDisplayStart)
+        iDisplayLength = int(iDisplayLength)
+        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
+
+        whichStatus = 'All'
+        if kwargs['whichStatus']:
+            whichStatus = kwargs['whichStatus']
+
+        AuthorID = None
+        if kwargs['AuthorID']:
+            AuthorID = kwargs['AuthorID']
+
         myDB = database.DBConnection()
-        title = "Series"
-        cmd = 'SELECT series.SeriesID,seriesauthors.AuthorID,SeriesName,series.Status,AuthorName'
+        cmd = 'SELECT series.SeriesID,seriesauthors.AuthorID,AuthorName,SeriesName,series.Status'
         cmd += ' from series,authors,seriesauthors'
         cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
-        if not whichStatus == 'All':
+        if not whichStatus in ['All', 'None']:
             cmd += ' and series.Status="%s"' % whichStatus
-        if AuthorID:
+
+        if AuthorID and not AuthorID == 'None':
             match = myDB.match('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
             if match:
                 title = "%s Series" % match['AuthorName']
             cmd += ' and seriesauthors.AuthorID="%s"' % AuthorID
         cmd += ' GROUP BY series.seriesID'
         cmd += ' order by AuthorName,SeriesName'
-        series = myDB.select(cmd)
-        return serve_template(templatename="series.html", title=title, authorid=AuthorID, series=series, whichStatus=whichStatus)
+
+        rowlist = myDB.select(cmd)
+
+        # turn the sqlite rowlist into a list of lists
+        d = []
+        filtered = []
+        rows = []
+
+        if len(rowlist):
+            # the masterlist to be filled with the row data
+            for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
+                l = []  # for each Row use a separate list
+                for column in row:
+                    l.append(column)
+                d.append(l)  # add the rowlist to the masterlist
+            if sSearch:
+                filtered = filter(lambda x: sSearch in str(x), d)
+            else:
+                filtered = d
+
+            sortcolumn = int(iSortCol_0) + 1  # hidden authorid
+
+            filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+
+            if iDisplayLength < 0:  # display = all
+                rows = filtered
+            else:
+                rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+
+            # now add html to the ones we want to display
+            d = []  # the masterlist to be filled with the html data
+            for row in rows:
+                l = []  # for each Row use a separate list
+                if lazylibrarian.CONFIG['HTTP_LOOK'] == 'bookstrap':
+                    l.append(
+                        '<td class="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[0])
+                    l.append('%s' % row[2])
+                    l.append('%s' % row[3])
+                    l.append('<td class="text-center">%s' % row[4])
+                    btn = '<td class="stars text-center"><a class="b btn btn-xs btn-success"'
+                    btn += ' href="seriesMembers?seriesid=%s"' % row[0]
+                    btn += ' title="Select"><i class="fa"></i>Select</a></p></td>'
+                    l.append(btn)
+                else:
+                    l.append('<td id="select"><input class="checkbox" type="checkbox" name="%s" /></td>' % row[0])
+                    l.append('%s' % row[2])
+                    l.append('%s' % row[3])
+                    l.append('%s' % row[4])
+                    btn = '<a class="button grey" href="seriesMembers?seriesid="%s"' % row[0]
+                    btn += ' title="Show">Show</a></p></td>'
+                    l.append(btn)
+                d.append(l)  # add the rowlist to the masterlist
+
+        mydict = {'iTotalDisplayRecords': len(filtered),
+                  'iTotalRecords': len(rowlist),
+                  'aaData': d,
+                  }
+        s = simplejson.dumps(mydict)
+        return s
+
+
+    @cherrypy.expose
+    def series(self, AuthorID=None, whichStatus=None):
+        myDB = database.DBConnection()
+        title = "Series"
+        if AuthorID:
+            match = myDB.match('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
+            if match:
+                title = "%s Series" % match['AuthorName']
+        return serve_template(templatename="series.html", title=title, authorid=AuthorID, series=[], whichStatus=whichStatus)
+
 
     @cherrypy.expose
     def seriesMembers(self, seriesid):
@@ -672,7 +753,7 @@ class WebInterface(object):
                     # Don't show author column on author page, we know which author!
                     if not kwargs['source'] == "Author":
                         l.append(
-                            '<td class="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[11], row[1]))
+                            '<td class="authorname"><span class="hidden">%s</span><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[1], row[11], row[1]))
                     if row[8]:  # is there a sub-title
                         title = '<td class="bookname">%s<br><small><i>%s</i></small></td>' % (row[2], row[8])
                     else:
@@ -730,7 +811,7 @@ class WebInterface(object):
                     # Don't show author column on author page, we know which author!
                     if not kwargs['source'] == "Author":
                         l.append(
-                            '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[11], row[1]))
+                            '<td id="authorname"><span class="hidden">%s</span><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[1], row[11], row[1]))
                     if row[8]:  # is there a sub-title
                         title = '<td id="bookname">%s<br><i class="smalltext">%s</i></td>' % (row[2], row[8])
                     else:

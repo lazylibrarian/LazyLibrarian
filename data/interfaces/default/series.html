@@ -37,22 +37,10 @@
                 <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
                 <th id="authorname">Author</th>
                 <th id="bookname">Series Name</th>
-                <th id="status">Status</th>
-                <th id="stars">Series</th>
+                <th id="stars">Status</th>
+                <th id="status">Show</th>
             </tr>
         </thead>
-
-        <tbody>
-        %for result in series:
-            <tr class="gradeZ">
-                <td id="select"><input class="checkbox" type="checkbox" name="${result['SeriesID']}" /></td>
-                <td id="authorname">${result['AuthorName']}</td>
-                <td id="bookname">${result['SeriesName']}</td>
-                <td id="status">${result['Status']}</td>
-                <td id="stars"><a class="button grey" href="seriesMembers?seriesid=${result['SeriesID']}" title="Show">Show</a></p></td>
-            </tr>
-        %endfor
-        </tbody>
     </table>
     <p>
 
@@ -96,8 +84,32 @@
                     "sInfoFiltered":"(filtered from _MAX_ total rows)"},
                 "sPaginationType": "full_numbers",
                 "aaSorting": [[1, 'asc']],
+                "bServerSide": true,
+                "sAjaxSource": 'getSeries?whichStatus=${whichStatus}&AuthorID=${authorid}',
+                "bFilter": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $(nRow).addClass("gradeZ");
+                    $('td', nRow).eq(3).addClass("center");
+                    $('td', nRow).eq(4).addClass("center");
+                    var w = window.innerWidth;
+                    if ( w < 320 )
+                    {   // hide author,status on smallest devices
+                        $('td', nRow).eq(1).addClass('hidden');
+                        $('td', nRow).eq(3).addClass('hidden');
+                   }
+                    if ( w < 640 )
+                    {   // hide author,status on smaller devices
+                        $('td', nRow).eq(1).addClass('hidden');
+                        $('td', nRow).eq(3).addClass('hidden');
+                   }
+                    if ( w < 768 )
+                    {   // hide status on small devices
+                        $('td', nRow).eq(3).addClass('hidden');
+                    }
+                    return nRow;
+                },
             });
 			$('.dataTables_filter input').attr("placeholder", "Search filter");
 			$(window).resize(function() {oTable.fnDraw(false)});

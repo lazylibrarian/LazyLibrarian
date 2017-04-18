@@ -61,7 +61,7 @@
                 <td id="bookname"><span title="${author['LastBook']}"></span><a href="${author['LastLink']}" target="_blank" rel="noreferrer">${author['LastBook']}</a></td>
 
                 <td id="date">${author['LastDate']}</td>
-                <td id="have"><span title="${percent}"></span>${css}
+                <td id="have"><span title="${percent}"></span><span class="hidden">${percent}</span>${css}
 				<div style="width:${percent}%"><span class="progressbar-front-text">${havebooks}/${totalbooks}</span></div></td>
 
                 <td id="status">${author['Status']}</td>
