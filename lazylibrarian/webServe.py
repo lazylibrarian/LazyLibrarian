@@ -144,7 +144,8 @@ class WebInterface(object):
             else:
                 filtered = d
 
-            sortcolumn = int(iSortCol_0) + 1  # hidden authorid
+            sortcolumn = int(iSortCol_0)
+            sortcolumn += 1  # hidden authorid
 
             filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
 
@@ -670,6 +671,17 @@ class WebInterface(object):
                 cmd += ' and BOOKLANG="%s"' % kwargs['booklang']
 
         rowlist = myDB.select(cmd)
+        # At his point if possible we want to sort and filter _before_ adding the html
+        # as it's much quicker BUT we don't have series info at this point so we
+        # can't sort on series until later...
+        # Series is column 3 on author page, column 4 on manage and books page
+        sort_after = False
+        sortcolumn = int(iSortCol_0)
+
+        if sortcolumn == 3 and kwargs['source'] == "Author":
+            sort_after = True
+        if sortcolumn == 4 and kwargs['source'] in ["Manage", "Books"]:
+            sort_after = True
 
         # turn the sqlite rowlist into a list of lists
         d = []
@@ -683,9 +695,32 @@ class WebInterface(object):
                 d.append(l)  # add the rowlist to the masterlist
 
             if sSearch:
-                rows = filter(lambda x: sSearch in str(x), d)
+                filtered = filter(lambda x: sSearch in str(x), d)
             else:
-                rows = d
+                filtered = d
+
+            if sort_after:
+                rows = filtered
+            else:
+                # table headers and column headers do not match at this point
+                if kwargs['source'] in ["Manage", "Books"]:
+                    if sortcolumn < 4:  # author or title
+                        sortcolumn -= 1
+                    else:               # rating, date, status
+                        sortcolumn -= 2
+                elif kwargs['source'] == "Author":
+                    if sortcolumn > 3:  # rating, date, status
+                        sortcolumn -= 1
+
+                if sortcolumn >= 3:  # rating, date, status pre html
+                    filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+                else:
+                    self.natural_sort(filtered,key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+
+                if iDisplayLength < 0:  # display = all
+                    rows = filtered
+                else:
+                    rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
             # now add html to the ones we want to display
             d = []  # the masterlist to be filled with the html data
@@ -837,18 +872,17 @@ class WebInterface(object):
 
                 d.append(l)  # add the rowlist to the masterlist
 
-            sortcolumn = int(iSortCol_0)
-            if sortcolumn < 4:
-                d.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
-            else:
+            if sort_after:
+                # at this point to columns are complete and in the right order but contain html
                 self.natural_sort(d,key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
-
-            if iDisplayLength < 0:  # display = all
-                rows = d
+                if iDisplayLength < 0:  # display = all
+                    rows = d
+                else:
+                    rows = d[iDisplayStart:(iDisplayStart + iDisplayLength)]
             else:
-                rows = d[iDisplayStart:(iDisplayStart + iDisplayLength)]
+                rows = d
 
-        mydict = {'iTotalDisplayRecords': len(rows),
+        mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
                   'aaData': rows,
                   }

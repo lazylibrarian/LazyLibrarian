@@ -152,6 +152,15 @@
         var oTable = $('#book_table').dataTable(
             {
                 "bAutoWidth": false,
+                "aoColumns": [
+                    {"bSortable": false},
+                    {"bSortable": false},
+                    null,
+                    { "sType": "natural" },
+                    null,
+                    null,
+                    null
+                    ],
                 "order": [[ 5, 'desc']],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ books per page",
