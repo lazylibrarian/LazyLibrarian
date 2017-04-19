@@ -64,8 +64,9 @@ def upgrade_needed():
     # 16 remove series, authorlink, authorname columns from book table, only in series/author tables now
     # 17 remove authorid from series table, new seriesauthor table to allow multiple authors per series
     # 18 Added unique constraint to seriesauthors table
+    # 19 add seriesdisplay to book table
 
-    db_current_version = 18
+    db_current_version = 19
     if db_version < db_current_version:
         return db_current_version
     return 0
@@ -120,7 +121,7 @@ def dbupgrade(db_current_version):
             myDB.action('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, \
                 BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
                 BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, \
-                BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, WorkPage TEXT, Manual TEXT)')
+                BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, WorkPage TEXT, Manual TEXT, SeriesDisplay TEXT)')
             myDB.action('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, \
                 NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, Source TEXT, DownloadID TEXT)')
             myDB.action('CREATE TABLE IF NOT EXISTS pastissues AS SELECT * FROM wanted WHERE 0')  # same columns
@@ -628,6 +629,33 @@ def dbupgrade(db_current_version):
                 myDB.action('DROP TABLE temp_table')
                 lazylibrarian.UPDATE_MSG = 'Reorganisation of seriesauthors complete'
 
+        if db_version < 19:
+                #if not has_column(myDB, "books", "SeriesDisplay"):
+                lazylibrarian.UPDATE_MSG = 'Adding series display to book table'
+                #myDB.action('ALTER TABLE books ADD COLUMN SeriesDisplay TEXT')
+                books = myDB.select('SELECT BookID from books')
+                if books:
+                    cnt = 0
+                    tot = len(books)
+                    for book in books:
+                        cnt += 1
+                        lazylibrarian.UPDATE_MSG = "Updating series display: %s of %s" % (cnt, tot)
+                        cmd = 'SELECT SeriesName,SeriesNum from series,member '
+                        cmd += 'WHERE series.SeriesID = member.SeriesID and member.BookID="%s"' % book['BookID']
+
+                        whichseries = myDB.select(cmd)
+
+                        series = ''
+                        for item in whichseries:
+                            newseries = "%s %s" % (item['SeriesName'], item['SeriesNum'])
+                            newseries.strip()
+                            if series and newseries:
+                                series += '<br>'
+                            series += newseries
+
+                        myDB.action('UPDATE books SET SeriesDisplay="%s" WHERE BookID="%s"' % (series, book['BookID']))
+
+                lazylibrarian.UPDATE_MSG = 'Reorganisation of series display complete'
 
         # Now do any non-version-specific tidying
         try:

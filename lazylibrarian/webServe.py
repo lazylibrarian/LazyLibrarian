@@ -653,7 +653,8 @@ class WebInterface(object):
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
         cmd = 'SELECT bookimg,authorname,bookname,bookrate,bookdate,books.status,bookid,booklang,'
-        cmd += 'booksub,booklink,workpage,books.authorid from books,authors where books.AuthorID = authors.AuthorID'
+        cmd += 'booksub,booklink,workpage,books.authorid,seriesdisplay from books,authors'
+        cmd += ' where books.AuthorID = authors.AuthorID'
 
         if kwargs['source'] == "Manage":
             cmd += ' and books.STATUS="%s"' % kwargs['whichStatus']
@@ -671,20 +672,10 @@ class WebInterface(object):
                 cmd += ' and BOOKLANG="%s"' % kwargs['booklang']
 
         rowlist = myDB.select(cmd)
-        # At his point if possible we want to sort and filter _before_ adding the html
-        # as it's much quicker BUT we don't have series info at this point so we
-        # can't sort on series until later...
-        # Series is column 3 on author page, column 4 on manage and books page
-        sort_after = False
-        sortcolumn = int(iSortCol_0)
-
-        if sortcolumn == 3 and kwargs['source'] == "Author":
-            sort_after = True
-        if sortcolumn == 4 and kwargs['source'] in ["Manage", "Books"]:
-            sort_after = True
-
+        # At his point we want to sort and filter _before_ adding the html as it's much quicker
         # turn the sqlite rowlist into a list of lists
         d = []
+        rows = []
         filtered = []
         if len(rowlist):
             # the masterlist to be filled with the row data
@@ -699,45 +690,34 @@ class WebInterface(object):
             else:
                 filtered = d
 
-            if sort_after:
+            # table headers and column headers do not match at this point
+            sortcolumn = int(iSortCol_0)
+
+            if kwargs['source'] in ["Manage", "Books"]:
+                if sortcolumn < 4:  # author, title
+                    sortcolumn -= 1
+                elif sortcolumn == 4:  # series
+                    sortcolumn = 12
+                else:               # rating, date, status
+                    sortcolumn -= 2
+            elif kwargs['source'] == "Author":
+                if sortcolumn > 3:  # rating, date
+                    sortcolumn -= 1
+                elif sortcolumn == 3:  # series
+                    sortcolumn = 12
+            if sortcolumn in [3, 4, 12]:  # rating, date, series
+                self.natural_sort(filtered,key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+            else:
+                filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+
+            if iDisplayLength < 0:  # display = all
                 rows = filtered
             else:
-                # table headers and column headers do not match at this point
-                if kwargs['source'] in ["Manage", "Books"]:
-                    if sortcolumn < 4:  # author or title
-                        sortcolumn -= 1
-                    else:               # rating, date, status
-                        sortcolumn -= 2
-                elif kwargs['source'] == "Author":
-                    if sortcolumn > 3:  # rating, date, status
-                        sortcolumn -= 1
-
-                if sortcolumn >= 3:  # rating, date, status pre html
-                    filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
-                else:
-                    self.natural_sort(filtered,key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
-
-                if iDisplayLength < 0:  # display = all
-                    rows = filtered
-                else:
-                    rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+                rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
             # now add html to the ones we want to display
             d = []  # the masterlist to be filled with the html data
             for row in rows:
-                cmd = 'SELECT SeriesName,SeriesNum from series,member '
-                cmd += 'WHERE series.SeriesID = member.SeriesID and member.BookID="%s"' % row[6]
-
-                whichseries = myDB.select(cmd)
-
-                series = ''
-                for item in whichseries:
-                    newseries = "%s %s" % (item['SeriesName'], item['SeriesNum'])
-                    newseries.strip()
-                    if series and newseries:
-                        series += '<br>'
-                    series += newseries
-
                 l = []  # for each Row use a separate list
                 bookrate = float(row[3])
                 if bookrate < 0.5:
@@ -790,8 +770,8 @@ class WebInterface(object):
                         title = '<td class="bookname">%s</td>' % row[2]
                     l.append(title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage)
 
-                    # is the book part of a series
-                    l.append('<td class="series">%s</td>' % series)
+                    # is the book part of any series
+                    l.append('<td class="series">%s</td>' % row[12])
 
                     l.append('<td class="stars text-center"><img src="images/' + starimg + '" alt="Rating"></td>')
 
@@ -848,8 +828,8 @@ class WebInterface(object):
                         title = '<td id="bookname">%s</td>' % row[2]
                     l.append(title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage)
 
-                    # is the book part of a series
-                    l.append('<td id="series">%s</td>' % series)
+                    # is the book part of any series
+                    l.append('<td id="series">%s</td>' % row[12])
 
                     l.append('<td id="stars"><img src="images/' + starimg + '" width="50" height="10"></td>')
 
@@ -871,16 +851,7 @@ class WebInterface(object):
                         l.append(btn)
 
                 d.append(l)  # add the rowlist to the masterlist
-
-            if sort_after:
-                # at this point to columns are complete and in the right order but contain html
-                self.natural_sort(d,key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
-                if iDisplayLength < 0:  # display = all
-                    rows = d
-                else:
-                    rows = d[iDisplayStart:(iDisplayStart + iDisplayLength)]
-            else:
-                rows = d
+            rows = d
 
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),

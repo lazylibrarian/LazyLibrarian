@@ -151,7 +151,8 @@ def setAllBookSeries():
     return msg
 
 def setSeries(seriesdict=None, bookid=None, seriesauthors=True):
-    """ set series details in series/member tables from the supplied dict """
+    """ set series details in series/member tables from the supplied dict 
+        and a displayable summary in book table """
     myDB = database.DBConnection()
     if bookid:
         # delete any old series-member entries
@@ -176,6 +177,16 @@ def setSeries(seriesdict=None, bookid=None, seriesauthors=True):
                                 (match['SeriesID'], book['AuthorID']), suppress='UNIQUE')
             else:
                 logger.debug('Unable to set series for book %s, %s' % (bookid, repr(seriesdict)))
+
+        series = ''
+        for item in seriesdict:
+            newseries = "%s %s" % (item['SeriesName'], item['SeriesNum'])
+            newseries.strip()
+            if series and newseries:
+                series += '<br>'
+            series += newseries
+        myDB.action('UPDATE books SET SeriesDisplay="%s" WHERE BookID="%s"' % (series, bookid))
+
         # removed deleteEmptySeries as setSeries slows down drastically if run in a loop
         # eg dbupgrade or setAllBookSeries. Better to tidy up all empties when loop finished
         # deleteEmptySeries()
