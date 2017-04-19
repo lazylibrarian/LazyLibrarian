@@ -630,9 +630,9 @@ def dbupgrade(db_current_version):
                 lazylibrarian.UPDATE_MSG = 'Reorganisation of seriesauthors complete'
 
         if db_version < 19:
-                #if not has_column(myDB, "books", "SeriesDisplay"):
+            if not has_column(myDB, "books", "SeriesDisplay"):
                 lazylibrarian.UPDATE_MSG = 'Adding series display to book table'
-                #myDB.action('ALTER TABLE books ADD COLUMN SeriesDisplay TEXT')
+                myDB.action('ALTER TABLE books ADD COLUMN SeriesDisplay TEXT')
                 books = myDB.select('SELECT BookID from books')
                 if books:
                     cnt = 0
