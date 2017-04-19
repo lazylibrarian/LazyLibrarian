@@ -105,14 +105,15 @@ def dbupgrade(db_current_version):
     if db_version < db_current_version:
         myDB = database.DBConnection()
 
-        if db_version < 1:
+        if db_version:
+            lazylibrarian.UPDATE_MSG = 'Updating database to version %s, current version is %s' % (
+                                        db_current_version, db_version)
+            logger.info(lazylibrarian.UPDATE_MSG)
+        else:
             if not has_column(myDB, "authors", "AuthorID"):
                 # it's a new database. Create tables but no need for any upgrading
                 db_version = db_current_version
                 lazylibrarian.UPDATE_MSG = 'Creating new database, version %s' % db_version
-            else:
-                lazylibrarian.UPDATE_MSG = 'Updating database to version %s, current version is %s' % (
-                                            db_current_version, db_version)
             logger.info(lazylibrarian.UPDATE_MSG)
             myDB.action('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT UNIQUE, AuthorName TEXT UNIQUE, \
                 AuthorImg TEXT, AuthorLink TEXT, DateAdded TEXT, Status TEXT, LastBook TEXT, LastBookImg TEXT, \
@@ -143,6 +144,9 @@ def dbupgrade(db_current_version):
         # These are the incremental changes before database versioning was introduced.
         # Old database tables might already have these incorporated depending on version, so we need to check...
         if db_version < 1:
+            lazylibrarian.UPDATE_MSG = 'Updating database to version %s, current version is %s' % (
+                                        db_current_version, db_version)
+            logger.info(lazylibrarian.UPDATE_MSG)
 
             if not has_column(myDB, "books", "BookSub"):
                 lazylibrarian.UPDATE_MSG = 'Updating database to hold book subtitles.'

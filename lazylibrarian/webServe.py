@@ -705,7 +705,8 @@ class WebInterface(object):
                     sortcolumn -= 1
                 elif sortcolumn == 3:  # series
                     sortcolumn = 12
-            if sortcolumn in [3, 4, 12]:  # rating, date, series
+
+            if sortcolumn in [4, 12]:  # date, series
                 self.natural_sort(filtered,key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
             else:
                 filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
