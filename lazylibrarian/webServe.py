@@ -172,7 +172,7 @@ class WebInterface(object):
                     l.append('%s' % row[2])
                     l.append('%s' % row[3])
                     l.append('%s' % row[4])
-                    btn = '<a class="button grey" href="seriesMembers?seriesid="%s"' % row[0]
+                    btn = '<a class="button grey" href="seriesMembers?seriesid=%s"' % row[0]
                     btn += ' title="Show">Show</a></p></td>'
                     l.append(btn)
                 d.append(l)  # add the rowlist to the masterlist
@@ -683,14 +683,9 @@ class WebInterface(object):
                 d.append(l)  # add the rowlist to the masterlist
 
             if sSearch:
-                filtered = filter(lambda x: sSearch in str(x), d)
+                rows = filter(lambda x: sSearch in str(x), d)
             else:
-                filtered = d
-
-            if iDisplayLength < 0:  # display = all
-                rows = filtered
-            else:
-                rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+                rows = d
 
             # now add html to the ones we want to display
             d = []  # the masterlist to be filled with the html data
@@ -842,13 +837,20 @@ class WebInterface(object):
 
                 d.append(l)  # add the rowlist to the masterlist
 
-                sortcolumn = int(iSortCol_0)
-                #d.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+            sortcolumn = int(iSortCol_0)
+            if sortcolumn < 4:
+                d.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+            else:
                 self.natural_sort(d,key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
 
-        mydict = {'iTotalDisplayRecords': len(filtered),
+            if iDisplayLength < 0:  # display = all
+                rows = d
+            else:
+                rows = d[iDisplayStart:(iDisplayStart + iDisplayLength)]
+
+        mydict = {'iTotalDisplayRecords': len(rows),
                   'iTotalRecords': len(rowlist),
-                  'aaData': d,
+                  'aaData': rows,
                   }
         s = simplejson.dumps(mydict)
         # print ("Getbooks returning %s to %s" % (iDisplayStart, iDisplayStart

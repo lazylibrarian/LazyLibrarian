@@ -91,7 +91,7 @@
 
         $('#book_table').dataTable(
             {
-                "responsive": true,
+                "bAutoWidth": false,
                 "order": [[ 2, 'asc']],
                 "columnDefs":
                     [{ targets: 'no-sort', orderable: false }]
@@ -103,8 +103,13 @@
                     "sInfoEmpty":"Showing 0 to 0 of 0 issues",
                     "sInfoFiltered":"(filtered from _MAX_ total issues)"},
                 "sPaginationType": "full_numbers",
+                "aaSorting": [[2, 'asc']],
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $(nRow).addClass("gradeZ");
+                    return nRow;
+                },
             });
             $('.dataTables_filter input').attr("placeholder", "Search filter");
     });

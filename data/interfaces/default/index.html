@@ -69,6 +69,8 @@
         %endfor
         </tbody>
     </table>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
 </%def>
 
 <%def name="headIncludes()">
@@ -77,25 +79,22 @@
 
 <%def name="javascriptIncludes()">
     <script src="js/libs/jquery.dataTables.min.js"></script>
-    <script src="js/natural.js"></script>
+    <script src="js/libs/natural.js"></script>
     <script>
     $(document).ready(function()
     {
         $('#author_table').dataTable(
             {
-            "aoColumns": [
+                "bAutoWidth": false,
+                "aoColumns": [
                     {"bSortable": false},
                     null,
                     null,
                     null,
-                    null,
+                    { "sType": "natural" },
                     null
                     ],
-                "responsive": true,
                 "order": [[ 1, 'asc']],
-                "columnDefs":
-                    [{ type: 'natural', targets: 3 },
-                     { type: 'natural-nohtml', targets: 4 }],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ authors per page",
                     "sEmptyTable": "No authors found",

@@ -55,7 +55,7 @@
                 %endif
                 <th class="date col-xs-1 text-center">Num</th>
                 <th class="status text-center">Status</th>
-                <th class="stars text-center">Edit Details</th>
+                <th class="stars text-center no-sort">Edit Details</th>
             </tr>
         </thead>
 
@@ -87,16 +87,15 @@
 </%def>
 
 <%def name="javascriptIncludes()">
-<script type="text/javascript">
+<script>
     $(document).ready(function()
     {
         var oTable = $('#book_table').dataTable(
             {
+                "bAutoWidth": false,
                 "order": [[ 4, 'asc' ]],
-                // Don't allow colums of class no-sort to be sorted
                 "columnDefs": [{ targets: 'no-sort', orderable: false },
-                               { type: 'natural', targets: 4 }
-                               ],
+                               { type: 'natural', targets: 4 }],
                 "oLanguage": {
                     "sLengthMenu":"_MENU_ rows per page",
                     "sEmptyTable": "No books found",
