@@ -1031,6 +1031,7 @@ def shutdown(restart=False, update=False):
 		try:
 			result = versioncheck.update()
 			if result:
+			    logger.debug('Lazylibrarian version updated')
 			    config_write()
 		except Exception as e:
 			logger.warn('LazyLibrarian failed to update: %s. Restarting.' % str(e))
