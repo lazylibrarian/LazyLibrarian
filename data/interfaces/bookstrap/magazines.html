@@ -57,16 +57,16 @@
                 <tr>
                     <th class="select no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
                     % if covercount > 0:
-                        <th class="bookart no-sort">Cover</th>
+                        <th class="bookart text-center no-sort">Cover</th>
                     % else:
                         <th class="bookart hidden">Cover</th>
                     % endif
                     <th class="magtitle">Title</th>
-                    <th class="seriesNum">Num</th>
-                    <th class="lastacquired">Acquired</th>
-                    <th class="issuedate">Latest Issue</th>
-                    <th class="status">Status</th>
-                    <th class="issue no-sort">Magazine</th>
+                    <th class="seriesNum text-center">Num</th>
+                    <th class="lastacquired text-center">Acquired</th>
+                    <th class="issuedate text-center">Latest Issue</th>
+                    <th class="status text-center">Status</th>
+                    <th class="issue text-center no-sort">Select</th>
                 </tr>
             </thead>
 
@@ -153,6 +153,15 @@
                 "sPaginationType": "full_numbers",
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                $('td', nRow).eq(1).addClass('text-center');
+                $('td', nRow).eq(3).addClass('text-center');
+                $('td', nRow).eq(4).addClass('text-center');
+                $('td', nRow).eq(5).addClass('text-center');
+                $('td', nRow).eq(6).addClass('text-center');
+                $('td', nRow).eq(7).addClass('text-center');
+                return nRow;
+            },
             });
             $('.dataTables_filter input').attr("placeholder", "Search filter");
     });

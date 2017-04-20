@@ -235,10 +235,10 @@ def authorUpdate():
         myDB = database.DBConnection()
         cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" order by DateAdded ASC'
         author = myDB.match(cmd)
-        if author and lazylibrarian.CONFIG['CACHE_AGE']:
+        if author and int(lazylibrarian.CONFIG['CACHE_AGE']):
             dtnow = datetime.datetime.now()
             diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
-            if diff > lazylibrarian.CONFIG['CACHE_AGE']:
+            if diff > int(lazylibrarian.CONFIG['CACHE_AGE']):
                 logger.info('Starting update for %s' % author['AuthorName'])
                 authorid = author['AuthorID']
                 # noinspection PyUnresolvedReferences

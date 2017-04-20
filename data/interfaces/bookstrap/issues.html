@@ -33,13 +33,13 @@
                     <tr>
                         <th class="select no-sort"><input type="checkbox" onClick="toggleAll(this)" class="form-control" /></th>
                         % if covercount > 0:
-                        <th class="bookart no-sort" width=20%>Cover</th>
+                        <th class="bookart text-center no-sort" width=20%>Cover</th>
                         % else:
                         <th class="bookart hidden">Cover</th>
                         % endif
                         <th class="issuedate text-center">Issue</th>
                         <th class="lastacquired text-center">Acquired</th>
-                        <th class="issue text-center">Issue</th>
+                        <th class="issue text-center">Select</th>
                     </tr>
                 </thead>
 
@@ -48,7 +48,7 @@
                         <tr>
                             <td class="select"><input type="checkbox" name="${result['IssueID']}" class="form-control" /></td>
                             % if covercount > 0:
-                            <td class="bookart"><a href="${result['Cover']}" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="cover" width="90%"></a></td>
+                            <td class="bookart text-center"><a href="${result['Cover']}" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="cover" width="90%"></a></td>
                             % else:
                             <td class="bookart hidden"><a href="${result['Cover']}" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="Cover"></a></td>
                             % endif

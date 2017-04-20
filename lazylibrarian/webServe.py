@@ -166,7 +166,7 @@ class WebInterface(object):
                     l.append('<td class="text-center">%s' % row[4])
                     btn = '<td class="stars text-center"><a class="b btn btn-xs btn-success"'
                     btn += ' href="seriesMembers?seriesid=%s"' % row[0]
-                    btn += ' title="Select"><i class="fa"></i>Select</a></p></td>'
+                    btn += ' title="Select"><i class="fa"></i>Show</a></p></td>'
                     l.append(btn)
                 else:
                     l.append('<td id="select"><input class="checkbox" type="checkbox" name="%s" /></td>' % row[0])
@@ -174,7 +174,7 @@ class WebInterface(object):
                     l.append('%s' % row[3])
                     l.append('%s' % row[4])
                     btn = '<a class="button grey" href="seriesMembers?seriesid=%s"' % row[0]
-                    btn += ' title="Show">Show</a></p></td>'
+                    btn += ' title="Select">Show</a></p></td>'
                     l.append(btn)
                 d.append(l)  # add the rowlist to the masterlist
 
