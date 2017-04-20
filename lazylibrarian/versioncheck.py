@@ -16,6 +16,8 @@
 import os
 import platform
 import re
+import time
+import stat
 import socket
 import subprocess
 import tarfile
@@ -188,7 +190,7 @@ def getCurrentGitBranch():
 
 
 def checkForUpdates():
-    """ Called from webserver with thread name WEBSERVER, or as a cron job """
+    """ Called at startup, from webserver with thread name WEBSERVER, or as a cron job """
     if 'Thread-' in threading.currentThread().name:
         threading.currentThread().name = "CRON-VERSIONCHECK"
     logger.debug('Set Install Type, Current & Latest Version and Commit status')
@@ -196,7 +198,11 @@ def checkForUpdates():
         getInstallType()
         lazylibrarian.CONFIG['CURRENT_VERSION'] = getCurrentVersion()
         lazylibrarian.CONFIG['LATEST_VERSION'] = getLatestVersion()
-        lazylibrarian.CONFIG['COMMITS_BEHIND'], lazylibrarian.COMMIT_LIST = getCommitDifferenceFromGit()
+        if lazylibrarian.CONFIG['CURRENT_VERSION'] == lazylibrarian.CONFIG['LATEST_VERSION']:
+            lazylibrarian.CONFIG['COMMITS_BEHIND'] = 0
+            lazylibrarian.COMMIT_LIST = ""
+        else:
+            lazylibrarian.CONFIG['COMMITS_BEHIND'], lazylibrarian.COMMIT_LIST = getCommitDifferenceFromGit()
         logger.debug('Update check complete')
     else:
         logger.warn('No internet connection')
@@ -208,7 +214,7 @@ def checkForUpdates():
 
 def getLatestVersion():
     # Can only work for GIT driven installs, so check install type
-    lazylibrarian.CONFIG['COMMITS_BEHIND'] = 'Unknown'
+    #lazylibrarian.CONFIG['COMMITS_BEHIND'] = 'Unknown'
 
     if lazylibrarian.CONFIG['INSTALL_TYPE'] in ['git', 'source', 'package']:
         latest_version = getLatestVersion_FromGit()
@@ -245,9 +251,17 @@ def getLatestVersion_FromGit():
                 lazylibrarian.CONFIG['GIT_USER'], lazylibrarian.CONFIG['GIT_REPO'], branch)
             logger.debug(
                 '(getLatestVersion_FromGit) Retrieving latest version information from github command=[%s]' % url)
+
+            version_file = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
+            age = ''
+            if os.path.isfile(version_file):
+                age = time.ctime(os.stat(version_file)[stat.ST_MTIME])
+
             try:
                 request = urllib2.Request(url)
                 request.add_header('User-Agent', USER_AGENT)
+                if age:
+                    request.add_header('If-Modified-Since', age)
                 resp = urllib2.urlopen(request, timeout=30)
                 result = resp.read()
                 git = simplejson.JSONDecoder().decode(result)
@@ -255,14 +269,18 @@ def getLatestVersion_FromGit():
                 logger.debug('(getLatestVersion_FromGit) Branch [%s] Latest Version has been set to [%s]' % (
                              branch, latest_version))
             except Exception as e:
-                logger.warn('(getLatestVersion_FromGit) Could not get the latest commit from github')
                 if hasattr(e, 'reason'):
                     errmsg = e.reason
                 else:
                     errmsg = str(e)
 
-                logger.debug('git error for %s: %s' % (url, errmsg))
-                latest_version = 'Not_Available_From_GitHUB'
+                if hasattr(e, 'code') and str(e.code) == '304':  # Not modified
+                    latest_version = lazylibrarian.CONFIG['CURRENT_VERSION']
+                    logger.debug('(getLatestVersion_FromGit) Branch [%s] Currently on Latest Version' % branch)
+                else:
+                    logger.warn('(getLatestVersion_FromGit) Could not get the latest commit from github')
+                    logger.debug('git error for %s: %s' % (url, errmsg))
+                    latest_version = 'Not_Available_From_GitHUB'
 
     return latest_version
 
