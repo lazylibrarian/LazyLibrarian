@@ -148,6 +148,7 @@ CONFIG_DEFINITIONS = {
 	'GIT_USER': ('str', 'Git', 'dobytang'),
 	'GIT_REPO': ('str', 'Git', 'lazylibrarian'),
 	'GIT_BRANCH': ('str', 'Git', 'master'),
+	'GIT_UPDATED': ('str', 'Git', ''),
 	'INSTALL_TYPE': ('str', 'Git', ''),
 	'CURRENT_VERSION': ('str', 'Git', ''),
 	'LATEST_VERSION': ('str', 'Git', ''),
@@ -1028,7 +1029,9 @@ def shutdown(restart=False, update=False):
 	if update:
 		logger.info('LazyLibrarian is updating...')
 		try:
-			versioncheck.update()
+			result = versioncheck.update()
+			if result:
+			    config_write()
 		except Exception as e:
 			logger.warn('LazyLibrarian failed to update: %s. Restarting.' % str(e))
 
