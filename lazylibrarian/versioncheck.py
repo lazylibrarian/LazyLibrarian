@@ -309,12 +309,12 @@ def getCommitDifferenceFromGit():
                 logger.debug('JSONDecode url')
                 git = simplejson.JSONDecoder().decode(result)
                 logger.debug('pull total_commits from json object')
-                commits = git['total_commits']
+                commits = int(git['total_commits'])
 
                 logger.debug('(getCommitDifferenceFromGit) -  GitHub reports as follows Status [%s] - Ahead [%s] - Behind [%s] - Total Commits [%s]' % (
                              git['status'], git['ahead_by'], git['behind_by'], git['total_commits']))
 
-                if git['total_commits'] > 0:
+                if int(git['total_commits']) > 0:
                     messages = []
                     for item in git['commits']:
                         messages.insert(0, item['commit']['message'])
@@ -333,7 +333,7 @@ def getCommitDifferenceFromGit():
             logger.info('[VersionCheck] -  New version is available. You are one commit behind')
         elif commits == 0:
             logger.info('[VersionCheck] -  lazylibrarian is up to date ')
-        elif commits == -1:
+        elif commits < 0:
             logger.info(
                 '[VersionCheck] -  You are running an unknown version of lazylibrarian. Run the updater to identify your version')
 
