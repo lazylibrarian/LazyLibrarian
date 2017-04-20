@@ -28,7 +28,7 @@
         </div>
         <p>&nbsp;</p>
         <div class="table-responsive">
-            <table class="table table-striped table-hover table-bordered" id="book_tablez">
+            <table class="table table-striped table-hover table-bordered" id="book_table">
                 <thead>
                     <tr>
                         <th class="select no-sort"><input type="checkbox" onClick="toggleAll(this)" class="form-control" /></th>
@@ -59,7 +59,6 @@
                 %endfor
                 </tbody>
             </table>
-
         </div>
     </form>
 </%def>
@@ -70,7 +69,7 @@
 
 <%def name="javascriptIncludes()">
 
-    <script>
+    <script type="text/javascript">
 
     $(document).ready(function()
     {
@@ -91,11 +90,9 @@
 
         $('#book_table').dataTable(
             {
-                "responsive": true,
+                "bAutoWidth": false,
                 "order": [[ 2, 'asc']],
-                "columnDefs":
-                    [{ targets: 'no-sort', orderable: false }]
-                ,
+                "columnDefs": [{ targets: 'no-sort', orderable: false }],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ issues per page",
                     "sEmptyTable": "No issues found",
@@ -103,6 +100,7 @@
                     "sInfoEmpty":"Showing 0 to 0 of 0 issues",
                     "sInfoFiltered":"(filtered from _MAX_ total issues)"},
                 "sPaginationType": "full_numbers",
+                "aaSorting": [[2, 'asc']],
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
             });

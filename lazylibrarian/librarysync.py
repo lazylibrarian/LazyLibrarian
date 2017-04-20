@@ -652,9 +652,9 @@ def LibraryScan(startdir=None):
             if nolang:
                 logger.warn("Found %s book%s in your library with unknown language" % (nolang, plural(nolang)))
                 # show stats if new books were added
-            stats = myDB.match(
-                "SELECT sum(GR_book_hits), sum(GR_lang_hits), sum(LT_lang_hits), sum(GB_lang_change), \
-                    sum(cache_hits), sum(bad_lang), sum(bad_char), sum(uncached), sum(duplicates) FROM stats")
+            cmd = "SELECT sum(GR_book_hits), sum(GR_lang_hits), sum(LT_lang_hits), sum(GB_lang_change), "
+            cmd += "sum(cache_hits), sum(bad_lang), sum(bad_char), sum(uncached), sum(duplicates) FROM stats"
+            stats = myDB.match(cmd)
 
             st= {'GR_book_hits': stats['sum(GR_book_hits)'], 'GB_book_hits': stats['sum(GR_book_hits)'],
                  'GR_lang_hits': stats['sum(GR_lang_hits)'], 'LT_lang_hits': stats['sum(LT_lang_hits)'],

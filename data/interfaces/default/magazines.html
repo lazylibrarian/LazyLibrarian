@@ -51,7 +51,7 @@
                 <th id="lastacquired">Acquired</th>
                 <th id="issuedate">Latest Issue</th>
                 <th id="status">Status</th>
-                <th id="issue">Magazine</th>
+                <th id="issue">Show</th>
             </tr>
         </thead>
 
@@ -98,7 +98,7 @@
 
 <%def name="javascriptIncludes()">
     <script src="js/libs/jquery.dataTables.min.js"></script>
-    <script src="js/natural.js"></script>
+    <script src="js/libs/natural.js"></script>
     <script>
 
     $(document).ready(function()
@@ -124,20 +124,18 @@
                     {"bSortable": false},
                     {"bSortable": false},
                     null,
+                    { "sType": "natural" },
                     null,
+                    { "sType": "natural" },
                     null,
-                    null,
-                    null,
-                    null
+                    {"bSortable": false}
                     ],
                 "order": [[ 2, 'asc']],
-                "columnDefs":
-                    [{ type: 'natural', targets: 3 }],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ magazines per page",
                     "sEmptyTable": "No magazines found",
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
-                    "sInfoEmpty":"Showing 0 to 0 of 0 books",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 magazines",
                     "sInfoFiltered":"(filtered from _MAX_ total magazines)"},
                 "sPaginationType": "full_numbers",
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],

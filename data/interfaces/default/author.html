@@ -126,6 +126,8 @@
             </tr>
         </thead>
     </table>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
     </form>
 </%def>
 
@@ -149,6 +151,17 @@
     {
         var oTable = $('#book_table').dataTable(
             {
+                "bAutoWidth": false,
+                "aoColumns": [
+                    {"bSortable": false},
+                    {"bSortable": false},
+                    null,
+                    { "sType": "natural" },
+                    null,
+                    null,
+                    null
+                    ],
+                "order": [[ 5, 'desc']],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ books per page",
                     "sEmptyTable": "No books found",
@@ -163,6 +176,7 @@
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $(nRow).addClass("gradeZ");
                     var w = window.innerWidth;
                     if ( w < 320 )
                     {   // hide cover,series,stars,date on smallest devices

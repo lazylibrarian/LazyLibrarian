@@ -235,6 +235,7 @@ def _get_auth():
         #                                  , verify=TORRENT_VERIFY_CERT)
     except Exception as err:
         logger.debug('Deluge: auth.login returned %s' % str(err))
+        delugeweb_auth = {}
         return None
 
     auth = json.loads(response.text)["result"]
@@ -248,6 +249,7 @@ def _get_auth():
         #                                  , verify=TORRENT_VERIFY_CERT)
     except Exception as err:
         logger.debug('Deluge: web.connected returned %s' % str(err))
+        delugeweb_auth = {}
         return None
 
     connected = json.loads(response.text)['result']
@@ -261,11 +263,13 @@ def _get_auth():
             #                                  , verify=TORRENT_VERIFY_CERT)
         except Exception as err:
             logger.debug('Deluge: web.get_hosts returned %s' % str(err))
+            delugeweb_auth = {}
             return None
 
         delugeweb_hosts = json.loads(response.text)['result']
         if len(delugeweb_hosts) == 0:
             logger.error('Deluge: WebUI does not contain daemons')
+            delugeweb_auth = {}
             return None
 
         post_data = json.dumps({"method": "web.connect",
@@ -277,6 +281,7 @@ def _get_auth():
             #                                  , verify=TORRENT_VERIFY_CERT)
         except Exception as err:
             logger.debug('Deluge: web.connect returned %s' % str(err))
+            delugeweb_auth = {}
             return None
 
         post_data = json.dumps({"method": "web.connected",
@@ -288,12 +293,14 @@ def _get_auth():
             #                                  , verify=TORRENT_VERIFY_CERT)
         except Exception as err:
             logger.debug('Deluge: web.connected returned %s' % str(err))
+            delugeweb_auth = {}
             return None
 
         connected = json.loads(response.text)['result']
 
         if not connected:
             logger.error('Deluge: WebUI could not connect to daemon')
+            delugeweb_auth = {}
             return None
 
     return auth

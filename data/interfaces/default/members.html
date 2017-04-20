@@ -56,7 +56,7 @@
 
         <tbody>
         %for result in members:
-            <tr>
+            <tr class="gradeZ">
                 <td id="select"><input class="checkbox" type="checkbox" name="${result['BookID']}" /></td>
                 <td id="bookart"><a href="${result['BookImg']}" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" width="60" alt="Cover" class="bookcover-sm"></a></td>
                 <td id="bookname">${result['BookName']}</td>
@@ -83,7 +83,7 @@
 
 <%def name="javascriptIncludes()">
     <script src="js/libs/jquery.dataTables.min.js"></script>
-    <script src="js/natural.js"></script>
+    <script src="js/libs/natural.js"></script>
     <script>
     $(document).ready(function()
     {
@@ -94,12 +94,10 @@
                     {"bSortable": false},
                     null,
                     null,
-                    null,
-                    null,
+                    { "sType": "natural" },
                     null,
                     null
                     ],
-                "columnDefs": [{ type: 'natural', targets: 4 }],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ rows per page",
                     "sEmptyTable": "No books found",

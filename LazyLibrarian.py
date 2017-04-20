@@ -140,33 +140,12 @@ def main():
 
     # Set the install type (win,git,source) &
     # check the version when the application starts
-    logger.debug('(LazyLibrarian) Setup install,versions and commit status')
-    versioncheck.getInstallType()
-    version_file = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
-    # if version file is less than "old" hours old, don't check github at startup
-    old = 6
-    if os.path.isfile(version_file):
-        age = time.time() - os.stat(version_file)[stat.ST_MTIME]
-        old = int(age / (60 * 60 * old))
-        if not old:  # don't call git, read the version file
-            fp = open(version_file, 'r')
-            lazylibrarian.CONFIG['CURRENT_VERSION'] = fp.read().strip(' \n\r')
-            fp.close()
-            lazylibrarian.CONFIG['LATEST_VERSION'] = "not checked"
-            lazylibrarian.CONFIG['COMMITS_BEHIND'] = 0
-            lazylibrarian.COMMIT_LIST = ""
-            if not re.match('^[a-z0-9]+$', lazylibrarian.CONFIG['CURRENT_VERSION']):
-                logger.error('Current version doesn\'t look like a hash, not using it')
-                os.remove(version_file)
-                old = False
-    if old:
-        lazylibrarian.CONFIG['CURRENT_VERSION'] = versioncheck.getCurrentVersion()
-        lazylibrarian.CONFIG['LATEST_VERSION'] = versioncheck.getLatestVersion()
-        lazylibrarian.CONFIG['COMMITS_BEHIND'], lazylibrarian.COMMIT_LIST = versioncheck.getCommitDifferenceFromGit()
+    versioncheck.checkForUpdates()
 
     logger.debug('Current Version [%s] - Latest remote version [%s] - Install type [%s]' % (
         lazylibrarian.CONFIG['CURRENT_VERSION'], lazylibrarian.CONFIG['LATEST_VERSION'], lazylibrarian.CONFIG['INSTALL_TYPE']))
 
+    version_file = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
     if not os.path.isfile(version_file) and lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
         # User may be running an old source zip, so force update
         lazylibrarian.CONFIG['COMMITS_BEHIND'] = 1

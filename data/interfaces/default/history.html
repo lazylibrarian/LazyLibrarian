@@ -36,7 +36,7 @@
 					grade = 'A'
 				elif item['Status'] == 'Snatched':
 					grade = 'C'
-				elif item['Status'] == 'Unprocessed':
+				elif item['Status'] == 'Failed':
 					grade = 'X'
 				else:
 					grade = 'U'
@@ -52,6 +52,8 @@
 		%endfor
 		</tbody>
 	</table>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
 </%def>
 
 <%def name="headIncludes()">
@@ -60,19 +62,21 @@
 
 <%def name="javascriptIncludes()">
     <script src="js/libs/jquery.dataTables.min.js"></script>
+    <script src="js/libs/natural.js"></script>
     <script>
 
     $(document).ready(function()
     {
 
-        $('#book_table').dataTable(
+        var oTable = $('#book_table').dataTable(
             {
+                "bAutoWidth": false,
                 "aoColumns": [
                     null,
+                    { "sType": "natural" },
                     null,
-                    null,
-                    null,
-                    null,
+                    { "sType": "natural" },
+                    { "sType": "natural" },
                     null
                     ],
                 "oLanguage": {
@@ -86,6 +90,7 @@
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
             });
             $('.dataTables_filter input').attr("placeholder", "Search table here");
+            $(window).resize(function() {oTable.fnDraw(false)});
     });
     </script>
 </%def>
