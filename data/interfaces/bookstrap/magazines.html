@@ -61,12 +61,12 @@
                     % else:
                         <th class="bookart hidden">Cover</th>
                     % endif
-                    <th class="magtitle">Title</th>
-                    <th class="seriesNum text-center">Num</th>
-                    <th class="lastacquired text-center">Acquired</th>
-                    <th class="issuedate text-center">Latest Issue</th>
-                    <th class="status text-center">Status</th>
-                    <th class="issue text-center no-sort">Select</th>
+                    <th class="bookname">Title</th>
+                    <th class="number text-center">Num</th>
+                    <th class="series text-center">Acquired</th>
+                    <th class="date text-center">Latest Issue</th>
+                    <th class="stars text-center">Status</th>
+                    <th class="status text-center no-sort">Select</th>
                 </tr>
             </thead>
 
@@ -79,28 +79,28 @@
                         % else:
                             <td class="bookart hidden"><a href="${result['Cover']}" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="cover" class="bookcover-sm"></a></td>
                         % endif
-                        <td class="magtitle">${result['Title']}</td>
-                        <td class="seriesNum text-center">${result['Count']}</td>
-                        <td class="lastacquired text-center">${result['LastAcquired']}</td>
-                        <td class="issuedate text-center">${result['IssueDate']}</td>
-                        <td class="status text-center">${result['Status']}</td>
+                        <td class="bookname">${result['Title']}</td>
+                        <td class="number text-center">${result['Count']}</td>
+                        <td class="series text-center">${result['LastAcquired']}</td>
+                        <td class="date text-center">${result['IssueDate']}</td>
+                        <td class="stars text-center">${result['Status']}</td>
                         %if result['IssueStatus'] == 'Open':
                             %if result['Count'] == 1 and lazylibrarian.CONFIG['MAG_SINGLE']:
-                                <td class="issue text-center"><a class="button btn btn-xs btn-warning" href="openMag?bookid=${result['safetitle']}" target="_self"><i class="fa fa-book"></i> Open</a></td>
+                                <td class="status text-center"><a class="button btn btn-xs btn-warning" href="openMag?bookid=${result['safetitle']}" target="_self"><i class="fa fa-book"></i> Open</a></td>
                             %else:
-                                <td class="issue text-center"><a class="button btn btn-xs btn-primary" href="openMag?bookid=${result['safetitle']}" target="_self"><i class="fa fa-list-ul"></i> Show</a></td>
+                                <td class="status text-center"><a class="button btn btn-xs btn-primary" href="openMag?bookid=${result['safetitle']}" target="_self"><i class="fa fa-list-ul"></i> Show</a></td>
                             %endif
                         %else:
                             %if result['IssueStatus'] == 'Wanted':
-                                <td class="issue text-center">
+                                <td class="status text-center">
                                     <p><a class="a btn btn-xs btn-danger">${result['IssueStatus']}</a></p>
                                     <p><a class="b  btn btn-xs btn-success" href="searchForMag?bookid=${result['safetitle']}" target="_self"><i class="fa fa-search"></i> Search</a></p>
                                 </td>
                             %else:
                                 %if result['IssueStatus'] == 'Snatched' or result['IssueStatus'] == 'Have':
-                                    <td class="issue text-center"><a class="button btn btn-xs btn-info">${result['IssueStatus']}</a></td>
+                                    <td class="status text-center"><a class="button btn btn-xs btn-info">${result['IssueStatus']}</a></td>
                                 %else:
-                                    <td class="issue text-center"><a class="button grey btn btn-xs btn-default">${result['IssueStatus']}</a></td>
+                                    <td class="status text-center"><a class="button grey btn btn-xs btn-default">${result['IssueStatus']}</a></td>
                                 %endif
                             %endif
                         %endif
