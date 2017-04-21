@@ -151,7 +151,7 @@ def setAllBookSeries():
     return msg
 
 def setSeries(seriesdict=None, bookid=None, seriesauthors=True):
-    """ set series details in series/member tables from the supplied dict 
+    """ set series details in series/member tables from the supplied dict
         and a displayable summary in book table """
     myDB = database.DBConnection()
     if bookid:
@@ -180,7 +180,7 @@ def setSeries(seriesdict=None, bookid=None, seriesauthors=True):
 
         series = ''
         for item in seriesdict:
-            newseries = "%s %s" % (item['SeriesName'], item['SeriesNum'])
+            newseries = "%s %s" % (item, seriesdict[item])
             newseries.strip()
             if series and newseries:
                 series += '<br>'

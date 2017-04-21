@@ -21,11 +21,11 @@
 	<table class="display" id="book_table">
 		<thead>
 			<tr>
-				<th id="filename">Title</th>
-				<th id="bookid">ID</th>
-				<th id="provider">Provider</th>
-				<th id="dateadded">Date</th>
-				<th id="size">Size</th>
+				<th id="bookname">Title</th>
+				<th id="number">ID</th>
+				<th id="authorname">Provider</th>
+				<th id="date">Date</th>
+				<th id="stars">Size</th>
 				<th id="status">Status</th>
 			</tr>
 		</thead>
@@ -42,11 +42,11 @@
 					grade = 'U'
 			%>
 			<tr class="grade${grade}">
-				<td id="filename">${item['NZBtitle']}</td>
-				<td id="bookid">${item['BookID']}</td>
-				<td id="provider"><a href="${item['NZBurl']}">${item['NZBprov']}</a></td>
-				<td id="dateadded">${item['NZBdate']}</td>
-				<td id="size">${item['NZBsize']} MB</td>
+				<td id="bookname">${item['NZBtitle']}</td>
+				<td id="number">${item['BookID']}</td>
+				<td id="authorname"><a href="${item['NZBurl']}">${item['NZBprov']}</a></td>
+				<td id="date">${item['NZBdate']}</td>
+				<td id="stars">${item['NZBsize']} MB</td>
 				<td id="status">${item['Status']}</td>
 			</tr>
 		%endfor

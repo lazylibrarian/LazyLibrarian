@@ -93,6 +93,13 @@
                 "bServerSide": true,
                 "sAjaxSource": 'getBooks?whichStatus=${whichStatus}&source=Manage',
                 "bFilter": true,
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $('td', nRow).eq(0).addClass('text-center');
+                    $('td', nRow).eq(1).addClass('text-center');
+                    $('td', nRow).eq(5).addClass('text-center');
+                    $('td', nRow).eq(6).addClass('text-center');
+                    return nRow;
+                },
             });
 			$('.dataTables_filter input').attr("placeholder", "Search filter");
     });

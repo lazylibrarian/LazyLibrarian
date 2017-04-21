@@ -177,6 +177,9 @@
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     $(nRow).addClass("gradeZ");
+                    $('td', nRow).eq(0).addClass('center');
+                    $('td', nRow).eq(5).addClass('center');
+                    $('td', nRow).eq(6).addClass('center');
                     var w = window.innerWidth;
                     if ( w < 320 )
                     {   // hide cover,series,stars,date on smallest devices

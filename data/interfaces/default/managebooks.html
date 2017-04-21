@@ -34,13 +34,13 @@
     <table class="display" id="book_table">
         <thead>
             <tr>
-                <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
+                <th id="select" class="center"><input type="checkbox" onClick="toggleAll(this)" /></th>
                 <th id="bookart">Cover</th>
                 <th id="authorname">Author</th>
                 <th id="bookname">Title</th>
         		<th id="series">Series</th>
-                <th id="stars">Rating</th>
-                <th id="date">Released</th>
+                <th id="stars" class="center">Rating</th>
+                <th id="date" class="center">Released</th>
             </tr>
         </thead>
     </table>
@@ -94,6 +94,9 @@
                 "sAjaxSource": 'getBooks?whichStatus=${whichStatus}&source=Manage',
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     $(nRow).addClass("gradeZ");
+                    $('td', nRow).eq(0).addClass('center');
+                    $('td', nRow).eq(5).addClass('center');
+                    $('td', nRow).eq(6).addClass('center');
                     var w = window.innerWidth;
                     if ( w < 320 )
                     {   // hide cover,author,series,stars,date on smallest devices

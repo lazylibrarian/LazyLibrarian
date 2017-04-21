@@ -585,8 +585,8 @@ def LibraryScan(startdir=None):
                                                 if not bookid:
                                                     logger.warn("GoodReads doesn't know about %s" % book)
                                         except Exception as e:
-                                            logger.error("Error finding rescan results: %s" % str(e))
-
+                                            #logger.error("Error finding rescan results: %s" % str(e))
+                                            logger.error('Error finding rescan results: %s' % traceback.format_exc())
                                     elif lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
                                         # if we get here using googlebooks it's because googlebooks
                                         # doesn't have the book. No point in looking for it again.

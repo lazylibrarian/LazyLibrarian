@@ -34,11 +34,11 @@
     <table class="display" id="book_table" style="width:100%;">
         <thead>
             <tr>
-                <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
+                <th id="select" class="center"><input type="checkbox" onClick="toggleAll(this)" /></th>
                 <th id="authorname">Author</th>
                 <th id="bookname">Series Name</th>
-                <th id="stars">Status</th>
-                <th id="status">Show</th>
+                <th id="stars" class="center">Status</th>
+                <th id="status" class="center">Show</th>
             </tr>
         </thead>
     </table>
@@ -91,6 +91,7 @@
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     $(nRow).addClass("gradeZ");
+                    $('td', nRow).eq(0).addClass("center");
                     $('td', nRow).eq(3).addClass("center");
                     $('td', nRow).eq(4).addClass("center");
                     var w = window.innerWidth;

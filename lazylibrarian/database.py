@@ -66,7 +66,8 @@ class DBConnection:
                 except  sqlite3.IntegrityError as e:
                         if 'UNIQUE constraint failed' in e.message and suppress == 'UNIQUE':
                             logger.debug('Unique entry suppressed [%s]' % query)
-                            break
+                            self.connection.commit()
+                            pass
                         else:
                             logger.error('Database Integrity error: %s' % e)
                             logger.error("Failed query: [%s]" % query)
