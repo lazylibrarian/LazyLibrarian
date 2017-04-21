@@ -849,8 +849,9 @@ TABLE#book_table
 }
 TABLE#book_table TH#select
 {
+    vertical-align: middle;
 	text-align: center;
-	width: 10px !important;
+	width: 10px
 }
 TABLE#book_table TH#bookart
 {
@@ -869,7 +870,7 @@ TABLE#book_table TH#bookname
 }
 TABLE#book_table TH#series
 {
-	text-align: center;
+	text-align: left;
 	width: 90px !important;
 }
 TABLE#book_table TH#status
@@ -881,7 +882,7 @@ TABLE#book_table TH#status
 }
 TABLE#book_table TH#date
 {
-	text-align: left;
+	text-align: center;
 	width: 50px;
 }
 TABLE#book_table TH#number
@@ -939,7 +940,7 @@ TABLE#book_table TD#bookname
 TABLE#book_table TD#series
 {
 	vertical-align: middle;
-	text-align: center;
+	text-align: left;
 }
 TABLE#book_table TD#status
 {

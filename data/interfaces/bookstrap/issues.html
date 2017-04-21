@@ -31,7 +31,7 @@
             <table class="table table-striped table-hover table-bordered" id="book_table">
                 <thead>
                     <tr>
-                        <th class="select no-sort"><input type="checkbox" onClick="toggleAll(this)" class="form-control" /></th>
+                        <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" class="form-control" /></th>
                         % if covercount > 0:
                         <th class="bookart text-center no-sort" width=20%>Cover</th>
                         % else:
@@ -46,7 +46,7 @@
                 <tbody>
                 %for result in issues:
                         <tr>
-                            <td class="select"><input type="checkbox" name="${result['IssueID']}" class="form-control" /></td>
+                            <td class="select text-center"><input type="checkbox" name="${result['IssueID']}" class="form-control" /></td>
                             % if covercount > 0:
                             <td class="bookart text-center"><a href="${result['Cover']}" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="cover" width="90%"></a></td>
                             % else:

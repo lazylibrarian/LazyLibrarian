@@ -163,8 +163,8 @@ class WebInterface(object):
                         '<td class="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[0])
                     l.append('%s' % row[2])
                     l.append('%s' % row[3])
-                    l.append('<td class="text-center">%s' % row[4])
-                    btn = '<td class="stars text-center"><a class="b btn btn-xs btn-success"'
+                    l.append('%s' % row[4])
+                    btn = '<td class="stars"><a class="b btn btn-xs btn-success"'
                     btn += ' href="seriesMembers?seriesid=%s"' % row[0]
                     btn += ' title="Select"><i class="fa"></i>Show</a></p></td>'
                     l.append(btn)
@@ -173,7 +173,7 @@ class WebInterface(object):
                     l.append('%s' % row[2])
                     l.append('%s' % row[3])
                     l.append('%s' % row[4])
-                    btn = '<a class="button grey" href="seriesMembers?seriesid=%s"' % row[0]
+                    btn = '<a class="button orange" href="seriesMembers?seriesid=%s"' % row[0]
                     btn += ' title="Select">Show</a></p></td>'
                     l.append(btn)
                 d.append(l)  # add the rowlist to the masterlist
@@ -756,7 +756,7 @@ class WebInterface(object):
 
                     l.append(
                         '<td class="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[6])
-                    lref = '<td class="bookart text-center"><a href="%s' % row[0]
+                    lref = '<td class="bookart"><a href="%s' % row[0]
                     lref += '" target="_blank" rel="noreferrer"><img src="%s' % row[0]
                     lref += '" alt="Cover" class="bookcover-sm img-responsive"></a></td>'
                     l.append(lref)
@@ -764,7 +764,7 @@ class WebInterface(object):
                     # Don't show author column on author page, we know which author!
                     if not kwargs['source'] == "Author":
                         l.append(
-                            '<td class="authorname"><span class="hidden">%s</span><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[1], row[11], row[1]))
+                            '<td class="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[11], row[1]))
                     if row[8]:  # is there a sub-title
                         title = '<td class="bookname">%s<br><small><i>%s</i></small></td>' % (row[2], row[8])
                     else:
@@ -774,26 +774,26 @@ class WebInterface(object):
                     # is the book part of any series
                     l.append('<td class="series">%s</td>' % row[12])
 
-                    l.append('<td class="stars text-center"><img src="images/' + starimg + '" alt="Rating"></td>')
+                    l.append('<td class="stars"><img src="images/' + starimg + '" alt="Rating"></td>')
 
-                    l.append('<td class="date text-center">%s</td>' % row[4])
+                    l.append('<td class="date">%s</td>' % row[4])
 
                     # Do not show status column in MANAGE page as we are only showing one status
                     if not kwargs['source'] == "Manage":
                         if row[5] == 'Open':
-                            btn = '<td class="status text-center"><a class="button green btn btn-xs btn-warning"'
+                            btn = '<td class="status"><a class="button green btn btn-xs btn-warning"'
                             btn += ' href="openBook?bookid=%s' % row[6]
                             btn += '" target="_self"><i class="fa fa-book"></i>%s</a></td>' % row[5]
                         elif row[5] == 'Wanted':
-                            btn = '<td class="status text-center"><p><a class="a btn btn-xs btn-danger">%s' % row[5]
+                            btn = '<td class="status"><p><a class="a btn btn-xs btn-danger">%s' % row[5]
                             btn += '</a></p><p><a class="b btn btn-xs btn-success" '
                             btn += 'href="searchForBook?bookid=%s' % row[6]
                             btn += '" target="_self"><i class="fa fa-search"></i> Search</a></p></td>'
                         elif row[5] == 'Snatched' or row[5] == 'Have':
-                            btn = '<td class="status text-center"><a class="button btn btn-xs btn-info">%s' % row[5]
+                            btn = '<td class="status"><a class="button btn btn-xs btn-info">%s' % row[5]
                             btn += '</a></td>'
                         else:
-                            btn = '<td class="status text-center"><a class="button btn btn-xs btn-default grey">%s' % row[5]
+                            btn = '<td class="status"><a class="button btn btn-xs btn-default grey">%s' % row[5]
                             btn += '</a></td>'
                         l.append(btn)
 
@@ -822,7 +822,7 @@ class WebInterface(object):
                     # Don't show author column on author page, we know which author!
                     if not kwargs['source'] == "Author":
                         l.append(
-                            '<td id="authorname"><span class="hidden">%s</span><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[1], row[11], row[1]))
+                            '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[11], row[1]))
                     if row[8]:  # is there a sub-title
                         title = '<td id="bookname">%s<br><i class="smalltext">%s</i></td>' % (row[2], row[8])
                     else:

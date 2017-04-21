@@ -49,9 +49,9 @@
                 <th id="authorname">Author</th>
                 <th id="bookname">Title</th>
 		        <th id="series">Series</th>
-                <th id="stars">Rating</th>
-                <th id="date">Released</th>
-                <th id="status">Status</th>
+                <th id="stars" class="center">Rating</th>
+                <th id="date" class="center">Released</th>
+                <th id="status" class="center">Status</th>
             </tr>
         </thead>
     </table>
@@ -111,6 +111,9 @@
                 "bFilter": true,
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     $(nRow).addClass("gradeZ");
+                    $('td', nRow).eq(5).addClass('center');
+                    $('td', nRow).eq(6).addClass('center');
+                    $('td', nRow).eq(7).addClass('center');
                     var w = window.innerWidth;
                     if ( w < 320 )
                     {   // hide cover,author,series,stars,date on smallest devices
