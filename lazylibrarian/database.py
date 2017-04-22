@@ -67,7 +67,7 @@ class DBConnection:
                         if 'UNIQUE constraint failed' in e.message and suppress == 'UNIQUE':
                             logger.debug('Unique entry suppressed [%s]' % query)
                             self.connection.commit()
-                            pass
+                            break
                         else:
                             logger.error('Database Integrity error: %s' % e)
                             logger.error("Failed query: [%s]" % query)
