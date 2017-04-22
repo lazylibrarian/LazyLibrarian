@@ -128,11 +128,11 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
             dbauthor = myDB.match("SELECT * from authors WHERE AuthorID='%s'" % authorid)
             if not dbauthor:
                 authorname = 'unknown author'
-                logger.debug("Now adding new author id: %s to database" % authorid)
+                logger.debug("Adding new author id %s to database" % authorid)
                 new_author = True
             else:
                 authorname = dbauthor['authorname']
-                logger.debug("Now updating author %s " % authorname)
+                logger.debug("Updating author %s " % authorname)
                 new_author = False
 
             myDB.upsert("authors", newValueDict, controlValueDict)
@@ -271,7 +271,7 @@ def update_totals(AuthorID):
     if not match:
         return
     cmd = 'SELECT BookName, BookLink, BookDate from books WHERE AuthorID="%s"' % AuthorID
-    cmd += ' AND Status != "Ignored" order by BookDate DESC' 
+    cmd += ' AND Status != "Ignored" order by BookDate DESC'
     lastbook = myDB.match(cmd)
     cmd = 'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % AuthorID
     cmd += ' AND Status != "Ignored"'
