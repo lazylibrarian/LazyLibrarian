@@ -405,7 +405,7 @@ def update():
                 logger.info('(update) Output: ' + str(output))
                 success = False
         if success:
-            lazylibrarian.CONFIG['GIT_UPDATED'] = time.ctime()
+            lazylibrarian.CONFIG['GIT_UPDATED'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
             return True
     elif lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
 
