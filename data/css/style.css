@@ -955,7 +955,7 @@ TABLE#book_table TD#date
 TABLE#book_table TD#number
 {
 	vertical-align: middle;
-	text-align: right;
+	text-align: center;
 }
 TABLE#book_table TD#language
 {

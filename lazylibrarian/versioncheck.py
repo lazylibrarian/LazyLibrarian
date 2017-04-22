@@ -262,6 +262,7 @@ def getLatestVersion_FromGit():
                 request = urllib2.Request(url)
                 request.add_header('User-Agent', USER_AGENT)
                 if age:
+                    logger.debug('(getLatestVersion_FromGit) Checking if modified since %s' % age)
                     request.add_header('If-Modified-Since', age)
                 resp = urllib2.urlopen(request, timeout=30)
                 result = resp.read()
@@ -277,7 +278,7 @@ def getLatestVersion_FromGit():
 
                 if hasattr(e, 'code') and str(e.code) == '304':  # Not modified
                     latest_version = lazylibrarian.CONFIG['CURRENT_VERSION']
-                    logger.debug('(getLatestVersion_FromGit) Branch [%s] Currently on Latest Version' % branch)
+                    logger.debug('(getLatestVersion_FromGit) Not modified, currently on Latest Version')
                 else:
                     logger.warn('(getLatestVersion_FromGit) Could not get the latest commit from github')
                     logger.debug('git error for %s: %s' % (url, errmsg))
