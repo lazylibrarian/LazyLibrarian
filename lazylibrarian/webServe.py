@@ -1456,7 +1456,7 @@ class WebInterface(object):
                         logger.debug(u'Item %s removed from past issues' % nzburl)
                         maglist.append({'nzburl': nzburl})
                     elif action in ['Have', 'Ignored', 'Skipped']:
-                        myDB.action('UPDATE pastissues set status=%s WHERE NZBurl="%s"' % (action, nzburl))
+                        myDB.action('UPDATE pastissues set status="%s" WHERE NZBurl="%s"' % (action, nzburl))
                         logger.debug(u'Item %s removed from past issues' % nzburl)
                         maglist.append({'nzburl': nzburl})
                     elif action == 'Wanted':
