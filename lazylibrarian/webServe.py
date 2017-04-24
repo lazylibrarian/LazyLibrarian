@@ -50,9 +50,7 @@ from mako.lookup import TemplateLookup
 
 
 def serve_template(templatename, **kwargs):
-    interface_dir = os.path.join(
-        str(lazylibrarian.PROG_DIR),
-        'data/interfaces/')
+    interface_dir = os.path.join(str(lazylibrarian.PROG_DIR), 'data/interfaces/')
     template_dir = os.path.join(str(interface_dir), lazylibrarian.CONFIG['HTTP_LOOK'])
     if not os.path.isdir(template_dir):
         logger.error("Unable to locate template [%s], reverting to default" % template_dir)
@@ -62,8 +60,12 @@ def serve_template(templatename, **kwargs):
     _hplookup = TemplateLookup(directories=[template_dir])
 
     try:
-        template = _hplookup.get_template(templatename)
-        return template.render(**kwargs)
+        if lazylibrarian.UPDATE_MSG:
+            template = _hplookup.get_template("dbupdate.html")
+            return template.render(message="Database upgrade in progress, please wait...", title="Database Upgrade", timer=5)
+        else:
+            template = _hplookup.get_template(templatename)
+            return template.render(**kwargs)
     except Exception:
         return exceptions.html_error_template().render()
 
@@ -75,14 +77,10 @@ class WebInterface(object):
 
     @cherrypy.expose
     def home(self):
-        if lazylibrarian.UPDATE_MSG:
-            message = "Upgrading database, please wait"
-            return serve_template(templatename="dbupdate.html", title="Database Upgrade", message=message, timer=5)
-        else:
-            myDB = database.DBConnection()
-            authors = myDB.select(
-                'SELECT * from authors where Status != "Ignored" order by AuthorName COLLATE NOCASE')
-            return serve_template(templatename="index.html", title="Authors", authors=authors)
+        myDB = database.DBConnection()
+        authors = myDB.select(
+            'SELECT * from authors where Status != "Ignored" order by AuthorName COLLATE NOCASE')
+        return serve_template(templatename="index.html", title="Authors", authors=authors)
 
     @staticmethod
     def label_thread(name=None):
