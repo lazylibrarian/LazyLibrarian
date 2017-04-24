@@ -133,10 +133,7 @@ class WebInterface(object):
         if len(rowlist):
             # the masterlist to be filled with the row data
             for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
-                l = []  # for each Row use a separate list
-                for column in row:
-                    l.append(column)
-                d.append(l)  # add the rowlist to the masterlist
+                d.append(list(row))  # add the rowlist to the masterlist
             if sSearch:
                 filtered = filter(lambda x: sSearch in str(x), d)
             else:
@@ -155,25 +152,16 @@ class WebInterface(object):
             # now add html to the ones we want to display
             d = []  # the masterlist to be filled with the html data
             for row in rows:
-                l = []  # for each Row use a separate list
+                # for each Row create a separate list
+                l = ['<input type="checkbox" name="%s" class="checkbox" />' % row[0]]
+                l.extend([row[2], row[3], row[4]])
                 if lazylibrarian.CONFIG['HTTP_LOOK'] == 'bookstrap':
-                    l.append(
-                        '<td class="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[0])
-                    l.append('%s' % row[2])
-                    l.append('%s' % row[3])
-                    l.append('%s' % row[4])
-                    btn = '<td class="stars"><a class="b btn btn-xs btn-success"'
-                    btn += ' href="seriesMembers?seriesid=%s"' % row[0]
-                    btn += ' title="Select"><i class="fa"></i>Show</a></p></td>'
-                    l.append(btn)
+                    btn = '<a class="b btn btn-xs btn-success" href="seriesMembers?seriesid=%s"' % row[0]
+                    btn += ' title="Select"><i class="fa"></i>Show</a>'
                 else:
-                    l.append('<td id="select"><input class="checkbox" type="checkbox" name="%s" /></td>' % row[0])
-                    l.append('%s' % row[2])
-                    l.append('%s' % row[3])
-                    l.append('%s' % row[4])
                     btn = '<a class="button orange" href="seriesMembers?seriesid=%s"' % row[0]
-                    btn += ' title="Select">Show</a></p></td>'
-                    l.append(btn)
+                    btn += ' title="Select">Show</a>'
+                l.append(btn)
                 d.append(l)  # add the rowlist to the masterlist
 
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -678,10 +666,7 @@ class WebInterface(object):
         if len(rowlist):
             # the masterlist to be filled with the row data
             for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
-                l = []  # for each Row use a separate list
-                for column in row:
-                    l.append(column)
-                d.append(l)  # add the rowlist to the masterlist
+                d.append(list(row))  # add each rowlist to the masterlist
 
             if sSearch:
                 filtered = filter(lambda x: sSearch in str(x), d)
@@ -717,7 +702,7 @@ class WebInterface(object):
             # now add html to the ones we want to display
             d = []  # the masterlist to be filled with the html data
             for row in rows:
-                l = []  # for each Row use a separate list
+
                 bookrate = float(row[3])
                 if bookrate < 0.5:
                     starimg = '0-stars.png'
@@ -736,119 +721,63 @@ class WebInterface(object):
 
                 worklink = ''
 
+                if row[10] and  len(row[10]) > 4:  # is there a workpage link
+                    worklink = '<a href="' + row[10] + '" target="_new"><small><i>LibraryThing</i></small></a>'
+                editpage = '<a href="editBook?bookid=' + row[6] + '" target="_new"><small><i>Manual</i></a>'
+
+                sitelink = ''
+                if 'goodreads' in row[9]:
+                    sitelink = '<a href="%s" target="_new"><small><i>GoodReads</i></small></a>' % row[9]
+                elif 'google' in row[9]:
+                    sitelink = '<a href="%s" target="_new"><small><i>GoogleBooks</i></small></a>' % row[9]
+                if row[8]:  # is there a sub-title
+                    title = '%s<br><small><i>%s</i></small>' % (row[2], row[8])
+                else:
+                    title = row[2]
+                title = title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage
+                btn = ''
+
                 if lazylibrarian.CONFIG['HTTP_LOOK'] == 'bookstrap':
-                    if row[10]:  # is there a workpage link
-                        if len(row[10]) > 4:
-                            worklink = '<td><a href="' + \
-                                       row[10] + '" target="_new"><small><i>LibraryThing</i></small></a></td>'
-
-                    editpage = '<a href="editBook?bookid=' + row[6] + '" target="_new"><small><i>Manual</i></a>'
-
-                    sitelink = ''
-                    if 'goodreads' in row[9]:
-                        sitelink = '<td><a href="' + \
-                                   row[9] + '" target="_new"><small><i>GoodReads</i></small></a></td>'
-                    if 'google' in row[9]:
-                        sitelink = '<td><a href="' + \
-                                   row[9] + '" target="_new"><small><i>GoogleBooks</i></small></a></td>'
-
-                    l.append(
-                        '<td class="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[6])
-                    lref = '<td class="bookart"><a href="%s' % row[0]
-                    lref += '" target="_blank" rel="noreferrer"><img src="%s' % row[0]
-                    lref += '" alt="Cover" class="bookcover-sm img-responsive"></a></td>'
-                    l.append(lref)
-
-                    # Don't show author column on author page, we know which author!
-                    if not kwargs['source'] == "Author":
-                        l.append(
-                            '<td class="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[11], row[1]))
-                    if row[8]:  # is there a sub-title
-                        title = '<td class="bookname">%s<br><small><i>%s</i></small></td>' % (row[2], row[8])
-                    else:
-                        title = '<td class="bookname">%s</td>' % row[2]
-                    l.append(title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage)
-
-                    # is the book part of any series
-                    l.append('<td class="series">%s</td>' % row[12])
-
-                    l.append('<td class="stars"><img src="images/' + starimg + '" alt="Rating"></td>')
-
-                    l.append('<td class="date">%s</td>' % row[4])
-
+                    cover = '<a href="%s" target="_blank" rel="noreferrer"><img src="%s"' % (row[0], row[0])
+                    cover += ' alt="Cover" class="bookcover-sm img-responsive"></a>'
                     # Do not show status column in MANAGE page as we are only showing one status
                     if not kwargs['source'] == "Manage":
                         if row[5] == 'Open':
-                            btn = '<td class="status"><a class="button green btn btn-xs btn-warning"'
-                            btn += ' href="openBook?bookid=%s' % row[6]
-                            btn += '" target="_self"><i class="fa fa-book"></i>%s</a></td>' % row[5]
+                            btn = '<a class="button green btn btn-xs btn-warning" href="openBook?bookid=%s' % row[6]
+                            btn += '" target="_self"><i class="fa fa-book"></i>%s</a>' % row[5]
                         elif row[5] == 'Wanted':
-                            btn = '<td class="status"><p><a class="a btn btn-xs btn-danger">%s' % row[5]
+                            btn = '<p><a class="a btn btn-xs btn-danger">%s' % row[5]
                             btn += '</a></p><p><a class="b btn btn-xs btn-success" '
                             btn += 'href="searchForBook?bookid=%s' % row[6]
-                            btn += '" target="_self"><i class="fa fa-search"></i> Search</a></p></td>'
+                            btn += '" target="_self"><i class="fa fa-search"></i> Search</a></p>'
                         elif row[5] == 'Snatched' or row[5] == 'Have':
-                            btn = '<td class="status"><a class="button btn btn-xs btn-info">%s' % row[5]
-                            btn += '</a></td>'
+                            btn = '<a class="button btn btn-xs btn-info">%s</a>' % row[5]
                         else:
-                            btn = '<td class="status"><a class="button btn btn-xs btn-default grey">%s' % row[5]
-                            btn += '</a></td>'
-                        l.append(btn)
+                            btn = '<a class="button btn btn-xs btn-default grey">%s</a>' % row[5]
 
-                else:  # lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
-                    if row[10]:  # is there a workpage link
-                        if len(row[10]) > 4:
-                            worklink = '<td><a href="' + \
-                                       row[10] + '" target="_new"><i class="smalltext">LibraryThing</i></a></td>'
-
-                    editpage = '<a href="editBook?bookid=' + row[6] + \
-                                '" target="_new"><i class="smalltext">Manual</i></a>'
-
-                    sitelink = ''
-                    if 'goodreads' in row[9]:
-                        sitelink = '<td><a href="' + \
-                                   row[9] + '" target="_new"><i class="smalltext">GoodReads</i></a></td>'
-                    if 'google' in row[9]:
-                        sitelink = '<td><a href="' + \
-                                   row[9] + '" target="_new"><i class="smalltext">GoogleBooks</i></a></td>'
-
-                    l.append(
-                        '<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[6])
-                    lref = '<td id="bookart"><a href="%s" target="_new"><img src="%s' % (row[0], row[0])
-                    lref += '" height="75" width="50"></a></td>'
-                    l.append(lref)
-                    # Don't show author column on author page, we know which author!
-                    if not kwargs['source'] == "Author":
-                        l.append(
-                            '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[11], row[1]))
-                    if row[8]:  # is there a sub-title
-                        title = '<td id="bookname">%s<br><i class="smalltext">%s</i></td>' % (row[2], row[8])
-                    else:
-                        title = '<td id="bookname">%s</td>' % row[2]
-                    l.append(title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage)
-
-                    # is the book part of any series
-                    l.append('<td id="series">%s</td>' % row[12])
-
-                    l.append('<td id="stars"><img src="images/' + starimg + '" width="50" height="10"></td>')
-
-                    l.append('<td id="date">%s</td>' % row[4])
-
-                    # Do not show status column in MANAGE page
-                    if not kwargs['source'] == "Manage":
+                else:
+                    cover = '<a href="%s" target="_new"><img src="%s" height="75" width="50"></a>' % (row[0], row[0])
+                    if not kwargs['source'] == "Manage":  # Do not show status column in MANAGE page
                         if row[5] == 'Open':
-                            btn = '<td id="status"><a class="button green" href="openBook?bookid=%s' % row[6]
-                            btn += '" target="_self">Open</a></td>'
+                            btn = '<a class="button green" href="openBook?bookid=%s" target="_self">Open</a>' % row[6]
                         elif row[5] == 'Wanted':
-                            btn = '<td id="status"><a class="button red" href="searchForBook?bookid=%s' % row[6]
-                            btn += '" target="_self"><span class="a">Wanted</span>'
-                            btn += '<span class="b">Search</span></a></td>'
+                            btn = '<a class="button red" href="searchForBook?bookid=%s' % row[6]
+                            btn += '" target="_self"><span class="a">Wanted</span><span class="b">Search</span></a>'
                         elif row[5] == 'Snatched' or row[5] == 'Have':
-                            btn = '<td id="status"><a class="button">%s</a></td>' % row[5]
+                            btn = '<a class="button">%s</a>' % row[5]
                         else:
-                            btn = '<td id="status"><a class="button grey">%s</a></td>' % row[5]
-                        l.append(btn)
+                            btn = '<a class="button grey">%s</a>' % row[5]
 
+                # for each Row use a separate list
+                l = ['<input type="checkbox" name="%s" class="checkbox" />' % row[6]]
+                l.append(cover)
+                # Don't show author column on author page, we know which author!
+                if not kwargs['source'] == "Author":
+                    l.append('<a href="authorPage?AuthorID=%s">%s</a>' % (row[11], row[1]))
+                l.extend([title, row[12], '<img src="images/' + starimg + '" alt="Rating">', row[4]])
+                # Do not show status column in MANAGE page
+                if not kwargs['source'] == "Manage":
+                    l.append(btn)
                 d.append(l)  # add the rowlist to the masterlist
             rows = d
 
@@ -1359,10 +1288,7 @@ class WebInterface(object):
         if len(rowlist):
             # the masterlist to be filled with the row data
             for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
-                l = []  # for each Row use a separate list
-                for column in row:
-                    l.append(column)
-                d.append(l)  # add the rowlist to the masterlist
+                d.append(list(row))  # add each rowlist to the masterlist
 
             if sSearch:
                 filtered = filter(lambda x: sSearch in str(x), d)
@@ -1380,11 +1306,8 @@ class WebInterface(object):
             # now add html to the ones we want to display
             d = []  # the masterlist to be filled with the html data
             for row in rows:
-                l = ['<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[0],
-                     '<td id="magtitle">%s</td>' % row[1],
-                     '<td id="lastacquired">%s</td>' % row[2],
-                     '<td id="issuedate">%s</td>' % row[3],
-                     '<td id="provider">%s</td>' % row[4]]  # for each Row use a separate list
+                l = ['<input type="checkbox" name="%s" class="checkbox" />' % row[0],
+                     row[1], row[2], row[3], row[4]]  # for each Row create a separate list
                 d.append(l)  # add the rowlist to the masterlist
 
         mydict = {'iTotalDisplayRecords': len(filtered),
