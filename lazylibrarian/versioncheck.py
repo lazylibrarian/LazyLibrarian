@@ -256,7 +256,6 @@ def getLatestVersion_FromGit():
             logger.debug(
                 '(getLatestVersion_FromGit) Retrieving latest version information from github command=[%s]' % url)
 
-            version_file = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
             age = lazylibrarian.CONFIG['GIT_UPDATED']
             try:
                 request = urllib2.Request(url)
