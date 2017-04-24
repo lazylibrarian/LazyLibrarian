@@ -202,7 +202,6 @@ def main():
 
     while True:
         if not lazylibrarian.SIGNAL:
-
             try:
                 time.sleep(1)
             except KeyboardInterrupt:
