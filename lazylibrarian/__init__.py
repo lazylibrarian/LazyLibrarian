@@ -1009,6 +1009,7 @@ def start():
         SCHED.start()
         started = True
         if not UPDATE_MSG:
+            myDB = database.DBConnection()
             restartJobs(start='Start')
             series_list = myDB.select('SELECT SeriesID from series')
             SHOW_SERIES = len(series_list)
