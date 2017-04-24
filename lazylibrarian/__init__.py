@@ -442,13 +442,6 @@ def initialize():
                 version = 0
             logger.info("Database is version %s, integrity check: %s" % (version, check[0]))
 
-            series_list = myDB.select('SELECT SeriesID from series')
-            SHOW_SERIES = len(series_list)
-            if CONFIG['ADD_SERIES']:
-                SHOW_SERIES = 1
-
-            SHOW_MAGS = len(CONFIG['MAG_DEST_FOLDER'])
-
         except Exception as e:
             logger.error("Can't connect to the database: %s" % str(e))
 
@@ -1017,7 +1010,11 @@ def start():
         started = True
         if not UPDATE_MSG:
             restartJobs(start='Start')
-
+            series_list = myDB.select('SELECT SeriesID from series')
+            SHOW_SERIES = len(series_list)
+            if CONFIG['ADD_SERIES']:
+                SHOW_SERIES = 1
+            SHOW_MAGS = len(CONFIG['MAG_DEST_FOLDER'])
 
 def shutdown(restart=False, update=False):
     cherrypy.engine.exit()
