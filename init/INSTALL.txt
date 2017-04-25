@@ -1,0 +1,23 @@
+#!/bin/bash
+#
+# Edit lazylibrarian.default if necessary, 
+# the other files should not need to be changed
+#
+# Default settings need LazyLibrarian in /opt/lazylibrarian
+# and use the users home directory for config, database, logs
+# Suitable for ubuntu and other debian based systems, and the
+# init.d and default files should work on sysv based systems. 
+# 
+# You need to be root to copy the files (or use sudo)
+# Copy all three files for systemd (ubuntu,debian etc)
+# Copy just the last two files for SysV
+cp lazylibrarian.service  /lib/systemd/system/lazylibrarian.service
+cp lazylibrarian.initd    /etc/init.d/lazylibrarian
+cp lazylibrarian.default  /etc/default/lazylibrarian
+#
+# To auto-start on a systemd based system
+# systemctl enable lazylibrarian
+# systemctl start lazylibrarian
+#
+# To autostart on SysV
+# update-rc.d lazylibrarian defaults

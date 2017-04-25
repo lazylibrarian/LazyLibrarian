@@ -379,14 +379,11 @@ def initialize():
 
         check_section('General')
         # False to silence logging until logger initialised
-        CONFIG = {'LOGDIR': check_setting('str', 'General', 'logdir', '', False),
-                  'LOGLIMIT': check_setting('int', 'General', 'loglimit', 500, False),
-                  'LOGFILES': check_setting('int', 'General', 'logfiles', 10, False),
-                  'LOGSIZE': check_setting('int', 'General', 'logsize', 204800, False),
-                  }
+        for key in ['LOGLIMIT','LOGFILES','LOGSIZE']:
+            item_type, section, default = CONFIG_DEFINITIONS[key]
+            CONFIG[key.upper()] = check_setting(item_type, section, key.lower(), default, False)
+        CONFIG['LOGDIR'] = os.path.join(DATADIR, 'Logs')
 
-        if not CONFIG['LOGDIR']:
-            CONFIG['LOGDIR'] = os.path.join(DATADIR, 'Logs')
         # Create logdir
         if not os.path.exists(CONFIG['LOGDIR']):
             try:
@@ -569,7 +566,8 @@ def config_read(reloaded=False):
     for key in CONFIG_DEFINITIONS.keys():
         item_type, section, default = CONFIG_DEFINITIONS[key]
         CONFIG[key.upper()] = check_setting(item_type, section, key.lower(), default)
-
+    if not CONFIG['LOGDIR']:
+        CONFIG['LOGDIR'] = os.path.join(DATADIR, 'Logs')
     if CONFIG['HTTP_PORT'] < 21 or CONFIG ['HTTP_PORT'] > 65535:
         CONFIG['HTTP_PORT'] = 5299
 

@@ -11,14 +11,14 @@
 APP_PATH=/opt/lazylibrarian
 
 # [optional] change to 1 to enable daemon
-ENABLE_DAEMON=0
+ENABLE_DAEMON=1
 
 # [required] user or uid of account to run the program as:
-RUN_AS=
+RUN_AS=$USER
 
 # [optional] change to 1 to enable updating from webinterface
 # this changes ownership of /opt/lazylibrarian to user set @ RUN_AS
-WEB_UPDATE=0
+WEB_UPDATE=1
 
 # [optional] full path to the configuration file of your choice;
 # otherwise, the default location (~/.lazylibrarian) is used:
