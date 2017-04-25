@@ -379,14 +379,12 @@ def initialize():
 
         check_section('General')
         # False to silence logging until logger initialised
-        CONFIG = {'LOGDIR': check_setting('str', 'General', 'logdir', '', False),
-                  'LOGLIMIT': check_setting('int', 'General', 'loglimit', 500, False),
-                  'LOGFILES': check_setting('int', 'General', 'logfiles', 10, False),
-                  'LOGSIZE': check_setting('int', 'General', 'logsize', 204800, False),
-                  }
-
+        for key in ['LOGDIR','LOGLIMIT','LOGFILES','LOGSIZE']:
+            item_type, section, default = CONFIG_DEFINITIONS[key]
+            CONFIG[key.upper()] = check_setting(item_type, section, key.lower(), default, False)
         if not CONFIG['LOGDIR']:
             CONFIG['LOGDIR'] = os.path.join(DATADIR, 'Logs')
+
         # Create logdir
         if not os.path.exists(CONFIG['LOGDIR']):
             try:
