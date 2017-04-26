@@ -87,7 +87,11 @@ def get_book_info(fname):
 
         # find the contents metafile
         txt = zipdata.read('META-INF/container.xml')
-        tree = ElementTree.fromstring(txt)
+        try:
+            tree = ElementTree.fromstring(txt)
+        except Exception as e:
+            logger.error("Error parsing metadata from zipfile: %s" % str(e))
+            return res
         n = 0
         cfname = ""
         if not len(tree):

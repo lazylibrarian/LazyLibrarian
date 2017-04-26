@@ -128,23 +128,44 @@ def get_cached_request(url, useCache=True, cache="XML"):
         lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
         logger.debug(u"CacheHandler: Returning CACHED response for %s" % url)
         if cache == "JSON":
-            source = json.load(open(hashfilename))
+            try:
+                source = json.load(open(hashfilename))
+            except Exception as e:
+                logger.warn(u"Error decoding json from %s" % hashfilename)
+                logger.debug(u"%s : %s" % (e, result))
+                return None, False
         elif cache == "XML":
             with open(hashfilename, "r") as cachefile:
                 result = cachefile.read()
-            source = ElementTree.fromstring(result)
+            try:
+                source = ElementTree.fromstring(result)
+            except Exception as e:
+                logger.warn(u"Error parsing xml from %s" % hashfilename)
+                logger.debug(u"%s : %s" % (e, result))
+                return None, False
     else:
         lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
         result, success = fetchURL(url)
         if success:
             logger.debug(u"CacheHandler: Storing %s for %s" % (cache, url))
             if cache == "JSON":
-                source = json.loads(result)
+                try:
+                    source = json.loads(result)
+                except Exception as e:
+                    logger.warn(u"Error decoding json from %s" % url)
+                    logger.debug(u"%s : %s" % (e, result))
+                    return None, False
                 json.dump(source, open(hashfilename, "w"))
             elif cache == "XML":
                 with open(hashfilename, "w") as cachefile:
                     cachefile.write(result)
-                source = ElementTree.fromstring(result)
+                try:
+                    source = ElementTree.fromstring(result)
+                except Exception as e:
+                    logger.warn(u"Error parsing xml from %s" % url)
+                    logger.debug(u"%s : %s" % (e, result))
+                    os.remove(hashfilename)
+                    return None, False
         else:
             logger.warn(u"Got error response for %s: %s" % (url, result))
             return None, False

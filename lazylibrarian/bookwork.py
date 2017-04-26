@@ -150,7 +150,7 @@ def setAllBookSeries():
     logger.info('Series check complete: ' + msg)
     return msg
 
-def setSeries(seriesdict=None, bookid=None, seriesauthors=True):
+def setSeries(seriesdict=None, bookid=None, seriesauthors=True, seriesdisplay=True):
     """ set series details in series/member tables from the supplied dict
         and a displayable summary in book table """
     myDB = database.DBConnection()
@@ -170,22 +170,25 @@ def setSeries(seriesdict=None, bookid=None, seriesauthors=True):
                 controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
                 newValueDict = {"SeriesNum": seriesdict[item]}
                 myDB.upsert("member", newValueDict, controlValueDict)
-                # database versions earlier that 17 don't have seriesauthors table
-                # but this function is used in dbupgrade
+                # database versions earlier than 17 don't have seriesauthors table
+                # but this function is used in dbupgrade v15
                 if seriesauthors:
                     myDB.action('INSERT INTO seriesauthors ("SeriesID", "AuthorID") VALUES ("%s", "%s")' %
                                 (match['SeriesID'], book['AuthorID']), suppress='UNIQUE')
             else:
                 logger.debug('Unable to set series for book %s, %s' % (bookid, repr(seriesdict)))
 
-        series = ''
-        for item in seriesdict:
-            newseries = "%s %s" % (item, seriesdict[item])
-            newseries.strip()
-            if series and newseries:
-                series += '<br>'
-            series += newseries
-        myDB.action('UPDATE books SET SeriesDisplay="%s" WHERE BookID="%s"' % (series, bookid))
+        # database versions earlier than 19 don't have seriesdisplay
+        # but this function is used in dbupgrade v15
+        if seriesdisplay:
+            series = ''
+            for item in seriesdict:
+                newseries = "%s %s" % (item, seriesdict[item])
+                newseries.strip()
+                if series and newseries:
+                    series += '<br>'
+                series += newseries
+            myDB.action('UPDATE books SET SeriesDisplay="%s" WHERE BookID="%s"' % (series, bookid))
 
         # removed deleteEmptySeries as setSeries slows down drastically if run in a loop
         # eg dbupgrade or setAllBookSeries. Better to tidy up all empties when loop finished
