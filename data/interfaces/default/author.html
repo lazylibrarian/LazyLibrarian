@@ -118,6 +118,7 @@
             <tr>
                 <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
                 <th id="bookart">Cover</th>
+                <th id="authorname" class="hidden">Title</th>
                 <th id="bookname">Title</th>
 		        <th id="series">Series</th>
                 <th id="stars">Rating</th>
@@ -153,15 +154,27 @@
             {
                 "bAutoWidth": false,
                 "aoColumns": [
-                    {"bSortable": false},
-                    {"bSortable": false},
+                    {"bSortable": false,
+                      "fnRender": function ( oObj ) {
+                        return '<input type="checkbox" name="' + oObj.aData[0] + '" class="checkbox" />'
+                      }
+                    },
+                    {"bSortable": false,
+                      "fnRender": function ( oObj ) {
+                        return '<a href="' + oObj.aData[1] + '" target="_new"><img src="' + oObj.aData[1] + '" height="75" width="50"></a>'
+                      }
+                    },
+                    null,
                     null,
                     { "sType": "natural" },
-                    null,
+                    { "fnRender": function ( oObj ) {
+                        return '<img src="images/' + oObj.aData[5] + '" alt="Rating">'
+                      }
+                    },
                     null,
                     null
                     ],
-                "order": [[ 5, 'desc']],
+                "order": [[ 6, 'desc']],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ books per page",
                     "sEmptyTable": "No books found",
@@ -169,7 +182,7 @@
                     "sInfoEmpty":"Showing 0 to 0 of 0 books",
                     "sInfoFiltered":"(filtered from _MAX_ total books)"},
                 "sPaginationType": "full_numbers",
-                "aaSorting": [[5, 'desc']],
+                "aaSorting": [[6, 'desc']],
                 "bServerSide": true,
                 "sAjaxSource": 'getBooks?source=Author&AuthorID=${author['AuthorID']}&booklang=${booklang}&ignored=${ignored}',
                 "bFilter": true,
@@ -178,33 +191,34 @@
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     $(nRow).addClass("gradeZ");
                     $('td', nRow).eq(0).addClass('center');
-                    $('td', nRow).eq(5).addClass('center');
+                    $('td', nRow).eq(2).addClass('hidden');
                     $('td', nRow).eq(6).addClass('center');
+                    $('td', nRow).eq(7).addClass('center');
                     var w = window.innerWidth;
                     if ( w < 320 )
                     {   // hide cover,series,stars,date on smallest devices
                         $('td', nRow).eq(1).addClass('hidden');
-                        $('td', nRow).eq(3).addClass('hidden');
                         $('td', nRow).eq(4).addClass('hidden');
                         $('td', nRow).eq(5).addClass('hidden');
+                        $('td', nRow).eq(6).addClass('hidden');
                     }
                     if ( w < 640 )
                     {   // hide cover,series,stars,date on smaller devices
                         $('td', nRow).eq(1).addClass('hidden');
-                        $('td', nRow).eq(3).addClass('hidden');
                         $('td', nRow).eq(4).addClass('hidden');
                         $('td', nRow).eq(5).addClass('hidden');
+                        $('td', nRow).eq(6).addClass('hidden');
                     }
                     if ( w < 768 )
                     {   // hide cover,stars,date on small devices
                         $('td', nRow).eq(1).addClass('hidden');
-                        $('td', nRow).eq(4).addClass('hidden');
                         $('td', nRow).eq(5).addClass('hidden');
+                        $('td', nRow).eq(6).addClass('hidden');
                     }
                     if ( w < 1024 )
                     {   // hide stars,date on medium devices
-                        $('td', nRow).eq(4).addClass('hidden');
                         $('td', nRow).eq(5).addClass('hidden');
+                        $('td', nRow).eq(6).addClass('hidden');
                     }
                     return nRow;
                 },

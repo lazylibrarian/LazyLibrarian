@@ -67,7 +67,14 @@
             {
                 "order": [[1, 'asc']],
                 "columnDefs":
-                    [{ targets: 'no-sort', orderable: false }], // Don't allow colums of class no-sort to be sorted
+                    [{ targets: 'no-sort', orderable: false },
+                    { targets: [0], 'render': function(data, type, row) {
+                        return '<input type="checkbox" name="' + data + '" class="checkbox" />';}
+                    },
+                    { targets: [4], 'render': function(data, type, row) {
+                        return '<a class="b btn btn-xs btn-success" href="seriesMembers?seriesid=' + data + '" title="Select"><i class="fa"></i>Show</a>';}
+                    }
+                    ],
                 "oLanguage": {
                     "sLengthMenu":"_MENU_ rows per page",
                     "sEmptyTable": "No series found",

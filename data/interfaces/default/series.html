@@ -70,11 +70,19 @@
                 "bAutoWidth": false,
                 "order": [[ 1, 'asc' ]],
                 "aoColumns": [
-                    {"bSortable": false},
+                    {"bSortable": false,
+                      "fnRender": function ( oObj ) {
+                        return '<input type="checkbox" name="' + oObj.aData[0] + '" class="checkbox" />'
+                      }
+                    },
                     null,
                     null,
                     null,
-                    {"bSortable": false}
+                    {"bSortable": false,
+                      "fnRender": function ( oObj ) {
+                        return '<a class="button orange" href="seriesMembers?seriesid=' + oObj.aData[4] + '" title="Select">Show</a>'
+                      }
+                    }
                     ],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ rows per page",

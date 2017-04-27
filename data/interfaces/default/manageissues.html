@@ -67,7 +67,11 @@
             {
                 "order": [[ 1, 'asc' ]],
                 "aoColumns": [
-                    {"bSortable": false},
+                    {"bSortable": false,
+                      "fnRender": function ( oObj ) {
+                        return '<input type="checkbox" name="' + oObj.aData[0] + '" class="checkbox" />'
+                      }
+                    },
                     null,
                     null,
                     null,

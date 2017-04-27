@@ -72,7 +72,11 @@
                 "responsive": true,
                 "order": [[ 1, 'asc']],
                 "columnDefs":
-                    [{ targets: 'no-sort', orderable: false }]
+                    [{ targets: 'no-sort', orderable: false },
+                    { targets: [0], 'render': function(data, type, row) {
+                        return '<input type="checkbox" name="' + data + '" class="checkbox" />';}
+                    }
+                    ]
                 ,
                 "oLanguage": {
                     "sLengthMenu":"_MENU_ rows per page",
