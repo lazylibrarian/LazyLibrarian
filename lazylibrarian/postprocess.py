@@ -911,8 +911,12 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 target_dir = os.path.join(calibre_dir, '%s (%s)' % (global_name, calibre_id))
                 if os.path.isdir(target_dir):
                     imported = LibraryScan(target_dir)
-                    newbookfile = book_file(target_dir)
-                    if not newbookfile:
+                    newbookfile = book_file(target_dir, booktype='book')
+                    if newbookfile:
+                        setperm(target_dir)
+                        for fname in os.listdir(target_dir):
+                            setperm(os.path.join(target_dir, fname))
+                    else:
                         logger.warn("Failed to find a valid book in [%s]" % target_dir)
                         imported = False
                 else:
