@@ -109,7 +109,8 @@ class WebInterface(object):
             AuthorID = kwargs['AuthorID']
 
         myDB = database.DBConnection()
-        cmd = 'SELECT series.SeriesID,AuthorName,SeriesName,series.Status,seriesauthors.AuthorID'
+        # We need to pass series.SeriesID twice for datatables as the render function modifies it
+        cmd = 'SELECT series.SeriesID,AuthorName,SeriesName,series.Status,seriesauthors.AuthorID,series.SeriesID'
         cmd += ' from series,authors,seriesauthors'
         cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
         if not whichStatus in ['All', 'None']:

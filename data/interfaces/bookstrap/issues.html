@@ -91,7 +91,7 @@
         $('#book_table').dataTable(
             {
                 "bAutoWidth": false,
-                "order": [[ 2, 'asc']],
+                "order": [[ 2, 'desc']],
                 "columnDefs": [{ targets: 'no-sort', orderable: false }],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ issues per page",
@@ -100,7 +100,7 @@
                     "sInfoEmpty":"Showing 0 to 0 of 0 issues",
                     "sInfoFiltered":"(filtered from _MAX_ total issues)"},
                 "sPaginationType": "full_numbers",
-                "aaSorting": [[2, 'asc']],
+                "aaSorting": [[2, 'desc']],
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
             });

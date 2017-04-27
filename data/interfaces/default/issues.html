@@ -88,6 +88,7 @@
 
         $('#book_table').dataTable(
             {
+                "order": [[ 2, 'desc']],
                 "aoColumns": [
                     {"bSortable": false},
                     {"bSortable": false},
@@ -102,6 +103,7 @@
                     "sInfoEmpty":"Showing 0 to 0 of 0 issues",
                     "sInfoFiltered":"(filtered from _MAX_ total issues)"},
                 "sPaginationType": "full_numbers",
+                "aaSorting": [[2, 'desc']],
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
             });
