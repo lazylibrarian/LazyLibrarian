@@ -28,20 +28,20 @@
     <input  class="btn btn-sm btn-default" type="submit" value="Manage" />
     </form>
     <br>
-<form action="markSeries" method="get" class="form-inline">
-<div class="table-responsive">
-    <table class="display table table-striped table-hover table-bordered" id="book_table">
-        <thead>
-            <tr>
-                <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
-                <th class="authorname hidden-xs">Author</th>
-                <th class="series">Series Name</th>
-                <th class="status text-center hidden-xs">Status</th>
-                <th class="stars text-center">Select</th>
-            </tr>
-        </thead>
-    </table>
-</div>
+    <form action="markSeries" method="get" class="form-inline">
+        <div class="table-responsive">
+            <table class="display table table-striped table-hover table-bordered" id="book_table">
+                <thead>
+                    <tr>
+                        <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
+                        <th class="authorname hidden-xs">Author</th>
+                        <th class="series">Series Name</th>
+                        <th class="status text-center hidden-xs">Status</th>
+                        <th class="stars text-center">Select</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
         <div class="form-group">
             <label for="markSeries" class="control-label">Change selected series to: </label>
             <select id="markSeries" class="markSeries form-control input-sm" name="action">
@@ -51,7 +51,7 @@
             </select>
         </div>
         <input type="submit" class="markSeries btn btn-sm btn-default" value="Go">
-</form>
+    </form>
 <p>&nbsp;</p>
 </%def>
 
@@ -67,7 +67,14 @@
             {
                 "order": [[1, 'asc']],
                 "columnDefs":
-                    [{ targets: 'no-sort', orderable: false }], // Don't allow colums of class no-sort to be sorted
+                    [{ targets: 'no-sort', orderable: false },
+                    { targets: [0], 'render': function(data, type, row) {
+                        return '<input type="checkbox" name="' + data + '" class="checkbox" />';}
+                    },
+                    { targets: [4], 'render': function(data, type, row) {
+                        return '<a class="b btn btn-xs btn-success" href="seriesMembers?seriesid=' + row[5] + '" title="Select"><i class="fa"></i>Show</a>';}
+                    }
+                    ],
                 "oLanguage": {
                     "sLengthMenu":"_MENU_ rows per page",
                     "sEmptyTable": "No series found",

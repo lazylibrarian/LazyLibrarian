@@ -109,7 +109,9 @@ class WebInterface(object):
             AuthorID = kwargs['AuthorID']
 
         myDB = database.DBConnection()
-        cmd = 'SELECT series.SeriesID,seriesauthors.AuthorID,AuthorName,SeriesName,series.Status'
+        # We pass series.SeriesID twice for datatables as the render function modifies it
+        # and we need it in two columns. There is probably a better way...
+        cmd = 'SELECT series.SeriesID,AuthorName,SeriesName,series.Status,seriesauthors.AuthorID,series.SeriesID'
         cmd += ' from series,authors,seriesauthors'
         cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
         if not whichStatus in ['All', 'None']:
@@ -126,22 +128,19 @@ class WebInterface(object):
         rowlist = myDB.select(cmd)
 
         # turn the sqlite rowlist into a list of lists
-        d = []
         filtered = []
         rows = []
 
         if len(rowlist):
             # the masterlist to be filled with the row data
             for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
-                d.append(list(row))  # add the rowlist to the masterlist
+                rows.append(list(row))  # add the rowlist to the masterlist
             if sSearch:
-                filtered = filter(lambda x: sSearch in str(x), d)
+                filtered = filter(lambda x: sSearch in str(x), rows)
             else:
-                filtered = d
+                filtered = rows
 
             sortcolumn = int(iSortCol_0)
-            sortcolumn += 1  # hidden authorid
-
             filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
 
             if iDisplayLength < 0:  # display = all
@@ -149,24 +148,9 @@ class WebInterface(object):
             else:
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
-            # now add html to the ones we want to display
-            d = []  # the masterlist to be filled with the html data
-            for row in rows:
-                # for each Row create a separate list
-                l = ['<input type="checkbox" name="%s" class="checkbox" />' % row[0]]
-                l.extend([row[2], row[3], row[4]])
-                if lazylibrarian.CONFIG['HTTP_LOOK'] == 'bookstrap':
-                    btn = '<a class="b btn btn-xs btn-success" href="seriesMembers?seriesid=%s"' % row[0]
-                    btn += ' title="Select"><i class="fa"></i>Show</a>'
-                else:
-                    btn = '<a class="button orange" href="seriesMembers?seriesid=%s"' % row[0]
-                    btn += ' title="Select">Show</a>'
-                l.append(btn)
-                d.append(l)  # add the rowlist to the masterlist
-
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
-                  'aaData': d,
+                  'aaData': rows,
                   }
         s = simplejson.dumps(mydict)
         return s
@@ -194,7 +178,7 @@ class WebInterface(object):
         cmd = 'SELECT member.BookID,BookName,SeriesNum,BookImg,books.Status,AuthorName,authors.AuthorID'
         cmd += ' from member,series,books,authors'
         cmd += ' where series.SeriesID=member.SeriesID and books.BookID=member.BookID'
-        cmd += ' and books.AuthorID=authors.AuthorID'
+        cmd += ' and books.AuthorID=authors.AuthorID and books.Status != "Ignored"'
         cmd += ' and series.SeriesID="%s" order by SeriesName' % seriesid
         members = myDB.select(cmd)
         # is it a multi-author series?
@@ -666,28 +650,22 @@ class WebInterface(object):
         if len(rowlist):
             # the masterlist to be filled with the row data
             for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
-                d.append(list(row))  # add each rowlist to the masterlist
+                rows.append(list(row))  # add each rowlist to the masterlist
 
             if sSearch:
-                filtered = filter(lambda x: sSearch in str(x), d)
+                filtered = filter(lambda x: sSearch in str(x), rows)
             else:
-                filtered = d
+                filtered = rows
 
             # table headers and column headers do not match at this point
             sortcolumn = int(iSortCol_0)
 
-            if kwargs['source'] in ["Manage", "Books"]:
-                if sortcolumn < 4:  # author, title
-                    sortcolumn -= 1
-                elif sortcolumn == 4:  # series
-                    sortcolumn = 12
-                else:               # rating, date, status
-                    sortcolumn -= 2
-            elif kwargs['source'] == "Author":
-                if sortcolumn > 3:  # rating, date
-                    sortcolumn -= 1
-                elif sortcolumn == 3:  # series
-                    sortcolumn = 12
+            if sortcolumn < 4:  # author, title
+                sortcolumn -= 1
+            elif sortcolumn == 4:  # series
+                sortcolumn = 12
+            else:               # rating, date, status
+                sortcolumn -= 2
 
             if sortcolumn in [4, 12]:  # date, series
                 self.natural_sort(filtered,key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
@@ -702,7 +680,8 @@ class WebInterface(object):
             # now add html to the ones we want to display
             d = []  # the masterlist to be filled with the html data
             for row in rows:
-
+                worklink = ''
+                sitelink = ''
                 bookrate = float(row[3])
                 if bookrate < 0.5:
                     starimg = '0-stars.png'
@@ -719,13 +698,10 @@ class WebInterface(object):
                 else:
                     starimg = '0-stars.png'
 
-                worklink = ''
-
-                if row[10] and  len(row[10]) > 4:  # is there a workpage link
+                if row[10] and len(row[10]) > 4:  # is there a workpage link
                     worklink = '<a href="' + row[10] + '" target="_new"><small><i>LibraryThing</i></small></a>'
                 editpage = '<a href="editBook?bookid=' + row[6] + '" target="_new"><small><i>Manual</i></a>'
 
-                sitelink = ''
                 if 'goodreads' in row[9]:
                     sitelink = '<a href="%s" target="_new"><small><i>GoodReads</i></small></a>' % row[9]
                 elif 'google' in row[9]:
@@ -735,13 +711,12 @@ class WebInterface(object):
                 else:
                     title = row[2]
                 title = title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage
-                btn = ''
 
-                if lazylibrarian.CONFIG['HTTP_LOOK'] == 'bookstrap':
-                    cover = '<a href="%s" target="_blank" rel="noreferrer"><img src="%s"' % (row[0], row[0])
-                    cover += ' alt="Cover" class="bookcover-sm img-responsive"></a>'
-                    # Do not show status column in MANAGE page as we are only showing one status
-                    if not kwargs['source'] == "Manage":
+                # for each Row use a separate list
+                l = [row[6], row[0], row[1], title, row[12], starimg, row[4]]
+                # Do not show status column in MANAGE page as we are only showing one status
+                if not kwargs['source'] == "Manage":
+                    if lazylibrarian.CONFIG['HTTP_LOOK'] == 'bookstrap':
                         if row[5] == 'Open':
                             btn = '<a class="button green btn btn-xs btn-warning" href="openBook?bookid=%s' % row[6]
                             btn += '" target="_self"><i class="fa fa-book"></i>%s</a>' % row[5]
@@ -755,9 +730,7 @@ class WebInterface(object):
                         else:
                             btn = '<a class="button btn btn-xs btn-default grey">%s</a>' % row[5]
 
-                else:
-                    cover = '<a href="%s" target="_new"><img src="%s" height="75" width="50"></a>' % (row[0], row[0])
-                    if not kwargs['source'] == "Manage":  # Do not show status column in MANAGE page
+                    else:
                         if row[5] == 'Open':
                             btn = '<a class="button green" href="openBook?bookid=%s" target="_self">Open</a>' % row[6]
                         elif row[5] == 'Wanted':
@@ -767,17 +740,8 @@ class WebInterface(object):
                             btn = '<a class="button">%s</a>' % row[5]
                         else:
                             btn = '<a class="button grey">%s</a>' % row[5]
-
-                # for each Row use a separate list
-                l = ['<input type="checkbox" name="%s" class="checkbox" />' % row[6]]
-                l.append(cover)
-                # Don't show author column on author page, we know which author!
-                if not kwargs['source'] == "Author":
-                    l.append('<a href="authorPage?AuthorID=%s">%s</a>' % (row[11], row[1]))
-                l.extend([title, row[12], '<img src="images/' + starimg + '" alt="Rating">', row[4]])
-                # Do not show status column in MANAGE page
-                if not kwargs['source'] == "Manage":
                     l.append(btn)
+                l.append(row[11])  # add authorid for xref
                 d.append(l)  # add the rowlist to the masterlist
             rows = d
 
@@ -1283,17 +1247,17 @@ class WebInterface(object):
         # need to filter on whichStatus
         rowlist = myDB.select(
             'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov from pastissues WHERE Status=' + kwargs['whichStatus'])
-        d = []
+        rows = []
         filtered = []
         if len(rowlist):
             # the masterlist to be filled with the row data
             for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
-                d.append(list(row))  # add each rowlist to the masterlist
+                rows.append(list(row))  # add each rowlist to the masterlist
 
             if sSearch:
-                filtered = filter(lambda x: sSearch in str(x), d)
+                filtered = filter(lambda x: sSearch in str(x), rows)
             else:
-                filtered = d
+                filtered = rows
 
             sortcolumn = int(iSortCol_0)
             filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
@@ -1303,16 +1267,9 @@ class WebInterface(object):
             else:
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
-            # now add html to the ones we want to display
-            d = []  # the masterlist to be filled with the html data
-            for row in rows:
-                l = ['<input type="checkbox" name="%s" class="checkbox" />' % row[0],
-                     row[1], row[2], row[3], row[4]]  # for each Row create a separate list
-                d.append(l)  # add the rowlist to the masterlist
-
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
-                  'aaData': d,
+                  'aaData': rows,
                   }
         s = simplejson.dumps(mydict)
         return s

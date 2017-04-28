@@ -143,7 +143,7 @@ def dbupgrade(db_current_version):
                     myDB.action('CREATE TABLE IF NOT EXISTS series (SeriesID INTEGER PRIMARY KEY, SeriesName TEXT, \
                 Status TEXT)')
                     myDB.action('CREATE TABLE IF NOT EXISTS member (SeriesID INTEGER, BookID TEXT, SeriesNum TEXT)')
-                    myDB.action('CREATE TABLE IF NOT EXISTS seriesauthors (SeriesID INTEGER, AuthorID TEXT)')
+                    myDB.action('CREATE TABLE IF NOT EXISTS seriesauthors (SeriesID INTEGER, AuthorID TEXT, UNIQUE (SeriesID,AuthorID))')
 
 
                 # These are the incremental changes before database versioning was introduced.
@@ -689,7 +689,7 @@ def dbupgrade(db_current_version):
                         lazylibrarian.UPDATE_MSG = 'Creating seriesauthors table'
                         upgradelog.write("%s v17: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
                         # In this version of the database there is only one author per series so use that as starting point
-                        myDB.action('CREATE TABLE seriesauthors (SeriesID INTEGER, AuthorID TEXT, UNIQUE (SeriesID,AuthorID))')
+                        myDB.action('CREATE TABLE IF NOT EXISTS seriesauthors (SeriesID INTEGER, AuthorID TEXT, UNIQUE (SeriesID,AuthorID))')
                         series = myDB.select('SELECT SeriesID,AuthorID from series')
                         cnt = 0
                         tot = len(series)
@@ -699,9 +699,8 @@ def dbupgrade(db_current_version):
                             myDB.action('insert into seriesauthors (SeriesID, AuthorID) values (%s, %s)' %
                                         (item['SeriesID'], item['AuthorID']) , suppress='UNIQUE')
 
-                        myDB.action('DROP TABLE temp_table')
-                        myDB.action('CREATE TABLE temp_table (SeriesID INTEGER PRIMARY KEY, SeriesName TEXT, \
-                    Status TEXT)')
+                        myDB.action('DROP TABLE IF EXISTS temp_table')
+                        myDB.action('CREATE TABLE temp_table (SeriesID INTEGER PRIMARY KEY, SeriesName TEXT, Status TEXT)')
                         myDB.action('INSERT INTO temp_table SELECT  SeriesID, SeriesName, Status FROM series')
                         myDB.action('DROP TABLE series')
                         myDB.action('ALTER TABLE temp_table RENAME TO series')
@@ -793,5 +792,4 @@ def dbupgrade(db_current_version):
             msg = 'Unhandled exception in database update: %s' % traceback.format_exc()
             upgradelog.write("%s: %s\n" % (time.ctime(), msg))
             logger.error(msg)
-
             lazylibrarian.UPDATE_MSG = ''

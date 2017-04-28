@@ -87,12 +87,26 @@
                 "bAutoWidth": false,
                 "order": [[ 2, 'asc' ]],
                 "aoColumns": [
-                    {"bSortable": false},
-                    {"bSortable": false},
+                    {"bSortable": false,
+                      "fnRender": function ( oObj ) {
+                        return '<input type="checkbox" name="' + oObj.aData[0] + '" class="checkbox" />'
+                      }
+                    },
+                    {"bSortable": false,
+                      "fnRender": function ( oObj ) {
+                        return '<a href="' + oObj.aData[1] + '" target="_new"><img src="' + oObj.aData[1] + '" height="75" width="50"></a>'
+                      }
+                    },
+                    { "fnRender": function ( oObj ) {
+                        return '<a href="authorPage?AuthorID=' + oObj.aData[8] + '">' + oObj.aData[2] + '</a>'
+                      }
+                    },
                     null,
                     null,
-                    null,
-                    null,
+                    { "fnRender": function ( oObj ) {
+                        return '<img src="images/' + oObj.aData[5] + '" alt="Rating">'
+                      }
+                    },
                     null,
                     null
                     ],

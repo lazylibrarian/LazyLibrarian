@@ -94,9 +94,17 @@
         var oTable = $('#book_table').dataTable({
             "bAutoWidth": false,
             "order": [[ 2, 'asc' ]],
-            "columnDefs":
-                [{ targets: 'no-sort', orderable: false }]
-            ,
+            "columnDefs":[
+                { targets: 'no-sort', orderable: false },
+                { targets: [0], 'render': function(data, type, row) {
+                    return '<input type="checkbox" name="' + data + '" class="checkbox" />';} },
+                { targets: [1], 'render': function(data, type, row) {
+                    return '<a href="' + data + '" target="_blank" rel="noreferrer"><img src="' + data + '" alt="Cover" class="bookcover-sm img-responsive"></a>';} },
+                { targets: [2], 'render': function(data, type, row) {
+                    return '<a href="authorPage?AuthorID=' + row[8] + '">' + data + '</a>';} },
+                { targets: [5], 'render': function(data, type, row) {
+                    return '<img src="images/' + data + '" alt="Rating">';} }
+                ],
             "oLanguage": {
                 "sLengthMenu":"_MENU_ rows per page",
                 "sEmptyTable": "No books found",

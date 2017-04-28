@@ -183,7 +183,6 @@ def processResultList(resultlist, book, searchtype):
                 logger.debug("Rejecting %s, too small" % nzb_Title)
 
         if not rejected:
-            # if nzbAuthor_match >= match_ratio and nzbBook_match >= match_ratio:
             bookid = book['bookid']
             nzbTitle = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
             nzbprov = nzb['nzbprov']
@@ -200,11 +199,16 @@ def processResultList(resultlist, book, searchtype):
             }
 
             score = (nzbBook_match + nzbAuthor_match) / 2  # as a percentage
-            # lose a point for each extra word in the title so we get the closest match
-            words = len(getList(nzb_Title))
-            words -= len(getList(author))
-            words -= len(getList(title))
-            score -= abs(words)
+            # lose a point for each unwanted word in the title so we get the closest match
+            wordlist = getList(nzb_Title.lower())
+            words = [x for x in wordlist if x not in getList(author.lower())]
+            words = [x for x in words if x not in getList(title.lower())]
+            words = [x for x in words if x not in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
+            score -= len(words)
+            # prioritise titles that include the ebook types we want
+            booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
+            if len(booktypes):
+                score += 1
             matches.append([score, nzb_Title, newValueDict, controlValueDict])
 
     if matches:

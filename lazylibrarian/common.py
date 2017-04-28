@@ -70,16 +70,17 @@ def formatAuthorName(author):
 
 
 def internet():
-  """
-  Check for an active internet connection
-  Return True or False
-  """
-  try:
-      _ = urllib2.urlopen("http://www.google.com", timeout=5)
-      return True
-  except Exception:  # as e:
-      #logger.debug(str(e)
-      return False
+    """
+    Check for an active internet connection
+    Return True or False
+    """
+    try:
+        _ = urllib2.urlopen("http://www.google.com", timeout=5)
+        return True
+    except Exception as e:
+        if int(lazylibrarian.LOGLEVEL) > 2:
+            logger.debug("Internet: %s" % str(e))
+        return False
 
 
 def setperm(file_or_dir):
@@ -102,8 +103,9 @@ def setperm(file_or_dir):
     try:
         os.chmod(file_or_dir, perm)
         return True
-    except:
-        #  logger.debug("Failed to set permission %s for %s" % (perm, file_or_dir))
+    except Exception as e:
+        if int(lazylibrarian.LOGLEVEL) > 2:
+            logger.debug("Failed to set permission %s for %s : %s" % (perm, file_or_dir, str(e)))
         return False
 
 
