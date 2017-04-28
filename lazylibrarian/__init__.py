@@ -381,7 +381,7 @@ def initialize():
         # False to silence logging until logger initialised
         for key in ['LOGLIMIT','LOGFILES','LOGSIZE']:
             item_type, section, default = CONFIG_DEFINITIONS[key]
-            CONFIG[key.upper()] = check_setting(item_type, section, key.lower(), default, False)
+            CONFIG[key.upper()] = check_setting(item_type, section, key.lower(), default, log=False)
         CONFIG['LOGDIR'] = os.path.join(DATADIR, 'Logs')
 
         # Create logdir
@@ -393,7 +393,7 @@ def initialize():
                     print '%s : Unable to create folder for logs: %s. Only logging to console.' % (CONFIG['LOGDIR'], str(e))
 
         # Start the logger, silence console logging if we need to
-        CFGLOGLEVEL = check_setting('int', 'General', 'loglevel', 9)
+        CFGLOGLEVEL = check_setting('int', 'General', 'loglevel', 9, log=False)
         if LOGLEVEL == 1:  # default if no debug or quiet on cmdline
             if CFGLOGLEVEL == 9:  # default value if none in config
                 LOGLEVEL = 2  # If not set in Config or cmdline, then lets set to DEBUG
