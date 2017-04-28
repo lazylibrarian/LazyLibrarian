@@ -696,12 +696,13 @@ def dbupgrade(db_current_version):
                         for item in series:
                             cnt += 1
                             lazylibrarian.UPDATE_MSG = "Updating seriesauthors: %s of %s" % (cnt, tot)
-                            myDB.action('insert into seriesauthors (SeriesID, AuthorID) values (%s, %s)' %
+                            if item['AuthorID']:
+                                myDB.action('insert into seriesauthors (SeriesID, AuthorID) values ("%s", "%s")' %
                                         (item['SeriesID'], item['AuthorID']) , suppress='UNIQUE')
 
                         myDB.action('DROP TABLE IF EXISTS temp_table')
                         myDB.action('CREATE TABLE temp_table (SeriesID INTEGER PRIMARY KEY, SeriesName TEXT, Status TEXT)')
-                        myDB.action('INSERT INTO temp_table SELECT  SeriesID, SeriesName, Status FROM series')
+                        myDB.action('INSERT INTO temp_table SELECT  SeriesID, SeriesName, Status FROM series WHERE AuthorID IS NOT NULL')
                         myDB.action('DROP TABLE series')
                         myDB.action('ALTER TABLE temp_table RENAME TO series')
                         lazylibrarian.UPDATE_MSG = 'Reorganisation of series table complete'
@@ -722,7 +723,7 @@ def dbupgrade(db_current_version):
                         for item in series:
                             cnt += 1
                             lazylibrarian.UPDATE_MSG = "Updating seriesauthors: %s of %s" % (cnt, tot)
-                            myDB.action('insert into seriesauthors (SeriesID, AuthorID) values (%s, %s)' %
+                            myDB.action('insert into seriesauthors (SeriesID, AuthorID) values ("%s", "%s")' %
                                         (item['SeriesID'], item['AuthorID']) , suppress='UNIQUE')
                         myDB.action('DROP TABLE temp_table')
                         lazylibrarian.UPDATE_MSG = 'Reorganisation of seriesauthors complete'
