@@ -109,7 +109,8 @@ class WebInterface(object):
             AuthorID = kwargs['AuthorID']
 
         myDB = database.DBConnection()
-        # We need to pass series.SeriesID twice for datatables as the render function modifies it
+        # We pass series.SeriesID twice for datatables as the render function modifies it
+        # and we need it in two columns. There is probably a better way...
         cmd = 'SELECT series.SeriesID,AuthorName,SeriesName,series.Status,seriesauthors.AuthorID,series.SeriesID'
         cmd += ' from series,authors,seriesauthors'
         cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
@@ -177,7 +178,7 @@ class WebInterface(object):
         cmd = 'SELECT member.BookID,BookName,SeriesNum,BookImg,books.Status,AuthorName,authors.AuthorID'
         cmd += ' from member,series,books,authors'
         cmd += ' where series.SeriesID=member.SeriesID and books.BookID=member.BookID'
-        cmd += ' and books.AuthorID=authors.AuthorID'
+        cmd += ' and books.AuthorID=authors.AuthorID and books.Status != "Ignored"'
         cmd += ' and series.SeriesID="%s" order by SeriesName' % seriesid
         members = myDB.select(cmd)
         # is it a multi-author series?
@@ -649,12 +650,12 @@ class WebInterface(object):
         if len(rowlist):
             # the masterlist to be filled with the row data
             for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
-                d.append(list(row))  # add each rowlist to the masterlist
+                rows.append(list(row))  # add each rowlist to the masterlist
 
             if sSearch:
-                filtered = filter(lambda x: sSearch in str(x), d)
+                filtered = filter(lambda x: sSearch in str(x), rows)
             else:
-                filtered = d
+                filtered = rows
 
             # table headers and column headers do not match at this point
             sortcolumn = int(iSortCol_0)
