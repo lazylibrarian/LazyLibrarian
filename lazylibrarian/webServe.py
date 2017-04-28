@@ -288,7 +288,8 @@ class WebInterface(object):
                 else:
                     # or for strings not available in config html page
                     if key not in ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'GIT_REPO', 'GIT_USER', 'GIT_BRANCH',
-                                    'LATEST_VERSION', 'CURRENT_VERSION', 'COMMITS_BEHIND', 'INSTALL_TYPE']:
+                                    'LATEST_VERSION', 'CURRENT_VERSION', 'COMMITS_BEHIND', 'INSTALL_TYPE',
+                                    'DIR_PERM', 'FILE_PERM']:
                         # or for an empty string
                         lazylibrarian.CONFIG[key] = ''
 
