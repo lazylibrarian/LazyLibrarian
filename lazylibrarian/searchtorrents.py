@@ -28,7 +28,7 @@ from hashlib import sha1
 
 import lazylibrarian
 from lazylibrarian import logger, database, utorrent, transmission, qbittorrent, deluge, rtorrent, synology, bencode
-from lazylibrarian.common import scheduleJob, USER_AGENT, setperm, internet
+from lazylibrarian.common import scheduleJob, USER_AGENT, setperm
 from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, check_int, now, cleanName
 from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.providers import IterateOverTorrentSites
@@ -53,10 +53,6 @@ def search_tor_book(books=None, reset=False):
 
         if not lazylibrarian.USE_TOR():
             logger.warn('No Torrent providers set, check config')
-            return
-
-        if not internet():
-            logger.warn('Search Tor Book: No internet connection')
             return
 
         myDB = database.DBConnection()
