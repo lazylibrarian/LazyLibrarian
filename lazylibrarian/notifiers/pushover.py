@@ -50,12 +50,12 @@ class PushoverNotifier:
         else:
             testMessage = False
             uri = "/1/messages.json"
-            logger.debug("Pushover event: " + str(event))
-            logger.debug("Pushover message: " + str(message))
-            logger.debug("Pushover api: " + str())
-            logger.debug("Pushover keys: " + str(pushover_keys))
-            logger.debug("Pushover device: " + str(pushover_device))
-            logger.debug("Pushover notification type: " + str(notificationType))
+        logger.debug("Pushover event: " + str(event))
+        logger.debug("Pushover message: " + str(message))
+        logger.debug("Pushover api: " + str(pushover_apitoken))
+        logger.debug("Pushover keys: " + str(pushover_keys))
+        logger.debug("Pushover device: " + str(pushover_device))
+        logger.debug("Pushover notification type: " + str(notificationType))
 
         http_handler = HTTPSConnection('api.pushover.net')
 
@@ -116,7 +116,7 @@ class PushoverNotifier:
 
         logger.debug("Pushover: Sending notification " + str(message))
 
-        return self._sendPushover(message, event, pushover_apitoken, pushover_keys, pushover_device, notificationType, method)
+        return self._sendPushover(message, event, pushover_apitoken, pushover_keys, pushover_device, notificationType, method, force)
 
 #
 # Public functions
@@ -131,7 +131,7 @@ class PushoverNotifier:
             self._notify(message=title, event=notifyStrings[NOTIFY_DOWNLOAD], notificationType='note')
 
     def test_notify(self, title="Test"):
-        return self._notify(message="This is a test notification from LazyLibrarian", event=title, notificationType=None)
+        return self._notify(message="This is a test notification from LazyLibrarian", event=title, notificationType=None, force=True)
 
     def update_library(self, showName=None):
         pass

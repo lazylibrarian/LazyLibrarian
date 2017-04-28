@@ -2663,11 +2663,11 @@
             });
 
             $('#testPushover').click(function () {
-                var apitoken = $.trim($("pushover_apitoken").val());
+                var token = $.trim($("#pushover_apitoken").val());
                 var keys = $.trim($("#pushover_keys").val());
                 var priority = $.trim($("#pushover_priority").val());
                 var device = $.trim($("#pushover_device").val());
-                $.get("testPushover", {'apitoken': apitoken, 'keys': keys, 'priority': priority, 'device': device},
+                $.get("testPushover", {'apitoken': token, 'keys': keys, 'priority': priority, 'device': device},
                     function (data) { window.alert(data) });
             });
 
