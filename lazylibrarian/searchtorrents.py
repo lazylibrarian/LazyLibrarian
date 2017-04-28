@@ -201,11 +201,16 @@ def processResultList(resultlist, book, searchtype):
             }
 
             score = (torBook_match + torAuthor_match) / 2  # as a percentage
-            # lose a point for each extra word in the title so we get the closest match
-            words = len(getList(torTitle))
-            words -= len(getList(author))
-            words -= len(getList(title))
-            score -= abs(words)
+            # lose a point for each unwanted word in the title so we get the closest match
+            wordlist = getList(torTitle.lower())
+            words = [x for x in wordlist if x not in getList(author.lower())]
+            words = [x for x in words if x not in getList(title.lower())]
+            words = [x for x in words if x not in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
+            score -= len(words)
+            # prioritise titles that include the ebook types we want
+            booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
+            if len(booktypes):
+                score += 1
             matches.append([score, torTitle, newValueDict, controlValueDict])
 
     if matches:
