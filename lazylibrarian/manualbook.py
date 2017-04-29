@@ -16,7 +16,6 @@
 import lazylibrarian
 import urllib
 from lazylibrarian.formatter import getList, unaccented_str
-from lazylibrarian.common import internet
 from lazylibrarian import logger
 from lazylibrarian.providers import IterateOverRSSSites, IterateOverTorrentSites, IterateOverNewzNabSites
 from lib.fuzzywuzzy import fuzz
@@ -30,10 +29,6 @@ def searchItem(item=None, bookid=None):
     results = []
 
     if not item:
-        return results
-
-    if not internet():
-        logger.debug('Search Item: No internet connection')
         return results
 
     book = {}

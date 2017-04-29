@@ -69,20 +69,6 @@ def formatAuthorName(author):
     return ' '.join(author.split())  # ensure no extra whitespace
 
 
-def internet():
-    """
-    Check for an active internet connection
-    Return True or False
-    """
-    try:
-        _ = urllib2.urlopen("http://www.google.com", timeout=5)
-        return True
-    except Exception as e:
-        if int(lazylibrarian.LOGLEVEL) > 2:
-            logger.debug("Internet: %s" % str(e))
-        return False
-
-
 def setperm(file_or_dir):
     """
     Force newly created directories to rwxr-xr-x and files to rw-r--r--
@@ -96,12 +82,14 @@ def setperm(file_or_dir):
             perm = int(value, 8)
         else:
             perm = 0o755
+            value = '0o755'
     elif os.path.isfile(file_or_dir):
         value = lazylibrarian.CONFIG['FILE_PERM']
         if value and value.startswith('0o') and len(value) == 5:
             perm = int(lazylibrarian.CONFIG['FILE_PERM'], 8)
         else:
             perm = 0o644
+            value = '0o644'
     else:
         return False
     try:
@@ -109,7 +97,7 @@ def setperm(file_or_dir):
         return True
     except Exception as e:
         if int(lazylibrarian.LOGLEVEL) > 2:
-            logger.debug("Failed to set permission %s for %s : %s" % (perm, file_or_dir, str(e)))
+            logger.debug("Failed to set permission %s for %s : %s" % (value, file_or_dir, str(e)))
         return False
 
 
@@ -232,12 +220,7 @@ def authorUpdate():
     threadname = threading.currentThread().name
     if "Thread-" in threadname:
         threading.currentThread().name = "AUTHORUPDATE"
-
     try:
-        if not internet():
-            logger.warn('No internet connection')
-            return
-
         myDB = database.DBConnection()
         cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" order by DateAdded ASC'
         author = myDB.match(cmd)
