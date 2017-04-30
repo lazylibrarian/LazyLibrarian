@@ -120,16 +120,13 @@
             "sAjaxSource": 'getBooks?source=Books&booklang=${booklang}',
             "bFilter": true,
             "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-                var w = window.innerWidth;
                 $('td', nRow).eq(5).addClass('text-center');
                 $('td', nRow).eq(6).addClass('text-center');
                 $('td', nRow).eq(7).addClass('text-center');
-                if ( w < 768 )
-                {   // hide cover,stars,date on small devices
-                    $('td', nRow).eq(1).addClass('hidden');
-                    $('td', nRow).eq(5).addClass('hidden');
-                    $('td', nRow).eq(6).addClass('hidden');
-                }
+                // hide cover,stars,date on small devices
+                $('td', nRow).eq(1).addClass('hidden-xs');
+                $('td', nRow).eq(5).addClass('hidden-xs');
+                $('td', nRow).eq(6).addClass('hidden-xs');
                 return nRow;
             },
         });

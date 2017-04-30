@@ -32,9 +32,9 @@
             <tr>
                 <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
                 % if covercount > 0:
-                <th id="bookart">Cover</th>
+                    <th id="bookart">Cover</th>
                 % else:
-                <th id="bookart" hidden="true">Cover</th>
+                    <th id="bookart" hidden="true">Cover</th>
                 % endif
                 <th id="issuedate">Issue</th>
                 <th id="lastacquired">Acquired</th>
@@ -47,9 +47,9 @@
                 <tr class="gradeZ">
                     <td id="select"><input type="checkbox" name="${result['IssueID']}" class="checkbox" /></td>
                     % if covercount > 0:
-                    <td id="bookart"><a href="${result['Cover']}" target="_new"><img src="${result['Cover']}" height="75" width="50"></a></td>
+                        <td id="bookart"><a href="${result['Cover']}" target="_new"><img src="${result['Cover']}" height="75" width="50"></a></td>
                     % else:
-                    <td id="bookart" hidden="true"><a href="${result['Cover']}" target="_new"><img src="${result['Cover']}" height="75" width="50"></a></td>
+                        <td id="bookart" hidden="true"><a href="${result['Cover']}" target="_new"><img src="${result['Cover']}" height="75" width="50"></a></td>
                     % endif
                     <td id="issuedate">${result['IssueDate']}</td>
                     <td id="lastacquired">${result['IssueAcquired']}</td>
@@ -60,6 +60,7 @@
     </table>
 <p>&nbsp;</p>
 <p>&nbsp;</p>
+</form>
 </%def>
 
 <%def name="headIncludes()">

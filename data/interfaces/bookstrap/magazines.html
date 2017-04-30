@@ -71,7 +71,7 @@
             </thead>
 
             <tbody>
-            %for result in magazines:
+                %for result in magazines:
                     <tr>
                         <td class="select text-center"><input type="checkbox" name="${result['Title']}" id="${result['safetitle']}" class="checkbox" /></td>
                         % if covercount > 0:
@@ -105,7 +105,7 @@
                             %endif
                         %endif
                     </tr>
-            %endfor
+                %endfor
             </tbody>
         </table>
     </div>

@@ -36,27 +36,8 @@
                     <th class="message">Message</th>
                 </tr>
             </thead>
-<!--
-            <tbody>
-            %for line in lineList:
-                <%
-                    timestamp, message, level, threadname = line
-
-                    if level == 'WARNING' or level == 'ERROR':
-                        grade = 'bg-danger'
-                    else:
-                        grade = 'bg-info'
-                %>
-                    <tr>
-                        <td class="timestamp">${timestamp}</td>
-                        <td class="level">${level}</td>
-                        <td class="message">${message}</td>
-                    </tr>
-            %endfor
-            </tbody>
--->
         </table>
-        </div>
+    </div>
 </%def>
 
 <%def name="headIncludes()">
@@ -90,15 +71,12 @@
                     } else {
                         $('td', nRow).closest('tr').addClass("text-info");
                     }
-                    var w = window.innerWidth;
-                    if ( w < 640 ) // hide timestamp on smallest devices
-                    {
-                        $('td', nRow).eq(0).addClass('hidden');
-                    }
+                    // hide timestamp on smallest devices
+                    $('td', nRow).eq(0).addClass('hidden-xs');
                     return nRow;
                 },
                 "fnServerData": function (sSource, aoData, fnCallback) {
-//                     Add some extra data to the sender
+                    // Add some extra data to the sender
                     $.getJSON(sSource, aoData, function (json) {
                         fnCallback(json)
                     });

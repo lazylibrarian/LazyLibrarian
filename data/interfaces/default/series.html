@@ -44,7 +44,6 @@
             </thead>
         </table>
         <p>
-
         &nbsp&nbspChange selected series to:
         <select class="markSeries" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
             %for item in ['Skipped', 'Wanted', 'Active', 'Ignored']:
@@ -52,9 +51,8 @@
             %endfor
         </select>
         <input type="submit" class="markSeries" value="Go">
+        </p>
     </form>
-    </p>
-</div>
 <p>&nbsp;</p>
 </%def>
 
@@ -105,19 +103,13 @@
                     $('td', nRow).eq(3).addClass("center");
                     $('td', nRow).eq(4).addClass("center");
                     var w = window.innerWidth;
-                    if ( w < 320 )
-                    {   // hide author,status on smallest devices
-                        $('td', nRow).eq(1).addClass('hidden');
-                        $('td', nRow).eq(3).addClass('hidden');
-                   }
-                    if ( w < 640 )
-                    {   // hide author,status on smaller devices
-                        $('td', nRow).eq(1).addClass('hidden');
-                        $('td', nRow).eq(3).addClass('hidden');
-                   }
                     if ( w < 768 )
                     {   // hide status on small devices
                         $('td', nRow).eq(3).addClass('hidden');
+                    }
+                    if ( w < 640 )
+                    {   // hide author,status on smaller devices
+                        $('td', nRow).eq(1).addClass('hidden');
                     }
                     return nRow;
                 },
