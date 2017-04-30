@@ -195,10 +195,6 @@ class WebInterface(object):
                                 members=members, series=series, multi=multi)
 
     @cherrypy.expose
-    def markMembers(self, action=None, **args):
-        return self.markBooks(self, action=action, **args)
-
-    @cherrypy.expose
     def markSeries(self, action=None, **args):
         self.label_thread()
         myDB = database.DBConnection()
@@ -206,7 +202,7 @@ class WebInterface(object):
             for seriesid in args:
                 # ouch dirty workaround...
                 if not seriesid == 'book_table_length':
-                    if action in ["Wanted", "Active", "Skipped"]:
+                    if action in ["Wanted", "Active", "Skipped", "Ignored"]:
                         match = myDB.match('SELECT SeriesName from series WHERE SeriesID = "%s"' % seriesid)
                         if match:
                             myDB.upsert("series", {'Status': action}, {'SeriesID': seriesid})

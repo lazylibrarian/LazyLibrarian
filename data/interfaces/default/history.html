@@ -4,60 +4,60 @@
 %>
 
 <%def name="headerIncludes()">
-	<div id="subhead_container">
-		<ul id="subhead_menu">
-			<li><a href="clearhistory?status=all" id="button">Clear All History</a></li>
-			<li><a href="clearhistory?status=Processed" id="button">Clear Processed</a></li>
-			<li><a href="clearhistory?status=Snatched" id="button">Clear Snatched</a></li>
-			<li><a href="clearhistory?status=Failed" id="button">Clear Failed</a></li>
-			</ul>
-	</div>
+    <div id="subhead_container">
+        <ul id="subhead_menu">
+            <li><a href="clearhistory?status=all" id="button">Clear All History</a></li>
+            <li><a href="clearhistory?status=Processed" id="button">Clear Processed</a></li>
+            <li><a href="clearhistory?status=Snatched" id="button">Clear Snatched</a></li>
+            <li><a href="clearhistory?status=Failed" id="button">Clear Failed</a></li>
+        </ul>
+    </div>
 </%def>
 
 <%def name="body()">
 <BR><BR>
 <h1>&nbsp&nbsp${title}</h1><br>
 
-	<table class="display" id="book_table">
-		<thead>
-			<tr>
-				<th id="bookname">Title</th>
-				<th id="number">ID</th>
-				<th id="authorname">Provider</th>
-				<th id="date">Date</th>
-				<th id="stars">Size</th>
-				<th id="status">Status</th>
-			</tr>
-		</thead>
-		<tbody>
-		%for item in history:
-			<%
-				if item['Status'] == 'Processed':
-					grade = 'A'
-				elif item['Status'] == 'Snatched':
-					grade = 'C'
-				elif item['Status'] == 'Failed':
-					grade = 'X'
-				else:
-					grade = 'U'
-			%>
-			<tr class="grade${grade}">
-				<td id="bookname">${item['NZBtitle']}</td>
-				<td id="number">${item['BookID']}</td>
-				<td id="authorname"><a href="${item['NZBurl']}">${item['NZBprov']}</a></td>
-				<td id="date">${item['NZBdate']}</td>
-				<td id="stars">${item['NZBsize']} MB</td>
-				<td id="status">${item['Status']}</td>
-			</tr>
-		%endfor
-		</tbody>
-	</table>
+    <table class="display" id="book_table">
+        <thead>
+            <tr>
+                <th id="bookname">Title</th>
+                <th id="number">ID</th>
+                <th id="authorname">Provider</th>
+                <th id="date">Date</th>
+                <th id="stars">Size</th>
+                <th id="status">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+        %for item in history:
+            <%
+                if item['Status'] == 'Processed':
+                    grade = 'A'
+                elif item['Status'] == 'Snatched':
+                    grade = 'C'
+                elif item['Status'] == 'Failed':
+                    grade = 'X'
+                else:
+                    grade = 'U'
+            %>
+            <tr class="grade${grade}">
+                <td id="bookname">${item['NZBtitle']}</td>
+                <td id="number">${item['BookID']}</td>
+                <td id="authorname"><a href="${item['NZBurl']}">${item['NZBprov']}</a></td>
+                <td id="date">${item['NZBdate']}</td>
+                <td id="stars">${item['NZBsize']} MB</td>
+                <td id="status">${item['Status']}</td>
+            </tr>
+        %endfor
+        </tbody>
+    </table>
 <p>&nbsp;</p>
 <p>&nbsp;</p>
 </%def>
 
 <%def name="headIncludes()">
-	<link rel="stylesheet" href="css/data_table.css">
+    <link rel="stylesheet" href="css/data_table.css">
 </%def>
 
 <%def name="javascriptIncludes()">

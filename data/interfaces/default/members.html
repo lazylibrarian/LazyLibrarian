@@ -20,22 +20,21 @@
 %else:
     <h1>&nbsp&nbsp${series['AuthorName']} : ${title}</h1>
 %endif
-        <form action="markMembers" method="get">
-            <input type="hidden" name="redirect" value="members">
-            <input type="hidden" name="seriesid" value="${series['SeriesID']}">
-            <label>&nbsp&nbspMark selected as: </label>
-            <select class="markMembers" name="action" id="action">
-                    %for item in ["Wanted", "Have", "Ignored", "Skipped", "Remove", "Delete"]:
-                        <option value="${item}"
-                        %if whichStatus == item:
-                            selected = "selected"
-                        %endif
-                        >${item}</option>
-                    %endfor
-            </select>
-        <input type="submit" class="markMembers" id="go" value="Go">
-        </form>
-        <br><br>
+<form action="markBooks" method="get">
+    <input type="hidden" name="redirect" value="members">
+    <input type="hidden" name="seriesid" value="${series['SeriesID']}">
+    <label>&nbsp&nbspMark selected as: </label>
+    <select class="markBooks" name="action" id="action">
+        %for item in ["Wanted", "Have", "Ignored", "Skipped", "Remove", "Delete"]:
+            <option value="${item}"
+            %if whichStatus == item:
+                selected = "selected"
+            %endif
+            >${item}</option>
+        %endfor
+    </select>
+    <input type="submit" class="markBooks" id="go" value="Go">
+    <br><br>
 
     <table class="display" id="book_table" style="width:100%;">
         <thead>
@@ -72,7 +71,7 @@
         %endfor
         </tbody>
     </table>
-</div>
+</form>
 
 <p>&nbsp;</p>
 <p>&nbsp;</p>

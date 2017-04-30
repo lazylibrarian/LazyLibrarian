@@ -50,7 +50,6 @@
 
         		if author['Status'] == 'Paused':
         			grade = 'X'
-
             %>
             <tr>
                 <td class="name text-center"><a href="${author['AuthorImg']}" target="_blank" rel="noreferrer"><img src="${author['AuthorImg']}" alt="Cover" class="bookcover-sm"></a></td>
@@ -81,7 +80,7 @@
 <%def name="javascriptIncludes()">
 
     <script type="text/javascript">
-    $(document).ready(function()
+    $(document).ready(function)
     {
         $('#author_table').dataTable(
             {

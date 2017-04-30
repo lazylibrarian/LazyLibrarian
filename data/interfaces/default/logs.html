@@ -5,28 +5,28 @@
 <%def name="headerIncludes()">
 	<div id="subhead_container">
 		<ul id="subhead_menu">
-		  <li><a href="clearLog" id="button"> Clear Log </a></li>
-		  %if lazylibrarian.LOGFULL == True:
+		<li><a href="clearLog" id="button"> Clear Log </a></li>
+		%if lazylibrarian.LOGFULL == True:
 		    <li><a href="toggleLog" id="button"> Stop Debug Log</a></li>
-		  %else:
+		%else:
 		    <li><a href="toggleLog" id="button"> Start Debug Log</a></li>
-		  %endif
+		%endif
 		</ul>
 	</div>
 </%def>
 <%def name="body()">
 <BR><BR>
 <h1>&nbsp&nbsp${title}</h1>
-   <div align="center">Refresh rate:
-   <select id="refreshrate" onchange="setRefresh()">
-   <option value="0" selected="selected">No Refresh</option>
-   <option value="5">5 Seconds</option>
-   <option value="15">15 Seconds</option>
-   <option value="30">30 Seconds</option>
-   <option value="60">60 Seconds</option>
-   <option value="300">5 Minutes</option>
-   <option value="600">10 Minutes</option>
-   </select></div>
+    <div align="center">Refresh rate:
+    <select id="refreshrate" onchange="setRefresh()">
+        <option value="0" selected="selected">No Refresh</option>
+        <option value="5">5 Seconds</option>
+        <option value="15">15 Seconds</option>
+        <option value="30">30 Seconds</option>
+        <option value="60">60 Seconds</option>
+        <option value="300">5 Minutes</option>
+        <option value="600">10 Minutes</option>
+    </select></div>
 
     <table class="display" id="log_table">
         <thead>
@@ -36,25 +36,6 @@
                 <th id="message">Message</th>
             </tr>
         </thead>
-<!--  we don't use this section now as we do it server-side
-        <tbody>
-        %for line in lineList:
-            <%
-                timestamp, message, level, threadname = line
-
-                if level == 'WARNING' or level == 'ERROR':
-                    grade = 'X'
-                else:
-                    grade = 'Z'
-            %>
-                <tr class="grade${grade}">
-                    <td id="timestamp">${timestamp}</td>
-                    <td id="level">${level}</td>
-                    <td id="message">${message}</td>
-                </tr>
-        %endfor
-        </tbody>
--->
     </table>
 <p>&nbsp;</p>
 <p>&nbsp;</p>

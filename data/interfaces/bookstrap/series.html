@@ -12,46 +12,46 @@
 
 <%def name="body()">
 <h1>${title}</h1>
-    <form action="series" method="get" class="form-inline">
-        <div class="form-group">
-            <label for="whichStatus" class="control-label">Series with status:</label>
-            <select name="whichStatus" class="form-control input-sm">
-        %for item in ['All', 'Skipped', 'Wanted', 'Active', 'Ignored']:
-            <option value="${item}"
-                %if whichStatus == item:
-                    selected = "selected"
-                %endif
-            >${item}</option>
-        %endfor
-            </select>
-        </div>
+<form action="series" method="get" class="form-inline">
+    <div class="form-group">
+        <label for="whichStatus" class="control-label">Series with status:</label>
+        <select name="whichStatus" class="form-control input-sm">
+    %for item in ['All', 'Skipped', 'Wanted', 'Active', 'Ignored']:
+        <option value="${item}"
+            %if whichStatus == item:
+                selected = "selected"
+            %endif
+        >${item}</option>
+    %endfor
+        </select>
+    </div>
     <input  class="btn btn-sm btn-default" type="submit" value="Manage" />
-    </form>
+</form>
     <br>
-    <form action="markSeries" method="get" class="form-inline">
-        <div class="table-responsive">
-            <table class="display table table-striped table-hover table-bordered" id="book_table">
-                <thead>
-                    <tr>
-                        <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
-                        <th class="authorname hidden-xs">Author</th>
-                        <th class="series">Series Name</th>
-                        <th class="status text-center hidden-xs">Status</th>
-                        <th class="stars text-center">Select</th>
-                    </tr>
-                </thead>
-            </table>
-        </div>
-        <div class="form-group">
-            <label for="markSeries" class="control-label">Change selected series to: </label>
-            <select id="markSeries" class="markSeries form-control input-sm" name="action">
-            %for item in ['Skipped', 'Wanted', 'Active', 'Ignored']:
-                <option value="${item}">${item}</option>
-            %endfor
-            </select>
-        </div>
-        <input type="submit" class="markSeries btn btn-sm btn-default" value="Go">
-    </form>
+<form action="markSeries" method="get" class="form-inline">
+    <div class="table-responsive">
+        <table class="display table table-striped table-hover table-bordered" id="book_table">
+            <thead>
+                <tr>
+                    <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
+                    <th class="authorname hidden-xs">Author</th>
+                    <th class="series">Series Name</th>
+                    <th class="status text-center hidden-xs">Status</th>
+                    <th class="stars text-center">Select</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+    <div class="form-group">
+        <label for="markSeries" class="control-label">Change selected series to: </label>
+        <select id="markSeries" class="markSeries form-control input-sm" name="action">
+        %for item in ['Skipped', 'Wanted', 'Active', 'Ignored']:
+            <option value="${item}">${item}</option>
+        %endfor
+        </select>
+    </div>
+    <input type="submit" class="markSeries btn btn-sm btn-default" value="Go">
+</form>
 <p>&nbsp;</p>
 </%def>
 
@@ -92,12 +92,9 @@
                     $('td', nRow).eq(0).addClass("text-center");
                     $('td', nRow).eq(3).addClass("text-center");
                     $('td', nRow).eq(4).addClass("text-center");
-                    var w = window.innerWidth;
-                    if ( w < 768 )
-                    {   // hide author,status on small devices
-                        $('td', nRow).eq(1).addClass('hidden');
-                        $('td', nRow).eq(3).addClass('hidden');
-                    }
+                    // hide author,status on small devices
+                    $('td', nRow).eq(1).addClass('hidden-xs');
+                    $('td', nRow).eq(3).addClass('hidden-xs');
                     return nRow;
                 },
             });
