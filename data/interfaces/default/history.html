@@ -17,7 +17,6 @@
 <%def name="body()">
 <BR><BR>
 <h1>&nbsp&nbsp${title}</h1><br>
-
     <table class="display" id="book_table">
         <thead>
             <tr>
@@ -64,10 +63,8 @@
     <script src="js/libs/jquery.dataTables.min.js"></script>
     <script src="js/libs/natural.js"></script>
     <script>
-
     $(document).ready(function()
     {
-
         var oTable = $('#book_table').dataTable(
             {
                 "bAutoWidth": false,
@@ -89,8 +86,8 @@
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
             });
-            $('.dataTables_filter input').attr("placeholder", "Search table here");
-            $(window).resize(function() {oTable.fnDraw(false)});
+        $('.dataTables_filter input').attr("placeholder", "Search table here");
+        $(window).resize(function() {oTable.fnDraw(false)});
     });
     </script>
 </%def>

@@ -78,8 +78,7 @@ class WebInterface(object):
     @cherrypy.expose
     def home(self):
         myDB = database.DBConnection()
-        authors = myDB.select(
-            'SELECT * from authors where Status != "Ignored" order by AuthorName COLLATE NOCASE')
+        authors = myDB.select('SELECT * from authors where Status != "Ignored" order by AuthorName COLLATE NOCASE')
         return serve_template(templatename="index.html", title="Authors", authors=authors)
 
     @staticmethod

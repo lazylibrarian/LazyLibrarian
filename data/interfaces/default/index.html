@@ -7,8 +7,8 @@
     <div id="subhead_container">
         <ul id="subhead_menu">
             <li><a href="forceUpdate" id="button"> Refresh Active Authors </a></li>
-	     <li><a href="libraryScan" id="button"> Library Scan </a></li>
-	    </ul>
+         <li><a href="libraryScan" id="button"> Library Scan </a></li>
+        </ul>
     </div>
 </%def>
 
@@ -29,29 +29,29 @@
         <tbody>
         %for author in authors:
             <%
-        		totalbooks = author['UnignoredBooks']
-        		havebooks = author['HaveBooks']
-        		if not havebooks:
-        			havebooks = 0
-        		try:
-        			percent = (havebooks*100.0)/totalbooks
-        			if percent > 100:
-        				percent = 100
-        			if percent <= 100:
-        				css = "<div class=\"progress-container success\">"
-        			if percent <= 75:
-        				css = "<div class=\"progress-container info\">"
-        			if percent <= 50:
-        				css = "<div class=\"progress-container warning\">"
-        			if percent <= 25:
-        				css = "<div class=\"progress-container danger\">"
-        		except (ZeroDivisionError, TypeError):
-        			percent = 0
-        			totalbooks = '0'
-        			css = "<div class=\"progress-container danger\">"
+                totalbooks = author['UnignoredBooks']
+                havebooks = author['HaveBooks']
+                if not havebooks:
+                    havebooks = 0
+                try:
+                    percent = (havebooks*100.0)/totalbooks
+                    if percent > 100:
+                        percent = 100
+                    if percent <= 100:
+                        css = "<div class=\"progress-container success\">"
+                    if percent <= 75:
+                        css = "<div class=\"progress-container info\">"
+                    if percent <= 50:
+                        css = "<div class=\"progress-container warning\">"
+                    if percent <= 25:
+                        css = "<div class=\"progress-container danger\">"
+                except (ZeroDivisionError, TypeError):
+                    percent = 0
+                    totalbooks = '0'
+                    css = "<div class=\"progress-container danger\">"
 
-        		if author['Status'] == 'Paused':
-        			grade = 'X'
+                if author['Status'] == 'Paused':
+                    grade = 'X'
 
             %>
             <tr class="gradeZ">
@@ -62,7 +62,7 @@
 
                 <td id="date">${author['LastDate']}</td>
                 <td id="have"><span title="${percent}"></span><span class="hidden">${percent}</span>${css}
-				<div style="width:${percent}%"><span class="progressbar-front-text">${havebooks}/${totalbooks}</span></div></td>
+                <div style="width:${percent}%"><span class="progressbar-front-text">${havebooks}/${totalbooks}</span></div></td>
 
                 <td id="status">${author['Status']}</td>
             </tr>
@@ -106,7 +106,7 @@
                 "sPaginationType": "full_numbers",
                 "aaSorting": [[1, 'asc']],
             });
-			$('.dataTables_filter input').attr("placeholder", "Search table here");
+        $('.dataTables_filter input').attr("placeholder", "Search table here");
     });
     </script>
 </%def>

@@ -1941,8 +1941,8 @@
                                 <span class="help-block">Default: None</span>
                                 %for mag in config['magazines_list']:
                                     <label>${mag['Title']}</label>
-             	    		        <input type="text" id="reject_list[${mag['Title']}]" name="reject_list[${mag['Title']}]" value="${mag['Reject']}" class="form-control" placeholder="Reject word list">
-             	    		        <input type="text" id="regex[${mag['Title']}]" name="regex[${mag['Title']}]" value="${mag['Regex']}" class="form-control" placeholder="Search expression">
+                                    <input type="text" id="reject_list[${mag['Title']}]" name="reject_list[${mag['Title']}]" value="${mag['Reject']}" class="form-control" placeholder="Reject word list">
+                                    <input type="text" id="regex[${mag['Title']}]" name="regex[${mag['Title']}]" value="${mag['Regex']}" class="form-control" placeholder="Search expression">
                                 %endfor
                                 </div>
                             </div>

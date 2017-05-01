@@ -5,8 +5,10 @@
 
 <%def name="headerIncludes()">
     <div id="subhead_container">
-        <a href="forceUpdate" class="btn btn-sm btn-primary" id="refresh"><i class="fa fa-refresh"></i> Refresh Active Authors</a>
-        <a href="libraryScan" class="btn btn-sm btn-primary" id="scan"><i class="fa fa-flash"></i> Library Scan</a>
+        <div id="subhead_menu">
+            <a href="forceUpdate" class="btn btn-sm btn-primary" id="refresh"><i class="fa fa-refresh"></i> Refresh Active Authors</a>
+            <a href="libraryScan" class="btn btn-sm btn-primary" id="scan"><i class="fa fa-flash"></i> Library Scan</a>
+        </div>
     </div>
 </%def>
 
@@ -27,29 +29,29 @@
         <tbody>
         %for author in authors:
             <%
-        		totalbooks = author['UnignoredBooks']
-        		havebooks = author['HaveBooks']
-        		if not havebooks:
-        			havebooks = 0
-        		try:
-        			percent = (havebooks*100.0)/totalbooks
-        			if percent > 100:
-        				percent = 100
-        			if percent <= 100:
-        				css = 'success'
-        			if percent <= 75:
-        				css = 'info'
-        			if percent <= 50:
-        				css = 'warning'
-        			if percent <= 25:
-        				css = 'danger'
-        		except (ZeroDivisionError, TypeError):
-        			percent = 0
-        			totalbooks = '0'
-                                css = 'danger'
+                totalbooks = author['UnignoredBooks']
+                havebooks = author['HaveBooks']
+                if not havebooks:
+                    havebooks = 0
+                try:
+                    percent = (havebooks*100.0)/totalbooks
+                    if percent > 100:
+                        percent = 100
+                    if percent <= 100:
+                        css = 'success'
+                    if percent <= 75:
+                        css = 'info'
+                    if percent <= 50:
+                        css = 'warning'
+                    if percent <= 25:
+                        css = 'danger'
+                except (ZeroDivisionError, TypeError):
+                    percent = 0
+                    totalbooks = '0'
+                    css = 'danger'
 
-        		if author['Status'] == 'Paused':
-        			grade = 'X'
+                if author['Status'] == 'Paused':
+                    grade = 'X'
             %>
             <tr>
                 <td class="name text-center"><a href="${author['AuthorImg']}" target="_blank" rel="noreferrer"><img src="${author['AuthorImg']}" alt="Cover" class="bookcover-sm"></a></td>
@@ -70,7 +72,6 @@
         </tbody>
     </table>
 </div>
-<p>&nbsp;</p>
 </%def>
 
 <%def name="headIncludes()">
@@ -80,7 +81,7 @@
 <%def name="javascriptIncludes()">
 
     <script type="text/javascript">
-    $(document).ready(function)
+    $(document).ready(function()
     {
         $('#author_table').dataTable(
             {
@@ -101,7 +102,7 @@
                 "sPaginationType": "full_numbers",
                 "aaSorting": [[1, 'asc']],
             });
-			$('.dataTables_filter input').attr("placeholder", "Search filter");
+        $('.dataTables_filter input').attr("placeholder", "Search filter");
     });
     </script>
 </%def>

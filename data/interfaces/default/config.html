@@ -61,21 +61,21 @@
                     <BR>
                     <input type="checkbox" id="https_enabled" name="https_enabled" value=1 ${checked} />
                     <label>  Enable https</label>
-                  <fieldset id="https_options">
-                  <label>Https Certificate:</label><input type="text" name="https_cert" value="${lazylibrarian.CONFIG['HTTPS_CERT']}" size="20">
-		          <br>
-                  <label>Https Key:</label><input type="text" name="https_key" value="${lazylibrarian.CONFIG['HTTPS_KEY']}" size="20">
-		          </fieldset>
-		          <br>
-                  <br>
-                  <label>Logdir:</label><input type="text" name="logdir" value="${lazylibrarian.CONFIG['LOGDIR']}" size="26"><br>
-                  <label>Log Limit:</label><input type="text" name="loglimit" value="${lazylibrarian.CONFIG['LOGLIMIT']}" size="4"><br>
-                  <i class="smalltext">Size of on-screen log, smaller is faster and uses less memory</i><br>
-                  <label>Log Level:</label><input type="text" name="loglevel" value="${lazylibrarian.LOGLEVEL}" size="4"><br>
-                  <i class="smalltext">0=Quiet, 1=Normal, 2=Debug, >2=file/console log always set to debug (ignores toggle)</i>
-        		  <br>
-        		  <label>Table Display Length:</label>
-                  <select name="displaylength">
+                    <fieldset id="https_options">
+                    <label>Https Certificate:</label><input type="text" name="https_cert" value="${lazylibrarian.CONFIG['HTTPS_CERT']}" size="20">
+                    <br>
+                    <label>Https Key:</label><input type="text" name="https_key" value="${lazylibrarian.CONFIG['HTTPS_KEY']}" size="20">
+                    </fieldset>
+                    <br>
+                    <br>
+                    <label>Logdir:</label><input type="text" name="logdir" value="${lazylibrarian.CONFIG['LOGDIR']}" size="26"><br>
+                    <label>Log Limit:</label><input type="text" name="loglimit" value="${lazylibrarian.CONFIG['LOGLIMIT']}" size="4"><br>
+                    <i class="smalltext">Size of on-screen log, smaller is faster and uses less memory</i><br>
+                    <label>Log Level:</label><input type="text" name="loglevel" value="${lazylibrarian.LOGLEVEL}" size="4"><br>
+                    <i class="smalltext">0=Quiet, 1=Normal, 2=Debug, >2=file/console log always set to debug (ignores toggle)</i>
+                    <br>
+                    <label>Table Display Length:</label>
+                    <select name="displaylength">
                     %for displaylength in [5, 10, 15, 25, 50, 100, -1]:
                         <%
                             if displaylength == lazylibrarian.CONFIG['DISPLAYLENGTH']:
@@ -88,15 +88,15 @@
                     </select><br>
                     <i class="smalltext">Use -1 to display all rows</i>
                   <br>
-		  <div>
-		  <label>Proxy Host:</label><input type="text" name="proxy_host" value="${lazylibrarian.CONFIG['PROXY_HOST']}" size="20"><br>
-		  <i class="smalltext">Set this value if you are behind a proxy</i>
-		  </div>
-		  <br>
-		  <div>
-		  <label>Proxy Type:</label><input type="text" name="proxy_type" value="${lazylibrarian.CONFIG['PROXY_TYPE']}" size="10"><br>
+          <div>
+          <label>Proxy Host:</label><input type="text" name="proxy_host" value="${lazylibrarian.CONFIG['PROXY_HOST']}" size="20"><br>
+          <i class="smalltext">Set this value if you are behind a proxy</i>
+          </div>
+          <br>
+          <div>
+          <label>Proxy Type:</label><input type="text" name="proxy_type" value="${lazylibrarian.CONFIG['PROXY_TYPE']}" size="10"><br>
                   <i class="smalltext">http, https, etc</i>
-		  </div>
+          </div>
                 </td>
                 <td>
                     <div>
@@ -219,7 +219,7 @@
                     <BR> GoogleBooks e.g: en, es, it
                     <BR> Default: en, eng, en-US, en-GB
                     <BR> Try adding "Unknown" to list if GoodReads is missing results, or "All" if you don't want to check for language</i>
-		            <BR><BR>
+                    <BR><BR>
                     <label>Languages for month names:</label><input type="text" name="imp_monthlang" value="${lazylibrarian.CONFIG['IMP_MONTHLANG']}" size="20">
                     <br><i class="smalltext">Comma separated language codes for magazine issues:
                     <br> e.g: fr_FR.utf8, es_ES.utf8
@@ -278,10 +278,10 @@
                                     <label>SABnzbd SubDir:</label>
                                     <input type="text" id="sab_subdir"  name="sab_subdir" value="${lazylibrarian.CONFIG['SAB_SUBDIR']}" size="26">
                                 </div>
-                				<div class="row">
-                				    <label>Retention Max Age:</label>
-                				    <input type="text" name="usenet_retention" value="${lazylibrarian.CONFIG['USENET_RETENTION']}" size="26">
-                				</div>
+                                <div class="row">
+                                    <label>Retention Max Age:</label>
+                                    <input type="text" name="usenet_retention" value="${lazylibrarian.CONFIG['USENET_RETENTION']}" size="26">
+                                </div>
                                 <div class="row">
                                     <label>SABnzb Connection:</label>
                                     <input type="button" value="Test SABnzbd" id="testSABnzbd" style="float:right;">
@@ -671,15 +671,15 @@
                         checked = ''
                     %>
                     <input type="checkbox" name="newznab[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter API Here" name="newznab[${loop.index}][api]" value="${prov['API']}" size="26" class="providers-input">
- 	    		    <input type="text" placeholder="Enter URL Here" name="newznab[${loop.index}][host]" value="${prov['HOST']}" size="26" class="providers-input">
- 	    		    <br>
- 	    		    %endfor
+                    <input type="text" placeholder="Enter API Here" name="newznab[${loop.index}][api]" value="${prov['API']}" size="26" class="providers-input">
+                    <input type="text" placeholder="Enter URL Here" name="newznab[${loop.index}][host]" value="${prov['HOST']}" size="26" class="providers-input">
+                    <br>
+                    %endfor
                 </fieldset>
-		        </td>
-		        <td>
-		        <fieldset id="torznab_options">
-		            <h3>Torznab Providers</h3>
+                </td>
+                <td>
+                <fieldset id="torznab_options">
+                    <h3>Torznab Providers</h3>
                     <br>
                     %for prov in lazylibrarian.TORZNAB_PROV:
                     <%
@@ -689,11 +689,11 @@
                         checked = ''
                     %>
                     <input type="checkbox" name="torznab[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter API Here" name="torznab[${loop.index}][api]" value="${prov['API']}" size="26" class="providers-input">
- 	    		    <input type="text" placeholder="Enter URL Here" name="torznab[${loop.index}][host]" value="${prov['HOST']}" size="26" class="providers-input">
- 	    		    <br>
- 	    		    %endfor
- 	    		</fieldset>
+                    <input type="text" placeholder="Enter API Here" name="torznab[${loop.index}][api]" value="${prov['API']}" size="26" class="providers-input">
+                    <input type="text" placeholder="Enter URL Here" name="torznab[${loop.index}][host]" value="${prov['HOST']}" size="26" class="providers-input">
+                    <br>
+                    %endfor
+                </fieldset>
             </tr>
             <tr>
                 <td>
@@ -707,10 +707,10 @@
                     else:
                         checked = ''
                     %>
-            		<input type="checkbox" name="rss[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
- 	    		    <input type="text" placeholder="Enter URL Here" name="rss[${loop.index}][host]" value="${prov['HOST']}" size="58" class="providers-rss-input"><br>
- 	    		    <br>
- 	    		    %endfor
+                    <input type="checkbox" name="rss[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
+                    <input type="text" placeholder="Enter URL Here" name="rss[${loop.index}][host]" value="${prov['HOST']}" size="58" class="providers-rss-input"><br>
+                    <br>
+                    %endfor
                 </fieldset>
                 </td>
                 <td>
@@ -721,64 +721,64 @@
                     else:
                         checked = ''
                     %>
-            		<input type="checkbox" name="kat" value=1 ${checked} style="margin-bottom:4px;" /> kickass
- 	    		    <input type="text" placeholder="Enter URL Here" name="kat_host" value="${lazylibrarian.CONFIG['KAT_HOST']}" size="26">
- 	  		        <br>
- 	  		        <%
+                    <input type="checkbox" name="kat" value=1 ${checked} style="margin-bottom:4px;" /> kickass
+                    <input type="text" placeholder="Enter URL Here" name="kat_host" value="${lazylibrarian.CONFIG['KAT_HOST']}" size="26">
+                    <br>
+                    <%
                     if lazylibrarian.CONFIG['TPB'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
-            		<input type="checkbox" name="tpb" value=1 ${checked} style="margin-bottom:4px;" /> piratebay
- 	    		    <input type="text" placeholder="Enter URL Here" name="tpb_host" value="${lazylibrarian.CONFIG['TPB_HOST']}" size="26">
- 	  		        <br>
- 	  		        <%
+                    <input type="checkbox" name="tpb" value=1 ${checked} style="margin-bottom:4px;" /> piratebay
+                    <input type="text" placeholder="Enter URL Here" name="tpb_host" value="${lazylibrarian.CONFIG['TPB_HOST']}" size="26">
+                    <br>
+                    <%
                     if lazylibrarian.CONFIG['ZOO'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
-            		<input type="checkbox" name="zoo" value=1 ${checked} style="margin-bottom:4px;" /> zooqle
- 	    		    <input type="text" placeholder="Enter URL Here" name="zoo_host" value="${lazylibrarian.CONFIG['ZOO_HOST']}" size="26">
- 	  		        <br>
- 	  		        <%
+                    <input type="checkbox" name="zoo" value=1 ${checked} style="margin-bottom:4px;" /> zooqle
+                    <input type="text" placeholder="Enter URL Here" name="zoo_host" value="${lazylibrarian.CONFIG['ZOO_HOST']}" size="26">
+                    <br>
+                    <%
                     if lazylibrarian.CONFIG['TDL'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
-            		<input type="checkbox" name="tdl" value=1 ${checked} style="margin-bottom:4px;" /> torrentdownload
- 	    		    <input type="text" placeholder="Enter URL Here" name="tdl_host" value="${lazylibrarian.CONFIG['TDL_HOST']}" size="26">
- 	  		        <br>
- 	  		        <%
+                    <input type="checkbox" name="tdl" value=1 ${checked} style="margin-bottom:4px;" /> torrentdownload
+                    <input type="text" placeholder="Enter URL Here" name="tdl_host" value="${lazylibrarian.CONFIG['TDL_HOST']}" size="26">
+                    <br>
+                    <%
                     if lazylibrarian.CONFIG['EXTRA'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
-            		<input type="checkbox" name="extra" value=1 ${checked} style="margin-bottom:4px;" /> extratorrent
- 	    		    <input type="text" placeholder="Enter URL Here" name="extra_host" value="${lazylibrarian.CONFIG['EXTRA_HOST']}" size="26">
- 	  		        <br>
- 	  		        <%
+                    <input type="checkbox" name="extra" value=1 ${checked} style="margin-bottom:4px;" /> extratorrent
+                    <input type="text" placeholder="Enter URL Here" name="extra_host" value="${lazylibrarian.CONFIG['EXTRA_HOST']}" size="26">
+                    <br>
+                    <%
                     if lazylibrarian.CONFIG['LIME'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
-            		<input type="checkbox" name="lime" value=1 ${checked} style="margin-bottom:4px;" /> limetorrent
- 	    		    <input type="text" placeholder="Enter URL Here" name="lime_host" value="${lazylibrarian.CONFIG['LIME_HOST']}" size="26">
- 	  		        <br>
+                    <input type="checkbox" name="lime" value=1 ${checked} style="margin-bottom:4px;" /> limetorrent
+                    <input type="text" placeholder="Enter URL Here" name="lime_host" value="${lazylibrarian.CONFIG['LIME_HOST']}" size="26">
+                    <br>
                    <br><h3>Direct Download Providers</h3><br>
- 	  		        <%
+                    <%
                     if lazylibrarian.CONFIG['GEN'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
-            		<input type="checkbox" name="gen" value=1 ${checked} style="margin-bottom:4px;" /> libgen
- 	    		    <input type="text" placeholder="Enter URL Here" name="gen_host" value="${lazylibrarian.CONFIG['GEN_HOST']}" size="26">
- 	    		</td>
+                    <input type="checkbox" name="gen" value=1 ${checked} style="margin-bottom:4px;" /> libgen
+                    <input type="text" placeholder="Enter URL Here" name="gen_host" value="${lazylibrarian.CONFIG['GEN_HOST']}" size="26">
+                </td>
             </tr>
         </table>
         </div>
@@ -899,8 +899,8 @@
                     </div>
                 </td>
                 <td>
-		            <label>Magazine Destination Folder:</label>
-		            <input type="text" name="mag_dest_folder" value="${lazylibrarian.CONFIG['MAG_DEST_FOLDER']}" size="26">
+                    <label>Magazine Destination Folder:</label>
+                    <input type="text" name="mag_dest_folder" value="${lazylibrarian.CONFIG['MAG_DEST_FOLDER']}" size="26">
                     <br><label>Magazine Issue Filename:</label>
                     <input type="text" name="mag_dest_file" value="${lazylibrarian.CONFIG['MAG_DEST_FILE']}" size="26">
                     <BR>
@@ -914,7 +914,7 @@
                         checked = ''
                     %>
                     <input type="checkbox" name="mag_relative" value=1 ${checked} /><label>Magazines inside book folder</label>
-		            <BR>
+                    <BR>
                     <small>Current limitation: If inside book folder, magazine folder must start with _ </small>
                     <br>
                     <%
@@ -1009,7 +1009,7 @@
                   </div>
                 </td>
             </tr>
-   	        <tr>
+            <tr>
                 <td>
                   <label>Missing Book Status:</label>
                   <select name="notfound_status"  style="float:right;">
@@ -1216,17 +1216,17 @@
                     else:
                         checked = ''
                     %>
-                            <input type="checkbox" name="pushover_onsnatch" value="1" ${checked} />Notify on snatch
-                        </div>
-			            <div class="row">
+                    <input type="checkbox" name="pushover_onsnatch" value="1" ${checked} />Notify on snatch
+                    </div>
+                    <div class="row">
                     <%
                     if lazylibrarian.CONFIG['PUSHOVER_ONDOWNLOAD'] == True:
                         checked = 'checked="checked"'
                     else:
                         checked = ''
                     %>
-			                <input type="checkbox" name="pushover_ondownload" value="1" ${checked} />Notify on download
-			            </div>
+                    <input type="checkbox" name="pushover_ondownload" value="1" ${checked} />Notify on download
+                    </div>
                         <div class="row">
                             <input type="text" id="pushover_apitoken"  name="pushover_apitoken" value="${lazylibrarian.CONFIG['PUSHOVER_APITOKEN']}" size="26" placeholder="Pushover API Token">
                         </div>
@@ -1296,8 +1296,8 @@
                         </div>
                     </div>
                 </fieldset>
-            	<fieldset>
-            	    <BR>
+                <fieldset>
+                    <BR>
                     <h3>NotifyMyAndroid</h3>
                     <div class="checkbox row">
                     <%
@@ -1361,7 +1361,7 @@
                                         <input type="button" value="Test NMA" id="testNMA">
                                     </div>
                                 </div>
-		        </fieldset>
+                </fieldset>
                 <fieldset>
                     <BR>
                     <h3>Slack</h3>
@@ -1546,21 +1546,21 @@
                     <h3><br>${provider['HOST']}</h3>
                     <input type="checkbox" name="newznab[${loop.index}][manual]" value=1 ${checked} ${hidden} style="margin-bottom:4px;" />
                     <label ${hidden}> Tick to lock settings</label>
- 	    		    <input type="text" name="newznab[${loop.index}][name]" value="${provider['NAME']}" class="hidden">
- 	    		    <input type="text" name="newznab[${loop.index}][updated]" value="${provider['UPDATED']}" class="hidden">
+                    <input type="text" name="newznab[${loop.index}][name]" value="${provider['NAME']}" class="hidden">
+                    <input type="text" name="newznab[${loop.index}][updated]" value="${provider['UPDATED']}" class="hidden">
                     <label ${hidden}><br>Extended Search</label>
- 	    		    <input type="text" placeholder="Enter Extended Here" name="newznab[${loop.index}][extended]" value="${provider['EXTENDED']}" size="26" ${hidden}>
+                    <input type="text" placeholder="Enter Extended Here" name="newznab[${loop.index}][extended]" value="${provider['EXTENDED']}" size="26" ${hidden}>
                     <label ${hidden}><br>General Search</label>
- 	    		    <input type="text" placeholder="Enter General Search Here" name="newznab[${loop.index}][generalsearch]" value="${provider['GENERALSEARCH']}" size="26" ${hidden}>
- 	    		    <label ${hidden}><br>Book Categories</label>
- 	    		    <input type="text" placeholder="Enter Book Categories Here" name="newznab[${loop.index}][bookcat]" value="${provider['BOOKCAT']}" size="26" ${hidden}>
- 	    		    <label ${hidden}><br>Book Search</label>
- 	    		    <input type="text" placeholder="Enter Book Search Here" name="newznab[${loop.index}][booksearch]" value="${provider['BOOKSEARCH']}" size="26" ${hidden}>
- 	    		    <label ${hidden}><br>Magazine Categories</label>
- 	    		    <input type="text" placeholder="Enter Mag Categories Here" name="newznab[${loop.index}][magcat]" value="${provider['MAGCAT']}" size="26" ${hidden}>
- 	    		    <label ${hidden}><br>Magazine Search</label>
- 	    		    <input type="text" placeholder="Enter Mag Search Here" name="newznab[${loop.index}][magsearch]" value="${provider['MAGSEARCH']}" size="26" ${hidden}>
- 	    		    %endfor
+                    <input type="text" placeholder="Enter General Search Here" name="newznab[${loop.index}][generalsearch]" value="${provider['GENERALSEARCH']}" size="26" ${hidden}>
+                    <label ${hidden}><br>Book Categories</label>
+                    <input type="text" placeholder="Enter Book Categories Here" name="newznab[${loop.index}][bookcat]" value="${provider['BOOKCAT']}" size="26" ${hidden}>
+                    <label ${hidden}><br>Book Search</label>
+                    <input type="text" placeholder="Enter Book Search Here" name="newznab[${loop.index}][booksearch]" value="${provider['BOOKSEARCH']}" size="26" ${hidden}>
+                    <label ${hidden}><br>Magazine Categories</label>
+                    <input type="text" placeholder="Enter Mag Categories Here" name="newznab[${loop.index}][magcat]" value="${provider['MAGCAT']}" size="26" ${hidden}>
+                    <label ${hidden}><br>Magazine Search</label>
+                    <input type="text" placeholder="Enter Mag Search Here" name="newznab[${loop.index}][magsearch]" value="${provider['MAGSEARCH']}" size="26" ${hidden}>
+                    %endfor
                     %for provider in lazylibrarian.TORZNAB_PROV:
                     <%
                     if provider['HOST'] == "":
@@ -1577,22 +1577,22 @@
                     <h3><br>${provider['HOST']}</h3>
                     <input type="checkbox" name="torznab[${loop.index}][manual]" value=1 ${checked} ${hidden} style="margin-bottom:4px;" />
                     <label ${hidden}> Tick to lock settings</label>
- 	    		    <input type="text" name="torznab[${loop.index}][name]" value="${provider['NAME']}" class="hidden">
- 	    		    <input type="text" name="torznab[${loop.index}][updated]" value="${provider['UPDATED']}" class="hidden">
+                    <input type="text" name="torznab[${loop.index}][name]" value="${provider['NAME']}" class="hidden">
+                    <input type="text" name="torznab[${loop.index}][updated]" value="${provider['UPDATED']}" class="hidden">
                     <label ${hidden}><br>Extended Search</label>
- 	    		    <input type="text" placeholder="Enter Extended Here" name="torznab[${loop.index}][extended]" value="${provider['EXTENDED']}" size="26" ${hidden}>
+                    <input type="text" placeholder="Enter Extended Here" name="torznab[${loop.index}][extended]" value="${provider['EXTENDED']}" size="26" ${hidden}>
                     <label ${hidden}><br>General Search</label>
- 	    		    <input type="text" placeholder="Enter General Search Here" name="torznab[${loop.index}][generalsearch]" value="${provider['GENERALSEARCH']}" size="26" ${hidden}>
- 	    		    <label ${hidden}><br>Book Categories</label>
- 	    		    <input type="text" placeholder="Enter Book Categories Here" name="torznab[${loop.index}][bookcat]" value="${provider['BOOKCAT']}" size="26" ${hidden}>
- 	    		    <label ${hidden}><br>Book Search</label>
- 	    		    <input type="text" placeholder="Enter Book Search Here" name="torznab[${loop.index}][booksearch]" value="${provider['BOOKSEARCH']}" size="26" ${hidden}>
- 	    		    <label ${hidden}><br>Magazine Categories</label>
- 	    		    <input type="text" placeholder="Enter Mag Categories Here" name="torznab[${loop.index}][magcat]" value="${provider['MAGCAT']}" size="26" ${hidden}>
- 	    		    <label ${hidden}><br>Magazine Search</label>
- 	    		    <input type="text" placeholder="Enter Mag Search Here" name="torznab[${loop.index}][magsearch]" value="${provider['MAGSEARCH']}" size="26" ${hidden}>
- 	    		    %endfor
-		        </fieldset>
+                    <input type="text" placeholder="Enter General Search Here" name="torznab[${loop.index}][generalsearch]" value="${provider['GENERALSEARCH']}" size="26" ${hidden}>
+                    <label ${hidden}><br>Book Categories</label>
+                    <input type="text" placeholder="Enter Book Categories Here" name="torznab[${loop.index}][bookcat]" value="${provider['BOOKCAT']}" size="26" ${hidden}>
+                    <label ${hidden}><br>Book Search</label>
+                    <input type="text" placeholder="Enter Book Search Here" name="torznab[${loop.index}][booksearch]" value="${provider['BOOKSEARCH']}" size="26" ${hidden}>
+                    <label ${hidden}><br>Magazine Categories</label>
+                    <input type="text" placeholder="Enter Mag Categories Here" name="torznab[${loop.index}][magcat]" value="${provider['MAGCAT']}" size="26" ${hidden}>
+                    <label ${hidden}><br>Magazine Search</label>
+                    <input type="text" placeholder="Enter Mag Search Here" name="torznab[${loop.index}][magsearch]" value="${provider['MAGSEARCH']}" size="26" ${hidden}>
+                    %endfor
+                </fieldset>
             </td>
         </tr>
         </table>
