@@ -257,8 +257,8 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
             score = (tor_Title_match + tor_Author_match) / 2  # as a percentage
             # lose a point for each unwanted word in the title so we get the closest match
             # but ignore anything at the end in square braces [keywords, genres etc]
-            wordlist = getList(torTitle.rsplit('[', 1)[0])
-            wordlist = wordlist.lower()
+            temptitle = torTitle.rsplit('[', 1)[0]
+            wordlist = getList(temptitle.lower())
             words = [x for x in wordlist if x not in getList(authorname.lower())]
             words = [x for x in words if x not in getList(bookname.lower())]
             words = [x for x in words if x not in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
