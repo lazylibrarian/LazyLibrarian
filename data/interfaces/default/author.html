@@ -85,9 +85,11 @@
                     totalbooks = '0'
                     css = "<div class=\"progress-container danger\" style=\"width:150px;\">"
             %>
-            <span title="${percent}">${css}</span>
-            <div style="width:${percent}%"><span class="progressbar-front-text">${havebooks}/${totalbooks}</span></div>
+            <span title="${percent}"></span>${css}
+            <div style="width:${percent}%"><span class="progressbar-front-text">${havebooks}/${totalbooks}</span></div></div>
 
+    </div>
+    <p class="indented">
         <form action="markBooks" method="get"><input type="hidden" name="AuthorID" value="${author['AuthorID']}">
             <input type="hidden" name="redirect" value="author">
             <input type="hidden" name="booklang" value="booklang">
@@ -99,10 +101,10 @@
                 <option value="Skipped">Skipped</option>
                 <option value="Remove">Remove</option>
                 <option value="Delete">Delete</option>
-                <option value="Leave" class="hidden">Leave</option>
+                <option value="Leave" hidden>Leave</option>
             </select>
         <input type="submit" class="markBooks" value="Go">
-    <br>
+    </p>
     <table class="display" id="book_table">
         <thead>
             <tr>
@@ -110,7 +112,7 @@
                 <th id="bookart">Cover</th>
                 <th id="authorname" class="hidden">Title</th>
                 <th id="bookname">Title</th>
-                <th id="series">Series</th>
+		        <th id="series">Series</th>
                 <th id="stars">Rating</th>
                 <th id="date">Released</th>
                 <th id="status">Status</th>
@@ -137,7 +139,6 @@
 <%def name="javascriptIncludes()">
     <script src="js/libs/jquery.dataTables.min.js"></script>
     <script>
-
     $(document).ready(function()
     {
         var oTable = $('#book_table').dataTable(
@@ -201,7 +202,7 @@
                     return nRow;
                 },
             });
-        $('.dataTables_filter input').attr("placeholder", "Search table here");
+		$('.dataTables_filter input').attr("placeholder", "Search table here");
         $(window).resize(function() {oTable.fnDraw(false)});
     });
     </script>
