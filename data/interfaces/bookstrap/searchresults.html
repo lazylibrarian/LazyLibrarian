@@ -11,11 +11,11 @@
     <table class="display table table-striped table-hover table-bordered" id="book_table">
         <thead>
             <tr>
-				<th class="bookart text-center no-sort">Cover</th>
-				<th class="authorname">Author</th>
-				<th class="bookname">Title</th>
-				<th class="date text-center">Released</th>
-				<th class="stars text-center">Rating</th>
+                <th class="bookart text-center no-sort">Cover</th>
+                <th class="authorname">Author</th>
+                <th class="bookname">Title</th>
+                <th class="date text-center">Released</th>
+                <th class="stars text-center">Rating</th>
                 <th class="addAuthor text-center no-sort">Add</th>
                 <th class="fuzz text-right">Match</th>
              </tr>
@@ -99,8 +99,8 @@
                         </p><p><a class="${but_class2} btn btn-xs" href="${destination2}">${value2}</a></p>
                     </td>
                     <td class="fuzz text-right">${result['highest_fuzz']}%</td>
-					</tr>
-				%endfor
+                    </tr>
+                %endfor
             %endif
         </tbody>
     </table>
@@ -141,7 +141,7 @@
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "sPaginationType": "full_numbers",
             });
-			$('.dataTables_filter input').attr("placeholder", "Search table here");
+        $('.dataTables_filter input').attr("placeholder", "Search table here");
     });
     </script>
 </%def>

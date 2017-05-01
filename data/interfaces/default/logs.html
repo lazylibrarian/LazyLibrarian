@@ -3,16 +3,16 @@
     import lazylibrarian
 %>
 <%def name="headerIncludes()">
-	<div id="subhead_container">
-		<ul id="subhead_menu">
-		<li><a href="clearLog" id="button"> Clear Log </a></li>
-		%if lazylibrarian.LOGFULL == True:
-		    <li><a href="toggleLog" id="button"> Stop Debug Log</a></li>
-		%else:
-		    <li><a href="toggleLog" id="button"> Start Debug Log</a></li>
-		%endif
-		</ul>
-	</div>
+    <div id="subhead_container">
+        <ul id="subhead_menu">
+        <li><a href="clearLog" id="button"> Clear Log </a></li>
+        %if lazylibrarian.LOGFULL == True:
+            <li><a href="toggleLog" id="button"> Stop Debug Log</a></li>
+        %else:
+            <li><a href="toggleLog" id="button"> Start Debug Log</a></li>
+        %endif
+        </ul>
+    </div>
 </%def>
 <%def name="body()">
 <BR><BR>
@@ -95,23 +95,23 @@
 
     });
     </script>
-	<script>
-		var timer;
-		function setRefresh()
-		{
-			refreshrate = document.getElementById('refreshrate');
-			if(refreshrate != null)
-			{
-				if(timer)
-				{
-					clearInterval(timer);
-				}
-				if(refreshrate.value != 0)
-				{
-					timer = setInterval("$('#log_table').dataTable().fnDraw()",1000*refreshrate.value);
-				}
-			}
-		}
-	</script>
+    <script>
+        var timer;
+        function setRefresh()
+        {
+            refreshrate = document.getElementById('refreshrate');
+            if(refreshrate != null)
+            {
+                if(timer)
+                {
+                    clearInterval(timer);
+                }
+                if(refreshrate.value != 0)
+                {
+                    timer = setInterval("$('#log_table').dataTable().fnDraw()",1000*refreshrate.value);
+                }
+            }
+        }
+    </script>
 
 </%def>
