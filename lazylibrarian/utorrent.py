@@ -147,10 +147,7 @@ class utorrentclient(object):
         url = self.base_url + '/gui/' + '?token=' + self.token + '&' + urllib.urlencode(params)
         request = urllib2.Request(url)
         if lazylibrarian.CONFIG['PROXY_HOST']:
-            proxy_type = lazylibrarian.CONFIG['PROXY_TYPE']
-            proxy_type = proxy_type.lower() + ':'
-            if url.lower().startswith(proxy_type):
-                request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])
+            request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])
         request.add_header('User-Agent', USER_AGENT)
 
         if body:

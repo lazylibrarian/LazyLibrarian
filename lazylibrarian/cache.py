@@ -32,10 +32,7 @@ def fetchURL(URL, headers=None, retry=True):
         Allow one retry on timeout by default"""
     request = urllib2.Request(URL)
     if lazylibrarian.CONFIG['PROXY_HOST']:
-        proxy_type = lazylibrarian.CONFIG['PROXY_TYPE']
-        proxy_type = proxy_type.lower() + ':'
-        if URL.lower().startswith(proxy_type):
-            request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])
+        request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])
     if headers is None:
         # some sites insist on having a user-agent, default is to add one
         # if you don't want any headers, send headers=[]
