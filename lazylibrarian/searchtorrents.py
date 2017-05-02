@@ -256,7 +256,10 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
 
     request = urllib2.Request(ur'%s' % tor_url)
     if lazylibrarian.CONFIG['PROXY_HOST']:
-        request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])
+        proxy_type = lazylibrarian.CONFIG['PROXY_TYPE']
+        proxy_type = proxy_type.lower() + ':'
+        if tor_url.lower().startswith(proxy_type):
+            request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])
     request.add_header('Accept-encoding', 'gzip')
     request.add_header('User-Agent', USER_AGENT)
 
@@ -339,7 +342,10 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None):
 
         request = urllib2.Request(ur'%s' % tor_url)
         if lazylibrarian.CONFIG['PROXY_HOST']:
-            request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])
+            proxy_type = lazylibrarian.CONFIG['PROXY_TYPE']
+            proxy_type = proxy_type.lower() + ':'
+            if tor_url.lower().startswith(proxy_type):
+                request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])
         request.add_header('Accept-encoding', 'gzip')
         request.add_header('User-Agent', USER_AGENT)
 
