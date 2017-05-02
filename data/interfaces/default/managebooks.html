@@ -6,18 +6,18 @@
 <%def name="headerIncludes()">
     <div id="subhead_container">
         <ul id="subhead_menu">
-        <li><a href="importAlternate" id="button"> Import Book </a></li>
-        <li><a href="importCSV" id="button"> Import CSV Wishlist </a></li>
-        <li><a href="exportCSV" id="button"> Export CSV Wishlist </a></li>
+            <li><a href="importAlternate" id="button"> Import Book </a></li>
+            <li><a href="importCSV" id="button"> Import CSV Wishlist </a></li>
+            <li><a href="exportCSV" id="button"> Export CSV Wishlist </a></li>
         </ul>
     </div>
 </%def>
 
 <%def name="body()">
 <BR><BR>
-<h1>&nbsp&nbsp${title}</h1><br>
+<h1>&nbsp;&nbsp;${title}</h1><br>
     <form action="manage" method="get">
-        <label>&nbsp&nbspBooks with status: </label>
+        <label>&nbsp;&nbsp;Books with status: </label>
         <select name="whichStatus">
         %for item in ['Skipped', 'Wanted', 'Open', 'Have', 'Ignored']:
             <option value="${item}"
@@ -45,7 +45,7 @@
         </thead>
     </table>
     <p>
-    &nbsp&nbspChange selected books to:
+    &nbsp;&nbsp;Change selected books to:
     <select class="markBooks" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
         %for item in ['Skipped', 'Wanted', 'Have', 'Ignored']:
             <option value="${item}">${item}</option>

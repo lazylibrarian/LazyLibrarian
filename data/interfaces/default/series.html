@@ -14,10 +14,10 @@
 
 <%def name="body()">
 <BR><BR>
-<h1>&nbsp&nbsp${title}</h1>
+<h1>&nbsp;&nbsp;${title}</h1>
     <p class="indented">
     <form action="series" method="get">
-        <label>&nbsp&nbspSeries with status: </label>
+        <label>&nbsp;&nbsp;Series with status: </label>
         <select name="whichStatus">
         %for item in ['All', 'Skipped', 'Wanted', 'Active', 'Ignored']:
             <option value="${item}"
@@ -44,7 +44,7 @@
             </thead>
         </table>
         <p>
-        &nbsp&nbspChange selected series to:
+        &nbsp;&nbsp;Change selected series to:
         <select class="markSeries" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
             %for item in ['Skipped', 'Wanted', 'Active', 'Ignored']:
                 <option value="${item}">${item}</option>
