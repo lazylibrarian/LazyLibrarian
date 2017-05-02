@@ -16,14 +16,14 @@
 <%def name="body()">
 <BR><BR>
 %if multi == "True":
-    <h1>&nbsp&nbsp${title}</h1>
+    <h1>&nbsp;&nbsp;${title}</h1>
 %else:
-    <h1>&nbsp&nbsp${series['AuthorName']} : ${title}</h1>
+    <h1>&nbsp;&nbsp;${series['AuthorName']} : ${title}</h1>
 %endif
 <form action="markBooks" method="get">
     <input type="hidden" name="redirect" value="members">
     <input type="hidden" name="seriesid" value="${series['SeriesID']}">
-    <label>&nbsp&nbspMark selected as: </label>
+    <label>&nbsp;&nbsp;Mark selected as: </label>
     <select class="markBooks" name="action" id="action">
         %for item in ["Wanted", "Have", "Ignored", "Skipped", "Remove", "Delete"]:
             <option value="${item}"

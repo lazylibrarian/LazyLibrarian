@@ -315,7 +315,7 @@ class GoodReads:
                                     isbn = book.find('isbn13').text
                                     isbnhead = isbn[3:6]
                             # Try to use shortcut of ISBN identifier codes described here...
-                            # https://en.wikipedia.org/wiki/List_of_ISBN_identifier_groups
+                            # http://en.wikipedia.org/wiki/List_of_ISBN_identifier_groups
                             if isbnhead:
                                 if find_field == "isbn13" and isbn.startswith('979'):
                                     for item in lazylibrarian.isbn_979_dict:
@@ -669,7 +669,7 @@ class GoodReads:
     def find_book(self, bookid=None, queue=None):
         myDB = database.DBConnection()
 
-        URL = 'https://www.goodreads.com/book/show/' + bookid + '?' + urllib.urlencode(self.params)
+        URL = 'http://www.goodreads.com/book/show/' + bookid + '?' + urllib.urlencode(self.params)
 
         try:
             rootxml, in_cache = get_xml_request(URL)

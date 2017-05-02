@@ -10,19 +10,19 @@
             <li><a href="forceProcess?source=magazines" id="button"> Force Post-Processing </a></li>
             <li><a href="magazineScan" id="button"> Library Scan </a></li>
             <li><a href="pastIssues?whichStatus="Skipped" id="button"> Past Issues </a></li>
-        </ul>F
+        </ul>
     </div>
 </%def>
 
 <%def name="body()">
 <br><br>
-    <h1>&nbsp&nbsp${title}</h1>
+    <h1>&nbsp;&nbsp;${title}</h1>
     <p class="indented">
         <form action="markIssues" method="get">
             <select name="action" id="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
                   <option value="Remove" selected>Remove</option>
                   <option value="Delete">Delete</option>
-                  <option value="Leave" hidden>Leave</option>
+                  <option value="Leave" class="hidden">Leave</option>
             </select>
         <input type="submit" id="go" value="Go">
     </p>

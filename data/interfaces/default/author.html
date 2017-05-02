@@ -25,7 +25,7 @@
             <li><a name="seriesbutton" href="series?AuthorID=${author['AuthorID']}" id="button"> Series </a></li>
             %endif
             %if len(languages) >= 1:
-                <li>Language:&nbsp</li>
+                <li>Language:&nbsp;</li>
 
                 <li><select onchange="window.location = 'authorPage?AuthorID=${author['AuthorID']}&BookLang=' + this.options[this.selectedIndex].value">
                     <option>Select</option>
@@ -85,23 +85,24 @@
                     totalbooks = '0'
                     css = "<div class=\"progress-container danger\" style=\"width:150px;\">"
             %>
-            <span title="${percent}"></span>${css}
-            <div style="width:${percent}%"><span class="progressbar-front-text">${havebooks}/${totalbooks}</span></div></div>
-
+            <span title="${percent}">${css}</span>
+            <div style="width:${percent}%"><span class="progressbar-front-text">${havebooks}/${totalbooks}</span></div>
+        </ul>
     </div>
     <p class="indented">
         <form action="markBooks" method="get"><input type="hidden" name="AuthorID" value="${author['AuthorID']}">
             <input type="hidden" name="redirect" value="author">
             <input type="hidden" name="booklang" value="booklang">
             <input type="hidden" name="ignored" value="ignored">
-            <select class="markBooks" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
+            <label>&nbsp;&nbsp;Mark selected books as: </label>
+            <select class="markBooks" name="action" style="margin-top:15px;margin-bottom:15px;">
                 <option value="Wanted">Wanted</option>
                 <option value="Have">Have</option>
                 <option value="Ignored">Ignored</option>
                 <option value="Skipped">Skipped</option>
                 <option value="Remove">Remove</option>
                 <option value="Delete">Delete</option>
-                <option value="Leave" hidden>Leave</option>
+                <option value="Leave" class="hidden">Leave</option>
             </select>
         <input type="submit" class="markBooks" value="Go">
     </p>
@@ -112,7 +113,7 @@
                 <th id="bookart">Cover</th>
                 <th id="authorname" class="hidden">Title</th>
                 <th id="bookname">Title</th>
-		        <th id="series">Series</th>
+                <th id="series">Series</th>
                 <th id="stars">Rating</th>
                 <th id="date">Released</th>
                 <th id="status">Status</th>
@@ -202,7 +203,7 @@
                     return nRow;
                 },
             });
-		$('.dataTables_filter input').attr("placeholder", "Search table here");
+        $('.dataTables_filter input').attr("placeholder", "Search table here");
         $(window).resize(function() {oTable.fnDraw(false)});
     });
     </script>

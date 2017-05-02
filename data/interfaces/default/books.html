@@ -9,7 +9,7 @@
             <li ><a id="button" href="forceSearch?source=books">Force Search</a></li>
             <li ><a id="button" href="forceProcess?source=books">Force Post-Processing</a></li>
             %if len(languages) >= 1:
-                <li>Language:&nbsp</li>
+                <li>Language:&nbsp;</li>
 
                 <li><select onchange="window.location = 'books?BookLang=' + this.options[this.selectedIndex].value">
                     <option>Select</option>
@@ -24,11 +24,11 @@
 
 <%def name="body()">
 <BR><BR>
-<h1>&nbsp&nbsp${title}</h1>
+<h1>&nbsp;&nbsp;${title}</h1>
 <p class="indented">
 <input type="hidden" name="booklang" value="booklang">
 <form action="markBooks" method="get">
-    <label>&nbsp&nbspMark selected books as: </label>
+    <label>&nbsp;&nbsp;Mark selected books as: </label>
     <select class="markBooks" name="action" id="action">
         <option value="Wanted">Wanted</option>
         <option value="Have">Have</option>
@@ -36,7 +36,7 @@
         <option value="Skipped">Skipped</option>
         <option value="Remove">Remove</option>
         <option value="Delete">Delete</option>
-        <option value="Leave" hidden>Leave</option>
+        <option value="Leave" class="hidden">Leave</option>
     </select>
     <input type="submit" class="markBooks" id="go" value="Go">
     <br><br>

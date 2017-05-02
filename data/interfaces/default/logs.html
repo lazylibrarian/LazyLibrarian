@@ -5,18 +5,18 @@
 <%def name="headerIncludes()">
     <div id="subhead_container">
         <ul id="subhead_menu">
-        <li><a href="clearLog" id="button"> Clear Log </a></li>
-        %if lazylibrarian.LOGFULL == True:
-            <li><a href="toggleLog" id="button"> Stop Debug Log</a></li>
-        %else:
-            <li><a href="toggleLog" id="button"> Start Debug Log</a></li>
-        %endif
+            <li><a href="clearLog" id="button"> Clear Log </a></li>
+            %if lazylibrarian.LOGFULL == True:
+                <li><a href="toggleLog" id="button"> Stop Debug Log</a></li>
+            %else:
+                <li><a href="toggleLog" id="button"> Start Debug Log</a></li>
+            %endif
         </ul>
     </div>
 </%def>
 <%def name="body()">
 <BR><BR>
-<h1>&nbsp&nbsp${title}</h1>
+<h1>&nbsp;&nbsp;${title}</h1>
     <div align="center">Refresh rate:
     <select id="refreshrate" onchange="setRefresh()">
         <option value="0" selected="selected">No Refresh</option>
