@@ -137,11 +137,15 @@ def get_cached_request(url, useCache=True, cache="XML"):
         elif cache == "XML":
             with open(hashfilename, "r") as cachefile:
                 result = cachefile.read()
-            try:
-                source = ElementTree.fromstring(result)
-            except Exception as e:
-                logger.warn(u"Error parsing xml from %s" % hashfilename)
+            if result and result.startswith('<?xml'):
+                try:
+                    source = ElementTree.fromstring(result)
+                except Exception as e:
+                    source = None
+            if source is None:
+                logger.warn(u"Error reading xml from %s" % hashfilename)
                 logger.debug(u"%s : %s" % (e, result))
+                os.remove(hashfilename)
                 return None, False
     else:
         lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
@@ -157,14 +161,17 @@ def get_cached_request(url, useCache=True, cache="XML"):
                     return None, False
                 json.dump(source, open(hashfilename, "w"))
             elif cache == "XML":
-                with open(hashfilename, "w") as cachefile:
-                    cachefile.write(result)
-                try:
-                    source = ElementTree.fromstring(result)
-                except Exception as e:
+                if result and result.startswith('<?xml'):
+                    try:
+                        source = ElementTree.fromstring(result)
+                    except Exception as e:
+                        source = None
+                if source is not None:
+                    with open(hashfilename, "w") as cachefile:
+                        cachefile.write(result)
+                else:
                     logger.warn(u"Error parsing xml from %s" % url)
                     logger.debug(u"%s : %s" % (e, result))
-                    os.remove(hashfilename)
                     return None, False
         else:
             logger.warn(u"Got error response for %s: %s" % (url, result))
