@@ -126,6 +126,8 @@
                 "bFilter": true,
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     $(nRow).addClass("gradeZ");
+                    $('td', nRow).eq(0).addClass('center');
+                    $('td', nRow).eq(1).addClass('center');
                     $('td', nRow).eq(5).addClass('center');
                     $('td', nRow).eq(6).addClass('center');
                     $('td', nRow).eq(7).addClass('center');
