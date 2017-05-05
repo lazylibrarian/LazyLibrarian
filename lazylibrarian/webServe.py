@@ -709,36 +709,7 @@ class WebInterface(object):
                 title = title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage
 
                 # for each Row use a separate list
-                l = [row[6], row[0], row[1], title, row[12], starimg, row[4]]
-                # Do not show status column in MANAGE page as we are only showing one status
-                if not kwargs['source'] == "Manage":
-                    if lazylibrarian.CONFIG['HTTP_LOOK'] == 'bookstrap':
-                        if row[5] == 'Open':
-                            btn = '<a class="button green btn btn-xs btn-warning" href="openBook?bookid=%s' % row[6]
-                            btn += '" target="_self"><i class="fa fa-book"></i>%s</a>' % row[5]
-                        elif row[5] == 'Wanted':
-                            btn = '<p><a class="a btn btn-xs btn-danger">%s' % row[5]
-                            btn += '</a></p><p><a class="b btn btn-xs btn-success" '
-                            btn += 'href="searchForBook?bookid=%s' % row[6]
-                            btn += '" target="_self"><i class="fa fa-search"></i> Search</a></p>'
-                        elif row[5] == 'Snatched' or row[5] == 'Have':
-                            btn = '<a class="button btn btn-xs btn-info">%s</a>' % row[5]
-                        else:
-                            btn = '<a class="button btn btn-xs btn-default grey">%s</a>' % row[5]
-
-                    else:
-                        if row[5] == 'Open':
-                            btn = '<a class="button green" href="openBook?bookid=%s" target="_self">Open</a>' % row[6]
-                        elif row[5] == 'Wanted':
-                            btn = '<a class="button red" href="searchForBook?bookid=%s' % row[6]
-                            btn += '" target="_self"><span class="a">Wanted</span><span class="b">Search</span></a>'
-                        elif row[5] == 'Snatched' or row[5] == 'Have':
-                            btn = '<a class="button">%s</a>' % row[5]
-                        else:
-                            btn = '<a class="button grey">%s</a>' % row[5]
-                    l.append(btn)
-                l.append(row[11])  # add authorid for xref
-                d.append(l)  # add the rowlist to the masterlist
+                d.append([row[6], row[0], row[1], title, row[12], starimg, row[4], row[5], row[11], row[6]])
             rows = d
 
         mydict = {'iTotalDisplayRecords': len(filtered),

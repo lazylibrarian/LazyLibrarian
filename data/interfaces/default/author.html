@@ -164,7 +164,22 @@
                       }
                     },
                     null,
-                    null
+                    { "fnRender": function ( oObj ) {
+                        var btn = oObj.aData[7]
+                        if ( btn == 'Open' ) {
+                            btn = '<a class="button green" href="openBook?bookid=' + oObj.aData[9] + '" target="_self">Open</a>'}
+                        else if ( btn == 'Wanted' ) {
+                            btn = '<a class="button red" href="searchForBook?bookid=' + oObj.aData[9] +
+                                    '" target="_self"><span class="a">Wanted</span><span class="b">Search</span></a>'}
+                        else if ( btn == 'Snatched' ) {
+                            btn = '<a class="button">' + oObj.aData[9] + '</a>'}
+                        else if ( btn == 'Have' ) {
+                            btn = '<a class="button">' + oObj.aData[9] + '</a>'}
+                        else {
+                            btn = '<a class="button grey">' + oObj.aData[9] + '</a>'}
+                        return btn
+                      }
+                    }
                     ],
                 "order": [[ 6, 'desc']],
                 "oLanguage": {
