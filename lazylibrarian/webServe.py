@@ -678,21 +678,9 @@ class WebInterface(object):
             for row in rows:
                 worklink = ''
                 sitelink = ''
-                bookrate = float(row[3])
-                if bookrate < 0.5:
-                    starimg = '0-stars.png'
-                elif 0.5 <= bookrate < 1.5:
-                    starimg = '1-stars.png'
-                elif 1.5 <= bookrate < 2.5:
-                    starimg = '2-stars.png'
-                elif 2.5 <= bookrate < 3.5:
-                    starimg = '3-stars.png'
-                elif 3.5 <= bookrate < 4.5:
-                    starimg = '4-stars.png'
-                elif bookrate >= 4.5:
-                    starimg = '5-stars.png'
-                else:
-                    starimg = '0-stars.png'
+                bookrate = int(round(float(row[3])))
+                if bookrate > 5:
+                    bookrate = 5
 
                 if row[10] and len(row[10]) > 4:  # is there a workpage link
                     worklink = '<a href="' + row[10] + '" target="_new"><small><i>LibraryThing</i></small></a>'
@@ -708,8 +696,8 @@ class WebInterface(object):
                     title = row[2]
                 title = title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage
 
-                # for each Row use a separate list
-                d.append([row[6], row[0], row[1], title, row[12], starimg, row[4], row[5], row[11], row[6]])
+                # Need to pass bookid row[6] twice as datatables modifies first one
+                d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[5], row[11], row[6]])
             rows = d
 
         mydict = {'iTotalDisplayRecords': len(filtered),
