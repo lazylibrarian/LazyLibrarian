@@ -27,7 +27,7 @@ import webbrowser
 
 import cherrypy
 from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, \
-    librarysync, versioncheck, database, searchmag, magazinescan, bookwork
+    librarysync, versioncheck, database, searchmag, magazinescan, bookwork, importer
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import restartJobs
 from lazylibrarian.formatter import getList, bookSeries, plural, unaccented
@@ -104,6 +104,8 @@ isbn_978_dict = {
 # Not all are accessible from the web ui
 # Any undefined on startup will be set to the default value
 # Any _NOT_ in the web ui will remain unchanged on config save
+CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION',
+                 'CURRENT_VERSION', 'COMMITS_BEHIND', 'INSTALL_TYPE', 'DIR_PERM', 'FILE_PERM']
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
     'LOGDIR': ('str', 'General', ''),
@@ -128,6 +130,8 @@ CONFIG_DEFINITIONS = {
     'HTTPS_KEY': ('str', 'General', ''),
     'BOOKSTRAP_THEME': ('str', 'General', 'slate'),
     'MAG_SINGLE': ('bool', 'General', 1),
+    'AUTHOR_IMG': ('bool', 'General', 1),
+    'BOOK_IMG': ('bool', 'General', 1),
     'LAUNCH_BROWSER': ('bool', 'General', 1),
     'API_ENABLED': ('bool', 'General', 0),
     'API_KEY': ('str', 'General', ''),
@@ -370,7 +374,8 @@ def initialize():
     global FULL_PATH, PROG_DIR, ARGS, DAEMON, SIGNAL, PIDFILE, DATADIR, CONFIGFILE, SYS_ENCODING, LOGLEVEL, \
         CONFIG, CFG, DBFILE, COMMIT_LIST, SCHED, INIT_LOCK, __INITIALIZED__, started, LOGLIST, LOGFULL, \
         UPDATE_MSG, CURRENT_TAB, CACHE_HIT, CACHE_MISS, LAST_LIBRARYTHING, LAST_GOODREADS, SHOW_SERIES, \
-        SHOW_MAGS, CACHEDIR, BOOKSTRAP_THEMELIST, MONTHNAMES, CONFIG_DEFINITIONS, isbn_979_dict, isbn_978_dict
+        SHOW_MAGS, CACHEDIR, BOOKSTRAP_THEMELIST, MONTHNAMES, CONFIG_DEFINITIONS, isbn_979_dict, isbn_978_dict, \
+        CONFIG_NONWEB
 
     with INIT_LOCK:
 
@@ -450,7 +455,7 @@ def initialize():
 
 
 def config_read(reloaded=False):
-    global CONFIG, CONFIG_DEFINITIONS, NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, SHOW_SERIES, SHOW_MAGS
+    global CONFIG, CONFIG_DEFINITIONS, CONFIG_NONWEB, NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, SHOW_SERIES, SHOW_MAGS
 
     # legacy name conversions, separate out host/port
     for provider in ['NZBGet', 'UTORRENT', 'QBITTORRENT', 'TRANSMISSION']:
@@ -996,7 +1001,7 @@ def launch_browser(host, port, root):
         logger.error('Could not launch browser: %s' % str(e))
 
 def start():
-    global __INITIALIZED__, started
+    global __INITIALIZED__, started, SHOW_SERIES, SHOW_MAGS
 
     if __INITIALIZED__:
         # Crons and scheduled jobs started here

@@ -21,7 +21,7 @@ import urllib2
 
 import lazylibrarian
 from lazylibrarian import logger
-from lazylibrarian.formatter import check_int
+from lazylibrarian.formatter import check_int, unaccented_str
 
 
 def checkLink():
@@ -144,10 +144,12 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
         return False
 
     logger.debug("Result text from SAB: " + str(result))
-    if title and (title.startswith('Test') or title.startswith('Delete')):
-        return result
+    if title:
+        title = unaccented_str(title)
+        if title.startswith('Test') or title.startswith('Delete'):
+            return result
     elif result['status'] is True:
-        logger.info(title + " sent to SAB successfully.")
+        logger.info("%s sent to SAB successfully." % title)
         # sab versions earlier than 0.8.0 don't return nzo_ids
         if 'nzo_ids' in result:
             if result['nzo_ids']:  # check its not empty

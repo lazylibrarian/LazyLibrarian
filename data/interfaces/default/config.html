@@ -133,6 +133,25 @@
                             <br><small>Current API key: <strong>${lazylibrarian.CONFIG['API_KEY']}</strong></small>
                         </div>
                     </fieldset>
+                    <h5>Appearance</h5>
+                    <%
+                        if lazylibrarian.CONFIG['AUTHOR_IMG'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <input type="checkbox" name="author_img" value=1 ${checked} />
+                    <label>  Show Author Images</label>
+                    <br>
+                    <%
+                        if lazylibrarian.CONFIG['BOOK_IMG'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <input type="checkbox" name="book_img" value=1 ${checked} />
+                    <label>  Show Book Images</label>
+                    <br>
                     <h5>Interface: <select name="http_look" style="float:right;"></h5>
                     %for http_look in config['http_look_list']:
                         <%

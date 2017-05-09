@@ -130,9 +130,8 @@ def get_cached_request(url, useCache=True, cache="XML"):
         if cache == "JSON":
             try:
                 source = json.load(open(hashfilename))
-            except Exception as e:
+            except Exception:
                 logger.warn(u"Error decoding json from %s" % hashfilename)
-                logger.debug(u"%s : %s" % (e, result))
                 return None, False
         elif cache == "XML":
             with open(hashfilename, "r") as cachefile:
@@ -140,11 +139,10 @@ def get_cached_request(url, useCache=True, cache="XML"):
             if result and result.startswith('<?xml'):
                 try:
                     source = ElementTree.fromstring(result)
-                except Exception as e:
+                except Exception:
                     source = None
             if source is None:
                 logger.warn(u"Error reading xml from %s" % hashfilename)
-                logger.debug(u"%s : %s" % (e, result))
                 os.remove(hashfilename)
                 return None, False
     else:
@@ -164,14 +162,14 @@ def get_cached_request(url, useCache=True, cache="XML"):
                 if result and result.startswith('<?xml'):
                     try:
                         source = ElementTree.fromstring(result)
-                    except Exception as e:
+                    except Exception:
+                        logger.warn(u"Error parsing xml from %s" % url)
                         source = None
                 if source is not None:
                     with open(hashfilename, "w") as cachefile:
                         cachefile.write(result)
                 else:
-                    logger.warn(u"Error parsing xml from %s" % url)
-                    logger.debug(u"%s : %s" % (e, result))
+                    logger.warn(u"Error getting xml data from %s" % url)
                     return None, False
         else:
             logger.warn(u"Got error response for %s: %s" % (url, result))

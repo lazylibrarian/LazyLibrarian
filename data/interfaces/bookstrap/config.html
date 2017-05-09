@@ -176,6 +176,28 @@
                                     </fieldset>
                                     <fieldset>
                                         <legend>Appearance</legend>
+                                        <div class="checkbox">
+                                            <%
+                                                if lazylibrarian.CONFIG['AUTHOR_IMG'] == True:
+                                                    checked = 'checked="checked"'
+                                                else:
+                                                    checked = ''
+                                            %>
+                                            <label for="author_img" class="control-label">
+                                            <input type="checkbox" id="author_img" name="author_img" value="1" ${checked} />
+                                            Show Author Images</label>
+                                        </div>
+                                        <div class="checkbox">
+                                            <%
+                                                if lazylibrarian.CONFIG['BOOK_IMG'] == True:
+                                                    checked = 'checked="checked"'
+                                                else:
+                                                    checked = ''
+                                            %>
+                                            <label for="book_img" class="control-label">
+                                            <input type="checkbox" id="book_img" name="book_img" value="1" ${checked} />
+                                            Show Book Images</label>
+                                        </div>
                                         <div class="form-group">
                                             <label for="http_look">Interface:</label>
                                             <select id="http_look" name="http_look" class="form-control">

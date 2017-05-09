@@ -50,10 +50,16 @@
         <p>&nbsp;</p>
         <div class="table-responsive">
         <table class="display table table-striped table-hover table-bordered" id="book_table">
+            <%
+            if lazylibrarian.CONFIG['BOOK_IMG'] == True:
+                hidden = ''
+            else:
+                hidden = 'hidden'
+            %>
             <thead>
                 <tr>
                     <th class="select no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
-                    <th class="bookart text-center no-sort hidden-xs">Cover</th>
+                    <th class="bookart text-center no-sort hidden-xs ${hidden}">Cover</th>
                     <th class="authorname">Author</th>
                     <th class="bookname">Title</th>
                     <th class="series">Series</th>
@@ -134,6 +140,11 @@
             "sAjaxSource": 'getBooks?source=Books&booklang=${booklang}',
             "bFilter": true,
             "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                var show = ${lazylibrarian.CONFIG['BOOK_IMG']};
+                if ( show != '1' )
+                {
+                    $('td', nRow).eq(1).addClass('hidden');
+                }
                 $('td', nRow).eq(5).addClass('text-center');
                 $('td', nRow).eq(6).addClass('text-center');
                 $('td', nRow).eq(7).addClass('text-center');

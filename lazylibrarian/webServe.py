@@ -282,9 +282,7 @@ class WebInterface(object):
                     lazylibrarian.CONFIG[key] = 0
                 else:
                     # or for strings not available in config html page
-                    if key not in ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'GIT_REPO', 'GIT_USER', 'GIT_BRANCH',
-                                    'LATEST_VERSION', 'CURRENT_VERSION', 'COMMITS_BEHIND', 'INSTALL_TYPE',
-                                    'DIR_PERM', 'FILE_PERM']:
+                    if key not in lazylibrarian.CONFIG_NONWEB:
                         # or for an empty string
                         lazylibrarian.CONFIG[key] = ''
 
@@ -715,6 +713,8 @@ class WebInterface(object):
         """
         Sort the list into natural alphanumeric order.
         """
+
+        # noinspection PyShadowingNames
         def get_alphanum_key_func(key):
             convert = lambda text: int(text) if text.isdigit() else text
             return lambda s: [convert(c) for c in re.split('([0-9]+)', key(s))]
