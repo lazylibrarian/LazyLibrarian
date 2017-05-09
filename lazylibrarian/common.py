@@ -17,10 +17,14 @@ import os
 import platform
 import shutil
 import time
+import datetime
+import traceback
+import threading
+import urllib2
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.formatter import plural, next_run, is_valid_booktype
+from lazylibrarian.formatter import plural, next_run, is_valid_booktype, datecompare, getList
 
 USER_AGENT = 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
 # Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36
@@ -32,6 +36,39 @@ NOTIFY_DOWNLOAD = 2
 notifyStrings = {NOTIFY_SNATCH: "Started Download", NOTIFY_DOWNLOAD: "Added to Library"}
 
 
+def formatAuthorName(author):
+    """ get authorame in a consistent format """
+
+    if "," in author:
+        postfix = getList(lazylibrarian.CONFIG['NAME_POSTFIX'])
+        words = author.split(',')
+        if len(words) == 2:
+            # Need to handle names like "L. E. Modesitt, Jr." or "J. Springmann, Phd"
+            # use an exceptions list for now, there might be a better way...
+            if words[1].strip().strip('.').strip('_').lower() in postfix:
+                surname = words[1].strip()
+                forename = words[0].strip()
+            else:
+                # guess its "surname, forename" or "surname, initial(s)" so swap them round
+                forename = words[1].strip()
+                surname = words[0].strip()
+            if author != forename + ' ' + surname:
+                logger.debug('Formatted authorname [%s] to [%s %s]' % (author, forename, surname))
+                author = forename + ' ' + surname
+    # reformat any initials, we want to end up with L.E. Modesitt Jr
+    if len(author) > 2 and author[1] in '. ':
+        surname = author
+        forename = ''
+        while len(surname) > 2 and surname[1] in '. ':
+            forename = forename + surname[0] + '.'
+            surname = surname[2:].strip()
+        if author != forename + ' ' + surname:
+            logger.debug('Stripped authorname [%s] to [%s %s]' % (author, forename, surname))
+            author = forename + ' ' + surname
+
+    return ' '.join(author.split())  # ensure no extra whitespace
+
+
 def setperm(file_or_dir):
     """
     Force newly created directories to rwxr-xr-x and files to rw-r--r--
@@ -40,16 +77,27 @@ def setperm(file_or_dir):
         return
 
     if os.path.isdir(file_or_dir):
-        perm = 0o755
+        value = lazylibrarian.CONFIG['DIR_PERM']
+        if value and value.startswith('0o') and len(value) == 5:
+            perm = int(value, 8)
+        else:
+            perm = 0o755
+            value = '0o755'
     elif os.path.isfile(file_or_dir):
-        perm = 0o644
+        value = lazylibrarian.CONFIG['FILE_PERM']
+        if value and value.startswith('0o') and len(value) == 5:
+            perm = int(lazylibrarian.CONFIG['FILE_PERM'], 8)
+        else:
+            perm = 0o644
+            value = '0o644'
     else:
         return False
     try:
         os.chmod(file_or_dir, perm)
         return True
-    except:
-        #  logger.debug("Failed to set permission %s for %s" % (perm, file_or_dir))
+    except Exception as e:
+        if int(lazylibrarian.LOGLEVEL) > 2:
+            logger.debug("Failed to set permission %s for %s : %s" % (value, file_or_dir, str(e)))
         return False
 
 
@@ -112,41 +160,100 @@ def scheduleJob(action='Start', target=None):
             if target in str(job):
                 logger.debug("%s %s job, already scheduled" % (action, target))
                 return  # return if already running, if not, start a new one
-        if 'processDir' in target and int(lazylibrarian.SCAN_INTERVAL):
+        if 'processDir' in target and int(lazylibrarian.CONFIG['SCAN_INTERVAL']):
             lazylibrarian.SCHED.add_interval_job(
                 lazylibrarian.postprocess.cron_processDir,
-                minutes=int(lazylibrarian.SCAN_INTERVAL))
-            logger.debug("%s %s job" % (action, target))
-        elif 'search_magazines' in target and int(lazylibrarian.SEARCH_INTERVAL):
+                minutes=int(lazylibrarian.CONFIG['SCAN_INTERVAL']))
+            logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SCAN_INTERVAL']))
+        elif 'search_magazines' in target and int(lazylibrarian.CONFIG['SEARCH_INTERVAL']):
             if lazylibrarian.USE_TOR() or lazylibrarian.USE_NZB() or lazylibrarian.USE_RSS():
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchmag.cron_search_magazines,
-                    minutes=int(lazylibrarian.SEARCH_INTERVAL))
-                logger.debug("%s %s job" % (action, target))
-        elif 'search_nzb_book' in target and int(lazylibrarian.SEARCH_INTERVAL):
+                    minutes=int(lazylibrarian.CONFIG['SEARCH_INTERVAL']))
+                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SEARCH_INTERVAL']))
+        elif 'search_nzb_book' in target and int(lazylibrarian.CONFIG['SEARCH_INTERVAL']):
             if lazylibrarian.USE_NZB():
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchnzb.cron_search_nzb_book,
-                    minutes=int(lazylibrarian.SEARCH_INTERVAL))
-                logger.debug("%s %s job" % (action, target))
-        elif 'search_tor_book' in target and int(lazylibrarian.SEARCH_INTERVAL):
+                    minutes=int(lazylibrarian.CONFIG['SEARCH_INTERVAL']))
+                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SEARCH_INTERVAL']))
+        elif 'search_tor_book' in target and int(lazylibrarian.CONFIG['SEARCH_INTERVAL']):
             if lazylibrarian.USE_TOR():
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchtorrents.cron_search_tor_book,
-                    minutes=int(lazylibrarian.SEARCH_INTERVAL))
-                logger.debug("%s %s job" % (action, target))
-        elif 'search_rss_book' in target and int(lazylibrarian.SEARCHRSS_INTERVAL):
+                    minutes=int(lazylibrarian.CONFIG['SEARCH_INTERVAL']))
+                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SEARCH_INTERVAL']))
+        elif 'search_rss_book' in target and int(lazylibrarian.CONFIG['SEARCHRSS_INTERVAL']):
             if lazylibrarian.USE_RSS():
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchrss.search_rss_book,
-                    minutes=int(lazylibrarian.SEARCHRSS_INTERVAL))
-                logger.debug("%s %s job" % (action, target))
-        elif 'checkForUpdates' in target and int(lazylibrarian.VERSIONCHECK_INTERVAL):
+                    minutes=int(lazylibrarian.CONFIG['SEARCHRSS_INTERVAL']))
+                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SEARCHRSS_INTERVAL']))
+        elif 'checkForUpdates' in target and int(lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL']):
             lazylibrarian.SCHED.add_interval_job(
                 lazylibrarian.versioncheck.checkForUpdates,
-                hours=int(lazylibrarian.VERSIONCHECK_INTERVAL))
-            logger.debug("%s %s job" % (action, target))
+                hours=int(lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL']))
+            logger.debug("%s %s job in %s hours" % (action, target, lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL']))
+        elif 'authorUpdate' in target and int(lazylibrarian.CONFIG['CACHE_AGE']):
+            # Try to get all authors scanned evenly inside the cache age
+            minutes = lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60
+            myDB = database.DBConnection()
+            authors = myDB.match(
+                "select count('AuthorID') as counter from Authors where Status='Active' or Status='Loading'")
+            authcount = authors['counter']
+            if not authcount:
+                minutes = 60
+            else:
+                minutes = int(minutes / authcount)
+            if minutes < 10:  # set a minimum interval of 10 minutes so we don't upset goodreads/librarything api
+                minutes = 10
+            if minutes <= 600:  # for bigger intervals switch to hours
+                lazylibrarian.SCHED.add_interval_job(authorUpdate, minutes=minutes)
+                logger.debug("%s %s job in %s minutes" % (action, target, minutes))
+            else:
+                hours = int(minutes / 60)
+                lazylibrarian.SCHED.add_interval_job(authorUpdate, hours=hours)
+                logger.debug("%s %s job in %s hours" % (action, target, hours))
 
+
+def authorUpdate():
+    threadname = threading.currentThread().name
+    if "Thread-" in threadname:
+        threading.currentThread().name = "AUTHORUPDATE"
+    try:
+        myDB = database.DBConnection()
+        cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" order by DateAdded ASC'
+        author = myDB.match(cmd)
+        if author and int(lazylibrarian.CONFIG['CACHE_AGE']):
+            dtnow = datetime.datetime.now()
+            diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
+            if diff > int(lazylibrarian.CONFIG['CACHE_AGE']):
+                logger.info('Starting update for %s' % author['AuthorName'])
+                authorid = author['AuthorID']
+                # noinspection PyUnresolvedReferences
+                lazylibrarian.importer.addAuthorToDB(refresh=True, authorid=authorid)
+            else:
+                logger.debug('Oldest author info is %s day%s old' % (diff, plural(diff)))
+    except Exception:
+        logger.error('Unhandled exception in AuthorUpdate: %s' % traceback.format_exc())
+
+
+def dbUpdate(refresh=False):
+    try:
+        myDB = database.DBConnection()
+        cmd = 'SELECT AuthorID from authors WHERE Status="Active" or Status="Loading" order by DateAdded ASC'
+        activeauthors = myDB.select(cmd)
+        logger.info('Starting update for %i active author%s' % (len(activeauthors), plural(len(activeauthors))))
+        for author in activeauthors:
+            authorid = author['AuthorID']
+            # noinspection PyUnresolvedReferences
+            lazylibrarian.importer.addAuthorToDB(refresh=refresh, authorid=authorid)
+        logger.info('Active author update complete')
+        return 'Updated %i active author%s' % (len(activeauthors), plural(len(activeauthors)))
+    except Exception:
+        msg = 'Unhandled exception in dbUpdate: %s' % traceback.format_exc()
+        logger.error(msg)
+        return msg
 
 def restartJobs(start='Restart'):
     scheduleJob(start, 'processDir')
@@ -155,7 +262,7 @@ def restartJobs(start='Restart'):
     scheduleJob(start, 'search_rss_book')
     scheduleJob(start, 'search_magazines')
     scheduleJob(start, 'checkForUpdates')
-
+    scheduleJob(start, 'authorUpdate')
 
 def ensureRunning(jobname):
     found = False
@@ -198,6 +305,7 @@ def checkRunningJobs():
     else:
         scheduleJob('Stop', 'search_magazines')
 
+    ensureRunning('authorUpdate')
 
 def showJobs():
     result = ["Cache %i hit%s, %i miss" % (int(lazylibrarian.CACHE_HIT),
@@ -207,6 +315,12 @@ def showJobs():
     wanted = myDB.match("SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'")
     result.append("%i item%s marked as Snatched" % (snatched['counter'], plural(snatched['counter'])))
     result.append("%i item%s marked as Wanted" % (wanted['counter'], plural(wanted['counter'])))
+    cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" or Status="Loading"'
+    cmd += ' order by DateAdded ASC'
+    author = myDB.match(cmd)
+    dtnow = datetime.datetime.now()
+    diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
+    result.append('Oldest author info is %s day%s old' % (diff, plural(diff)))
     for job in lazylibrarian.SCHED.get_jobs():
         job = str(job)
         if "search_magazines" in job:
@@ -221,6 +335,8 @@ def showJobs():
             jobname = "RSS book search"
         elif "processDir" in job:
             jobname = "Process downloads"
+        elif "authorUpdate" in job:
+            jobname = "Update authors"
         else:
             jobname = job.split(' ')[0].split('.')[2]
 
@@ -235,10 +351,10 @@ def showJobs():
 def clearLog():
     logger.lazylibrarian_log.stopLogger()
     error = False
-    if os.path.exists(lazylibrarian.LOGDIR):
+    if os.path.exists(lazylibrarian.CONFIG['LOGDIR']):
         try:
-            shutil.rmtree(lazylibrarian.LOGDIR)
-            os.mkdir(lazylibrarian.LOGDIR)
+            shutil.rmtree(lazylibrarian.CONFIG['LOGDIR'])
+            os.mkdir(lazylibrarian.CONFIG['LOGDIR'])
         except OSError as e:
             error = e.strerror
     logger.lazylibrarian_log.initLogger(loglevel=lazylibrarian.LOGLEVEL)
@@ -248,16 +364,16 @@ def clearLog():
     else:
         lazylibrarian.LOGLIST = []
         return "Log cleared, level set to [%s]- Log Directory is [%s]" % (
-            lazylibrarian.LOGLEVEL, lazylibrarian.LOGDIR)
+            lazylibrarian.LOGLEVEL, lazylibrarian.CONFIG['LOGDIR'])
 
 
 def cleanCache():
     """ Remove unused files from the cache - delete if expired or unused.
-        Check JSONCache  WorkCache  XMLCache cache
+        Check JSONCache  WorkCache  XMLCache  SeriesCache Author  Book
         Check covers and authorimages referenced in the database exist and change database entry if missing """
 
     myDB = database.DBConnection()
-
+    result = []
     cache = os.path.join(lazylibrarian.CACHEDIR, "JSONCache")
     # ensure directory is unicode so we get unicode results from listdir
     if isinstance(cache, str):
@@ -270,13 +386,15 @@ def cleanCache():
             cache_modified_time = os.stat(target).st_mtime
             time_now = time.time()
             if cache_modified_time < time_now - (
-                        lazylibrarian.CACHE_AGE * 24 * 60 * 60):  # expire after this many seconds
+                        lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60):  # expire after this many seconds
                 # Cache is old, delete entry
                 os.remove(target)
                 cleaned += 1
             else:
                 kept += 1
-    logger.debug("Cleaned %i file%s from JSONCache, kept %i" % (cleaned, plural(cleaned), kept))
+    msg = "Cleaned %i file%s from JSONCache, kept %i" % (cleaned, plural(cleaned), kept)
+    result.append(msg)
+    logger.debug(msg)
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "XMLCache")
     # ensure directory is unicode so we get unicode results from listdir
@@ -290,13 +408,15 @@ def cleanCache():
             cache_modified_time = os.stat(target).st_mtime
             time_now = time.time()
             if cache_modified_time < time_now - (
-                        lazylibrarian.CACHE_AGE * 24 * 60 * 60):  # expire after this many seconds
+                        lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60):  # expire after this many seconds
                 # Cache is old, delete entry
                 os.remove(target)
                 cleaned += 1
             else:
                 kept += 1
-    logger.debug("Cleaned %i file%s from XMLCache, kept %i" % (cleaned, plural(cleaned), kept))
+    msg = "Cleaned %i file%s from XMLCache, kept %i" % (cleaned, plural(cleaned), kept)
+    result.append(msg)
+    logger.debug(msg)
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "WorkCache")
     # ensure directory is unicode so we get unicode results from listdir
@@ -319,9 +439,11 @@ def cleanCache():
                 cleaned += 1
             else:
                 kept += 1
-    logger.debug("Cleaned %i file%s from WorkCache, kept %i" % (cleaned, plural(cleaned), kept))
+    msg = "Cleaned %i file%s from WorkCache, kept %i" % (cleaned, plural(cleaned), kept)
+    result.append(msg)
+    logger.debug(msg)
 
-    cache = lazylibrarian.CACHEDIR
+    cache = os.path.join(lazylibrarian.CACHEDIR, "SeriesCache")
     # ensure directory is unicode so we get unicode results from listdir
     if isinstance(cache, str):
         cache = cache.decode(lazylibrarian.SYS_ENCODING)
@@ -330,6 +452,46 @@ def cleanCache():
     if os.path.isdir(cache):
         for cached_file in os.listdir(cache):
             target = os.path.join(cache, cached_file)
+            try:
+                seriesid = cached_file.split('.')[0]
+            except IndexError:
+                logger.error('Clean Cache: Error splitting %s' % cached_file)
+                continue
+            item = myDB.match('select SeriesID from series where SeriesID="%s"' % seriesid)
+            if not item:
+                # SeriesPage no longer referenced in database, delete cached_file
+                os.remove(target)
+                cleaned += 1
+            else:
+                kept += 1
+    msg = "Cleaned %i file%s from SeriesCache, kept %i" % (cleaned, plural(cleaned), kept)
+    result.append(msg)
+    logger.debug(msg)
+
+    cache = lazylibrarian.CACHEDIR
+    cleaned = 0
+    kept = 0
+    cachedir = os.path.join(cache, 'author')
+    if os.path.isdir(cachedir):
+        for cached_file in os.listdir(cachedir):
+            target = os.path.join(cachedir, cached_file)
+            if os.path.isfile(target):
+                try:
+                    imgid = cached_file.split('.')[0].rsplit(os.sep)[-1]
+                except IndexError:
+                    logger.error('Clean Cache: Error splitting %s' % cached_file)
+                    continue
+                item = myDB.match('select AuthorID from authors where AuthorID="%s"' % imgid)
+                if not item:
+                    # Author Image no longer referenced in database, delete cached_file
+                    os.remove(target)
+                    cleaned += 1
+                else:
+                    kept += 1
+    cachedir = os.path.join(cache, 'book')
+    if os.path.isdir(cachedir):
+        for cached_file in os.listdir(cachedir):
+            target = os.path.join(cachedir, cached_file)
             if os.path.isfile(target):
                 try:
                     imgid = cached_file.split('.')[0].rsplit(os.sep)[-1]
@@ -338,38 +500,32 @@ def cleanCache():
                     continue
                 item = myDB.match('select BookID from books where BookID="%s"' % imgid)
                 if not item:
-                    item = myDB.match('select AuthorID from authors where AuthorID="%s"' % imgid)
-                    if not item:
-                        # Image no longer referenced in database, delete cached_file
-                        os.remove(target)
-                        cleaned += 1
-                    else:
-                        kept += 1
+                    # Book Image no longer referenced in database, delete cached_file
+                    os.remove(target)
+                    cleaned += 1
                 else:
                     kept += 1
-    logger.debug("Cleaned %i file%s from ImageCache, kept %i" % (cleaned, plural(cleaned), kept))
 
-    # correct any '\' separators in the BookImg links
-    cleaned = 0
-    covers = myDB.select('select BookImg from books where BookImg like "cache\%"')
-    for item in covers:
-        oldname = item['BookImg']
-        newname = oldname.replace('\\', '/')
-        myDB.action('update books set BookImg="%s" where BookImg="%s"' % (newname, oldname))
-        cleaned += 1
-    logger.debug("Corrected %i filename%s in ImageCache" % (cleaned, plural(cleaned)))
+    # at this point there should be no more .jpg files in the root of the cachedir
+    # any that are still there are for books/authors deleted from database
+    for cached_file in os.listdir(cache):
+        if cached_file.endswith('.jpg'):
+            os.remove(os.path.join(cache, cached_file))
+            cleaned += 1
+    msg = "Cleaned %i file%s from ImageCache, kept %i" % (cleaned, plural(cleaned), kept)
+    result.append(msg)
+    logger.debug(msg)
 
     # verify the cover images referenced in the database are present
-    covers = myDB.action('select BookImg,BookName,BookID from books')
-    cachedir = lazylibrarian.CACHEDIR
-
+    images = myDB.action('select BookImg,BookName,BookID from books')
+    cachedir = os.path.join(lazylibrarian.CACHEDIR, 'book')
     cleaned = 0
     kept = 0
-    for item in covers:
+    for item in images:
         keep = True
+        imgfile = ''
         if item['BookImg'] is None or item['BookImg'] == '':
             keep = False
-        imgfile = ''
         if keep and not item['BookImg'].startswith('http') and not item['BookImg'] == "images/nocover.png":
             # html uses '/' as separator, but os might not
             imgname = item['BookImg'].rsplit('/')[-1]
@@ -383,12 +539,13 @@ def cleanCache():
             logger.debug('Cover missing for %s %s' % (item['BookName'], imgfile))
             myDB.action('update books set BookImg="images/nocover.png" where Bookid="%s"' % item['BookID'])
 
-    logger.debug("Cleaned %i missing cover file%s, kept %i" % (cleaned, plural(cleaned), kept))
+    msg = "Cleaned %i missing cover file%s, kept %i" % (cleaned, plural(cleaned), kept)
+    result.append(msg)
+    logger.debug(msg)
 
     # verify the author images referenced in the database are present
     images = myDB.action('select AuthorImg,AuthorName,AuthorID from authors')
-    cachedir = lazylibrarian.CACHEDIR
-
+    cachedir = os.path.join(lazylibrarian.CACHEDIR, 'author')
     cleaned = 0
     kept = 0
     for item in images:
@@ -409,4 +566,7 @@ def cleanCache():
             logger.debug('Image missing for %s %s' % (item['AuthorName'], imgfile))
             myDB.action('update authors set AuthorImg="images/nophoto.png" where AuthorID="%s"' % item['AuthorID'])
 
-    logger.debug("Cleaned %i missing author image%s, kept %i" % (cleaned, plural(cleaned), kept))
+    msg = "Cleaned %i missing author image%s, kept %i" % (cleaned, plural(cleaned), kept)
+    result.append(msg)
+    logger.debug(msg)
+    return result

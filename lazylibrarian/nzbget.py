@@ -26,6 +26,7 @@ from base64 import standard_b64encode
 
 import lazylibrarian
 from lazylibrarian import logger
+from lazylibrarian.formatter import check_int
 
 
 def checkLink():
@@ -47,9 +48,10 @@ def sendNZB(nzb, cmd=None, nzbID=None):
     # we can send a new nzb, or commands to act on an existing nzbID (or array of nzbIDs)
     # by setting nzbID and cmd (we currently only use test and delete)
 
-    host = lazylibrarian.NZBGET_HOST
-    if host is None:
-        logger.error(u"No NZBget host found in configuration. Please configure it.")
+    host = lazylibrarian.CONFIG['NZBGET_HOST']
+    port = check_int(lazylibrarian.CONFIG['NZBGET_PORT'], 0)
+    if not host or not port:
+        logger.error('Invalid NZBget host or port, check your config')
         return False
 
     addToTop = False
@@ -62,9 +64,9 @@ def sendNZB(nzb, cmd=None, nzbID=None):
         host = host[:-1]
     hostparts = host.split('://')
 
-    url = hostparts[0] + '://' + nzbgetXMLrpc % {"host": hostparts[1], "username": lazylibrarian.NZBGET_USER,
-                                                 "port": lazylibrarian.NZBGET_PORT,
-                                                 "password": lazylibrarian.NZBGET_PASS}
+    url = hostparts[0] + '://' + nzbgetXMLrpc % {"host": hostparts[1], "username": lazylibrarian.CONFIG['NZBGET_USER'],
+                                                 "port": port,
+                                                 "password": lazylibrarian.CONFIG['NZBGET_PASS']}
     try:
         nzbGetRPC = xmlrpclib.ServerProxy(url)
     except Exception as e:
@@ -135,7 +137,7 @@ def sendNZB(nzb, cmd=None, nzbID=None):
         if nzbget_version == 0:  # or nzbget_version == 14:
             if nzbcontent64:
                 nzbget_result = nzbGetRPC.append(nzb.name + ".nzb",
-                                                 lazylibrarian.NZBGET_CATEGORY, addToTop, nzbcontent64)
+                                                 lazylibrarian.CONFIG['NZBGET_CATEGORY'], addToTop, nzbcontent64)
             else:
                 # from lazylibrarian.common.providers.generic import GenericProvider
                 # if nzb.resultType == "nzb":
@@ -144,34 +146,34 @@ def sendNZB(nzb, cmd=None, nzbID=None):
                 #     if (data is None):
                 #         return False
                 #     nzbcontent64 = standard_b64encode(data)
-                # nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", lazylibrarian.NZBGET_CATEGORY,
+                # nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", lazylibrarian.CONFIG['NZBGET_CATEGORY'],
                 #       addToTop, nzbcontent64)
                 return False
         elif nzbget_version == 12:
             if nzbcontent64:
-                nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", lazylibrarian.NZBGET_CATEGORY,
-                                                 lazylibrarian.NZBGET_PRIORITY, False,
+                nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", lazylibrarian.CONFIG['NZBGET_CATEGORY'],
+                                                 lazylibrarian.CONFIG['NZBGET_PRIORITY'], False,
                                                  nzbcontent64, False, dupekey, dupescore, "score")
             else:
-                nzbget_result = nzbGetRPC.appendurl(nzb.name + ".nzb", lazylibrarian.NZBGET_CATEGORY,
-                                                    lazylibrarian.NZBGET_PRIORITY, False, nzb.url, False,
+                nzbget_result = nzbGetRPC.appendurl(nzb.name + ".nzb", lazylibrarian.CONFIG['NZBGET_CATEGORY'],
+                                                    lazylibrarian.CONFIG['NZBGET_PRIORITY'], False, nzb.url, False,
                                                     dupekey, dupescore, "score")
         # v13+ has a new combined append method that accepts both (url and content)
         # also the return value has changed from boolean to integer
         # (Positive number representing NZBID of the queue item. 0 and negative numbers represent error codes.)
         elif nzbget_version >= 13:
             nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", nzbcontent64 if nzbcontent64 is not None
-                else nzb.url, lazylibrarian.NZBGET_CATEGORY, lazylibrarian.NZBGET_PRIORITY, False, False, dupekey,
+                else nzb.url, lazylibrarian.CONFIG['NZBGET_CATEGORY'], lazylibrarian.CONFIG['NZBGET_PRIORITY'], False, False, dupekey,
                                              dupescore, "score")
             if nzbget_result <= 0:
                 nzbget_result = False
         else:
             if nzbcontent64:
-                nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", lazylibrarian.NZBGET_CATEGORY,
-                                                 lazylibrarian.NZBGET_PRIORITY, False, nzbcontent64)
+                nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", lazylibrarian.CONFIG['NZBGET_CATEGORY'],
+                                                 lazylibrarian.CONFIG['NZBGET_PRIORITY'], False, nzbcontent64)
             else:
-                nzbget_result = nzbGetRPC.appendurl(nzb.name + ".nzb", lazylibrarian.NZBGET_CATEGORY,
-                                                    lazylibrarian.NZBGET_PRIORITY, False, nzb.url)
+                nzbget_result = nzbGetRPC.appendurl(nzb.name + ".nzb", lazylibrarian.CONFIG['NZBGET_CATEGORY'],
+                                                    lazylibrarian.CONFIG['NZBGET_PRIORITY'], False, nzb.url)
 
         if nzbget_result:
             logger.debug(u"NZB sent to NZBget successfully")

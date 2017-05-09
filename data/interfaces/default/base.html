@@ -8,8 +8,7 @@
 <!--[if IE 9 ]>    <html lang="en" class="no-js ie9"> <![endif]-->
 <!--[if (gt IE 9)|!(IE)]><!--> <html lang="en" class="no-js"> <!--<![endif]-->
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta charset="UTF-8" http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 
     <title>LazyLibrarian - ${title}</title>
     <meta name="description" content="">
@@ -22,15 +21,15 @@
     <link rel="stylesheet" href="css/style.css?v=2">
     <script type="text/javascript" src="js/mootools.js"></script>
     <script type="text/javascript" src="js/mootools_more.js"></script>
-    <script src="js/jquery-1.8.2.js"></script>
-    <script src="js/libs/modernizr-1.7.min.js"></script>
-    <script src="js/script.js"></script>
-    <script src="js/nav.js"></script>
-    <script src="js/jquery.clearsearch.js"></script>
-    <script src="js/question.js"></script>
-    <script src="js/lazylibrarian.js"></script>
+    <script type="text/javascript" src="js/jquery-1.8.2.js"></script>
+    <script type="text/javascript" src="js/libs/modernizr-1.7.min.js"></script>
+    <script type="text/javascript" src="js/script.js"></script>
+    <script type="text/javascript" src="js/nav.js"></script>
+    <script type="text/javascript" src="js/jquery.clearsearch.js"></script>
+    <script type="text/javascript" src="js/question.js"></script>
+    <script type="text/javascript" src="js/lazylibrarian.js"></script>
     ${next.headIncludes()}
-    <script>
+    <script type="text/javascript" >
     // Edit to suit your needs.
     var ADAPT_CONFIG = {
       // Where is your CSS?
@@ -52,13 +51,13 @@
       ]
     };
     </script>
-    <script src="js/adapt.min.js"></script>
+    <script type="text/javascript" src="js/adapt.min.js"></script>
 <!--    <div id="demo"></div>
     <script>
     wsize = window.innerWidth;
     document.getElementById("demo").innerHTML = wsize;
     </script> -->
-    <script>
+    <script type="text/javascript" >
         // Script to add a clear button to the search author input box
         $(document).ready(function () {
             $('input.deletable').wrap('<span class="" id="deleteicon"/>').after($('<span/>').click(function () {
@@ -77,49 +76,49 @@
             });
         });
     </script>
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
-    <script>!window.jQuery && document.write(unescape('%3Cscript src="js/libs/jquery-1.6.2.min.js"%3E%3C/script%3E'))</script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+    <script type="text/javascript" >!window.jQuery && document.write(unescape('%3Cscript src="js/libs/jquery-1.6.2.min.js"%3E%3C/script%3E'))</script>
     ${next.javascriptIncludes()}
-    <script language="JavaScript">
+    <script type="text/javascript" language="JavaScript">
         function toggleAll(source) {
             checkboxes = document.getElementsByClassName('checkbox');
             for (var i in checkboxes)
                 checkboxes[i].checked = source.checked;
         }
     </script>
-    <script src="js/plugins.js"></script>
-    <script src="js/script.js"></script>
+    <script type="text/javascript" src="js/plugins.js"></script>
+    <script type="text/javascript" src="js/script.js"></script>
 </head>
 <body>
     <div id="container">
         <div id="ajaxMsg"></div>
-            % if lazylibrarian.INSTALL_TYPE == 'git' or  lazylibrarian.INSTALL_TYPE == 'source':
-                % if not lazylibrarian.CURRENT_VERSION:
+            % if lazylibrarian.CONFIG['INSTALL_TYPE'] == 'git' or  lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
+                % if not lazylibrarian.CONFIG['CURRENT_VERSION']:
                     <div id="updatebar">
                         You are running an unknown version of lazylibrarian. <a href="update">Update</a> or
                         <a href="#" onclick="$('#updatebar').slideUp('slow');">Close</a>
                     </div>
-                % elif (lazylibrarian.INSTALL_TYPE == 'source' and lazylibrarian.CURRENT_VERSION == 'No Version File' ):
+                % elif (lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source' and lazylibrarian.CONFIG['CURRENT_VERSION'] == 'No Version File' ):
                     <div id="updatebar">
                         Running Unknown version via source install. Update from central area now <a href="update">Update</a> or
                         <a href="#" onclick="$('#updatebar').slideUp('slow');">Close</a>
                     </div>
-                % elif lazylibrarian.CURRENT_VERSION != lazylibrarian.LATEST_VERSION:
-                    % if lazylibrarian.LATEST_VERSION == 'Not_Available_From_GitHUB':
+                % elif lazylibrarian.CONFIG['CURRENT_VERSION'] != lazylibrarian.CONFIG['LATEST_VERSION']:
+                    % if lazylibrarian.CONFIG['LATEST_VERSION'] == 'Not_Available_From_GitHUB':
                         <div id="updatebar">
                             Unable to get latest version from GITHub
                         </div>
-                    % elif lazylibrarian.COMMITS_BEHIND < 0:
+                    % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] < 0:
                         <div id="updatebar">
                             Running a local updated version. Push changes to GITHub or rollback to Master release
                         </div>
-                    % elif lazylibrarian.COMMITS_BEHIND > 1:
+                    % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] > 1:
                         <div id="updatebar">
-                            A <a href="http://github.com/DobyTang/LazyLibrarian/compare/${lazylibrarian.CURRENT_VERSION}...${lazylibrarian.LATEST_VERSION}" target="_blank"> newer version</a> is available. You're ${lazylibrarian.COMMITS_BEHIND} commits behind. <a href="update">Update</a> or <a href="#" onclick="$('#updatebar').slideUp('slow');">Close</a>
+                            A <a href="http://github.com/DobyTang/LazyLibrarian/compare/${lazylibrarian.CONFIG['CURRENT_VERSION']}...${lazylibrarian.CONFIG['LATEST_VERSION']}" target="_blank"> newer version</a> is available. You're ${lazylibrarian.CONFIG['COMMITS_BEHIND']} commits behind. <a href="update">Update</a> or <a href="#" onclick="$('#updatebar').slideUp('slow');">Close</a>
                         </div>
-                    % elif lazylibrarian.COMMITS_BEHIND == 1:
+                    % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] == 1:
                         <div id="updatebar">
-                            A <a href="http://github.com/DobyTang/LazyLibrarian/compare/${lazylibrarian.CURRENT_VERSION}...${lazylibrarian.LATEST_VERSION}" target="_blank"> newer version</a> is available. You're one commit behind. <a href="update">Update</a> or <a href="#" onclick="$('#updatebar').slideUp('slow');">Close</a>
+                            A <a href="http://github.com/DobyTang/LazyLibrarian/compare/${lazylibrarian.CONFIG['CURRENT_VERSION']}...${lazylibrarian.CONFIG['LATEST_VERSION']}" target="_blank"> newer version</a> is available. You're one commit behind. <a href="update">Update</a> or <a href="#" onclick="$('#updatebar').slideUp('slow');">Close</a>
                         </div>
                     % endif
                 % endif
@@ -127,26 +126,27 @@
         <header>
           <div id="headercontainer">
             <div id="navbardiv">
-				<table>
-					<tr>
-						<div>
-							<a href="home" class="navbarlogo"><img src="images/lazylibrarian.png" width="64" height="64" alt="lazylibrarian"></a>
-							<a href="home" class="navbarele"><img src="images/nav/auth.png"></img></a>
-							<a href="books" class="navbarele"><img src="images/nav/book.png"></img></a>
-							<a href="magazines" class="navbarele"><img src="images/nav/mags.png"></img></a>
+                <table>
+                    <tr>
+                        <div>
+                            <a href="home" class="navbarlogo"><img src="images/lazylibrarian.png" width="64" height="64" alt="lazylibrarian"></a>
+                            <a href="home" class="navbarele"><img src="images/nav/auth.png"></img></a>
+                            <a href="books" class="navbarele"><img src="images/nav/book.png"></img></a>
+                            <a id="series" href="series" class="navbarele"><img src="images/nav/series.png"></img></a>
+                            <a id="magazines" href="magazines" class="navbarele"><img src="images/nav/mags.png"></img></a>
                             <a href="manage" class="navbarele"><img src="images/nav/manage.png"></img></a>
-							<a href="history" class="navbarele"><img src="images/nav/hist.png"></img></a>
-							<a href="logs" class="navbarele"><img src="images/nav/logs.png"></img></a>
-							<a href="config" class="navbarcfg"><img src="images/nav/config.png"></img></a>
-						</div>
-						<div id="searchbar" class="searchbar">
-						    <form class="input-group" action="search" method="get">
-							    <input type="text" value="" onfocus="if(this.value==this.defaultValue) this.value='';" name="name" placeholder="Title / Author / ISBN">
-							    <span class="mini-icon"></span>
-						    </form>
-						</div>
-					</tr>
-				</table>
+                            <a href="history" class="navbarele"><img src="images/nav/hist.png"></img></a>
+                            <a href="logs" class="navbarele"><img src="images/nav/logs.png"></img></a>
+                            <a href="config" class="navbarcfg"><img src="images/nav/config.png"></img></a>
+                        </div>
+                        <div id="searchbar" class="searchbar">
+                            <form class="input-group" action="search" method="get">
+                                <input type="text" value="" onfocus="if(this.value==this.defaultValue) this.value='';" name="name" placeholder="Title / Author / ISBN">
+                                <span class="mini-icon"></span>
+                            </form>
+                        </div>
+                    </tr>
+                </table>
               </div>
               <div id="subhead">
                   ${next.headerIncludes()}
@@ -160,7 +160,14 @@
         </div>
     </div>
 
-
+<script type="text/javascript">
+    % if lazylibrarian.SHOW_SERIES == 0:
+        $('#series').addClass("hidden");
+    % endif
+    % if lazylibrarian.SHOW_MAGS == 0:
+        $('#magazines').addClass("hidden");
+    % endif
+</script>
 
     <!--[if lt IE 7 ]>
     <script src="js/libs/dd_belatedpng.js"></script>

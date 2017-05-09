@@ -4,75 +4,76 @@
 %>
 
 <%def name="headerIncludes()">
-	<div id="subhead_container">
-		<ul id="subhead_menu">
-			<li><a href="clearhistory?status=all" id="button">Clear All History</a></li>
-			<li><a href="clearhistory?status=Processed" id="button">Clear Processed</a></li>
-			<li><a href="clearhistory?status=Snatched" id="button">Clear Snatched</a></li>
-			<li><a href="clearhistory?status=Failed" id="button">Clear Failed</a></li>
-			</ul>
-	</div>
+    <div id="subhead_container">
+        <ul id="subhead_menu">
+            <li><a href="clearhistory?status=all" id="button">Clear All History</a></li>
+            <li><a href="clearhistory?status=Processed" id="button">Clear Processed</a></li>
+            <li><a href="clearhistory?status=Snatched" id="button">Clear Snatched</a></li>
+            <li><a href="clearhistory?status=Failed" id="button">Clear Failed</a></li>
+        </ul>
+    </div>
 </%def>
 
 <%def name="body()">
-<BR>
-<h1>&nbsp&nbspHistory</h1><br>
-
-	<table class="display" id="book_table">
-		<thead>
-			<tr>
-				<th id="filename">Title</th>
-				<th id="bookid">ID</th>
-				<th id="provider">Provider</th>
-				<th id="dateadded">Date</th>
-				<th id="size">Size</th>
-				<th id="status">Status</th>
-			</tr>
-		</thead>
-		<tbody>
-		%for item in history:
-			<%
-				if item['Status'] == 'Processed':
-					grade = 'A'
-				elif item['Status'] == 'Snatched':
-					grade = 'C'
-				elif item['Status'] == 'Unprocessed':
-					grade = 'X'
-				else:
-					grade = 'U'
-			%>
-			<tr class="grade${grade}">
-				<td id="filename">${item['NZBtitle']}</td>
-				<td id="bookid">${item['BookID']}</td>
-				<td id="provider"><a href="${item['NZBurl']}">${item['NZBprov']}</a></td>
-				<td id="dateadded">${item['NZBdate']}</td>
-				<td id="size">${item['NZBsize']} MB</td>
-				<td id="status">${item['Status']}</td>
-			</tr>
-		%endfor
-		</tbody>
-	</table>
+<BR><BR>
+<h1>&nbsp;&nbsp;${title}</h1><br>
+    <table class="display" id="book_table">
+        <thead>
+            <tr>
+                <th id="bookname">Title</th>
+                <th id="number">ID</th>
+                <th id="authorname">Provider</th>
+                <th id="date">Date</th>
+                <th id="stars">Size</th>
+                <th id="status">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+        %for item in history:
+            <%
+                if item['Status'] == 'Processed':
+                    grade = 'A'
+                elif item['Status'] == 'Snatched':
+                    grade = 'C'
+                elif item['Status'] == 'Failed':
+                    grade = 'X'
+                else:
+                    grade = 'U'
+            %>
+            <tr class="grade${grade}">
+                <td id="bookname">${item['NZBtitle']}</td>
+                <td id="number">${item['BookID']}</td>
+                <td id="authorname"><a href="${item['NZBurl']}">${item['NZBprov']}</a></td>
+                <td id="date">${item['NZBdate']}</td>
+                <td id="stars">${item['NZBsize']} MB</td>
+                <td id="status">${item['Status']}</td>
+            </tr>
+        %endfor
+        </tbody>
+    </table>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
 </%def>
 
 <%def name="headIncludes()">
-	<link rel="stylesheet" href="css/data_table.css">
+    <link rel="stylesheet" href="css/data_table.css">
 </%def>
 
 <%def name="javascriptIncludes()">
     <script src="js/libs/jquery.dataTables.min.js"></script>
+    <script src="js/libs/natural.js"></script>
     <script>
-
     $(document).ready(function()
     {
-
-        $('#book_table').dataTable(
+        var oTable = $('#book_table').dataTable(
             {
+                "bAutoWidth": false,
                 "aoColumns": [
                     null,
+                    { "sType": "natural" },
                     null,
-                    null,
-                    null,
-                    null,
+                    { "sType": "natural" },
+                    { "sType": "natural" },
                     null
                     ],
                 "oLanguage": {
@@ -83,9 +84,10 @@
                     "sInfoFiltered":"(filtered from _MAX_ total rows)"},
                 "sPaginationType": "full_numbers",
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
-                "iDisplayLength": ${lazylibrarian.DISPLAYLENGTH},
+                "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
             });
-            $('.dataTables_filter input').attr("placeholder", "Search table here");
+        $('.dataTables_filter input').attr("placeholder", "Search table here");
+        $(window).resize(function() {oTable.fnDraw(false)});
     });
     </script>
 </%def>

@@ -36,7 +36,7 @@ def url_fix(s, charset='utf-8'):
 def TPB(book=None):
 
     provider = "TPB"
-    host = lazylibrarian.TPB_HOST
+    host = lazylibrarian.CONFIG['TPB_HOST']
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
@@ -63,7 +63,7 @@ def TPB(book=None):
 
     if result:
         logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
-        minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
+        minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
         soup = BeautifulSoup(result)
         try:
             table = soup.findAll('table')[0]
@@ -101,7 +101,7 @@ def TPB(book=None):
                 except ValueError:
                     seeders = 0
 
-                if magnet and minimumseeders < seeders:
+                if minimumseeders < seeders:
                     # no point in asking for magnet link if not enough seeders
                     magurl = '%s/%s' % (host, magnet)
                     result, success = fetchURL(magurl)
@@ -125,6 +125,7 @@ def TPB(book=None):
                                 'tor_title': title,
                                 'tor_url': magnet,
                                 'tor_size': str(size),
+                                'tor_type': 'magnet'
                             })
                             logger.debug('Found %s. Size: %s' % (title, size))
                         else:
@@ -142,7 +143,7 @@ def TPB(book=None):
 def KAT(book=None):
 
     provider = "KAT"
-    host = lazylibrarian.KAT_HOST
+    host = lazylibrarian.CONFIG['KAT_HOST']
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
@@ -169,7 +170,7 @@ def KAT(book=None):
 
     if result:
         logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
-        minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
+        minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
         soup = BeautifulSoup(result)
 
         try:
@@ -195,17 +196,21 @@ def KAT(book=None):
                 # kat can return magnet or torrent or both.
                 magnet = ''
                 url = ''
+                mode = 'torrent'
                 try:
                     magnet = 'magnet' + str(col0).split('href="magnet')[1].split('"')[0]
+                    mode = 'magnet'
                 except IndexError:
                     pass
                 try:
                     url = 'http' + str(col0).split('href="http')[1].split('.torrent?')[0] + '.torrent'
+                    mode = 'torrent'
                 except IndexError:
                     pass
 
-                if not url or (magnet and url and lazylibrarian.PREFER_MAGNET):
+                if not url or (magnet and url and lazylibrarian.CONFIG['PREFER_MAGNET']):
                     url = magnet
+                    mode = 'magnet'
 
                 try:
                     size = str(col1.text).replace('&nbsp;', '').upper()
@@ -233,6 +238,7 @@ def KAT(book=None):
                         'tor_title': title,
                         'tor_url': url,
                         'tor_size': str(size),
+                        'tor_type': mode
                     })
                     logger.debug('Found %s. Size: %s' % (title, size))
                 else:
@@ -248,7 +254,7 @@ def KAT(book=None):
 def EXTRA(book=None):
 
     provider = "Extratorrent"
-    host = lazylibrarian.EXTRA_HOST
+    host = lazylibrarian.CONFIG['EXTRA_HOST']
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
@@ -272,7 +278,7 @@ def EXTRA(book=None):
 
     results = []
 
-    minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
+    minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
     if data:
         logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
         d = feedparser.parse(data)
@@ -305,6 +311,7 @@ def EXTRA(book=None):
                             'tor_title': title,
                             'tor_url': url,
                             'tor_size': str(size),
+                            'tor_type': 'torrent'
                         })
                         logger.debug('Found %s. Size: %s' % (title, size))
                     else:
@@ -321,7 +328,7 @@ def EXTRA(book=None):
 def ZOO(book=None):
 
     provider = "zooqle"
-    host = lazylibrarian.ZOO_HOST
+    host = lazylibrarian.CONFIG['ZOO_HOST']
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
@@ -345,7 +352,7 @@ def ZOO(book=None):
 
     results = []
 
-    minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
+    minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
     if data:
         logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
         d = feedparser.parse(data)
@@ -359,11 +366,14 @@ def ZOO(book=None):
                     magnet = item['torrent_magneturi']
 
                     url = None
+                    mode = 'torrent'
                     if link:
                         url = link
+                        mode = 'torrent'
                     if magnet:
-                        if not url or (url and lazylibrarian.PREFER_MAGNET):
+                        if not url or (url and lazylibrarian.CONFIG['PREFER_MAGNET']):
                             url = magnet
+                            mode = 'magnet'
 
                     if not url or not title:
                         logger.debug('No url or title found')
@@ -374,6 +384,7 @@ def ZOO(book=None):
                             'tor_title': title,
                             'tor_url': url,
                             'tor_size': str(size),
+                            'tor_type': mode
                         })
                         logger.debug('Found %s. Size: %s' % (title, size))
                     else:
@@ -394,7 +405,7 @@ def ZOO(book=None):
 def LIME(book=None):
 
     provider = "Limetorrent"
-    host = lazylibrarian.LIME_HOST
+    host = lazylibrarian.CONFIG['LIME_HOST']
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
@@ -412,7 +423,7 @@ def LIME(book=None):
 
     results = []
 
-    minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
+    minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
     if data:
         logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
         d = feedparser.parse(data)
@@ -446,6 +457,7 @@ def LIME(book=None):
                             'tor_title': title,
                             'tor_url': url,
                             'tor_size': str(size),
+                            'tor_type': 'torrent'
                         })
                         logger.debug('Found %s. Size: %s' % (title, size))
                     else:
@@ -466,7 +478,7 @@ def LIME(book=None):
 def GEN(book=None):
 
     provider = "libgen"
-    host = lazylibrarian.GEN_HOST
+    host = lazylibrarian.CONFIG['GEN_HOST']
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
@@ -563,6 +575,7 @@ def GEN(book=None):
                                 'tor_title': title,
                                 'tor_url': url,
                                 'tor_size': str(size),
+                                'tor_type': 'direct'
                             })
                             logger.debug('Found %s, Size %s' % (title, size))
 
@@ -577,7 +590,7 @@ def GEN(book=None):
 def TDL(book=None):
 
     provider = "torrentdownloads"
-    host = lazylibrarian.TDL_HOST
+    host = lazylibrarian.CONFIG['TDL_HOST']
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
@@ -602,7 +615,7 @@ def TDL(book=None):
 
     results = []
 
-    minimumseeders = int(lazylibrarian.NUMBEROFSEEDERS) - 1
+    minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
     if data:
         logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
         d = feedparser.parse(data)
@@ -638,6 +651,7 @@ def TDL(book=None):
                                 'tor_title': title,
                                 'tor_url': url,
                                 'tor_size': str(size),
+                                'tor_type': 'magnet'
                             })
                             logger.debug('Found %s. Size: %s' % (title, size))
                     else:

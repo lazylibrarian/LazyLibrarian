@@ -23,39 +23,45 @@ from lazylibrarian import logger, database, providers, nzbget, sabnzbd, classes,
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import scheduleJob, setperm
 from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, now, check_int
-from lazylibrarian.notifiers import notify_snatch
+from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.searchtorrents import TORDownloadMethod
 from lib.fuzzywuzzy import fuzz
 
 
 def cron_search_nzb_book():
-    threading.currentThread().name = "CRON-SEARCHNZB"
-    search_nzb_book()
+    if 'SEARCHALLNZB' not in [n.name for n in [t for t in threading.enumerate()]]:
+        search_nzb_book()
 
 
 def search_nzb_book(books=None, reset=False):
     try:
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
-            threading.currentThread().name = "SEARCHNZB"
+            if books is None:
+                threading.currentThread().name = "SEARCHALLNZB"
+            else:
+                threading.currentThread().name = "SEARCHNZB"
 
         if not lazylibrarian.USE_NZB():
             logger.warn('No NEWZNAB/TORZNAB providers set, check config')
             return
+
         myDB = database.DBConnection()
         searchlist = []
 
         if books is None:
             # We are performing a backlog search
-            searchbooks = myDB.select(
-                'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books WHERE Status="Wanted" \
-                order by BookAdded desc')
+            cmd = 'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books,authors '
+            cmd += 'WHERE books.Status="Wanted" and books.AuthorID = authors.AuthorID order by BookAdded desc'
+            searchbooks = myDB.select(cmd)
         else:
             # The user has added a new book
             searchbooks = []
             for book in books:
-                searchbook = myDB.select('SELECT BookID, AuthorName, BookName, BookSub from books WHERE BookID="%s" \
-                                         AND Status="Wanted"' % book['bookid'])
+                cmd = 'SELECT BookID, AuthorName, BookName, BookSub from books,authors'
+                cmd += ' WHERE BookID="%s"' % book['bookid']
+                cmd += ' AND books.AuthorID = authors.AuthorID AND books.Status="Wanted"'
+                searchbook = myDB.select(cmd)
                 for terms in searchbook:
                     searchbooks.append(terms)
 
@@ -98,6 +104,11 @@ def search_nzb_book(books=None, reset=False):
                 resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'general')
                 found = processResultList(resultlist, book, "general")
 
+             # if still not found, try general search again without any "(extended details, series etc)"
+            if not found and '(' in book['bookName']:
+                resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'shortgeneral')
+                found = processResultList(resultlist, book, "shortgeneral")
+
             if not found:
                 logger.info("NZB Searches for %s returned no results." % book['searchterm'])
             if found > True:
@@ -120,10 +131,10 @@ def processResultList(resultlist, book, searchtype):
                 ':': '', '!': '', '-': ' ', '\s\s': ' '}
 
     dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
-           ',': '', '*': '', ':': '', ';': '', '\'': ''}
+           ',': '', '*': '', ':': '.', ';': '', '\'': ''}
 
-    match_ratio = int(lazylibrarian.MATCH_RATIO)
-    reject_list = getList(lazylibrarian.REJECT_WORDS)
+    match_ratio = int(lazylibrarian.CONFIG['MATCH_RATIO'])
+    reject_list = getList(lazylibrarian.CONFIG['REJECT_WORDS'])
     author = unaccented_str(replace_all(book['authorName'], dic))
     title = unaccented_str(replace_all(book['bookName'], dic))
 
@@ -155,14 +166,19 @@ def processResultList(resultlist, book, searchtype):
         nzbsize_temp = check_int(nzbsize_temp, 1000)
         nzbsize = round(float(nzbsize_temp) / 1048576, 2)
 
-        maxsize = check_int(lazylibrarian.REJECT_MAXSIZE, 0)
+        maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXSIZE'], 0)
         if not rejected:
             if maxsize and nzbsize > maxsize:
                 rejected = True
                 logger.debug("Rejecting %s, too large" % nzb_Title)
 
+        minsize = check_int(lazylibrarian.CONFIG['REJECT_MINSIZE'], 0)
         if not rejected:
-            # if nzbAuthor_match >= match_ratio and nzbBook_match >= match_ratio:
+            if minsize and nzbsize < minsize:
+                rejected = True
+                logger.debug("Rejecting %s, too small" % nzb_Title)
+
+        if not rejected:
             bookid = book['bookid']
             nzbTitle = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
             nzbprov = nzb['nzbprov']
@@ -179,11 +195,16 @@ def processResultList(resultlist, book, searchtype):
             }
 
             score = (nzbBook_match + nzbAuthor_match) / 2  # as a percentage
-            # lose a point for each extra word in the title so we get the closest match
-            words = len(getList(nzb_Title))
-            words -= len(getList(author))
-            words -= len(getList(title))
-            score -= abs(words)
+            # lose a point for each unwanted word in the title so we get the closest match
+            wordlist = getList(nzb_Title.lower())
+            words = [x for x in wordlist if x not in getList(author.lower())]
+            words = [x for x in words if x not in getList(title.lower())]
+            words = [x for x in words if x not in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
+            score -= len(words)
+            # prioritise titles that include the ebook types we want
+            booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
+            if len(booktypes):
+                score += 1
             matches.append([score, nzb_Title, newValueDict, controlValueDict])
 
     if matches:
@@ -201,7 +222,7 @@ def processResultList(resultlist, book, searchtype):
         logger.info(u'Best NZB match (%s%%): %s using %s search' %
                     (score, nzb_Title, searchtype))
 
-        snatchedbooks = myDB.match('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
+        snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID="%s" and Status="Snatched"' %
                                    newValueDict["BookID"])
         if snatchedbooks:
             logger.debug('%s already marked snatched' % nzb_Title)
@@ -217,6 +238,7 @@ def processResultList(resultlist, book, searchtype):
                 logger.info('Downloading %s from %s' % (newValueDict["NZBtitle"], newValueDict["NZBprov"]))
                 notify_snatch("%s from %s at %s" %
                               (newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
+                custom_notify_snatch(newValueDict["BookID"])
                 scheduleJob(action='Start', target='processDir')
                 return True + True  # we found it
     else:
@@ -228,11 +250,11 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None):
     myDB = database.DBConnection()
     Source = ''
     downloadID = ''
-    if lazylibrarian.NZB_DOWNLOADER_SABNZBD and lazylibrarian.SAB_HOST:
+    if lazylibrarian.CONFIG['NZB_DOWNLOADER_SABNZBD'] and lazylibrarian.CONFIG['SAB_HOST']:
         Source = "SABNZBD"
         downloadID = sabnzbd.SABnzbd(nzbtitle, nzburl, False)  # returns nzb_ids or False
 
-    if lazylibrarian.NZB_DOWNLOADER_NZBGET and lazylibrarian.NZBGET_HOST:
+    if lazylibrarian.CONFIG['NZB_DOWNLOADER_NZBGET'] and lazylibrarian.CONFIG['NZBGET_HOST']:
         Source = "NZBGET"
         # headers = {'User-Agent': USER_AGENT}
         # data = request.request_content(url=nzburl, headers=headers)
@@ -247,11 +269,11 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None):
             nzb.url = nzburl
             downloadID = nzbget.sendNZB(nzb)
 
-    if lazylibrarian.NZB_DOWNLOADER_SYNOLOGY and lazylibrarian.USE_SYNOLOGY and lazylibrarian.SYNOLOGY_HOST:
+    if lazylibrarian.CONFIG['NZB_DOWNLOADER_SYNOLOGY'] and lazylibrarian.CONFIG['USE_SYNOLOGY'] and lazylibrarian.CONFIG['SYNOLOGY_HOST']:
         Source = "SYNOLOGY_NZB"
         downloadID = synology.addTorrent(nzburl)  # returns nzb_ids or False
 
-    if lazylibrarian.NZB_DOWNLOADER_BLACKHOLE:
+    if lazylibrarian.CONFIG['NZB_DOWNLOADER_BLACKHOLE']:
         Source = "BLACKHOLE"
         nzbfile, success = fetchURL(nzburl)
         if not success:
@@ -260,7 +282,7 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None):
 
         if nzbfile:
             nzbname = str(nzbtitle) + '.nzb'
-            nzbpath = os.path.join(lazylibrarian.NZB_BLACKHOLEDIR, nzbname)
+            nzbpath = os.path.join(lazylibrarian.CONFIG['NZB_BLACKHOLEDIR'], nzbname)
             try:
                 with open(nzbpath, 'w') as f:
                     f.write(nzbfile)

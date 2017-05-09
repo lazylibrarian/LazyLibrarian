@@ -31,8 +31,8 @@ def fetchURL(URL, headers=None, retry=True):
         Otherwise return error message and False
         Allow one retry on timeout by default"""
     request = urllib2.Request(URL)
-    if lazylibrarian.PROXY_HOST:
-        request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
+    if lazylibrarian.CONFIG['PROXY_HOST']:
+        request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])
     if headers is None:
         # some sites insist on having a user-agent, default is to add one
         # if you don't want any headers, send headers=[]
@@ -62,16 +62,19 @@ def fetchURL(URL, headers=None, retry=True):
         return str(e), False
 
 
-def cache_cover(bookID, img_url):
+def cache_img(img_type, img_ID, img_url, refresh=False):
     """ Cache the image from the given URL in the local images cache
-        linked to the bookid, return the link to the cached file
-        or None if failed to cache """
+        linked to the id, return the link to the cached file, True
+        or error message, False if failed to cache """
 
+    if img_type not in ['book', 'author']:
+        logger.warn('Internal error in cache_img, img_type = [%s]' % img_type)
+        img_type = 'book'
     cachedir = lazylibrarian.CACHEDIR
-    coverfile = os.path.join(cachedir, bookID + '.jpg')
-    link = 'cache/' + bookID + '.jpg'
-    # if os.path.isfile(coverfile):  # overwrite any cached image
-    #    return link
+    coverfile = os.path.join(cachedir, img_type, img_ID + '.jpg')
+    link = 'cache/%s/%s.jpg' % (img_type, img_ID)
+    if os.path.isfile(coverfile) and not refresh:  # overwrite any cached image
+       return link, True
 
     result, success = fetchURL(img_url)
 
@@ -79,10 +82,11 @@ def cache_cover(bookID, img_url):
         try:
             with open(coverfile, 'wb') as img:
                 img.write(result)
-            return link
+            return link, True
         except Exception as e:
             logger.debug("Error writing image to %s, %s" % (coverfile, str(e)))
-    return None
+            return str(e), False
+    return result, False
 
 
 def get_xml_request(my_url, useCache=True):
@@ -113,7 +117,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
     if useCache and os.path.isfile(hashfilename):
         cache_modified_time = os.stat(hashfilename).st_mtime
         time_now = time.time()
-        expiry = lazylibrarian.CACHE_AGE * 24 * 60 * 60  # expire cache after this many seconds
+        expiry = lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60  # expire cache after this many seconds
         if cache_modified_time < time_now - expiry:
             # Cache entry is too old, delete it
             os.remove(hashfilename)
@@ -124,23 +128,44 @@ def get_cached_request(url, useCache=True, cache="XML"):
         lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
         logger.debug(u"CacheHandler: Returning CACHED response for %s" % url)
         if cache == "JSON":
-            source = json.load(open(hashfilename))
+            try:
+                source = json.load(open(hashfilename))
+            except Exception as e:
+                logger.warn(u"Error decoding json from %s" % hashfilename)
+                logger.debug(u"%s : %s" % (e, result))
+                return None, False
         elif cache == "XML":
             with open(hashfilename, "r") as cachefile:
                 result = cachefile.read()
-            source = ElementTree.fromstring(result)
+            try:
+                source = ElementTree.fromstring(result)
+            except Exception as e:
+                logger.warn(u"Error parsing xml from %s" % hashfilename)
+                logger.debug(u"%s : %s" % (e, result))
+                return None, False
     else:
         lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
         result, success = fetchURL(url)
         if success:
             logger.debug(u"CacheHandler: Storing %s for %s" % (cache, url))
             if cache == "JSON":
-                source = json.loads(result)
+                try:
+                    source = json.loads(result)
+                except Exception as e:
+                    logger.warn(u"Error decoding json from %s" % url)
+                    logger.debug(u"%s : %s" % (e, result))
+                    return None, False
                 json.dump(source, open(hashfilename, "w"))
             elif cache == "XML":
                 with open(hashfilename, "w") as cachefile:
                     cachefile.write(result)
-                source = ElementTree.fromstring(result)
+                try:
+                    source = ElementTree.fromstring(result)
+                except Exception as e:
+                    logger.warn(u"Error parsing xml from %s" % url)
+                    logger.debug(u"%s : %s" % (e, result))
+                    os.remove(hashfilename)
+                    return None, False
         else:
             logger.warn(u"Got error response for %s: %s" % (url, result))
             return None, False

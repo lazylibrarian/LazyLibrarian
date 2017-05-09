@@ -26,7 +26,7 @@ import lazylibrarian
 
 def bookSeries(bookname):
     """
-    Try to get a book series/seriesNum from a bookname, or return None
+    Try to get a book series/seriesNum from a bookname, or return empty string
     See if book is in multiple series first, if so return first one
     eg "The Shepherds Crown (Discworld, #41; Tiffany Aching, #5)"
     if no match, try single series, eg Mrs Bradshaws Handbook (Discworld, #40.5)
@@ -42,10 +42,10 @@ def bookSeries(bookname):
     [;,]          a semicolon or comma if multiple series
     )             end group
     """
-    series = None
-    seriesNum = None
+    series = ""
+    seriesNum = ""
 
-    result = re.search(r"\(([\S\s]+),? #?(\d+\.?-?\d{0,}[;,])", bookname)
+    result = re.search(r"\(([\S\s]+),? #?(\d+\.?-?\d*[;,])", bookname)
     if result:
         series = result.group(1)
         if series[-1] == ',':
@@ -54,7 +54,7 @@ def bookSeries(bookname):
         if seriesNum[-1] in ';,':
             seriesNum = seriesNum[:-1]
     else:
-        result = re.search(r"\(([\S\s]+),? #?(\d+\.?-?\d{0,})", bookname)
+        result = re.search(r"\(([\S\s]+),? #?(\d+\.?-?\d*)", bookname)
         if result:
             series = result.group(1)
             if series[-1] == ',':
@@ -66,6 +66,13 @@ def bookSeries(bookname):
     if series and series.lower().endswith(' book'):
         series = series[:-5]
 
+    series = cleanName(unaccented(series))
+    series = series.strip()
+    seriesNum = seriesNum.strip()
+    if series.lower().strip('.') == 'vol':
+        series = ''
+    if series.lower().strip('.').endswith('vol'):
+        series = series[:-4].strip()
     return series, seriesNum
 
 
@@ -100,7 +107,7 @@ def now():
 
 def today():
     """
-    Return todays date in format yyyy-mm-dd
+    Return todays date in format yyyymmdd
     """
     dttoday = datetime.date.today()
     yyyymmdd = datetime.date.isoformat(dttoday)
@@ -129,7 +136,7 @@ def check_year(num):
     # See if num looks like a valid year for a magazine
     # Allow forward dated by a year, eg Jan 2017 issues available in Dec 2016
     n = check_int(num, 0)
-    if n > 1900 and n < int(datetime.date.today().strftime("%Y")) + 2:
+    if 1900 < n < int(datetime.date.today().strftime("%Y")) + 2:
         return n
     return 0
 
@@ -216,12 +223,11 @@ def is_valid_isbn(isbn):
     if len(isbn) == 13:
         if isbn.isdigit():
             return True
-        elif len(isbn) == 10:
-            if isbn[:9].isdigit():
-                return True
-            else:
-                if isbn[9] in ["Xx"] and isbn[:8].isdigit():
-                    return True
+    elif len(isbn) == 10:
+        if isbn[:9].isdigit():
+            return True
+        elif isbn[9] in ["Xx"] and isbn[:8].isdigit():
+            return True
     return False
 
 
@@ -230,9 +236,9 @@ def is_valid_booktype(filename, booktype=None):
     Check if filename extension is one we want
     """
     if booktype == 'mag':  # default is book
-        booktype_list = getList(lazylibrarian.MAG_TYPE)
+        booktype_list = getList(lazylibrarian.CONFIG['MAG_TYPE'])
     else:
-        booktype_list = getList(lazylibrarian.EBOOK_TYPE)
+        booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
     extn = os.path.splitext(filename)[1].lstrip('.')
     if extn and extn.lower() in booktype_list:
         return True
@@ -240,15 +246,18 @@ def is_valid_booktype(filename, booktype=None):
 
 
 def getList(st):
-    # split a string into a list
-    # changed posix to "false" to not baulk at apostrophes
-    if st:
-        my_splitter = shlex.shlex(st, posix=False)
-        my_splitter.whitespace += ','
-        my_splitter.whitespace_split = True
-        return list(my_splitter)
-    return []
+    # split a string into a list on whitespace or plus or comma
+    # quotes treated as part of word in case unpaired
+    # could maybe strip them out?
 
+    if st:
+        st = unaccented_str(st)
+        lex = shlex.shlex(st)
+        lex.whitespace += ',+'
+        lex.quotes = ''
+        lex.whitespace_split = True
+        return list(lex)
+    return []
 
 def safe_unicode(obj, *args):
     """ return the unicode representation of obj """
@@ -264,35 +273,52 @@ def split_title(author, book):
     # Strip title at colon if starts with author, eg Tom Clancy: Ghost Protocol
     if book.startswith(author + ':'):
         book = book.split(author + ':')[1].strip()
-    colon = book.find(':')
     brace = book.find('(')
-    # split subtitle on whichever comes first, ':' or '('
     # .find() returns position in string (0 to len-1) or -1 if not found
-    # change position to 1 to len, or zero if not found
-    colon += 1
+    # change position to 1 to len, or zero if not found so we can use boolean if
     brace += 1
+    if brace and book.endswith(')'):
+        # if title ends with words in braces, split on last brace
+        # as this always seems to be a subtitle or series info
+        parts = book.rsplit('(', 1)
+        parts[1] = '(' + parts[1]
+        bookname = parts[0].strip()
+        booksub = parts[1]
+        return bookname, booksub
+    # if not (words in braces at end of string)
+    # split subtitle on whichever comes first, ':' or '('
+    # unless the part in braces is one word, eg (TM) or (Annotated)
+    # Might need to expand this to be a list of allowed words?
+    colon = book.find(':')
+    colon += 1
     bookname = book
     booksub = ''
     parts = ''
+    if brace:
+        endbrace = book.find(')')
+        endbrace += 1
+        if endbrace:
+            if ' ' not in book[brace:endbrace-1]:
+                brace = 0
     if colon and brace:
         if colon < brace:
-            parts = book.split(':')
+            parts = book.split(':', 1)
         else:
-            parts = book.split('(')
+            parts = book.split('(', 1)
             parts[1] = '(' + parts[1]
     elif colon:
-        parts = book.split(':')
+        parts = book.split(':', 1)
     elif brace:
-        parts = book.split('(')
+        parts = book.split('(', 1)
         parts[1] = '(' + parts[1]
     if parts:
-        bookname = parts[0]
+        bookname = parts[0].strip()
         booksub = parts[1]
     return bookname, booksub
 
 
-def cleanName(name):
-    validNameChars = u"-_.() %s%s" % (string.ascii_letters, string.digits)
+def cleanName(name, extras=None):
+    validNameChars = u"-_.() %s%s%s" % (string.ascii_letters, string.digits, extras)
     try:
         cleanedName = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore')
     except TypeError:

@@ -30,14 +30,14 @@ class PushbulletNotifier:
     @staticmethod
     def _sendPushbullet(message=None, event=None, pushbullet_token=None, pushbullet_deviceid=None, force=False):
 
-        if not lazylibrarian.USE_PUSHBULLET and not force:
+        if not lazylibrarian.CONFIG['USE_PUSHBULLET'] and not force:
             return False
 
         if pushbullet_token is None:
-            pushbullet_token = lazylibrarian.PUSHBULLET_TOKEN
+            pushbullet_token = lazylibrarian.CONFIG['PUSHBULLET_TOKEN']
         if pushbullet_deviceid is None:
-            if lazylibrarian.PUSHBULLET_DEVICEID:
-                pushbullet_deviceid = lazylibrarian.PUSHBULLET_DEVICEID
+            if lazylibrarian.CONFIG['PUSHBULLET_DEVICEID']:
+                pushbullet_deviceid = lazylibrarian.CONFIG['PUSHBULLET_DEVICEID']
 
         logger.debug("Pushbullet event: " + str(event))
         logger.debug("Pushbullet message: " + str(message))
@@ -52,7 +52,7 @@ class PushbulletNotifier:
             for device in devices:
                 logger.info("Pushbullet: %s [%s]" % (device["nickname"], device["iden"]))
                 ret += "\nPushbullet: %s [%s]" % (device["nickname"], device["iden"])
-            push = pb.pushNote(pushbullet_deviceid, str(event), str(message))
+            _ = pb.pushNote(pushbullet_deviceid, str(event), str(message))
             return ret
         else:
             push = pb.pushNote(pushbullet_deviceid, str(event), str(message))
@@ -73,7 +73,7 @@ class PushbulletNotifier:
             logger.warn("Pushbullet: could not convert  message: %s" % e)
 
         # suppress notifications if the notifier is disabled but the notify options are checked
-        if not lazylibrarian.USE_PUSHBULLET:
+        if not lazylibrarian.CONFIG['USE_PUSHBULLET']:
             return False
 
         logger.debug("Pushbullet: Sending notification " + str(message))
@@ -85,11 +85,11 @@ class PushbulletNotifier:
 #
 
     def notify_snatch(self, title):
-        if lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH:
+        if lazylibrarian.CONFIG['PUSHBULLET_NOTIFY_ONSNATCH']:
             self._notify(message=title, event=notifyStrings[NOTIFY_SNATCH])
 
     def notify_download(self, title):
-        if lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD:
+        if lazylibrarian.CONFIG['PUSHBULLET_NOTIFY_ONDOWNLOAD']:
             self._notify(message=title, event=notifyStrings[NOTIFY_DOWNLOAD])
 
     def test_notify(self, title="LLTest"):

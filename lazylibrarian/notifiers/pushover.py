@@ -32,15 +32,15 @@ class PushoverNotifier:
     def _sendPushover(message=None, event=None, pushover_apitoken=None, pushover_keys=None,
                       pushover_device=None, notificationType=None, method=None, force=False):
 
-        if not lazylibrarian.USE_PUSHOVER and not force:
+        if not lazylibrarian.CONFIG['USE_PUSHOVER'] and not force:
             return False
 
         if pushover_apitoken is None:
-            pushover_apitoken = lazylibrarian.PUSHOVER_APITOKEN
+            pushover_apitoken = lazylibrarian.CONFIG['PUSHOVER_APITOKEN']
         if pushover_keys is None:
-            pushover_keys = lazylibrarian.PUSHOVER_KEYS
+            pushover_keys = lazylibrarian.CONFIG['PUSHOVER_KEYS']
         if pushover_device is None:
-            pushover_device = lazylibrarian.PUSHOVER_DEVICE
+            pushover_device = lazylibrarian.CONFIG['PUSHOVER_DEVICE']
         if method is None:
             method = 'POST'
         if notificationType is None:
@@ -50,12 +50,12 @@ class PushoverNotifier:
         else:
             testMessage = False
             uri = "/1/messages.json"
-            logger.debug("Pushover event: " + str(event))
-            logger.debug("Pushover message: " + str(message))
-            logger.debug("Pushover api: " + str())
-            logger.debug("Pushover keys: " + str(pushover_keys))
-            logger.debug("Pushover device: " + str(pushover_device))
-            logger.debug("Pushover notification type: " + str(notificationType))
+        logger.debug("Pushover event: " + str(event))
+        logger.debug("Pushover message: " + str(message))
+        logger.debug("Pushover api: " + str(pushover_apitoken))
+        logger.debug("Pushover keys: " + str(pushover_keys))
+        logger.debug("Pushover device: " + str(pushover_device))
+        logger.debug("Pushover notification type: " + str(notificationType))
 
         http_handler = HTTPSConnection('api.pushover.net')
 
@@ -65,7 +65,7 @@ class PushoverNotifier:
                     'title': event.encode('utf-8'),
                     'message': message.encode("utf-8"),
                     'device': pushover_device,
-                    'priority': lazylibrarian.PUSHOVER_PRIORITY}
+                    'priority': lazylibrarian.CONFIG['PUSHOVER_PRIORITY']}
             http_handler.request(method,
                                  uri,
                                  headers={'Content-type': "application/x-www-form-urlencoded"},
@@ -111,27 +111,27 @@ class PushoverNotifier:
         except Exception as e:
             logger.warn("Pushover: could not convert  message: %s" % e)
         # suppress notifications if the notifier is disabled but the notify options are checked
-        if not lazylibrarian.USE_PUSHOVER and not force:
+        if not lazylibrarian.CONFIG['USE_PUSHOVER'] and not force:
             return False
 
         logger.debug("Pushover: Sending notification " + str(message))
 
-        return self._sendPushover(message, event, pushover_apitoken, pushover_keys, pushover_device, notificationType, method)
+        return self._sendPushover(message, event, pushover_apitoken, pushover_keys, pushover_device, notificationType, method, force)
 
 #
 # Public functions
 #
 
     def notify_snatch(self, title):
-        if lazylibrarian.PUSHOVER_ONSNATCH:
+        if lazylibrarian.CONFIG['PUSHOVER_ONSNATCH']:
             self._notify(message=title, event=notifyStrings[NOTIFY_SNATCH], notificationType='note')
 
     def notify_download(self, title):
-        if lazylibrarian.PUSHOVER_ONDOWNLOAD:
+        if lazylibrarian.CONFIG['PUSHOVER_ONDOWNLOAD']:
             self._notify(message=title, event=notifyStrings[NOTIFY_DOWNLOAD], notificationType='note')
 
     def test_notify(self, title="Test"):
-        return self._notify(message="This is a test notification from LazyLibrarian", event=title, notificationType=None)
+        return self._notify(message="This is a test notification from LazyLibrarian", event=title, notificationType=None, force=True)
 
     def update_library(self, showName=None):
         pass

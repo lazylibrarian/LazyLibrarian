@@ -22,9 +22,12 @@ import urllib2
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage
-from lazylibrarian.cache import get_xml_request, cache_cover
-from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title
+from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, deleteEmptySeries, \
+                                    setSeries, setStatus
+from lazylibrarian.cache import get_xml_request, cache_img
+from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList, \
+                                    cleanName, is_valid_isbn
+from lazylibrarian.common import formatAuthorName
 from lib.fuzzywuzzy import fuzz
 
 
@@ -34,32 +37,28 @@ class GoodReads:
     def __init__(self, name=None):
         self.name = name.encode(lazylibrarian.SYS_ENCODING)
         # self.type = type
-        if not lazylibrarian.GR_API:
+        if not lazylibrarian.CONFIG['GR_API']:
             logger.warn('No Goodreads API key, check config')
-        self.params = {"key": lazylibrarian.GR_API}
+        self.params = {"key": lazylibrarian.CONFIG['GR_API']}
 
-    def find_results(self, authorname=None, queue=None):
+    def find_results(self, searchterm=None, queue=None):
         try:
             resultlist = []
             api_hits = 0
-            # Goodreads doesn't like initials followed by spaces,
-            # eg "M L Hamilton", needs "M. L. Hamilton" or "M.L.Hamilton"
-            # but DOES need spaces if not initials eg "Tom.Holt" fails, but "Tom Holt" works
-            if authorname[1] == ' ':
-                authorname = authorname.replace(' ', '.')
-                authorname = authorname.replace('..', '.')
+            # we don't use the title/author separator in goodreads
+            searchterm = searchterm.replace(' <ll> ', '')
 
-            url = urllib.quote_plus(authorname.encode(lazylibrarian.SYS_ENCODING))
+            url = urllib.quote_plus(searchterm.encode(lazylibrarian.SYS_ENCODING))
             set_url = 'http://www.goodreads.com/search.xml?q=' + url + '&' + urllib.urlencode(self.params)
-            logger.debug('Now searching GoodReads API with keyword: ' + authorname)
-            logger.debug('Searching for %s at: %s' % (authorname, set_url))
+            logger.debug('Now searching GoodReads API with searchterm: %s' % searchterm)
+            #logger.debug('Searching for %s at: %s' % (searchterm, set_url))
 
             resultcount = 0
             try:
                 try:
                     rootxml, in_cache = get_xml_request(set_url)
                 except Exception as e:
-                    logger.error("Error finding results: %s" % str(e))
+                    logger.error("Error finding gr results: %s" % str(e))
                     return
                 if not len(rootxml):
                     logger.debug("Error requesting results")
@@ -74,6 +73,8 @@ class GoodReads:
                         bookdate = author.find('original_publication_year').text
 
                     authorNameResult = author.find('./best_book/author/name').text
+                    # Goodreads sometimes puts extra whitepase in the author names!
+                    authorNameResult =  ' '.join(authorNameResult.split())
                     booksub = ""
                     bookpub = ""
                     booklang = "Unknown"
@@ -101,17 +102,13 @@ class GoodReads:
                     else:
                         bookTitle = author.find('./best_book/title').text
 
-                    author_fuzz = fuzz.token_set_ratio(authorNameResult, authorname)
-                    book_fuzz = fuzz.token_set_ratio(bookTitle, authorname)
-                    try:
-                        isbn_check = int(authorname[:-1])
-                        if (len(str(isbn_check)) == 9) or (len(str(isbn_check)) == 12):
-                            isbn_fuzz = int(100)
-                        else:
-                            isbn_fuzz = int(0)
-                    except Exception:
-                        isbn_fuzz = int(0)
-                    highest_fuzz = max(author_fuzz, book_fuzz, isbn_fuzz)
+                    author_fuzz = fuzz.ratio(authorNameResult, searchterm)
+                    book_fuzz = fuzz.ratio(bookTitle, searchterm)
+                    isbn_fuzz = 0
+                    if is_valid_isbn(searchterm):
+                            isbn_fuzz = 100
+
+                    highest_fuzz = max((author_fuzz + book_fuzz) / 2, isbn_fuzz)
 
                     bookid = author.find('./best_book/id').text
 
@@ -148,9 +145,9 @@ class GoodReads:
                 else:
                     logger.error('An unexpected error has occurred when searching for an author: %s' % str(err))
 
-            logger.debug('Found %s result%s with keyword: %s' % (resultcount, plural(resultcount), authorname))
+            logger.debug('Found %s result%s with keyword: %s' % (resultcount, plural(resultcount), searchterm))
             logger.debug(
-                'The GoodReads API was hit %s time%s for keyword %s' % (api_hits, plural(api_hits), authorname))
+                'The GoodReads API was hit %s time%s for keyword %s' % (api_hits, plural(api_hits), searchterm))
 
             queue.put(resultlist)
 
@@ -159,12 +156,7 @@ class GoodReads:
 
     def find_author_id(self, refresh=False):
         author = self.name
-        # Goodreads doesn't like initials followed by spaces,
-        # eg "M L Hamilton", needs "M. L. Hamilton" or "M.L.Hamilton"
-        # but DOES need spaces if not initials eg "Tom.Holt" fails, but "Tom Holt" works
-        if author[1] == ' ':
-            author = author.replace(' ', '.')
-            author = author.replace('..', '.')
+        author = formatAuthorName(author)
         URL = 'http://www.goodreads.com/api/author_url/' + urllib.quote(author) + '?' + urllib.urlencode(self.params)
 
         # googlebooks gives us author names with long form unicode characters
@@ -196,12 +188,11 @@ class GoodReads:
             # For now we'll have to let the user handle this by selecting/adding the author manually
             for author in resultxml:
                 authorid = author.attrib.get("id")
-                authorname = author[0].text
-                authorlist = self.get_author_info(authorid, authorname)
+                authorlist = self.get_author_info(authorid)
         return authorlist
 
 
-    def get_author_info(self, authorid=None, authorname=None):
+    def get_author_info(self, authorid=None):
 
         URL = 'http://www.goodreads.com/author/show/' + authorid + '.xml?' + urllib.urlencode(self.params)
         author_dict = {}
@@ -220,9 +211,17 @@ class GoodReads:
         if not len(resultxml):
             logger.warn('No author found with ID: ' + authorid)
         else:
-            logger.debug("[%s] Processing info for authorID: %s" % (authorname, authorid))
-            # PAB added authorname to author_dict - this holds the intact name preferred by GR
+            # added authorname to author_dict - this holds the intact name preferred by GR
+            # except GR messes up names like "L. E. Modesitt, Jr." where it returns <name>Jr., L. E. Modesitt</name>
             authorname = resultxml[1].text
+            if "," in authorname:
+                postfix = getList(lazylibrarian.CONFIG['NAME_POSTFIX'])
+                words = authorname.split(',')
+                if len(words) == 2:
+                    if words[0].strip().strip('.').lower in postfix:
+                        authorname = words[1].strip() + ' ' + words[0].strip()
+
+            logger.debug("[%s] Processing info for authorID: %s" % (authorname, authorid))
             author_dict = {
                 'authorid': resultxml[0].text,
                 'authorlink': resultxml.find('link').text,
@@ -262,7 +261,7 @@ class GoodReads:
                 api_hits += 1
             resultxml = rootxml.getiterator('book')
 
-            valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
+            valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
 
             resultsCount = 0
             removedResults = 0
@@ -273,31 +272,6 @@ class GoodReads:
             book_ignore_count = 0
             total_count = 0
 
-            isbn_979_dict = {
-                "10": "fre",
-                "11": "kor",
-                "12": "ita"
-            }
-            isbn_978_dict = {
-                "0": "eng",
-                "1": "eng",
-                "2": "fre",
-                "3": "ger",
-                "4": "jap",
-                "5": "rus",
-                "7": "chi",
-                "80": "cze",
-                "82": "pol",
-                "83": "nor",
-                "84": "spa",
-                "85": "bra",
-                "87": "den",
-                "88": "ita",
-                "89": "kor",
-                "91": "swe",
-                "93": "ind"
-            }
-
             if not len(resultxml):
                 logger.warn('[%s] No books found for author with ID: %s' % (authorname, authorid))
             else:
@@ -305,7 +279,9 @@ class GoodReads:
                 logger.debug(u"url " + URL)
 
                 authorNameResult = rootxml.find('./author/name').text
-                logger.debug(u"author name " + authorNameResult)
+                # Goodreads sometimes puts extra whitepase in the author names!
+                authorNameResult =  ' '.join(authorNameResult.split())
+                logger.debug(u"GoodReads author name [%s]" % authorNameResult)
                 loopCount = 1
 
                 while resultxml:
@@ -338,26 +314,25 @@ class GoodReads:
                                     find_field = "isbn13"
                                     isbn = book.find('isbn13').text
                                     isbnhead = isbn[3:6]
-                            if find_field != 'id':  # isbn10 or isbn13 found
-                                # Try to use shortcut of ISBN identifier codes described here...
-                                # https://en.wikipedia.org/wiki/List_of_ISBN_identifier_groups
-                                if isbnhead != "":
-                                    if find_field == "isbn13" and isbn.startswith('979'):
-                                        for item in isbn_979_dict:
-                                            if isbnhead.startswith(item):
-                                                bookLanguage = isbn_979_dict[item]
-                                                break
-                                        if bookLanguage != "Unknown":
-                                            logger.debug("ISBN979 returned %s for %s" % (bookLanguage, isbnhead))
-                                    elif (find_field == "isbn") or (find_field == "isbn13" and isbn.startswith('978')):
-                                        for item in isbn_978_dict:
-                                            if isbnhead.startswith(item):
-                                                bookLanguage = isbn_978_dict[item]
-                                                break
-                                        if bookLanguage != "Unknown":
-                                            logger.debug("ISBN978 returned %s for %s" % (bookLanguage, isbnhead))
+                            # Try to use shortcut of ISBN identifier codes described here...
+                            # http://en.wikipedia.org/wiki/List_of_ISBN_identifier_groups
+                            if isbnhead:
+                                if find_field == "isbn13" and isbn.startswith('979'):
+                                    for item in lazylibrarian.isbn_979_dict:
+                                        if isbnhead.startswith(item):
+                                            bookLanguage = lazylibrarian.isbn_979_dict[item]
+                                            break
+                                    if bookLanguage != "Unknown":
+                                        logger.debug("ISBN979 returned %s for %s" % (bookLanguage, isbnhead))
+                                elif (find_field == "isbn") or (find_field == "isbn13" and isbn.startswith('978')):
+                                    for item in lazylibrarian.isbn_978_dict:
+                                        if isbnhead.startswith(item):
+                                            bookLanguage = lazylibrarian.isbn_978_dict[item]
+                                            break
+                                    if bookLanguage != "Unknown":
+                                        logger.debug("ISBN978 returned %s for %s" % (bookLanguage, isbnhead))
 
-                            if bookLanguage == "Unknown":
+                            if bookLanguage == "Unknown" and isbnhead:
                                 # Nothing in the isbn dictionary, try any cached results
                                 match = myDB.match('SELECT lang FROM languages where isbn = "%s"' % isbnhead)
                                 if match:
@@ -451,6 +426,7 @@ class GoodReads:
                                 logger.debug('Skipped %s with language %s' % (book.find('title').text, bookLanguage))
                                 ignored += 1
                                 continue
+
                         bookname = book.find('title').text
                         bookid = book.find('id').text
                         bookdesc = book.find('description').text
@@ -463,7 +439,7 @@ class GoodReads:
 
                         bookname, booksub = split_title(authorNameResult, bookname)
 
-                        dic = {':': '', '"': '', '\'': ''}
+                        dic = {':': '.', '"': ''}  # do we need to strip apostrophes , '\'': ''}
                         bookname = replace_all(bookname, dic)
                         bookname = bookname.strip()  # strip whitespace
                         booksub = replace_all(booksub, dic)
@@ -473,23 +449,19 @@ class GoodReads:
                         else:
                             series, seriesNum = bookSeries(bookname)
 
-                        # GoodReads sometimes has multiple bookids for the same book (same author/title, different editions)
-                        # and sometimes uses the same bookid if the book is the same but the title is slightly different
-                        # We use bookid, then reject if another author/title has a different bookid so we just keep one...
-                        find_book_status = myDB.match('SELECT * FROM books WHERE BookID = "%s"' % bookid)
-                        if find_book_status:
-                            book_status = find_book_status['Status']
-                            locked = find_book_status['Manual']
-                        else:
-                            book_status = bookstatus
-                            locked = False
-
                         rejected = False
+                        check_status = False
 
                         if re.match('[^\w-]', bookname):  # reject books with bad characters in title
                             logger.debug(u"removed result [" + bookname + "] for bad characters")
                             removedResults += 1
                             rejected = True
+
+                        if not rejected and lazylibrarian.CONFIG['NO_FUTURE']:
+                            if pubyear > today()[:4]:
+                                logger.debug('Rejecting %s, future publication date %s' % (bookname, pubyear))
+                                removedResults += 1
+                                rejected = True
 
                         if not rejected and not bookname:
                             logger.debug('Rejecting bookid %s for %s, no bookname' %
@@ -498,62 +470,75 @@ class GoodReads:
                             rejected = True
 
                         if not rejected:
-                            find_books = myDB.select('SELECT * FROM books WHERE BookName = "%s" and AuthorName = "%s"' %
-                                                     (bookname, authorNameResult.replace('"', '""')))
-                            if find_books:
-                                for find_book in find_books:
-                                    if find_book['BookID'] != bookid:
-                                        # we have a book with this author/title already
-                                        logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
-                                                     (find_book['BookID'], authorNameResult, bookname, bookid))
-                                        duplicates += 1
-                                        rejected = True
+                            cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'
+                            cmd += ' and BookName = "%s" COLLATE NOCASE and AuthorName = "%s" COLLATE NOCASE' % \
+                                    (bookname, authorNameResult.replace('"', '""'))
+                            match = myDB.match(cmd)
+                            if match:
+                                if match['BookID'] != bookid:
+                                    # we have a different book with this author/title already
+                                    logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
+                                                 (match['BookID'], authorNameResult, bookname, bookid))
+                                    duplicates += 1
+                                    rejected = True
 
                         if not rejected:
-                            find_books = myDB.match(
-                                'SELECT AuthorName,BookName FROM books WHERE BookID = "%s"' % bookid)
-                            if find_books:
+                            cmd = 'SELECT AuthorName,BookName FROM books,authors'
+                            cmd += ' WHERE authors.AuthorID = books.AuthorID AND BookID=%s' % bookid
+                            match = myDB.match(cmd)
+                            if match:
                                 # we have a book with this bookid already
-                                if bookname != find_books['BookName'] or authorNameResult != find_books['AuthorName']:
+                                if bookname != match['BookName'] or authorNameResult != match['AuthorName']:
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got bookid for [%s][%s]' %
                                                  (bookid, authorNameResult, bookname,
-                                                  find_books['AuthorName'], find_books['BookName']))
+                                                 match['AuthorName'], match['BookName']))
                                 else:
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got this book in database' %
                                                  (bookid, authorNameResult, bookname))
+                                    check_status = True
                                 duplicates += 1
                                 rejected = True
 
-                        if not rejected:
-                            if book_status != "Ignored":
-                                if not locked:
-                                    controlValueDict = {"BookID": bookid}
-                                    newValueDict = {
-                                        "AuthorName": authorNameResult,
-                                        "AuthorID": authorid,
-                                        "AuthorLink": None,
-                                        "BookName": bookname,
-                                        "BookSub": booksub,
-                                        "BookDesc": bookdesc,
-                                        "BookIsbn": bookisbn,
-                                        "BookPub": bookpub,
-                                        "BookGenre": None,
-                                        "BookImg": bookimg,
-                                        "BookLink": booklink,
-                                        "BookRate": bookrate,
-                                        "BookPages": bookpages,
-                                        "BookDate": pubyear,
-                                        "BookLang": bookLanguage,
-                                        "Status": book_status,
-                                        "BookAdded": today(),
-                                        "Series": series,
-                                        "SeriesNum": seriesNum
-                                    }
+                        if check_status or not rejected:
+                            existing_book = myDB.match('SELECT Status,Manual FROM books WHERE BookID = "%s"' % bookid)
+                            if existing_book:
+                                book_status = existing_book['Status']
+                                locked = existing_book['Manual']
+                                if locked is None:
+                                    locked = False
+                                elif locked.isdigit():
+                                    locked = bool(int(locked))
+                            else:
+                                book_status = bookstatus  # new_book status, or new_author status
+                                locked = False
 
-                                    resultsCount += 1
+                            # Is the book already in the database?
+                            # Leave alone if locked or status "ignore"
+                            if not locked and book_status != "Ignored":
+                                controlValueDict = {"BookID": bookid}
+                                newValueDict = {
+                                    "AuthorID": authorid,
+                                    "BookName": bookname,
+                                    "BookSub": booksub,
+                                    "BookDesc": bookdesc,
+                                    "BookIsbn": bookisbn,
+                                    "BookPub": bookpub,
+                                    "BookGenre": "",
+                                    "BookImg": bookimg,
+                                    "BookLink": booklink,
+                                    "BookRate": bookrate,
+                                    "BookPages": bookpages,
+                                    "BookDate": pubyear,
+                                    "BookLang": bookLanguage,
+                                    "Status": book_status,
+                                    "BookAdded": today()
+                                }
 
-                                    myDB.upsert("books", newValueDict, controlValueDict)
-                                    logger.debug(u"Book found: " + book.find('title').text + " " + pubyear)
+                                resultsCount += 1
+                                updated = False
+
+                                myDB.upsert("books", newValueDict, controlValueDict)
+                                logger.debug(u"Book found: " + book.find('title').text + " " + pubyear)
 
                                 if 'nocover' in bookimg or 'nophoto' in bookimg:
                                     # try to get a cover from librarything
@@ -563,25 +548,35 @@ class GoodReads:
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": workcover}
                                         myDB.upsert("books", newValueDict, controlValueDict)
+                                        updated = True
 
                                 elif bookimg and bookimg.startswith('http'):
-                                    link = cache_cover(bookid, bookimg)
-                                    if link:
+                                    link, success = cache_img("book", bookid, bookimg, refresh=refresh)
+                                    if success:
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": link}
                                         myDB.upsert("books", newValueDict, controlValueDict)
+                                        updated = True
+                                    else:
+                                        logger.debug('Failed to cache image for %s' % bookimg)
 
-                                if seriesNum is None:
-                                    # try to get series info from librarything
-                                    series, seriesNum = getWorkSeries(bookid)
-                                    if seriesNum:
-                                        logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))
-                                        controlValueDict = {"BookID": bookid}
-                                        newValueDict = {
-                                            "Series": series,
-                                            "SeriesNum": seriesNum
-                                        }
-                                        myDB.upsert("books", newValueDict, controlValueDict)
+                                seriesdict = {}
+                                if lazylibrarian.CONFIG['ADD_SERIES']:
+                                    # prefer series info from librarything
+                                    seriesdict = getWorkSeries(bookid)
+                                    if seriesdict:
+                                        logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
+                                        updated = True
+                                    else:
+                                        if series:
+                                            seriesdict = {cleanName(unaccented(series)): seriesNum}
+                                    setSeries(seriesdict, bookid)
+
+                                new_status = setStatus(bookid, seriesdict, bookstatus)
+
+                                if not new_status == book_status:
+                                    book_status = new_status
+                                    updated = True
 
                                 worklink = getWorkPage(bookid)
                                 if worklink:
@@ -589,11 +584,13 @@ class GoodReads:
                                     newValueDict = {"WorkPage": worklink}
                                     myDB.upsert("books", newValueDict, controlValueDict)
 
-                                if not find_book_status:
-                                    logger.debug(u"[%s] Added book: %s" % (authorname, bookname))
+                                if not existing_book:
+                                    logger.debug(u"[%s] Added book: %s [%s] status %s" %
+                                                (authorname, bookname, bookLanguage, book_status))
                                     added_count += 1
-                                else:
-                                    logger.debug(u"[%s] Updated book: %s" % (authorname, bookname))
+                                elif updated:
+                                    logger.debug(u"[%s] Updated book: %s [%s] status %s" %
+                                                (authorname, bookname, bookLanguage, book_status))
                                     updated_count += 1
                             else:
                                 book_ignore_count += 1
@@ -615,9 +612,10 @@ class GoodReads:
                         logger.error("Error finding next page of results: %s" % str(e))
 
                     if resultxml:
-                        if all(False for book in resultxml):  # returns True if iterator is empty
+                        if all(False for _ in resultxml):  # returns True if iterator is empty
                             resultxml = None
 
+            deleteEmptySeries()
             lastbook = myDB.match('SELECT BookName, BookLink, BookDate, BookImg from books WHERE AuthorID="%s" \
                                 AND Status != "Ignored" order by BookDate DESC' % authorid)
             if lastbook:
@@ -626,10 +624,10 @@ class GoodReads:
                 lastbookdate = lastbook['BookDate']
                 lastbookimg = lastbook['BookImg']
             else:
-                lastbookname = None
-                lastbooklink = None
-                lastbookdate = None
-                lastbookimg = None
+                lastbookname = ""
+                lastbooklink = ""
+                lastbookdate = ""
+                lastbookimg = ""
 
             controlValueDict = {"AuthorID": authorid}
             newValueDict = {
@@ -644,14 +642,14 @@ class GoodReads:
             # This is here because GoodReads sometimes has several entries with the same BookID!
             modified_count = added_count + updated_count
 
-            logger.debug("Found %s total book%s for author" % (total_count, plural(total_count)))
-            logger.debug("Removed %s unwanted language result%s for author" % (ignored, plural(ignored)))
+            logger.debug("Found %s result%s" % (total_count, plural(total_count)))
+            logger.debug("Removed %s unwanted language result%s" % (ignored, plural(ignored)))
             logger.debug(
-                "Removed %s bad character or no-name result%s for author" %
+                "Removed %s bad character or no-name result%s" %
                 (removedResults, plural(removedResults)))
-            logger.debug("Removed %s duplicate result%s for author" % (duplicates, plural(duplicates)))
+            logger.debug("Removed %s duplicate result%s" % (duplicates, plural(duplicates)))
             logger.debug("Found %s book%s by author marked as Ignored" % (book_ignore_count, plural(book_ignore_count)))
-            logger.debug("Imported/Updated %s book%s for author" % (modified_count, plural(modified_count)))
+            logger.debug("Imported/Updated %s book%s" % (modified_count, plural(modified_count)))
 
             myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i, %i)' %
                         (authorname.replace('"', '""'), api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change,
@@ -667,10 +665,11 @@ class GoodReads:
         except Exception:
             logger.error('Unhandled exception in GR.get_author_books: %s' % traceback.format_exc())
 
+    # noinspection PyUnusedLocal
     def find_book(self, bookid=None, queue=None):
         myDB = database.DBConnection()
 
-        URL = 'https://www.goodreads.com/book/show/' + bookid + '?' + urllib.urlencode(self.params)
+        URL = 'http://www.goodreads.com/book/show/' + bookid + '?' + urllib.urlencode(self.params)
 
         try:
             rootxml, in_cache = get_xml_request(URL)
@@ -689,9 +688,9 @@ class GoodReads:
         #
         # PAB user has said they want this book, don't block for unwanted language, just warn
         #
-        valid_langs = ([valid_lang.strip() for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
+        valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
         if bookLanguage not in valid_langs:
-            logger.debug('Book %s language does not match preference, %s' % (bookname, bookLanguage))
+            logger.debug('Book %s goodreads language does not match preference, %s' % (bookname, bookLanguage))
 
         if rootxml.find('./book/publication_year').text is None:
             bookdate = "0000"
@@ -718,13 +717,33 @@ class GoodReads:
         author = GR.find_author_id()
         if author:
             AuthorID = author['authorid']
+            match = myDB.match('SELECT AuthorID from authors WHERE AuthorID="%s"' % AuthorID)
+            if not match:
+                match = myDB.match('SELECT AuthorID from authors WHERE AuthorName="%s"' %  author['authorname'])
+                if match:
+                    logger.debug('%s: Changing authorid from %s to %s' %
+                                (author['authorname'], AuthorID, match['AuthorID']))
+                    AuthorID = match['AuthorID']    # we have a different authorid for that authorname
+                else:   # no author but request to add book, add author as "ignored"
+                        # User hit "add book" button from a search
+                    controlValueDict = {"AuthorID": AuthorID}
+                    newValueDict = {
+                        "AuthorName": author['authorname'],
+                        "AuthorImg": author['authorimg'],
+                        "AuthorLink": author['authorlink'],
+                        "AuthorBorn": author['authorborn'],
+                        "AuthorDeath": author['authordeath'],
+                        "DateAdded": today(),
+                        "Status": "Ignored"
+                    }
+                    myDB.upsert("authors", newValueDict, controlValueDict)
         else:
             logger.warn("No AuthorID for %s, unable to add book %s" % (authorname, bookname))
             return
 
         bookname = unaccented(bookname)
         bookname, booksub = split_title(authorname, bookname)
-        dic = {':': '', '"': '', '\'': ''}
+        dic = {':': '.', '"': '', '\'': ''}
         bookname = replace_all(bookname, dic).strip()
         booksub = replace_all(booksub, dic).strip()
         if booksub:
@@ -734,15 +753,13 @@ class GoodReads:
 
         controlValueDict = {"BookID": bookid}
         newValueDict = {
-            "AuthorName": authorname,
             "AuthorID": AuthorID,
-            "AuthorLink": None,
             "BookName": bookname,
             "BookSub": booksub,
             "BookDesc": bookdesc,
             "BookIsbn": bookisbn,
             "BookPub": bookpub,
-            "BookGenre": None,
+            "BookGenre": "",
             "BookImg": bookimg,
             "BookLink": booklink,
             "BookRate": bookrate,
@@ -750,13 +767,11 @@ class GoodReads:
             "BookDate": bookdate,
             "BookLang": bookLanguage,
             "Status": "Wanted",
-            "BookAdded": today(),
-            "Series": series,
-            "SeriesNum": seriesNum
+            "BookAdded": today()
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
-        logger.debug("%s added to the books database" % bookname)
+        logger.info("%s added to the books database" % bookname)
 
         if 'nocover' in bookimg or 'nophoto' in bookimg:
             # try to get a cover from librarything
@@ -768,23 +783,23 @@ class GoodReads:
                 myDB.upsert("books", newValueDict, controlValueDict)
 
         elif bookimg and bookimg.startswith('http'):
-            link = cache_cover(bookid, bookimg)
-            if link:
+            link, success = cache_img("book", bookid, bookimg)
+            if success:
                 controlValueDict = {"BookID": bookid}
                 newValueDict = {"BookImg": link}
                 myDB.upsert("books", newValueDict, controlValueDict)
+            else:
+                logger.debug('Failed to cache image for %s' % bookimg)
 
-        if seriesNum is None:
-            #  try to get series info from librarything
-            series, seriesNum = getWorkSeries(bookid)
-            if seriesNum:
-                logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))
-                controlValueDict = {"BookID": bookid}
-                newValueDict = {
-                    "Series": series,
-                    "SeriesNum": seriesNum
-                }
-                myDB.upsert("books", newValueDict, controlValueDict)
+        if lazylibrarian.CONFIG['ADD_SERIES']:
+            # prefer series info from librarything
+            seriesdict = getWorkSeries(bookid)
+            if seriesdict:
+                logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
+            else:
+                if series:
+                    seriesdict = {cleanName(unaccented(series)): seriesNum}
+            setSeries(seriesdict, bookid)
 
         worklink = getWorkPage(bookid)
         if worklink:

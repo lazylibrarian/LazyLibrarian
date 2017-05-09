@@ -64,7 +64,11 @@ Open localhost:5299/home or click the LazyLibrarian icon in the top left. Type a
 
 
 ## Update
-Auto update available via interface from master
+Auto update available via interface from master for git and source installs
+
+## Packages
+rpm and deb packages here : https://github.com/DobyTang/LazyLibrarian/releases  
+AUR package available here: https://aur.archlinux.org/packages/lazylibrarian/  
 
 ## Docker packages
 x64 version here  : https://hub.docker.com/r/linuxserver/lazylibrarian/  

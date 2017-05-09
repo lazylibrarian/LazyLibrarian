@@ -25,9 +25,11 @@ from urllib2 import HTTPError
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage
-from lazylibrarian.cache import get_json_request, cache_cover
-from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn
+from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, deleteEmptySeries, \
+    setSeries, setStatus
+from lazylibrarian.cache import get_json_request, cache_img
+from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn, \
+    getList, cleanName
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 
@@ -35,41 +37,64 @@ from lib.fuzzywuzzy import fuzz
 class GoogleBooks:
     def __init__(self, name=None):
         self.name = name
-        if not lazylibrarian.GB_API:
+        if not lazylibrarian.CONFIG['GB_API']:
             logger.warn('No GoogleBooks API key, check config')
         self.url = 'https://www.googleapis.com/books/v1/volumes?q='
         self.params = {
             'maxResults': 40,
             'printType': 'books',
-            'key': lazylibrarian.GB_API
+            'key': lazylibrarian.CONFIG['GB_API']
         }
 
-    def find_results(self, authorname=None, queue=None):
+    def find_results(self, searchterm=None, queue=None):
+        """ GoogleBooks performs much better if we search for author OR title
+            not both at once, so if searchterm is not isbn, two searches needed.
+            Lazylibrarian searches use <ll> to separate title from author in searchterm
+            If this token isn't present, it's an isbn or searchterm as supplied by user
+        """
         try:
             myDB = database.DBConnection()
             resultlist = []
             # See if we should check ISBN field, otherwise ignore it
             api_strings = ['inauthor:', 'intitle:']
-            if is_valid_isbn(authorname):
+            if is_valid_isbn(searchterm):
                 api_strings = ['isbn:']
 
             api_hits = 0
-            logger.debug(
-                'Now searching Google Books API with keyword: ' +
-                self.name)
 
-            resultcount = 0
             ignored = 0
             total_count = 0
             no_author_count = 0
-            api_value = ''
+
+            if ' <ll> ' in searchterm:  # special token separates title from author
+                title, authorname = searchterm.split(' <ll> ')
+            else:
+                title = ''
+                authorname = ''
+
+            fullterm = searchterm.replace(' <ll> ', '')
+            logger.debug('Now searching Google Books API with searchterm: %s' % fullterm)
 
             for api_value in api_strings:
+                set_url = self.url
                 if api_value == "isbn:":
-                    set_url = self.url + urllib.quote(api_value + self.name.encode(lazylibrarian.SYS_ENCODING))
-                else:
-                    set_url = self.url + \
-                              urllib.quote(api_value + '"' + self.name.encode(lazylibrarian.SYS_ENCODING) + '"')
+                    set_url = set_url + urllib.quote(api_value + searchterm.encode(lazylibrarian.SYS_ENCODING))
+                elif api_value == 'intitle:':
+                    searchterm = fullterm
+                    if title:  # just search for title
+                        title = title.split(' (')[0]    # with out any series info
+                        searchterm = title
+                    searchterm = searchterm.replace("'","").replace('"','')  # and no quotes
+                    searchterm = searchterm.strip()
+                    set_url = set_url + \
+                              urllib.quote(api_value + '"' + searchterm.encode(lazylibrarian.SYS_ENCODING) + '"')
+                elif api_value == 'inauthor:':
+                    searchterm = fullterm
+                    if authorname:
+                        searchterm = authorname    # just search for author
+                    set_url = set_url + \
+                              urllib.quote(api_value + '"' + searchterm.encode(lazylibrarian.SYS_ENCODING) + '"')
+                    searchterm = searchterm.strip()
 
                 startindex = 0
                 resultcount = 0
@@ -85,7 +110,7 @@ class GoogleBooks:
 
                         try:
                             jsonresults, in_cache = get_json_request(URL)
-                            if jsonresults is None:
+                            if not jsonresults:
                                 number_results = 0
                             else:
                                 if not in_cache:
@@ -93,9 +118,7 @@ class GoogleBooks:
                                 number_results = jsonresults['totalItems']
                                 logger.debug('Searching url: ' + URL)
                             if number_results == 0:
-                                logger.warn(
-                                    'Found no results for %s with value: %s' %
-                                    (api_value, self.name))
+                                logger.warn('Found no results for %s with value: %s' % (api_value, searchterm))
                                 break
                             else:
                                 pass
@@ -124,8 +147,7 @@ class GoogleBooks:
                                 logger.debug('Skipped a result without title.')
                                 continue
 
-                            valid_langs = ([valid_lang.strip()
-                                            for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
+                            valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
                             booklang = ''
                             if "All" not in valid_langs:  # don't care about languages, accept all
                                 try:
@@ -144,12 +166,12 @@ class GoogleBooks:
                             try:
                                 bookpub = item['volumeInfo']['publisher']
                             except KeyError:
-                                bookpub = None
+                                bookpub = ""
 
                             try:
                                 booksub = item['volumeInfo']['subtitle']
                             except KeyError:
-                                booksub = None
+                                booksub = ""
 
                             try:
                                 bookdate = item['volumeInfo']['publishedDate']
@@ -175,7 +197,7 @@ class GoogleBooks:
                             try:
                                 bookgenre = item['volumeInfo']['categories'][0]
                             except KeyError:
-                                bookgenre = None
+                                bookgenre = ""
 
                             try:
                                 bookdesc = item['volumeInfo']['description']
@@ -196,16 +218,27 @@ class GoogleBooks:
                             except KeyError:
                                 bookisbn = 0
 
-                            author_fuzz = fuzz.token_set_ratio(Author, authorname)
-                            book_fuzz = fuzz.token_set_ratio(bookname, authorname)
+                            if authorname:
+                                author_fuzz = fuzz.ratio(Author, authorname)
+                            else:
+                                author_fuzz = fuzz.ratio(Author, fullterm)
+
+                            if title:
+                                book_fuzz = fuzz.ratio(bookname, title)
+                                # lose a point for each extra word in the fuzzy matches so we get the closest match
+                                words = len(getList(bookname))
+                                words -= len(getList(title))
+                                book_fuzz -= abs(words)
+                            else:
+                                book_fuzz = fuzz.ratio(bookname, fullterm)
 
                             isbn_fuzz = 0
-                            if is_valid_isbn(authorname):
+                            if is_valid_isbn(fullterm):
                                 isbn_fuzz = 100
 
-                            highest_fuzz = max(author_fuzz, book_fuzz, isbn_fuzz)
+                            highest_fuzz = max((author_fuzz + book_fuzz) / 2, isbn_fuzz)
 
-                            dic = {':': '', '"': '', '\'': ''}
+                            dic = {':': '.', '"': '', '\'': ''}
                             bookname = replace_all(bookname, dic)
 
                             bookname = unaccented(bookname)
@@ -213,8 +246,7 @@ class GoogleBooks:
                             bookid = item['id']
 
                             author = myDB.select(
-                                'SELECT AuthorID FROM authors WHERE AuthorName = "%s"' %
-                                Author.replace('"', '""'))
+                                'SELECT AuthorID FROM authors WHERE AuthorName = "%s"' % Author.replace('"', '""'))
                             if author:
                                 AuthorID = author[0]['authorid']
                             else:
@@ -248,14 +280,14 @@ class GoogleBooks:
                 except KeyError:
                     break
 
-            logger.debug("Found %s total result%s" % (total_count, plural(total_count)))
+                logger.debug("Returning %s result%s for (%s) with keyword: %s" %
+                            (resultcount, plural(resultcount), api_value, searchterm))
+
+            logger.debug("Found %s result%s" % (total_count, plural(total_count)))
             logger.debug("Removed %s unwanted language result%s" % (ignored, plural(ignored)))
             logger.debug("Removed %s book%s with no author" % (no_author_count, plural(no_author_count)))
-            logger.debug("Showing %s result%s for (%s) with keyword: %s" %
-                         (resultcount, plural(resultcount), api_value, authorname))
-            logger.debug(
-                'The Google Books API was hit %s time%s for keyword %s' %
-                (api_hits, plural(api_hits), self.name))
+            logger.debug('The Google Books API was hit %s time%s for searchterm: %s' %
+                        (api_hits, plural(api_hits), fullterm))
             queue.put(resultlist)
 
         except Exception:
@@ -284,8 +316,7 @@ class GoogleBooks:
             total_count = 0
             number_results = 1
 
-            valid_langs = ([valid_lang.strip()
-                            for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
+            valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
             # Artist is loading
             myDB = database.DBConnection()
             controlValueDict = {"AuthorID": authorid}
@@ -300,7 +331,7 @@ class GoogleBooks:
 
                     try:
                         jsonresults, in_cache = get_json_request(URL, useCache=not refresh)
-                        if jsonresults is None:
+                        if not jsonresults:
                             number_results = 0
                         else:
                             if not in_cache:
@@ -326,7 +357,7 @@ class GoogleBooks:
 
                         # skip if no author, no author is no book.
                         try:
-                            author = item['volumeInfo']['authors'][0]
+                            _ = item['volumeInfo']['authors'][0]
                         except KeyError:
                             logger.debug('Skipped a result without authorfield.')
                             continue
@@ -343,6 +374,8 @@ class GoogleBooks:
                         isbnhead = ""
                         if len(bookisbn) == 10:
                             isbnhead = bookisbn[0:3]
+                        elif len(bookisbn) == 13:
+                            isbnhead = bookisbn[3:6]
 
                         try:
                             booklang = item['volumeInfo']['language']
@@ -356,21 +389,45 @@ class GoogleBooks:
                                 # are in english when they are not
                                 if booklang == "Unknown" or booklang == "en":
                                     googlelang = booklang
-                                    match = myDB.match('SELECT lang FROM languages where isbn = "%s"' %
-                                                       isbnhead)
-                                    if match:
-                                        booklang = match['lang']
+                                    match = False
+                                    lang = myDB.match('SELECT lang FROM languages where isbn = "%s"' % isbnhead)
+                                    if lang:
+                                        booklang = lang['lang']
                                         cache_hits += 1
-                                        logger.debug(
-                                            "Found cached language [%s] for [%s]" %
-                                            (booklang, isbnhead))
+                                        logger.debug("Found cached language [%s] for [%s]" % (booklang, isbnhead))
+                                        match = True
+                                    if not match:
+                                        # no match in cache, try lookup dict
+                                        if isbnhead:
+                                            if len(bookisbn) == 13 and bookisbn.startswith('979'):
+                                                for lang in lazylibrarian.isbn_979_dict:
+                                                    if isbnhead.startswith(lang):
+                                                        booklang = lazylibrarian.isbn_979_dict[lang]
+                                                        logger.debug("ISBN979 returned %s for %s" %
+                                                                    (booklang, isbnhead))
+                                                        match = True
+                                                        break
 
-                                    else:
-                                        # no match in cache, try searching librarything for a language code using the isbn
+                                            elif (len(bookisbn) == 10) or \
+                                                    (len(bookisbn) == 13 and bookisbn.startswith('978')):
+                                                for lang in lazylibrarian.isbn_978_dict:
+                                                    if isbnhead.startswith(lang):
+                                                        booklang = lazylibrarian.isbn_978_dict[lang]
+                                                        logger.debug("ISBN979 returned %s for %s" %
+                                                                    (booklang, isbnhead))
+                                                        match = True
+                                                        break
+
+                                            if match:
+                                                myDB.action('insert into languages values ("%s", "%s")' %
+                                                            (isbnhead, booklang))
+                                                logger.debug(u"GB language: " + booklang)
+
+                                    if not match:
+                                        # try searching librarything for a language code using the isbn
                                         # if no language found, librarything return value is "invalid" or "unknown"
                                         # librarything returns plain text, not xml
-                                        BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + \
-                                                   bookisbn
+                                        BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + bookisbn
                                         try:
                                             librarything_wait()
                                             resp = urllib2.urlopen(BOOK_URL, timeout=30).read()
@@ -380,6 +437,7 @@ class GoogleBooks:
 
                                             if resp != 'invalid' and resp != 'unknown':
                                                 booklang = resp  # found a language code
+                                                match = True
                                                 myDB.action('insert into languages values ("%s", "%s")' %
                                                             (isbnhead, booklang))
                                                 logger.debug(u"LT language: " + booklang)
@@ -387,21 +445,16 @@ class GoogleBooks:
                                             booklang = ""
                                             logger.error("Error finding language: %s" % str(e))
 
-                                    if googlelang == "en" and booklang not in ["en-US", "en-GB", "eng"]:
-                                        # these are all english, may need to expand
-                                        # this list
-                                        booknamealt = item['volumeInfo']['title']
-                                        logger.debug("%s Google thinks [%s], we think [%s]" %
+                                    if match:
+                                        # We found a better language match
+                                        if googlelang == "en" and booklang not in ["en-US", "en-GB", "eng"]:
+                                            # these are all english, may need to expand this list
+                                            booknamealt = item['volumeInfo']['title']
+                                            logger.debug("%s Google thinks [%s], we think [%s]" %
                                                      (booknamealt, googlelang, booklang))
-                                        gb_lang_change += 1
-                                else:
-                                    match = myDB.match('SELECT lang FROM languages where isbn = "%s"' %
-                                                       isbnhead)
-                                    if not match:
-                                        myDB.action(
-                                            'insert into languages values ("%s", "%s")' %
-                                            (isbnhead, booklang))
-                                        logger.debug(u"GB language: " + booklang)
+                                            gb_lang_change += 1
+                                    else:  # No match anywhere, accept google language
+                                        booklang = googlelang
 
                             # skip if language is in ignore list
                             if booklang not in valid_langs:
@@ -415,27 +468,40 @@ class GoogleBooks:
                         try:
                             bookpub = item['volumeInfo']['publisher']
                         except KeyError:
-                            bookpub = None
+                            bookpub = ""
 
                         try:
                             booksub = item['volumeInfo']['subtitle']
                         except KeyError:
-                            booksub = None
+                            booksub = ""
 
-                        if booksub is None:
-                            series = None
-                            seriesNum = None
+                        if not booksub:
+                            series = ""
+                            seriesNum = ""
                         else:
                             try:
                                 series = booksub.split('(')[1].split(' Series ')[0]
                             except IndexError:
-                                series = None
+                                series = ""
+                            if series.endswith(')'):
+                                series = series[:-1]
                             try:
                                 seriesNum = booksub.split('(')[1].split(' Series ')[1].split(')')[0]
                                 if seriesNum[0] == '#':
                                     seriesNum = seriesNum[1:]
                             except IndexError:
-                                seriesNum = None
+                                seriesNum = ""
+
+                            if not seriesNum and '#' in series:
+                                words = series.rsplit('#', 1)
+                                series = words[0].strip()
+                                seriesNum = words[1].strip()
+                            if not seriesNum and ' ' in series:
+                                words = series.rsplit(' ', 1)
+                                # has to be unicode for isnumeric()
+                                if (u"%s" % words[1]).isnumeric():
+                                    series = words[0]
+                                    seriesNum = words[1]
 
                         try:
                             bookdate = item['volumeInfo']['publishedDate']
@@ -460,16 +526,16 @@ class GoogleBooks:
                         try:
                             bookgenre = item['volumeInfo']['categories'][0]
                         except KeyError:
-                            bookgenre = None
+                            bookgenre = ""
 
                         try:
                             bookdesc = item['volumeInfo']['description']
                         except KeyError:
-                            bookdesc = None
+                            bookdesc = ""
 
                         bookname = item['volumeInfo']['title']
                         bookname = unaccented(bookname)
-                        dic = {':': '', '"': '', '\'': ''}
+                        dic = {':': '.', '"': '', '\'': ''}
                         bookname = replace_all(bookname, dic)
                         bookname = bookname.strip()  # strip whitespace
 
@@ -481,15 +547,21 @@ class GoogleBooks:
                         # and sometimes uses the same bookid if the book is the same but the title is slightly different
                         #
                         # Not sure if googlebooks does too, but we only want one...
-                        find_book_status = myDB.match('SELECT * FROM books WHERE BookID = "%s"' % bookid)
-                        if find_book_status:
-                            book_status = find_book_status['Status']
-                            locked = find_book_status['Manual']
+                        existing_book = myDB.match('SELECT Status,Manual FROM books WHERE BookID = "%s"' % bookid)
+                        if existing_book:
+                            book_status = existing_book['Status']
+                            locked = existing_book['Manual']
+                            if locked is None:
+                                locked = False
+                            elif locked.isdigit():
+                                locked = bool(int(locked))
                         else:
-                            book_status = bookstatus
+                            book_status = bookstatus  # new_book status, or new_author status
                             locked = False
 
                         rejected = False
+                        check_status = False
+
                         if re.match('[^\w-]', bookname):  # remove books with bad characters in title
                             logger.debug("[%s] removed book for bad characters" % bookname)
                             removedResults += 1
@@ -501,40 +573,47 @@ class GoogleBooks:
                             removedResults += 1
                             rejected = True
 
-                        if not rejected:
-                            find_books = myDB.select('SELECT * FROM books WHERE BookName = "%s" and AuthorName = "%s"' %
-                                                     (bookname.replace('"', '""'), authorname.replace('"', '""')))
-                            if find_books:
-                                for find_book in find_books:
-                                    if find_book['BookID'] != bookid:
-                                        # we have a book with this author/title already
-                                        logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
-                                                     (find_book['BookID'], authorname, bookname, bookid))
-                                        rejected = True
-                                        duplicates += 1
-
-                        if not rejected:
-                            find_books = myDB.match(
-                                'SELECT AuthorName,BookName FROM books WHERE BookID = "%s"' % bookid)
-                            if find_books:
-                                # we have a book with this bookid already
-                                if bookname != find_books['BookName'] or authorname != find_books['AuthorName']:
-                                    logger.debug('Rejecting bookid %s for [%s][%s] already got bookid for [%s][%s]' %
-                                                 (bookid, authorname, bookname,
-                                                  find_books['AuthorName'], find_books['BookName']))
-                                else:
-                                    logger.debug('Rejecting bookid %s for [%s][%s] already got this book in database' %
-                                                 (bookid, authorname, bookname))
-                                duplicates += 1
+                        if not rejected and lazylibrarian.CONFIG['NO_FUTURE']:
+                            # googlebooks sometimes gives yyyy, sometimes yyyy-mm, sometimes yyyy-mm-dd
+                            if bookdate > today()[:len(bookdate)]:
+                                logger.debug('Rejecting %s, future publication date %s' % (bookname, bookdate))
+                                removedResults += 1
                                 rejected = True
 
                         if not rejected:
+                            cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'
+                            cmd += ' and BookName = "%s" COLLATE NOCASE and AuthorName = "%s" COLLATE NOCASE'% \
+                                    (bookname.replace('"', '""'), authorname.replace('"', '""'))
+                            match = myDB.match(cmd)
+                            if match:
+                                if match['BookID'] != bookid:
+                                    # we have a different book with this author/title already
+                                    logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
+                                                 (match['BookID'], authorname, bookname, bookid))
+                                    rejected = True
+                                    duplicates += 1
+
+                        if not rejected:
+                            cmd = 'SELECT AuthorName,BookName FROM books,authors'
+                            cmd += ' WHERE authors.AuthorID = books.AuthorID AND BookID="%s"' % bookid
+                            match = myDB.match(cmd)
+                            if match:
+                                # we have a book with this bookid already
+                                if bookname != match['BookName'] or authorname != match['AuthorName']:
+                                    logger.debug('Rejecting bookid %s for [%s][%s] already got bookid for [%s][%s]' %
+                                                 (bookid, authorname, bookname, match['AuthorName'], match['BookName']))
+                                else:
+                                    logger.debug('Rejecting bookid %s for [%s][%s] already got this book in database' %
+                                                 (bookid, authorname, bookname))
+                                    check_status = True
+                                duplicates += 1
+                                rejected = True
+
+                        if check_status or not rejected:
                             if book_status != "Ignored" and not locked:
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {
-                                    "AuthorName": authorname,
                                     "AuthorID": authorid,
-                                    "AuthorLink": "",
                                     "BookName": bookname,
                                     "BookSub": booksub,
                                     "BookDesc": bookdesc,
@@ -548,15 +627,13 @@ class GoogleBooks:
                                     "BookDate": bookdate,
                                     "BookLang": booklang,
                                     "Status": book_status,
-                                    "BookAdded": today(),
-                                    "Series": series,
-                                    "SeriesNum": seriesNum
+                                    "BookAdded": today()
                                 }
                                 resultcount += 1
 
                                 myDB.upsert("books", newValueDict, controlValueDict)
                                 logger.debug(u"Book found: " + bookname + " " + bookdate)
-
+                                updated = False
                                 if 'nocover' in bookimg or 'nophoto' in bookimg:
                                     # try to get a cover from librarything
                                     workcover = getBookCover(bookid)
@@ -565,25 +642,36 @@ class GoogleBooks:
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": workcover}
                                         myDB.upsert("books", newValueDict, controlValueDict)
+                                        updated = True
 
                                 elif bookimg and bookimg.startswith('http'):
-                                    link = cache_cover(bookid, bookimg)
-                                    if link:
+                                    link, success = cache_img("book", bookid, bookimg, refresh=refresh)
+                                    if success:
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": link}
                                         myDB.upsert("books", newValueDict, controlValueDict)
+                                        updated = True
+                                    else:
+                                        logger.debug('Failed to cache image for %s' % bookimg)
 
-                                if seriesNum is None:
-                                    # try to get series info from librarything
-                                    series, seriesNum = getWorkSeries(bookid)
-                                    if seriesNum:
-                                        logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))
-                                        controlValueDict = {"BookID": bookid}
-                                        newValueDict = {
-                                            "Series": series,
-                                            "SeriesNum": seriesNum
-                                        }
-                                        myDB.upsert("books", newValueDict, controlValueDict)
+                                seriesdict = {}
+                                if lazylibrarian.CONFIG['ADD_SERIES']:
+                                    # prefer series info from librarything
+                                    seriesdict = getWorkSeries(bookid)
+                                    if seriesdict:
+                                        logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
+                                        updated = True
+                                    else:
+                                        # librarything doesn't have series info. Any in the title?
+                                        if series:
+                                            seriesdict = {cleanName(unaccented(series)): seriesNum}
+                                    setSeries(seriesdict, bookid)
+
+                                new_status = setStatus(bookid, seriesdict, bookstatus)
+
+                                if not new_status == book_status:
+                                    book_status = new_status
+                                    updated = True
 
                                 worklink = getWorkPage(bookid)
                                 if worklink:
@@ -591,17 +679,20 @@ class GoogleBooks:
                                     newValueDict = {"WorkPage": worklink}
                                     myDB.upsert("books", newValueDict, controlValueDict)
 
-                                if not find_book_status:
-                                    logger.debug("[%s] Added book: %s [%s]" % (authorname, bookname, booklang))
+                                if not existing_book:
+                                    logger.debug("[%s] Added book: %s [%s] status %s" %
+                                                (authorname, bookname, booklang, book_status))
                                     added_count += 1
-                                else:
+                                elif updated:
+                                    logger.debug("[%s] Updated book: %s [%s] status %s" %
+                                                (authorname, bookname, booklang, book_status))
                                     updated_count += 1
-                                    logger.debug("[%s] Updated book: %s" % (authorname, bookname))
                             else:
                                 book_ignore_count += 1
             except KeyError:
                 pass
 
+            deleteEmptySeries()
             logger.debug('[%s] The Google Books API was hit %s time%s to populate book list' %
                          (authorname, api_hits, plural(api_hits)))
 
@@ -614,10 +705,10 @@ class GoogleBooks:
                 lastbookdate = lastbook['BookDate']
                 lastbookimg = lastbook['BookImg']
             else:
-                lastbookname = None
-                lastbooklink = None
-                lastbookdate = None
-                lastbookimg = None
+                lastbookname = ""
+                lastbooklink = ""
+                lastbookdate = ""
+                lastbookimg = ""
 
             controlValueDict = {"AuthorID": authorid}
             newValueDict = {
@@ -653,21 +744,22 @@ class GoogleBooks:
         except Exception:
             logger.error('Unhandled exception in GB.get_author_books: %s' % traceback.format_exc())
 
+    # noinspection PyUnusedLocal
     @staticmethod
     def find_book(bookid=None, queue=None):
         myDB = database.DBConnection()
-        if not lazylibrarian.GB_API:
+        if not lazylibrarian.CONFIG['GB_API']:
             logger.warn('No GoogleBooks API key, check config')
         URL = 'https://www.googleapis.com/books/v1/volumes/' + \
-              str(bookid) + "?key=" + lazylibrarian.GB_API
+              str(bookid) + "?key=" + lazylibrarian.CONFIG['GB_API']
         jsonresults, in_cache = get_json_request(URL)
 
-        if jsonresults is None:
+        if not jsonresults:
             logger.debug('No results found for %s' % bookid)
             return
 
         bookname = jsonresults['volumeInfo']['title']
-        dic = {':': '', '"': '', '\'': ''}
+        dic = {':': '.', '"': '', '\'': ''}
         bookname = replace_all(bookname, dic)
 
         bookname = unaccented(bookname)
@@ -681,10 +773,9 @@ class GoogleBooks:
         try:
             # warn if language is in ignore list, but user said they wanted this book
             booklang = jsonresults['volumeInfo']['language']
-            valid_langs = ([valid_lang.strip()
-                            for valid_lang in lazylibrarian.IMP_PREFLANG.split(',')])
+            valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
             if booklang not in valid_langs and 'All' not in valid_langs:
-                logger.debug('Book %s language does not match preference' % bookname)
+                logger.debug('Book %s googlebooks language does not match preference, %s' % (bookname, booklang))
         except KeyError:
             logger.debug('Book does not have language field')
             booklang = "Unknown"
@@ -692,24 +783,24 @@ class GoogleBooks:
         try:
             bookpub = jsonresults['volumeInfo']['publisher']
         except KeyError:
-            bookpub = None
+            bookpub = ""
 
-        series = None
-        seriesNum = None
+        series = ""
+        seriesNum = ""
         try:
             booksub = jsonresults['volumeInfo']['subtitle']
             try:
                 series = booksub.split('(')[1].split(' Series ')[0]
             except IndexError:
-                series = None
+                series = ""
             try:
                 seriesNum = booksub.split('(')[1].split(' Series ')[1].split(')')[0]
                 if seriesNum[0] == '#':
                     seriesNum = seriesNum[1:]
             except IndexError:
-                seriesNum = None
+                seriesNum = ""
         except KeyError:
-            booksub = None
+            booksub = ""
 
         try:
             bookdate = jsonresults['volumeInfo']['publishedDate']
@@ -734,20 +825,20 @@ class GoogleBooks:
         try:
             bookgenre = jsonresults['volumeInfo']['categories'][0]
         except KeyError:
-            bookgenre = None
+            bookgenre = ""
 
         try:
             bookdesc = jsonresults['volumeInfo']['description']
         except KeyError:
-            bookdesc = None
+            bookdesc = ""
 
         try:
             if jsonresults['volumeInfo']['industryIdentifiers'][0]['type'] == 'ISBN_10':
                 bookisbn = jsonresults['volumeInfo']['industryIdentifiers'][0]['identifier']
             else:
-                bookisbn = None
+                bookisbn = ""
         except KeyError:
-            bookisbn = None
+            bookisbn = ""
 
         booklink = jsonresults['volumeInfo']['canonicalVolumeLink']
         bookrate = float(bookrate)
@@ -756,15 +847,33 @@ class GoogleBooks:
         author = GR.find_author_id()
         if author:
             AuthorID = author['authorid']
+            match = myDB.match('SELECT AuthorID from authors WHERE AuthorID="%s"' % AuthorID)
+            if not match:
+                match = myDB.match('SELECT AuthorID from authors WHERE AuthorName="%s"' %  author['authorname'])
+                if match:
+                    logger.debug('%s: Changing authorid from %s to %s' %
+                                (author['authorname'], AuthorID, match['AuthorID']))
+                    AuthorID = match['AuthorID']    # we have a different authorid for that authorname
+                else:   # no author but request to add book, add author as "ignored"
+                        # User hit "add book" button from a search
+                    controlValueDict = {"AuthorID": AuthorID}
+                    newValueDict = {
+                        "AuthorName": author['authorname'],
+                        "AuthorImg": author['authorimg'],
+                        "AuthorLink": author['authorlink'],
+                        "AuthorBorn": author['authorborn'],
+                        "AuthorDeath": author['authordeath'],
+                        "DateAdded": today(),
+                        "Status": "Ignored"
+                    }
+                    myDB.upsert("authors", newValueDict, controlValueDict)
         else:
-            logger.warn('No AuthorID found for %s' % authorname)
+            logger.warn("No AuthorID for %s, unable to add book %s" % (authorname, bookname))
             return
 
         controlValueDict = {"BookID": bookid}
         newValueDict = {
-            "AuthorName": authorname,
             "AuthorID": AuthorID,
-            "AuthorLink": "",
             "BookName": bookname,
             "BookSub": booksub,
             "BookDesc": bookdesc,
@@ -778,13 +887,11 @@ class GoogleBooks:
             "BookDate": bookdate,
             "BookLang": booklang,
             "Status": "Wanted",
-            "BookAdded": today(),
-            "Series": series,
-            "SeriesNum": seriesNum
+            "BookAdded": today()
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
-        logger.debug("%s added to the books database" % bookname)
+        logger.info("%s added to the books database" % bookname)
 
         if 'nocover' in bookimg or 'nophoto' in bookimg:
             # try to get a cover from librarything
@@ -796,23 +903,23 @@ class GoogleBooks:
                 myDB.upsert("books", newValueDict, controlValueDict)
 
             elif bookimg and bookimg.startswith('http'):
-                link = cache_cover(bookid, bookimg)
-                if link:
+                link, success = cache_img("book", bookid, bookimg)
+                if success:
                     controlValueDict = {"BookID": bookid}
                     newValueDict = {"BookImg": link}
                     myDB.upsert("books", newValueDict, controlValueDict)
+                else:
+                    logger.debug('Failed to cache image for %s' % bookimg)
 
-        if seriesNum is None:
-            # try to get series info from librarything
-            series, seriesNum = getWorkSeries(bookid)
-            if seriesNum:
-                logger.debug(u'Updated series: %s [%s]' % (series, seriesNum))
-                controlValueDict = {"BookID": bookid}
-                newValueDict = {
-                    "Series": series,
-                    "SeriesNum": seriesNum
-                }
-                myDB.upsert("books", newValueDict, controlValueDict)
+        if lazylibrarian.CONFIG['ADD_SERIES']:
+            # prefer series info from librarything
+            seriesdict = getWorkSeries(bookid)
+            if seriesdict:
+                logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
+            else:
+                if series:
+                    seriesdict = {cleanName(unaccented(series)): seriesNum}
+            setSeries(seriesdict, bookid)
 
         worklink = getWorkPage(bookid)
         if worklink:

@@ -30,7 +30,7 @@ class DBConnection:
         self.connection = sqlite3.connect(lazylibrarian.DBFILE, 20)
         self.connection.row_factory = sqlite3.Row
 
-    def action(self, query, args=None):
+    def action(self, query, args=None, suppress=None):
         with db_lock:
 
             if not query:
@@ -52,11 +52,31 @@ class DBConnection:
                 except sqlite3.OperationalError as e:
                     if "unable to open database file" in e.message or "database is locked" in e.message:
                         logger.warn('Database Error: %s' % e)
+                        logger.debug("Attempted db query: [%s]" % query)
                         attempt += 1
-                        time.sleep(1)
+                        if attempt == 5:
+                            logger.error("Failed db query: [%s]" % query)
+                        else:
+                            time.sleep(1)
                     else:
                         logger.error('Database error: %s' % e)
+                        logger.error("Failed query: [%s]" % query)
                         raise
+
+                except  sqlite3.IntegrityError as e:
+                        # we could ignore unique errors in sqlite by using "insert or ignore into" statements
+                        # but this would also ignore null values as we can't specify which errors to ignore :-(
+                        # The python interface to sqlite only returns english text messages, not error codes
+                        msg = e.message
+                        msg = msg.lower()
+                        if suppress == 'UNIQUE' and ('not unique' in msg or 'unique constraint failed' in msg):
+                            logger.debug('Suppressed [%s] %s' % (query, e.message))
+                            self.connection.commit()
+                            break
+                        else:
+                            logger.error('Database Integrity error: %s' % e)
+                            logger.error("Failed query: [%s]" % query)
+                            raise
 
                 except sqlite3.DatabaseError as e:
                     logger.error('Fatal error executing %s :: %s' % (query, e))

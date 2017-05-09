@@ -35,10 +35,11 @@ import lazylibrarian
 import lib.requests as requests
 from lazylibrarian import logger
 from lazylibrarian.common import setperm
+from lazylibrarian.formatter import check_int
 
 delugeweb_auth = {}
 delugeweb_url = ''
-
+headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
 
 def addTorrent(link, data=None):
     try:
@@ -109,9 +110,9 @@ def addTorrent(link, data=None):
             # Extract torrent name from .torrent
             try:
                 logger.debug('Deluge: Getting torrent name length')
-                name_length = int(re.findall('name([0-9]*)\:.*?\:', torrentfile)[0])
+                name_length = int(re.findall('name([0-9]*):.*?:', torrentfile)[0])
                 logger.debug('Deluge: Getting torrent name')
-                name = re.findall('name[0-9]*\:(.*?)\:', torrentfile)[0][:name_length]
+                name = re.findall('name[0-9]*:(.*?):', torrentfile)[0][:name_length]
             except Exception:
                 logger.debug('Deluge: Could not get torrent name, getting file name')
                 # get last part of link/path (name only)
@@ -130,7 +131,7 @@ def addTorrent(link, data=None):
 
         if retid:
             logger.info('Deluge: Torrent sent to Deluge successfully  (%s)' % retid)
-            if lazylibrarian.DELUGE_LABEL:
+            if lazylibrarian.CONFIG['DELUGE_LABEL']:
                 labelled = setTorrentLabel(result)
                 logger.debug('Deluge label returned: %s' % labelled)
             return retid
@@ -156,14 +157,15 @@ def getTorrentFolder(torrentid):
                                     ["total_done"]
                                 ],
                                 "id": 22})
-        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+
+        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
         total_done = json.loads(response.text)['result']['total_done']
 
         tries = 0
         while total_done == 0 and tries < 10:
             tries += 1
             time.sleep(5)
-            response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+            response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
             total_done = json.loads(response.text)['result']['total_done']
 
         post_data = json.dumps({"method": "web.get_torrent_status",
@@ -181,7 +183,7 @@ def getTorrentFolder(torrentid):
                                 ],
                                 "id": 23})
 
-        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
 
         # save_path = json.loads(response.text)['result']['save_path']
         name = json.loads(response.text)['result']['name']
@@ -196,7 +198,7 @@ def removeTorrent(torrentid, remove_data=False):
         _get_auth()
 
     post_data = json.dumps({"method": "core.remove_torrent", "params": [torrentid, remove_data], "id": 25})
-    response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+    response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
     result = json.loads(response.text)['result']
 
     return result
@@ -204,11 +206,16 @@ def removeTorrent(torrentid, remove_data=False):
 
 def _get_auth():
     logger.debug('Deluge: Authenticating...')
-    global delugeweb_auth, delugeweb_url
+    global delugeweb_auth, delugeweb_url, headers
     delugeweb_auth = {}
 
-    delugeweb_host = lazylibrarian.DELUGE_HOST
-    delugeweb_password = lazylibrarian.DELUGE_PASS
+    delugeweb_host = lazylibrarian.CONFIG['DELUGE_HOST']
+    delugeweb_port = check_int(lazylibrarian.CONFIG['DELUGE_PORT'], 0)
+    if not delugeweb_host or not delugeweb_port:
+        logger.error('Invalid delugeweb host or port, check your config')
+        return None
+
+    delugeweb_password = lazylibrarian.CONFIG['DELUGE_PASS']
 
     if not delugeweb_host.startswith('http'):
         delugeweb_host = 'http://%s' % delugeweb_host
@@ -216,7 +223,7 @@ def _get_auth():
     if delugeweb_host.endswith('/'):
         delugeweb_host = delugeweb_host[:-1]
 
-    delugeweb_host = "%s:%s" % (delugeweb_host, lazylibrarian.DELUGE_PORT)
+    delugeweb_host = "%s:%s" % (delugeweb_host, delugeweb_port)
 
     delugeweb_url = delugeweb_host + '/json'
 
@@ -224,10 +231,11 @@ def _get_auth():
                             "params": [delugeweb_password],
                             "id": 1})
     try:
-        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
         #                                  , verify=TORRENT_VERIFY_CERT)
     except Exception as err:
         logger.debug('Deluge: auth.login returned %s' % str(err))
+        delugeweb_auth = {}
         return None
 
     auth = json.loads(response.text)["result"]
@@ -237,10 +245,11 @@ def _get_auth():
                             "params": [],
                             "id": 10})
     try:
-        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
         #                                  , verify=TORRENT_VERIFY_CERT)
     except Exception as err:
         logger.debug('Deluge: web.connected returned %s' % str(err))
+        delugeweb_auth = {}
         return None
 
     connected = json.loads(response.text)['result']
@@ -250,15 +259,17 @@ def _get_auth():
                                 "params": [],
                                 "id": 11})
         try:
-            response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+            response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
             #                                  , verify=TORRENT_VERIFY_CERT)
         except Exception as err:
             logger.debug('Deluge: web.get_hosts returned %s' % str(err))
+            delugeweb_auth = {}
             return None
 
         delugeweb_hosts = json.loads(response.text)['result']
         if len(delugeweb_hosts) == 0:
             logger.error('Deluge: WebUI does not contain daemons')
+            delugeweb_auth = {}
             return None
 
         post_data = json.dumps({"method": "web.connect",
@@ -266,10 +277,11 @@ def _get_auth():
                                 "id": 11})
 
         try:
-            response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+            _ = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
             #                                  , verify=TORRENT_VERIFY_CERT)
         except Exception as err:
             logger.debug('Deluge: web.connect returned %s' % str(err))
+            delugeweb_auth = {}
             return None
 
         post_data = json.dumps({"method": "web.connected",
@@ -277,16 +289,18 @@ def _get_auth():
                                 "id": 10})
 
         try:
-            response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+            response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
             #                                  , verify=TORRENT_VERIFY_CERT)
         except Exception as err:
             logger.debug('Deluge: web.connected returned %s' % str(err))
+            delugeweb_auth = {}
             return None
 
         connected = json.loads(response.text)['result']
 
         if not connected:
             logger.error('Deluge: WebUI could not connect to daemon')
+            delugeweb_auth = {}
             return None
 
     return auth
@@ -300,7 +314,7 @@ def _add_torrent_magnet(result):
         post_data = json.dumps({"method": "core.add_torrent_magnet",
                                 "params": [result['url'], {}],
                                 "id": 2})
-        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
         result['hash'] = json.loads(response.text)['result']
         logger.debug('Deluge: Response was %s' % str(json.loads(response.text)['result']))
         return json.loads(response.text)['result']
@@ -316,7 +330,7 @@ def _add_torrent_url(result):
         post_data = json.dumps({"method": "core.add_torrent_url",
                                 "params": [result['url'], {}],
                                 "id": 2})
-        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
         result['hash'] = json.loads(response.text)['result']
         logger.debug('Deluge: Response was %s' % str(json.loads(response.text)['result']))
         return json.loads(response.text)['result']
@@ -335,7 +349,7 @@ def _add_torrent_file(result):
                                 "params":
                                     [result['name'] + '.torrent', b64encode(result['content'].encode('utf8')), {}],
                                 "id": 2})
-        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
         result['hash'] = json.loads(response.text)['result']
 
         logger.debug('Deluge: Response was %s' % str(json.loads(response.text)['result']))
@@ -349,7 +363,7 @@ def _add_torrent_file(result):
 
 def setTorrentLabel(result):
     logger.debug('Deluge: Setting label')
-    label = lazylibrarian.DELUGE_LABEL
+    label = lazylibrarian.CONFIG['DELUGE_LABEL']
 
     if not any(delugeweb_auth):
         _get_auth()
@@ -362,7 +376,7 @@ def setTorrentLabel(result):
         post_data = json.dumps({"method": 'label.get_labels',
                                 "params": [],
                                 "id": 3})
-        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
         labels = json.loads(response.text)['result']
 
         if labels:
@@ -372,7 +386,7 @@ def setTorrentLabel(result):
                     post_data = json.dumps({"method": 'label.add',
                                             "params": [label],
                                             "id": 4})
-                    response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+                    _ = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
                     logger.debug('Deluge: %s label added to Deluge' % label)
                 except Exception as err:
                     logger.error('Deluge: Setting label failed: %s' % str(err))
@@ -383,7 +397,7 @@ def setTorrentLabel(result):
             post_data = json.dumps({"method": 'label.set_torrent',
                                     "params": [result['hash'], label],
                                     "id": 5})
-            response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+            response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
             logger.debug('Deluge: %s label added to torrent' % label)
             return not json.loads(response.text)['error']
         else:
@@ -407,11 +421,11 @@ def setSeedRatio(result):
         post_data = json.dumps({"method": "core.set_torrent_stop_at_ratio",
                                 "params": [result['hash'], True],
                                 "id": 5})
-        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+        _ = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
         post_data = json.dumps({"method": "core.set_torrent_stop_ratio",
                                 "params": [result['hash'], float(ratio)],
                                 "id": 6})
-        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
 
         return not json.loads(response.text)['error']
 
@@ -427,7 +441,7 @@ def setTorrentPath(result):
         post_data = json.dumps({"method": "core.set_torrent_move_completed",
                                 "params": [result['hash'], True],
                                 "id": 7})
-        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+        _ = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
 
         move_to = lazylibrarian.DIRECTORY('Download')
 
@@ -438,7 +452,7 @@ def setTorrentPath(result):
         post_data = json.dumps({"method": "core.set_torrent_move_completed_path",
                                 "params": [result['hash'], move_to],
                                 "id": 8})
-        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+        response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
 
         return not json.loads(response.text)['error']
 
@@ -453,7 +467,7 @@ def setTorrentPause(result):
     post_data = json.dumps({"method": "core.pause_torrent",
                             "params": [[result['hash']]],
                             "id": 9})
-    response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth)
+    response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
 
     return not json.loads(response.text)['error']
 

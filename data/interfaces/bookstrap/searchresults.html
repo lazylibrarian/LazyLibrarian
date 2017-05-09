@@ -1,22 +1,21 @@
 <%inherit file="base.html"/>
 <%!
     import lazylibrarian
-    import thread, threading
 %>
 
 <%def name="body()">
 
-<h1>Search Results</h1>
+<h1>${title}</h1>
 
 <div class="table-responsive">
     <table class="display table table-striped table-hover table-bordered" id="book_table">
         <thead>
             <tr>
-				<th class="bookart text-center no-sort">Cover</th>
-				<th class="authorname">Author</th>
-				<th class="bookname">Title</th>
-				<th class="date text-center">Released</th>
-				<th class="stars text-center">Rating</th>
+                <th class="bookart text-center no-sort">Cover</th>
+                <th class="authorname">Author</th>
+                <th class="bookname">Title</th>
+                <th class="date text-center">Released</th>
+                <th class="stars text-center">Rating</th>
                 <th class="addAuthor text-center no-sort">Add</th>
                 <th class="fuzz text-right">Match</th>
              </tr>
@@ -41,18 +40,16 @@
                     else:
                         starimg = '0-stars.png'
 
-                    if authorlist:
-                        if result['authorname'] in authorlist:
-                            destination = "authorPage?AuthorID="+result['authorid']
-                            value = "Have Author"
-                            but_class = "btn-info"
-                        else:
-                            destination = "addAuthorID?AuthorID="+result['authorid']+'&AuthorName='+result['safeauthorname']
-                            value = "Add Author"
-                            but_class = "btn-success"
-
+                    if authorlist and result['authorname'] in authorlist:
+                        destination = "authorPage?AuthorID="+result['authorid']
+                        value = "Have Author"
+                        but_class = "btn-info"
+                    elif result['authorid']:
+                        destination = "addAuthorID?AuthorID="+result['authorid']
+                        value = "Add Author"
+                        but_class = "btn-success"
                     else:
-                        destination = "addAuthorID?AuthorID="+result['authorid']+'&AuthorName='+result['safeauthorname']
+                        destination = "addAuthor?AuthorName="+result['authorname']
                         value = "Add Author"
                         but_class = "btn-success"
 
@@ -102,8 +99,8 @@
                         </p><p><a class="${but_class2} btn btn-xs" href="${destination2}">${value2}</a></p>
                     </td>
                     <td class="fuzz text-right">${result['highest_fuzz']}%</td>
-					</tr>
-				%endfor
+                    </tr>
+                %endfor
             %endif
         </tbody>
     </table>
@@ -122,7 +119,7 @@
         $('#book_table').dataTable(
             {
                 "responsive": true,
-                "order": [[ 1, 'asc' ]], // Skip ordering of the first column[0] (cover)
+                "order": [[ 6, 'desc' ]],
                 "aoColumns": [
                     null,
                     null,
@@ -141,10 +138,10 @@
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
                     "sInfoEmpty":"Showing 0 to 0 of 0 books",
                     "sInfoFiltered":"(filtered from _MAX_ total books)"},
-                "iDisplayLength": ${lazylibrarian.DISPLAYLENGTH},
+                "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "sPaginationType": "full_numbers",
             });
-			$('.dataTables_filter input').attr("placeholder", "Search table here");
+        $('.dataTables_filter input').attr("placeholder", "Search table here");
     });
     </script>
 </%def>

@@ -11,9 +11,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import lib.requests as requests
 import lib.simplejson as json
-from lib.requests.auth import HTTPBasicAuth
+try:
+    import requests
+    from requests.auth import HTTPBasicAuth
+except ImportError:
+    import lib.requests as requests
+    from lib.requests.auth import HTTPBasicAuth
 
 # from websocket import create_connection
 
@@ -144,6 +148,7 @@ class PushBullet:
 
         if not file_type:
             try:
+                # noinspection PyUnresolvedReferences
                 import magic
                 file_type = magic.from_buffer(fobj.read(1024))
                 fobj.seek(0)

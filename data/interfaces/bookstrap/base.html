@@ -18,7 +18,7 @@
     <!--<link rel="stylesheet" href="css/style.css?v=2">-->
 
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/s/bs-3.3.5/jqc-1.11.3,dt-1.10.10,b-1.1.0/datatables.min.css"/>
-    <link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.6/${lazylibrarian.BOOKSTRAP_THEME}/bootstrap.min.css" rel="stylesheet">
+    <link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.6/${lazylibrarian.CONFIG['BOOKSTRAP_THEME']}/bootstrap.min.css" rel="stylesheet">
     <!--<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">-->
 
     <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
@@ -69,6 +69,7 @@
     </script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/s/bs-3.3.5/jqc-1.11.3,dt-1.10.10,b-1.1.0/datatables.min.js"></script>
+    <script src="js/natural.js"></script>
     <script src="js/bootbox.min.js"></script>
     <script src="js/bootstrap-notify.min.js"></script>
 
@@ -93,7 +94,8 @@
                         <ul class="nav navbar-nav">
                             <li><a href="home" class="navbarele">Authors</a></li>
                             <li><a href="books" class="navbarele">Books</a></li>
-                            <li><a href="magazines" class="navbarele">Magazines</a></li>
+                            <li><a id="series" href="series" class="navbarele">Series</a></li>
+                            <li><a id="magazines" href="magazines" class="navbarele">Magazines</a></li>
                             <li><a href="manage" class="navbarele">Manage</a></li>
                             <li><a href="history" class="navbarele">History</a></li>
                             <li><a href="logs" class="navbarele">Logs</a></li>
@@ -130,22 +132,28 @@
 
 <script type="text/javascript">
     msg = '';
-        % if  lazylibrarian.INSTALL_TYPE == 'git' or lazylibrarian.INSTALL_TYPE == 'source':
-            % if not lazylibrarian.CURRENT_VERSION:
+        % if lazylibrarian.SHOW_SERIES == 0:
+            $('#series').addClass("hidden");
+        % endif
+        % if lazylibrarian.SHOW_MAGS == 0:
+            $('#magazines').addClass("hidden");
+        % endif
+        % if lazylibrarian.CONFIG['INSTALL_TYPE'] == 'git' or lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
+            % if not lazylibrarian.CONFIG['CURRENT_VERSION']:
                 msg = 'You are running an unknown version of lazylibrarian.<br/><a href="update" class="btn btn-xs btn-primary pull-right">Update</a>'
-            % elif (lazylibrarian.INSTALL_TYPE == 'source' and lazylibrarian.CURRENT_VERSION == 'No Version File' ):
+            % elif (lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source' and lazylibrarian.CONFIG['CURRENT_VERSION'] == 'No Version File' ):
                 msg = 'Running Unknown version via source install. Update from central area now <a href="update" class="btn btn-xs btn-primary pull-right">Update</a>
-            % elif lazylibrarian.CURRENT_VERSION != lazylibrarian.LATEST_VERSION:
-                % if lazylibrarian.LATEST_VERSION == 'Not_Available_From_GitHUB':
+            % elif lazylibrarian.CONFIG['CURRENT_VERSION'] != lazylibrarian.CONFIG['LATEST_VERSION']:
+                % if lazylibrarian.CONFIG['LATEST_VERSION'] == 'Not_Available_From_GitHUB':
                     msg = 'Unable to get latest version from GITHub'
-                % elif lazylibrarian.COMMITS_BEHIND < 0:
+                % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] < 0:
                     msg = 'Running a local updated version. Push changes to GITHub or rollback to Master release'
-                % elif lazylibrarian.COMMITS_BEHIND > 1:
-                    msg = 'New version available. You are ${lazylibrarian.COMMITS_BEHIND} commits behind.<br/><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the update message for 24 hours" id="ignoreUpdate">Ignore</a>&nbsp;<a href="update" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Update to the latest release">Update</a></div>'
-                % elif lazylibrarian.COMMITS_BEHIND == 1:
+                % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] > 1:
+                    msg = 'New version available. You are ${lazylibrarian.CONFIG['COMMITS_BEHIND']} commits behind.<br/><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the update message for 24 hours" id="ignoreUpdate">Ignore</a>&nbsp;<a href="update" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Update to the latest release">Update</a></div>'
+                % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] == 1:
                     msg = 'New version available. You are one commit behind.<br/><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the update message for 24 hours" id="ignoreUpdate">Ignore</a>&nbsp;<a href="update" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Update to the latest release">Update</a></div>'
 
-                    //<a class="btn btn-xs btn-primary pull-right" href="http://github.com/DobyTang/LazyLibrarian/compare/${lazylibrarian.CURRENT_VERSION}...${lazylibrarian.LATEST_VERSION}" target="_blank">Click Here</a>'
+                    //<a class="btn btn-xs btn-primary pull-right" href="http://github.com/DobyTang/LazyLibrarian/compare/${lazylibrarian.CONFIG['CURRENT_VERSION']}...${lazylibrarian.CONFIG['LATEST_VERSION']}" target="_blank">Click Here</a>'
                 % endif
             % endif
         % endif

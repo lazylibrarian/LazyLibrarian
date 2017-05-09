@@ -30,7 +30,7 @@ import lazylibrarian
 from lazylibrarian import logger, database, utorrent, transmission, qbittorrent, deluge, rtorrent, synology, bencode
 from lazylibrarian.common import scheduleJob, USER_AGENT, setperm
 from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, check_int, now, cleanName
-from lazylibrarian.notifiers import notify_snatch
+from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.providers import IterateOverTorrentSites
 from lib.deluge_client import DelugeRPCClient
 from lib.fuzzywuzzy import fuzz
@@ -38,15 +38,18 @@ from magnet2torrent import magnet2torrent
 
 
 def cron_search_tor_book():
-    threading.currentThread().name = "CRON-SEARCHTOR"
-    search_tor_book()
+    if 'SEARCHALLTOR' not in [n.name for n in [t for t in threading.enumerate()]]:
+        search_tor_book()
 
 
 def search_tor_book(books=None, reset=False):
     try:
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
-            threading.currentThread().name = "SEARCHTOR"
+            if books is None:
+                threading.currentThread().name = "SEARCHALLTOR"
+            else:
+                threading.currentThread().name = "SEARCHTOR"
 
         if not lazylibrarian.USE_TOR():
             logger.warn('No Torrent providers set, check config')
@@ -57,14 +60,16 @@ def search_tor_book(books=None, reset=False):
 
         if books is None:
             # We are performing a backlog search
-            searchbooks = myDB.select(
-                'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books WHERE Status="Wanted" order by BookAdded desc')
+            cmd = 'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books,authors '
+            cmd += 'WHERE books.AuthorID = authors.AuthorID and books.Status="Wanted" order by BookAdded desc'
+            searchbooks = myDB.select(cmd)
         else:
             # The user has added a new book
             searchbooks = []
             for book in books:
-                searchbook = myDB.select('SELECT BookID, AuthorName, BookName, BookSub from books WHERE BookID="%s" \
-                                         AND Status="Wanted"' % book['bookid'])
+                cmd = 'SELECT BookID, AuthorName, BookName, BookSub from books,authors WHERE books.Status="Wanted"'
+                cmd += ' and books.AuthorID = authors.AuthorID and BookID="%s"' % book['bookid']
+                searchbook = myDB.select(cmd)
                 for terms in searchbook:
                     searchbooks.append(terms)
 
@@ -128,10 +133,10 @@ def processResultList(resultlist, book, searchtype):
                 '-': ' ', '\s\s': ' '}
 
     dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
-           ',': '', '*': '', ':': '', ';': ''}
+           ',': '', '*': '', ':': '.', ';': ''}
 
-    match_ratio = int(lazylibrarian.MATCH_RATIO)
-    reject_list = getList(lazylibrarian.REJECT_WORDS)
+    match_ratio = int(lazylibrarian.CONFIG['MATCH_RATIO'])
+    reject_list = getList(lazylibrarian.CONFIG['REJECT_WORDS'])
     author = unaccented_str(replace_all(book['authorName'], dic))
     title = unaccented_str(replace_all(book['bookName'], dic))
 
@@ -164,11 +169,17 @@ def processResultList(resultlist, book, searchtype):
         tor_size_temp = check_int(tor_size_temp, 1000)
         tor_size = round(float(tor_size_temp) / 1048576, 2)
 
-        maxsize = check_int(lazylibrarian.REJECT_MAXSIZE, 0)
+        maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXSIZE'], 0)
         if not rejected:
             if maxsize and tor_size > maxsize:
                 rejected = True
                 logger.debug("Rejecting %s, too large" % torTitle)
+
+        minsize = check_int(lazylibrarian.CONFIG['REJECT_MINSIZE'], 0)
+        if not rejected:
+            if minsize and tor_size < minsize:
+                rejected = True
+                logger.debug("Rejecting %s, too small" % torTitle)
 
         if not rejected:
             bookid = book['bookid']
@@ -186,11 +197,16 @@ def processResultList(resultlist, book, searchtype):
             }
 
             score = (torBook_match + torAuthor_match) / 2  # as a percentage
-            # lose a point for each extra word in the title so we get the closest match
-            words = len(getList(torTitle))
-            words -= len(getList(author))
-            words -= len(getList(title))
-            score -= abs(words)
+            # lose a point for each unwanted word in the title so we get the closest match
+            wordlist = getList(torTitle.lower())
+            words = [x for x in wordlist if x not in getList(author.lower())]
+            words = [x for x in words if x not in getList(title.lower())]
+            words = [x for x in words if x not in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
+            score -= len(words)
+            # prioritise titles that include the ebook types we want
+            booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
+            if len(booktypes):
+                score += 1
             matches.append([score, torTitle, newValueDict, controlValueDict])
 
     if matches:
@@ -208,7 +224,7 @@ def processResultList(resultlist, book, searchtype):
         logger.info(u'Best TOR match (%s%%): %s using %s search' %
                     (score, nzb_Title, searchtype))
 
-        snatchedbooks = myDB.match('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
+        snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID="%s" and Status="Snatched"' %
                                    newValueDict["BookID"])
         if snatchedbooks:
             logger.debug('%s already marked snatched' % nzb_Title)
@@ -224,6 +240,7 @@ def processResultList(resultlist, book, searchtype):
                 logger.info('Downloading %s from %s' % (newValueDict["NZBtitle"], newValueDict["NZBprov"]))
                 notify_snatch("%s from %s at %s" %
                               (newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
+                custom_notify_snatch(newValueDict["BookID"])
                 scheduleJob(action='Start', target='processDir')
                 return True + True  # we found it
     else:
@@ -238,8 +255,8 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
     full_url = tor_url  # keep the url as stored in "wanted" table
 
     request = urllib2.Request(ur'%s' % tor_url)
-    if lazylibrarian.PROXY_HOST:
-        request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
+    if lazylibrarian.CONFIG['PROXY_HOST']:
+        request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])
     request.add_header('Accept-encoding', 'gzip')
     request.add_header('User-Agent', USER_AGENT)
 
@@ -307,8 +324,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None):
             # torznab results need to be re-encoded
             # had a problem with torznab utf-8 encoded strings not matching
             # our utf-8 strings because of long/short form differences
-            url = tor_url.split('&file=')[0]
-            value = tor_url.split('&file=')[1]
+            url, value = tor_url.split('&file=', 1)
             if isinstance(value, str):
                 value = value.decode('utf-8')  # make unicode
             value = unicodedata.normalize('NFC', value)  # normalize to short form
@@ -322,8 +338,8 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None):
                 tor_url = tor_url.split('.torrent')[0] + '.torrent'
 
         request = urllib2.Request(ur'%s' % tor_url)
-        if lazylibrarian.PROXY_HOST:
-            request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
+        if lazylibrarian.CONFIG['PROXY_HOST']:
+            request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])
         request.add_header('Accept-encoding', 'gzip')
         request.add_header('User-Agent', USER_AGENT)
 
@@ -346,22 +362,22 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None):
             logger.warn('Error, invalid url: [%s] %s' % (full_url, str(e)))
             return False
 
-    if lazylibrarian.TOR_DOWNLOADER_BLACKHOLE:
+    if lazylibrarian.CONFIG['TOR_DOWNLOADER_BLACKHOLE']:
         Source = "BLACKHOLE"
         logger.debug("Sending %s to blackhole" % tor_title)
         tor_name = cleanName(tor_title).replace(' ', '_')
         if tor_url and tor_url.startswith('magnet'):
-            if lazylibrarian.TOR_CONVERT_MAGNET:
+            if lazylibrarian.CONFIG['TOR_CONVERT_MAGNET']:
                 hashid = CalcTorrentHash(tor_url)
                 tor_name = 'meta-' + hashid + '.torrent'
-                tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
+                tor_path = os.path.join(lazylibrarian.CONFIG['TORRENT_DIR'], tor_name)
                 result = magnet2torrent(tor_url, tor_path)
                 if result is not False:
                     logger.debug('Magnet file saved as: %s' % tor_path)
                     downloadID = Source
             else:
                 tor_name += '.magnet'
-                tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
+                tor_path = os.path.join(lazylibrarian.CONFIG['TORRENT_DIR'], tor_name)
                 try:
                     with open(tor_path, 'wb') as torrent_file:
                         torrent_file.write(torrent)
@@ -373,7 +389,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None):
                     return False
         else:
             tor_name += '.torrent'
-            tor_path = os.path.join(lazylibrarian.TORRENT_DIR, tor_name)
+            tor_path = os.path.join(lazylibrarian.CONFIG['TORRENT_DIR'], tor_name)
             try:
                 with open(tor_path, 'wb') as torrent_file:
                     torrent_file.write(torrent)
@@ -384,7 +400,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None):
                 logger.debug("Failed to write torrent to file %s, %s" % (tor_path, str(e)))
                 return False
 
-    if lazylibrarian.TOR_DOWNLOADER_UTORRENT and lazylibrarian.UTORRENT_HOST:
+    if lazylibrarian.CONFIG['TOR_DOWNLOADER_UTORRENT'] and lazylibrarian.CONFIG['UTORRENT_HOST']:
         logger.debug("Sending %s to Utorrent" % tor_title)
         Source = "UTORRENT"
         hashid = CalcTorrentHash(torrent)
@@ -392,7 +408,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None):
         if downloadID:
             tor_title = utorrent.nameTorrent(downloadID)
 
-    if lazylibrarian.TOR_DOWNLOADER_RTORRENT and lazylibrarian.RTORRENT_HOST:
+    if lazylibrarian.CONFIG['TOR_DOWNLOADER_RTORRENT'] and lazylibrarian.CONFIG['RTORRENT_HOST']:
         logger.debug("Sending %s to rTorrent" % tor_title)
         Source = "RTORRENT"
         hashid = CalcTorrentHash(torrent)
@@ -400,7 +416,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None):
         if downloadID:
             tor_title = rtorrent.getName(downloadID)
 
-    if lazylibrarian.TOR_DOWNLOADER_QBITTORRENT and lazylibrarian.QBITTORRENT_HOST:
+    if lazylibrarian.CONFIG['TOR_DOWNLOADER_QBITTORRENT'] and lazylibrarian.CONFIG['QBITTORRENT_HOST']:
         logger.debug("Sending %s to qbittorrent" % tor_title)
         Source = "QBITTORRENT"
         hashid = CalcTorrentHash(torrent)
@@ -409,7 +425,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None):
             downloadID = hashid
             tor_title = qbittorrent.getName(hashid)
 
-    if lazylibrarian.TOR_DOWNLOADER_TRANSMISSION and lazylibrarian.TRANSMISSION_HOST:
+    if lazylibrarian.CONFIG['TOR_DOWNLOADER_TRANSMISSION'] and lazylibrarian.CONFIG['TRANSMISSION_HOST']:
         logger.debug("Sending %s to Transmission" % tor_title)
         Source = "TRANSMISSION"
         downloadID = transmission.addTorrent(tor_url)  # returns id or False
@@ -418,16 +434,16 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None):
             downloadID = CalcTorrentHash(torrent)
             tor_title = transmission.getTorrentFolder(downloadID)
 
-    if lazylibrarian.TOR_DOWNLOADER_SYNOLOGY and lazylibrarian.USE_SYNOLOGY and lazylibrarian.SYNOLOGY_HOST:
+    if lazylibrarian.CONFIG['TOR_DOWNLOADER_SYNOLOGY'] and lazylibrarian.CONFIG['USE_SYNOLOGY'] and lazylibrarian.CONFIG['SYNOLOGY_HOST']:
         logger.debug("Sending %s to Synology" % tor_title)
         Source = "SYNOLOGY_TOR"
         downloadID = synology.addTorrent(tor_url)  # returns id or False
         if downloadID:
             tor_title = synology.getName(downloadID)
 
-    if lazylibrarian.TOR_DOWNLOADER_DELUGE and lazylibrarian.DELUGE_HOST:
+    if lazylibrarian.CONFIG['TOR_DOWNLOADER_DELUGE'] and lazylibrarian.CONFIG['DELUGE_HOST']:
         logger.debug("Sending %s to Deluge" % tor_title)
-        if not lazylibrarian.DELUGE_USER:
+        if not lazylibrarian.CONFIG['DELUGE_USER']:
             # no username, talk to the webui
             Source = "DELUGEWEBUI"
             downloadID = deluge.addTorrent(tor_url)  # returns hash or False
@@ -436,10 +452,10 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None):
         else:
             # have username, talk to the daemon
             Source = "DELUGERPC"
-            client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
-                                     int(lazylibrarian.DELUGE_PORT),
-                                     lazylibrarian.DELUGE_USER,
-                                     lazylibrarian.DELUGE_PASS)
+            client = DelugeRPCClient(lazylibrarian.CONFIG['DELUGE_HOST'],
+                                     int(lazylibrarian.CONFIG['DELUGE_PORT']),
+                                     lazylibrarian.CONFIG['DELUGE_USER'],
+                                     lazylibrarian.CONFIG['DELUGE_PASS'])
             try:
                 client.connect()
                 args = {"name": tor_title}
@@ -448,8 +464,8 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None):
                 else:
                     downloadID = client.call('core.add_torrent_url', tor_url, args)
                 if downloadID:
-                    if lazylibrarian.DELUGE_LABEL:
-                        result = client.call('label.set_torrent', downloadID, lazylibrarian.DELUGE_LABEL)
+                    if lazylibrarian.CONFIG['DELUGE_LABEL']:
+                        _ = client.call('label.set_torrent', downloadID, lazylibrarian.CONFIG['DELUGE_LABEL'])
                     result = client.call('core.get_torrent_status', downloadID, {})
                     # for item in result:
                     #    logger.debug ('Deluge RPC result %s: %s' % (item, result[item]))

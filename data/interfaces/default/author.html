@@ -21,8 +21,11 @@
                 <li><a href="resumeAuthor?AuthorID=${author['AuthorID']}" id="button"> Unignore Author</a></li>
             %endif
             <li><a href="authorPage?AuthorID=${author['AuthorID']}&Ignored=True" id="button"> Ignored Books </a></li>
+            %if showseries >= 1:
+            <li><a name="seriesbutton" href="series?AuthorID=${author['AuthorID']}" id="button"> Series </a></li>
+            %endif
             %if len(languages) >= 1:
-                <li>Language:&nbsp</li>
+                <li>Language:&nbsp;</li>
 
                 <li><select onchange="window.location = 'authorPage?AuthorID=${author['AuthorID']}&BookLang=' + this.options[this.selectedIndex].value">
                     <option>Select</option>
@@ -45,7 +48,9 @@
 
     <div id="authorhead_container">
         <ul id="authorhead_menu">
-            <li><a href="${author['AuthorLink']}" target="_new">${author['AuthorName']}</a></li></br>
+            <li><a href="${author['AuthorLink']}" target="_new">${author['AuthorName']}</a></li>
+            <li><p align="right"><a href="editAuthor?authorid=${author['AuthorID']}"&amp;target="_new">
+                <i class="smalltext">Edit</i></a></li></br>
             %if author['AuthorDeath']:
                 <li><b>Born:</b> ${author['AuthorBorn']}, <b>Died:</b>  ${author['AuthorDeath']}</li><br>
             %else:
@@ -80,110 +85,43 @@
                     totalbooks = '0'
                     css = "<div class=\"progress-container danger\" style=\"width:150px;\">"
             %>
-            <span title="${percent}"></span>${css}
-            <div style="width:${percent}%"><span class="progressbar-front-text">${havebooks}/${totalbooks}</span></div></div>
-
+            <span title="${percent}">${css}</span>
+            <div style="width:${percent}%"><span class="progressbar-front-text">${havebooks}/${totalbooks}</span></div>
+        </ul>
     </div>
-<!--    <table class="display">-->
-<!--        <thead>-->
-<!--            <tr>-->
-<!--                <th>-->
     <p class="indented">
         <form action="markBooks" method="get"><input type="hidden" name="AuthorID" value="${author['AuthorID']}">
             <input type="hidden" name="redirect" value="author">
-            <select class="markBooks" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
+            <input type="hidden" name="booklang" value="booklang">
+            <input type="hidden" name="ignored" value="ignored">
+            <label>&nbsp;&nbsp;Mark selected books as: </label>
+            <select class="markBooks" name="action" style="margin-top:15px;margin-bottom:15px;">
                 <option value="Wanted">Wanted</option>
                 <option value="Have">Have</option>
                 <option value="Ignored">Ignored</option>
                 <option value="Skipped">Skipped</option>
                 <option value="Remove">Remove</option>
                 <option value="Delete">Delete</option>
-                <option value="Leave" hidden>Leave</option>
+                <option value="Leave" class="hidden">Leave</option>
             </select>
         <input type="submit" class="markBooks" value="Go">
     </p>
-<!--                </th>-->
-<!--            </tr>-->
-<!--        </thead>-->
-<!--    </table>-->
     <table class="display" id="book_table">
         <thead>
             <tr>
                 <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
                 <th id="bookart">Cover</th>
+                <th id="authorname" class="hidden">Title</th>
                 <th id="bookname">Title</th>
-		        <th id="series">Series</th>
-		        <th id="seriesNum">Num.</th>
+                <th id="series">Series</th>
                 <th id="stars">Rating</th>
                 <th id="date">Released</th>
-                <th id="language">Language</th>
                 <th id="status">Status</th>
             </tr>
         </thead>
-
-        <tbody>
-        %for result in books:
-                <%
-                    if result['bookrate'] < 0.5:
-                        starimg = '0-stars.png'
-                    elif result['bookrate'] >= 0.5 and result['bookrate'] < 1.5:
-                        starimg = '1-stars.png'
-                    elif result['bookrate'] >= 1.5 and result['bookrate'] < 2.5:
-                        starimg = '2-stars.png'
-                    elif result['bookrate'] >= 2.5 and result['bookrate'] < 3.5:
-                        starimg = '3-stars.png'
-                    elif result['bookrate'] >= 3.5 and result['bookrate'] < 4.5:
-                        starimg = '4-stars.png'
-                    elif result['bookrate'] >= 4.5:
-                        starimg = '5-stars.png'
-                    else:
-                        starimg = '0-stars.png'
-
-                    sitelink = ''
-                    if 'goodreads' in result['booklink']:
-                        sitelink = '<a href="' + result['booklink'] + '" target="_new"><i class="smalltext">GoodReads</i></a>'
-                    if 'google' in result['booklink']:
-                        sitelink = '<a href="' + result['booklink'] + '" target="_new"><i class="smalltext">GoogleBooks</i></a>'
-
-                    workpage = ''
-                    if result['workpage']:
-                        if len(result['workpage']) > 4:
-                            workpage = '<a href="' + result['workpage'] + '" target="_new"><i class="smalltext">LibraryThing</i></a>'
-                    editpage = '<a href="editBook?bookid=' + result['bookID'] + '"><i class="smalltext">Edit</i></a>'
-                %>
-                <tr class="gradeZ">
-                    <td id="select"><input type="checkbox" name="${result['BookID']}" class="checkbox" /></td>
-                    <td id="bookart"><a href="${result['bookimg']}" target="_new"><img src="${result['bookimg']}" height="75" width="50"></a></td>
-                    %if result['booksub']:
-                        <td id="bookname">${result['bookname']}<br>
-                        <i class="smalltext">${result['booksub']}</i><br>${sitelink}&nbsp;${workpage}&nbsp;${editpage}</td>
-                    %else:
-                        <td id="bookname">${result['bookname']}<br>${sitelink}&nbsp;${workpage}&nbsp;${editpage}</td>
-                    %endif
-                    <td id="series">${result['Series']}</td>
-                    <td id="seriesNum">${result['seriesNum']}</td>
-                    <td id="stars"><img src="images/${starimg}" width="50" height="10"></td>
-                    <td id="date">${result['BookDate']}</td>
-                    <td id="language">${result['booklang']}</td>
-
-                    %if result['Status'] == 'Open':
-                        <td id="status"><a class="button green" href="openBook?bookid=${result['bookID']}" target="_self">${result['Status']}</a></td>
-                    %else:
-                        %if result['Status'] == 'Wanted':
-                            <td id="status"><a class="button red" href="searchForBook?bookid=${result['bookID']}" target="_self"><span class="a">${result['Status']}</span><span class="b">Search</span></a></td>
-                        %else:
-                            %if result['Status'] == 'Snatched':
-                                <td id="status"><a class="button">${result['Status']}</a></td>
-                            %else:
-                                <td id="status"><a class="button grey">${result['Status']}</a></td>
-                            %endif
-                        %endif
-                    %endif
-                </tr>
-        %endfor
-        </tbody>
     </table>
-    <br /><br /><br />
+<p>&nbsp;</p>
+<p>&nbsp;</p>
     </form>
 </%def>
 
@@ -202,11 +140,33 @@
 <%def name="javascriptIncludes()">
     <script src="js/libs/jquery.dataTables.min.js"></script>
     <script>
-
     $(document).ready(function()
     {
         var oTable = $('#book_table').dataTable(
             {
+                "bAutoWidth": false,
+                "aoColumns": [
+                    {"bSortable": false,
+                      "fnRender": function ( oObj ) {
+                        return '<input type="checkbox" name="' + oObj.aData[0] + '" class="checkbox" />'
+                      }
+                    },
+                    {"bSortable": false,
+                      "fnRender": function ( oObj ) {
+                        return '<a href="' + oObj.aData[1] + '" target="_new"><img src="' + oObj.aData[1] + '" height="75" width="50"></a>'
+                      }
+                    },
+                    null,
+                    null,
+                    { "sType": "natural" },
+                    { "fnRender": function ( oObj ) {
+                        return '<img src="images/' + oObj.aData[5] + '" alt="Rating">'
+                      }
+                    },
+                    null,
+                    null
+                    ],
+                "order": [[ 6, 'desc']],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ books per page",
                     "sEmptyTable": "No books found",
@@ -214,43 +174,37 @@
                     "sInfoEmpty":"Showing 0 to 0 of 0 books",
                     "sInfoFiltered":"(filtered from _MAX_ total books)"},
                 "sPaginationType": "full_numbers",
+                "aaSorting": [[6, 'desc']],
+                "bServerSide": true,
+                "sAjaxSource": 'getBooks?source=Author&AuthorID=${author['AuthorID']}&booklang=${booklang}&ignored=${ignored}',
+                "bFilter": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
-                "iDisplayLength": ${lazylibrarian.DISPLAYLENGTH},
+                "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $(nRow).addClass("gradeZ");
+                    $('td', nRow).eq(0).addClass('center');
+                    $('td', nRow).eq(2).addClass('hidden');
+                    $('td', nRow).eq(6).addClass('center');
+                    $('td', nRow).eq(7).addClass('center');
                     var w = window.innerWidth;
-                    if ( w < 320 )
-                    {   // hide cover,series,seriesnum,stars,date on smallest devices
-                        $('td', nRow).eq(1).addClass('hidden');
-                        $('td', nRow).eq(3).addClass('hidden');
-                        $('td', nRow).eq(4).addClass('hidden');
-                        $('td', nRow).eq(5).addClass('hidden');
-                        $('td', nRow).eq(6).addClass('hidden');
-                    }
-                    if ( w < 640 )
-                    {   // hide cover,series,seriesnum,stars,date on smaller devices
-                        $('td', nRow).eq(1).addClass('hidden');
-                        $('td', nRow).eq(3).addClass('hidden');
-                        $('td', nRow).eq(4).addClass('hidden');
-                        $('td', nRow).eq(5).addClass('hidden');
-                        $('td', nRow).eq(6).addClass('hidden');
-                    }
-                    if ( w < 768 )
-                    {   // hide cover,seriesnum,stars,date on small devices
-                        $('td', nRow).eq(1).addClass('hidden');
-                        $('td', nRow).eq(4).addClass('hidden');
-                        $('td', nRow).eq(5).addClass('hidden');
-                        $('td', nRow).eq(6).addClass('hidden');
-                    }
                     if ( w < 1024 )
                     {   // hide stars,date on medium devices
                         $('td', nRow).eq(5).addClass('hidden');
                         $('td', nRow).eq(6).addClass('hidden');
                     }
+                    if ( w < 768 )
+                    {   // hide cover,stars,date on small devices
+                        $('td', nRow).eq(1).addClass('hidden');
+                    }
+                    if ( w < 640 )
+                    {   // hide cover,series,stars,date on smaller devices
+                        $('td', nRow).eq(4).addClass('hidden');
+                    }
                     return nRow;
                 },
             });
-			$('.dataTables_filter input').attr("placeholder", "Search table here");
-            $(window).resize(function() {oTable.fnDraw(false)});
+        $('.dataTables_filter input').attr("placeholder", "Search table here");
+        $(window).resize(function() {oTable.fnDraw(false)});
     });
     </script>
 </%def>

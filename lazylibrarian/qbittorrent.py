@@ -27,6 +27,7 @@ import urllib2
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
+from lazylibrarian.formatter import check_int
 
 
 class qbittorrentclient(object):
@@ -35,7 +36,11 @@ class qbittorrentclient(object):
 
     def __init__(self):
 
-        host = lazylibrarian.QBITTORRENT_HOST
+        host = lazylibrarian.CONFIG['QBITTORRENT_HOST']
+        port = check_int(lazylibrarian.CONFIG['QBITTORRENT_PORT'], 0)
+        if not host or not port:
+            logger.error('Invalid Qbittorrent host or port, check your config')
+
         if not host.startswith('http'):
             host = 'http://' + host
 
@@ -45,10 +50,10 @@ class qbittorrentclient(object):
         if host.endswith('/gui'):
             host = host[:-4]
 
-        host = "%s:%s" % (host, lazylibrarian.QBITTORRENT_PORT)
+        host = "%s:%s" % (host, port)
         self.base_url = host
-        self.username = lazylibrarian.QBITTORRENT_USER
-        self.password = lazylibrarian.QBITTORRENT_PASS
+        self.username = lazylibrarian.CONFIG['QBITTORRENT_USER']
+        self.password = lazylibrarian.CONFIG['QBITTORRENT_PASS']
         self.cookiejar = cookielib.CookieJar()
         self.opener = self._make_opener()
         self._get_sid(self.base_url, self.username, self.password)
@@ -63,7 +68,7 @@ class qbittorrentclient(object):
         # login so we can capture SID cookie
         login_data = urllib.urlencode({'username': username, 'password': password})
         try:
-            response = self.opener.open(base_url + '/login', login_data)
+            _ = self.opener.open(base_url + '/login', login_data)
         except Exception as err:
             logger.debug('Error getting SID. qBittorrent responded with error: %s' % str(err))
             logger.debug('Unable to log in to %s/login' % base_url)
@@ -87,8 +92,8 @@ class qbittorrentclient(object):
 
         request = urllib2.Request(url, data, headers)
 
-        if lazylibrarian.PROXY_HOST:
-            request.set_proxy(lazylibrarian.PROXY_HOST, lazylibrarian.PROXY_TYPE)
+        if lazylibrarian.CONFIG['PROXY_HOST']:
+            request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])
         request.add_header('User-Agent', USER_AGENT)
 
         try:
@@ -189,7 +194,7 @@ def checkLink():
         if len(qbclient.cookiejar):
             # qbittorrent creates a new label if needed
             # can't see how to get a list of known labels
-            if lazylibrarian.QBITTORRENT_LABEL:
+            if lazylibrarian.CONFIG['QBITTORRENT_LABEL']:
                 return "qBittorrent login successful, label not checked"
             return "qBittorrent login successful"
         return "qBittorrent login FAILED\nCheck debug log"
@@ -202,8 +207,8 @@ def addTorrent(link):
 
     qbclient = qbittorrentclient()
     args = {'urls': link, 'savepath': lazylibrarian.DIRECTORY('Download')}
-    if lazylibrarian.QBITTORRENT_LABEL:
-        args['label'] = lazylibrarian.QBITTORRENT_LABEL
+    if lazylibrarian.CONFIG['QBITTORRENT_LABEL']:
+        args['label'] = lazylibrarian.CONFIG['QBITTORRENT_LABEL']
     return qbclient._command('command/download', args, 'application/x-www-form-urlencoded')
 
 
@@ -304,7 +309,7 @@ def encode_multipart(fields, files, boundary=None):
         return s.replace('"', '\\"')
 
     if boundary is None:
-        boundary = ''.join(random.choice(_BOUNDARY_CHARS) for i in range(30))
+        boundary = ''.join(random.choice(_BOUNDARY_CHARS) for _ in range(30))
     lines = []
 
     for name, value in fields.items():

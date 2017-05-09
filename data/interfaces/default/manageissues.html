@@ -10,9 +10,9 @@
 
 <%def name="body()">
     <BR>
-<h1>&nbsp&nbspManage Past Issues</h1><br>
+<h1>&nbsp;&nbsp;${title}</h1><br>
 
-    <form action="pastIssues" method="get">
+<form action="pastIssues" method="get">
     Manage Issues with status <select name="whichStatus">
         %for item in ['Skipped', 'Have', 'Ignored']:
             <option value="${item}"
@@ -38,23 +38,8 @@
                 <th id="provider">NZBprov</th>
            </tr>
         </thead>
-<!--
-        <tbody>
-        %for result in issues:
-                <tr class="gradeZ">
-                    <td id="select"><input type="checkbox" name="${result['NZBurl']}" class="checkbox" /></td>
-                    <td id="magtitle"><BR>${result['NZBtitle']}<BR><BR></td>
-                    <td id="lastacquired">${result['NZBdate']}</td>
-                    <td id="issuedate">${result['Auxinfo']}</td>
-                    <td id="provider">${result['NZBprov']}</td>
-                    <td id="status">${result['Status']}</td>
-                </tr>
-        %endfor
-        </tbody>
--->
     </table>
     <p>
-
     Change selected magazines to <select class="markPastIssues" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
         %for item in ['Skipped', 'Wanted', 'Have', 'Ignored', 'Remove']:
             %if whichStatus != item:
@@ -64,7 +49,7 @@
             </select>
         <input type="submit" class="markPastIssues" value="Go">
     </p>
-    </form>
+</form>
 
 </%def>
 
@@ -81,7 +66,11 @@
             {
                 "order": [[ 1, 'asc' ]],
                 "aoColumns": [
-                    {"bSortable": false},
+                    {"bSortable": false,
+                      "fnRender": function ( oObj ) {
+                        return '<input type="checkbox" name="' + oObj.aData[0] + '" class="checkbox" />'
+                      }
+                    },
                     null,
                     null,
                     null,
@@ -94,12 +83,12 @@
                     "sInfoEmpty":"Showing 0 to 0 of 0 magazines",
                     "sInfoFiltered":"(filtered from _MAX_ total magazines)"},
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
-                "iDisplayLength": ${lazylibrarian.DISPLAYLENGTH},
+                "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "sPaginationType": "full_numbers",
                 "aaSorting": [[1, 'asc']],
                 "bServerSide": true,
                 // need to pass requested status filter
-                "sAjaxSource": 'getPastIssues?whichStatus=Skipped',
+                "sAjaxSource": 'getPastIssues?whichStatus="${whichStatus}"',
                 "bFilter": true,
             });
             $('.dataTables_filter input').attr("placeholder", "Search table here");

@@ -20,151 +20,222 @@ import re
 import subprocess
 import traceback
 from hashlib import sha1
+import shutil
+import lib.zipfile as zipfile
 
 import lazylibrarian
 from lazylibrarian import database, logger
 from lazylibrarian.common import setperm
 from lazylibrarian.formatter import getList, is_valid_booktype, plural
 
-
 def create_covers(refresh=False):
+    if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':  # special flag to say "no covers required"
+        logger.info('Cover creation is disabled in config')
+        return
     myDB = database.DBConnection()
-    issues = myDB.select('SELECT IssueFile from issues')
+    #  <> '' ignores empty string or NULL
+    issues = myDB.select("SELECT IssueFile from issues WHERE IssueFile <> ''")
     if refresh:
         logger.info("Creating covers for %s issue%s" % (len(issues), plural(len(issues))))
     else:
         logger.info("Checking covers for %s issue%s" % (len(issues), plural(len(issues))))
+    cnt = 0
     for item in issues:
-        create_cover(item['IssueFile'], refresh=refresh)
+        try:
+            create_cover(item['IssueFile'], refresh=refresh)
+            cnt += 1
+        except Exception as why:
+            logger.debug('Unable to create cover for %s, %s' % (item['IssueFile'], str(why)))
     logger.info("Cover creation completed")
+    if refresh:
+        return "Created covers for %s issue%s" % (cnt, plural(cnt))
+    return "Checked covers for %s issue%s" % (cnt, plural(cnt))
 
 
 def create_cover(issuefile=None, refresh=False):
-    if lazylibrarian.IMP_CONVERT == 'None':  # special flag to say "no covers required"
+    if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':  # special flag to say "no covers required"
         return
     if issuefile is None or not os.path.isfile(issuefile):
+        logger.debug('No issuefile %s' % issuefile)
         return
 
-    # create a thumbnail cover if there isn't one
     extn = os.path.splitext(issuefile)[1]
     if extn:
         coverfile = issuefile.replace(extn, '.jpg')
     else:
         logger.debug('Unable to create cover for %s, no extension?' % issuefile)
         return
+
     if os.path.isfile(coverfile):
         if refresh:
             os.remove(coverfile)
         else:
-            return  # quit if cover already exists
+            logger.debug('Cover for %s exists' % issuefile)
+            return  # quit if cover already exists and we didn't want to refresh
 
-    generator = ""
-    GS = ""
-    if platform.system() == "Windows":
-        params = ["where", "gswin64c"]
+    logger.debug('Creating cover for %s' % issuefile)
+    data = ''  # result from unzip or unrar
+    extn = extn.lower()
+    if extn in ['.cbz', '.epub']:
         try:
-            GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
-            generator = "gswin64c"
-        except Exception as e:
-            logger.debug("where gswin64c failed: %s" % str(e))
-        if not os.path.isfile(GS):
-            params = ["where", "gswin32c"]
-            try:
-                GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
-                generator = "gswin32c"
-            except Exception as e:
-                logger.debug("where gswin32c failed: %s" % str(e))
-        if not os.path.isfile(GS):
-            logger.debug("No gswin found")
-            generator = "(no windows ghostscript found)"
-        else:
-            params = [GS, "--version"]
-            res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-            logger.debug("Found %s [%s] version %s" % (generator, GS, res))
-            generator = "%s version %s" % (generator, res)
-            if '[' in issuefile:
-                issuefile = issuefile.split('[')[0]
-            params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1", "-dLastPage=1",
-                      "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
-            res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-            if not os.path.isfile(coverfile):
-                logger.debug("Failed to create jpg: %s" % res)
-
-    else:  # not windows
+            data = zipfile.ZipFile(issuefile)
+        except Exception as why:
+            logger.debug("Failed to read zip file %s, %s" %  (issuefile, str(why)))
+            data = ''
+    elif extn in ['.cbr']:
         try:
-            from wand.image import Image
-            interface = "wand"
-        except Exception:
-            try:
-                # No PythonMagick in python3
-                import PythonMagick
-                interface = "pythonmagick"
-            except Exception:
-                interface = ""
-
+            # unrar will complain if the library isn't installed, needs to be compiled separately
+            # see https://pypi.python.org/pypi/unrar/ for instructions
+            # Download source from http://www.rarlab.com/rar_add.htm
+            # note we need LIBRARY SOURCE not a binary package
+            # make lib; sudo make install-lib; sudo ldconfig
+            # lib.unrar should then be able to find libunrar.so
+            from lib.unrar import rarfile
+            data = rarfile.RarFile(issuefile)
+        except Exception as why:
+            logger.debug("Failed to read rar file %s, %s" %  (issuefile, str(why)))
+            data = ''
+    if data:
+        img = ''
         try:
-            if len(lazylibrarian.IMP_CONVERT):  # allow external convert to override libraries
-                generator = "external program: %s" % lazylibrarian.IMP_CONVERT
-                if "gsconvert.py" in lazylibrarian.IMP_CONVERT:
-                    msg = "Use of gsconvert.py is deprecated, equivalent functionality is now built in. "
-                    msg += "Support for gsconvert.py may be removed in a future release. See wiki for details."
-                    logger.warn(msg)
-                converter = lazylibrarian.IMP_CONVERT
-                if not converter.startswith(os.sep):  # full path given, or just program_name?
-                    converter = os.path.join(os.getcwd(), lazylibrarian.IMP_CONVERT)
-                try:
-                    params = [converter, '%s' % issuefile, '%s' % coverfile]
-                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                    if res:
-                        logger.debug('%s reports: %s' % (lazylibrarian.IMP_CONVERT, res))
-                except Exception as e:
-                    # logger.debug(params)
-                    logger.debug('External "convert" failed %s' % e)
-
-            elif interface == 'wand':
-                generator = "wand interface"
-                with Image(filename=issuefile + '[0]') as img:
-                    img.save(filename=coverfile)
-
-            elif interface == 'pythonmagick':
-                generator = "pythonmagick interface"
-                img = PythonMagick.Image()
-                img.read(issuefile + '[0]')
-                img.write(coverfile)
+            for member in data.namelist():
+                memlow = member.lower()
+                if '-00.' in memlow or '000.' in memlow or 'cover.' in memlow:
+                    if memlow.endswith('.jpg') or memlow.endswith('.jpeg'):
+                        img = data.read(member)
+                        break
+            if img:
+                with open(coverfile, "wb") as f:
+                    f.write(img)
+                return
             else:
-                GS = os.path.join(os.getcwd(), "gs")
-                generator = "local gs"
-                if not os.path.isfile(GS):
-                    GS = ""
-                    params = ["which", "gs"]
+                logger.debug("Failed to find image in %s" % issuefile)
+        except Exception as why:
+            logger.debug("Failed to extract image from %s, %s" % (issuefile, str(why)))
+
+    elif extn == '.pdf':
+        generator = ""
+        if platform.system() == "Windows":
+            GS = os.path.join(os.getcwd(), "gswin64c.exe")
+            generator = "local gswin64c"
+            if not os.path.isfile(GS):
+                GS = os.path.join(os.getcwd(), "gswin32c.exe")
+                generator = "local gswin32c"
+            if not os.path.isfile(GS):
+                params = ["where", "gswin64c"]
+                try:
+                    GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+                    generator = "gswin64c"
+                except Exception as e:
+                    logger.debug("where gswin64c failed: %s" % str(e))
+            if not os.path.isfile(GS):
+                params = ["where", "gswin32c"]
+                try:
+                    GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+                    generator = "gswin32c"
+                except Exception as e:
+                    logger.debug("where gswin32c failed: %s" % str(e))
+            if not os.path.isfile(GS):
+                logger.debug("No gswin found")
+                generator = "(no windows ghostscript found)"
+            else:
+                try:
+                    params = [GS, "--version"]
+                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                    logger.debug("Found %s [%s] version %s" % (generator, GS, res))
+                    generator = "%s version %s" % (generator, res)
+                    issuefile = issuefile.split('[')[0]
+                    params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1", "-dLastPage=1",
+                              "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
+                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                    if not os.path.isfile(coverfile):
+                        logger.debug("Failed to create jpg: %s" % res)
+                except Exception:  #  as why:
+                    logger.debug("Failed to create jpg for %s" % issuefile)
+                    logger.debug('Exception in gswin create_cover: %s' % traceback.format_exc())
+        else:  # not windows
+            try:
+                # noinspection PyUnresolvedReferences,PyUnresolvedReferences,PyUnresolvedReferences
+                from wand.image import Image
+                interface = "wand"
+            except Exception:
+                try:
+                    # No PythonMagick in python3
+                    import PythonMagick
+                    interface = "pythonmagick"
+                except Exception:
+                    interface = ""
+            try:
+                if len(lazylibrarian.CONFIG['IMP_CONVERT']):  # allow external convert to override libraries
+                    generator = "external program: %s" % lazylibrarian.CONFIG['IMP_CONVERT']
+                    if "gsconvert.py" in lazylibrarian.CONFIG['IMP_CONVERT']:
+                        msg = "Use of gsconvert.py is deprecated, equivalent functionality is now built in. "
+                        msg += "Support for gsconvert.py may be removed in a future release. See wiki for details."
+                        logger.warn(msg)
+                    converter = lazylibrarian.CONFIG['IMP_CONVERT']
+                    if not converter.startswith(os.sep):  # full path given, or just program_name?
+                        converter = os.path.join(os.getcwd(), lazylibrarian.CONFIG['IMP_CONVERT'])
                     try:
-                        GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
-                        generator = GS
+                        params = [converter, '%s' % issuefile, '%s' % coverfile]
+                        res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                        if res:
+                            logger.debug('%s reports: %s' % (lazylibrarian.CONFIG['IMP_CONVERT'], res))
                     except Exception as e:
-                        logger.debug("which gs failed: %s" % str(e))
+                        # logger.debug(params)
+                        logger.debug('External "convert" failed %s' % e)
+
+                elif interface == 'wand':
+                    generator = "wand interface"
+                    with Image(filename=issuefile + '[0]') as img:
+                        img.save(filename=coverfile)
+
+                elif interface == 'pythonmagick':
+                    generator = "pythonmagick interface"
+                    img = PythonMagick.Image()
+                    img.read(issuefile + '[0]')
+                    img.write(coverfile)
+
+                else:
+                    GS = os.path.join(os.getcwd(), "gs")
+                    generator = "local gs"
                     if not os.path.isfile(GS):
-                        logger.debug("Cannot find gs")
-                        generator = "(no gs found)"
-                    else:
-                        params = [GS, "--version"]
-                        res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                        logger.debug("Found gs [%s] version %s" % (GS, res))
-                        generator = "%s version %s" % (generator, res)
-                        if '[' in issuefile:
+                        GS = ""
+                        params = ["which", "gs"]
+                        try:
+                            GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+                            generator = GS
+                        except Exception as e:
+                            logger.debug("which gs failed: %s" % str(e))
+                        if not os.path.isfile(GS):
+                            logger.debug("Cannot find gs")
+                            generator = "(no gs found)"
+                        else:
+                            params = [GS, "--version"]
+                            res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                            logger.debug("Found gs [%s] version %s" % (GS, res))
+                            generator = "%s version %s" % (generator, res)
                             issuefile = issuefile.split('[')[0]
-                        params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1",
-                                  "-dLastPage=1", "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
-                        res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                        if not os.path.isfile(coverfile):
-                            logger.debug("Failed to create jpg: %s" % res)
+                            params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1",
+                                      "-dLastPage=1", "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
+                            res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                            if not os.path.isfile(coverfile):
+                                logger.debug("Failed to create jpg: %s" % res)
+            except Exception:
+                logger.debug("Unable to create cover for %s using %s" % (issuefile, generator))
+                logger.debug('Exception in gs create_cover: %s' % traceback.format_exc())
 
-        except Exception:
-            logger.debug("Unable to create cover for %s using %s" % (issuefile, generator))
-            logger.debug('Exception in create_cover: %s' % traceback.format_exc())
+        if os.path.isfile(coverfile):
+            setperm(coverfile)
+            logger.debug("Created cover for %s using %s" % (issuefile, generator))
+            return
 
-    if os.path.isfile(coverfile):
+    # if not recognised extension or cover creation failed
+    try:
+        shutil.copyfile(os.path.join(lazylibrarian.PROG_DIR, 'data/images/nocover.jpg'), coverfile)
         setperm(coverfile)
-        logger.debug("Created cover for %s using %s" % (issuefile, generator))
+    except Exception as why:
+        logger.debug("Failed to copy nocover file, %s" %  str(why))
+    return
 
 
 def create_id(issuename=None):
@@ -177,18 +248,17 @@ def magazineScan():
   try:
     myDB = database.DBConnection()
 
-    mag_path = lazylibrarian.MAG_DEST_FOLDER
-    if '$' in mag_path:
-        mag_path = mag_path.split('$')[0]
+    mag_path = lazylibrarian.CONFIG['MAG_DEST_FOLDER']
+    mag_path = mag_path.split('$')[0]
 
-    if lazylibrarian.MAG_RELATIVE:
+    if lazylibrarian.CONFIG['MAG_RELATIVE']:
         if mag_path[0] not in '._':
             mag_path = '_' + mag_path
         mag_path = os.path.join(lazylibrarian.DIRECTORY('Destination'), mag_path).encode(lazylibrarian.SYS_ENCODING)
     else:
         mag_path = mag_path.encode(lazylibrarian.SYS_ENCODING)
 
-    if lazylibrarian.FULL_SCAN:
+    if lazylibrarian.CONFIG['FULL_SCAN']:
         mags = myDB.select('select * from Issues')
         # check all the issues are still there, delete entry if not
         for mag in mags:
@@ -222,13 +292,13 @@ def magazineScan():
     logger.info(' Checking [%s] for magazines' % mag_path)
 
     matchString = ''
-    for char in lazylibrarian.MAG_DEST_FILE:
+    for char in lazylibrarian.CONFIG['MAG_DEST_FILE']:
         matchString = matchString + '\\' + char
     # massage the MAG_DEST_FILE config parameter into something we can use
     # with regular expression matching
     booktypes = ''
     count = -1
-    booktype_list = getList(lazylibrarian.MAG_TYPE)
+    booktype_list = getList(lazylibrarian.CONFIG['MAG_TYPE'])
     for book_type in booktype_list:
         count += 1
         if count == 0:
@@ -264,7 +334,7 @@ def magazineScan():
                 controlValueDict = {"Title": title}
 
                 # is this magazine already in the database?
-                mag_entry = myDB.select('SELECT * from magazines WHERE Title="%s" COLLATE NOCASE' % title)
+                mag_entry = myDB.match('SELECT LastAcquired, IssueDate, MagazineAdded from magazines WHERE Title="%s"' % title)
                 if not mag_entry:
                     # need to add a new magazine to the database
                     newValueDict = {
@@ -282,9 +352,9 @@ def magazineScan():
                     magissuedate = None
                     magazineadded = None
                 else:
-                    maglastacquired = mag_entry[0]['LastAcquired']
-                    magissuedate = mag_entry[0]['IssueDate']
-                    magazineadded = mag_entry[0]['MagazineAdded']
+                    maglastacquired = mag_entry['LastAcquired']
+                    magissuedate = mag_entry['IssueDate']
+                    magazineadded = mag_entry['MagazineAdded']
                     magissuedate = str(magissuedate).zfill(4)
 
                 issuedate = str(issuedate).zfill(4)  # for sorting issue numbers
@@ -292,7 +362,7 @@ def magazineScan():
                 # is this issue already in the database?
                 controlValueDict = {"Title": title, "IssueDate": issuedate}
                 issue_id = create_id("%s %s" % (title, issuedate))
-                iss_entry = myDB.match('SELECT Title from issues WHERE Title="%s" COLLATE NOCASE and IssueDate="%s"' % (
+                iss_entry = myDB.match('SELECT Title from issues WHERE Title="%s" and IssueDate="%s"' % (
                     title, issuedate))
                 if not iss_entry:
                     newValueDict = {
@@ -306,15 +376,8 @@ def magazineScan():
                 create_cover(issuefile)
 
                 # see if this issues date values are useful
-                # if its a new magazine, magazineadded,magissuedate,lastacquired are all None
-                # if magazineadded is NOT None, but the others are, we've deleted one or more issues
-                # so the most recent dates may be wrong and need to be updated.
-                # Set magazine_issuedate to issuedate of most recent issue we have
-                # Set magazine_added to acquired date of earliest issue we have
-                # Set magazine_lastacquired to acquired date of most recent issue we have
-                # acquired dates are read from magazine file timestamps
-                if magazineadded is None:  # new magazine, this might be the only issue
-                    controlValueDict = {"Title": title}
+                controlValueDict = {"Title": title}
+                if not mag_entry:  # new magazine, this is the only issue
                     newValueDict = {
                         "MagazineAdded": iss_acquired,
                         "LastAcquired": iss_acquired,
@@ -324,19 +387,20 @@ def magazineScan():
                     }
                     myDB.upsert("magazines", newValueDict, controlValueDict)
                 else:
+                    # Set magazine_issuedate to issuedate of most recent issue we have
+                    # Set latestcover to most recent issue cover
+                    # Set magazine_added to acquired date of earliest issue we have
+                    # Set magazine_lastacquired to acquired date of most recent issue we have
+                    # acquired dates are read from magazine file timestamps
+                    newValueDict = {"IssueStatus": "Open"}
                     if iss_acquired < magazineadded:
-                        controlValueDict = {"Title": title}
-                        newValueDict = {"MagazineAdded": iss_acquired}
-                        myDB.upsert("magazines", newValueDict, controlValueDict)
-                    if maglastacquired is None or iss_acquired > maglastacquired:
-                        controlValueDict = {"Title": title}
-                        newValueDict = {"LastAcquired": iss_acquired,
-                                        "LatestCover": os.path.splitext(issuefile)[0] + '.jpg'}
-                        myDB.upsert("magazines", newValueDict, controlValueDict)
-                    if magissuedate is None or issuedate > magissuedate:
-                        controlValueDict = {"Title": title}
-                        newValueDict = {"IssueDate": issuedate}
-                        myDB.upsert("magazines", newValueDict, controlValueDict)
+                        newValueDict["MagazineAdded"] =  iss_acquired
+                    if not maglastacquired or iss_acquired > maglastacquired:
+                        newValueDict["LastAcquired"] = iss_acquired
+                    if not magissuedate or issuedate >= magissuedate:
+                        newValueDict["IssueDate"] = issuedate
+                        newValueDict["LatestCover"] = os.path.splitext(issuefile)[0] + '.jpg'
+                    myDB.upsert("magazines", newValueDict, controlValueDict)
 
     magcount = myDB.match("select count(*) from magazines")
     isscount = myDB.match("select count(*) from issues")

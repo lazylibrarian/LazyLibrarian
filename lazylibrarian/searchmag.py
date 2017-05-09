@@ -24,7 +24,7 @@ from lazylibrarian import logger, database
 from lazylibrarian.common import scheduleJob
 from lazylibrarian.formatter import plural, now, unaccented_str, replace_all, unaccented, \
     nzbdate2format, getList, month2num, datecompare, check_int, check_year
-from lazylibrarian.notifiers import notify_snatch
+from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.providers import IterateOverNewzNabSites, IterateOverTorrentSites, IterateOverRSSSites
 from lazylibrarian.searchnzb import NZBDownloadMethod
 from lazylibrarian.searchtorrents import TORDownloadMethod
@@ -32,15 +32,18 @@ from lib.fuzzywuzzy import fuzz
 
 
 def cron_search_magazines():
-    threading.currentThread().name = "CRON-SEARCHMAG"
-    search_magazines()
+    if 'SEARCHALLMAG' not in [n.name for n in [t for t in threading.enumerate()]]:
+        search_magazines()
 
 def search_magazines(mags=None, reset=False):
     # produce a list of magazines to search for, tor, nzb, torznab, rss
     try:
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
-            threading.currentThread().name = "SEARCHMAG"
+            if mags is None:
+                threading.currentThread().name = "SEARCHALLMAG"
+            else:
+                threading.currentThread().name = "SEARCHMAG"
 
         myDB = database.DBConnection()
         searchlist = []
@@ -75,7 +78,7 @@ def search_magazines(mags=None, reset=False):
                 searchterm = searchmag['Title']
                 dic = {'...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': ''}
                 searchterm = unaccented_str(replace_all(searchterm, dic))
-                searchterm = re.sub('[\.\-\/]', ' ', searchterm).encode(lazylibrarian.SYS_ENCODING)
+                searchterm = re.sub('[.\-/]', ' ', searchterm).encode(lazylibrarian.SYS_ENCODING)
 
             searchlist.append({"bookid": bookid, "searchterm": searchterm})
 
@@ -128,7 +131,6 @@ def search_magazines(mags=None, reset=False):
 
             if not resultlist:
                 logger.debug("Adding magazine %s to queue." % book['searchterm'])
-
             else:
                 bad_name = 0
                 bad_date = 0
@@ -159,10 +161,16 @@ def search_magazines(mags=None, reset=False):
                         bad_name += 1
                     else:
                         rejected = False
-                        maxsize = check_int(lazylibrarian.REJECT_MAGSIZE, 0)
+                        maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAGSIZE'], 0)
                         if maxsize and nzbsize > maxsize:
                             logger.debug("Rejecting %s, too large" % nzbtitle)
                             rejected = True
+
+                        if not rejected:
+                            minsize = check_int(lazylibrarian.CONFIG['REJECT_MAGMIN'], 0)
+                            if minsize and nzbsize < minsize:
+                                logger.debug("Rejecting %s, too small" % nzbtitle)
+                                rejected = True
 
                         if not rejected:
                             control_date = results['IssueDate']
@@ -192,7 +200,7 @@ def search_magazines(mags=None, reset=False):
                                     unaccented(bookid),
                                     unaccented(nzbtitle_formatted))
 
-                                if mag_title_match < lazylibrarian.MATCH_RATIO:
+                                if mag_title_match < lazylibrarian.CONFIG['MATCH_RATIO']:
                                     logger.debug(
                                         u"Magazine token set Match failed: " + str(
                                             mag_title_match) + "% for " + nzbtitle_formatted)
@@ -223,6 +231,7 @@ def search_magazines(mags=None, reset=False):
                                     logger.debug("Rejecting %s, contains %s" % (nzbtitle_formatted, word))
                                     break
 
+                        regex_pass = 0
                         if not rejected:
                             # Magazine names have many different styles of date
                             # DD MonthName YYYY OR MonthName YYYY or Issue nn, MonthName YYYY
@@ -231,7 +240,6 @@ def search_magazines(mags=None, reset=False):
                             # Issue/No/Nr/Vol nn, YYYY or Issue/No/Nr/Vol nn
                             # nn YYYY issue number without "Nr" before it
                             # issue and year as a single 6 digit string eg 222015
-                            regex_pass = 0
                             newdatish = "none"
                             # DD MonthName YYYY OR MonthName YYYY or Issue nn, MonthName YYYY
                             pos = 0
@@ -240,7 +248,7 @@ def search_magazines(mags=None, reset=False):
                                 if year and pos:
                                     month = month2num(nzbtitle_exploded[pos - 1])
                                     if month:
-                                        if (pos - 1):
+                                        if pos - 1:
                                             day = check_int(nzbtitle_exploded[pos - 2], 1)
                                             if day > 31:  # probably issue number nn
                                                 day = 1
@@ -248,7 +256,7 @@ def search_magazines(mags=None, reset=False):
                                             day = 1
                                         newdatish = "%04d-%02d-%02d" % (year, month, day)
                                         try:
-                                            check = datetime.date(year, month, day)
+                                            _ = datetime.date(year, month, day)
                                             regex_pass = 1
                                             break
                                         except ValueError:
@@ -265,7 +273,7 @@ def search_magazines(mags=None, reset=False):
                                         if month:
                                             day = check_int(nzbtitle_exploded[pos - 1].rstrip(','), 1)
                                             try:
-                                                check = datetime.date(year, month, day)
+                                                _ = datetime.date(year, month, day)
                                                 newdatish = "%04d-%02d-%02d" % (year, month, day)
                                                 regex_pass = 2
                                                 break
@@ -286,7 +294,7 @@ def search_magazines(mags=None, reset=False):
                                             else:
                                                 day = 1
                                             try:
-                                                check = datetime.date(year, month, day)
+                                                _ = datetime.date(year, month, day)
                                                 newdatish = "%04d-%02d-%02d" % (year, month, day)
                                                 regex_pass = 3
                                                 break
@@ -368,7 +376,7 @@ def search_magazines(mags=None, reset=False):
 
                                 if '-' in str(newdatish):
                                     start_time = time.time()
-                                    start_time -= int(lazylibrarian.MAG_AGE) * 24 * 60 * 60  # number of seconds in days
+                                    start_time -= int(lazylibrarian.CONFIG['MAG_AGE']) * 24 * 60 * 60  # number of seconds in days
                                     if start_time < 0:  # limit of unixtime (1st Jan 1970)
                                         start_time = 0
                                     control_date = time.strftime("%Y-%m-%d", time.localtime(start_time))
@@ -439,27 +447,27 @@ def search_magazines(mags=None, reset=False):
                                 }
                                 myDB.upsert(insert_table, newValueDict, controlValueDict)
 
+                logger.info(
+                    'Found %i result%s for %s. %i new, %i old, %i fail date, %i fail name, %i rejected: %i to download' % (
+                    total_nzbs, plural(total_nzbs), bookid, new_date, old_date, bad_date, bad_name, rejects, len(maglist)))
 
-            logger.info(
-                'Found %i result%s for %s. %i new, %i old, %i fail date, %i fail name, %i rejected: %i to download' % (
-                total_nzbs, plural(total_nzbs), bookid, new_date, old_date, bad_date, bad_name, rejects, len(maglist)))
-
-            for magazine in maglist:
-                if magazine['nzbmode'] in ["torznab", "torrent", "magnet"]:
-                    snatch = TORDownloadMethod(
-                        magazine['bookid'],
-                        magazine['nzbtitle'],
-                        magazine['nzburl'])
-                else:
-                    snatch = NZBDownloadMethod(
-                        magazine['bookid'],
-                        magazine['nzbtitle'],
-                        magazine['nzburl'])
-                if snatch:
-                    logger.info('Downloading %s from %s' % (magazine['nzbtitle'], magazine["nzbprov"]))
-                    notify_snatch("%s from %s at %s" %
-                                  (unaccented(magazine['nzbtitle']), magazine["nzbprov"], now()))
-                    scheduleJob(action='Start', target='processDir')
+                for magazine in maglist:
+                    if magazine['nzbmode'] in ["torznab", "torrent", "magnet"]:
+                        snatch = TORDownloadMethod(
+                            magazine['bookid'],
+                            magazine['nzbtitle'],
+                            magazine['nzburl'])
+                    else:
+                        snatch = NZBDownloadMethod(
+                            magazine['bookid'],
+                            magazine['nzbtitle'],
+                            magazine['nzburl'])
+                    if snatch:
+                        logger.info('Downloading %s from %s' % (magazine['nzbtitle'], magazine["nzbprov"]))
+                        notify_snatch("%s from %s at %s" %
+                                      (unaccented(magazine['nzbtitle']), magazine["nzbprov"], now()))
+                        custom_notify_snatch(magazine['bookid'])
+                        scheduleJob(action='Start', target='processDir')
 
         if reset:
             scheduleJob(action='Restart', target='search_magazines')

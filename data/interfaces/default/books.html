@@ -8,8 +8,8 @@
         <ul id="subhead_menu">
             <li ><a id="button" href="forceSearch?source=books">Force Search</a></li>
             <li ><a id="button" href="forceProcess?source=books">Force Post-Processing</a></li>
-            %if len(languages) > 1:
-                <li>Language:&nbsp</li>
+            %if len(languages) >= 1:
+                <li>Language:&nbsp;</li>
 
                 <li><select onchange="window.location = 'books?BookLang=' + this.options[this.selectedIndex].value">
                     <option>Select</option>
@@ -24,37 +24,40 @@
 
 <%def name="body()">
 <BR><BR>
-<h1>&nbsp&nbspBooks</h1>
-    <p class="indented">
-        <form action="markBooks" method="get">
-            <label>Mark selected books as: </label>
-            <select class="markBooks" name="action" id="action">
-                <option value="Wanted">Wanted</option>
-                <option value="Have">Have</option>
-                <option value="Ignored">Ignored</option>
-                <option value="Skipped">Skipped</option>
-                <option value="Remove">Remove</option>
-                <option value="Delete">Delete</option>
-                <option value="Leave" hidden>Leave</option>
-            </select>
-        <input type="submit" class="markBooks" id="go" value="Go">
-        <br><br>
-    </p>
-    <table class="display" id="book_table" style="width:100%;">
-        <thead>
-            <tr>
-                <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
-                <th id="bookart">Cover</th>
-                <th id="authorname">Author</th>
-                <th id="bookname">Title</th>
-		        <th id="series">Series</th>
-		        <th id="seriesNum">Num</th>
-                <th id="stars">Rating</th>
-                <th id="date">Released</th>
-                <th id="status">Status</th>
-            </tr>
-        </thead>
-    </table>
+<h1>&nbsp;&nbsp;${title}</h1>
+<p class="indented">
+<input type="hidden" name="booklang" value="booklang">
+<form action="markBooks" method="get">
+    <label>&nbsp;&nbsp;Mark selected books as: </label>
+    <select class="markBooks" name="action" id="action">
+        <option value="Wanted">Wanted</option>
+        <option value="Have">Have</option>
+        <option value="Ignored">Ignored</option>
+        <option value="Skipped">Skipped</option>
+        <option value="Remove">Remove</option>
+        <option value="Delete">Delete</option>
+        <option value="Leave" class="hidden">Leave</option>
+    </select>
+    <input type="submit" class="markBooks" id="go" value="Go">
+    <br><br>
+</p>
+<table class="display" id="book_table" style="width:100%;">
+    <thead>
+        <tr>
+            <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
+            <th id="bookart">Cover</th>
+            <th id="authorname">Author</th>
+            <th id="bookname">Title</th>
+            <th id="series">Series</th>
+            <th id="stars" class="center">Rating</th>
+            <th id="date" class="center">Released</th>
+            <th id="status" class="center">Status</th>
+        </tr>
+    </thead>
+</table>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+</form>
 </%def>
 
 <%def name="headIncludes()">
@@ -85,15 +88,28 @@
                 "bAutoWidth": false,
                 "order": [[ 2, 'asc' ]],
                 "aoColumns": [
-                    {"bSortable": false},
-                    {"bSortable": false},
+                    {"bSortable": false,
+                      "fnRender": function ( oObj ) {
+                        return '<input type="checkbox" name="' + oObj.aData[0] + '" class="checkbox" />'
+                      }
+                    },
+                    {"bSortable": false,
+                      "fnRender": function ( oObj ) {
+                        return '<a href="' + oObj.aData[1] + '" target="_new"><img src="' + oObj.aData[1] + '" height="75" width="50"></a>'
+                      }
+                    },
+                    { "fnRender": function ( oObj ) {
+                        return '<a href="authorPage?AuthorID=' + oObj.aData[8] + '">' + oObj.aData[2] + '</a>'
+                      }
+                    },
                     null,
                     null,
+                    { "fnRender": function ( oObj ) {
+                        return '<img src="images/' + oObj.aData[5] + '" alt="Rating">'
+                      }
+                    },
                     null,
-                    null,
-                    null,
-                    null,
-                    {"bSortable": false}
+                    null
                     ],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ books per page",
@@ -102,49 +118,40 @@
                     "sInfoEmpty":"Showing 0 to 0 of 0 books",
                     "sInfoFiltered":"(filtered from _MAX_ total books)"},
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
-                "iDisplayLength": ${lazylibrarian.DISPLAYLENGTH},
+                "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "sPaginationType": "full_numbers",
                 "aaSorting": [[2, 'asc']],
-                 "bServerSide": true,
-                // need to pass requested language filter to getBooks
-                "sAjaxSource": 'getBooks?BookLang=eng',
+                "bServerSide": true,
+                "sAjaxSource": 'getBooks?source=Books&booklang=${booklang}',
                 "bFilter": true,
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $(nRow).addClass("gradeZ");
+                    $('td', nRow).eq(5).addClass('center');
+                    $('td', nRow).eq(6).addClass('center');
+                    $('td', nRow).eq(7).addClass('center');
                     var w = window.innerWidth;
-                    if ( w < 320 )
-                    {   // hide cover,author,series,seriesnum,stars,date on smallest devices
-                        $('td', nRow).eq(1).addClass('hidden');
-                        $('td', nRow).eq(2).addClass('hidden');
-                        $('td', nRow).eq(4).addClass('hidden');
-                        $('td', nRow).eq(5).addClass('hidden');
-                        $('td', nRow).eq(6).addClass('hidden');
-                        $('td', nRow).eq(7).addClass('hidden');
-                    }
-                    if ( w < 640 )
-                    {   // hide cover,series,seriesnum,stars,date on smaller devices
-                        $('td', nRow).eq(1).addClass('hidden');
-                        $('td', nRow).eq(4).addClass('hidden');
-                        $('td', nRow).eq(5).addClass('hidden');
-                        $('td', nRow).eq(6).addClass('hidden');
-                        $('td', nRow).eq(7).addClass('hidden');
-                    }
-                    if ( w < 768 )
-                    {   // hide cover,seriesnum,stars,date on small devices
-                        $('td', nRow).eq(1).addClass('hidden');
-                        $('td', nRow).eq(5).addClass('hidden');
-                        $('td', nRow).eq(6).addClass('hidden');
-                        $('td', nRow).eq(7).addClass('hidden');
-                    }
                     if ( w < 1024 )
                     {   // hide stars,date on medium devices
+                        $('td', nRow).eq(5).addClass('hidden');
                         $('td', nRow).eq(6).addClass('hidden');
-                        $('td', nRow).eq(7).addClass('hidden');
+                    }
+                    if ( w < 768 )
+                    {   // hide cover,stars,date on small devices
+                        $('td', nRow).eq(1).addClass('hidden');
+                    }
+                    if ( w < 640 )
+                    {   // hide cover,series,stars,date on smaller devices
+                        $('td', nRow).eq(4).addClass('hidden');
+                    }
+                    if ( w < 320 )
+                    {   // hide cover,author,series,stars,date on smallest devices
+                        $('td', nRow).eq(2).addClass('hidden');
                     }
                     return nRow;
                 },
             });
-			$('.dataTables_filter input').attr("placeholder", "Search table here");
-			$(window).resize(function() {oTable.fnDraw(false)});
+        $('.dataTables_filter input').attr("placeholder", "Search table here");
+        $(window).resize(function() {oTable.fnDraw(false)});
     });
     </script>
 </%def>

@@ -26,14 +26,20 @@ import lazylibrarian
 from lazylibrarian import database, logger, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology, sabnzbd, nzbget
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file
-from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, unaccented
+from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, \
+    unaccented, getList
 from lazylibrarian.gr import GoodReads
-from lazylibrarian.importer import addAuthorToDB
+from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB
 from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
 from lazylibrarian.magazinescan import create_id, create_cover
-from lazylibrarian.notifiers import notify_download
+from lazylibrarian.notifiers import notify_download, custom_notify_download
 from lib.deluge_client import DelugeRPCClient
 from lib.fuzzywuzzy import fuzz
+
+# Need to remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
+# as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
+__dic__ = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
+           ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
 
 
 def processAlternate(source_dir=None):
@@ -57,7 +63,7 @@ def processAlternate(source_dir=None):
                 processAlternate(subdir)
         # only import one book from each alternate (sub)directory, this is because
         # the importer may delete the directory after importing a book,
-        # depending on lazylibrarian.DESTINATION_COPY setting
+        # depending on lazylibrarian.CONFIG['DESTINATION_COPY'] setting
         # also if multiple books in a folder and only a "metadata.opf"
         # which book is it for?
         new_book = book_file(source_dir, booktype='book')
@@ -85,7 +91,7 @@ def processAlternate(source_dir=None):
                 authorname = metadata['creator']
                 bookname = metadata['title']
                 myDB = database.DBConnection()
-
+                authorid = ''
                 authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % authorname)
 
                 if not authmatch:
@@ -99,15 +105,19 @@ def processAlternate(source_dir=None):
                         logger.debug("No author id for [%s]" % authorname)
                     if author_gr:
                         grauthorname = author_gr['authorname']
+                        authorid = author_gr['authorid']
                         logger.debug("GoodReads reports [%s] for [%s]" % (grauthorname, authorname))
                         authorname = grauthorname
-                        authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % authorname)
+                        authmatch = myDB.match('SELECT * FROM authors where AuthorID="%s"' % authorid)
 
                 if authmatch:
                     logger.debug("ALT: Author %s found in database" % authorname)
                 else:
                     logger.debug("ALT: Author %s not found, adding to database" % authorname)
-                    addAuthorToDB(authorname)
+                    if authorid:
+                        addAuthorToDB(authorid=authorid)
+                    else:
+                        addAuthorNameToDB(author=authorname)
 
                 bookid = find_book_in_db(myDB, authorname, bookname)
                 if bookid:
@@ -147,16 +157,16 @@ def try_rename(directory, filename):
         return ""
 
 
-def move_into_subdir(processpath, targetdir, fname):
+def move_into_subdir(sourcedir, targetdir, fname):
     # move the book and any related files too, other book formats, or opf, jpg with same title
-    # (files begin with fname) from processpath to new targetdir
+    # (files begin with fname) from sourcedir to new targetdir
     # can't move metadata.opf or cover.jpg or similar as can't be sure they are ours
-    list_dir = os.listdir(processpath)
+    list_dir = os.listdir(sourcedir)
     for ourfile in list_dir:
         if isinstance(ourfile, str):
             if int(lazylibrarian.LOGLEVEL) > 2:
                 logger.warn("unexpected unicode conversion moving file into subdir")
-            ourfile = try_rename(processpath, ourfile)
+            ourfile = try_rename(sourcedir, ourfile)
             if not ourfile:
                 ourfile = "failed rename"
         if int(lazylibrarian.LOGLEVEL) > 2:
@@ -166,19 +176,19 @@ def move_into_subdir(processpath, targetdir, fname):
                     or is_valid_booktype(ourfile, booktype="mag") \
                     or os.path.splitext(ourfile)[1].lower() in ['.opf', '.jpg']:
                 try:
-                    if lazylibrarian.DESTINATION_COPY:
-                        shutil.copyfile(os.path.join(processpath, ourfile), os.path.join(targetdir, ourfile))
+                    if lazylibrarian.CONFIG['DESTINATION_COPY']:
+                        shutil.copyfile(os.path.join(sourcedir, ourfile), os.path.join(targetdir, ourfile))
                         setperm(os.path.join(targetdir, ourfile))
                     else:
-                        shutil.move(os.path.join(processpath, ourfile), os.path.join(targetdir, ourfile))
+                        shutil.move(os.path.join(sourcedir, ourfile), os.path.join(targetdir, ourfile))
                         setperm(os.path.join(targetdir, ourfile))
                 except Exception as why:
                     logger.debug("Failed to copy/move file %s to %s, %s" % (ourfile, targetdir, str(why)))
 
 
 def cron_processDir():
-    threading.currentThread().name = "CRON-POSTPROCESS"
-    processDir()
+    if 'POSTPROCESS' not in [n.name for n in [t for t in threading.enumerate()]]:
+        processDir()
 
 
 def processDir(reset=False):
@@ -187,20 +197,20 @@ def processDir(reset=False):
         if "Thread-" in threadname:
             threading.currentThread().name = "POSTPROCESS"
 
-        processpath = lazylibrarian.DIRECTORY('Download')
+        download_dir = lazylibrarian.DIRECTORY('Download')
         ppcount = 0
-        # processpath is set to unicode so we get unicode results from listdir
+        # download_dir is set to unicode so we get unicode results from listdir
         try:
-            downloads = os.listdir(processpath)
+            downloads = os.listdir(download_dir)
         except OSError as why:
-            logger.error('Could not access directory [%s] %s' % (processpath, why.strerror))
+            logger.error('Could not access directory [%s] %s' % (download_dir, why.strerror))
             return
 
-        logger.debug('Checking %s file%s in %s' % (len(downloads), plural(len(downloads)), processpath))
+        logger.debug('Checking %s file%s in %s' % (len(downloads), plural(len(downloads)), download_dir))
 
         myDB = database.DBConnection()
         snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
-        logger.debug('There are %s file%s marked "Snatched"' % (len(snatched), plural(len(snatched))))
+        logger.debug('Found %s file%s marked "Snatched"' % (len(snatched), plural(len(snatched))))
 
         skipped_extensions = ['.fail', '.part', '.bts', '.!ut', '.torrent', '.magnet', '.nzb']
 
@@ -225,10 +235,10 @@ def processDir(reset=False):
                     elif book['Source'] == 'DELUGEWEBUI':
                         torrentname = deluge.getTorrentFolder(book['DownloadID'])
                     elif book['Source'] == 'DELUGERPC':
-                        client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
-                                                 int(lazylibrarian.DELUGE_PORT),
-                                                 lazylibrarian.DELUGE_USER,
-                                                 lazylibrarian.DELUGE_PASS)
+                        client = DelugeRPCClient(lazylibrarian.CONFIG['DELUGE_HOST'],
+                                                 int(lazylibrarian.CONFIG['DELUGE_PORT']),
+                                                 lazylibrarian.CONFIG['DELUGE_USER'],
+                                                 lazylibrarian.CONFIG['DELUGE_PASS'])
                         try:
                             client.connect()
                             result = client.call('core.get_torrent_status', book['DownloadID'], {})
@@ -253,12 +263,12 @@ def processDir(reset=False):
                 # If downloader says it hasn't completed, no need to look for it.
 
                 matches = []
-                logger.info('Looking for %s in %s' % (matchtitle, processpath))
+                logger.info('Looking for %s in %s' % (matchtitle, download_dir))
                 for fname in downloads:
                     if isinstance(fname, str):
                         if int(lazylibrarian.LOGLEVEL) > 2:
                             logger.warn("unexpected unicode conversion in downloads")
-                        fname = try_rename(processpath, fname)
+                        fname = try_rename(download_dir, fname)
                     if not fname:
                         fname = "failed rename"
                     # skip if failed before or incomplete torrents, or incomplete btsync etc
@@ -272,16 +282,13 @@ def processDir(reset=False):
                         # so we try to do a "best match" on the name, there might be a better way...
 
                         matchname = fname
-                        if ' LL.(' in matchname:
-                            matchname = matchname.split(' LL.(')[0]
-
-                        if ' LL.(' in matchtitle:
-                            matchtitle = matchtitle.split(' LL.(')[0]
+                        matchname = matchname.split(' LL.(')[0]
+                        matchtitle = matchtitle.split(' LL.(')[0]
                         match = fuzz.token_set_ratio(matchtitle, matchname)
                         if int(lazylibrarian.LOGLEVEL) > 2:
                             logger.debug("%s%% match %s : %s" % (match, matchtitle, matchname))
-                        if match >= lazylibrarian.DLOAD_RATIO:
-                            pp_path = os.path.join(processpath, fname)
+                        if match >= lazylibrarian.CONFIG['DLOAD_RATIO']:
+                            pp_path = os.path.join(download_dir, fname)
                             if isinstance(pp_path, str):
                                 try:
                                     pp_path = pp_path.decode(lazylibrarian.SYS_ENCODING)
@@ -299,11 +306,11 @@ def processDir(reset=False):
                                         or is_valid_booktype(fname, booktype="mag"):
                                     if int(lazylibrarian.LOGLEVEL) > 2:
                                         logger.debug('file [%s] is a valid book/mag' % fname)
-                                    if bts_file(processpath):
-                                        logger.debug("Skipping %s, found a .bts file" % processpath)
+                                    if bts_file(download_dir):
+                                        logger.debug("Skipping %s, found a .bts file" % download_dir)
                                     else:
                                         fname = os.path.splitext(fname)[0]
-                                        targetdir = os.path.join(processpath, fname)
+                                        targetdir = os.path.join(download_dir, fname)
                                         if not os.path.exists(targetdir):
                                             try:
                                                 os.makedirs(targetdir)
@@ -314,7 +321,7 @@ def processDir(reset=False):
                                         if not os.path.exists(targetdir):
                                             logger.debug('Unable to find directory %s' % targetdir)
                                         else:
-                                            move_into_subdir(processpath, targetdir, fname)
+                                            move_into_subdir(download_dir, targetdir, fname)
                                             pp_path = targetdir
 
                             if os.path.isdir(pp_path):
@@ -328,7 +335,7 @@ def processDir(reset=False):
                             else:
                                 logger.debug('%s is not a directory?' % pp_path)
                         else:
-                            pp_path = os.path.join(processpath, fname)
+                            pp_path = os.path.join(download_dir, fname)
                             matches.append([match, pp_path, book])  # so we can report closest match
                     else:
                         logger.debug('Skipping %s' % fname)
@@ -339,57 +346,53 @@ def processDir(reset=False):
                     match = highest[0]
                     pp_path = highest[1]
                     book = highest[2]
-                if match and match >= lazylibrarian.DLOAD_RATIO:
+                if match and match >= lazylibrarian.CONFIG['DLOAD_RATIO']:
                     mostrecentissue = ''
                     logger.debug(u'Found match (%s%%): %s for %s' % (match, pp_path, book['NZBtitle']))
-                    data = myDB.match('SELECT * from books WHERE BookID="%s"' % book['BookID'])
+
+                    cmd = 'SELECT AuthorName,BookName from books,authors WHERE BookID="%s"' % book['BookID']
+                    cmd += ' and books.AuthorID = authors.AuthorID'
+                    data = myDB.match(cmd)
                     if data:  # it's a book
                         logger.debug(u'Processing book %s' % book['BookID'])
                         authorname = data['AuthorName']
                         authorname = ' '.join(authorname.split())  # ensure no extra whitespace
                         bookname = data['BookName']
-                        if 'windows' in platform.system().lower() and '/' in lazylibrarian.EBOOK_DEST_FOLDER:
+                        if 'windows' in platform.system().lower() and '/' in lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']:
                             logger.warn('Please check your EBOOK_DEST_FOLDER setting')
-                            lazylibrarian.EBOOK_DEST_FOLDER = lazylibrarian.EBOOK_DEST_FOLDER.replace('/', '\\')
+                            lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'] = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('/', '\\')
                         # Default destination path, should be allowed change per config file.
-                        dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace(
+                        dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('$Author', authorname).replace(
                             '$Title', bookname)
-                        global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace(
+                        global_name = lazylibrarian.CONFIG['EBOOK_DEST_FILE'].replace('$Author', authorname).replace(
                             '$Title', bookname)
                         global_name = unaccented(global_name)
-                        # Remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
-                        # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
-                        dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
-                               ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
-                        dest_path = unaccented_str(replace_all(dest_path, dic))
-                        dest_path = os.path.join(processpath, dest_path).encode(lazylibrarian.SYS_ENCODING)
+                        dest_path = unaccented_str(replace_all(dest_path, __dic__))
+                        dest_dir = lazylibrarian.DIRECTORY('Destination')
+                        dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
                     else:
-                        data = myDB.match('SELECT * from magazines WHERE Title="%s"' % book['BookID'])
+                        data = myDB.match('SELECT IssueDate from magazines WHERE Title="%s"' % book['BookID'])
                         if data:  # it's a magazine
                             logger.debug(u'Processing magazine %s' % book['BookID'])
                             # AuxInfo was added for magazine release date, normally housed in 'magazines'
                             # but if multiple files are downloading, there will be an error in post-processing
                             # trying to go to the same directory.
                             mostrecentissue = data['IssueDate']  # keep for processing issues arriving out of order
-                            # Remove characters we don't want in the filename before (maybe) adding to DESTINATION_DIR
-                            # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
-                            dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
-                                   ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
-                            mag_name = unaccented_str(replace_all(book['BookID'], dic))
+                            mag_name = unaccented_str(replace_all(book['BookID'], __dic__))
                             # book auxinfo is a cleaned date, eg 2015-01-01
-                            dest_path = lazylibrarian.MAG_DEST_FOLDER.replace(
+                            dest_path = lazylibrarian.CONFIG['MAG_DEST_FOLDER'].replace(
                                 '$IssueDate', book['AuxInfo']).replace('$Title', mag_name)
 
-                            if lazylibrarian.MAG_RELATIVE:
+                            if lazylibrarian.CONFIG['MAG_RELATIVE']:
                                 if dest_path[0] not in '._':
                                     dest_path = '_' + dest_path
-                                dest_path = os.path.join(processpath, dest_path).encode(
-                                    lazylibrarian.SYS_ENCODING)
+                                dest_dir = lazylibrarian.DIRECTORY('Destination')
+                                dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
                             else:
                                 dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
                             authorname = None
                             bookname = None
-                            global_name = lazylibrarian.MAG_DEST_FILE.replace('$IssueDate', book['AuxInfo']).replace(
+                            global_name = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace('$IssueDate', book['AuxInfo']).replace(
                                 '$Title', mag_name)
                             global_name = unaccented(global_name)
                         else:  # not recognised
@@ -404,8 +407,9 @@ def processDir(reset=False):
                                 logger.debug('Match: %s%%  %s' % (match[0], match[1]))
                     continue
 
-                if processDestination(pp_path, dest_path, authorname, bookname, global_name, book['BookID']):
-                    logger.debug("Processing %s, %s" % (global_name, book['NZBurl']))
+                success, dest_file = processDestination(pp_path, dest_path, authorname, bookname, global_name, book['BookID'])
+                if success:
+                    logger.debug("Processed %s: %s, %s" % (book['NZBmode'], global_name, book['NZBurl']))
                     # update nzbs, only update the snatched ones in case multiple matches for same book/magazine issue
                     controlValueDict = {"BookID": book['BookID'], "NZBurl": book['NZBurl'], "Status": "Snatched"}
                     newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
@@ -413,20 +417,25 @@ def processDir(reset=False):
 
                     if bookname:
                         # it's a book, if None it's a magazine
-                        if len(lazylibrarian.IMP_CALIBREDB):
+                        if len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
                             logger.debug('Calibre should have created the extras for us')
                         else:
+                            cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,'
+                            cmd += 'BookLang,BookPub from books,authors WHERE BookID="%s"' % book['BookID']
+                            cmd += ' and books.AuthorID = authors.AuthorID'
+                            data = myDB.match(cmd)
                             processExtras(myDB, dest_path, global_name, data)
                     else:
                         # update mags
-                        controlValueDict = {"Title": book['BookID']}
                         if mostrecentissue:
                             if mostrecentissue.isdigit() and str(book['AuxInfo']).isdigit():
-                                older = int(mostrecentissue) > int(book['AuxInfo'])  # issuenumber
+                                older = (int(mostrecentissue) > int(book['AuxInfo']))  # issuenumber
                             else:
-                                older = mostrecentissue > book['AuxInfo']  # YYYY-MM-DD
+                                older = (mostrecentissue > book['AuxInfo'])  # YYYY-MM-DD
                         else:
                             older = False
+
+                        controlValueDict = {"Title": book['BookID']}
                         if older:  # check this in case processing issues arriving out of order
                             newValueDict = {"LastAcquired": today(), "IssueStatus": "Open"}
                         else:
@@ -434,9 +443,6 @@ def processDir(reset=False):
                                             "LatestCover": os.path.splitext(dest_file)[0] + '.jpg',
                                             "IssueStatus": "Open"}
                         myDB.upsert("magazines", newValueDict, controlValueDict)
-                        # dest_path is where we put the magazine after processing, but we don't have the full filename
-                        # so look for any "book" in that directory
-                        dest_file = book_file(dest_path, booktype='mag')
                         controlValueDict = {"Title": book['BookID'], "IssueDate": book['AuxInfo']}
                         newValueDict = {"IssueAcquired": today(),
                                         "IssueFile": dest_file,
@@ -450,9 +456,9 @@ def processDir(reset=False):
                     # calibre or ll copied/moved the files we want, now delete source files
 
                     to_delete = True
-                    if book['NZBmode'] in ['torrent', 'magnet']:
+                    if book['NZBmode'] in ['torrent', 'magnet', 'torznab']:
                         # Only delete torrents if we don't want to keep seeding
-                        if lazylibrarian.KEEP_SEEDING:
+                        if lazylibrarian.CONFIG['KEEP_SEEDING']:
                             logger.warn('%s is seeding %s %s' % (book['Source'], book['NZBmode'], book['NZBtitle']))
                             to_delete = False
                         else:
@@ -467,20 +473,27 @@ def processDir(reset=False):
 
                     if to_delete:
                         # only delete the files if not in download root dir and if DESTINATION_COPY not set
-                        if not lazylibrarian.DESTINATION_COPY and (pp_path != processpath):
+                        if not lazylibrarian.CONFIG['DESTINATION_COPY'] and (pp_path != download_dir):
                             if os.path.isdir(pp_path):
                                 # calibre might have already deleted it?
                                 try:
                                     shutil.rmtree(pp_path)
+                                    logger.debug('Deleted %s, %s from %s' %
+                                                 (book['NZBtitle'], book['NZBmode'], book['Source'].lower()))
                                 except Exception as why:
                                     logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
+                        else:
+                            if lazylibrarian.CONFIG['DESTINATION_COPY']:
+                                logger.debug("Not removing original files as Keep Files is set")
+                            else:
+                                logger.debug("Not removing original files as in download root")
 
                     logger.info('Successfully processed: %s' % global_name)
                     ppcount += 1
+                    custom_notify_download(book['BookID'])
                     notify_download("%s from %s at %s" % (global_name, book['NZBprov'], now()))
                 else:
-                    logger.error('Postprocessing for %s has failed.' % global_name)
-                    logger.error('Warning - Residual files remain in %s.fail' % pp_path)
+                    logger.error('Postprocessing for %s has failed: %s' % (global_name, dest_file))
                     controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
                     newValueDict = {"Status": "Failed", "NZBDate": now()}
                     myDB.upsert("wanted", newValueDict, controlValueDict)
@@ -493,40 +506,54 @@ def processDir(reset=False):
                     # again (and fail again)
                     try:
                         os.rename(pp_path, pp_path + '.fail')
+                        logger.error('Warning - Residual files remain in %s.fail' % pp_path)
                     except Exception as e:
-                        logger.debug("Unable to rename %s, %s" % (pp_path, str(e)))
+                        # rename fails on MacOS as can't rename a directory that's not empty??
+                        logger.error("Unable to rename %s, %s" % (pp_path, str(e)))
+                        try:
+                            fname = os.path.join(pp_path, "LL.(fail).bts")
+                            with open(fname, 'a'):
+                                os.utime(fname, None)
+                            logger.error('Warning - Residual files remain in %s' % pp_path)
+                        except:
+                            logger.error('Warning - Unable to create bts file. Residual files remain in %s' % pp_path)
 
         # Check for any books in download that weren't marked as snatched, but have a LL.(bookid)
         # do a fresh listdir in case we processed and deleted any earlier
-        downloads = os.listdir(processpath)
+        # and don't process any we've already done as we might not want to delete originals
+        downloads = os.listdir(download_dir)
         if int(lazylibrarian.LOGLEVEL) > 2:
-            logger.debug("Scanning %s entries in %s for LL.(num)" % (len(downloads), processpath))
+            logger.debug("Scanning %s entries in %s for LL.(num)" % (len(downloads), download_dir))
         for entry in downloads:
-            if isinstance(entry, str):
-                if int(lazylibrarian.LOGLEVEL) > 2:
-                    logger.warn("unexpected unicode conversion in LL scanner")
-                entry = try_rename(processpath, entry)
-                if not entry:
-                    entry = "failed rename"
-            dname, extn = os.path.splitext(entry)
             if "LL.(" in entry:
+                if isinstance(entry, str):
+                    if int(lazylibrarian.LOGLEVEL) > 2:
+                        logger.warn("unexpected unicode conversion in LL scanner")
+                    entry = try_rename(download_dir, entry)
+                    if not entry:
+                        entry = "failed rename"
+                dname, extn = os.path.splitext(entry)
                 if not extn or extn not in skipped_extensions:
                     bookID = entry.split("LL.(")[1].split(")")[0]
                     logger.debug("Book with id: %s found in download directory" % bookID)
-                    pp_path = os.path.join(processpath, entry)
+                    data = myDB.match('SELECT BookFile from books WHERE BookID="%s"' % bookID)
+                    if data and data['BookFile'] and os.path.isfile(data['BookFile']):
+                        logger.debug('Skipping BookID %s, already exists' % bookID)
+                    else:
+                        pp_path = os.path.join(download_dir, entry)
 
-                    if os.path.isfile(pp_path):
-                        if int(lazylibrarian.LOGLEVEL) > 2:
-                            logger.debug("%s is a file" % pp_path)
-                        pp_path = os.path.join(processpath)
-
-                    if os.path.isdir(pp_path):
-                        if int(lazylibrarian.LOGLEVEL) > 2:
-                            logger.debug("%s is a dir" % pp_path)
-                        if import_book(pp_path, bookID):
+                        if os.path.isfile(pp_path):
                             if int(lazylibrarian.LOGLEVEL) > 2:
-                                logger.debug("Imported %s" % pp_path)
-                            ppcount += 1
+                                logger.debug("%s is a file" % pp_path)
+                            pp_path = os.path.join(download_dir)
+
+                        if os.path.isdir(pp_path):
+                            if int(lazylibrarian.LOGLEVEL) > 2:
+                                logger.debug("%s is a dir" % pp_path)
+                            if import_book(pp_path, bookID):
+                                if int(lazylibrarian.LOGLEVEL) > 2:
+                                    logger.debug("Imported %s" % pp_path)
+                                ppcount += 1
                 else:
                     if int(lazylibrarian.LOGLEVEL) > 2:
                         logger.debug("Skipping extn %s" % entry)
@@ -534,14 +561,12 @@ def processDir(reset=False):
                 if int(lazylibrarian.LOGLEVEL) > 2:
                     logger.debug("Skipping (not LL) %s" % entry)
 
-        if ppcount == 0:
-            logger.info('No snatched books/mags have been found')
-        else:
-            logger.info('%s book%s/mag%s processed.' % (ppcount, plural(ppcount), plural(ppcount)))
+
+        logger.info('%s book%s/mag%s processed.' % (ppcount, plural(ppcount), plural(ppcount)))
 
         # Now check for any that are still marked snatched...
         snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
-        if lazylibrarian.TASK_AGE and len(snatched) > 0:
+        if lazylibrarian.CONFIG['TASK_AGE'] and len(snatched) > 0:
             for snatch in snatched:
                 # FUTURE: we could check percentage downloaded or eta?
                 # if percentage is increasing, it's just slow
@@ -552,7 +577,7 @@ def processDir(reset=False):
                 except:
                     diff = 0
                 hours = int(diff / 3600)
-                if hours >= lazylibrarian.TASK_AGE:
+                if hours >= lazylibrarian.CONFIG['TASK_AGE']:
                     logger.warn('%s was sent to %s %s hours ago, deleting failed task' %
                                 (snatch['NZBtitle'], snatch['Source'].lower(), hours))
                     # change status to "Failed", and ask downloader to delete task and files
@@ -564,7 +589,7 @@ def processDir(reset=False):
         # Check if postprocessor needs to run again
         snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
         if len(snatched) == 0:
-            logger.info('Nothing marked as snatched.')
+            logger.info('Nothing marked as snatched. Stopping postprocessor.')
             scheduleJob(action='Stop', target='processDir')
             return
 
@@ -596,10 +621,10 @@ def delete_task(Source, DownloadID, remove_data):
         elif Source == "DELUGEWEBUI":
             deluge.removeTorrent(DownloadID, remove_data)
         elif Source == "DELUGERPC":
-            client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
-                                     int(lazylibrarian.DELUGE_PORT),
-                                     lazylibrarian.DELUGE_USER,
-                                     lazylibrarian.DELUGE_PASS)
+            client = DelugeRPCClient(lazylibrarian.CONFIG['DELUGE_HOST'],
+                                     int(lazylibrarian.CONFIG['DELUGE_PORT']),
+                                     lazylibrarian.CONFIG['DELUGE_USER'],
+                                     lazylibrarian.CONFIG['DELUGE_PASS'])
             try:
                 client.connect()
                 client.call('core.remove_torrent', DownloadID, remove_data)
@@ -622,28 +647,27 @@ def import_book(pp_path=None, bookID=None):
         # Called from "import_alternate" or if we find a "LL.(xxx)" folder that doesn't match a snatched book/mag
         #
         myDB = database.DBConnection()
-        data = myDB.match('SELECT * from books WHERE BookID="%s"' % bookID)
+        cmd = 'SELECT AuthorName,BookName from books,authors WHERE BookID="%s"' % bookID
+        cmd += ' and books.AuthorID = authors.AuthorID'
+        data = myDB.match(cmd)
         if data:
             authorname = data['AuthorName']
             authorname = ' '.join(authorname.split())  # ensure no extra whitespace
             bookname = data['BookName']
-            processpath = lazylibrarian.DIRECTORY('Destination')
+            dest_dir = lazylibrarian.DIRECTORY('Destination')
 
-            if 'windows' in platform.system().lower() and '/' in lazylibrarian.EBOOK_DEST_FOLDER:
+            if 'windows' in platform.system().lower() and '/' in lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']:
                 logger.warn('Please check your EBOOK_DEST_FOLDER setting')
-                lazylibrarian.EBOOK_DEST_FOLDER = lazylibrarian.EBOOK_DEST_FOLDER.replace('/', '\\')
+                lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'] = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('/', '\\')
 
-            dest_path = lazylibrarian.EBOOK_DEST_FOLDER.replace('$Author', authorname).replace('$Title', bookname)
-            global_name = lazylibrarian.EBOOK_DEST_FILE.replace('$Author', authorname).replace('$Title', bookname)
+            dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('$Author', authorname).replace('$Title', bookname)
+            global_name = lazylibrarian.CONFIG['EBOOK_DEST_FILE'].replace('$Author', authorname).replace('$Title', bookname)
             global_name = unaccented(global_name)
-            # Remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
-            # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
-            dic = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
-                   ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
-            dest_path = unaccented_str(replace_all(dest_path, dic))
-            dest_path = os.path.join(processpath, dest_path).encode(lazylibrarian.SYS_ENCODING)
+            dest_path = unaccented_str(replace_all(dest_path, __dic__))
+            dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
 
-            if processDestination(pp_path, dest_path, authorname, bookname, global_name, bookID):
+            success, dest_file = processDestination(pp_path, dest_path, authorname, bookname, global_name, bookID)
+            if success:
                 # update nzbs
                 was_snatched = myDB.match('SELECT BookID, NZBprov FROM wanted WHERE BookID="%s"' % bookID)
                 snatched_from = "from " + was_snatched['NZBprov'] if was_snatched else "manually added"
@@ -652,24 +676,35 @@ def import_book(pp_path=None, bookID=None):
                     newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
                     myDB.upsert("wanted", newValueDict, controlValueDict)
                     if bookname:
-                        if len(lazylibrarian.IMP_CALIBREDB):
+                        if len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
                             logger.debug('Calibre should have created the extras')
                         else:
+                            cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,'
+                            cmd += 'BookLang,BookPub from books,authors WHERE BookID="%s"' % bookID
+                            cmd += ' and books.AuthorID = authors.AuthorID'
+                            data = myDB.match(cmd)
                             processExtras(myDB, dest_path, global_name, data)
 
-                    if not lazylibrarian.DESTINATION_COPY and pp_path != processpath:
+                    if not lazylibrarian.CONFIG['DESTINATION_COPY'] and pp_path != dest_dir:
                         if os.path.isdir(pp_path):
                             # calibre might have already deleted it?
                             try:
                                 shutil.rmtree(pp_path)
                             except Exception as why:
                                 logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
+                    else:
+                        if lazylibrarian.CONFIG['DESTINATION_COPY']:
+                            logger.debug("Not removing original files as Keep Files is set")
+                        else:
+                            logger.debug("Not removing original files as in download root")
 
                 logger.info('Successfully processed: %s' % global_name)
+                custom_notify_download(bookID)
+
                 notify_download("%s %s at %s" % (global_name, snatched_from, now()))
                 return True
             else:
-                logger.error('Postprocessing for %s has failed.' % global_name)
+                logger.error('Postprocessing for %s has failed: %s' % (global_name, dest_file))
                 logger.error('Warning - Residual files remain in %s.fail' % pp_path)
                 was_snatched = myDB.match('SELECT BookID FROM wanted WHERE BookID="%s"' % bookID)
                 if was_snatched:
@@ -680,8 +715,17 @@ def import_book(pp_path=None, bookID=None):
                 myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % bookID)
                 try:
                     os.rename(pp_path, pp_path + '.fail')
+                    logger.error('Warning - Residual files remain in %s.fail' % pp_path)
                 except Exception as e:
-                    logger.debug("Unable to rename %s, %s" % (pp_path, str(e)))
+                    # rename fails on MacOS as can't rename a directory that's not empty??
+                    logger.error("Unable to rename %s, %s" % (pp_path, str(e)))
+                    try:
+                        fname = os.path.join(pp_path, "LL.(fail).bts")
+                        with open(fname, 'a'):
+                            os.utime(fname, None)
+                        logger.error('Warning - Residual files remain in %s' % pp_path)
+                    except:
+                        logger.error('Warning - Unable to create bts file. Residual files remain in %s' % pp_path)
         return False
     except Exception:
         logger.error('Unhandled exception in importBook: %s' % traceback.format_exc())
@@ -690,6 +734,9 @@ def import_book(pp_path=None, bookID=None):
 def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
     # given book data, handle calibre autoadd, book image, opf,
     # and update author and book counts
+    if not data:
+        logger.error('processExtras: No data supplied')
+
     authorname = data['AuthorName']
     bookid = data['BookID']
     bookname = data['BookName']
@@ -702,7 +749,7 @@ def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
 
     # If you use auto add by Calibre you need the book in a single directory, not nested
     # So take the file you Copied/Moved to Dest_path and copy it to a Calibre auto add folder.
-    if lazylibrarian.IMP_AUTOADD:
+    if lazylibrarian.CONFIG['IMP_AUTOADD']:
         processAutoAdd(dest_path)
 
     # try image
@@ -722,18 +769,22 @@ def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
     myDB.upsert("books", newValueDict, controlValueDict)
 
     # update authors
-    havebooks = myDB.match(
-        'SELECT count("BookID") as counter FROM books WHERE AuthorName="%s" AND (Status="Have" OR Status="Open")' %
-        authorname)
-    controlValueDict = {"AuthorName": authorname}
-    newValueDict = {"HaveBooks": havebooks['counter']}
-    countauthor = len(myDB.select('SELECT AuthorID FROM authors WHERE AuthorName="%s"' % authorname))
-    if countauthor:
+    match = myDB.match('SELECT AuthorID FROM authors WHERE AuthorName="%s"' % authorname)
+    if match:
+        authorid = match['AuthorID']
+        cmd = 'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % authorid
+        cmd += ' and (Status="Have" OR Status="Open")'
+        havebooks = myDB.match(cmd)
+
+        controlValueDict = {"AuthorID": authorid}
+        newValueDict = {"HaveBooks": havebooks['counter']}
         myDB.upsert("authors", newValueDict, controlValueDict)
 
 
 def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, bookid=None):
-    # check we got a book/magazine in the downloaded files, if not, return
+    """ Copy book/mag and associated files into target directory
+        Return True, full_path_to_book  or False, error_message"""
+
     if bookname:
         booktype = 'book'
     else:
@@ -743,107 +794,139 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     if isinstance(pp_path, str):
         pp_path = pp_path.decode(lazylibrarian.SYS_ENCODING)
 
-    got_book = False
-    for bookfile in os.listdir(pp_path):
-        if is_valid_booktype(bookfile, booktype=booktype):
-            got_book = bookfile
-            break
+    match = False
+    if bookname and lazylibrarian.CONFIG['ONE_FORMAT']:
+        booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
+        for booktype in booktype_list:
+            if not match:
+                for fname in os.listdir(pp_path):
+                    extn = os.path.splitext(fname)[1].lstrip('.')
+                    if extn and extn.lower() == booktype:
+                        match = booktype
+                        break
+        if match:
+            logger.debug('One format import, best match = %s' % match)
+            for fname in os.listdir(pp_path):
+                if is_valid_booktype(fname, booktype=booktype) and not fname.endswith(match):
+                    try:
+                        logger.debug('Deleting %s' % os.path.splitext(fname)[1])
+                        os.remove(os.path.join(pp_path, fname))
+                    except OSError as why:
+                        logger.debug('Unable to delete %s: %s' % (fname, why.strerror))
 
-    if got_book is False:
+    else:  # mag or multi-format book
+        for fname in os.listdir(pp_path):
+            if is_valid_booktype(fname, booktype=booktype):
+                match = True
+                break
+
+    if not match:
         # no book/mag found in a format we wanted. Leave for the user to delete or convert manually
-        logger.warn('Failed to locate a book/magazine in %s, leaving for manual processing' % pp_path)
-        return False
+        return False, 'Unable to locate a book/magazine in %s, leaving for manual processing' % pp_path
 
     # Do we want calibre to import the book for us
-    if bookname and len(lazylibrarian.IMP_CALIBREDB):
-        processpath = lazylibrarian.DIRECTORY('Destination')
+    newbookfile= ''
+    if bookname and len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
+        dest_dir = lazylibrarian.DIRECTORY('Destination')
         params = []
         try:
             logger.debug('Importing %s into calibre library' % global_name)
             # calibre ignores metadata.opf and book_name.opf
-            for bookfile in os.listdir(pp_path):
-                filename, extn = os.path.splitext(bookfile)
+            for fname in os.listdir(pp_path):
+                filename, extn = os.path.splitext(fname)
                 # calibre does not like quotes in author names
                 os.rename(os.path.join(pp_path, filename + extn), os.path.join(
                     pp_path, global_name.replace('"', '_') + extn))
 
+            calibre_id = ''
             if bookid.isdigit():
                 identifier = "goodreads:%s" % bookid
             else:
                 identifier = "google:%s" % bookid
 
-            params = [lazylibrarian.IMP_CALIBREDB,
+            params = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
                       'add',
                       '-1',
-                      '--with-library=%s' % processpath,
+                      '--with-library=%s' % dest_dir,
                       pp_path
                       ]
             logger.debug(str(params))
             res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-            if res:
-                logger.debug('%s reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
+            if not res:
+                logger.debug('No response from %s' % lazylibrarian.CONFIG['IMP_CALIBREDB'])
+            else:
+                logger.debug('%s reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
                 if 'already exist' in res:
                     logger.warn('Calibre failed to import %s %s, reports book already exists' % (authorname, bookname))
                 if 'Added book ids' in res:
                     calibre_id = res.split("book ids: ", 1)[1].split("\n", 1)[0]
                     logger.debug('Calibre ID: %s' % calibre_id)
-                    authorparams = [lazylibrarian.IMP_CALIBREDB,
+                    authorparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
                                     'set_metadata',
                                     '--field',
                                     'authors:%s' % unaccented(authorname),
                                     '--with-library',
-                                    processpath,
+                                    dest_dir,
                                     calibre_id
                                     ]
                     logger.debug(str(authorparams))
                     res = subprocess.check_output(authorparams, stderr=subprocess.STDOUT)
                     if res:
-                        logger.debug('%s author reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
+                        logger.debug('%s author reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
-                    titleparams = [lazylibrarian.IMP_CALIBREDB,
+                    titleparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
                                    'set_metadata',
                                    '--field',
                                    'title:%s' % unaccented(bookname),
                                    '--with-library',
-                                   processpath,
+                                   dest_dir,
                                    calibre_id
                                    ]
                     logger.debug(str(titleparams))
                     res = subprocess.check_output(titleparams, stderr=subprocess.STDOUT)
                     if res:
-                        logger.debug('%s book reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
+                        logger.debug('%s book reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
-                    metaparams = [lazylibrarian.IMP_CALIBREDB,
+                    metaparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
                                   'set_metadata',
                                   '--field',
                                   'identifiers:%s' % identifier,
                                   '--with-library',
-                                  processpath,
+                                  dest_dir,
                                   calibre_id
                                   ]
                     logger.debug(str(metaparams))
                     res = subprocess.check_output(metaparams, stderr=subprocess.STDOUT)
                     if res:
-                        logger.debug('%s identifier reports: %s' % (lazylibrarian.IMP_CALIBREDB, unaccented_str(res)))
+                        logger.debug('%s identifier reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
             # calibre does not like quotes in author names
-            calibre_dir = os.path.join(processpath, unaccented_str(authorname.replace('"', '_')), '')
-            if os.path.isdir(calibre_dir):
-                imported = LibraryScan(calibre_dir)  # rescan authors directory so we get the new book in our database
+            calibre_dir = os.path.join(dest_dir, unaccented_str(authorname.replace('"', '_')), '')
+            if os.path.isdir(calibre_dir):  # assumed author directory
+                target_dir = os.path.join(calibre_dir, '%s (%s)' % (global_name, calibre_id))
+                if os.path.isdir(target_dir):
+                    imported = LibraryScan(target_dir)
+                    newbookfile = book_file(target_dir, booktype='book')
+                    if newbookfile:
+                        setperm(target_dir)
+                        for fname in os.listdir(target_dir):
+                            setperm(os.path.join(target_dir, fname))
+                    else:
+                        logger.warn("Failed to find a valid book in [%s]" % target_dir)
+                        imported = False
+                else:
+                    imported = LibraryScan(calibre_dir)  # rescan whole authors directory
             else:
                 logger.error("Failed to locate calibre dir [%s]" % calibre_dir)
                 imported = False
-                # imported = LibraryScan(processpath)  # may have to rescan whole library instead
+                # imported = LibraryScan(dest_dir)  # may have to rescan whole library instead
             if not imported:
-                return False
+                return False, "Unable to import book to %s" % calibre_dir
         except subprocess.CalledProcessError as e:
             logger.debug(params)
-            logger.debug('calibredb import failed: %s' % e.output)
-            return False
+            return False, 'calibredb import failed: %s' % e.output
         except OSError as e:
-            logger.debug('calibredb failed, %s' % e.strerror)
-            return False
-
+            return False, 'calibredb failed, %s' % e.strerror
     else:
         # we are copying the files ourselves, either it's a magazine or we don't want to use calibre
         if not os.path.exists(dest_path):
@@ -853,15 +936,13 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             try:
                 os.remove(dest_path)
             except OSError as why:
-                logger.debug('Failed to delete %s, %s' % (dest_path, why.strerror))
-                return False
+                return False, 'Unable to delete %s: %s' % (dest_path, why.strerror)
 
         if not os.path.exists(dest_path):
             try:
                 os.makedirs(dest_path)
             except OSError as why:
-                logger.debug('Failed to create directory %s, %s' % (dest_path, why.strerror))
-                return False
+                return False, 'Unable to create directory %s: %s' % (dest_path, why.strerror)
             setperm(dest_path)
 
         # ok, we've got a target directory, try to copy only the files we want, renaming them on the fly.
@@ -870,16 +951,16 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     is_valid_booktype(fname, booktype=booktype):
                 logger.debug('Copying %s to directory %s' % (fname, dest_path))
                 try:
-                    shutil.copyfile(os.path.join(pp_path, fname), os.path.join(
-                        dest_path, global_name + os.path.splitext(fname)[1]))
-                    setperm(os.path.join(dest_path, global_name + os.path.splitext(fname)[1]))
+                    destfile = os.path.join(dest_path, global_name + os.path.splitext(fname)[1])
+                    shutil.copyfile(os.path.join(pp_path, fname), destfile)
+                    setperm(destfile)
+                    if is_valid_booktype(destfile, booktype=booktype):
+                        newbookfile = destfile
                 except Exception as why:
-                    logger.debug("Failed to copy file %s to %s, %s" % (
-                        fname, dest_path, str(why)))
-                    return False
+                    return False, "Unable to copy file %s to %s: %s" % (fname, dest_path, str(why))
             else:
                 logger.debug('Ignoring unwanted file: %s' % fname)
-    return True
+    return True, newbookfile
 
 
 def processAutoAdd(src_path=None):
@@ -887,7 +968,7 @@ def processAutoAdd(src_path=None):
     # ensure directory is unicode so we get unicode results from listdir
     if isinstance(src_path, str):
         src_path = src_path.decode(lazylibrarian.SYS_ENCODING)
-    autoadddir = lazylibrarian.IMP_AUTOADD
+    autoadddir = lazylibrarian.CONFIG['IMP_AUTOADD']
     logger.debug('AutoAdd - Attempt to copy from [%s] to [%s]' % (src_path, autoadddir))
 
     if not os.path.exists(autoadddir):
@@ -904,20 +985,34 @@ def processAutoAdd(src_path=None):
         # and only imports one format of each ebook, treats the others as duplicates
         # Maybe need to rewrite this so we only copy the first ebook we find and ignore everything else
         #
+        match = False
+        if lazylibrarian.CONFIG['ONE_FORMAT']:
+            booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
+            for booktype in booktype_list:
+                while not match:
+                    for name in names:
+                        extn = os.path.splitext(name)[1].lstrip('.')
+                        if extn and extn.lower() == booktype:
+                            match = booktype
+                            break
+
         for name in names:
-            srcname = os.path.join(src_path, name)
-            dstname = os.path.join(autoadddir, name)
-            logger.debug('AutoAdd Copying file [%s] as copy [%s] to [%s]' % (name, srcname, dstname))
-            try:
-                shutil.copyfile(srcname, dstname)
-            except Exception as why:
-                logger.error('AutoAdd - Failed to copy file [%s] because [%s] ' % (name, str(why)))
-                return False
-            try:
-                os.chmod(dstname, 0o666)  # make rw for calibre
-            except OSError as why:
-                logger.warn("Could not set permission of %s because [%s]" % (dstname, why.strerror))
-                # permissions might not be fatal, continue
+            if match and is_valid_booktype(name, booktype="book") and not name.endswith(match):
+                logger.debug('Skipping %s' % os.path.splitext(name)[1])
+            else:
+                srcname = os.path.join(src_path, name)
+                dstname = os.path.join(autoadddir, name)
+                logger.debug('AutoAdd Copying file [%s] as copy [%s] to [%s]' % (name, srcname, dstname))
+                try:
+                    shutil.copyfile(srcname, dstname)
+                except Exception as why:
+                    logger.error('AutoAdd - Failed to copy file [%s] because [%s] ' % (name, str(why)))
+                    return False
+                try:
+                    os.chmod(dstname, 0o666)  # make rw for calibre
+                except OSError as why:
+                    logger.warn("Could not set permission of %s because [%s]" % (dstname, why.strerror))
+                    # permissions might not be fatal, continue
 
     except OSError as why:
         logger.error('AutoAdd - Failed because [%s]' % why.strerror)

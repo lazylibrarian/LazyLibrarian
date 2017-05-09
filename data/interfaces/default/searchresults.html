@@ -5,20 +5,18 @@
 
 <%def name="body()">
 
-    <!--<div id="paddingheader">
-        <h1>Search Results<h1>
-    </div>-->
-
+<br><br>
+<h1>&nbsp;&nbsp;${title}</h1>
     <table class="display" id="book_table">
         <thead>
             <tr>
-				<th id="bookart">Cover</th>
-				<th id="authorname">Author</th>
-				<th id="bookname">Title</th>
-				<th id="date">Released</th>
-				<th id="stars">Rating</th>
+                <th id="bookart">Cover</th>
+                <th id="authorname">Author</th>
+                <th id="bookname">Title</th>
+                <th id="date">Released</th>
+                <th id="stars">Rating</th>
                 <th id="addAuthor">Add</th>
-                <th id="fuzz">Match</th>
+                <th id="stars">Match</th>
              </tr>
         </thead>
 
@@ -41,18 +39,16 @@
                     else:
                         starimg = '0-stars.png'
 
-                    if authorlist:
-                        if result['authorname'] in authorlist:
-                            destination = "authorPage?AuthorID="+result['authorid']
-                            value = "Have Author"
-                            but_class = "button green"
-                        else:
-                            destination = "addAuthorID?AuthorID="+result['authorid']+'&AuthorName='+result['safeauthorname']
-                            value = "Add Author"
-                            but_class = "button"
-
+                    if authorlist and result['authorname'] in authorlist:
+                        destination = "authorPage?AuthorID="+result['authorid']
+                        value = "Have Author"
+                        but_class = "button green"
+                    elif result['authorid']:
+                        destination = "addAuthorID?AuthorID="+result['authorid']
+                        value = "Add Author"
+                        but_class = "button"
                     else:
-                        destination = "addAuthorID?AuthorID="+result['authorid']+'&AuthorName='+result['safeauthorname']
+                        destination = "addAuthor?AuthorName="+result['authorname']
                         value = "Add Author"
                         but_class = "button"
 
@@ -97,12 +93,11 @@
                     <BR><BR><a class="${but_class2}" href="${destination2}">${value2}</a>
                     </td>
                     <td id="fuzz">${result['highest_fuzz']}%</td>
-					</tr>
-				%endfor
+                    </tr>
+                %endfor
             %endif
         </tbody>
     </table>
-        </form>
 </%def>
 
 <%def name="headIncludes()">
@@ -116,6 +111,8 @@
     {
         $('#book_table').dataTable(
             {
+                "responsive": true,
+                "order": [[ 6, 'desc' ]],
                 "aoColumns": [
                     null,
                     null,
@@ -131,10 +128,10 @@
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
                     "sInfoEmpty":"Showing 0 to 0 of 0 books",
                     "sInfoFiltered":"(filtered from _MAX_ total books)"},
-                "iDisplayLength": ${lazylibrarian.DISPLAYLENGTH},
+                "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "sPaginationType": "full_numbers",
             });
-			$('.dataTables_filter input').attr("placeholder", "Search table here");
+            $('.dataTables_filter input').attr("placeholder", "Search table here");
     });
     </script>
 </%def>

@@ -4,19 +4,29 @@
     from lazylibrarian import formatter
 %>
 <%def name="headerIncludes()">
-	<div id="subhead_container">
-		<div id="subhead_menu">
-		  <a href="clearLog" class="button btn btn-sm btn-primary">Clear Log </a>
-		  %if lazylibrarian.LOGFULL == True:
-		    <a href="toggleLog" class="button btn btn-sm btn-primary">Stop Debug Log</a>
-		  %else:
-		    <a href="toggleLog" class="button btn btn-sm btn-primary">Start Debug Log</a>
-		  %endif
-		</div>
-	</div>
+    <div id="subhead_container">
+        <div id="subhead_menu">
+          <a href="clearLog" class="button btn btn-sm btn-primary">Clear Log </a>
+          %if lazylibrarian.LOGFULL == True:
+            <a href="toggleLog" class="button btn btn-sm btn-primary">Stop Debug Log</a>
+          %else:
+            <a href="toggleLog" class="button btn btn-sm btn-primary">Start Debug Log</a>
+          %endif
+        </div>
+    </div>
 </%def>
 <%def name="body()">
-    <h1>Logs</h1>
+    <h1>${title}</h1>
+    <div align="center">Refresh rate:
+    <select id="refreshrate" onchange="setRefresh()">
+    <option value="0" selected="selected">No Refresh</option>
+    <option value="5">5 Seconds</option>
+    <option value="15">15 Seconds</option>
+    <option value="30">30 Seconds</option>
+    <option value="60">60 Seconds</option>
+    <option value="300">5 Minutes</option>
+    <option value="600">10 Minutes</option>
+    </select></div>
     <div class="table-responsive">
         <table class="display table table-striped table-hover table-bordered" id="log_table">
             <thead>
@@ -26,38 +36,8 @@
                     <th class="message">Message</th>
                 </tr>
             </thead>
-<!--
-            <tbody>
-            %for line in lineList:
-                <%
-                    timestamp, message, level, threadname = line
-
-                    if level == 'WARNING' or level == 'ERROR':
-                        grade = 'bg-danger'
-                    else:
-                        grade = 'bg-info'
-                %>
-                    <tr>
-                        <td class="timestamp">${timestamp}</td>
-                        <td class="level">${level}</td>
-                        <td class="message">${message}</td>
-                    </tr>
-            %endfor
-            </tbody>
--->
         </table>
-    	<div align="center">Refresh rate:
-	    <select id="refreshrate" onchange="setRefresh()">
-	    <option value="0" selected="selected">No Refresh</option>
-	    <option value="5">5 Seconds</option>
-	    <option value="15">15 Seconds</option>
-	    <option value="30">30 Seconds</option>
-	    <option value="60">60 Seconds</option>
-	    <option value="300">5 Minutes</option>
-	    <option value="600">10 Minutes</option>
-	    </select></div>
-	    <br>
-        </div>
+    </div>
 </%def>
 
 <%def name="headIncludes()">
@@ -79,7 +59,7 @@
                     "sInfoFiltered":"(filtered from _MAX_ total rows)"
                 },
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
-                "iDisplayLength": ${lazylibrarian.DISPLAYLENGTH},
+                "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "sPaginationType": "full_numbers",
                 "aaSorting": [],
                 "bServerSide": true,
@@ -91,15 +71,12 @@
                     } else {
                         $('td', nRow).closest('tr').addClass("text-info");
                     }
-                    var w = window.innerWidth;
-                    if ( w < 640 ) // hide timestamp on smallest devices
-                    {
-                        $('td', nRow).eq(0).addClass('hidden');
-                    }
+                    // hide timestamp on smallest devices
+                    $('td', nRow).eq(0).addClass('hidden-xs');
                     return nRow;
                 },
                 "fnServerData": function (sSource, aoData, fnCallback) {
-//                     Add some extra data to the sender
+                    // Add some extra data to the sender
                     $.getJSON(sSource, aoData, function (json) {
                         fnCallback(json)
                     });
@@ -109,23 +86,23 @@
             $(window).resize(function() {oTable.fnDraw(false)});
         });
     </script>
-	<script>
-		var timer;
-		function setRefresh()
-		{
-			refreshrate = document.getElementById('refreshrate');
-			if(refreshrate != null)
-			{
-				if(timer)
-				{
-					clearInterval(timer);
-				}
-				if(refreshrate.value != 0)
-				{
-					timer = setInterval("$('#log_table').dataTable().fnDraw()",1000*refreshrate.value);
-				}
-			}
-		}
-	</script>
+    <script>
+        var timer;
+        function setRefresh()
+        {
+            refreshrate = document.getElementById('refreshrate');
+            if(refreshrate != null)
+            {
+                if(timer)
+                {
+                    clearInterval(timer);
+                }
+                if(refreshrate.value != 0)
+                {
+                    timer = setInterval("$('#log_table').dataTable().fnDraw()",1000*refreshrate.value);
+                }
+            }
+        }
+    </script>
 
 </%def>

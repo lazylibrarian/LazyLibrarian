@@ -14,7 +14,7 @@
             %if len(languages) >= 1:
                 <div class="form-group">
                     <label for="chooselanguage"><small>Language</small></label>
-                    <select class="form-control input-sm" id="chooselanguage" onchange="window.location = 'books?BookLang=' + this.options[this.selectedIndex].value">
+                    <select class="form-control input-sm" name="chooselanguage" id="chooselanguage" onchange="window.location = 'books?BookLang=' + this.options[this.selectedIndex].value">
                         <option value="">All</option>
                         %for language in languages:
                         <option value="${language['BookLang']}">${language['BookLang']}</option>
@@ -28,9 +28,10 @@
 </%def>
 
 <%def name="body()">
-    <h1>Books</h1>
+    <h1>${title}</h1>
     <form action="markBooks" method="get" class="form-inline">
         <div class="indented">
+        <input type="hidden" name="booklang" value="booklang">
         <div class="form-group">
             <label for="markBooks" class="control-label">Mark selected books as</label>
             <select class="markBooks form-control input-sm" id="action" name="action">
@@ -56,7 +57,6 @@
                     <th class="authorname">Author</th>
                     <th class="bookname">Title</th>
                     <th class="series">Series</th>
-                    <th class="seriesNum text-center hidden-xs">Num</th>
                     <th class="stars text-center hidden-xs">Rating</th>
                     <th class="date text-center hidden-xs">Released</th>
                     <th class="status text-center no-sort">Status</th>
@@ -89,12 +89,22 @@
                 }
             });
 
+        $('#chooselanguage').val(getUrlVars()['BookLang']);
+
         var oTable = $('#book_table').dataTable({
             "bAutoWidth": false,
             "order": [[ 2, 'asc' ]],
-            "columnDefs":
-                [{ targets: 'no-sort', orderable: false }]
-            ,
+            "columnDefs":[
+                { targets: 'no-sort', orderable: false },
+                { targets: [0], 'render': function(data, type, row) {
+                    return '<input type="checkbox" name="' + data + '" class="checkbox" />';} },
+                { targets: [1], 'render': function(data, type, row) {
+                    return '<a href="' + data + '" target="_blank" rel="noreferrer"><img src="' + data + '" alt="Cover" class="bookcover-sm img-responsive"></a>';} },
+                { targets: [2], 'render': function(data, type, row) {
+                    return '<a href="authorPage?AuthorID=' + row[8] + '">' + data + '</a>';} },
+                { targets: [5], 'render': function(data, type, row) {
+                    return '<img src="images/' + data + '" alt="Rating">';} }
+                ],
             "oLanguage": {
                 "sLengthMenu":"_MENU_ rows per page",
                 "sEmptyTable": "No books found",
@@ -103,33 +113,31 @@
                 "sInfoFiltered":"(filtered from _MAX_ total rows)"},
 
             "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
-            "iDisplayLength": ${lazylibrarian.DISPLAYLENGTH},
+            "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
             "sPaginationType": "full_numbers",
             "aaSorting": [[0, 'asc']],
             "bServerSide": true,
-            "sAjaxSource": 'getBooks?BookLang="eng"',
+            "sAjaxSource": 'getBooks?source=Books&booklang=${booklang}',
             "bFilter": true,
             "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-                var w = window.innerWidth;
-                if ( w < 768 )
-                {   // hide cover,seriesnum,stars,date on small devices
-                    $('td', nRow).eq(1).addClass('hidden');
-                    $('td', nRow).eq(5).addClass('hidden');
-                    $('td', nRow).eq(6).addClass('hidden');
-                    $('td', nRow).eq(7).addClass('hidden');
-                }
+                $('td', nRow).eq(5).addClass('text-center');
+                $('td', nRow).eq(6).addClass('text-center');
+                $('td', nRow).eq(7).addClass('text-center');
+                // hide cover,stars,date on small devices
+                $('td', nRow).eq(1).addClass('hidden-xs');
+                $('td', nRow).eq(5).addClass('hidden-xs');
+                $('td', nRow).eq(6).addClass('hidden-xs');
                 return nRow;
             },
         });
 
         $('.dataTables_filter input').attr("placeholder", "Search filter");
-    	$(window).resize(function() {oTable.fnDraw(false)});
+        $(window).resize(function() {oTable.fnDraw(false)});
 
-        $('#chooselanguage').val(getUrlVars()['BookLang']);
     });
 
     // Read a page's GET URL variables and return them as an associative array.
-	function getUrlVars() {
+    function getUrlVars() {
         var vars = [], hash;
         var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
         for(var i = 0; i < hashes.length; i++) {

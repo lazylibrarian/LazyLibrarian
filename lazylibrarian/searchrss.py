@@ -19,25 +19,30 @@ import traceback
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.common import scheduleJob
-from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, check_int, now
-from lazylibrarian.notifiers import notify_snatch
-from lazylibrarian.providers import IterateOverRSSSites, get_searchterm
+from lazylibrarian.common import scheduleJob, formatAuthorName
+from lazylibrarian.formatter import plural, unaccented_str, unaccented, replace_all, getList, check_int, now
+from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
+from lazylibrarian.providers import IterateOverRSSSites, IterateOverGoodReads, get_searchterm
 from lazylibrarian.searchnzb import NZBDownloadMethod
 from lazylibrarian.searchtorrents import TORDownloadMethod
+from lazylibrarian.importer import import_book, search_for
+from lazylibrarian.csvfile import finditem
 from lib.fuzzywuzzy import fuzz
 
 
 def cron_search_rss_book():
-    threading.currentThread().name = "CRON-SEARCHRSS"
-    search_rss_book()
+    if 'SEARCHALLRSS' not in [n.name for n in [t for t in threading.enumerate()]]:
+        search_rss_book()
 
 
 def search_rss_book(books=None, reset=False):
     try:
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
-            threading.currentThread().name = "SEARCHRSS"
+            if books is None:
+                threading.currentThread().name = "SEARCHALLRSS"
+            else:
+                threading.currentThread().name = "SEARCHRSS"
 
         if not(lazylibrarian.USE_RSS()):
             logger.warn('RSS search is disabled')
@@ -46,29 +51,116 @@ def search_rss_book(books=None, reset=False):
 
         myDB = database.DBConnection()
 
+        resultlist, wishproviders = IterateOverGoodReads()
+        if not wishproviders:
+            logger.debug('No rss wishlists are set')
+        else:
+            # for each item in resultlist, add to database if necessary, and mark as wanted
+            for book in resultlist:
+                # we get rss_author, rss_title, rss_isbn, rss_bookid (goodreads bookid)
+                # we can just use bookid if goodreads, or try isbn and name matching on author/title if googlebooks
+                # not sure if anyone would use a goodreads wishlist if not using goodreads interface...
+                logger.debug('Processing %s item%s in wishlists' % (len(resultlist), plural(len(resultlist))))
+                if book['rss_bookid'] and lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
+                    bookmatch = myDB.match('select Status,BookName from books where bookid="%s"' % book['rss_bookid'])
+                    if bookmatch:
+                        bookstatus = bookmatch['Status']
+                        bookname = bookmatch['BookName']
+                        if bookstatus in ['Open', 'Wanted', 'Have']:
+                            logger.info(u'Found book %s, already marked as "%s"' % (bookname, bookstatus))
+                        else:  # skipped/ignored
+                            logger.info(u'Found book %s, marking as "Wanted"' % bookname)
+                            controlValueDict = {"BookID": book['rss_bookid']}
+                            newValueDict = {"Status": "Wanted"}
+                            myDB.upsert("books", newValueDict, controlValueDict)
+                    else:
+                      import_book(book['rss_bookid'])
+                else:
+                    item = {}
+                    headers = []
+                    item['Title'] = book['rss_title']
+                    if book['rss_bookid']:
+                        item['BookID'] = book['rss_bookid']
+                        headers.append('BookID')
+                    if book['rss_isbn']:
+                        item['ISBN'] = book['rss_isbn']
+                        headers.append('ISBN')
+                    bookmatch = finditem(item, book['rss_author'], headers)
+                    if bookmatch:  # it's already in the database
+                        authorname = bookmatch['AuthorName']
+                        bookname = bookmatch['BookName']
+                        bookid = bookmatch['BookID']
+                        bookstatus = bookmatch['Status']
+                        if bookstatus in ['Open', 'Wanted', 'Have']:
+                            logger.info(u'Found book %s by %s, already marked as "%s"' % (bookname, authorname, bookstatus))
+                        else:  # skipped/ignored
+                            logger.info(u'Found book %s by %s, marking as "Wanted"' % (bookname, authorname))
+                            controlValueDict = {"BookID": bookid}
+                            newValueDict = {"Status": "Wanted"}
+                            myDB.upsert("books", newValueDict, controlValueDict)
+                    else:  # not in database yet
+                        results = ''
+                        if book['rss_isbn']:
+                            results = search_for(book['rss_isbn'])
+                        if results:
+                            result = results[0]
+                            if result['isbn_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO']:
+                                logger.info("Found (%s%%) %s: %s" %
+                                            (result['isbn_fuzz'], result['authorname'], result['bookname']))
+                                import_book(result['bookid'])
+                                bookmatch = True
+                        if not results:
+                            searchterm = "%s <ll> %s" % (item['Title'], formatAuthorName(book['rss_author']))
+                            results = search_for(unaccented(searchterm))
+                        if results:
+                            result = results[0]
+                            if result['author_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO'] \
+                                and result['book_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO']:
+                                logger.info("Found (%s%% %s%%) %s: %s" % (result['author_fuzz'], result['book_fuzz'],
+                                                                            result['authorname'], result['bookname']))
+                                import_book(result['bookid'])
+                                bookmatch = True
+
+                    if not bookmatch:
+                        msg = "Skipping book %s by %s" % (item['Title'], book['rss_author'])
+                        # noinspection PyUnboundLocalVariable
+                        if not results:
+                            msg += ', No results returned'
+                            logger.warn(msg)
+                        else:
+                            msg += ', No match found'
+                            logger.warn(msg)
+                            msg = "Closest match (%s%% %s%%) %s: %s" % (result['author_fuzz'], result['book_fuzz'],
+                                                                        result['authorname'], result['bookname'])
+                            logger.warn(msg)
+
         if books is None:
             # We are performing a backlog search
-            searchbooks = myDB.select(
-                'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books WHERE Status="Wanted" \
-                order by BookAdded desc')
+            cmd = 'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books,authors '
+            cmd += 'WHERE books.AuthorID = authors.AuthorID and books.Status="Wanted" order by BookAdded desc'
+            searchbooks = myDB.select(cmd)
+
         else:
             # The user has added a new book
             searchbooks = []
             for book in books:
-                searchbook = myDB.select('SELECT BookID, AuthorName, BookName, BookSub from books WHERE BookID="%s" \
-                                         AND Status="Wanted"' % book['bookid'])
+                cmd = 'SELECT BookID, AuthorName, BookName, BookSub from books,authors '
+                cmd += 'WHERE books.AuthorID = authors.AuthorID and BookID="%s" ' % book['bookid']
+                cmd += 'AND books.Status="Wanted"'
+                searchbook = myDB.select(cmd)
                 for terms in searchbook:
                     searchbooks.append(terms)
 
         if len(searchbooks) == 0:
             return
 
-        logger.info('RSS Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
-
         resultlist, nproviders = IterateOverRSSSites()
         if not nproviders:
-            logger.warn('No rss providers are set, check config')
+            if not wishproviders:
+                logger.warn('No rss providers are set, check config')
             return  # No point in continuing
+
+        logger.info('RSS Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
 
         rss_count = 0
         for book in searchbooks:
@@ -101,8 +193,8 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
                 '3': '', '4': '', '5': '', '6': '', '7': '', '8': '', '9': '', '\'': '', ':': '', '!': '',
                 '-': ' ', '\s\s': ' '}
 
-    match_ratio = int(lazylibrarian.MATCH_RATIO)
-    reject_list = getList(lazylibrarian.REJECT_WORDS)
+    match_ratio = int(lazylibrarian.CONFIG['MATCH_RATIO'])
+    reject_list = getList(lazylibrarian.CONFIG['REJECT_WORDS'])
 
     matches = []
 
@@ -133,17 +225,22 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
         tor_size_temp = tor['tor_size']  # Need to cater for when this is NONE (Issue 35)
         tor_size_temp = check_int(tor_size_temp, 1000)
         tor_size = round(float(tor_size_temp) / 1048576, 2)
-        maxsize = check_int(lazylibrarian.REJECT_MAXSIZE, 0)
 
+        maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXSIZE'], 0)
         if not rejected:
             if maxsize and tor_size > maxsize:
                 rejected = True
                 logger.debug("Rejecting %s, too large" % torTitle)
 
+        minsize = check_int(lazylibrarian.CONFIG['REJECT_MINSIZE'], 0)
+        if not rejected:
+            if minsize and tor_size < minsize:
+                rejected = True
+                logger.debug("Rejecting %s, too small" % torTitle)
+
         if not rejected:
             bookid = book['bookid']
-            tor_Title = (book["authorName"] + ' - ' + book['bookName'] +
-                         ' LL.(' + book['bookid'] + ')').strip()
+            tor_Title = (book["authorName"] + ' - ' + book['bookName'] + ' LL.(' + book['bookid'] + ')').strip()
             tor_prov = tor['tor_prov']
 
             controlValueDict = {"NZBurl": tor_url}
@@ -158,11 +255,18 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
             }
 
             score = (tor_Title_match + tor_Author_match) / 2  # as a percentage
-            # lose a point for each extra word in the title so we get the closest match
-            words = len(getList(torTitle))
-            words -= len(getList(authorname))
-            words -= len(getList(bookname))
-            score -= abs(words)
+            # lose a point for each unwanted word in the title so we get the closest match
+            # but ignore anything at the end in square braces [keywords, genres etc]
+            temptitle = torTitle.rsplit('[', 1)[0]
+            wordlist = getList(temptitle.lower())
+            words = [x for x in wordlist if x not in getList(authorname.lower())]
+            words = [x for x in words if x not in getList(bookname.lower())]
+            words = [x for x in words if x not in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
+            score -= len(words)
+            # prioritise titles that include the ebook types we want
+            booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
+            if len(booktypes):
+                score += 1
             matches.append([score, torTitle, newValueDict, controlValueDict])
 
     if matches:
@@ -180,7 +284,7 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
         logger.info(u'Best RSS match (%s%%): %s using %s search' %
                     (score, nzb_Title, searchtype))
 
-        snatchedbooks = myDB.match('SELECT * from books WHERE BookID="%s" and Status="Snatched"' %
+        snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID="%s" and Status="Snatched"' %
                                    newValueDict["BookID"])
 
         if snatchedbooks:  # check if one of the other downloaders got there first
@@ -207,6 +311,7 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
                 logger.info('Downloading %s from %s' % (newValueDict["NZBtitle"], newValueDict["NZBprov"]))
                 notify_snatch("%s from %s at %s" %
                               (newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
+                custom_notify_snatch(newValueDict["BookID"])
                 scheduleJob(action='Start', target='processDir')
                 return True + True  # we found it
     else:

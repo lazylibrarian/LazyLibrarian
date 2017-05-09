@@ -13,13 +13,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import Queue
+import datetime
 import hashlib
 import os
 import random
+import re
 import threading
 import urllib
-from operator import itemgetter
 from shutil import copyfile, rmtree
 
 import cherrypy
@@ -28,13 +28,17 @@ import lib.simplejson as simplejson
 from cherrypy.lib.static import serve_file
 from lazylibrarian import logger, database, notifiers, versioncheck, magazinescan, \
     qbittorrent, utorrent, rtorrent, transmission, sabnzbd, nzbget, deluge, synology
-from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm
+from lazylibrarian.bookwork import setSeries, deleteEmptySeries, getSeriesAuthors
+from lazylibrarian.cache import cache_img
+from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, dbUpdate
 from lazylibrarian.csvfile import import_CSV, export_CSV
-from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode
+from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode, unaccented, cleanName
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
-from lazylibrarian.importer import addAuthorToDB, update_totals
+from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals, search_for
 from lazylibrarian.librarysync import LibraryScan
+from lazylibrarian.manualbook import searchItem
+from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.postprocess import processAlternate, processDir
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
@@ -46,20 +50,22 @@ from mako.lookup import TemplateLookup
 
 
 def serve_template(templatename, **kwargs):
-    interface_dir = os.path.join(
-        str(lazylibrarian.PROG_DIR),
-        'data/interfaces/')
-    template_dir = os.path.join(str(interface_dir), lazylibrarian.HTTP_LOOK)
+    interface_dir = os.path.join(str(lazylibrarian.PROG_DIR), 'data/interfaces/')
+    template_dir = os.path.join(str(interface_dir), lazylibrarian.CONFIG['HTTP_LOOK'])
     if not os.path.isdir(template_dir):
         logger.error("Unable to locate template [%s], reverting to default" % template_dir)
-        lazylibrarian.HTTP_LOOK = 'default'
-        template_dir = os.path.join(str(interface_dir), lazylibrarian.HTTP_LOOK)
+        lazylibrarian.CONFIG['HTTP_LOOK'] = 'default'
+        template_dir = os.path.join(str(interface_dir), lazylibrarian.CONFIG['HTTP_LOOK'])
 
     _hplookup = TemplateLookup(directories=[template_dir])
 
     try:
-        template = _hplookup.get_template(templatename)
-        return template.render(**kwargs)
+        if lazylibrarian.UPDATE_MSG:
+            template = _hplookup.get_template("dbupdate.html")
+            return template.render(message="Database upgrade in progress, please wait...", title="Database Upgrade", timer=5)
+        else:
+            template = _hplookup.get_template(templatename)
+            return template.render(**kwargs)
     except Exception:
         return exceptions.html_error_template().render()
 
@@ -67,41 +73,152 @@ def serve_template(templatename, **kwargs):
 class WebInterface(object):
     @cherrypy.expose
     def index(self):
-        if lazylibrarian.UPDATE_MSG:
-            message = "Upgrading database, please wait"
-            return serve_template(templatename="dbupdate.html", title="Database Upgrade", message=message, timer=5)
-        else:
-            myDB = database.DBConnection()
-            authors = myDB.select(
-                'SELECT * from authors where Status != "Ignored" order by AuthorName COLLATE NOCASE')
-            return serve_template(templatename="index.html", title="Index", authors=authors)
-
+        raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
     def home(self):
-        if lazylibrarian.UPDATE_MSG:
-            message = "Upgrading database, please wait"
-            return serve_template(templatename="dbupdate.html", title="Database Upgrade", message=message, timer=5)
-        else:
-            myDB = database.DBConnection()
-            authors = myDB.select(
-                'SELECT * from authors where Status != "Ignored" order by AuthorName COLLATE NOCASE')
-            return serve_template(templatename="index.html", title="Home", authors=authors)
-
+        myDB = database.DBConnection()
+        authors = myDB.select('SELECT * from authors where Status != "Ignored" order by AuthorName COLLATE NOCASE')
+        return serve_template(templatename="index.html", title="Authors", authors=authors)
 
     @staticmethod
-    def label_thread():
+    def label_thread(name=None):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
-            threading.currentThread().name = "WEBSERVER"
+            if name:
+                threading.currentThread().name = name
+            else:
+                threading.currentThread().name = "WEBSERVER"
+
+    # SERIES ############################################################
+    # noinspection PyUnusedLocal
+    @cherrypy.expose
+    def getSeries(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
+        # kwargs is used by datatables to pass params
+        iDisplayStart = int(iDisplayStart)
+        iDisplayLength = int(iDisplayLength)
+        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
+
+        whichStatus = 'All'
+        if kwargs['whichStatus']:
+            whichStatus = kwargs['whichStatus']
+
+        AuthorID = None
+        if kwargs['AuthorID']:
+            AuthorID = kwargs['AuthorID']
+
+        myDB = database.DBConnection()
+        # We pass series.SeriesID twice for datatables as the render function modifies it
+        # and we need it in two columns. There is probably a better way...
+        cmd = 'SELECT series.SeriesID,AuthorName,SeriesName,series.Status,seriesauthors.AuthorID,series.SeriesID'
+        cmd += ' from series,authors,seriesauthors'
+        cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
+        if not whichStatus in ['All', 'None']:
+            cmd += ' and series.Status="%s"' % whichStatus
+
+        if AuthorID and not AuthorID == 'None':
+            match = myDB.match('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
+            if match:
+                title = "%s Series" % match['AuthorName']
+            cmd += ' and seriesauthors.AuthorID="%s"' % AuthorID
+        cmd += ' GROUP BY series.seriesID'
+        cmd += ' order by AuthorName,SeriesName'
+
+        rowlist = myDB.select(cmd)
+
+        # turn the sqlite rowlist into a list of lists
+        filtered = []
+        rows = []
+
+        if len(rowlist):
+            # the masterlist to be filled with the row data
+            for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
+                rows.append(list(row))  # add the rowlist to the masterlist
+            if sSearch:
+                filtered = filter(lambda x: sSearch in str(x), rows)
+            else:
+                filtered = rows
+
+            sortcolumn = int(iSortCol_0)
+            filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+
+            if iDisplayLength < 0:  # display = all
+                rows = filtered
+            else:
+                rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+
+        mydict = {'iTotalDisplayRecords': len(filtered),
+                  'iTotalRecords': len(rowlist),
+                  'aaData': rows,
+                  }
+        s = simplejson.dumps(mydict)
+        return s
+
+
+    @cherrypy.expose
+    def series(self, AuthorID=None, whichStatus=None):
+        myDB = database.DBConnection()
+        title = "Series"
+        if AuthorID:
+            match = myDB.match('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
+            if match:
+                title = "%s Series" % match['AuthorName']
+        return serve_template(templatename="series.html", title=title, authorid=AuthorID, series=[], whichStatus=whichStatus)
+
+
+    @cherrypy.expose
+    def seriesMembers(self, seriesid):
+        myDB = database.DBConnection()
+        cmd = 'SELECT SeriesName,series.SeriesID,AuthorName,seriesauthors.AuthorID'
+        cmd += ' from series,authors,seriesauthors'
+        cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
+        cmd += ' and series.SeriesID="%s"' % seriesid
+        series = myDB.match(cmd)
+        cmd = 'SELECT member.BookID,BookName,SeriesNum,BookImg,books.Status,AuthorName,authors.AuthorID'
+        cmd += ' from member,series,books,authors'
+        cmd += ' where series.SeriesID=member.SeriesID and books.BookID=member.BookID'
+        cmd += ' and books.AuthorID=authors.AuthorID and books.Status != "Ignored"'
+        cmd += ' and series.SeriesID="%s" order by SeriesName' % seriesid
+        members = myDB.select(cmd)
+        # is it a multi-author series?
+        multi = "False"
+        authorid = ''
+        for item in members:
+            if not authorid:
+                authorid = item['AuthorID']
+            else:
+                if not authorid == item['AuthorID']:
+                    multi = "True"
+                    break
+        return serve_template(templatename="members.html", title=series['SeriesName'],
+                                members=members, series=series, multi=multi)
+
+    @cherrypy.expose
+    def markSeries(self, action=None, **args):
+        self.label_thread()
+        myDB = database.DBConnection()
+        if action:
+            for seriesid in args:
+                # ouch dirty workaround...
+                if not seriesid == 'book_table_length':
+                    if action in ["Wanted", "Active", "Skipped", "Ignored"]:
+                        match = myDB.match('SELECT SeriesName from series WHERE SeriesID = "%s"' % seriesid)
+                        if match:
+                            myDB.upsert("series", {'Status': action}, {'SeriesID': seriesid})
+                            logger.debug(u'Status set to "%s" for "%s"' % (action, match['SeriesName']))
+                            if action in ['Wanted', 'Active']:
+                                threading.Thread(target=getSeriesAuthors, name='SERIESAUTHORS', args=[seriesid]).start()
+            if "redirect" in args:
+                if not args['redirect'] == 'None':
+                    raise cherrypy.HTTPRedirect("series?AuthorID=%s" % args['redirect'])
+            raise cherrypy.HTTPRedirect("series")
 
     # CONFIG ############################################################
 
     @cherrypy.expose
     def config(self):
-        http_look_dir = os.path.join(
-            str(lazylibrarian.PROG_DIR),
-            'data' + os.sep + 'interfaces')
+        self.label_thread()
+        http_look_dir = os.path.join(lazylibrarian.PROG_DIR, 'data' + os.sep + 'interfaces')
         http_look_list = [name for name in os.listdir(http_look_dir)
                           if os.path.isdir(os.path.join(http_look_dir, name))]
         status_list = ['Skipped', 'Wanted', 'Have', 'Ignored']
@@ -136,264 +253,41 @@ class WebInterface(object):
         return serve_template(templatename="config.html", title="Settings", config=config)
 
     @cherrypy.expose
-    def configUpdate(
-            self, http_host='0.0.0.0', http_root='', http_user='', http_port=5299, current_tab='0',
-            http_pass='', http_look='', launch_browser=0, api_key='', api_enabled=0, displaylength=10,
-            logdir='', loglevel=2, loglimit=500, git_program='',
-            imp_onlyisbn=0, imp_singlebook=0, imp_preflang='', imp_monthlang='', imp_convert='',
-            imp_calibredb='', imp_autoadd='', imp_autosearch=0, match_ratio=80, dload_ratio=90,
-            nzb_downloader_sabnzbd=0, nzb_downloader_nzbget=0, nzb_downloader_synology=0,
-            nzb_downloader_blackhole=0, proxy_host='', proxy_type='', sab_host='', sab_port=0,
-            sab_subdir='', sab_api='', sab_user='', sab_pass='',
-            destination_copy=0, destination_dir='', download_dir='', sab_cat='', usenet_retention=0,
-            nzb_blackholedir='', alternate_dir='', torrent_dir='', numberofseeders=0, tor_convert_magnet=0,
-            tor_downloader_blackhole=0, tor_downloader_utorrent=0, tor_downloader_qbittorrent=0,
-            nzbget_host='', nzbget_port=0, nzbget_user='', nzbget_pass='', nzbget_cat='', nzbget_priority=0,
-            newzbin=0, newzbin_uid='', newzbin_pass='', kat=0, kat_host='', tpb=0, tpb_host='', tdl=0,
-            tdl_host='', zoo=0, zoo_host='', ebook_type='', mag_type='', reject_words='', reject_maxsize=0,
-            reject_magsize=0, extra=0, extra_host='', gen=0, gen_host='', lime=0, lime_host='', book_api='',
-            gr_api='', gb_api='', versioncheck_interval='', search_interval='', scan_interval='',
-            searchrss_interval=20, ebook_dest_folder='', ebook_dest_file='', tor_downloader_rtorrent=0,
-            keep_seeding=0, prefer_magnet=0, rtorrent_host='', rtorrent_dir='', rtorrent_user='', rtorrent_pass='',
-            rtorrent_label='', use_twitter=0, twitter_notify_onsnatch=0, twitter_notify_ondownload=0,
-            mag_age=0, mag_dest_folder='', mag_dest_file='', mag_relative=0, mag_single=0, cache_age=30, task_age=0,
-            utorrent_host='', utorrent_port=0, utorrent_user='', utorrent_pass='', utorrent_label='',
-            qbittorrent_host='', qbittorrent_port=0, qbittorrent_user='', qbittorrent_pass='',
-            qbittorrent_label='', notfound_status='Skipped', newbook_status='Skipped', full_scan=0,
-            add_author=0, tor_downloader_transmission=0, transmission_host='', transmission_port=0,
-            transmission_user='', transmission_pass='', tor_downloader_deluge=0, deluge_host='',
-            deluge_user='', deluge_pass='', deluge_port=0, deluge_label='', use_synology=0, synology_dir='',
-            tor_downloader_synology=0, synology_host='', synology_port=0, synology_user='', synology_pass='',
-            use_boxcar=0, boxcar_notify_onsnatch=0, boxcar_notify_ondownload=0, boxcar_token='',
-            use_pushbullet=0, pushbullet_notify_onsnatch=0, newauthor_status='Skipped',
-            pushbullet_notify_ondownload=0, pushbullet_token='', pushbullet_deviceid='',
-            use_pushover=0, pushover_onsnatch=0, pushover_priority=0, pushover_keys='',
-            pushover_apitoken='', pushover_ondownload=0, pushover_device='',
-            use_androidpn=0, androidpn_notify_onsnatch=0, androidpn_notify_ondownload=0,
-            androidpn_url='', androidpn_username='', androidpn_broadcast=0, bookstrap_theme='',
-            use_nma=0, nma_apikey='', nma_priority=0, nma_onsnatch=0, nma_ondownload=0,
-            use_slack=0, slack_notify_onsnatch=0, slack_notify_ondownload=0, slack_token='',
-            use_email=0, email_notify_onsnatch=0, email_notify_ondownload=0, email_from='',
-            email_to='', email_ssl=0, email_smtp_server='', email_smtp_port=0, email_tls=0,
-            email_smtp_user='', email_smtp_password='',
-            https_enabled=0, https_cert='', https_key='', **kwargs):
+    def configUpdate(self, **kwargs):
         # print len(kwargs)
         # for arg in kwargs:
-        #    if "reject" in arg:
-        #        print arg
-        #        print str(arg)
-        # print current_tab
-        lazylibrarian.CURRENT_TAB = current_tab
-        lazylibrarian.HTTP_HOST = http_host
-        lazylibrarian.HTTP_ROOT = http_root
-        lazylibrarian.HTTP_PORT = check_int(http_port, 5299)
-        lazylibrarian.HTTP_USER = http_user
-        lazylibrarian.HTTP_PASS = http_pass
-        lazylibrarian.HTTP_LOOK = http_look
-        lazylibrarian.HTTPS_ENABLED = bool(https_enabled)
-        lazylibrarian.HTTPS_CERT = https_cert
-        lazylibrarian.HTTPS_KEY = https_key
-        lazylibrarian.BOOKSTRAP_THEME = bookstrap_theme
-        lazylibrarian.LAUNCH_BROWSER = bool(launch_browser)
-        lazylibrarian.API_ENABLED = bool(api_enabled)
-        lazylibrarian.API_KEY = api_key
-        lazylibrarian.PROXY_HOST = proxy_host
-        lazylibrarian.PROXY_TYPE = proxy_type
-        lazylibrarian.LOGDIR = logdir
-        lazylibrarian.LOGLIMIT = check_int(loglimit, 500)
-        lazylibrarian.LOGLEVEL = check_int(loglevel, 2)
-
-        lazylibrarian.MATCH_RATIO = check_int(match_ratio, 80)
-        lazylibrarian.DLOAD_RATIO = check_int(dload_ratio, 90)
-        lazylibrarian.CACHE_AGE = check_int(cache_age, 30)
-        lazylibrarian.TASK_AGE = check_int(task_age, 0)
-        lazylibrarian.DISPLAYLENGTH = check_int(displaylength, 10)
-
-        lazylibrarian.IMP_ONLYISBN = bool(imp_onlyisbn)
-        lazylibrarian.IMP_SINGLEBOOK = bool(imp_singlebook)
-        lazylibrarian.IMP_PREFLANG = imp_preflang
-        lazylibrarian.IMP_MONTHLANG = imp_monthlang
-        lazylibrarian.IMP_AUTOADD = imp_autoadd
-        lazylibrarian.IMP_AUTOSEARCH = bool(imp_autosearch)
-        lazylibrarian.IMP_CALIBREDB = imp_calibredb
-        lazylibrarian.IMP_CONVERT = imp_convert
-        lazylibrarian.GIT_PROGRAM = git_program
-
-        lazylibrarian.SAB_HOST = sab_host
-        lazylibrarian.SAB_PORT = check_int(sab_port, 0)
-        lazylibrarian.SAB_SUBDIR = sab_subdir
-        lazylibrarian.SAB_API = sab_api
-        lazylibrarian.SAB_USER = sab_user
-        lazylibrarian.SAB_PASS = sab_pass
-        lazylibrarian.SAB_CAT = sab_cat
-
-        lazylibrarian.NZBGET_HOST = nzbget_host
-        lazylibrarian.NZBGET_PORT = check_int(nzbget_port, 0)
-        lazylibrarian.NZBGET_USER = nzbget_user
-        lazylibrarian.NZBGET_PASS = nzbget_pass
-        lazylibrarian.NZBGET_CATEGORY = nzbget_cat
-        lazylibrarian.NZBGET_PRIORITY = check_int(nzbget_priority, 0)
-
-        lazylibrarian.DESTINATION_COPY = bool(destination_copy)
-        lazylibrarian.DESTINATION_DIR = destination_dir
-        lazylibrarian.ALTERNATE_DIR = alternate_dir
-        lazylibrarian.DOWNLOAD_DIR = download_dir
-        lazylibrarian.USENET_RETENTION = check_int(usenet_retention, 0)
-        lazylibrarian.NZB_BLACKHOLEDIR = nzb_blackholedir
-        lazylibrarian.NZB_DOWNLOADER_SABNZBD = bool(nzb_downloader_sabnzbd)
-        lazylibrarian.NZB_DOWNLOADER_NZBGET = bool(nzb_downloader_nzbget)
-        lazylibrarian.NZB_DOWNLOADER_SYNOLOGY = bool(nzb_downloader_synology)
-        lazylibrarian.NZB_DOWNLOADER_BLACKHOLE = bool(nzb_downloader_blackhole)
-        lazylibrarian.TORRENT_DIR = torrent_dir
-        lazylibrarian.NUMBEROFSEEDERS = check_int(numberofseeders, 0)
-        lazylibrarian.KEEP_SEEDING = bool(keep_seeding)
-        lazylibrarian.PREFER_MAGNET = bool(prefer_magnet)
-        lazylibrarian.TOR_DOWNLOADER_BLACKHOLE = bool(tor_downloader_blackhole)
-        lazylibrarian.TOR_CONVERT_MAGNET = bool(tor_convert_magnet)
-        lazylibrarian.TOR_DOWNLOADER_UTORRENT = bool(tor_downloader_utorrent)
-        lazylibrarian.TOR_DOWNLOADER_RTORRENT = bool(tor_downloader_rtorrent)
-        lazylibrarian.TOR_DOWNLOADER_QBITTORRENT = bool(tor_downloader_qbittorrent)
-        lazylibrarian.TOR_DOWNLOADER_TRANSMISSION = bool(tor_downloader_transmission)
-        lazylibrarian.TOR_DOWNLOADER_SYNOLOGY = bool(tor_downloader_synology)
-        lazylibrarian.TOR_DOWNLOADER_DELUGE = bool(tor_downloader_deluge)
-
-        lazylibrarian.NEWZBIN = bool(newzbin)
-        lazylibrarian.NEWZBIN_UID = newzbin_uid
-        lazylibrarian.NEWZBIN_PASS = newzbin_pass
-
-        lazylibrarian.RTORRENT_HOST = rtorrent_host
-        lazylibrarian.RTORRENT_USER = rtorrent_user
-        lazylibrarian.RTORRENT_PASS = rtorrent_pass
-        lazylibrarian.RTORRENT_LABEL = rtorrent_label
-        lazylibrarian.RTORRENT_DIR = rtorrent_dir
-
-        lazylibrarian.UTORRENT_HOST = utorrent_host
-        lazylibrarian.UTORRENT_PORT = utorrent_port
-        lazylibrarian.UTORRENT_USER = utorrent_user
-        lazylibrarian.UTORRENT_PASS = utorrent_pass
-        lazylibrarian.UTORRENT_LABEL = utorrent_label
-
-        lazylibrarian.QBITTORRENT_HOST = qbittorrent_host
-        lazylibrarian.QBITTORRENT_PORT = check_int(qbittorrent_port, 0)
-        lazylibrarian.QBITTORRENT_USER = qbittorrent_user
-        lazylibrarian.QBITTORRENT_PASS = qbittorrent_pass
-        lazylibrarian.QBITTORRENT_LABEL = qbittorrent_label
-
-        lazylibrarian.TRANSMISSION_HOST = transmission_host
-        lazylibrarian.TRANSMISSION_PORT = transmission_port
-        lazylibrarian.TRANSMISSION_USER = transmission_user
-        lazylibrarian.TRANSMISSION_PASS = transmission_pass
-
-        lazylibrarian.SYNOLOGY_HOST = synology_host
-        lazylibrarian.SYNOLOGY_PORT = synology_port
-        lazylibrarian.SYNOLOGY_USER = synology_user
-        lazylibrarian.SYNOLOGY_PASS = synology_pass
-        lazylibrarian.SYNOLOGY_DIR = synology_dir
-        lazylibrarian.USE_SYNOLOGY = bool(use_synology)
-
-        lazylibrarian.DELUGE_HOST = deluge_host
-        lazylibrarian.DELUGE_PORT = check_int(deluge_port, 0)
-        lazylibrarian.DELUGE_USER = deluge_user
-        lazylibrarian.DELUGE_PASS = deluge_pass
-        lazylibrarian.DELUGE_LABEL = deluge_label
-
-        lazylibrarian.KAT = bool(kat)
-        lazylibrarian.KAT_HOST = kat_host
-        lazylibrarian.TPB = bool(tpb)
-        lazylibrarian.TPB_HOST = tpb_host
-        lazylibrarian.ZOO = bool(zoo)
-        lazylibrarian.ZOO_HOST = zoo_host
-        lazylibrarian.EXTRA = bool(extra)
-        lazylibrarian.EXTRA_HOST = extra_host
-        lazylibrarian.TDL = bool(tdl)
-        lazylibrarian.TDL_HOST = tdl_host
-        lazylibrarian.GEN = bool(gen)
-        lazylibrarian.GEN_HOST = gen_host
-        lazylibrarian.LIME = bool(lime)
-        lazylibrarian.LIME_HOST = lime_host
-
-        lazylibrarian.EBOOK_TYPE = ebook_type
-        lazylibrarian.MAG_TYPE = mag_type
-        lazylibrarian.REJECT_WORDS = reject_words
-        lazylibrarian.REJECT_MAXSIZE = reject_maxsize
-        lazylibrarian.REJECT_MAGSIZE = reject_magsize
-        lazylibrarian.MAG_AGE = mag_age
-        lazylibrarian.BOOK_API = book_api
-        lazylibrarian.GR_API = gr_api
-        lazylibrarian.GB_API = gb_api
-
-        lazylibrarian.SEARCH_INTERVAL = check_int(search_interval, 360)
-        lazylibrarian.SCAN_INTERVAL = check_int(scan_interval, 10)
-        lazylibrarian.SEARCHRSS_INTERVAL = check_int(searchrss_interval, 20)
-        lazylibrarian.VERSIONCHECK_INTERVAL = check_int(versioncheck_interval, 24)
-
-        lazylibrarian.FULL_SCAN = bool(full_scan)
-        lazylibrarian.NOTFOUND_STATUS = notfound_status
-        lazylibrarian.NEWBOOK_STATUS = newbook_status
-        lazylibrarian.NEWAUTHOR_STATUS = newauthor_status
-        lazylibrarian.ADD_AUTHOR = bool(add_author)
-
-        lazylibrarian.EBOOK_DEST_FOLDER = ebook_dest_folder
-        lazylibrarian.EBOOK_DEST_FILE = ebook_dest_file
-        lazylibrarian.MAG_DEST_FOLDER = mag_dest_folder
-        lazylibrarian.MAG_DEST_FILE = mag_dest_file
-        lazylibrarian.MAG_RELATIVE = bool(mag_relative)
-        lazylibrarian.MAG_SINGLE = bool(mag_single)
-
-        lazylibrarian.USE_TWITTER = bool(use_twitter)
-        lazylibrarian.TWITTER_NOTIFY_ONSNATCH = bool(twitter_notify_onsnatch)
-        lazylibrarian.TWITTER_NOTIFY_ONDOWNLOAD = bool(twitter_notify_ondownload)
-
-        lazylibrarian.USE_BOXCAR = bool(use_boxcar)
-        lazylibrarian.BOXCAR_NOTIFY_ONSNATCH = bool(boxcar_notify_onsnatch)
-        lazylibrarian.BOXCAR_NOTIFY_ONDOWNLOAD = bool(boxcar_notify_ondownload)
-        lazylibrarian.BOXCAR_TOKEN = boxcar_token
-
-        lazylibrarian.USE_PUSHBULLET = bool(use_pushbullet)
-        lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH = bool(pushbullet_notify_onsnatch)
-        lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD = bool(pushbullet_notify_ondownload)
-        lazylibrarian.PUSHBULLET_TOKEN = pushbullet_token
-        lazylibrarian.PUSHBULLET_DEVICEID = pushbullet_deviceid
-
-        lazylibrarian.USE_PUSHOVER = bool(use_pushover)
-        lazylibrarian.PUSHOVER_ONSNATCH = bool(pushover_onsnatch)
-        lazylibrarian.PUSHOVER_ONDOWNLOAD = bool(pushover_ondownload)
-        lazylibrarian.PUSHOVER_KEYS = pushover_keys
-        lazylibrarian.PUSHOVER_APITOKEN = pushover_apitoken
-        lazylibrarian.PUSHOVER_PRIORITY = check_int(pushover_priority, 0)
-        lazylibrarian.PUSHOVER_DEVICE = pushover_device
-
-        lazylibrarian.USE_ANDROIDPN = bool(use_androidpn)
-        lazylibrarian.ANDROIDPN_NOTIFY_ONSNATCH = bool(androidpn_notify_onsnatch)
-        lazylibrarian.ANDROIDPN_NOTIFY_ONDOWNLOAD = bool(androidpn_notify_ondownload)
-        lazylibrarian.ANDROIDPN_URL = androidpn_url
-        lazylibrarian.ANDROIDPN_USERNAME = androidpn_username
-        lazylibrarian.ANDROIDPN_BROADCAST = bool(androidpn_broadcast)
-
-        lazylibrarian.USE_NMA = bool(use_nma)
-        lazylibrarian.NMA_APIKEY = nma_apikey
-        lazylibrarian.NMA_PRIORITY = check_int(nma_priority, 0)
-        lazylibrarian.NMA_ONSNATCH = bool(nma_onsnatch)
-        lazylibrarian.NMA_ONDOWNLOAD = bool(nma_ondownload)
-
-        lazylibrarian.USE_SLACK = bool(use_slack)
-        lazylibrarian.SLACK_NOTIFY_ONSNATCH = bool(slack_notify_onsnatch)
-        lazylibrarian.SLACK_NOTIFY_ONDOWNLOAD = bool(slack_notify_ondownload)
-        lazylibrarian.SLACK_TOKEN = slack_token
-
-        lazylibrarian.USE_EMAIL = bool(use_email)
-        lazylibrarian.EMAIL_NOTIFY_ONSNATCH = bool(email_notify_onsnatch)
-        lazylibrarian.EMAIL_NOTIFY_ONDOWNLOAD = bool(email_notify_ondownload)
-        lazylibrarian.EMAIL_FROM = email_from
-        lazylibrarian.EMAIL_TO = email_to
-        lazylibrarian.EMAIL_SSL = bool(email_ssl)
-        lazylibrarian.EMAIL_SMTP_SERVER = email_smtp_server
-        lazylibrarian.EMAIL_SMTP_PORT = check_int(email_smtp_port, 25)
-        lazylibrarian.EMAIL_TLS = bool(email_tls)
-        lazylibrarian.EMAIL_SMTP_USER = email_smtp_user
-        lazylibrarian.EMAIL_SMTP_PASSWORD = email_smtp_password
-
+        #    print arg
         self.label_thread()
+
+        # first the non-config options
+        if 'current_tab' in kwargs:
+            lazylibrarian.CURRENT_TAB = kwargs['current_tab']
+
+        # now the config file entries
+        for key in lazylibrarian.CONFIG_DEFINITIONS.keys():
+            item_type, section, default = lazylibrarian.CONFIG_DEFINITIONS[key]
+            if key.lower() in kwargs:
+                value = kwargs[key.lower()]
+                if item_type == 'bool':
+                    if not value or value == 'False' or value == '0':
+                        value = 0
+                    else:
+                        value = 1
+                elif item_type == 'int':
+                    value = check_int(value, default)
+                lazylibrarian.CONFIG[key] = value
+            else:
+                # no key returned for empty tickboxes...
+                if item_type == 'bool':
+                    lazylibrarian.CONFIG[key] = 0
+                else:
+                    # or for strings not available in config html page
+                    if key not in ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'GIT_REPO', 'GIT_USER', 'GIT_BRANCH',
+                                    'LATEST_VERSION', 'CURRENT_VERSION', 'COMMITS_BEHIND', 'INSTALL_TYPE',
+                                    'DIR_PERM', 'FILE_PERM']:
+                        # or for an empty string
+                        lazylibrarian.CONFIG[key] = ''
+
 
         myDB = database.DBConnection()
         magazines = myDB.select('SELECT Title,Reject,Regex from magazines ORDER by upper(Title)')
@@ -482,57 +376,30 @@ class WebInterface(object):
         lazylibrarian.config_write()
         checkRunningJobs()
 
-        logger.info('Config file [%s] has been updated' % lazylibrarian.CONFIGFILE)
-
         raise cherrypy.HTTPRedirect("config")
 
     # SEARCH ############################################################
 
     @cherrypy.expose
     def search(self, name):
-        if name is None or not len(name):
+        if name is None or not name:
             raise cherrypy.HTTPRedirect("home")
 
         myDB = database.DBConnection()
-        if lazylibrarian.BOOK_API == "GoogleBooks":
-            GB = GoogleBooks(name)
-            queue = Queue.Queue()
-            search_api = threading.Thread(
-                target=GB.find_results, name='GB-RESULTS', args=[name, queue])
-            search_api.start()
-        else:  # lazylibrarian.BOOK_API == "GoodReads":
-            queue = Queue.Queue()
-            GR = GoodReads(name)
-            search_api = threading.Thread(
-                target=GR.find_results, name='GR-RESULTS', args=[name, queue])
-            search_api.start()
-
-        search_api.join()
-        searchresults = queue.get()
 
         authorsearch = myDB.select("SELECT AuthorName from authors")
         authorlist = []
         for item in authorsearch:
             authorlist.append(item['AuthorName'])
 
-        booksearch = myDB.select("SELECT * from books")
+        booksearch = myDB.select("SELECT Status,BookID from books")
         booklist = []
         for item in booksearch:
             booklist.append(item['BookID'])
 
-        # need a url safe version of authorname for passing to
-        # searchresults.html as it might be a new author with no authorid yet
-        resultlist = []
-        for result in searchresults:
-            result['safeauthorname'] = urllib.quote_plus(
-                result['authorname'].encode(lazylibrarian.SYS_ENCODING))
-            resultlist.append(result)
-
-        sortedlist_final = sorted(
-            searchresults, key=itemgetter('highest_fuzz', 'num_reviews'), reverse=True)
-        return serve_template(templatename="searchresults.html", title='Search Results for: "' +
-                                                                       name + '"', searchresults=sortedlist_final,
-                              authorlist=authorlist,
+        searchresults = search_for(name)
+        return serve_template(templatename="searchresults.html", title='Search Results: "' +
+                              name + '"', searchresults=searchresults, authorlist=authorlist,
                               booklist=booklist, booksearch=booksearch)
 
     # AUTHOR ############################################################
@@ -542,36 +409,21 @@ class WebInterface(object):
         myDB = database.DBConnection()
 
         if Ignored:
-            languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorID = '%s' \
-                                    AND Status ='Ignored'" % AuthorID)
-            if BookLang:
-                querybooks = "SELECT * from books WHERE AuthorID = '%s' AND BookLang = '%s' \
-                              AND Status ='Ignored' order by BookDate DESC, BookRate DESC" % (
-                    AuthorID, BookLang)
-            else:
-                querybooks = "SELECT * from books WHERE AuthorID = '%s' and Status ='Ignored' \
-                              order by BookDate DESC, BookRate DESC" % AuthorID
+            languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorID = '%s' AND Status ='Ignored'" % AuthorID)
         else:
             languages = myDB.select(
                 "SELECT DISTINCT BookLang from books WHERE AuthorID = '%s' AND Status !='Ignored'" % AuthorID)
-            if BookLang:
-                querybooks = "SELECT * from books WHERE AuthorID = '%s' AND BookLang = '%s' \
-                              AND Status !='Ignored' order by BookDate DESC, BookRate DESC" % (
-                    AuthorID, BookLang)
-            else:
-                querybooks = "SELECT * from books WHERE AuthorID = '%s' and Status !='Ignored' \
-                              order by BookDate DESC, BookRate DESC" % AuthorID
 
         queryauthors = "SELECT * from authors WHERE AuthorID = '%s'" % AuthorID
 
         author = myDB.match(queryauthors)
-        books = myDB.select(querybooks)
+
         if not author:
             raise cherrypy.HTTPRedirect("home")
         authorname = author['AuthorName'].encode(lazylibrarian.SYS_ENCODING)
         return serve_template(
             templatename="author.html", title=urllib.quote_plus(authorname),
-            author=author, books=books, languages=languages)
+            author=author, languages=languages, booklang=BookLang, ignored=Ignored, showseries=lazylibrarian.SHOW_SERIES)
 
     @cherrypy.expose
     def pauseAuthor(self, AuthorID):
@@ -646,6 +498,7 @@ class WebInterface(object):
             AuthorName = authorsearch['AuthorName']
             logger.info(u"Removing all references to author: %s" % AuthorName)
             myDB.action('DELETE from authors WHERE AuthorID="%s"' % AuthorID)
+            myDB.action('DELETE from seriesauthors WHERE AuthorID="%s"' % AuthorID)
             myDB.action('DELETE from books WHERE AuthorID="%s"' % AuthorID)
         raise cherrypy.HTTPRedirect("home")
 
@@ -675,7 +528,9 @@ class WebInterface(object):
                 # books might not be in exact same authorname folder
                 # eg Calibre puts books into folder "Eric van Lustbader", but
                 # goodreads told lazylibrarian he's "Eric Van Lustbader", note the capital 'V'
-                anybook = myDB.match('SELECT BookFile from books where AuthorName="%s" and BookFile <> ""' % AuthorName)
+                cmd = 'SELECT BookFile from books,authors where books.AuthorID = authors.AuthorID'
+                cmd += '  and AuthorName="%s" and BookFile <> ""' % AuthorName
+                anybook = myDB.match(cmd)
                 if anybook:
                     authordir = safe_unicode(os.path.dirname(os.path.dirname(anybook['BookFile'])))
             if os.path.isdir(authordir):
@@ -693,65 +548,125 @@ class WebInterface(object):
 
     @cherrypy.expose
     def addAuthor(self, AuthorName):
-        threading.Thread(target=addAuthorToDB, name='ADDAUTHOR', args=[AuthorName, False]).start()
+        threading.Thread(target=addAuthorNameToDB, name='ADDAUTHOR', args=[AuthorName, False]).start()
         raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
-    def addAuthorID(self, AuthorID, AuthorName):
-        threading.Thread(target=addAuthorToDB, name='ADDAUTHOR', args=[AuthorName, False, AuthorID]).start()
+    def addAuthorID(self, AuthorID):
+        threading.Thread(target=addAuthorToDB, name='ADDAUTHOR', args=['', False, AuthorID]).start()
         raise cherrypy.HTTPRedirect("home")
 
     # BOOKS #############################################################
-    LANGFILTER = ''
+
+    @cherrypy.expose
+    def booksearch(self, bookid=None, title="", author=""):
+        self.label_thread()
+        searchterm = '%s %s' % (author, title)
+        searchterm.strip()
+        results = searchItem(searchterm, bookid)
+        return serve_template(templatename="manualsearch.html", title='Search Results: "' +
+                              searchterm + '"', bookid=bookid, results=results)
+
+
+    @cherrypy.expose
+    def countProviders(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        count = lazylibrarian.USE_NZB() + lazylibrarian.USE_TOR() + lazylibrarian.USE_RSS()
+        return "Searching %s providers, please wait..." % count
+
+
+    @cherrypy.expose
+    def snatchBook(self, bookid=None, mode=None, provider=None, url=None):
+        self.label_thread()
+        logger.debug("snatch bookid %s mode=%s from %s url=[%s]" % (bookid, mode, provider, url))
+        myDB = database.DBConnection()
+        bookdata = myDB.match('SELECT AuthorID, BookName from books WHERE BookID="%s"' % bookid)
+        if bookdata:
+            AuthorID = bookdata["AuthorID"]
+            url = urllib.unquote_plus(url)
+            url = url.replace(' ', '+')
+            bookname = '%s LL.(%s)' % (bookdata["BookName"], bookid)
+            if mode in ["torznab", "torrent", "magnet"]:
+                snatch = TORDownloadMethod(bookid, bookname, url)
+            else:
+                snatch = NZBDownloadMethod(bookid, bookname, url)
+            if snatch:
+                logger.info('Downloading %s from %s' % (bookdata["BookName"], provider))
+                notify_snatch("%s from %s at %s" % (unaccented(bookdata["BookName"]), provider, now()))
+                custom_notify_snatch(bookid)
+                scheduleJob(action='Start', target='processDir')
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+        else:
+            logger.debug('snatchBook Invalid bookid [%s]' % bookid)
+            raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
     def books(self, BookLang=None):
-        global LANGFILTER
         myDB = database.DBConnection()
-        languages = myDB.select('SELECT DISTINCT BookLang from books WHERE \
-                                STATUS !="Skipped" AND STATUS !="Ignored"')
-        LANGFILTER = BookLang
-        return serve_template(templatename="books.html", title='Books', books=[], languages=languages)
+        languages = myDB.select('SELECT DISTINCT BookLang from books WHERE STATUS !="Skipped" AND STATUS !="Ignored"')
+        return serve_template(templatename="books.html", title='Books', books=[], languages=languages, booklang=BookLang)
 
+    # noinspection PyUnusedLocal
     @cherrypy.expose
     def getBooks(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
-        global LANGFILTER
+        #for arg in kwargs:
+        #    print arg, kwargs[arg]
+
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
-        lazylibrarian.DISPLAYLENGTH = iDisplayLength
+        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
-        #   need to check and filter on BookLang if set
-        if LANGFILTER is None or not len(LANGFILTER):
-            cmd = 'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid,'
-            cmd += ' booksub, booklink, workpage, authorid from books WHERE STATUS !="Skipped"'
-            cmd += ' AND STATUS !="Ignored"'
-            rowlist = myDB.select(cmd)
-        else:
-            cmd = 'SELECT bookimg, authorname, bookname, series, seriesnum, bookrate, bookdate, status, bookid,'
-            cmd += ' booksub, booklink, workpage, authorid from books WHERE STATUS !="Skipped"'
-            cmd = cmd + ' AND STATUS !="Ignored" and BOOKLANG="' + LANGFILTER + '"'
-            rowlist = myDB.select(cmd)
+        cmd = 'SELECT bookimg,authorname,bookname,bookrate,bookdate,books.status,bookid,booklang,'
+        cmd += 'booksub,booklink,workpage,books.authorid,seriesdisplay from books,authors'
+        cmd += ' where books.AuthorID = authors.AuthorID'
+
+        if kwargs['source'] == "Manage":
+            cmd += ' and books.STATUS="%s"' % kwargs['whichStatus']
+        elif kwargs['source'] == "Books":
+            cmd += ' and books.STATUS !="Skipped" AND books.STATUS !="Ignored"'
+        elif kwargs['source'] == "Author":
+            cmd += ' and books.AuthorID="%s"' % kwargs['AuthorID']
+            if 'ignored' in kwargs and kwargs['ignored'] == "True":
+                cmd += ' and books.status="Ignored"'
+            else:
+                cmd += ' and books.status != "Ignored"'
+        if kwargs['source'] in ["Books", "Author"]:
+            # for "books" and "author" need to check and filter on BookLang if set
+            if 'booklang' in kwargs and kwargs['booklang'] != 'None':
+                cmd += ' and BOOKLANG="%s"' % kwargs['booklang']
+
+        rowlist = myDB.select(cmd)
+        # At his point we want to sort and filter _before_ adding the html as it's much quicker
         # turn the sqlite rowlist into a list of lists
         d = []
+        rows = []
         filtered = []
         if len(rowlist):
             # the masterlist to be filled with the row data
             for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
-                l = []  # for each Row use a separate list
-                for column in row:
-                    l.append(column)
-                d.append(l)  # add the rowlist to the masterlist
+                rows.append(list(row))  # add each rowlist to the masterlist
 
             if sSearch:
-                filtered = filter(lambda x: sSearch in str(x), d)
+                filtered = filter(lambda x: sSearch in str(x), rows)
             else:
-                filtered = d
+                filtered = rows
 
+            # table headers and column headers do not match at this point
             sortcolumn = int(iSortCol_0)
-            sortcolumn -= 1  # indexed from 0
-            filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+
+            if sortcolumn < 4:  # author, title
+                sortcolumn -= 1
+            elif sortcolumn == 4:  # series
+                sortcolumn = 12
+            else:               # rating, date, status
+                sortcolumn -= 2
+
+            if sortcolumn in [4, 12]:  # date, series
+                self.natural_sort(filtered,key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+            else:
+                filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
 
             if iDisplayLength < 0:  # display = all
                 rows = filtered
@@ -761,8 +676,9 @@ class WebInterface(object):
             # now add html to the ones we want to display
             d = []  # the masterlist to be filled with the html data
             for row in rows:
-                l = []  # for each Row use a separate list
-                bookrate = float(row[5])
+                worklink = ''
+                sitelink = ''
+                bookrate = float(row[3])
                 if bookrate < 0.5:
                     starimg = '0-stars.png'
                 elif 0.5 <= bookrate < 1.5:
@@ -778,168 +694,93 @@ class WebInterface(object):
                 else:
                     starimg = '0-stars.png'
 
-                worklink = ''
+                if row[10] and len(row[10]) > 4:  # is there a workpage link
+                    worklink = '<a href="' + row[10] + '" target="_new"><small><i>LibraryThing</i></small></a>'
+                editpage = '<a href="editBook?bookid=' + row[6] + '" target="_new"><small><i>Manual</i></a>'
 
-                if lazylibrarian.HTTP_LOOK == 'bookstrap':
-                    if row[11]:  # is there a workpage link
-                        if len(row[11]) > 4:
-                            worklink = '<td><a href="' + \
-                                       row[11] + '" target="_new"><small><i>LibraryThing</i></small></a></td>'
+                if 'goodreads' in row[9]:
+                    sitelink = '<a href="%s" target="_new"><small><i>GoodReads</i></small></a>' % row[9]
+                elif 'google' in row[9]:
+                    sitelink = '<a href="%s" target="_new"><small><i>GoogleBooks</i></small></a>' % row[9]
+                if row[8]:  # is there a sub-title
+                    title = '%s<br><small><i>%s</i></small>' % (row[2], row[8])
+                else:
+                    title = row[2]
+                title = title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage
 
-                    editpage = '<a href="editBook?bookid=' + row[8] + '" target="_new"><small><i>Edit</i></a>'
+                # for each Row use a separate list
+                l = [row[6], row[0], row[1], title, row[12], starimg, row[4]]
+                # Do not show status column in MANAGE page as we are only showing one status
+                if not kwargs['source'] == "Manage":
+                    if lazylibrarian.CONFIG['HTTP_LOOK'] == 'bookstrap':
+                        if row[5] == 'Open':
+                            btn = '<a class="button green btn btn-xs btn-warning" href="openBook?bookid=%s' % row[6]
+                            btn += '" target="_self"><i class="fa fa-book"></i>%s</a>' % row[5]
+                        elif row[5] == 'Wanted':
+                            btn = '<p><a class="a btn btn-xs btn-danger">%s' % row[5]
+                            btn += '</a></p><p><a class="b btn btn-xs btn-success" '
+                            btn += 'href="searchForBook?bookid=%s' % row[6]
+                            btn += '" target="_self"><i class="fa fa-search"></i> Search</a></p>'
+                        elif row[5] == 'Snatched' or row[5] == 'Have':
+                            btn = '<a class="button btn btn-xs btn-info">%s</a>' % row[5]
+                        else:
+                            btn = '<a class="button btn btn-xs btn-default grey">%s</a>' % row[5]
 
-                    sitelink = ''
-                    if 'goodreads' in row[10]:
-                        sitelink = '<td><a href="' + \
-                                   row[10] + '" target="_new"><small><i>GoodReads</i></small></a></td>'
-                    if 'google' in row[10]:
-                        sitelink = '<td><a href="' + \
-                                   row[10] + '" target="_new"><small><i>GoogleBooks</i></small></a></td>'
-
-                    l.append(
-                        '<td class="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[8])
-                    lref = '<td class="bookart text-center"><a href="%s' % row[0]
-                    lref += '" target="_blank" rel="noreferrer"><img src="%s' % row[0]
-                    lref += '" alt="Cover" class="bookcover-sm img-responsive"></a></td>'
-                    l.append(lref)
-                    l.append(
-                        '<td class="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[12], row[1]))
-                    if row[9]:  # is there a sub-title
-                        title = '<td class="bookname">%s<br><small><i>%s</i></small></td>' % (row[2], row[9])
                     else:
-                        title = '<td class="bookname">%s</td>' % row[2]
-                    l.append(title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage)
-
-                    if row[3]:  # is the book part of a series
-                        l.append('<td class="series">%s</td>' % row[3])
-                    else:
-                        l.append('<td class="series">None</td>')
-
-                    if row[4]:
-                        l.append('<td class="seriesNum text-center">%s</td>' % row[4])
-                    else:
-                        l.append('<td class="seriesNum text-center">None</td>')
-
-                    l.append(
-                        '<td class="stars text-center"><img src="images/' + starimg + '" alt="Rating"></td>')
-
-                    l.append('<td class="date text-center">%s</td>' % row[6])
-                    if row[7] == 'Open':
-                        btn = '<td class="status text-center"><a class="button green btn btn-xs btn-warning"'
-                        btn += ' href="openBook?bookid=%s' % row[8]
-                        btn += '" target="_self"><i class="fa fa-book"></i>%s</a></td>' % row[7]
-                    elif row[7] == 'Wanted':
-                        btn = '<td class="status text-center"><p><a class="a btn btn-xs btn-danger">%s' % row[7]
-                        btn += '</a></p><p><a class="b btn btn-xs btn-success" '
-                        btn += 'href="searchForBook?bookid=%s' % row[8]
-                        btn += '" target="_self"><i class="fa fa-search"></i> Search</a></p></td>'
-                    elif row[7] == 'Snatched' or row[7] == 'Have':
-                        btn = '<td class="status text-center"><a class="button btn btn-xs btn-info">%s' % row[7]
-                        btn += '</a></td>'
-                    else:
-                        btn = '<td class="status text-center"><a class="button btn btn-xs btn-default grey">%s' % row[7]
-                        btn += '</a></td>'
+                        if row[5] == 'Open':
+                            btn = '<a class="button green" href="openBook?bookid=%s" target="_self">Open</a>' % row[6]
+                        elif row[5] == 'Wanted':
+                            btn = '<a class="button red" href="searchForBook?bookid=%s' % row[6]
+                            btn += '" target="_self"><span class="a">Wanted</span><span class="b">Search</span></a>'
+                        elif row[5] == 'Snatched' or row[5] == 'Have':
+                            btn = '<a class="button">%s</a>' % row[5]
+                        else:
+                            btn = '<a class="button grey">%s</a>' % row[5]
                     l.append(btn)
-
-                else:  # lazylibrarian.HTTP_LOOK == 'default':
-                    if row[11]:  # is there a workpage link
-                        if len(row[11]) > 4:
-                            worklink = '<td><a href="' + \
-                                       row[11] + '" target="_new"><i class="smalltext">LibraryThing</i></a></td>'
-
-                    editpage = '<a href="editBook?bookid=' + row[
-                        8] + '" target="_new"><i class="smalltext">Edit</i></a>'
-
-                    sitelink = ''
-                    if 'goodreads' in row[10]:
-                        sitelink = '<td><a href="' + \
-                                   row[10] + '" target="_new"><i class="smalltext">GoodReads</i></a></td>'
-                    if 'google' in row[10]:
-                        sitelink = '<td><a href="' + \
-                                   row[10] + '" target="_new"><i class="smalltext">GoogleBooks</i></a></td>'
-
-                    l.append(
-                        '<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[8])
-                    lref = '<td id="bookart"><a href="%s" target="_new"><img src="%s' % (row[0], row[0])
-                    lref += '" height="75" width="50"></a></td>'
-                    l.append(lref)
-                    l.append(
-                        '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (row[12], row[1]))
-                    if row[9]:  # is there a sub-title
-                        title = '<td id="bookname">%s<br><i class="smalltext">%s</i></td>' % (row[2], row[9])
-                    else:
-                        title = '<td id="bookname">%s</td>' % row[2]
-                    l.append(title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage)
-
-                    if row[3]:  # is the book part of a series
-                        l.append('<td id="series">%s</td>' % row[3])
-                    else:
-                        l.append('<td id="series">None</td>')
-
-                    if row[4]:
-                        l.append('<td id="seriesNum">%s</td>' % row[4])
-                    else:
-                        l.append('<td id="seriesNum">None</td>')
-
-                    l.append(
-                        '<td id="stars"><img src="images/' + starimg + '" width="50" height="10"></td>')
-
-                    l.append('<td id="date">%s</td>' % row[6])
-
-                    if row[7] == 'Open':
-                        btn = '<td id="status"><a class="button green" href="openBook?bookid=%s' % row[8]
-                        btn += '" target="_self">Open</a></td>'
-                    elif row[7] == 'Wanted':
-                        btn = '<td id="status"><a class="button red" href="searchForBook?bookid=%s' % row[8]
-                        btn += '" target="_self"><span class="a">Wanted</span>'
-                        btn += '<span class="b">Search</span></a></td>'
-                    elif row[7] == 'Snatched' or row[7] == 'Have':
-                        btn = '<td id="status"><a class="button">%s</a></td>' % row[7]
-                    else:
-                        btn = '<td id="status"><a class="button grey">%s</a></td>' % row[7]
-                    l.append(btn)
-
+                l.append(row[11])  # add authorid for xref
                 d.append(l)  # add the rowlist to the masterlist
+            rows = d
 
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
-                  'aaData': d,
+                  'aaData': rows,
                   }
         s = simplejson.dumps(mydict)
         # print ("Getbooks returning %s to %s" % (iDisplayStart, iDisplayStart
         # + iDisplayLength))
         return s
 
+
+    @staticmethod
+    def natural_sort(lst, key=lambda s:s, reverse=False):
+        """
+        Sort the list into natural alphanumeric order.
+        """
+        def get_alphanum_key_func(key):
+            convert = lambda text: int(text) if text.isdigit() else text
+            return lambda s: [convert(c) for c in re.split('([0-9]+)', key(s))]
+        sort_key = get_alphanum_key_func(key)
+        lst.sort(key=sort_key, reverse=reverse)
+
+
     @cherrypy.expose
     def addBook(self, bookid=None):
         myDB = database.DBConnection()
         AuthorID = ""
-        booksearch = myDB.select(
-            'SELECT * from books WHERE BookID="%s"' % bookid)
-        if len(booksearch):
+        match = myDB.match('SELECT AuthorID from books WHERE BookID="%s"' % bookid)
+        if match:
             myDB.upsert("books", {'Status': 'Wanted'}, {'BookID': bookid})
-            for book in booksearch:
-                AuthorID = book['AuthorID']
-                update_totals(AuthorID)
+            AuthorID = match['AuthorID']
+            update_totals(AuthorID)
         else:
-            if lazylibrarian.BOOK_API == "GoogleBooks":
+            if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
                 GB = GoogleBooks(bookid)
-                queue = Queue.Queue()
-                find_book = threading.Thread(
-                    target=GB.find_book, name='GB-BOOK', args=[bookid, queue])
-                find_book.start()
-            else:  # lazylibrarian.BOOK_API == "GoodReads":
-                queue = Queue.Queue()
+                _ = threading.Thread(target=GB.find_book, name='GB-BOOK', args=[bookid]).start()
+            else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
                 GR = GoodReads(bookid)
-                find_book = threading.Thread(
-                    target=GR.find_book, name='GR-BOOK', args=[bookid, queue])
-                find_book.start()
-            if len(bookid) == 0:
-                raise cherrypy.HTTPRedirect("config")
+                _ = threading.Thread(target=GR.find_book, name='GR-BOOK', args=[bookid]).start()
 
-            find_book.join()
-
-        if lazylibrarian.IMP_AUTOSEARCH:
+        if lazylibrarian.CONFIG['IMP_AUTOSEARCH']:
             books = [{"bookid": bookid}]
             self.startBookSearch(books)
 
@@ -968,7 +809,7 @@ class WebInterface(object):
     def searchForBook(self, bookid=None):
         myDB = database.DBConnection()
         AuthorID = ''
-        bookdata = myDB.match('SELECT * from books WHERE BookID="%s"' % bookid)
+        bookdata = myDB.match('SELECT AuthorID from books WHERE BookID="%s"' % bookid)
         if bookdata:
             AuthorID = bookdata["AuthorID"]
 
@@ -986,9 +827,9 @@ class WebInterface(object):
         self.label_thread()
 
         myDB = database.DBConnection()
-
-        bookdata = myDB.match(
-            'SELECT * from books WHERE BookID="%s"' % bookid)
+        cmd = 'SELECT BookFile,AuthorName,BookName from books,authors WHERE BookID="%s"' % bookid
+        cmd += ' and books.AuthorID = authors.AuthorID'
+        bookdata = myDB.match(cmd)
         if bookdata:
             bookfile = bookdata["BookFile"]
             if bookfile and os.path.isfile(bookfile):
@@ -1000,51 +841,172 @@ class WebInterface(object):
                 logger.info(u'Missing book %s,%s' % (authorName, bookName))
 
     @cherrypy.expose
-    def editBook(self, bookid=None):
+    def editAuthor(self, authorid=None):
 
         myDB = database.DBConnection()
 
+        data = myDB.match('SELECT * from authors WHERE AuthorID="%s"' % authorid)
+        if data:
+            return serve_template(templatename="editauthor.html", title="Edit Author", config=data)
+        else:
+            logger.info(u'Missing author %s:' % authorid)
+
+    @cherrypy.expose
+    def authorUpdate(self, authorid='', authorname='', authorborn='', authordeath='', authorimg='', manual='0'):
+        self.label_thread()
+
+        myDB = database.DBConnection()
+        if authorid:
+            authdata = myDB.match('SELECT * from authors WHERE AuthorID="%s"' % authorid)
+            if authdata:
+                edited = ""
+                if authorborn == 'None':
+                    authorborn = ''
+                if authordeath == 'None':
+                    authordeath = ''
+                if authorimg == 'None':
+                    authorimg = ''
+                manual = bool(check_int(manual, 0))
+
+                if not (authdata["AuthorBorn"] == authorborn):
+                    edited += "Born "
+                if not (authdata["AuthorDeath"] == authordeath):
+                    edited += "Died "
+                if not (authdata["AuthorImg"] == authorimg):
+                    edited += "Image "
+                if not (bool(check_int(authdata["Manual"], 0)) == manual):
+                    edited += "Manual "
+
+                if not (authdata["AuthorName"] == authorname):
+                    match = myDB.match('SELECT AuthorName from authors where AuthorName="%s"' % authorname)
+                    if match:
+                        logger.debug("Unable to rename, new author name %s already exists" % authorname)
+                        authorname = authdata["AuthorName"]
+                    else:
+                        edited += "Name "
+
+                if edited:
+                    # Check dates in format yyyy/mm/dd, or unchanged if fails datecheck
+                    ab = authorborn
+                    authorborn = authdata["AuthorBorn"]  # assume fail, leave unchanged
+                    if ab:
+                        rejected = True
+                        if len(ab) == 10:
+                            try:
+                                _ = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
+                                authorborn = ab
+                                rejected = False
+                            except ValueError:
+                                authorborn = authdata["AuthorBorn"]
+                        if rejected:
+                            logger.warn("Author Born date [%s] rejected" % ab)
+                            edited = edited.replace('Born ', '')
+
+                    ab = authordeath
+                    authordeath = authdata["AuthorDeath"]  # assume fail, leave unchanged
+                    if ab:
+                        rejected = True
+                        if len(ab) == 10:
+                            try:
+                                _ = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
+                                authordeath = ab
+                                rejected = False
+                            except ValueError:
+                                authordeath = authdata["AuthorDeath"]
+                        if rejected:
+                            logger.warn("Author Died date [%s] rejected" % ab)
+                            edited = edited.replace('Died ', '')
+
+                    if not authorimg:
+                        authorimg = authdata["AuthorImg"]
+                    else:
+                        rejected = True
+                        # Cache file image
+                        if os.path.isfile(authorimg):
+                            extn = os.path.splitext(authorimg)[1].lower()
+                            if extn and extn in ['.jpg', '.jpeg', '.png']:
+                                destfile = os.path.join(lazylibrarian.CACHEDIR, authorid + '.jpg')
+                                try:
+                                    copyfile(authorimg, destfile)
+                                    setperm(destfile)
+                                    authorimg = 'cache' + os.sep + authorid + '.jpg'
+                                    rejected = False
+                                except Exception as why:
+                                    logger.debug("Failed to copy file %s, %s" % (authorimg, str(why)))
+
+                        if authorimg.startswith('http'):
+                            # cache image from url
+                            extn = os.path.splitext(authorimg)[1].lower()
+                            if extn and extn in ['.jpg', '.jpeg', '.png']:
+                                authorimg, success = cache_img("author", authorid, authorimg)
+                                if success:
+                                    rejected = False
+
+                        if rejected:
+                            logger.warn("Author Image [%s] rejected" % authorimg)
+                            authorimg = authdata["AuthorImg"]
+                            edited = edited.replace('Image ', '')
+
+                    controlValueDict = {'AuthorID': authorid}
+                    newValueDict = {
+                        'AuthorName': authorname,
+                        'AuthorBorn': authorborn,
+                        'AuthorDeath': authordeath,
+                        'AuthorImg': authorimg,
+                        'Manual': bool(manual)
+                    }
+                    myDB.upsert("authors", newValueDict, controlValueDict)
+                    logger.info('Updated [ %s] for %s' % (edited, authorname))
+
+                else:
+                    logger.debug('Author [%s] has not been changed' % authorname)
+
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % authorid)
+        else:
+            raise cherrypy.HTTPRedirect("authors")
+
+    @cherrypy.expose
+    def editBook(self, bookid=None):
+
+        myDB = database.DBConnection()
         authors = myDB.select(
             "SELECT AuthorName from authors WHERE Status !='Ignored' ORDER by AuthorName COLLATE NOCASE")
-        bookdata = myDB.match('SELECT * from books WHERE BookID="%s"' % bookid)
+        cmd = 'SELECT BookName,BookID,BookSub,BookGenre,BookLang,books.Manual,AuthorName,books.AuthorID '
+        cmd += 'from books,authors WHERE books.AuthorID = authors.AuthorID and BookID="%s"' % bookid
+        bookdata = myDB.match(cmd)
+        cmd ='SELECT SeriesName, SeriesNum from member,series '
+        cmd += 'where series.SeriesID=member.SeriesID and BookID="%s"' % bookid
+        seriesdict = myDB.select(cmd)
         if bookdata:
-            return serve_template(templatename="editbook.html", title="Edit Book", config=bookdata, authors=authors)
+            return serve_template(templatename="editbook.html", title="Edit Book",
+                                    config=bookdata, seriesdict=seriesdict, authors=authors)
         else:
             logger.info(u'Missing book %s' % bookid)
 
     @cherrypy.expose
-    def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre=None, booklang='',
-                   series=None, seriesnum=None, manual='0', authorname=''):
+    def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre='', booklang='',
+                   manual='0', authorname='', **kwargs):
         myDB = database.DBConnection()
-
         if bookid:
-            bookdata = myDB.match('SELECT * from books WHERE BookID="%s"' % bookid)
+            cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,books.Manual,AuthorName,books.AuthorID '
+            cmd += 'from books,authors WHERE books.AuthorID = authors.AuthorID and BookID="%s"' % bookid
+            bookdata = myDB.match(cmd)
             if bookdata:
-                edited = False
+                edited = ''
                 moved = False
-                if series == 'None' or not len(series):
-                    series = None
-                if seriesnum == 'None' or not len(seriesnum):
-                    seriesnum = None
-                if bookgenre == 'None' or not len(bookgenre):
-                    bookgenre = None
+                if bookgenre == 'None':
+                    bookgenre = ''
                 manual = bool(check_int(manual, 0))
-
                 if not (bookdata["BookName"] == bookname):
-                    edited = True
+                    edited += "Title "
                 if not (bookdata["BookSub"] == booksub):
-                    edited = True
+                    edited += "Subtitle "
                 if not (bookdata["BookGenre"] == bookgenre):
-                    edited = True
+                    edited += "Genre "
                 if not (bookdata["BookLang"] == booklang):
-                    edited = True
-                if not (bookdata["Series"] == series):
-                    edited = True
-                if not (bookdata["SeriesNum"] == seriesnum):
-                    edited = True
+                    edited += "Language "
                 if not (bool(check_int(bookdata["Manual"], 0)) == manual):
-                    edited = True
-
+                    edited += "Manual "
                 if not (bookdata["AuthorName"] == authorname):
                     moved = True
 
@@ -1055,25 +1017,55 @@ class WebInterface(object):
                         'BookSub': booksub,
                         'BookGenre': bookgenre,
                         'BookLang': booklang,
-                        'Series': series,
-                        'SeriesNum': seriesnum,
                         'Manual': bool(manual)
                     }
                     myDB.upsert("books", newValueDict, controlValueDict)
-                    logger.info('Book [%s] has been updated' % bookname)
+
+                cmd ='SELECT SeriesName, SeriesNum from member,series '
+                cmd += 'where series.SeriesID=member.SeriesID and BookID="%s"' % bookid
+                old_series = myDB.select(cmd)
+                old_dict = {}
+                new_dict = {}
+                dict_counter = 0
+                while "series[%s][name]" % dict_counter in kwargs:
+                    s_name = kwargs["series[%s][name]" % dict_counter]
+                    s_name = cleanName(unaccented(s_name), '&/')
+                    new_dict[s_name] = kwargs["series[%s][number]" % dict_counter]
+                    dict_counter += 1
+                if 'series[new][name]' in kwargs and 'series[new][number]' in kwargs:
+                    if kwargs['series[new][name]']:
+                        s_name = kwargs["series[new][name]"]
+                        s_name = cleanName(unaccented(s_name), '&/')
+                        new_dict[s_name] = kwargs['series[new][number]']
+                for item in old_series:
+                    old_dict[cleanName(unaccented(item['SeriesName']), '&/')] = item['SeriesNum']
+
+                series_changed= False
+                for item in old_dict:
+                    if not item in new_dict:
+                        series_changed = True
+                for item in new_dict:
+                    if not item in old_dict:
+                        series_changed = True
+                    else:
+                        if new_dict[item] != old_dict[item]:
+                            series_changed = True
+                if series_changed:
+                    setSeries(new_dict, bookid)
+                    deleteEmptySeries()
+                    edited += "Series "
+
+                if edited:
+                    logger.info('Updated [ %s] for %s' % (edited, bookname))
                 else:
                     logger.debug('Book [%s] has not been changed' % bookname)
 
                 if moved:
                     authordata = myDB.match(
-                        'SELECT AuthorID,AuthorLink from authors WHERE AuthorName="%s"' % authorname)
+                        'SELECT AuthorID from authors WHERE AuthorName="%s"' % authorname)
                     if authordata:
                         controlValueDict = {'BookID': bookid}
-                        newValueDict = {
-                            'AuthorName': authorname,
-                            'AuthorID': authordata['AuthorID'],
-                            'AuthorLink': authordata['AuthorLink']
-                        }
+                        newValueDict = {'AuthorID': authordata['AuthorID']}
                         myDB.upsert("books", newValueDict, controlValueDict)
                         update_totals(bookdata["AuthorID"])  # we moved from here
                         update_totals(authordata['AuthorID'])  # to here
@@ -1081,13 +1073,13 @@ class WebInterface(object):
                     logger.info('Book [%s] has been moved' % bookname)
                 else:
                     logger.debug('Book [%s] has not been moved' % bookname)
+                #if edited or moved:
+                raise cherrypy.HTTPRedirect("editBook?bookid=%s" % bookid)
 
-            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % bookdata["AuthorID"])
-        else:
-            raise cherrypy.HTTPRedirect("books")
+        raise cherrypy.HTTPRedirect("books")
 
     @cherrypy.expose
-    def markBooks(self, AuthorID=None, action=None, redirect=None, **args):
+    def markBooks(self, AuthorID=None, seriesid=None, action=None, redirect=None, **args):
         self.label_thread()
 
         myDB = database.DBConnection()
@@ -1099,15 +1091,14 @@ class WebInterface(object):
                 # ouch dirty workaround...
                 if not bookid == 'book_table_length':
                     if action in ["Wanted", "Have", "Ignored", "Skipped"]:
-                        title = myDB.match('SELECT * from books WHERE BookID = "%s"' % bookid)
+                        title = myDB.match('SELECT BookName from books WHERE BookID = "%s"' % bookid)
                         if title:
                             bookname = title['BookName']
                             myDB.upsert("books", {'Status': action}, {'BookID': bookid})
-                            logger.info(u'Status set to "%s" for "%s"' % (action, bookname))
+                            logger.debug(u'Status set to "%s" for "%s"' % (action, bookname))
                     if action in ["Remove", "Delete"]:
                         bookdata = myDB.match(
-                            'SELECT AuthorID,Bookname,BookFile from books WHERE BookID = "%s"' %
-                            bookid)
+                            'SELECT AuthorID,Bookname,BookFile from books WHERE BookID = "%s"' % bookid)
                         if bookdata:
                             AuthorID = bookdata['AuthorID']
                             bookname = bookdata['BookName']
@@ -1123,9 +1114,9 @@ class WebInterface(object):
                             authorcheck = myDB.match('SELECT AuthorID from authors WHERE AuthorID = "%s"' % AuthorID)
                             if authorcheck:
                                 myDB.upsert("books", {"Status": "Ignored"}, {"BookID": bookid})
-                                logger.info(u'Status set to Ignored for "%s"' % bookname)
+                                logger.debug(u'Status set to Ignored for "%s"' % bookname)
                             else:
-                                myDB.action('DELETE from books WHERE BookID = "%s"' % bookid)
+                                myDB.action('delete from books where bookid="%s"' % bookid)
                                 logger.info(u'Removed "%s" from database' % bookname)
 
         if redirect == "author" or len(authorcheck):
@@ -1147,13 +1138,13 @@ class WebInterface(object):
                 threading.Thread(target=search_tor_book, name='SEARCHTOR', args=[books]).start()
 
         if redirect == "author":
-            raise cherrypy.HTTPRedirect(
-                "authorPage?AuthorID=%s" % AuthorID)
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
         elif redirect == "books":
             raise cherrypy.HTTPRedirect("books")
+        elif redirect == "members":
+            raise cherrypy.HTTPRedirect("seriesMembers?seriesid=%s" % seriesid)
         else:
             raise cherrypy.HTTPRedirect("manage")
-
 
     # MAGAZINES #########################################################
 
@@ -1174,13 +1165,15 @@ class WebInterface(object):
                 else:
                     issues = 0
                 magimg = mag['LatestCover']
-                if not magimg or not os.path.isfile(magimg):
-                    magimg = 'images/nocover.png'
+                # special flag to say "no covers required"
+                if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None' or not magimg or not os.path.isfile(magimg):
+                    magimg = 'images/nocover.jpg'
                 else:
                     myhash = hashlib.md5(magimg).hexdigest()
                     hashname = os.path.join(lazylibrarian.CACHEDIR, myhash + ".jpg")
-                    copyfile(magimg, hashname)
-                    setperm(hashname)
+                    if not os.path.isfile(hashname):
+                        copyfile(magimg, hashname)
+                        setperm(hashname)
                     magimg = 'cache/' + myhash + '.jpg'
                     covercount += 1
 
@@ -1189,9 +1182,6 @@ class WebInterface(object):
                 this_mag['Cover'] = magimg
                 this_mag['safetitle'] = urllib.quote_plus(mag['Title'].encode(lazylibrarian.SYS_ENCODING))
                 mags.append(this_mag)
-
-        if lazylibrarian.IMP_CONVERT == 'None':  # special flag to say "no covers required"
-            covercount = 0
 
         return serve_template(templatename="magazines.html", title="Magazines", magazines=mags, covercount=covercount)
 
@@ -1212,7 +1202,7 @@ class WebInterface(object):
                 if extn:
                     magimg = magfile.replace(extn, '.jpg')
                     if not magimg or not os.path.isfile(magimg):
-                        magimg = 'images/nocover.png'
+                        magimg = 'images/nocover.jpg'
                     else:
                         myhash = hashlib.md5(magimg).hexdigest()
                         hashname = os.path.join(lazylibrarian.CACHEDIR, myhash + ".jpg")
@@ -1222,56 +1212,48 @@ class WebInterface(object):
                         covercount += 1
                 else:
                     logger.debug('No extension found on %s' % magfile)
-                    magimg = 'images/nocover.png'
+                    magimg = 'images/nocover.jpg'
 
                 this_issue = dict(issue)
                 this_issue['Cover'] = magimg
                 mod_issues.append(this_issue)
             logger.debug("Found %s cover%s" % (covercount, plural(covercount)))
 
-        if lazylibrarian.IMP_CONVERT == 'None':  # special flag to say "no covers required"
+        if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':  # special flag to say "no covers required"
             covercount = 0
 
         return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
 
-    ISSUEFILTER = ''
 
     @cherrypy.expose
     def pastIssues(self, whichStatus=None):
-        global ISSUEFILTER
         if whichStatus is None:
             whichStatus = "Skipped"
-        ISSUEFILTER = whichStatus
         return serve_template(
-            templatename="manageissues.html", title="Magazine Status Management", issues=[], whichStatus=whichStatus)
+            templatename="manageissues.html", title="Manage Past Issues", issues=[], whichStatus=whichStatus)
 
+    # noinspection PyUnusedLocal
     @cherrypy.expose
     def getPastIssues(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
-        global ISSUEFILTER
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
-        lazylibrarian.DISPLAYLENGTH = iDisplayLength
-
+        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
         # need to filter on whichStatus
         rowlist = myDB.select(
-            'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov from pastissues WHERE Status="%s"' % ISSUEFILTER)
-
-        d = []
+            'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov from pastissues WHERE Status=' + kwargs['whichStatus'])
+        rows = []
         filtered = []
         if len(rowlist):
             # the masterlist to be filled with the row data
             for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
-                l = []  # for each Row use a separate list
-                for column in row:
-                    l.append(column)
-                d.append(l)  # add the rowlist to the masterlist
+                rows.append(list(row))  # add each rowlist to the masterlist
 
             if sSearch:
-                filtered = filter(lambda x: sSearch in str(x), d)
+                filtered = filter(lambda x: sSearch in str(x), rows)
             else:
-                filtered = d
+                filtered = rows
 
             sortcolumn = int(iSortCol_0)
             filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
@@ -1281,18 +1263,9 @@ class WebInterface(object):
             else:
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
-            # now add html to the ones we want to display
-            d = []  # the masterlist to be filled with the html data
-            for row in rows:
-                l = ['<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[0],
-                     '<td id="magtitle">%s</td>' % row[1], '<td id="lastacquired">%s</td>' % row[2],
-                     '<td id="issuedate">%s</td>' % row[3],
-                     '<td id="provider">%s</td>' % row[4]]  # for each Row use a separate list
-                d.append(l)  # add the rowlist to the masterlist
-
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
-                  'aaData': d,
+                  'aaData': rows,
                   }
         s = simplejson.dumps(mydict)
         return s
@@ -1315,7 +1288,7 @@ class WebInterface(object):
         mag_data = myDB.select('SELECT * from issues WHERE Title="%s"' % bookid)
         if len(mag_data) <= 0:  # no issues!
             raise cherrypy.HTTPRedirect("magazines")
-        elif len(mag_data) == 1 and lazylibrarian.MAG_SINGLE:  # we only have one issue, get it
+        elif len(mag_data) == 1 and lazylibrarian.CONFIG['MAG_SINGLE']:  # we only have one issue, get it
             IssueDate = mag_data[0]["IssueDate"]
             IssueFile = mag_data[0]["IssueFile"]
             logger.info(u'Opening %s - %s' % (bookid, IssueDate))
@@ -1348,8 +1321,7 @@ class WebInterface(object):
                 if not nzburl2:
                     title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s"' % nzburl)
                 else:
-                    title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s" OR NZBurl="%s"' %
-                                        (nzburl, nzburl2))
+                    title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s" OR NZBurl="%s"' % (nzburl, nzburl2))
 
                 for item in title:
                     nzburl = item['NZBurl']
@@ -1358,7 +1330,7 @@ class WebInterface(object):
                         logger.debug(u'Item %s removed from past issues' % nzburl)
                         maglist.append({'nzburl': nzburl})
                     elif action in ['Have', 'Ignored', 'Skipped']:
-                        myDB.action('UPDATE pastissues set status=%s WHERE NZBurl="%s"' % (action, nzburl))
+                        myDB.action('UPDATE pastissues set status="%s" WHERE NZBurl="%s"' % (action, nzburl))
                         logger.debug(u'Item %s removed from past issues' % nzburl)
                         maglist.append({'nzburl': nzburl})
                     elif action == 'Wanted':
@@ -1410,6 +1382,7 @@ class WebInterface(object):
                 if snatch:  # if snatch fails, downloadmethods already report it
                     logger.info('Downloading %s from %s' % (items['nzbtitle'], items['nzbprov']))
                     notifiers.notify_snatch(items['nzbtitle'] + ' at ' + now())
+                    custom_notify_snatch(items['bookid'])
                     scheduleJob(action='Start', target='processDir')
         raise cherrypy.HTTPRedirect("pastIssues")
 
@@ -1424,15 +1397,34 @@ class WebInterface(object):
                 issue = myDB.match('SELECT IssueFile,Title,IssueDate from issues WHERE IssueID="%s"' % item)
                 if issue:
                     if action == "Delete":
-                        try:
-                            rmtree(os.path.dirname(issue['IssueFile']), ignore_errors=True)
+                        result = self.deleteIssue(issue['IssueFile'])
+                        if result:
                             logger.info(u'Issue %s of %s deleted from disc' % (issue['IssueDate'], issue['Title']))
-                        except Exception as e:
-                            logger.debug('rmtree failed on %s, %s' % (issue['IssueFile'], str(e)))
                     if action == "Remove" or action == "Delete":
                         myDB.action('DELETE from issues WHERE IssueID="%s"' % item)
                         logger.info(u'Issue %s of %s removed from database' % (issue['IssueDate'], issue['Title']))
         raise cherrypy.HTTPRedirect("magazines")
+
+    @staticmethod
+    def deleteIssue(issuefile):
+        try:
+            # delete the magazine file and any cover image
+            if os.path.exists(issuefile):
+                os.remove(issuefile)
+            fname, extn = os.path.splitext(issuefile)
+            fname = fname + '.jpg'
+            if os.path.exists(fname):
+                os.remove(fname)
+            # if the directory is now empty, delete that too
+            try:
+                os.rmdir(os.path.dirname(issuefile))
+            except Exception:
+                logger.debug('Directory %s not deleted, not empty?' % os.path.dirname(issuefile))
+            return True
+        except Exception as e:
+            logger.debug('delete issue failed on %s, %s' % (issuefile, str(e)))
+        return False
+
 
     @cherrypy.expose
     def markMagazines(self, action=None, **args):
@@ -1454,21 +1446,19 @@ class WebInterface(object):
                     logger.debug(u'Deleting magazine %s from disc' % item)
                     issuedir = ''
                     for issue in issues:  # delete all issues of this magazine
-                        try:
+                        result = self.deleteIssue(issue['IssueFile'])
+                        if result:
+                            logger.debug(u'Issue %s deleted from disc' % issue['IssueFile'])
                             issuedir = os.path.dirname(issue['IssueFile'])
-                            rmtree(issuedir, ignore_errors=True)
-                            logger.debug(u'Issue directory %s deleted from disc' % issuedir)
-                        except Exception as e:
-                            logger.debug('rmtree failed on %s, %s' % (issuedir, str(e)))
+                        else:
+                            logger.debug('Failed to delete %s' % (issue['IssueFile']))
                     if issuedir:
                         magdir = os.path.dirname(issuedir)
-                        if not os.listdir(magdir):  # this magazines directory is now empty
-                            try:
-                                rmtree(magdir, ignore_errors=True)
-                                logger.debug(u'Magazine directory %s deleted from disc' % magdir)
-                            except Exception as e:
-                                logger.debug('rmtree failed on %s, %s' % (magdir, str(e)))
-                        else:
+                        # delete this magazines directory if now empty
+                        try:
+                            os.rmdir(magdir)
+                            logger.debug(u'Magazine directory %s deleted from disc' % magdir)
+                        except Exception:
                             logger.debug(u'Magazine directory %s is not empty' % magdir)
                     logger.info(u'Magazine %s deleted from disc' % item)
                 if action == "Remove" or action == "Delete":
@@ -1526,7 +1516,7 @@ class WebInterface(object):
             # replace any non-ascii quotes/apostrophes with ascii ones eg "Collector's"
             dic = {u'\u2018': u"'", u'\u2019': u"'", u'\u201c': u'"', u'\u201d': u'"'}
             title = replace_all(title, dic)
-            exists = myDB.match('SELECT Title from magazines WHERE Title="%s" COLLATE NOCASE' % title)
+            exists = myDB.match('SELECT Title from magazines WHERE Title="%s"' % title)
             if exists:
                 logger.debug("Magazine %s already exists (%s)" % (title, exists['Title']))
             else:
@@ -1540,10 +1530,9 @@ class WebInterface(object):
                 }
                 myDB.upsert("magazines", newValueDict, controlValueDict)
                 mags = [{"bookid": title}]
-                if lazylibrarian.IMP_AUTOSEARCH:
+                if lazylibrarian.CONFIG['IMP_AUTOSEARCH']:
                     self.startMagazineSearch(mags)
             raise cherrypy.HTTPRedirect("magazines")
-
 
     # UPDATES ###########################################################
 
@@ -1551,7 +1540,7 @@ class WebInterface(object):
     def checkForUpdates(self):
         self.label_thread()
         versioncheck.checkForUpdates()
-        if lazylibrarian.COMMITS_BEHIND == 0:
+        if lazylibrarian.CONFIG['COMMITS_BEHIND'] == 0:
             if lazylibrarian.COMMIT_LIST:
                 message = "unknown status"
                 messages = lazylibrarian.COMMIT_LIST.replace('\n', '<br>')
@@ -1560,17 +1549,16 @@ class WebInterface(object):
                 message = "up to date"
             return serve_template(templatename="shutdown.html", title="Version Check", message=message, timer=5)
 
-        elif lazylibrarian.COMMITS_BEHIND > 0:
-            message = "behind by %s commit%s" % (lazylibrarian.COMMITS_BEHIND, plural(lazylibrarian.COMMITS_BEHIND))
+        elif lazylibrarian.CONFIG['COMMITS_BEHIND'] > 0:
+            message = "behind by %s commit%s" % (lazylibrarian.CONFIG['COMMITS_BEHIND'], plural(lazylibrarian.CONFIG['COMMITS_BEHIND']))
             messages = lazylibrarian.COMMIT_LIST.replace('\n', '<br>')
             message = message + '<br><small>' + messages
             return serve_template(templatename="shutdown.html", title="Commits", message=message, timer=15)
 
         else:
             message = "unknown version"
-            messages = "%s is not recognised at<br>https://github.com/%s/%s  Branch: %s" % (
-                lazylibrarian.CURRENT_VERSION, lazylibrarian.GIT_USER,
-                lazylibrarian.GIT_REPO, lazylibrarian.GIT_BRANCH)
+            messages = "Your version is not recognised at<br>https://github.com/%s/%s  Branch: %s" % (
+                lazylibrarian.CONFIG['GIT_USER'], lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['GIT_BRANCH'])
             message = message + '<br><small>' + messages
             return serve_template(templatename="shutdown.html", title="Commits", message=message, timer=15)
 
@@ -1578,8 +1566,10 @@ class WebInterface(object):
 
     @cherrypy.expose
     def forceUpdate(self):
-        from lazylibrarian import updater
-        threading.Thread(target=updater.dbUpdate, name='DBUPDATE', args=[False]).start()
+        if 'DBUPDATE' not in [n.name for n in [t for t in threading.enumerate()]]:
+            threading.Thread(target=dbUpdate, name='DBUPDATE', args=[False]).start()
+        else:
+            logger.debug('DBUPDATE already running')
         raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
@@ -1593,42 +1583,60 @@ class WebInterface(object):
 
     @cherrypy.expose
     def libraryScan(self):
-        try:
-            threading.Thread(target=LibraryScan, name='LIBRARYSYNC', args=[]).start()
-        except Exception as e:
-            logger.error(u'Unable to complete the scan: %s' % str(e))
+        if 'LIBRARYSYNC' not in [n.name for n in [t for t in threading.enumerate()]]:
+            try:
+                threading.Thread(target=LibraryScan, name='LIBRARYSYNC', args=[]).start()
+            except Exception as e:
+                logger.error(u'Unable to complete the scan: %s' % str(e))
+        else:
+            logger.debug('LIBRARYSYNC already running')
         raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
     def magazineScan(self):
-        try:
-            threading.Thread(target=magazinescan.magazineScan, name='MAGAZINESCAN', args=[]).start()
-        except Exception as e:
-            logger.error(u'Unable to complete the scan: %s' % str(e))
+        if 'LIBRARYSYNC' not in [n.name for n in [t for t in threading.enumerate()]]:
+            try:
+                threading.Thread(target=magazinescan.magazineScan, name='MAGAZINESCAN', args=[]).start()
+            except Exception as e:
+                logger.error(u'Unable to complete the scan: %s' % str(e))
+        else:
+            logger.debug('MAGAZINESCAN already running')
         raise cherrypy.HTTPRedirect("magazines")
 
     @cherrypy.expose
     def importAlternate(self):
-        try:
-            threading.Thread(target=processAlternate, name='IMPORTALT', args=[lazylibrarian.ALTERNATE_DIR]).start()
-        except Exception as e:
-            logger.error(u'Unable to complete the import: %s' % str(e))
+        if 'IMPORTALT' not in [n.name for n in [t for t in threading.enumerate()]]:
+            try:
+                threading.Thread(target=processAlternate, name='IMPORTALT',
+                                args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
+            except Exception as e:
+                logger.error(u'Unable to complete the import: %s' % str(e))
+        else:
+            logger.debug('IMPORTALT already running')
         raise cherrypy.HTTPRedirect("manage")
 
     @cherrypy.expose
     def importCSV(self):
-        try:
-            threading.Thread(target=import_CSV, name='IMPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
-        except Exception as e:
-            logger.error(u'Unable to complete the import: %s' % str(e))
+        if 'IMPORTCSV' not in [n.name for n in [t for t in threading.enumerate()]]:
+            try:
+                threading.Thread(target=import_CSV, name='IMPORTCSV',
+                                args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
+            except Exception as e:
+                logger.error(u'Unable to complete the import: %s' % str(e))
+        else:
+            logger.debug('IMPORTCSV already running')
         raise cherrypy.HTTPRedirect("manage")
 
     @cherrypy.expose
     def exportCSV(self):
-        try:
-            threading.Thread(target=export_CSV, name='EXPORTCSV', args=[lazylibrarian.ALTERNATE_DIR]).start()
-        except Exception as e:
-            logger.error(u'Unable to complete the export: %s' % str(e))
+        if 'EXPORTCSV' not in [n.name for n in [t for t in threading.enumerate()]]:
+            try:
+                threading.Thread(target=export_CSV, name='EXPORTCSV',
+                                args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
+            except Exception as e:
+                logger.error(u'Unable to complete the export: %s' % str(e))
+        else:
+            logger.debug('EXPORTCSV already running')
         raise cherrypy.HTTPRedirect("manage")
 
     # JOB CONTROL #######################################################
@@ -1699,12 +1707,13 @@ class WebInterface(object):
     def logs(self):
         return serve_template(templatename="logs.html", title="Log", lineList=[])  # lazylibrarian.LOGLIST)
 
+    # noinspection PyUnusedLocal
     @cherrypy.expose
     def getLog(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
-        lazylibrarian.DISPLAYLENGTH = iDisplayLength
+        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
         if sSearch:
             filtered = filter(lambda x: sSearch in str(x), lazylibrarian.LOGLIST[::])
@@ -1729,6 +1738,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def history(self, source=None):
+        self.label_thread()
         myDB = database.DBConnection()
         if not source:
             # wanted status holds snatched processed for all, plus skipped and
@@ -1739,7 +1749,6 @@ class WebInterface(object):
     @cherrypy.expose
     def clearhistory(self, status=None):
         self.label_thread()
-
         myDB = database.DBConnection()
         if status == 'all':
             logger.info(u"Clearing all history")
@@ -1782,74 +1791,131 @@ class WebInterface(object):
             return "Error sending tweet"
 
     @cherrypy.expose
-    def testAndroidPN(self, url=None, username=None, broadcast=None):
-        cherrypy.response.headers[
-            'Cache-Control'] = "max-age=0,no-cache,no-store"
-
-        result = notifiers.androidpn_notifier.test_notify(
-            url, username, broadcast)
+    def testAndroidPN(self, **kwargs):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'url' in kwargs:
+            lazylibrarian.CONFIG['ANDROIDPN_URL'] = kwargs['url']
+        if 'username' in kwargs:
+            lazylibrarian.CONFIG['ANDROIDPN_USERNAME'] = kwargs['username']
+        if 'broadcast' in kwargs:
+            lazylibrarian.CONFIG['ANDROIDPN_BROADCAST'] = kwargs['broadcast']
+        result = notifiers.androidpn_notifier.test_notify()
         if result:
+            lazylibrarian.config_write()
             return "Test AndroidPN notice sent successfully"
         else:
             return "Test AndroidPN notice failed"
 
     @cherrypy.expose
-    def testBoxcar(self):
+    def testBoxcar(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'token' in kwargs:
+            lazylibrarian.CONFIG['BOXCAR_TOKEN'] = kwargs['token']
         result = notifiers.boxcar_notifier.test_notify()
         if result:
+            lazylibrarian.config_write()
             return "Boxcar notification successful,\n%s" % result
         else:
             return "Boxcar notification failed"
 
     @cherrypy.expose
-    def testPushbullet(self):
+    def testPushbullet(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-
+        if 'token' in kwargs:
+            lazylibrarian.CONFIG['PUSHBULLET_TOKEN'] = kwargs['token']
+        if 'device' in kwargs:
+            lazylibrarian.CONFIG['PUSHBULLET_DEVICEID'] = kwargs['device']
         result = notifiers.pushbullet_notifier.test_notify()
         if result:
+            lazylibrarian.config_write()
             return "Pushbullet notification successful,\n%s" % result
         else:
             return "Pushbullet notification failed"
 
     @cherrypy.expose
-    def testPushover(self):
+    def testPushover(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'apitoken' in kwargs:
+            lazylibrarian.CONFIG['PUSHOVER_APITOKEN'] = kwargs['apitoken']
+        if 'keys' in kwargs:
+            lazylibrarian.CONFIG['PUSHOVER_KEYS'] = kwargs['keys']
+        if 'priority' in kwargs:
+            lazylibrarian.CONFIG['PUSHOVER_PRIORITY'] = kwargs['priority']
+        if 'device' in kwargs:
+            lazylibrarian.CONFIG['PUSHOVER_DEVICE'] = kwargs['device']
 
         result = notifiers.pushover_notifier.test_notify()
         if result:
+            lazylibrarian.config_write()
             return "Pushover notification successful,\n%s" % result
         else:
             return "Pushover notification failed"
 
     @cherrypy.expose
-    def testNMA(self):
+    def testNMA(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'apikey' in kwargs:
+            lazylibrarian.CONFIG['NMA_APIKEY'] = kwargs['apikey']
+        if 'priority' in kwargs:
+            lazylibrarian.CONFIG['NMA_PRIORITY'] = kwargs['priority']
 
         result = notifiers.nma_notifier.test_notify()
         if result:
+            lazylibrarian.config_write()
             return "Test NMA notice sent successfully"
         else:
             return "Test NMA notice failed"
 
     @cherrypy.expose
-    def testSlack(self):
+    def testSlack(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'token' in kwargs:
+            lazylibrarian.CONFIG['SLACK_TOKEN'] = kwargs['token']
 
         result = notifiers.slack_notifier.test_notify()
         if result != "ok":
             return "Slack notification failed,\n%s" % result
         else:
+            lazylibrarian.config_write()
             return "Slack notification successful"
 
     @cherrypy.expose
-    def testEmail(self):
+    def testCustom(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'script' in kwargs:
+            lazylibrarian.CONFIG['CUSTOM_SCRIPT'] = kwargs['script']
+        result = notifiers.custom_notifier.test_notify()
+        if result:
+            return "Custom notification failed,\n%s" % result
+        else:
+            lazylibrarian.config_write()
+            return "Custom notification successful"
+
+    @cherrypy.expose
+    def testEmail(self, **kwargs):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'tls' in kwargs:
+            lazylibrarian.CONFIG['EMAIL_TLS'] = kwargs['tls']
+        if 'ssl' in kwargs:
+            lazylibrarian.CONFIG['EMAIL_SSL'] = kwargs['ssl']
+        if 'emailfrom' in kwargs:
+            lazylibrarian.CONFIG['EMAIL_FROM'] = kwargs['emailfrom']
+        if 'emailto' in kwargs:
+            lazylibrarian.CONFIG['EMAIL_TO'] = kwargs['emailto']
+        if 'server' in kwargs:
+            lazylibrarian.CONFIG['EMAIL_SMTP_SERVER'] = kwargs['server']
+        if 'user' in kwargs:
+            lazylibrarian.CONFIG['EMAIL_SMTP_USER'] = kwargs['user']
+        if 'password' in kwargs:
+            lazylibrarian.CONFIG['EMAIL_SMTP_PASSWORD'] = kwargs['password']
+        if 'port' in kwargs:
+            lazylibrarian.CONFIG['EMAIL_SMTP_PORT'] = kwargs['port']
 
         result = notifiers.email_notifier.test_notify()
         if not result:
             return "Email notification failed"
         else:
+            lazylibrarian.config_write()
             return "Email notification successful, check your email"
 
     # API ###############################################################
@@ -1864,7 +1930,7 @@ class WebInterface(object):
     @cherrypy.expose
     def generateAPI(self):
         api_key = hashlib.sha224(str(random.getrandbits(256))).hexdigest()[0:32]
-        lazylibrarian.API_KEY = api_key
+        lazylibrarian.CONFIG['API_KEY'] = api_key
         logger.info("New API generated")
         raise cherrypy.HTTPRedirect("config")
 
@@ -1872,159 +1938,84 @@ class WebInterface(object):
 
     @cherrypy.expose
     def forceProcess(self, source=None):
-        threading.Thread(target=processDir, name='POSTPROCESS', args=[True]).start()
+        if 'POSTPROCESS' not in [n.name for n in [t for t in threading.enumerate()]]:
+            threading.Thread(target=processDir, name='POSTPROCESS', args=[True]).start()
+        else:
+            logger.debug('POSTPROCESS already running')
         raise cherrypy.HTTPRedirect(source)
 
     @cherrypy.expose
     def forceSearch(self, source=None):
         if source == "magazines":
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
-                threading.Thread(target=search_magazines, name='SEARCHMAG', args=[None, True]).start()
+                if 'SEARCHALLMAG' not in [n.name for n in [t for t in threading.enumerate()]]:
+                    threading.Thread(target=search_magazines, name='SEARCHALLMAG', args=[]).start()
         elif source == "books":
             if lazylibrarian.USE_NZB():
-                threading.Thread(target=search_nzb_book, name='SEARCHNZB', args=[]).start()
+                if 'SEARCHALLNZB' not in [n.name for n in [t for t in threading.enumerate()]]:
+                    threading.Thread(target=search_nzb_book, name='SEARCHALLNZB', args=[]).start()
             if lazylibrarian.USE_TOR():
-                threading.Thread(target=search_tor_book, name='SEARCHTOR', args=[]).start()
+                if 'SEARCHALLTOR' not in [n.name for n in [t for t in threading.enumerate()]]:
+                    threading.Thread(target=search_tor_book, name='SEARCHALLTOR', args=[]).start()
             if lazylibrarian.USE_RSS():
-                threading.Thread(target=search_rss_book, name='SEARCHRSS', args=[]).start()
+                if 'SEARCHALLRSS' not in [n.name for n in [t for t in threading.enumerate()]]:
+                    threading.Thread(target=search_rss_book, name='SEARCHALLRSS', args=[]).start()
         else:
             logger.debug(u"forceSearch called with bad source")
         raise cherrypy.HTTPRedirect(source)
 
-    MANAGEFILTER = ''
 
     @cherrypy.expose
     def manage(self, whichStatus=None):
-        global MANAGEFILTER
         if whichStatus is None:
             whichStatus = "Wanted"
-        MANAGEFILTER = whichStatus
-        return serve_template(templatename="managebooks.html", title="Book Status Management",
+        return serve_template(templatename="managebooks.html", title="Manage Books",
                               books=[], whichStatus=whichStatus)
 
-    @cherrypy.expose
-    def getManage(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
-        # kwargs is used by datatables to pass params
-        global MANAGEFILTER
-        myDB = database.DBConnection()
-        iDisplayStart = int(iDisplayStart)
-        iDisplayLength = int(iDisplayLength)
-        lazylibrarian.DISPLAYLENGTH = iDisplayLength
-
-        # print "getManage %s" % iDisplayStart
-        #   need to filter on whichStatus
-        cmd = 'SELECT authorname, bookname, series, seriesnum, bookdate, bookid, booklink, booksub, authorid '
-        cmd = cmd + 'from books WHERE STATUS="' + MANAGEFILTER + '"'
-        rowlist = myDB.select(cmd)
-
-        d = []
-        filtered = []
-        if len(rowlist):
-            # the masterlist to be filled with the row data
-            for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
-                l = []  # for each Row use a separate list
-                for column in row:
-                    l.append(column)
-                d.append(l)  # add the rowlist to the masterlist
-
-            if sSearch:
-                filtered = filter(lambda x: sSearch in str(x), d)
-            else:
-                filtered = d
-
-            sortcolumn = int(iSortCol_0)
-            sortcolumn -= 1  # indexed from 0
-            filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
-
-            if iDisplayLength < 0:  # display = all
-                rows = filtered
-            else:
-                rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
-
-            # now add html to the ones we want to display
-            d = []  # the masterlist to be filled with the html data
-            for row in rows:
-                l = ['<td id="select"><input type="checkbox" name="%s" class="checkbox" /></td>' % row[5],
-                     '<td id="authorname"><a href="authorPage?AuthorID=%s">%s</a></td>' % (
-                         row[8], row[0])]  # for each Row use a separate list
-
-                if lazylibrarian.HTTP_LOOK == 'bookstrap':
-                    sitelink = ''
-                    if 'goodreads' in row[6]:
-                        sitelink = '<a href="%s" target="_new"><small><i>GoodReads</i></small></a>' % row[6]
-                    if 'google' in row[6]:
-                        sitelink = '<a href="%s" target="_new"><small><i>GoogleBooks</i></small></a>' % row[6]
-
-                    if row[7]:  # is there a sub-title
-                        l.append(
-                            '<td id="bookname">%s<br><small><i>%s</i></small><br>%s</td>' %
-                            (row[1], row[7], sitelink))
-                    else:
-                        l.append('<td id="bookname">%s<br>%s</td>' % (row[1], sitelink))
-
-                else:  # lazylibrarian.HTTP_LOOK == 'default':
-                    sitelink = ''
-                    if 'goodreads' in row[6]:
-                        sitelink = '<a href="%s" target="_new"><i class="smalltext">GoodReads</i></a>' % row[6]
-                    if 'google' in row[6]:
-                        sitelink = '<a href="%s" target="_new"><i class="smalltext">GoogleBooks</i></a>' % row[6]
-
-                    if row[7]:  # is there a sub-title
-                        l.append(
-                            '<td id="bookname">%s<br><i class="smalltext">%s</i><br>%s</td>' %
-                            (row[1], row[7], sitelink))
-                    else:
-                        l.append('<td id="bookname">%s<br>%s</td>' % (row[1], sitelink))
-
-                if row[2]:  # is the book part of a series
-                    l.append('<td id="series">%s</td>' % row[2])
-                else:
-                    l.append('<td id="series">None</td>')
-
-                if row[3]:
-                    l.append('<td id="seriesNum">%s</td>' % row[3])
-                else:
-                    l.append('<td id="seriesNum">None</td>')
-
-                l.append('<td id="date">%s</td>' % row[4])
-
-                d.append(l)  # add the rowlist to the masterlist
-
-        mydict = {'iTotalDisplayRecords': len(filtered),
-                  'iTotalRecords': len(rowlist),
-                  'aaData': d,
-                  }
-        s = simplejson.dumps(mydict)
-        # print ("getManage returning %s to %s" % (iDisplayStart, iDisplayStart
-        # + iDisplayLength))
-        return s
 
     @cherrypy.expose
-    def testDeluge(self):
+    def testDeluge(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-        try:
-            if not lazylibrarian.DELUGE_USER:
-                # no username, talk to the webui
-                return deluge.checkLink()
+        if 'host' in kwargs:
+            lazylibrarian.CONFIG['DELUGE_HOST'] = kwargs['host']
+        if 'port' in kwargs:
+            lazylibrarian.CONFIG['DELUGE_PORT'] = kwargs['port']
+        if 'user' in kwargs:
+            lazylibrarian.CONFIG['DELUGE_USER'] = kwargs['user']
+        if 'pwd' in kwargs:
+            lazylibrarian.CONFIG['DELUGE_PASS'] = kwargs['pwd']
+        if 'label' in kwargs:
+            lazylibrarian.CONFIG['DELUGE_LABEL'] = kwargs['label']
 
-            # if there's a username, talk to the daemon directly
-            client = DelugeRPCClient(lazylibrarian.DELUGE_HOST,
-                                     int(lazylibrarian.DELUGE_PORT),
-                                     lazylibrarian.DELUGE_USER,
-                                     lazylibrarian.DELUGE_PASS)
-            client.connect()
-            if lazylibrarian.DELUGE_LABEL:
-                labels = client.call('label.get_labels')
-                if lazylibrarian.DELUGE_LABEL not in labels:
-                    msg = "Deluge: Unknown label [%s]\n" % lazylibrarian.DELUGE_LABEL
-                    if labels:
-                        msg += "Valid labels:\n"
-                        for label in labels:
-                            msg += '%s\n' % label
-                    else:
-                        msg += "Deluge daemon seems to have no labels set"
+        try:
+            if not lazylibrarian.CONFIG['DELUGE_USER']:
+                # no username, talk to the webui
+                msg = deluge.checkLink()
+                if 'FAILED' in msg:
                     return msg
-            return "Deluge: Daemon connection Successful"
+            else:
+                # if there's a username, talk to the daemon directly
+                client = DelugeRPCClient(lazylibrarian.CONFIG['DELUGE_HOST'],
+                                         int(lazylibrarian.CONFIG['DELUGE_PORT']),
+                                         lazylibrarian.CONFIG['DELUGE_USER'],
+                                         lazylibrarian.CONFIG['DELUGE_PASS'])
+                client.connect()
+                msg = "Deluge: Daemon connection Successful"
+                if lazylibrarian.CONFIG['DELUGE_LABEL']:
+                    labels = client.call('label.get_labels')
+                    if lazylibrarian.CONFIG['DELUGE_LABEL'] not in labels:
+                        msg = "Deluge: Unknown label [%s]\n" % lazylibrarian.CONFIG['DELUGE_LABEL']
+                        if labels:
+                            msg += "Valid labels:\n"
+                            for label in labels:
+                                msg += '%s\n' % label
+                        else:
+                            msg += "Deluge daemon seems to have no labels set"
+                        return msg
+            # success, save settings
+            lazylibrarian.config_write()
+            return msg
+
         except Exception as e:
             msg = "Deluge: Daemon connection FAILED\n"
             if 'Connection refused' in str(e):
@@ -2037,36 +2028,134 @@ class WebInterface(object):
             return msg
 
     @cherrypy.expose
-    def testSABnzbd(self):
+    def testSABnzbd(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-        return sabnzbd.checkLink()
+        if 'host' in kwargs:
+            lazylibrarian.CONFIG['SAB_HOST'] = kwargs['host']
+        if 'port' in kwargs:
+            lazylibrarian.CONFIG['SAB_PORT'] = kwargs['port']
+        if 'user' in kwargs:
+            lazylibrarian.CONFIG['SAB_USER'] = kwargs['user']
+        if 'pwd' in kwargs:
+            lazylibrarian.CONFIG['SAB_PASS'] = kwargs['pwd']
+        if 'api' in kwargs:
+            lazylibrarian.CONFIG['SAB_API'] = kwargs['api']
+        if 'cat' in kwargs:
+            lazylibrarian.CONFIG['SAB_CAT'] = kwargs['cat']
+        if 'subdir' in kwargs:
+            lazylibrarian.CONFIG['SAB_SUBDIR'] = kwargs['subdir']
+        msg = sabnzbd.checkLink()
+        if 'success' in msg:
+            lazylibrarian.config_write()
+        return msg
 
     @cherrypy.expose
-    def testNZBget(self):
+    def testNZBget(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-        return nzbget.checkLink()
+        if 'host' in kwargs:
+            lazylibrarian.CONFIG['NZBGET_HOST'] = kwargs['host']
+        if 'port' in kwargs:
+            lazylibrarian.CONFIG['NZBGET_PORT'] = kwargs['port']
+        if 'user' in kwargs:
+            lazylibrarian.CONFIG['NZBGET_USER'] = kwargs['user']
+        if 'pwd' in kwargs:
+            lazylibrarian.CONFIG['NZBGET_PASS'] = kwargs['pwd']
+        if 'cat' in kwargs:
+            lazylibrarian.CONFIG['NZBGET_CATEGORY'] = kwargs['cat']
+        if 'pri' in kwargs:
+            lazylibrarian.CONFIG['NZBGET_PRIORITY'] = kwargs['pri']
+
+        msg = nzbget.checkLink()
+        if 'success' in msg:
+            lazylibrarian.config_write()
+        return msg
 
     @cherrypy.expose
-    def testTransmission(self):
+    def testTransmission(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-        return transmission.checkLink()
+        if 'host' in kwargs:
+            lazylibrarian.CONFIG['TRANSMISSION_HOST'] = kwargs['host']
+        if 'port' in kwargs:
+            lazylibrarian.CONFIG['TRANSMISSION_PORT'] = kwargs['port']
+        if 'user' in kwargs:
+            lazylibrarian.CONFIG['TRANSMISSION_USER'] = kwargs['user']
+        if 'pwd' in kwargs:
+            lazylibrarian.CONFIG['TRANSMISSION_PASS'] = kwargs['pwd']
+        msg = transmission.checkLink()
+        if 'success' in msg:
+            lazylibrarian.config_write()
+        return msg
 
     @cherrypy.expose
-    def testqBittorrent(self):
+    def testqBittorrent(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-        return qbittorrent.checkLink()
+        if 'host' in kwargs:
+            lazylibrarian.CONFIG['QBITTORRENT_HOST'] = kwargs['host']
+        if 'port' in kwargs:
+            lazylibrarian.CONFIG['QBITTORRENT_PORT'] = kwargs['port']
+        if 'user' in kwargs:
+            lazylibrarian.CONFIG['QBITTORRENT_USER'] = kwargs['user']
+        if 'pwd' in kwargs:
+            lazylibrarian.CONFIG['QBITTORRENT_PASS'] = kwargs['pwd']
+        if 'label' in kwargs:
+            lazylibrarian.CONFIG['QBITTORRENT_LABEL'] = kwargs['label']
+        msg = qbittorrent.checkLink()
+        if 'success' in msg:
+            lazylibrarian.config_write()
+        return msg
 
     @cherrypy.expose
-    def testuTorrent(self):
+    def testuTorrent(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-        return utorrent.checkLink()
+        if 'host' in kwargs:
+            lazylibrarian.CONFIG['UTORRENT_HOST'] = kwargs['host']
+        if 'port' in kwargs:
+            lazylibrarian.CONFIG['UTORRENT_PORT'] = kwargs['port']
+        if 'user' in kwargs:
+            lazylibrarian.CONFIG['UTORRENT_USER'] = kwargs['user']
+        if 'pwd' in kwargs:
+            lazylibrarian.CONFIG['UTORRENT_PASS'] = kwargs['pwd']
+        if 'label' in kwargs:
+            lazylibrarian.CONFIG['UTORRENT_LABEL'] = kwargs['label']
+        msg = utorrent.checkLink()
+        if 'success' in msg:
+            lazylibrarian.config_write()
+        return msg
+
 
     @cherrypy.expose
-    def testrTorrent(self):
+    def testrTorrent(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-        return rtorrent.checkLink()
+        if 'host' in kwargs:
+            lazylibrarian.CONFIG['RTORRENT_HOST'] = kwargs['host']
+        if 'dir' in kwargs:
+            lazylibrarian.CONFIG['RTORRENT_DIR'] = kwargs['dir']
+        if 'user' in kwargs:
+            lazylibrarian.CONFIG['RTORRENT_USER'] = kwargs['user']
+        if 'pwd' in kwargs:
+            lazylibrarian.CONFIG['RTORRENT_PASS'] = kwargs['pwd']
+        if 'label' in kwargs:
+            lazylibrarian.CONFIG['RTORRENT_LABEL'] = kwargs['label']
+        msg = rtorrent.checkLink()
+        if 'success' in msg:
+            lazylibrarian.config_write()
+        return msg
+
 
     @cherrypy.expose
-    def testSynology(self):
+    def testSynology(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-        return synology.checkLink()
+        if 'host' in kwargs:
+            lazylibrarian.CONFIG['SYNOLOGY_HOST'] = kwargs['host']
+        if 'port' in kwargs:
+            lazylibrarian.CONFIG['SYNOLOGY_PORT'] = kwargs['port']
+        if 'user' in kwargs:
+            lazylibrarian.CONFIG['SYNOLOGY_USER'] = kwargs['user']
+        if 'pwd' in kwargs:
+            lazylibrarian.CONFIG['SYNOLOGY_PASS'] = kwargs['pwd']
+        if 'dir' in kwargs:
+            lazylibrarian.CONFIG['SYNOLOGY_DIR'] = kwargs['dir']
+        msg = synology.checkLink()
+        if 'success' in msg:
+            lazylibrarian.config_write()
+        return msg

@@ -113,6 +113,7 @@ def request_soup(url, **kwargs):
     no exceptions are raised.
     """
 
+    # noinspection PyUnusedLocal
     parser = kwargs.pop("parser", "html5lib")
     response = request_response(url, **kwargs)
 

@@ -849,9 +849,9 @@ TABLE#book_table
 }
 TABLE#book_table TH#select
 {
-	text-align: left;
-	width: 10px;
-	vertical-align: middle;
+    vertical-align: middle;
+	text-align: center;
+	width: 10px
 }
 TABLE#book_table TH#bookart
 {
@@ -866,26 +866,23 @@ TABLE#book_table TH#authorname
 TABLE#book_table TH#bookname
 {
 	text-align: left;
-	min-width: 250px;
+	width: 250px;
 }
 TABLE#book_table TH#series
 {
-	text-align: center;
+	text-align: left;
 	width: 90px !important;
-}
-TABLE#book_table TH#seriesNum
-{
-	text-align: center;
-	width: 40px;
 }
 TABLE#book_table TH#status
 {
 	text-align: center;
-	min-width: 50px;
+	width: 25px;
+	max-width: 25px;
+	vertical-align: middle;
 }
 TABLE#book_table TH#date
 {
-	text-align: left;
+	text-align: center;
 	width: 50px;
 }
 TABLE#book_table TH#number
@@ -913,13 +910,13 @@ TABLE#book_table TH#addAuthor
 }
 TABLE#book_table TH#fuzz
 {
-	text-align: left;
-	min-width: 50px;
+	text-align: center;
+	width: 50px;
 }
 TABLE#book_table TD#select
 {
 	vertical-align: middle;
-	text-align: left;
+	text-align: center;
 }
 TABLE#book_table TD#bookart
 {
@@ -943,12 +940,7 @@ TABLE#book_table TD#bookname
 TABLE#book_table TD#series
 {
 	vertical-align: middle;
-	text-align: center;
-}
-TABLE#book_table TD#seriesNum
-{
-	vertical-align: middle;
-	text-align: center;
+	text-align: left;
 }
 TABLE#book_table TD#status
 {
@@ -963,7 +955,7 @@ TABLE#book_table TD#date
 TABLE#book_table TD#number
 {
 	vertical-align: middle;
-	text-align: right;
+	text-align: center;
 }
 TABLE#book_table TD#language
 {

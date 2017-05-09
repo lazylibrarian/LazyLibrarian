@@ -14,10 +14,10 @@
 </%def>
 
 <%def name="body()">
-    <p>&nbsp;</p>
+    <h1>${title}</h1>
     <form action="manage" method="get" class="form-inline">
         <div class="form-group">
-            <label for="whichStatus" class="control-label">Manage books with status:</label>
+            <label for="whichStatus" class="control-label">Books with status:</label>
             <select name="whichStatus" class="form-control input-sm">
         %for item in ['Skipped', 'Wanted', 'Open', 'Have', 'Ignored']:
             <option value="${item}"
@@ -32,8 +32,6 @@
     </form>
     <br>
 
-    <h3>Books with status ${whichStatus}</h3>
-        <br>
     <form action="markBooks" method="get" class="form-inline">
         <input type="hidden" name="redirect" value="manage">
         <div class="table-responsive">
@@ -41,10 +39,11 @@
                 <thead>
                     <tr>
                         <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
+                        <th class="bookart text-center no-sort hidden-xs">Cover</th>
                         <th class="authorname">Author</th>
                         <th class="bookname">Title</th>
                         <th class="series">Series</th>
-                        <th class="seriesNum text-center">Num</th>
+                        <th class="stars text-center hidden-xs">Rating</th>
                         <th class="date text-center">Released</th>
                     </tr>
                 </thead>
@@ -55,10 +54,8 @@
         <div class="form-group">
             <label for="markBooks" class="control-label">Change selected books to: </label>
             <select id="markBooks" class="markBooks form-control input-sm" name="action">
-            %for item in ['Skipped', 'Wanted', 'Snatched', 'Have', 'Ignored']:
-                %if whichStatus != item:
-                    <option value="${item}">${item}</option>
-                %endif
+            %for item in ['Skipped', 'Wanted', 'Have', 'Ignored']:
+                <option value="${item}">${item}</option>
             %endfor
             </select>
         </div>
@@ -73,16 +70,24 @@
 </%def>
 
 <%def name="javascriptIncludes()">
-    <script type="text/ecmascript">
+    <script type="text/javascript">
     $(document).ready(function()
     {
         $('#book_table').dataTable(
             {
                 "responsive": true,
-                "order": [[ 1, 'asc' ]],
-                "columnDefs":
-                    [{ targets: 'no-sort', orderable: false }]
-                ,
+                "order": [[ 2, 'asc' ]],
+                "columnDefs":[
+                    { targets: 'no-sort', orderable: false },
+                    { targets: [0], 'render': function(data, type, row) {
+                        return '<input type="checkbox" name="' + data + '" class="checkbox" />';} },
+                    { targets: [1], 'render': function(data, type, row) {
+                        return '<a href="' + data + '" target="_blank" rel="noreferrer"><img src="' + data + '" alt="Cover" class="bookcover-sm img-responsive"></a>';} },
+                    { targets: [2], 'render': function(data, type, row) {
+                        return '<a href="authorPage?AuthorID=' + row[7] + '">' + data + '</a>';} },
+                    { targets: [5], 'render': function(data, type, row) {
+                        return '<img src="images/' + data + '" alt="Rating">';} }
+                    ],
                 "oLanguage": {
                     "sLengthMenu":"_MENU_ rows per page",
                     "sEmptyTable": "No books found",
@@ -90,15 +95,21 @@
                     "sInfoEmpty":"Showing 0 to 0 of 0 rows",
                     "sInfoFiltered":"(filtered from _MAX_ total rows)"},
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
-                "iDisplayLength": ${lazylibrarian.DISPLAYLENGTH},
+                "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "sPaginationType": "full_numbers",
-                "aaSorting": [[0, 'asc']],
+                "aaSorting": [[2, 'asc']],
                 "bServerSide": true,
-                // need to pass requested status to getManage
-                "sAjaxSource": 'getManage?whichStatus="Skipped"',
+                "sAjaxSource": 'getBooks?whichStatus=${whichStatus}&source=Manage',
                 "bFilter": true,
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $('td', nRow).eq(0).addClass('text-center');
+                    $('td', nRow).eq(1).addClass('text-center');
+                    $('td', nRow).eq(5).addClass('text-center');
+                    $('td', nRow).eq(6).addClass('text-center');
+                    return nRow;
+                },
             });
-			$('.dataTables_filter input').attr("placeholder", "Search filter");
+        $('.dataTables_filter input').attr("placeholder", "Search filter");
     });
     </script>
 </%def>

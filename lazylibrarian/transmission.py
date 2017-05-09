@@ -19,6 +19,7 @@ import urlparse
 
 import lazylibrarian
 from lazylibrarian import logger, request
+from lazylibrarian.formatter import check_int
 
 
 # This is just a simple script to send torrents to transmission. The
@@ -140,7 +141,7 @@ def removeTorrent(torrentid, remove_data=False):
                 arguments = {'delete-local-data': True, 'ids': [torrentid]}
             else:
                 arguments = {'ids': [torrentid]}
-            response = torrentAction(method, arguments)
+            _ = torrentAction(method, arguments)
             return True
         else:
             logger.debug('%s has not finished seeding yet, torrent will not be removed, \
@@ -167,10 +168,15 @@ def checkLink():
 
 def torrentAction(method, arguments):
 
-    host = lazylibrarian.TRANSMISSION_HOST
-    port = lazylibrarian.TRANSMISSION_PORT
-    username = lazylibrarian.TRANSMISSION_USER
-    password = lazylibrarian.TRANSMISSION_PASS
+    host = lazylibrarian.CONFIG['TRANSMISSION_HOST']
+    port = check_int(lazylibrarian.CONFIG['TRANSMISSION_PORT'], 0)
+
+    if not host or not port:
+        logger.error('Invalid transmission host or port, check your config')
+        return False
+
+    username = lazylibrarian.CONFIG['TRANSMISSION_USER']
+    password = lazylibrarian.CONFIG['TRANSMISSION_PASS']
 
     if not host.startswith('http'):
         host = 'http://' + host

@@ -20,18 +20,14 @@ import lazylibrarian
 import lib.feedparser as feedparser
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.formatter import age, today, plural, cleanName, unaccented
+from lazylibrarian.formatter import age, today, plural, cleanName, unaccented, getList
 from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL, GEN, EXTRA, LIME
 
 
 def get_searchterm(book, searchType):
     authorname = cleanName(book['authorName'])
     bookname = cleanName(book['bookName'])
-    if searchType == "book" or searchType == "shortbook":
-        while authorname[1] in '. ':  # strip any leading initials
-            authorname = authorname[2:].strip()  # and leading whitespace
-        # middle initials can't have a dot
-        authorname = authorname.replace('. ', ' ')
+    if searchType in ['book', 'shortbook', 'shortgeneral']:
         if bookname == authorname and book['bookSub']:
             # books like "Spike Milligan: Man of Letters"
             # where we split the title/subtitle on ':'
@@ -42,14 +38,24 @@ def get_searchterm(book, searchType):
             bookname = bookname[len(authorname) + 1:]
         bookname = bookname.strip()
 
-        if searchType == "book":
-            return authorname, bookname
+        # no initials or extensions after surname eg L. E. Modesitt Jr. -> Modesitt
+        # and Charles H. Elliott, Phd -> Charles Elliott
+        # but Tom Holt -> Tom Holt
+        # Calibre directories may have trailing '.' replaced by '_'  eg Jr_
+        if ' ' in authorname:
+            authorname_exploded = authorname.split(' ')
+            authorname = ''
+            postfix = getList(lazylibrarian.CONFIG['NAME_POSTFIX'])
+            for word in authorname_exploded:
+                word = word.strip('.').strip('_')
+                if len(word) > 1 and word.lower() not in postfix:
+                    if authorname:
+                        authorname += ' '
+                    authorname += word
 
-        if searchType == "shortbook" and '(' in bookname:
+        if 'short' in searchType and '(' in bookname:
             bookname = bookname.split('(')[0].strip()
-            return authorname, bookname
 
-    # any other searchType
     return authorname, bookname
 
 
@@ -60,7 +66,7 @@ def get_capabilities(provider):
     match = False
     if len(provider['UPDATED']) == 10:  # any stored values?
         match = True
-        if (age(provider['UPDATED']) > lazylibrarian.CACHE_AGE) and not provider['MANUAL']:
+        if (age(provider['UPDATED']) > lazylibrarian.CONFIG['CACHE_AGE']) and not provider['MANUAL']:
             logger.debug('Stored capabilities for %s are too old' % provider['HOST'])
             match = False
 
@@ -189,37 +195,37 @@ def IterateOverTorrentSites(book=None, searchType=None):
 
     resultslist = []
     providers = 0
-    if searchType != 'mag':
+    if searchType != 'mag' and searchType != 'general':
         authorname, bookname = get_searchterm(book, searchType)
         book['searchterm'] = authorname + ' ' + bookname
 
-    if lazylibrarian.KAT:
+    if lazylibrarian.CONFIG['KAT']:
         providers += 1
-        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.KAT_HOST)
+        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG['KAT_HOST'])
         resultslist += KAT(book)
-    if lazylibrarian.TPB:
+    if lazylibrarian.CONFIG['TPB']:
         providers += 1
-        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.TPB_HOST)
+        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG['TPB_HOST'])
         resultslist += TPB(book)
-    if lazylibrarian.ZOO:
+    if lazylibrarian.CONFIG['ZOO']:
         providers += 1
-        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.ZOO_HOST)
+        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG['ZOO_HOST'])
         resultslist += ZOO(book)
-    if lazylibrarian.EXTRA:
+    if lazylibrarian.CONFIG['EXTRA']:
         providers += 1
-        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.EXTRA_HOST)
+        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG['EXTRA_HOST'])
         resultslist += EXTRA(book)
-    if lazylibrarian.TDL:
+    if lazylibrarian.CONFIG['TDL']:
         providers += 1
-        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.TDL_HOST)
+        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG['TDL_HOST'])
         resultslist += TDL(book)
-    if lazylibrarian.GEN:
+    if lazylibrarian.CONFIG['GEN']:
         providers += 1
-        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.GEN_HOST)
+        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG['GEN_HOST'])
         resultslist += GEN(book)
-    if lazylibrarian.LIME:
+    if lazylibrarian.CONFIG['LIME']:
         providers += 1
-        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.LIME_HOST)
+        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG['LIME_HOST'])
         resultslist += LIME(book)
 
     return resultslist, providers
@@ -230,11 +236,72 @@ def IterateOverRSSSites():
     resultslist = []
     providers = 0
     for provider in lazylibrarian.RSS_PROV:
-        if provider['ENABLED']:
+        if provider['ENABLED'] and not 'goodreads' in provider['HOST'] and not 'list_rss' in provider['HOST']:
             providers += 1
             logger.debug('[IterateOverRSSSites] - %s' % provider['HOST'])
             resultslist += RSS(provider['HOST'], provider['NAME'])
     return resultslist, providers
+
+def IterateOverGoodReads():
+
+    resultslist = []
+    providers = 0
+    for provider in lazylibrarian.RSS_PROV:
+        if provider['ENABLED'] and 'goodreads' in provider['HOST'] and 'list_rss' in provider['HOST']:
+            providers += 1
+            logger.debug('[IterateOverGoodReads] - %s' % provider['HOST'])
+            resultslist += GOODREADS(provider['HOST'], provider['NAME'])
+    return resultslist, providers
+
+
+def GOODREADS(host=None, feednr=None):
+    """
+    Goodreads RSS query function, return all the results in a list, can handle multiple wishlists
+    but expects goodreads format (looks for goodreads category names)
+    """
+    results = []
+
+    if not str(host)[:4] == "http":
+        host = 'http://' + host
+
+    URL = host
+
+    result, success = fetchURL(URL)
+    if success:
+        data = feedparser.parse(result)
+    else:
+        logger.error('Error fetching data from %s: %s' % (host, result))
+        data = None
+
+    if data:
+        logger.debug(u'Parsing results from %s' % URL)
+        provider = data['feed']['link']
+        logger.debug("RSS %s returned %i result%s" % (provider, len(data.entries), plural(len(data.entries))))
+        for post in data.entries:
+            title = ''
+            book_id = ''
+            author_name = ''
+            isbn = ''
+            if 'title' in post:
+                title = post.title
+            if 'book_id' in post:
+                book_id = post.book_id
+            if 'author_name' in post:
+                author_name = post.author_name
+            if 'isbn' in post:
+                isbn = post.isbn
+            if title and author_name:
+                results.append({
+                    'rss_prov': provider,
+                    'rss_feed': feednr,
+                    'rss_title': title,
+                    'rss_author': author_name,
+                    'rss_bookid': book_id,
+                    'rss_isbn': isbn
+                })
+    else:
+        logger.debug('No data returned from %s' % host)
+    return results
 
 
 def RSS(host=None, feednr=None):
@@ -290,7 +357,7 @@ def RSS(host=None, feednr=None):
                 tortype = 'torrent'
 
             if magnet:
-                if not url or (url and lazylibrarian.PREFER_MAGNET):
+                if not url or (url and lazylibrarian.CONFIG['PREFER_MAGNET']):
                     url = magnet
                     tortype = 'magnet'
 
@@ -368,11 +435,11 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
             if rootxml.tag == 'error':
                 errormsg = rootxml.get('description', default='unknown error')
                 logger.error(u"%s - %s" % (host, errormsg))
-                if provider['BOOKSEARCH']:  # maybe the host doesn't support it
+                if provider['BOOKSEARCH'] and searchType == "book":  # maybe the host doesn't support it
                     errorlist = ['no such function', 'unknown parameter', 'unknown function', 'incorrect parameter']
                     match = False
                     for item in errorlist:
-                        if item in errormsg.lower() and provider['BOOKSEARCH'].lower() in errormsg.lower():
+                        if item in errormsg.lower():
                             match = True
                     if match:
                         count = 0
@@ -407,7 +474,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
 def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
 
     params = None
-    if searchType == "book":
+    if searchType in ["book", "shortbook"]:
         authorname, bookname = get_searchterm(book, searchType)
         if provider['BOOKSEARCH'] and provider['BOOKCAT']:  # if specific booksearch, use it
             params = {
@@ -418,23 +485,6 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "cat": provider['BOOKCAT']
             }
         elif provider['GENERALSEARCH'] and provider['BOOKCAT']:  # if not, try general search
-            params = {
-                "t": provider['GENERALSEARCH'],
-                "apikey": api_key,
-                "q": authorname + ' ' + bookname,
-                "cat": provider['BOOKCAT']
-            }
-    elif searchType == "shortbook":
-        authorname, bookname = get_searchterm(book, searchType)
-        if provider['BOOKSEARCH'] and provider['BOOKCAT']:  # if specific booksearch, use it
-            params = {
-                "t": provider['BOOKSEARCH'],
-                "apikey": api_key,
-                "title": bookname,
-                "author": authorname,
-                "cat": provider['BOOKCAT']
-            }
-        elif provider['GENERALSEARCH'] and provider['BOOKCAT']:
             params = {
                 "t": provider['GENERALSEARCH'],
                 "apikey": api_key,
@@ -460,17 +510,21 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
             }
     else:
         if provider['GENERALSEARCH']:
+            if searchType == "shortgeneral":
+                authorname, bookname = get_searchterm(book, searchType)
+                searchterm = authorname + ' ' + bookname
+            else:
+                searchterm = unaccented(book['searchterm'])
             params = {
                 "t": provider['GENERALSEARCH'],
                 "apikey": api_key,
-                # this is a general search
-                "q": unaccented(book['searchterm']),
+                "q": searchterm,
                 "extended": provider['EXTENDED'],
             }
     if params:
         logger.debug('[NewzNabPlus] - %s Search parameters set to %s' % (searchMode, str(params)))
     else:
-        logger.debug('[NewzNabPlus] - %s No matching search parameters' % searchMode)
+        logger.debug('[NewzNabPlus] - %s No matching search parameters for %s' % (searchMode, searchType))
 
     return params
 
@@ -584,7 +638,7 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, host=None, searc
         elif tag == 'pubdate':
             nzbdate = nzbdetails[n].text
         elif tag == 'link':
-            if not nzburl or (nzburl and not lazylibrarian.PREFER_MAGNET):
+            if not nzburl or (nzburl and not lazylibrarian.CONFIG['PREFER_MAGNET']):
                 nzburl = nzbdetails[n].text
         elif nzbdetails[n].attrib.get('name') == 'magneturl':
             nzburl = nzbdetails[n].attrib.get('value')

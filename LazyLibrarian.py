@@ -8,9 +8,10 @@ import stat
 import sys
 import threading
 import time
+import re
 
 import lazylibrarian
-from lazylibrarian import webStart, logger, versioncheck
+from lazylibrarian import webStart, logger, versioncheck, dbupgrade
 
 # The following should probably be made configurable at the settings level
 # This fix is put in place for systems with broken SSL (like QNAP)
@@ -28,7 +29,6 @@ if opt_out_of_certificate_verification:
 
 
 def main():
-    # DIFFEREMT
     # rename this thread
     threading.currentThread().name = "MAIN"
     # Set paths
@@ -100,7 +100,7 @@ def main():
             print "Daemonize not supported under Windows, starting normally"
 
     if options.nolaunch:
-        lazylibrarian.LAUNCH_BROWSER = False
+        lazylibrarian.CONFIG['LAUNCH_BROWSER'] = False
 
     if options.update:
         lazylibrarian.SIGNAL = 'update'
@@ -140,74 +140,68 @@ def main():
 
     # Set the install type (win,git,source) &
     # check the version when the application starts
-    logger.debug('(LazyLibrarian) Setup install,versions and commit status')
-    versioncheck.getInstallType()
-    version_file = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
-    # if version file is less than "old" hours old, don't check github at startup
-    old = 6
-    if os.path.isfile(version_file):
-        age = time.time() - os.stat(version_file)[stat.ST_MTIME]
-        old = int(age / (60 * 60 * old))
-        if not old:  # don't call git, read the version file
-            fp = open(version_file, 'r')
-            lazylibrarian.CURRENT_VERSION = fp.read().strip(' \n\r')
-            fp.close()
-            lazylibrarian.LATEST_VERSION = "not checked"
-            lazylibrarian.COMMITS_BEHIND = 0
-            lazylibrarian.COMMIT_LIST = ""
-    if old:
-        lazylibrarian.CURRENT_VERSION = versioncheck.getCurrentVersion()
-        lazylibrarian.LATEST_VERSION = versioncheck.getLatestVersion()
-        lazylibrarian.COMMITS_BEHIND, lazylibrarian.COMMIT_LIST = versioncheck.getCommitDifferenceFromGit()
+    versioncheck.checkForUpdates()
 
     logger.debug('Current Version [%s] - Latest remote version [%s] - Install type [%s]' % (
-        lazylibrarian.CURRENT_VERSION, lazylibrarian.LATEST_VERSION, lazylibrarian.INSTALL_TYPE))
+        lazylibrarian.CONFIG['CURRENT_VERSION'], lazylibrarian.CONFIG['LATEST_VERSION'], lazylibrarian.CONFIG['INSTALL_TYPE']))
 
-    if lazylibrarian.COMMITS_BEHIND <= 0 and lazylibrarian.SIGNAL == 'update':
+    version_file = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
+    if not os.path.isfile(version_file) and lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
+        # User may be running an old source zip, so force update
+        lazylibrarian.CONFIG['COMMITS_BEHIND'] = 1
+        lazylibrarian.SIGNAL == 'update'
+
+    if lazylibrarian.CONFIG['COMMITS_BEHIND'] <= 0 and lazylibrarian.SIGNAL == 'update':
         lazylibrarian.SIGNAL = None
-        if lazylibrarian.COMMITS_BEHIND == 0:
+        if lazylibrarian.CONFIG['COMMITS_BEHIND'] == 0:
             logger.debug('Not updating, LazyLibrarian is already up to date')
         else:
             logger.debug('Not updating, LazyLibrarian has local changes')
 
     if lazylibrarian.SIGNAL == 'update':
-        if lazylibrarian.INSTALL_TYPE not in ['git', 'source']:
+        if lazylibrarian.CONFIG['INSTALL_TYPE'] not in ['git', 'source']:
             lazylibrarian.SIGNAL = None
             logger.debug('Not updating, not a git or source installation')
 
     if options.port:
-        lazylibrarian.HTTP_PORT = int(options.port)
+        lazylibrarian.CONFIG['HTTP_PORT'] = int(options.port)
         logger.info('Starting LazyLibrarian on forced port: %s, webroot "%s"' %
-                    (lazylibrarian.HTTP_PORT, lazylibrarian.HTTP_ROOT))
+                    (lazylibrarian.CONFIG['HTTP_PORT'], lazylibrarian.CONFIG['HTTP_ROOT']))
     else:
-        lazylibrarian.HTTP_PORT = int(lazylibrarian.HTTP_PORT)
+        lazylibrarian.CONFIG['HTTP_PORT'] = int(lazylibrarian.CONFIG['HTTP_PORT'])
         logger.info('Starting LazyLibrarian on port: %s, webroot "%s"' %
-                    (lazylibrarian.HTTP_PORT, lazylibrarian.HTTP_ROOT))
+                    (lazylibrarian.CONFIG['HTTP_PORT'], lazylibrarian.CONFIG['HTTP_ROOT']))
 
     if lazylibrarian.DAEMON:
         lazylibrarian.daemonize()
 
     # Try to start the server.
+    curr_ver = dbupgrade.upgrade_needed()
+    if curr_ver:
+        lazylibrarian.UPDATE_MSG = 'Updating database to version %s' % curr_ver
+
     webStart.initialize({
-        'http_port': lazylibrarian.HTTP_PORT,
-        'http_host': lazylibrarian.HTTP_HOST,
-        'http_root': lazylibrarian.HTTP_ROOT,
-        'http_user': lazylibrarian.HTTP_USER,
-        'http_pass': lazylibrarian.HTTP_PASS,
-        'http_proxy': lazylibrarian.HTTP_PROXY,
-        'https_enabled': lazylibrarian.HTTPS_ENABLED,
-        'https_cert': lazylibrarian.HTTPS_CERT,
-        'https_key': lazylibrarian.HTTPS_KEY,
+        'http_port': lazylibrarian.CONFIG['HTTP_PORT'],
+        'http_host': lazylibrarian.CONFIG['HTTP_HOST'],
+        'http_root': lazylibrarian.CONFIG['HTTP_ROOT'],
+        'http_user': lazylibrarian.CONFIG['HTTP_USER'],
+        'http_pass': lazylibrarian.CONFIG['HTTP_PASS'],
+        'http_proxy': lazylibrarian.CONFIG['HTTP_PROXY'],
+        'https_enabled': lazylibrarian.CONFIG['HTTPS_ENABLED'],
+        'https_cert': lazylibrarian.CONFIG['HTTPS_CERT'],
+        'https_key': lazylibrarian.CONFIG['HTTPS_KEY'],
     })
 
-    if lazylibrarian.LAUNCH_BROWSER and not options.nolaunch:
-        lazylibrarian.launch_browser(lazylibrarian.HTTP_HOST, lazylibrarian.HTTP_PORT, lazylibrarian.HTTP_ROOT)
+    if lazylibrarian.CONFIG['LAUNCH_BROWSER'] and not options.nolaunch:
+        lazylibrarian.launch_browser(lazylibrarian.CONFIG['HTTP_HOST'], lazylibrarian.CONFIG['HTTP_PORT'], lazylibrarian.CONFIG['HTTP_ROOT'])
+
+    if curr_ver:
+        threading.Thread(target=dbupgrade.dbupgrade, name="DB_UPGRADE", args=[curr_ver]).start()
 
     lazylibrarian.start()
 
     while True:
         if not lazylibrarian.SIGNAL:
-
             try:
                 time.sleep(1)
             except KeyboardInterrupt:
@@ -217,7 +211,7 @@ def main():
                 lazylibrarian.shutdown()
             elif lazylibrarian.SIGNAL == 'restart':
                 lazylibrarian.shutdown(restart=True)
-            else:
+            elif lazylibrarian.SIGNAL == 'update':
                 lazylibrarian.shutdown(restart=True, update=True)
             lazylibrarian.SIGNAL = None
 

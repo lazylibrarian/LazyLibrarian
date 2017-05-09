@@ -19,9 +19,9 @@ import traceback
 import lazylibrarian
 import lib.csv as csv
 from lazylibrarian import database, logger
-from lazylibrarian.common import csv_file
-from lazylibrarian.formatter import plural, is_valid_isbn, now
-from lazylibrarian.importer import addAuthorToDB
+from lazylibrarian.common import csv_file, formatAuthorName
+from lazylibrarian.formatter import plural, is_valid_isbn, now, unaccented
+from lazylibrarian.importer import search_for, import_book
 from lazylibrarian.librarysync import find_book_in_db
 
 
@@ -42,7 +42,9 @@ def export_CSV(search_dir=None, status="Wanted"):
 
         myDB = database.DBConnection()
 
-        find_status = myDB.select('SELECT * FROM books WHERE Status = "%s"' % status)
+        cmd = 'SELECT BookID,AuthorName,BookName,BookIsbn,books.AuthorID FROM books,authors '
+        cmd += 'WHERE books.Status = "%s" and books.AuthorID = authors.AuthorID' % status
+        find_status = myDB.select(cmd)
 
         if not find_status:
             logger.warn(u"No books marked as %s" % status)
@@ -61,12 +63,16 @@ def export_CSV(search_dir=None, status="Wanted"):
                             resulted['BookIsbn'], resulted['AuthorID']])
                     csvwrite.writerow([("%s" % s).encode(lazylibrarian.SYS_ENCODING) for s in row])
                     count += 1
-            logger.info(u"CSV exported %s book%s to %s" % (count, plural(count), csvFile))
+            msg = "CSV exported %s book%s to %s" % (count, plural(count), csvFile)
+            logger.info(msg)
+            return msg
     except Exception:
-        logger.error('Unhandled exception in exportCSV: %s' % traceback.format_exc())
+        msg = 'Unhandled exception in exportCSV: %s' % traceback.format_exc()
+        logger.error(msg)
+        return msg
 
 
-def finditem(item, headers):
+def finditem(item, authorname, headers):
     """
     Try to find book matching the csv item in the database
     Return database entry, or False if not found
@@ -77,9 +83,7 @@ def finditem(item, headers):
     isbn13 = ""
     bookid = ""
     bookname = item['Title']
-    authorname = item['Author']
-    if isinstance(authorname, str):
-        authorname = authorname.decode(lazylibrarian.SYS_ENCODING)
+
     if isinstance(bookname, str):
         bookname = bookname.decode(lazylibrarian.SYS_ENCODING)
     if 'ISBN' in headers:
@@ -90,18 +94,23 @@ def finditem(item, headers):
         bookid = item['BookID']
 
     # try to find book in our database using bookid or isbn, or if that fails, name matching
+    cmd = 'SELECT AuthorName,BookName,BookID,books.Status FROM books,authors where books.AuthorID = authors.AuthorID '
     if bookid:
-        bookmatch = myDB.match('SELECT * FROM books where BookID=%s' % bookid)
+        fullcmd = cmd + 'and BookID=%s' % bookid
+        bookmatch = myDB.match(fullcmd)
     if not bookmatch:
         if is_valid_isbn(isbn10):
-            bookmatch = myDB.match('SELECT * FROM books where BookIsbn=%s' % isbn10)
+            fullcmd = cmd + 'and BookIsbn="%s"' % isbn10
+            bookmatch = myDB.match(fullcmd)
     if not bookmatch:
         if is_valid_isbn(isbn13):
-            bookmatch = myDB.match('SELECT * FROM books where BookIsbn=%s' % isbn13)
+            fullcmd = cmd + 'and BookIsbn="%s"' % isbn13
+            bookmatch = myDB.match(fullcmd)
     if not bookmatch:
         bookid = find_book_in_db(myDB, authorname, bookname)
         if bookid:
-            bookmatch = myDB.match('SELECT * FROM books where BookID="%s"' % bookid)
+            fullcmd = cmd + 'and BookID="%s"' % bookid
+            bookmatch = myDB.match(fullcmd)
     return bookmatch
 
 
@@ -154,38 +163,23 @@ def import_CSV(search_dir=None):
             skipcount = 0
             logger.debug(u"CSV: Found %s book%s in csv file" % (len(content.keys()), plural(len(content.keys()))))
             for item in content.keys():
-                authorname = content[item]['Author']
-                if isinstance(authorname, str):
-                    authorname = authorname.decode(lazylibrarian.SYS_ENCODING)
-
+                authorname = formatAuthorName(content[item]['Author'])
                 authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % authorname)
 
                 if authmatch:
-                    newauthor = False
                     logger.debug(u"CSV: Author %s found in database" % authorname)
                 else:
-                    newauthor = True
-                    logger.debug(u"CSV: Author %s not found, adding to database" % authorname)
-                    addAuthorToDB(authorname, False)
+                    logger.debug(u"CSV: Author %s not found" % authorname)
                     authcount += 1
 
-                bookmatch = finditem(content[item], headers)
-
-                # if we didn't find it, maybe author info is stale
-                if not bookmatch and not newauthor:
-                    addAuthorToDB(authorname, True)
-                    bookmatch = finditem(content[item], headers)
-
-                bookname = ''
+                bookmatch = finditem(content[item], authorname, headers)
+                result = ''
                 if bookmatch:
                     authorname = bookmatch['AuthorName']
-                    # noinspection PyTypeChecker
                     bookname = bookmatch['BookName']
-                    # noinspection PyTypeChecker
                     bookid = bookmatch['BookID']
-                    # noinspection PyTypeChecker
                     bookstatus = bookmatch['Status']
-                    if bookstatus == 'Open' or bookstatus == 'Wanted' or bookstatus == 'Have':
+                    if bookstatus in ['Open', 'Wanted', 'Have']:
                         logger.info(u'Found book %s by %s, already marked as "%s"' % (bookname, authorname, bookstatus))
                     else:  # skipped/ignored
                         logger.info(u'Found book %s by %s, marking as "Wanted"' % (bookname, authorname))
@@ -194,9 +188,35 @@ def import_CSV(search_dir=None):
                         myDB.upsert("books", newValueDict, controlValueDict)
                         bookcount += 1
                 else:
-                    logger.warn(u"Skipping book %s by %s, not found in database" % (bookname, authorname))
+                    searchterm = "%s <ll> %s" % (content[item]['Title'], formatAuthorName(authorname))
+                    results = search_for(unaccented(searchterm))
+                    if results:
+                        result = results[0]
+                        if result['author_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO'] \
+                            and result['book_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO']:
+                            logger.info("Found (%s%% %s%%) %s: %s" % (result['author_fuzz'], result['book_fuzz'],
+                                                                        result['authorname'], result['bookname']))
+                            import_book(result['bookid'])
+                            bookcount += 1
+                            bookmatch = True
+
+                if not bookmatch:
+                    msg = "Skipping book %s by %s" % (content[item]['Title'], content[item]['Author'])
+                    if not result:
+                        msg += ', No results returned'
+                        logger.warn(msg)
+                    else:
+                        msg += ', No match found'
+                        logger.warn(msg)
+                        msg = "Closest match (%s%% %s%%) %s: %s" % (result['author_fuzz'], result['book_fuzz'],
+                                                                    result['authorname'], result['bookname'])
+                        logger.warn(msg)
                     skipcount += 1
-            logger.info(u"Added %i new author%s, marked %i book%s as 'Wanted', %i book%s not found" %
-                        (authcount, plural(authcount), bookcount, plural(bookcount), skipcount, plural(skipcount)))
+            msg = "Added %i new author%s, marked %i book%s as 'Wanted', %i book%s not found" % \
+                    (authcount, plural(authcount), bookcount, plural(bookcount), skipcount, plural(skipcount))
+            logger.info(msg)
+            return msg
     except Exception:
-        logger.error('Unhandled exception in importCSV: %s' % traceback.format_exc())
+        msg = 'Unhandled exception in importCSV: %s' % traceback.format_exc()
+        logger.error(msg)
+        return msg
