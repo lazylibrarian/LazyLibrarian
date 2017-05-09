@@ -152,6 +152,33 @@
                     <input type="checkbox" name="book_img" value=1 ${checked} />
                     <label>  Show Book Images</label>
                     <br>
+                    <%
+                        if lazylibrarian.CONFIG['MAG_IMG'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <input type="checkbox" name="mag_img" value=1 ${checked} />
+                    <label>  Show Magazine Images</label>
+                    <br>
+                    <%
+                        if lazylibrarian.CONFIG['SERIES_TAB'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <input type="checkbox" name="" value=1 ${checked} />
+                    <label>  Show Series</label>
+                    <br>
+                    <%
+                        if lazylibrarian.CONFIG['MAG_TAB'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <input type="checkbox" name="" value=1 ${checked} />
+                    <label>  Show Magazines</label>
+                    <br>
                     <h5>Interface: <select name="http_look" style="float:right;"></h5>
                     %for http_look in config['http_look_list']:
                         <%

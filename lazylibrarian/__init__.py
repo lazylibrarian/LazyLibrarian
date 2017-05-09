@@ -132,6 +132,9 @@ CONFIG_DEFINITIONS = {
     'MAG_SINGLE': ('bool', 'General', 1),
     'AUTHOR_IMG': ('bool', 'General', 1),
     'BOOK_IMG': ('bool', 'General', 1),
+    'MAG_IMG': ('bool', 'General', 1),
+    'SERIES_TAB': ('bool', 'General', 1),
+    'MAG_TAB': ('bool', 'General', 1),
     'LAUNCH_BROWSER': ('bool', 'General', 1),
     'API_ENABLED': ('bool', 'General', 0),
     'API_KEY': ('str', 'General', ''),
@@ -661,7 +664,12 @@ def config_write():
     SHOW_SERIES = len(series_list)
     if CONFIG['ADD_SERIES']:
         SHOW_SERIES = 1
+    if not CONFIG['SERIES_TAB']:
+        SHOW_SERIES = 0
+
     SHOW_MAGS = len(CONFIG['MAG_DEST_FOLDER'])
+    if not CONFIG['MAG_TAB']:
+        SHOW_MAGS = 0
 
     msg = None
     try:

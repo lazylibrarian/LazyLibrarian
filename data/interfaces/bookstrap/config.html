@@ -198,6 +198,39 @@
                                             <input type="checkbox" id="book_img" name="book_img" value="1" ${checked} />
                                             Show Book Images</label>
                                         </div>
+                                        <div class="checkbox">
+                                            <%
+                                                if lazylibrarian.CONFIG['MAG_IMG'] == True:
+                                                    checked = 'checked="checked"'
+                                                else:
+                                                    checked = ''
+                                            %>
+                                            <label for="mag_img" class="control-label">
+                                            <input type="checkbox" id="mag_img" name="mag_img" value="1" ${checked} />
+                                            Show Magazine Images</label>
+                                        </div>
+                                        <div class="checkbox">
+                                            <%
+                                                if lazylibrarian.CONFIG['SERIES_TAB'] == True:
+                                                    checked = 'checked="checked"'
+                                                else:
+                                                    checked = ''
+                                            %>
+                                            <label for="series_tab" class="control-label">
+                                            <input type="checkbox" id="series_tab" name="series_tab" value="1" ${checked} />
+                                            Show Series</label>
+                                        </div>
+                                        <div class="checkbox">
+                                            <%
+                                                if lazylibrarian.CONFIG['MAG_TAB'] == True:
+                                                    checked = 'checked="checked"'
+                                                else:
+                                                    checked = ''
+                                            %>
+                                            <label for="mag_tab" class="control-label">
+                                            <input type="checkbox" id="mag_tab" name="mag_tab" value="1" ${checked} />
+                                            Show Magazines</label>
+                                        </div>
                                         <div class="form-group">
                                             <label for="http_look">Interface:</label>
                                             <select id="http_look" name="http_look" class="form-control">

@@ -1142,6 +1142,8 @@ class WebInterface(object):
                 this_mag['safetitle'] = urllib.quote_plus(mag['Title'].encode(lazylibrarian.SYS_ENCODING))
                 mags.append(this_mag)
 
+            if not lazylibrarian.CONFIG['MAG_IMG']:
+                covercount = 0
         return serve_template(templatename="magazines.html", title="Magazines", magazines=mags, covercount=covercount)
 
     @cherrypy.expose
@@ -1178,7 +1180,7 @@ class WebInterface(object):
                 mod_issues.append(this_issue)
             logger.debug("Found %s cover%s" % (covercount, plural(covercount)))
 
-        if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':  # special flag to say "no covers required"
+        if not lazylibrarian.CONFIG['MAG_IMG'] or lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':
             covercount = 0
 
         return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
