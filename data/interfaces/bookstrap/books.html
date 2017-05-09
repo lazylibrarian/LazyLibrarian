@@ -50,10 +50,16 @@
         <p>&nbsp;</p>
         <div class="table-responsive">
         <table class="display table table-striped table-hover table-bordered" id="book_table">
+            <%
+            if lazylibrarian.CONFIG['BOOK_IMG'] == True:
+                hidden = ''
+            else:
+                hidden = 'hidden'
+            %>
             <thead>
                 <tr>
                     <th class="select no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
-                    <th class="bookart text-center no-sort hidden-xs">Cover</th>
+                    <th class="bookart text-center no-sort hidden-xs ${hidden}">Cover</th>
                     <th class="authorname">Author</th>
                     <th class="bookname">Title</th>
                     <th class="series">Series</th>
@@ -103,7 +109,21 @@
                 { targets: [2], 'render': function(data, type, row) {
                     return '<a href="authorPage?AuthorID=' + row[8] + '">' + data + '</a>';} },
                 { targets: [5], 'render': function(data, type, row) {
-                    return '<img src="images/' + data + '" alt="Rating">';} }
+                    return '<img src="images/' + data + '-stars.png" alt="Rating">';} },
+                { targets: [7], 'render': function(data, type, row) {
+                    var btn = data
+                    if ( btn == 'Open' ) {
+                        btn = '<a class="button green btn btn-xs btn-warning" href="openBook?bookid=' + row[9] +
+                                '" target="_self"><i class="fa fa-book"></i>Open</a>'}
+                    else if ( btn == 'Wanted' ) {
+                        btn = '<p><a class="a btn btn-xs btn-danger">Wanted</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=' + row[9] + '" target="_self"><i class="fa fa-search"></i> Search</a></p>'}
+                    else if ( btn == 'Snatched' ) {
+                        btn = '<a class="button btn btn-xs btn-info">Snatched</a>'}
+                    else if ( btn == 'Have' ) {
+                        btn = '<a class="button btn btn-xs btn-info">Have</a>'}
+                    else {
+                        btn = '<a class="button btn btn-xs btn-default grey">' + row[7] + '</a>'}
+                    return btn;} }
                 ],
             "oLanguage": {
                 "sLengthMenu":"_MENU_ rows per page",
@@ -120,6 +140,11 @@
             "sAjaxSource": 'getBooks?source=Books&booklang=${booklang}',
             "bFilter": true,
             "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                var show = ${lazylibrarian.CONFIG['BOOK_IMG']};
+                if ( show != '1' )
+                {
+                    $('td', nRow).eq(1).addClass('hidden');
+                }
                 $('td', nRow).eq(5).addClass('text-center');
                 $('td', nRow).eq(6).addClass('text-center');
                 $('td', nRow).eq(7).addClass('text-center');

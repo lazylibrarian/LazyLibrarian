@@ -16,9 +16,15 @@
 <BR><BR>
 <h1>&nbsp;&nbsp;${title}</h1>
     <table class="display" id="author_table">
+            <%
+            if lazylibrarian.CONFIG['AUTHOR_IMG'] == True:
+                hidden = ''
+            else:
+                hidden = 'class="hidden"'
+            %>
         <thead>
             <tr>
-                <th id="status">Image</th>
+                <th id="status" ${hidden}>Image</th>
                 <th id="authorname">Author</th>
                 <th id="bookname">Latest Book</th>
                 <th id="date">Released</th>
@@ -55,7 +61,7 @@
 
             %>
             <tr class="gradeZ">
-                <td id="status"><a href="${author['AuthorImg']}" target="_blank" rel="noreferrer"><img src="${author['AuthorImg']}" width="60" alt="Cover" class="bookcover-sm"></a></td>
+                <td id="status" ${hidden}><a href="${author['AuthorImg']}" target="_blank" rel="noreferrer"><img src="${author['AuthorImg']}" width="60" alt="Cover" class="bookcover-sm"></a></td>
                 <td id=authorname><a href="authorPage?AuthorID=${author['AuthorID']|u}">${author['AuthorName']}</a></td>
 
                 <td id="bookname"><span title="${author['LastBook']}"></span><a href="${author['LastLink']}" target="_blank" rel="noreferrer">${author['LastBook']}</a></td>

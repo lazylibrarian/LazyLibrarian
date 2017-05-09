@@ -441,7 +441,7 @@ def dbupgrade(db_current_version):
                     images = myDB.select('SELECT BookID, BookImg FROM books WHERE BookImg LIKE "images/cache/%"')
                     if images:
                         lazylibrarian.UPDATE_MSG = 'Moving book images to new location'
-                        logger.debug(lazylibrar8ian.UPDATE_MSG)
+                        logger.debug(lazylibrarian.UPDATE_MSG)
                         upgradelog.write("%s v8: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
                         tot = len(images)
                         cnt = 0
