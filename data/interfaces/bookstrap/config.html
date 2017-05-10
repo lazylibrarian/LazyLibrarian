@@ -834,7 +834,7 @@
                                                      Keep seeding after processing</label>
                                                 </div>
                                             <div class="form-group">
-                                                <label for="download_dir" class="control-label">Directory:</label>
+                                                <label for="download_dir" class="control-label">Download Directory:</label>
                                                 <input type="text" id="download_dir" name="download_dir" value="${lazylibrarian.CONFIG['DOWNLOAD_DIR']}" class="form-control" placeholder="Download Directory">
                                                 <span class="help-block">Full path to the folder where books are downloaded</span>
                                             </div>
@@ -1079,7 +1079,7 @@
                                     <fieldset>
                                         <legend>Folders</legend>
                                         <div class="form-group">
-                                            <label for="destination_dir" class="control-label">Base Destination Folder:</label>
+                                            <label for="destination_dir" class="control-label">Book Library Folder:</label>
                                             <input type="text" id="destination_dir" name="destination_dir" value="${lazylibrarian.CONFIG['DESTINATION_DIR']}" class="form-control" placeholder="Destination Directory">
                                         </div>
                                         <div class="form-group">
@@ -1088,11 +1088,11 @@
                                             <span class="help-block">Directory for wishlists and manually importing books</span>
                                         </div>
                                         <div class="form-group">
-                                            <label for="ebook_dest_folder">eBook Destination Folder:</label>
+                                            <label for="ebook_dest_folder">eBook Foldername Pattern:</label>
                                             <input type="text" id="ebook_dest_folder" name="ebook_dest_folder" value="${lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']}" class="form-control" placeholder="eBook Destination Folder">
                                         </div>
-                                        <div class="fomr-group">
-                                            <label for="ebook_dest_file">eBook Destination File:</label>
+                                        <div class="form-group">
+                                            <label for="ebook_dest_file">eBook Filename Pattern:</label>
                                             <input type="text" id="ebook_dest_file" name="ebook_dest_file" value="${lazylibrarian.CONFIG['EBOOK_DEST_FILE']}" class="form-control" placeholder="eBook Destination File">
                                             <span class="help-block">Options include $Author, $Title, any string.<br/>Current limitation: each file has to be in unique subfolder</span>
                                         </div>
@@ -1124,16 +1124,16 @@
                                             <span class="help-block">Path to "calibredb" to import books into the library</span>
                                         </div>
                                         <div class="form-group">
-                                            <label for="imp_autoadd">Calibre Auto Add:</label>
+                                            <label for="imp_autoadd">Calibre Auto Add Directory:</label>
                                             <input type="text" id="imp_autoadd" name="imp_autoadd" value="${lazylibrarian.CONFIG['IMP_AUTOADD']}" class="form-control">
                                             <span class="help-block">Directory for a copy to be placed for auto add process</span>
                                         </div>
                                         <div class="form-group">
-                                            <label for="mag_dest_folder">Magazine Destination Folder:</label>
+                                            <label for="mag_dest_folder">Magazine Foldername Pattern:</label>
                                             <input type="text" id="mag_dest_folder" name="mag_dest_folder" value="${lazylibrarian.CONFIG['MAG_DEST_FOLDER']}" class="form-control" placeholder="Magazines Destination Folder">
                                         </div>
                                         <div class="form-group">
-                                            <label for="mag_dest_file">Magazine Issue Filename:</label>
+                                            <label for="mag_dest_file">Magazine Filename Pattern:</label>
                                             <input type="text" id="mag_dest_file" name="mag_dest_file" value="${lazylibrarian.CONFIG['MAG_DEST_FILE']}" class="form-control" placeholder="Magazine Issue Filename">
                                             <span class="help-block">Options include $Title, $IssueDate, any string
                                             <BR>Current limitation: Issue Filename must contain Title and Date</span>

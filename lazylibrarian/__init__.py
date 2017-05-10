@@ -584,11 +584,24 @@ def config_read(reloaded=False):
     CONFIG['MAG_TYPE'] = CONFIG['MAG_TYPE'].lower()
     CONFIG['REJECT_WORDS'] = CONFIG['REJECT_WORDS'].lower()
 
+    myDB = database.DBConnection()
+    series_list = myDB.select('SELECT SeriesID from series')
+    SHOW_SERIES = len(series_list)
+    if CONFIG['ADD_SERIES']:
+        SHOW_SERIES = 1
+    if not CONFIG['SERIES_TAB']:
+        SHOW_SERIES = 0
+
+    SHOW_MAGS = len(CONFIG['MAG_DEST_FOLDER'])
+    if not CONFIG['MAG_TAB']:
+        SHOW_MAGS = 0
+    if CONFIG['BOOK_IMG']:
+        CONFIG['BOOK_IMG'] = 1
+
     if reloaded:
         logger.info('Config file reloaded')
     else:
         logger.info('Config file loaded')
-
 
 def config_write():
     global SHOW_SERIES, SHOW_MAGS
