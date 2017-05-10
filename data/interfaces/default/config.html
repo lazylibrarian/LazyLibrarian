@@ -167,7 +167,7 @@
                         else:
                             checked = ''
                     %>
-                    <input type="checkbox" name="" value=1 ${checked} />
+                    <input type="checkbox" name="series_tab" value=1 ${checked} />
                     <label>  Show Series</label>
                     <br>
                     <%
@@ -176,7 +176,7 @@
                         else:
                             checked = ''
                     %>
-                    <input type="checkbox" name="" value=1 ${checked} />
+                    <input type="checkbox" name="mag_tab" value=1 ${checked} />
                     <label>  Show Magazines</label>
                     <br>
                     <h5>Interface: <select name="http_look" style="float:right;"></h5>
@@ -690,7 +690,7 @@
                         <br>
                         <h3>Download Settings</h3>
                         <div class="row">
-                            <label>Directory:</label><input type="text" name="download_dir" value="${lazylibrarian.CONFIG['DOWNLOAD_DIR']}" size="26">
+                            <label>Download Directory:</label><input type="text" name="download_dir" value="${lazylibrarian.CONFIG['DOWNLOAD_DIR']}" size="26">
                             <BR>
                             <small>Full path to the folder where books are downloaded</small>
                         </div>
@@ -899,7 +899,7 @@
             <tr>
                 <td>
                     <div>
-                    <label>Base Destination Folder:</label>
+                    <label>Book Library Folder:</label>
                     <input type="text" name="destination_dir" value="${lazylibrarian.CONFIG['DESTINATION_DIR']}" size="26">
                     </div>
                     <BR>
@@ -913,9 +913,9 @@
             </tr>
             <tr>
                 <td>
-                    <label>eBook Destination Folder:</label>
+                    <label>eBook Foldername Pattern:</label>
                     <input type="text" name="ebook_dest_folder" value="${lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']}" size="26">
-                    <br><label>eBook Destination File:</label>
+                    <br><label>eBook Filename Pattern:</label>
                     <input type="text" name="ebook_dest_file" value="${lazylibrarian.CONFIG['EBOOK_DEST_FILE']}" size="26">
                     <BR>
                     <small>Options include $Author, $Title, any string
@@ -945,9 +945,9 @@
                     </div>
                 </td>
                 <td>
-                    <label>Magazine Destination Folder:</label>
+                    <label>Magazine Foldername Pattern:</label>
                     <input type="text" name="mag_dest_folder" value="${lazylibrarian.CONFIG['MAG_DEST_FOLDER']}" size="26">
-                    <br><label>Magazine Issue Filename:</label>
+                    <br><label>Magazine Filename Pattern:</label>
                     <input type="text" name="mag_dest_file" value="${lazylibrarian.CONFIG['MAG_DEST_FILE']}" size="26">
                     <BR>
                     <small>Options include $Title, $IssueDate, any string</small>
@@ -979,7 +979,7 @@
                     <input type="text" name="imp_calibredb" value="${lazylibrarian.CONFIG['IMP_CALIBREDB']}" size="26">
                     <BR>
                     <small>Path to "calibredb" to import books into the library</small>
-                    <label>Calibre Auto Add:</label>
+                    <label>Calibre Auto Add Directory:</label>
                     <input type="text" name="imp_autoadd" value="${lazylibrarian.CONFIG['IMP_AUTOADD']}" size="26">
                     <BR>
                     <small>Directory for a copy to be placed for auto add process</small>
