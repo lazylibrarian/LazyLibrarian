@@ -703,8 +703,7 @@ class WebInterface(object):
                   'aaData': rows,
                   }
         s = simplejson.dumps(mydict)
-        # print ("Getbooks returning %s to %s" % (iDisplayStart, iDisplayStart
-        # + iDisplayLength))
+        # print ("Getbooks returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
         return s
 
 
