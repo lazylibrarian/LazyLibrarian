@@ -417,6 +417,9 @@ def processDir(reset=False):
 
                     if bookname:
                         # it's a book, if None it's a magazine
+                        controlValueDict = {"BookID": book['BookID']}
+                        newValueDict = {"BookLibrary": now()}  # say when we added it
+                        myDB.upsert("books", newValueDict, controlValueDict)
                         if len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
                             logger.debug('Calibre should have created the extras for us')
                         else:
@@ -675,6 +678,8 @@ def import_book(pp_path=None, bookID=None):
                     controlValueDict = {"BookID": bookID}
                     newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
                     myDB.upsert("wanted", newValueDict, controlValueDict)
+                    newValueDict = {"BookLibrary": now()}  # say when we added it
+                    myDB.upsert("books", newValueDict, controlValueDict)
                     if bookname:
                         if len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
                             logger.debug('Calibre should have created the extras')
