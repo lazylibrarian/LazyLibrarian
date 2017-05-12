@@ -135,7 +135,7 @@ class WebInterface(object):
             for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
                 rows.append(list(row))  # add the rowlist to the masterlist
             if sSearch:
-                filtered = filter(lambda x: sSearch in str(x), rows)
+                filtered = filter(lambda x: sSearch.lower() in str(x).lower(), rows)
             else:
                 filtered = rows
 
@@ -647,7 +647,7 @@ class WebInterface(object):
                 rows.append(list(row))  # add each rowlist to the masterlist
 
             if sSearch:
-                filtered = filter(lambda x: sSearch in str(x), rows)
+                filtered = filter(lambda x: sSearch.lower() in str(x).lower(), rows)
             else:
                 filtered = rows
 
@@ -1211,7 +1211,7 @@ class WebInterface(object):
                 rows.append(list(row))  # add each rowlist to the masterlist
 
             if sSearch:
-                filtered = filter(lambda x: sSearch in str(x), rows)
+                filtered = filter(lambda x: sSearch.lower() in str(x).lower(), rows)
             else:
                 filtered = rows
 
@@ -1676,7 +1676,7 @@ class WebInterface(object):
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
         if sSearch:
-            filtered = filter(lambda x: sSearch in str(x), lazylibrarian.LOGLIST[::])
+            filtered = filter(lambda x: sSearch.lower() in str(x).lower(), lazylibrarian.LOGLIST[::])
         else:
             filtered = lazylibrarian.LOGLIST[::]
 

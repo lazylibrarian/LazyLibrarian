@@ -17,6 +17,7 @@ from __future__ import with_statement
 
 import os
 import time
+import datetime
 import shutil
 import threading
 import traceback
@@ -66,8 +67,9 @@ def upgrade_needed():
     # 17 remove authorid from series table, new seriesauthor table to allow multiple authors per series
     # 18 Added unique constraint to seriesauthors table
     # 19 add seriesdisplay to book table
+    # 20 add booklibrary date to book table
 
-    db_current_version = 19
+    db_current_version = 20
     if db_version < db_current_version:
         return db_current_version
     return 0
@@ -127,7 +129,7 @@ def dbupgrade(db_current_version):
                 BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
                 BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, \
                 BookFile TEXT, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, WorkPage TEXT, \
-                Manual TEXT, SeriesDisplay TEXT)')
+                Manual TEXT, SeriesDisplay TEXT, BookLibrary TEXT)')
                     myDB.action('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, \
                 NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, Source TEXT, DownloadID TEXT)')
                     myDB.action('CREATE TABLE IF NOT EXISTS pastissues AS SELECT * FROM wanted WHERE 0')  # same columns
@@ -755,11 +757,39 @@ def dbupgrade(db_current_version):
                                         series += '<br>'
                                     series += newseries
 
-                                myDB.action('UPDATE books SET SeriesDisplay="%s" WHERE BookID="%s"' % (series, book['BookID']))
+                                myDB.action('UPDATE books SET SeriesDisplay="%s" WHERE BookID="%s"' %
+                                            (series, book['BookID']))
 
                         lazylibrarian.UPDATE_MSG = 'Reorganisation of series display complete'
                         upgradelog.write("%s v19: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
                     upgradelog.write("%s v19: complete\n" % time.ctime())
+
+                if db_version < 20:
+                    if not has_column(myDB, "books", "BookLibrary"):
+                        lazylibrarian.UPDATE_MSG = 'Adding BookLibrary to book table'
+                        upgradelog.write("%s v20: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+                        myDB.action('ALTER TABLE books ADD COLUMN BookLibrary TEXT')
+                    else:
+                        lazylibrarian.UPDATE_MSG = 'Updating BookLibrary dates'
+                        upgradelog.write("%s v20: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+                    books = myDB.select('SELECT BookID,BookFile from books')
+                    cnt = 0
+                    mod = 0
+                    if books:
+                        tot = len(books)
+                        for book in books:
+                            cnt += 1
+                            lazylibrarian.UPDATE_MSG = "Updating BookLibrary date: %s of %s" % (cnt, tot)
+                            if book['BookFile'] and os.path.isfile(book['BookFile']):
+                                mod += 1
+                                t = os.path.getctime(book['BookFile'])
+                                filedate = datetime.datetime.utcfromtimestamp(int(t)).strftime("%Y-%m-%d %H:%M:%S")
+                                myDB.action('UPDATE books SET BookLibrary="%s" WHERE BookID="%s"' %
+                                            (filedate, book['BookID']))
+
+                        lazylibrarian.UPDATE_MSG = 'Adding BookLibrary date complete, %s/%s books' % (mod,cnt)
+                        upgradelog.write("%s v20: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+                    upgradelog.write("%s v20: complete\n" % time.ctime())
 
                 # Now do any non-version-specific tidying
                 try:

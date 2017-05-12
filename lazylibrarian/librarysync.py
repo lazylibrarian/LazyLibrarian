@@ -324,6 +324,7 @@ def LibraryScan(startdir=None):
                 if not (bookfile and os.path.isfile(bookfile)):
                     myDB.action('update books set Status="%s" where BookID="%s"' % (status, bookID))
                     myDB.action('update books set BookFile="" where BookID="%s"' % bookID)
+                    myDB.action('update books set BookLibrary="" where BookID="%s"' % bookID)
                     logger.warn('Book %s - %s updated as not found on disk' % (book['AuthorName'], book['BookName']))
 
         # to save repeat-scans of the same directory if it contains multiple formats of the same book,
