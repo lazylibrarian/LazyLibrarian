@@ -143,6 +143,7 @@
                 <th class="series">Series</th>
                 <th class="stars text-center hidden-xs">Rating</th>
                 <th class="date text-center hidden-xs">Released</th>
+                <th class="date text-center hidden-xs">Added</th>
                 <th class="status text-center">Status</th>
             </tr>
         </thead>
@@ -184,7 +185,12 @@
                     { targets: [5], 'render': function(data, type, row) {
                         return '<img src="images/' + data + '-stars.png" alt="Rating">';} },
                     { targets: [7], 'render': function(data, type, row) {
-                        var btn = data
+                        var dtime = row[10];
+                        var str = String(dtime).substr(0, 10);
+                        if (str === "null"){ str = ""}
+                        return str ;} },
+                    { targets: [8], 'render': function(data, type, row) {
+                        var btn = row[7]
                         if ( btn == 'Open' ) {
                             btn = '<a class="button green btn btn-xs btn-warning" href="openBook?bookid=' + row[9] +
                                     '" target="_self"><i class="fa fa-book"></i>Open</a>'}
@@ -225,6 +231,7 @@
                     $('td', nRow).eq(1).addClass('hidden-xs');
                     $('td', nRow).eq(5).addClass('hidden-xs');
                     $('td', nRow).eq(6).addClass('hidden-xs');
+                    $('td', nRow).eq(7).addClass('hidden-xs');
                     return nRow;
                 },
             });

@@ -271,6 +271,7 @@
                                             <div class="col-xs-12">
                                                 <button class="button btn btn-sm btn-primary" type="button" value="Show Jobs" id="show_Jobs"><i class="fa fa-list-ul"></i> Show Jobs</button>
                                                 <button class="button btn btn-sm btn-warning" type="button" value="Restart Jobs" id="restart_Jobs"><i class="fa fa-refresh"></i> Restart Jobs</button>
+                                                <button class="button btn btn-sm btn-danger" type="button" value="Stop Jobs" id="stop_Jobs"><i class="fa fa-refresh"></i> Stop Jobs</button>
                                                 <br><br>
                                             </div>
                                         </div>
@@ -2272,6 +2273,21 @@
                 $.get('show_Jobs', function(data) {
                     bootbox.dialog({
                         title: 'Jobs Status',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
+            });
+
+            $('#stop_Jobs').on('click', function(e) {
+                $.get('stop_Jobs', function(data) {
+                    bootbox.dialog({
+                        title: 'Stop Jobs',
                         message: '<pre>'+data+'</pre>',
                         buttons: {
                             primary: {

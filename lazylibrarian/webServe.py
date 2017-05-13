@@ -617,7 +617,7 @@ class WebInterface(object):
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
         cmd = 'SELECT bookimg,authorname,bookname,bookrate,bookdate,books.status,bookid,booklang,'
-        cmd += 'booksub,booklink,workpage,books.authorid,seriesdisplay from books,authors'
+        cmd += 'booksub,booklink,workpage,books.authorid,seriesdisplay,booklibrary from books,authors'
         cmd += ' where books.AuthorID = authors.AuthorID'
 
         if kwargs['source'] == "Manage":
@@ -658,6 +658,8 @@ class WebInterface(object):
                 sortcolumn -= 1
             elif sortcolumn == 4:  # series
                 sortcolumn = 12
+            elif sortcolumn == 7:   # added
+                sortcolumn = 13
             else:               # rating, date, status
                 sortcolumn -= 2
 
@@ -695,7 +697,7 @@ class WebInterface(object):
                 title = title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage
 
                 # Need to pass bookid row[6] twice as datatables modifies first one
-                d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[5], row[11], row[6]])
+                d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[5], row[11], row[6], row[13]])
             rows = d
 
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -1631,13 +1633,18 @@ class WebInterface(object):
         # and list the new run-times in the log
         return self.show_Jobs()
 
+    @cherrypy.expose
+    def stop_Jobs(self):
+        restartJobs(start='Stop')
+        # and list the new run-times in the log
+        return self.show_Jobs()
+
     # LOGGING ###########################################################
 
     @cherrypy.expose
     def clearLog(self):
         # Clear the log
         self.label_thread()
-
         result = clearLog()
         logger.info(result)
         raise cherrypy.HTTPRedirect("logs")
