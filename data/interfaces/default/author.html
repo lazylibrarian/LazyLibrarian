@@ -122,6 +122,7 @@
                 <th id="series">Series</th>
                 <th id="stars">Rating</th>
                 <th id="date">Released</th>
+                <th id="date">Added</th>
                 <th id="status">Status</th>
             </tr>
         </thead>
@@ -171,7 +172,14 @@
                     },
                     null,
                     { "fnRender": function ( oObj ) {
-                        var btn = oObj.aData[7]
+                        var dtime = oObj.aData[10]
+                        var str = String(dtime).substr(0, 10)
+                        if (str === "null"){ str = ""}
+                        return str
+                      }
+                    },
+                    { "fnRender": function ( oObj ) {
+                        var btn = oObj.aData[11]
                         if ( btn == 'Open' ) {
                             btn = '<a class="button green" href="openBook?bookid=' + oObj.aData[9] + '" target="_self">Open</a>'}
                         else if ( btn == 'Wanted' ) {
@@ -182,7 +190,7 @@
                         else if ( btn == 'Have' ) {
                             btn = '<a class="button">Have</a>'}
                         else {
-                            btn = '<a class="button grey">' + oObj.aData[7] + '</a>'}
+                            btn = '<a class="button grey">' + oObj.aData[11] + '</a>'}
                         return btn
                       }
                     }
@@ -207,6 +215,7 @@
                     $('td', nRow).eq(2).addClass('hidden');
                     $('td', nRow).eq(6).addClass('center');
                     $('td', nRow).eq(7).addClass('center');
+                    $('td', nRow).eq(8).addClass('center');
                     var show = ${lazylibrarian.CONFIG['BOOK_IMG']};
                     if ( show != '1' )
                     {
@@ -217,6 +226,7 @@
                     {   // hide stars,date on medium devices
                         $('td', nRow).eq(5).addClass('hidden');
                         $('td', nRow).eq(6).addClass('hidden');
+                        $('td', nRow).eq(7).addClass('hidden');
                     }
                     if ( w < 768 )
                     {   // hide cover,stars,date on small devices

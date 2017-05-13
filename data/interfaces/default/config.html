@@ -194,6 +194,7 @@
                     <div class="row">
                         <input type="button" value="Show Jobs" id="show_Jobs" />
                         <input type="button" value="Restart Jobs" id="restart_Jobs" />
+                        <input type="button" value="Stop Jobs" id="stop_Jobs" />
                     </div>
                 </td>
             </tr>
@@ -2171,6 +2172,12 @@
 
             $('#restart_Jobs').click(function () {
                 $.get("restart_Jobs",
+                    function (data) { alert(data); });
+
+            });
+
+            $('#stop_Jobs').click(function () {
+                $.get("stop_Jobs",
                     function (data) { alert(data); });
 
             });

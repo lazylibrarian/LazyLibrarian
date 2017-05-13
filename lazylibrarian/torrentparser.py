@@ -555,35 +555,40 @@ def GEN(book=None):
                         title = title + '.' + extn
 
                     bookURL = url_fix(host + "/ads.php?" + link)
-                    bookresult, success = fetchURL(bookURL)
-                    if not success:
-                        # may return 404 if no results, not really an error
-                        if '404' in bookresult:
-                            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
-                        else:
-                            logger.debug(bookURL)
-                            logger.debug('Error fetching data from %s: %s' % (provider, bookresult))
-                        bookresult = False
-                    if bookresult:
-                        url = None
-                        new_soup = BeautifulSoup(bookresult)
-                        for link in new_soup.findAll('a'):
-                            output = link.get('href')
-                            if output and output.startswith('/get.php'):
-                                url = output
-                                break
 
-                        if url:
-                            url = url_fix(host + url)
-                            results.append({
-                                'bookid': book['bookid'],
-                                'tor_prov': provider,
-                                'tor_title': title,
-                                'tor_url': url,
-                                'tor_size': str(size),
-                                'tor_type': 'direct'
-                            })
-                            logger.debug('Found %s, Size %s' % (title, size))
+                    #bookresult, success = fetchURL(bookURL)
+                    #if not success:
+                    #    # may return 404 if no results, not really an error
+                    #    if '404' in bookresult:
+                    #        logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+                    #    else:
+                    #        logger.debug(bookURL)
+                    #        logger.debug('Error fetching data from %s: %s' % (provider, bookresult))
+                    #    bookresult = False
+                    #if bookresult:
+                    #    url = None
+                    #    print "******************"
+                    #    print bookresult[:100]
+                    #    print "******************"
+                    #    new_soup = BeautifulSoup(bookresult)
+                    #    for link in new_soup.findAll('a'):
+                    #        output = link.get('href')
+                    #        if output and output.startswith('/get.php'):
+                    #            url = output
+                    #            break
+                    #
+                    #    if url:
+                    #        url = url_fix(host + url)
+                    url = bookURL
+                    results.append({
+                        'bookid': book['bookid'],
+                        'tor_prov': provider,
+                        'tor_title': title,
+                        'tor_url': url,
+                        'tor_size': str(size),
+                        'tor_type': 'direct'
+                    })
+                    logger.debug('Found %s, Size %s' % (title, size))
 
             except Exception as e:
                 logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
