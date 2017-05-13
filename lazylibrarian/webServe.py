@@ -660,7 +660,9 @@ class WebInterface(object):
                 sortcolumn = 12
             elif sortcolumn == 7:   # added
                 sortcolumn = 13
-            else:               # rating, date, status
+            elif sortcolumn == 8:   # status
+                sortcolumn = 5
+            else:               # rating, date
                 sortcolumn -= 2
 
             if sortcolumn in [4, 12]:  # date, series
@@ -696,8 +698,8 @@ class WebInterface(object):
                     title = row[2]
                 title = title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage
 
-                # Need to pass bookid row[6] twice as datatables modifies first one
-                d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[5], row[11], row[6], row[13]])
+                # Need to pass bookid and status twice as datatables modifies first one
+                d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[5], row[11], row[6], row[13], row[5]])
             rows = d
 
         mydict = {'iTotalDisplayRecords': len(filtered),
