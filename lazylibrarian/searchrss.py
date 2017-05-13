@@ -270,7 +270,7 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
             matches.append([score, torTitle, newValueDict, controlValueDict])
 
     if matches:
-        highest = max(matches, key=lambda x: x[0])
+        highest = max(matches, key=lambda s: s[0])
         score = highest[0]
         nzb_Title = highest[1]
         newValueDict = highest[2]

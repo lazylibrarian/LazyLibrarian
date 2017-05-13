@@ -15,6 +15,7 @@
 
 import urllib
 import urlparse
+import traceback
 
 import lazylibrarian
 import lib.feedparser as feedparser
@@ -134,6 +135,7 @@ def TPB(book=None):
                     logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
             except Exception as e:
                 logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+                logger.debug('%s: %s' % (provider, traceback.format_exc()))
 
     logger.debug(u"Found %i result%s from %s for %s" %
                  (len(results), plural(len(results)), provider, book['searchterm']))
@@ -245,6 +247,7 @@ def KAT(book=None):
                     logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
             except Exception as e:
                 logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+                logger.debug('%s: %s' % (provider, traceback.format_exc()))
 
     logger.debug(u"Found %i result%s from %s for %s" %
                  (len(results), plural(len(results)), provider, book['searchterm']))
@@ -319,6 +322,7 @@ def EXTRA(book=None):
 
                 except Exception as e:
                     logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+                    logger.debug('%s: %s' % (provider, traceback.format_exc()))
 
     logger.debug(u"Found %i result%s from %s for %s" %
                  (len(results), plural(len(results)), provider, book['searchterm']))
@@ -396,6 +400,7 @@ def ZOO(book=None):
                         logger.error('Access forbidden. Please wait a while before trying %s again.' % provider)
                     else:
                         logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+                        logger.debug('%s: %s' % (provider, traceback.format_exc()))
 
     logger.debug(u"Found %i result%s from %s for %s" %
                  (len(results), plural(len(results)), provider, book['searchterm']))
@@ -469,6 +474,7 @@ def LIME(book=None):
                         logger.error('Access forbidden. Please wait a while before trying %s again.' % provider)
                     else:
                         logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+                        logger.debug('%s: %s' % (provider, traceback.format_exc()))
 
     logger.debug(u"Found %i result%s from %s for %s" %
                  (len(results), plural(len(results)), provider, book['searchterm']))
@@ -581,6 +587,7 @@ def GEN(book=None):
 
             except Exception as e:
                 logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+                logger.debug('%s: %s' % (provider, traceback.format_exc()))
 
     logger.debug(u"Found %i result%s from %s for %s" %
                  (len(results), plural(len(results)), provider, book['searchterm']))
@@ -659,6 +666,7 @@ def TDL(book=None):
 
                 except Exception as e:
                     logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+                    logger.debug('%s: %s' % (provider, traceback.format_exc()))
 
     logger.debug(u"Found %i result%s from %s for %s" %
                  (len(results), plural(len(results)), provider, book['searchterm']))

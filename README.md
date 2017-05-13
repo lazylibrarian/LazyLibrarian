@@ -41,6 +41,11 @@ Linux / Mac OS X:
 
 * Start in daemon mode with `python LazyLibrarian.py -daemon`
 
+## Documentation:
+Fairly limited so far (any help appreciated)
+There is a wiki at https://github.com/DobyTang/LazyLibrarian/wiki
+and a reddit at https://www.reddit.com/r/LazyLibrarian/
+
 ## Minimal Configuration (uTorrent):
 This is the bare minimum to get you up and running. For more options see the [Configuration Wiki](https://github.com/DobyTang/LazyLibrarian/wiki/Configuration).
 
@@ -67,7 +72,8 @@ Open localhost:5299/home or click the LazyLibrarian icon in the top left. Type a
 Auto update available via interface from master for git and source installs
 
 ## Packages
-rpm and deb packages here : https://github.com/DobyTang/LazyLibrarian/releases  
+rpm deb and snap packages here : https://github.com/DobyTang/LazyLibrarian/releases  
+The snap package is confined to users home directory, so all books and downloads need to be accessible from there too. 
 AUR package available here: https://aur.archlinux.org/packages/lazylibrarian/  
 
 ## Docker packages

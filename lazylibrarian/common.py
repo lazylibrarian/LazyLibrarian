@@ -20,7 +20,6 @@ import time
 import datetime
 import traceback
 import threading
-import urllib2
 
 import lazylibrarian
 from lazylibrarian import logger, database

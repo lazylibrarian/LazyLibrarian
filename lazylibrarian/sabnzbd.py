@@ -21,7 +21,7 @@ import urllib2
 
 import lazylibrarian
 from lazylibrarian import logger
-from lazylibrarian.formatter import check_int
+from lazylibrarian.formatter import check_int, unaccented_str
 
 
 def checkLink():
@@ -72,7 +72,7 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
         params['output'] = 'json'
         if lazylibrarian.CONFIG['SAB_API']:
             params['apikey'] = lazylibrarian.CONFIG['SAB_API']
-        title = 'Test ' + nzburl
+        title = 'LL(Test) ' + nzburl
     elif nzburl == 'delete':
         # only deletes tasks if still in the queue, ie NOT completed tasks
         params['mode'] = 'queue'
@@ -87,7 +87,7 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
             params['apikey'] = lazylibrarian.CONFIG['SAB_API']
         if remove_data:
             params['del_files'] = 1
-        title = 'Delete ' + title
+        title = 'LL(Delete) ' + title
     else:
         params['mode'] = 'addurl'
         params['output'] = 'json'
@@ -144,10 +144,12 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
         return False
 
     logger.debug("Result text from SAB: " + str(result))
-    if title and (title.startswith('Test') or title.startswith('Delete')):
-        return result
-    elif result['status'] is True:
-        logger.info(title + " sent to SAB successfully.")
+    if title:
+        title = unaccented_str(title)
+        if title.startswith('LL(Test) ') or title.startswith('LL(Delete) '):
+            return result
+    if result['status'] is True:
+        logger.info("%s sent to SAB successfully." % title)
         # sab versions earlier than 0.8.0 don't return nzo_ids
         if 'nzo_ids' in result:
             if result['nzo_ids']:  # check its not empty

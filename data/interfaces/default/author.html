@@ -108,9 +108,15 @@
     </p>
     <table class="display" id="book_table">
         <thead>
+            <%
+            if lazylibrarian.CONFIG['BOOK_IMG'] == True:
+                hidden = ''
+            else:
+                hidden = 'class="hidden"'
+            %>
             <tr>
                 <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
-                <th id="bookart">Cover</th>
+                <th id="bookart" ${hidden}>Cover</th>
                 <th id="authorname" class="hidden">Title</th>
                 <th id="bookname">Title</th>
                 <th id="series">Series</th>
@@ -160,11 +166,26 @@
                     null,
                     { "sType": "natural" },
                     { "fnRender": function ( oObj ) {
-                        return '<img src="images/' + oObj.aData[5] + '" alt="Rating">'
+                        return '<img src="images/' + oObj.aData[5] + '-stars.png" alt="Rating">'
                       }
                     },
                     null,
-                    null
+                    { "fnRender": function ( oObj ) {
+                        var btn = oObj.aData[7]
+                        if ( btn == 'Open' ) {
+                            btn = '<a class="button green" href="openBook?bookid=' + oObj.aData[9] + '" target="_self">Open</a>'}
+                        else if ( btn == 'Wanted' ) {
+                            btn = '<a class="button red" href="searchForBook?bookid=' + oObj.aData[9] +
+                                    '" target="_self"><span class="a">Wanted</span><span class="b">Search</span></a>'}
+                        else if ( btn == 'Snatched' ) {
+                            btn = '<a class="button">Snatched</a>'}
+                        else if ( btn == 'Have' ) {
+                            btn = '<a class="button">Have</a>'}
+                        else {
+                            btn = '<a class="button grey">' + oObj.aData[7] + '</a>'}
+                        return btn
+                      }
+                    }
                     ],
                 "order": [[ 6, 'desc']],
                 "oLanguage": {
@@ -186,6 +207,11 @@
                     $('td', nRow).eq(2).addClass('hidden');
                     $('td', nRow).eq(6).addClass('center');
                     $('td', nRow).eq(7).addClass('center');
+                    var show = ${lazylibrarian.CONFIG['BOOK_IMG']};
+                    if ( show != '1' )
+                    {
+                        $('td', nRow).eq(1).addClass('hidden');
+                    }
                     var w = window.innerWidth;
                     if ( w < 1024 )
                     {   // hide stars,date on medium devices

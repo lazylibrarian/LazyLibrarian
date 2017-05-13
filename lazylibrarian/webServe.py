@@ -135,7 +135,7 @@ class WebInterface(object):
             for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
                 rows.append(list(row))  # add the rowlist to the masterlist
             if sSearch:
-                filtered = filter(lambda x: sSearch in str(x), rows)
+                filtered = filter(lambda x: sSearch.lower() in str(x).lower(), rows)
             else:
                 filtered = rows
 
@@ -282,9 +282,7 @@ class WebInterface(object):
                     lazylibrarian.CONFIG[key] = 0
                 else:
                     # or for strings not available in config html page
-                    if key not in ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'GIT_REPO', 'GIT_USER', 'GIT_BRANCH',
-                                    'LATEST_VERSION', 'CURRENT_VERSION', 'COMMITS_BEHIND', 'INSTALL_TYPE',
-                                    'DIR_PERM', 'FILE_PERM']:
+                    if key not in lazylibrarian.CONFIG_NONWEB:
                         # or for an empty string
                         lazylibrarian.CONFIG[key] = ''
 
@@ -649,7 +647,7 @@ class WebInterface(object):
                 rows.append(list(row))  # add each rowlist to the masterlist
 
             if sSearch:
-                filtered = filter(lambda x: sSearch in str(x), rows)
+                filtered = filter(lambda x: sSearch.lower() in str(x).lower(), rows)
             else:
                 filtered = rows
 
@@ -678,21 +676,9 @@ class WebInterface(object):
             for row in rows:
                 worklink = ''
                 sitelink = ''
-                bookrate = float(row[3])
-                if bookrate < 0.5:
-                    starimg = '0-stars.png'
-                elif 0.5 <= bookrate < 1.5:
-                    starimg = '1-stars.png'
-                elif 1.5 <= bookrate < 2.5:
-                    starimg = '2-stars.png'
-                elif 2.5 <= bookrate < 3.5:
-                    starimg = '3-stars.png'
-                elif 3.5 <= bookrate < 4.5:
-                    starimg = '4-stars.png'
-                elif bookrate >= 4.5:
-                    starimg = '5-stars.png'
-                else:
-                    starimg = '0-stars.png'
+                bookrate = int(round(float(row[3])))
+                if bookrate > 5:
+                    bookrate = 5
 
                 if row[10] and len(row[10]) > 4:  # is there a workpage link
                     worklink = '<a href="' + row[10] + '" target="_new"><small><i>LibraryThing</i></small></a>'
@@ -708,37 +694,8 @@ class WebInterface(object):
                     title = row[2]
                 title = title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage
 
-                # for each Row use a separate list
-                l = [row[6], row[0], row[1], title, row[12], starimg, row[4]]
-                # Do not show status column in MANAGE page as we are only showing one status
-                if not kwargs['source'] == "Manage":
-                    if lazylibrarian.CONFIG['HTTP_LOOK'] == 'bookstrap':
-                        if row[5] == 'Open':
-                            btn = '<a class="button green btn btn-xs btn-warning" href="openBook?bookid=%s' % row[6]
-                            btn += '" target="_self"><i class="fa fa-book"></i>%s</a>' % row[5]
-                        elif row[5] == 'Wanted':
-                            btn = '<p><a class="a btn btn-xs btn-danger">%s' % row[5]
-                            btn += '</a></p><p><a class="b btn btn-xs btn-success" '
-                            btn += 'href="searchForBook?bookid=%s' % row[6]
-                            btn += '" target="_self"><i class="fa fa-search"></i> Search</a></p>'
-                        elif row[5] == 'Snatched' or row[5] == 'Have':
-                            btn = '<a class="button btn btn-xs btn-info">%s</a>' % row[5]
-                        else:
-                            btn = '<a class="button btn btn-xs btn-default grey">%s</a>' % row[5]
-
-                    else:
-                        if row[5] == 'Open':
-                            btn = '<a class="button green" href="openBook?bookid=%s" target="_self">Open</a>' % row[6]
-                        elif row[5] == 'Wanted':
-                            btn = '<a class="button red" href="searchForBook?bookid=%s' % row[6]
-                            btn += '" target="_self"><span class="a">Wanted</span><span class="b">Search</span></a>'
-                        elif row[5] == 'Snatched' or row[5] == 'Have':
-                            btn = '<a class="button">%s</a>' % row[5]
-                        else:
-                            btn = '<a class="button grey">%s</a>' % row[5]
-                    l.append(btn)
-                l.append(row[11])  # add authorid for xref
-                d.append(l)  # add the rowlist to the masterlist
+                # Need to pass bookid row[6] twice as datatables modifies first one
+                d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[5], row[11], row[6]])
             rows = d
 
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -746,8 +703,7 @@ class WebInterface(object):
                   'aaData': rows,
                   }
         s = simplejson.dumps(mydict)
-        # print ("Getbooks returning %s to %s" % (iDisplayStart, iDisplayStart
-        # + iDisplayLength))
+        # print ("Getbooks returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
         return s
 
 
@@ -756,6 +712,8 @@ class WebInterface(object):
         """
         Sort the list into natural alphanumeric order.
         """
+
+        # noinspection PyShadowingNames
         def get_alphanum_key_func(key):
             convert = lambda text: int(text) if text.isdigit() else text
             return lambda s: [convert(c) for c in re.split('([0-9]+)', key(s))]
@@ -1183,6 +1141,8 @@ class WebInterface(object):
                 this_mag['safetitle'] = urllib.quote_plus(mag['Title'].encode(lazylibrarian.SYS_ENCODING))
                 mags.append(this_mag)
 
+            if not lazylibrarian.CONFIG['MAG_IMG']:
+                covercount = 0
         return serve_template(templatename="magazines.html", title="Magazines", magazines=mags, covercount=covercount)
 
     @cherrypy.expose
@@ -1219,7 +1179,7 @@ class WebInterface(object):
                 mod_issues.append(this_issue)
             logger.debug("Found %s cover%s" % (covercount, plural(covercount)))
 
-        if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':  # special flag to say "no covers required"
+        if not lazylibrarian.CONFIG['MAG_IMG'] or lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':
             covercount = 0
 
         return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
@@ -1251,7 +1211,7 @@ class WebInterface(object):
                 rows.append(list(row))  # add each rowlist to the masterlist
 
             if sSearch:
-                filtered = filter(lambda x: sSearch in str(x), rows)
+                filtered = filter(lambda x: sSearch.lower() in str(x).lower(), rows)
             else:
                 filtered = rows
 
@@ -1716,7 +1676,7 @@ class WebInterface(object):
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
         if sSearch:
-            filtered = filter(lambda x: sSearch in str(x), lazylibrarian.LOGLIST[::])
+            filtered = filter(lambda x: sSearch.lower() in str(x).lower(), lazylibrarian.LOGLIST[::])
         else:
             filtered = lazylibrarian.LOGLIST[::]
 

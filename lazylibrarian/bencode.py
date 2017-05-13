@@ -28,7 +28,7 @@ def stringlength(string, index = 0):
 	try:
 		colon = string.find(":", index)	# Find the colon, ending the number.
 	except ValueError:
-		raise BencodeError("Decode", "Malformed expression", data)
+		raise BencodeError("Decode", "Malformed expression", string)
 
 	# Return a list of the number characters.
 	num = [a for a in string[index:colon] if a.isdigit() ]

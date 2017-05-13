@@ -72,7 +72,7 @@
                                             %>
                                             <label for="https_enabled" class="control-label">
                                             <input type="checkbox" id="https_enabled" name="https_enabled" value="1" ${checked} />
-                                            Enable https</label>
+                                            Enable https access to lazylibrarian</label>
                                         </div>
                                         <fieldset id="https_options">
                                         <div class="form-group">
@@ -176,6 +176,61 @@
                                     </fieldset>
                                     <fieldset>
                                         <legend>Appearance</legend>
+                                        <div class="checkbox">
+                                            <%
+                                                if lazylibrarian.CONFIG['AUTHOR_IMG'] == True:
+                                                    checked = 'checked="checked"'
+                                                else:
+                                                    checked = ''
+                                            %>
+                                            <label for="author_img" class="control-label">
+                                            <input type="checkbox" id="author_img" name="author_img" value="1" ${checked} />
+                                            Show Author Images</label>
+                                        </div>
+                                        <div class="checkbox">
+                                            <%
+                                                if lazylibrarian.CONFIG['BOOK_IMG'] == True:
+                                                    checked = 'checked="checked"'
+                                                else:
+                                                    checked = ''
+                                            %>
+                                            <label for="book_img" class="control-label">
+                                            <input type="checkbox" id="book_img" name="book_img" value="1" ${checked} />
+                                            Show Book Images</label>
+                                        </div>
+                                        <div class="checkbox">
+                                            <%
+                                                if lazylibrarian.CONFIG['MAG_IMG'] == True:
+                                                    checked = 'checked="checked"'
+                                                else:
+                                                    checked = ''
+                                            %>
+                                            <label for="mag_img" class="control-label">
+                                            <input type="checkbox" id="mag_img" name="mag_img" value="1" ${checked} />
+                                            Show Magazine Images</label>
+                                        </div>
+                                        <div class="checkbox">
+                                            <%
+                                                if lazylibrarian.CONFIG['SERIES_TAB'] == True:
+                                                    checked = 'checked="checked"'
+                                                else:
+                                                    checked = ''
+                                            %>
+                                            <label for="series_tab" class="control-label">
+                                            <input type="checkbox" id="series_tab" name="series_tab" value="1" ${checked} />
+                                            Show Series</label>
+                                        </div>
+                                        <div class="checkbox">
+                                            <%
+                                                if lazylibrarian.CONFIG['MAG_TAB'] == True:
+                                                    checked = 'checked="checked"'
+                                                else:
+                                                    checked = ''
+                                            %>
+                                            <label for="mag_tab" class="control-label">
+                                            <input type="checkbox" id="mag_tab" name="mag_tab" value="1" ${checked} />
+                                            Show Magazines</label>
+                                        </div>
                                         <div class="form-group">
                                             <label for="http_look">Interface:</label>
                                             <select id="http_look" name="http_look" class="form-control">
@@ -779,7 +834,7 @@
                                                      Keep seeding after processing</label>
                                                 </div>
                                             <div class="form-group">
-                                                <label for="download_dir" class="control-label">Directory:</label>
+                                                <label for="download_dir" class="control-label">Download Directory:</label>
                                                 <input type="text" id="download_dir" name="download_dir" value="${lazylibrarian.CONFIG['DOWNLOAD_DIR']}" class="form-control" placeholder="Download Directory">
                                                 <span class="help-block">Full path to the folder where books are downloaded</span>
                                             </div>
@@ -1024,7 +1079,7 @@
                                     <fieldset>
                                         <legend>Folders</legend>
                                         <div class="form-group">
-                                            <label for="destination_dir" class="control-label">Base Destination Folder:</label>
+                                            <label for="destination_dir" class="control-label">Book Library Folder:</label>
                                             <input type="text" id="destination_dir" name="destination_dir" value="${lazylibrarian.CONFIG['DESTINATION_DIR']}" class="form-control" placeholder="Destination Directory">
                                         </div>
                                         <div class="form-group">
@@ -1033,11 +1088,11 @@
                                             <span class="help-block">Directory for wishlists and manually importing books</span>
                                         </div>
                                         <div class="form-group">
-                                            <label for="ebook_dest_folder">eBook Destination Folder:</label>
+                                            <label for="ebook_dest_folder">eBook Foldername Pattern:</label>
                                             <input type="text" id="ebook_dest_folder" name="ebook_dest_folder" value="${lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']}" class="form-control" placeholder="eBook Destination Folder">
                                         </div>
-                                        <div class="fomr-group">
-                                            <label for="ebook_dest_file">eBook Destination File:</label>
+                                        <div class="form-group">
+                                            <label for="ebook_dest_file">eBook Filename Pattern:</label>
                                             <input type="text" id="ebook_dest_file" name="ebook_dest_file" value="${lazylibrarian.CONFIG['EBOOK_DEST_FILE']}" class="form-control" placeholder="eBook Destination File">
                                             <span class="help-block">Options include $Author, $Title, any string.<br/>Current limitation: each file has to be in unique subfolder</span>
                                         </div>
@@ -1069,16 +1124,16 @@
                                             <span class="help-block">Path to "calibredb" to import books into the library</span>
                                         </div>
                                         <div class="form-group">
-                                            <label for="imp_autoadd">Calibre Auto Add:</label>
+                                            <label for="imp_autoadd">Calibre Auto Add Directory:</label>
                                             <input type="text" id="imp_autoadd" name="imp_autoadd" value="${lazylibrarian.CONFIG['IMP_AUTOADD']}" class="form-control">
                                             <span class="help-block">Directory for a copy to be placed for auto add process</span>
                                         </div>
                                         <div class="form-group">
-                                            <label for="mag_dest_folder">Magazine Destination Folder:</label>
+                                            <label for="mag_dest_folder">Magazine Foldername Pattern:</label>
                                             <input type="text" id="mag_dest_folder" name="mag_dest_folder" value="${lazylibrarian.CONFIG['MAG_DEST_FOLDER']}" class="form-control" placeholder="Magazines Destination Folder">
                                         </div>
                                         <div class="form-group">
-                                            <label for="mag_dest_file">Magazine Issue Filename:</label>
+                                            <label for="mag_dest_file">Magazine Filename Pattern:</label>
                                             <input type="text" id="mag_dest_file" name="mag_dest_file" value="${lazylibrarian.CONFIG['MAG_DEST_FILE']}" class="form-control" placeholder="Magazine Issue Filename">
                                             <span class="help-block">Options include $Title, $IssueDate, any string
                                             <BR>Current limitation: Issue Filename must contain Title and Date</span>
@@ -1293,7 +1348,7 @@
                                                 checked = ''
                                             %>
                                                 <label for="twitter_notify_onsnatch" class="control-label">
-                                                <input type="checkbox" id="twitter_notify_onsnatch" value="1" ${checked} />
+                                                <input type="checkbox" id="twitter_notify_onsnatch" name="twitter_notify_onsnatch" value="1" ${checked} />
                                                 Notify on snatch</label>
                                         </div>
                                         <div class="checkbox">
@@ -1548,7 +1603,7 @@
                                         checked = ''
                                     %>
                                     <label for="use_nma" class="control-label">
-                                    <input type="checkbox" id="use_nma" value="1" ${checked} />
+                                    <input type="checkbox" name="use_nma" id="use_nma" value="1" ${checked} />
                                     Enable NotifyMyAndroid</label>
                                 </div>
                                 <div id="nmaoptions">

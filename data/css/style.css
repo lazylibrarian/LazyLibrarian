@@ -185,11 +185,11 @@ INPUT[type="radio"]
 }
 INPUT[type="checkbox"]
 {
-	vertical-align: bottom;
+	vertical-align: center;
 }
 .ie7 INPUT[type="checkbox"]
 {
-	vertical-align: baseline;
+	vertical-align: center;
 }
 .ie6 INPUT
 {
@@ -849,7 +849,7 @@ TABLE#book_table
 }
 TABLE#book_table TH#select
 {
-    vertical-align: middle;
+	vertical-align: middle;
 	text-align: center;
 	width: 10px
 }

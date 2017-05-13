@@ -470,6 +470,23 @@ class GoodReads:
                             rejected = True
 
                         if not rejected:
+                            anames = book.find('authors')
+                            amatch = False
+                            for aname in anames:
+                                aid = aname.find('id').text
+                                if aid == authorid:
+                                    role = aname.find('role').text
+                                    if role is None or 'Author' in role:
+                                        amatch = True
+                                    else:
+                                        logger.debug('Ignoring %s for %s, role is %s' %
+                                                    (bookname, authorNameResult, role))
+                                else:
+                                    logger.debug('Ignoring %s for %s, authorid %s' %
+                                                (bookname, authorNameResult, aid))
+                            rejected = not amatch
+
+                        if not rejected:
                             cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'
                             cmd += ' and BookName = "%s" COLLATE NOCASE and AuthorName = "%s" COLLATE NOCASE' % \
                                     (bookname, authorNameResult.replace('"', '""'))
