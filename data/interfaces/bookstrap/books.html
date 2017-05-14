@@ -50,16 +50,10 @@
         <p>&nbsp;</p>
         <div class="table-responsive">
         <table class="display table table-striped table-hover table-bordered" id="book_table">
-            <%
-            if lazylibrarian.CONFIG['BOOK_IMG'] == True:
-                hidden = ''
-            else:
-                hidden = 'hidden'
-            %>
             <thead>
                 <tr>
                     <th class="select no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
-                    <th class="bookart text-center no-sort hidden-xs ${hidden}">Cover</th>
+                    <th class="bookart text-center no-sort hidden-xs">Cover</th>
                     <th class="authorname">Author</th>
                     <th class="bookname">Title</th>
                     <th class="series">Series</th>
@@ -98,6 +92,10 @@
 
         $('#chooselanguage').val(getUrlVars()['BookLang']);
 
+        var show = ${lazylibrarian.CONFIG['BOOK_IMG']};
+            if ( show != '1' ) { showimg = false }
+            else { showimg = true }
+
         var oTable = $('#book_table').dataTable({
             "bAutoWidth": false,
             "order": [[ 2, 'asc' ]],
@@ -105,7 +103,9 @@
                 { targets: 'no-sort', orderable: false },
                 { targets: [0], 'render': function(data, type, row) {
                     return '<input type="checkbox" name="' + data + '" class="checkbox" />';} },
-                { targets: [1], 'render': function(data, type, row) {
+                { targets: [1],
+                    'visible': showimg,
+                    'render': function(data, type, row) {
                     return '<a href="' + data + '" target="_blank" rel="noreferrer"><img src="' + data + '" alt="Cover" class="bookcover-sm img-responsive"></a>';} },
                 { targets: [2], 'render': function(data, type, row) {
                     return '<a href="authorPage?AuthorID=' + row[8] + '">' + data + '</a>';} },
@@ -146,11 +146,6 @@
             "sAjaxSource": 'getBooks?source=Books&booklang=${booklang}',
             "bFilter": true,
             "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-                var show = ${lazylibrarian.CONFIG['BOOK_IMG']};
-                if ( show != '1' )
-                {
-                    $('td', nRow).eq(1).addClass('hidden');
-                }
                 $('td', nRow).eq(5).addClass('text-center');
                 $('td', nRow).eq(6).addClass('text-center');
                 $('td', nRow).eq(7).addClass('text-center');
