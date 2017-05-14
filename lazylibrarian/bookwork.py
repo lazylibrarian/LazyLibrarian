@@ -519,7 +519,9 @@ def getSeriesAuthors(seriesid):
             authorid = ''
             try:
                 rootxml, in_cache = get_xml_request(set_url)
-                if len(rootxml):
+                if rootxml is None:
+                    logger.warn('Error getting XML for %s' % searchname)
+                else:
                     resultxml = rootxml.getiterator('work')
                     for item in resultxml:
                         booktitle = item.find('./best_book/title').text
@@ -534,7 +536,9 @@ def getSeriesAuthors(seriesid):
                     searchterm = urllib.quote_plus(searchname.encode(lazylibrarian.SYS_ENCODING))
                     set_url = base_url + searchterm + '&' + urllib.urlencode(params)
                     rootxml, in_cache = get_xml_request(set_url)
-                    if len(rootxml):
+                    if rootxml is None:
+                        logger.warn('Error getting XML for %s' % searchname)
+                    else:
                         resultxml = rootxml.getiterator('work')
                         for item in resultxml:
                             booktitle = item.find('./best_book/title').text

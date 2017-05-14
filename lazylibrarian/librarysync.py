@@ -565,7 +565,7 @@ def LibraryScan(startdir=None):
                                         try:
                                             rootxml, in_cache = get_xml_request(set_url)
                                             if not len(rootxml):
-                                                logger.debug("Error requesting results from GoodReads")
+                                                logger.warn("Error requesting GoodReads for %s" % searchname)
                                             else:
                                                 resultxml = rootxml.getiterator('work')
                                                 for item in resultxml:
