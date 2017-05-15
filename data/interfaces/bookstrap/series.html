@@ -35,9 +35,9 @@
             <thead>
                 <tr>
                     <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
-                    <th class="authorname hidden-xs">Author</th>
+                    <th class="authorname">Author</th>
                     <th class="series">Series Name</th>
-                    <th class="status text-center hidden-xs">Status</th>
+                    <th class="status text-center">Status</th>
                     <th class="stars text-center">Select</th>
                 </tr>
             </thead>
@@ -96,8 +96,8 @@
                     $('td', nRow).eq(3).addClass("text-center");
                     $('td', nRow).eq(4).addClass("text-center");
                     // hide author,status on small devices
-                    $('td', nRow).eq(1).addClass('hidden-xs');
-                    $('td', nRow).eq(3).addClass('hidden-xs');
+                    //$('td', nRow).eq(1).addClass('hidden-xs');
+                    //$('td', nRow).eq(3).addClass('hidden-xs');
                     return nRow;
                 },
             });
