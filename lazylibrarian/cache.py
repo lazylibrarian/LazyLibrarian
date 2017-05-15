@@ -53,7 +53,7 @@ def fetchURL(URL, headers=None, retry=True):
         if not retry:
             logger.error(u"fetchURL: Timeout getting response from %s" % URL)
             return str(e), False
-        logger.warn(u"fetchURL: retrying - got timeout on %s" % URL)
+        logger.debug(u"fetchURL: retrying - got timeout on %s" % URL)
         result, success = fetchURL(URL, headers=headers, retry=False)
         return result, success
     except Exception as e:
@@ -68,7 +68,7 @@ def cache_img(img_type, img_ID, img_url, refresh=False):
         or error message, False if failed to cache """
 
     if img_type not in ['book', 'author']:
-        logger.warn('Internal error in cache_img, img_type = [%s]' % img_type)
+        logger.debug('Internal error in cache_img, img_type = [%s]' % img_type)
         img_type = 'book'
     cachedir = lazylibrarian.CACHEDIR
     coverfile = os.path.join(cachedir, img_type, img_ID + '.jpg')
@@ -131,7 +131,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
             try:
                 source = json.load(open(hashfilename))
             except Exception:
-                logger.warn(u"Error decoding json from %s" % hashfilename)
+                logger.debug(u"Error decoding json from %s" % hashfilename)
                 return None, False
         elif cache == "XML":
             with open(hashfilename, "r") as cachefile:
@@ -142,7 +142,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
                 except Exception:
                     source = None
             if source is None:
-                logger.warn(u"Error reading xml from %s" % hashfilename)
+                logger.debug(u"Error reading xml from %s" % hashfilename)
                 os.remove(hashfilename)
                 return None, False
     else:
@@ -154,7 +154,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
                 try:
                     source = json.loads(result)
                 except Exception as e:
-                    logger.warn(u"Error decoding json from %s" % url)
+                    logger.debug(u"Error decoding json from %s" % url)
                     logger.debug(u"%s : %s" % (e, result))
                     return None, False
                 json.dump(source, open(hashfilename, "w"))
@@ -163,15 +163,15 @@ def get_cached_request(url, useCache=True, cache="XML"):
                     try:
                         source = ElementTree.fromstring(result)
                     except Exception:
-                        logger.warn(u"Error parsing xml from %s" % url)
+                        logger.debug(u"Error parsing xml from %s" % url)
                         source = None
                 if source is not None:
                     with open(hashfilename, "w") as cachefile:
                         cachefile.write(result)
                 else:
-                    logger.warn(u"Error getting xml data from %s" % url)
+                    logger.debug(u"Error getting xml data from %s" % url)
                     return None, False
         else:
-            logger.warn(u"Got error response for %s: %s" % (url, result))
+            logger.debug(u"Got error response for %s: %s" % (url, result))
             return None, False
     return source, valid_cache

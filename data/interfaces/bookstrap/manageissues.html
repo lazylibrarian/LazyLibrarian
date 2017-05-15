@@ -25,6 +25,7 @@
         </select>
     </div>
     <input  class="btn btn-sm btn-primary" type="submit" value="Manage" />
+        &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Title</a> - <a class="toggle-vis" data-column="2">Date</a> - <a class="toggle-vis" data-column="3">Issue</a> - <a class="toggle-vis" data-column="4">Provider</a>>
 </form>
 
 <h3>Magazines with status ${whichStatus}</h3>
@@ -66,10 +67,12 @@
 <%def name="javascriptIncludes()">
     <script type="text/javascript">
     $(document).ready(function() {
-        $('#book_table').dataTable(
+        var table = $('#book_table').DataTable(
             {
                 "responsive": true,
                 "order": [[ 1, 'asc']],
+                "bAutoWidth": false,
+                "stateSave": true,
                 "columnDefs":
                     [{ targets: 'no-sort', orderable: false },
                     { targets: [0], 'render': function(data, type, row) {
@@ -93,6 +96,11 @@
                 "bFilter": true,
             });
             $('.dataTables_filter input').attr("placeholder", "Search filter");
+            $('a.toggle-vis').click(function (e) {
+                e.preventDefault();
+                var column = table.column( $(this).attr('data-column') );
+                column.visible( ! column.visible() );
+            } );
     });
     </script>
 </%def>

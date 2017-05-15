@@ -108,15 +108,9 @@
     </p>
     <table class="display" id="book_table">
         <thead>
-            <%
-            if lazylibrarian.CONFIG['BOOK_IMG'] == True:
-                hidden = ''
-            else:
-                hidden = 'class="hidden"'
-            %>
             <tr>
                 <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
-                <th id="bookart" ${hidden}>Cover</th>
+                <th id="bookart">Cover</th>
                 <th id="authorname" class="hidden">Title</th>
                 <th id="bookname">Title</th>
                 <th id="series">Series</th>
@@ -149,6 +143,10 @@
     <script>
     $(document).ready(function()
     {
+        var show = ${lazylibrarian.CONFIG['BOOK_IMG']};
+            if ( show != '1' ) { showimg = false }
+            else { showimg = true }
+
         var oTable = $('#book_table').dataTable(
             {
                 "bAutoWidth": false,
@@ -159,11 +157,17 @@
                       }
                     },
                     {"bSortable": false,
+                     "bVisible": showimg,
                       "fnRender": function ( oObj ) {
                         return '<a href="' + oObj.aData[1] + '" target="_new"><img src="' + oObj.aData[1] + '" height="75" width="50"></a>'
                       }
                     },
-                    null,
+                    {"fnRender": function ( oObj ) {
+                        var col = 2
+                        if ( showimg === false ) { col = 3 }
+                        return  oObj.aData[col]
+                      }
+                    },
                     null,
                     { "sType": "natural" },
                     { "fnRender": function ( oObj ) {
@@ -216,11 +220,6 @@
                     $('td', nRow).eq(6).addClass('center');
                     $('td', nRow).eq(7).addClass('center');
                     $('td', nRow).eq(8).addClass('center');
-                    var show = ${lazylibrarian.CONFIG['BOOK_IMG']};
-                    if ( show != '1' )
-                    {
-                        $('td', nRow).eq(1).addClass('hidden');
-                    }
                     var w = window.innerWidth;
                     if ( w < 1024 )
                     {   // hide stars,date on medium devices
