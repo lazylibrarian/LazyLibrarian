@@ -29,6 +29,7 @@
             </select>
         </div>
     <input  class="btn btn-sm btn-default" type="submit" value="Manage" />
+        &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="2">Author</a> - <a class="toggle-vis" data-column="3">Title</a> - <a class="toggle-vis" data-column="4">Series</a> - <a class="toggle-vis" data-column="5">Rating</a> - <a class="toggle-vis" data-column="6">Released</a>
     </form>
     <br>
 
@@ -77,9 +78,11 @@
             if ( show != '1' ) { showimg = false }
             else { showimg = true }
 
-        $('#book_table').dataTable(
+         var table = $('#book_table').DataTable(
             {
+                "bAutoWidth": false,
                 "responsive": true,
+                "stateSave": true,
                 "order": [[ 2, 'asc' ]],
                 "columnDefs":[
                     { targets: 'no-sort', orderable: false },
@@ -115,6 +118,11 @@
                 },
             });
         $('.dataTables_filter input').attr("placeholder", "Search filter");
+        $('a.toggle-vis').click(function (e) {
+            e.preventDefault();
+            var column = table.column( $(this).attr('data-column') );
+            column.visible( ! column.visible() );
+        } );
     });
     </script>
 </%def>

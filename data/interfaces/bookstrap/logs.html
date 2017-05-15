@@ -17,6 +17,7 @@
 </%def>
 <%def name="body()">
     <h1>${title}</h1>
+    Toggle: <a class="toggle-vis" data-column="0">Timestamp</a> - <a class="toggle-vis" data-column="1">Level</a> - <a class="toggle-vis" data-column="2">Message</a>
     <div align="center">Refresh rate:
     <select id="refreshrate" class="button btn btn-sm btn-primary" onchange="setRefresh()">
     <option value="0" selected="selected">No Refresh</option>
@@ -47,8 +48,9 @@
 <%def name="javascriptIncludes()">
     <script>
     $(document).ready(function() {
-        var oTable = $('#log_table').dataTable({
+        var oTable = $('#log_table').DataTable({
                 "bAutoWidth": false,
+                "stateSave": true,
                 "order": [[ 0, 'desc' ]],
                 "oLanguage": {
                     "sSearch":"",
@@ -84,6 +86,11 @@
             });
             $('.dataTables_filter input').attr("placeholder", "Search filter");
             $(window).resize(function() {oTable.fnDraw(false)});
+            $('a.toggle-vis').click(function (e) {
+                e.preventDefault();
+                var column = oTable.column( $(this).attr('data-column') );
+                column.visible( ! column.visible() );
+            } );
         });
     </script>
     <script>

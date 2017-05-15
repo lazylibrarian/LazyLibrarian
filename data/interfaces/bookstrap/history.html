@@ -17,6 +17,8 @@
 <%def name="body()">
     <h1>${title}</h1>
     <div class="table-responsive">
+        Toggle: <a class="toggle-vis" data-column="0">Title</a> - <a class="toggle-vis" data-column="1">ID</a> - <a class="toggle-vis" data-column="2">Provider</a> - <a class="toggle-vis" data-column="3">Date</a> - <a class="toggle-vis" data-column="4">Size</a> - <a class="toggle-vis" data-column="5">Status</a>
+        <p>&nbsp;&nbsp;</p>
         <table class="display table table-striped table-hover table-bordered" id="book_table">
             <thead>
                 <tr>
@@ -63,10 +65,11 @@
 
     $(document).ready(function()
     {
-
-        $('#book_table').dataTable(
+        var table = $('#book_table').DataTable(
             {
                 "responsive": true,
+                "bAutoWidth": false,
+                "stateSave": true,
                 "order": [[ 3, 'desc' ]],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ rows per page",
@@ -79,6 +82,11 @@
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
             });
             $('.dataTables_filter input').attr("placeholder", "Search filter");
+            $('a.toggle-vis').click(function (e) {
+                e.preventDefault();
+                var column = table.column( $(this).attr('data-column') );
+                column.visible( ! column.visible() );
+            } );
     });
     </script>
 </%def>

@@ -25,6 +25,7 @@
                       <option value="Leave" hidden>Leave</option>
                 </select>
             <button type="submit" value="Go" id="go" class="btn btn-sm btn-primary">Go</button>
+        &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="2">Issue</a> - <a class="toggle-vis" data-column="3">Acquired</a> - <a class="toggle-vis" data-column="4">Select</a>
         </div>
         <p>&nbsp;</p>
         <div class="table-responsive">
@@ -88,9 +89,10 @@
                 }
             });
 
-        $('#book_table').dataTable(
+        var table = $('#book_table').DataTable(
             {
                 "bAutoWidth": false,
+                "stateSave": true,
                 "order": [[ 2, 'desc']],
                 "columnDefs": [{ targets: 'no-sort', orderable: false }],
                 "oLanguage": {
@@ -105,6 +107,11 @@
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
             });
             $('.dataTables_filter input').attr("placeholder", "Search filter");
+            $('a.toggle-vis').click(function (e) {
+                e.preventDefault();
+                var column = table.column( $(this).attr('data-column') );
+                column.visible( ! column.visible() );
+            } );
     });
     </script>
 </%def>
