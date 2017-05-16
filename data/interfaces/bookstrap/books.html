@@ -94,13 +94,13 @@
 
         $('#chooselanguage').val(getUrlVars()['BookLang']);
 
-        var show = ${lazylibrarian.CONFIG['BOOK_IMG']};
+        var show = ""+${lazylibrarian.CONFIG['BOOK_IMG']};
             if ( show != '1' ) { showimg = false }
             else { showimg = true }
 
         var table = $('#book_table').DataTable({
             "bAutoWidth": false,
-            //"stateSave": true,
+            "stateSave": true,
             "order": [[ 2, 'asc' ]],
             "columnDefs":[
                 { targets: 'no-sort', orderable: false },
@@ -169,7 +169,9 @@
             var column = table.column( $(this).attr('data-column') );
             column.visible( ! column.visible() );
         } );
-
+        table.on(function ( e ) {
+            console.log( e );
+} );
     });
 
     // Read a page's GET URL variables and return them as an associative array.
