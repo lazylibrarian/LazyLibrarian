@@ -162,16 +162,16 @@
         });
 
         $('.dataTables_filter input').attr("placeholder", "Search filter");
-        $(window).resize(function() {table.fnDraw(false)});
+        $(window).resize(function() {table.draw(false)});
 
         $('a.toggle-vis').click(function (e) {
             e.preventDefault();
             var column = table.column( $(this).attr('data-column') );
             column.visible( ! column.visible() );
         } );
-        table.on(function ( e ) {
-            console.log( e );
-} );
+        //enable datatables console logging
+        //table.on(function ( e ) {
+        //   console.log( e ); } );
     });
 
     // Read a page's GET URL variables and return them as an associative array.

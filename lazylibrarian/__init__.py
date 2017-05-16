@@ -597,6 +597,8 @@ def config_read(reloaded=False):
         SHOW_MAGS = 0
     if CONFIG['BOOK_IMG']:
         CONFIG['BOOK_IMG'] = 1
+    else:
+        CONFIG['BOOK_IMG'] = 0
 
     if reloaded:
         logger.info('Config file reloaded')
