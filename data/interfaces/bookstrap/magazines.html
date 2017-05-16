@@ -2,128 +2,115 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="headerIncludes()">
-
-    <div id="subhead_container" class="row">
-        <form action="addMagazine" method="get">
-        <div id="subhead_menu" class="col-xs-12 col-md-8">
-            <a href="forceSearch?source=magazines" class="button btn btn-sm btn-primary"><i class="fa fa-search"></i> Force Search</a>
-            <a href="forceProcess?source=magazines" class="button btn btn-sm btn-primary">Force Post-Processing</a>
-            <a href="magazineScan" class="button btn btn-sm btn-primary"><i class="fa fa-flash"></i> Library Scan</a>
-            <a href="pastIssues?whichStatus=Skipped" class="button btn btn-sm btn-primary"><i class="fa fa-calendar"></i> Past Issues</a>
+  <div id="subhead_container" class="row">
+    <form action="addMagazine" method="get">
+      <div id="subhead_menu" class="col-xs-12 col-md-8">
+        <a href="forceSearch?source=magazines" class="button btn btn-sm btn-primary"><i class="fa fa-search"></i> Force Search</a>
+        <a href="forceProcess?source=magazines" class="button btn btn-sm btn-primary">Force Post-Processing</a>
+        <a href="magazineScan" class="button btn btn-sm btn-primary"><i class="fa fa-flash"></i> Library Scan</a>
+        <a href="pastIssues?whichStatus=Skipped" class="button btn btn-sm btn-primary"><i class="fa fa-calendar"></i> Past Issues</a>
+      </div>
+      <div class="clearfix visible-xs"><hr/></div>
+      <div class="col-xs-12 col-md-4">
+        <div class="form-group">
+          <label class="sr-only">Magazine Title</label>
+          <div class="input-group">
+            <input type="text" placeholder="Magazine Title" name="title" class="form-control input-sm col-xs-12">
+            <span class="input-group-btn">
+              <button type="submit" value="Magazine" class="btn btn-sm btn-primary" data-toggle="tooltip" data-placement="bottom" title="Add and Search for Magazine"><i class="fa fa-search-plus"></i><span> Magazine</span></button>
+            </span>
+          </div>
         </div>
-        <div class="clearfix visible-xs"><hr/></div>
-        <div class="col-xs-12 col-md-4">
-            <div class="form-group">
-                <label class="sr-only">Magazine Title</label>
-                <div class="input-group">
-                    <input type="text" placeholder="Magazine Title" name="title" class="form-control input-sm col-xs-12">
-                    <span class="input-group-btn">
-                        <button type="submit" value="Magazine" class="btn btn-sm btn-primary" data-toggle="tooltip" data-placement="bottom" title="Add and Search for Magazine"><i class="fa fa-search-plus"></i><span> Magazine</span></button>
-                    </span>
-                </div>
-            </div>
-
-        </div>
-
-        </form>
-    </div>
+      </div>
+    </form>
+  </div>
 </%def>
-
 <%def name="body()">
-
-<form action="markMagazines" method="get" class="form-inline">
+  <form action="markMagazines" method="get" class="form-inline">
     <h1>${title}</h1>
     <div class="indented">
-            <div class="form-group">
-                <label for="action" class="">Mark selected as</label>
-                <select class="markMagazines form-control input-sm" id="action" name="action">
-                    <option value="Active">Active</option>
-                    <option value="Paused">Paused</option>
-                    <option value="Reset">Reset</option>
-                    <option value="Remove">Remove</option>
-                    <option value="Delete">Delete</option>
-                    <option value="Leave" hidden>Leave</option>
-                </select>
-            </div>
-            <input type="submit" class="markMagazines btn btn-sm btn-primary" id="go" value="Go">
-        &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="2">Title</a> - <a class="toggle-vis" data-column="3">Num</a> - <a class="toggle-vis" data-column="4">Acquired</a> - <a class="toggle-vis" data-column="5">Latest</a> - <a class="toggle-vis" data-column="6">Status</a> - <a class="toggle-vis" data-column="7">Select</a>
+      <div class="form-group">
+        <label for="action" class="">Mark selected as</label>
+        <select class="markMagazines form-control input-sm" id="action" name="action">
+          <option value="Active">Active</option>
+          <option value="Paused">Paused</option>
+          <option value="Reset">Reset</option>
+          <option value="Remove">Remove</option>
+          <option value="Delete">Delete</option>
+          <option value="Leave" hidden>Leave</option>
+        </select>
+      </div>
+      <input type="submit" class="markMagazines btn btn-sm btn-primary" id="go" value="Go">
+      &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="2">Title</a> - <a class="toggle-vis" data-column="3">Num</a> - <a class="toggle-vis" data-column="4">Acquired</a> - <a class="toggle-vis" data-column="5">Latest</a> - <a class="toggle-vis" data-column="6">Status</a> - <a class="toggle-vis" data-column="7">Select</a>
     </div>
     <p>&nbsp;</p>
-
     <div class="table-responsive">
-        <table class="display table table-striped table-hover table-bordered" id="book_table">
-            <thead>
-                <tr>
-                    <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
-                    % if covercount > 0:
-                        <th class="bookart text-center no-sort">Cover</th>
-                    % else:
-                        <th class="bookart hidden">Cover</th>
-                    % endif
-                    <th class="bookname">Title</th>
-                    <th class="number text-center">Num</th>
-                    <th class="series text-center">Acquired</th>
-                    <th class="date text-center">Latest Issue</th>
-                    <th class="stars text-center">Status</th>
-                    <th class="status text-center no-sort">Select</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                %for result in magazines:
-                    <tr>
-                        <td class="select text-center"><input type="checkbox" name="${result['Title']}" id="${result['safetitle']}" class="checkbox" /></td>
-                        % if covercount > 0:
-                            <td class="bookart text-center"><a href="${result['Cover']}" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="cover" class="bookcover-sm"></a></td>
-                        % else:
-                            <td class="bookart hidden"><a href="${result['Cover']}" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="cover" class="bookcover-sm"></a></td>
-                        % endif
-                        <td class="bookname">${result['Title']}</td>
-                        <td class="number text-center">${result['Count']}</td>
-                        <td class="series text-center">${result['LastAcquired']}</td>
-                        <td class="date text-center">${result['IssueDate']}</td>
-                        <td class="stars text-center">${result['Status']}</td>
-                        %if result['IssueStatus'] == 'Open':
-                            %if result['Count'] == 1 and lazylibrarian.CONFIG['MAG_SINGLE']:
-                                <td class="status text-center"><a class="button btn btn-xs btn-warning" href="openMag?bookid=${result['safetitle']}" target="_self"><i class="fa fa-book"></i> Open</a></td>
-                            %else:
-                                <td class="status text-center"><a class="button btn btn-xs btn-primary" href="openMag?bookid=${result['safetitle']}" target="_self"><i class="fa fa-list-ul"></i> Show</a></td>
-                            %endif
-                        %else:
-                            %if result['IssueStatus'] == 'Wanted':
-                                <td class="status text-center">
-                                    <p><a class="a btn btn-xs btn-danger">${result['IssueStatus']}</a></p>
-                                    <p><a class="b  btn btn-xs btn-success" href="searchForMag?bookid=${result['safetitle']}" target="_self"><i class="fa fa-search"></i> Search</a></p>
-                                </td>
-                            %else:
-                                %if result['IssueStatus'] == 'Snatched' or result['IssueStatus'] == 'Have':
-                                    <td class="status text-center"><a class="button btn btn-xs btn-info">${result['IssueStatus']}</a></td>
-                                %else:
-                                    <td class="status text-center"><a class="button grey btn btn-xs btn-default">${result['IssueStatus']}</a></td>
-                                %endif
-                            %endif
-                        %endif
-                    </tr>
-                %endfor
-            </tbody>
-        </table>
+      <table class="display table table-striped table-hover table-bordered" id="book_table">
+        <thead>
+          <tr>
+            <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
+            % if covercount > 0:
+            <th class="bookart text-center no-sort">Cover</th>
+            % else:
+            <th class="bookart hidden">Cover</th>
+            % endif
+            <th class="bookname">Title</th>
+            <th class="number text-center">Num</th>
+            <th class="series text-center">Acquired</th>
+            <th class="date text-center">Latest Issue</th>
+            <th class="stars text-center">Status</th>
+            <th class="status text-center no-sort">Select</th>
+          </tr>
+        </thead>
+        <tbody>
+          %for result in magazines:
+          <tr>
+            <td class="select text-center"><input type="checkbox" name="${result['Title']}" id="${result['safetitle']}" class="checkbox" /></td>
+            % if covercount > 0:
+            <td class="bookart text-center"><a href="${result['Cover']}" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="cover" class="bookcover-sm"></a></td>
+            % else:
+            <td class="bookart hidden"><a href="${result['Cover']}" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="cover" class="bookcover-sm"></a></td>
+            % endif
+            <td class="bookname">${result['Title']}</td>
+            <td class="number text-center">${result['Count']}</td>
+            <td class="series text-center">${result['LastAcquired']}</td>
+            <td class="date text-center">${result['IssueDate']}</td>
+            <td class="stars text-center">${result['Status']}</td>
+            %if result['IssueStatus'] == 'Open':
+            %if result['Count'] == 1 and lazylibrarian.CONFIG['MAG_SINGLE']:
+            <td class="status text-center"><a class="button btn btn-xs btn-warning" href="openMag?bookid=${result['safetitle']}" target="_self"><i class="fa fa-book"></i> Open</a></td>
+            %else:
+            <td class="status text-center"><a class="button btn btn-xs btn-primary" href="openMag?bookid=${result['safetitle']}" target="_self"><i class="fa fa-list-ul"></i> Show</a></td>
+            %endif
+            %else:
+            %if result['IssueStatus'] == 'Wanted':
+            <td class="status text-center">
+              <p><a class="a btn btn-xs btn-danger">${result['IssueStatus']}</a></p>
+              <p><a class="b  btn btn-xs btn-success" href="searchForMag?bookid=${result['safetitle']}" target="_self"><i class="fa fa-search"></i> Search</a></p>
+            </td>
+            %else:
+            %if result['IssueStatus'] == 'Snatched' or result['IssueStatus'] == 'Have':
+            <td class="status text-center"><a class="button btn btn-xs btn-info">${result['IssueStatus']}</a></td>
+            %else:
+            <td class="status text-center"><a class="button grey btn btn-xs btn-default">${result['IssueStatus']}</a></td>
+            %endif
+            %endif
+            %endif
+          </tr>
+          %endfor
+        </tbody>
+      </table>
     </div>
-</form>
-
+  </form>
 </%def>
-
 <%def name="headIncludes()">
-
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script>
-
+  <script>
     $(document).ready(function()
     {
-
+    
         $('#go').click(function () {
                 var action = $("#action").val();
                 if (action == "Delete") {
@@ -137,7 +124,7 @@
                     return
                 }
             });
-
+    
         var oTable = $('#book_table').DataTable(
             {
                 "responsive": true,
@@ -164,5 +151,5 @@
                 column.visible( ! column.visible() );
             } );
     });
-    </script>
+  </script>
 </%def>

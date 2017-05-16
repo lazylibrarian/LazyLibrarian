@@ -2,89 +2,84 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="headerIncludes()">
-    <div id="subhead_container">
-        <ul id="subhead_menu">
-            <li><a href="authorPage?AuthorID=${series['AuthorID']}" id="button"> Return to Author</a></li>
-            <li><a href="series?AuthorID=${series['AuthorID']}" id="button"> Series List</a></li>
-            <li><a href="refreshAuthor?AuthorID=${series['AuthorID']}" id="button"> Refresh Author</a></li>
-        </ul>
-    </div>
+  <div id="subhead_container">
+    <ul id="subhead_menu">
+      <li><a href="authorPage?AuthorID=${series['AuthorID']}" id="button"> Return to Author</a></li>
+      <li><a href="series?AuthorID=${series['AuthorID']}" id="button"> Series List</a></li>
+      <li><a href="refreshAuthor?AuthorID=${series['AuthorID']}" id="button"> Refresh Author</a></li>
+    </ul>
+  </div>
 </%def>
-
 <%def name="body()">
-<BR><BR>
-%if multi == "True":
-    <h1>&nbsp;&nbsp;${title}</h1>
-%else:
-    <h1>&nbsp;&nbsp;${series['AuthorName']} : ${title}</h1>
-%endif
-<form action="markBooks" method="get">
+  <BR><BR>
+  %if multi == "True":
+  <h1>&nbsp;&nbsp;${title}</h1>
+  %else:
+  <h1>&nbsp;&nbsp;${series['AuthorName']} : ${title}</h1>
+  %endif
+  <form action="markBooks" method="get">
     <input type="hidden" name="redirect" value="members">
     <input type="hidden" name="seriesid" value="${series['SeriesID']}">
     <label>&nbsp;&nbsp;Mark selected as: </label>
     <select class="markBooks" name="action" id="action">
-        %for item in ["Wanted", "Have", "Ignored", "Skipped", "Remove", "Delete"]:
-            <option value="${item}"
+      %for item in ["Wanted", "Have", "Ignored", "Skipped", "Remove", "Delete"]:
+      <option value="${item}"
             %if whichStatus == item:
                 selected = "selected"
             %endif
             >${item}</option>
-        %endfor
+      %endfor
     </select>
     <input type="submit" class="markBooks" id="go" value="Go">
-    <br><br>
-
+    <br>
+    <br>
     <table class="display" id="book_table" style="width:100%;">
-        <thead>
-            <tr>
-                <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
-                <th id="bookart">Cover</th>
-                <th id="bookname">Title</th>
-                %if multi == "True":
-                    <th id="authorname">Author</th>
-                %else:
-                    <th id="authorname" class="hidden">Author</th>
-                %endif
-                <th id="series">Number</th>
-                <th id="status">Status</th>
-                <th id="stars">Select</th>
-            </tr>
-        </thead>
-
-        <tbody>
+      <thead>
+        <tr>
+          <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
+          <th id="bookart">Cover</th>
+          <th id="bookname">Title</th>
+          %if multi == "True":
+          <th id="authorname">Author</th>
+          %else:
+          <th id="authorname" class="hidden">Author</th>
+          %endif
+          <th id="series">Number</th>
+          <th id="status">Status</th>
+          <th id="stars">Select</th>
+        </tr>
+      </thead>
+      <tbody>
         %for result in members:
-            <tr class="gradeZ">
-                <td id="select"><input type="checkbox" name="${result['BookID']}" /></td>
-                <td id="bookart"><a href="${result['BookImg']}" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" width="60" alt="Cover" class="bookcover-sm"></a></td>
-                <td id="bookname">${result['BookName']}</td>
-                %if multi == "True":
-                    <td id="authorname">${result['AuthorName']}</td>
-                %else:
-                    <td id="authorname" class="hidden">${result['AuthorName']}</td>
-                %endif
-                <td id="series">${result['SeriesNum']}</td>
-                <td id="status">${result['Status']}</td>
-                <td id="stars"><a class="button orange" href="editBook?bookid=${result['BookID']}" title="Select">Edit</a></p></td>
-            </tr>
-        %endfor
-        </tbody>
-    </table>
+        <tr class="gradeZ">
+          <td id="select"><input type="checkbox" name="${result['BookID']}" /></td>
+          <td id="bookart"><a href="${result['BookImg']}" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" width="60" alt="Cover" class="bookcover-sm"></a></td>
+          <td id="bookname">${result['BookName']}</td>
+          %if multi == "True":
+          <td id="authorname">${result['AuthorName']}</td>
+          %else:
+          <td id="authorname" class="hidden">${result['AuthorName']}</td>
+          %endif
+          <td id="series">${result['SeriesNum']}</td>
+          <td id="status">${result['Status']}</td>
+          <td id="stars"><a class="button orange" href="editBook?bookid=${result['BookID']}" title="Select">Edit</a></p>
+        </td>
+      </tr>
+      %endfor
+    </tbody>
+  </table>
 </form>
-
 <p>&nbsp;</p>
 <p>&nbsp;</p>
 </%def>
-
 <%def name="headIncludes()">
-    <link rel="stylesheet" href="css/data_table.css">
+  <link rel="stylesheet" href="css/data_table.css">
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script src="js/libs/jquery.dataTables.min.js"></script>
-    <script src="js/libs/natural.js"></script>
-    <script>
+  <script src="js/libs/jquery.dataTables.min.js"></script>
+  <script src="js/libs/natural.js"></script>
+  <script>
     $(document).ready(function()
     {
         var oTable = $('#book_table').dataTable(
@@ -113,5 +108,5 @@
             $('.dataTables_filter input').attr("placeholder", "Search filter");
             $(window).resize(function() {oTable.fnDraw(false)});
     });
-</script>
+  </script>
 </%def>

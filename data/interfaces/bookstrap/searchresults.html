@@ -2,7 +2,6 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="body()">
 
 <h1>${title}</h1>
@@ -88,32 +87,30 @@
                         value2 = "Add Book"
                         but_class2 = "btn-success"
                     %>
-                    <tr>
-                    <td class="bookart text-center"><a href="${result['bookimg']}" target="_blank" rel="noreferrer"><img src="${result['bookimg']}" alt="Cover"></a></td>
-                    <td class="authorname">${result['authorname']}</td>
-                    <td class="bookname"><a href="${result['booklink']}" target="_blank" rel="noreferrer">${result['bookname']}</a></td>
-                    <td class="date text-center">${result['bookdate']}</td>
-                    <td class="stars text-center"><img src="images/${starimg}" alt="Rating"></td>
-                    <td class="addAuthor text-center">
-                        <p><a class="${but_class} btn btn-xs" href="${destination}">${value}</a>
-                        </p><p><a class="${but_class2} btn btn-xs" href="${destination2}">${value2}</a></p>
-                    </td>
-                    <td class="fuzz text-right">${result['highest_fuzz']}%</td>
-                    </tr>
-                %endfor
-            %endif
-        </tbody>
-    </table>
+<tr>
+  <td class="bookart text-center"><a href="${result['bookimg']}" target="_blank" rel="noreferrer"><img src="${result['bookimg']}" alt="Cover"></a></td>
+  <td class="authorname">${result['authorname']}</td>
+  <td class="bookname"><a href="${result['booklink']}" target="_blank" rel="noreferrer">${result['bookname']}</a></td>
+  <td class="date text-center">${result['bookdate']}</td>
+  <td class="stars text-center"><img src="images/${starimg}" alt="Rating"></td>
+  <td class="addAuthor text-center">
+    <p><a class="${but_class} btn btn-xs" href="${destination}">${value}</a>
+    </p>
+    <p><a class="${but_class2} btn btn-xs" href="${destination2}">${value2}</a></p>
+  </td>
+  <td class="fuzz text-right">${result['highest_fuzz']}%</td>
+</tr>
+%endfor
+%endif
+</tbody>
+</table>
 </div>
 <p>&nbsp;</p>
 </%def>
-
 <%def name="headIncludes()">
-
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script type="text/javascript">
+  <script type="text/javascript">
     $(document).ready(function()
     {
         $('#book_table').dataTable(
@@ -143,5 +140,5 @@
             });
         $('.dataTables_filter input').attr("placeholder", "Search table here");
     });
-    </script>
+  </script>
 </%def>

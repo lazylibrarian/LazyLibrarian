@@ -2,7 +2,6 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="headerIncludes()">
     <div id="subhead_container">
         <div id="subhead_menu">
@@ -42,31 +41,28 @@
                     else:
                         checked = ''
                 %>
-                <label for="manual" class="control-label">
-                <input type="checkbox" id="manual" name="manual" value="1" ${checked} />
-                Lock settings</label>
-            </div>
-
-        </fieldset>
-
-        <div class="table_wrapper_button">
-            <input type="submit" value="Save changes" id="add" class="btn btn-primary">
-        </div>
-    <p>&nbsp;</p>
-    </div>
+<label for="manual" class="control-label">
+  <input type="checkbox" id="manual" name="manual" value="1" ${checked} />
+  Lock settings</label>
+</div>
+</fieldset>
+<div class="table_wrapper_button">
+  <input type="submit" value="Save changes" id="add" class="btn btn-primary">
+</div>
+<p>&nbsp;</p>
+</div>
 </form>
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script type="text/javascript">
-        function initThisPage()
-
-        {
-            "use strict";
-        }
-        $(document).ready(function() {
-            initThisPage();
-        });
-    </script>
+  <script type="text/javascript">
+    function initThisPage()
+    
+    {
+        "use strict";
+    }
+    $(document).ready(function() {
+        initThisPage();
+    });
+  </script>
 </%def>
 <html><head></head><body></body></html>

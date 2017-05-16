@@ -3,51 +3,48 @@
     import lazylibrarian
 %>
 <%def name="headerIncludes()">
-    <div id="subhead_container">
-        <ul id="subhead_menu">
-            <li><a href="clearLog" id="button"> Clear Log </a></li>
-            %if lazylibrarian.LOGFULL == True:
-                <li><a href="toggleLog" id="button"> Stop Debug Log</a></li>
-            %else:
-                <li><a href="toggleLog" id="button"> Start Debug Log</a></li>
-            %endif
-        </ul>
-    </div>
+  <div id="subhead_container">
+    <ul id="subhead_menu">
+      <li><a href="clearLog" id="button"> Clear Log </a></li>
+      %if lazylibrarian.LOGFULL == True:
+      <li><a href="toggleLog" id="button"> Stop Debug Log</a></li>
+      %else:
+      <li><a href="toggleLog" id="button"> Start Debug Log</a></li>
+      %endif
+    </ul>
+  </div>
 </%def>
 <%def name="body()">
-<BR><BR>
-<h1>&nbsp;&nbsp;${title}</h1>
-    <div align="center">Refresh rate:
+  <BR><BR>
+  <h1>&nbsp;&nbsp;${title}</h1>
+  <div align="center">Refresh rate:
     <select id="refreshrate" onchange="setRefresh()">
-        <option value="0" selected="selected">No Refresh</option>
-        <option value="5">5 Seconds</option>
-        <option value="15">15 Seconds</option>
-        <option value="30">30 Seconds</option>
-        <option value="60">60 Seconds</option>
-        <option value="300">5 Minutes</option>
-        <option value="600">10 Minutes</option>
+      <option value="0" selected="selected">No Refresh</option>
+      <option value="5">5 Seconds</option>
+      <option value="15">15 Seconds</option>
+      <option value="30">30 Seconds</option>
+      <option value="60">60 Seconds</option>
+      <option value="300">5 Minutes</option>
+      <option value="600">10 Minutes</option>
     </select></div>
-
-    <table class="display" id="log_table">
-        <thead>
-            <tr>
-                <th id="timestamp">Timestamp</th>
-                <th id="level">Level</th>
-                <th id="message">Message</th>
-            </tr>
-        </thead>
-    </table>
-<p>&nbsp;</p>
-<p>&nbsp;</p>
+  <table class="display" id="log_table">
+    <thead>
+      <tr>
+        <th id="timestamp">Timestamp</th>
+        <th id="level">Level</th>
+        <th id="message">Message</th>
+      </tr>
+    </thead>
+  </table>
+  <p>&nbsp;</p>
+  <p>&nbsp;</p>
 </%def>
-
 <%def name="headIncludes()">
-    <link rel="stylesheet" href="css/data_table.css">
+  <link rel="stylesheet" href="css/data_table.css">
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script src="js/libs/jquery.dataTables.min.js"></script>
-    <script>
+  <script src="js/libs/jquery.dataTables.min.js"></script>
+  <script>
     $(document).ready(function()
     {
         var oTable = $('#log_table').dataTable(
@@ -92,26 +89,25 @@
             });
         $('.dataTables_filter input').attr("placeholder", "Search table here");
         $(window).resize(function() {oTable.fnDraw(false)});
-
+    
     });
-    </script>
-    <script>
-        var timer;
-        function setRefresh()
+  </script>
+  <script>
+    var timer;
+    function setRefresh()
+    {
+        refreshrate = document.getElementById('refreshrate');
+        if(refreshrate != null)
         {
-            refreshrate = document.getElementById('refreshrate');
-            if(refreshrate != null)
+            if(timer)
             {
-                if(timer)
-                {
-                    clearInterval(timer);
-                }
-                if(refreshrate.value != 0)
-                {
-                    timer = setInterval("$('#log_table').dataTable().fnDraw()",1000*refreshrate.value);
-                }
+                clearInterval(timer);
+            }
+            if(refreshrate.value != 0)
+            {
+                timer = setInterval("$('#log_table').dataTable().fnDraw()",1000*refreshrate.value);
             }
         }
-    </script>
-
+    }
+  </script>
 </%def>

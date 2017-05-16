@@ -1,29 +1,25 @@
 <%inherit file="base.html"/>
-
-<%def name="headIncludes()">
-
-</%def>
-
-<%def name="body()">
+  <%def name="headIncludes()">
+  </%def>
+  <%def name="body()">
     <p>&nbsp;</p>
     <div id="shutdown" class="alert alert-info">
-        <h1>${title}</h1>
-        <h2><i class="fa fa-circle-o-notch fa-spin"></i> LazyLibrarian is ${message}</h2>
-        <h3 id="countdown">&nbsp;</h3>
+      <h1>${title}</h1>
+      <h2><i class="fa fa-circle-o-notch fa-spin"></i> LazyLibrarian is ${message}</h2>
+      <h3 id="countdown">&nbsp;</h3>
     </div>
-</%def>
-
-<%def name="javascriptIncludes()">
-<script type="text/javascript">
-    $(function(){
-        var countdown = ${timer};
-        setInterval(function() {
-            countdown--;
-            $('#countdown').html('Refreshing in '+countdown+' seconds');
-            if (countdown <= 0) {
-                window.location = 'index';
-            }
-        }, 1000);
-    });
-</script>
-</%def>
+  </%def>
+  <%def name="javascriptIncludes()">
+    <script type="text/javascript">
+      $(function(){
+          var countdown = ${timer};
+          setInterval(function() {
+              countdown--;
+              $('#countdown').html('Refreshing in '+countdown+' seconds');
+              if (countdown <= 0) {
+                  window.location = 'index';
+              }
+          }, 1000);
+      });
+    </script>
+  </%def>

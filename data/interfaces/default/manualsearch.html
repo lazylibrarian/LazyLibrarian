@@ -2,55 +2,52 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="headerIncludes()">
-    <div id="subhead_container">
-        <div id="subhead_menu">
-        </div>
+  <div id="subhead_container">
+    <div id="subhead_menu">
     </div>
+  </div>
 </%def>
-
 <%def name="body()">
-    <br><br>
-    <h1>&nbsp;&nbsp;${title}</h1>
-    <br><br>
-    <table class="display" id="book_table">
-        <thead>
-            <tr>
-                <th id="number">Match</th>
-                <th id="bookname">Title</th>
-                <th id="provider">Provider</th>
-                <th id="size">Size</th>
-                <th id="dateadded">Date</th>
-                <th id="status">Status</th>
-            </tr>
-        </thead>
-        <tbody>
-        %for item in results:
-            <tr class="gradeZ">
-                <td id="number">${item['score']} %</td>
-                <td id="bookname">${item['title']}</td>
-                <td id="provider"><a href="${item['url']}">${item['provider']}</a></td>
-                <td id="size">${item['size']}</td>
-                <td id="dateadded">${item['date']}</td>
-                <td id="status"> <a class="button" href="snatchBook?bookid=${bookid}&mode=${item['mode']}&provider=${item['provider']}&url=${item['url']}" title="Snatch">Snatch</a></td>
-            </tr>
-        %endfor
-        </tbody>
-    </table>
+  <br>
+  <br>
+  <h1>&nbsp;&nbsp;${title}</h1>
+  <br>
+  <br>
+  <table class="display" id="book_table">
+    <thead>
+      <tr>
+        <th id="number">Match</th>
+        <th id="bookname">Title</th>
+        <th id="provider">Provider</th>
+        <th id="size">Size</th>
+        <th id="dateadded">Date</th>
+        <th id="status">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      %for item in results:
+      <tr class="gradeZ">
+        <td id="number">${item['score']} %</td>
+        <td id="bookname">${item['title']}</td>
+        <td id="provider"><a href="${item['url']}">${item['provider']}</a></td>
+        <td id="size">${item['size']}</td>
+        <td id="dateadded">${item['date']}</td>
+        <td id="status"> <a class="button" href="snatchBook?bookid=${bookid}&mode=${item['mode']}&provider=${item['provider']}&url=${item['url']}" title="Snatch">Snatch</a></td>
+      </tr>
+      %endfor
+    </tbody>
+  </table>
 </%def>
-
 <%def name="headIncludes()">
-    <link rel="stylesheet" href="css/data_table.css">
+  <link rel="stylesheet" href="css/data_table.css">
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script src="js/libs/jquery.dataTables.min.js"></script>
-    <script>
-
+  <script src="js/libs/jquery.dataTables.min.js"></script>
+  <script>
     $(document).ready(function()
     {
-
+    
         $('#book_table').dataTable(
             {
                 "responsive": true,
@@ -67,5 +64,5 @@
             });
             $('.dataTables_filter input').attr("placeholder", "Search table here");
     });
-    </script>
+  </script>
 </%def>

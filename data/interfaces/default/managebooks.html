@@ -2,73 +2,70 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="headerIncludes()">
-    <div id="subhead_container">
-        <ul id="subhead_menu">
-            <li><a href="importAlternate" id="button"> Import Book </a></li>
-            <li><a href="importCSV" id="button"> Import CSV Wishlist </a></li>
-            <li><a href="exportCSV" id="button"> Export CSV Wishlist </a></li>
-        </ul>
-    </div>
+  <div id="subhead_container">
+    <ul id="subhead_menu">
+      <li><a href="importAlternate" id="button"> Import Book </a></li>
+      <li><a href="importCSV" id="button"> Import CSV Wishlist </a></li>
+      <li><a href="exportCSV" id="button"> Export CSV Wishlist </a></li>
+    </ul>
+  </div>
 </%def>
-
 <%def name="body()">
-<BR><BR>
-<h1>&nbsp;&nbsp;${title}</h1><br>
-    <form action="manage" method="get">
-        <label>&nbsp;&nbsp;Books with status: </label>
-        <select name="whichStatus">
-        %for item in ['Skipped', 'Wanted', 'Open', 'Have', 'Ignored']:
-            <option value="${item}"
+  <BR><BR>
+  <h1>&nbsp;&nbsp;${title}</h1>
+  <br>
+  <form action="manage" method="get">
+    <label>&nbsp;&nbsp;Books with status: </label>
+    <select name="whichStatus">
+      %for item in ['Skipped', 'Wanted', 'Open', 'Have', 'Ignored']:
+      <option value="${item}"
             %if item == whichStatus:
                 selected = "selected"
             %endif
             >${item}</option>
-        %endfor
-        </select>
-        <input  class="btn" type="submit" value="Manage" />
-    </form>
-    <br>
-    <form action="markBooks" method="get"><input type="hidden" name="redirect" value="manage">
+      %endfor
+    </select>
+    <input  class="btn" type="submit" value="Manage" />
+  </form>
+  <br>
+  <form action="markBooks" method="get"><input type="hidden" name="redirect" value="manage">
     <table class="display" id="book_table" style="width:100%;">
-        <thead>
-            <tr>
-                <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
-                <th id="bookart">Cover</th>
-                <th id="authorname">Author</th>
-                <th id="bookname">Title</th>
-                <th id="series">Series</th>
-                <th id="stars" class="center">Rating</th>
-                <th id="date" class="center">Released</th>
-            </tr>
-        </thead>
+      <thead>
+        <tr>
+          <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
+          <th id="bookart">Cover</th>
+          <th id="authorname">Author</th>
+          <th id="bookname">Title</th>
+          <th id="series">Series</th>
+          <th id="stars" class="center">Rating</th>
+          <th id="date" class="center">Released</th>
+        </tr>
+      </thead>
     </table>
     <p>
-    &nbsp;&nbsp;Change selected books to:
-    <select class="markBooks" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
+      &nbsp;&nbsp;Change selected books to:
+      <select class="markBooks" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
         %for item in ['Skipped', 'Wanted', 'Have', 'Ignored']:
-            <option value="${item}">${item}</option>
+        <option value="${item}">${item}</option>
         %endfor
-    </select>
-        <input type="submit" class="markBooks" value="Go">
+      </select>
+      <input type="submit" class="markBooks" value="Go">
     </p>
-    </form>
+  </form>
 </%def>
-
 <%def name="headIncludes()">
-    <link rel="stylesheet" href="css/data_table.css">
+  <link rel="stylesheet" href="css/data_table.css">
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script src="js/libs/jquery.dataTables.min.js"></script>
-    <script>
+  <script src="js/libs/jquery.dataTables.min.js"></script>
+  <script>
     $(document).ready(function()
     {
         var show = ""+${lazylibrarian.CONFIG['BOOK_IMG']};
             if ( show != '1' ) { showimg = false }
             else { showimg = true }
-
+    
         var oTable = $('#book_table').dataTable(
             {
                 "bAutoWidth": false,
@@ -139,5 +136,5 @@
         $('.dataTables_filter input').attr("placeholder", "Search table here");
         $(window).resize(function() {oTable.fnDraw(false)});
     });
-    </script>
+  </script>
 </%def>

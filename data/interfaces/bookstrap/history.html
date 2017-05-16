@@ -2,7 +2,6 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="headerIncludes()">
     <div id="subhead_container">
         <div id="subhead_menu">
@@ -42,27 +41,23 @@
                     else:
                         grade = 'U'
                 %>
-                <tr class="grade${grade}">
-                    <td class="filename">${item['NZBtitle']}</td>
-                    <td class="bookid">${item['BookID']}</td>
-                    <td class="provider"><a href="${item['NZBurl']}">${item['NZBprov']}</a></td>
-                    <td class="dateadded">${item['NZBdate']}</td>
-                    <td class="size text-right">${item['NZBsize']} MB</td>
-                    <td class="status text-center">${item['Status']}</td>
-                </tr>
-            %endfor
-            </tbody>
-        </table>
-    </div>
+<tr class="grade${grade}">
+  <td class="filename">${item['NZBtitle']}</td>
+  <td class="bookid">${item['BookID']}</td>
+  <td class="provider"><a href="${item['NZBurl']}">${item['NZBprov']}</a></td>
+  <td class="dateadded">${item['NZBdate']}</td>
+  <td class="size text-right">${item['NZBsize']} MB</td>
+  <td class="status text-center">${item['Status']}</td>
+</tr>
+%endfor
+</tbody>
+</table>
+</div>
 </%def>
-
 <%def name="headIncludes()">
-
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script>
-
+  <script>
     $(document).ready(function()
     {
         var table = $('#book_table').DataTable(
@@ -88,5 +83,5 @@
                 column.visible( ! column.visible() );
             } );
     });
-    </script>
+  </script>
 </%def>
