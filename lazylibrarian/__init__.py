@@ -135,6 +135,7 @@ CONFIG_DEFINITIONS = {
     'MAG_IMG': ('bool', 'General', 1),
     'SERIES_TAB': ('bool', 'General', 1),
     'MAG_TAB': ('bool', 'General', 1),
+    'TOGGLES': ('bool', 'General', 1),
     'LAUNCH_BROWSER': ('bool', 'General', 1),
     'API_ENABLED': ('bool', 'General', 0),
     'API_KEY': ('str', 'General', ''),
@@ -599,6 +600,10 @@ def config_read(reloaded=False):
         CONFIG['BOOK_IMG'] = 1
     else:
         CONFIG['BOOK_IMG'] = 0
+    if CONFIG['TOGGLES']:
+        CONFIG['TOGGLES'] = 1
+    else:
+        CONFIG['TOGGLES'] = 0
 
     if reloaded:
         logger.info('Config file reloaded')

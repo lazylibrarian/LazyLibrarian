@@ -24,7 +24,9 @@
                       <option value="Leave" hidden>Leave</option>
                 </select>
             <button type="submit" value="Go" id="go" class="btn btn-sm btn-primary">Go</button>
+        %if lazylibrarian.CONFIG['TOGGLES'] == True:
         &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="2">Issue</a> - <a class="toggle-vis" data-column="3">Acquired</a> - <a class="toggle-vis" data-column="4">Select</a>
+        %endif
         </div>
         <p>&nbsp;</p>
         <div class="table-responsive">
@@ -67,7 +69,7 @@
   <script type="text/javascript">
     $(document).ready(function()
     {
-    
+
         $('#go').click(function () {
                 var action = $("#action").val();
                 if (action == "Delete") {
@@ -81,7 +83,7 @@
                     return
                 }
             });
-    
+
         var table = $('#book_table').DataTable(
             {
                 "bAutoWidth": false,

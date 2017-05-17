@@ -27,7 +27,9 @@
       </select>
     </div>
     <input  class="btn btn-sm btn-default" type="submit" value="Manage" />
+    %if lazylibrarian.CONFIG['TOGGLES'] == True:
     &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="2">Author</a> - <a class="toggle-vis" data-column="3">Title</a> - <a class="toggle-vis" data-column="4">Series</a> - <a class="toggle-vis" data-column="5">Rating</a> - <a class="toggle-vis" data-column="6">Released</a>
+    %endif
   </form>
   <br>
   <form action="markBooks" method="get" class="form-inline">
@@ -68,7 +70,7 @@
         var show = ""+${lazylibrarian.CONFIG['BOOK_IMG']};
             if ( show != '1' ) { showimg = false }
             else { showimg = true }
-    
+
          var table = $('#book_table').DataTable(
             {
                 "bAutoWidth": false,

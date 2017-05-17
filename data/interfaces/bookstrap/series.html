@@ -24,7 +24,9 @@
       </select>
     </div>
     <input  class="btn btn-sm btn-default" type="submit" value="Manage" />
+    %if lazylibrarian.CONFIG['TOGGLES'] == True:
     &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Author</a> - <a class="toggle-vis" data-column="2">Series</a> - <a class="toggle-vis" data-column="3">Status</a> - <a class="toggle-vis" data-column="4">Select</a>
+    %endif
   </form>
   <br>
   <form action="markSeries" method="get" class="form-inline">

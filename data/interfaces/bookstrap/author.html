@@ -120,9 +120,11 @@
       </select>
     </div>
     <input type="submit" class="markBooks btn btn-sm btn-primary" value="Go">
+    %if lazylibrarian.CONFIG['TOGGLES'] == True:
     &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="3">Title</a> - <a class="toggle-vis" data-column="4">Series</a> - <a class="toggle-vis" data-column="5">Rating</a> - <a class="toggle-vis" data-column="6">Released</a> - <a class="toggle-vis" data-column="7">Added</a> - <a class="toggle-vis" data-column="7">Status</a>
+    <p>&nbsp;</p>
+    %endif
   </div>
-  <p>&nbsp;</p>
   <div class="table-responsive">
     <table class="display table table-striped table-hover table-bordered" id="book_table">
       <thead>
@@ -163,7 +165,7 @@
         var show = ""+${lazylibrarian.CONFIG['BOOK_IMG']};
             if ( show != '1' ) { showimg = false }
             else { showimg = true }
-    
+
         var oTable = $('#book_table').DataTable(
             {
                 "order": [[ 6, 'desc' ]],

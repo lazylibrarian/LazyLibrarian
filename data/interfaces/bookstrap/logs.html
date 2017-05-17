@@ -17,7 +17,9 @@
 </%def>
 <%def name="body()">
   <h1>${title}</h1>
+  %if lazylibrarian.CONFIG['TOGGLES'] == True:
   Toggle: <a class="toggle-vis" data-column="0">Timestamp</a> - <a class="toggle-vis" data-column="1">Level</a> - <a class="toggle-vis" data-column="2">Message</a>
+  %endif
   <div align="center">Refresh rate:
     <select id="refreshrate" class="button btn btn-sm btn-primary" onchange="setRefresh()">
       <option value="0" selected="selected">No Refresh</option>

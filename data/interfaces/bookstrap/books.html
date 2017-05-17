@@ -43,8 +43,10 @@
         </select>
       </div>
       <input type="submit" class="markBooks btn btn-sm btn-primary" id="go" value="Go">
+      %if lazylibrarian.CONFIG['TOGGLES'] == True:
       &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="2">Author</a> - <a class="toggle-vis" data-column="3">Title</a> - <a class="toggle-vis" data-column="4">Series</a> - <a class="toggle-vis" data-column="5">Rating</a> - <a class="toggle-vis" data-column="6">Released</a> - <a class="toggle-vis" data-column="7">Added</a> - <a class="toggle-vis" data-column="8">Status</a>
-      <p>&nbsp;</p>
+      %endif
+    <p>&nbsp;</p>
     </div>
     <div class="table-responsive">
       <table class="display table table-striped table-hover table-bordered" id="book_table">
@@ -70,7 +72,7 @@
 <%def name="javascriptIncludes()">
   <script type="text/javascript">
     $(document).ready(function() {
-    
+
         $('#go').click(function () {
                 var action = $("#action").val();
                 if (action == "Delete") {
@@ -84,13 +86,13 @@
                     return
                 }
             });
-    
+
         $('#chooselanguage').val(getUrlVars()['BookLang']);
-    
+
         var show = ""+${lazylibrarian.CONFIG['BOOK_IMG']};
             if ( show != '1' ) { showimg = false }
             else { showimg = true }
-    
+
         var table = $('#book_table').DataTable({
             "bAutoWidth": false,
             "stateSave": true,
@@ -133,7 +135,7 @@
                 "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
                 "sInfoEmpty":"Showing 0 to 0 of 0 rows",
                 "sInfoFiltered":"(filtered from _MAX_ total rows)"},
-    
+
             "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
             "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
             "sPaginationType": "full_numbers",
@@ -153,10 +155,10 @@
                 return nRow;
             },
         });
-    
+
         $('.dataTables_filter input').attr("placeholder", "Search filter");
         $(window).resize(function() {table.draw(false)});
-    
+
         $('a.toggle-vis').click(function (e) {
             e.preventDefault();
             var column = table.column( $(this).attr('data-column') );
@@ -166,7 +168,7 @@
         //table.on(function ( e ) {
         //   console.log( e ); } );
     });
-    
+
     // Read a page's GET URL variables and return them as an associative array.
     function getUrlVars() {
         var vars = [], hash;

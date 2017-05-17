@@ -42,7 +42,9 @@
         </select>
       </div>
       <input type="submit" class="markMagazines btn btn-sm btn-primary" id="go" value="Go">
+      %if lazylibrarian.CONFIG['TOGGLES'] == True:
       &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="2">Title</a> - <a class="toggle-vis" data-column="3">Num</a> - <a class="toggle-vis" data-column="4">Acquired</a> - <a class="toggle-vis" data-column="5">Latest</a> - <a class="toggle-vis" data-column="6">Status</a> - <a class="toggle-vis" data-column="7">Select</a>
+      %endif
     </div>
     <p>&nbsp;</p>
     <div class="table-responsive">
@@ -110,7 +112,7 @@
   <script>
     $(document).ready(function()
     {
-    
+
         $('#go').click(function () {
                 var action = $("#action").val();
                 if (action == "Delete") {
@@ -124,7 +126,7 @@
                     return
                 }
             });
-    
+
         var oTable = $('#book_table').DataTable(
             {
                 "responsive": true,

@@ -217,7 +217,7 @@
                                             %>
       <label for="series_tab" class="control-label">
         <input type="checkbox" id="series_tab" name="series_tab" value="1" ${checked} />
-        Show Series</label>
+        Show Series tab</label>
     </div>
     <div class="checkbox">
       <%
@@ -228,7 +228,18 @@
                                             %>
       <label for="mag_tab" class="control-label">
         <input type="checkbox" id="mag_tab" name="mag_tab" value="1" ${checked} />
-        Show Magazines</label>
+        Show Magazines tab</label>
+    </div>
+    <div class="checkbox">
+      <%
+                                                if lazylibrarian.CONFIG['TOGGLES'] == True:
+                                                    checked = 'checked="checked"'
+                                                else:
+                                                    checked = ''
+                                            %>
+      <label for="mag_tab" class="control-label">
+        <input type="checkbox" id="toggles" name="toggles" value="1" ${checked} />
+        Show column toggles</label>
     </div>
     <div class="form-group">
       <label for="http_look">Interface:</label>
@@ -2002,10 +2013,10 @@
 <%def name="javascriptIncludes()">
   <script type="text/javascript">
     function initThisPage()
-    
+
     {
         "use strict";
-    
+
         if ($("#https_enabled").is(":checked"))
             {
                     $("#https_options").show();
@@ -2014,7 +2025,7 @@
             {
                     $("#https_options").hide();
             }
-    
+
         $("#https_enabled").click(function(){
                 if ($("#https_enabled").is(":checked"))
                 {
@@ -2025,7 +2036,7 @@
                         $("#https_options").slideUp();
                 }
         });
-    
+
         if ($("#api_enabled").is(":checked"))
             {
                     $("#api_options").show();
@@ -2034,7 +2045,7 @@
             {
                     $("#api_options").hide();
             }
-    
+
         $("#api_enabled").click(function(){
                 if ($("#api_enabled").is(":checked"))
                 {
@@ -2045,7 +2056,7 @@
                         $("#api_options").slideUp();
                 }
         });
-    
+
         if ($("#tor_downloader_blackhole").is(":checked"))
             {
                     $("#tor_blackhole_options").show();
@@ -2054,7 +2065,7 @@
             {
                     $("#tor_blackhole_options").hide();
             }
-    
+
         $("#tor_downloader_blackhole").click(function(){
                 if ($("#tor_downloader_blackhole").is(":checked"))
                 {
@@ -2065,7 +2076,7 @@
                         $("#tor_blackhole_options").slideUp();
                 }
         });
-    
+
         if ($("#tor_downloader_deluge").is(":checked"))
             {
                     $("#deluge_options").show();
@@ -2084,7 +2095,7 @@
                         $("#deluge_options").slideUp();
                 }
         });
-    
+
         if ($("#tor_downloader_transmission").is(":checked"))
             {
                     $("#transmission_options").show();
@@ -2103,7 +2114,7 @@
                         $("#transmission_options").slideUp();
                 }
         });
-    
+
         if ($("#tor_downloader_utorrent").is(":checked"))
             {
                     $("#utorrent_options").show();
@@ -2112,7 +2123,7 @@
             {
                     $("#utorrent_options").hide();
             }
-    
+
         $("#tor_downloader_utorrent").click(function(){
                 if ($("#tor_downloader_utorrent").is(":checked"))
                 {
@@ -2123,7 +2134,7 @@
                         $("#utorrent_options").slideUp();
                 }
         });
-    
+
         if ($("#tor_downloader_rtorrent").is(":checked"))
             {
                     $("#rtorrent_options").show();
@@ -2132,7 +2143,7 @@
             {
                     $("#rtorrent_options").hide();
             }
-    
+
         $("#tor_downloader_rtorrent").click(function(){
                 if ($("#tor_downloader_rtorrent").is(":checked"))
                 {
@@ -2143,7 +2154,7 @@
                         $("#rtorrent_options").slideUp();
                 }
         });
-    
+
         if ($("#tor_downloader_qbittorrent").is(":checked"))
             {
                     $("#qbittorrent_options").show();
@@ -2152,7 +2163,7 @@
             {
                     $("#qbittorrent_options").hide();
             }
-    
+
         $("#tor_downloader_qbittorrent").click(function(){
                 if ($("#tor_downloader_qbittorrent").is(":checked"))
                 {
@@ -2163,7 +2174,7 @@
                         $("#qbittorrent_options").slideUp();
                 }
         });
-    
+
         if ($("#nzb_downloader_blackhole").is(":checked"))
             {
                     $("#nzb_blackhole_options").show();
@@ -2172,7 +2183,7 @@
             {
                     $("#nzb_blackhole_options").hide();
             }
-    
+
         $("#nzb_downloader_blackhole").click(function(){
                 if ($("#nzb_downloader_blackhole").is(":checked"))
                 {
@@ -2183,7 +2194,7 @@
                         $("#nzb_blackhole_options").slideUp();
                 }
         });
-    
+
         if ($("#nzb_downloader_sabnzbd").is(":checked"))
             {
                     $("#sabnzbd_options").show();
@@ -2202,7 +2213,7 @@
                         $("#sabnzbd_options").slideUp();
                 }
         });
-    
+
         if ($("#nzb_downloader_nzbget").is(":checked"))
             {
                     $("#nzbget_options").show();
@@ -2221,7 +2232,7 @@
                         $("#nzbget_options").slideUp();
                 }
         });
-    
+
         if ($("#use_synology").is(":checked"))
             {
                     $("#synology_options").show();
@@ -2240,13 +2251,13 @@
                         $("#synology_options").slideUp();
                 }
         });
-    
+
         $('#generateAPI').click(function () {
             $.get("generateAPI",
                 function (data) { });
-    
+
         });
-    
+
         $('#show_Jobs').on('click', function(e) {
             $.get('show_Jobs', function(data) {
                 bootbox.dialog({
@@ -2261,7 +2272,7 @@
                 });
             });
         });
-    
+
         $('#stop_Jobs').on('click', function(e) {
             $.get('stop_Jobs', function(data) {
                 bootbox.dialog({
@@ -2276,7 +2287,7 @@
                 });
             });
         });
-    
+
         $('#restart_Jobs').on('click', function(e) {
             $.get('restart_Jobs', function(data) {
                 bootbox.dialog({
@@ -2291,7 +2302,7 @@
                 });
             });
         });
-    
+
         $('#testSABnzbd').on('click', function() {
             var host = $.trim($("#sab_host").val());
             var port = $.trim($("#sab_port").val());
@@ -2314,7 +2325,7 @@
                 });
             });
         });
-    
+
         $('#testNZBget').on('click', function(e) {
             var host = $.trim($("#nzbget_host").val());
             var port = $.trim($("#nzbget_port").val());
@@ -2336,7 +2347,7 @@
                 });
             });
         });
-    
+
         $('#testSynology').on('click', function(e) {
             var host = $.trim($("#synology_host").val());
             var port = $.trim($("#synology_port").val());
@@ -2357,7 +2368,7 @@
                 });
             });
         });
-    
+
         $('#testDeluge').on('click', function() {
             var host = $.trim($("#deluge_host").val());
             var port = $.trim($("#deluge_port").val());
@@ -2378,7 +2389,7 @@
                 });
             });
         });
-    
+
         $('#testTransmission').on('click', function(e) {
             var host = $.trim($("#transmission_host").val());
             var port = $.trim($("#transmission_port").val());
@@ -2398,7 +2409,7 @@
                 });
             });
         });
-    
+
         $('#testqBittorrent').on('click', function() {
             var host = $.trim($("#qbittorrent_host").val());
             var port = $.trim($("#qbittorrent_port").val());
@@ -2419,7 +2430,7 @@
                 });
             });
         });
-    
+
         $('#testuTorrent').on('click', function(e) {
             var host = $.trim($("#utorrent_host").val());
             var port = $.trim($("#utorrent_port").val());
@@ -2440,7 +2451,7 @@
                 });
             });
         });
-    
+
         $('#testrTorrent').on('click', function(e) {
             var host = $.trim($("#rtorrent_host").val());
             var dir = $.trim($("#rtorrent_dir").val());
@@ -2461,7 +2472,7 @@
                 });
             });
         });
-    
+
         if ($("#use_twitter").is(":checked"))
                 {
                         $("#twitteroptions").show();
@@ -2470,7 +2481,7 @@
                 {
                         $("#twitteroptions").hide();
                 }
-    
+
         $("#use_twitter").click(function(){
                 if ($("#use_twitter").is(":checked"))
                 {
@@ -2481,7 +2492,7 @@
                         $("#twitteroptions").slideUp();
                 }
         });
-    
+
         if ($("#use_boxcar").is(":checked"))
                 {
                         $("#boxcaroptions").show();
@@ -2490,7 +2501,7 @@
                 {
                         $("#boxcaroptions").hide();
                 }
-    
+
         $("#use_boxcar").click(function(){
                 if ($("#use_boxcar").is(":checked"))
                 {
@@ -2501,7 +2512,7 @@
                         $("#boxcaroptions").slideUp();
                 }
         });
-    
+
         if ($("#fullscan").is(":checked"))
                 {
                         $("#fullscanoptions").show();
@@ -2510,7 +2521,7 @@
                 {
                         $("#fullscanoptions").hide();
                 }
-    
+
         $("#fullscan").click(function(){
                 if ($("#fullscan").is(":checked"))
                 {
@@ -2521,7 +2532,7 @@
                         $("#fullscanoptions").slideUp();
                 }
         });
-    
+
         if ($("#use_pushbullet").is(":checked"))
                 {
                         $("#pushbulletoptions").show();
@@ -2530,7 +2541,7 @@
                 {
                         $("#pushbulletoptions").hide();
                 }
-    
+
         $("#use_pushbullet").click(function(){
                 if ($("#use_pushbullet").is(":checked"))
                 {
@@ -2541,7 +2552,7 @@
                         $("#pushbulletoptions").slideUp();
                 }
         });
-    
+
         if ($("#use_pushover").is(":checked"))
                 {
                         $("#pushoveroptions").show();
@@ -2560,7 +2571,7 @@
                         $("#pushoveroptions").slideUp();
                 }
         });
-    
+
         if ($("#use_androidpn").is(":checked"))
                 {
                         $("#androidpnoptions").show();
@@ -2579,7 +2590,7 @@
                     $("#androidpnoptions").slideUp();
                 }
         });
-    
+
         if ($("#androidpn_broadcast").is(":checked"))
                 {
                         $("#androidpn_username").hide();
@@ -2598,7 +2609,7 @@
                     $("#androidpn_username").slideDown();
                 }
         });
-    
+
             if ($("#use_nma").is(":checked"))
                     {
                             $("#nmaoptions").show();
@@ -2607,7 +2618,7 @@
                     {
                             $("#nmaoptions").hide();
                     }
-    
+
             $("#use_nma").click(function(){
                     if ($("#use_nma").is(":checked"))
                     {
@@ -2618,7 +2629,7 @@
                             $("#nmaoptions").slideUp();
                     }
             });
-    
+
         if ($("#use_slack").is(":checked"))
                 {
                         $("#slackoptions").show();
@@ -2627,7 +2638,7 @@
                 {
                         $("#slackoptions").hide();
                 }
-    
+
         $("#use_slack").click(function(){
                 if ($("#use_slack").is(":checked"))
                 {
@@ -2638,7 +2649,7 @@
                         $("#slackoptions").slideUp();
                 }
         });
-    
+
         if ($("#use_custom").is(":checked"))
                 {
                         $("#customoptions").show();
@@ -2647,7 +2658,7 @@
                 {
                         $("#customoptions").hide();
                 }
-    
+
         $("#use_custom").click(function(){
                 if ($("#use_custom").is(":checked"))
                 {
@@ -2658,7 +2669,7 @@
                         $("#customoptions").slideUp();
                 }
         });
-    
+
         if ($("#use_email").is(":checked"))
                 {
                         $("#emailoptions").show();
@@ -2667,7 +2678,7 @@
                 {
                         $("#emailoptions").hide();
                 }
-    
+
         $("#use_email").click(function(){
                 if ($("#use_email").is(":checked"))
                 {
@@ -2678,39 +2689,39 @@
                         $("#emailoptions").slideUp();
                 }
         });
-    
-    
+
+
         $('#twitterStep1').click(function () {
             $('#testTwitter-result').html('');
             $.get("twitterStep1", function (data) {window.open(data); })
                 .done(function () { $('#testTwitter-result').html('<b>Step1:</b> Confirm Authorization'); });
         });
-    
+
         $('#twitterStep2').click(function () {
             $('#testTwitter-result').html('');
             var twitter_key = $("#twitter_key").val();
             $.get("twitterStep2", {'key': twitter_key},
                 function (data) { $('#testTwitter-result').html(data); });
         });
-    
+
         $('#testTwitter').click(function () {
             $.get("testTwitter",
                 function (data) { $('#testTwitter-result').html(data); });
         });
-    
+
         $('#testBoxcar').click(function () {
             var token = $.trim($("#boxcar_token").val());
             $.get("testBoxcar", {'token': token},
                 function (data) { window.alert(data) });
         });
-    
+
         $('#testPushbullet').click(function () {
             var token = $.trim($("#pushbullet_token").val());
             var device = $.trim($("#pushbullet_deviceid").val());
             $.get("testPushbullet", {'token': token, 'device': device},
                 function (data) { window.alert(data) });
         });
-    
+
         $('#testPushover').click(function () {
             var token = $.trim($("#pushover_apitoken").val());
             var keys = $.trim($("#pushover_keys").val());
@@ -2719,26 +2730,26 @@
             $.get("testPushover", {'apitoken': token, 'keys': keys, 'priority': priority, 'device': device},
                 function (data) { window.alert(data) });
         });
-    
+
         $('#testNMA').click(function () {
             var apikey = $.trim($("#nma_apikey").val());
             var priority = $.trim($("#nma_priority").val());
             $.get("testNMA", {'apikey': apikey, 'priority': priority},
                 function (data) { window.alert(data) });
         });
-    
+
         $('#testSlack').click(function () {
             var token = $.trim($("#slack_token").val());
             $.get("testSlack", {'token': token},
                 function (data) { window.alert(data) });
         });
-    
+
         $('#testCustom').click(function () {
             var script = $.trim($("#custom_script").val());
             $.get("testCustom", {'script': script},
                 function (data) { window.alert(data) });
         });
-    
+
         $('#testEmail').click(function () {
             var tls = ($("#email_tls").prop('checked') == true) ? 'True' : 'False';
             var ssl = ($("#email_ssl").prop('checked') == true) ? 'True' : 'False';
@@ -2751,7 +2762,7 @@
             $.get("testEmail", {'tls': tls, 'ssl': ssl, 'emailfrom': emailfrom, 'emailto': emailto, 'server': server, 'user': user, 'password': password, 'port': port},
                 function (data) { window.alert(data) });
         });
-    
+
         $("#testAndroidPN").click(function () {
             var androidpn_url = $.trim($("#androidpn_url").val());
             var androidpn_username = $.trim($("#androidpn_username").val());
@@ -2759,7 +2770,7 @@
             $.get("testAndroidPN", {'url': androidpn_url, 'username': androidpn_username, 'broadcast': androidpn_broadcast},
                 function (data) { window.alert(data) });
         });
-    
+
         $('#http_look').change(function() {
             if ($(this).val() == 'bookstrap') {
                 $('#bookstrap_options').removeClass("hidden");
@@ -2767,7 +2778,7 @@
                 $('#bookstrap_options').addClass("hidden");
             }
         });
-    
+
         // when the page first loads, hide all tab headers and panels
         $("li[role='presentation']").attr("aria-selected", "false");
         $("li[role='presentation']").removeClass('active');
@@ -2784,16 +2795,16 @@
         tabid.attr("aria-selected", "true");
         tabid.addClass('active');
         $("div[role='tab-table']").removeClass('hidden');
-    
+
         // when a tab is clicked
         $("li[role='presentation']").click(function(){
             var tabnum = $(this).attr('id');    // store current tab for python
             $("#current_tab").val(tabnum);
         });
-    
-    
+
+
     } // End Init
-    
+
     $(document).ready(function() {
         initThisPage();
     });

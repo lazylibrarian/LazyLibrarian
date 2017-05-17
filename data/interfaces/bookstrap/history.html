@@ -16,8 +16,10 @@
 <%def name="body()">
     <h1>${title}</h1>
     <div class="table-responsive">
+        %if lazylibrarian.CONFIG['TOGGLES'] == True:
         Toggle: <a class="toggle-vis" data-column="0">Title</a> - <a class="toggle-vis" data-column="1">ID</a> - <a class="toggle-vis" data-column="2">Provider</a> - <a class="toggle-vis" data-column="3">Date</a> - <a class="toggle-vis" data-column="4">Size</a> - <a class="toggle-vis" data-column="5">Status</a>
-        <p>&nbsp;&nbsp;</p>
+        <p>&nbsp;</p>
+        %endif
         <table class="display table table-striped table-hover table-bordered" id="book_table">
             <thead>
                 <tr>
