@@ -20,10 +20,13 @@ Toggle: <a class="toggle-vis" data-column="0">Image</a> - <a class="toggle-vis" 
 %endif
     <table class="display table table-striped table-hover table-bordered" id="author_table">
         <%
-        if lazylibrarian.CONFIG['AUTHOR_IMG'] == True:
+        if lazylibrarian.CONFIG['TOGGLES'] == True:
             hidden = ''
         else:
-            hidden = 'hidden'
+            if lazylibrarian.CONFIG['AUTHOR_IMG'] == True:
+                hidden = ''
+            else:
+                hidden = 'hidden'
         %>
 <thead>
   <tr>

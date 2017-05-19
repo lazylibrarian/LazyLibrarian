@@ -65,7 +65,7 @@
         var show = ""+${lazylibrarian.CONFIG['BOOK_IMG']};
             if ( show != '1' ) { showimg = false }
             else { showimg = true }
-    
+
         var oTable = $('#book_table').dataTable(
             {
                 "bAutoWidth": false,
@@ -134,7 +134,7 @@
                 },
             });
         $('.dataTables_filter input').attr("placeholder", "Search table here");
-        $(window).resize(function() {oTable.fnDraw(false)});
+        //$(window).resize(function() {oTable.fnDraw(false)});
     });
   </script>
 </%def>

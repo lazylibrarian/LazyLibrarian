@@ -586,20 +586,36 @@ def config_read(reloaded=False):
     CONFIG['REJECT_WORDS'] = CONFIG['REJECT_WORDS'].lower()
 
     myDB = database.DBConnection()
+    ###################################################################
+    # ensure all these are boolean 1 0, not True False for javascript #
+    ###################################################################
+    # Suppress series tab if there are none and user doesn't want to add any
     series_list = myDB.select('SELECT SeriesID from series')
     SHOW_SERIES = len(series_list)
     if CONFIG['ADD_SERIES']:
         SHOW_SERIES = 1
+    # Or suppress if tab is disabled
     if not CONFIG['SERIES_TAB']:
         SHOW_SERIES = 0
-
-    SHOW_MAGS = len(CONFIG['MAG_DEST_FOLDER'])
-    if not CONFIG['MAG_TAB']:
+    # Suppress magazine tab if disabled
+    if CONFIG['MAG_TAB']:
+        SHOW_MAGS = 1
+    else:
         SHOW_MAGS = 0
+    # Suppress images if disabled
     if CONFIG['BOOK_IMG']:
         CONFIG['BOOK_IMG'] = 1
     else:
         CONFIG['BOOK_IMG'] = 0
+    if CONFIG['MAG_IMG']:
+        CONFIG['MAG_IMG'] = 1
+    else:
+        CONFIG['MAG_IMG'] = 0
+    if CONFIG['AUTHOR_IMG']:
+        CONFIG['AUTHOR_IMG'] = 1
+    else:
+        CONFIG['AUTHOR_IMG'] = 0
+    # Suppress column toggles if user doesn't want them
     if CONFIG['TOGGLES']:
         CONFIG['TOGGLES'] = 1
     else:

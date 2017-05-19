@@ -229,7 +229,7 @@
                 },
             });
         $('.dataTables_filter input').attr("placeholder", "Search filter");
-        $(window).resize(function() {oTable.draw(false)});
+        //$(window).resize(function() {oTable.draw(false)});
         $('a.toggle-vis').click(function (e) {
             e.preventDefault();
             var column = oTable.column( $(this).attr('data-column') );
