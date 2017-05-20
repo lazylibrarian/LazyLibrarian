@@ -2,16 +2,14 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="headIncludes()">
-    <meta http-equiv="refresh" content="${timer};url=index">
+  <meta http-equiv="refresh" content="${timer};url=index">
 </%def>
-
 <%def name="body()">
-    <div class="table_wrapper">
-        <div id="shutdown">
-        <h1>${message}</h1>
-        <h2>${lazylibrarian.UPDATE_MSG}</h2>
-        </div>
+  <div class="table_wrapper">
+    <div id="shutdown">
+      <h1>${message}</h1>
+      <h2>${lazylibrarian.UPDATE_MSG}</h2>
     </div>
+  </div>
 </%def>

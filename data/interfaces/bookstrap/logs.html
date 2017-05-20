@@ -4,49 +4,48 @@
     from lazylibrarian import formatter
 %>
 <%def name="headerIncludes()">
-    <div id="subhead_container">
-        <div id="subhead_menu">
-          <a href="clearLog" class="button btn btn-sm btn-primary">Clear Log </a>
-          %if lazylibrarian.LOGFULL == True:
-            <a href="toggleLog" class="button btn btn-sm btn-primary">Stop Debug Log</a>
-          %else:
-            <a href="toggleLog" class="button btn btn-sm btn-primary">Start Debug Log</a>
-          %endif
-        </div>
+  <div id="subhead_container">
+    <div id="subhead_menu">
+      <a href="clearLog" class="button btn btn-sm btn-primary">Clear Log </a>
+      %if lazylibrarian.LOGFULL == True:
+      <a href="toggleLog" class="button btn btn-sm btn-primary">Stop Debug Log</a>
+      %else:
+      <a href="toggleLog" class="button btn btn-sm btn-primary">Start Debug Log</a>
+      %endif
     </div>
+  </div>
 </%def>
 <%def name="body()">
-    <h1>${title}</h1>
-    Toggle: <a class="toggle-vis" data-column="0">Timestamp</a> - <a class="toggle-vis" data-column="1">Level</a> - <a class="toggle-vis" data-column="2">Message</a>
-    <div align="center">Refresh rate:
+  <h1>${title}</h1>
+  %if lazylibrarian.CONFIG['TOGGLES'] == True:
+  Toggle: <a class="toggle-vis" data-column="0">Timestamp</a> - <a class="toggle-vis" data-column="1">Level</a> - <a class="toggle-vis" data-column="2">Message</a>
+  %endif
+  <div align="center">Refresh rate:
     <select id="refreshrate" class="button btn btn-sm btn-primary" onchange="setRefresh()">
-    <option value="0" selected="selected">No Refresh</option>
-    <option value="5">5 Seconds</option>
-    <option value="15">15 Seconds</option>
-    <option value="30">30 Seconds</option>
-    <option value="60">60 Seconds</option>
-    <option value="300">5 Minutes</option>
-    <option value="600">10 Minutes</option>
+      <option value="0" selected="selected">No Refresh</option>
+      <option value="5">5 Seconds</option>
+      <option value="15">15 Seconds</option>
+      <option value="30">30 Seconds</option>
+      <option value="60">60 Seconds</option>
+      <option value="300">5 Minutes</option>
+      <option value="600">10 Minutes</option>
     </select></div>
-    <div class="table-responsive">
-        <table class="display table table-striped table-hover table-bordered" id="log_table">
-            <thead>
-                <tr>
-                    <th class="timestamp">Timestamp</th>
-                    <th class="level">Level</th>
-                    <th class="message">Message</th>
-                </tr>
-            </thead>
-        </table>
-    </div>
+  <div class="table-responsive">
+    <table class="display table table-striped table-hover table-bordered" id="log_table">
+      <thead>
+        <tr>
+          <th class="timestamp">Timestamp</th>
+          <th class="level">Level</th>
+          <th class="message">Message</th>
+        </tr>
+      </thead>
+    </table>
+  </div>
 </%def>
-
 <%def name="headIncludes()">
-
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script>
+  <script>
     $(document).ready(function() {
         var oTable = $('#log_table').DataTable({
                 "bAutoWidth": false,
@@ -85,31 +84,30 @@
                 }
             });
             $('.dataTables_filter input').attr("placeholder", "Search filter");
-            $(window).resize(function() {oTable.draw(false)});
+            //$(window).resize(function() {oTable.draw(false)});
             $('a.toggle-vis').click(function (e) {
                 e.preventDefault();
                 var column = oTable.column( $(this).attr('data-column') );
                 column.visible( ! column.visible() );
             } );
         });
-    </script>
-    <script>
-        var timer;
-        function setRefresh()
+  </script>
+  <script>
+    var timer;
+    function setRefresh()
+    {
+        refreshrate = document.getElementById('refreshrate');
+        if(refreshrate != null)
         {
-            refreshrate = document.getElementById('refreshrate');
-            if(refreshrate != null)
+            if(timer)
             {
-                if(timer)
-                {
-                    clearInterval(timer);
-                }
-                if(refreshrate.value != 0)
-                {
-                    timer = setInterval("$('#log_table').dataTable().fnDraw()",1000*refreshrate.value);
-                }
+                clearInterval(timer);
+            }
+            if(refreshrate.value != 0)
+            {
+                timer = setInterval("$('#log_table').dataTable().fnDraw()",1000*refreshrate.value);
             }
         }
-    </script>
-
+    }
+  </script>
 </%def>

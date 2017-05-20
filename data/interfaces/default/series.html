@@ -2,67 +2,64 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="headerIncludes()">
-    <div id="subhead_container">
-        <ul id="subhead_menu">
-            <li><a href="authorPage?AuthorID=${authorid}" id="button"> Return to Author</a></li>
-            <li><a href="refreshAuthor?AuthorID=${authorid}" id="button"> Refresh Author</a></li>
-        </ul>
-    </div>
+  <div id="subhead_container">
+    <ul id="subhead_menu">
+      <li><a href="authorPage?AuthorID=${authorid}" id="button"> Return to Author</a></li>
+      <li><a href="refreshAuthor?AuthorID=${authorid}" id="button"> Refresh Author</a></li>
+    </ul>
+  </div>
 </%def>
-
 <%def name="body()">
-<BR><BR>
-<h1>&nbsp;&nbsp;${title}</h1>
-    <p class="indented">
+  <BR><BR>
+  <h1>&nbsp;&nbsp;${title}</h1>
+  <p class="indented">
     <form action="series" method="get">
-        <label>&nbsp;&nbsp;Series with status: </label>
-        <select name="whichStatus">
+      <label>&nbsp;&nbsp;Series with status: </label>
+      <select name="whichStatus">
         %for item in ['All', 'Skipped', 'Wanted', 'Active', 'Ignored']:
-            <option value="${item}"
+        <option value="${item}"
                 %if item == whichStatus:
                     selected = "selected"
                 %endif
             >${item}</option>
         %endfor
-        </select>
-        <input  class="btn" type="submit" value="Manage" />
+      </select>
+      <input  class="btn" type="submit" value="Manage" />
     </form>
-    <br><br>
+    <br>
+    <br>
+  </p>
+  <form action="markSeries" method="get">
+    <table class="display" id="book_table" style="width:100%;">
+      <thead>
+        <tr>
+          <th id="select" class="center"><input type="checkbox" onClick="toggleAll(this)" /></th>
+          <th id="authorname">Author</th>
+          <th id="bookname">Series Name</th>
+          <th id="stars" class="center">Status</th>
+          <th id="status" class="center">Show</th>
+        </tr>
+      </thead>
+    </table>
+    <p>
+      &nbsp;&nbsp;Change selected series to:
+      <select class="markSeries" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
+        %for item in ['Skipped', 'Wanted', 'Active', 'Ignored']:
+        <option value="${item}">${item}</option>
+        %endfor
+      </select>
+      <input type="submit" class="markSeries" value="Go">
     </p>
-    <form action="markSeries" method="get">
-        <table class="display" id="book_table" style="width:100%;">
-            <thead>
-                <tr>
-                    <th id="select" class="center"><input type="checkbox" onClick="toggleAll(this)" /></th>
-                    <th id="authorname">Author</th>
-                    <th id="bookname">Series Name</th>
-                    <th id="stars" class="center">Status</th>
-                    <th id="status" class="center">Show</th>
-                </tr>
-            </thead>
-        </table>
-        <p>
-        &nbsp;&nbsp;Change selected series to:
-        <select class="markSeries" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
-            %for item in ['Skipped', 'Wanted', 'Active', 'Ignored']:
-                <option value="${item}">${item}</option>
-            %endfor
-        </select>
-        <input type="submit" class="markSeries" value="Go">
-        </p>
-    </form>
-<p>&nbsp;</p>
+  </form>
+  <p>&nbsp;</p>
 </%def>
-
 <%def name="headIncludes()">
-    <link rel="stylesheet" href="css/data_table.css">
+  <link rel="stylesheet" href="css/data_table.css">
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script src="js/libs/jquery.dataTables.min.js"></script>
-    <script>
+  <script src="js/libs/jquery.dataTables.min.js"></script>
+  <script>
     $(document).ready(function()
     {
         var oTable = $('#book_table').dataTable(
@@ -115,7 +112,7 @@
                 },
             });
             $('.dataTables_filter input').attr("placeholder", "Search filter");
-            $(window).resize(function() {oTable.fnDraw(false)});
+            //$(window).resize(function() {oTable.fnDraw(false)});
     });
-</script>
+  </script>
 </%def>

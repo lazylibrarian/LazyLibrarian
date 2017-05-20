@@ -2,7 +2,6 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="headerIncludes()">
     <div id="subhead_container">
         <ul id="subhead_menu">
@@ -22,19 +21,19 @@
             else:
                 hidden = 'class="hidden"'
             %>
-        <thead>
-            <tr>
-                <th id="status" ${hidden}>Image</th>
-                <th id="authorname">Author</th>
-                <th id="bookname">Latest Book</th>
-                <th id="date">Released</th>
-                <th id="have">Downloaded</th>
-                <th id="status">Status</th>
-            </tr>
-        </thead>
-        <tbody>
-        %for author in authors:
-            <%
+<thead>
+  <tr>
+    <th id="status" ${hidden}>Image</th>
+    <th id="authorname">Author</th>
+    <th id="bookname">Latest Book</th>
+    <th id="date">Released</th>
+    <th id="have">Downloaded</th>
+    <th id="status">Status</th>
+  </tr>
+</thead>
+<tbody>
+  %for author in authors:
+  <%
                 totalbooks = author['UnignoredBooks']
                 havebooks = author['HaveBooks']
                 if not havebooks:
@@ -60,33 +59,29 @@
                     grade = 'X'
 
             %>
-            <tr class="gradeZ">
-                <td id="status" ${hidden}><a href="${author['AuthorImg']}" target="_blank" rel="noreferrer"><img src="${author['AuthorImg']}" width="60" alt="Cover" class="bookcover-sm"></a></td>
-                <td id=authorname><a href="authorPage?AuthorID=${author['AuthorID']|u}">${author['AuthorName']}</a></td>
-
-                <td id="bookname"><span title="${author['LastBook']}"></span><a href="${author['LastLink']}" target="_blank" rel="noreferrer">${author['LastBook']}</a></td>
-
-                <td id="date">${author['LastDate']}</td>
-                <td id="have"><span title="${percent}"></span><span class="hidden">${percent}</span>${css}
-                <div style="width:${percent}%"><span class="progressbar-front-text">${havebooks}/${totalbooks}</span></div></td>
-
-                <td id="status">${author['Status']}</td>
-            </tr>
-        %endfor
-        </tbody>
-    </table>
+  <tr class="gradeZ">
+    <td id="status" ${hidden}><a href="${author['AuthorImg']}" target="_blank" rel="noreferrer"><img src="${author['AuthorImg']}" width="60" alt="Cover" class="bookcover-sm"></a></td>
+    <td id=authorname><a href="authorPage?AuthorID=${author['AuthorID']|u}">${author['AuthorName']}</a></td>
+    <td id="bookname"><span title="${author['LastBook']}"></span><a href="${author['LastLink']}" target="_blank" rel="noreferrer">${author['LastBook']}</a></td>
+    <td id="date">${author['LastDate']}</td>
+    <td id="have"><span title="${percent}"></span><span class="hidden">${percent}</span>${css}
+      <div style="width:${percent}%"><span class="progressbar-front-text">${havebooks}/${totalbooks}</span></div>
+    </td>
+    <td id="status">${author['Status']}</td>
+  </tr>
+  %endfor
+</tbody>
+</table>
 <p>&nbsp;</p>
 <p>&nbsp;</p>
 </%def>
-
 <%def name="headIncludes()">
-    <link rel="stylesheet" href="css/data_table.css">
+  <link rel="stylesheet" href="css/data_table.css">
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script src="js/libs/jquery.dataTables.min.js"></script>
-    <script src="js/libs/natural.js"></script>
-    <script>
+  <script src="js/libs/jquery.dataTables.min.js"></script>
+  <script src="js/libs/natural.js"></script>
+  <script>
     $(document).ready(function()
     {
         $('#author_table').dataTable(
@@ -114,5 +109,5 @@
             });
         $('.dataTables_filter input').attr("placeholder", "Search table here");
     });
-    </script>
+  </script>
 </%def>

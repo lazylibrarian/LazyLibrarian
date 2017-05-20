@@ -2,64 +2,59 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="headerIncludes()">
-    <div id="subhead_container">
-    </div>
+  <div id="subhead_container">
+  </div>
 </%def>
-
 <%def name="body()">
-    <BR>
-<h1>&nbsp;&nbsp;${title}</h1><br>
-
-<form action="pastIssues" method="get">
+  <BR>
+  <h1>&nbsp;&nbsp;${title}</h1>
+  <br>
+  <form action="pastIssues" method="get">
     Manage Issues with status <select name="whichStatus">
-        %for item in ['Skipped', 'Have', 'Ignored']:
-            <option value="${item}"
+      %for item in ['Skipped', 'Have', 'Ignored']:
+      <option value="${item}"
                 %if whichStatus == item:
                     selected = "selected"
                 %endif
             >${item}</option>
-        %endfor
+      %endfor
     </select>
     <input  class="btn" type="submit" value="Manage" />
-    </form>
-    <br>
-    <h3>Magazines with status ${whichStatus}</h3>
-    <br>
-    <form action="markPastIssues" method="get"><input type="hidden" name="redirect" value="manageissues">
+  </form>
+  <br>
+  <h3>Magazines with status ${whichStatus}</h3>
+  <br>
+  <form action="markPastIssues" method="get"><input type="hidden" name="redirect" value="manageissues">
     <table class="display" id="book_table">
-        <thead>
-            <tr>
-                <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
-                <th id="magtitle">Title</th>
-                <th id="lastacquired">NZBdate</th>
-                <th id="issuedate">Issue Date</th>
-                <th id="provider">NZBprov</th>
-           </tr>
-        </thead>
+      <thead>
+        <tr>
+          <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
+          <th id="magtitle">Title</th>
+          <th id="lastacquired">NZBdate</th>
+          <th id="issuedate">Issue Date</th>
+          <th id="provider">NZBprov</th>
+        </tr>
+      </thead>
     </table>
     <p>
-    Change selected magazines to <select class="markPastIssues" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
+      Change selected magazines to <select class="markPastIssues" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
         %for item in ['Skipped', 'Wanted', 'Have', 'Ignored', 'Remove']:
-            %if whichStatus != item:
-                <option value="${item}">${item}</option>
-            %endif
+        %if whichStatus != item:
+        <option value="${item}">${item}</option>
+        %endif
         %endfor
-            </select>
-        <input type="submit" class="markPastIssues" value="Go">
+      </select>
+      <input type="submit" class="markPastIssues" value="Go">
     </p>
-</form>
-
+  </form>
 </%def>
-
 <%def name="headIncludes()">
-    <link rel="stylesheet" href="css/data_table.css">
+  <link rel="stylesheet" href="css/data_table.css">
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script src="js/libs/jquery.dataTables.min.js"></script>
-    <script>
+  <script src="js/libs/jquery.dataTables.min.js"></script>
+  <script>
     $(document).ready(function()
     {
         $('#book_table').dataTable(
@@ -93,5 +88,5 @@
             });
             $('.dataTables_filter input').attr("placeholder", "Search table here");
     });
-    </script>
+  </script>
 </%def>

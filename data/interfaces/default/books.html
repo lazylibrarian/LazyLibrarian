@@ -2,34 +2,31 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="headerIncludes()">
-    <div id="subhead_container">
-        <ul id="subhead_menu">
-            <li ><a id="button" href="forceSearch?source=books">Force Search</a></li>
-            <li ><a id="button" href="forceProcess?source=books">Force Post-Processing</a></li>
-            %if len(languages) >= 1:
-                <li>Language:&nbsp;</li>
-
-                <li><select onchange="window.location = 'books?BookLang=' + this.options[this.selectedIndex].value">
-                    <option>Select</option>
-                %for language in languages:
-                    <option value="${language['BookLang']}">${language['BookLang']}</option>
-                %endfor
-                </select></li>
-            %endif
-        </ul>
-    </div>
+  <div id="subhead_container">
+    <ul id="subhead_menu">
+      <li ><a id="button" href="forceSearch?source=books">Force Search</a></li>
+      <li ><a id="button" href="forceProcess?source=books">Force Post-Processing</a></li>
+      %if len(languages) >= 1:
+      <li>Language:&nbsp;</li>
+      <li><select onchange="window.location = 'books?BookLang=' + this.options[this.selectedIndex].value">
+          <option>Select</option>
+          %for language in languages:
+          <option value="${language['BookLang']}">${language['BookLang']}</option>
+          %endfor
+        </select></li>
+      %endif
+    </ul>
+  </div>
 </%def>
-
 <%def name="body()">
-<BR><BR>
-<h1>&nbsp;&nbsp;${title}</h1>
-<p class="indented">
-<input type="hidden" name="booklang" value="booklang">
-<form action="markBooks" method="get">
-    <label>&nbsp;&nbsp;Mark selected books as: </label>
-    <select class="markBooks" name="action" id="action">
+  <BR><BR>
+  <h1>&nbsp;&nbsp;${title}</h1>
+  <p class="indented">
+    <input type="hidden" name="booklang" value="booklang">
+    <form action="markBooks" method="get">
+      <label>&nbsp;&nbsp;Mark selected books as: </label>
+      <select class="markBooks" name="action" id="action">
         <option value="Wanted">Wanted</option>
         <option value="Have">Have</option>
         <option value="Ignored">Ignored</option>
@@ -37,37 +34,36 @@
         <option value="Remove">Remove</option>
         <option value="Delete">Delete</option>
         <option value="Leave" class="hidden">Leave</option>
-    </select>
-    <input type="submit" class="markBooks" id="go" value="Go">
-    <br><br>
-</p>
-<table class="display" id="book_table" style="width:100%;">
-    <thead>
+      </select>
+      <input type="submit" class="markBooks" id="go" value="Go">
+      <br>
+      <br>
+    </p>
+    <table class="display" id="book_table" style="width:100%;">
+      <thead>
         <tr>
-            <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
-            <th id="bookart">Cover</th>
-            <th id="authorname">Author</th>
-            <th id="bookname">Title</th>
-            <th id="series">Series</th>
-            <th id="stars" class="center">Rating</th>
-            <th id="date" class="center">Released</th>
-            <th id="date" class="center">Added</th>
-            <th id="status" class="center">Status</th>
+          <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
+          <th id="bookart">Cover</th>
+          <th id="authorname">Author</th>
+          <th id="bookname">Title</th>
+          <th id="series">Series</th>
+          <th id="stars" class="center">Rating</th>
+          <th id="date" class="center">Released</th>
+          <th id="date" class="center">Added</th>
+          <th id="status" class="center">Status</th>
         </tr>
-    </thead>
-</table>
-<p>&nbsp;</p>
-<p>&nbsp;</p>
-</form>
+      </thead>
+    </table>
+    <p>&nbsp;</p>
+    <p>&nbsp;</p>
+  </form>
 </%def>
-
 <%def name="headIncludes()">
-    <link rel="stylesheet" href="css/data_table.css">
+  <link rel="stylesheet" href="css/data_table.css">
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script src="js/libs/jquery.dataTables.min.js"></script>
-    <script>
+  <script src="js/libs/jquery.dataTables.min.js"></script>
+  <script>
     $(document).ready(function()
     {
         $('#go').click(function () {
@@ -182,7 +178,7 @@
                 },
             });
         $('.dataTables_filter input').attr("placeholder", "Search table here");
-        $(window).resize(function() {oTable.fnDraw(false)});
+        //$(window).resize(function() {oTable.fnDraw(false)});
     });
-    </script>
+  </script>
 </%def>

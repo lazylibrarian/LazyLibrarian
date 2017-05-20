@@ -2,7 +2,6 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="headerIncludes()">
     <div id="subhead_container">
         <div id="subhead_menu">
@@ -25,7 +24,9 @@
                       <option value="Leave" hidden>Leave</option>
                 </select>
             <button type="submit" value="Go" id="go" class="btn btn-sm btn-primary">Go</button>
+        %if lazylibrarian.CONFIG['TOGGLES'] == True:
         &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="2">Issue</a> - <a class="toggle-vis" data-column="3">Acquired</a> - <a class="toggle-vis" data-column="4">Select</a>
+        %endif
         </div>
         <p>&nbsp;</p>
         <div class="table-responsive">
@@ -35,43 +36,37 @@
                         <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" class="form-control" /></th>
                         % if covercount > 0:
                         <th class="bookart text-center no-sort" width=20%>Cover</th>
-                        % else:
-                        <th class="bookart hidden">Cover</th>
-                        % endif
-                        <th class="issuedate text-center">Issue</th>
-                        <th class="lastacquired text-center">Acquired</th>
-                        <th class="issue text-center">Select</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                %for result in issues:
-                        <tr>
-                            <td class="select text-center"><input type="checkbox" name="${result['IssueID']}" class="form-control" /></td>
-                            % if covercount > 0:
-                            <td class="bookart text-center"><a href="${result['Cover']}" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="cover" width="90%"></a></td>
-                            % else:
-                            <td class="bookart hidden"><a href="${result['Cover']}" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="Cover"></a></td>
-                            % endif
-                            <td class="issuedate text-center">${result['IssueDate']}</td>
-                            <td class="lastacquired text-center">${result['IssueAcquired']}</td>
-                            <td class="issue text-center"><a class="button green btn btn-xs btn-warning" href="openMag?bookid=${result['IssueID']}" target="_self"><i class="fa fa-book"></i> Open</a></td>
-                        </tr>
-                %endfor
-                </tbody>
-            </table>
-        </div>
-    </form>
+% else:
+<th class="bookart hidden">Cover</th>
+% endif
+<th class="issuedate text-center">Issue</th>
+<th class="lastacquired text-center">Acquired</th>
+<th class="issue text-center">Select</th>
+</tr>
+</thead>
+<tbody>
+  %for result in issues:
+  <tr>
+    <td class="select text-center"><input type="checkbox" name="${result['IssueID']}" class="form-control" /></td>
+    % if covercount > 0:
+    <td class="bookart text-center"><a href="${result['Cover']}" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="cover" width="90%"></a></td>
+    % else:
+    <td class="bookart hidden"><a href="${result['Cover']}" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="Cover"></a></td>
+    % endif
+    <td class="issuedate text-center">${result['IssueDate']}</td>
+    <td class="lastacquired text-center">${result['IssueAcquired']}</td>
+    <td class="issue text-center"><a class="button green btn btn-xs btn-warning" href="openMag?bookid=${result['IssueID']}" target="_self"><i class="fa fa-book"></i> Open</a></td>
+  </tr>
+  %endfor
+</tbody>
+</table>
+</div>
+</form>
 </%def>
-
 <%def name="headIncludes()">
-
 </%def>
-
 <%def name="javascriptIncludes()">
-
-    <script type="text/javascript">
-
+  <script type="text/javascript">
     $(document).ready(function()
     {
 
@@ -113,5 +108,5 @@
                 column.visible( ! column.visible() );
             } );
     });
-    </script>
+  </script>
 </%def>

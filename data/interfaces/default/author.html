@@ -2,7 +2,6 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="headerIncludes()">
     <div id="subhead_container">
         <ul id="subhead_menu">
@@ -85,62 +84,60 @@
                     totalbooks = '0'
                     css = "<div class=\"progress-container danger\" style=\"width:150px;\">"
             %>
-            <span title="${percent}">${css}</span>
-            <div style="width:${percent}%"><span class="progressbar-front-text">${havebooks}/${totalbooks}</span></div>
-        </ul>
-    </div>
-    <p class="indented">
-        <form action="markBooks" method="get"><input type="hidden" name="AuthorID" value="${author['AuthorID']}">
-            <input type="hidden" name="redirect" value="author">
-            <input type="hidden" name="booklang" value="booklang">
-            <input type="hidden" name="ignored" value="ignored">
-            <label>&nbsp;&nbsp;Mark selected books as: </label>
-            <select class="markBooks" name="action" style="margin-top:15px;margin-bottom:15px;">
-                <option value="Wanted">Wanted</option>
-                <option value="Have">Have</option>
-                <option value="Ignored">Ignored</option>
-                <option value="Skipped">Skipped</option>
-                <option value="Remove">Remove</option>
-                <option value="Delete">Delete</option>
-                <option value="Leave" class="hidden">Leave</option>
-            </select>
-        <input type="submit" class="markBooks" value="Go">
-    </p>
-    <table class="display" id="book_table">
-        <thead>
-            <tr>
-                <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
-                <th id="bookart">Cover</th>
-                <th id="authorname" class="hidden">Title</th>
-                <th id="bookname">Title</th>
-                <th id="series">Series</th>
-                <th id="stars">Rating</th>
-                <th id="date">Released</th>
-                <th id="date">Added</th>
-                <th id="status">Status</th>
-            </tr>
-        </thead>
-    </table>
-<p>&nbsp;</p>
-<p>&nbsp;</p>
-    </form>
+<span title="${percent}">${css}</span>
+<div style="width:${percent}%"><span class="progressbar-front-text">${havebooks}/${totalbooks}</span></div>
+</ul>
+</div>
+<p class="indented">
+  <form action="markBooks" method="get"><input type="hidden" name="AuthorID" value="${author['AuthorID']}">
+    <input type="hidden" name="redirect" value="author">
+    <input type="hidden" name="booklang" value="booklang">
+    <input type="hidden" name="ignored" value="ignored">
+    <label>&nbsp;&nbsp;Mark selected books as: </label>
+    <select class="markBooks" name="action" style="margin-top:15px;margin-bottom:15px;">
+      <option value="Wanted">Wanted</option>
+      <option value="Have">Have</option>
+      <option value="Ignored">Ignored</option>
+      <option value="Skipped">Skipped</option>
+      <option value="Remove">Remove</option>
+      <option value="Delete">Delete</option>
+      <option value="Leave" class="hidden">Leave</option>
+    </select>
+    <input type="submit" class="markBooks" value="Go">
+  </p>
+  <table class="display" id="book_table">
+    <thead>
+      <tr>
+        <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
+        <th id="bookart">Cover</th>
+        <th id="authorname" class="hidden">Title</th>
+        <th id="bookname">Title</th>
+        <th id="series">Series</th>
+        <th id="stars">Rating</th>
+        <th id="date">Released</th>
+        <th id="date">Added</th>
+        <th id="status">Status</th>
+      </tr>
+    </thead>
+  </table>
+  <p>&nbsp;</p>
+  <p>&nbsp;</p>
+</form>
 </%def>
-
 <%def name="headIncludes()">
-    <link rel="stylesheet" href="css/data_table.css">
-    %if author['Status'] == 'Loading':
-    <meta http-equiv="refresh" content="12">
-    <script>
-        $(document).ready(function () {
-            showMsg("Getting Author's Books", true);
-        });
-     </script>
-    %endif
+  <link rel="stylesheet" href="css/data_table.css">
+  %if author['Status'] == 'Loading':
+  <meta http-equiv="refresh" content="12">
+  <script>
+    $(document).ready(function () {
+        showMsg("Getting Author's Books", true);
+    });
+  </script>
+  %endif
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script src="js/libs/jquery.dataTables.min.js"></script>
-    <script>
+  <script src="js/libs/jquery.dataTables.min.js"></script>
+  <script>
     $(document).ready(function()
     {
         var show = ""+${lazylibrarian.CONFIG['BOOK_IMG']};
@@ -239,7 +236,7 @@
                 },
             });
         $('.dataTables_filter input').attr("placeholder", "Search table here");
-        $(window).resize(function() {oTable.fnDraw(false)});
+        //$(window).resize(function() {oTable.fnDraw(false)});
     });
-    </script>
+  </script>
 </%def>

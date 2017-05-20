@@ -1144,8 +1144,7 @@ class WebInterface(object):
                 this_mag['Cover'] = magimg
                 this_mag['safetitle'] = urllib.quote_plus(mag['Title'].encode(lazylibrarian.SYS_ENCODING))
                 mags.append(this_mag)
-
-            if not lazylibrarian.CONFIG['MAG_IMG']:
+            if not lazylibrarian.CONFIG['TOGGLE'] and not lazylibrarian.CONFIG['MAG_IMG']:
                 covercount = 0
         return serve_template(templatename="magazines.html", title="Magazines", magazines=mags, covercount=covercount)
 
@@ -1183,8 +1182,9 @@ class WebInterface(object):
                 mod_issues.append(this_issue)
             logger.debug("Found %s cover%s" % (covercount, plural(covercount)))
 
-        if not lazylibrarian.CONFIG['MAG_IMG'] or lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':
-            covercount = 0
+        if not lazylibrarian.CONFIG['TOGGLE']:
+            if not lazylibrarian.CONFIG['MAG_IMG'] or lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':
+                covercount = 0
 
         return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
 

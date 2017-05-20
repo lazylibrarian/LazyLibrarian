@@ -2,66 +2,63 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="headerIncludes()">
-    <div id="subhead_container">
-            <a href="authorPage?AuthorID=${authorid}" class="btn btn-sm btn-primary"><i class="fa fa-chevron-left"></i> Return to Author</a>
-            <a href="refreshAuthor?AuthorID=${authorid}" class="btn btn-sm btn-primary"><i class="fa fa-refresh"></i> Refresh Author</a>
-    </div>
+  <div id="subhead_container">
+    <a href="authorPage?AuthorID=${authorid}" class="btn btn-sm btn-primary"><i class="fa fa-chevron-left"></i> Return to Author</a>
+    <a href="refreshAuthor?AuthorID=${authorid}" class="btn btn-sm btn-primary"><i class="fa fa-refresh"></i> Refresh Author</a>
+  </div>
 </%def>
-
 <%def name="body()">
-<h1>${title}</h1>
-<form action="series" method="get" class="form-inline">
+  <h1>${title}</h1>
+  <form action="series" method="get" class="form-inline">
     <div class="form-group">
-        <label for="whichStatus" class="control-label">Series with status:</label>
-        <select name="whichStatus" class="form-control input-sm">
-    %for item in ['All', 'Skipped', 'Wanted', 'Active', 'Ignored']:
+      <label for="whichStatus" class="control-label">Series with status:</label>
+      <select name="whichStatus" class="form-control input-sm">
+        %for item in ['All', 'Skipped', 'Wanted', 'Active', 'Ignored']:
         <option value="${item}"
             %if whichStatus == item:
                 selected = "selected"
             %endif
         >${item}</option>
-    %endfor
-        </select>
+        %endfor
+      </select>
     </div>
     <input  class="btn btn-sm btn-default" type="submit" value="Manage" />
-&nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Author</a> - <a class="toggle-vis" data-column="2">Series</a> - <a class="toggle-vis" data-column="3">Status</a> - <a class="toggle-vis" data-column="4">Select</a>
-</form>
-    <br>
-<form action="markSeries" method="get" class="form-inline">
+    %if lazylibrarian.CONFIG['TOGGLES'] == True:
+    &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Author</a> - <a class="toggle-vis" data-column="2">Series</a> - <a class="toggle-vis" data-column="3">Status</a> - <a class="toggle-vis" data-column="4">Select</a>
+    %endif
+  </form>
+  <br>
+  <form action="markSeries" method="get" class="form-inline">
     <div class="table-responsive">
-        <table class="display table table-striped table-hover table-bordered" id="book_table">
-            <thead>
-                <tr>
-                    <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
-                    <th class="authorname">Author</th>
-                    <th class="series">Series Name</th>
-                    <th class="status text-center">Status</th>
-                    <th class="stars text-center">Select</th>
-                </tr>
-            </thead>
-        </table>
+      <table class="display table table-striped table-hover table-bordered" id="book_table">
+        <thead>
+          <tr>
+            <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
+            <th class="authorname">Author</th>
+            <th class="series">Series Name</th>
+            <th class="status text-center">Status</th>
+            <th class="stars text-center">Select</th>
+          </tr>
+        </thead>
+      </table>
     </div>
     <div class="form-group">
-        <label for="markSeries" class="control-label">Change selected series to: </label>
-        <select id="markSeries" class="markSeries form-control input-sm" name="action">
+      <label for="markSeries" class="control-label">Change selected series to: </label>
+      <select id="markSeries" class="markSeries form-control input-sm" name="action">
         %for item in ['Skipped', 'Wanted', 'Active', 'Ignored']:
-            <option value="${item}">${item}</option>
+        <option value="${item}">${item}</option>
         %endfor
-        </select>
+      </select>
     </div>
     <input type="submit" class="markSeries btn btn-sm btn-default" value="Go">
-</form>
-<p>&nbsp;</p>
+  </form>
+  <p>&nbsp;</p>
 </%def>
-
 <%def name="headIncludes()">
-
 </%def>
-
 <%def name="javascriptIncludes()">
-<script type="text/javascript">
+  <script type="text/javascript">
     $(document).ready(function()
     {
         var oTable = $('#book_table').DataTable(
@@ -102,12 +99,12 @@
                 },
             });
         $('.dataTables_filter input').attr("placeholder", "Search filter");
-        $(window).resize(function() {oTable.draw(false)});
+        //$(window).resize(function() {oTable.draw(false)});
         $('a.toggle-vis').click(function (e) {
             e.preventDefault();
             var column = oTable.column( $(this).attr('data-column') );
             column.visible( ! column.visible() );
         } );
     });
-</script>
+  </script>
 </%def>

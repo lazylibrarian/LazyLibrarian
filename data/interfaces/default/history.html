@@ -2,7 +2,6 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="headerIncludes()">
     <div id="subhead_container">
         <ul id="subhead_menu">
@@ -40,29 +39,27 @@
                 else:
                     grade = 'U'
             %>
-            <tr class="grade${grade}">
-                <td id="bookname">${item['NZBtitle']}</td>
-                <td id="number">${item['BookID']}</td>
-                <td id="authorname"><a href="${item['NZBurl']}">${item['NZBprov']}</a></td>
-                <td id="date">${item['NZBdate']}</td>
-                <td id="stars">${item['NZBsize']} MB</td>
-                <td id="status">${item['Status']}</td>
-            </tr>
-        %endfor
-        </tbody>
-    </table>
+<tr class="grade${grade}">
+  <td id="bookname">${item['NZBtitle']}</td>
+  <td id="number">${item['BookID']}</td>
+  <td id="authorname"><a href="${item['NZBurl']}">${item['NZBprov']}</a></td>
+  <td id="date">${item['NZBdate']}</td>
+  <td id="stars">${item['NZBsize']} MB</td>
+  <td id="status">${item['Status']}</td>
+</tr>
+%endfor
+</tbody>
+</table>
 <p>&nbsp;</p>
 <p>&nbsp;</p>
 </%def>
-
 <%def name="headIncludes()">
-    <link rel="stylesheet" href="css/data_table.css">
+  <link rel="stylesheet" href="css/data_table.css">
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script src="js/libs/jquery.dataTables.min.js"></script>
-    <script src="js/libs/natural.js"></script>
-    <script>
+  <script src="js/libs/jquery.dataTables.min.js"></script>
+  <script src="js/libs/natural.js"></script>
+  <script>
     $(document).ready(function()
     {
         var oTable = $('#book_table').dataTable(
@@ -87,7 +84,7 @@
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
             });
         $('.dataTables_filter input').attr("placeholder", "Search table here");
-        $(window).resize(function() {oTable.fnDraw(false)});
+        //$(window).resize(function() {oTable.fnDraw(false)});
     });
-    </script>
+  </script>
 </%def>
