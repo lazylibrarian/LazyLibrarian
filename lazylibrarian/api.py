@@ -25,10 +25,9 @@ from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, g
     getBookCover, getAuthorImage, getAuthorImages, getSeriesMembers, getSeriesAuthors, deleteEmptySeries, \
     getBookAuthors, setAllBookAuthors
 from lazylibrarian.cache import cache_img
-from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, dbUpdate, setperm, \
-    formatAuthorName
+from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, dbUpdate, setperm
 from lazylibrarian.csvfile import import_CSV, export_CSV
-from lazylibrarian.formatter import today
+from lazylibrarian.formatter import today, formatAuthorName
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals

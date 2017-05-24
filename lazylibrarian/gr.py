@@ -26,8 +26,7 @@ from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSerie
                                     setSeries, setStatus
 from lazylibrarian.cache import get_xml_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList, \
-                                    cleanName, is_valid_isbn
-from lazylibrarian.common import formatAuthorName
+                                    cleanName, is_valid_isbn, formatAuthorName
 from lib.fuzzywuzzy import fuzz
 
 

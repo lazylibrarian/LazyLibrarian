@@ -317,6 +317,39 @@ def split_title(author, book):
     return bookname, booksub
 
 
+def formatAuthorName(author):
+    """ get authorame in a consistent format """
+
+    if "," in author:
+        postfix = getList(lazylibrarian.CONFIG['NAME_POSTFIX'])
+        words = author.split(',')
+        if len(words) == 2:
+            # Need to handle names like "L. E. Modesitt, Jr." or "J. Springmann, Phd"
+            # use an exceptions list for now, there might be a better way...
+            if words[1].strip().strip('.').strip('_').lower() in postfix:
+                surname = words[1].strip()
+                forename = words[0].strip()
+            else:
+                # guess its "surname, forename" or "surname, initial(s)" so swap them round
+                forename = words[1].strip()
+                surname = words[0].strip()
+            if author != forename + ' ' + surname:
+                logger.debug('Formatted authorname [%s] to [%s %s]' % (author, forename, surname))
+                author = forename + ' ' + surname
+    # reformat any initials, we want to end up with L.E. Modesitt Jr
+    if len(author) > 2 and author[1] in '. ':
+        surname = author
+        forename = ''
+        while len(surname) > 2 and surname[1] in '. ':
+            forename = forename + surname[0] + '.'
+            surname = surname[2:].strip()
+        if author != forename + ' ' + surname:
+            logger.debug('Stripped authorname [%s] to [%s %s]' % (author, forename, surname))
+            author = forename + ' ' + surname
+
+    return ' '.join(author.split())  # ensure no extra whitespace
+
+
 def cleanName(name, extras=None):
     validNameChars = u"-_.() %s%s%s" % (string.ascii_letters, string.digits, extras)
     try:
