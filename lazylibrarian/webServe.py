@@ -58,7 +58,6 @@ def serve_template(templatename, **kwargs):
         template_dir = os.path.join(str(interface_dir), lazylibrarian.CONFIG['HTTP_LOOK'])
 
     _hplookup = TemplateLookup(directories=[template_dir])
-
     try:
         if lazylibrarian.UPDATE_MSG:
             template = _hplookup.get_template("dbupdate.html")
@@ -1631,12 +1630,14 @@ class WebInterface(object):
 
     @cherrypy.expose
     def restart_Jobs(self):
+        self.label_thread()
         restartJobs(start='Restart')
         # and list the new run-times in the log
         return self.show_Jobs()
 
     @cherrypy.expose
     def stop_Jobs(self):
+        self.label_thread()
         restartJobs(start='Stop')
         # and list the new run-times in the log
         return self.show_Jobs()
