@@ -187,7 +187,7 @@ def authorUpdate():
         threading.currentThread().name = "AUTHORUPDATE"
     try:
         myDB = database.DBConnection()
-        cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" order by DateAdded ASC'
+        cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" and DateAdded is not null order by DateAdded ASC'
         author = myDB.match(cmd)
         if author and int(lazylibrarian.CONFIG['CACHE_AGE']):
             dtnow = datetime.datetime.now()
@@ -199,7 +199,7 @@ def authorUpdate():
                 # noinspection PyUnresolvedReferences
                 lazylibrarian.importer.addAuthorToDB(refresh=True, authorid=authorid)
             else:
-                logger.debug('Oldest author info is %s day%s old' % (diff, plural(diff)))
+                logger.debug('Oldest author info (%s) is %s day%s old' % (author['AuthorName'], diff, plural(diff)))
     except Exception:
         logger.error('Unhandled exception in AuthorUpdate: %s' % traceback.format_exc())
 
