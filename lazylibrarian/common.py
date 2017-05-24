@@ -286,7 +286,7 @@ def showJobs():
     author = myDB.match(cmd)
     dtnow = datetime.datetime.now()
     diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
-    result.append('Oldest author info is %s day%s old' % (diff, plural(diff)))
+    result.append('Oldest author info (%s) is %s day%s old' % (author['AuthorName'], diff, plural(diff)))
     for job in lazylibrarian.SCHED.get_jobs():
         job = str(job)
         if "search_magazines" in job:
