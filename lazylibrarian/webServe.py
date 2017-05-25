@@ -1768,7 +1768,10 @@ class WebInterface(object):
         if 'username' in kwargs:
             lazylibrarian.CONFIG['ANDROIDPN_USERNAME'] = kwargs['username']
         if 'broadcast' in kwargs:
-            lazylibrarian.CONFIG['ANDROIDPN_BROADCAST'] = kwargs['broadcast']
+            if kwargs['broadcast'] == 'True':
+                lazylibrarian.CONFIG['ANDROIDPN_BROADCAST'] = True
+            else:
+                lazylibrarian.CONFIG['ANDROIDPN_BROADCAST'] = False
         result = notifiers.androidpn_notifier.test_notify()
         if result:
             lazylibrarian.config_write()
@@ -1810,7 +1813,7 @@ class WebInterface(object):
         if 'keys' in kwargs:
             lazylibrarian.CONFIG['PUSHOVER_KEYS'] = kwargs['keys']
         if 'priority' in kwargs:
-            lazylibrarian.CONFIG['PUSHOVER_PRIORITY'] = kwargs['priority']
+            lazylibrarian.CONFIG['PUSHOVER_PRIORITY'] = check_int(kwargs['priority'], 0)
         if 'device' in kwargs:
             lazylibrarian.CONFIG['PUSHOVER_DEVICE'] = kwargs['device']
 
@@ -1827,7 +1830,7 @@ class WebInterface(object):
         if 'apikey' in kwargs:
             lazylibrarian.CONFIG['NMA_APIKEY'] = kwargs['apikey']
         if 'priority' in kwargs:
-            lazylibrarian.CONFIG['NMA_PRIORITY'] = kwargs['priority']
+            lazylibrarian.CONFIG['NMA_PRIORITY'] = check_int(kwargs['priority'], 0)
 
         result = notifiers.nma_notifier.test_notify()
         if result:
@@ -1865,9 +1868,15 @@ class WebInterface(object):
     def testEmail(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         if 'tls' in kwargs:
-            lazylibrarian.CONFIG['EMAIL_TLS'] = kwargs['tls']
+            if kwargs['tls'] == 'True':
+                lazylibrarian.CONFIG['EMAIL_TLS'] = True
+            else:
+                lazylibrarian.CONFIG['EMAIL_TLS'] = False
         if 'ssl' in kwargs:
-            lazylibrarian.CONFIG['EMAIL_SSL'] = kwargs['ssl']
+            if kwargs['ssl'] == 'True':
+                lazylibrarian.CONFIG['EMAIL_SSL'] = True
+            else:
+                lazylibrarian.CONFIG['EMAIL_SSL'] = False
         if 'emailfrom' in kwargs:
             lazylibrarian.CONFIG['EMAIL_FROM'] = kwargs['emailfrom']
         if 'emailto' in kwargs:
@@ -1949,7 +1958,7 @@ class WebInterface(object):
         if 'host' in kwargs:
             lazylibrarian.CONFIG['DELUGE_HOST'] = kwargs['host']
         if 'port' in kwargs:
-            lazylibrarian.CONFIG['DELUGE_PORT'] = kwargs['port']
+            lazylibrarian.CONFIG['DELUGE_PORT'] = check_int(kwargs['port'], 0)
         if 'user' in kwargs:
             lazylibrarian.CONFIG['DELUGE_USER'] = kwargs['user']
         if 'pwd' in kwargs:
@@ -1966,7 +1975,7 @@ class WebInterface(object):
             else:
                 # if there's a username, talk to the daemon directly
                 client = DelugeRPCClient(lazylibrarian.CONFIG['DELUGE_HOST'],
-                                         int(lazylibrarian.CONFIG['DELUGE_PORT']),
+                                         check_int(lazylibrarian.CONFIG['DELUGE_PORT'], 0),
                                          lazylibrarian.CONFIG['DELUGE_USER'],
                                          lazylibrarian.CONFIG['DELUGE_PASS'])
                 client.connect()
@@ -2003,7 +2012,7 @@ class WebInterface(object):
         if 'host' in kwargs:
             lazylibrarian.CONFIG['SAB_HOST'] = kwargs['host']
         if 'port' in kwargs:
-            lazylibrarian.CONFIG['SAB_PORT'] = kwargs['port']
+            lazylibrarian.CONFIG['SAB_PORT'] = check_int(kwargs['port'], 0)
         if 'user' in kwargs:
             lazylibrarian.CONFIG['SAB_USER'] = kwargs['user']
         if 'pwd' in kwargs:
@@ -2025,7 +2034,7 @@ class WebInterface(object):
         if 'host' in kwargs:
             lazylibrarian.CONFIG['NZBGET_HOST'] = kwargs['host']
         if 'port' in kwargs:
-            lazylibrarian.CONFIG['NZBGET_PORT'] = kwargs['port']
+            lazylibrarian.CONFIG['NZBGET_PORT'] = check_int(kwargs['port'], 0)
         if 'user' in kwargs:
             lazylibrarian.CONFIG['NZBGET_USER'] = kwargs['user']
         if 'pwd' in kwargs:
@@ -2033,7 +2042,7 @@ class WebInterface(object):
         if 'cat' in kwargs:
             lazylibrarian.CONFIG['NZBGET_CATEGORY'] = kwargs['cat']
         if 'pri' in kwargs:
-            lazylibrarian.CONFIG['NZBGET_PRIORITY'] = kwargs['pri']
+            lazylibrarian.CONFIG['NZBGET_PRIORITY'] = check_int(kwargs['pri'], 0)
 
         msg = nzbget.checkLink()
         if 'success' in msg:
@@ -2046,7 +2055,7 @@ class WebInterface(object):
         if 'host' in kwargs:
             lazylibrarian.CONFIG['TRANSMISSION_HOST'] = kwargs['host']
         if 'port' in kwargs:
-            lazylibrarian.CONFIG['TRANSMISSION_PORT'] = kwargs['port']
+            lazylibrarian.CONFIG['TRANSMISSION_PORT'] = check_int(kwargs['port'], 0)
         if 'user' in kwargs:
             lazylibrarian.CONFIG['TRANSMISSION_USER'] = kwargs['user']
         if 'pwd' in kwargs:
@@ -2062,7 +2071,7 @@ class WebInterface(object):
         if 'host' in kwargs:
             lazylibrarian.CONFIG['QBITTORRENT_HOST'] = kwargs['host']
         if 'port' in kwargs:
-            lazylibrarian.CONFIG['QBITTORRENT_PORT'] = kwargs['port']
+            lazylibrarian.CONFIG['QBITTORRENT_PORT'] = check_int(kwargs['port'], 0)
         if 'user' in kwargs:
             lazylibrarian.CONFIG['QBITTORRENT_USER'] = kwargs['user']
         if 'pwd' in kwargs:
@@ -2080,7 +2089,7 @@ class WebInterface(object):
         if 'host' in kwargs:
             lazylibrarian.CONFIG['UTORRENT_HOST'] = kwargs['host']
         if 'port' in kwargs:
-            lazylibrarian.CONFIG['UTORRENT_PORT'] = kwargs['port']
+            lazylibrarian.CONFIG['UTORRENT_PORT'] = check_int(kwargs['port'], 0)
         if 'user' in kwargs:
             lazylibrarian.CONFIG['UTORRENT_USER'] = kwargs['user']
         if 'pwd' in kwargs:
@@ -2118,7 +2127,7 @@ class WebInterface(object):
         if 'host' in kwargs:
             lazylibrarian.CONFIG['SYNOLOGY_HOST'] = kwargs['host']
         if 'port' in kwargs:
-            lazylibrarian.CONFIG['SYNOLOGY_PORT'] = kwargs['port']
+            lazylibrarian.CONFIG['SYNOLOGY_PORT'] = check_int(kwargs['port'], 0)
         if 'user' in kwargs:
             lazylibrarian.CONFIG['SYNOLOGY_USER'] = kwargs['user']
         if 'pwd' in kwargs:

@@ -626,6 +626,7 @@ def config_read(reloaded=False):
     else:
         logger.info('Config file loaded')
 
+
 def config_write():
     global SHOW_SERIES, SHOW_MAGS
 
