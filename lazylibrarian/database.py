@@ -70,7 +70,8 @@ class DBConnection:
                         msg = e.message
                         msg = msg.lower()
                         if suppress == 'UNIQUE' and ('not unique' in msg or 'unique constraint failed' in msg):
-                            logger.debug('Suppressed [%s] %s' % (query, e.message))
+                            if int(lazylibrarian.LOGLEVEL) > 2:
+                                logger.debug('Suppressed [%s] %s' % (query, e.message))
                             self.connection.commit()
                             break
                         else:

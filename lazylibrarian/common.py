@@ -170,6 +170,7 @@ def scheduleJob(action='Start', target=None):
                 minutes = 60
             else:
                 minutes = int(minutes / authcount)
+
             if minutes < 10:  # set a minimum interval of 10 minutes so we don't upset goodreads/librarything api
                 minutes = 10
             if minutes <= 600:  # for bigger intervals switch to hours
@@ -192,14 +193,22 @@ def authorUpdate():
         if author and int(lazylibrarian.CONFIG['CACHE_AGE']):
             dtnow = datetime.datetime.now()
             diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
+            msg = 'Oldest author info (%s) is %s day%s old' % (author['AuthorName'], diff, plural(diff))
             if diff > int(lazylibrarian.CONFIG['CACHE_AGE']):
                 logger.info('Starting update for %s' % author['AuthorName'])
                 authorid = author['AuthorID']
-                logger.debug('%s info is %s day%s old' % (author['AuthorName'], diff, plural(diff)))
+                logger.debug(msg)
                 # noinspection PyUnresolvedReferences
                 lazylibrarian.importer.addAuthorToDB(refresh=True, authorid=authorid)
             else:
-                logger.debug('Oldest author info (%s) is %s day%s old' % (author['AuthorName'], diff, plural(diff)))
+                # don't nag. Show info message no more than every 12 hrs, debug message otherwise
+                timenow = int(time.time())
+                if int(lazylibrarian.AUTHORUPDATE_MSG) + 43200 < timenow:
+                    logger.info(msg)
+                    lazylibrarian.AUTHORUPDATE_MSG = timenow
+                else:
+                    logger.debug(msg)
+
     except Exception:
         logger.error('Unhandled exception in AuthorUpdate: %s' % traceback.format_exc())
 
