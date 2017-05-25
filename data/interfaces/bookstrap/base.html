@@ -12,15 +12,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="shortcut icon" type="image/png"  href="images/ll.ico">
     <link rel="apple-touch-icon" href="images/ll.png">
-    <!--<link rel="stylesheet" href="css/style.css?v=2">-->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/s/bs-3.3.5/jqc-1.11.3,dt-1.10.10,b-1.1.0/datatables.min.css"/>
     <link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.6/${lazylibrarian.CONFIG['BOOKSTRAP_THEME']}/bootstrap.min.css" rel="stylesheet">
-    <!--<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">-->
     <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
     <link href="css/bookstrap.css" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
     <script src="https://code.jquery.com/jquery-migrate-1.3.0.min.js"></script>
-    <!--<script src="js/script.js"></script>-->
     <script src="js/lazylibrarian-bs.js"></script>
     ${next.headIncludes()}
     <script type="text/javascript">
@@ -28,11 +25,8 @@
       $(document).ready(function () {
           $.fn.dataTableExt.oApi.clearSearch = function ( oSettings ) {
               var table = this;
-      
-              //var clearSearch = $('<img title="Delete" alt="" src="data:image/png;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAD2SURBVHjaxFM7DoMwDH2pOESHHgDPcB223gKpAxK34EAMMIe1FCQOgFQxuflARVBSVepQS5Ht2PHn2RHMjF/ohB8p2gSZpprtyxEHX8dGTeMG0A5UlsD5rCSGvF55F4SpqpSm1GmCzPO3LXJy1LXllwvodoMsCpNVy2hbYBjCLRiaZ8u7Dng+QXlu9b4H7ncvBmKbwoYBWR4kaXv3YmAMyoEpjv2PdWUHcP1j1ECqFpyj777YA6Yss9KyuEeDaW0cCsCUJMDjYUE8kr5TNuOzC+JiMI5uz2rmJvNWvidwcJXXx8IAuwb6uMqrY2iVgzbx99/4EmAAarFu0IJle5oAAAAASUVORK5CYII=" style="vertical-align:text-bottom;cursor:pointer;" />');
-      
               var clearSearch = $('<i class="fa fa-remove" style="cursor:pointer;width:16px;text-align:left;" title="Reset Search"></i>');
-      
+
               $(clearSearch).click( function ()
                       {
                               table.fnFilter('');
@@ -42,7 +36,7 @@
               $(oSettings.nTableWrapper).find('div.dataTables_filter label').css('margin-right', '-16px');//16px the image width
               $(oSettings.nTableWrapper).find('div.dataTables_filter input').css('padding-right', '16px');
           }
-      
+
           //auto-execute, no code needs to be added
           $.fn.dataTable.models.oSettings['aoInitComplete'].push( {
               "fn": $.fn.dataTableExt.oApi.clearSearch,
@@ -114,56 +108,60 @@
     </div>
     <script type="text/javascript">
       msg = '';
-          % if lazylibrarian.SHOW_SERIES == 0:
-              $('#series').addClass("hidden");
-          % endif
-          % if lazylibrarian.SHOW_MAGS == 0:
-              $('#magazines').addClass("hidden");
-          % endif
-          % if lazylibrarian.CONFIG['INSTALL_TYPE'] == 'git' or lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
-              % if not lazylibrarian.CONFIG['CURRENT_VERSION']:
-                  msg = 'You are running an unknown version of lazylibrarian.<br/><a href="update" class="btn btn-xs btn-primary pull-right">Update</a>'
-              % elif (lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source' and lazylibrarian.CONFIG['CURRENT_VERSION'] == 'No Version File' ):
-                  msg = 'Running Unknown version via source install. Update from central area now <a href="update" class="btn btn-xs btn-primary pull-right">Update</a>
-              % elif lazylibrarian.CONFIG['CURRENT_VERSION'] != lazylibrarian.CONFIG['LATEST_VERSION']:
-                  % if lazylibrarian.CONFIG['LATEST_VERSION'] == 'Not_Available_From_GitHUB':
-                      msg = 'Unable to get latest version from GITHub'
-                  % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] < 0:
-                      msg = 'Running a local updated version. Push changes to GITHub or rollback to Master release'
-                  % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] > 1:
-                      msg = 'New version available. You are ${lazylibrarian.CONFIG['COMMITS_BEHIND']} commits behind.<br/><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the update message for 24 hours" id="ignoreUpdate">Ignore</a>&nbsp;<a href="update" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Update to the latest release">Update</a></div>'
-                  % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] == 1:
-                      msg = 'New version available. You are one commit behind.<br/><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the update message for 24 hours" id="ignoreUpdate">Ignore</a>&nbsp;<a href="update" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Update to the latest release">Update</a></div>'
-      
-                      //<a class="btn btn-xs btn-primary pull-right" href="http://github.com/DobyTang/LazyLibrarian/compare/${lazylibrarian.CONFIG['CURRENT_VERSION']}...${lazylibrarian.CONFIG['LATEST_VERSION']}" target="_blank">Click Here</a>'
-                  % endif
+      % if lazylibrarian.SHOW_SERIES == 0:
+        $('#series').addClass("hidden");
+      % endif
+      % if lazylibrarian.SHOW_MAGS == 0:
+          $('#magazines').addClass("hidden");
+      % endif
+      % if lazylibrarian.CONFIG['INSTALL_TYPE'] == 'git' or lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
+          title = 'LazyLibrarian Update'
+          % if not lazylibrarian.CONFIG['CURRENT_VERSION']:
+              msg = '<div class="input-group">You are running an unknown version of lazylibrarian.</div><a href="update" class="btn btn-xs btn-primary pull-right">Update</a>'
+          % elif (lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source' and lazylibrarian.CONFIG['CURRENT_VERSION'] == 'No Version File' ):
+              msg = '<div class="input-group">Running Unknown version via source install. Update from central area now</div><a href="update" class="btn btn-xs btn-primary pull-right">Update</a>
+          % elif lazylibrarian.CONFIG['CURRENT_VERSION'] != lazylibrarian.CONFIG['LATEST_VERSION']:
+              % if lazylibrarian.CONFIG['LATEST_VERSION'] == 'Not_Available_From_GitHUB':
+                  msg = '<div class="input-group">Unable to get latest version from GITHub</div>'
+              % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] < 0:
+                  msg = '<div class="input-group">Running a local updated version. Push changes to GITHub or rollback to Master release</div>'
+              % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] > 1:
+                  msg = '<div class="input-group">New version available. You are ${lazylibrarian.CONFIG['COMMITS_BEHIND']} commits behind.</div><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the update message for 24 hours" id="ignoreUpdate">Ignore</a>&nbsp;<a href="update" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Update to the latest release">Update</a></div>'
+              % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] == 1:
+                  msg = '<div class="input-group">New version available. You are one commit behind.</div><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the update message for 24 hours" id="ignoreUpdate">Ignore</a>&nbsp;<a href="update" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Update to the latest release">Update</a></div>'
               % endif
           % endif
-      
+      % endif
+
       $(document).ready(function() {
-      if (msg != '' && readCookie('ignoreUpdate') === null) {
-          $.notify({
-              icon: 'fa fa-check-square-o',
-              message: msg
-          },{
+      if (readCookie('ignoreUpdate') != null) { msg = '' }
+
+      if (msg != '') {
+        $.notify({
+            icon: "images/ll48.png",
+            title: '<strong>'+title+'</strong>',
+            message: msg
+        },{
+            icon_type: 'image'
+        },{
               type: 'warning'
           });
       }
-      
+
       $('#ignoreUpdate').click(function() {
           createCookie("ignoreUpdate", true, 1);
       });
       });
-      
+
       // Initialise tooltips
       $(function () {
         $('[data-toggle="tooltip"]').tooltip()
       })
-      
-      
+
+
       function createCookie(name, value, days) {
       var expires;
-      
+
       if (days) {
           var date = new Date();
           date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
@@ -173,7 +171,7 @@
       }
       document.cookie = encodeURIComponent(name) + "=" + encodeURIComponent(value) + expires + "; path=/";
       }
-      
+
       function readCookie(name) {
       var nameEQ = encodeURIComponent(name) + "=";
       var ca = document.cookie.split(';');
@@ -184,7 +182,7 @@
       }
       return null;
       }
-      
+
       function eraseCookie(name) {
       createCookie(name, "", -1);
       }

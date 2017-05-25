@@ -73,11 +73,11 @@ class CustomNotifier:
         #
 
     def notify_snatch(self, title):
-        if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONSNATCH']:
+        if lazylibrarian.CONFIG['CUSTOM_NOTIFY_ONSNATCH']:
             self._notify(message=title, event=notifyStrings[NOTIFY_SNATCH])
 
     def notify_download(self, title):
-        if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONDOWNLOAD']:
+        if lazylibrarian.CONFIG['CUSTOM_NOTIFY_ONDOWNLOAD']:
             self._notify(message=title, event=notifyStrings[NOTIFY_DOWNLOAD])
 
     def test_notify(self, title="Test"):

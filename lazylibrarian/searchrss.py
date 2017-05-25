@@ -19,8 +19,8 @@ import traceback
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.common import scheduleJob, formatAuthorName
-from lazylibrarian.formatter import plural, unaccented_str, unaccented, replace_all, getList, check_int, now
+from lazylibrarian.common import scheduleJob
+from lazylibrarian.formatter import plural, unaccented_str, unaccented, replace_all, getList, check_int, now, formatAuthorName
 from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.providers import IterateOverRSSSites, IterateOverGoodReads, get_searchterm
 from lazylibrarian.searchnzb import NZBDownloadMethod

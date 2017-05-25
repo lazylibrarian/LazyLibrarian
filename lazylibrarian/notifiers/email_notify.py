@@ -51,7 +51,7 @@ class EmailNotifier:
                 mailserver = smtplib.SMTP(lazylibrarian.CONFIG['EMAIL_SMTP_SERVER'],
                                             check_int(lazylibrarian.CONFIG['EMAIL_SMTP_PORT'], 25))
 
-            if lazylibrarian.CONFIG['EMAIL_TLS'] == 'True':
+            if lazylibrarian.CONFIG['EMAIL_TLS']:
                 mailserver.starttls()
             else:
                 mailserver.ehlo()

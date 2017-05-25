@@ -23,8 +23,7 @@ from operator import itemgetter
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import getAuthorImage
 from lazylibrarian.cache import cache_img
-from lazylibrarian.formatter import today, unaccented
-from lazylibrarian.common import formatAuthorName
+from lazylibrarian.formatter import today, unaccented, formatAuthorName
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 
@@ -163,9 +162,15 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
         if authorname and not match:
             authorname = ' '.join(authorname.split())  # ensure no extra whitespace
             GR = GoodReads(authorname)
+            author = GR.find_author_id(refresh=refresh)
 
             query = "SELECT * from authors WHERE AuthorName='%s'" % authorname.replace("'", "''")
             dbauthor = myDB.match(query)
+            if author and not dbauthor: # may have different name for same authorid (spelling?)
+                query = "SELECT * from authors WHERE AuthorID='%s'" % author['authorid']
+                dbauthor = myDB.match(query)
+                authorname = dbauthor['AuthorName']
+
             controlValueDict = {"AuthorName": authorname}
 
             if not dbauthor:
@@ -181,7 +186,6 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
                 new_author = False
             myDB.upsert("authors", newValueDict, controlValueDict)
 
-            author = GR.find_author_id(refresh=refresh)
             if author:
                 authorid = author['authorid']
                 authorimg = author['authorimg']

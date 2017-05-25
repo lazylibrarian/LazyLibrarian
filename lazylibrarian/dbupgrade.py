@@ -811,7 +811,7 @@ def dbupgrade(db_current_version):
                 lazylibrarian.UPDATE_MSG = 'Cleaning Database'
                 upgradelog.write("%s: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
                 myDB.action('vacuum')
-                lazylibrarian.UPDATE_MSG = 'Database is now version %s' % db_current_version
+                lazylibrarian.UPDATE_MSG = 'Database upgraded to version %s' % db_current_version
                 logger.info(lazylibrarian.UPDATE_MSG)
                 upgradelog.write("%s: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
 
