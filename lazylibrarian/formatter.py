@@ -334,7 +334,7 @@ def formatAuthorName(author):
                 forename = words[1].strip()
                 surname = words[0].strip()
             if author != forename + ' ' + surname:
-                logger.debug('Formatted authorname [%s] to [%s %s]' % (author, forename, surname))
+                lazylibrarian.logger.debug('Formatted authorname [%s] to [%s %s]' % (author, forename, surname))
                 author = forename + ' ' + surname
     # reformat any initials, we want to end up with L.E. Modesitt Jr
     if len(author) > 2 and author[1] in '. ':
@@ -344,7 +344,7 @@ def formatAuthorName(author):
             forename = forename + surname[0] + '.'
             surname = surname[2:].strip()
         if author != forename + ' ' + surname:
-            logger.debug('Stripped authorname [%s] to [%s %s]' % (author, forename, surname))
+            lazylibrarian.logger.debug('Stripped authorname [%s] to [%s %s]' % (author, forename, surname))
             author = forename + ' ' + surname
 
     return ' '.join(author.split())  # ensure no extra whitespace
