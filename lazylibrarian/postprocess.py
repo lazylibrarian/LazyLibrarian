@@ -952,6 +952,10 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
         # ok, we've got a target directory, try to copy only the files we want, renaming them on the fly.
         for fname in os.listdir(pp_path):
+            if isinstance(fname, str):
+                if int(lazylibrarian.LOGLEVEL) > 2:
+                    logger.warn("unexpected unicode conversion copying file to target directory")
+                fname = try_rename(pp_path, fname)
             if fname.lower().endswith(".jpg") or fname.lower().endswith(".opf") or \
                     is_valid_booktype(fname, booktype=booktype):
                 logger.debug('Copying %s to directory %s' % (fname, dest_path))
