@@ -68,8 +68,9 @@ def upgrade_needed():
     # 18 Added unique constraint to seriesauthors table
     # 19 add seriesdisplay to book table
     # 20 add booklibrary date to book table
+    # 21 add audiofile audiolibrary date and audiostatus to books table
 
-    db_current_version = 20
+    db_current_version = 21
     if db_version < db_current_version:
         return db_current_version
     return 0
@@ -129,7 +130,8 @@ def dbupgrade(db_current_version):
                 BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
                 BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, \
                 BookFile TEXT, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, WorkPage TEXT, \
-                Manual TEXT, SeriesDisplay TEXT, BookLibrary TEXT)')
+                Manual TEXT, SeriesDisplay TEXT, BookLibrary TEXT, AudioFile TEXT, AudioLibrary TEXT, \
+                AudioStatus TEXT)')
                     myDB.action('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, \
                 NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, Source TEXT, DownloadID TEXT)')
                     myDB.action('CREATE TABLE IF NOT EXISTS pastissues AS SELECT * FROM wanted WHERE 0')  # same columns
@@ -788,6 +790,18 @@ def dbupgrade(db_current_version):
                                             (filedate, book['BookID']))
 
                         lazylibrarian.UPDATE_MSG = 'Adding BookLibrary date complete, %s/%s books' % (mod,cnt)
+                        upgradelog.write("%s v20: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+                    upgradelog.write("%s v20: complete\n" % time.ctime())
+
+                if db_version < 21:
+                    if not has_column(myDB, "books", "AudioLibrary"):
+                        lazylibrarian.UPDATE_MSG = 'Adding AudioBook support to book table'
+                        upgradelog.write("%s v20: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+                        myDB.action('ALTER TABLE books ADD COLUMN AudioFile TEXT')
+                        myDB.action('ALTER TABLE books ADD COLUMN AudioLibrary TEXT')
+                        myDB.action('ALTER TABLE books ADD COLUMN AudioStatus TEXT')
+                        myDB.action('UPDATE books SET AudioStatus="Skipped"')
+                        lazylibrarian.UPDATE_MSG = 'Adding AudioBook support complete'
                         upgradelog.write("%s v20: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
                     upgradelog.write("%s v20: complete\n" % time.ctime())
 

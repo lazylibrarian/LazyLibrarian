@@ -29,14 +29,14 @@ from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_
 from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, \
     unaccented, getList
 from lazylibrarian.gr import GoodReads
-from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB
+from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals
 from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
 from lazylibrarian.magazinescan import create_id, create_cover
 from lazylibrarian.notifiers import notify_download, custom_notify_download
 from lib.deluge_client import DelugeRPCClient
 from lib.fuzzywuzzy import fuzz
 
-# Need to remove characters we don't want in the filename BEFORE adding to DESTINATION_DIR
+# Need to remove characters we don't want in the filename BEFORE adding to EBOOK_DIR
 # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
 __dic__ = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
            ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
@@ -48,7 +48,7 @@ def processAlternate(source_dir=None):
         if not source_dir or not os.path.isdir(source_dir):
             logger.warn("Alternate Directory not configured")
             return False
-        if source_dir == lazylibrarian.DIRECTORY('Destination'):
+        if source_dir == lazylibrarian.DIRECTORY('eBook'):
             logger.warn('Alternate directory must not be the same as Destination')
             return False
 
@@ -157,7 +157,7 @@ def try_rename(directory, filename):
         return ""
 
 
-def move_into_subdir(sourcedir, targetdir, fname):
+def move_into_subdir(sourcedir, targetdir, fname, move='move'):
     # move the book and any related files too, other book formats, or opf, jpg with same title
     # (files begin with fname) from sourcedir to new targetdir
     # can't move metadata.opf or cover.jpg or similar as can't be sure they are ours
@@ -176,7 +176,7 @@ def move_into_subdir(sourcedir, targetdir, fname):
                     or is_valid_booktype(ourfile, booktype="mag") \
                     or os.path.splitext(ourfile)[1].lower() in ['.opf', '.jpg']:
                 try:
-                    if lazylibrarian.CONFIG['DESTINATION_COPY']:
+                    if lazylibrarian.CONFIG['DESTINATION_COPY'] or move == 'copy':
                         shutil.copyfile(os.path.join(sourcedir, ourfile), os.path.join(targetdir, ourfile))
                         setperm(os.path.join(targetdir, ourfile))
                     else:
@@ -311,17 +311,19 @@ def processDir(reset=False):
                                     else:
                                         fname = os.path.splitext(fname)[0]
                                         targetdir = os.path.join(download_dir, fname)
-                                        if not os.path.exists(targetdir):
-                                            try:
-                                                os.makedirs(targetdir)
-                                                setperm(targetdir)
-                                            except OSError as why:
+                                        try:
+                                            os.makedirs(targetdir)
+                                            setperm(targetdir)
+                                        except OSError as why:
+                                            if not os.path.isdir(targetdir):
                                                 logger.debug('Failed to create directory %s, %s' %
                                                              (targetdir, why.strerror))
-                                        if not os.path.exists(targetdir):
-                                            logger.debug('Unable to find directory %s' % targetdir)
-                                        else:
-                                            move_into_subdir(download_dir, targetdir, fname)
+                                        if os.path.isdir(targetdir):
+                                            if book['NZBmode'] in ['torrent', 'magnet', 'torznab'] and \
+                                                    lazylibrarian.CONFIG['KEEP_SEEDING']:
+                                                move_into_subdir(download_dir, targetdir, fname, move='copy')
+                                            else:
+                                                move_into_subdir(download_dir, targetdir, fname)
                                             pp_path = targetdir
 
                             if os.path.isdir(pp_path):
@@ -368,7 +370,7 @@ def processDir(reset=False):
                             '$Title', bookname)
                         global_name = unaccented(global_name)
                         dest_path = unaccented_str(replace_all(dest_path, __dic__))
-                        dest_dir = lazylibrarian.DIRECTORY('Destination')
+                        dest_dir = lazylibrarian.DIRECTORY('eBook')
                         dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
                     else:
                         data = myDB.match('SELECT IssueDate from magazines WHERE Title="%s"' % book['BookID'])
@@ -386,7 +388,7 @@ def processDir(reset=False):
                             if lazylibrarian.CONFIG['MAG_RELATIVE']:
                                 if dest_path[0] not in '._':
                                     dest_path = '_' + dest_path
-                                dest_dir = lazylibrarian.DIRECTORY('Destination')
+                                dest_dir = lazylibrarian.DIRECTORY('eBook')
                                 dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
                             else:
                                 dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
@@ -416,18 +418,26 @@ def processDir(reset=False):
                     myDB.upsert("wanted", newValueDict, controlValueDict)
 
                     if bookname:
-                        # it's a book, if None it's a magazine
+                        # it's a book (ebook or audiobook), if None it's a magazine
                         controlValueDict = {"BookID": book['BookID']}
-                        newValueDict = {"BookLibrary": now()}  # say when we added it
-                        myDB.upsert("books", newValueDict, controlValueDict)
-                        if len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
-                            logger.debug('Calibre should have created the extras for us')
+                        if book['AuxInfo'] == 'audiobook':
+                            newValueDict = {"AudioFile": dest_file, "AudioLibrary": now()}  # say when we added it
+                            myDB.upsert("books", newValueDict, controlValueDict)
+                            # update authors book counts
+                            match = myDB.match('SELECT AuthorID FROM books WHERE BookID="%s"' % book['BookID'])
+                            if match:
+                                update_totals(match['AuthorID'])
                         else:
-                            cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,'
-                            cmd += 'BookLang,BookPub from books,authors WHERE BookID="%s"' % book['BookID']
-                            cmd += ' and books.AuthorID = authors.AuthorID'
-                            data = myDB.match(cmd)
-                            processExtras(myDB, dest_path, global_name, data)
+                            newValueDict = {"BookFile": dest_file, "BookLibrary": now()}
+                            myDB.upsert("books", newValueDict, controlValueDict)
+                            if len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
+                                logger.debug('Calibre should have created the extras for us')
+                            else:
+                                cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,'
+                                cmd += 'BookLang,BookPub from books,authors WHERE BookID="%s"' % book['BookID']
+                                cmd += ' and books.AuthorID = authors.AuthorID'
+                                data = myDB.match(cmd)
+                                processExtras(myDB, dest_path, global_name, data)
                     else:
                         # update mags
                         if mostrecentissue:
@@ -657,7 +667,7 @@ def import_book(pp_path=None, bookID=None):
             authorname = data['AuthorName']
             authorname = ' '.join(authorname.split())  # ensure no extra whitespace
             bookname = data['BookName']
-            dest_dir = lazylibrarian.DIRECTORY('Destination')
+            dest_dir = lazylibrarian.DIRECTORY('eBook')
 
             if 'windows' in platform.system().lower() and '/' in lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']:
                 logger.warn('Please check your EBOOK_DEST_FOLDER setting')
@@ -672,23 +682,32 @@ def import_book(pp_path=None, bookID=None):
             success, dest_file = processDestination(pp_path, dest_path, authorname, bookname, global_name, bookID)
             if success:
                 # update nzbs
-                was_snatched = myDB.match('SELECT BookID, NZBprov FROM wanted WHERE BookID="%s"' % bookID)
+                was_snatched = myDB.match('SELECT BookID, NZBprov, AuxInfo FROM wanted WHERE BookID="%s"' % bookID)
                 snatched_from = "from " + was_snatched['NZBprov'] if was_snatched else "manually added"
                 if was_snatched:
                     controlValueDict = {"BookID": bookID}
                     newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
                     myDB.upsert("wanted", newValueDict, controlValueDict)
-                    newValueDict = {"BookLibrary": now()}  # say when we added it
-                    myDB.upsert("books", newValueDict, controlValueDict)
-                    if bookname:
-                        if len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
-                            logger.debug('Calibre should have created the extras')
-                        else:
-                            cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,'
-                            cmd += 'BookLang,BookPub from books,authors WHERE BookID="%s"' % bookID
-                            cmd += ' and books.AuthorID = authors.AuthorID'
-                            data = myDB.match(cmd)
-                            processExtras(myDB, dest_path, global_name, data)
+
+                    if was_snatched['AuxInfo'] == 'audiobook':
+                        newValueDict = {"AudioLibrary": now()}
+                        myDB.upsert("books", newValueDict, controlValueDict)
+                        # update authors book counts
+                        match = myDB.match('SELECT AuthorID FROM books WHERE BookID="%s"' % bookID)
+                        if match:
+                            update_totals(match['AuthorID'])
+                    else:
+                        newValueDict = {"BookLibrary": now()}  # say when we added it
+                        myDB.upsert("books", newValueDict, controlValueDict)
+                        if bookname:
+                            if len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
+                                logger.debug('Calibre should have created the extras')
+                            else:
+                                cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,'
+                                cmd += 'BookLang,BookPub from books,authors WHERE BookID="%s"' % bookID
+                                cmd += ' and books.AuthorID = authors.AuthorID'
+                                data = myDB.match(cmd)
+                                processExtras(myDB, dest_path, global_name, data)
 
                     if not lazylibrarian.CONFIG['DESTINATION_COPY'] and pp_path != dest_dir:
                         if os.path.isdir(pp_path):
@@ -773,17 +792,9 @@ def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
     newValueDict = {"Status": "Open", "BookFile": dest_file}
     myDB.upsert("books", newValueDict, controlValueDict)
 
-    # update authors
-    match = myDB.match('SELECT AuthorID FROM authors WHERE AuthorName="%s"' % authorname)
+    match = myDB.match('SELECT AuthorID FROM authors WHERE BookID="%s"' % bookid)
     if match:
-        authorid = match['AuthorID']
-        cmd = 'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % authorid
-        cmd += ' and (Status="Have" OR Status="Open")'
-        havebooks = myDB.match(cmd)
-
-        controlValueDict = {"AuthorID": authorid}
-        newValueDict = {"HaveBooks": havebooks['counter']}
-        myDB.upsert("authors", newValueDict, controlValueDict)
+        update_totals(match['AuthorID'])
 
 
 def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, bookid=None):
@@ -795,12 +806,18 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     else:
         booktype = 'mag'
 
+    myDB = database.DBConnection()
+    data = myDB.match('SELECT AuxInfo FROM wanted WHERE BookID="%s"' % bookID)
+    auxinfo = ''
+    if data:
+        auxinfo = data['AuxInfo']
+
     # ensure directory is unicode so we get unicode results from listdir
     if isinstance(pp_path, str):
         pp_path = pp_path.decode(lazylibrarian.SYS_ENCODING)
 
     match = False
-    if bookname and lazylibrarian.CONFIG['ONE_FORMAT']:
+    if bookname and lazylibrarian.CONFIG['ONE_FORMAT'] and auxinfo != 'audiobook':
         booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
         for booktype in booktype_list:
             if not match:
@@ -819,7 +836,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     except OSError as why:
                         logger.debug('Unable to delete %s: %s' % (fname, why.strerror))
 
-    else:  # mag or multi-format book
+    else:  # mag or audiobook or multi-format book
         for fname in os.listdir(pp_path):
             if is_valid_booktype(fname, booktype=booktype):
                 match = True
@@ -829,10 +846,10 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         # no book/mag found in a format we wanted. Leave for the user to delete or convert manually
         return False, 'Unable to locate a book/magazine in %s, leaving for manual processing' % pp_path
 
-    # Do we want calibre to import the book for us
+    # If ebook, do we want calibre to import the book for us
     newbookfile= ''
-    if bookname and len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
-        dest_dir = lazylibrarian.DIRECTORY('Destination')
+    if bookname and len(lazylibrarian.CONFIG['IMP_CALIBREDB']) and auxinfo != 'audiobook':
+        dest_dir = lazylibrarian.DIRECTORY('eBook')
         params = []
         try:
             logger.debug('Importing %s into calibre library' % global_name)
@@ -933,7 +950,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         except OSError as e:
             return False, 'calibredb failed, %s' % e.strerror
     else:
-        # we are copying the files ourselves, either it's a magazine or we don't want to use calibre
+        # we are copying the files ourselves, either it's audiobook, magazine or we don't want to use calibre
         if not os.path.exists(dest_path):
             logger.debug('%s does not exist, so it\'s safe to create it' % dest_path)
         elif not os.path.isdir(dest_path):
@@ -943,20 +960,29 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             except OSError as why:
                 return False, 'Unable to delete %s: %s' % (dest_path, why.strerror)
 
-        if not os.path.exists(dest_path):
-            try:
-                os.makedirs(dest_path)
-            except OSError as why:
-                return False, 'Unable to create directory %s: %s' % (dest_path, why.strerror)
+        try:
+            os.makedirs(dest_path)
             setperm(dest_path)
+        except OSError as why:
+            if not os.path.isdir(dest_path):
+                return False, 'Unable to create directory %s: %s' % (dest_path, why.strerror)
 
         # ok, we've got a target directory, try to copy only the files we want, renaming them on the fly.
         for fname in os.listdir(pp_path):
+            if isinstance(fname, str):
+                if int(lazylibrarian.LOGLEVEL) > 2:
+                    logger.warn("unexpected unicode conversion copying file to target directory")
+                fname = try_rename(pp_path, fname)
             if fname.lower().endswith(".jpg") or fname.lower().endswith(".opf") or \
                     is_valid_booktype(fname, booktype=booktype):
                 logger.debug('Copying %s to directory %s' % (fname, dest_path))
                 try:
-                    destfile = os.path.join(dest_path, global_name + os.path.splitext(fname)[1])
+                    if auxinfo == 'audiobook':
+                        # don't rename, just copy it
+                        destfile = os.path.join(dest_path, fname)
+                    else:
+                        # for ebooks, the book, jpg, opf all have the same basename
+                        destfile = os.path.join(dest_path, global_name + os.path.splitext(fname)[1])
                     shutil.copyfile(os.path.join(pp_path, fname), destfile)
                     setperm(destfile)
                     if is_valid_booktype(destfile, booktype=booktype):

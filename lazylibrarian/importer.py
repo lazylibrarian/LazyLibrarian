@@ -237,6 +237,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
             myDB.upsert("authors", newValueDict, controlValueDict)
 
         if addbooks:
+            audiostatus = lazylibrarian.CONFIG['NEWAUDIO_STATUS']
             if new_author:
                 bookstatus = lazylibrarian.CONFIG['NEWAUTHOR_STATUS']
             else:
@@ -283,7 +284,7 @@ def update_totals(AuthorID):
     totalbooks = myDB.match(
         'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % AuthorID)
     cmd = 'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % AuthorID
-    cmd += ' AND (Status="Have" OR Status="Open")'
+    cmd += ' AND (Status="Have" OR Status="Open" OR AudioStatus="Have" OR AudioStatus="Open")'
     havebooks = myDB.match(cmd)
     controlValueDict = {"AuthorID": AuthorID}
 

@@ -219,7 +219,7 @@
                                             %>
       <label for="series_tab" class="control-label">
         <input type="checkbox" id="series_tab" name="series_tab" value="1" ${checked} />
-        Show Series tab</label>
+        Show Series</label>
     </div>
     <div class="checkbox">
       <%
@@ -230,7 +230,18 @@
                                             %>
       <label for="mag_tab" class="control-label">
         <input type="checkbox" id="mag_tab" name="mag_tab" value="1" ${checked} />
-        Show Magazines tab</label>
+        Show Magazines</label>
+    </div>
+    <div class="checkbox">
+      <%
+                                                if lazylibrarian.CONFIG['AUDIO_TAB'] == True:
+                                                    checked = 'checked="checked"'
+                                                else:
+                                                    checked = ''
+                                            %>
+      <label for="audio_tab" class="control-label">
+        <input type="checkbox" id="audio_tab" name="audio_tab" value="1" ${checked} />
+        Show AudioBooks</label>
     </div>
     <div class="checkbox">
       <%
@@ -239,7 +250,7 @@
                                                 else:
                                                     checked = ''
                                             %>
-      <label for="mag_tab" class="control-label">
+      <label for="toggles" class="control-label">
         <input type="checkbox" id="toggles" name="toggles" value="1" ${checked} />
         Show column toggles</label>
     </div>
@@ -343,6 +354,11 @@
             <label for="ebook_type" class="control-label">eBooks:</label>
             <input type="text" id="ebook_type" name="ebook_type" value="${lazylibrarian.CONFIG['EBOOK_TYPE']}" class="form-control" placeholder="eBook file formats">
             <span class="help-block">Comma separated file extensions. Default: epub, mobi, pdf</span>
+          </div>
+          <div class="form-group">
+            <label for="audiobook_type" class="control-label">AudioBooks:</label>
+            <input type="text" id="ebook_type" name="audiobook_type" value="${lazylibrarian.CONFIG['AUDIOBOOK_TYPE']}" class="form-control" placeholder="AudioBook file formats">
+            <span class="help-block">Comma separated file extensions. Default: mp3</span>
           </div>
           <div class="form-group">
             <label for="mag_type" class="control-label">Magazines:</label>
@@ -1080,8 +1096,12 @@
             <fieldset>
               <legend>Folders</legend>
               <div class="form-group">
-                <label for="destination_dir" class="control-label">Book Library Folder:</label>
-                <input type="text" id="destination_dir" name="destination_dir" value="${lazylibrarian.CONFIG['DESTINATION_DIR']}" class="form-control" placeholder="Destination Directory">
+                <label for="ebook_dir" class="control-label">eBook Library Folder:</label>
+                <input type="text" id="ebook_dir" name="ebook_dir" value="${lazylibrarian.CONFIG['EBOOK_DIR']}" class="form-control" placeholder="eBook Library Folder">
+              </div>
+              <div class="form-group">
+                <label for="audio_dir" class="control-label">AudioBook Library Folder:</label>
+                <input type="text" id="audio_dir" name="audio_dir" value="${lazylibrarian.CONFIG['AUDIO_DIR']}" class="form-control" placeholder="AudioBook Library Folder">
               </div>
               <div class="form-group">
                 <label for="alternate_dir" class="control-label">Alternate Import/Export Folder:</label>
@@ -1089,33 +1109,33 @@
                 <span class="help-block">Directory for wishlists and manually importing books</span>
               </div>
               <div class="form-group">
-                <label for="ebook_dest_folder">eBook Foldername Pattern:</label>
+                <label for="ebook_dest_folder">eBook/AudioBook Foldername Pattern:</label>
                 <input type="text" id="ebook_dest_folder" name="ebook_dest_folder" value="${lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']}" class="form-control" placeholder="eBook Destination Folder">
               </div>
               <div class="form-group">
                 <label for="ebook_dest_file">eBook Filename Pattern:</label>
                 <input type="text" id="ebook_dest_file" name="ebook_dest_file" value="${lazylibrarian.CONFIG['EBOOK_DEST_FILE']}" class="form-control" placeholder="eBook Destination File">
                 <span class="help-block">Options include $Author, $Title, any string.<br/>
-                  Current limitation: each file has to be in unique subfolder</span>
+                  Current limitation: each title has to be in unique subfolder</span>
               </div>
               <div class="checkbox">
                 <%
-                                            if lazylibrarian.CONFIG['DESTINATION_COPY'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['DESTINATION_COPY'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                %>
                 <label for="destination_copy">
                   <input type="checkbox" id="destination_copy" name="destination_copy" value="1" ${checked} />
                   Keep original files</label>
               </div>
               <div class="checkbox">
                 <%
-                                            if lazylibrarian.CONFIG['ONE_FORMAT'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['ONE_FORMAT'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                %>
                 <label for="one_format">
                   <input type="checkbox" id="one_format" name="one_format" value="1" ${checked} />
                   Only import one format of an ebook if multiple formats downloaded</label>
@@ -1304,6 +1324,20 @@
                   %endfor
                 </select>
                 <span class="help-block">Status for new ebooks by existing authors</span>
+              </div>
+              <div class="form-group">
+                <label for="newaudio_status">New AudioBook Status:</label>
+                <select id="newaudio_status" name="newaudio_status" class="form-control">
+                  %for nb_status in config['status_list']:
+                  <%
+                                                selected = ''
+                                                if nb_status == lazylibrarian.CONFIG['NEWAUDIO_STATUS']:
+                                                        selected = 'selected="selected"'
+                                            %>
+                  <option value="${nb_status}" ${selected}>${nb_status}</option>
+                  %endfor
+                </select>
+                <span class="help-block">Status for new audiobooks by existing authors</span>
               </div>
               <div class="form-group">
                 <label for="newauthor_status">New Authors Book Status:</label>
@@ -1894,6 +1928,14 @@
               <label for="newznab[${loop.index}][magcat]" class="control-label">Magazine Categories:</label>
               <input type="text" placeholder="Magazine Categories" id="newznab[${loop.index}][magcat]" name="newznab[${loop.index}][magcat]" value="${provider['MAGCAT']}" class="form-control">
             </div>
+            <div class="form-group col-md-6" ${hidden}>
+              <label for="newznab[${loop.index}][audiosearch]" class="control-label">AudioBook Search:</label>
+              <input type="text" placeholder="AudioBook Search" id="newznab[${loop.index}][audiosearch]" name="newznab[${loop.index}][audiosearch]" value="${provider['AUDIOSEARCH']}" class="form-control">
+            </div>
+            <div class="form-group col-md-6" ${hidden}>
+              <label for="newznab[${loop.index}][audiocat]" class="control-label">AudioBook Categories:</label>
+              <input type="text" placeholder="AudioBook Categories" id="newznab[${loop.index}][audiocat]" name="newznab[${loop.index}][audiocat]" value="${provider['AUDIOCAT']}" class="form-control">
+            </div>
             %endfor
             %for provider in lazylibrarian.TORZNAB_PROV:
             <%
@@ -1940,6 +1982,14 @@
               <label for="torznab[${loop.index}][magcat]" class="control-label">Magazine Categories:</label>
               <input type="text" placeholder="Magazine Categories" id="torznab[${loop.index}][magcat]" name="torznab[${loop.index}][magcat]" value="${provider['MAGCAT']}" class="form-control">
             </div>
+            <div class="form-group col-md-6" ${hidden}>
+              <label for="torznab[${loop.index}][audiosearch]" class="control-label">AudioBook Search:</label>
+              <input type="text" placeholder="AudioBook Search" id="torznab[${loop.index}][audiosearch]" name="torznab[${loop.index}][audiosearch]" value="${provider['AUDIOSEARCH']}" class="form-control">
+            </div>
+            <div class="form-group col-md-6" ${hidden}>
+              <label for="torznab[${loop.index}][audiocat]" class="control-label">AudioBook Categories:</label>
+              <input type="text" placeholder="AudioBook Categories" id="torznab[${loop.index}][audiocat]" name="torznab[${loop.index}][audiocat]" value="${provider['AUDIOCAT']}" class="form-control">
+            </div>
             %endfor
           </div>
         </div>
@@ -1968,6 +2018,28 @@
             <div class="form-group">
               <input type="text" id="reject_minsize" name="reject_minsize" value="${lazylibrarian.CONFIG['REJECT_MINSIZE']}" class="form-control" placeholder="Reject minimum size">
               <span class="help-block">Book minimum size (Mb):<br/>
+                Search results smaller than this will be rejected, set to 0 to disable<br/>
+              </span>
+            </div>
+            <legend>AudioBook Reject List</legend>
+            <span class="help-block">Default: epub, mobi</span>
+            <div class="form-group">
+              <input type="text" id="reject_audio" name="reject_audio" value="${lazylibrarian.CONFIG['REJECT_AUDIO']}" class="form-control" placeholder="Reject word list">
+              <span class="help-block">Comma separated list of words to reject:<br/>
+                Search results with any of these words in the title will be ignored<br/>
+              </span>
+            </div>
+            <legend>AudioBook Size Limits</legend>
+            <span class="help-block">Default: 0</span>
+            <div class="form-group">
+              <input type="text" id="reject_maxaudio" name="reject_maxaudio" value="${lazylibrarian.CONFIG['REJECT_MAXAUDIO']}" class="form-control" placeholder="Reject maximum size">
+              <span class="help-block">AudioBook maximum size (Mb):<br/>
+                Search results larger than this will be rejected, set to 0 to disable<br/>
+              </span>
+            </div>
+            <div class="form-group">
+              <input type="text" id="reject_minaudio" name="reject_minaudio" value="${lazylibrarian.CONFIG['REJECT_MINAUDIO']}" class="form-control" placeholder="Reject minimum size">
+              <span class="help-block">AudioBook minimum size (Mb):<br/>
                 Search results smaller than this will be rejected, set to 0 to disable<br/>
               </span>
             </div>

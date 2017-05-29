@@ -42,7 +42,11 @@ def cron_search_tor_book():
         search_tor_book()
 
 
-def search_tor_book(books=None, reset=False):
+def search_tor_book(books=None, library=None):
+    """
+    books is a list of new books to add, or None for backlog search
+    library is "eBook" or "AudioBook" or None to search all book types
+    """
     try:
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
@@ -60,17 +64,22 @@ def search_tor_book(books=None, reset=False):
 
         if books is None:
             # We are performing a backlog search
-            cmd = 'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books,authors '
-            cmd += 'WHERE books.AuthorID = authors.AuthorID and books.Status="Wanted" order by BookAdded desc'
-            searchbooks = myDB.select(cmd)
+            searchbooks = []
+            cmd = 'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded, books.Status, AudioStatus '
+            cmd += 'from books,authors WHERE (books.Status="Wanted" OR AudioStatus="Wanted") '
+            cmd += 'and books.AuthorID = authors.AuthorID order by BookAdded desc'
+            results = myDB.select(cmd)
+            for terms in results:
+                searchbooks.append(terms)
         else:
             # The user has added a new book
             searchbooks = []
             for book in books:
-                cmd = 'SELECT BookID, AuthorName, BookName, BookSub from books,authors WHERE books.Status="Wanted"'
-                cmd += ' and books.AuthorID = authors.AuthorID and BookID="%s"' % book['bookid']
-                searchbook = myDB.select(cmd)
-                for terms in searchbook:
+                cmd = 'SELECT BookID, AuthorName, BookName, BookSub, books.Status, AudioStatus '
+                cmd += 'from books,authors WHERE BookID="%s" ' % book['bookid']
+                cmd += 'AND books.AuthorID = authors.AuthorID'
+                results = myDB.select(cmd)
+                for terms in results:
                     searchbooks.append(terms)
 
         if len(searchbooks) == 0:
@@ -84,27 +93,44 @@ def search_tor_book(books=None, reset=False):
             if searchbook['BookSub']:
                 searchterm = searchterm + ': ' + searchbook['BookSub']
 
-            searchlist.append(
-                {"bookid": searchbook['BookID'],
-                 "bookName": searchbook['BookName'],
-                 "bookSub": searchbook['BookSub'],
-                 "authorName": searchbook['AuthorName'],
-                 "searchterm": searchterm})
+            if searchbook['Status'] == "Wanted":
+                searchlist.append(
+                    {"bookid": searchbook['BookID'],
+                     "bookName": searchbook['BookName'],
+                     "bookSub": searchbook['BookSub'],
+                     "authorName": searchbook['AuthorName'],
+                     "library": "eBook",
+                     "searchterm": searchterm})
+
+            if searchbook['AudioStatus'] == "Wanted":
+                searchlist.append(
+                    {"bookid": searchbook['BookID'],
+                     "bookName": searchbook['BookName'],
+                     "bookSub": searchbook['BookSub'],
+                     "authorName": searchbook['AuthorName'],
+                     "library": "AudioBook",
+                     "searchterm": searchterm})
 
         tor_count = 0
         for book in searchlist:
+            # first attempt, try author/title in category "book"
+            if book['library'] == 'AudioBook':
+                searchtype = 'audio'
+            else:
+                searchtype = 'book'
 
-            resultlist, nproviders = IterateOverTorrentSites(book, 'book')
+            resultlist, nproviders = IterateOverTorrentSites(book, searchtype)
             if not nproviders:
                 logger.warn('No torrent providers are set, check config')
                 return  # No point in continuing
 
-            found = processResultList(resultlist, book, "book")
+            found = processResultList(resultlist, book, searchtype)
 
             # if you can't find the book, try author/title without any "(extended details, series etc)"
             if not found and '(' in book['bookName']:
-                resultlist, nproviders = IterateOverTorrentSites(book, 'shortbook')
-                found = processResultList(resultlist, book, "shortbook")
+                searchtype = 'short' + searchtype
+                resultlist, nproviders = IterateOverTorrentSites(book, searchtype)
+                found = processResultList(resultlist, book, searchtype)
 
             # general search is the same as booksearch for torrents
             # if not found:
@@ -112,14 +138,11 @@ def search_tor_book(books=None, reset=False):
             #    found = processResultList(resultlist, book, "general")
 
             if not found:
-                logger.debug("Searches for %s returned no results." % book['searchterm'])
+                logger.debug("Searches for %s %s returned no results." % (book['library'], book['searchterm']))
             if found > True:
                 tor_count += 1
 
         logger.info("TORSearch for Wanted items complete, found %s book%s" % (tor_count, plural(tor_count)))
-
-        if reset:
-            scheduleJob(action='Restart', target='search_tor_book')
 
     except Exception:
         logger.error('Unhandled exception in search_tor_book: %s' % traceback.format_exc())
@@ -136,9 +159,19 @@ def processResultList(resultlist, book, searchtype):
            ',': '', '*': '', ':': '.', ';': ''}
 
     match_ratio = int(lazylibrarian.CONFIG['MATCH_RATIO'])
-    reject_list = getList(lazylibrarian.CONFIG['REJECT_WORDS'])
     author = unaccented_str(replace_all(book['authorName'], dic))
     title = unaccented_str(replace_all(book['bookName'], dic))
+    if book['library'] == 'eBook':
+        reject_list = getList(lazylibrarian.CONFIG['REJECT_WORDS'])
+        maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXSIZE'], 0)
+        minsize = check_int(lazylibrarian.CONFIG['REJECT_MINSIZE'], 0)
+        auxinfo = 'eBook'
+
+    else:   #if book['library'] == 'AudioBook':
+        reject_list = getList(lazylibrarian.CONFIG['REJECT_AUDIO'])
+        maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXAUDIO'], 0)
+        minsize = check_int(lazylibrarian.CONFIG['REJECT_MINAUDIO'], 0)
+        auxinfo = 'AudioBook'
 
     matches = []
     for tor in resultlist:
@@ -169,13 +202,11 @@ def processResultList(resultlist, book, searchtype):
         tor_size_temp = check_int(tor_size_temp, 1000)
         tor_size = round(float(tor_size_temp) / 1048576, 2)
 
-        maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXSIZE'], 0)
         if not rejected:
             if maxsize and tor_size > maxsize:
                 rejected = True
                 logger.debug("Rejecting %s, too large" % torTitle)
 
-        minsize = check_int(lazylibrarian.CONFIG['REJECT_MINSIZE'], 0)
         if not rejected:
             if minsize and tor_size < minsize:
                 rejected = True
@@ -193,6 +224,7 @@ def processResultList(resultlist, book, searchtype):
                 "NZBsize": tor_size,
                 "NZBtitle": tor_Title,
                 "NZBmode": "torrent",
+                "AuxInfo": auxinfo,
                 "Status": "Skipped"
             }
 
@@ -201,10 +233,14 @@ def processResultList(resultlist, book, searchtype):
             wordlist = getList(torTitle.lower())
             words = [x for x in wordlist if x not in getList(author.lower())]
             words = [x for x in words if x not in getList(title.lower())]
-            words = [x for x in words if x not in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
+            if newValueDict['AuxInfo'] == 'eBook':
+                words = [x for x in words if x not in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
+                booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
+            if newValueDict['AuxInfo'] == 'AudioBook':
+                words = [x for x in words if x not in getList(lazylibrarian.CONFIG['AUDIOBOOK_TYPE'])]
+                booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['AUDIOBOOK_TYPE'])]
             score -= len(words)
             # prioritise titles that include the ebook types we want
-            booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
             if len(booktypes):
                 score += 1
             matches.append([score, torTitle, newValueDict, controlValueDict])
@@ -237,9 +273,10 @@ def processResultList(resultlist, book, searchtype):
             else:
                 snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             if snatch:
-                logger.info('Downloading %s from %s' % (newValueDict["NZBtitle"], newValueDict["NZBprov"]))
-                notify_snatch("%s from %s at %s" %
-                              (newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
+                logger.info('Downloading %s %s from %s' %
+                            (newValueDict["AuxInfo"], newValueDict["NZBtitle"], newValueDict["NZBprov"]))
+                notify_snatch("%s %s from %s at %s" %
+                              (newValueDict["AuxInfo"], newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
                 custom_notify_snatch(newValueDict["BookID"])
                 scheduleJob(action='Start', target='processDir')
                 return True + True  # we found it
@@ -275,7 +312,7 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
             os.makedirs(destdir)
             setperm(destdir)
         except OSError as e:
-            if e.errno is not 17:  # directory already exists is ok. Using errno because of different languages
+            if not os.path.isdir(destdir):
                 logger.debug("Error creating directory %s, %s" % (destdir, e.strerror))
 
         destfile = os.path.join(destdir, bookname)
