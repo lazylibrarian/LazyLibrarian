@@ -477,7 +477,7 @@ class Api(object):
     def _forceBookSearch(self, **kwargs):
         if 'type' in kwargs:
             library = kwargs['type']
-        else
+        else:
             library = None
         if lazylibrarian.USE_NZB():
             if 'wait' in kwargs:
@@ -719,7 +719,7 @@ class Api(object):
         books = [{"bookid": id}]
         if 'type' in kwargs:
             library = kwargs['type']
-        else
+        else:
             library = None
         if lazylibrarian.USE_RSS():
             if 'wait' in kwargs:

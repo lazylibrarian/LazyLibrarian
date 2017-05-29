@@ -420,8 +420,8 @@ def processDir(reset=False):
                     if bookname:
                         # it's a book (ebook or audiobook), if None it's a magazine
                         controlValueDict = {"BookID": book['BookID']}
-                        if book['AuxInfo'] == 'audiobook':
-                            newValueDict = {"AudioFile": dest_file, "AudioLibrary": now()}  # say when we added it
+                        if book['AuxInfo'] == 'AudioBook':
+                            newValueDict = {"AudioFile": dest_file, "AudioStatus": "Open", "AudioLibrary": now()}
                             myDB.upsert("books", newValueDict, controlValueDict)
                             # update authors book counts
                             match = myDB.match('SELECT AuthorID FROM books WHERE BookID="%s"' % book['BookID'])
@@ -504,7 +504,14 @@ def processDir(reset=False):
                     logger.info('Successfully processed: %s' % global_name)
                     ppcount += 1
                     custom_notify_download(book['BookID'])
-                    notify_download("%s from %s at %s" % (global_name, book['NZBprov'], now()))
+
+                    book_type = 'eBook'
+                    if book['AuxInfo'] in ['AudioBook', 'eBook']:
+                        book_type = book['AuxInfo']
+                    elif not bookname:
+                        book_type = 'Magazine'
+
+                    notify_download("%s %s from %s at %s" % (book_type, global_name, book['NZBprov'], now()))
                 else:
                     logger.error('Postprocessing for %s has failed: %s' % (global_name, dest_file))
                     controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
@@ -689,8 +696,8 @@ def import_book(pp_path=None, bookID=None):
                     newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
                     myDB.upsert("wanted", newValueDict, controlValueDict)
 
-                    if was_snatched['AuxInfo'] == 'audiobook':
-                        newValueDict = {"AudioLibrary": now()}
+                    if was_snatched['AuxInfo'] == 'AudioBook':
+                        newValueDict = {"AudioStatus": "Open", "AudioFile": dest_file, "AudioLibrary": now()}
                         myDB.upsert("books", newValueDict, controlValueDict)
                         # update authors book counts
                         match = myDB.match('SELECT AuthorID FROM books WHERE BookID="%s"' % bookID)
@@ -806,18 +813,20 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     else:
         booktype = 'mag'
 
-    myDB = database.DBConnection()
-    data = myDB.match('SELECT AuxInfo FROM wanted WHERE BookID="%s"' % bookID)
     auxinfo = ''
+    myDB = database.DBConnection()
+    data = myDB.match('SELECT AuxInfo FROM wanted WHERE BookID="%s"' % bookid)
     if data:
         auxinfo = data['AuxInfo']
+    if auxinfo == 'AudioBook':
+        booktype = 'audiobook'
 
     # ensure directory is unicode so we get unicode results from listdir
     if isinstance(pp_path, str):
         pp_path = pp_path.decode(lazylibrarian.SYS_ENCODING)
 
     match = False
-    if bookname and lazylibrarian.CONFIG['ONE_FORMAT'] and auxinfo != 'audiobook':
+    if booktype == 'book' and lazylibrarian.CONFIG['ONE_FORMAT']:
         booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
         for booktype in booktype_list:
             if not match:
@@ -844,11 +853,11 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
     if not match:
         # no book/mag found in a format we wanted. Leave for the user to delete or convert manually
-        return False, 'Unable to locate a book/magazine in %s, leaving for manual processing' % pp_path
+        return False, 'Unable to locate a valid filetype in %s, leaving for manual processing' % pp_path
 
     # If ebook, do we want calibre to import the book for us
     newbookfile= ''
-    if bookname and len(lazylibrarian.CONFIG['IMP_CALIBREDB']) and auxinfo != 'audiobook':
+    if booktype == 'book' and len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
         dest_dir = lazylibrarian.DIRECTORY('eBook')
         params = []
         try:
@@ -977,7 +986,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     is_valid_booktype(fname, booktype=booktype):
                 logger.debug('Copying %s to directory %s' % (fname, dest_path))
                 try:
-                    if auxinfo == 'audiobook':
+                    if booktype == 'audiobook':
                         # don't rename, just copy it
                         destfile = os.path.join(dest_path, fname)
                     else:

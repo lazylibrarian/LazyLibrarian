@@ -84,23 +84,25 @@ def search_nzb_book(books=None, library=None):
             if searchbook['BookSub']:
                 searchterm = searchterm + ': ' + searchbook['BookSub']
 
-            if searchbook['Status'] == "Wanted":
-                searchlist.append(
-                    {"bookid": searchbook['BookID'],
-                     "bookName": searchbook['BookName'],
-                     "bookSub": searchbook['BookSub'],
-                     "authorName": searchbook['AuthorName'],
-                     "library": "eBook",
-                     "searchterm": searchterm})
+            if library is None or library == 'eBook':
+                if searchbook['Status'] == "Wanted":
+                    searchlist.append(
+                        {"bookid": searchbook['BookID'],
+                         "bookName": searchbook['BookName'],
+                         "bookSub": searchbook['BookSub'],
+                         "authorName": searchbook['AuthorName'],
+                         "library": "eBook",
+                         "searchterm": searchterm})
 
-            if searchbook['AudioStatus'] == "Wanted":
-                searchlist.append(
-                    {"bookid": searchbook['BookID'],
-                     "bookName": searchbook['BookName'],
-                     "bookSub": searchbook['BookSub'],
-                     "authorName": searchbook['AuthorName'],
-                     "library": "AudioBook",
-                     "searchterm": searchterm})
+            if library is None or library == 'AudioBook':
+                if searchbook['AudioStatus'] == "Wanted":
+                    searchlist.append(
+                        {"bookid": searchbook['BookID'],
+                         "bookName": searchbook['BookName'],
+                         "bookSub": searchbook['BookSub'],
+                         "authorName": searchbook['AuthorName'],
+                         "library": "AudioBook",
+                         "searchterm": searchterm})
 
         nzb_count = 0
         for book in searchlist:
@@ -230,6 +232,7 @@ def processResultList(resultlist, book, searchtype):
             wordlist = getList(nzb_Title.lower())
             words = [x for x in wordlist if x not in getList(author.lower())]
             words = [x for x in words if x not in getList(title.lower())]
+            booktypes = ''
             if newValueDict['AuxInfo'] == 'eBook':
                 words = [x for x in words if x not in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
                 booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]

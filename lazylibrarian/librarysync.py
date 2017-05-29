@@ -627,6 +627,7 @@ def LibraryScan(startdir=None, library='eBook'):
                                     if not check_status:
                                         logger.debug('Unable to find bookid %s in database' % bookid)
                                     else:
+                                        book_filename = None
                                         if library == 'eBook' and check_status['Status'] != 'Open':
                                             # we found a new book
                                             new_book_count += 1
@@ -675,12 +676,13 @@ def LibraryScan(startdir=None, library='eBook'):
                                                             (book_filename, bookid))
 
                                         # update cover file to cover.jpg in book folder (if exists)
-                                        bookdir = os.path.dirname(book_filename)
-                                        coverimg = os.path.join(bookdir, 'cover.jpg')
-                                        if os.path.isfile(coverimg):
-                                            cachedir = lazylibrarian.CACHEDIR
-                                            cacheimg = os.path.join(cachedir, 'book', bookid + '.jpg')
-                                            copyfile(coverimg, cacheimg)
+                                        if book_filename:
+                                            bookdir = os.path.dirname(book_filename)
+                                            coverimg = os.path.join(bookdir, 'cover.jpg')
+                                            if os.path.isfile(coverimg):
+                                                cachedir = lazylibrarian.CACHEDIR
+                                                cacheimg = os.path.join(cachedir, 'book', bookid + '.jpg')
+                                                copyfile(coverimg, cacheimg)
                                 else:
                                     if library == 'eBook':
                                         logger.warn(

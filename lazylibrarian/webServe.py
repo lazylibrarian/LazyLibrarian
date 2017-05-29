@@ -1090,12 +1090,12 @@ class WebInterface(object):
                         title = myDB.match('SELECT BookName from books WHERE BookID = "%s"' % bookid)
                         if title:
                             bookname = title['BookName']
-                            if redirect == 'book':
+                            if library == 'eBook':
                                 myDB.upsert("books", {'Status': action}, {'BookID': bookid})
                                 logger.debug(u'Status set to "%s" for "%s"' % (action, bookname))
-                            elif redirect == 'audio':
+                            elif library == 'AudioBook':
                                 myDB.upsert("books", {'AudioStatus': action}, {'BookID': bookid})
-                            logger.debug(u'AudioStatus set to "%s" for "%s"' % (action, bookname))
+                                logger.debug(u'AudioStatus set to "%s" for "%s"' % (action, bookname))
                     if action in ["Remove", "Delete"]:
                         bookdata = myDB.match(
                             'SELECT AuthorID,Bookname,BookFile,AudioFile from books WHERE BookID = "%s"' % bookid)
@@ -1139,7 +1139,7 @@ class WebInterface(object):
                 threading.Thread(target=search_nzb_book, name='SEARCHNZB', args=[books]).start()
             if lazylibrarian.USE_TOR():
                 threading.Thread(target=search_tor_book, name='SEARCHTOR', args=[books]).start()
-        print redirect
+
         if redirect == "author":
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&Library=%s" % (AuthorID, library))
         elif redirect in ["books", "audio"]:

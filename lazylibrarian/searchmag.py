@@ -464,7 +464,7 @@ def search_magazines(mags=None, reset=False):
                             magazine['nzburl'])
                     if snatch:
                         logger.info('Downloading %s from %s' % (magazine['nzbtitle'], magazine["nzbprov"]))
-                        notify_snatch("%s from %s at %s" %
+                        notify_snatch("Magazine %s from %s at %s" %
                                       (unaccented(magazine['nzbtitle']), magazine["nzbprov"], now()))
                         custom_notify_snatch(magazine['bookid'])
                         scheduleJob(action='Start', target='processDir')

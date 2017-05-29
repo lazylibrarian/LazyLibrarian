@@ -237,6 +237,8 @@ def is_valid_booktype(filename, booktype=None):
     """
     if booktype == 'mag':  # default is book
         booktype_list = getList(lazylibrarian.CONFIG['MAG_TYPE'])
+    elif booktype == 'audiobook':
+        booktype_list = getList(lazylibrarian.CONFIG['AUDIOBOOK_TYPE'])
     else:
         booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
     extn = os.path.splitext(filename)[1].lstrip('.')
