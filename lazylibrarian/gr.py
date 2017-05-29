@@ -64,77 +64,98 @@ class GoodReads:
                     return
 
                 resultxml = rootxml.getiterator('work')
-                for author in resultxml:
+                loopCount = 1
+                while resultxml:
+                    for author in resultxml:
 
-                    if author.find('original_publication_year').text is None:
-                        bookdate = "0000"
-                    else:
-                        bookdate = author.find('original_publication_year').text
+                        if author.find('original_publication_year').text is None:
+                            bookdate = "0000"
+                        else:
+                            bookdate = author.find('original_publication_year').text
 
-                    authorNameResult = author.find('./best_book/author/name').text
-                    # Goodreads sometimes puts extra whitepase in the author names!
-                    authorNameResult =  ' '.join(authorNameResult.split())
-                    booksub = ""
-                    bookpub = ""
-                    booklang = "Unknown"
+                        authorNameResult = author.find('./best_book/author/name').text
+                        # Goodreads sometimes puts extra whitepase in the author names!
+                        authorNameResult =  ' '.join(authorNameResult.split())
+                        booksub = ""
+                        bookpub = ""
+                        booklang = "Unknown"
 
-                    try:
-                        bookimg = author.find('./best_book/image_url').text
-                        if bookimg == 'http://www.goodreads.com/assets/nocover/111x148.png':
+                        try:
+                            bookimg = author.find('./best_book/image_url').text
+                            if bookimg == 'http://www.goodreads.com/assets/nocover/111x148.png':
+                                bookimg = 'images/nocover.png'
+                        except (KeyError, AttributeError):
                             bookimg = 'images/nocover.png'
-                    except (KeyError, AttributeError):
-                        bookimg = 'images/nocover.png'
 
+                        try:
+                            bookrate = author.find('average_rating').text
+                        except KeyError:
+                            bookrate = 0
+
+                        bookpages = '0'
+                        bookgenre = ''
+                        bookdesc = ''
+                        bookisbn = ''
+                        booklink = 'http://www.goodreads.com/book/show/' + author.find('./best_book/id').text
+
+                        if author.find('./best_book/title').text is None:
+                            bookTitle = ""
+                        else:
+                            bookTitle = author.find('./best_book/title').text
+
+                        author_fuzz = fuzz.ratio(authorNameResult, searchterm)
+                        book_fuzz = fuzz.ratio(bookTitle, searchterm)
+                        isbn_fuzz = 0
+                        if is_valid_isbn(searchterm):
+                                isbn_fuzz = 100
+
+                        highest_fuzz = max((author_fuzz + book_fuzz) / 2, isbn_fuzz)
+
+                        bookid = author.find('./best_book/id').text
+
+                        resultlist.append({
+                            'authorname': author.find('./best_book/author/name').text,
+                            'bookid': bookid,
+                            'authorid': author.find('./best_book/author/id').text,
+                            'bookname': bookTitle.encode("ascii", "ignore"),
+                            'booksub': booksub,
+                            'bookisbn': bookisbn,
+                            'bookpub': bookpub,
+                            'bookdate': bookdate,
+                            'booklang': booklang,
+                            'booklink': booklink,
+                            'bookrate': float(bookrate),
+                            'bookimg': bookimg,
+                            'bookpages': bookpages,
+                            'bookgenre': bookgenre,
+                            'bookdesc': bookdesc,
+                            'author_fuzz': author_fuzz,
+                            'book_fuzz': book_fuzz,
+                            'isbn_fuzz': isbn_fuzz,
+                            'highest_fuzz': highest_fuzz,
+                            'num_reviews': float(bookrate)
+                        })
+
+                        resultcount += 1
+
+                    loopCount += 1
+                    URL = set_url + '&page=' + str(loopCount)
+                    resultxml = None
                     try:
-                        bookrate = author.find('average_rating').text
-                    except KeyError:
-                        bookrate = 0
+                        rootxml, in_cache = get_xml_request(URL)
+                        if rootxml is None:
+                            logger.debug('Error requesting page %s of results' % loopCount)
+                        else:
+                            resultxml = rootxml.getiterator('work')
+                            if not in_cache:
+                                api_hits += 1
+                    except Exception as e:
+                        resultxml = None
+                        logger.error("Error finding page %s of results: %s" % (loopCount, str(e)))
 
-                    bookpages = '0'
-                    bookgenre = ''
-                    bookdesc = ''
-                    bookisbn = ''
-                    booklink = 'http://www.goodreads.com/book/show/' + author.find('./best_book/id').text
-
-                    if author.find('./best_book/title').text is None:
-                        bookTitle = ""
-                    else:
-                        bookTitle = author.find('./best_book/title').text
-
-                    author_fuzz = fuzz.ratio(authorNameResult, searchterm)
-                    book_fuzz = fuzz.ratio(bookTitle, searchterm)
-                    isbn_fuzz = 0
-                    if is_valid_isbn(searchterm):
-                            isbn_fuzz = 100
-
-                    highest_fuzz = max((author_fuzz + book_fuzz) / 2, isbn_fuzz)
-
-                    bookid = author.find('./best_book/id').text
-
-                    resultlist.append({
-                        'authorname': author.find('./best_book/author/name').text,
-                        'bookid': bookid,
-                        'authorid': author.find('./best_book/author/id').text,
-                        'bookname': bookTitle.encode("ascii", "ignore"),
-                        'booksub': booksub,
-                        'bookisbn': bookisbn,
-                        'bookpub': bookpub,
-                        'bookdate': bookdate,
-                        'booklang': booklang,
-                        'booklink': booklink,
-                        'bookrate': float(bookrate),
-                        'bookimg': bookimg,
-                        'bookpages': bookpages,
-                        'bookgenre': bookgenre,
-                        'bookdesc': bookdesc,
-                        'author_fuzz': author_fuzz,
-                        'book_fuzz': book_fuzz,
-                        'isbn_fuzz': isbn_fuzz,
-                        'highest_fuzz': highest_fuzz,
-                        'num_reviews': float(bookrate)
-                    })
-
-                    resultcount += 1
+                    if resultxml:
+                        if all(False for _ in resultxml):  # returns True if iterator is empty
+                            resultxml = None
 
             except urllib2.HTTPError as err:
                 if err.code == 404:
@@ -278,7 +299,7 @@ class GoodReads:
                 logger.debug(u"url " + URL)
 
                 authorNameResult = rootxml.find('./author/name').text
-                # Goodreads sometimes puts extra whitepase in the author names!
+                # Goodreads sometimes puts extra whitespace in the author names!
                 authorNameResult =  ' '.join(authorNameResult.split())
                 logger.debug(u"GoodReads author name [%s]" % authorNameResult)
                 loopCount = 1
@@ -547,6 +568,7 @@ class GoodReads:
                                     "BookDate": pubyear,
                                     "BookLang": bookLanguage,
                                     "Status": book_status,
+                                    "AudioStatus": lazylibrarian.CONFIG['NEWAUDIO_STATUS'],
                                     "BookAdded": today()
                                 }
 
@@ -783,6 +805,7 @@ class GoodReads:
             "BookDate": bookdate,
             "BookLang": bookLanguage,
             "Status": "Wanted",
+            "AudioStatus": lazylibrarian.CONFIG['NEWAUDIO_STATUS'],
             "BookAdded": today()
         }
 
