@@ -149,7 +149,6 @@ def dbupgrade(db_current_version):
                     myDB.action('CREATE TABLE IF NOT EXISTS member (SeriesID INTEGER, BookID TEXT, SeriesNum TEXT)')
                     myDB.action('CREATE TABLE IF NOT EXISTS seriesauthors (SeriesID INTEGER, AuthorID TEXT, UNIQUE (SeriesID,AuthorID))')
 
-
                 # These are the incremental changes before database versioning was introduced.
                 # Old database tables might already have these incorporated depending on version, so we need to check...
                 if db_version < 1:

@@ -74,6 +74,7 @@ NEWZNAB_PROV = []
 TORZNAB_PROV = []
 RSS_PROV = []
 BOOKSTRAP_THEMELIST = []
+PROVIDER_BLOCKLIST = []
 SHOW_MAGS = 1
 SHOW_SERIES = 1
 SHOW_AUDIO = 0
@@ -107,7 +108,7 @@ isbn_978_dict = {
 # Any undefined on startup will be set to the default value
 # Any _NOT_ in the web ui will remain unchanged on config save
 CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION',
-                 'CURRENT_VERSION', 'COMMITS_BEHIND', 'INSTALL_TYPE', 'DIR_PERM', 'FILE_PERM']
+                 'CURRENT_VERSION', 'COMMITS_BEHIND', 'INSTALL_TYPE', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER']
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
                  'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES']
 CONFIG_DEFINITIONS = {
@@ -119,6 +120,7 @@ CONFIG_DEFINITIONS = {
     'LOGLEVEL': ('int', 'General', 1),
     'FILE_PERM': ('str', 'General', '0o644'),
     'DIR_PERM': ('str', 'General', '0o755'),
+    'BLOCKLIST_TIMER': ('int', 'General', 3600),
     'MATCH_RATIO': ('int', 'General', 80),
     'DLOAD_RATIO': ('int', 'General', 90),
     'DISPLAYLENGTH': ('int', 'General', 10),

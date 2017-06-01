@@ -123,7 +123,7 @@ def search_tor_book(books=None, library=None):
 
             resultlist, nproviders = IterateOverTorrentSites(book, searchtype)
             if not nproviders:
-                logger.warn('No torrent providers are set, check config')
+                logger.warn('No torrent providers are available')
                 return  # No point in continuing
 
             found = processResultList(resultlist, book, searchtype)
@@ -183,7 +183,8 @@ def processResultList(resultlist, book, searchtype):
 
         torAuthor_match = fuzz.token_set_ratio(author, torTitle)
         torBook_match = fuzz.token_set_ratio(title, torTitle)
-        logger.debug(u"TOR author/book Match: %s/%s for %s" % (torAuthor_match, torBook_match, torTitle))
+        logger.debug(u"TOR author/book Match: %s/%s for %s at %s" %
+                    (torAuthor_match, torBook_match, torTitle, tor['tor_prov']))
         tor_url = tor['tor_url']
 
         rejected = False

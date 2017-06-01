@@ -114,7 +114,7 @@ def search_nzb_book(books=None, library=None):
             resultlist, nproviders = providers.IterateOverNewzNabSites(book, searchtype)
 
             if not nproviders:
-                logger.warn('No NewzNab or TorzNab providers are set, check config')
+                logger.warn('No NewzNab or TorzNab providers are available')
                 return  # no point in continuing
 
             found = processResultList(resultlist, book, searchtype)
@@ -179,7 +179,8 @@ def processResultList(resultlist, book, searchtype):
 
         nzbAuthor_match = fuzz.token_set_ratio(author, nzb_Title)
         nzbBook_match = fuzz.token_set_ratio(title, nzb_Title)
-        logger.debug(u"NZB author/book Match: %s/%s for %s" % (nzbAuthor_match, nzbBook_match, nzb_Title))
+        logger.debug(u"NZB author/book Match: %s/%s for %s at %s" %
+                    (nzbAuthor_match, nzbBook_match, nzb_Title, nzb['nzbprov']))
         nzburl = nzb['nzburl']
 
         rejected = False
@@ -260,8 +261,13 @@ def processResultList(resultlist, book, searchtype):
         logger.info(u'Best NZB match (%s%%): %s using %s search' %
                     (score, nzb_Title, searchtype))
 
-        snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID="%s" and Status="Snatched"' %
-                                   newValueDict["BookID"])
+        if auxinfo == 'eBook':
+            snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID="%s" and Status="Snatched"' %
+                                        newValueDict["BookID"])
+        else:
+            snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID="%s" and AudioStatus="Snatched"' %
+                                        newValueDict["BookID"])
+
         if snatchedbooks:
             logger.debug('%s already marked snatched' % nzb_Title)
             return True  # someone else found it

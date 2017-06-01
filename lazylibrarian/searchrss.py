@@ -164,10 +164,9 @@ def search_rss_book(books=None, library=None):
             return
 
         resultlist, nproviders = IterateOverRSSSites()
-        if not nproviders:
-            if not wishproviders:
-                logger.warn('No rss providers are set, check config')
-            return  # No point in continuing
+        if not nproviders and not wishproviders:
+            logger.warn('No rss providers are available')
+        return  # No point in continuing
 
         logger.info('RSS Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
 
@@ -252,7 +251,8 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
 
         tor_Author_match = fuzz.token_set_ratio(authorname, torTitle)
         tor_Title_match = fuzz.token_set_ratio(bookname, torTitle)
-        logger.debug("RSS Author/Title Match: %s/%s for %s" % (tor_Author_match, tor_Title_match, torTitle))
+        logger.debug("RSS Author/Title Match: %s/%s for %s at %s" %
+                    (tor_Author_match, tor_Title_match, torTitle, tor['tor_prov']))
         tor_url = tor['tor_url']
 
         rejected = False

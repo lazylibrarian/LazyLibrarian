@@ -1053,6 +1053,11 @@
                 </div>
               </div>
             </fieldset>
+            <div class="row">
+              <div class="col-xs-12">
+                <button class="button btn btn-sm btn-primary" type="button" value="showblocked" id="showblocked"><i class="fa fa-list-ul"></i> Provider Status</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -2330,6 +2335,21 @@
             $.get("generateAPI",
                 function (data) { });
 
+        });
+
+        $('#showblocked').on('click', function(e) {
+            $.get('showblocked', function(data) {
+                bootbox.dialog({
+                    title: 'Provider Status',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
+                        }
+                    }
+                });
+            });
         });
 
         $('#show_Jobs').on('click', function(e) {

@@ -13,6 +13,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
+import time
 import datetime
 import hashlib
 import os
@@ -1077,7 +1078,8 @@ class WebInterface(object):
             library = args['library']
         else:
             library = 'eBook'
-
+            if redirect == 'audio':
+                library = 'AudioBook'
         myDB = database.DBConnection()
         if not redirect:
             redirect = "books"
@@ -1555,7 +1557,8 @@ class WebInterface(object):
             return serve_template(templatename="shutdown.html", title="Version Check", message=message, timer=5)
 
         elif lazylibrarian.CONFIG['COMMITS_BEHIND'] > 0:
-            message = "behind by %s commit%s" % (lazylibrarian.CONFIG['COMMITS_BEHIND'], plural(lazylibrarian.CONFIG['COMMITS_BEHIND']))
+            message = "behind by %s commit%s" % (lazylibrarian.CONFIG['COMMITS_BEHIND'],
+                                                    plural(lazylibrarian.CONFIG['COMMITS_BEHIND']))
             messages = lazylibrarian.COMMIT_LIST.replace('\n', '<br>')
             message = message + '<br><small>' + messages
             return serve_template(templatename="shutdown.html", title="Commits", message=message, timer=15)
@@ -1769,6 +1772,23 @@ class WebInterface(object):
             logger.info(u"Clearing history where status is %s" % status)
             myDB.action('DELETE from wanted WHERE Status="%s"' % status)
         raise cherrypy.HTTPRedirect("history")
+
+    @cherrypy.expose
+    def showblocked(self):
+        cherrypy.response.headers[
+            'Cache-Control'] = "max-age=0,no-cache,no-store"
+        # show any currently blocked providers
+        result = ''
+        for line in lazylibrarian.PROVIDER_BLOCKLIST:
+            resume = int(line['resume']) - int(time.time())
+            if resume > 0:
+                resume = int(resume / 60) + (resume % 60 > 0)
+                new_entry = "%s blocked for %s minute%s, %s\n" % (line['name'], resume, plural(resume), line['reason'])
+                result = result + new_entry
+
+        if result == '':
+            result = 'No blocked providers'
+        return result
 
     # NOTIFIERS #########################################################
 
