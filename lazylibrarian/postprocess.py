@@ -695,7 +695,7 @@ def import_book(pp_path=None, bookID=None):
             book_type = "eBook"
             dest_dir = lazylibrarian.DIRECTORY('eBook')
         else:
-            logger.warn("Failed to find a valid format in [%s]" % pp_path)
+            logger.warn("Failed to find an ebook or audiobook in [%s]" % pp_path)
             return False
 
         myDB = database.DBConnection()
@@ -983,7 +983,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                         for fname in os.listdir(target_dir):
                             setperm(os.path.join(target_dir, fname))
                     else:
-                        logger.warn("Failed to find a valid book in [%s]" % target_dir)
+                        logger.warn("Failed to find a valid ebook in [%s]" % target_dir)
                         imported = False
                 else:
                     imported = LibraryScan(calibre_dir)  # rescan whole authors directory

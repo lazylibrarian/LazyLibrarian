@@ -35,7 +35,7 @@ def cron_search_rss_book():
         search_rss_book()
 
 
-def search_rss_book(books=None, library=None):
+def search_rss_book(books=None):
     """
     books is a list of new books to add, or None for backlog search
     library is "eBook" or "AudioBook" or None to search all book types
@@ -138,8 +138,6 @@ def search_rss_book(books=None, library=None):
                                                                         result['authorname'], result['bookname'])
                             logger.warn(msg)
 
-        searchlist = []
-
         if books is None:
             # We are performing a backlog search
             searchbooks = []
@@ -166,7 +164,7 @@ def search_rss_book(books=None, library=None):
         resultlist, nproviders = IterateOverRSSSites()
         if not nproviders and not wishproviders:
             logger.warn('No rss providers are available')
-        return  # No point in continuing
+            return  # No point in continuing
 
         logger.info('RSS Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
 

@@ -253,6 +253,10 @@ def IterateOverTorrentSites(book=None, searchType=None):
                     results,error = GEN(book)
                 elif prov == 'LIME':
                     results,error = LIME(book)
+                else:
+                    results = ''
+                    error = ''
+                    logger.error('IterateOverTorrentSites called with unknown provider [%s]' % prov)
 
                 if error:
                     BlockProvider(prov, error)

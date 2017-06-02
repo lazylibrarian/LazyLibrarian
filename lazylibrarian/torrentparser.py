@@ -563,18 +563,19 @@ def GEN(book=None):
                     if extn:
                         title = title + '.' + extn
 
-                    bookURL = url_fix(host + "/ads.php?" + link)
+                    url = url_fix(host + "/ads.php?" + link)
 
-                    bookresult, success = fetchURL(bookURL)
+                    bookresult, success = fetchURL(url)
                     if not success:
                         # may return 404 if no results, not really an error
                         if '404' in bookresult:
                             logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
                         else:
-                            logger.debug(bookURL)
+                            logger.debug(url)
                             logger.debug('Error fetching data from %s: %s' % (provider, bookresult))
                             errmsg = bookresult
                         bookresult = False
+
                     if bookresult:
                         url = None
                         new_soup = BeautifulSoup(bookresult)
