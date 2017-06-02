@@ -816,22 +816,31 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("books")
 
     @cherrypy.expose
-    def openBook(self, bookid=None):
+    def openBook(self, bookid=None, source=None):
         self.label_thread()
 
         myDB = database.DBConnection()
-        cmd = 'SELECT BookFile,AuthorName,BookName from books,authors WHERE BookID="%s"' % bookid
+        cmd = 'SELECT BookFile,AudioFile,AuthorName,BookName from books,authors WHERE BookID="%s"' % bookid
         cmd += ' and books.AuthorID = authors.AuthorID'
         bookdata = myDB.match(cmd)
         if bookdata:
-            bookfile = bookdata["BookFile"]
-            if bookfile and os.path.isfile(bookfile):
-                logger.info(u'Opening file %s' % bookfile)
-                return serve_file(bookfile, "application/x-download", "attachment")
+            if source == 'audio':
+                bookfile = bookdata["AudioFile"]
+                if bookfile and os.path.isfile(bookfile):
+                    bookfile = os.path.dirname(bookfile)
+                    logger.info(u'Opening folder %s' % bookfile)
+                    return serve_file(bookfile, "application/x-directory", "attachment")
             else:
-                authorName = bookdata["AuthorName"]
-                bookName = bookdata["BookName"]
-                logger.info(u'Missing book %s,%s' % (authorName, bookName))
+                bookfile = bookdata["BookFile"]
+                if bookfile and os.path.isfile(bookfile):
+                    logger.info(u'Opening file %s' % bookfile)
+                    return serve_file(bookfile, "application/x-download", "attachment")
+
+            authorName = bookdata["AuthorName"]
+            bookName = bookdata["BookName"]
+            logger.info(u'Missing book %s,%s' % (authorName, bookName))
+        else:
+            logger.warn(u'Missing book %s' % (bookid))
 
     @cherrypy.expose
     def editAuthor(self, authorid=None):
