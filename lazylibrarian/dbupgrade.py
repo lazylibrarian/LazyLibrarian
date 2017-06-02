@@ -148,6 +148,7 @@ def dbupgrade(db_current_version):
                 Status TEXT)')
                     myDB.action('CREATE TABLE IF NOT EXISTS member (SeriesID INTEGER, BookID TEXT, SeriesNum TEXT)')
                     myDB.action('CREATE TABLE IF NOT EXISTS seriesauthors (SeriesID INTEGER, AuthorID TEXT, UNIQUE (SeriesID,AuthorID))')
+                    myDB.action('CREATE TABLE IF NOT EXISTS downloads (Count INTEGER, Provider TEXT)')
 
                 # These are the incremental changes before database versioning was introduced.
                 # Old database tables might already have these incorporated depending on version, so we need to check...
@@ -800,8 +801,20 @@ def dbupgrade(db_current_version):
                         myDB.action('ALTER TABLE books ADD COLUMN AudioLibrary TEXT')
                         myDB.action('ALTER TABLE books ADD COLUMN AudioStatus TEXT')
                         myDB.action('UPDATE books SET AudioStatus="Skipped"')
-                        lazylibrarian.UPDATE_MSG = 'Adding AudioBook support complete'
-                        upgradelog.write("%s v20: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+                    lazylibrarian.UPDATE_MSG = 'Creating downloads table'
+                    upgradelog.write("%s v20: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+                    myDB.action('CREATE TABLE IF NOT EXISTS downloads (Count INTEGER, Provider TEXT)')
+                    downloads = myDB.select('SELECT NZBprov from wanted WHERE Status="Processed"')
+                    for download in downloads:
+                        entry = myDB.match('SELECT Count FROM downloads where Provider="%s"' % download['NZBprov'])
+                        if entry:
+                            counter = int(entry['Count'])
+                            myDB.action('UPDATE downloads SET Count=%s WHERE Provider="%s"' %
+                                        (counter + 1, download['NZBprov']))
+                        else:
+                            myDB.action('INSERT into downloads (Count, Provider) VALUES  (%s, "%s")' %
+                                        (1, download['NZBprov']))
+
                     upgradelog.write("%s v20: complete\n" % time.ctime())
 
                 # Now do any non-version-specific tidying

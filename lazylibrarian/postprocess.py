@@ -42,6 +42,16 @@ __dic__ = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's
            ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
 
 
+def update_downloads(provider):
+    myDB = database.DBConnection()
+    entry = myDB.match('SELECT Count FROM downloads where Provider="%s"' % provider)
+    if entry:
+        counter = int(entry['Count'])
+        myDB.action('UPDATE downloads SET Count=%s WHERE Provider="%s"' % (counter + 1, provider))
+    else:
+        myDB.action('INSERT into downloads (Count, Provider) VALUES  (%s, "%s")' % (1, provider))
+
+
 def processAlternate(source_dir=None):
     # import a book from an alternate directory
     try:
@@ -529,6 +539,7 @@ def processDir(reset=False):
                     custom_notify_download(book['BookID'])
 
                     notify_download("%s %s from %s at %s" % (book_type, global_name, book['NZBprov'], now()))
+                    update_downloads(book['NZBprov'])
                 else:
                     logger.error('Postprocessing for %s has failed: %s' % (global_name, dest_file))
                     controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
@@ -776,6 +787,7 @@ def import_book(pp_path=None, bookID=None):
                 custom_notify_download(bookID)
 
                 notify_download("%s %s %s at %s" % (book_type, global_name, snatched_from, now()))
+                update_downloads(snatched_from)
                 return True
             else:
                 logger.error('Postprocessing for %s has failed: %s' % (global_name, dest_file))

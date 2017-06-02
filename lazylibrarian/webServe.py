@@ -1798,6 +1798,22 @@ class WebInterface(object):
             result = 'No blocked providers'
         return result
 
+    @cherrypy.expose
+    def showdownloads(self):
+        cherrypy.response.headers[
+            'Cache-Control'] = "max-age=0,no-cache,no-store"
+        # show provider download totals
+        myDB = database.DBConnection()
+        result = ''
+        downloads = myDB.select('SELECT count,provider from downloads')
+        for line in downloads:
+            new_entry = "%03d - %s\n" % (line['count'], line['provider'])
+            result = result + new_entry
+
+        if result == '':
+            result = 'No downloads'
+        return result
+
     # NOTIFIERS #########################################################
 
     @cherrypy.expose

@@ -1053,11 +1053,14 @@
                 </div>
               </div>
             </fieldset>
+            <fieldset>
             <div class="row">
               <div class="col-xs-12">
                 <button class="button btn btn-sm btn-primary" type="button" value="showblocked" id="showblocked"><i class="fa fa-list-ul"></i> Provider Status</button>
+                <button class="button btn btn-sm btn-primary" type="button" value="showdownloads" id="showdownloads"><i class="fa fa-list-ul"></i> Download Count</button>
               </div>
             </div>
+            </fieldset>
           </div>
         </div>
       </div>
@@ -2341,6 +2344,21 @@
             $.get('showblocked', function(data) {
                 bootbox.dialog({
                     title: 'Provider Status',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
+                        }
+                    }
+                });
+            });
+        });
+
+        $('#showdownloads').on('click', function(e) {
+            $.get('showdownloads', function(data) {
+                bootbox.dialog({
+                    title: 'Successful Downloads',
                     message: '<pre>'+data+'</pre>',
                     buttons: {
                         primary: {
