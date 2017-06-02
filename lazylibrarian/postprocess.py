@@ -150,7 +150,7 @@ def try_rename(directory, filename):
     # eg 'Stephen Hawking - A Brief History of Time (PDF&EPUB&MOB\xc4\xb0)\xb0\x06'
     # Return the new filename or empty string if failed
     if int(lazylibrarian.LOGLEVEL) > 2:
-        logger.debug("try_rename %s %s" % (type(pp_path), repr(pp_path)))
+        logger.debug("try_rename %s %s %s %s" % (type(filename), repr(filename), type(directory), repr(directoy)))
 
     if isinstance(filename, str):
         try:
@@ -597,6 +597,9 @@ def processDir(reset=False):
                         logger.debug('Skipping BookID %s, already exists' % bookID)
                     else:
                         pp_path = os.path.join(download_dir, entry)
+
+                        if int(lazylibrarian.LOGLEVEL) > 2:
+                            logger.debug("Checking type of %s" % pp_path)
 
                         if os.path.isfile(pp_path):
                             if int(lazylibrarian.LOGLEVEL) > 2:
@@ -1208,4 +1211,4 @@ def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bo
 class imgGoogle(FancyURLopener):
     # Hack because Google wants a user agent for downloading images,
     # which is stupid because it's so easy to circumvent.
-    version = 'Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11'
+    version = 'Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11'r
