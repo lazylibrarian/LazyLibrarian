@@ -8,7 +8,7 @@
             <a href="clearhistory?status=all" class="button btn btn-sm btn-primary">Clear All History</a>
             <a href="clearhistory?status=Processed" class="button btn btn-sm btn-primary">Clear Processed</a>
             <a href="clearhistory?status=Snatched" class="button btn btn-sm btn-primary">Clear Snatched</a>
-            <a href="clearhistory?status=Failed" class="button btn btn-sm btn-primary">Clear Failed</a>
+            <button class="button btn btn-sm btn-primary" type="button" value="showdownloads" id="showdownloads"> Download Count</button>
         </div>
     </div>
 </%def>
@@ -57,13 +57,31 @@
 </tbody>
 </table>
 </div>
+
 </%def>
 <%def name="headIncludes()">
 </%def>
 <%def name="javascriptIncludes()">
-  <script>
+  <script type="text/javascript">
+
     $(document).ready(function()
     {
+
+        $('#showdownloads').on('click', function(e) {
+            $.get('showdownloads', function(data) {
+                bootbox.dialog({
+                    title: 'Successful Downloads',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
+                        }
+                    }
+                });
+            });
+        });
+
         var table = $('#book_table').DataTable(
             {
                 "responsive": true,

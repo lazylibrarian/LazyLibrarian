@@ -1183,7 +1183,7 @@ class WebInterface(object):
                     magimg = 'images/nocover.jpg'
                 else:
                     myhash = hashlib.md5(magimg).hexdigest()
-                    hashname = os.path.join(lazylibrarian.CACHEDIR, 'magazine', + myhash + ".jpg")
+                    hashname = os.path.join(lazylibrarian.CACHEDIR, 'magazine', '%s.jpg' % myhash)
                     if not os.path.isfile(hashname):
                         copyfile(magimg, hashname)
                         setperm(hashname)
@@ -1562,21 +1562,21 @@ class WebInterface(object):
                 message = message + '<br><small>' + messages
             else:
                 message = "up to date"
-            return serve_template(templatename="shutdown.html", title="Version Check", message=message, timer=5)
+            return serve_template(templatename="shutdown.html", prefix='LazyLibrarian is ', title="Version Check", message=message, timer=5)
 
         elif lazylibrarian.CONFIG['COMMITS_BEHIND'] > 0:
             message = "behind by %s commit%s" % (lazylibrarian.CONFIG['COMMITS_BEHIND'],
                                                     plural(lazylibrarian.CONFIG['COMMITS_BEHIND']))
             messages = lazylibrarian.COMMIT_LIST.replace('\n', '<br>')
             message = message + '<br><small>' + messages
-            return serve_template(templatename="shutdown.html", title="Commits", message=message, timer=15)
+            return serve_template(templatename="shutdown.html", title="Commits", prefix='LazyLibrarian is ', message=message, timer=15)
 
         else:
             message = "unknown version"
             messages = "Your version is not recognised at<br>https://github.com/%s/%s  Branch: %s" % (
                 lazylibrarian.CONFIG['GIT_USER'], lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['GIT_BRANCH'])
             message = message + '<br><small>' + messages
-            return serve_template(templatename="shutdown.html", title="Commits", message=message, timer=15)
+            return serve_template(templatename="shutdown.html", title="Commits",  prefix='LazyLibrarian is ', message=message, timer=15)
 
             # raise cherrypy.HTTPRedirect("config")
 
@@ -1593,7 +1593,7 @@ class WebInterface(object):
         logger.debug('(webServe-Update) - Performing update')
         lazylibrarian.SIGNAL = 'update'
         message = 'Updating...'
-        return serve_template(templatename="shutdown.html", title="Updating", message=message, timer=30)
+        return serve_template(templatename="shutdown.html",  prefix='LazyLibrarian is ', title="Updating", message=message, timer=30)
 
     # IMPORT/EXPORT #####################################################
 
@@ -1662,13 +1662,13 @@ class WebInterface(object):
         lazylibrarian.config_write()
         lazylibrarian.SIGNAL = 'shutdown'
         message = 'closing ...'
-        return serve_template(templatename="shutdown.html", title="Close library", message=message, timer=15)
+        return serve_template(templatename="shutdown.html",  prefix='LazyLibrarian is ', title="Close library", message=message, timer=15)
 
     @cherrypy.expose
     def restart(self):
         lazylibrarian.SIGNAL = 'restart'
         message = 'reopening ...'
-        return serve_template(templatename="shutdown.html", title="Reopen library", message=message, timer=30)
+        return serve_template(templatename="shutdown.html",  prefix='LazyLibrarian is ', title="Reopen library", message=message, timer=30)
 
     @cherrypy.expose
     def show_Jobs(self):
@@ -1758,6 +1758,14 @@ class WebInterface(object):
         return s
 
     # HISTORY ###########################################################
+
+    @cherrypy.expose
+    def showHistory(self):
+        self.label_thread()
+        message = self.showdownloads()
+        message = message.replace('\n','<br>')
+        return serve_template(templatename="shutdown.html", title="Download Count", prefix='', message=message, timer=0)
+
 
     @cherrypy.expose
     def history(self, source=None):

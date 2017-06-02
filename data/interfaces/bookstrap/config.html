@@ -8,7 +8,10 @@
             <a onclick="self.shutdownQA(this)" class="button btn btn-sm btn-danger" data-toggle="tooltip" data-placement="bottom" title="Terminate the LazyLibrarian process - Be careful if you're doing this remotely"><i class="fa fa-power-off"></i> Shutdown</a>
             <a class="button btn btn-sm btn-warning" onclick="self.restartQA(this, '', '')" data-toggle="tooltip" data-placement="bottom" title="Restart LazyLibrarian"><i class="fa fa-refresh"></i> Restart</a>
             <a class="button btn btn-sm btn-primary" href="checkForUpdates" data-toggle="tooltip" data-placement="bottom" title="Check for the latest release"><i class="fa fa-check-square-o"></i> Check Version</a>
-        </div>
+        <button class="button btn btn-sm btn-primary" type="button" value="Show Jobs" id="show_Jobs"><i class="fa fa-list-ul"></i> Show Jobs</button>
+        <button class="button btn btn-sm btn-warning" type="button" value="Restart Jobs" id="restart_Jobs"><i class="fa fa-refresh"></i> Restart Jobs</button>
+        <button class="button btn btn-sm btn-danger" type="button" value="Stop Jobs" id="stop_Jobs"><i class="fa fa-power-off"></i> Stop Jobs</button>
+      </div>
     </div>
 </%def>
 <%def name="body()">
@@ -279,26 +282,17 @@
         <select name="bookstrap_theme" id="bookstrap_theme" class="form-control">
           %for bookstrap_theme in lazylibrarian.BOOKSTRAP_THEMELIST:
           <%
-                                                        if bookstrap_theme == lazylibrarian.CONFIG['BOOKSTRAP_THEME']:
-                                                            selected = 'selected="selected"'
-                                                        else:
-                                                            selected = ''
-                                                    %>
+            if bookstrap_theme == lazylibrarian.CONFIG['BOOKSTRAP_THEME']:
+                selected = 'selected="selected"'
+            else:
+                selected = ''
+          %>
           <option value="${bookstrap_theme}" ${selected}>${bookstrap_theme}</option>
           %endfor
         </select>
       </div>
     </fieldset>
     <br>
-    <div class="row">
-      <div class="col-xs-12">
-        <button class="button btn btn-sm btn-primary" type="button" value="Show Jobs" id="show_Jobs"><i class="fa fa-list-ul"></i> Show Jobs</button>
-        <button class="button btn btn-sm btn-warning" type="button" value="Restart Jobs" id="restart_Jobs"><i class="fa fa-refresh"></i> Restart Jobs</button>
-        <button class="button btn btn-sm btn-danger" type="button" value="Stop Jobs" id="stop_Jobs"><i class="fa fa-refresh"></i> Stop Jobs</button>
-        <br>
-        <br>
-      </div>
-    </div>
   </fieldset>
 </div>
 </div>
@@ -760,11 +754,11 @@
                 </fieldset>
                 <div class="checkbox">
                   <%
-                                                if lazylibrarian.CONFIG['TOR_DOWNLOADER_QBITTORRENT'] == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                                %>
+                    if lazylibrarian.CONFIG['TOR_DOWNLOADER_QBITTORRENT'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                   <label for="tor_downloader_qbittorrent" class="control-label">
                     <input type="checkbox" id="tor_downloader_qbittorrent" name="tor_downloader_qbittorrent" value="1" ${checked} />
                     Use qBitTorrent</label>
@@ -875,10 +869,10 @@
               <legend>Newznab Providers</legend>
               %for provider in lazylibrarian.NEWZNAB_PROV:
               <%
-                                            checked = ''
-                                            if provider['ENABLED'] == True:
-                                                checked = 'checked="checked"'
-                                        %>
+                checked = ''
+                if provider['ENABLED'] == True:
+                    checked = 'checked="checked"'
+              %>
               <div class="form-group">
                 <div class="input-group">
                   <span class="input-group-addon">
@@ -900,10 +894,10 @@
               <legend>Torznab Providers</legend>
               %for provider in lazylibrarian.TORZNAB_PROV:
               <%
-                                            checked = ''
-                                            if provider['ENABLED'] == True:
-                                                checked = 'checked="checked"'
-                                        %>
+                checked = ''
+                if provider['ENABLED'] == True:
+                    checked = 'checked="checked"'
+              %>
               <div class="form-group">
                 <div class="input-group">
                   <label for="torznab[${loop.index}][host]" class="sr-only">Torznab URL</label>
@@ -926,10 +920,10 @@
               <div id="rss_options">
                 %for provider in lazylibrarian.RSS_PROV:
                 <%
-                                                checked = ''
-                                                if provider['ENABLED'] == True:
-                                                    checked = 'checked="checked"'
-                                            %>
+                    checked = ''
+                    if provider['ENABLED'] == True:
+                        checked = 'checked="checked"'
+                %>
                 <div class="form-group">
                   <label for="rss[${loop.index}][host]" class="sr-only">RSS URL</label>
                   <div class="input-group">
@@ -945,11 +939,11 @@
             <fieldset>
               <legend>Torrent Providers</legend>
               <%
-                                        if lazylibrarian.CONFIG['KAT'] == True:
-                                            checked = 'checked="checked"'
-                                        else:
-                                            checked = ''
-                                        %>
+                if lazylibrarian.CONFIG['KAT'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
               <div class="form-group">
                 <label for="kat_host" class="sr-only">KAT Host</label>
                 <div class="input-group">
@@ -960,11 +954,11 @@
                 </div>
               </div>
               <%
-                                        if lazylibrarian.CONFIG['TPB'] == True:
-                                            checked = 'checked="checked"'
-                                        else:
-                                            checked = ''
-                                        %>
+                if lazylibrarian.CONFIG['TPB'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+              %>
               <div class="form-group">
                 <label for="tpb_host" class="sr-only">TPB Host</label>
                 <div class="input-group">
@@ -975,11 +969,11 @@
                 </div>
               </div>
               <%
-                                        if lazylibrarian.CONFIG['ZOO'] == True:
-                                            checked = 'checked="checked"'
-                                        else:
-                                            checked = ''
-                                        %>
+                if lazylibrarian.CONFIG['ZOO'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
               <div class="form-group">
                 <label for="zoo_host" class="sr-only">zooqle host</label>
                 <div class="input-group">
@@ -1038,11 +1032,11 @@
             <fieldset>
               <legend>Direct Download Providers</legend>
               <%
-                                        if lazylibrarian.CONFIG['GEN'] == True:
-                                            checked = 'checked="checked"'
-                                        else:
-                                            checked = ''
-                                        %>
+                if lazylibrarian.CONFIG['GEN'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
               <div class="form-group">
                 <label for="gen_host" class="sr-only">libgen host</label>
                 <div class="input-group">
@@ -1053,14 +1047,7 @@
                 </div>
               </div>
             </fieldset>
-            <fieldset>
-            <div class="row">
-              <div class="col-xs-12">
-                <button class="button btn btn-sm btn-primary" type="button" value="showblocked" id="showblocked"><i class="fa fa-list-ul"></i> Provider Status</button>
-                <button class="button btn btn-sm btn-primary" type="button" value="showdownloads" id="showdownloads"><i class="fa fa-list-ul"></i> Download Count</button>
-              </div>
-            </div>
-            </fieldset>
+            <button class="button btn btn-sm btn-primary" type="button" value="showblocked" id="showblocked"> Blocked Providers</button>
           </div>
         </div>
       </div>
@@ -1893,19 +1880,19 @@
             You only need to change these settings if auto-detection fails or returns incorrect values. If you make any alterations, tick the lock button to prevent reloading values from the provider.
             %for provider in lazylibrarian.NEWZNAB_PROV:
             <%
-                                if provider['HOST'] == "":
-                                    hidden = 'hidden="hidden"'
-                                else:
-                                    hidden = ''
-                                %>
+              if provider['HOST'] == "":
+                hidden = 'hidden="hidden"'
+              else:
+                hidden = ''
+            %>
             <legend ${hidden}>${provider['HOST']}</legend>
             <div class="checkbox">
               <%
-                                if provider['MANUAL'] == True:
-                                    checked = 'checked="checked"'
-                                else:
-                                    checked = ''
-                                %>
+                if provider['MANUAL'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
               <label for="newznab[${loop.index}][manual]" class="control-label" ${hidden}>
                 <input type="checkbox" id="newznab[${loop.index}][manual]" name="newznab[${loop.index}][manual]" value="1" ${checked}  ${hidden}/>
                 Tick to lock settings</label>
@@ -1947,19 +1934,19 @@
             %endfor
             %for provider in lazylibrarian.TORZNAB_PROV:
             <%
-                                if provider['HOST'] == "":
-                                    hidden = 'hidden="hidden"'
-                                else:
-                                    hidden = ''
-                                %>
+                if provider['HOST'] == "":
+                    hidden = 'hidden="hidden"'
+                else:
+                    hidden = ''
+            %>
             <legend ${hidden}>${provider['HOST']}</legend>
             <div class="checkbox">
               <%
-                                if provider['MANUAL'] == True:
-                                    checked = 'checked="checked"'
-                                else:
-                                    checked = ''
-                                %>
+                if provider['MANUAL'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+              %>
               <label for="torznab[${loop.index}][manual]" class="control-label" ${hidden}>
                 <input type="checkbox" id="torznab[${loop.index}][manual]" name="torznab[${loop.index}][manual]" value="1" ${checked} ${hidden}/>
                 Tick to prevent reloading values from provider</label>
@@ -2344,21 +2331,6 @@
             $.get('showblocked', function(data) {
                 bootbox.dialog({
                     title: 'Provider Status',
-                    message: '<pre>'+data+'</pre>',
-                    buttons: {
-                        primary: {
-                            label: "Close",
-                            className: 'btn-primary'
-                        }
-                    }
-                });
-            });
-        });
-
-        $('#showdownloads').on('click', function(e) {
-            $.get('showdownloads', function(data) {
-                bootbox.dialog({
-                    title: 'Successful Downloads',
                     message: '<pre>'+data+'</pre>',
                     buttons: {
                         primary: {

@@ -5,7 +5,11 @@
     <p>&nbsp;</p>
     <div id="shutdown" class="alert alert-info">
       <h1>${title}</h1>
-      <h2><i class="fa fa-circle-o-notch fa-spin"></i> LazyLibrarian is ${message}</h2>
+      %if timer == 0:
+        <h2>${prefix} ${message}</h2>
+      %else:
+        <h2><i class="fa fa-circle-o-notch fa-spin"></i>&nbsp;&nbsp;${prefix} ${message}</h2>
+      %endif
       <h3 id="countdown">&nbsp;</h3>
     </div>
   </%def>
@@ -13,13 +17,15 @@
     <script type="text/javascript">
       $(function(){
           var countdown = ${timer};
-          setInterval(function() {
-              countdown--;
-              $('#countdown').html('Refreshing in '+countdown+' seconds');
-              if (countdown <= 0) {
-                  window.location = 'index';
-              }
-          }, 1000);
+          if (countdown > 0) {
+            setInterval(function() {
+                  countdown--;
+                  $('#countdown').html('Refreshing in '+countdown+' seconds');
+                  if (countdown <= 0) {
+                      window.location = 'index';
+                  }
+            }, 1000);
+          }
       });
     </script>
   </%def>
