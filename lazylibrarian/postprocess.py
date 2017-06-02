@@ -1025,6 +1025,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 return False, 'Unable to create directory %s: %s' % (dest_path, why.strerror)
 
         # ok, we've got a target directory, try to copy only the files we want, renaming them on the fly.
+        firstfile = ''  # try to keep track of the first part of multi-part audiobooks
         for fname in os.listdir(pp_path):
             if isinstance(fname, str):
                 if int(lazylibrarian.LOGLEVEL) > 2:
@@ -1044,10 +1045,14 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     setperm(destfile)
                     if is_valid_booktype(destfile, booktype=booktype):
                         newbookfile = destfile
+                        if booktype == 'audiobook' and '01' in destfile:
+                            firstfile = destfile
                 except Exception as why:
                     return False, "Unable to copy file %s to %s: %s" % (fname, dest_path, str(why))
             else:
                 logger.debug('Ignoring unwanted file: %s' % fname)
+        if firstfile:
+            newbookfile = firstfile
     return True, newbookfile
 
 

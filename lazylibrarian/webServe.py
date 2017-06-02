@@ -827,9 +827,8 @@ class WebInterface(object):
             if source == 'audio':
                 bookfile = bookdata["AudioFile"]
                 if bookfile and os.path.isfile(bookfile):
-                    bookfile = os.path.dirname(bookfile)
-                    logger.info(u'Opening folder %s' % bookfile)
-                    return serve_file(bookfile, "application/x-directory", "attachment")
+                    logger.info(u'Opening audiofile %s' % bookfile)
+                    return serve_file(bookfile, "application/x-download", "attachment")
             else:
                 bookfile = bookdata["BookFile"]
                 if bookfile and os.path.isfile(bookfile):
