@@ -149,6 +149,9 @@ def try_rename(directory, filename):
     # or 8bit ascii str if it can't convert the filename to unicode
     # eg 'Stephen Hawking - A Brief History of Time (PDF&EPUB&MOB\xc4\xb0)\xb0\x06'
     # Return the new filename or empty string if failed
+    if int(lazylibrarian.LOGLEVEL) > 2:
+        logger.debug("try_rename %s %s" % (type(pp_path), repr(pp_path)))
+
     if isinstance(filename, str):
         try:
             # try decode first in case we called listdir with str instead of unicode
@@ -313,6 +316,9 @@ def processDir(reset=False):
                                 except:
                                     logger.error("Unable to convert %s to sys encoding" % repr(pp_path))
                                     pp_path = "Failed pp_path"
+
+                            if int(lazylibrarian.LOGLEVEL) > 2:
+                                logger.debug("processDir %s %s" % (type(pp_path), repr(pp_path)))
 
                             if os.path.isfile(pp_path):
                                 # handle single file downloads here. Book/mag file in download root.
@@ -699,6 +705,8 @@ def import_book(pp_path=None, bookID=None):
         # Move a book into LL folder structure given just the folder and bookID, returns True or False
         # Called from "import_alternate" or if we find a "LL.(xxx)" folder that doesn't match a snatched book/mag
         #
+        if int(lazylibrarian.LOGLEVEL) > 2:
+            logger.debug("import_book %s" % pp_path)
         if book_file(pp_path, "audiobook"):
             book_type = "AudioBook"
             dest_dir = lazylibrarian.DIRECTORY('Audio')
@@ -741,10 +749,15 @@ def import_book(pp_path=None, bookID=None):
             dest_path = unaccented_str(replace_all(dest_path, __dic__))
             dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
 
+            if int(lazylibrarian.LOGLEVEL) > 2:
+                logger.debug("processDestination %s" % pp_path)
+
             success, dest_file = processDestination(pp_path, dest_path, authorname, bookname, global_name, bookID)
             if success:
                 # update nzbs
                 snatched_from = "from " + was_snatched['NZBprov'] if was_snatched else "manually added"
+                if int(lazylibrarian.LOGLEVEL) > 2:
+                    logger.debug("was_snatched %s" % snatched_from)
                 if was_snatched:
                     controlValueDict = {"BookID": bookID}
                     newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it

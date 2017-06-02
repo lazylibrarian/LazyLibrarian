@@ -1805,9 +1805,9 @@ class WebInterface(object):
         # show provider download totals
         myDB = database.DBConnection()
         result = ''
-        downloads = myDB.select('SELECT count,provider from downloads')
+        downloads = myDB.select('SELECT Count,Provider FROM downloads ORDER BY Count DESC')
         for line in downloads:
-            new_entry = "%03d - %s\n" % (line['count'], line['provider'])
+            new_entry = "%4d - %s\n" % (line['Count'], line['Provider'])
             result = result + new_entry
 
         if result == '':
