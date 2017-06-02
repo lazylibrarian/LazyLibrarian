@@ -1211,4 +1211,4 @@ def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bo
 class imgGoogle(FancyURLopener):
     # Hack because Google wants a user agent for downloading images,
     # which is stupid because it's so easy to circumvent.
-    version = 'Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11'r
+    version = 'Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11'
