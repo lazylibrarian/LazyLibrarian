@@ -35,7 +35,11 @@ def cron_search_rss_book():
         search_rss_book()
 
 
-def search_rss_book(books=None, reset=False):
+def search_rss_book(books=None):
+    """
+    books is a list of new books to add, or None for backlog search
+    library is "eBook" or "AudioBook" or None to search all book types
+    """
     try:
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
@@ -136,51 +140,81 @@ def search_rss_book(books=None, reset=False):
 
         if books is None:
             # We are performing a backlog search
-            cmd = 'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books,authors '
-            cmd += 'WHERE books.AuthorID = authors.AuthorID and books.Status="Wanted" order by BookAdded desc'
-            searchbooks = myDB.select(cmd)
-
+            searchbooks = []
+            cmd = 'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded, books.Status, AudioStatus '
+            cmd += 'from books,authors WHERE (books.Status="Wanted" OR AudioStatus="Wanted") '
+            cmd += 'and books.AuthorID = authors.AuthorID order by BookAdded desc'
+            results = myDB.select(cmd)
+            for terms in results:
+                searchbooks.append(terms)
         else:
             # The user has added a new book
             searchbooks = []
             for book in books:
-                cmd = 'SELECT BookID, AuthorName, BookName, BookSub from books,authors '
-                cmd += 'WHERE books.AuthorID = authors.AuthorID and BookID="%s" ' % book['bookid']
-                cmd += 'AND books.Status="Wanted"'
-                searchbook = myDB.select(cmd)
-                for terms in searchbook:
+                cmd = 'SELECT BookID, AuthorName, BookName, BookSub, books.Status, AudioStatus '
+                cmd += 'from books,authors WHERE BookID="%s" ' % book['bookid']
+                cmd += 'AND books.AuthorID = authors.AuthorID'
+                results = myDB.select(cmd)
+                for terms in results:
                     searchbooks.append(terms)
 
         if len(searchbooks) == 0:
             return
 
         resultlist, nproviders = IterateOverRSSSites()
-        if not nproviders:
-            if not wishproviders:
-                logger.warn('No rss providers are set, check config')
+        if not nproviders and not wishproviders:
+            logger.warn('No rss providers are available')
             return  # No point in continuing
 
         logger.info('RSS Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
 
+        for searchbook in searchbooks:
+            # searchterm is only used for display purposes
+            searchterm = searchbook['AuthorName'] + ' ' + searchbook['BookName']
+            if searchbook['BookSub']:
+                searchterm = searchterm + ': ' + searchbook['BookSub']
+
+            if library is None or library == 'eBook':
+                if searchbook['Status'] == "Wanted":
+                    searchlist.append(
+                        {"bookid": searchbook['BookID'],
+                         "bookName": searchbook['BookName'],
+                         "bookSub": searchbook['BookSub'],
+                         "authorName": searchbook['AuthorName'],
+                         "library": "eBook",
+                         "searchterm": searchterm})
+
+            if library is None or library == 'AudioBook':
+                if searchbook['AudioStatus'] == "Wanted":
+                    searchlist.append(
+                        {"bookid": searchbook['BookID'],
+                         "bookName": searchbook['BookName'],
+                         "bookSub": searchbook['BookSub'],
+                         "authorName": searchbook['AuthorName'],
+                         "library": "AudioBook",
+                         "searchterm": searchterm})
+
         rss_count = 0
-        for book in searchbooks:
-            authorname, bookname = get_searchterm(book, "book")
-            found = processResultList(resultlist, authorname, bookname, book, 'book')
+        for book in searchlist:
+            if book['library'] == 'AudioBook':
+                searchtype = 'audio'
+            else:
+                searchtype = 'book'
+            authorname, bookname = get_searchterm(book, searchtype)
+            found = processResultList(resultlist, authorname, bookname, book, searchtype)
 
             # if you can't find the book, try title without any "(extended details, series etc)"
             if not found and '(' in bookname:  # anything to shorten?
-                authorname, bookname = get_searchterm(book, "shortbook")
-                found = processResultList(resultlist, authorname, bookname, book, 'shortbook')
+                searchtype = 'short' + searchtype
+                authorname, bookname = get_searchterm(book, searchtype)
+                found = processResultList(resultlist, authorname, bookname, book, searchtype)
 
             if not found:
-                logger.debug("Searches returned no results. Adding book %s - %s to queue." % (authorname, bookname))
+                logger.debug("Searches for %s %s returned no results." % (authorname, bookname))
             if found > True:
                 rss_count += 1
 
         logger.info("RSS Search for Wanted items complete, found %s book%s" % (rss_count, plural(rss_count)))
-
-        if reset:
-            scheduleJob(action='Restart', target='search_rss_book')
 
     except Exception:
         logger.error('Unhandled exception in search_rss_book: %s' % traceback.format_exc())
@@ -194,7 +228,17 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
                 '-': ' ', '\s\s': ' '}
 
     match_ratio = int(lazylibrarian.CONFIG['MATCH_RATIO'])
-    reject_list = getList(lazylibrarian.CONFIG['REJECT_WORDS'])
+    if book['library'] == 'eBook':
+        reject_list = getList(lazylibrarian.CONFIG['REJECT_WORDS'])
+        maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXSIZE'], 0)
+        minsize = check_int(lazylibrarian.CONFIG['REJECT_MINSIZE'], 0)
+        auxinfo = 'eBook'
+
+    else:   #if book['library'] == 'AudioBook':
+        reject_list = getList(lazylibrarian.CONFIG['REJECT_AUDIO'])
+        maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXAUDIO'], 0)
+        minsize = check_int(lazylibrarian.CONFIG['REJECT_MINAUDIO'], 0)
+        auxinfo = 'AudioBook'
 
     matches = []
 
@@ -205,7 +249,8 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
 
         tor_Author_match = fuzz.token_set_ratio(authorname, torTitle)
         tor_Title_match = fuzz.token_set_ratio(bookname, torTitle)
-        logger.debug("RSS Author/Title Match: %s/%s for %s" % (tor_Author_match, tor_Title_match, torTitle))
+        logger.debug("RSS Author/Title Match: %s/%s for %s at %s" %
+                    (tor_Author_match, tor_Title_match, torTitle, tor['tor_prov']))
         tor_url = tor['tor_url']
 
         rejected = False
@@ -226,13 +271,11 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
         tor_size_temp = check_int(tor_size_temp, 1000)
         tor_size = round(float(tor_size_temp) / 1048576, 2)
 
-        maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXSIZE'], 0)
         if not rejected:
             if maxsize and tor_size > maxsize:
                 rejected = True
                 logger.debug("Rejecting %s, too large" % torTitle)
 
-        minsize = check_int(lazylibrarian.CONFIG['REJECT_MINSIZE'], 0)
         if not rejected:
             if minsize and tor_size < minsize:
                 rejected = True
@@ -251,6 +294,7 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
                 "NZBsize": tor_size,
                 "NZBtitle": tor_Title,
                 "NZBmode": "torrent",
+                "AuxInfo": auxinfo,
                 "Status": "Skipped"
             }
 
@@ -261,10 +305,15 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
             wordlist = getList(temptitle.lower())
             words = [x for x in wordlist if x not in getList(authorname.lower())]
             words = [x for x in words if x not in getList(bookname.lower())]
-            words = [x for x in words if x not in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
+            booktypes = ''
+            if newValueDict['AuxInfo'] == 'eBook':
+                words = [x for x in words if x not in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
+                booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
+            if newValueDict['AuxInfo'] == 'AudioBook':
+                words = [x for x in words if x not in getList(lazylibrarian.CONFIG['AUDIOBOOK_TYPE'])]
+                booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['AUDIOBOOK_TYPE'])]
             score -= len(words)
             # prioritise titles that include the ebook types we want
-            booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
             if len(booktypes):
                 score += 1
             matches.append([score, torTitle, newValueDict, controlValueDict])
@@ -308,9 +357,10 @@ def processResultList(resultlist, authorname, bookname, book, searchtype):
                 snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], tor_url)
 
             if snatch:
-                logger.info('Downloading %s from %s' % (newValueDict["NZBtitle"], newValueDict["NZBprov"]))
-                notify_snatch("%s from %s at %s" %
-                              (newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
+                logger.info('Downloading %s %s from %s' %
+                            (newValueDict["AuxInfo"], newValueDict["NZBtitle"], newValueDict["NZBprov"]))
+                notify_snatch("%s %s from %s at %s" %
+                              (newValueDict["AuxInfo"], newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
                 custom_notify_snatch(newValueDict["BookID"])
                 scheduleJob(action='Start', target='processDir')
                 return True + True  # we found it

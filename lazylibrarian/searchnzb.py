@@ -33,7 +33,11 @@ def cron_search_nzb_book():
         search_nzb_book()
 
 
-def search_nzb_book(books=None, reset=False):
+def search_nzb_book(books=None, library=None):
+    """
+    books is a list of new books to add, or None for backlog search
+    library is "eBook" or "AudioBook" or None to search all book types
+    """
     try:
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
@@ -51,18 +55,22 @@ def search_nzb_book(books=None, reset=False):
 
         if books is None:
             # We are performing a backlog search
-            cmd = 'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded from books,authors '
-            cmd += 'WHERE books.Status="Wanted" and books.AuthorID = authors.AuthorID order by BookAdded desc'
-            searchbooks = myDB.select(cmd)
+            searchbooks = []
+            cmd = 'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded, books.Status, AudioStatus '
+            cmd += 'from books,authors WHERE (books.Status="Wanted" OR AudioStatus="Wanted") '
+            cmd += 'and books.AuthorID = authors.AuthorID order by BookAdded desc'
+            results = myDB.select(cmd)
+            for terms in results:
+                searchbooks.append(terms)
         else:
             # The user has added a new book
             searchbooks = []
             for book in books:
-                cmd = 'SELECT BookID, AuthorName, BookName, BookSub from books,authors'
-                cmd += ' WHERE BookID="%s"' % book['bookid']
-                cmd += ' AND books.AuthorID = authors.AuthorID AND books.Status="Wanted"'
-                searchbook = myDB.select(cmd)
-                for terms in searchbook:
+                cmd = 'SELECT BookID, AuthorName, BookName, BookSub, books.Status, AudioStatus '
+                cmd += 'from books,authors WHERE BookID="%s" ' % book['bookid']
+                cmd += 'AND books.AuthorID = authors.AuthorID'
+                results = myDB.select(cmd)
+                for terms in results:
                     searchbooks.append(terms)
 
         if len(searchbooks) == 0:
@@ -76,48 +84,63 @@ def search_nzb_book(books=None, reset=False):
             if searchbook['BookSub']:
                 searchterm = searchterm + ': ' + searchbook['BookSub']
 
-            searchlist.append(
-                {"bookid": searchbook['BookID'],
-                 "bookName": searchbook['BookName'],
-                 "bookSub": searchbook['BookSub'],
-                 "authorName": searchbook['AuthorName'],
-                 "searchterm": searchterm})
+            if library is None or library == 'eBook':
+                if searchbook['Status'] == "Wanted":
+                    searchlist.append(
+                        {"bookid": searchbook['BookID'],
+                         "bookName": searchbook['BookName'],
+                         "bookSub": searchbook['BookSub'],
+                         "authorName": searchbook['AuthorName'],
+                         "library": "eBook",
+                         "searchterm": searchterm})
+
+            if library is None or library == 'AudioBook':
+                if searchbook['AudioStatus'] == "Wanted":
+                    searchlist.append(
+                        {"bookid": searchbook['BookID'],
+                         "bookName": searchbook['BookName'],
+                         "bookSub": searchbook['BookSub'],
+                         "authorName": searchbook['AuthorName'],
+                         "library": "AudioBook",
+                         "searchterm": searchterm})
 
         nzb_count = 0
         for book in searchlist:
             # first attempt, try author/title in category "book"
-            resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'book')
+            if book['library'] == 'AudioBook':
+                searchtype = 'audio'
+            else:
+                searchtype = 'book'
+            resultlist, nproviders = providers.IterateOverNewzNabSites(book, searchtype)
 
             if not nproviders:
-                logger.warn('No NewzNab or TorzNab providers are set, check config')
+                logger.warn('No NewzNab or TorzNab providers are available')
                 return  # no point in continuing
 
-            found = processResultList(resultlist, book, "book")
+            found = processResultList(resultlist, book, searchtype)
 
             # if you can't find the book, try author/title without any "(extended details, series etc)"
             if not found and '(' in book['bookName']:
-                resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'shortbook')
-                found = processResultList(resultlist, book, "shortbook")
+                searchtype = 'short' + searchtype
+                resultlist, nproviders = providers.IterateOverNewzNabSites(book, searchtype)
+                found = processResultList(resultlist, book, searchtype)
 
             # if you can't find the book under "books", you might find under general search
             if not found:
                 resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'general')
                 found = processResultList(resultlist, book, "general")
 
-             # if still not found, try general search again without any "(extended details, series etc)"
+            # if still not found, try general search again without any "(extended details, series etc)"
             if not found and '(' in book['bookName']:
                 resultlist, nproviders = providers.IterateOverNewzNabSites(book, 'shortgeneral')
                 found = processResultList(resultlist, book, "shortgeneral")
 
             if not found:
-                logger.info("NZB Searches for %s returned no results." % book['searchterm'])
+                logger.info("NZB Searches for %s %s returned no results." % (book['library'], book['searchterm']))
             if found > True:
                 nzb_count += 1  # we found it
 
         logger.info("NZBSearch for Wanted items complete, found %s book%s" % (nzb_count, plural(nzb_count)))
-
-        if reset:
-            scheduleJob(action='Restart', target='search_nzb_book')
 
     except Exception:
         logger.error('Unhandled exception in search_nzb_book: %s' % traceback.format_exc())
@@ -134,7 +157,18 @@ def processResultList(resultlist, book, searchtype):
            ',': '', '*': '', ':': '.', ';': '', '\'': ''}
 
     match_ratio = int(lazylibrarian.CONFIG['MATCH_RATIO'])
-    reject_list = getList(lazylibrarian.CONFIG['REJECT_WORDS'])
+    if book['library'] == 'eBook':
+        reject_list = getList(lazylibrarian.CONFIG['REJECT_WORDS'])
+        maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXSIZE'], 0)
+        minsize = check_int(lazylibrarian.CONFIG['REJECT_MINSIZE'], 0)
+        auxinfo = 'eBook'
+
+    else:   #if book['library'] == 'AudioBook':
+        reject_list = getList(lazylibrarian.CONFIG['REJECT_AUDIO'])
+        maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXAUDIO'], 0)
+        minsize = check_int(lazylibrarian.CONFIG['REJECT_MINAUDIO'], 0)
+        auxinfo = 'AudioBook'
+
     author = unaccented_str(replace_all(book['authorName'], dic))
     title = unaccented_str(replace_all(book['bookName'], dic))
 
@@ -145,7 +179,8 @@ def processResultList(resultlist, book, searchtype):
 
         nzbAuthor_match = fuzz.token_set_ratio(author, nzb_Title)
         nzbBook_match = fuzz.token_set_ratio(title, nzb_Title)
-        logger.debug(u"NZB author/book Match: %s/%s for %s" % (nzbAuthor_match, nzbBook_match, nzb_Title))
+        logger.debug(u"NZB author/book Match: %s/%s for %s at %s" %
+                    (nzbAuthor_match, nzbBook_match, nzb_Title, nzb['nzbprov']))
         nzburl = nzb['nzburl']
 
         rejected = False
@@ -166,13 +201,11 @@ def processResultList(resultlist, book, searchtype):
         nzbsize_temp = check_int(nzbsize_temp, 1000)
         nzbsize = round(float(nzbsize_temp) / 1048576, 2)
 
-        maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXSIZE'], 0)
         if not rejected:
             if maxsize and nzbsize > maxsize:
                 rejected = True
                 logger.debug("Rejecting %s, too large" % nzb_Title)
 
-        minsize = check_int(lazylibrarian.CONFIG['REJECT_MINSIZE'], 0)
         if not rejected:
             if minsize and nzbsize < minsize:
                 rejected = True
@@ -191,6 +224,7 @@ def processResultList(resultlist, book, searchtype):
                 "NZBsize": nzbsize,
                 "NZBtitle": nzbTitle,
                 "NZBmode": nzbmode,
+                "AuxInfo": auxinfo,
                 "Status": "Skipped"
             }
 
@@ -199,10 +233,15 @@ def processResultList(resultlist, book, searchtype):
             wordlist = getList(nzb_Title.lower())
             words = [x for x in wordlist if x not in getList(author.lower())]
             words = [x for x in words if x not in getList(title.lower())]
-            words = [x for x in words if x not in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
+            booktypes = ''
+            if newValueDict['AuxInfo'] == 'eBook':
+                words = [x for x in words if x not in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
+                booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
+            if newValueDict['AuxInfo'] == 'AudioBook':
+                words = [x for x in words if x not in getList(lazylibrarian.CONFIG['AUDIOBOOK_TYPE'])]
+                booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['AUDIOBOOK_TYPE'])]
             score -= len(words)
             # prioritise titles that include the ebook types we want
-            booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
             if len(booktypes):
                 score += 1
             matches.append([score, nzb_Title, newValueDict, controlValueDict])
@@ -222,8 +261,13 @@ def processResultList(resultlist, book, searchtype):
         logger.info(u'Best NZB match (%s%%): %s using %s search' %
                     (score, nzb_Title, searchtype))
 
-        snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID="%s" and Status="Snatched"' %
-                                   newValueDict["BookID"])
+        if auxinfo == 'eBook':
+            snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID="%s" and Status="Snatched"' %
+                                        newValueDict["BookID"])
+        else:
+            snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID="%s" and AudioStatus="Snatched"' %
+                                        newValueDict["BookID"])
+
         if snatchedbooks:
             logger.debug('%s already marked snatched' % nzb_Title)
             return True  # someone else found it
@@ -235,9 +279,10 @@ def processResultList(resultlist, book, searchtype):
             else:
                 snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             if snatch:
-                logger.info('Downloading %s from %s' % (newValueDict["NZBtitle"], newValueDict["NZBprov"]))
-                notify_snatch("%s from %s at %s" %
-                              (newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
+                logger.info('Downloading %s %s from %s' %
+                            (newValueDict["AuxInfo"], newValueDict["NZBtitle"], newValueDict["NZBprov"]))
+                notify_snatch("%s %s from %s at %s" %
+                              (newValueDict["AuxInfo"], newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
                 custom_notify_snatch(newValueDict["BookID"])
                 scheduleJob(action='Start', target='processDir')
                 return True + True  # we found it

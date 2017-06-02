@@ -13,6 +13,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
+import time
 import datetime
 import hashlib
 import os
@@ -279,11 +280,11 @@ class WebInterface(object):
                 # no key returned for empty tickboxes...
                 if item_type == 'bool':
                     lazylibrarian.CONFIG[key] = 0
-                else:
-                    # or for strings not available in config html page
-                    if key not in lazylibrarian.CONFIG_NONWEB:
-                        # or for an empty string
-                        lazylibrarian.CONFIG[key] = ''
+                # or for strings not available in config html page
+                elif lazylibrarian.CONFIG['HTTP_LOOK'] == 'default' and key not in lazylibrarian.CONFIG_NONDEFAULT:
+                    lazylibrarian.CONFIG[key] = ''
+                elif key not in lazylibrarian.CONFIG_NONWEB:
+                    lazylibrarian.CONFIG[key] = ''
 
 
         myDB = database.DBConnection()
@@ -323,10 +324,14 @@ class WebInterface(object):
                 'newznab[%i][booksearch]' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['MAGSEARCH'] = kwargs.get(
                 'newznab[%i][magsearch]' % count, '')
+            lazylibrarian.NEWZNAB_PROV[count]['AUDIOSEARCH'] = kwargs.get(
+                'newznab[%i][audiosearch]' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['BOOKCAT'] = kwargs.get(
                 'newznab[%i][bookcat]' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['MAGCAT'] = kwargs.get(
                 'newznab[%i][magcat]' % count, '')
+            lazylibrarian.NEWZNAB_PROV[count]['AUDIOCAT'] = kwargs.get(
+                'newznab[%i][audiocat]' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['EXTENDED'] = kwargs.get(
                 'newznab[%i][extended]' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['UPDATED'] = kwargs.get(
@@ -349,10 +354,14 @@ class WebInterface(object):
                 'torznab[%i][booksearch]' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['MAGSEARCH'] = kwargs.get(
                 'torznab[%i][magsearch]' % count, '')
+            lazylibrarian.TORZNAB_PROV[count]['AUDIOSEARCH'] = kwargs.get(
+                'torznab[%i][audiosearch]' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['BOOKCAT'] = kwargs.get(
                 'torznab[%i][bookcat]' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['MAGCAT'] = kwargs.get(
                 'torznab[%i][magcat]' % count, '')
+            lazylibrarian.TORZNAB_PROV[count]['AUDIOCAT'] = kwargs.get(
+                'torznab[%i][audiocat]' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['EXTENDED'] = kwargs.get(
                 'torznab[%i][extended]' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['UPDATED'] = kwargs.get(
@@ -402,9 +411,8 @@ class WebInterface(object):
     # AUTHOR ############################################################
 
     @cherrypy.expose
-    def authorPage(self, AuthorID, BookLang=None, Ignored=False):
+    def authorPage(self, AuthorID, BookLang=None, Library='eBook', Ignored=False):
         myDB = database.DBConnection()
-
         if Ignored:
             languages = myDB.select("SELECT DISTINCT BookLang from books WHERE AuthorID = '%s' AND Status ='Ignored'" % AuthorID)
         else:
@@ -415,12 +423,17 @@ class WebInterface(object):
 
         author = myDB.match(queryauthors)
 
+        types = ['eBook']
+        if lazylibrarian.SHOW_AUDIO:
+            types.append('AudioBook')
+
         if not author:
             raise cherrypy.HTTPRedirect("home")
         authorname = author['AuthorName'].encode(lazylibrarian.SYS_ENCODING)
         return serve_template(
             templatename="author.html", title=urllib.quote_plus(authorname),
-            author=author, languages=languages, booklang=BookLang, ignored=Ignored, showseries=lazylibrarian.SHOW_SERIES)
+            author=author, languages=languages, booklang=BookLang, types=types, library=Library, ignored=Ignored,
+            showseries=lazylibrarian.SHOW_SERIES)
 
     @cherrypy.expose
     def pauseAuthor(self, AuthorID):
@@ -520,7 +533,7 @@ class WebInterface(object):
         authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         if authorsearch:  # to stop error if try to refresh an author while they are still loading
             AuthorName = authorsearch['AuthorName']
-            authordir = safe_unicode(os.path.join(lazylibrarian.DIRECTORY('Destination'), AuthorName))
+            authordir = safe_unicode(os.path.join(lazylibrarian.DIRECTORY('eBook'), AuthorName))
             if not os.path.isdir(authordir):
                 # books might not be in exact same authorname folder
                 # eg Calibre puts books into folder "Eric van Lustbader", but
@@ -598,8 +611,18 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
+    def audio(self, BookLang=None):
+        myDB = database.DBConnection()
+        if BookLang == '':
+            BookLang = None
+        languages = myDB.select('SELECT DISTINCT BookLang from books WHERE AUDIOSTATUS !="Skipped" AND AUDIOSTATUS !="Ignored"')
+        return serve_template(templatename="audio.html", title='AudioBooks', books=[], languages=languages, booklang=BookLang)
+
+    @cherrypy.expose
     def books(self, BookLang=None):
         myDB = database.DBConnection()
+        if BookLang == '':
+            BookLang = None
         languages = myDB.select('SELECT DISTINCT BookLang from books WHERE STATUS !="Skipped" AND STATUS !="Ignored"')
         return serve_template(templatename="books.html", title='Books', books=[], languages=languages, booklang=BookLang)
 
@@ -616,21 +639,29 @@ class WebInterface(object):
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
         cmd = 'SELECT bookimg,authorname,bookname,bookrate,bookdate,books.status,bookid,booklang,'
-        cmd += 'booksub,booklink,workpage,books.authorid,seriesdisplay,booklibrary from books,authors'
+        cmd += 'booksub,booklink,workpage,books.authorid,seriesdisplay,booklibrary,audiostatus from books,authors'
         cmd += ' where books.AuthorID = authors.AuthorID'
 
         if kwargs['source'] == "Manage":
             cmd += ' and books.STATUS="%s"' % kwargs['whichStatus']
         elif kwargs['source'] == "Books":
             cmd += ' and books.STATUS !="Skipped" AND books.STATUS !="Ignored"'
+        elif kwargs['source'] == "Audio":
+            cmd += ' and AUDIOSTATUS !="Skipped" AND AUDIOSTATUS !="Ignored"'
         elif kwargs['source'] == "Author":
+            library = kwargs['library']
+            if library == 'AudioBook':
+                status_type = 'audiostatus'
+            else:
+                status_type = 'books.status'
+
             cmd += ' and books.AuthorID="%s"' % kwargs['AuthorID']
             if 'ignored' in kwargs and kwargs['ignored'] == "True":
-                cmd += ' and books.status="Ignored"'
+                cmd += ' and %s="Ignored"' % status_type
             else:
-                cmd += ' and books.status != "Ignored"'
-        if kwargs['source'] in ["Books", "Author"]:
-            # for "books" and "author" need to check and filter on BookLang if set
+                cmd += ' and %s != "Ignored"' % status_type
+        if kwargs['source'] in ["Books", "Author", "Audio"]:
+            # for these we need to check and filter on BookLang if set
             if 'booklang' in kwargs and kwargs['booklang'] != 'None':
                 cmd += ' and BOOKLANG="%s"' % kwargs['booklang']
 
@@ -698,7 +729,8 @@ class WebInterface(object):
                 title = title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage
 
                 # Need to pass bookid and status twice as datatables modifies first one
-                d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[5], row[11], row[6], row[13], row[5]])
+                d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[5], row[11],
+                        row[6], row[13], row[5], row[14]])
             rows = d
 
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -784,22 +816,30 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("books")
 
     @cherrypy.expose
-    def openBook(self, bookid=None):
+    def openBook(self, bookid=None, source=None):
         self.label_thread()
 
         myDB = database.DBConnection()
-        cmd = 'SELECT BookFile,AuthorName,BookName from books,authors WHERE BookID="%s"' % bookid
+        cmd = 'SELECT BookFile,AudioFile,AuthorName,BookName from books,authors WHERE BookID="%s"' % bookid
         cmd += ' and books.AuthorID = authors.AuthorID'
         bookdata = myDB.match(cmd)
         if bookdata:
-            bookfile = bookdata["BookFile"]
-            if bookfile and os.path.isfile(bookfile):
-                logger.info(u'Opening file %s' % bookfile)
-                return serve_file(bookfile, "application/x-download", "attachment")
+            if source == 'audio':
+                bookfile = bookdata["AudioFile"]
+                if bookfile and os.path.isfile(bookfile):
+                    logger.info(u'Opening audiofile %s' % bookfile)
+                    return serve_file(bookfile, "application/x-download", "attachment")
             else:
-                authorName = bookdata["AuthorName"]
-                bookName = bookdata["BookName"]
-                logger.info(u'Missing book %s,%s' % (authorName, bookName))
+                bookfile = bookdata["BookFile"]
+                if bookfile and os.path.isfile(bookfile):
+                    logger.info(u'Opening file %s' % bookfile)
+                    return serve_file(bookfile, "application/x-download", "attachment")
+
+            authorName = bookdata["AuthorName"]
+            bookName = bookdata["BookName"]
+            logger.info(u'Missing book %s,%s' % (authorName, bookName))
+        else:
+            logger.warn(u'Missing book %s' % (bookid))
 
     @cherrypy.expose
     def editAuthor(self, authorid=None):
@@ -886,11 +926,11 @@ class WebInterface(object):
                         if os.path.isfile(authorimg):
                             extn = os.path.splitext(authorimg)[1].lower()
                             if extn and extn in ['.jpg', '.jpeg', '.png']:
-                                destfile = os.path.join(lazylibrarian.CACHEDIR, authorid + '.jpg')
+                                destfile = os.path.join(lazylibrarian.CACHEDIR, 'author', authorid + '.jpg')
                                 try:
                                     copyfile(authorimg, destfile)
                                     setperm(destfile)
-                                    authorimg = 'cache' + os.sep + authorid + '.jpg'
+                                    authorimg = 'cache/author/' + authorid + '.jpg'
                                     rejected = False
                                 except Exception as why:
                                     logger.debug("Failed to copy file %s, %s" % (authorimg, str(why)))
@@ -1042,7 +1082,12 @@ class WebInterface(object):
     @cherrypy.expose
     def markBooks(self, AuthorID=None, seriesid=None, action=None, redirect=None, **args):
         self.label_thread()
-
+        if 'library' in args:
+            library = args['library']
+        else:
+            library = 'eBook'
+            if redirect == 'audio':
+                library = 'AudioBook'
         myDB = database.DBConnection()
         if not redirect:
             redirect = "books"
@@ -1055,22 +1100,29 @@ class WebInterface(object):
                         title = myDB.match('SELECT BookName from books WHERE BookID = "%s"' % bookid)
                         if title:
                             bookname = title['BookName']
-                            myDB.upsert("books", {'Status': action}, {'BookID': bookid})
-                            logger.debug(u'Status set to "%s" for "%s"' % (action, bookname))
+                            if library == 'eBook':
+                                myDB.upsert("books", {'Status': action}, {'BookID': bookid})
+                                logger.debug(u'Status set to "%s" for "%s"' % (action, bookname))
+                            elif library == 'AudioBook':
+                                myDB.upsert("books", {'AudioStatus': action}, {'BookID': bookid})
+                                logger.debug(u'AudioStatus set to "%s" for "%s"' % (action, bookname))
                     if action in ["Remove", "Delete"]:
                         bookdata = myDB.match(
-                            'SELECT AuthorID,Bookname,BookFile from books WHERE BookID = "%s"' % bookid)
+                            'SELECT AuthorID,Bookname,BookFile,AudioFile from books WHERE BookID = "%s"' % bookid)
                         if bookdata:
                             AuthorID = bookdata['AuthorID']
                             bookname = bookdata['BookName']
-                            bookfile = bookdata['BookFile']
                             if action == "Delete":
-                                if bookfile and os.path.isfile(bookfile):
-                                    try:
-                                        rmtree(os.path.dirname(bookfile), ignore_errors=True)
-                                        logger.info(u'Book %s deleted from disc' % bookname)
-                                    except Exception as e:
-                                        logger.debug('rmtree failed on %s, %s' % (bookfile, str(e)))
+                                for bookfile in [bookdata['BookFile'], bookdata['AudioFile']]:
+                                    if bookfile and os.path.isfile(bookfile):
+                                        try:
+                                            rmtree(os.path.dirname(bookfile), ignore_errors=True)
+                                            if bookfile == bookdata['BookFile']:
+                                                logger.info(u'eBook %s deleted from disc' % bookname)
+                                            if bookfile == bookdata['AudioFile']:
+                                                logger.info(u'AudioBook %s deleted from disc' % bookname)
+                                        except Exception as e:
+                                            logger.debug('rmtree failed on %s, %s' % (bookfile, str(e)))
 
                             authorcheck = myDB.match('SELECT AuthorID from authors WHERE AuthorID = "%s"' % AuthorID)
                             if authorcheck:
@@ -1099,9 +1151,9 @@ class WebInterface(object):
                 threading.Thread(target=search_tor_book, name='SEARCHTOR', args=[books]).start()
 
         if redirect == "author":
-            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
-        elif redirect == "books":
-            raise cherrypy.HTTPRedirect("books")
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&Library=%s" % (AuthorID, library))
+        elif redirect in ["books", "audio"]:
+            raise cherrypy.HTTPRedirect(redirect)
         elif redirect == "members":
             raise cherrypy.HTTPRedirect("seriesMembers?seriesid=%s" % seriesid)
         else:
@@ -1131,11 +1183,11 @@ class WebInterface(object):
                     magimg = 'images/nocover.jpg'
                 else:
                     myhash = hashlib.md5(magimg).hexdigest()
-                    hashname = os.path.join(lazylibrarian.CACHEDIR, myhash + ".jpg")
+                    hashname = os.path.join(lazylibrarian.CACHEDIR, 'magazine', '%s.jpg' % myhash)
                     if not os.path.isfile(hashname):
                         copyfile(magimg, hashname)
                         setperm(hashname)
-                    magimg = 'cache/' + myhash + '.jpg'
+                    magimg = 'cache/magazine/' + myhash + '.jpg'
                     covercount += 1
 
                 this_mag = dict(mag)
@@ -1167,10 +1219,10 @@ class WebInterface(object):
                         magimg = 'images/nocover.jpg'
                     else:
                         myhash = hashlib.md5(magimg).hexdigest()
-                        hashname = os.path.join(lazylibrarian.CACHEDIR, myhash + ".jpg")
+                        hashname = os.path.join(lazylibrarian.CACHEDIR, 'magazine', myhash + ".jpg")
                         copyfile(magimg, hashname)
                         setperm(hashname)
-                        magimg = 'cache/' + myhash + '.jpg'
+                        magimg = 'cache/magazine/' + myhash + '.jpg'
                         covercount += 1
                 else:
                     logger.debug('No extension found on %s' % magfile)
@@ -1510,20 +1562,21 @@ class WebInterface(object):
                 message = message + '<br><small>' + messages
             else:
                 message = "up to date"
-            return serve_template(templatename="shutdown.html", title="Version Check", message=message, timer=5)
+            return serve_template(templatename="shutdown.html", prefix='LazyLibrarian is ', title="Version Check", message=message, timer=5)
 
         elif lazylibrarian.CONFIG['COMMITS_BEHIND'] > 0:
-            message = "behind by %s commit%s" % (lazylibrarian.CONFIG['COMMITS_BEHIND'], plural(lazylibrarian.CONFIG['COMMITS_BEHIND']))
+            message = "behind by %s commit%s" % (lazylibrarian.CONFIG['COMMITS_BEHIND'],
+                                                    plural(lazylibrarian.CONFIG['COMMITS_BEHIND']))
             messages = lazylibrarian.COMMIT_LIST.replace('\n', '<br>')
             message = message + '<br><small>' + messages
-            return serve_template(templatename="shutdown.html", title="Commits", message=message, timer=15)
+            return serve_template(templatename="shutdown.html", title="Commits", prefix='LazyLibrarian is ', message=message, timer=15)
 
         else:
             message = "unknown version"
             messages = "Your version is not recognised at<br>https://github.com/%s/%s  Branch: %s" % (
                 lazylibrarian.CONFIG['GIT_USER'], lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['GIT_BRANCH'])
             message = message + '<br><small>' + messages
-            return serve_template(templatename="shutdown.html", title="Commits", message=message, timer=15)
+            return serve_template(templatename="shutdown.html", title="Commits",  prefix='LazyLibrarian is ', message=message, timer=15)
 
             # raise cherrypy.HTTPRedirect("config")
 
@@ -1540,7 +1593,7 @@ class WebInterface(object):
         logger.debug('(webServe-Update) - Performing update')
         lazylibrarian.SIGNAL = 'update'
         message = 'Updating...'
-        return serve_template(templatename="shutdown.html", title="Updating", message=message, timer=30)
+        return serve_template(templatename="shutdown.html",  prefix='LazyLibrarian is ', title="Updating", message=message, timer=30)
 
     # IMPORT/EXPORT #####################################################
 
@@ -1609,13 +1662,13 @@ class WebInterface(object):
         lazylibrarian.config_write()
         lazylibrarian.SIGNAL = 'shutdown'
         message = 'closing ...'
-        return serve_template(templatename="shutdown.html", title="Close library", message=message, timer=15)
+        return serve_template(templatename="shutdown.html",  prefix='LazyLibrarian is ', title="Close library", message=message, timer=15)
 
     @cherrypy.expose
     def restart(self):
         lazylibrarian.SIGNAL = 'restart'
         message = 'reopening ...'
-        return serve_template(templatename="shutdown.html", title="Reopen library", message=message, timer=30)
+        return serve_template(templatename="shutdown.html",  prefix='LazyLibrarian is ', title="Reopen library", message=message, timer=30)
 
     @cherrypy.expose
     def show_Jobs(self):
@@ -1707,6 +1760,14 @@ class WebInterface(object):
     # HISTORY ###########################################################
 
     @cherrypy.expose
+    def showHistory(self):
+        self.label_thread()
+        message = self.showdownloads()
+        message = message.replace('\n','<br>')
+        return serve_template(templatename="shutdown.html", title="Download Count", prefix='', message=message, timer=0)
+
+
+    @cherrypy.expose
     def history(self, source=None):
         self.label_thread()
         myDB = database.DBConnection()
@@ -1727,6 +1788,39 @@ class WebInterface(object):
             logger.info(u"Clearing history where status is %s" % status)
             myDB.action('DELETE from wanted WHERE Status="%s"' % status)
         raise cherrypy.HTTPRedirect("history")
+
+    @cherrypy.expose
+    def showblocked(self):
+        cherrypy.response.headers[
+            'Cache-Control'] = "max-age=0,no-cache,no-store"
+        # show any currently blocked providers
+        result = ''
+        for line in lazylibrarian.PROVIDER_BLOCKLIST:
+            resume = int(line['resume']) - int(time.time())
+            if resume > 0:
+                resume = int(resume / 60) + (resume % 60 > 0)
+                new_entry = "%s blocked for %s minute%s, %s\n" % (line['name'], resume, plural(resume), line['reason'])
+                result = result + new_entry
+
+        if result == '':
+            result = 'No blocked providers'
+        return result
+
+    @cherrypy.expose
+    def showdownloads(self):
+        cherrypy.response.headers[
+            'Cache-Control'] = "max-age=0,no-cache,no-store"
+        # show provider download totals
+        myDB = database.DBConnection()
+        result = ''
+        downloads = myDB.select('SELECT Count,Provider FROM downloads ORDER BY Count DESC')
+        for line in downloads:
+            new_entry = "%4d - %s\n" % (line['Count'], line['Provider'])
+            result = result + new_entry
+
+        if result == '':
+            result = 'No downloads'
+        return result
 
     # NOTIFIERS #########################################################
 
@@ -1929,7 +2023,7 @@ class WebInterface(object):
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
                 if 'SEARCHALLMAG' not in [n.name for n in [t for t in threading.enumerate()]]:
                     threading.Thread(target=search_magazines, name='SEARCHALLMAG', args=[]).start()
-        elif source == "books":
+        elif source in ["books", "audio"]:
             if lazylibrarian.USE_NZB():
                 if 'SEARCHALLNZB' not in [n.name for n in [t for t in threading.enumerate()]]:
                     threading.Thread(target=search_nzb_book, name='SEARCHALLNZB', args=[]).start()
@@ -1945,11 +2039,14 @@ class WebInterface(object):
 
 
     @cherrypy.expose
-    def manage(self, whichStatus=None):
+    def manage(self, whichStatus=None, Library=None):
         if whichStatus is None:
             whichStatus = "Wanted"
+        types = ['eBook']
+        if lazylibrarian.SHOW_AUDIO:
+            types.append('AudioBook')
         return serve_template(templatename="managebooks.html", title="Manage Books",
-                              books=[], whichStatus=whichStatus)
+                              books=[], types=types, library=Library, whichStatus=whichStatus)
 
 
     @cherrypy.expose

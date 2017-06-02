@@ -8,7 +8,7 @@
             <a href="clearhistory?status=all" class="button btn btn-sm btn-primary">Clear All History</a>
             <a href="clearhistory?status=Processed" class="button btn btn-sm btn-primary">Clear Processed</a>
             <a href="clearhistory?status=Snatched" class="button btn btn-sm btn-primary">Clear Snatched</a>
-            <a href="clearhistory?status=Failed" class="button btn btn-sm btn-primary">Clear Failed</a>
+            <button class="button btn btn-sm btn-primary" type="button" value="showdownloads" id="showdownloads"> Download Count</button>
         </div>
     </div>
 </%def>
@@ -17,13 +17,14 @@
     <h1>${title}</h1>
     <div class="table-responsive">
         %if lazylibrarian.CONFIG['TOGGLES'] == True:
-        Toggle: <a class="toggle-vis" data-column="0">Title</a> - <a class="toggle-vis" data-column="1">ID</a> - <a class="toggle-vis" data-column="2">Provider</a> - <a class="toggle-vis" data-column="3">Date</a> - <a class="toggle-vis" data-column="4">Size</a> - <a class="toggle-vis" data-column="5">Status</a>
+        Toggle: <a class="toggle-vis" data-column="0">Title</a> - <a class="toggle-vis" data-column="1">Type</a> - <a class="toggle-vis" data-column="2">ID</a> - <a class="toggle-vis" data-column="3">Provider</a> - <a class="toggle-vis" data-column="4">Date</a> - <a class="toggle-vis" data-column="5">Size</a> - <a class="toggle-vis" data-column="6">Status</a>
         <p>&nbsp;</p>
         %endif
         <table class="display table table-striped table-hover table-bordered" id="book_table">
             <thead>
                 <tr>
                     <th class="filename">Title</th>
+                    <th class="type">Type</th>
                     <th class="bookid">ID</th>
                     <th class="provider">Provider</th>
                     <th class="dateadded">Date</th>
@@ -45,6 +46,7 @@
                 %>
 <tr class="grade${grade}">
   <td class="filename">${item['NZBtitle']}</td>
+  <td class="type">${item['AuxInfo']}</td>
   <td class="bookid">${item['BookID']}</td>
   <td class="provider"><a href="${item['NZBurl']}">${item['NZBprov']}</a></td>
   <td class="dateadded">${item['NZBdate']}</td>
@@ -55,19 +57,44 @@
 </tbody>
 </table>
 </div>
+
 </%def>
 <%def name="headIncludes()">
 </%def>
 <%def name="javascriptIncludes()">
-  <script>
+  <script type="text/javascript">
+
     $(document).ready(function()
     {
+
+        $('#showdownloads').on('click', function(e) {
+            $.get('showdownloads', function(data) {
+                bootbox.dialog({
+                    title: 'Successful Downloads',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
+                        }
+                    }
+                });
+            });
+        });
+
         var table = $('#book_table').DataTable(
             {
                 "responsive": true,
                 "bAutoWidth": false,
                 "stateSave": true,
-                "order": [[ 3, 'desc' ]],
+                "order": [[ 4, 'desc' ]],
+                "columnDefs":[
+                    { targets: [1], 'render': function(data, type, row) {
+                        var ftype = row[1]
+                        if ( ftype == 'None' ) {ftype = 'eBook'}
+                        if ( ftype.match(/^[0-9.-]+$/) != null ) {ftype = 'Magazine'}
+                        return ftype;} },
+                ],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ rows per page",
                     "sEmptyTable": "No history found",

@@ -35,7 +35,7 @@ def url_fix(s, charset='utf-8'):
 
 
 def TPB(book=None):
-
+    errmsg = ''
     provider = "TPB"
     host = lazylibrarian.CONFIG['TPB_HOST']
     if not str(host)[:4] == "http":
@@ -58,6 +58,7 @@ def TPB(book=None):
         else:
             logger.debug(searchURL)
             logger.debug('Error fetching data from %s: %s' % (provider, result))
+            errmsg = result
         result = False
 
     results = []
@@ -139,11 +140,11 @@ def TPB(book=None):
 
     logger.debug(u"Found %i result%s from %s for %s" %
                  (len(results), plural(len(results)), provider, book['searchterm']))
-    return results
+    return results, errmsg
 
 
 def KAT(book=None):
-
+    errmsg = ''
     provider = "KAT"
     host = lazylibrarian.CONFIG['KAT_HOST']
     if not str(host)[:4] == "http":
@@ -166,6 +167,7 @@ def KAT(book=None):
         else:
             logger.debug(searchURL)
             logger.debug('Error fetching data from %s: %s' % (provider, result))
+            errmsg = result
         result = False
 
     results = []
@@ -251,11 +253,11 @@ def KAT(book=None):
 
     logger.debug(u"Found %i result%s from %s for %s" %
                  (len(results), plural(len(results)), provider, book['searchterm']))
-    return results
+    return results, errmsg
 
 
 def EXTRA(book=None):
-
+    errmsg = ''
     provider = "Extratorrent"
     host = lazylibrarian.CONFIG['EXTRA_HOST']
     if not str(host)[:4] == "http":
@@ -277,6 +279,8 @@ def EXTRA(book=None):
             logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
         else:
             logger.debug('Error fetching data from %s: %s' % (provider, data))
+            errmsg = data
+
         data = False
 
     results = []
@@ -326,11 +330,11 @@ def EXTRA(book=None):
 
     logger.debug(u"Found %i result%s from %s for %s" %
                  (len(results), plural(len(results)), provider, book['searchterm']))
-    return results
+    return results, errmsg
 
 
 def ZOO(book=None):
-
+    errmsg = ''
     provider = "zooqle"
     host = lazylibrarian.CONFIG['ZOO_HOST']
     if not str(host)[:4] == "http":
@@ -352,6 +356,7 @@ def ZOO(book=None):
         else:
             logger.debug(searchURL)
             logger.debug('Error fetching data from %s: %s' % (provider, data))
+            errmsg = data
         data = False
 
     results = []
@@ -404,11 +409,11 @@ def ZOO(book=None):
 
     logger.debug(u"Found %i result%s from %s for %s" %
                  (len(results), plural(len(results)), provider, book['searchterm']))
-    return results
+    return results, errmsg
 
 
 def LIME(book=None):
-
+    errmsg = ''
     provider = "Limetorrent"
     host = lazylibrarian.CONFIG['LIME_HOST']
     if not str(host)[:4] == "http":
@@ -424,6 +429,7 @@ def LIME(book=None):
         else:
             logger.debug(searchURL)
             logger.debug('Error fetching data from %s: %s' % (provider, data))
+            errmsg = data
         data = False
 
     results = []
@@ -478,11 +484,11 @@ def LIME(book=None):
 
     logger.debug(u"Found %i result%s from %s for %s" %
                  (len(results), plural(len(results)), provider, book['searchterm']))
-    return results
+    return results, errmsg
 
 
 def GEN(book=None):
-
+    errmsg = ''
     provider = "libgen"
     host = lazylibrarian.CONFIG['GEN_HOST']
     if not str(host)[:4] == "http":
@@ -499,9 +505,12 @@ def GEN(book=None):
         elif '111' in result:
             # looks like libgen has ip based access limits
             logger.error('Access forbidden. Please wait a while before trying %s again.' % provider)
+            errmsg = result
         else:
             logger.debug(searchURL)
             logger.debug('Error fetching data from %s: %s' % (provider, result))
+            errmsg = result
+
         result = False
 
     results = []
@@ -554,32 +563,30 @@ def GEN(book=None):
                     if extn:
                         title = title + '.' + extn
 
-                    bookURL = url_fix(host + "/ads.php?" + link)
+                    url = url_fix(host + "/ads.php?" + link)
 
-                    #bookresult, success = fetchURL(bookURL)
-                    #if not success:
-                    #    # may return 404 if no results, not really an error
-                    #    if '404' in bookresult:
-                    #        logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
-                    #    else:
-                    #        logger.debug(bookURL)
-                    #        logger.debug('Error fetching data from %s: %s' % (provider, bookresult))
-                    #    bookresult = False
-                    #if bookresult:
-                    #    url = None
-                    #    print "******************"
-                    #    print bookresult[:100]
-                    #    print "******************"
-                    #    new_soup = BeautifulSoup(bookresult)
-                    #    for link in new_soup.findAll('a'):
-                    #        output = link.get('href')
-                    #        if output and output.startswith('/get.php'):
-                    #            url = output
-                    #            break
-                    #
-                    #    if url:
-                    #        url = url_fix(host + url)
-                    url = bookURL
+                    bookresult, success = fetchURL(url)
+                    if not success:
+                        # may return 404 if no results, not really an error
+                        if '404' in bookresult:
+                            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+                        else:
+                            logger.debug(url)
+                            logger.debug('Error fetching data from %s: %s' % (provider, bookresult))
+                            errmsg = bookresult
+                        bookresult = False
+
+                    if bookresult:
+                        url = None
+                        new_soup = BeautifulSoup(bookresult)
+                        for link in new_soup.findAll('a'):
+                            output = link.get('href')
+                            if output and output.startswith('/get.php'):
+                                url = output
+                                break
+                        if url:
+                            url = url_fix(host + url)
+
                     results.append({
                         'bookid': book['bookid'],
                         'tor_prov': provider,
@@ -596,11 +603,11 @@ def GEN(book=None):
 
     logger.debug(u"Found %i result%s from %s for %s" %
                  (len(results), plural(len(results)), provider, book['searchterm']))
-    return results
+    return results, errmsg
 
 
 def TDL(book=None):
-
+    errmsg = ''
     provider = "torrentdownloads"
     host = lazylibrarian.CONFIG['TDL_HOST']
     if not str(host)[:4] == "http":
@@ -623,6 +630,7 @@ def TDL(book=None):
         else:
             logger.debug(searchURL)
             logger.debug('Error fetching data from %s: %s' % (provider, data))
+            errmsg = data
         data = False
 
     results = []
@@ -675,4 +683,4 @@ def TDL(book=None):
 
     logger.debug(u"Found %i result%s from %s for %s" %
                  (len(results), plural(len(results)), provider, book['searchterm']))
-    return results
+    return results, errmsg

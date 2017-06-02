@@ -22,16 +22,26 @@
             %if showseries >= 1:
             <a href="series?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-book"></i> Series</a>
             %endif
-            %if len(languages) >= 1:
+            %if len(types) > 1:
                 <div class="form-group pull-right">
-                    <label for="chooselanguage"><small>Language</small></label>
-                    <select class="form-control input-sm" name="chooselanguage" onchange="window.location = 'authorPage?AuthorID=${author['AuthorID']}&BookLang=' + this.options[this.selectedIndex].value">
-                        <option value="">All</option>
-                        %for language in languages:
-                        <option value="${language['BookLang']}">${language['BookLang']}</option>
+                    <label for="chooselib"><small>&nbsp;Library</small></label>
+                    <select class="form-control input-sm" name="chooselib" id="chooselib">
+                        %for library in types:
+                        <option value="${library}">${library}</option>
                         %endfor
                     </select>
                 </div>
+            %endif
+            %if len(languages) > 1:
+              <div class="form-group pull-right">
+                <label for="chooselanguage"><small>Language</small></label>
+                <select class="form-control input-sm" name="chooselanguage" id="chooselanguage">
+                <option value="">All</option>
+                %for language in languages:
+                <option value="${language['BookLang']}">${language['BookLang']}</option>
+                %endfor
+                </select>
+              </div>
             %endif
         </form>
     </div>
@@ -105,8 +115,9 @@
   <div class="indented">
     <input type="hidden" name="AuthorID" value="${author['AuthorID']}">
     <input type="hidden" name="redirect" value="author">
-    <input type="hidden" name="booklang" value="booklang">
-    <input type="hidden" name="ignored" value="ignored">
+    <input type="hidden" name="booklang" value=${booklang}>
+    <input type="hidden" name="library" value=${library}>
+    <input type="hidden" name="ignored" value=${ignored}>
     <div class="form-group">
       <label for="action" class="">Mark selected as</label>
       <select class="markBooks form-control input-sm" id="action" name="action">
@@ -162,6 +173,24 @@
   <script type="text/javascript">
     $(document).ready(function()
     {
+        $('#chooselanguage').change(function(){
+            new_settings = 'authorPage?AuthorID=${author['AuthorID']}&BookLang=' + $(this).val()
+            if (typeof $("#chooselib").val() != 'undefined') {
+            new_settings += '&Library=' + $("#chooselib").val() }
+            window.location = new_settings
+        })
+        $('#chooselib').change(function(){
+            new_settings = 'authorPage?AuthorID=${author['AuthorID']}&Library=' + $(this).val()
+            if (typeof $("#chooselanguage").val() != 'undefined') {
+            new_settings += '&BookLang=' + $("#chooselanguage").val() }
+            window.location = new_settings
+        })
+        $('#chooselanguage').val(getUrlVars()['BookLang']);
+        $('#chooselib').val(getUrlVars()['Library']);
+        if ($("#chooselib").val() != 'AudioBook') {
+            $('#chooselib').val('eBook')
+        }
+
         var show = ""+${lazylibrarian.CONFIG['BOOK_IMG']};
             if ( show != '1' ) { showimg = false }
             else { showimg = true }
@@ -189,6 +218,8 @@
                         return str ;} },
                     { targets: [8], 'render': function(data, type, row) {
                         var btn = row[11]
+                        if ($("#chooselib").val() === "AudioBook") {
+                            var btn = row[12] }
                         if ( btn == 'Open' ) {
                             btn = '<a class="button green btn btn-xs btn-warning" href="openBook?bookid=' + row[9] +
                                     '" target="_self"><i class="fa fa-book"></i>Open</a>'}
@@ -199,7 +230,7 @@
                         else if ( btn == 'Have' ) {
                             btn = '<a class="button btn btn-xs btn-info">Have</a>'}
                         else {
-                            btn = '<a class="button btn btn-xs btn-default grey">' + row[11] + '</a>'}
+                            btn = '<a class="button btn btn-xs btn-default grey">' + btn + '</a>'}
                         return btn;} }
                     ],
                 "oLanguage": {
@@ -211,7 +242,7 @@
                 "sPaginationType": "full_numbers",
                 "aaSorting": [[6, 'desc']],
                 "bServerSide": true,
-                "sAjaxSource": 'getBooks?source=Author&AuthorID=${author['AuthorID']}&booklang=${booklang}&ignored=${ignored}',
+                "sAjaxSource": 'getBooks?source=Author&AuthorID=${author['AuthorID']}&booklang=${booklang}&library=${library}&ignored=${ignored}',
                 "bFilter": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
@@ -236,5 +267,16 @@
             column.visible( ! column.visible() );
         } );
     });
+    // Read a page's GET URL variables and return them as an associative array.
+    function getUrlVars() {
+        var vars = [], hash;
+        var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+        for(var i = 0; i < hashes.length; i++) {
+            hash = hashes[i].split('=');
+            vars.push(hash[0]);
+            vars[hash[0]] = hash[1];
+        }
+        return vars;
+    }
   </script>
 </%def>

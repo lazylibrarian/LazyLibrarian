@@ -318,8 +318,6 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
     item = myDB.match(cmd)
     if item:
         cacheLocation = os.path.join(lazylibrarian.CACHEDIR, cacheLocation)
-        if not os.path.exists(cacheLocation):
-            os.mkdir(cacheLocation)
         if bookID:
             workfile = os.path.join(cacheLocation, str(bookID) + '.html')
         else:

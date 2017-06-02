@@ -254,7 +254,7 @@ def magazineScan():
     if lazylibrarian.CONFIG['MAG_RELATIVE']:
         if mag_path[0] not in '._':
             mag_path = '_' + mag_path
-        mag_path = os.path.join(lazylibrarian.DIRECTORY('Destination'), mag_path).encode(lazylibrarian.SYS_ENCODING)
+        mag_path = os.path.join(lazylibrarian.DIRECTORY('eBook'), mag_path).encode(lazylibrarian.SYS_ENCODING)
     else:
         mag_path = mag_path.encode(lazylibrarian.SYS_ENCODING)
 

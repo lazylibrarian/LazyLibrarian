@@ -15,19 +15,19 @@
 
 import urllib
 from xml.etree import ElementTree
-
+import time
 import lazylibrarian
 import lib.feedparser as feedparser
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.formatter import age, today, plural, cleanName, unaccented, getList
+from lazylibrarian.formatter import age, today, plural, cleanName, unaccented, getList, check_int
 from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL, GEN, EXTRA, LIME
 
 
 def get_searchterm(book, searchType):
     authorname = cleanName(book['authorName'])
     bookname = cleanName(book['bookName'])
-    if searchType in ['book', 'shortbook', 'shortgeneral']:
+    if searchType in ['book', 'audio'] or 'short' in searchType:
         if bookname == authorname and book['bookSub']:
             # books like "Spike Milligan: Man of Letters"
             # where we split the title/subtitle on ':'
@@ -111,8 +111,10 @@ def get_capabilities(provider):
             provider['EXTENDED'] = '1'
             provider['BOOKCAT'] = ''
             provider['MAGCAT'] = ''
+            provider['AUDIOCAT'] = ''
             provider['BOOKSEARCH'] = ''
             provider['MAGSEARCH'] = ''
+            provider['AUDIOSEARCH'] = ''
             #
             search = data.find('searching/search')
             if search is not None:
@@ -122,8 +124,15 @@ def get_capabilities(provider):
             categories = data.getiterator('category')
             for cat in categories:
                 if 'name' in cat.attrib:
-                    if cat.attrib['name'].lower() == 'books':
-                        bookcat = cat.attrib['id']  # keep main bookcat for later
+                    if cat.attrib['name'].lower() == 'audio':
+                        provider['AUDIOCAT'] = cat.attrib['id']
+                        subcats = cat.getiterator('subcat')
+                        for subcat in subcats:
+                            if 'audiobook' in subcat.attrib['name'].lower():
+                                provider['AUDIOCAT'] = "%s,%s" % (provider['AUDIOCAT'], subcat.attrib['id'])
+
+                    elif cat.attrib['name'].lower() == 'books':
+                        bookcat = cat.attrib['id']  # keep main bookcat for starting magazines later
                         provider['BOOKCAT'] = bookcat
                         provider['MAGCAT'] = ''
                         if provider['BOOKCAT'] == '7000':
@@ -160,12 +169,36 @@ def get_capabilities(provider):
                         # if no specific magazine subcategory, use books
                         if not provider['MAGCAT']:
                             provider['MAGCAT'] = bookcat
-            logger.debug("Categories: Books %s : Mags %s" % (provider['BOOKCAT'], provider['MAGCAT']))
+            logger.debug("Categories: Books %s : Mags %s : Audio %s" %
+                        (provider['BOOKCAT'], provider['MAGCAT'],provider['AUDIOCAT']))
             provider['UPDATED'] = today()
             lazylibrarian.config_write()
         else:
             logger.warn(u"Unable to get capabilities for %s: No data returned" % URL)
     return provider
+
+
+def ProviderIsBlocked(name):
+    """ Check if provider is blocked because of previous errors """
+    timenow = int(time.time())
+    for entry in lazylibrarian.PROVIDER_BLOCKLIST:
+        if entry["name"] == name:
+            if timenow < int(entry['resume']):
+                return True
+            else:
+                lazylibrarian.PROVIDER_BLOCKLIST.remove(entry)
+    return False
+
+
+def BlockProvider(who, why):
+    logger.info("Blocking provider %s for an hour because %s" % (who, why))
+    timenow = int(time.time())
+    for entry in lazylibrarian.PROVIDER_BLOCKLIST:
+        if entry["name"] == who:
+            lazylibrarian.PROVIDER_BLOCKLIST.remove(entry)
+    newentry = {"name": who, "resume": timenow + check_int(lazylibrarian.BLOCKLIST_TIMER, 3600), "reason": why}
+    lazylibrarian.PROVIDER_BLOCKLIST.append(newentry)
+    logger.debug("Provider Blocklist contains %s entries" % len(lazylibrarian.PROVIDER_BLOCKLIST))
 
 
 def IterateOverNewzNabSites(book=None, searchType=None):
@@ -179,14 +212,14 @@ def IterateOverNewzNabSites(book=None, searchType=None):
     providers = 0
 
     for provider in lazylibrarian.NEWZNAB_PROV:
-        if provider['ENABLED']:
+        if provider['ENABLED'] and not ProviderIsBlocked(provider['HOST']):
             provider = get_capabilities(provider)
             providers += 1
             logger.debug('[IterateOverNewzNabSites] - %s' % provider['HOST'])
             resultslist += NewzNabPlus(book, provider, searchType, "nzb")
 
     for provider in lazylibrarian.TORZNAB_PROV:
-        if provider['ENABLED']:
+        if provider['ENABLED'] and not ProviderIsBlocked(provider['HOST']):
             provider = get_capabilities(provider)
             providers += 1
             logger.debug('[IterateOverTorzNabSites] - %s' % provider['HOST'])
@@ -203,34 +236,33 @@ def IterateOverTorrentSites(book=None, searchType=None):
         authorname, bookname = get_searchterm(book, searchType)
         book['searchterm'] = authorname + ' ' + bookname
 
-    if lazylibrarian.CONFIG['KAT']:
-        providers += 1
-        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG['KAT_HOST'])
-        resultslist += KAT(book)
-    if lazylibrarian.CONFIG['TPB']:
-        providers += 1
-        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG['TPB_HOST'])
-        resultslist += TPB(book)
-    if lazylibrarian.CONFIG['ZOO']:
-        providers += 1
-        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG['ZOO_HOST'])
-        resultslist += ZOO(book)
-    if lazylibrarian.CONFIG['EXTRA']:
-        providers += 1
-        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG['EXTRA_HOST'])
-        resultslist += EXTRA(book)
-    if lazylibrarian.CONFIG['TDL']:
-        providers += 1
-        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG['TDL_HOST'])
-        resultslist += TDL(book)
-    if lazylibrarian.CONFIG['GEN']:
-        providers += 1
-        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG['GEN_HOST'])
-        resultslist += GEN(book)
-    if lazylibrarian.CONFIG['LIME']:
-        providers += 1
-        logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG['LIME_HOST'])
-        resultslist += LIME(book)
+    for prov in ['KAT', 'TPB', 'ZOO', 'EXTRA', 'TDL', 'GEN', 'LIME']:
+            if lazylibrarian.CONFIG[prov] and not ProviderIsBlocked(prov):
+                logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG[prov+'_HOST'])
+                if prov == 'KAT':
+                    results,error = KAT(book)
+                elif prov == 'TPB':
+                    results,error = TPB(book)
+                elif prov == 'ZOO':
+                    results,error = ZOO(book)
+                elif prov == 'EXTRA':
+                    results,error = EXTRA(book)
+                elif prov == 'TDL':
+                    results,error = TDL(book)
+                elif prov == 'GEN':
+                    results,error = GEN(book)
+                elif prov == 'LIME':
+                    results,error = LIME(book)
+                else:
+                    results = ''
+                    error = ''
+                    logger.error('IterateOverTorrentSites called with unknown provider [%s]' % prov)
+
+                if error:
+                    BlockProvider(prov, error)
+                else:
+                    resultslist += results
+                    providers += 1
 
     return resultslist, providers
 
@@ -240,7 +272,8 @@ def IterateOverRSSSites():
     resultslist = []
     providers = 0
     for provider in lazylibrarian.RSS_PROV:
-        if provider['ENABLED'] and not 'goodreads' in provider['HOST'] and not 'list_rss' in provider['HOST']:
+        if provider['ENABLED'] and not 'goodreads' in provider['HOST'] \
+            and not 'list_rss' in provider['HOST'] and not ProviderIsBlocked(provider['HOST']):
             providers += 1
             logger.debug('[IterateOverRSSSites] - %s' % provider['HOST'])
             resultslist += RSS(provider['HOST'], provider['NAME'])
@@ -251,7 +284,8 @@ def IterateOverGoodReads():
     resultslist = []
     providers = 0
     for provider in lazylibrarian.RSS_PROV:
-        if provider['ENABLED'] and 'goodreads' in provider['HOST'] and 'list_rss' in provider['HOST']:
+        if provider['ENABLED'] and 'goodreads' in provider['HOST'] \
+            and 'list_rss' in provider['HOST'] and not ProviderIsBlocked(provider['HOST']):
             providers += 1
             logger.debug('[IterateOverGoodReads] - %s' % provider['HOST'])
             resultslist += GOODREADS(provider['HOST'], provider['NAME'])
@@ -324,6 +358,7 @@ def RSS(host=None, feednr=None):
         data = feedparser.parse(result)
     else:
         logger.error('Error fetching data from %s: %s' % (host, result))
+        BlockProvider(host, result)
         data = None
 
     if data:
@@ -439,27 +474,38 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
             if rootxml.tag == 'error':
                 errormsg = rootxml.get('description', default='unknown error')
                 logger.error(u"%s - %s" % (host, errormsg))
-                if provider['BOOKSEARCH'] and searchType == "book":  # maybe the host doesn't support it
+                # maybe the host doesn't support the search type
+                match = False
+                if (provider['BOOKSEARCH'] and searchType in ["book", "shortbook"]) or \
+                    (provider['AUDIOSEARCH'] and searchType in ["audio", "shortaudio"]):
                     errorlist = ['no such function', 'unknown parameter', 'unknown function', 'incorrect parameter']
-                    match = False
                     for item in errorlist:
                         if item in errormsg.lower():
                             match = True
                     if match:
                         count = 0
-                        while count < len(lazylibrarian.NEWZNAB_PROV):
-                            if lazylibrarian.NEWZNAB_PROV[count]['HOST'] == provider['HOST']:
-                                if str(provider['MANUAL']) == 'False':
-                                    logger.error(
-                                        "Disabled booksearch=%s for %s" %
-                                        (provider['BOOKSEARCH'], provider['HOST']))
-                                    lazylibrarian.NEWZNAB_PROV[count]['BOOKSEARCH'] = ""
-                                    lazylibrarian.config_write()
-                                else:
-                                    logger.error(
-                                        "Unable to disable booksearch for %s [MANUAL=%s]" %
-                                        (provider['HOST'], provider['MANUAL']))
-                            count += 1
+                        if searchType in ["book", "shortbook"]:
+                            msg = 'BOOKSEARCH'
+                        elif searchType in ["audio", "shortaudio"]:
+                            msg = 'AUDIOSEARCH'
+                        else:
+                            msg = ''
+                        if not msg:
+                            logger.error('Error trying to disable searchtype [%s] for %s' % (searchType, host))
+                        else:
+                            while count < len(lazylibrarian.NEWZNAB_PROV):
+                                if lazylibrarian.NEWZNAB_PROV[count]['HOST'] == provider['HOST']:
+                                    if str(provider['MANUAL']) == 'False':
+                                        logger.error("Disabled %s=%s for %s" %
+                                            (msg, provider[msg], provider['HOST']))
+                                        lazylibrarian.NEWZNAB_PROV[count][msg] = ""
+                                        lazylibrarian.config_write()
+                                    else:
+                                        logger.error("Unable to disable %s for %s [MANUAL=%s]" %
+                                                    (msg, provider['HOST'], provider['MANUAL']))
+                                count += 1
+                if not match:
+                    BlockProvider(provider['HOST'], errormsg)
             else:
                 resultxml = rootxml.getiterator('item')
                 nzbcount = 0
@@ -494,6 +540,23 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "apikey": api_key,
                 "q": authorname + ' ' + bookname,
                 "cat": provider['BOOKCAT']
+            }
+    elif searchType in ["audio", "shortaudio"]:
+        authorname, bookname = get_searchterm(book, searchType)
+        if provider['AUDIOSEARCH'] and provider['AUDIOCAT']:  # if specific audiosearch, use it
+            params = {
+                "t": provider['AUDIOSEARCH'],
+                "apikey": api_key,
+                "title": bookname,
+                "author": authorname,
+                "cat": provider['AUDIOCAT']
+            }
+        elif provider['GENERALSEARCH'] and provider['AUDIOCAT']:  # if not, try general search
+            params = {
+                "t": provider['GENERALSEARCH'],
+                "apikey": api_key,
+                "q": authorname + ' ' + bookname,
+                "cat": provider['AUDIOCAT']
             }
     elif searchType == "mag":
         if provider['MAGSEARCH'] and provider['MAGCAT']:  # if specific magsearch, use it

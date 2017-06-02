@@ -64,7 +64,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'getIssues': '&name= list issues of named magazine',
             'createMagCovers': '[&wait] [&refresh] create covers for magazines, optionally refresh existing ones',
             'forceMagSearch': '[&wait] search for all wanted magazines',
-            'forceBookSearch': '[&wait] search for all wanted books',
+            'forceBookSearch': '[&wait] [&type=eBook/AudioBook] search for all wanted books',
             'forceProcess': 'process books/mags in download dir',
             'pauseAuthor': '&id= pause author by AuthorID',
             'resumeAuthor': '&id= resume author by AuthorID',
@@ -73,6 +73,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'refreshAuthor': '&name= [&refresh] reload author (and their books) by name, optionally refresh cache',
             'forceActiveAuthorsUpdate': '[&wait] [&refresh] reload all active authors and book data, optionally refresh cache',
             'forceLibraryScan': '[&wait] rescan whole book library',
+            'forceAudioBookScan': '[&wait] rescan whole audiobook library',
             'forceMagazineScan': '[&wait] rescan whole magazine library',
             'getVersion': 'show lazylibrarian current/git version',
             'shutdown': 'stop lazylibrarian',
@@ -474,21 +475,25 @@ class Api(object):
             self.data = 'No search methods set, check config'
 
     def _forceBookSearch(self, **kwargs):
+        if 'type' in kwargs:
+            library = kwargs['type']
+        else:
+            library = None
         if lazylibrarian.USE_NZB():
             if 'wait' in kwargs:
-                search_nzb_book()
+                search_nzb_book(library=library)
             else:
-                threading.Thread(target=search_nzb_book, name='API-SEARCHNZB', args=[]).start()
+                threading.Thread(target=search_nzb_book, name='API-SEARCHNZB', args=[None, library]).start()
         if lazylibrarian.USE_TOR():
             if 'wait' in kwargs:
-                search_tor_book()
+                search_tor_book(library=library)
             else:
-                threading.Thread(target=search_tor_book, name='API-SEARCHTOR', args=[]).start()
+                threading.Thread(target=search_tor_book, name='API-SEARCHTOR', args=[None, library]).start()
         if lazylibrarian.USE_RSS():
             if 'wait' in kwargs:
-                search_rss_book()
+                search_rss_book(library=library)
             else:
-                threading.Thread(target=search_rss_book, name='API-SEARCHRSS', args=[]).start()
+                threading.Thread(target=search_rss_book, name='API-SEARCHRSS', args=[None, library]).start()
         if not lazylibrarian.USE_RSS() and not lazylibrarian.USE_NZB() and not lazylibrarian.USE_TOR():
             self.data = "No search methods set, check config"
 
@@ -501,7 +506,14 @@ class Api(object):
         if 'wait' in kwargs:
             LibraryScan()
         else:
-            threading.Thread(target=LibraryScan, name='API-LIBRARYSCAN', args=[]).start()
+            threading.Thread(target=LibraryScan, name='API-LIBRARYSCAN', args=[None, 'eBook']).start()
+
+    @staticmethod
+    def _forceAudioBookScan(**kwargs):
+        if 'wait' in kwargs:
+            LibraryScan(library='audio')
+        else:
+            threading.Thread(target=LibraryScan, name='API-LIBRARYSCAN', args=[None, 'audio']).start()
 
     @staticmethod
     def _forceMagazineScan(**kwargs):
@@ -705,21 +717,25 @@ class Api(object):
             self.id = kwargs['id']
 
         books = [{"bookid": id}]
+        if 'type' in kwargs:
+            library = kwargs['type']
+        else:
+            library = None
         if lazylibrarian.USE_RSS():
             if 'wait' in kwargs:
-                search_rss_book(books)
+                search_rss_book(books=books, library=library)
             else:
-                threading.Thread(target=search_rss_book, name='API-SEARCHRSS', args=[books]).start()
+                threading.Thread(target=search_rss_book, name='API-SEARCHRSS', args=[books, library]).start()
         if lazylibrarian.USE_NZB():
             if 'wait' in kwargs:
-                search_nzb_book(books)
+                search_nzb_book(books=books, library=library)
             else:
-                threading.Thread(target=search_nzb_book, name='API-SEARCHNZB', args=[books]).start()
+                threading.Thread(target=search_nzb_book, name='API-SEARCHNZB', args=[books, library]).start()
         if lazylibrarian.USE_TOR():
             if 'wait' in kwargs:
-                search_tor_book(books)
+                search_tor_book(books=books, library=library)
             else:
-                threading.Thread(target=search_tor_book, name='API-SEARCHTOR', args=[books]).start()
+                threading.Thread(target=search_tor_book, name='API-SEARCHTOR', args=[books, library]).start()
         if not lazylibrarian.USE_RSS() and not lazylibrarian.USE_NZB() and not lazylibrarian.USE_TOR():
             self.data = "No search methods set, check config"
 
@@ -887,7 +903,7 @@ class Api(object):
         if os.path.isfile(img):
             extn = os.path.splitext(img)[1].lower()
             if extn and extn in ['.jpg','.jpeg','.png']:
-                destfile = os.path.join(lazylibrarian.CACHEDIR, itemid + '.jpg')
+                destfile = os.path.join(lazylibrarian.CACHEDIR, table, itemid + '.jpg')
                 try:
                     shutil.copy(img, destfile)
                     setperm(destfile)

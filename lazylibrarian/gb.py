@@ -627,6 +627,7 @@ class GoogleBooks:
                                     "BookDate": bookdate,
                                     "BookLang": booklang,
                                     "Status": book_status,
+                                    "AudioStatus": lazylibrarian.CONFIG['NEWAUDIO_STATUS'],
                                     "BookAdded": today()
                                 }
                                 resultcount += 1
@@ -887,6 +888,7 @@ class GoogleBooks:
             "BookDate": bookdate,
             "BookLang": booklang,
             "Status": "Wanted",
+            "AudioStatus": lazylibrarian.CONFIG['NEWAUDIO_STATUS'],
             "BookAdded": today()
         }
 
