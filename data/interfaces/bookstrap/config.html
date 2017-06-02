@@ -8,9 +8,6 @@
             <a onclick="self.shutdownQA(this)" class="button btn btn-sm btn-danger" data-toggle="tooltip" data-placement="bottom" title="Terminate the LazyLibrarian process - Be careful if you're doing this remotely"><i class="fa fa-power-off"></i> Shutdown</a>
             <a class="button btn btn-sm btn-warning" onclick="self.restartQA(this, '', '')" data-toggle="tooltip" data-placement="bottom" title="Restart LazyLibrarian"><i class="fa fa-refresh"></i> Restart</a>
             <a class="button btn btn-sm btn-primary" href="checkForUpdates" data-toggle="tooltip" data-placement="bottom" title="Check for the latest release"><i class="fa fa-check-square-o"></i> Check Version</a>
-        <button class="button btn btn-sm btn-primary" type="button" value="Show Jobs" id="show_Jobs"><i class="fa fa-list-ul"></i> Show Jobs</button>
-        <button class="button btn btn-sm btn-warning" type="button" value="Restart Jobs" id="restart_Jobs"><i class="fa fa-refresh"></i> Restart Jobs</button>
-        <button class="button btn btn-sm btn-danger" type="button" value="Stop Jobs" id="stop_Jobs"><i class="fa fa-power-off"></i> Stop Jobs</button>
       </div>
     </div>
 </%def>
@@ -1048,6 +1045,7 @@
               </div>
             </fieldset>
             <button class="button btn btn-sm btn-primary" type="button" value="showblocked" id="showblocked"> Blocked Providers</button>
+            <br>
           </div>
         </div>
       </div>
@@ -1339,17 +1337,21 @@
                 <select id="newauthor_status" name="newauthor_status" class="form-control">
                   %for na_status in config['status_list']:
                   <%
-                                                selected = ''
-                                                if na_status == lazylibrarian.CONFIG['NEWAUTHOR_STATUS']:
-                                                        selected = 'selected="selected"'
-                                            %>
+                    selected = ''
+                    if na_status == lazylibrarian.CONFIG['NEWAUTHOR_STATUS']:
+                        selected = 'selected="selected"'
+                  %>
                   <option value="${na_status}" ${selected}>${na_status}</option>
                   %endfor
                 </select>
                 <span class="help-block">Status for ebooks by new authors</span>
               </div>
             </fieldset>
-          </div>
+        <button class="button btn btn-sm btn-primary" type="button" value="Show Jobs" id="show_Jobs"><i class="fa fa-list-ul"></i> Show Jobs</button>
+        <button class="button btn btn-sm btn-warning" type="button" value="Restart Jobs" id="restart_Jobs"><i class="fa fa-refresh"></i> Restart Jobs</button>
+        <button class="button btn btn-sm btn-danger" type="button" value="Stop Jobs" id="stop_Jobs"><i class="fa fa-power-off"></i> Stop Jobs</button>
+        <br>
+        </div>
         </div>
       </div>
     </div>
@@ -1359,11 +1361,11 @@
           <div class="col-md-6">
             <div class="checkbox">
               <%
-                                if lazylibrarian.CONFIG['USE_TWITTER'] == True:
-                                    checked = 'checked="checked"'
-                                else:
-                                    checked = ''
-                                %>
+                if lazylibrarian.CONFIG['USE_TWITTER'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
               <label for="use_twitter">
                 <input type="checkbox" id="use_twitter" name="use_twitter" value="1" ${checked} />
                 Enable Twitter Notifications</label>
@@ -1373,22 +1375,22 @@
                 <legend>Twitter</legend>
                 <div class="checkbox">
                   <%
-                                            if lazylibrarian.CONFIG['TWITTER_NOTIFY_ONSNATCH'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['TWITTER_NOTIFY_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                   <label for="twitter_notify_onsnatch" class="control-label">
                     <input type="checkbox" id="twitter_notify_onsnatch" name="twitter_notify_onsnatch" value="1" ${checked} />
                     Notify on snatch</label>
                 </div>
                 <div class="checkbox">
                   <%
-                                            if lazylibrarian.CONFIG['TWITTER_NOTIFY_ONDOWNLOAD'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['TWITTER_NOTIFY_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                   <label for="twitter_notify_ondownload">
                     <input type="checkbox" id="twitter_notify_ondownload" name="twitter_notify_ondownload" value="1" ${checked} />
                     Notify on download</label>
@@ -1410,11 +1412,11 @@
             </div>
             <div class="checkbox">
               <%
-                                if lazylibrarian.CONFIG['USE_BOXCAR'] == True:
-                                    checked = 'checked="checked"'
-                                else:
-                                    checked = ''
-                                %>
+                if lazylibrarian.CONFIG['USE_BOXCAR'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
               <label for="use_boxcar" class="control-label">
                 <input type="checkbox" id="use_boxcar" name="use_boxcar" value="1" ${checked} />
                 Enable boxcar Notifications</label>
@@ -1424,22 +1426,22 @@
                 <legend>Boxcar2</legend>
                 <div class="checkbox">
                   <%
-                                            if lazylibrarian.CONFIG['BOXCAR_NOTIFY_ONSNATCH'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['BOXCAR_NOTIFY_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                   <label for="boxcar_notify_onsnatch" class="control-label">
                     <input type="checkbox" id="boxcar_notify_onsnatch" name="boxcar_notify_onsnatch" value="1" ${checked} />
                     Notify on snatch</label>
                 </div>
                 <div class="checkbox">
                   <%
-                                            if lazylibrarian.CONFIG['BOXCAR_NOTIFY_ONDOWNLOAD'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['BOXCAR_NOTIFY_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                   <label for="boxcar_notify_ondownload">
                     <input type="checkbox" id="boxcar_notify_ondownload" name="boxcar_notify_ondownload" value="1" ${checked} />
                     Notify on download</label>
@@ -1455,11 +1457,11 @@
             </div>
             <div class="checkbox">
               <%
-                                    if lazylibrarian.CONFIG['USE_PUSHBULLET'] == True:
-                                        checked = 'checked="checked"'
-                                    else:
-                                        checked = ''
-                                    %>
+                if lazylibrarian.CONFIG['USE_PUSHBULLET'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
               <label for="use_pushbullet" class="control-label">
                 <input type="checkbox" id="use_pushbullet" name="use_pushbullet" value="1" ${checked} />
                 Enable Pushbullet Notifications</label>
@@ -1469,22 +1471,22 @@
                 <legend>Pushbullet</legend>
                 <div class="checkbox">
                   <%
-                                            if lazylibrarian.CONFIG['PUSHBULLET_NOTIFY_ONSNATCH'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['PUSHBULLET_NOTIFY_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                   <label for="pushbullet_notify_onsnatch">
                     <input type="checkbox" id="pushbullet_notify_onsnatch" name="pushbullet_notify_onsnatch" value="1" ${checked} />
                     Notify on snatch</label>
                 </div>
                 <div class="checkbox">
                   <%
-                                            if lazylibrarian.CONFIG['PUSHBULLET_NOTIFY_ONDOWNLOAD'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['PUSHBULLET_NOTIFY_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                   <label for="pushbullet_notify_ondownload">
                     <input type="checkbox" id="pushbullet_notify_ondownload" name="pushbullet_notify_ondownload" value="1" ${checked} />
                     Notify on download</label>
@@ -1506,11 +1508,11 @@
           <div class="col-md-6">
             <div class="checkbox">
               <%
-                                    if lazylibrarian.CONFIG['USE_PUSHOVER'] == True:
-                                        checked = 'checked="checked"'
-                                    else:
-                                        checked = ''
-                                    %>
+                if lazylibrarian.CONFIG['USE_PUSHOVER'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
               <label for="use_pushover" class="control-label">
                 <input type="checkbox" id="use_pushover" name="use_pushover" value="1" ${checked} />
                 Enable Pushover Notifications</label>
@@ -1520,22 +1522,22 @@
                 <legend>Pushover</legend>
                 <div class="checkbox">
                   <%
-                                            if lazylibrarian.CONFIG['PUSHOVER_ONSNATCH'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['PUSHOVER_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                   <label for="pushover_onsnatch">
                     <input type="checkbox" id="pushover_onsnatch" name="pushover_onsnatch" value="1" ${checked} />
                     Notify on snatch</label>
                 </div>
                 <div class="checkbox">
                   <%
-                                            if lazylibrarian.CONFIG['PUSHOVER_ONDOWNLOAD'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['PUSHOVER_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                   <label for="pushover_ondownload" class="control-label">
                     <input type="checkbox" id="pushover_ondownload" name="pushover_ondownload" value="1" ${checked} />
                     Notify on download</label>
@@ -1563,11 +1565,11 @@
             </div>
             <div class="checkbox">
               <%
-                                    if lazylibrarian.CONFIG['USE_ANDROIDPN'] == True:
-                                        checked = 'checked="checked"'
-                                    else:
-                                        checked = ''
-                                    %>
+                if lazylibrarian.CONFIG['USE_ANDROIDPN'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
               <label for="use_androidpn" class="control-label">
                 <input type="checkbox" id="use_androidpn" name="use_androidpn" value="1" ${checked} />
                 Enable AndroidPN Notifications</label>
@@ -1577,33 +1579,33 @@
                 <legend>AndroidPN</legend>
                 <div class="checkbox">
                   <%
-                                            if lazylibrarian.CONFIG['ANDROIDPN_NOTIFY_ONSNATCH'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['ANDROIDPN_NOTIFY_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                   <label for="androidpn_notify_onsnatch" class="control-label">
                     <input type="checkbox" id="androidpn_notify_onsnatch" name="androidpn_notify_onsnatch" value="1" ${checked} />
                     Notify on snatch</label>
                 </div>
                 <div class="checkbox">
                   <%
-                                            if lazylibrarian.CONFIG['ANDROIDPN_NOTIFY_ONDOWNLOAD'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['ANDROIDPN_NOTIFY_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                   <label for="androidpn_notify_ondownload" class="control-label">
                     <input type="checkbox" id="androidpn_notify_ondownload" name="androidpn_notify_ondownload" value="1" ${checked} />
                     Notify on download</label>
                 </div>
                 <div class="checkbox">
                   <%
-                                            if lazylibrarian.CONFIG['ANDROIDPN_BROADCAST'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['ANDROIDPN_BROADCAST'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                   <label for="androidpn_broadcast" class="control-label">
                     <input type="checkbox" id="androidpn_broadcast" name="androidpn_broadcast" value="1" ${checked} />
                     Broadcast notification</label>
@@ -1623,11 +1625,11 @@
             </div>
             <div class="checkbox">
               <%
-                                    if lazylibrarian.CONFIG['USE_NMA'] == True:
-                                        checked = 'checked="checked"'
-                                    else:
-                                        checked = ''
-                                    %>
+                if lazylibrarian.CONFIG['USE_NMA'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
               <label for="use_nma" class="control-label">
                 <input type="checkbox" name="use_nma" id="use_nma" value="1" ${checked} />
                 Enable NotifyMyAndroid</label>
@@ -1637,22 +1639,22 @@
                 <legend>NotifyMyAndroid</legend>
                 <div class="checkbox">
                   <%
-                                            if lazylibrarian.CONFIG['NMA_ONSNATCH'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['NMA_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                   <label for="nma_onsnatch" class="control-label">
                     <input type="checkbox" id="nma_onsnatch" name="nma_onsnatch" value="1" ${checked} />
                     Notify on snatch?</label>
                 </div>
                 <div class="checkbox">
                   <%
-                                            if lazylibrarian.CONFIG['NMA_ONDOWNLOAD'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['NMA_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                   <label for="nma_ondownload" class="control-label">
                     <input type="checkbox" id="nma_ondownload" name="nma_ondownload" value="1" ${checked} />
                     Notify on download?</label>
@@ -1667,22 +1669,22 @@
                   <select id="nma_priority" name="nma_priority" class="form-control">
                     %for x in [-2,-1,0,1,2]:
                     <%
-                                                    if lazylibrarian.CONFIG['NMA_PRIORITY'] == x:
-                                                        nma_priority_selected = 'selected'
-                                                    else:
-                                                        nma_priority_selected = ''
+                        if lazylibrarian.CONFIG['NMA_PRIORITY'] == x:
+                            nma_priority_selected = 'selected'
+                        else:
+                            nma_priority_selected = ''
 
-                                                    if x == -2:
-                                                        nma_priority_value = 'Very Low'
-                                                    elif x == -1:
-                                                        nma_priority_value = 'Moderate'
-                                                    elif x == 0:
-                                                        nma_priority_value = 'Normal'
-                                                    elif x == 1:
-                                                        nma_priority_value = 'High'
-                                                    else:
-                                                        nma_priority_value = 'Emergency'
-                                                %>
+                        if x == -2:
+                            nma_priority_value = 'Very Low'
+                        elif x == -1:
+                            nma_priority_value = 'Moderate'
+                        elif x == 0:
+                            nma_priority_value = 'Normal'
+                        elif x == 1:
+                            nma_priority_value = 'High'
+                        else:
+                            nma_priority_value = 'Emergency'
+                    %>
                     <option value="${x}" ${nma_priority_selected}>${nma_priority_value}</option>
                     %endfor
                   </select>
@@ -1694,11 +1696,11 @@
             </div>
             <div class="checkbox">
               <%
-                                    if lazylibrarian.CONFIG['USE_SLACK'] == True:
-                                        checked = 'checked="checked"'
-                                    else:
-                                        checked = ''
-                                    %>
+                if lazylibrarian.CONFIG['USE_SLACK'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
               <label for="use_slack" class="control-label">
                 <input type="checkbox" id="use_slack" name="use_slack" value="1" ${checked} />
                 Enable Slack Notifications</label>
@@ -1708,22 +1710,22 @@
                 <legend>Slack</legend>
                 <div class="checkbox">
                   <%
-                                            if lazylibrarian.CONFIG['SLACK_NOTIFY_ONSNATCH'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['SLACK_NOTIFY_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                   <label for="slack_notify_onsnatch">
                     <input type="checkbox" id="slack_notify_onsnatch" name="slack_notify_onsnatch" value="1" ${checked} />
                     Notify on snatch</label>
                 </div>
                 <div class="checkbox">
                   <%
-                                            if lazylibrarian.CONFIG['SLACK_NOTIFY_ONDOWNLOAD'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['SLACK_NOTIFY_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                   <label for="slack_notify_ondownload">
                     <input type="checkbox" id="slack_notify_ondownload" name="slack_notify_ondownload" value="1" ${checked} />
                     Notify on download</label>
@@ -1739,11 +1741,11 @@
             </div>
             <div class="checkbox">
               <%
-                                    if lazylibrarian.CONFIG['USE_EMAIL'] == True:
-                                        checked = 'checked="checked"'
-                                    else:
-                                        checked = ''
-                                    %>
+                if lazylibrarian.CONFIG['USE_EMAIL'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
               <label for="use_email" class="control-label">
                 <input type="checkbox" id="use_email" name="use_email" value="1" ${checked} />
                 Enable Email Notifications</label>
@@ -1753,22 +1755,22 @@
                 <legend>Email</legend>
                 <div class="checkbox">
                   <%
-                                            if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONSNATCH'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                  %>
                   <label for="email_notify_onsnatch">
                     <input type="checkbox" id="email_notify_onsnatch" name="email_notify_onsnatch" value="1" ${checked} />
                     Notify on snatch</label>
                 </div>
                 <div class="checkbox">
                   <%
-                                            if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONDOWNLOAD'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                   <label for="email_notify_ondownload">
                     <input type="checkbox" id="email_notify_ondownload" name="email_notify_ondownload" value="1" ${checked} />
                     Notify on download</label>
@@ -1799,22 +1801,22 @@
                 </div>
                 <div class="checkbox">
                   <%
-                                            if lazylibrarian.CONFIG['EMAIL_SSL'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['EMAIL_SSL'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                   <label for="email_ssl">
                     <input type="checkbox" id="email_ssl" name="email_ssl" value="1" ${checked} />
                     SSL</label>
                 </div>
                 <div class="checkbox">
                   <%
-                                            if lazylibrarian.CONFIG['EMAIL_TLS'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['EMAIL_TLS'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                   <label for="email_tls">
                     <input type="checkbox" id="email_tls" name="email_tls" value="1" ${checked} />
                     TLS</label>
@@ -1826,11 +1828,11 @@
             </div>
             <div class="checkbox">
               <%
-                                    if lazylibrarian.CONFIG['USE_CUSTOM'] == True:
-                                        checked = 'checked="checked"'
-                                    else:
-                                        checked = ''
-                                    %>
+                if lazylibrarian.CONFIG['USE_CUSTOM'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
               <label for="use_custom" class="control-label">
                 <input type="checkbox" id="use_custom" name="use_custom" value="1" ${checked} />
                 Enable Custom Notifications</label>
@@ -1840,22 +1842,22 @@
                 <legend>Custom</legend>
                 <div class="checkbox">
                   <%
-                                            if lazylibrarian.CONFIG['CUSTOM_NOTIFY_ONSNATCH'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['CUSTOM_NOTIFY_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                   <label for="custom_notify_onsnatch">
                     <input type="checkbox" id="custom_notify_onsnatch" name="custom_notify_onsnatch" value="1" ${checked} />
                     Notify on snatch</label>
                 </div>
                 <div class="checkbox">
                   <%
-                                            if lazylibrarian.CONFIG['CUSTOM_NOTIFY_ONDOWNLOAD'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['CUSTOM_NOTIFY_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                   <label for="custom_notify_ondownload">
                     <input type="checkbox" id="custom_notify_ondownload" name="custom_notify_ondownload" value="1" ${checked} />
                     Notify on download</label>
