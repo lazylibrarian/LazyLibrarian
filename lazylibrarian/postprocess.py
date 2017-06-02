@@ -701,22 +701,30 @@ def import_book(pp_path=None, bookID=None):
         myDB = database.DBConnection()
         cmd = 'SELECT AuthorName,BookName from books,authors WHERE BookID="%s"' % bookID
         cmd += ' and books.AuthorID = authors.AuthorID'
-        if book_type == "AudioBook":
-            cmd += ' and AuxInfo = "AudioBook"'
-        else:
-            cmd += ' and AuxInfo != "AudioBook"'
         data = myDB.match(cmd)
         if data:
             was_snatched = myDB.match('SELECT BookID, NZBprov, AuxInfo FROM wanted WHERE BookID="%s"' % bookID)
+            if was_snatched:
+                if was_snatched['AuxInfo'] == 'AudioBook' and book_type != "AudioBook":
+                    logger.warn('Wanted AudioBook, got %s, rejecting' % book_type)
+                    return False
+                elif (was_snatched['AuxInfo'] == 'eBook' or was_snatched['AuxInfo'] == '') and book_type != "eBook":
+                    logger.warn('Wanted eBook, got %s, rejecting' % book_type)
+                    return False
+            else:
+                logger.debug('Bookid %s was not snatched so cannot check type, contains %s' % (bookID, book_file))
+
             authorname = data['AuthorName']
             authorname = ' '.join(authorname.split())  # ensure no extra whitespace
             bookname = data['BookName']
-
+            # DEST_FOLDER pattern is the same for ebook and audiobook
             if 'windows' in platform.system().lower() and '/' in lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']:
                 logger.warn('Please check your EBOOK_DEST_FOLDER setting')
                 lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'] = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('/', '\\')
 
             dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('$Author', authorname).replace('$Title', bookname)
+            # global_name is only used for ebooks to ensure book/cover/opf all have the same basename
+            # audiobooks are usually multi part so can't be renamed this way
             global_name = lazylibrarian.CONFIG['EBOOK_DEST_FILE'].replace('$Author', authorname).replace('$Title', bookname)
             global_name = unaccented(global_name)
             dest_path = unaccented_str(replace_all(dest_path, __dic__))
