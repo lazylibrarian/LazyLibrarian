@@ -150,7 +150,7 @@ def try_rename(directory, filename):
     # eg 'Stephen Hawking - A Brief History of Time (PDF&EPUB&MOB\xc4\xb0)\xb0\x06'
     # Return the new filename or empty string if failed
     if int(lazylibrarian.LOGLEVEL) > 2:
-        logger.debug("try_rename %s %s %s %s" % (type(filename), repr(filename), type(directory), repr(directoy)))
+        logger.debug("try_rename %s %s %s %s" % (type(filename), repr(filename), type(directory), repr(directory)))
 
     if isinstance(filename, str):
         try:
