@@ -196,7 +196,7 @@ def BlockProvider(who, why):
     for entry in lazylibrarian.PROVIDER_BLOCKLIST:
         if entry["name"] == who:
             lazylibrarian.PROVIDER_BLOCKLIST.remove(entry)
-    newentry = {"name": who, "resume": timenow + check_int(lazylibrarian.BLOCKLIST_TIMER, 3600), "reason": why}
+    newentry = {"name": who, "resume": timenow + check_int(lazylibrarian.CONFIG['BLOCKLIST_TIMER'], 3600), "reason": why}
     lazylibrarian.PROVIDER_BLOCKLIST.append(newentry)
     logger.debug("Provider Blocklist contains %s entries" % len(lazylibrarian.PROVIDER_BLOCKLIST))
 
