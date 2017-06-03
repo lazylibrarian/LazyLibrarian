@@ -191,13 +191,18 @@ def ProviderIsBlocked(name):
 
 
 def BlockProvider(who, why):
-    logger.info("Blocking provider %s for an hour because %s" % (who, why))
-    timenow = int(time.time())
-    for entry in lazylibrarian.PROVIDER_BLOCKLIST:
-        if entry["name"] == who:
-            lazylibrarian.PROVIDER_BLOCKLIST.remove(entry)
-    newentry = {"name": who, "resume": timenow + check_int(lazylibrarian.CONFIG['BLOCKLIST_TIMER'], 3600), "reason": why}
-    lazylibrarian.PROVIDER_BLOCKLIST.append(newentry)
+    delay = check_int(lazylibrarian.CONFIG['BLOCKLIST_TIMER'], 3600)
+    if delay == 0:
+        logger.debug('Not blocking %s,%s as timer is zero' % (who, why))
+    else:
+        mins = int(delay / 60) + (delay % 60 > 0)
+        logger.info("Blocking provider %s for %s minutes because %s" % (mins, who, why))
+        timenow = int(time.time())
+        for entry in lazylibrarian.PROVIDER_BLOCKLIST:
+            if entry["name"] == who:
+                lazylibrarian.PROVIDER_BLOCKLIST.remove(entry)
+        newentry = {"name": who, "resume": timenow + delay, "reason": why}
+        lazylibrarian.PROVIDER_BLOCKLIST.append(newentry)
     logger.debug("Provider Blocklist contains %s entries" % len(lazylibrarian.PROVIDER_BLOCKLIST))
 
 
