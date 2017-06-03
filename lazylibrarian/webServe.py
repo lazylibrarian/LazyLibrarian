@@ -649,7 +649,10 @@ class WebInterface(object):
         elif kwargs['source'] == "Audio":
             cmd += ' and AUDIOSTATUS !="Skipped" AND AUDIOSTATUS !="Ignored"'
         elif kwargs['source'] == "Author":
-            library = kwargs['library']
+            library = 'eBook'
+            if 'library' in kwargs:
+                library = kwargs['library']
+
             if library == 'AudioBook':
                 status_type = 'audiostatus'
             else:
@@ -660,6 +663,7 @@ class WebInterface(object):
                 cmd += ' and %s="Ignored"' % status_type
             else:
                 cmd += ' and %s != "Ignored"' % status_type
+
         if kwargs['source'] in ["Books", "Author", "Audio"]:
             # for these we need to check and filter on BookLang if set
             if 'booklang' in kwargs and kwargs['booklang'] != 'None':
