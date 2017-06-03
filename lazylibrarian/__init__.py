@@ -110,7 +110,7 @@ isbn_978_dict = {
 CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION',
                  'CURRENT_VERSION', 'COMMITS_BEHIND', 'INSTALL_TYPE', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER']
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
-                 'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES']
+                 'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB']
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
     'LOGDIR': ('str', 'General', ''),
@@ -392,7 +392,7 @@ def initialize():
         CONFIG, CFG, DBFILE, COMMIT_LIST, SCHED, INIT_LOCK, __INITIALIZED__, started, LOGLIST, LOGFULL, \
         UPDATE_MSG, CURRENT_TAB, CACHE_HIT, CACHE_MISS, LAST_LIBRARYTHING, LAST_GOODREADS, SHOW_SERIES, SHOW_MAGS, \
         SHOW_AUDIO, CACHEDIR, BOOKSTRAP_THEMELIST, MONTHNAMES, CONFIG_DEFINITIONS, isbn_979_dict, isbn_978_dict, \
-        AUTHORUPDATE_MSG, CONFIG_NONWEB
+        AUTHORUPDATE_MSG, CONFIG_NONWEB, CONFIG_NONDEFAULT
 
     with INIT_LOCK:
 
@@ -480,7 +480,7 @@ def initialize():
 
 
 def config_read(reloaded=False):
-    global CONFIG, CONFIG_DEFINITIONS, CONFIG_NONWEB, NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, \
+    global CONFIG, CONFIG_DEFINITIONS, CONFIG_NONWEB, CONFIG_NONDEFAULT, NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, \
             SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO
     # legacy name conversion
     if not CFG.has_option('General', 'ebook_dir'):
@@ -668,19 +668,29 @@ def config_read(reloaded=False):
 
 
 def config_write():
-    global SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO
+    global SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO, CONFIG_NONWEB, CONFIG_NONDEFAULT, LOGLEVEL
+
+    interface = CFG.get('General', 'http_look')
 
     for key in CONFIG_DEFINITIONS.keys():
         item_type, section, default = CONFIG_DEFINITIONS[key]
-        check_section(section)
-        value =  CONFIG[key]
-        if key in ['LOGDIR', 'EBOOK_DIR', 'AUDIO_DIR', 'ALTERNATE_DIR', 'DOWLOAD_DIR',
-                   'EBOOK_DEST_FILE', 'EBOOK_DEST_FOLDER', 'MAG_DEST_FILE', 'MAG_DEST_FOLDER']:
-            value = value.encode(SYS_ENCODING)
-        elif key in ['REJECT_WORDS', 'REJECT_AUDIO', 'MAG_TYPE', 'EBOOK_TYPE', 'AUDIOBOOK_TYPE']:
-            value = value.encode(SYS_ENCODING).lower()
-
+        if key not in CONFIG_NONWEB and not (interface == 'default' and key in CONFIG_NONDEFAULT):
+            check_section(section)
+            value =  CONFIG[key]
+            if key in ['LOGDIR', 'EBOOK_DIR', 'AUDIO_DIR', 'ALTERNATE_DIR', 'DOWLOAD_DIR',
+                       'EBOOK_DEST_FILE', 'EBOOK_DEST_FOLDER', 'MAG_DEST_FILE', 'MAG_DEST_FOLDER']:
+                value = value.encode(SYS_ENCODING)
+            elif key in ['REJECT_WORDS', 'REJECT_AUDIO', 'MAG_TYPE', 'EBOOK_TYPE', 'AUDIOBOOK_TYPE']:
+                value = value.encode(SYS_ENCODING).lower()
+        else:
+            # keep the old value
+            value = CFG.get(section, key.lower())
+            if CONFIG['LOGLEVEL'] > 2:
+                logger.debug("Leaving %s unchanged (%s)" % (key,value))
+            CONFIG[key] = value
         CFG.set(section, key.lower(), value)
+
+    LOGLEVEL = CONFIG['LOGLEVEL']
 
     # sanity check for typos...
     for key in CONFIG.keys():
