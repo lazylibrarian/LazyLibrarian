@@ -168,7 +168,7 @@ CONFIG_DEFINITIONS = {
     'INSTALL_TYPE': ('str', 'Git', ''),
     'CURRENT_VERSION': ('str', 'Git', ''),
     'LATEST_VERSION': ('str', 'Git', ''),
-    'COMMITS_BEHIND': ('str', 'Git', ''),
+    'COMMITS_BEHIND': ('int', 'Git', 0),
     'SAB_HOST': ('str', 'SABnzbd', ''),
     'SAB_PORT': ('int', 'SABnzbd', 0),
     'SAB_SUBDIR': ('str', 'SABnzbd', ''),

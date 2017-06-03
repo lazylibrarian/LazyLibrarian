@@ -263,6 +263,7 @@ class WebInterface(object):
         if 'current_tab' in kwargs:
             lazylibrarian.CURRENT_TAB = kwargs['current_tab']
 
+        interface = lazylibrarian.CFG.get('General', 'http_look')
         # now the config file entries
         for key in lazylibrarian.CONFIG_DEFINITIONS.keys():
             item_type, section, default = lazylibrarian.CONFIG_DEFINITIONS[key]
@@ -277,13 +278,15 @@ class WebInterface(object):
                     value = check_int(value, default)
                 lazylibrarian.CONFIG[key] = value
             else:
-                # no key returned for empty tickboxes...
+                # no key is returned for empty tickboxes...
                 if item_type == 'bool':
                     lazylibrarian.CONFIG[key] = 0
-                # or for strings not available in config html page
-                elif key not in lazylibrarian.CONFIG_NONWEB and key not in lazylibrarian.CONFIG_GIT:
-                    lazylibrarian.CONFIG[key] = ''
-                elif lazylibrarian.CONFIG['HTTP_LOOK'] == 'default' and key not in lazylibrarian.CONFIG_NONDEFAULT:
+                # or for empty strings, or strings not available in config html page
+                elif key in lazylibrarian.CONFIG_NONWEB or key in lazylibrarian.CONFIG_GIT:
+                    pass
+                elif interface == 'default' and key in lazylibrarian.CONFIG_NONDEFAULT:
+                    pass
+                else:
                     lazylibrarian.CONFIG[key] = ''
 
         myDB = database.DBConnection()

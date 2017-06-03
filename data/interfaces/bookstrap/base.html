@@ -127,11 +127,11 @@
           % elif lazylibrarian.CONFIG['CURRENT_VERSION'] != lazylibrarian.CONFIG['LATEST_VERSION']:
               % if lazylibrarian.CONFIG['LATEST_VERSION'] == 'Not_Available_From_GitHUB':
                   msg = '<div class="input-group">Unable to get latest version from GITHub</div>'
-              % elif parseInt(lazylibrarian.CONFIG['COMMITS_BEHIND']) < 0:
+              % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] < 0:
                   msg = '<div class="input-group">Running a local updated version. Push changes to GITHub or rollback to Master release</div>'
-              % elif parseInt(lazylibrarian.CONFIG['COMMITS_BEHIND']) > 1:
+              % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] > 1:
                   msg = '<div class="input-group">New version available. You are ${lazylibrarian.CONFIG['COMMITS_BEHIND']} commits behind.</div><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the update message for 24 hours" id="ignoreUpdate">Ignore</a>&nbsp;<a href="update" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Update to the latest release">Update</a></div>'
-              % elif parseInt(lazylibrarian.CONFIG['COMMITS_BEHIND']) == 1:
+              % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] == 1:
                   msg = '<div class="input-group">New version available. You are one commit behind.</div><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the update message for 24 hours" id="ignoreUpdate">Ignore</a>&nbsp;<a href="update" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Update to the latest release">Update</a></div>'
               % endif
           % endif
