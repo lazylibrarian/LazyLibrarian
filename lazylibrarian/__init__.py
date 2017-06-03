@@ -670,7 +670,7 @@ def config_read(reloaded=False):
 def config_write():
     global SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO, CONFIG_NONWEB, CONFIG_NONDEFAULT, LOGLEVEL
 
-    interface = CONFIG['HTTP_LOOK']
+    interface = CFG.get('General', 'http_look')
 
     for key in CONFIG_DEFINITIONS.keys():
         item_type, section, default = CONFIG_DEFINITIONS[key]
@@ -687,6 +687,7 @@ def config_write():
             value = CFG.get(section, key.lower())
             if CONFIG['LOGLEVEL'] > 2:
                 logger.debug("Leaving %s unchanged (%s)" % (key,value))
+            CONFIG[key] = value
         CFG.set(section, key.lower(), value)
 
     LOGLEVEL = CONFIG['LOGLEVEL']
