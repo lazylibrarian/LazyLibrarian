@@ -20,6 +20,9 @@ from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
 
 
 class CustomNotifier:
+    def __init__(self):
+        pass
+
     @staticmethod
     def _notify(message, event, force=False):
 

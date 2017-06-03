@@ -24,6 +24,9 @@ from lazylibrarian.formatter import check_int
 
 
 class EmailNotifier:
+    def __init__(self):
+        pass
+
     @staticmethod
     def _notify(message, event, force=False):
 

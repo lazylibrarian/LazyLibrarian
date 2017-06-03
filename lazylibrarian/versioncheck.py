@@ -366,7 +366,7 @@ def updateVersionFile(new_version_id):
             ver_file = open(version_path, 'w')
             ver_file.write(new_version_id)
             ver_file.close()
-            lazylibrarian.CONFIG['CURRENT_VERSION'] == new_version_id
+            lazylibrarian.CONFIG['CURRENT_VERSION'] = new_version_id
             return True
         except IOError as e:
             logger.error(

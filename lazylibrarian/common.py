@@ -13,17 +13,17 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
+import datetime
 import os
 import platform
 import shutil
-import time
-import datetime
-import traceback
 import threading
+import time
+import traceback
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.formatter import plural, next_run, is_valid_booktype, datecompare, getList
+from lazylibrarian.formatter import plural, next_run, is_valid_booktype, datecompare
 
 USER_AGENT = 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
 # Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36

@@ -845,7 +845,7 @@ class WebInterface(object):
             bookName = bookdata["BookName"]
             logger.info(u'Missing book %s,%s' % (authorName, bookName))
         else:
-            logger.warn(u'Missing book %s' % (bookid))
+            logger.warn(u'Missing book %s' % bookid)
 
     @cherrypy.expose
     def editAuthor(self, authorid=None):
@@ -1439,7 +1439,7 @@ class WebInterface(object):
             # if the directory is now empty, delete that too
             try:
                 os.rmdir(os.path.dirname(issuefile))
-            except Exception:
+            except OSError:
                 logger.debug('Directory %s not deleted, not empty?' % os.path.dirname(issuefile))
             return True
         except Exception as e:
@@ -1479,7 +1479,7 @@ class WebInterface(object):
                         try:
                             os.rmdir(magdir)
                             logger.debug(u'Magazine directory %s deleted from disc' % magdir)
-                        except Exception:
+                        except OSError:
                             logger.debug(u'Magazine directory %s is not empty' % magdir)
                     logger.info(u'Magazine %s deleted from disc' % item)
                 if action == "Remove" or action == "Delete":
