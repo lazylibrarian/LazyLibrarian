@@ -27,6 +27,9 @@ from pushbullet2 import PushBullet
 
 class PushbulletNotifier:
 
+    def __init__(self):
+        pass
+
     @staticmethod
     def _sendPushbullet(message=None, event=None, pushbullet_token=None, pushbullet_deviceid=None, force=False):
 

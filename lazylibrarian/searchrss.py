@@ -35,7 +35,7 @@ def cron_search_rss_book():
         search_rss_book()
 
 
-def search_rss_book(books=None):
+def search_rss_book(books=None, library=None):
     """
     books is a list of new books to add, or None for backlog search
     library is "eBook" or "AudioBook" or None to search all book types
@@ -168,6 +168,7 @@ def search_rss_book(books=None):
 
         logger.info('RSS Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
 
+        searchlist = []
         for searchbook in searchbooks:
             # searchterm is only used for display purposes
             searchterm = searchbook['AuthorName'] + ' ' + searchbook['BookName']

@@ -89,7 +89,7 @@ class DBConnection:
         try:
             # if there are no results, action() returns None and .fetchone() fails
             sqlResults = self.action(query, args).fetchone()
-        except Exception:
+        except sqlite3.Error:
             return []
         if not sqlResults:
             return []
@@ -100,7 +100,7 @@ class DBConnection:
         try:
             # if there are no results, action() returns None and .fetchall() fails
             sqlResults = self.action(query, args).fetchall()
-        except Exception:
+        except sqlite3.Error:
             return []
         if not sqlResults:
             return []

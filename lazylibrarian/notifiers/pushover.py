@@ -28,6 +28,9 @@ from lazylibrarian.formatter import unaccented
 
 class PushoverNotifier:
 
+    def __init__(self):
+        pass
+
     @staticmethod
     def _sendPushover(message=None, event=None, pushover_apitoken=None, pushover_keys=None,
                       pushover_device=None, notificationType=None, method=None, force=False):

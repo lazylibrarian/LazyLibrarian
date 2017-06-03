@@ -32,6 +32,9 @@ API_URL = 'https://new.boxcar.io/api/notifications'
 
 
 class BoxcarNotifier:
+    def __init__(self):
+        pass
+
     def _sendBoxcar(self, msg, title, token, subscribe=False):
         """
         Sends a boxcar notification to the address provided

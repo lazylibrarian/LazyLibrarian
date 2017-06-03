@@ -22,6 +22,9 @@ from lazylibrarian.formatter import unaccented
 
 class SlackNotifier:
 
+    def __init__(self):
+        pass
+
     @staticmethod
     def _sendSlack(message=None, event=None, slack_token=None,
                    method=None, force=False):

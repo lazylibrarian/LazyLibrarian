@@ -24,6 +24,7 @@ from lazylibrarian import logger, common, formatter
 try:
     from urlparse import parse_qsl  # @UnusedImport
 except:
+    # noinspection PyDeprecation
     from cgi import parse_qsl  # @Reimport
 
 import lib.oauth2 as oauth
@@ -31,6 +32,9 @@ import lib.pythontwitter as twitter
 
 
 class TwitterNotifier:
+
+    def __init__(self):
+        pass
 
     consumer_key = "208JPTMMnZjtKWA4obcH8g"
     consumer_secret = "BKaHzaQRd5PK6EH8EqPZ1w8mz6NSk9KErArarinHutk"

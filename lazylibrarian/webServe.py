@@ -263,6 +263,7 @@ class WebInterface(object):
         if 'current_tab' in kwargs:
             lazylibrarian.CURRENT_TAB = kwargs['current_tab']
 
+        interface = lazylibrarian.CFG.get('General', 'http_look')
         # now the config file entries
         for key in lazylibrarian.CONFIG_DEFINITIONS.keys():
             item_type, section, default = lazylibrarian.CONFIG_DEFINITIONS[key]
@@ -277,13 +278,15 @@ class WebInterface(object):
                     value = check_int(value, default)
                 lazylibrarian.CONFIG[key] = value
             else:
-                # no key returned for empty tickboxes...
+                # no key is returned for empty tickboxes...
                 if item_type == 'bool':
                     lazylibrarian.CONFIG[key] = 0
-                # or for strings not available in config html page
-                elif key not in lazylibrarian.CONFIG_NONWEB and key not in lazylibrarian.CONFIG_GIT:
-                    lazylibrarian.CONFIG[key] = ''
-                elif lazylibrarian.CONFIG['HTTP_LOOK'] == 'default' and key not in lazylibrarian.CONFIG_NONDEFAULT:
+                # or for empty strings, or strings not available in config html page
+                elif key in lazylibrarian.CONFIG_NONWEB or key in lazylibrarian.CONFIG_GIT:
+                    pass
+                elif interface == 'default' and key in lazylibrarian.CONFIG_NONDEFAULT:
+                    pass
+                else:
                     lazylibrarian.CONFIG[key] = ''
 
         myDB = database.DBConnection()
@@ -842,7 +845,7 @@ class WebInterface(object):
             bookName = bookdata["BookName"]
             logger.info(u'Missing book %s,%s' % (authorName, bookName))
         else:
-            logger.warn(u'Missing book %s' % (bookid))
+            logger.warn(u'Missing book %s' % bookid)
 
     @cherrypy.expose
     def editAuthor(self, authorid=None):
@@ -1436,7 +1439,7 @@ class WebInterface(object):
             # if the directory is now empty, delete that too
             try:
                 os.rmdir(os.path.dirname(issuefile))
-            except Exception:
+            except OSError:
                 logger.debug('Directory %s not deleted, not empty?' % os.path.dirname(issuefile))
             return True
         except Exception as e:
@@ -1476,7 +1479,7 @@ class WebInterface(object):
                         try:
                             os.rmdir(magdir)
                             logger.debug(u'Magazine directory %s deleted from disc' % magdir)
-                        except Exception:
+                        except OSError:
                             logger.debug(u'Magazine directory %s is not empty' % magdir)
                     logger.info(u'Magazine %s deleted from disc' % item)
                 if action == "Remove" or action == "Delete":

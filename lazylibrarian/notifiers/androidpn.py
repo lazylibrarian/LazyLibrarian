@@ -28,6 +28,9 @@ from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
 
 class AndroidPNNotifier:
 
+    def __init__(self):
+        pass
+
     def _sendAndroidPN(self, title, msg, url, username, broadcast):
 
         # build up the URL and parameters

@@ -371,7 +371,7 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
                 except Exception:
                     try:
                         errmsg = result.split('<error>')[1].split('</error>')[0]
-                    except Exception:
+                    except IndexError:
                         errmsg = "Unknown Error"
                     # if no workpage link, try isbn instead
                     if item['BookISBN']:
@@ -387,7 +387,7 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
                                 # no workpage link found by isbn
                                 try:
                                     errmsg = result.split('<error>')[1].split('</error>')[0]
-                                except Exception:
+                                except IndexError:
                                     errmsg = "Unknown Error"
                                 # still cache if whatwork returned a result without a link, so we don't keep retrying
                                 logger.debug("getBookWork: Librarything: [%s] for ISBN %s" %
