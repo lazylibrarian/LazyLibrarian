@@ -145,6 +145,11 @@ def main():
     logger.debug('Current Version [%s] - Latest remote version [%s] - Install type [%s]' % (
         lazylibrarian.CONFIG['CURRENT_VERSION'], lazylibrarian.CONFIG['LATEST_VERSION'], lazylibrarian.CONFIG['INSTALL_TYPE']))
 
+    if not lazylibrarian.CONFIG['GIT_UPDATED']:
+        if lazylibrarian.CONFIG['CURRENT_VERSION'] == lazylibrarian.CONFIG['LATEST_VERSION']:
+            if lazylibrarian.CONFIG['INSTALL_TYPE'] == 'git' and lazylibrarian.CONFIG['COMMITS_BEHIND'] == 0:
+                lazylibrarian.CONFIG['GIT_UPDATED'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+
     version_file = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
     if not os.path.isfile(version_file) and lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
         # User may be running an old source zip, so force update
