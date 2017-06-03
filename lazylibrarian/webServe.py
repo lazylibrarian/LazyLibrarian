@@ -281,11 +281,10 @@ class WebInterface(object):
                 if item_type == 'bool':
                     lazylibrarian.CONFIG[key] = 0
                 # or for strings not available in config html page
+                elif key not in lazylibrarian.CONFIG_NONWEB and key not in lazylibrarian.CONFIG_GIT:
+                    lazylibrarian.CONFIG[key] = ''
                 elif lazylibrarian.CONFIG['HTTP_LOOK'] == 'default' and key not in lazylibrarian.CONFIG_NONDEFAULT:
                     lazylibrarian.CONFIG[key] = ''
-                elif key not in lazylibrarian.CONFIG_NONWEB:
-                    lazylibrarian.CONFIG[key] = ''
-
 
         myDB = database.DBConnection()
         magazines = myDB.select('SELECT Title,Reject,Regex from magazines ORDER by upper(Title)')

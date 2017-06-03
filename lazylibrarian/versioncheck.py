@@ -275,6 +275,7 @@ def getLatestVersion_FromGit():
                 if hasattr(e, 'code') and str(e.code) == '304':  # Not modified
                     latest_version = lazylibrarian.CONFIG['CURRENT_VERSION']
                     logger.debug('(getLatestVersion_FromGit) Not modified, currently on Latest Version')
+                    lazylibrarian.CONFIG['GIT_UPDATED'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
                 else:
                     logger.warn('(getLatestVersion_FromGit) Could not get the latest commit from github')
                     logger.debug('git error for %s: %s' % (url, errmsg))
@@ -330,6 +331,7 @@ def getCommitDifferenceFromGit():
             logger.info('[VersionCheck] -  New version is available. You are one commit behind')
         elif commits == 0:
             logger.info('[VersionCheck] -  lazylibrarian is up to date ')
+            lazylibrarian.CONFIG['GIT_UPDATED'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
         elif commits < 0:
             logger.info(
                 '[VersionCheck] -  You are running an unknown version of lazylibrarian. Run the updater to identify your version')
@@ -364,6 +366,7 @@ def updateVersionFile(new_version_id):
             ver_file = open(version_path, 'w')
             ver_file.write(new_version_id)
             ver_file.close()
+            lazylibrarian.CONFIG['CURRENT_VERSION'] == new_version_id
             return True
         except IOError as e:
             logger.error(
@@ -396,6 +399,7 @@ def update():
                 logger.info('(update) No update available, not updating')
                 logger.info('(update) Output: ' + str(output))
                 success = False
+                lazylibrarian.CONFIG['GIT_UPDATED'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
             elif line.endswith('Aborting.'):
                 logger.error('(update) Unable to update from git: ' + line)
                 logger.info('(update) Output: ' + str(output))
@@ -469,7 +473,7 @@ def update():
 
         # Update version.txt
         updateVersionFile(lazylibrarian.CONFIG['LATEST_VERSION'])
-        lazylibrarian.CONFIG['GIT_UPDATED'] = time.ctime()
+        lazylibrarian.CONFIG['GIT_UPDATED'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
         return True
     else:
         logger.error("(update) Cannot perform update - Install Type not set")

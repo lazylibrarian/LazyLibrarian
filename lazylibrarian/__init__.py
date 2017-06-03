@@ -107,8 +107,9 @@ isbn_978_dict = {
 # Not all are accessible from the web ui
 # Any undefined on startup will be set to the default value
 # Any _NOT_ in the web ui will remain unchanged on config save
-CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION',
-                 'CURRENT_VERSION', 'COMMITS_BEHIND', 'INSTALL_TYPE', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER']
+CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDATED', 'CURRENT_VERSION',
+                'COMMITS_BEHIND', 'INSTALL_TYPE']
+CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER']
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
                  'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB']
 CONFIG_DEFINITIONS = {
@@ -392,7 +393,7 @@ def initialize():
         CONFIG, CFG, DBFILE, COMMIT_LIST, SCHED, INIT_LOCK, __INITIALIZED__, started, LOGLIST, LOGFULL, \
         UPDATE_MSG, CURRENT_TAB, CACHE_HIT, CACHE_MISS, LAST_LIBRARYTHING, LAST_GOODREADS, SHOW_SERIES, SHOW_MAGS, \
         SHOW_AUDIO, CACHEDIR, BOOKSTRAP_THEMELIST, MONTHNAMES, CONFIG_DEFINITIONS, isbn_979_dict, isbn_978_dict, \
-        AUTHORUPDATE_MSG, CONFIG_NONWEB, CONFIG_NONDEFAULT
+        AUTHORUPDATE_MSG, CONFIG_NONWEB, CONFIG_NONDEFAULT, CONFIG_GIT
 
     with INIT_LOCK:
 
@@ -481,7 +482,7 @@ def initialize():
 
 def config_read(reloaded=False):
     global CONFIG, CONFIG_DEFINITIONS, CONFIG_NONWEB, CONFIG_NONDEFAULT, NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, \
-            SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO
+            CONFIG_GIT, SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO
     # legacy name conversion
     if not CFG.has_option('General', 'ebook_dir'):
         ebook_dir = check_setting('str', 'General', 'destination_dir', '')
@@ -668,7 +669,7 @@ def config_read(reloaded=False):
 
 
 def config_write():
-    global SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO, CONFIG_NONWEB, CONFIG_NONDEFAULT, LOGLEVEL
+    global SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO, CONFIG_NONWEB, CONFIG_NONDEFAULT, CONFIG_GIT, LOGLEVEL
 
     interface = CFG.get('General', 'http_look')
 
@@ -689,8 +690,6 @@ def config_write():
                 logger.debug("Leaving %s unchanged (%s)" % (key,value))
             CONFIG[key] = value
         CFG.set(section, key.lower(), value)
-
-    LOGLEVEL = CONFIG['LOGLEVEL']
 
     # sanity check for typos...
     for key in CONFIG.keys():
