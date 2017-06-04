@@ -98,8 +98,8 @@ def addAuthorNameToDB(author=None, refresh=False, addbooks=True):
                         check_exist_author = myDB.match('SELECT AuthorID FROM authors where AuthorID="%s"' % authorid)
                         if check_exist_author:
                             new = True
-                    except Exception:
-                        logger.debug('Failed to add author [%s] to db' % author)
+                    except Exception as e:
+                        logger.debug('Failed to add author [%s] to db: %s' % (author, str(e)))
     # check author exists in db, either newly loaded or already there
     if not check_exist_author:
         logger.debug("Failed to match author [%s] in database" % author)

@@ -82,8 +82,10 @@ class EmailNotifier:
         if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONDOWNLOAD']:
             self._notify(message=title, event=notifyStrings[NOTIFY_DOWNLOAD])
 
-    def test_notify(self, title="Test"):
-        return self._notify(message="This is a test notification from LazyLibrarian", event=title, force=True)
+    def test_notify(self, title='Test'):
+        message = u"This is a test notification from LazyLibrarian"
+        # noinspection PyTypeChecker
+        return self._notify(message=message, event=title, force=True)
 
 
 notifier = EmailNotifier

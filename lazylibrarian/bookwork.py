@@ -69,8 +69,8 @@ def setBookAuthors(book):
                         myDB.action('INSERT into bookauthors (AuthorID, BookID) VALUES ("%s", "%s")' %
                                    (authorid, book['bookid']), suppress='UNIQUE')
                         newrefs += 1
-    except:
-        logger.debug("Error parsing authorlist for " + book['bookname'])
+    except Exception as e:
+        logger.debug("Error parsing authorlist for %s: %s" % (book['bookname'], str(e)))
     return newauthors, newrefs
 
 

@@ -185,9 +185,19 @@ def processResultList(resultlist, book, searchtype):
         torBook_match = fuzz.token_set_ratio(title, torTitle)
         logger.debug(u"TOR author/book Match: %s/%s for %s at %s" %
                     (torAuthor_match, torBook_match, torTitle, tor['tor_prov']))
-        tor_url = tor['tor_url']
 
         rejected = False
+
+        tor_url = tor['tor_url']
+        if not rejected:
+            if tor_url is None:
+                rejected = True
+                logger.debug("Rejecting %s, no URL found" % torTitle)
+
+        if not rejected:
+            if not tor_url.startswith('http'):
+                rejected = True
+                logger.debug("Rejecting %s, invalid URL" % torTitle)
 
         already_failed = myDB.match('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' % tor_url)
         if already_failed:
@@ -294,7 +304,7 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
     downloadID = False
     Source = "DIRECT"
     full_url = tor_url  # keep the url as stored in "wanted" table
-
+    logger.debug("Starting Direct Download for [%s]" % bookname)
     request = urllib2.Request(ur'%s' % tor_url)
     if lazylibrarian.CONFIG['PROXY_HOST']:
         request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])

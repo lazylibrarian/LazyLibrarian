@@ -846,7 +846,7 @@ def dbupgrade(db_current_version):
             lazylibrarian.UPDATE_MSG = ''
 
         except Exception:
-            msg = 'Unhandled exception in database update: %s' % traceback.format_exc()
+            msg = 'Unhandled exception in database upgrade: %s' % traceback.format_exc()
             upgradelog.write("%s: %s\n" % (time.ctime(), msg))
             logger.error(msg)
             lazylibrarian.UPDATE_MSG = ''

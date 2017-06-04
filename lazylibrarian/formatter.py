@@ -151,7 +151,7 @@ def nzbdate2format(nzbdate):
             month = 1  # hopefully won't hit this, but return a default value rather than error
         year = nzbdate.split()[3]
         return "%s-%02d-%s" % (year, month, day)
-    except Exception:
+    except IndexError:
         return "1970-01-01"
 
 

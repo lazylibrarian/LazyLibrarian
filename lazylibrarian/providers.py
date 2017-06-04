@@ -83,7 +83,7 @@ def get_capabilities(provider):
         if success:
             try:
                 data = ElementTree.fromstring(source_xml)
-            except Exception:
+            except ElementTree.ParseError:
                 data = ''
                 logger.debug(u"Error parsing xml from %s, %s" % (URL, source_xml))
         else:

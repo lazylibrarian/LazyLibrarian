@@ -37,11 +37,11 @@ from lazylibrarian import logger
 def magnet2torrent(magnet, output_name=None):
     try:
         import libtorrent as lt
-    except Exception:
+    except ImportError:
         try:
             # noinspection PyUnresolvedReferences
             from lib.libtorrent import libtorrent as lt
-        except Exception:
+        except ImportError:
             logger.error("Unable to import libtorrent, disabling magnet conversion")
             lazylibrarian.CONFIG['TOR_CONVERT_MAGNET'] = False
             return False

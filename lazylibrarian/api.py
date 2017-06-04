@@ -18,6 +18,7 @@ import json
 import os
 import shutil
 import threading
+import ConfigParser
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -782,7 +783,7 @@ class Api(object):
             return
         try:
             self.data = '["%s"]' % lazylibrarian.CFG.get(kwargs['group'], kwargs['name'])
-        except Exception:
+        except ConfigParser.Error:
             self.data = 'No CFG entry for %s: %s' % (kwargs['group'], kwargs['name'])
 
     @staticmethod

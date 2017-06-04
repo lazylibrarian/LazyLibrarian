@@ -130,7 +130,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
         if cache == "JSON":
             try:
                 source = json.load(open(hashfilename))
-            except Exception:
+            except ValueError:
                 logger.debug(u"Error decoding json from %s" % hashfilename)
                 return None, False
         elif cache == "XML":
@@ -139,7 +139,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
             if result and result.startswith('<?xml'):
                 try:
                     source = ElementTree.fromstring(result)
-                except Exception:
+                except ElementTree.ParseError:
                     source = None
             if source is None:
                 logger.debug(u"Error reading xml from %s" % hashfilename)
@@ -162,7 +162,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
                 if result and result.startswith('<?xml'):
                     try:
                         source = ElementTree.fromstring(result)
-                    except Exception:
+                    except ElementTree.ParseError:
                         logger.debug(u"Error parsing xml from %s" % url)
                         source = None
                 if source is not None:

@@ -158,12 +158,12 @@ def create_cover(issuefile=None, refresh=False):
                 # noinspection PyUnresolvedReferences,PyUnresolvedReferences,PyUnresolvedReferences
                 from wand.image import Image
                 interface = "wand"
-            except Exception:
+            except ImportError:
                 try:
                     # No PythonMagick in python3
                     import PythonMagick
                     interface = "pythonmagick"
-                except Exception:
+                except ImportError:
                     interface = ""
             try:
                 if len(lazylibrarian.CONFIG['IMP_CONVERT']):  # allow external convert to override libraries
@@ -321,8 +321,8 @@ def magazineScan():
                     else:
                         logger.debug("Pattern match failed for [%s]" % fname)
                         continue
-                except Exception:
-                    logger.debug("Invalid name format for [%s]" % fname)
+                except Exception as e:
+                    logger.debug("Invalid name format for [%s] %s" % (fname, str(e)))
                     continue
 
                 logger.debug("Found Issue %s" % fname)
