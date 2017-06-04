@@ -620,11 +620,21 @@ def config_read(reloaded=False):
     CONFIG['REJECT_AUDIO'] = CONFIG['REJECT_AUDIO'].lower()
 
     myDB = database.DBConnection()
+    # check if we have an active database yet, not a fresh install
+    result = myDB.match('PRAGMA user_version')
+    if result:
+        version = result[0]
+    else:
+        version = 0
+
     ###################################################################
     # ensure all these are boolean 1 0, not True False for javascript #
     ###################################################################
     # Suppress series tab if there are none and user doesn't want to add any
-    series_list = myDB.select('SELECT SeriesID from series')
+    series_list = ''
+    if version: # if zero, there is no series table yet
+        series_list = myDB.select('SELECT SeriesID from series')
+
     SHOW_SERIES = len(series_list)
     if CONFIG['ADD_SERIES']:
         SHOW_SERIES = 1
