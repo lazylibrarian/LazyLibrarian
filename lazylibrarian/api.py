@@ -782,7 +782,7 @@ class Api(object):
             return
         try:
             self.data = '["%s"]' % lazylibrarian.CFG.get(kwargs['group'], kwargs['name'])
-        except ConfigParser.Error:
+        except Exception:
             self.data = 'No CFG entry for %s: %s' % (kwargs['group'], kwargs['name'])
 
     @staticmethod
