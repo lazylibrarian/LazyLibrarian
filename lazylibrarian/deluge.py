@@ -99,13 +99,13 @@ def addTorrent(link, data=None):
             retid = _add_torrent_file(result)
             """
         # elif link.endswith('.torrent') or data:
-        elif link and not link.startswith('http'):
+        elif link:
             if data:
                 logger.debug('Deluge: Getting .torrent data')
                 torrentfile = data
             else:
                 logger.debug('Deluge: Getting .torrent file')
-                with open(link, 'rb') as f:
+                with open(link, str('rb')) as f:
                     torrentfile = f.read()
             # Extract torrent name from .torrent
             try:
@@ -113,7 +113,7 @@ def addTorrent(link, data=None):
                 name_length = int(re.findall('name([0-9]*):.*?:', torrentfile)[0])
                 logger.debug('Deluge: Getting torrent name')
                 name = re.findall('name[0-9]*:(.*?):', torrentfile)[0][:name_length]
-            except Exception:
+            except (re.error, IndexError, TypeError):
                 logger.debug('Deluge: Could not get torrent name, getting file name')
                 # get last part of link/path (name only)
                 name = link.split('\\')[-1].split('/')[-1]

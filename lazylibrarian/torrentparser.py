@@ -581,8 +581,9 @@ def GEN(book=None):
                         new_soup = BeautifulSoup(bookresult)
                         for link in new_soup.findAll('a'):
                             output = link.get('href')
-                            if output and output.startswith('/get.php'):
-                                url = output
+                            if output and '/get.php' in output:
+                                url = '/get.php' + output.split('/get.php')[1]
+                                print url
                                 break
                         if url:
                             url = url_fix(host + url)

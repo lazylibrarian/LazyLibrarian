@@ -157,7 +157,7 @@ def try_rename(directory, filename):
             # try decode first in case we called listdir with str instead of unicode
             filename = filename.decode(lazylibrarian.SYS_ENCODING)
             return filename
-        except Exception:
+        except UnicodeDecodeError:
             logger.error("Unable to convert %s to sys encoding" % repr(filename))
 
     # strip out any non-ascii characters and try to rename
@@ -165,7 +165,7 @@ def try_rename(directory, filename):
     try:
         os.rename(os.path.join(directory, filename), os.path.join(directory, newfname))
         return newfname
-    except Exception:
+    except OSError:
         logger.error("Unable to rename %s" % repr(filename))
         return ""
 
@@ -313,7 +313,7 @@ def processDir(reset=False):
                             if isinstance(pp_path, str):
                                 try:
                                     pp_path = pp_path.decode(lazylibrarian.SYS_ENCODING)
-                                except:
+                                except UnicodeDecodeError:
                                     logger.error("Unable to convert %s to sys encoding" % repr(pp_path))
                                     pp_path = "Failed pp_path"
 
@@ -448,7 +448,8 @@ def processDir(reset=False):
                                 logger.debug('Match: %s%%  %s' % (match[0], match[1]))
                     continue
 
-                success, dest_file = processDestination(pp_path, dest_path, authorname, bookname, global_name, book['BookID'])
+                success, dest_file = processDestination(pp_path, dest_path, authorname, bookname,
+                                                        global_name, book['BookID'], book_type)
                 if success:
                     logger.debug("Processed %s: %s, %s" % (book['NZBmode'], global_name, book['NZBurl']))
                     # update nzbs, only update the snatched ones in case multiple matches for same book/magazine issue
@@ -571,7 +572,7 @@ def processDir(reset=False):
                             with open(fname, 'a'):
                                 os.utime(fname, None)
                             logger.error('Warning - Residual files remain in %s' % pp_path)
-                        except:
+                        except OSError:
                             logger.error('Warning - Unable to create bts file. Residual files remain in %s' % pp_path)
 
         # Check for any books in download that weren't marked as snatched, but have a LL.(bookid)
@@ -633,7 +634,7 @@ def processDir(reset=False):
                     when_snatched = time.strptime(snatch['NZBdate'], '%Y-%m-%d %H:%M:%S')
                     when_snatched = time.mktime(when_snatched)
                     diff = time.time() - when_snatched  # time difference in seconds
-                except:
+                except ValueError:
                     diff = 0
                 hours = int(diff / 3600)
                 if hours >= lazylibrarian.CONFIG['TASK_AGE']:
@@ -725,16 +726,28 @@ def import_book(pp_path=None, bookID=None):
         cmd += ' and books.AuthorID = authors.AuthorID'
         data = myDB.match(cmd)
         if data:
-            was_snatched = myDB.match('SELECT BookID, NZBprov, AuxInfo FROM wanted WHERE BookID="%s"' % bookID)
-            if was_snatched:
-                if was_snatched['AuxInfo'] == 'AudioBook' and book_type != "AudioBook":
-                    logger.warn('Wanted AudioBook, got %s, rejecting' % book_type)
-                    return False
-                elif (was_snatched['AuxInfo'] == 'eBook' or was_snatched['AuxInfo'] == '') and book_type != "eBook":
-                    logger.warn('Wanted eBook, got %s, rejecting' % book_type)
-                    return False
-            else:
-                logger.debug('Bookid %s was not snatched so cannot check type, contains %s' % (bookID, book_file))
+            cmd = 'SELECT BookID, NZBprov, AuxInfo FROM wanted WHERE BookID="%s" and Status="Snatched"' % bookID
+            # we may have snatched an ebook and audiobook of the same title/id
+            was_snatched = myDB.select(cmd)
+            want_audio = False
+            want_ebook = False
+            for item in was_snatched:
+                if item['AuxInfo'] == 'AudioBook':
+                    want_audio = True
+                elif item['AuxInfo'] == 'eBook' or item['AuxInfo'] == '':
+                    want_ebook = True
+
+            match = False
+            if want_audio and book_type == "AudioBook":
+                match = True
+            elif want_ebook and book_type == "eBook":
+                match = True
+            elif not was_snatched:
+                logger.debug('Bookid %s was not snatched so cannot check type, contains %s' % (bookID, book_type))
+                match = True
+            if not match:
+                logger.debug('Bookid %s, failed to find valid %s' % (bookID, book_type))
+                return False
 
             authorname = data['AuthorName']
             authorname = ' '.join(authorname.split())  # ensure no extra whitespace
@@ -755,7 +768,8 @@ def import_book(pp_path=None, bookID=None):
             if int(lazylibrarian.LOGLEVEL) > 2:
                 logger.debug("processDestination %s" % pp_path)
 
-            success, dest_file = processDestination(pp_path, dest_path, authorname, bookname, global_name, bookID)
+            success, dest_file = processDestination(pp_path, dest_path, authorname, bookname,
+                                                    global_name, bookID, book_type)
             if success:
                 # update nzbs
                 snatched_from = "from " + was_snatched['NZBprov'] if was_snatched else "manually added"
@@ -808,7 +822,7 @@ def import_book(pp_path=None, bookID=None):
             else:
                 logger.error('Postprocessing for %s has failed: %s' % (global_name, dest_file))
                 logger.error('Warning - Residual files remain in %s.fail' % pp_path)
-                was_snatched = myDB.match('SELECT BookID FROM wanted WHERE BookID="%s"' % bookID)
+                was_snatched = myDB.match('SELECT BookID FROM wanted WHERE BookID="%s" and Status="Snatched"' % bookID)
                 if was_snatched:
                     controlValueDict = {"BookID": bookID}
                     newValueDict = {"Status": "Failed", "NZBDate": now()}
@@ -829,8 +843,9 @@ def import_book(pp_path=None, bookID=None):
                         with open(fname, 'a'):
                             os.utime(fname, None)
                         logger.error('Warning - Residual files remain in %s' % pp_path)
-                    except:
-                        logger.error('Warning - Unable to create bts file. Residual files remain in %s' % pp_path)
+                    except OSError as e:
+                        logger.error('Warning - Unable to create bts file. Residual files remain in %s: %s' %
+                                     (pp_path, str(e)))
         return False
     except Exception:
         logger.error('Unhandled exception in importBook: %s' % traceback.format_exc())
@@ -878,38 +893,28 @@ def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
         update_totals(match['AuthorID'])
 
 
-def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, bookid=None):
+def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, bookid=None, booktype=None):
     """ Copy book/mag and associated files into target directory
         Return True, full_path_to_book  or False, error_message"""
 
-    #*** check if a valid ebook or audiobook in pp_path first, if not return failed
-
-    if bookname:
-        booktype = 'book'
-    else:
+    if not bookname:
         booktype = 'mag'
 
-    auxinfo = ''
-    myDB = database.DBConnection()
-    data = myDB.match('SELECT AuxInfo FROM wanted WHERE BookID="%s"' % bookid)
-    if data:
-        auxinfo = data['AuxInfo']
-    if auxinfo == 'AudioBook':
-        booktype = 'audiobook'
+    booktype = booktype.lower()
 
     # ensure directory is unicode so we get unicode results from listdir
     if isinstance(pp_path, str):
         pp_path = pp_path.decode(lazylibrarian.SYS_ENCODING)
 
     match = False
-    if booktype == 'book' and lazylibrarian.CONFIG['ONE_FORMAT']:
+    if booktype == 'ebook' and lazylibrarian.CONFIG['ONE_FORMAT']:
         booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
-        for booktype in booktype_list:
+        for btype in booktype_list:
             if not match:
                 for fname in os.listdir(pp_path):
                     extn = os.path.splitext(fname)[1].lstrip('.')
-                    if extn and extn.lower() == booktype:
-                        match = booktype
+                    if extn and extn.lower() == btype:
+                        match = btype
                         break
         if match:
             logger.debug('One format import, best match = %s' % match)
@@ -933,7 +938,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
     # If ebook, do we want calibre to import the book for us
     newbookfile= ''
-    if booktype == 'book' and len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
+    if booktype == 'ebook' and len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
         dest_dir = lazylibrarian.DIRECTORY('eBook')
         params = []
         try:
@@ -1013,7 +1018,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 target_dir = os.path.join(calibre_dir, '%s (%s)' % (global_name, calibre_id))
                 if os.path.isdir(target_dir):
                     imported = LibraryScan(target_dir)
-                    newbookfile = book_file(target_dir, booktype='book')
+                    newbookfile = book_file(target_dir, booktype='ebook')
                     if newbookfile:
                         setperm(target_dir)
                         for fname in os.listdir(target_dir):

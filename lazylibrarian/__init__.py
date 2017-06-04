@@ -24,6 +24,7 @@ import sys
 import threading
 import time
 import webbrowser
+import ConfigParser
 
 import cherrypy
 from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, \
@@ -357,13 +358,13 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
     if cfg_type == 'int':
         try:
             my_val = CFG.getint(cfg_name, item_name)
-        except Exception:
+        except ConfigParser.Error:
             my_val = int(def_val)
 
     elif cfg_type == 'bool':
         try:
             my_val = CFG.getboolean(cfg_name, item_name)
-        except Exception:
+        except ConfigParser.Error:
             my_val = bool(def_val)
 
     elif cfg_type == 'str':
@@ -375,7 +376,7 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
             if not len(my_val):
                 my_val = def_val
             my_val = my_val.decode(SYS_ENCODING)
-        except Exception:
+        except ConfigParser.Error:
             my_val = str(def_val)
     else:
         my_val = def_val
