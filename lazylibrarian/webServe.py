@@ -278,14 +278,16 @@ class WebInterface(object):
                     value = check_int(value, default)
                 lazylibrarian.CONFIG[key] = value
             else:
-                # no key is returned for empty tickboxes...
-                if item_type == 'bool':
-                    lazylibrarian.CONFIG[key] = 0
-                # or for empty strings, or strings not available in config html page
-                elif key in lazylibrarian.CONFIG_NONWEB or key in lazylibrarian.CONFIG_GIT:
+                # no key is returned for strings not available in config html page so leave these unchanged
+                if key in lazylibrarian.CONFIG_NONWEB or key in lazylibrarian.CONFIG_GIT:
                     pass
+                # default interface doesn't know about other interfaces variables
                 elif interface == 'default' and key in lazylibrarian.CONFIG_NONDEFAULT:
                     pass
+                # no key is returned for empty tickboxes...
+                elif item_type == 'bool':
+                    lazylibrarian.CONFIG[key] = 0
+                # or empty string values
                 else:
                     lazylibrarian.CONFIG[key] = ''
 
