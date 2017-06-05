@@ -168,6 +168,9 @@ def main():
             lazylibrarian.SIGNAL = None
             logger.debug('Not updating, not a git or source installation')
 
+    if lazylibrarian.SIGNAL == 'update':
+        lazylibrarian.shutdown(restart=True, update=True)
+
     if options.port:
         lazylibrarian.CONFIG['HTTP_PORT'] = int(options.port)
         logger.info('Starting LazyLibrarian on forced port: %s, webroot "%s"' %
