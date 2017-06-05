@@ -1148,35 +1148,58 @@ def start():
             else:
                 SHOW_AUDIO = 0
 
+
+def logmsg(level, msg):
+    # log messages to logger if initialised, or print if not.
+    if __INITIALIZED__:
+        if level == 'error':
+            logger.error(msg)
+        elif level == 'info':
+            logger.info(msg)
+        elif level == 'debug':
+            logger.debug(msg)
+        elif level == 'warn':
+            logger.warn(msg)
+        else:
+            logger.info(msg)
+    else:
+        print level.upper(), msg
+
+
 def shutdown(restart=False, update=False):
     cherrypy.engine.exit()
     SCHED.shutdown(wait=False)
     # config_write() don't automatically rewrite config on exit
 
     if not restart and not update:
-        logger.info('LazyLibrarian is shutting down...')
+        msg = 'LazyLibrarian is shutting down...'
+        if __INITIALIZED__:
+            logger.info(msg)
+        else:
+            print(msg)
     if update:
-        logger.info('LazyLibrarian is updating...')
+        logmsg('info', 'LazyLibrarian is updating...')
         try:
             if versioncheck.update():
-                logger.debug('Lazylibrarian version updated')
+                logmsg('info', 'Lazylibrarian version updated')
                 config_write()
         except Exception as e:
-            logger.warn('LazyLibrarian failed to update: %s. Restarting.' % str(e))
+            logmsg('warn', 'LazyLibrarian failed to update: %s. Restarting.' % str(e))
 
     if PIDFILE:
-        logger.info('Removing pidfile %s' % PIDFILE)
+        logmsg('info', 'Removing pidfile %s' % PIDFILE)
         os.remove(PIDFILE)
 
     if restart:
-        logger.info('LazyLibrarian is restarting ...')
+        logmsg('info', 'LazyLibrarian is restarting ...')
+
         popen_list = [sys.executable, FULL_PATH]
         popen_list += ARGS
         if '--update' in popen_list:
             popen_list.remove('--update')
         if '--nolaunch' not in popen_list:
             popen_list += ['--nolaunch']
-            logger.info('Restarting LazyLibrarian with ' + str(popen_list))
+            logmsg('info', 'Restarting LazyLibrarian with ' + str(popen_list))
         subprocess.Popen(popen_list, cwd=os.getcwd())
 
     os._exit(0)
