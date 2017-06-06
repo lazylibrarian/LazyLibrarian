@@ -285,6 +285,9 @@ class WebInterface(object):
                 # default interface doesn't know about other interfaces variables
                 elif interface == 'default' and key in lazylibrarian.CONFIG_NONDEFAULT:
                     pass
+                # default interface doesn't know about priorities
+                elif interface == 'default' and 'dlpriority' in key.lower():
+                    pass
                 # no key is returned for empty tickboxes...
                 elif item_type == 'bool':
                     lazylibrarian.CONFIG[key] = 0

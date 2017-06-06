@@ -882,7 +882,7 @@
                 <input type="text" placeholder="Newznab API #${loop.index}" id="newznab[${loop.index}][api]" name="newznab[${loop.index}][api]" value="${provider['API']}" class="form-control">
                 <div class="input-group">
                   <span class="input-group-addon">Priority</span>
-                  <input type="text" id="newznab[${loop.index}][priority]" name="newznab[${loop.index}][priority]" value="${provider['PRIORITY']}" class="form-control" placeholder="0">
+                  <input type="text" id="newznab[${loop.index}][dlpriority]" name="newznab[${loop.index}][dlpriority]" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
                 </div>
               </div>
               %endfor
@@ -909,7 +909,7 @@
                 <input type="text" placeholder="Torznab API #${loop.index}" id="torznab[${loop.index}][api]" name="torznab[${loop.index}][api]" value="${provider['API']}" class="form-control">
                 <div class="input-group">
                   <span class="input-group-addon">Priority</span>
-                  <input type="text" id="torznab[${loop.index}][priority]" name="torznab[${loop.index}][priority]" value="${provider['PRIORITY']}" class="form-control" placeholder="0">
+                  <input type="text" id="torznab[${loop.index}][dlpriority]" name="torznab[${loop.index}][dlpriority]" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
                 </div>
               </div>
               %endfor
@@ -935,7 +935,7 @@
                   </div>
                 <div class="input-group">
                   <span class="input-group-addon">Priority</span>
-                  <input type="text" id="rss[${loop.index}][priority]" name="rss[${loop.index}][priority]" value="${provider['PRIORITY']}" class="form-control" placeholder="0">
+                  <input type="text" id="rss[${loop.index}][dlpriority]" name="rss[${loop.index}][dlpriority]" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
                 </div>
                 </div>
                 %endfor
@@ -959,7 +959,7 @@
                 </div>
                 <div class="input-group">
                   <span class="input-group-addon">Priority</span>
-                  <input type="text" id="kat_priority" name="kat_priority" value="${lazylibrarian.CONFIG['KAT_PRIORITY']}" class="form-control" placeholder="0">
+                  <input type="text" id="kat_dlpriority" name="kat_dlpriority" value="${lazylibrarian.CONFIG['KAT_DLPRIORITY']}" class="form-control" placeholder="0">
                 </div>
               </div>
               <%
@@ -978,7 +978,7 @@
                 </div>
                 <div class="input-group">
                   <span class="input-group-addon">Priority</span>
-                  <input type="text" id="tpb_priority" name="tpb_priority" value="${lazylibrarian.CONFIG['TPB_PRIORITY']}" class="form-control" placeholder="0">
+                  <input type="text" id="tpb_dlpriority" name="tpb_dlpriority" value="${lazylibrarian.CONFIG['TPB_DLPRIORITY']}" class="form-control" placeholder="0">
                 </div>
               </div>
               <%
@@ -997,7 +997,7 @@
                 </div>
                 <div class="input-group">
                   <span class="input-group-addon">Priority</span>
-                  <input type="text" id="zoo_priority" name="zoo_priority" value="${lazylibrarian.CONFIG['ZOO_PRIORITY']}" class="form-control" placeholder="0">
+                  <input type="text" id="zoo_dlpriority" name="zoo_dlpriority" value="${lazylibrarian.CONFIG['ZOO_DLPRIORITY']}" class="form-control" placeholder="0">
                 </div>
               </div>
               <%
@@ -1016,7 +1016,7 @@
                 </div>
                 <div class="input-group">
                   <span class="input-group-addon">Priority</span>
-                  <input type="text" id="tdl_priority" name="tdl_priority" value="${lazylibrarian.CONFIG['TDL_PRIORITY']}" class="form-control" placeholder="0">
+                  <input type="text" id="tdl_dlpriority" name="tdl_dlpriority" value="${lazylibrarian.CONFIG['TDL_DLPRIORITY']}" class="form-control" placeholder="0">
                 </div>
               </div>
               <%
@@ -1035,7 +1035,7 @@
                 </div>
                 <div class="input-group">
                   <span class="input-group-addon">Priority</span>
-                  <input type="text" id="extra_priority" name="extra_priority" value="${lazylibrarian.CONFIG['EXTRA_PRIORITY']}" class="form-control" placeholder="0">
+                  <input type="text" id="extra_dlpriority" name="extra_dlpriority" value="${lazylibrarian.CONFIG['EXTRA_DLPRIORITY']}" class="form-control" placeholder="0">
                 </div>
               </div>
               <%
@@ -1054,7 +1054,7 @@
                 </div>
                 <div class="input-group">
                   <span class="input-group-addon">Priority</span>
-                  <input type="text" id="lime_priority" name="lime_priority" value="${lazylibrarian.CONFIG['LIME_PRIORITY']}" class="form-control" placeholder="0">
+                  <input type="text" id="lime_dlpriority" name="lime_dlpriority" value="${lazylibrarian.CONFIG['LIME_DLPRIORITY']}" class="form-control" placeholder="0">
                 </div>
               </div>
             </fieldset>
@@ -1076,7 +1076,7 @@
                 </div>
                 <div class="input-group">
                   <span class="input-group-addon">Priority</span>
-                  <input type="text" id="gen_priority" name="gen_priority" value="${lazylibrarian.CONFIG['GEN_PRIORITY']}" class="form-control" placeholder="0">
+                  <input type="text" id="gen_dlpriority" name="gen_dlpriority" value="${lazylibrarian.CONFIG['GEN_DLPRIORITY']}" class="form-control" placeholder="0">
                 </div>
               </div>
             </fieldset>
@@ -1191,11 +1191,11 @@
               </div>
               <div class="checkbox">
                 <%
-                                            if lazylibrarian.CONFIG['MAG_RELATIVE'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['MAG_RELATIVE'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                 <label for="mag_relative" class="control-label">
                   <input type="checkbox" id="mag_relative" name="mag_relative" value="1" ${checked} />
                   Magazines inside book folder</label>
@@ -1203,11 +1203,11 @@
               </div>
               <div class="checkbox">
                 <%
-                                                if lazylibrarian.CONFIG['MAG_SINGLE'] == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['MAG_SINGLE'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                %>
                 <label for="mag_single" class="control-label">
                   <input type="checkbox" id="mag_single" name="mag_single" value="1" ${checked} />
                   Quick open single issues of magazines</label>
@@ -1267,11 +1267,11 @@
               </div>
               <div class="checkbox">
                 <%
-                                            if lazylibrarian.CONFIG['FULL_SCAN'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['FULL_SCAN'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                 <label for="full_scan" class="control-label">
                   <input type="checkbox" id="full_scan" name="full_scan" value="1" ${checked} />
                   Full scan</label>
@@ -1279,11 +1279,11 @@
               </div>
               <div class="checkbox">
                 <%
-                                            if lazylibrarian.CONFIG['IMP_SINGLEBOOK'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['IMP_SINGLEBOOK'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                 <label for="imp_singlebook" class="control-label">
                   <input type="checkbox" id="imp_singlebook" name="imp_singlebook" value="1" ${checked} />
                   One book per directory</label>
@@ -1291,11 +1291,11 @@
               </div>
               <div class="checkbox">
                 <%
-                                            if lazylibrarian.CONFIG['ADD_AUTHOR'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['ADD_AUTHOR'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                 <label for="add_author" class="control-label">
                   <input type="checkbox" id="add_author" name="add_author" value="1" ${checked} />
                   Add Authors</label>
@@ -1303,11 +1303,11 @@
               </div>
               <div class="checkbox">
                 <%
-                                            if lazylibrarian.CONFIG['ADD_SERIES'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['ADD_SERIES'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                 <label for="add_series" class="control-label">
                   <input type="checkbox" id="add_series" name="add_series" value="1" ${checked} />
                   Add Series</label>
@@ -1315,11 +1315,11 @@
               </div>
               <div class="checkbox">
                 <%
-                                            if lazylibrarian.CONFIG['IMP_AUTOSEARCH'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+                    if lazylibrarian.CONFIG['IMP_AUTOSEARCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                 <label for="imp_autosearch" class="control-label">
                   <input type="checkbox" id="imp_autosearch" name="imp_autosearch" value="1" ${checked} />
                   Search when added</label>
@@ -1331,10 +1331,10 @@
                 <select id="notfound_status" name="notfound_status" class="form-control">
                   %for nf_status in config['status_list']:
                   <%
-                                                selected = ''
-                                                if nf_status == lazylibrarian.CONFIG['NOTFOUND_STATUS']:
-                                                        selected = 'selected="selected"'
-                                            %>
+                        selected = ''
+                        if nf_status == lazylibrarian.CONFIG['NOTFOUND_STATUS']:
+                                selected = 'selected="selected"'
+                    %>
                   <option value="${nf_status}" ${selected}>${nf_status}</option>
                   %endfor
                 </select>
@@ -1345,10 +1345,10 @@
                 <select id="newbook_status" name="newbook_status" class="form-control">
                   %for nb_status in config['status_list']:
                   <%
-                                                selected = ''
-                                                if nb_status == lazylibrarian.CONFIG['NEWBOOK_STATUS']:
-                                                        selected = 'selected="selected"'
-                                            %>
+                        selected = ''
+                        if nb_status == lazylibrarian.CONFIG['NEWBOOK_STATUS']:
+                                selected = 'selected="selected"'
+                    %>
                   <option value="${nb_status}" ${selected}>${nb_status}</option>
                   %endfor
                 </select>
@@ -1359,10 +1359,10 @@
                 <select id="newaudio_status" name="newaudio_status" class="form-control">
                   %for nb_status in config['status_list']:
                   <%
-                                                selected = ''
-                                                if nb_status == lazylibrarian.CONFIG['NEWAUDIO_STATUS']:
-                                                        selected = 'selected="selected"'
-                                            %>
+                        selected = ''
+                        if nb_status == lazylibrarian.CONFIG['NEWAUDIO_STATUS']:
+                            selected = 'selected="selected"'
+                    %>
                   <option value="${nb_status}" ${selected}>${nb_status}</option>
                   %endfor
                 </select>

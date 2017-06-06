@@ -241,25 +241,25 @@ CONFIG_DEFINITIONS = {
     'USE_SYNOLOGY': ('bool', 'SYNOLOGY', 0),
     'KAT_HOST': ('str', 'KAT', 'kickass.cd'),
     'KAT': ('bool', 'KAT', 0),
-    'KAT_PRIORITY': ('int', 'KAT', 0),
+    'KAT_DLPRIORITY': ('int', 'KAT', 0),
     'TPB_HOST': ('str', 'TPB', 'https://piratebays.co'),
     'TPB': ('bool', 'TPB', 0),
-    'TPB_PRIORITY': ('int', 'TPB', 0),
+    'TPB_DLPRIORITY': ('int', 'TPB', 0),
     'ZOO_HOST': ('str', 'ZOO', 'https://zooqle.com'),
     'ZOO': ('bool', 'ZOO', 0),
-    'ZOO_PRIORITY': ('int', 'ZOO', 0),
+    'ZOO_DLPRIORITY': ('int', 'ZOO', 0),
     'EXTRA_HOST': ('str', 'EXTRA', 'extratorrent.cc'),
     'EXTRA': ('bool', 'EXTRA', 0),
-    'EXTRA_PRIORITY': ('int', 'EXTRA', 0),
+    'EXTRA_DLPRIORITY': ('int', 'EXTRA', 0),
     'TDL_HOST': ('str', 'TDL', 'torrentdownloads.me'),
     'TDL': ('bool', 'TDL', 0),
-    'TDL_PRIORITY': ('int', 'TDL', 0),
+    'TDL_DLPRIORITY': ('int', 'TDL', 0),
     'GEN_HOST': ('str', 'GEN', 'libgen.io'),
     'GEN': ('bool', 'GEN', 0),
-    'GEN_PRIORITY': ('int', 'GEN', 0),
+    'GEN_DLPRIORITY': ('int', 'GEN', 0),
     'LIME_HOST': ('str', 'LIME', 'https://www.limetorrents.cc'),
     'LIME': ('bool', 'LIME', 0),
-    'LIME_PRIORITY': ('int', 'LIME', 0),
+    'LIME_DLPRIORITY': ('int', 'LIME', 0),
     'NEWZBIN_UID': ('str', 'Newzbin', ''),
     'NEWZBIN_PASS': ('str', 'Newzbin', ''),
     'NEWZBIN': ('bool', 'Newzbin', 0),
@@ -543,7 +543,7 @@ def config_read(reloaded=False):
                              "EXTENDED": check_setting('str', newz_name, 'extended', '1'),
                              "UPDATED": check_setting('str', newz_name, 'updated', ''),
                              "MANUAL": check_setting('bool', newz_name, 'manual', 0),
-                             "PRIORITY": check_setting('int', newz_name, 'priority', 0)
+                             "DLPRIORITY": check_setting('int', newz_name, 'dlpriority', 0)
                              })
         count += 1
     # if the last slot is full, add an empty one on the end
@@ -579,7 +579,7 @@ def config_read(reloaded=False):
                              "EXTENDED": check_setting('str', torz_name, 'extended', '1'),
                              "UPDATED": check_setting('str', torz_name, 'updated', ''),
                              "MANUAL": check_setting('bool', torz_name, 'manual', 0),
-                             "PRIORITY": check_setting('int', torz_name, 'priority', 0)
+                             "DLPRIORITY": check_setting('int', torz_name, 'dlpriority', 0)
                              })
         count += 1
     # if the last slot is full, add an empty one on the end
@@ -609,7 +609,7 @@ def config_read(reloaded=False):
         RSS_PROV.append({"NAME": rss_name,
                          "ENABLED": check_setting('bool', rss_name, 'ENABLED', 0),
                          "HOST": check_setting('str', rss_name, 'HOST', ''),
-                         "PRIORITY": check_setting('int', rss_name, 'PRIORITY', 0)
+                         "DLPRIORITY": check_setting('int', rss_name, 'DLPRIORITY', 0)
                          })
         count += 1
     # if the last slot is full, add an empty one on the end
@@ -732,7 +732,7 @@ def config_write():
         CFG.set(provider['NAME'], 'MAGCAT', provider['MAGCAT'])
         CFG.set(provider['NAME'], 'AUDIOCAT', provider['AUDIOCAT'])
         CFG.set(provider['NAME'], 'EXTENDED', provider['EXTENDED'])
-        CFG.set(provider['NAME'], 'PRIORITY', provider['PRIORITY'])
+        CFG.set(provider['NAME'], 'DLPRIORITY', provider['DLPRIORITY'])
         if provider['HOST'] == oldprovider:
             CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
             CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
@@ -756,7 +756,7 @@ def config_write():
         CFG.set(provider['NAME'], 'MAGCAT', provider['MAGCAT'])
         CFG.set(provider['NAME'], 'AUDIOCAT', provider['AUDIOCAT'])
         CFG.set(provider['NAME'], 'EXTENDED', provider['EXTENDED'])
-        CFG.set(provider['NAME'], 'PRIORITY', provider['PRIORITY'])
+        CFG.set(provider['NAME'], 'DLPRIORITY', provider['DLPRIORITY'])
         if provider['HOST'] == oldprovider:
             CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
             CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
@@ -771,7 +771,7 @@ def config_write():
         check_section(provider['NAME'])
         CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
         CFG.set(provider['NAME'], 'HOST', provider['HOST'])
-        CFG.set(provider['NAME'], 'PRIORITY', provider['PRIORITY'])
+        CFG.set(provider['NAME'], 'DLPRIORITY', provider['DLPRIORITY'])
     add_rss_slot()
 
     myDB = database.DBConnection()
@@ -843,7 +843,7 @@ def add_newz_slot():
         CFG.set(newz_name, 'EXTENDED', '1')
         CFG.set(newz_name, 'UPDATED', '')
         CFG.set(newz_name, 'MANUAL', False)
-        CFG.set(newz_name, 'PRIORITY', 0)
+        CFG.set(newz_name, 'DLPRIORITY', 0)
 
         NEWZNAB_PROV.append({"NAME": newz_name,
                              "ENABLED": 0,
@@ -859,7 +859,7 @@ def add_newz_slot():
                              "EXTENDED": '1',
                              "UPDATED": '',
                              "MANUAL": 0,
-                             "PRIORITY": 0
+                             "DLPRIORITY": 0
                              })
 
 
@@ -880,7 +880,7 @@ def add_torz_slot():
         CFG.set(torz_name, 'EXTENDED', '1')
         CFG.set(torz_name, 'UPDATED', '')
         CFG.set(torz_name, 'MANUAL', False)
-        CFG.set(torz_name, 'PRIORITY', 0)
+        CFG.set(torz_name, 'DLPRIORITY', 0)
         TORZNAB_PROV.append({"NAME": torz_name,
                              "ENABLED": 0,
                              "HOST": '',
@@ -894,7 +894,7 @@ def add_torz_slot():
                              "EXTENDED": '1',
                              "UPDATED": '',
                              "MANUAL": 0,
-                             "PRIORITY": 0
+                             "DLPRIORITY": 0
                              })
 
 
@@ -941,7 +941,7 @@ def add_rss_slot():
         RSS_PROV.append({"NAME": rss_name,
                          "ENABLED": 0,
                          "HOST": '',
-                         "PRIORITY": 0
+                         "DLPRIORITY": 0
                          })
 
 
