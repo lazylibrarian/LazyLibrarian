@@ -42,9 +42,10 @@ from lazylibrarian.manualbook import searchItem
 from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.postprocess import processAlternate, processDir
 from lazylibrarian.searchmag import search_magazines
-from lazylibrarian.searchnzb import search_nzb_book, NZBDownloadMethod
+from lazylibrarian.searchnzb import search_nzb_book
 from lazylibrarian.searchrss import search_rss_book
-from lazylibrarian.searchtorrents import search_tor_book, TORDownloadMethod
+from lazylibrarian.searchtorrents import search_tor_book
+from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod
 from lib.deluge_client import DelugeRPCClient
 from mako import exceptions
 from mako.lookup import TemplateLookup

@@ -104,9 +104,11 @@ def main():
     if options.update:
         lazylibrarian.SIGNAL = 'update'
         # This is the "emergency recovery" update in case lazylibrarian won't start.
-        # Set up some dummy values as we have not read the config file yet
+        # Set up some dummy values for the update as we have not read the config file yet
         lazylibrarian.CONFIG['GIT_PROGRAM'] = ''
-        lazylibrarian.CONFIG['LOGLIMIT'] = 1000
+        lazylibrarian.CONFIG['GIT_USER'] = 'dobytang'
+        lazylibrarian.CONFIG['GIT_REPO'] = 'lazylibrarian'
+        lazylibrarian.CONFIG['LOGLIMIT'] = 2000
         versioncheck.getInstallType()
         if lazylibrarian.CONFIG['INSTALL_TYPE'] not in ['git', 'source']:
             lazylibrarian.SIGNAL = None

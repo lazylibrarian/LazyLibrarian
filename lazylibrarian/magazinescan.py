@@ -161,6 +161,7 @@ def create_cover(issuefile=None, refresh=False):
             except ImportError:
                 try:
                     # No PythonMagick in python3
+                    # noinspection PyUnresolvedReferences
                     import PythonMagick
                     interface = "pythonmagick"
                 except ImportError:

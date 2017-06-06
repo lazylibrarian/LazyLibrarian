@@ -26,8 +26,7 @@ from lazylibrarian.formatter import plural, now, unaccented_str, replace_all, un
     nzbdate2format, getList, month2num, datecompare, check_int, check_year
 from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.providers import IterateOverNewzNabSites, IterateOverTorrentSites, IterateOverRSSSites
-from lazylibrarian.searchnzb import NZBDownloadMethod
-from lazylibrarian.searchtorrents import TORDownloadMethod
+from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod
 from lib.fuzzywuzzy import fuzz
 
 
