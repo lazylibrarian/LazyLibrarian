@@ -24,6 +24,7 @@ from lazylibrarian import logger, database
 from lazylibrarian.cache import cache_img, fetchURL, get_xml_request
 from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName
 
+
 def setAllBookAuthors():
     myDB = database.DBConnection()
     myDB.action('drop table if exists bookauthors')
@@ -31,7 +32,7 @@ def setAllBookAuthors():
     books = myDB.select('SELECT AuthorID,BookID from books')
     for item in books:
         myDB.action('insert into bookauthors (AuthorID, BookID) values (%s, %s)' %
-                    (item['AuthorID'], item['BookID']) , suppress='UNIQUE')
+                    (item['AuthorID'], item['BookID']), suppress='UNIQUE')
     # also need to drop authorid from books table once it all works properly
     totalauthors = 0
     totalrefs = 0
@@ -53,7 +54,7 @@ def setBookAuthors(book):
         authorlist = getBookAuthors(book['bookid'])
         for author in authorlist:
             authtype = author['type']
-            if authtype in ['primary author','main author','secondary author']:
+            if authtype in ['primary author', 'main author', 'secondary author']:
                 if author['role'] in ['Author', '&mdash;'] and author['work'] == 'all editions':
                     name = formatAuthorName(unaccented(author['name']))
                     exists = myDB.match('select authorid from authors where authorname = "%s"' % name)
@@ -67,7 +68,7 @@ def setBookAuthors(book):
                     if authorid:
                         # suppress duplicates in bookauthors
                         myDB.action('INSERT into bookauthors (AuthorID, BookID) VALUES ("%s", "%s")' %
-                                   (authorid, book['bookid']), suppress='UNIQUE')
+                                    (authorid, book['bookid']), suppress='UNIQUE')
                         newrefs += 1
     except Exception as e:
         logger.debug("Error parsing authorlist for %s: %s" % (book['bookname'], str(e)))
@@ -123,7 +124,7 @@ def getBookCovers():
                 newValueDict = {"BookImg": coverlink}
                 myDB.upsert("books", newValueDict, controlValueDict)
                 counter += 1
-        msg =  'Updated %s cover%s' % (counter, plural(counter))
+        msg = 'Updated %s cover%s' % (counter, plural(counter))
         logger.info('Cover check complete: ' + msg)
     else:
         msg = 'No missing book covers'
@@ -149,6 +150,7 @@ def setAllBookSeries():
     logger.info('Series check complete: ' + msg)
     return msg
 
+
 def setSeries(seriesdict=None, bookid=None, seriesauthors=True, seriesdisplay=True):
     """ set series details in series/member tables from the supplied dict
         and a displayable summary in book table """
@@ -163,7 +165,7 @@ def setSeries(seriesdict=None, bookid=None, seriesauthors=True, seriesdisplay=Tr
                 myDB.action('INSERT into series (SeriesName, Status) VALUES ("%s", "Active")' % item)
                 match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % item)
                 # don't ask librarything what other books are in the series - leave for user to query if series wanted
-                #_ = getSeriesMembers(match['SeriesID'])
+                # _ = getSeriesMembers(match['SeriesID'])
             book = myDB.match('SELECT AuthorID from books where BookID="%s"' % bookid)
             if match and book:
                 controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
@@ -189,9 +191,10 @@ def setSeries(seriesdict=None, bookid=None, seriesauthors=True, seriesdisplay=Tr
                 series += newseries
             myDB.action('UPDATE books SET SeriesDisplay="%s" WHERE BookID="%s"' % (series, bookid))
 
-        # removed deleteEmptySeries as setSeries slows down drastically if run in a loop
-        # eg dbupgrade or setAllBookSeries. Better to tidy up all empties when loop finished
-        # deleteEmptySeries()
+            # removed deleteEmptySeries as setSeries slows down drastically if run in a loop
+            # eg dbupgrade or setAllBookSeries. Better to tidy up all empties when loop finished
+            # deleteEmptySeries()
+
 
 def setStatus(bookid=None, seriesdict=None, default=None):
     """ Set the status of a book according to series/author/newbook/newauthor preferences
@@ -254,9 +257,10 @@ def deleteEmptySeries():
         match = myDB.match('SELECT BookID from member where SeriesID="%s"' % item['SeriesID'])
         if not match:
             logger.debug('Deleting empty series %s' % item['SeriesName'])
-            count+= 1
+            count += 1
             myDB.action('DELETE from series where SeriesID="%s"' % item['SeriesID'])
     return count
+
 
 def setWorkPages():
     """ Set the workpage link for any books that don't already have one """
@@ -334,7 +338,7 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
                     # Cache entry is too old, delete it
                     os.remove(workfile)
 
-            #os.remove(workfile)  # ignore cache for testing
+                    # os.remove(workfile)  # ignore cache for testing
 
         if os.path.isfile(workfile):
             # use cached file if possible to speed up refreshactiveauthors and librarysync re-runs
@@ -356,7 +360,7 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
                 title = safe_unicode(item['BookName']).encode(lazylibrarian.SYS_ENCODING)
                 author = safe_unicode(item['AuthorName']).encode(lazylibrarian.SYS_ENCODING)
                 URL = 'http://www.librarything.com/api/whatwork.php?author=%s&title=%s' % \
-                        (urllib.quote_plus(author), urllib.quote_plus(title))
+                      (urllib.quote_plus(author), urllib.quote_plus(title))
             else:
                 seriesname = safe_unicode(item['seriesName']).encode(lazylibrarian.SYS_ENCODING)
                 URL = 'http://www.librarything.com/series/%s' % urllib.quote_plus(seriesname)
@@ -391,7 +395,7 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
                                     errmsg = "Unknown Error"
                                 # still cache if whatwork returned a result without a link, so we don't keep retrying
                                 logger.debug("getBookWork: Librarything: [%s] for ISBN %s" %
-                                            (errmsg, item['BookISBN']))
+                                             (errmsg, item['BookISBN']))
                                 success = True
                     else:
                         # still cache if whatwork returned a result without a link, so we don't keep retrying
@@ -463,12 +467,13 @@ def getAllSeriesAuthors():
         logger.debug(msg)
     return msg
 
+
 def getBookAuthors(bookid):
     """ Get a list of authors contributing to a book from the bookwork file """
     data = getBookWork(bookid, "Authors")
     if data:
         try:
-            data = data.split('otherauthors_container')[1].split('</table>')[0].split('<table')[1].split('>',1)[1]
+            data = data.split('otherauthors_container')[1].split('</table>')[0].split('<table')[1].split('>', 1)[1]
         except IndexError:
             data = ''
 
@@ -503,7 +508,7 @@ def getSeriesAuthors(seriesid):
     if members:
         myDB = database.DBConnection()
         for member in members:
-            #order = member[0]
+            # order = member[0]
             bookname = member[1]
             authorname = member[2]
 
@@ -573,11 +578,11 @@ def getSeriesMembers(seriesID=None):
                 if 'href=' in row:
                     booklink = row.split('href="')[1]
                     bookname = booklink.split('">')[1].split('<')[0]
-                    #booklink = booklink.split('"')[0]
+                    # booklink = booklink.split('"')[0]
                     try:
                         authorlink = row.split('href="')[2]
                         authorname = authorlink.split('">')[1].split('<')[0]
-                        #authorlink = authorlink.split('"')[0]
+                        # authorlink = authorlink.split('"')[0]
                         order = row.split('class="order">')[1].split('<')[0]
                         results.append([order, bookname, authorname])
                     except IndexError:
@@ -706,7 +711,7 @@ def getBookCover(bookID=None):
                     coverlink, success = cache_img("book", bookID, img)
                     if success:
                         logger.debug("getBookCover: Caching goodreads cover for %s %s" %
-                                    (item['AuthorName'],item['BookName']))
+                                     (item['AuthorName'], item['BookName']))
                         return coverlink
                     else:
                         logger.debug("getBookCover: Error getting goodreads image for %s, [%s]" % (img, coverlink))
@@ -730,7 +735,7 @@ def getBookCover(bookID=None):
                 coverlink, success = cache_img("book", bookID, img)
                 if success:
                     logger.debug("getBookCover: Caching google cover for %s %s" %
-                                (item['AuthorName'], item['BookName']))
+                                 (item['AuthorName'], item['BookName']))
                     return coverlink
                 else:
                     logger.debug("getBookCover: Error getting google image %s, [%s]" % (img, coverlink))

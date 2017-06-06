@@ -872,16 +872,18 @@
               %>
               <div class="form-group">
                 <div class="input-group">
+                <label for="newznab[${loop.index}][host]" class="sr-only">Newznab URL</label>
                   <span class="input-group-addon">
                     <input type="checkbox" id="newznab[${loop.index}][enabled]" name="newznab[${loop.index}][enabled]" value="1" ${checked} />
                   </span>
                   <input type="text" placeholder="Newznab URL #${loop.index}" id="newznab[${loop.index}][host]" name="newznab[${loop.index}][host]" value="${provider['HOST']}" class="form-control">
-                </div>
-                <label for="newznab[${loop.index}][host]" class="sr-only">Newznab URL</label>
-              </div>
-              <div class="form-group">
+                 </div>
                 <label for="newznab[${loop.index}][api]" class="sr-only">Newznab API Key</label>
                 <input type="text" placeholder="Newznab API #${loop.index}" id="newznab[${loop.index}][api]" name="newznab[${loop.index}][api]" value="${provider['API']}" class="form-control">
+                <div class="input-group">
+                  <span class="input-group-addon">Priority</span>
+                  <input type="text" id="newznab[${loop.index}][priority]" name="newznab[${loop.index}][priority]" value="${provider['PRIORITY']}" class="form-control" placeholder="0">
+                </div>
               </div>
               %endfor
             </fieldset>
@@ -903,10 +905,12 @@
                   </span>
                   <input type="text" placeholder="Torznab URL #${loop.index}" id="torznab[${loop.index}][host]" name="torznab[${loop.index}][host]" value="${provider['HOST']}" class="form-control">
                 </div>
-              </div>
-              <div class="form-group">
                 <label for="torznab[${loop.index}][api]" class="sr-only">Torznab API Key</label>
                 <input type="text" placeholder="Torznab API #${loop.index}" id="torznab[${loop.index}][api]" name="torznab[${loop.index}][api]" value="${provider['API']}" class="form-control">
+                <div class="input-group">
+                  <span class="input-group-addon">Priority</span>
+                  <input type="text" id="torznab[${loop.index}][priority]" name="torznab[${loop.index}][priority]" value="${provider['PRIORITY']}" class="form-control" placeholder="0">
+                </div>
               </div>
               %endfor
             </fieldset>
@@ -929,6 +933,10 @@
                     </span>
                     <input type="text" placeholder="RSS URL #${loop.index}" id="rss[${loop.index}][host]" name="rss[${loop.index}][host]" value="${provider['HOST']}" class="form-control" />
                   </div>
+                <div class="input-group">
+                  <span class="input-group-addon">Priority</span>
+                  <input type="text" id="rss[${loop.index}][priority]" name="rss[${loop.index}][priority]" value="${provider['PRIORITY']}" class="form-control" placeholder="0">
+                </div>
                 </div>
                 %endfor
               </div>
@@ -949,6 +957,10 @@
                   </span>
                   <input type="text" placeholder="KAT Host" id="kat_host" name="kat_host" value="${lazylibrarian.CONFIG['KAT_HOST']}" class="form-control">
                 </div>
+                <div class="input-group">
+                  <span class="input-group-addon">Priority</span>
+                  <input type="text" id="kat_priority" name="kat_priority" value="${lazylibrarian.CONFIG['KAT_PRIORITY']}" class="form-control" placeholder="0">
+                </div>
               </div>
               <%
                 if lazylibrarian.CONFIG['TPB'] == True:
@@ -963,6 +975,10 @@
                     <input type="checkbox" id="tpb" name="tpb" value="1" ${checked} />
                   </span>
                   <input type="text" placeholder="TPB Host" id="tpb_host" name="tpb_host" value="${lazylibrarian.CONFIG['TPB_HOST']}" class="form-control">
+                </div>
+                <div class="input-group">
+                  <span class="input-group-addon">Priority</span>
+                  <input type="text" id="tpb_priority" name="tpb_priority" value="${lazylibrarian.CONFIG['TPB_PRIORITY']}" class="form-control" placeholder="0">
                 </div>
               </div>
               <%
@@ -979,13 +995,17 @@
                   </span>
                   <input type="text" placeholder="zooqle host" id="zoo_host" name="zoo_host" value="${lazylibrarian.CONFIG['ZOO_HOST']}" class="form-control">
                 </div>
+                <div class="input-group">
+                  <span class="input-group-addon">Priority</span>
+                  <input type="text" id="zoo_priority" name="zoo_priority" value="${lazylibrarian.CONFIG['ZOO_PRIORITY']}" class="form-control" placeholder="0">
+                </div>
               </div>
               <%
-                                        if lazylibrarian.CONFIG['TDL'] == True:
-                                            checked = 'checked="checked"'
-                                        else:
-                                            checked = ''
-                                        %>
+                if lazylibrarian.CONFIG['TDL'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
               <div class="form-group">
                 <label for="tdl_host" class="sr-only">torrentdownload host</label>
                 <div class="input-group">
@@ -994,13 +1014,17 @@
                   </span>
                   <input type="text" placeholder="torrentdownload host" id="tdl_host" name="tdl_host" value="${lazylibrarian.CONFIG['TDL_HOST']}" class="form-control">
                 </div>
+                <div class="input-group">
+                  <span class="input-group-addon">Priority</span>
+                  <input type="text" id="tdl_priority" name="tdl_priority" value="${lazylibrarian.CONFIG['TDL_PRIORITY']}" class="form-control" placeholder="0">
+                </div>
               </div>
               <%
-                                        if lazylibrarian.CONFIG['EXTRA'] == True:
-                                            checked = 'checked="checked"'
-                                        else:
-                                            checked = ''
-                                        %>
+                if lazylibrarian.CONFIG['EXTRA'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
               <div class="form-group">
                 <label for="extra_host" class="sr-only">extratorrent host</label>
                 <div class="input-group">
@@ -1009,13 +1033,17 @@
                   </span>
                   <input type="text" placeholder="extratorrent host" id="extra_host" name="extra_host" value="${lazylibrarian.CONFIG['EXTRA_HOST']}" class="form-control">
                 </div>
+                <div class="input-group">
+                  <span class="input-group-addon">Priority</span>
+                  <input type="text" id="extra_priority" name="extra_priority" value="${lazylibrarian.CONFIG['EXTRA_PRIORITY']}" class="form-control" placeholder="0">
+                </div>
               </div>
               <%
-                                        if lazylibrarian.CONFIG['LIME'] == True:
-                                            checked = 'checked="checked"'
-                                        else:
-                                            checked = ''
-                                        %>
+                if lazylibrarian.CONFIG['LIME'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
               <div class="form-group">
                 <label for="lime_host" class="sr-only">limetorrent host</label>
                 <div class="input-group">
@@ -1023,6 +1051,10 @@
                     <input type="checkbox" id="lime" name="lime" value="1" ${checked} />
                   </span>
                   <input type="text" placeholder="limetorrent host" id="lime_host" name="lime_host" value="${lazylibrarian.CONFIG['LIME_HOST']}" class="form-control">
+                </div>
+                <div class="input-group">
+                  <span class="input-group-addon">Priority</span>
+                  <input type="text" id="lime_priority" name="lime_priority" value="${lazylibrarian.CONFIG['LIME_PRIORITY']}" class="form-control" placeholder="0">
                 </div>
               </div>
             </fieldset>
@@ -1041,6 +1073,10 @@
                     <input type="checkbox" id="gen" name="gen" value="1" ${checked} />
                   </span>
                   <input type="text" placeholder="libgen host" id="gen_host" name="gen_host" value="${lazylibrarian.CONFIG['GEN_HOST']}" class="form-control">
+                </div>
+                <div class="input-group">
+                  <span class="input-group-addon">Priority</span>
+                  <input type="text" id="gen_priority" name="gen_priority" value="${lazylibrarian.CONFIG['GEN_PRIORITY']}" class="form-control" placeholder="0">
                 </div>
               </div>
             </fieldset>

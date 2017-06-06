@@ -56,7 +56,7 @@ def addAuthorNameToDB(author=None, refresh=False, addbooks=True):
         # only try to add if GR data matches found author data
         if author_gr:
             authorname = author_gr['authorname']
-            #authorid = author_gr['authorid']
+            # authorid = author_gr['authorid']
             # "J.R.R. Tolkien" is the same person as "J. R. R. Tolkien" and "J R R Tolkien"
             match_auth = author.replace('.', ' ')
             match_auth = ' '.join(match_auth.split())
@@ -77,7 +77,7 @@ def addAuthorNameToDB(author=None, refresh=False, addbooks=True):
             match_fuzz = fuzz.ratio(match_auth.lower(), match_name.lower())
             if match_fuzz < 90:
                 logger.debug("Failed to match author [%s] to authorname [%s] fuzz [%d]" %
-                                (author, match_name, match_fuzz))
+                             (author, match_name, match_fuzz))
 
             # To save loading hundreds of books by unknown authors at GR or GB, ignore unknown
             if (author != "Unknown") and (match_fuzz >= 90):
@@ -166,7 +166,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
 
             query = "SELECT * from authors WHERE AuthorName='%s'" % authorname.replace("'", "''")
             dbauthor = myDB.match(query)
-            if author and not dbauthor: # may have different name for same authorid (spelling?)
+            if author and not dbauthor:  # may have different name for same authorid (spelling?)
                 query = "SELECT * from authors WHERE AuthorID='%s'" % author['authorid']
                 dbauthor = myDB.match(query)
                 authorname = dbauthor['AuthorName']
@@ -269,6 +269,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
         logger.error(msg)
         return msg
 
+
 def update_totals(AuthorID):
     myDB = database.DBConnection()
     # author totals needs to be updated every time a book is marked differently
@@ -297,6 +298,7 @@ def update_totals(AuthorID):
         "LastDate": lastbook['BookDate'] if lastbook else None
     }
     myDB.upsert("authors", newValueDict, controlValueDict)
+
 
 def import_book(bookid):
     """ search goodreads or googlebooks for a bookid and import the book """

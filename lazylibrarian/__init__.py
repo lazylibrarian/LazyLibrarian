@@ -109,10 +109,10 @@ isbn_978_dict = {
 # Any undefined on startup will be set to the default value
 # Any _NOT_ in the web ui will remain unchanged on config save
 CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDATED', 'CURRENT_VERSION',
-                'COMMITS_BEHIND', 'INSTALL_TYPE']
+              'COMMITS_BEHIND', 'INSTALL_TYPE']
 CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER']
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
-                 'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB']
+                     'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB']
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
     'LOGDIR': ('str', 'General', ''),
@@ -150,7 +150,7 @@ CONFIG_DEFINITIONS = {
     'API_KEY': ('str', 'General', ''),
     'PROXY_HOST': ('str', 'General', ''),
     'PROXY_TYPE': ('str', 'General', ''),
-    'NAME_POSTFIX':('str', 'General', 'snr, jnr, jr, sr, phd'),
+    'NAME_POSTFIX': ('str', 'General', 'snr, jnr, jr, sr, phd'),
     'IMP_PREFLANG': ('str', 'General', 'en, eng, en-US, en-GB'),
     'IMP_MONTHLANG': ('str', 'General', ''),
     'IMP_AUTOADD': ('str', 'General', ''),
@@ -241,18 +241,25 @@ CONFIG_DEFINITIONS = {
     'USE_SYNOLOGY': ('bool', 'SYNOLOGY', 0),
     'KAT_HOST': ('str', 'KAT', 'kickass.cd'),
     'KAT': ('bool', 'KAT', 0),
+    'KAT_PRIORITY': ('int', 'KAT', 0),
     'TPB_HOST': ('str', 'TPB', 'https://piratebays.co'),
     'TPB': ('bool', 'TPB', 0),
+    'TPB_PRIORITY': ('int', 'TPB', 0),
     'ZOO_HOST': ('str', 'ZOO', 'https://zooqle.com'),
     'ZOO': ('bool', 'ZOO', 0),
+    'ZOO_PRIORITY': ('int', 'ZOO', 0),
     'EXTRA_HOST': ('str', 'EXTRA', 'extratorrent.cc'),
     'EXTRA': ('bool', 'EXTRA', 0),
+    'EXTRA_PRIORITY': ('int', 'EXTRA', 0),
     'TDL_HOST': ('str', 'TDL', 'torrentdownloads.me'),
     'TDL': ('bool', 'TDL', 0),
+    'TDL_PRIORITY': ('int', 'TDL', 0),
     'GEN_HOST': ('str', 'GEN', 'libgen.io'),
     'GEN': ('bool', 'GEN', 0),
+    'GEN_PRIORITY': ('int', 'GEN', 0),
     'LIME_HOST': ('str', 'LIME', 'https://www.limetorrents.cc'),
     'LIME': ('bool', 'LIME', 0),
+    'LIME_PRIORITY': ('int', 'LIME', 0),
     'NEWZBIN_UID': ('str', 'Newzbin', ''),
     'NEWZBIN_PASS': ('str', 'Newzbin', ''),
     'NEWZBIN': ('bool', 'Newzbin', 0),
@@ -331,7 +338,7 @@ CONFIG_DEFINITIONS = {
     'EMAIL_NOTIFY_ONSNATCH': ('bool', 'Email', 0),
     'EMAIL_NOTIFY_ONDOWNLOAD': ('bool', 'Email', 0),
     'EMAIL_FROM': ('str', 'Email', ''),
-    'EMAIL_TO': ('str', 'Email',''),
+    'EMAIL_TO': ('str', 'Email', ''),
     'EMAIL_SSL': ('bool', 'Email', 0),
     'EMAIL_SMTP_SERVER': ('str', 'Email', ''),
     'EMAIL_SMTP_PORT': ('int', 'Email', 25),
@@ -403,7 +410,7 @@ def initialize():
 
         check_section('General')
         # False to silence logging until logger initialised
-        for key in ['LOGLIMIT','LOGFILES','LOGSIZE']:
+        for key in ['LOGLIMIT', 'LOGFILES', 'LOGSIZE']:
             item_type, section, default = CONFIG_DEFINITIONS[key]
             CONFIG[key.upper()] = check_setting(item_type, section, key.lower(), default, log=False)
         CONFIG['LOGDIR'] = os.path.join(DATADIR, 'Logs')
@@ -414,7 +421,8 @@ def initialize():
                 os.makedirs(CONFIG['LOGDIR'])
             except OSError as e:
                 if LOGLEVEL:
-                    print '%s : Unable to create folder for logs: %s. Only logging to console.' % (CONFIG['LOGDIR'], str(e))
+                    print '%s : Unable to create folder for logs: %s' % (
+                        CONFIG['LOGDIR'], str(e))
 
         # Start the logger, silence console logging if we need to
         CFGLOGLEVEL = check_setting('int', 'General', 'loglevel', 9, log=False)
@@ -483,7 +491,7 @@ def initialize():
 
 def config_read(reloaded=False):
     global CONFIG, CONFIG_DEFINITIONS, CONFIG_NONWEB, CONFIG_NONDEFAULT, NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, \
-            CONFIG_GIT, SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO
+        CONFIG_GIT, SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO
     # legacy name conversion
     if not CFG.has_option('General', 'ebook_dir'):
         ebook_dir = check_setting('str', 'General', 'destination_dir', '')
@@ -534,7 +542,8 @@ def config_read(reloaded=False):
                              "AUDIOCAT": check_setting('str', newz_name, 'audiocat', '3030'),
                              "EXTENDED": check_setting('str', newz_name, 'extended', '1'),
                              "UPDATED": check_setting('str', newz_name, 'updated', ''),
-                             "MANUAL": check_setting('bool', newz_name, 'manual', 0)
+                             "MANUAL": check_setting('bool', newz_name, 'manual', 0),
+                             "PRIORITY": check_setting('int', newz_name, 'priority', 0)
                              })
         count += 1
     # if the last slot is full, add an empty one on the end
@@ -569,7 +578,8 @@ def config_read(reloaded=False):
                              "AUDIOCAT": check_setting('str', torz_name, 'audiocat', '3030'),
                              "EXTENDED": check_setting('str', torz_name, 'extended', '1'),
                              "UPDATED": check_setting('str', torz_name, 'updated', ''),
-                             "MANUAL": check_setting('bool', torz_name, 'manual', 0)
+                             "MANUAL": check_setting('bool', torz_name, 'manual', 0),
+                             "PRIORITY": check_setting('int', torz_name, 'priority', 0)
                              })
         count += 1
     # if the last slot is full, add an empty one on the end
@@ -598,7 +608,8 @@ def config_read(reloaded=False):
 
         RSS_PROV.append({"NAME": rss_name,
                          "ENABLED": check_setting('bool', rss_name, 'ENABLED', 0),
-                         "HOST": check_setting('str', rss_name, 'HOST', '')
+                         "HOST": check_setting('str', rss_name, 'HOST', ''),
+                         "PRIORITY": check_setting('int', rss_name, 'PRIORITY', 0)
                          })
         count += 1
     # if the last slot is full, add an empty one on the end
@@ -609,7 +620,7 @@ def config_read(reloaded=False):
         CONFIG[key.upper()] = check_setting(item_type, section, key.lower(), default)
     if not CONFIG['LOGDIR']:
         CONFIG['LOGDIR'] = os.path.join(DATADIR, 'Logs')
-    if CONFIG['HTTP_PORT'] < 21 or CONFIG ['HTTP_PORT'] > 65535:
+    if CONFIG['HTTP_PORT'] < 21 or CONFIG['HTTP_PORT'] > 65535:
         CONFIG['HTTP_PORT'] = 5299
 
     # to make extension matching easier
@@ -632,7 +643,7 @@ def config_read(reloaded=False):
     ###################################################################
     # Suppress series tab if there are none and user doesn't want to add any
     series_list = ''
-    if version: # if zero, there is no series table yet
+    if version:  # if zero, there is no series table yet
         series_list = myDB.select('SELECT SeriesID from series')
 
     SHOW_SERIES = len(series_list)
@@ -688,7 +699,7 @@ def config_write():
         item_type, section, default = CONFIG_DEFINITIONS[key]
         if key not in CONFIG_NONWEB and not (interface == 'default' and key in CONFIG_NONDEFAULT):
             check_section(section)
-            value =  CONFIG[key]
+            value = CONFIG[key]
             if key in ['LOGDIR', 'EBOOK_DIR', 'AUDIO_DIR', 'ALTERNATE_DIR', 'DOWLOAD_DIR',
                        'EBOOK_DEST_FILE', 'EBOOK_DEST_FOLDER', 'MAG_DEST_FILE', 'MAG_DEST_FOLDER']:
                 value = value.encode(SYS_ENCODING)
@@ -698,7 +709,7 @@ def config_write():
             # keep the old value
             value = CFG.get(section, key.lower())
             if CONFIG['LOGLEVEL'] > 2:
-                logger.debug("Leaving %s unchanged (%s)" % (key,value))
+                logger.debug("Leaving %s unchanged (%s)" % (key, value))
             CONFIG[key] = value
         CFG.set(section, key.lower(), value)
 
@@ -721,6 +732,7 @@ def config_write():
         CFG.set(provider['NAME'], 'MAGCAT', provider['MAGCAT'])
         CFG.set(provider['NAME'], 'AUDIOCAT', provider['AUDIOCAT'])
         CFG.set(provider['NAME'], 'EXTENDED', provider['EXTENDED'])
+        CFG.set(provider['NAME'], 'PRIORITY', provider['PRIORITY'])
         if provider['HOST'] == oldprovider:
             CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
             CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
@@ -744,6 +756,7 @@ def config_write():
         CFG.set(provider['NAME'], 'MAGCAT', provider['MAGCAT'])
         CFG.set(provider['NAME'], 'AUDIOCAT', provider['AUDIOCAT'])
         CFG.set(provider['NAME'], 'EXTENDED', provider['EXTENDED'])
+        CFG.set(provider['NAME'], 'PRIORITY', provider['PRIORITY'])
         if provider['HOST'] == oldprovider:
             CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
             CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
@@ -758,6 +771,7 @@ def config_write():
         check_section(provider['NAME'])
         CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
         CFG.set(provider['NAME'], 'HOST', provider['HOST'])
+        CFG.set(provider['NAME'], 'PRIORITY', provider['PRIORITY'])
     add_rss_slot()
 
     myDB = database.DBConnection()
@@ -829,6 +843,7 @@ def add_newz_slot():
         CFG.set(newz_name, 'EXTENDED', '1')
         CFG.set(newz_name, 'UPDATED', '')
         CFG.set(newz_name, 'MANUAL', False)
+        CFG.set(newz_name, 'PRIORITY', 0)
 
         NEWZNAB_PROV.append({"NAME": newz_name,
                              "ENABLED": 0,
@@ -843,7 +858,8 @@ def add_newz_slot():
                              "AUDIOCAT": '3030',
                              "EXTENDED": '1',
                              "UPDATED": '',
-                             "MANUAL": 0
+                             "MANUAL": 0,
+                             "PRIORITY": 0
                              })
 
 
@@ -864,6 +880,7 @@ def add_torz_slot():
         CFG.set(torz_name, 'EXTENDED', '1')
         CFG.set(torz_name, 'UPDATED', '')
         CFG.set(torz_name, 'MANUAL', False)
+        CFG.set(torz_name, 'PRIORITY', 0)
         TORZNAB_PROV.append({"NAME": torz_name,
                              "ENABLED": 0,
                              "HOST": '',
@@ -876,7 +893,8 @@ def add_torz_slot():
                              "AUDIOCAT": '8030',
                              "EXTENDED": '1',
                              "UPDATED": '',
-                             "MANUAL": 0
+                             "MANUAL": 0,
+                             "PRIORITY": 0
                              })
 
 
@@ -922,7 +940,8 @@ def add_rss_slot():
         # CFG.set(rss_name, 'PASS', '')
         RSS_PROV.append({"NAME": rss_name,
                          "ENABLED": 0,
-                         "HOST": ''
+                         "HOST": '',
+                         "PRIORITY": 0
                          })
 
 
@@ -1073,7 +1092,7 @@ def build_monthtable():
                 logger.warn("Unable to get a list of alternatives, %s" % str(e))
             logger.info("Set locale back to entry state %s" % current_locale)
 
-    #with open(json_file, 'w') as f:
+    # with open(json_file, 'w') as f:
     #    json.dump(table, f)
     return table
 
@@ -1124,6 +1143,7 @@ def launch_browser(host, port, root):
         webbrowser.open('http://%s:%i%s' % (host, port, root))
     except Exception as e:
         logger.error('Could not launch browser: %s' % str(e))
+
 
 def start():
     global __INITIALIZED__, started, SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO

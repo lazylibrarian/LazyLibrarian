@@ -34,6 +34,7 @@ NOTIFY_DOWNLOAD = 2
 
 notifyStrings = {NOTIFY_SNATCH: "Started Download", NOTIFY_DOWNLOAD: "Added to Library"}
 
+
 def setperm(file_or_dir):
     """
     Force newly created directories to rwxr-xr-x and files to rw-r--r--
@@ -188,7 +189,8 @@ def authorUpdate():
         threading.currentThread().name = "AUTHORUPDATE"
     try:
         myDB = database.DBConnection()
-        cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" and DateAdded is not null order by DateAdded ASC'
+        cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active"'
+        cmd += ' and DateAdded is not null order by DateAdded ASC'
         author = myDB.match(cmd)
         if author and int(lazylibrarian.CONFIG['CACHE_AGE']):
             dtnow = datetime.datetime.now()
@@ -230,6 +232,7 @@ def dbUpdate(refresh=False):
         logger.error(msg)
         return msg
 
+
 def restartJobs(start='Restart'):
     scheduleJob(start, 'processDir')
     scheduleJob(start, 'search_nzb_book')
@@ -238,6 +241,7 @@ def restartJobs(start='Restart'):
     scheduleJob(start, 'search_magazines')
     scheduleJob(start, 'checkForUpdates')
     scheduleJob(start, 'authorUpdate')
+
 
 def ensureRunning(jobname):
     found = False
@@ -281,6 +285,7 @@ def checkRunningJobs():
         scheduleJob('Stop', 'search_magazines')
 
     ensureRunning('authorUpdate')
+
 
 def showJobs():
     result = ["Cache %i hit%s, %i miss" % (int(lazylibrarian.CACHE_HIT),
@@ -361,7 +366,7 @@ def cleanCache():
             cache_modified_time = os.stat(target).st_mtime
             time_now = time.time()
             if cache_modified_time < time_now - (
-                        lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60):  # expire after this many seconds
+                                lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60):  # expire after this many seconds
                 # Cache is old, delete entry
                 os.remove(target)
                 cleaned += 1
@@ -383,7 +388,7 @@ def cleanCache():
             cache_modified_time = os.stat(target).st_mtime
             time_now = time.time()
             if cache_modified_time < time_now - (
-                        lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60):  # expire after this many seconds
+                                lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60):  # expire after this many seconds
                 # Cache is old, delete entry
                 os.remove(target)
                 cleaned += 1

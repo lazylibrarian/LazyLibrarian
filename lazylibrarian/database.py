@@ -63,21 +63,21 @@ class DBConnection:
                         logger.error("Failed query: [%s]" % query)
                         raise
 
-                except  sqlite3.IntegrityError as e:
-                        # we could ignore unique errors in sqlite by using "insert or ignore into" statements
-                        # but this would also ignore null values as we can't specify which errors to ignore :-(
-                        # The python interface to sqlite only returns english text messages, not error codes
-                        msg = e.message
-                        msg = msg.lower()
-                        if suppress == 'UNIQUE' and ('not unique' in msg or 'unique constraint failed' in msg):
-                            if int(lazylibrarian.LOGLEVEL) > 2:
-                                logger.debug('Suppressed [%s] %s' % (query, e.message))
-                            self.connection.commit()
-                            break
-                        else:
-                            logger.error('Database Integrity error: %s' % e)
-                            logger.error("Failed query: [%s]" % query)
-                            raise
+                except sqlite3.IntegrityError as e:
+                    # we could ignore unique errors in sqlite by using "insert or ignore into" statements
+                    # but this would also ignore null values as we can't specify which errors to ignore :-(
+                    # The python interface to sqlite only returns english text messages, not error codes
+                    msg = e.message
+                    msg = msg.lower()
+                    if suppress == 'UNIQUE' and ('not unique' in msg or 'unique constraint failed' in msg):
+                        if int(lazylibrarian.LOGLEVEL) > 2:
+                            logger.debug('Suppressed [%s] %s' % (query, e.message))
+                        self.connection.commit()
+                        break
+                    else:
+                        logger.error('Database Integrity error: %s' % e)
+                        logger.error("Failed query: [%s]" % query)
+                        raise
 
                 except sqlite3.DatabaseError as e:
                     logger.error('Fatal error executing %s :: %s' % (query, e))

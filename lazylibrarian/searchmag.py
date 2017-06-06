@@ -34,6 +34,7 @@ def cron_search_magazines():
     if 'SEARCHALLMAG' not in [n.name for n in [t for t in threading.enumerate()]]:
         search_magazines()
 
+
 def search_magazines(mags=None, reset=False):
     # produce a list of magazines to search for, tor, nzb, torznab, rss
     try:
@@ -375,7 +376,8 @@ def search_magazines(mags=None, reset=False):
 
                                 if '-' in str(newdatish):
                                     start_time = time.time()
-                                    start_time -= int(lazylibrarian.CONFIG['MAG_AGE']) * 24 * 60 * 60  # number of seconds in days
+                                    start_time -= int(
+                                        lazylibrarian.CONFIG['MAG_AGE']) * 24 * 60 * 60  # number of seconds in days
                                     if start_time < 0:  # limit of unixtime (1st Jan 1970)
                                         start_time = 0
                                     control_date = time.strftime("%Y-%m-%d", time.localtime(start_time))
@@ -446,9 +448,10 @@ def search_magazines(mags=None, reset=False):
                                 }
                                 myDB.upsert(insert_table, newValueDict, controlValueDict)
 
-                logger.info(
-                    'Found %i result%s for %s. %i new, %i old, %i fail date, %i fail name, %i rejected: %i to download' % (
-                    total_nzbs, plural(total_nzbs), bookid, new_date, old_date, bad_date, bad_name, rejects, len(maglist)))
+                msg = 'Found %i result%s for %s. %i new,' % (total_nzbs, plural(total_nzbs), bookid, new_date)
+                msg += ' %i old, %i fail date, %i fail name,' % (old_date, bad_date, bad_name)
+                msg += ' %i rejected: %i to download' % (rejects, len(maglist))
+                logger.info(msg)
 
                 for magazine in maglist:
                     if magazine['nzbmode'] in ["torznab", "torrent", "magnet"]:

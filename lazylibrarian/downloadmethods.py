@@ -56,7 +56,8 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None):
             nzb.url = nzburl
             downloadID = nzbget.sendNZB(nzb)
 
-    if lazylibrarian.CONFIG['NZB_DOWNLOADER_SYNOLOGY'] and lazylibrarian.CONFIG['USE_SYNOLOGY'] and lazylibrarian.CONFIG['SYNOLOGY_HOST']:
+    if lazylibrarian.CONFIG['NZB_DOWNLOADER_SYNOLOGY'] and lazylibrarian.CONFIG['USE_SYNOLOGY'] and \
+            lazylibrarian.CONFIG['SYNOLOGY_HOST']:
         Source = "SYNOLOGY_NZB"
         downloadID = synology.addTorrent(nzburl)  # returns nzb_ids or False
 
@@ -116,7 +117,12 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
             f = gzip.GzipFile(fileobj=buf)
             fdata = f.read()
         else:
-            fdata = response.read()
+            try:
+                fdata = response.read()
+            except Exception as e:
+                logger.warn('Error reading response from url: %s, %s' % (tor_url, e.reason))
+                return False
+
         bookname = '.'.join(bookname.rsplit(' ', 1))  # last word is the extension
         logger.debug("File download got %s bytes for %s/%s" % (len(fdata), tor_title, bookname))
         destdir = os.path.join(lazylibrarian.DIRECTORY('Download'), tor_title)
@@ -283,7 +289,8 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None):
             downloadID = CalcTorrentHash(torrent)
             tor_title = transmission.getTorrentFolder(downloadID)
 
-    if lazylibrarian.CONFIG['TOR_DOWNLOADER_SYNOLOGY'] and lazylibrarian.CONFIG['USE_SYNOLOGY'] and lazylibrarian.CONFIG['SYNOLOGY_HOST']:
+    if lazylibrarian.CONFIG['TOR_DOWNLOADER_SYNOLOGY'] and lazylibrarian.CONFIG['USE_SYNOLOGY'] and \
+            lazylibrarian.CONFIG['SYNOLOGY_HOST']:
         logger.debug("Sending %s to Synology" % tor_title)
         Source = "SYNOLOGY_TOR"
         downloadID = synology.addTorrent(tor_url)  # returns id or False

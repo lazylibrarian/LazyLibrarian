@@ -74,7 +74,7 @@ def cache_img(img_type, img_ID, img_url, refresh=False):
     coverfile = os.path.join(cachedir, img_type, img_ID + '.jpg')
     link = 'cache/%s/%s.jpg' % (img_type, img_ID)
     if os.path.isfile(coverfile) and not refresh:  # overwrite any cached image
-       return link, True
+        return link, True
 
     result, success = fetchURL(img_url)
 

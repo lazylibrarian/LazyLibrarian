@@ -72,7 +72,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'ignoreAuthor': '&id= ignore author by AuthorID',
             'unignoreAuthor': '&id= unignore author by AuthorID',
             'refreshAuthor': '&name= [&refresh] reload author (and their books) by name, optionally refresh cache',
-            'forceActiveAuthorsUpdate': '[&wait] [&refresh] reload all active authors and book data, optionally refresh cache',
+            'forceActiveAuthorsUpdate': '[&wait] [&refresh] reload all active authors and book data, refresh cache',
             'forceLibraryScan': '[&wait] rescan whole book library',
             'forceAudioBookScan': '[&wait] rescan whole audiobook library',
             'forceMagazineScan': '[&wait] rescan whole magazine library',
@@ -94,7 +94,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'readCFG': '&name=&group= read value of config variable "name" in section "group"',
             'writeCFG': '&name=&group=&value= set config variable "name" in section "group" to value',
             'loadCFG': 'reload config from file',
-            'getBookCover': '&id= fetch a link to a cover from bookfolder/cache/librarything/goodreads/google for a BookID',
+            'getBookCover': '&id= fetch a cover link from bookfolder/cache/librarything/goodreads/google for a BookID',
             'getAllBooks': 'list all books in the database',
             'getNoLang': 'list all books in the database with unknown language',
             'listIgnoredAuthors': 'list all authors in the database marked ignored',
@@ -322,9 +322,9 @@ class Api(object):
 
     def _createMagCovers(self, **kwargs):
         if 'refresh' in kwargs:
-            refresh=True
+            refresh = True
         else:
-            refresh=False
+            refresh = False
         if 'wait' in kwargs:
             self.data = create_covers(refresh=refresh)
         else:
@@ -846,7 +846,6 @@ class Api(object):
             self.id = kwargs['id']
         self.data = getAuthorImage(self.id)
 
-
     def _lock(self, table, itemid, state):
         myDB = database.DBConnection()
         dbentry = myDB.match('SELECT %sID from %ss WHERE %sID=%s' % (table, table, table, itemid))
@@ -855,7 +854,6 @@ class Api(object):
         else:
             self.data = "%sID %s not found" % (table, itemid)
 
-
     def _setAuthorLock(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
@@ -863,14 +861,12 @@ class Api(object):
         else:
             self._lock("author", kwargs['id'], "1")
 
-
     def _setAuthorUnlock(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
             return
         else:
             self._lock("author", kwargs['id'], "0")
-
 
     def _setAuthorImage(self, **kwargs):
         if 'id' not in kwargs:
@@ -884,7 +880,6 @@ class Api(object):
         else:
             self._setimage("author", kwargs['id'], kwargs['img'])
 
-
     def _setBookImage(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
@@ -897,27 +892,26 @@ class Api(object):
         else:
             self._setimage("book", kwargs['id'], kwargs['img'])
 
-
     def _setimage(self, table, itemid, img):
         msg = "%s Image [%s] rejected" % (table, img)
         # Cache file image
         if os.path.isfile(img):
             extn = os.path.splitext(img)[1].lower()
-            if extn and extn in ['.jpg','.jpeg','.png']:
+            if extn and extn in ['.jpg', '.jpeg', '.png']:
                 destfile = os.path.join(lazylibrarian.CACHEDIR, table, itemid + '.jpg')
                 try:
                     shutil.copy(img, destfile)
                     setperm(destfile)
                     msg = ''
                 except Exception as why:
-                    msg += " Failed to copy file: %s" %  str(why)
+                    msg += " Failed to copy file: %s" % str(why)
             else:
                 msg += " invalid extension"
 
         if img.startswith('http'):
             # cache image from url
             extn = os.path.splitext(img)[1].lower()
-            if extn and extn in ['.jpg','.jpeg','.png']:
+            if extn and extn in ['.jpg', '.jpeg', '.png']:
                 cachedimg, success = cache_img(table, itemid, img)
                 if success:
                     msg = ''
@@ -940,7 +934,6 @@ class Api(object):
         else:
             self.data = "%sID %s not found" % (table, itemid)
 
-
     def _setBookLock(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
@@ -948,14 +941,12 @@ class Api(object):
         else:
             self._lock("book", kwargs['id'], "1")
 
-
     def _setBookUnlock(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
             return
         else:
             self._lock("book", kwargs['id'], "0")
-
 
     @staticmethod
     def _restartJobs():

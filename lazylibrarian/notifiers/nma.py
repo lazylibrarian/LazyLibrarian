@@ -60,7 +60,8 @@ class NMA_Notifier:
 
     # noinspection PyUnusedLocal
     def test_notify(self, title="Test"):
-        return self._sendNMA(nma_api=None, nma_priority=None, event="Test", message="Testing NMA settings from LazyLibrarian", force=True)
+        return self._sendNMA(nma_api=None, nma_priority=None, event="Test",
+                             message="Testing NMA settings from LazyLibrarian", force=True)
 
     def update_library(self, showName=None):
         pass

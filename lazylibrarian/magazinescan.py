@@ -28,6 +28,7 @@ from lazylibrarian import database, logger
 from lazylibrarian.common import setperm
 from lazylibrarian.formatter import getList, is_valid_booktype, plural
 
+
 def create_covers(refresh=False):
     if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':  # special flag to say "no covers required"
         logger.info('Cover creation is disabled in config')
@@ -80,7 +81,7 @@ def create_cover(issuefile=None, refresh=False):
         try:
             data = zipfile.ZipFile(issuefile)
         except Exception as why:
-            logger.debug("Failed to read zip file %s, %s" %  (issuefile, str(why)))
+            logger.debug("Failed to read zip file %s, %s" % (issuefile, str(why)))
             data = ''
     elif extn in ['.cbr']:
         try:
@@ -93,7 +94,7 @@ def create_cover(issuefile=None, refresh=False):
             from lib.unrar import rarfile
             data = rarfile.RarFile(issuefile)
         except Exception as why:
-            logger.debug("Failed to read rar file %s, %s" %  (issuefile, str(why)))
+            logger.debug("Failed to read rar file %s, %s" % (issuefile, str(why)))
             data = ''
     if data:
         img = ''
@@ -150,7 +151,7 @@ def create_cover(issuefile=None, refresh=False):
                     res = subprocess.check_output(params, stderr=subprocess.STDOUT)
                     if not os.path.isfile(coverfile):
                         logger.debug("Failed to create jpg: %s" % res)
-                except Exception:  #  as why:
+                except Exception:  # as why:
                     logger.debug("Failed to create jpg for %s" % issuefile)
                     logger.debug('Exception in gswin create_cover: %s' % traceback.format_exc())
         else:  # not windows
@@ -235,7 +236,7 @@ def create_cover(issuefile=None, refresh=False):
         shutil.copyfile(os.path.join(lazylibrarian.PROG_DIR, 'data/images/nocover.jpg'), coverfile)
         setperm(coverfile)
     except Exception as why:
-        logger.debug("Failed to copy nocover file, %s" %  str(why))
+        logger.debug("Failed to copy nocover file, %s" % str(why))
     return
 
 
@@ -246,169 +247,170 @@ def create_id(issuename=None):
 
 
 def magazineScan():
-  try:
-    myDB = database.DBConnection()
+    try:
+        myDB = database.DBConnection()
 
-    mag_path = lazylibrarian.CONFIG['MAG_DEST_FOLDER']
-    mag_path = mag_path.split('$')[0]
+        mag_path = lazylibrarian.CONFIG['MAG_DEST_FOLDER']
+        mag_path = mag_path.split('$')[0]
 
-    if lazylibrarian.CONFIG['MAG_RELATIVE']:
-        if mag_path[0] not in '._':
-            mag_path = '_' + mag_path
-        mag_path = os.path.join(lazylibrarian.DIRECTORY('eBook'), mag_path).encode(lazylibrarian.SYS_ENCODING)
-    else:
-        mag_path = mag_path.encode(lazylibrarian.SYS_ENCODING)
-
-    if lazylibrarian.CONFIG['FULL_SCAN']:
-        mags = myDB.select('select * from Issues')
-        # check all the issues are still there, delete entry if not
-        for mag in mags:
-            title = mag['Title']
-            issuedate = mag['IssueDate']
-            issuefile = mag['IssueFile']
-
-            if issuefile and not os.path.isfile(issuefile):
-                myDB.action('DELETE from Issues where issuefile="%s"' % issuefile)
-                logger.info('Issue %s - %s deleted as not found on disk' % (title, issuedate))
-                controlValueDict = {"Title": title}
-                newValueDict = {
-                    "LastAcquired": None,  # clear magazine dates
-                    "IssueDate": None,  # we will fill them in again later
-                    "LatestCover": None,
-                    "IssueStatus": "Skipped"  # assume there are no issues now
-                }
-                myDB.upsert("magazines", newValueDict, controlValueDict)
-                logger.debug('Magazine %s details reset' % title)
-
-        mags = myDB.select('SELECT * from magazines')
-        # now check the magazine titles and delete any with no issues
-        for mag in mags:
-            title = mag['Title']
-            count = myDB.select('SELECT COUNT(Title) as counter FROM issues WHERE Title="%s"' % title)
-            issues = count[0]['counter']
-            if not issues:
-                logger.debug('Magazine %s deleted as no issues found' % title)
-                myDB.action('DELETE from magazines WHERE Title="%s"' % title)
-
-    logger.info(' Checking [%s] for magazines' % mag_path)
-
-    matchString = ''
-    for char in lazylibrarian.CONFIG['MAG_DEST_FILE']:
-        matchString = matchString + '\\' + char
-    # massage the MAG_DEST_FILE config parameter into something we can use
-    # with regular expression matching
-    booktypes = ''
-    count = -1
-    booktype_list = getList(lazylibrarian.CONFIG['MAG_TYPE'])
-    for book_type in booktype_list:
-        count += 1
-        if count == 0:
-            booktypes = book_type
+        if lazylibrarian.CONFIG['MAG_RELATIVE']:
+            if mag_path[0] not in '._':
+                mag_path = '_' + mag_path
+            mag_path = os.path.join(lazylibrarian.DIRECTORY('eBook'), mag_path).encode(lazylibrarian.SYS_ENCODING)
         else:
-            booktypes = booktypes + '|' + book_type
-    matchString = matchString.replace("\\$\\I\\s\\s\\u\\e\\D\\a\\t\\e", "(?P<issuedate>.*?)").replace(
-        "\\$\\T\\i\\t\\l\\e", "(?P<title>.*?)") + '\.[' + booktypes + ']'
-    pattern = re.compile(matchString, re.VERBOSE)
+            mag_path = mag_path.encode(lazylibrarian.SYS_ENCODING)
 
-    for dirname, dirnames, filenames in os.walk(mag_path):
-        for fname in filenames[:]:
-            # maybe not all magazines will be pdf?
-            if is_valid_booktype(fname, booktype='mag'):
-                try:
-                    match = pattern.match(fname)
-                    if match:
-                        issuedate = match.group("issuedate")
-                        title = match.group("title")
-                    else:
-                        logger.debug("Pattern match failed for [%s]" % fname)
-                        continue
-                except Exception as e:
-                    logger.debug("Invalid name format for [%s] %s" % (fname, str(e)))
-                    continue
+        if lazylibrarian.CONFIG['FULL_SCAN']:
+            mags = myDB.select('select * from Issues')
+            # check all the issues are still there, delete entry if not
+            for mag in mags:
+                title = mag['Title']
+                issuedate = mag['IssueDate']
+                issuefile = mag['IssueFile']
 
-                logger.debug("Found Issue %s" % fname)
-
-                issuefile = os.path.join(dirname, fname)  # full path to issue.pdf
-                mtime = os.path.getmtime(issuefile)
-                iss_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
-
-                controlValueDict = {"Title": title}
-
-                # is this magazine already in the database?
-                mag_entry = myDB.match('SELECT LastAcquired, IssueDate, MagazineAdded from magazines WHERE Title="%s"' % title)
-                if not mag_entry:
-                    # need to add a new magazine to the database
+                if issuefile and not os.path.isfile(issuefile):
+                    myDB.action('DELETE from Issues where issuefile="%s"' % issuefile)
+                    logger.info('Issue %s - %s deleted as not found on disk' % (title, issuedate))
+                    controlValueDict = {"Title": title}
                     newValueDict = {
-                        "Reject": None,
-                        "Status": "Active",
-                        "MagazineAdded": None,
-                        "LastAcquired": None,
+                        "LastAcquired": None,  # clear magazine dates
+                        "IssueDate": None,  # we will fill them in again later
                         "LatestCover": None,
-                        "IssueDate": None,
-                        "IssueStatus": "Skipped",
-                        "Regex": None
-                    }
-                    logger.debug("Adding magazine %s" % title)
-                    myDB.upsert("magazines", newValueDict, controlValueDict)
-                    magissuedate = None
-                    magazineadded = None
-                else:
-                    maglastacquired = mag_entry['LastAcquired']
-                    magissuedate = mag_entry['IssueDate']
-                    magazineadded = mag_entry['MagazineAdded']
-                    magissuedate = str(magissuedate).zfill(4)
-
-                issuedate = str(issuedate).zfill(4)  # for sorting issue numbers
-
-                # is this issue already in the database?
-                controlValueDict = {"Title": title, "IssueDate": issuedate}
-                issue_id = create_id("%s %s" % (title, issuedate))
-                iss_entry = myDB.match('SELECT Title from issues WHERE Title="%s" and IssueDate="%s"' % (
-                    title, issuedate))
-                if not iss_entry:
-                    newValueDict = {
-                        "IssueAcquired": iss_acquired,
-                        "IssueID": issue_id,
-                        "IssueFile": issuefile
-                    }
-                    myDB.upsert("Issues", newValueDict, controlValueDict)
-                    logger.debug("Adding issue %s %s" % (title, issuedate))
-
-                create_cover(issuefile)
-
-                # see if this issues date values are useful
-                controlValueDict = {"Title": title}
-                if not mag_entry:  # new magazine, this is the only issue
-                    newValueDict = {
-                        "MagazineAdded": iss_acquired,
-                        "LastAcquired": iss_acquired,
-                        "LatestCover": os.path.splitext(issuefile)[0] + '.jpg',
-                        "IssueDate": issuedate,
-                        "IssueStatus": "Open"
+                        "IssueStatus": "Skipped"  # assume there are no issues now
                     }
                     myDB.upsert("magazines", newValueDict, controlValueDict)
-                else:
-                    # Set magazine_issuedate to issuedate of most recent issue we have
-                    # Set latestcover to most recent issue cover
-                    # Set magazine_added to acquired date of earliest issue we have
-                    # Set magazine_lastacquired to acquired date of most recent issue we have
-                    # acquired dates are read from magazine file timestamps
-                    newValueDict = {"IssueStatus": "Open"}
-                    if iss_acquired < magazineadded:
-                        newValueDict["MagazineAdded"] =  iss_acquired
-                    if not maglastacquired or iss_acquired > maglastacquired:
-                        newValueDict["LastAcquired"] = iss_acquired
-                    if not magissuedate or issuedate >= magissuedate:
-                        newValueDict["IssueDate"] = issuedate
-                        newValueDict["LatestCover"] = os.path.splitext(issuefile)[0] + '.jpg'
-                    myDB.upsert("magazines", newValueDict, controlValueDict)
+                    logger.debug('Magazine %s details reset' % title)
 
-    magcount = myDB.match("select count(*) from magazines")
-    isscount = myDB.match("select count(*) from issues")
+            mags = myDB.select('SELECT * from magazines')
+            # now check the magazine titles and delete any with no issues
+            for mag in mags:
+                title = mag['Title']
+                count = myDB.select('SELECT COUNT(Title) as counter FROM issues WHERE Title="%s"' % title)
+                issues = count[0]['counter']
+                if not issues:
+                    logger.debug('Magazine %s deleted as no issues found' % title)
+                    myDB.action('DELETE from magazines WHERE Title="%s"' % title)
 
-    logger.info("Magazine scan complete, found %s magazine%s, %s issue%s" %
-                (magcount['count(*)'], plural(magcount['count(*)']),
-                 isscount['count(*)'], plural(isscount['count(*)'])))
+        logger.info(' Checking [%s] for magazines' % mag_path)
 
-  except Exception:
-    logger.error('Unhandled exception in magazineScan: %s' % traceback.format_exc())
+        matchString = ''
+        for char in lazylibrarian.CONFIG['MAG_DEST_FILE']:
+            matchString = matchString + '\\' + char
+        # massage the MAG_DEST_FILE config parameter into something we can use
+        # with regular expression matching
+        booktypes = ''
+        count = -1
+        booktype_list = getList(lazylibrarian.CONFIG['MAG_TYPE'])
+        for book_type in booktype_list:
+            count += 1
+            if count == 0:
+                booktypes = book_type
+            else:
+                booktypes = booktypes + '|' + book_type
+        matchString = matchString.replace("\\$\\I\\s\\s\\u\\e\\D\\a\\t\\e", "(?P<issuedate>.*?)").replace(
+            "\\$\\T\\i\\t\\l\\e", "(?P<title>.*?)") + '\.[' + booktypes + ']'
+        pattern = re.compile(matchString, re.VERBOSE)
+
+        for dirname, dirnames, filenames in os.walk(mag_path):
+            for fname in filenames[:]:
+                # maybe not all magazines will be pdf?
+                if is_valid_booktype(fname, booktype='mag'):
+                    try:
+                        match = pattern.match(fname)
+                        if match:
+                            issuedate = match.group("issuedate")
+                            title = match.group("title")
+                        else:
+                            logger.debug("Pattern match failed for [%s]" % fname)
+                            continue
+                    except Exception as e:
+                        logger.debug("Invalid name format for [%s] %s" % (fname, str(e)))
+                        continue
+
+                    logger.debug("Found Issue %s" % fname)
+
+                    issuefile = os.path.join(dirname, fname)  # full path to issue.pdf
+                    mtime = os.path.getmtime(issuefile)
+                    iss_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
+
+                    controlValueDict = {"Title": title}
+
+                    # is this magazine already in the database?
+                    mag_entry = myDB.match(
+                        'SELECT LastAcquired, IssueDate, MagazineAdded from magazines WHERE Title="%s"' % title)
+                    if not mag_entry:
+                        # need to add a new magazine to the database
+                        newValueDict = {
+                            "Reject": None,
+                            "Status": "Active",
+                            "MagazineAdded": None,
+                            "LastAcquired": None,
+                            "LatestCover": None,
+                            "IssueDate": None,
+                            "IssueStatus": "Skipped",
+                            "Regex": None
+                        }
+                        logger.debug("Adding magazine %s" % title)
+                        myDB.upsert("magazines", newValueDict, controlValueDict)
+                        magissuedate = None
+                        magazineadded = None
+                    else:
+                        maglastacquired = mag_entry['LastAcquired']
+                        magissuedate = mag_entry['IssueDate']
+                        magazineadded = mag_entry['MagazineAdded']
+                        magissuedate = str(magissuedate).zfill(4)
+
+                    issuedate = str(issuedate).zfill(4)  # for sorting issue numbers
+
+                    # is this issue already in the database?
+                    controlValueDict = {"Title": title, "IssueDate": issuedate}
+                    issue_id = create_id("%s %s" % (title, issuedate))
+                    iss_entry = myDB.match('SELECT Title from issues WHERE Title="%s" and IssueDate="%s"' % (
+                        title, issuedate))
+                    if not iss_entry:
+                        newValueDict = {
+                            "IssueAcquired": iss_acquired,
+                            "IssueID": issue_id,
+                            "IssueFile": issuefile
+                        }
+                        myDB.upsert("Issues", newValueDict, controlValueDict)
+                        logger.debug("Adding issue %s %s" % (title, issuedate))
+
+                    create_cover(issuefile)
+
+                    # see if this issues date values are useful
+                    controlValueDict = {"Title": title}
+                    if not mag_entry:  # new magazine, this is the only issue
+                        newValueDict = {
+                            "MagazineAdded": iss_acquired,
+                            "LastAcquired": iss_acquired,
+                            "LatestCover": os.path.splitext(issuefile)[0] + '.jpg',
+                            "IssueDate": issuedate,
+                            "IssueStatus": "Open"
+                        }
+                        myDB.upsert("magazines", newValueDict, controlValueDict)
+                    else:
+                        # Set magazine_issuedate to issuedate of most recent issue we have
+                        # Set latestcover to most recent issue cover
+                        # Set magazine_added to acquired date of earliest issue we have
+                        # Set magazine_lastacquired to acquired date of most recent issue we have
+                        # acquired dates are read from magazine file timestamps
+                        newValueDict = {"IssueStatus": "Open"}
+                        if iss_acquired < magazineadded:
+                            newValueDict["MagazineAdded"] = iss_acquired
+                        if not maglastacquired or iss_acquired > maglastacquired:
+                            newValueDict["LastAcquired"] = iss_acquired
+                        if not magissuedate or issuedate >= magissuedate:
+                            newValueDict["IssueDate"] = issuedate
+                            newValueDict["LatestCover"] = os.path.splitext(issuefile)[0] + '.jpg'
+                        myDB.upsert("magazines", newValueDict, controlValueDict)
+
+        magcount = myDB.match("select count(*) from magazines")
+        isscount = myDB.match("select count(*) from issues")
+
+        logger.info("Magazine scan complete, found %s magazine%s, %s issue%s" %
+                    (magcount['count(*)'], plural(magcount['count(*)']),
+                     isscount['count(*)'], plural(isscount['count(*)'])))
+
+    except Exception:
+        logger.error('Unhandled exception in magazineScan: %s' % traceback.format_exc())

@@ -66,7 +66,7 @@ def processResultList(resultlist, book, searchtype, source):
         Author_match = fuzz.token_set_ratio(author, Title)
         Book_match = fuzz.token_set_ratio(title, Title)
         logger.debug(u"%s author/book Match: %s/%s for %s at %s" %
-                    (source.upper(), Author_match, Book_match, Title, res[prefix + 'prov']))
+                     (source.upper(), Author_match, Book_match, Title, res[prefix + 'prov']))
 
         rejected = False
 
@@ -109,7 +109,7 @@ def processResultList(resultlist, book, searchtype, source):
 
         if not rejected:
             bookid = book['bookid']
-            Title = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
+            newTitle = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
 
             if source == 'nzb':
                 mode = res['nzbmode']
@@ -124,7 +124,7 @@ def processResultList(resultlist, book, searchtype, source):
                 "BookID": bookid,
                 "NZBdate": now(),  # when we asked for it
                 "NZBsize": size,
-                "NZBtitle": Title,
+                "NZBtitle": newTitle,
                 "NZBmode": mode,
                 "AuxInfo": auxinfo,
                 "Status": "Skipped"
@@ -151,10 +151,10 @@ def processResultList(resultlist, book, searchtype, source):
             # prioritise titles that include the ebook types we want
             if len(booktypes):
                 score += 1
-            matches.append([score, Title, newValueDict, controlValueDict])
+            matches.append([score, Title, newValueDict, controlValueDict, res['priority']])
 
     if matches:
-        highest = max(matches, key=lambda s: s[0])
+        highest = max(matches, key=lambda s: (s[0], s[4]))
         score = highest[0]
         Title = highest[1]
         newValueDict = highest[2]
@@ -169,10 +169,10 @@ def processResultList(resultlist, book, searchtype, source):
 
         if auxinfo == 'eBook':
             snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID="%s" and Status="Snatched"' %
-                                        newValueDict["BookID"])
+                                       newValueDict["BookID"])
         else:
             snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID="%s" and AudioStatus="Snatched"' %
-                                        newValueDict["BookID"])
+                                       newValueDict["BookID"])
 
         if snatchedbooks:
             logger.debug('%s already marked snatched' % Title)
@@ -182,7 +182,8 @@ def processResultList(resultlist, book, searchtype, source):
             if '.nzb' in controlValueDict["NZBurl"]:
                 snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             elif newValueDict["NZBprov"] == 'libgen':  # for libgen we use direct download links
-                snatch = DirectDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], controlValueDict["NZBurl"], Title)
+                snatch = DirectDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
+                                              controlValueDict["NZBurl"], Title)
             elif newValueDict['NZBmode'] == "torznab" or newValueDict['NZBmode'] == "torrent":
                 snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             else:

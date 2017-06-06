@@ -42,7 +42,8 @@ class BoxcarNotifier:
         msg: The message to send (unicode)
         title: The title of the message
         email: The email address to send the message to (or to subscribe with)
-        subscribe: If true then instead of sending a message this function will send a subscription notification (optional, default is False)
+        subscribe: If true then instead of sending a message this function will send
+        a subscription notification (optional, default is False)
 
         returns: True if the message succeeded, False otherwise
         """

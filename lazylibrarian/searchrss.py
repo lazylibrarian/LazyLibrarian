@@ -44,7 +44,7 @@ def search_rss_book(books=None, library=None):
             else:
                 threading.currentThread().name = "SEARCHRSS"
 
-        if not(lazylibrarian.USE_RSS()):
+        if not (lazylibrarian.USE_RSS()):
             logger.warn('RSS search is disabled')
             scheduleJob(action='Stop', target='search_rss_book')
             return
@@ -74,7 +74,7 @@ def search_rss_book(books=None, library=None):
                             newValueDict = {"Status": "Wanted"}
                             myDB.upsert("books", newValueDict, controlValueDict)
                     else:
-                      import_book(book['rss_bookid'])
+                        import_book(book['rss_bookid'])
                 else:
                     item = {}
                     headers = []
@@ -92,7 +92,8 @@ def search_rss_book(books=None, library=None):
                         bookid = bookmatch['BookID']
                         bookstatus = bookmatch['Status']
                         if bookstatus in ['Open', 'Wanted', 'Have']:
-                            logger.info(u'Found book %s by %s, already marked as "%s"' % (bookname, authorname, bookstatus))
+                            logger.info(
+                                u'Found book %s by %s, already marked as "%s"' % (bookname, authorname, bookstatus))
                         else:  # skipped/ignored
                             logger.info(u'Found book %s by %s, marking as "Wanted"' % (bookname, authorname))
                             controlValueDict = {"BookID": bookid}
@@ -115,9 +116,9 @@ def search_rss_book(books=None, library=None):
                         if results:
                             result = results[0]
                             if result['author_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO'] \
-                                and result['book_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO']:
+                                    and result['book_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO']:
                                 logger.info("Found (%s%% %s%%) %s: %s" % (result['author_fuzz'], result['book_fuzz'],
-                                                                            result['authorname'], result['bookname']))
+                                                                          result['authorname'], result['bookname']))
                                 import_book(result['bookid'])
                                 bookmatch = True
 

@@ -352,7 +352,7 @@ def processDir(reset=False):
 
                             if os.path.isdir(pp_path):
                                 logger.debug('Found folder (%s%%) %s for %s %s' %
-                                            (match, pp_path, book_type, matchtitle))
+                                             (match, pp_path, book_type, matchtitle))
                                 skipped = False
                                 if book_type == 'eBook' and not book_file(pp_path, 'ebook'):
                                     logger.debug("Skipping %s, no ebook found" % pp_path)
@@ -393,13 +393,14 @@ def processDir(reset=False):
                     cmd += ' and books.AuthorID = authors.AuthorID'
                     data = myDB.match(cmd)
                     if data:  # it's ebook/audiobook
-                        logger.debug(u'Processing %s %s' % (book_type,book['BookID']))
+                        logger.debug(u'Processing %s %s' % (book_type, book['BookID']))
                         authorname = data['AuthorName']
                         authorname = ' '.join(authorname.split())  # ensure no extra whitespace
                         bookname = data['BookName']
                         if 'windows' in platform.system().lower() and '/' in lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']:
                             logger.warn('Please check your EBOOK_DEST_FOLDER setting')
-                            lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'] = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('/', '\\')
+                            lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'] = lazylibrarian.CONFIG[
+                                'EBOOK_DEST_FOLDER'].replace('/', '\\')
                         # Default destination path, should be allowed change per config file.
                         dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('$Author', authorname).replace(
                             '$Title', bookname)
@@ -433,7 +434,8 @@ def processDir(reset=False):
                                 dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
                             authorname = None
                             bookname = None
-                            global_name = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace('$IssueDate', book['AuxInfo']).replace(
+                            global_name = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace('$IssueDate',
+                                                                                        book['AuxInfo']).replace(
                                 '$Title', mag_name)
                             global_name = unaccented(global_name)
                         else:  # not recognised
@@ -621,7 +623,6 @@ def processDir(reset=False):
                 if int(lazylibrarian.LOGLEVEL) > 2:
                     logger.debug("Skipping (not LL) %s" % entry)
 
-
         logger.info('%s book%s/mag%s processed.' % (ppcount, plural(ppcount), plural(ppcount)))
 
         # Now check for any that are still marked snatched...
@@ -757,10 +758,12 @@ def import_book(pp_path=None, bookID=None):
                 logger.warn('Please check your EBOOK_DEST_FOLDER setting')
                 lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'] = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('/', '\\')
 
-            dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('$Author', authorname).replace('$Title', bookname)
+            dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('$Author', authorname).replace('$Title',
+                                                                                                         bookname)
             # global_name is only used for ebooks to ensure book/cover/opf all have the same basename
             # audiobooks are usually multi part so can't be renamed this way
-            global_name = lazylibrarian.CONFIG['EBOOK_DEST_FILE'].replace('$Author', authorname).replace('$Title', bookname)
+            global_name = lazylibrarian.CONFIG['EBOOK_DEST_FILE'].replace('$Author', authorname).replace('$Title',
+                                                                                                         bookname)
             global_name = unaccented(global_name)
             dest_path = unaccented_str(replace_all(dest_path, __dic__))
             dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
@@ -893,7 +896,8 @@ def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
         update_totals(match['AuthorID'])
 
 
-def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, bookid=None, booktype=None):
+def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, bookid=None,
+                       booktype=None):
     """ Copy book/mag and associated files into target directory
         Return True, full_path_to_book  or False, error_message"""
 
@@ -934,10 +938,11 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
     if not match:
         # no book/mag found in a format we wanted. Leave for the user to delete or convert manually
-        return False, 'Unable to locate a valid filetype (%s) in %s, leaving for manual processing' % (booktype, pp_path)
+        return False, 'Unable to locate a valid filetype (%s) in %s, leaving for manual processing' % (
+            booktype, pp_path)
 
     # If ebook, do we want calibre to import the book for us
-    newbookfile= ''
+    newbookfile = ''
     if booktype == 'ebook' and len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
         dest_dir = lazylibrarian.DIRECTORY('eBook')
         params = []
@@ -984,7 +989,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     logger.debug(str(authorparams))
                     res = subprocess.check_output(authorparams, stderr=subprocess.STDOUT)
                     if res:
-                        logger.debug('%s author reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
+                        logger.debug(
+                            '%s author reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
                     titleparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
                                    'set_metadata',
@@ -997,7 +1003,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     logger.debug(str(titleparams))
                     res = subprocess.check_output(titleparams, stderr=subprocess.STDOUT)
                     if res:
-                        logger.debug('%s book reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
+                        logger.debug(
+                            '%s book reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
                     metaparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
                                   'set_metadata',
@@ -1010,7 +1017,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     logger.debug(str(metaparams))
                     res = subprocess.check_output(metaparams, stderr=subprocess.STDOUT)
                     if res:
-                        logger.debug('%s identifier reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
+                        logger.debug(
+                            '%s identifier reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
             # calibre does not like quotes in author names
             calibre_dir = os.path.join(dest_dir, unaccented_str(authorname.replace('"', '_')), '')
