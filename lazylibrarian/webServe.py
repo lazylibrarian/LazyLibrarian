@@ -285,7 +285,7 @@ class WebInterface(object):
                 # default interface doesn't know about other interfaces variables
                 elif interface == 'default' and key in lazylibrarian.CONFIG_NONDEFAULT:
                     pass
-                # default interface doesn't know about priorities
+                # default interface doesn't know about download priorities
                 elif interface == 'default' and 'dlpriority' in key.lower():
                     pass
                 # no key is returned for empty tickboxes...
@@ -346,8 +346,9 @@ class WebInterface(object):
                 'newznab[%i][updated]' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['MANUAL'] = bool(kwargs.get(
                 'newznab[%i][manual]' % count, False))
-            lazylibrarian.NEWZNAB_PROV[count]['PRIORITY'] = kwargs.get(
-                'newznab[%i][priority]' % count, 0)
+            if interface != 'default':
+                lazylibrarian.NEWZNAB_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
+                    'newznab[%i][dlpriority]' % count, 0), 0)
             count += 1
 
         count = 0
@@ -378,15 +379,18 @@ class WebInterface(object):
                 'torznab[%i][updated]' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['MANUAL'] = bool(kwargs.get(
                 'torznab[%i][manual]' % count, False))
-            lazylibrarian.TORZNAB_PROV[count]['PRIORITY'] = kwargs.get(
-                'torznab[%i][priority]' % count, 0)
+            if interface != 'default':
+                lazylibrarian.TORZNAB_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
+                    'torznab[%i][dlpriority]' % count, 0), 0)
             count += 1
 
         count = 0
         while count < len(lazylibrarian.RSS_PROV):
             lazylibrarian.RSS_PROV[count]['ENABLED'] = bool(kwargs.get('rss[%i][enabled]' % count, False))
             lazylibrarian.RSS_PROV[count]['HOST'] = kwargs.get('rss[%i][host]' % count, '')
-            lazylibrarian.RSS_PROV[count]['PRIORITY'] = kwargs.get('rss[%i][priority]' % count, 0)
+            if interface != 'default':
+                lazylibrarian.RSS_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
+                    'rss[%i][dlpriority]' % count, 0), 0)
             # lazylibrarian.RSS_PROV[count]['USER'] = kwargs.get('rss[%i][user]' % count, '')
             # lazylibrarian.RSS_PROV[count]['PASS'] = kwargs.get('rss[%i][pass]' % count, '')
             count += 1

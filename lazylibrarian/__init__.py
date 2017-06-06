@@ -31,7 +31,7 @@ from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, search
     librarysync, versioncheck, database, searchmag, magazinescan, bookwork, importer
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import restartJobs
-from lazylibrarian.formatter import getList, bookSeries, plural, unaccented
+from lazylibrarian.formatter import getList, bookSeries, plural, unaccented, check_int
 from lib.apscheduler.scheduler import Scheduler
 
 # Transient globals NOT stored in config
@@ -732,7 +732,7 @@ def config_write():
         CFG.set(provider['NAME'], 'MAGCAT', provider['MAGCAT'])
         CFG.set(provider['NAME'], 'AUDIOCAT', provider['AUDIOCAT'])
         CFG.set(provider['NAME'], 'EXTENDED', provider['EXTENDED'])
-        CFG.set(provider['NAME'], 'DLPRIORITY', provider['DLPRIORITY'])
+        CFG.set(provider['NAME'], 'DLPRIORITY', check_int(provider['DLPRIORITY'], 0))
         if provider['HOST'] == oldprovider:
             CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
             CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
@@ -756,7 +756,7 @@ def config_write():
         CFG.set(provider['NAME'], 'MAGCAT', provider['MAGCAT'])
         CFG.set(provider['NAME'], 'AUDIOCAT', provider['AUDIOCAT'])
         CFG.set(provider['NAME'], 'EXTENDED', provider['EXTENDED'])
-        CFG.set(provider['NAME'], 'DLPRIORITY', provider['DLPRIORITY'])
+        CFG.set(provider['NAME'], 'DLPRIORITY', check_int(provider['DLPRIORITY'], 0))
         if provider['HOST'] == oldprovider:
             CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
             CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
@@ -771,7 +771,7 @@ def config_write():
         check_section(provider['NAME'])
         CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
         CFG.set(provider['NAME'], 'HOST', provider['HOST'])
-        CFG.set(provider['NAME'], 'DLPRIORITY', provider['DLPRIORITY'])
+        CFG.set(provider['NAME'], 'DLPRIORITY', check_int(provider['DLPRIORITY'], 0))
     add_rss_slot()
 
     myDB = database.DBConnection()
