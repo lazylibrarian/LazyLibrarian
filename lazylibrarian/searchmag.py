@@ -130,7 +130,7 @@ def search_magazines(mags=None, reset=False):
                         })
 
             if not resultlist:
-                logger.debug("Adding magazine %s to queue." % book['searchterm'])
+                logger.debug("No results for magazine %s" % book['searchterm'])
             else:
                 bad_name = 0
                 bad_date = 0

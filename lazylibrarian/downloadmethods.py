@@ -120,7 +120,7 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
             try:
                 fdata = response.read()
             except Exception as e:
-                logger.warn('Error reading response from url: %s, %s' % (tor_url, e.reason))
+                logger.warn('Error reading response from url: %s, %s' % (tor_url, str(e)))
                 return False
 
         bookname = '.'.join(bookname.rsplit(' ', 1))  # last word is the extension

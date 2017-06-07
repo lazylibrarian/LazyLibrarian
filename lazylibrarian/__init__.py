@@ -27,8 +27,8 @@ import webbrowser
 import ConfigParser
 
 import cherrypy
-from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, \
-    librarysync, versioncheck, database, searchmag, magazinescan, bookwork, importer
+from lazylibrarian import logger, postprocess, searchbook, searchrss, librarysync, versioncheck, database, \
+    searchmag, magazinescan, bookwork, importer
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import restartJobs
 from lazylibrarian.formatter import getList, bookSeries, plural, unaccented, check_int

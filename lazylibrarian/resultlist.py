@@ -14,6 +14,7 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
+import traceback
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -26,146 +27,200 @@ from lib.fuzzywuzzy import fuzz
 
 
 def processResultList(resultlist, book, searchtype, source):
-    myDB = database.DBConnection()
-    dictrepl = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
-                ',': ' ', '*': '', '(': '', ')': '', '[': '', ']': '', '#': '', '0': '', '1': '',
-                '2': '', '3': '', '4': '', '5': '', '6': '', '7': '', '8': '', '9': '', '\'': '',
-                ':': '', '!': '', '-': ' ', '\s\s': ' '}
+    """ Separated this out into two functions
+        1. get the "best" match
+        2. if over match threshold, send it to downloader
+        This lets us try several searchtypes and stop at the first successful one
+        and we can combine results from tor/nzb searches in one task
+    """
+    match = findBestResult(resultlist, book, searchtype, source)
+    if match:
+        score = match[0]
+        # resultTitle = match[1]
+        # newValueDict = match[2]
+        # controlValueDict = match[3]
+        # dlpriority = match[4]
 
-    dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
-           ',': '', '*': '', ':': '.', ';': '', '\'': ''}
+        if score < int(lazylibrarian.CONFIG['MATCH_RATIO']):
+            return False
+        return downloadResult(match, book)
+    return False
 
-    match_ratio = int(lazylibrarian.CONFIG['MATCH_RATIO'])
-    author = unaccented_str(replace_all(book['authorName'], dic))
-    title = unaccented_str(replace_all(book['bookName'], dic))
-    if book['library'] == 'AudioBook':
-        reject_list = getList(lazylibrarian.CONFIG['REJECT_AUDIO'])
-        maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXAUDIO'], 0)
-        minsize = check_int(lazylibrarian.CONFIG['REJECT_MINAUDIO'], 0)
-        auxinfo = 'AudioBook'
 
-    else:  # elif book['library'] == 'eBook':
-        reject_list = getList(lazylibrarian.CONFIG['REJECT_WORDS'])
-        maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXSIZE'], 0)
-        minsize = check_int(lazylibrarian.CONFIG['REJECT_MINSIZE'], 0)
-        auxinfo = 'eBook'
+def findBestResult(resultlist, book, searchtype, source):
+    """ resultlist: collated results from search providers
+        book:       the book we want to find
+        searchtype: book, magazine, shortbook, audiobook etc.
+        source:     nzb, tor, rss
+        return:     highest scoring match, or None if no match
+    """
+    try:
+        myDB = database.DBConnection()
+        dictrepl = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
+                    ',': ' ', '*': '', '(': '', ')': '', '[': '', ']': '', '#': '', '0': '', '1': '',
+                    '2': '', '3': '', '4': '', '5': '', '6': '', '7': '', '8': '', '9': '', '\'': '',
+                    ':': '', '!': '', '-': ' ', '\s\s': ' '}
 
-    if source == 'nzb':
-        prefix = 'nzb'
-    elif source == 'tor':
-        prefix = 'tor_'
-    else:  # rss returns torrents
-        prefix = 'tor_'
+        dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
+               ',': '', '*': '', ':': '.', ';': '', '\'': ''}
 
-    matches = []
-    for res in resultlist:
-        Title = unaccented_str(replace_all(res[prefix + 'title'], dictrepl)).strip()
-        Title = re.sub(r"\s\s+", " ", Title)  # remove extra whitespace
         if source == 'rss':
             author, title = get_searchterm(book, searchtype)
-        Author_match = fuzz.token_set_ratio(author, Title)
-        Book_match = fuzz.token_set_ratio(title, Title)
-        logger.debug(u"%s author/book Match: %s/%s for %s at %s" %
-                     (source.upper(), Author_match, Book_match, Title, res[prefix + 'prov']))
+        else:
+            author = unaccented_str(replace_all(book['authorName'], dic))
+            title = unaccented_str(replace_all(book['bookName'], dic))
 
-        rejected = False
+        if book['library'] == 'AudioBook':
+            reject_list = getList(lazylibrarian.CONFIG['REJECT_AUDIO'])
+            maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXAUDIO'], 0)
+            minsize = check_int(lazylibrarian.CONFIG['REJECT_MINAUDIO'], 0)
+            auxinfo = 'AudioBook'
 
-        url = res[prefix + 'url']
-        if url is None:
-            rejected = True
-            logger.debug("Rejecting %s, no URL found" % Title)
+        else:  # elif book['library'] == 'eBook':
+            reject_list = getList(lazylibrarian.CONFIG['REJECT_WORDS'])
+            maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXSIZE'], 0)
+            minsize = check_int(lazylibrarian.CONFIG['REJECT_MINSIZE'], 0)
+            auxinfo = 'eBook'
 
-        if not rejected:
-            already_failed = myDB.match('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' % url)
-            if already_failed:
-                logger.debug("Rejecting %s, blacklisted at %s" % (Title, already_failed['NZBprov']))
+        if source == 'nzb':
+            prefix = 'nzb'
+        elif source == 'tor':
+            prefix = 'tor_'
+        else:  # rss returns torrents
+            prefix = 'tor_'
+
+        matches = []
+        for res in resultlist:
+            resultTitle = unaccented_str(replace_all(res[prefix + 'title'], dictrepl)).strip()
+            resultTitle = re.sub(r"\s\s+", " ", resultTitle)  # remove extra whitespace
+            Author_match = fuzz.token_set_ratio(author, resultTitle)
+            Book_match = fuzz.token_set_ratio(title, resultTitle)
+            logger.debug(u"%s author/book Match: %s/%s for %s at %s" %
+                         (source.upper(), Author_match, Book_match, resultTitle, res[prefix + 'prov']))
+
+            rejected = False
+
+            url = res[prefix + 'url']
+            if url is None:
                 rejected = True
+                logger.debug("Rejecting %s, no URL found" % resultTitle)
 
-        if not rejected:
-            if not url.startswith('http'):
-                rejected = True
-                logger.debug("Rejecting %s, invalid URL" % Title)
-
-        if not rejected:
-            for word in reject_list:
-                if word in Title.lower() and word not in author.lower() and word not in title.lower():
+            if not rejected:
+                already_failed = myDB.match('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' % url)
+                if already_failed:
+                    logger.debug("Rejecting %s, blacklisted at %s" % (resultTitle, already_failed['NZBprov']))
                     rejected = True
-                    logger.debug("Rejecting %s, contains %s" % (Title, word))
-                    break
 
-        size_temp = res[prefix + 'size']  # Need to cater for when this is NONE (Issue 35)
-        size_temp = check_int(size_temp, 1000)
-        size = round(float(size_temp) / 1048576, 2)
+            if not rejected:
+                if not url.startswith('http') and not url.startswith('magnet'):
+                    rejected = True
+                    logger.debug("Rejecting %s, invalid URL [%s]" % (resultTitle, url))
 
-        if not rejected:
-            if maxsize and size > maxsize:
-                rejected = True
-                logger.debug("Rejecting %s, too large" % Title)
+            if not rejected:
+                for word in reject_list:
+                    if word in resultTitle.lower() and word not in author.lower() and word not in title.lower():
+                        rejected = True
+                        logger.debug("Rejecting %s, contains %s" % (resultTitle, word))
+                        break
 
-        if not rejected:
-            if minsize and size < minsize:
-                rejected = True
-                logger.debug("Rejecting %s, too small" % Title)
+            size_temp = res[prefix + 'size']  # Need to cater for when this is NONE (Issue 35)
+            size_temp = check_int(size_temp, 1000)
+            size = round(float(size_temp) / 1048576, 2)
 
-        if not rejected:
-            bookid = book['bookid']
-            newTitle = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
+            if not rejected:
+                if maxsize and size > maxsize:
+                    rejected = True
+                    logger.debug("Rejecting %s, too large" % resultTitle)
 
-            if source == 'nzb':
-                mode = res['nzbmode']
-            elif source == 'tor':
-                mode = "torrent"
-            else:  # rss returns torrents
-                mode = "torrent"
+            if not rejected:
+                if minsize and size < minsize:
+                    rejected = True
+                    logger.debug("Rejecting %s, too small" % resultTitle)
 
-            controlValueDict = {"NZBurl": url}
-            newValueDict = {
-                "NZBprov": res[prefix + 'prov'],
-                "BookID": bookid,
-                "NZBdate": now(),  # when we asked for it
-                "NZBsize": size,
-                "NZBtitle": newTitle,
-                "NZBmode": mode,
-                "AuxInfo": auxinfo,
-                "Status": "Skipped"
-            }
+            if not rejected:
+                bookid = book['bookid']
+                newTitle = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
 
-            score = (Book_match + Author_match) / 2  # as a percentage
-            # lose a point for each unwanted word in the title so we get the closest match
-            # but for RSS ignore anything at the end in square braces [keywords, genres etc]
-            if source == 'rss':
-                temptitle = Title.rsplit('[', 1)[0]
-                wordlist = getList(temptitle.lower())
+                if source == 'nzb':
+                    mode = res['nzbmode']
+                elif source == 'tor':
+                    mode = "torrent"
+                else:  # rss returns torrents
+                    mode = "torrent"
+
+                controlValueDict = {"NZBurl": url}
+                newValueDict = {
+                    "NZBprov": res[prefix + 'prov'],
+                    "BookID": bookid,
+                    "NZBdate": now(),  # when we asked for it
+                    "NZBsize": size,
+                    "NZBtitle": newTitle,
+                    "NZBmode": mode,
+                    "AuxInfo": auxinfo,
+                    "Status": "Skipped"
+                }
+
+                score = (Book_match + Author_match) / 2  # as a percentage
+                # lose a point for each unwanted word in the title so we get the closest match
+                # but for RSS ignore anything at the end in square braces [keywords, genres etc]
+                if source == 'rss':
+                    temptitle = resultTitle.rsplit('[', 1)[0]
+                    wordlist = getList(temptitle.lower())
+                else:
+                    wordlist = getList(resultTitle.lower())
+                words = [x for x in wordlist if x not in getList(author.lower())]
+                words = [x for x in words if x not in getList(title.lower())]
+                booktypes = ''
+                if newValueDict['AuxInfo'] == 'eBook':
+                    words = [x for x in words if x not in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
+                    booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
+                elif newValueDict['AuxInfo'] == 'AudioBook':
+                    words = [x for x in words if x not in getList(lazylibrarian.CONFIG['AUDIOBOOK_TYPE'])]
+                    booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['AUDIOBOOK_TYPE'])]
+                score -= len(words)
+                # prioritise titles that include the ebook types we want
+                if len(booktypes):
+                    score += 1
+                matches.append([score, resultTitle, newValueDict, controlValueDict, res['priority']])
+
+        if matches:
+            highest = max(matches, key=lambda s: (s[0], s[4]))
+            score = highest[0]
+            resultTitle = highest[1]
+            # newValueDict = match[2]
+            # controlValueDict = match[3]
+            dlpriority = match[4]
+
+            if score < int(lazylibrarian.CONFIG['MATCH_RATIO']):
+                logger.info(u'Nearest %s match (%s%%): %s using %s search for %s %s' %
+                            (source.upper(), score, resultTitle, searchtype, book['authorName'], book['bookName']))
             else:
-                wordlist = getList(Title.lower())
-            words = [x for x in wordlist if x not in getList(author.lower())]
-            words = [x for x in words if x not in getList(title.lower())]
-            booktypes = ''
-            if newValueDict['AuxInfo'] == 'eBook':
-                words = [x for x in words if x not in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
-                booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
-            elif newValueDict['AuxInfo'] == 'AudioBook':
-                words = [x for x in words if x not in getList(lazylibrarian.CONFIG['AUDIOBOOK_TYPE'])]
-                booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['AUDIOBOOK_TYPE'])]
-            score -= len(words)
-            # prioritise titles that include the ebook types we want
-            if len(booktypes):
-                score += 1
-            matches.append([score, Title, newValueDict, controlValueDict, res['priority']])
+                logger.info(u'Best %s match (%s%%): %s using %s search, priority %s' %
+                            (source.upper(), score, resultTitle, searchtype, dlpriority))
+            return highest
+        else:
+            logger.debug("No %s found for [%s] using searchtype %s" % (source, book["searchterm"], searchtype))
+        return None
+    except Exception:
+        logger.error('Unhandled exception in findBestResult: %s' % traceback.format_exc())
 
-    if matches:
-        highest = max(matches, key=lambda s: (s[0], s[4]))
-        score = highest[0]
-        Title = highest[1]
-        newValueDict = highest[2]
-        controlValueDict = highest[3]
 
-        if score < match_ratio:
-            logger.info(u'Nearest %s match (%s%%): %s using %s search for %s %s' %
-                        (source.upper(), score, Title, searchtype, author, title))
-            return False
+def downloadResult(match, book):
+    """ match:  best result from search providers
+        book:   book we are downloading
+        return: True if already snatched, False if failed to snatch, >True if we snatched it
+    """
+    try:
+        myDB = database.DBConnection()
 
-        logger.info(u'Best %s match (%s%%): %s using %s search' % (source.upper(), score, Title, searchtype))
+        resultTitle = match[1]
+        newValueDict = match[2]
+        controlValueDict = match[3]
+
+        if book['library'] == 'AudioBook':
+            auxinfo = 'AudioBook'
+        else:  # elif book['library'] == 'eBook':
+            auxinfo = 'eBook'
 
         if auxinfo == 'eBook':
             snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID="%s" and Status="Snatched"' %
@@ -175,15 +230,15 @@ def processResultList(resultlist, book, searchtype, source):
                                        newValueDict["BookID"])
 
         if snatchedbooks:
-            logger.debug('%s %s already marked snatched' % (author, title))
-            return True  # someone else found it
+            logger.debug('%s %s already marked snatched' % (book['authorName'], book['bookName']))
+            return True  # someone else already found it
         else:
             myDB.upsert("wanted", newValueDict, controlValueDict)
             if '.nzb' in controlValueDict["NZBurl"]:
                 snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             elif newValueDict["NZBprov"] == 'libgen':  # for libgen we use direct download links
                 snatch = DirectDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
-                                              controlValueDict["NZBurl"], Title)
+                                              controlValueDict["NZBurl"], resultTitle)
             elif newValueDict['NZBmode'] == "torznab" or newValueDict['NZBmode'] == "torrent":
                 snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], controlValueDict["NZBurl"])
             else:
@@ -196,6 +251,6 @@ def processResultList(resultlist, book, searchtype, source):
                 custom_notify_snatch(newValueDict["BookID"])
                 scheduleJob(action='Start', target='processDir')
                 return True + True  # we found it
-    else:
-        logger.debug("No %s found for [%s] using searchtype %s" % (source, book["searchterm"], searchtype))
-    return False
+        return False
+    except Exception:
+        logger.error('Unhandled exception in downloadResult: %s' % traceback.format_exc())

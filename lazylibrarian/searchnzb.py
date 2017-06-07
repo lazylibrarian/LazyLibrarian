@@ -20,15 +20,21 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.formatter import plural
 from lazylibrarian.providers import IterateOverNewzNabSites
-from lazylibrarian.resultlist import processResultList
+from lazylibrarian.resultlist import findBestResult, downloadResult
 
 
-def cron_search_nzb_book():
-    if 'SEARCHALLNZB' not in [n.name for n in [t for t in threading.enumerate()]]:
-        search_nzb_book()
+def cron_search_book():
+    if 'SEARCHALLBOOKS' not in [n.name for n in [t for t in threading.enumerate()]]:
+        search_book()
 
 
-def search_nzb_book(books=None, library=None):
+def goodEnough(match):
+    if match and int(match[0]) >= int(lazylibrarian.CONFIG['MATCH_RATIO']):
+        return True
+    return False
+
+
+def search_book(books=None, library=None):
     """
     books is a list of new books to add, or None for backlog search
     library is "eBook" or "AudioBook" or None to search all book types
@@ -37,13 +43,9 @@ def search_nzb_book(books=None, library=None):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             if books is None:
-                threading.currentThread().name = "SEARCHALLNZB"
+                threading.currentThread().name = "SEARCHALLBOOKS"
             else:
-                threading.currentThread().name = "SEARCHNZB"
-
-        if not lazylibrarian.USE_NZB():
-            logger.warn('No NEWZNAB/TORZNAB providers set, check config')
-            return
+                threading.currentThread().name = "SEARCHBOOKS"
 
         myDB = database.DBConnection()
         searchlist = []
@@ -68,10 +70,10 @@ def search_nzb_book(books=None, library=None):
                     searchbooks.append(terms)
 
         if len(searchbooks) == 0:
-            logger.debug("SearchNZB - No books to search for")
+            logger.debug("SearchBooks - No books to search for")
             return
 
-        logger.info('NZB Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
+        logger.info('Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
 
         for searchbook in searchbooks:
             # searchterm is only used for display purposes
@@ -99,43 +101,64 @@ def search_nzb_book(books=None, library=None):
                          "library": "AudioBook",
                          "searchterm": searchterm})
 
-        nzb_count = 0
+        book_count = 0
         for book in searchlist:
-            # first attempt, try author/title in category "book"
-            if book['library'] == 'AudioBook':
-                searchtype = 'audio'
-            else:
-                searchtype = 'book'
-            resultlist, nproviders = IterateOverNewzNabSites(book, searchtype)
+            matches = []
+            for mode in ['nzb', 'tor']:
+                # first attempt, try author/title in category "book"
+                if book['library'] == 'AudioBook':
+                    searchtype = 'audio'
+                else:
+                    searchtype = 'book'
+                if mode == 'nzb':
+                    resultlist, nproviders = IterateOverNewzNabSites(book, searchtype)
+                    if not nproviders:
+                        break  # no point in continuing
+                elif mode == 'tor':
+                    resultlist, nproviders = IterateOverTorrentSites(book, searchtype)
+                    if not nproviders:
+                        break  # no point in continuing
 
-            if not nproviders:
-                logger.warn('No NewzNab or TorzNab providers are available')
-                return  # no point in continuing
+                match = findBestResult(resultlist, book, searchtype, mode)
 
-            found = processResultList(resultlist, book, searchtype, 'nzb')
+                # if you can't find the book, try author/title without any "(extended details, series etc)"
+                if not goodEnough(match) and '(' in book['bookName']:
+                    searchtype = 'short' + searchtype
+                    if mode == 'nzb':
+                        resultlist, nproviders = IterateOverNewzNabSites(book, searchtype)
+                    elif mode == 'tor':
+                        resultlist, nproviders = IterateOverTorrentSites(book, searchtype)
+                    match = findBestResult(resultlist, book, searchtype, mode)
 
-            # if you can't find the book, try author/title without any "(extended details, series etc)"
-            if not found and '(' in book['bookName']:
-                searchtype = 'short' + searchtype
-                resultlist, nproviders = IterateOverNewzNabSites(book, searchtype)
-                found = processResultList(resultlist, book, searchtype, 'nzb')
+                # if you can't find the book under "books", you might find under general search
+                # general search is the same as booksearch for torrents
+                if not goodEnough(match):
+                    searchtype = 'general'
+                    if mode == 'nzb':
+                        resultlist, nproviders = IterateOverNewzNabSites(book, searchtype)
+                        match = findBestResult(resultlist, book, searchtype, mode)
 
-            # if you can't find the book under "books", you might find under general search
-            if not found:
-                resultlist, nproviders = IterateOverNewzNabSites(book, 'general')
-                found = processResultList(resultlist, book, "general", 'nzb')
+                # if still not found, try general search again without any "(extended details, series etc)"
+                if not goodEnough(match) and '(' in book['searchterm']:
+                    searchtype = 'shortgeneral'
+                    if mode == 'nzb':
+                        resultlist, nproviders = IterateOverNewzNabSites(book, searchtype)
+                        match = findBestResult(resultlist, book, searchtype, mode)
 
-            # if still not found, try general search again without any "(extended details, series etc)"
-            if not found and '(' in book['bookName']:
-                resultlist, nproviders = IterateOverNewzNabSites(book, 'shortgeneral')
-                found = processResultList(resultlist, book, "shortgeneral", 'nzb')
+                if not goodEnough(match):
+                    logger.info("%s Searches for %s %s returned no results." %
+                                (mode.upper(), book['library'], book['searchterm']))
+                else:
+                    logger.info("Top %s result: %s %s%%, %s priority %s" %
+                                (mode.upper(), searchtype, match[0], match[2]['NZBprov'], match[4]))
+                    matches.append(match)
 
-            if not found:
-                logger.info("NZB Searches for %s %s returned no results." % (book['library'], book['searchterm']))
-            if found > True:
-                nzb_count += 1  # we found it
+            if matches:
+                highest = max(matches, key=lambda s: (s[0], s[4]))  # sort on percentage and priority
+                if downloadResult(highest, book) > True:
+                    book_count += 1  # we found it
 
-        logger.info("NZBSearch for Wanted items complete, found %s book%s" % (nzb_count, plural(nzb_count)))
+        logger.info("Search for Wanted items complete, found %s book%s" % (book_count, plural(book_count)))
 
     except Exception:
-        logger.error('Unhandled exception in search_nzb_book: %s' % traceback.format_exc())
+        logger.error('Unhandled exception in search_book: %s' % traceback.format_exc())

@@ -42,9 +42,8 @@ from lazylibrarian.manualbook import searchItem
 from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.postprocess import processAlternate, processDir
 from lazylibrarian.searchmag import search_magazines
-from lazylibrarian.searchnzb import search_nzb_book
+from lazylibrarian.searchbook import search_book
 from lazylibrarian.searchrss import search_rss_book
-from lazylibrarian.searchtorrents import search_tor_book
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod
 from lib.deluge_client import DelugeRPCClient
 from mako import exceptions
@@ -807,10 +806,8 @@ class WebInterface(object):
         if books:
             if lazylibrarian.USE_RSS():
                 threading.Thread(target=search_rss_book, name='SEARCHRSS', args=[books]).start()
-            if lazylibrarian.USE_NZB():
-                threading.Thread(target=search_nzb_book, name='SEARCHNZB', args=[books]).start()
-            if lazylibrarian.USE_TOR():
-                threading.Thread(target=search_tor_book, name='SEARCHTOR', args=[books]).start()
+            if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
+                threading.Thread(target=search_book, name='SEARCHBOOK', args=[books]).start()
             if lazylibrarian.USE_RSS() or lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
                 logger.debug(u"Searching for book with id: " + books[0]["bookid"])
             else:
@@ -1165,10 +1162,8 @@ class WebInterface(object):
 
             if lazylibrarian.USE_RSS():
                 threading.Thread(target=search_rss_book, name='SEARCHRSS', args=[books]).start()
-            if lazylibrarian.USE_NZB():
-                threading.Thread(target=search_nzb_book, name='SEARCHNZB', args=[books]).start()
-            if lazylibrarian.USE_TOR():
-                threading.Thread(target=search_tor_book, name='SEARCHTOR', args=[books]).start()
+            if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
+                threading.Thread(target=search_book, name='SEARCHBOOK', args=[books]).start()
 
         if redirect == "author":
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&Library=%s" % (AuthorID, library))
@@ -2047,12 +2042,9 @@ class WebInterface(object):
                 if 'SEARCHALLMAG' not in [n.name for n in [t for t in threading.enumerate()]]:
                     threading.Thread(target=search_magazines, name='SEARCHALLMAG', args=[]).start()
         elif source in ["books", "audio"]:
-            if lazylibrarian.USE_NZB():
-                if 'SEARCHALLNZB' not in [n.name for n in [t for t in threading.enumerate()]]:
-                    threading.Thread(target=search_nzb_book, name='SEARCHALLNZB', args=[]).start()
-            if lazylibrarian.USE_TOR():
-                if 'SEARCHALLTOR' not in [n.name for n in [t for t in threading.enumerate()]]:
-                    threading.Thread(target=search_tor_book, name='SEARCHALLTOR', args=[]).start()
+            if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
+                if 'SEARCHALLBOOKS' not in [n.name for n in [t for t in threading.enumerate()]]:
+                    threading.Thread(target=search_book, name='SEARCHALLBOOKS', args=[]).start()
             if lazylibrarian.USE_RSS():
                 if 'SEARCHALLRSS' not in [n.name for n in [t for t in threading.enumerate()]]:
                     threading.Thread(target=search_rss_book, name='SEARCHALLRSS', args=[]).start()

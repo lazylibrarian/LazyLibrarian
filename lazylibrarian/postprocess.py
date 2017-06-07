@@ -186,6 +186,7 @@ def move_into_subdir(sourcedir, targetdir, fname, move='move'):
             logger.debug("Checking %s for %s" % (ourfile, fname))
         if ourfile.startswith(fname):
             if is_valid_booktype(ourfile, booktype="book") \
+                    or is_valid_booktype(ourfile, booktype="audiobook") \
                     or is_valid_booktype(ourfile, booktype="mag") \
                     or os.path.splitext(ourfile)[1].lower() in ['.opf', '.jpg']:
                 try:
@@ -327,6 +328,7 @@ def processDir(reset=False):
                                 if int(lazylibrarian.LOGLEVEL) > 2:
                                     logger.debug('%s is a file' % fname)
                                 if is_valid_booktype(fname, booktype="book") \
+                                        or is_valid_booktype(fname, booktype="audiobook") \
                                         or is_valid_booktype(fname, booktype="mag"):
                                     if int(lazylibrarian.LOGLEVEL) > 2:
                                         logger.debug('file [%s] is a valid book/mag' % fname)
@@ -775,7 +777,7 @@ def import_book(pp_path=None, bookID=None):
                                                     global_name, bookID, book_type)
             if success:
                 # update nzbs
-                snatched_from = "from " + was_snatched['NZBprov'] if was_snatched else "manually added"
+                snatched_from = "from " + was_snatched[0]['NZBprov'] if was_snatched else "manually added"
                 if int(lazylibrarian.LOGLEVEL) > 2:
                     logger.debug("was_snatched %s" % snatched_from)
                 if was_snatched:

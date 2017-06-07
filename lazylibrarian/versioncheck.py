@@ -327,9 +327,8 @@ def getCommitDifferenceFromGit():
 
                 msg = '(getCommitDifferenceFromGit) -  GitHub reports as follows '
                 msg += 'Status [%s] - Ahead [%s] - Behind [%s] - Total Commits [%s]' % (
-                           git['status'], git['ahead_by'], git['behind_by'], git['total_commits'])
+                    git['status'], git['ahead_by'], git['behind_by'], git['total_commits'])
                 logmsg('debug', msg)
-
 
                 if int(git['total_commits']) > 0:
                     messages = []
@@ -356,7 +355,6 @@ def getCommitDifferenceFromGit():
             msg = '[VersionCheck] -  You are running an unknown version of lazylibrarian. '
             msg += 'Run the updater to identify your version'
             logmsg('info', msg)
-
 
     elif lazylibrarian.CONFIG['LATEST_VERSION'] == 'Not_Available_From_GitHUB':
         commit_list = 'Unable to get latest version from GitHub'

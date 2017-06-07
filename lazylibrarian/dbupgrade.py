@@ -811,13 +811,13 @@ def dbupgrade(db_current_version):
                 if db_version < 21:
                     if not has_column(myDB, "books", "AudioLibrary"):
                         lazylibrarian.UPDATE_MSG = 'Adding AudioBook support to book table'
-                        upgradelog.write("%s v20: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+                        upgradelog.write("%s v21: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
                         myDB.action('ALTER TABLE books ADD COLUMN AudioFile TEXT')
                         myDB.action('ALTER TABLE books ADD COLUMN AudioLibrary TEXT')
                         myDB.action('ALTER TABLE books ADD COLUMN AudioStatus TEXT')
                         myDB.action('UPDATE books SET AudioStatus="Skipped"')
                     lazylibrarian.UPDATE_MSG = 'Creating downloads table'
-                    upgradelog.write("%s v20: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+                    upgradelog.write("%s v21: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
                     myDB.action('CREATE TABLE IF NOT EXISTS downloads (Count INTEGER, Provider TEXT)')
                     downloads = myDB.select('SELECT NZBprov from wanted WHERE Status="Processed"')
                     for download in downloads:
@@ -830,7 +830,7 @@ def dbupgrade(db_current_version):
                             myDB.action('INSERT into downloads (Count, Provider) VALUES  (%s, "%s")' %
                                         (1, download['NZBprov']))
 
-                    upgradelog.write("%s v20: complete\n" % time.ctime())
+                    upgradelog.write("%s v21: complete\n" % time.ctime())
 
                 # Now do any non-version-specific tidying
                 try:
