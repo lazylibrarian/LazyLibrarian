@@ -189,7 +189,7 @@ def findBestResult(resultlist, book, searchtype, source):
             resultTitle = highest[1]
             # newValueDict = match[2]
             # controlValueDict = match[3]
-            dlpriority = match[4]
+            dlpriority = highest[4]
 
             if score < int(lazylibrarian.CONFIG['MATCH_RATIO']):
                 logger.info(u'Nearest %s match (%s%%): %s using %s search for %s %s' %
