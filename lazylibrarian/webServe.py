@@ -842,21 +842,23 @@ class WebInterface(object):
         bookdata = myDB.match(cmd)
         if bookdata:
             if source == 'audio':
+                source = 'AudioBook'
                 bookfile = bookdata["AudioFile"]
                 if bookfile and os.path.isfile(bookfile):
-                    logger.info(u'Opening audiofile %s' % bookfile)
+                    logger.info(u'Opening %s %s' % (source, bookfile))
                     return serve_file(bookfile, "application/x-download", "attachment")
             else:
+                source = 'eBook'
                 bookfile = bookdata["BookFile"]
                 if bookfile and os.path.isfile(bookfile):
-                    logger.info(u'Opening file %s' % bookfile)
+                    logger.info(u'Opening %s %s' % (source, bookfile))
                     return serve_file(bookfile, "application/x-download", "attachment")
 
             authorName = bookdata["AuthorName"]
             bookName = bookdata["BookName"]
-            logger.info(u'Missing book %s,%s' % (authorName, bookName))
+            logger.info(u'Missing %s %s,%s [%s]' % (source, authorName, bookName, bookfile))
         else:
-            logger.warn(u'Missing book %s' % bookid)
+            logger.warn(u'Missing bookid: %s' % bookid)
 
     @cherrypy.expose
     def editAuthor(self, authorid=None):

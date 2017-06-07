@@ -36,12 +36,12 @@
                 <td>
                   <div>
                   <input type="text" id="current_tab" name="current_tab" value="${lazylibrarian.CURRENT_TAB}" class="hidden">
-                  <label>Hostname:</label><input type="text" name="http_host" value="${lazylibrarian.CONFIG['HTTP_HOST']}" size="20">
+                  <label>Hostname:</label><input type="text" name="http_host" id="http_host" value="${lazylibrarian.CONFIG['HTTP_HOST']}" size="20">
                   </div>
                   <div>
-                  <label>Port:</label><input type="text" name="http_port" value="${lazylibrarian.CONFIG['HTTP_PORT']}" size="10">
+                  <label>Port:</label><input type="text" name="http_port" id="http_root" value="${lazylibrarian.CONFIG['HTTP_PORT']}" size="10">
                   </div>
-                  <label>Web Root:</label><input type="text" name="http_root" value="${lazylibrarian.CONFIG['HTTP_ROOT']}" size="20">
+                  <label>Web Root:</label><input type="text" name="http_root" id="http_root" value="${lazylibrarian.CONFIG['HTTP_ROOT']}" size="20">
                     <%
                         if lazylibrarian.CONFIG['HTTP_PROXY'] == True:
                             checked = 'checked="checked"'
