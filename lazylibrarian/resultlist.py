@@ -175,7 +175,7 @@ def processResultList(resultlist, book, searchtype, source):
                                        newValueDict["BookID"])
 
         if snatchedbooks:
-            logger.debug('%s already marked snatched' % Title)
+            logger.debug('%s %s already marked snatched' % (author, title))
             return True  # someone else found it
         else:
             myDB.upsert("wanted", newValueDict, controlValueDict)

@@ -196,7 +196,7 @@ def BlockProvider(who, why):
         logger.debug('Not blocking %s,%s as timer is zero' % (who, why))
     else:
         mins = int(delay / 60) + (delay % 60 > 0)
-        logger.info("Blocking provider %s for %s minutes because %s" % (mins, who, why))
+        logger.info("Blocking provider %s for %s minutes because %s" % (who, mins, why))
         timenow = int(time.time())
         for entry in lazylibrarian.PROVIDER_BLOCKLIST:
             if entry["name"] == who:
@@ -279,7 +279,7 @@ def IterateOverRSSSites():
                 and 'list_rss' not in provider['HOST'] and not ProviderIsBlocked(provider['HOST']):
             providers += 1
             logger.debug('[IterateOverRSSSites] - %s' % provider['HOST'])
-            resultslist += RSS(provider['HOST'], provider['NAME'], provider['PRIORITY'])
+            resultslist += RSS(provider['HOST'], provider['NAME'], provider['DLPRIORITY'])
     return resultslist, providers
 
 
@@ -291,7 +291,7 @@ def IterateOverGoodReads():
                 and 'list_rss' in provider['HOST'] and not ProviderIsBlocked(provider['HOST']):
             providers += 1
             logger.debug('[IterateOverGoodReads] - %s' % provider['HOST'])
-            resultslist += GOODREADS(provider['HOST'], provider['NAME'], provider['PRIORITY'])
+            resultslist += GOODREADS(provider['HOST'], provider['NAME'], provider['DLPRIORITY'])
     return resultslist, providers
 
 
@@ -517,7 +517,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
                     try:
                         nzbcount += 1
                         results.append(
-                            ReturnResultsFieldsBySearchType(book, nzb, host, searchMode, provider['PRIORITY']))
+                            ReturnResultsFieldsBySearchType(book, nzb, host, searchMode, provider['DLPRIORITY']))
                     except IndexError:
                         logger.debug('No results from %s for %s' % (host, book['searchterm']))
                 logger.debug(u'Found %s nzb at %s for: %s' % (nzbcount, host, book['searchterm']))
