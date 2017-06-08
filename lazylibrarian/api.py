@@ -38,7 +38,6 @@ from lazylibrarian.manualbook import searchItem
 from lazylibrarian.postprocess import processDir, processAlternate
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchbook import search_book
-from lazylibrarian.searchrss import search_rss_book
 
 cmd_dict = {'help': 'list available commands. ' +
                     'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +
@@ -479,17 +478,12 @@ class Api(object):
             library = kwargs['type']
         else:
             library = None
-        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
+        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
             if 'wait' in kwargs:
                 search_book(library=library)
             else:
                 threading.Thread(target=search_book, name='API-SEARCHBOOK', args=[None, library]).start()
-        if lazylibrarian.USE_RSS():
-            if 'wait' in kwargs:
-                search_rss_book(library=library)
-            else:
-                threading.Thread(target=search_rss_book, name='API-SEARCHRSS', args=[None, library]).start()
-        if not lazylibrarian.USE_RSS() and not lazylibrarian.USE_NZB() and not lazylibrarian.USE_TOR():
+        else:
             self.data = "No search methods set, check config"
 
     @staticmethod
@@ -716,17 +710,13 @@ class Api(object):
             library = kwargs['type']
         else:
             library = None
-        if lazylibrarian.USE_RSS():
-            if 'wait' in kwargs:
-                search_rss_book(books=books, library=library)
-            else:
-                threading.Thread(target=search_rss_book, name='API-SEARCHRSS', args=[books, library]).start()
-        if lazylibrarian.USE_NZB()or lazylibrarian.USE_TOR():
+        if :
+        if lazylibrarian.USE_NZB()or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
             if 'wait' in kwargs:
                 search_book(books=books, library=library)
             else:
                 threading.Thread(target=search_book, name='API-SEARCHBOOK', args=[books, library]).start()
-        if not lazylibrarian.USE_RSS() and not lazylibrarian.USE_NZB() and not lazylibrarian.USE_TOR():
+        else:
             self.data = "No search methods set, check config"
 
     def _removeAuthor(self, **kwargs):

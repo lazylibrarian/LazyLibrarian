@@ -806,11 +806,8 @@ class WebInterface(object):
     @cherrypy.expose
     def startBookSearch(self, books=None):
         if books:
-            if lazylibrarian.USE_RSS():
-                threading.Thread(target=search_rss_book, name='SEARCHRSS', args=[books]).start()
-            if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
+            if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
                 threading.Thread(target=search_book, name='SEARCHBOOK', args=[books]).start()
-            if lazylibrarian.USE_RSS() or lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
                 logger.debug(u"Searching for book with id: " + books[0]["bookid"])
             else:
                 logger.warn(u"Not searching for book, no search methods set, check config.")
@@ -1164,9 +1161,7 @@ class WebInterface(object):
                 if not bookid == 'book_table_length':
                     books.append({"bookid": bookid})
 
-            if lazylibrarian.USE_RSS():
-                threading.Thread(target=search_rss_book, name='SEARCHRSS', args=[books]).start()
-            if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
+            if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
                 threading.Thread(target=search_book, name='SEARCHBOOK', args=[books]).start()
 
         if redirect == "author":

@@ -298,7 +298,7 @@ def showJobs():
         elif "checkForUpdates" in job:
             jobname = "Check LazyLibrarian version"
         elif "search_book" in job:
-            jobname = "NZB/TOR book search"
+            jobname = "Book search"
         elif "search_rss_book" in job:
             jobname = "RSS book search"
         elif "processDir" in job:

@@ -73,7 +73,15 @@ def search_book(books=None, library=None):
             logger.debug("SearchBooks - No books to search for")
             return
 
-        logger.info('Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
+        modelist = []
+        if lazylibrarian.USE_NZB:
+            modelist.append('nzb')
+        if lazylibrarian.USE_TOR:
+            modelist.append('tor')
+        if lazylibrarian.USE_RSS:
+            modelist.append('rss')
+
+        logger.info('Searching %s for %i book%s' % (str(modelist), len(searchbooks), plural(len(searchbooks))))
 
         for searchbook in searchbooks:
             # searchterm is only used for display purposes
@@ -109,7 +117,7 @@ def search_book(books=None, library=None):
         book_count = 0
         for book in searchlist:
             matches = []
-            for mode in ['nzb', 'tor', 'rss']:
+            for mode in modelist:
                 # first attempt, try author/title in category "book"
                 if book['library'] == 'AudioBook':
                     searchtype = 'audio'
@@ -118,16 +126,22 @@ def search_book(books=None, library=None):
                 if mode == 'nzb':
                     resultlist, nproviders = IterateOverNewzNabSites(book, searchtype)
                     if not nproviders:
+                        logger.debug("No active nzb providers found")
+                        modelist.remove('nzb')
                         break  # no point in continuing
                 elif mode == 'tor':
                     resultlist, nproviders = IterateOverTorrentSites(book, searchtype)
                     if not nproviders:
+                        logger.debug("No active tor providers found")
+                        modelist.remove('tor')
                         break  # no point in continuing
                 elif mode == 'rss':
                     if rss_resultlist:
                         resultlist = rss_resultlist
                         nproviders = 1  # dummy value
                     else:
+                        logger.debug("No active rss providers found")
+                        modelist.remove('rss')
                         break
 
                 if nproviders:
@@ -170,7 +184,7 @@ def search_book(books=None, library=None):
 
             if matches:
                 highest = max(matches, key=lambda s: (s[0], s[4]))  # sort on percentage and priority
-                logger.info("Downloading match: %s%% %s: %s" % (highest[0], highest[2]['NZBprov'], highest[1]))
+                logger.info("Requesting download: %s%% %s: %s" % (highest[0], highest[2]['NZBprov'], highest[1]))
                 if downloadResult(highest, book) > True:
                     book_count += 1  # we found it
 
