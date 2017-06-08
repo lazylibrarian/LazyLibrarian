@@ -289,9 +289,11 @@ class WebInterface(object):
                     pass
                 # no key is returned for empty tickboxes...
                 elif item_type == 'bool':
+                    # print "No entry for bool " + key
                     lazylibrarian.CONFIG[key] = 0
                 # or empty string values
                 else:
+                    # print "No entry for str " + key
                     lazylibrarian.CONFIG[key] = ''
 
         myDB = database.DBConnection()
@@ -637,7 +639,7 @@ class WebInterface(object):
     @cherrypy.expose
     def books(self, BookLang=None):
         myDB = database.DBConnection()
-        if BookLang == '':
+        if BookLang == '' or BookLang == 'None':
             BookLang = None
         languages = myDB.select('SELECT DISTINCT BookLang from books WHERE STATUS !="Skipped" AND STATUS !="Ignored"')
         return serve_template(templatename="books.html", title='Books', books=[],
@@ -648,7 +650,7 @@ class WebInterface(object):
     def getBooks(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
         # for arg in kwargs:
-        #    print arg, kwargs[arg]
+        #     print arg, kwargs[arg]
 
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
@@ -683,7 +685,7 @@ class WebInterface(object):
 
         if kwargs['source'] in ["Books", "Author", "Audio"]:
             # for these we need to check and filter on BookLang if set
-            if 'booklang' in kwargs and kwargs['booklang'] != 'None':
+            if 'booklang' in kwargs and kwargs['booklang'] != '' and kwargs['booklang'] != 'None':
                 cmd += ' and BOOKLANG="%s"' % kwargs['booklang']
 
         rowlist = myDB.select(cmd)

@@ -9,19 +9,17 @@
         <a id="forcesearch" class="btn btn-sm btn-primary" href="forceSearch?source=books">Force Search</a>
         <a id="forcepostprocess" class="btn btn-sm btn-primary" href="forceProcess?source=books">Force Post-Processing</a>
       </div>
-      <div class="col-xs-2">
         %if len(languages) > 1:
-        <div class="form-group">
-          <label for="chooselanguage"><small>Language</small></label>
-          <select class="form-control input-sm" name="chooselanguage" id="chooselanguage" onchange="window.location = 'books?BookLang=' + this.options[this.selectedIndex].value">
+          <div class="form-group pull-right">
+            <label for="chooselanguage"><small>Language</small></label>
+            <select class="form-control input-sm" name="chooselanguage" id="chooselanguage">
             <option value="">All</option>
             %for language in languages:
             <option value="${language['BookLang']}">${language['BookLang']}</option>
             %endfor
-          </select>
-        </div>
+            </select>
+          </div>
         %endif
-      </div>
     </form>
   </div>
 </%def>
@@ -88,6 +86,9 @@
                 }
             });
 
+        $('#chooselanguage').change(function(){
+            window.location = 'books?BookLang=' + $(this).val()
+        })
         $('#chooselanguage').val(getUrlVars()['BookLang']);
 
         var show = ""+${lazylibrarian.CONFIG['BOOK_IMG']};
