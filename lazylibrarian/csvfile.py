@@ -193,9 +193,9 @@ def import_CSV(search_dir=None):
                     if results:
                         result = results[0]
                         if result['author_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO'] \
-                            and result['book_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO']:
+                                and result['book_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO']:
                             logger.info("Found (%s%% %s%%) %s: %s" % (result['author_fuzz'], result['book_fuzz'],
-                                                                        result['authorname'], result['bookname']))
+                                                                      result['authorname'], result['bookname']))
                             import_book(result['bookid'])
                             bookcount += 1
                             bookmatch = True
@@ -213,7 +213,7 @@ def import_CSV(search_dir=None):
                         logger.warn(msg)
                     skipcount += 1
             msg = "Added %i new author%s, marked %i book%s as 'Wanted', %i book%s not found" % \
-                    (authcount, plural(authcount), bookcount, plural(bookcount), skipcount, plural(skipcount))
+                  (authcount, plural(authcount), bookcount, plural(bookcount), skipcount, plural(skipcount))
             logger.info(msg)
             return msg
     except Exception:

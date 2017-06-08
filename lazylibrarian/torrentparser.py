@@ -127,7 +127,8 @@ def TPB(book=None):
                                 'tor_title': title,
                                 'tor_url': magnet,
                                 'tor_size': str(size),
-                                'tor_type': 'magnet'
+                                'tor_type': 'magnet',
+                                'priority': lazylibrarian.CONFIG['TPB_DLPRIORITY']
                             })
                             logger.debug('Found %s. Size: %s' % (title, size))
                         else:
@@ -242,7 +243,8 @@ def KAT(book=None):
                         'tor_title': title,
                         'tor_url': url,
                         'tor_size': str(size),
-                        'tor_type': mode
+                        'tor_type': mode,
+                        'priority': lazylibrarian.CONFIG['KAT_DLPRIORITY']
                     })
                     logger.debug('Found %s. Size: %s' % (title, size))
                 else:
@@ -318,7 +320,8 @@ def EXTRA(book=None):
                             'tor_title': title,
                             'tor_url': url,
                             'tor_size': str(size),
-                            'tor_type': 'torrent'
+                            'tor_type': 'torrent',
+                            'priority': lazylibrarian.CONFIG['EXTRA_DLPRIORITY']
                         })
                         logger.debug('Found %s. Size: %s' % (title, size))
                     else:
@@ -393,7 +396,8 @@ def ZOO(book=None):
                             'tor_title': title,
                             'tor_url': url,
                             'tor_size': str(size),
-                            'tor_type': mode
+                            'tor_type': mode,
+                            'priority': lazylibrarian.CONFIG['ZOO_DLPRIORITY']
                         })
                         logger.debug('Found %s. Size: %s' % (title, size))
                     else:
@@ -468,7 +472,8 @@ def LIME(book=None):
                             'tor_title': title,
                             'tor_url': url,
                             'tor_size': str(size),
-                            'tor_type': 'torrent'
+                            'tor_type': 'torrent',
+                            'priority': lazylibrarian.CONFIG['LIME_DLPRIORITY']
                         })
                         logger.debug('Found %s. Size: %s' % (title, size))
                     else:
@@ -594,7 +599,8 @@ def GEN(book=None):
                         'tor_title': title,
                         'tor_url': url,
                         'tor_size': str(size),
-                        'tor_type': 'direct'
+                        'tor_type': 'direct',
+                        'priority': lazylibrarian.CONFIG['GEN_DLPRIORITY']
                     })
                     logger.debug('Found %s, Size %s' % (title, size))
 
@@ -672,7 +678,8 @@ def TDL(book=None):
                                 'tor_title': title,
                                 'tor_url': url,
                                 'tor_size': str(size),
-                                'tor_type': 'magnet'
+                                'tor_type': 'magnet',
+                                'priority': lazylibrarian.CONFIG['TDL_DLPRIORITY']
                             })
                             logger.debug('Found %s. Size: %s' % (title, size))
                     else:

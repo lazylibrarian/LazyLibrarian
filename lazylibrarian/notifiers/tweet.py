@@ -77,7 +77,8 @@ class TwitterNotifier:
 
     def _get_credentials(self, key):
         request_token = {'oauth_token': lazylibrarian.CONFIG['TWITTER_USERNAME'],
-                         'oauth_token_secret': lazylibrarian.CONFIG['TWITTER_PASSWORD'], 'oauth_callback_confirmed': 'true'}
+                         'oauth_token_secret': lazylibrarian.CONFIG['TWITTER_PASSWORD'],
+                         'oauth_callback_confirmed': 'true'}
 
         token = oauth.Token(request_token['oauth_token'], request_token['oauth_token_secret'])
         token.set_verifier(key)

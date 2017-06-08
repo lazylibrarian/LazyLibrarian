@@ -261,6 +261,7 @@ def getList(st):
         return list(lex)
     return []
 
+
 def safe_unicode(obj, *args):
     """ return the unicode representation of obj """
     try:
@@ -300,7 +301,7 @@ def split_title(author, book):
         endbrace = book.find(')')
         endbrace += 1
         if endbrace:
-            if ' ' not in book[brace:endbrace-1]:
+            if ' ' not in book[brace:endbrace - 1]:
                 brace = 0
     if colon and brace:
         if colon < brace:

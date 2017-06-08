@@ -34,6 +34,7 @@ NOTIFY_DOWNLOAD = 2
 
 notifyStrings = {NOTIFY_SNATCH: "Started Download", NOTIFY_DOWNLOAD: "Added to Library"}
 
+
 def setperm(file_or_dir):
     """
     Force newly created directories to rwxr-xr-x and files to rw-r--r--
@@ -110,7 +111,7 @@ def book_file(search_dir=None, booktype=None):
 
 def scheduleJob(action='Start', target=None):
     """ Start or stop or restart a cron job by name eg
-        target=search_magazines, target=processDir, target=search_tor_book """
+        target=search_magazines, target=processDir, target=search_book """
     if target is None:
         return
 
@@ -136,16 +137,10 @@ def scheduleJob(action='Start', target=None):
                     lazylibrarian.searchmag.cron_search_magazines,
                     minutes=int(lazylibrarian.CONFIG['SEARCH_INTERVAL']))
                 logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SEARCH_INTERVAL']))
-        elif 'search_nzb_book' in target and int(lazylibrarian.CONFIG['SEARCH_INTERVAL']):
-            if lazylibrarian.USE_NZB():
+        elif 'search_book' in target and int(lazylibrarian.CONFIG['SEARCH_INTERVAL']):
+            if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
                 lazylibrarian.SCHED.add_interval_job(
-                    lazylibrarian.searchnzb.cron_search_nzb_book,
-                    minutes=int(lazylibrarian.CONFIG['SEARCH_INTERVAL']))
-                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SEARCH_INTERVAL']))
-        elif 'search_tor_book' in target and int(lazylibrarian.CONFIG['SEARCH_INTERVAL']):
-            if lazylibrarian.USE_TOR():
-                lazylibrarian.SCHED.add_interval_job(
-                    lazylibrarian.searchtorrents.cron_search_tor_book,
+                    lazylibrarian.searchbook.cron_search_book,
                     minutes=int(lazylibrarian.CONFIG['SEARCH_INTERVAL']))
                 logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SEARCH_INTERVAL']))
         elif 'search_rss_book' in target and int(lazylibrarian.CONFIG['SEARCHRSS_INTERVAL']):
@@ -188,7 +183,8 @@ def authorUpdate():
         threading.currentThread().name = "AUTHORUPDATE"
     try:
         myDB = database.DBConnection()
-        cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" and DateAdded is not null order by DateAdded ASC'
+        cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active"'
+        cmd += ' and DateAdded is not null order by DateAdded ASC'
         author = myDB.match(cmd)
         if author and int(lazylibrarian.CONFIG['CACHE_AGE']):
             dtnow = datetime.datetime.now()
@@ -230,14 +226,15 @@ def dbUpdate(refresh=False):
         logger.error(msg)
         return msg
 
+
 def restartJobs(start='Restart'):
     scheduleJob(start, 'processDir')
-    scheduleJob(start, 'search_nzb_book')
-    scheduleJob(start, 'search_tor_book')
+    scheduleJob(start, 'search_book')
     scheduleJob(start, 'search_rss_book')
     scheduleJob(start, 'search_magazines')
     scheduleJob(start, 'checkForUpdates')
     scheduleJob(start, 'authorUpdate')
+
 
 def ensureRunning(jobname):
     found = False
@@ -264,15 +261,12 @@ def checkRunningJobs():
     if snatched:
         ensureRunning('processDir')
     if wanted:
-        if lazylibrarian.USE_NZB():
-            ensureRunning('search_nzb_book')
-        if lazylibrarian.USE_TOR():
-            ensureRunning('search_tor_book')
+        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
+            ensureRunning('search_book')
         if lazylibrarian.USE_RSS():
             ensureRunning('search_rss_book')
     else:
-        scheduleJob('Stop', 'search_nzb_book')
-        scheduleJob('Stop', 'search_tor_book')
+        scheduleJob('Stop', 'search_book')
         scheduleJob('Stop', 'search_rss_book')
 
     if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
@@ -281,6 +275,7 @@ def checkRunningJobs():
         scheduleJob('Stop', 'search_magazines')
 
     ensureRunning('authorUpdate')
+
 
 def showJobs():
     result = ["Cache %i hit%s, %i miss" % (int(lazylibrarian.CACHE_HIT),
@@ -302,10 +297,8 @@ def showJobs():
             jobname = "Magazine search"
         elif "checkForUpdates" in job:
             jobname = "Check LazyLibrarian version"
-        elif "search_tor_book" in job:
-            jobname = "TOR book search"
-        elif "search_nzb_book" in job:
-            jobname = "NZB book search"
+        elif "search_book" in job:
+            jobname = "Book search"
         elif "search_rss_book" in job:
             jobname = "RSS book search"
         elif "processDir" in job:
@@ -361,7 +354,7 @@ def cleanCache():
             cache_modified_time = os.stat(target).st_mtime
             time_now = time.time()
             if cache_modified_time < time_now - (
-                        lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60):  # expire after this many seconds
+                                lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60):  # expire after this many seconds
                 # Cache is old, delete entry
                 os.remove(target)
                 cleaned += 1
@@ -383,7 +376,7 @@ def cleanCache():
             cache_modified_time = os.stat(target).st_mtime
             time_now = time.time()
             if cache_modified_time < time_now - (
-                        lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60):  # expire after this many seconds
+                                lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60):  # expire after this many seconds
                 # Cache is old, delete entry
                 os.remove(target)
                 cleaned += 1

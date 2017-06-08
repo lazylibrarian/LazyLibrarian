@@ -170,7 +170,7 @@ def get_capabilities(provider):
                         if not provider['MAGCAT']:
                             provider['MAGCAT'] = bookcat
             logger.debug("Categories: Books %s : Mags %s : Audio %s" %
-                        (provider['BOOKCAT'], provider['MAGCAT'],provider['AUDIOCAT']))
+                         (provider['BOOKCAT'], provider['MAGCAT'], provider['AUDIOCAT']))
             provider['UPDATED'] = today()
             lazylibrarian.config_write()
         else:
@@ -196,7 +196,7 @@ def BlockProvider(who, why):
         logger.debug('Not blocking %s,%s as timer is zero' % (who, why))
     else:
         mins = int(delay / 60) + (delay % 60 > 0)
-        logger.info("Blocking provider %s for %s minutes because %s" % (mins, who, why))
+        logger.info("Blocking provider %s for %s minutes because %s" % (who, mins, why))
         timenow = int(time.time())
         for entry in lazylibrarian.PROVIDER_BLOCKLIST:
             if entry["name"] == who:
@@ -234,7 +234,6 @@ def IterateOverNewzNabSites(book=None, searchType=None):
 
 
 def IterateOverTorrentSites(book=None, searchType=None):
-
     resultslist = []
     providers = 0
     if searchType != 'mag' and searchType != 'general':
@@ -242,62 +241,61 @@ def IterateOverTorrentSites(book=None, searchType=None):
         book['searchterm'] = authorname + ' ' + bookname
 
     for prov in ['KAT', 'TPB', 'ZOO', 'EXTRA', 'TDL', 'GEN', 'LIME']:
-            if lazylibrarian.CONFIG[prov] and not ProviderIsBlocked(prov):
-                logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG[prov+'_HOST'])
-                if prov == 'KAT':
-                    results,error = KAT(book)
-                elif prov == 'TPB':
-                    results,error = TPB(book)
-                elif prov == 'ZOO':
-                    results,error = ZOO(book)
-                elif prov == 'EXTRA':
-                    results,error = EXTRA(book)
-                elif prov == 'TDL':
-                    results,error = TDL(book)
-                elif prov == 'GEN':
-                    results,error = GEN(book)
-                elif prov == 'LIME':
-                    results,error = LIME(book)
-                else:
-                    results = ''
-                    error = ''
-                    logger.error('IterateOverTorrentSites called with unknown provider [%s]' % prov)
+        if lazylibrarian.CONFIG[prov] and not ProviderIsBlocked(prov):
+            logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG[prov + '_HOST'])
+            if prov == 'KAT':
+                results, error = KAT(book)
+            elif prov == 'TPB':
+                results, error = TPB(book)
+            elif prov == 'ZOO':
+                results, error = ZOO(book)
+            elif prov == 'EXTRA':
+                results, error = EXTRA(book)
+            elif prov == 'TDL':
+                results, error = TDL(book)
+            elif prov == 'GEN':
+                results, error = GEN(book)
+            elif prov == 'LIME':
+                results, error = LIME(book)
+            else:
+                results = ''
+                error = ''
+                logger.error('IterateOverTorrentSites called with unknown provider [%s]' % prov)
 
-                if error:
-                    BlockProvider(prov, error)
-                else:
-                    resultslist += results
-                    providers += 1
+            if error:
+                BlockProvider(prov, error)
+            else:
+                resultslist += results
+                providers += 1
 
     return resultslist, providers
 
 
 def IterateOverRSSSites():
-
     resultslist = []
     providers = 0
     for provider in lazylibrarian.RSS_PROV:
-        if provider['ENABLED'] and not 'goodreads' in provider['HOST'] \
-            and not 'list_rss' in provider['HOST'] and not ProviderIsBlocked(provider['HOST']):
+        if provider['ENABLED'] and 'goodreads' not in provider['HOST'] \
+                and 'list_rss' not in provider['HOST'] and not ProviderIsBlocked(provider['HOST']):
             providers += 1
             logger.debug('[IterateOverRSSSites] - %s' % provider['HOST'])
-            resultslist += RSS(provider['HOST'], provider['NAME'])
+            resultslist += RSS(provider['HOST'], provider['NAME'], provider['DLPRIORITY'])
     return resultslist, providers
 
-def IterateOverGoodReads():
 
+def IterateOverGoodReads():
     resultslist = []
     providers = 0
     for provider in lazylibrarian.RSS_PROV:
         if provider['ENABLED'] and 'goodreads' in provider['HOST'] \
-            and 'list_rss' in provider['HOST'] and not ProviderIsBlocked(provider['HOST']):
+                and 'list_rss' in provider['HOST'] and not ProviderIsBlocked(provider['HOST']):
             providers += 1
             logger.debug('[IterateOverGoodReads] - %s' % provider['HOST'])
-            resultslist += GOODREADS(provider['HOST'], provider['NAME'])
+            resultslist += GOODREADS(provider['HOST'], provider['NAME'], provider['DLPRIORITY'])
     return resultslist, providers
 
 
-def GOODREADS(host=None, feednr=None):
+def GOODREADS(host=None, feednr=None, priority=0):
     """
     Goodreads RSS query function, return all the results in a list, can handle multiple wishlists
     but expects goodreads format (looks for goodreads category names)
@@ -340,16 +338,17 @@ def GOODREADS(host=None, feednr=None):
                     'rss_title': title,
                     'rss_author': author_name,
                     'rss_bookid': book_id,
-                    'rss_isbn': isbn
+                    'rss_isbn': isbn,
+                    'priority': priority
                 })
     else:
         logger.debug('No data returned from %s' % host)
     return results
 
 
-def RSS(host=None, feednr=None):
+def RSS(host=None, feednr=None, priority=0):
     """
-    Generic RSS query function, just return all the results from all the RSS feeds in a list
+    Generic RSS query function, just return all the results from the RSS feed in a list
     """
     results = []
 
@@ -405,7 +404,7 @@ def RSS(host=None, feednr=None):
                     url = magnet
                     tortype = 'magnet'
 
-            if nzb:     # prefer nzb over torrent/magnet
+            if nzb:  # prefer nzb over torrent/magnet
                 url = nzb
                 tortype = 'nzb'
 
@@ -428,9 +427,9 @@ def RSS(host=None, feednr=None):
                     'tor_size': str(size),
                     'tor_date': tor_date,
                     'tor_feed': feednr,
-                    'tor_type': tortype
+                    'tor_type': tortype,
+                    'priority': priority
                 })
-
     else:
         logger.debug('No data returned from %s' % host)
     return results
@@ -447,7 +446,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
     host = provider['HOST']
     api_key = provider['API']
     logger.debug('[NewzNabPlus] searchType [%s] with Host [%s] mode [%s] using api [%s] for item [%s]' % (
-                 searchType, host, searchMode, api_key, str(book)))
+        searchType, host, searchMode, api_key, str(book)))
 
     results = []
 
@@ -482,7 +481,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
                 # maybe the host doesn't support the search type
                 match = False
                 if (provider['BOOKSEARCH'] and searchType in ["book", "shortbook"]) or \
-                    (provider['AUDIOSEARCH'] and searchType in ["audio", "shortaudio"]):
+                        (provider['AUDIOSEARCH'] and searchType in ["audio", "shortaudio"]):
                     errorlist = ['no such function', 'unknown parameter', 'unknown function', 'incorrect parameter']
                     for item in errorlist:
                         if item in errormsg.lower():
@@ -502,12 +501,12 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
                                 if lazylibrarian.NEWZNAB_PROV[count]['HOST'] == provider['HOST']:
                                     if str(provider['MANUAL']) == 'False':
                                         logger.error("Disabled %s=%s for %s" %
-                                            (msg, provider[msg], provider['HOST']))
+                                                     (msg, provider[msg], provider['HOST']))
                                         lazylibrarian.NEWZNAB_PROV[count][msg] = ""
                                         lazylibrarian.config_write()
                                     else:
                                         logger.error("Unable to disable %s for %s [MANUAL=%s]" %
-                                                    (msg, provider['HOST'], provider['MANUAL']))
+                                                     (msg, provider['HOST'], provider['MANUAL']))
                                 count += 1
                 if not match:
                     BlockProvider(provider['HOST'], errormsg)
@@ -517,7 +516,8 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
                 for nzb in resultxml:
                     try:
                         nzbcount += 1
-                        results.append(ReturnResultsFieldsBySearchType(book, nzb, host, searchMode))
+                        results.append(
+                            ReturnResultsFieldsBySearchType(book, nzb, host, searchMode, provider['DLPRIORITY']))
                     except IndexError:
                         logger.debug('No results from %s for %s' % (host, book['searchterm']))
                 logger.debug(u'Found %s nzb at %s for: %s' % (nzbcount, host, book['searchterm']))
@@ -527,7 +527,6 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
 
 
 def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
-
     params = None
     if searchType in ["book", "shortbook"]:
         authorname, bookname = get_searchterm(book, searchType)
@@ -569,7 +568,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "t": provider['MAGSEARCH'],
                 "apikey": api_key,
                 "cat": provider['MAGCAT'],
-                "q": unaccented(book['searchterm']),
+                "q": unaccented(book['searchterm'].replace(':', '')),
                 "extended": provider['EXTENDED'],
             }
         elif provider['GENERALSEARCH'] and provider['MAGCAT']:
@@ -577,16 +576,15 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
                 "t": provider['GENERALSEARCH'],
                 "apikey": api_key,
                 "cat": provider['MAGCAT'],
-                "q": unaccented(book['searchterm']),
+                "q": unaccented(book['searchterm'].replace(':', '')),
                 "extended": provider['EXTENDED'],
             }
     else:
         if provider['GENERALSEARCH']:
             if searchType == "shortgeneral":
-                authorname, bookname = get_searchterm(book, searchType)
-                searchterm = authorname + ' ' + bookname
+                searchterm = unaccented(book['searchterm'].split('(')[0].replace(':', ''))
             else:
-                searchterm = unaccented(book['searchterm'])
+                searchterm = unaccented(book['searchterm'].replace(':', ''))
             params = {
                 "t": provider['GENERALSEARCH'],
                 "apikey": api_key,
@@ -601,7 +599,7 @@ def ReturnSearchTypeStructure(provider, api_key, book, searchType, searchMode):
     return params
 
 
-def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, host=None, searchMode=None):
+def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, host=None, searchMode=None, priority=0):
     """
     # searchType has multiple query params for t=, which return different results sets.
     # books have a dedicated check, so will use that.
@@ -725,8 +723,9 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, host=None, searc
         'nzburl': nzburl,
         'nzbdate': nzbdate,
         'nzbsize': nzbsize,
-        'nzbmode': searchMode
-        }
+        'nzbmode': searchMode,
+        'priority': priority
+    }
 
     logger.debug('[NewzNabPlus] - result fields from NZB are ' + str(resultFields))
     return resultFields

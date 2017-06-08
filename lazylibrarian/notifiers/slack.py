@@ -92,6 +92,7 @@ class SlackNotifier:
             self._notify(message=title, event=notifyStrings[NOTIFY_DOWNLOAD], slack_token=None)
 
     def test_notify(self, title="Test"):
-        return self._notify(message="This is a test notification from LazyLibrarian", event=title, slack_token=None, force=True)
+        return self._notify(message="This is a test notification from LazyLibrarian",
+                            event=title, slack_token=None, force=True)
 
 notifier = SlackNotifier

@@ -19,7 +19,7 @@ import traceback
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.formatter import plural
-from lazylibrarian.providers import IterateOverNewzNabSites
+from lazylibrarian.providers import IterateOverNewzNabSites, IterateOverTorrentSites, IterateOverRSSSites
 from lazylibrarian.resultlist import findBestResult, downloadResult
 
 
@@ -73,7 +73,22 @@ def search_book(books=None, library=None):
             logger.debug("SearchBooks - No books to search for")
             return
 
-        logger.info('Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
+        nproviders = lazylibrarian.USE_NZB() + lazylibrarian.USE_TOR() + lazylibrarian.USE_RSS()
+
+        if nproviders == 0:
+            logger.debug("SearchBooks - No providers to search")
+            return
+
+        modelist = []
+        if lazylibrarian.USE_NZB():
+            modelist.append('nzb')
+        if lazylibrarian.USE_TOR():
+            modelist.append('tor')
+        if lazylibrarian.USE_RSS():
+            modelist.append('rss')
+
+        logger.info('Searching %s provider%s %s for %i book%s' %
+                    (nproviders, plural(nproviders), str(modelist), len(searchbooks), plural(len(searchbooks))))
 
         for searchbook in searchbooks:
             # searchterm is only used for display purposes
@@ -101,10 +116,15 @@ def search_book(books=None, library=None):
                          "library": "AudioBook",
                          "searchterm": searchterm})
 
+        # only get rss results once per run, as they are not search specific
+        rss_resultlist, nproviders = IterateOverRSSSites()
+        if not nproviders:
+            rss_resultlist = None
+
         book_count = 0
         for book in searchlist:
             matches = []
-            for mode in ['nzb', 'tor']:
+            for mode in modelist:
                 # first attempt, try author/title in category "book"
                 if book['library'] == 'AudioBook':
                     searchtype = 'audio'
@@ -113,13 +133,26 @@ def search_book(books=None, library=None):
                 if mode == 'nzb':
                     resultlist, nproviders = IterateOverNewzNabSites(book, searchtype)
                     if not nproviders:
+                        logger.debug("No active nzb providers found")
+                        modelist.remove('nzb')
                         break  # no point in continuing
                 elif mode == 'tor':
                     resultlist, nproviders = IterateOverTorrentSites(book, searchtype)
                     if not nproviders:
+                        logger.debug("No active tor providers found")
+                        modelist.remove('tor')
                         break  # no point in continuing
+                elif mode == 'rss':
+                    if rss_resultlist:
+                        resultlist = rss_resultlist
+                        nproviders = 1  # dummy value
+                    else:
+                        logger.debug("No active rss providers found")
+                        modelist.remove('rss')
+                        break
 
-                match = findBestResult(resultlist, book, searchtype, mode)
+                if nproviders:
+                    match = findBestResult(resultlist, book, searchtype, mode)
 
                 # if you can't find the book, try author/title without any "(extended details, series etc)"
                 if not goodEnough(match) and '(' in book['bookName']:
@@ -128,10 +161,13 @@ def search_book(books=None, library=None):
                         resultlist, nproviders = IterateOverNewzNabSites(book, searchtype)
                     elif mode == 'tor':
                         resultlist, nproviders = IterateOverTorrentSites(book, searchtype)
+                    elif mode == 'rss':
+                        resultlist = rss_resultlist
+
                     match = findBestResult(resultlist, book, searchtype, mode)
 
                 # if you can't find the book under "books", you might find under general search
-                # general search is the same as booksearch for torrents
+                # general search is the same as booksearch for torrents and rss, no need to check again
                 if not goodEnough(match):
                     searchtype = 'general'
                     if mode == 'nzb':
@@ -149,12 +185,13 @@ def search_book(books=None, library=None):
                     logger.info("%s Searches for %s %s returned no results." %
                                 (mode.upper(), book['library'], book['searchterm']))
                 else:
-                    logger.info("Top %s result: %s %s%%, %s priority %s" %
+                    logger.info("Found %s result: %s %s%%, %s priority %s" %
                                 (mode.upper(), searchtype, match[0], match[2]['NZBprov'], match[4]))
                     matches.append(match)
 
             if matches:
                 highest = max(matches, key=lambda s: (s[0], s[4]))  # sort on percentage and priority
+                logger.info("Requesting download: %s%% %s: %s" % (highest[0], highest[2]['NZBprov'], highest[1]))
                 if downloadResult(highest, book) > True:
                     book_count += 1  # we found it
 

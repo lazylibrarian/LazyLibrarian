@@ -27,11 +27,11 @@ import webbrowser
 import ConfigParser
 
 import cherrypy
-from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, \
-    librarysync, versioncheck, database, searchmag, magazinescan, bookwork, importer
+from lazylibrarian import logger, postprocess, searchbook, searchrss, librarysync, versioncheck, database, \
+    searchmag, magazinescan, bookwork, importer
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import restartJobs
-from lazylibrarian.formatter import getList, bookSeries, plural, unaccented
+from lazylibrarian.formatter import getList, bookSeries, plural, unaccented, check_int
 from lib.apscheduler.scheduler import Scheduler
 
 # Transient globals NOT stored in config
@@ -109,10 +109,10 @@ isbn_978_dict = {
 # Any undefined on startup will be set to the default value
 # Any _NOT_ in the web ui will remain unchanged on config save
 CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDATED', 'CURRENT_VERSION',
-                'COMMITS_BEHIND', 'INSTALL_TYPE']
+              'COMMITS_BEHIND', 'INSTALL_TYPE']
 CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER']
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
-                 'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB']
+                     'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB']
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
     'LOGDIR': ('str', 'General', ''),
@@ -150,7 +150,7 @@ CONFIG_DEFINITIONS = {
     'API_KEY': ('str', 'General', ''),
     'PROXY_HOST': ('str', 'General', ''),
     'PROXY_TYPE': ('str', 'General', ''),
-    'NAME_POSTFIX':('str', 'General', 'snr, jnr, jr, sr, phd'),
+    'NAME_POSTFIX': ('str', 'General', 'snr, jnr, jr, sr, phd'),
     'IMP_PREFLANG': ('str', 'General', 'en, eng, en-US, en-GB'),
     'IMP_MONTHLANG': ('str', 'General', ''),
     'IMP_AUTOADD': ('str', 'General', ''),
@@ -241,18 +241,25 @@ CONFIG_DEFINITIONS = {
     'USE_SYNOLOGY': ('bool', 'SYNOLOGY', 0),
     'KAT_HOST': ('str', 'KAT', 'kickass.cd'),
     'KAT': ('bool', 'KAT', 0),
+    'KAT_DLPRIORITY': ('int', 'KAT', 0),
     'TPB_HOST': ('str', 'TPB', 'https://piratebays.co'),
     'TPB': ('bool', 'TPB', 0),
+    'TPB_DLPRIORITY': ('int', 'TPB', 0),
     'ZOO_HOST': ('str', 'ZOO', 'https://zooqle.com'),
     'ZOO': ('bool', 'ZOO', 0),
+    'ZOO_DLPRIORITY': ('int', 'ZOO', 0),
     'EXTRA_HOST': ('str', 'EXTRA', 'extratorrent.cc'),
     'EXTRA': ('bool', 'EXTRA', 0),
+    'EXTRA_DLPRIORITY': ('int', 'EXTRA', 0),
     'TDL_HOST': ('str', 'TDL', 'torrentdownloads.me'),
     'TDL': ('bool', 'TDL', 0),
+    'TDL_DLPRIORITY': ('int', 'TDL', 0),
     'GEN_HOST': ('str', 'GEN', 'libgen.io'),
     'GEN': ('bool', 'GEN', 0),
+    'GEN_DLPRIORITY': ('int', 'GEN', 0),
     'LIME_HOST': ('str', 'LIME', 'https://www.limetorrents.cc'),
     'LIME': ('bool', 'LIME', 0),
+    'LIME_DLPRIORITY': ('int', 'LIME', 0),
     'NEWZBIN_UID': ('str', 'Newzbin', ''),
     'NEWZBIN_PASS': ('str', 'Newzbin', ''),
     'NEWZBIN': ('bool', 'Newzbin', 0),
@@ -331,7 +338,7 @@ CONFIG_DEFINITIONS = {
     'EMAIL_NOTIFY_ONSNATCH': ('bool', 'Email', 0),
     'EMAIL_NOTIFY_ONDOWNLOAD': ('bool', 'Email', 0),
     'EMAIL_FROM': ('str', 'Email', ''),
-    'EMAIL_TO': ('str', 'Email',''),
+    'EMAIL_TO': ('str', 'Email', ''),
     'EMAIL_SSL': ('bool', 'Email', 0),
     'EMAIL_SMTP_SERVER': ('str', 'Email', ''),
     'EMAIL_SMTP_PORT': ('int', 'Email', 25),
@@ -403,7 +410,7 @@ def initialize():
 
         check_section('General')
         # False to silence logging until logger initialised
-        for key in ['LOGLIMIT','LOGFILES','LOGSIZE']:
+        for key in ['LOGLIMIT', 'LOGFILES', 'LOGSIZE']:
             item_type, section, default = CONFIG_DEFINITIONS[key]
             CONFIG[key.upper()] = check_setting(item_type, section, key.lower(), default, log=False)
         CONFIG['LOGDIR'] = os.path.join(DATADIR, 'Logs')
@@ -414,7 +421,8 @@ def initialize():
                 os.makedirs(CONFIG['LOGDIR'])
             except OSError as e:
                 if LOGLEVEL:
-                    print '%s : Unable to create folder for logs: %s. Only logging to console.' % (CONFIG['LOGDIR'], str(e))
+                    print '%s : Unable to create folder for logs: %s' % (
+                        CONFIG['LOGDIR'], str(e))
 
         # Start the logger, silence console logging if we need to
         CFGLOGLEVEL = check_setting('int', 'General', 'loglevel', 9, log=False)
@@ -483,7 +491,7 @@ def initialize():
 
 def config_read(reloaded=False):
     global CONFIG, CONFIG_DEFINITIONS, CONFIG_NONWEB, CONFIG_NONDEFAULT, NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, \
-            CONFIG_GIT, SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO
+        CONFIG_GIT, SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO
     # legacy name conversion
     if not CFG.has_option('General', 'ebook_dir'):
         ebook_dir = check_setting('str', 'General', 'destination_dir', '')
@@ -534,7 +542,8 @@ def config_read(reloaded=False):
                              "AUDIOCAT": check_setting('str', newz_name, 'audiocat', '3030'),
                              "EXTENDED": check_setting('str', newz_name, 'extended', '1'),
                              "UPDATED": check_setting('str', newz_name, 'updated', ''),
-                             "MANUAL": check_setting('bool', newz_name, 'manual', 0)
+                             "MANUAL": check_setting('bool', newz_name, 'manual', 0),
+                             "DLPRIORITY": check_setting('int', newz_name, 'dlpriority', 0)
                              })
         count += 1
     # if the last slot is full, add an empty one on the end
@@ -569,7 +578,8 @@ def config_read(reloaded=False):
                              "AUDIOCAT": check_setting('str', torz_name, 'audiocat', '3030'),
                              "EXTENDED": check_setting('str', torz_name, 'extended', '1'),
                              "UPDATED": check_setting('str', torz_name, 'updated', ''),
-                             "MANUAL": check_setting('bool', torz_name, 'manual', 0)
+                             "MANUAL": check_setting('bool', torz_name, 'manual', 0),
+                             "DLPRIORITY": check_setting('int', torz_name, 'dlpriority', 0)
                              })
         count += 1
     # if the last slot is full, add an empty one on the end
@@ -598,7 +608,8 @@ def config_read(reloaded=False):
 
         RSS_PROV.append({"NAME": rss_name,
                          "ENABLED": check_setting('bool', rss_name, 'ENABLED', 0),
-                         "HOST": check_setting('str', rss_name, 'HOST', '')
+                         "HOST": check_setting('str', rss_name, 'HOST', ''),
+                         "DLPRIORITY": check_setting('int', rss_name, 'DLPRIORITY', 0)
                          })
         count += 1
     # if the last slot is full, add an empty one on the end
@@ -609,7 +620,7 @@ def config_read(reloaded=False):
         CONFIG[key.upper()] = check_setting(item_type, section, key.lower(), default)
     if not CONFIG['LOGDIR']:
         CONFIG['LOGDIR'] = os.path.join(DATADIR, 'Logs')
-    if CONFIG['HTTP_PORT'] < 21 or CONFIG ['HTTP_PORT'] > 65535:
+    if CONFIG['HTTP_PORT'] < 21 or CONFIG['HTTP_PORT'] > 65535:
         CONFIG['HTTP_PORT'] = 5299
 
     # to make extension matching easier
@@ -620,11 +631,21 @@ def config_read(reloaded=False):
     CONFIG['REJECT_AUDIO'] = CONFIG['REJECT_AUDIO'].lower()
 
     myDB = database.DBConnection()
+    # check if we have an active database yet, not a fresh install
+    result = myDB.match('PRAGMA user_version')
+    if result:
+        version = result[0]
+    else:
+        version = 0
+
     ###################################################################
     # ensure all these are boolean 1 0, not True False for javascript #
     ###################################################################
     # Suppress series tab if there are none and user doesn't want to add any
-    series_list = myDB.select('SELECT SeriesID from series')
+    series_list = ''
+    if version:  # if zero, there is no series table yet
+        series_list = myDB.select('SELECT SeriesID from series')
+
     SHOW_SERIES = len(series_list)
     if CONFIG['ADD_SERIES']:
         SHOW_SERIES = 1
@@ -678,7 +699,7 @@ def config_write():
         item_type, section, default = CONFIG_DEFINITIONS[key]
         if key not in CONFIG_NONWEB and not (interface == 'default' and key in CONFIG_NONDEFAULT):
             check_section(section)
-            value =  CONFIG[key]
+            value = CONFIG[key]
             if key in ['LOGDIR', 'EBOOK_DIR', 'AUDIO_DIR', 'ALTERNATE_DIR', 'DOWLOAD_DIR',
                        'EBOOK_DEST_FILE', 'EBOOK_DEST_FOLDER', 'MAG_DEST_FILE', 'MAG_DEST_FOLDER']:
                 value = value.encode(SYS_ENCODING)
@@ -688,7 +709,7 @@ def config_write():
             # keep the old value
             value = CFG.get(section, key.lower())
             if CONFIG['LOGLEVEL'] > 2:
-                logger.debug("Leaving %s unchanged (%s)" % (key,value))
+                logger.debug("Leaving %s unchanged (%s)" % (key, value))
             CONFIG[key] = value
         CFG.set(section, key.lower(), value)
 
@@ -711,6 +732,7 @@ def config_write():
         CFG.set(provider['NAME'], 'MAGCAT', provider['MAGCAT'])
         CFG.set(provider['NAME'], 'AUDIOCAT', provider['AUDIOCAT'])
         CFG.set(provider['NAME'], 'EXTENDED', provider['EXTENDED'])
+        CFG.set(provider['NAME'], 'DLPRIORITY', check_int(provider['DLPRIORITY'], 0))
         if provider['HOST'] == oldprovider:
             CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
             CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
@@ -734,6 +756,7 @@ def config_write():
         CFG.set(provider['NAME'], 'MAGCAT', provider['MAGCAT'])
         CFG.set(provider['NAME'], 'AUDIOCAT', provider['AUDIOCAT'])
         CFG.set(provider['NAME'], 'EXTENDED', provider['EXTENDED'])
+        CFG.set(provider['NAME'], 'DLPRIORITY', check_int(provider['DLPRIORITY'], 0))
         if provider['HOST'] == oldprovider:
             CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
             CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
@@ -748,6 +771,7 @@ def config_write():
         check_section(provider['NAME'])
         CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
         CFG.set(provider['NAME'], 'HOST', provider['HOST'])
+        CFG.set(provider['NAME'], 'DLPRIORITY', check_int(provider['DLPRIORITY'], 0))
     add_rss_slot()
 
     myDB = database.DBConnection()
@@ -819,6 +843,7 @@ def add_newz_slot():
         CFG.set(newz_name, 'EXTENDED', '1')
         CFG.set(newz_name, 'UPDATED', '')
         CFG.set(newz_name, 'MANUAL', False)
+        CFG.set(newz_name, 'DLPRIORITY', 0)
 
         NEWZNAB_PROV.append({"NAME": newz_name,
                              "ENABLED": 0,
@@ -833,7 +858,8 @@ def add_newz_slot():
                              "AUDIOCAT": '3030',
                              "EXTENDED": '1',
                              "UPDATED": '',
-                             "MANUAL": 0
+                             "MANUAL": 0,
+                             "DLPRIORITY": 0
                              })
 
 
@@ -854,6 +880,7 @@ def add_torz_slot():
         CFG.set(torz_name, 'EXTENDED', '1')
         CFG.set(torz_name, 'UPDATED', '')
         CFG.set(torz_name, 'MANUAL', False)
+        CFG.set(torz_name, 'DLPRIORITY', 0)
         TORZNAB_PROV.append({"NAME": torz_name,
                              "ENABLED": 0,
                              "HOST": '',
@@ -866,7 +893,8 @@ def add_torz_slot():
                              "AUDIOCAT": '8030',
                              "EXTENDED": '1',
                              "UPDATED": '',
-                             "MANUAL": 0
+                             "MANUAL": 0,
+                             "DLPRIORITY": 0
                              })
 
 
@@ -912,7 +940,8 @@ def add_rss_slot():
         # CFG.set(rss_name, 'PASS', '')
         RSS_PROV.append({"NAME": rss_name,
                          "ENABLED": 0,
-                         "HOST": ''
+                         "HOST": '',
+                         "DLPRIORITY": 0
                          })
 
 
@@ -1063,7 +1092,7 @@ def build_monthtable():
                 logger.warn("Unable to get a list of alternatives, %s" % str(e))
             logger.info("Set locale back to entry state %s" % current_locale)
 
-    #with open(json_file, 'w') as f:
+    # with open(json_file, 'w') as f:
     #    json.dump(table, f)
     return table
 
@@ -1115,6 +1144,7 @@ def launch_browser(host, port, root):
     except Exception as e:
         logger.error('Could not launch browser: %s' % str(e))
 
+
 def start():
     global __INITIALIZED__, started, SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO
 
@@ -1138,35 +1168,58 @@ def start():
             else:
                 SHOW_AUDIO = 0
 
+
+def logmsg(level, msg):
+    # log messages to logger if initialised, or print if not.
+    if __INITIALIZED__:
+        if level == 'error':
+            logger.error(msg)
+        elif level == 'info':
+            logger.info(msg)
+        elif level == 'debug':
+            logger.debug(msg)
+        elif level == 'warn':
+            logger.warn(msg)
+        else:
+            logger.info(msg)
+    else:
+        print level.upper(), msg
+
+
 def shutdown(restart=False, update=False):
     cherrypy.engine.exit()
     SCHED.shutdown(wait=False)
     # config_write() don't automatically rewrite config on exit
 
     if not restart and not update:
-        logger.info('LazyLibrarian is shutting down...')
+        msg = 'LazyLibrarian is shutting down...'
+        if __INITIALIZED__:
+            logger.info(msg)
+        else:
+            print(msg)
     if update:
-        logger.info('LazyLibrarian is updating...')
+        logmsg('info', 'LazyLibrarian is updating...')
         try:
             if versioncheck.update():
-                logger.debug('Lazylibrarian version updated')
+                logmsg('info', 'Lazylibrarian version updated')
                 config_write()
         except Exception as e:
-            logger.warn('LazyLibrarian failed to update: %s. Restarting.' % str(e))
+            logmsg('warn', 'LazyLibrarian failed to update: %s. Restarting.' % str(e))
 
     if PIDFILE:
-        logger.info('Removing pidfile %s' % PIDFILE)
+        logmsg('info', 'Removing pidfile %s' % PIDFILE)
         os.remove(PIDFILE)
 
     if restart:
-        logger.info('LazyLibrarian is restarting ...')
+        logmsg('info', 'LazyLibrarian is restarting ...')
+
         popen_list = [sys.executable, FULL_PATH]
         popen_list += ARGS
         if '--update' in popen_list:
             popen_list.remove('--update')
         if '--nolaunch' not in popen_list:
             popen_list += ['--nolaunch']
-            logger.info('Restarting LazyLibrarian with ' + str(popen_list))
+            logmsg('info', 'Restarting LazyLibrarian with ' + str(popen_list))
         subprocess.Popen(popen_list, cwd=os.getcwd())
 
     os._exit(0)

@@ -17,286 +17,85 @@ import gzip
 import os
 import re
 import socket
-import threading
-import traceback
 import unicodedata
 import urllib2
 from StringIO import StringIO
 from base64 import b16encode, b32decode
 from hashlib import sha1
-#from HTMLParser import HTMLParser
 
 import lazylibrarian
-from lazylibrarian import logger, database, utorrent, transmission, qbittorrent, deluge, rtorrent, synology, bencode
-from lazylibrarian.common import scheduleJob, USER_AGENT, setperm
-from lazylibrarian.formatter import plural, unaccented_str, replace_all, getList, check_int, now, cleanName
-from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
-from lazylibrarian.providers import IterateOverTorrentSites
+from lazylibrarian import logger, database, nzbget, sabnzbd, classes, utorrent, transmission, qbittorrent, \
+    deluge, rtorrent, synology, bencode
+from lazylibrarian.cache import fetchURL
+from lazylibrarian.common import setperm, USER_AGENT
+from lazylibrarian.formatter import cleanName, unaccented_str
 from lib.deluge_client import DelugeRPCClient
-from lib.fuzzywuzzy import fuzz
 from magnet2torrent import magnet2torrent
 
 
-def cron_search_tor_book():
-    if 'SEARCHALLTOR' not in [n.name for n in [t for t in threading.enumerate()]]:
-        search_tor_book()
-
-
-def search_tor_book(books=None, library=None):
-    """
-    books is a list of new books to add, or None for backlog search
-    library is "eBook" or "AudioBook" or None to search all book types
-    """
-    try:
-        threadname = threading.currentThread().name
-        if "Thread-" in threadname:
-            if books is None:
-                threading.currentThread().name = "SEARCHALLTOR"
-            else:
-                threading.currentThread().name = "SEARCHTOR"
-
-        if not lazylibrarian.USE_TOR():
-            logger.warn('No Torrent providers set, check config')
-            return
-
-        myDB = database.DBConnection()
-        searchlist = []
-
-        if books is None:
-            # We are performing a backlog search
-            searchbooks = []
-            cmd = 'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded, books.Status, AudioStatus '
-            cmd += 'from books,authors WHERE (books.Status="Wanted" OR AudioStatus="Wanted") '
-            cmd += 'and books.AuthorID = authors.AuthorID order by BookAdded desc'
-            results = myDB.select(cmd)
-            for terms in results:
-                searchbooks.append(terms)
-        else:
-            # The user has added a new book
-            searchbooks = []
-            for book in books:
-                cmd = 'SELECT BookID, AuthorName, BookName, BookSub, books.Status, AudioStatus '
-                cmd += 'from books,authors WHERE BookID="%s" ' % book['bookid']
-                cmd += 'AND books.AuthorID = authors.AuthorID'
-                results = myDB.select(cmd)
-                for terms in results:
-                    searchbooks.append(terms)
-
-        if len(searchbooks) == 0:
-            return
-
-        logger.info('TOR Searching for %i book%s' % (len(searchbooks), plural(len(searchbooks))))
-
-        for searchbook in searchbooks:
-            # searchterm is only used for display purposes
-            searchterm = searchbook['AuthorName'] + ' ' + searchbook['BookName']
-            if searchbook['BookSub']:
-                searchterm = searchterm + ': ' + searchbook['BookSub']
-
-            if library is None or library == 'eBook':
-                if searchbook['Status'] == "Wanted":
-                    searchlist.append(
-                        {"bookid": searchbook['BookID'],
-                         "bookName": searchbook['BookName'],
-                         "bookSub": searchbook['BookSub'],
-                         "authorName": searchbook['AuthorName'],
-                         "library": "eBook",
-                         "searchterm": searchterm})
-
-            if library is None or library == 'AudioBook':
-                if searchbook['AudioStatus'] == "Wanted":
-                    searchlist.append(
-                        {"bookid": searchbook['BookID'],
-                         "bookName": searchbook['BookName'],
-                         "bookSub": searchbook['BookSub'],
-                         "authorName": searchbook['AuthorName'],
-                         "library": "AudioBook",
-                         "searchterm": searchterm})
-
-        tor_count = 0
-        for book in searchlist:
-            # first attempt, try author/title in category "book"
-            if book['library'] == 'AudioBook':
-                searchtype = 'audio'
-            else:
-                searchtype = 'book'
-
-            resultlist, nproviders = IterateOverTorrentSites(book, searchtype)
-            if not nproviders:
-                logger.warn('No torrent providers are available')
-                return  # No point in continuing
-
-            found = processResultList(resultlist, book, searchtype)
-
-            # if you can't find the book, try author/title without any "(extended details, series etc)"
-            if not found and '(' in book['bookName']:
-                searchtype = 'short' + searchtype
-                resultlist, nproviders = IterateOverTorrentSites(book, searchtype)
-                found = processResultList(resultlist, book, searchtype)
-
-            # general search is the same as booksearch for torrents
-            # if not found:
-            #    resultlist, nproviders = IterateOverTorrentSites(book, 'general')
-            #    found = processResultList(resultlist, book, "general")
-
-            if not found:
-                logger.debug("Searches for %s %s returned no results." % (book['library'], book['searchterm']))
-            if found > True:
-                tor_count += 1
-
-        logger.info("TORSearch for Wanted items complete, found %s book%s" % (tor_count, plural(tor_count)))
-
-    except Exception:
-        logger.error('Unhandled exception in search_tor_book: %s' % traceback.format_exc())
-
-
-def processResultList(resultlist, book, searchtype):
+def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None):
     myDB = database.DBConnection()
-    dictrepl = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
-                ',': ' ', '*': '', '(': '', ')': '', '[': '', ']': '', '#': '', '0': '', '1': '', '2': '',
-                '3': '', '4': '', '5': '', '6': '', '7': '', '8': '', '9': '', '\'': '', ':': '', '!': '',
-                '-': ' ', '\s\s': ' '}
+    Source = ''
+    downloadID = ''
+    if lazylibrarian.CONFIG['NZB_DOWNLOADER_SABNZBD'] and lazylibrarian.CONFIG['SAB_HOST']:
+        Source = "SABNZBD"
+        downloadID = sabnzbd.SABnzbd(nzbtitle, nzburl, False)  # returns nzb_ids or False
 
-    dic = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
-           ',': '', '*': '', ':': '.', ';': ''}
-
-    match_ratio = int(lazylibrarian.CONFIG['MATCH_RATIO'])
-    author = unaccented_str(replace_all(book['authorName'], dic))
-    title = unaccented_str(replace_all(book['bookName'], dic))
-    if book['library'] == 'eBook':
-        reject_list = getList(lazylibrarian.CONFIG['REJECT_WORDS'])
-        maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXSIZE'], 0)
-        minsize = check_int(lazylibrarian.CONFIG['REJECT_MINSIZE'], 0)
-        auxinfo = 'eBook'
-
-    else:   #if book['library'] == 'AudioBook':
-        reject_list = getList(lazylibrarian.CONFIG['REJECT_AUDIO'])
-        maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXAUDIO'], 0)
-        minsize = check_int(lazylibrarian.CONFIG['REJECT_MINAUDIO'], 0)
-        auxinfo = 'AudioBook'
-
-    matches = []
-    for tor in resultlist:
-        torTitle = unaccented_str(tor['tor_title'])
-        torTitle = replace_all(torTitle, dictrepl).strip()
-        torTitle = re.sub(r"\s\s+", " ", torTitle)  # remove extra whitespace
-
-        torAuthor_match = fuzz.token_set_ratio(author, torTitle)
-        torBook_match = fuzz.token_set_ratio(title, torTitle)
-        logger.debug(u"TOR author/book Match: %s/%s for %s at %s" %
-                    (torAuthor_match, torBook_match, torTitle, tor['tor_prov']))
-
-        rejected = False
-
-        tor_url = tor['tor_url']
-        if not rejected:
-            if tor_url is None:
-                rejected = True
-                logger.debug("Rejecting %s, no URL found" % torTitle)
-
-        if not rejected:
-            if not tor_url.startswith('http'):
-                rejected = True
-                logger.debug("Rejecting %s, invalid URL" % torTitle)
-
-        already_failed = myDB.match('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' % tor_url)
-        if already_failed:
-            logger.debug("Rejecting %s, blacklisted at %s" % (torTitle, already_failed['NZBprov']))
-            rejected = True
-
-        if not rejected:
-            for word in reject_list:
-                if word in torTitle.lower() and word not in author.lower() and word not in title.lower():
-                    rejected = True
-                    logger.debug("Rejecting %s, contains %s" % (torTitle, word))
-                    break
-
-        tor_size_temp = tor['tor_size']  # Need to cater for when this is NONE (Issue 35)
-        tor_size_temp = check_int(tor_size_temp, 1000)
-        tor_size = round(float(tor_size_temp) / 1048576, 2)
-
-        if not rejected:
-            if maxsize and tor_size > maxsize:
-                rejected = True
-                logger.debug("Rejecting %s, too large" % torTitle)
-
-        if not rejected:
-            if minsize and tor_size < minsize:
-                rejected = True
-                logger.debug("Rejecting %s, too small" % torTitle)
-
-        if not rejected:
-            bookid = book['bookid']
-            tor_Title = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
-
-            controlValueDict = {"NZBurl": tor_url}
-            newValueDict = {
-                "NZBprov": tor['tor_prov'],
-                "BookID": bookid,
-                "NZBdate": now(),  # when we asked for it
-                "NZBsize": tor_size,
-                "NZBtitle": tor_Title,
-                "NZBmode": "torrent",
-                "AuxInfo": auxinfo,
-                "Status": "Skipped"
-            }
-
-            score = (torBook_match + torAuthor_match) / 2  # as a percentage
-            # lose a point for each unwanted word in the title so we get the closest match
-            wordlist = getList(torTitle.lower())
-            words = [x for x in wordlist if x not in getList(author.lower())]
-            words = [x for x in words if x not in getList(title.lower())]
-            booktypes = ''
-            if newValueDict['AuxInfo'] == 'eBook':
-                words = [x for x in words if x not in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
-                booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
-            if newValueDict['AuxInfo'] == 'AudioBook':
-                words = [x for x in words if x not in getList(lazylibrarian.CONFIG['AUDIOBOOK_TYPE'])]
-                booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['AUDIOBOOK_TYPE'])]
-            score -= len(words)
-            # prioritise titles that include the ebook types we want
-            if len(booktypes):
-                score += 1
-            matches.append([score, torTitle, newValueDict, controlValueDict])
-
-    if matches:
-        highest = max(matches, key=lambda s: s[0])
-        score = highest[0]
-        nzb_Title = highest[1]
-        newValueDict = highest[2]
-        controlValueDict = highest[3]
-
-        if score < match_ratio:
-            logger.info(u'Nearest TOR match (%s%%): %s using %s search for %s %s' %
-                        (score, nzb_Title, searchtype, author, title))
-            return False
-
-        logger.info(u'Best TOR match (%s%%): %s using %s search' %
-                    (score, nzb_Title, searchtype))
-
-        snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID="%s" and Status="Snatched"' %
-                                   newValueDict["BookID"])
-        if snatchedbooks:
-            logger.debug('%s already marked snatched' % nzb_Title)
-            return True  # someone else found it, not us
+    if lazylibrarian.CONFIG['NZB_DOWNLOADER_NZBGET'] and lazylibrarian.CONFIG['NZBGET_HOST']:
+        Source = "NZBGET"
+        # headers = {'User-Agent': USER_AGENT}
+        # data = request.request_content(url=nzburl, headers=headers)
+        data, success = fetchURL(nzburl)
+        if not success:
+            logger.debug('Failed to read nzb data for nzbget: %s' % data)
+            downloadID = ''
         else:
-            myDB.upsert("wanted", newValueDict, controlValueDict)
-            if newValueDict["NZBprov"] == 'libgen':
-                # for libgen we use direct download links
-                snatch = DirectDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], controlValueDict["NZBurl"], nzb_Title)
-            else:
-                snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], controlValueDict["NZBurl"])
-            if snatch:
-                logger.info('Downloading %s %s from %s' %
-                            (newValueDict["AuxInfo"], newValueDict["NZBtitle"], newValueDict["NZBprov"]))
-                notify_snatch("%s %s from %s at %s" %
-                              (newValueDict["AuxInfo"], newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
-                custom_notify_snatch(newValueDict["BookID"])
-                scheduleJob(action='Start', target='processDir')
-                return True + True  # we found it
+            nzb = classes.NZBDataSearchResult()
+            nzb.extraInfo.append(data)
+            nzb.name = nzbtitle
+            nzb.url = nzburl
+            downloadID = nzbget.sendNZB(nzb)
+
+    if lazylibrarian.CONFIG['NZB_DOWNLOADER_SYNOLOGY'] and lazylibrarian.CONFIG['USE_SYNOLOGY'] and \
+            lazylibrarian.CONFIG['SYNOLOGY_HOST']:
+        Source = "SYNOLOGY_NZB"
+        downloadID = synology.addTorrent(nzburl)  # returns nzb_ids or False
+
+    if lazylibrarian.CONFIG['NZB_DOWNLOADER_BLACKHOLE']:
+        Source = "BLACKHOLE"
+        nzbfile, success = fetchURL(nzburl)
+        if not success:
+            logger.warn('Error fetching nzb from url [%s]: %s' % (nzburl, nzbfile))
+            nzbfile = ''
+
+        if nzbfile:
+            nzbname = str(nzbtitle) + '.nzb'
+            nzbpath = os.path.join(lazylibrarian.CONFIG['NZB_BLACKHOLEDIR'], nzbname)
+            try:
+                with open(nzbpath, 'w') as f:
+                    f.write(nzbfile)
+                logger.debug('NZB file saved to: ' + nzbpath)
+                setperm(nzbpath)
+                downloadID = nzbname
+
+            except Exception as e:
+                logger.error('%s not writable, NZB not saved. Error: %s' % (nzbpath, str(e)))
+                downloadID = ''
+
+    if not Source:
+        logger.warn('No NZB download method is enabled, check config.')
+        return False
+
+    if downloadID:
+        logger.debug('Nzbfile has been downloaded from ' + str(nzburl))
+        myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
+        myDB.action('UPDATE wanted SET status = "Snatched", Source = "%s", DownloadID = "%s" WHERE NZBurl="%s"' %
+                    (Source, downloadID, nzburl))
+        return True
     else:
-        logger.debug("No torrent's found for [%s] using searchtype %s" % (book["searchterm"], searchtype))
-    return False
+        logger.error(u'Failed to download nzb @ <a href="%s">%s</a>' % (nzburl, Source))
+        myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl="%s"' % nzburl)
+        return False
 
 
 def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=None):
@@ -318,7 +117,12 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
             f = gzip.GzipFile(fileobj=buf)
             fdata = f.read()
         else:
-            fdata = response.read()
+            try:
+                fdata = response.read()
+            except Exception as e:
+                logger.warn('Error reading response from url: %s, %s' % (tor_url, str(e)))
+                return False
+
         bookname = '.'.join(bookname.rsplit(' ', 1))  # last word is the extension
         logger.debug("File download got %s bytes for %s/%s" % (len(fdata), tor_title, bookname))
         destdir = os.path.join(lazylibrarian.DIRECTORY('Download'), tor_title)
@@ -485,7 +289,8 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None):
             downloadID = CalcTorrentHash(torrent)
             tor_title = transmission.getTorrentFolder(downloadID)
 
-    if lazylibrarian.CONFIG['TOR_DOWNLOADER_SYNOLOGY'] and lazylibrarian.CONFIG['USE_SYNOLOGY'] and lazylibrarian.CONFIG['SYNOLOGY_HOST']:
+    if lazylibrarian.CONFIG['TOR_DOWNLOADER_SYNOLOGY'] and lazylibrarian.CONFIG['USE_SYNOLOGY'] and \
+            lazylibrarian.CONFIG['SYNOLOGY_HOST']:
         logger.debug("Sending %s to Synology" % tor_title)
         Source = "SYNOLOGY_TOR"
         downloadID = synology.addTorrent(tor_url)  # returns id or False

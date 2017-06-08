@@ -23,10 +23,10 @@ import urllib2
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, deleteEmptySeries, \
-                                    setSeries, setStatus
+    setSeries, setStatus
 from lazylibrarian.cache import get_xml_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList, \
-                                    cleanName, is_valid_isbn, formatAuthorName
+    cleanName, is_valid_isbn, formatAuthorName
 from lib.fuzzywuzzy import fuzz
 
 
@@ -50,7 +50,7 @@ class GoodReads:
             url = urllib.quote_plus(searchterm.encode(lazylibrarian.SYS_ENCODING))
             set_url = 'http://www.goodreads.com/search.xml?q=' + url + '&' + urllib.urlencode(self.params)
             logger.debug('Now searching GoodReads API with searchterm: %s' % searchterm)
-            #logger.debug('Searching for %s at: %s' % (searchterm, set_url))
+            # logger.debug('Searching for %s at: %s' % (searchterm, set_url))
 
             resultcount = 0
             try:
@@ -75,7 +75,7 @@ class GoodReads:
 
                         authorNameResult = author.find('./best_book/author/name').text
                         # Goodreads sometimes puts extra whitepase in the author names!
-                        authorNameResult =  ' '.join(authorNameResult.split())
+                        authorNameResult = ' '.join(authorNameResult.split())
                         booksub = ""
                         bookpub = ""
                         booklang = "Unknown"
@@ -107,7 +107,7 @@ class GoodReads:
                         book_fuzz = fuzz.ratio(bookTitle, searchterm)
                         isbn_fuzz = 0
                         if is_valid_isbn(searchterm):
-                                isbn_fuzz = 100
+                            isbn_fuzz = 100
 
                         highest_fuzz = max((author_fuzz + book_fuzz) / 2, isbn_fuzz)
 
@@ -211,7 +211,6 @@ class GoodReads:
                 authorlist = self.get_author_info(authorid)
         return authorlist
 
-
     def get_author_info(self, authorid=None):
 
         URL = 'http://www.goodreads.com/author/show/' + authorid + '.xml?' + urllib.urlencode(self.params)
@@ -300,7 +299,7 @@ class GoodReads:
 
                 authorNameResult = rootxml.find('./author/name').text
                 # Goodreads sometimes puts extra whitespace in the author names!
-                authorNameResult =  ' '.join(authorNameResult.split())
+                authorNameResult = ' '.join(authorNameResult.split())
                 logger.debug(u"GoodReads author name [%s]" % authorNameResult)
                 loopCount = 1
 
@@ -426,7 +425,8 @@ class GoodReads:
                                             # it's in the html page, it's not in the xml results
 
                                         if isbnhead != "":
-                                            # if GR didn't give an isbn we can't cache it, just use language for this book
+                                            # if GR didn't give an isbn we can't cache it
+                                            # just use language for this book
                                             myDB.action('insert into languages values ("%s", "%s")' %
                                                         (isbnhead, bookLanguage))
                                             logger.debug("GoodReads reports language [%s] for %s" %
@@ -500,16 +500,16 @@ class GoodReads:
                                         amatch = True
                                     else:
                                         logger.debug('Ignoring %s for %s, role is %s' %
-                                                    (bookname, authorNameResult, role))
+                                                     (bookname, authorNameResult, role))
                                 else:
                                     logger.debug('Ignoring %s for %s, authorid %s' %
-                                                (bookname, authorNameResult, aid))
+                                                 (bookname, authorNameResult, aid))
                             rejected = not amatch
 
                         if not rejected:
                             cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'
                             cmd += ' and BookName = "%s" COLLATE NOCASE and AuthorName = "%s" COLLATE NOCASE' % \
-                                    (bookname, authorNameResult.replace('"', '""'))
+                                   (bookname, authorNameResult.replace('"', '""'))
                             match = myDB.match(cmd)
                             if match:
                                 if match['BookID'] != bookid:
@@ -528,7 +528,7 @@ class GoodReads:
                                 if bookname != match['BookName'] or authorNameResult != match['AuthorName']:
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got bookid for [%s][%s]' %
                                                  (bookid, authorNameResult, bookname,
-                                                 match['AuthorName'], match['BookName']))
+                                                  match['AuthorName'], match['BookName']))
                                 else:
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got this book in database' %
                                                  (bookid, authorNameResult, bookname))
@@ -624,11 +624,11 @@ class GoodReads:
 
                                 if not existing_book:
                                     logger.debug(u"[%s] Added book: %s [%s] status %s" %
-                                                (authorname, bookname, bookLanguage, book_status))
+                                                 (authorname, bookname, bookLanguage, book_status))
                                     added_count += 1
                                 elif updated:
                                     logger.debug(u"[%s] Updated book: %s [%s] status %s" %
-                                                (authorname, bookname, bookLanguage, book_status))
+                                                 (authorname, bookname, bookLanguage, book_status))
                                     updated_count += 1
                             else:
                                 book_ignore_count += 1
@@ -757,13 +757,13 @@ class GoodReads:
             AuthorID = author['authorid']
             match = myDB.match('SELECT AuthorID from authors WHERE AuthorID="%s"' % AuthorID)
             if not match:
-                match = myDB.match('SELECT AuthorID from authors WHERE AuthorName="%s"' %  author['authorname'])
+                match = myDB.match('SELECT AuthorID from authors WHERE AuthorName="%s"' % author['authorname'])
                 if match:
                     logger.debug('%s: Changing authorid from %s to %s' %
-                                (author['authorname'], AuthorID, match['AuthorID']))
-                    AuthorID = match['AuthorID']    # we have a different authorid for that authorname
-                else:   # no author but request to add book, add author as "ignored"
-                        # User hit "add book" button from a search
+                                 (author['authorname'], AuthorID, match['AuthorID']))
+                    AuthorID = match['AuthorID']  # we have a different authorid for that authorname
+                else:  # no author but request to add book, add author as "ignored"
+                    # User hit "add book" button from a search
                     controlValueDict = {"AuthorID": AuthorID}
                     newValueDict = {
                         "AuthorName": author['authorname'],

@@ -19,7 +19,6 @@ opt_out_of_certificate_verification = True
 if opt_out_of_certificate_verification:
     try:
         import ssl
-
         ssl._create_default_https_context = ssl._create_unverified_context
     except:
         pass
@@ -104,6 +103,18 @@ def main():
 
     if options.update:
         lazylibrarian.SIGNAL = 'update'
+        # This is the "emergency recovery" update in case lazylibrarian won't start.
+        # Set up some dummy values for the update as we have not read the config file yet
+        lazylibrarian.CONFIG['GIT_PROGRAM'] = ''
+        lazylibrarian.CONFIG['GIT_USER'] = 'dobytang'
+        lazylibrarian.CONFIG['GIT_REPO'] = 'lazylibrarian'
+        lazylibrarian.CONFIG['LOGLIMIT'] = 2000
+        versioncheck.getInstallType()
+        if lazylibrarian.CONFIG['INSTALL_TYPE'] not in ['git', 'source']:
+            lazylibrarian.SIGNAL = None
+            print('Cannot update, not a git or source installation')
+        else:
+            lazylibrarian.shutdown(restart=True, update=True)
 
     if options.datadir:
         lazylibrarian.DATADIR = str(options.datadir)
@@ -162,11 +173,6 @@ def main():
             logger.debug('Not updating, LazyLibrarian is already up to date')
         else:
             logger.debug('Not updating, LazyLibrarian has local changes')
-
-    if lazylibrarian.SIGNAL == 'update':
-        if lazylibrarian.CONFIG['INSTALL_TYPE'] not in ['git', 'source']:
-            lazylibrarian.SIGNAL = None
-            logger.debug('Not updating, not a git or source installation')
 
     if options.port:
         lazylibrarian.CONFIG['HTTP_PORT'] = int(options.port)

@@ -15,7 +15,7 @@
 
 import lazylibrarian
 import urllib
-from lazylibrarian.formatter import getList, unaccented_str
+from lazylibrarian.formatter import getList, unaccented_str, plural
 from lazylibrarian import logger
 from lazylibrarian.providers import IterateOverRSSSites, IterateOverTorrentSites, IterateOverNewzNabSites
 from lib.fuzzywuzzy import fuzz
@@ -41,7 +41,7 @@ def searchItem(item=None, bookid=None):
         book['bookid'] = searchterm
 
     nproviders = lazylibrarian.USE_NZB() + lazylibrarian.USE_TOR() + lazylibrarian.USE_RSS()
-    logger.debug('Searching %s providers for %s' % (nproviders, searchterm))
+    logger.debug('Searching %s provider%s for %s' % (nproviders, plural(nproviders), searchterm))
 
     if lazylibrarian.USE_NZB():
         resultlist, nproviders = IterateOverNewzNabSites(book, 'general')

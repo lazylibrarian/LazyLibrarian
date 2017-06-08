@@ -49,10 +49,10 @@ class EmailNotifier:
         try:
             if lazylibrarian.CONFIG['EMAIL_SSL']:
                 mailserver = smtplib.SMTP_SSL(lazylibrarian.CONFIG['EMAIL_SMTP_SERVER'],
-                                                check_int(lazylibrarian.CONFIG['EMAIL_SMTP_PORT'], 465))
+                                              check_int(lazylibrarian.CONFIG['EMAIL_SMTP_PORT'], 465))
             else:
                 mailserver = smtplib.SMTP(lazylibrarian.CONFIG['EMAIL_SMTP_SERVER'],
-                                            check_int(lazylibrarian.CONFIG['EMAIL_SMTP_PORT'], 25))
+                                          check_int(lazylibrarian.CONFIG['EMAIL_SMTP_PORT'], 25))
 
             if lazylibrarian.CONFIG['EMAIL_TLS']:
                 mailserver.starttls()
@@ -62,7 +62,8 @@ class EmailNotifier:
             if lazylibrarian.CONFIG['EMAIL_SMTP_USER']:
                 mailserver.login(lazylibrarian.CONFIG['EMAIL_SMTP_USER'], lazylibrarian.CONFIG['EMAIL_SMTP_PASSWORD'])
 
-            mailserver.sendmail(lazylibrarian.CONFIG['EMAIL_FROM'], lazylibrarian.CONFIG['EMAIL_TO'], message.as_string())
+            mailserver.sendmail(lazylibrarian.CONFIG['EMAIL_FROM'], lazylibrarian.CONFIG['EMAIL_TO'],
+                                message.as_string())
             mailserver.quit()
             return True
 
@@ -70,9 +71,9 @@ class EmailNotifier:
             logger.warn('Error sending Email: %s' % e)
             return False
 
-        #
-        # Public functions
-        #
+            #
+            # Public functions
+            #
 
     def notify_snatch(self, title):
         if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONSNATCH']:

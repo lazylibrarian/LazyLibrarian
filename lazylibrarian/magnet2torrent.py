@@ -53,7 +53,9 @@ def magnet2torrent(magnet, output_name=None):
         return False
 
     tempdir = tempfile.mkdtemp()
+    # noinspection PyUnresolvedReferences
     ses = lt.session()
+    # noinspection PyUnresolvedReferences
     params = {
         'save_path': tempdir,
         'storage_mode': lt.storage_mode_t(2),
@@ -61,6 +63,7 @@ def magnet2torrent(magnet, output_name=None):
         'auto_managed': True,
         'duplicate_is_error': True
     }
+    # noinspection PyUnresolvedReferences
     handle = lt.add_magnet_uri(ses, magnet, params)
 
     logger.debug("Downloading Metadata (this may take a while)")
@@ -83,7 +86,9 @@ def magnet2torrent(magnet, output_name=None):
     ses.pause()
 
     torinfo = handle.get_torrent_info()
+    # noinspection PyUnresolvedReferences
     torfile = lt.create_torrent(torinfo)
+    # noinspection PyUnresolvedReferences
     torcontent = lt.bencode(torfile.generate())
     ses.remove_torrent(handle)
 
