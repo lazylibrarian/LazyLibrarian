@@ -73,15 +73,22 @@ def search_book(books=None, library=None):
             logger.debug("SearchBooks - No books to search for")
             return
 
+        nproviders = lazylibrarian.USE_NZB() + lazylibrarian.USE_TOR() + lazylibrarian.USE_RSS()
+
+        if nproviders == 0:
+            logger.debug("SearchBooks - No providers to search")
+            return
+
         modelist = []
-        if lazylibrarian.USE_NZB:
+        if lazylibrarian.USE_NZB():
             modelist.append('nzb')
-        if lazylibrarian.USE_TOR:
+        if lazylibrarian.USE_TOR():
             modelist.append('tor')
-        if lazylibrarian.USE_RSS:
+        if lazylibrarian.USE_RSS():
             modelist.append('rss')
 
-        logger.info('Searching %s for %i book%s' % (str(modelist), len(searchbooks), plural(len(searchbooks))))
+        logger.info('Searching %s provider%s %s for %i book%s' %
+                    (nproviders, plural(nproviders), str(modelist), len(searchbooks), plural(len(searchbooks))))
 
         for searchbook in searchbooks:
             # searchterm is only used for display purposes

@@ -2041,12 +2041,9 @@ class WebInterface(object):
                 if 'SEARCHALLMAG' not in [n.name for n in [t for t in threading.enumerate()]]:
                     threading.Thread(target=search_magazines, name='SEARCHALLMAG', args=[]).start()
         elif source in ["books", "audio"]:
-            if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
+            if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
                 if 'SEARCHALLBOOKS' not in [n.name for n in [t for t in threading.enumerate()]]:
                     threading.Thread(target=search_book, name='SEARCHALLBOOKS', args=[]).start()
-            if lazylibrarian.USE_RSS():
-                if 'SEARCHALLRSS' not in [n.name for n in [t for t in threading.enumerate()]]:
-                    threading.Thread(target=search_rss_book, name='SEARCHALLRSS', args=[]).start()
         else:
             logger.debug(u"forceSearch called with bad source")
         raise cherrypy.HTTPRedirect(source)
