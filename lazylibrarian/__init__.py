@@ -347,7 +347,7 @@ CONFIG_DEFINITIONS = {
     'EMAIL_SMTP_PASSWORD': ('str', 'Email', ''),
     'BOOK_API': ('str', 'API', 'GoodReads'),
     'GR_API': ('str', 'API', 'ckvsiSDsuqh7omh74ZZ6Q'),
-    'GB_API': ('str', 'API', 'AIzaSyA2bSQ7vmmaaRD6i90_eoBVsmBVpnWmwa4')
+    'GB_API': ('str', 'API', '')  # API key has daily limits, each user needs their own
 }
 
 

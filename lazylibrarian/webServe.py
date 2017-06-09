@@ -613,9 +613,9 @@ class WebInterface(object):
             url = url.replace(' ', '+')
             bookname = '%s LL.(%s)' % (bookdata["BookName"], bookid)
             if mode in ["torznab", "torrent", "magnet"]:
-                snatch = TORDownloadMethod(bookid, bookname, url)
+                snatch = TORDownloadMethod(bookid, bookname, url, 'eBook')
             else:
-                snatch = NZBDownloadMethod(bookid, bookname, url)
+                snatch = NZBDownloadMethod(bookid, bookname, url, 'eBook')
             if snatch:
                 logger.info('Downloading %s from %s' % (bookdata["BookName"], provider))
                 notify_snatch("%s from %s at %s" % (unaccented(bookdata["BookName"]), provider, now()))
@@ -1401,12 +1401,14 @@ class WebInterface(object):
                     snatch = TORDownloadMethod(
                         items['bookid'],
                         items['nzbtitle'],
-                        items['nzburl'])
+                        items['nzburl'],
+                        'magazine')
                 else:
                     snatch = NZBDownloadMethod(
                         items['bookid'],
                         items['nzbtitle'],
-                        items['nzburl'])
+                        items['nzburl'],
+                        'magazine')
                 if snatch:  # if snatch fails, downloadmethods already report it
                     logger.info('Downloading %s from %s' % (items['nzbtitle'], items['nzbprov']))
                     notifiers.notify_snatch(items['nzbtitle'] + ' at ' + now())
