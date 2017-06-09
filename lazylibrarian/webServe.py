@@ -570,15 +570,15 @@ class WebInterface(object):
                     authordir = safe_unicode(os.path.dirname(os.path.dirname(anybook[sourcefile])))
             if os.path.isdir(authordir):
                 try:
-                    threading.Thread(target=LibraryScan, name='AUTHOR_SCAN', args=[authordir]).start()
+                    threading.Thread(target=LibraryScan, name='AUTHOR_SCAN', args=[authordir, library]).start()
                 except Exception as e:
                     logger.error(u'Unable to complete the scan: %s' % str(e))
             else:
                 # maybe we don't have any of their books
                 logger.warn(u'Unable to find author directory: %s' % authordir)
-            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&Library=%s" % (AuthorID, library))
         else:
-            logger.debug('scanAuthor Invalid authorid [%s]' % AuthorID)
+            logger.debug('ScanAuthor Invalid authorid [%s]' % AuthorID)
             raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
