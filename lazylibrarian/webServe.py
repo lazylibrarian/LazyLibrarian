@@ -544,23 +544,30 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
-    def libraryScanAuthor(self, AuthorID):
+    def libraryScanAuthor(self, AuthorID, library):
         self.label_thread()
 
         myDB = database.DBConnection()
         authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         if authorsearch:  # to stop error if try to refresh an author while they are still loading
             AuthorName = authorsearch['AuthorName']
-            authordir = safe_unicode(os.path.join(lazylibrarian.DIRECTORY('eBook'), AuthorName))
+            if library == 'AudioBook':
+                authordir = safe_unicode(os.path.join(lazylibrarian.DIRECTORY('Audio'), AuthorName))
+            else:  # if library == 'eBook':
+                authordir = safe_unicode(os.path.join(lazylibrarian.DIRECTORY('eBook'), AuthorName))
             if not os.path.isdir(authordir):
                 # books might not be in exact same authorname folder
                 # eg Calibre puts books into folder "Eric van Lustbader", but
                 # goodreads told lazylibrarian he's "Eric Van Lustbader", note the capital 'V'
-                cmd = 'SELECT BookFile from books,authors where books.AuthorID = authors.AuthorID'
-                cmd += '  and AuthorName="%s" and BookFile <> ""' % AuthorName
+                if library == 'AudioBook':
+                    sourcefile = 'AudioFile'
+                else:
+                    sourcefile = 'BookFile'
+                cmd = 'SELECT %s from books,authors where books.AuthorID = authors.AuthorID' % sourcefile
+                cmd += '  and AuthorName="%s" and %s <> ""' % (AuthorName, sourcefile)
                 anybook = myDB.match(cmd)
                 if anybook:
-                    authordir = safe_unicode(os.path.dirname(os.path.dirname(anybook['BookFile'])))
+                    authordir = safe_unicode(os.path.dirname(os.path.dirname(anybook[sourcefile])))
             if os.path.isdir(authordir):
                 try:
                     threading.Thread(target=LibraryScan, name='AUTHOR_SCAN', args=[authordir]).start()

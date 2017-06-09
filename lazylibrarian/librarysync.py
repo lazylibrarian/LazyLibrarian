@@ -153,6 +153,11 @@ def find_book_in_db(myDB, author, book):
     # PAB fuzzy search for book in library, return LL bookid if found or zero
     # if not, return bookid to more easily update status
     # prefer an exact match on author & book
+    if isinstance(author, str):
+        author = author.decode(lazylibrarian.SYS_ENCODING)
+    if isinstance(book, str):
+        book = book.decode(lazylibrarian.SYS_ENCODING)
+
     cmd = 'SELECT BookID FROM books,authors where books.AuthorID = authors.AuthorID '
     cmd += 'and AuthorName="%s" COLLATE NOCASE and BookName="%s" COLLATE NOCASE' % \
            (author.replace('"', '""'), book.replace('"', '""'))
