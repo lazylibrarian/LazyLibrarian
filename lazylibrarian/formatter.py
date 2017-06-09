@@ -322,6 +322,8 @@ def split_title(author, book):
 
 def formatAuthorName(author):
     """ get authorame in a consistent format """
+    if isinstance(author, str):
+        author = author.decode(lazylibrarian.SYS_ENCODING)
 
     if "," in author:
         postfix = getList(lazylibrarian.CONFIG['NAME_POSTFIX'])

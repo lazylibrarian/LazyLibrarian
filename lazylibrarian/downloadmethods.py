@@ -33,7 +33,7 @@ from lib.deluge_client import DelugeRPCClient
 from magnet2torrent import magnet2torrent
 
 
-def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None):
+def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
     myDB = database.DBConnection()
     Source = ''
     downloadID = ''
@@ -88,7 +88,10 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None):
 
     if downloadID:
         logger.debug('Nzbfile has been downloaded from ' + str(nzburl))
-        myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
+        if library == 'eBook':
+            myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
+        elif library == 'AudioBook':
+            myDB.action('UPDATE books SET audiostatus = "Snatched" WHERE BookID="%s"' % bookid)
         myDB.action('UPDATE wanted SET status = "Snatched", Source = "%s", DownloadID = "%s" WHERE NZBurl="%s"' %
                     (Source, downloadID, nzburl))
         return True
@@ -98,7 +101,7 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None):
         return False
 
 
-def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=None):
+def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=None, library='eBook'):
     myDB = database.DBConnection()
     downloadID = False
     Source = "DIRECT"
@@ -151,7 +154,10 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
 
     if downloadID:
         logger.debug(u'File %s has been downloaded from %s' % (tor_title, tor_url))
-        myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
+        if library == 'eBook':
+            myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
+        elif library == 'AudioBook':
+            myDB.action('UPDATE books SET audiostatus = "Snatched" WHERE BookID="%s"' % bookid)
         myDB.action('UPDATE wanted SET status = "Snatched", Source = "%s", DownloadID = "%s" WHERE NZBurl="%s"' %
                     (Source, downloadID, full_url))
         return True
@@ -161,7 +167,7 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
         return False
 
 
-def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None):
+def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'):
     myDB = database.DBConnection()
     downloadID = False
     Source = ''
@@ -337,7 +343,10 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None):
         return False
 
     if downloadID:
-        myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
+        if library == 'eBook':
+            myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
+        elif library == 'AudioBook':
+            myDB.action('UPDATE books SET audiostatus = "Snatched" WHERE BookID="%s"' % bookid)
         myDB.action('UPDATE wanted SET status = "Snatched", Source = "%s", DownloadID = "%s" WHERE NZBurl="%s"' %
                     (Source, downloadID, full_url))
         if tor_title:

@@ -34,7 +34,10 @@ class GoodReads:
     # http://www.goodreads.com/api/
 
     def __init__(self, name=None):
-        self.name = name.encode(lazylibrarian.SYS_ENCODING)
+        if isinstance(name, str):
+            self.name = name.decode(lazylibrarian.SYS_ENCODING)
+        else:
+            self.name = name
         # self.type = type
         if not lazylibrarian.CONFIG['GR_API']:
             logger.warn('No Goodreads API key, check config')

@@ -544,34 +544,41 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
-    def libraryScanAuthor(self, AuthorID):
+    def libraryScanAuthor(self, AuthorID, library):
         self.label_thread()
 
         myDB = database.DBConnection()
         authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         if authorsearch:  # to stop error if try to refresh an author while they are still loading
             AuthorName = authorsearch['AuthorName']
-            authordir = safe_unicode(os.path.join(lazylibrarian.DIRECTORY('eBook'), AuthorName))
+            if library == 'AudioBook':
+                authordir = safe_unicode(os.path.join(lazylibrarian.DIRECTORY('Audio'), AuthorName))
+            else:  # if library == 'eBook':
+                authordir = safe_unicode(os.path.join(lazylibrarian.DIRECTORY('eBook'), AuthorName))
             if not os.path.isdir(authordir):
                 # books might not be in exact same authorname folder
                 # eg Calibre puts books into folder "Eric van Lustbader", but
                 # goodreads told lazylibrarian he's "Eric Van Lustbader", note the capital 'V'
-                cmd = 'SELECT BookFile from books,authors where books.AuthorID = authors.AuthorID'
-                cmd += '  and AuthorName="%s" and BookFile <> ""' % AuthorName
+                if library == 'AudioBook':
+                    sourcefile = 'AudioFile'
+                else:
+                    sourcefile = 'BookFile'
+                cmd = 'SELECT %s from books,authors where books.AuthorID = authors.AuthorID' % sourcefile
+                cmd += '  and AuthorName="%s" and %s <> ""' % (AuthorName, sourcefile)
                 anybook = myDB.match(cmd)
                 if anybook:
-                    authordir = safe_unicode(os.path.dirname(os.path.dirname(anybook['BookFile'])))
+                    authordir = safe_unicode(os.path.dirname(os.path.dirname(anybook[sourcefile])))
             if os.path.isdir(authordir):
                 try:
-                    threading.Thread(target=LibraryScan, name='SCANAUTHOR', args=[authordir]).start()
+                    threading.Thread(target=LibraryScan, name='AUTHOR_SCAN', args=[authordir, library]).start()
                 except Exception as e:
                     logger.error(u'Unable to complete the scan: %s' % str(e))
             else:
                 # maybe we don't have any of their books
                 logger.warn(u'Unable to find author directory: %s' % authordir)
-            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&Library=%s" % (AuthorID, library))
         else:
-            logger.debug('scanAuthor Invalid authorid [%s]' % AuthorID)
+            logger.debug('ScanAuthor Invalid authorid [%s]' % AuthorID)
             raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
@@ -613,9 +620,9 @@ class WebInterface(object):
             url = url.replace(' ', '+')
             bookname = '%s LL.(%s)' % (bookdata["BookName"], bookid)
             if mode in ["torznab", "torrent", "magnet"]:
-                snatch = TORDownloadMethod(bookid, bookname, url)
+                snatch = TORDownloadMethod(bookid, bookname, url, 'eBook')
             else:
-                snatch = NZBDownloadMethod(bookid, bookname, url)
+                snatch = NZBDownloadMethod(bookid, bookname, url, 'eBook')
             if snatch:
                 logger.info('Downloading %s from %s' % (bookdata["BookName"], provider))
                 notify_snatch("%s from %s at %s" % (unaccented(bookdata["BookName"]), provider, now()))
@@ -1401,12 +1408,14 @@ class WebInterface(object):
                     snatch = TORDownloadMethod(
                         items['bookid'],
                         items['nzbtitle'],
-                        items['nzburl'])
+                        items['nzburl'],
+                        'magazine')
                 else:
                     snatch = NZBDownloadMethod(
                         items['bookid'],
                         items['nzbtitle'],
-                        items['nzburl'])
+                        items['nzburl'],
+                        'magazine')
                 if snatch:  # if snatch fails, downloadmethods already report it
                     logger.info('Downloading %s from %s' % (items['nzbtitle'], items['nzbprov']))
                     notifiers.notify_snatch(items['nzbtitle'] + ' at ' + now())
@@ -1614,25 +1623,28 @@ class WebInterface(object):
     # IMPORT/EXPORT #####################################################
 
     @cherrypy.expose
-    def libraryScan(self):
-        if 'LIBRARYSYNC' not in [n.name for n in [t for t in threading.enumerate()]]:
+    def libraryScan(self, library):
+        threadname = "%s_SCAN" % library.upper()
+        if threadname not in [n.name for n in [t for t in threading.enumerate()]]:
             try:
-                threading.Thread(target=LibraryScan, name='LIBRARYSYNC', args=[]).start()
+                threading.Thread(target=LibraryScan, name=threadname, args=[None, library]).start()
             except Exception as e:
                 logger.error(u'Unable to complete the scan: %s' % str(e))
         else:
-            logger.debug('LIBRARYSYNC already running')
-        raise cherrypy.HTTPRedirect("home")
+            logger.debug('%s already running' % threadname)
+        if library == 'Audio':
+            raise cherrypy.HTTPRedirect("audio")
+        raise cherrypy.HTTPRedirect("books")
 
     @cherrypy.expose
     def magazineScan(self):
-        if 'LIBRARYSYNC' not in [n.name for n in [t for t in threading.enumerate()]]:
+        if 'MAGAZINE_SCAN' not in [n.name for n in [t for t in threading.enumerate()]]:
             try:
-                threading.Thread(target=magazinescan.magazineScan, name='MAGAZINESCAN', args=[]).start()
+                threading.Thread(target=magazinescan.magazineScan, name='MAGAZINE_SCAN', args=[]).start()
             except Exception as e:
                 logger.error(u'Unable to complete the scan: %s' % str(e))
         else:
-            logger.debug('MAGAZINESCAN already running')
+            logger.debug('MAGAZINE_SCAN already running')
         raise cherrypy.HTTPRedirect("magazines")
 
     @cherrypy.expose

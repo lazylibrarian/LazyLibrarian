@@ -8,6 +8,7 @@
       <div class="col-xs-10">
         <a id="forcesearch" class="btn btn-sm btn-primary" href="forceSearch?source=books">Force Search</a>
         <a id="forcepostprocess" class="btn btn-sm btn-primary" href="forceProcess?source=books">Force Post-Processing</a>
+        <a href="libraryScan?library=eBook" class="btn btn-sm btn-primary" id="scan"><i class="fa fa-flash"></i> Library Scan</a>
       </div>
         %if len(languages) > 1:
           <div class="form-group pull-right">
@@ -158,7 +159,7 @@
             },
         });
 
-        $('.dataTables_filter input').attr("placeholder", "Search filter");
+        $('.dataTables_filter input').attr("placeholder", "Results filter");
         //$(window).resize(function() {table.draw('page')});
 
         $('a.toggle-vis').click(function (e) {

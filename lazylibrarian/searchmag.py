@@ -458,12 +458,14 @@ def search_magazines(mags=None, reset=False):
                         snatch = TORDownloadMethod(
                             magazine['bookid'],
                             magazine['nzbtitle'],
-                            magazine['nzburl'])
+                            magazine['nzburl'],
+                            'magazine')
                     else:
                         snatch = NZBDownloadMethod(
                             magazine['bookid'],
                             magazine['nzbtitle'],
-                            magazine['nzburl'])
+                            magazine['nzburl'],
+                            'magazine')
                     if snatch:
                         logger.info('Downloading %s from %s' % (magazine['nzbtitle'], magazine["nzbprov"]))
                         notify_snatch("Magazine %s from %s at %s" %

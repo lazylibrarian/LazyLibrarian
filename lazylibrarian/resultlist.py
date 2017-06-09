@@ -235,20 +235,27 @@ def downloadResult(match, book):
         else:
             myDB.upsert("wanted", newValueDict, controlValueDict)
             if '.nzb' in controlValueDict["NZBurl"]:
-                snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], controlValueDict["NZBurl"])
+                snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
+                                            controlValueDict["NZBurl"], auxinfo)
             elif newValueDict["NZBprov"] == 'libgen':  # for libgen we use direct download links
                 snatch = DirectDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
-                                              controlValueDict["NZBurl"], resultTitle)
+                                              controlValueDict["NZBurl"], resultTitle, auxinfo)
             elif newValueDict['NZBmode'] == "torznab" or newValueDict['NZBmode'] == "torrent":
-                snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], controlValueDict["NZBurl"])
+                snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
+                                            controlValueDict["NZBurl"], auxinfo)
             else:
-                snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"], controlValueDict["NZBurl"])
+                snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
+                                            controlValueDict["NZBurl"], auxinfo)
             if snatch:
                 logger.info('Downloading %s %s from %s' %
-                            (newValueDict["AuxInfo"], newValueDict["NZBtitle"], newValueDict["NZBprov"]))
+                            (auxinfo, newValueDict["NZBtitle"], newValueDict["NZBprov"]))
                 notify_snatch("%s %s from %s at %s" %
-                              (newValueDict["AuxInfo"], newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
+                              (auxinfo, newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
                 custom_notify_snatch(newValueDict["BookID"])
+                # at this point we could add NZBprov to the blocklist with a short timeout, a second or two?
+                # This would implement a round-robin search system. Blocklist with an incremental counter.
+                # If number of active providers == number blocklisted, so no unblocked providers are left,
+                # either sleep for a while, or unblock the one with the lowest counter.
                 scheduleJob(action='Start', target='processDir')
                 return True + True  # we found it
         return False

@@ -153,6 +153,11 @@ def find_book_in_db(myDB, author, book):
     # PAB fuzzy search for book in library, return LL bookid if found or zero
     # if not, return bookid to more easily update status
     # prefer an exact match on author & book
+    if isinstance(author, str):
+        author = author.decode(lazylibrarian.SYS_ENCODING)
+    if isinstance(book, str):
+        book = book.decode(lazylibrarian.SYS_ENCODING)
+
     cmd = 'SELECT BookID FROM books,authors where books.AuthorID = authors.AuthorID '
     cmd += 'and AuthorName="%s" COLLATE NOCASE and BookName="%s" COLLATE NOCASE' % \
            (author.replace('"', '""'), book.replace('"', '""'))
@@ -328,7 +333,7 @@ def LibraryScan(startdir=None, library='eBook'):
                         logger.warn(
                             'Book %s - %s updated as not found on disk' % (book['AuthorName'], book['BookName']))
 
-            else:  # library == 'audio':
+            else:  # library == 'Audio':
                 cmd = 'select AuthorName, BookName, AudioFile, BookID from books,authors'
                 cmd += ' where AudioLibrary is not null and books.AuthorID = authors.AuthorID'
                 if not startdir == destdir:
@@ -344,8 +349,8 @@ def LibraryScan(startdir=None, library='eBook'):
                         myDB.action('update books set Status="%s" where BookID="%s"' % (status, bookID))
                         myDB.action('update books set AudioFile="" where BookID="%s"' % bookID)
                         myDB.action('update books set AudioLibrary="" where BookID="%s"' % bookID)
-                        logger.warn(
-                            'Audiobook %s - %s updated as not found on disk' % (book['AuthorName'], book['BookName']))
+                        logger.warn('Audiobook %s - %s updated as not found on disk' %
+                                    (book['AuthorName'], book['BookName']))
 
         # to save repeat-scans of the same directory if it contains multiple formats of the same book,
         # keep track of which directories we've already looked at
@@ -388,7 +393,10 @@ def LibraryScan(startdir=None, library='eBook'):
                 # Added new code to skip if we've done this directory before.
                 # Made this conditional with a switch in config.ini
                 # in case user keeps multiple different books in the same subdirectory
-                if lazylibrarian.CONFIG['IMP_SINGLEBOOK'] and (subdirectory in processed_subdirectories):
+                if library == 'eBook' and lazylibrarian.CONFIG['IMP_SINGLEBOOK'] and \
+                    (subdirectory in processed_subdirectories):
+                    logger.debug("[%s] already scanned" % subdirectory)
+                elif library == 'Audio' and (subdirectory in processed_subdirectories):
                     logger.debug("[%s] already scanned" % subdirectory)
                 else:
                     # If this is a book, try to get author/title/isbn/language
@@ -399,7 +407,8 @@ def LibraryScan(startdir=None, library='eBook'):
                     # If all else fails, try pattern match for author/title
                     # and look up isbn/lang from LT or GR later
                     match = 0
-                    if is_valid_booktype(files):
+                    if (library == 'eBook' and is_valid_booktype(files, 'ebook')) or \
+                        (library == 'Audio' and is_valid_booktype(files, 'audiobook')):
 
                         logger.debug("[%s] Now scanning subdirectory %s" % (startdir, subdirectory))
                         language = "Unknown"
@@ -466,8 +475,38 @@ def LibraryScan(startdir=None, library='eBook'):
                                     logger.debug("File meta incomplete in %s" % metafile)
 
                         if not match:
-                            # no author/book from metadata file, and not embedded either, or audiobook
-                            # audiobooks may have id3 tags??  For now just pattern match on filename
+                            # no author/book from metadata file, and not embedded either
+                            # or audiobook which may have id3 tags  -  this is based on Dive Into Python example
+                            if is_valid_booktype(files, 'audiobook'):
+                                tagDataMap = {"title"   : (  3,  33),
+                                              "artist"  : ( 33,  63),
+                                              "album"   : ( 63,  93),
+                                              "year"    : ( 93,  97),
+                                              "comment" : ( 97, 126)}
+                                filename = os.path.join(r, files).encode(lazylibrarian.SYS_ENCODING)
+                                try:
+                                    tags = {}
+                                    fsock = open(filename, "rb", 0)
+                                    try:
+                                        fsock.seek(-128, 2)
+                                        tagdata = fsock.read(128)
+                                    finally:
+                                        fsock.close()
+                                    if tagdata[:3] == "TAG":
+                                        for tag, (start, end) in tagDataMap.items():
+                                            tags[tag] = tagdata[start:end].replace("\00", "").strip()
+                                        if 'album' in tags and 'artist' in tags:
+                                            author = tags['artist']
+                                            book = tags['album']
+                                            match = True
+                                except IOError:
+                                    pass
+
+                        #  Failing anything better, just pattern match on filename
+                        if not match:
+                            # might need a different pattern match for audiobooks
+                            # as they often seem to have CodeChapter-Seriesnum Author Title
+                            # but hopefully the tags will get there first...
                             match = pattern.match(files)
                             if match:
                                 author = match.group("author")
@@ -655,7 +694,7 @@ def LibraryScan(startdir=None, library='eBook'):
                                                 myDB.action('UPDATE books set BookFile="%s" where BookID="%s"' %
                                                             (book_filename, bookid))
 
-                                        elif library == 'audio' and check_status['AudioStatus'] != 'Open':
+                                        elif library == 'Audio' and check_status['AudioStatus'] != 'Open':
                                             # we found a new audiobook
                                             new_book_count += 1
                                             myDB.action(
@@ -665,6 +704,12 @@ def LibraryScan(startdir=None, library='eBook'):
                                                     now(), bookid))
                                             # store audiobook location so we can check if it gets removed
                                             book_filename = os.path.join(r, files)
+                                            # try to keep track of the first part of multi-part audiobooks
+                                            for fname in os.listdir(r):
+                                                if is_valid_booktype(fname, booktype='audiobook') and '01' in fname:
+                                                    book_filename = os.path.join(r, fname)
+                                                    break;
+
                                             if not check_status['AudioFile']:  # no previous location
                                                 myDB.action('UPDATE books set AudioFile="%s" where BookID="%s"' %
                                                             (book_filename, bookid))

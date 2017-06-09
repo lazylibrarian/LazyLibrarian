@@ -6,7 +6,6 @@
     <div id="subhead_container">
         <div id="subhead_menu">
             <a href="forceUpdate" class="btn btn-sm btn-primary" id="refresh"><i class="fa fa-refresh"></i> Refresh Active Authors</a>
-            <a href="libraryScan" class="btn btn-sm btn-primary" id="scan"><i class="fa fa-flash"></i> Library Scan</a>
         </div>
     </div>
 </%def>
@@ -111,7 +110,7 @@ Toggle: <a class="toggle-vis" data-column="0">Image</a> - <a class="toggle-vis" 
                 "sPaginationType": "full_numbers",
                 "aaSorting": [[1, 'asc']],
             });
-        $('.dataTables_filter input').attr("placeholder", "Search filter");
+        $('.dataTables_filter input').attr("placeholder", "Results filter");
         $('a.toggle-vis').click(function (e) {
             e.preventDefault();
             var column = table.column( $(this).attr('data-column') );
