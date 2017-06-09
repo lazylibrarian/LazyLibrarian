@@ -563,7 +563,7 @@ class WebInterface(object):
                     authordir = safe_unicode(os.path.dirname(os.path.dirname(anybook['BookFile'])))
             if os.path.isdir(authordir):
                 try:
-                    threading.Thread(target=LibraryScan, name='SCANAUTHOR', args=[authordir]).start()
+                    threading.Thread(target=LibraryScan, name='AUTHOR_SCAN', args=[authordir]).start()
                 except Exception as e:
                     logger.error(u'Unable to complete the scan: %s' % str(e))
             else:
@@ -1616,25 +1616,28 @@ class WebInterface(object):
     # IMPORT/EXPORT #####################################################
 
     @cherrypy.expose
-    def libraryScan(self):
-        if 'LIBRARYSYNC' not in [n.name for n in [t for t in threading.enumerate()]]:
+    def libraryScan(self, library):
+        threadname = "%s_SCAN" % library.upper()
+        if threadname not in [n.name for n in [t for t in threading.enumerate()]]:
             try:
-                threading.Thread(target=LibraryScan, name='LIBRARYSYNC', args=[]).start()
+                threading.Thread(target=LibraryScan, name=threadname, args=[None, library]).start()
             except Exception as e:
                 logger.error(u'Unable to complete the scan: %s' % str(e))
         else:
-            logger.debug('LIBRARYSYNC already running')
-        raise cherrypy.HTTPRedirect("home")
+            logger.debug('%s already running' % threadname)
+        if library == 'Audio':
+            raise cherrypy.HTTPRedirect("audio")
+        raise cherrypy.HTTPRedirect("books")
 
     @cherrypy.expose
     def magazineScan(self):
-        if 'LIBRARYSYNC' not in [n.name for n in [t for t in threading.enumerate()]]:
+        if 'MAGAZINE_SCAN' not in [n.name for n in [t for t in threading.enumerate()]]:
             try:
-                threading.Thread(target=magazinescan.magazineScan, name='MAGAZINESCAN', args=[]).start()
+                threading.Thread(target=magazinescan.magazineScan, name='MAGAZINE_SCAN', args=[]).start()
             except Exception as e:
                 logger.error(u'Unable to complete the scan: %s' % str(e))
         else:
-            logger.debug('MAGAZINESCAN already running')
+            logger.debug('MAGAZINE_SCAN already running')
         raise cherrypy.HTTPRedirect("magazines")
 
     @cherrypy.expose

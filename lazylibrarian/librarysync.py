@@ -328,7 +328,7 @@ def LibraryScan(startdir=None, library='eBook'):
                         logger.warn(
                             'Book %s - %s updated as not found on disk' % (book['AuthorName'], book['BookName']))
 
-            else:  # library == 'audio':
+            else:  # library == 'Audio':
                 cmd = 'select AuthorName, BookName, AudioFile, BookID from books,authors'
                 cmd += ' where AudioLibrary is not null and books.AuthorID = authors.AuthorID'
                 if not startdir == destdir:
@@ -388,7 +388,10 @@ def LibraryScan(startdir=None, library='eBook'):
                 # Added new code to skip if we've done this directory before.
                 # Made this conditional with a switch in config.ini
                 # in case user keeps multiple different books in the same subdirectory
-                if lazylibrarian.CONFIG['IMP_SINGLEBOOK'] and (subdirectory in processed_subdirectories):
+                if library == 'eBook' and lazylibrarian.CONFIG['IMP_SINGLEBOOK'] and \
+                    (subdirectory in processed_subdirectories):
+                    logger.debug("[%s] already scanned" % subdirectory)
+                elif library == 'Audio' and (subdirectory in processed_subdirectories):
                     logger.debug("[%s] already scanned" % subdirectory)
                 else:
                     # If this is a book, try to get author/title/isbn/language
@@ -399,7 +402,8 @@ def LibraryScan(startdir=None, library='eBook'):
                     # If all else fails, try pattern match for author/title
                     # and look up isbn/lang from LT or GR later
                     match = 0
-                    if is_valid_booktype(files):
+                    if (library == 'eBook' and is_valid_booktype(files, 'ebook')) or \
+                        (library == 'Audio' and is_valid_booktype(files, 'audiobook')):
 
                         logger.debug("[%s] Now scanning subdirectory %s" % (startdir, subdirectory))
                         language = "Unknown"
@@ -655,7 +659,7 @@ def LibraryScan(startdir=None, library='eBook'):
                                                 myDB.action('UPDATE books set BookFile="%s" where BookID="%s"' %
                                                             (book_filename, bookid))
 
-                                        elif library == 'audio' and check_status['AudioStatus'] != 'Open':
+                                        elif library == 'Audio' and check_status['AudioStatus'] != 'Open':
                                             # we found a new audiobook
                                             new_book_count += 1
                                             myDB.action(
