@@ -5,7 +5,7 @@ It uses a combination of [Goodreads](https://www.goodreads.com/) [Librarything](
 Right now it's capable of the following:
 * Import an existing calibre library (optional)
 * Find authors and add them to the database
-* List all books of an author and add them as 'wanted'.
+* List all books of an author and mark ebooks or audiobooks as 'wanted'.
 * LazyLibrarian will search for a nzb-file or a torrent or magnet link for that book
 * If a nzb/torrent/magnet is found it will be sent to a download client or saved in a black hole where your download client can pick it up.
 * Currently supported download clients for usenet are :
