@@ -1,0 +1,50 @@
+<%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
+<%def name="headerIncludes()">
+    <div id="subhead_container">
+        <div id="subhead_menu">
+            <a href="${redirect}" class="button btn btn-sm btn-primary"><i class="fa fa-chevron-left"></i> Return to ${redirect}</a>
+        </div>
+    </div>
+</%def>
+
+<%def name="body()">
+    <h1>${title}</h1>
+    <div class="table-responsive">
+      <table class="display table table-striped table-hover table-bordered" id="book_table">
+        <thead>
+          <tr>
+          </tr>
+        </thead>
+        <tbody>
+          <% count = 0 %>
+            <tr>
+            % for result in results:
+              <% count = count + 1 %>
+              %if redirect == 'books':
+                <td class="bookart text-center"><a href="openBook?bookid=${result['BookID']}" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" alt="cover" class="bookcover-sm"></a></td>
+              %else:
+                <td class="bookart text-center"><a href="openMag?bookid=${result['IssueID']}" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="cover" class="bookcover-sm"></a></td>
+              %endif
+              %if count == columns:
+                <% count = 0 %>
+                </tr><tr>
+              %endif
+            %endfor
+            </tr>
+        </tbody>
+      </table>
+    </div>
+</%def>
+<%def name="headIncludes()">
+</%def>
+<%def name="javascriptIncludes()">
+  <script type="text/javascript">
+
+    $(document).ready(function()
+    {
+    });
+  </script>
+</%def>

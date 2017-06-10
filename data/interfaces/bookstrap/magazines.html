@@ -5,11 +5,13 @@
 <%def name="headerIncludes()">
   <div id="subhead_container" class="row">
     <form action="addMagazine" method="get">
+      <input type="hidden" name="w_width" id="w_width" value=0>
       <div id="subhead_menu" class="col-xs-12 col-md-8">
         <a href="forceSearch?source=magazines" class="button btn btn-sm btn-primary"><i class="fa fa-search"></i> Force Search</a>
         <a href="forceProcess?source=magazines" class="button btn btn-sm btn-primary">Force Post-Processing</a>
         <a href="magazineScan" class="button btn btn-sm btn-primary"><i class="fa fa-flash"></i> Library Scan</a>
         <a href="pastIssues?whichStatus=Skipped" class="button btn btn-sm btn-primary"><i class="fa fa-calendar"></i> Past Issues</a>
+        <a href="magWall" class="button btn btn-sm btn-primary"><i class="fa fa-calendar"></i> Recent Issues</a>
       </div>
       <div class="clearfix visible-xs"><hr/></div>
       <div class="col-xs-12 col-md-4">
@@ -152,6 +154,7 @@
                 var column = oTable.column( $(this).attr('data-column') );
                 column.visible( ! column.visible() );
             } );
+        $('#w_width').val(window.innerWidth);
     });
   </script>
 </%def>

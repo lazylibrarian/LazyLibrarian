@@ -110,7 +110,7 @@ isbn_978_dict = {
 # Any _NOT_ in the web ui will remain unchanged on config save
 CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDATED', 'CURRENT_VERSION',
               'COMMITS_BEHIND', 'INSTALL_TYPE']
-CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER']
+CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER', 'WALL_COLUMNS']
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB']
 CONFIG_DEFINITIONS = {
@@ -120,6 +120,7 @@ CONFIG_DEFINITIONS = {
     'LOGFILES': ('int', 'General', 10),
     'LOGSIZE': ('int', 'General', 204800),
     'LOGLEVEL': ('int', 'General', 1),
+    'WALL_COLUMNS': ('int', 'General', 6),
     'FILE_PERM': ('str', 'General', '0o644'),
     'DIR_PERM': ('str', 'General', '0o755'),
     'BLOCKLIST_TIMER': ('int', 'General', 3600),

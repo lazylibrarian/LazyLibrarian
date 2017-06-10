@@ -1261,6 +1261,49 @@ class WebInterface(object):
         return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
 
     @cherrypy.expose
+    def magWall(self):
+        myDB = database.DBConnection()
+        issues = myDB.select('SELECT IssueFile,IssueID from issues order by IssueAcquired DESC')
+
+        if not len(issues):
+            raise cherrypy.HTTPRedirect("magazines")
+        else:
+            mod_issues = []
+            for issue in issues:
+                magfile = issue['IssueFile']
+                extn = os.path.splitext(magfile)[1]
+                if extn:
+                    magimg = magfile.replace(extn, '.jpg')
+                    if not magimg or not os.path.isfile(magimg):
+                        magimg = 'images/nocover.jpg'
+                    else:
+                        myhash = hashlib.md5(magimg).hexdigest()
+                        #hashname = os.path.join(lazylibrarian.CACHEDIR, 'magazine', myhash + ".jpg")
+                        #copyfile(magimg, hashname)
+                        #setperm(hashname)
+                        magimg = 'cache/magazine/' + myhash + '.jpg'
+                else:
+                    logger.debug('No extension found on %s' % magfile)
+                    magimg = 'images/nocover.jpg'
+
+                this_issue = dict(issue)
+                this_issue['Cover'] = magimg
+                mod_issues.append(this_issue)
+        return serve_template(
+            templatename="coverwall.html", title="Recent Issues", results=mod_issues, redirect="magazines",
+                        columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
+
+    @cherrypy.expose
+    def bookWall(self):
+        myDB = database.DBConnection()
+        results = myDB.select('SELECT BookFile,BookImg,BookID from books where Status="Open" order by BookAdded DESC')
+        if not len(results):
+            raise cherrypy.HTTPRedirect("books")
+        return serve_template(
+            templatename="coverwall.html", title="Recent Books", results=results, redirect="books",
+                        columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
+
+    @cherrypy.expose
     def pastIssues(self, whichStatus=None):
         if whichStatus is None:
             whichStatus = "Skipped"
