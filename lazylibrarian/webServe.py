@@ -1241,8 +1241,9 @@ class WebInterface(object):
                     else:
                         myhash = hashlib.md5(magimg).hexdigest()
                         hashname = os.path.join(lazylibrarian.CACHEDIR, 'magazine', myhash + ".jpg")
-                        copyfile(magimg, hashname)
-                        setperm(hashname)
+                        if not os.path.isfile(hashname):
+                            copyfile(magimg, hashname)
+                            setperm(hashname)
                         magimg = 'cache/magazine/' + myhash + '.jpg'
                         covercount += 1
                 else:
@@ -1278,9 +1279,10 @@ class WebInterface(object):
                         magimg = 'images/nocover.jpg'
                     else:
                         myhash = hashlib.md5(magimg).hexdigest()
-                        #hashname = os.path.join(lazylibrarian.CACHEDIR, 'magazine', myhash + ".jpg")
-                        #copyfile(magimg, hashname)
-                        #setperm(hashname)
+                        hashname = os.path.join(lazylibrarian.CACHEDIR, 'magazine', myhash + ".jpg")
+                        if not os.path.isfile(hashname):
+                            copyfile(magimg, hashname)
+                            setperm(hashname)
                         magimg = 'cache/magazine/' + myhash + '.jpg'
                 else:
                     logger.debug('No extension found on %s' % magfile)
@@ -1301,6 +1303,16 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("books")
         return serve_template(
             templatename="coverwall.html", title="Recent Books", results=results, redirect="books",
+                        columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
+
+    @cherrypy.expose
+    def audioWall(self):
+        myDB = database.DBConnection()
+        results = myDB.select('SELECT AudioFile,BookImg,BookID from books where AudioStatus="Open" order by BookAdded DESC')
+        if not len(results):
+            raise cherrypy.HTTPRedirect("audio")
+        return serve_template(
+            templatename="coverwall.html", title="Recent AudioBooks", results=results, redirect="audio",
                         columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
 
     @cherrypy.expose
