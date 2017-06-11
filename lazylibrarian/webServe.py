@@ -1244,13 +1244,13 @@ class WebInterface(object):
             columns -= 1
         lazylibrarian.CONFIG['WALL_COLUMNS'] = columns
         if redirect == 'audio':
-            return self.audioWall()
+            raise cherrypy.HTTPRedirect('audioWall')
         elif redirect == 'books':
-            return self.bookWall()
+            raise cherrypy.HTTPRedirect('bookWall')
         elif redirect == 'magazines':
-            return self.magWall()
+            raise cherrypy.HTTPRedirect('magWall')
         else:
-            raise cherrypy.HTTPRedirect(redirect)
+            raise cherrypy.HTTPRedirect('home')
 
     # MAGAZINES #########################################################
 

@@ -698,10 +698,14 @@ def config_write():
 
     for key in CONFIG_DEFINITIONS.keys():
         item_type, section, default = CONFIG_DEFINITIONS[key]
-        if key not in CONFIG_NONWEB and not (interface == 'default' and key in CONFIG_NONDEFAULT):
+        if key == 'WALL_COLUMNS':  # may be modified by user interface but not on config page
+            value = CONFIG[key]
+        elif key not in CONFIG_NONWEB and not (interface == 'default' and key in CONFIG_NONDEFAULT):
             check_section(section)
             value = CONFIG[key]
-            if key in ['LOGDIR', 'EBOOK_DIR', 'AUDIO_DIR', 'ALTERNATE_DIR', 'DOWLOAD_DIR',
+            if key == 'LOGLEVEL':
+                LOGLEVEL = value
+            elif key in ['LOGDIR', 'EBOOK_DIR', 'AUDIO_DIR', 'ALTERNATE_DIR', 'DOWLOAD_DIR',
                        'EBOOK_DEST_FILE', 'EBOOK_DEST_FOLDER', 'MAG_DEST_FILE', 'MAG_DEST_FOLDER']:
                 value = value.encode(SYS_ENCODING)
             elif key in ['REJECT_WORDS', 'REJECT_AUDIO', 'MAG_TYPE', 'EBOOK_TYPE', 'AUDIOBOOK_TYPE']:
