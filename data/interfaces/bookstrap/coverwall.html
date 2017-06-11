@@ -6,6 +6,9 @@
     <div id="subhead_container">
         <div id="subhead_menu">
             <a href="${redirect}" class="button btn btn-sm btn-primary"><i class="fa fa-chevron-left"></i> Return to ${redirect}</a>
+            &nbsp;Columns&nbsp;&nbsp;
+            <a href="wallColumns?count=up&redirect=${redirect}" class="button btn btn-sm btn-primary"><i class="fa fa-chevron-up"></i></a>
+            <a href="wallColumns?count=down&redirect=${redirect}" class="button btn btn-sm btn-primary"><i class="fa fa-chevron-down"></i></a>
         </div>
     </div>
 </%def>
@@ -49,6 +52,8 @@
 
     $(document).ready(function()
     {
+    var columns = Integer(window.innerWidth / 124);
+    $('#w_width').val(columns)
     });
   </script>
 </%def>
