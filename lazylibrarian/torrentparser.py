@@ -258,6 +258,128 @@ def KAT(book=None):
     return results, errmsg
 
 
+def WWT(book=None):
+    errmsg = ''
+    provider = "WorldWideTorrents"
+    host = lazylibrarian.CONFIG['WWT_HOST']
+    if not str(host)[:4] == "http":
+        host = 'http://' + host
+
+    providerurl = url_fix(host + "/torrents-search.php")
+
+    cat = 0  # 0=all, 36=ebooks, 52=mags, 56=audiobooks
+    if 'library' in book:
+        if book['library'] == 'AudioBook':
+            cat = 56
+        elif book['library'] == 'eBook':
+            cat = 36
+        elif book['library'] == 'magazine':
+            cat = 52
+
+    params = {
+        "search": book['searchterm'],
+        "cat": cat
+    }
+    searchURL = providerurl + "/?%s" % urllib.urlencode(params)
+
+    result, success = fetchURL(searchURL)
+    if not success:
+        # seems KAT returns 404 if no results, not really an error
+        if '404' in result:
+            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+        else:
+            logger.debug(searchURL)
+            logger.debug('Error fetching data from %s: %s' % (provider, result))
+            errmsg = result
+        result = False
+
+    results = []
+
+    if result:
+        logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
+        minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
+        soup = BeautifulSoup(result)
+
+        try:
+            table = soup.findAll('table')[2]
+            rows = table.findAll('tr')
+        except Exception:  # no results = no table in result page
+            rows = []
+
+        c0 = []
+        c1 = []
+        c2 = []
+
+        if len(rows) > 1:
+            for row in rows[1:]:
+                if len(row.findAll('td')) > 3:
+                    c0.append(row.findAll('td')[0])
+                    c1.append(row.findAll('td')[1])
+                    c2.append(row.findAll('td')[2])
+
+        for col0, col1, col2 in zip(c0, c1, c2):
+            try:
+                title = unaccented(str(col0).split('title="')[1].split('"')[0])
+
+                # kat can return magnet or torrent or both.
+                magnet = ''
+                url = ''
+                mode = 'torrent'
+                try:
+                    magnet = 'magnet' + str(col0).split('href="magnet')[1].split('"')[0]
+                    mode = 'magnet'
+                except IndexError:
+                    pass
+                try:
+                    url = url_fix(host + '/download.php') + str(col0).split('href="download.php')[1].split('.torrent"')[0] + '.torrent'
+                    mode = 'torrent'
+                except IndexError:
+                    pass
+
+                if not url or (magnet and url and lazylibrarian.CONFIG['PREFER_MAGNET']):
+                    url = magnet
+                    mode = 'magnet'
+
+                try:
+                    size = str(col1.text).replace('&nbsp;', '').upper()
+                    mult = 1
+                    if 'K' in size:
+                        size = size.split('K')[0]
+                        mult = 1024
+                    elif 'M' in size:
+                        size = size.split('M')[0]
+                        mult = 1024 * 1024
+                    size = int(float(size) * mult)
+                except (ValueError, IndexError):
+                    size = 0
+                try:
+                    seeders = int(col2.text)
+                except ValueError:
+                    seeders = 0
+                if not url or not title:
+                    logger.debug('Missing url or title')
+                elif minimumseeders < seeders:
+                    results.append({
+                        'bookid': book['bookid'],
+                        'tor_prov': provider,
+                        'tor_title': title,
+                        'tor_url': url,
+                        'tor_size': str(size),
+                        'tor_type': mode,
+                        'priority': lazylibrarian.CONFIG['WWT_DLPRIORITY']
+                    })
+                    logger.debug('Found %s. Size: %s' % (title, size))
+                else:
+                    logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
+            except Exception as e:
+                logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+                logger.debug('%s: %s' % (provider, traceback.format_exc()))
+
+    logger.debug(u"Found %i result%s from %s for %s" %
+                 (len(results), plural(len(results)), provider, book['searchterm']))
+    return results, errmsg
+
+
 def EXTRA(book=None):
     errmsg = ''
     provider = "Extratorrent"
@@ -588,7 +710,6 @@ def GEN(book=None):
                             output = link.get('href')
                             if output and '/get.php' in output:
                                 url = '/get.php' + output.split('/get.php')[1]
-                                print url
                                 break
                         if url:
                             url = url_fix(host + url)

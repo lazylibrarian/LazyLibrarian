@@ -764,6 +764,15 @@
               <input type="text" placeholder="Enter URL Here" id="kat_host" name="kat_host" value="${lazylibrarian.CONFIG['KAT_HOST']}" size="26">
               <br>
               <%
+                    if lazylibrarian.CONFIG['WWT'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+              <input type="checkbox" id="wwt" name="wwt" value=1 ${checked} style="margin-bottom:4px;" /> WorldWideTorrent
+              <input type="text" placeholder="Enter URL Here" id="wwt_host" name="wwt_host" value="${lazylibrarian.CONFIG['WWT_HOST']}" size="26">
+              <br>
+              <%
                     if lazylibrarian.CONFIG['TPB'] == True:
                         checked = 'checked="checked"'
                     else:
@@ -789,15 +798,6 @@
                     %>
               <input type="checkbox" id="tdl" name="tdl" value=1 ${checked} style="margin-bottom:4px;" /> torrentdownload
               <input type="text" placeholder="Enter URL Here" id="tdl_host" name="tdl_host" value="${lazylibrarian.CONFIG['TDL_HOST']}" size="26">
-              <br>
-              <%
-                    if lazylibrarian.CONFIG['EXTRA'] == True:
-                        checked = 'checked="checked"'
-                    else:
-                        checked = ''
-                    %>
-              <input type="checkbox" id="extra" name="extra" value=1 ${checked} style="margin-bottom:4px;" /> extratorrent
-              <input type="text" placeholder="Enter URL Here" id="extra_host" name="extra_host" value="${lazylibrarian.CONFIG['EXTRA_HOST']}" size="26">
               <br>
               <%
                     if lazylibrarian.CONFIG['LIME'] == True:

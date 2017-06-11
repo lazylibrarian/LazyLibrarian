@@ -243,15 +243,18 @@ CONFIG_DEFINITIONS = {
     'KAT_HOST': ('str', 'KAT', 'kickass.cd'),
     'KAT': ('bool', 'KAT', 0),
     'KAT_DLPRIORITY': ('int', 'KAT', 0),
-    'TPB_HOST': ('str', 'TPB', 'https://piratebays.co'),
+    'WWT_HOST': ('str', 'WWT', 'https://worldwidetorrents.eu'),
+    'WWT': ('bool', 'WWT', 0),
+    'WWT_DLPRIORITY': ('int', 'WWT', 0),
+    'TPB_HOST': ('str', 'TPB', 'https://pirateproxy.cc'),
     'TPB': ('bool', 'TPB', 0),
     'TPB_DLPRIORITY': ('int', 'TPB', 0),
     'ZOO_HOST': ('str', 'ZOO', 'https://zooqle.com'),
     'ZOO': ('bool', 'ZOO', 0),
     'ZOO_DLPRIORITY': ('int', 'ZOO', 0),
-    'EXTRA_HOST': ('str', 'EXTRA', 'extratorrent.cc'),
-    'EXTRA': ('bool', 'EXTRA', 0),
-    'EXTRA_DLPRIORITY': ('int', 'EXTRA', 0),
+     #'EXTRA_HOST': ('str', 'EXTRA', 'extratorrent.cc'),
+     #'EXTRA': ('bool', 'EXTRA', 0),
+     #'EXTRA_DLPRIORITY': ('int', 'EXTRA', 0),
     'TDL_HOST': ('str', 'TDL', 'torrentdownloads.me'),
     'TDL': ('bool', 'TDL', 0),
     'TDL_DLPRIORITY': ('int', 'TDL', 0),
@@ -972,8 +975,8 @@ def USE_RSS():
 
 def USE_TOR():
     count = 0
-    for provider in [CONFIG['KAT'], CONFIG['TPB'], CONFIG['ZOO'], CONFIG['EXTRA'], CONFIG['LIME'],
-                     CONFIG['TDL'], CONFIG['GEN']]:
+    for provider in [CONFIG['KAT'], CONFIG['TPB'], CONFIG['ZOO'], CONFIG['LIME'],
+                     CONFIG['TDL'], CONFIG['GEN'], CONFIG['WWT']]:
         if bool(provider):
             count += 1
     return count
