@@ -708,7 +708,7 @@ def LibraryScan(startdir=None, library='eBook'):
                                             for fname in os.listdir(r):
                                                 if is_valid_booktype(fname, booktype='audiobook') and '01' in fname:
                                                     book_filename = os.path.join(r, fname)
-                                                    break;
+                                                    break
 
                                             if not check_status['AudioFile']:  # no previous location
                                                 myDB.action('UPDATE books set AudioFile="%s" where BookID="%s"' %

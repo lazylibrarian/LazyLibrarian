@@ -110,7 +110,7 @@ isbn_978_dict = {
 # Any _NOT_ in the web ui will remain unchanged on config save
 CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDATED', 'CURRENT_VERSION',
               'COMMITS_BEHIND', 'INSTALL_TYPE']
-CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER']
+CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER', 'WALL_COLUMNS']
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB']
 CONFIG_DEFINITIONS = {
@@ -120,6 +120,7 @@ CONFIG_DEFINITIONS = {
     'LOGFILES': ('int', 'General', 10),
     'LOGSIZE': ('int', 'General', 204800),
     'LOGLEVEL': ('int', 'General', 1),
+    'WALL_COLUMNS': ('int', 'General', 6),
     'FILE_PERM': ('str', 'General', '0o644'),
     'DIR_PERM': ('str', 'General', '0o755'),
     'BLOCKLIST_TIMER': ('int', 'General', 3600),
@@ -242,15 +243,18 @@ CONFIG_DEFINITIONS = {
     'KAT_HOST': ('str', 'KAT', 'kickass.cd'),
     'KAT': ('bool', 'KAT', 0),
     'KAT_DLPRIORITY': ('int', 'KAT', 0),
-    'TPB_HOST': ('str', 'TPB', 'https://piratebays.co'),
+    'WWT_HOST': ('str', 'WWT', 'https://worldwidetorrents.eu'),
+    'WWT': ('bool', 'WWT', 0),
+    'WWT_DLPRIORITY': ('int', 'WWT', 0),
+    'TPB_HOST': ('str', 'TPB', 'https://pirateproxy.cc'),
     'TPB': ('bool', 'TPB', 0),
     'TPB_DLPRIORITY': ('int', 'TPB', 0),
     'ZOO_HOST': ('str', 'ZOO', 'https://zooqle.com'),
     'ZOO': ('bool', 'ZOO', 0),
     'ZOO_DLPRIORITY': ('int', 'ZOO', 0),
-    'EXTRA_HOST': ('str', 'EXTRA', 'extratorrent.cc'),
-    'EXTRA': ('bool', 'EXTRA', 0),
-    'EXTRA_DLPRIORITY': ('int', 'EXTRA', 0),
+     #'EXTRA_HOST': ('str', 'EXTRA', 'extratorrent.cc'),
+     #'EXTRA': ('bool', 'EXTRA', 0),
+     #'EXTRA_DLPRIORITY': ('int', 'EXTRA', 0),
     'TDL_HOST': ('str', 'TDL', 'torrentdownloads.me'),
     'TDL': ('bool', 'TDL', 0),
     'TDL_DLPRIORITY': ('int', 'TDL', 0),
@@ -697,10 +701,14 @@ def config_write():
 
     for key in CONFIG_DEFINITIONS.keys():
         item_type, section, default = CONFIG_DEFINITIONS[key]
-        if key not in CONFIG_NONWEB and not (interface == 'default' and key in CONFIG_NONDEFAULT):
+        if key == 'WALL_COLUMNS':  # may be modified by user interface but not on config page
+            value = CONFIG[key]
+        elif key not in CONFIG_NONWEB and not (interface == 'default' and key in CONFIG_NONDEFAULT):
             check_section(section)
             value = CONFIG[key]
-            if key in ['LOGDIR', 'EBOOK_DIR', 'AUDIO_DIR', 'ALTERNATE_DIR', 'DOWLOAD_DIR',
+            if key == 'LOGLEVEL':
+                LOGLEVEL = value
+            elif key in ['LOGDIR', 'EBOOK_DIR', 'AUDIO_DIR', 'ALTERNATE_DIR', 'DOWLOAD_DIR',
                        'EBOOK_DEST_FILE', 'EBOOK_DEST_FOLDER', 'MAG_DEST_FILE', 'MAG_DEST_FOLDER']:
                 value = value.encode(SYS_ENCODING)
             elif key in ['REJECT_WORDS', 'REJECT_AUDIO', 'MAG_TYPE', 'EBOOK_TYPE', 'AUDIOBOOK_TYPE']:
@@ -967,8 +975,8 @@ def USE_RSS():
 
 def USE_TOR():
     count = 0
-    for provider in [CONFIG['KAT'], CONFIG['TPB'], CONFIG['ZOO'], CONFIG['EXTRA'], CONFIG['LIME'],
-                     CONFIG['TDL'], CONFIG['GEN']]:
+    for provider in [CONFIG['KAT'], CONFIG['TPB'], CONFIG['ZOO'], CONFIG['LIME'],
+                     CONFIG['TDL'], CONFIG['GEN'], CONFIG['WWT']]:
         if bool(provider):
             count += 1
     return count

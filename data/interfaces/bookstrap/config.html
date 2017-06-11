@@ -963,6 +963,25 @@
                 </div>
               </div>
               <%
+                if lazylibrarian.CONFIG['WWT'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
+              <div class="form-group">
+                <label for="wwt_host" class="sr-only">WWT Host</label>
+                <div class="input-group">
+                  <span class="input-group-addon">
+                    <input type="checkbox" id="wwt" name="wwt" value="1" ${checked} />
+                  </span>
+                  <input type="text" placeholder="WWT Host" id="wwt_host" name="wwt_host" value="${lazylibrarian.CONFIG['WWT_HOST']}" class="form-control">
+                </div>
+                <div class="input-group">
+                  <span class="input-group-addon">Priority</span>
+                  <input type="text" id="wwt_dlpriority" name="wwt_dlpriority" value="${lazylibrarian.CONFIG['WWT_DLPRIORITY']}" class="form-control" placeholder="0">
+                </div>
+              </div>
+              <%
                 if lazylibrarian.CONFIG['TPB'] == True:
                     checked = 'checked="checked"'
                 else:
@@ -1017,25 +1036,6 @@
                 <div class="input-group">
                   <span class="input-group-addon">Priority</span>
                   <input type="text" id="tdl_dlpriority" name="tdl_dlpriority" value="${lazylibrarian.CONFIG['TDL_DLPRIORITY']}" class="form-control" placeholder="0">
-                </div>
-              </div>
-              <%
-                if lazylibrarian.CONFIG['EXTRA'] == True:
-                    checked = 'checked="checked"'
-                else:
-                    checked = ''
-                %>
-              <div class="form-group">
-                <label for="extra_host" class="sr-only">extratorrent host</label>
-                <div class="input-group">
-                  <span class="input-group-addon">
-                    <input type="checkbox" id="extra" name="extra" value="1" ${checked} />
-                  </span>
-                  <input type="text" placeholder="extratorrent host" id="extra_host" name="extra_host" value="${lazylibrarian.CONFIG['EXTRA_HOST']}" class="form-control">
-                </div>
-                <div class="input-group">
-                  <span class="input-group-addon">Priority</span>
-                  <input type="text" id="extra_dlpriority" name="extra_dlpriority" value="${lazylibrarian.CONFIG['EXTRA_DLPRIORITY']}" class="form-control" placeholder="0">
                 </div>
               </div>
               <%

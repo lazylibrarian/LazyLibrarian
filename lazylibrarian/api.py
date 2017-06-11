@@ -702,15 +702,13 @@ class Api(object):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
             return
-        else:
-            self.id = kwargs['id']
 
-        books = [{"bookid": id}]
+        books = [{"bookid": kwargs['id']}]
         if 'type' in kwargs:
             library = kwargs['type']
         else:
             library = None
-        if :
+
         if lazylibrarian.USE_NZB()or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
             if 'wait' in kwargs:
                 search_book(books=books, library=library)
