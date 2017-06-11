@@ -60,7 +60,7 @@ def addTorrent(link, data=None):
             retid = _add_torrent_url(result)
 
             """
-            user_agent = 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) 
+            user_agent = 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)
                           Chrome/41.0.2243.2 Safari/537.36'
             headers = {'User-Agent': user_agent}
             torrentfile = ''
@@ -233,6 +233,7 @@ def _get_auth():
     post_data = json.dumps({"method": "auth.login",
                             "params": [delugeweb_password],
                             "id": 1})
+
     try:
         response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
         #                                  , verify=TORRENT_VERIFY_CERT)
@@ -242,6 +243,11 @@ def _get_auth():
         return None
 
     auth = json.loads(response.text)["result"]
+    if auth is False:
+        logger.debug('Deluge: auth.login returned False')
+        delugeweb_auth = {}
+        return None
+
     delugeweb_auth = response.cookies
 
     post_data = json.dumps({"method": "web.connected",
@@ -321,10 +327,13 @@ def _add_torrent_magnet(result):
                                 "id": 2})
         response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
         result['hash'] = json.loads(response.text)['result']
-        logger.debug('Deluge: Response was %s' % str(json.loads(response.text)['result']))
+        msg = 'Deluge: Response was %s' % str(json.loads(response.text)['result'])
+        logger.debug(msg)
+        if 'was None' in msg:
+            logger.error('Deluge: Adding magnet failed: Is the WebUI running?')
         return json.loads(response.text)['result']
     except Exception as err:
-        logger.error('Deluge: Adding torrent magnet failed: %s' % str(err))
+        logger.error('Deluge: Adding magnet failed: %s' % str(err))
 
 
 def _add_torrent_url(result):
@@ -337,7 +346,10 @@ def _add_torrent_url(result):
                                 "id": 2})
         response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
         result['hash'] = json.loads(response.text)['result']
-        logger.debug('Deluge: Response was %s' % str(json.loads(response.text)['result']))
+        msg = 'Deluge: Response was %s' % str(json.loads(response.text)['result'])
+        logger.debug(msg)
+        if 'was None' in msg:
+            logger.error('Deluge: Adding torrent URL failed: Is the WebUI running?')
         return json.loads(response.text)['result']
     except Exception as err:
         logger.error('Deluge: Adding torrent URL failed: %s' % str(err))
@@ -356,8 +368,10 @@ def _add_torrent_file(result):
                                 "id": 2})
         response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
         result['hash'] = json.loads(response.text)['result']
-
-        logger.debug('Deluge: Response was %s' % str(json.loads(response.text)['result']))
+        msg = 'Deluge: Response was %s' % str(json.loads(response.text)['result'])
+        logger.debug(msg)
+        if 'was None' in msg:
+            logger.error('Deluge: Adding torrent file failed: Is the WebUI running?')
         return json.loads(response.text)['result']
     except Exception as err:
         logger.error('Deluge: Adding torrent file failed: %s' % str(err))
