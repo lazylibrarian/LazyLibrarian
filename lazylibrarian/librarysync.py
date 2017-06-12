@@ -540,13 +540,9 @@ def LibraryScan(startdir=None, library='eBook'):
                                 author = author.decode(lazylibrarian.SYS_ENCODING)
 
                             newauthor, authorid, new = addAuthorNameToDB(author)  # get the author name as we know it...
-                            if not new:
-                                if len(newauthor):
-                                    if isinstance(newauthor, str):
-                                        newauthor = newauthor.decode(lazylibrarian.SYS_ENCODING)
-                                    if newauthor != author:
-                                        logger.debug("Preferred authorname changed from [%s] to [%s]" % (author, newauthor))
-                                        author = newauthor
+                            if len(newauthor) and newauthor != author:
+                                logger.debug("Preferred authorname changed from [%s] to [%s]" % (author, newauthor))
+                                author = newauthor
                             if author:
                                 # author exists, check if this book by this author is in our database
                                 # metadata might have quotes in book name

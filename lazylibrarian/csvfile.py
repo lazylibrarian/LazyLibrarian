@@ -21,7 +21,7 @@ import lib.csv as csv
 from lazylibrarian import database, logger
 from lazylibrarian.common import csv_file
 from lazylibrarian.formatter import plural, is_valid_isbn, now, unaccented, formatAuthorName
-from lazylibrarian.importer import search_for, import_book
+from lazylibrarian.importer import search_for, import_book, addAuthorNameToDB
 from lazylibrarian.librarysync import find_book_in_db
 
 
@@ -177,7 +177,12 @@ def import_CSV(search_dir=None):
                     logger.debug(u"CSV: Author %s found in database" % authorname)
                 else:
                     logger.debug(u"CSV: Author %s not found" % authorname)
-                    authcount += 1
+                    newauthor, authorid, new = addAuthorNameToDB(author=authorname, addbooks=True)
+                    if len(newauthor) and newauthor != authorname:
+                        logger.debug("Preferred authorname changed from [%s] to [%s]" % (authorname, newauthor))
+                        authorname = newauthor
+                    if new:
+                        authcount += 1
 
                 bookmatch = finditem(content[item], authorname, headers)
                 result = ''
