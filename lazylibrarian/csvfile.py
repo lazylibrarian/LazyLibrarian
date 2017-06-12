@@ -163,7 +163,14 @@ def import_CSV(search_dir=None):
             skipcount = 0
             logger.debug(u"CSV: Found %s book%s in csv file" % (len(content.keys()), plural(len(content.keys()))))
             for item in content.keys():
-                authorname = formatAuthorName(content[item]['Author'])
+                authorname = content[item]['Author']
+                if isinstance(authorname, str):
+                    authorname = authorname.decode(lazylibrarian.SYS_ENCODING)
+                authorname = formatAuthorName(authorname)
+                title = content[item]['Title']
+                if isinstance(title, str):
+                    title = title.decode(lazylibrarian.SYS_ENCODING)
+
                 authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % authorname)
 
                 if authmatch:
@@ -188,7 +195,7 @@ def import_CSV(search_dir=None):
                         myDB.upsert("books", newValueDict, controlValueDict)
                         bookcount += 1
                 else:
-                    searchterm = "%s <ll> %s" % (content[item]['Title'], formatAuthorName(authorname))
+                    searchterm = "%s <ll> %s" % (title, authorname)
                     results = search_for(unaccented(searchterm))
                     if results:
                         result = results[0]
@@ -201,7 +208,7 @@ def import_CSV(search_dir=None):
                             bookmatch = True
 
                 if not bookmatch:
-                    msg = "Skipping book %s by %s" % (content[item]['Title'], content[item]['Author'])
+                    msg = "Skipping book %s by %s" % (title, authorname)
                     if not result:
                         msg += ', No results returned'
                         logger.warn(msg)

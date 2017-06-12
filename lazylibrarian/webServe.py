@@ -13,13 +13,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import time
 import datetime
 import hashlib
 import os
 import random
 import re
 import threading
+import time
 import urllib
 from shutil import copyfile, rmtree
 
@@ -33,6 +33,7 @@ from lazylibrarian.bookwork import setSeries, deleteEmptySeries, getSeriesAuthor
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, dbUpdate
 from lazylibrarian.csvfile import import_CSV, export_CSV
+from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod
 from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode, unaccented, cleanName
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
@@ -41,10 +42,8 @@ from lazylibrarian.librarysync import LibraryScan
 from lazylibrarian.manualbook import searchItem
 from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.postprocess import processAlternate, processDir
-from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchbook import search_book
-from lazylibrarian.searchrss import search_rss_book
-from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod
+from lazylibrarian.searchmag import search_magazines
 from lib.deluge_client import DelugeRPCClient
 from mako import exceptions
 from mako.lookup import TemplateLookup
@@ -422,7 +421,8 @@ class WebInterface(object):
 
         searchresults = search_for(name)
         return serve_template(templatename="searchresults.html", title='Search Results: "' +
-                              name + '"', searchresults=searchresults, authorlist=authorlist,
+                                                                       name + '"', searchresults=searchresults,
+                              authorlist=authorlist,
                               booklist=booklist, booksearch=booksearch)
 
     # AUTHOR ############################################################
@@ -600,7 +600,7 @@ class WebInterface(object):
         searchterm.strip()
         results = searchItem(searchterm, bookid)
         return serve_template(templatename="manualsearch.html", title='Search Results: "' +
-                              searchterm + '"', bookid=bookid, results=results)
+                                                                      searchterm + '"', bookid=bookid, results=results)
 
     @cherrypy.expose
     def countProviders(self):
@@ -718,11 +718,11 @@ class WebInterface(object):
                 sortcolumn -= 1
             elif sortcolumn == 4:  # series
                 sortcolumn = 12
-            elif sortcolumn == 7:   # added
+            elif sortcolumn == 7:  # added
                 sortcolumn = 13
-            elif sortcolumn == 8:   # status
+            elif sortcolumn == 8:  # status
                 sortcolumn = 5
-            else:               # rating, date
+            else:  # rating, date
                 sortcolumn -= 2
 
             if sortcolumn in [4, 12]:  # date, series
@@ -760,7 +760,7 @@ class WebInterface(object):
 
                 # Need to pass bookid and status twice as datatables modifies first one
                 d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[5], row[11],
-                         row[6], row[13], row[5], row[14]])
+                          row[6], row[13], row[5], row[14]])
             rows = d
 
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -772,7 +772,7 @@ class WebInterface(object):
         return s
 
     @staticmethod
-    def natural_sort(lst, key=lambda s:s, reverse=False):
+    def natural_sort(lst, key=lambda s: s, reverse=False):
         """
         Sort the list into natural alphanumeric order.
         """
@@ -781,6 +781,7 @@ class WebInterface(object):
         def get_alphanum_key_func(key):
             convert = lambda text: int(text) if text.isdigit() else text
             return lambda s: [convert(c) for c in re.split('([0-9]+)', key(s))]
+
         sort_key = get_alphanum_key_func(key)
         lst.sort(key=sort_key, reverse=reverse)
 
@@ -838,10 +839,22 @@ class WebInterface(object):
         else:
             raise cherrypy.HTTPRedirect("books")
 
+    @staticmethod
+    def mimetype(filename):
+        name = filename.lower()
+        if name.endswith('.epub'):
+            return 'application/epub+zip'
+        elif name.endswith('.mobi') or name.endswith('.azw3'):
+            return 'application/x-mobipocket-ebook'
+        elif name.endswith('.pdf'):
+            return 'application/pdf'
+        elif name.endswith('.mp3'):
+            return 'audio/mpeg3'
+        return "application/x-download"
+
     @cherrypy.expose
     def openBook(self, bookid=None, source=None):
         self.label_thread()
-
         myDB = database.DBConnection()
         cmd = 'SELECT BookFile,AudioFile,AuthorName,BookName from books,authors WHERE BookID="%s"' % bookid
         cmd += ' and books.AuthorID = authors.AuthorID'
@@ -851,14 +864,14 @@ class WebInterface(object):
                 source = 'AudioBook'
                 bookfile = bookdata["AudioFile"]
                 if bookfile and os.path.isfile(bookfile):
-                    logger.info(u'Opening %s %s' % (source, bookfile))
-                    return serve_file(bookfile, "application/x-download", "attachment")
+                    logger.debug(u'Opening %s %s' % (source, bookfile))
+                    return serve_file(bookfile, self.mimetype(bookfile), "attachment")
             else:
                 source = 'eBook'
                 bookfile = bookdata["BookFile"]
                 if bookfile and os.path.isfile(bookfile):
-                    logger.info(u'Opening %s %s' % (source, bookfile))
-                    return serve_file(bookfile, "application/x-download", "attachment")
+                    logger.debug(u'Opening %s %s' % (source, bookfile))
+                    return serve_file(bookfile, self.mimetype(bookfile), "attachment")
 
             authorName = bookdata["AuthorName"]
             bookName = bookdata["BookName"]
@@ -1214,7 +1227,7 @@ class WebInterface(object):
                 mod_issues.append(this_issue)
         return serve_template(
             templatename="coverwall.html", title="Recent Issues", results=mod_issues, redirect="magazines",
-                        columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
+            columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
 
     @cherrypy.expose
     def bookWall(self):
@@ -1224,17 +1237,19 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("books")
         return serve_template(
             templatename="coverwall.html", title="Recent Books", results=results, redirect="books",
-                        columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
+            columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
 
     @cherrypy.expose
     def audioWall(self):
         myDB = database.DBConnection()
-        results = myDB.select('SELECT AudioFile,BookImg,BookID from books where AudioStatus="Open" order by BookAdded DESC')
+        results = myDB.select(
+            'SELECT AudioFile,BookImg,BookID from books where AudioStatus="Open" order by BookAdded DESC')
         if not len(results):
             raise cherrypy.HTTPRedirect("audio")
         return serve_template(
             templatename="coverwall.html", title="Recent AudioBooks", results=results, redirect="audio",
-                        columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
+            columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
+
     @cherrypy.expose
     def wallColumns(self, redirect=None, count=None):
         columns = check_int(lazylibrarian.CONFIG['WALL_COLUMNS'], 6)
@@ -1389,8 +1404,8 @@ class WebInterface(object):
         if mag_data:
             IssueFile = mag_data["IssueFile"]
             if IssueFile and os.path.isfile(IssueFile):
-                logger.info(u'Opening file %s' % IssueFile)
-                return serve_file(IssueFile, "application/x-download", "attachment")
+                logger.debug(u'Opening file %s' % IssueFile)
+                return serve_file(IssueFile, self.mimetype(IssueFile), "attachment")
 
         # or we may just have a title to find magazine in issues table
         mag_data = myDB.select('SELECT * from issues WHERE Title="%s"' % bookid)
@@ -1399,8 +1414,8 @@ class WebInterface(object):
         elif len(mag_data) == 1 and lazylibrarian.CONFIG['MAG_SINGLE']:  # we only have one issue, get it
             IssueDate = mag_data[0]["IssueDate"]
             IssueFile = mag_data[0]["IssueFile"]
-            logger.info(u'Opening %s - %s' % (bookid, IssueDate))
-            return serve_file(IssueFile, "application/x-download", "attachment")
+            logger.debug(u'Opening %s - %s' % (bookid, IssueDate))
+            return serve_file(IssueFile, self.mimetype(IssueFile), "attachment")
         else:  # multiple issues, show a list
             logger.debug(u"%s has %s issue%s" % (bookid, len(mag_data), plural(len(mag_data))))
             raise cherrypy.HTTPRedirect(
@@ -1672,7 +1687,7 @@ class WebInterface(object):
             messages = "Your version is not recognised at<br>https://github.com/%s/%s  Branch: %s" % (
                 lazylibrarian.CONFIG['GIT_USER'], lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['GIT_BRANCH'])
             message = message + '<br><small>' + messages
-            return serve_template(templatename="shutdown.html", title="Commits",  prefix='LazyLibrarian is ',
+            return serve_template(templatename="shutdown.html", title="Commits", prefix='LazyLibrarian is ',
                                   message=message, timer=15)
 
             # raise cherrypy.HTTPRedirect("config")
@@ -1690,7 +1705,7 @@ class WebInterface(object):
         logger.debug('(webServe-Update) - Performing update')
         lazylibrarian.SIGNAL = 'update'
         message = 'Updating...'
-        return serve_template(templatename="shutdown.html",  prefix='LazyLibrarian is ', title="Updating",
+        return serve_template(templatename="shutdown.html", prefix='LazyLibrarian is ', title="Updating",
                               message=message, timer=30)
 
     # IMPORT/EXPORT #####################################################
@@ -1763,14 +1778,14 @@ class WebInterface(object):
         lazylibrarian.config_write()
         lazylibrarian.SIGNAL = 'shutdown'
         message = 'closing ...'
-        return serve_template(templatename="shutdown.html",  prefix='LazyLibrarian is ', title="Close library",
+        return serve_template(templatename="shutdown.html", prefix='LazyLibrarian is ', title="Close library",
                               message=message, timer=15)
 
     @cherrypy.expose
     def restart(self):
         lazylibrarian.SIGNAL = 'restart'
         message = 'reopening ...'
-        return serve_template(templatename="shutdown.html",  prefix='LazyLibrarian is ', title="Reopen library",
+        return serve_template(templatename="shutdown.html", prefix='LazyLibrarian is ', title="Reopen library",
                               message=message, timer=30)
 
     @cherrypy.expose
