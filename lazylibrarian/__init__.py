@@ -369,12 +369,19 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
     if cfg_type == 'int':
         try:
             my_val = CFG.getint(cfg_name, item_name)
+        except ValueError:
+            logger.warn('Invalid int for %s: %s, using default %s' % (cfg_name, item_name, int(def_val)))
+            my_val = int(def_val)
         except ConfigParser.Error:
+            # no such item, could be new config file
             my_val = int(def_val)
 
     elif cfg_type == 'bool':
         try:
             my_val = CFG.getboolean(cfg_name, item_name)
+        except ValueError:
+            logger.warn('Invalid bool for %s: %s, using default %s' % (cfg_name, item_name, bool(def_val)))
+            my_val = bool(def_val)
         except ConfigParser.Error:
             my_val = bool(def_val)
 
@@ -387,6 +394,9 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
             if not len(my_val):
                 my_val = def_val
             my_val = my_val.decode(SYS_ENCODING)
+        except ValueError:
+            logger.warn('Invalid str for %s: %s, using default %s' % (cfg_name, item_name, str(def_val)))
+            my_val = str(def_val)
         except ConfigParser.Error:
             my_val = str(def_val)
     else:
@@ -707,7 +717,7 @@ def config_write():
             check_section(section)
             value = CONFIG[key]
             if key == 'LOGLEVEL':
-                LOGLEVEL = value
+                LOGLEVEL = check_int(value, 2)
             elif key in ['LOGDIR', 'EBOOK_DIR', 'AUDIO_DIR', 'ALTERNATE_DIR', 'DOWLOAD_DIR',
                        'EBOOK_DEST_FILE', 'EBOOK_DEST_FOLDER', 'MAG_DEST_FILE', 'MAG_DEST_FOLDER']:
                 value = value.encode(SYS_ENCODING)
